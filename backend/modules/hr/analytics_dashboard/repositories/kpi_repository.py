@@ -2,16 +2,15 @@
 
 import logging
 from datetime import datetime
-from typing import Optional, List, Tuple
 from uuid import UUID
 
-from sqlalchemy import select, update, func, and_, or_
+from sqlalchemy import and_, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.hr.analytics_dashboard.models import (
-    KPIDefinition,
-    KPICategory,
     DEFAULT_KPIS,
+    KPICategory,
+    KPIDefinition,
 )
 from modules.hr.analytics_dashboard.schemas import (
     KPIDefinitionCreate,
@@ -44,7 +43,7 @@ class KPIRepository:
         await self.db.refresh(kpi)
         return kpi
 
-    async def get_kpi_by_id(self, kpi_id: UUID) -> Optional[KPIDefinition]:
+    async def get_kpi_by_id(self, kpi_id: UUID) -> KPIDefinition | None:
         """Busca KPI por ID."""
         query = select(KPIDefinition).where(
             KPIDefinition.id == kpi_id,
@@ -57,7 +56,7 @@ class KPIRepository:
         self,
         code: str,
         condominio_id: UUID = None,
-    ) -> Optional[KPIDefinition]:
+    ) -> KPIDefinition | None:
         """Busca KPI por código."""
         conditions = [
             KPIDefinition.code == code.upper(),
@@ -75,11 +74,7 @@ class KPIRepository:
         else:
             conditions.append(KPIDefinition.condominio_id.is_(None))
 
-        query = (
-            select(KPIDefinition)
-            .where(and_(*conditions))
-            .order_by(KPIDefinition.condominio_id.desc().nulls_last())
-        )
+        query = select(KPIDefinition).where(and_(*conditions)).order_by(KPIDefinition.condominio_id.desc().nulls_last())
         result = await self.db.execute(query)
         return result.scalars().first()
 
@@ -91,7 +86,7 @@ class KPIRepository:
         include_system: bool = True,
         page: int = 1,
         page_size: int = 50,
-    ) -> Tuple[List[KPIDefinition], int]:
+    ) -> tuple[list[KPIDefinition], int]:
         """Lista KPIs com filtros."""
         conditions = [KPIDefinition.is_active.is_(True)]
 
@@ -159,7 +154,7 @@ class KPIRepository:
         self,
         kpi_id: UUID,
         data: KPIDefinitionUpdate,
-    ) -> Optional[KPIDefinition]:
+    ) -> KPIDefinition | None:
         """Atualiza KPI."""
         kpi = await self.get_kpi_by_id(kpi_id)
         if not kpi:
@@ -198,7 +193,7 @@ class KPIRepository:
         self,
         kpi_id: UUID,
         is_featured: bool,
-    ) -> Optional[KPIDefinition]:
+    ) -> KPIDefinition | None:
         """Define KPI como destaque."""
         stmt = (
             update(KPIDefinition)
@@ -211,15 +206,13 @@ class KPIRepository:
 
     async def reorder_kpis(
         self,
-        kpi_orders: List[dict],
+        kpi_orders: list[dict],
     ) -> int:
         """Reordena KPIs."""
         updated = 0
         for order in kpi_orders:
             stmt = (
-                update(KPIDefinition)
-                .where(KPIDefinition.id == order["kpi_id"])
-                .values(sort_order=order["sort_order"])
+                update(KPIDefinition).where(KPIDefinition.id == order["kpi_id"]).values(sort_order=order["sort_order"])
             )
             result = await self.db.execute(stmt)
             updated += result.rowcount
@@ -249,7 +242,7 @@ class KPIRepository:
     async def get_kpi_codes(
         self,
         condominio_id: UUID = None,
-    ) -> List[str]:
+    ) -> list[str]:
         """Retorna lista de códigos de KPI."""
         conditions = [KPIDefinition.is_active.is_(True)]
 
@@ -270,7 +263,7 @@ class KPIRepository:
         kpi_code: str,
         condominio_id: UUID,
         created_by: UUID = None,
-    ) -> Optional[KPIDefinition]:
+    ) -> KPIDefinition | None:
         """Clona KPI global para customização do condomínio."""
         source = await self.get_kpi_by_code(kpi_code)
         if not source:

@@ -4,8 +4,9 @@ Testes do PricingEngine.
 Testes para calculo de CCT, impostos e formacao de preco.
 """
 
-import pytest
 from decimal import Decimal
+
+import pytest
 
 from modules.crm.services.pricing_engine import (
     PricingEngine,
@@ -65,7 +66,7 @@ class TestPricingEngine:
         )
 
         # Base = 2000 * 5 * 6 = 60000
-        base = Decimal("60000.00")
+        Decimal("60000.00")
 
         assert "inss_empresa" in breakdown
         assert "fgts" in breakdown
@@ -310,7 +311,7 @@ class TestPricingEngine:
         assert price_per_vigilante > Decimal("4000.00")  # Minimo realista
 
         # Log para verificacao manual
-        print(f"\nCenario Vigilancia:")
+        print("\nCenario Vigilancia:")
         print(f"  Base: R$ {result.base_cost:,.2f}")
         print(f"  CCT: R$ {result.cct_value:,.2f} ({result.cct_percent}%)")
         print(f"  Benefits: R$ {result.benefits_cost:,.2f}")

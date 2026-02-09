@@ -6,7 +6,6 @@ e sugerir ações.
 """
 
 import logging
-from typing import List
 from datetime import datetime
 
 from modules.campo.models.guardian_occurrence import (
@@ -251,13 +250,7 @@ class OccurrenceAnalyzer:
         # Bonus por pessoas afetadas (0-10 pontos)
         people_score = min(10, affected_people_count * 2)
 
-        total_score = (
-            severity_score
-            + type_score
-            + time_score
-            + recurrence_score
-            + people_score
-        )
+        total_score = severity_score + type_score + time_score + recurrence_score + people_score
 
         return {
             "total_score": total_score,
@@ -285,7 +278,7 @@ class OccurrenceAnalyzer:
         occurrence_type: str,
         severity: str,
         _location: str | None = None,
-    ) -> List[dict]:
+    ) -> list[dict]:
         """
         Sugere ações para uma ocorrência.
 
@@ -356,14 +349,18 @@ class OccurrenceAnalyzer:
             OccurrenceSeverity.CRITICAL.value,
             OccurrenceSeverity.HIGH.value,
         ):
-            actions.append({
-                "action": "Notificar supervisor imediatamente",
-                "priority": 0,
-            })
-            actions.append({
-                "action": "Documentar com fotos/vídeos",
-                "priority": 5,
-            })
+            actions.append(
+                {
+                    "action": "Notificar supervisor imediatamente",
+                    "priority": 0,
+                }
+            )
+            actions.append(
+                {
+                    "action": "Documentar com fotos/vídeos",
+                    "priority": 5,
+                }
+            )
 
         # Ordenar por prioridade
         actions.sort(key=lambda x: x.get("priority", 99))
@@ -428,28 +425,34 @@ class OccurrenceAnalyzer:
         escalation_path = []
 
         if elapsed_minutes > limits["acknowledge"]:
-            escalation_path.append({
-                "level": "Supervisor",
-                "reason": "Tempo de reconhecimento excedido",
-                "sla_limit": limits["acknowledge"],
-                "elapsed": elapsed_minutes,
-            })
+            escalation_path.append(
+                {
+                    "level": "Supervisor",
+                    "reason": "Tempo de reconhecimento excedido",
+                    "sla_limit": limits["acknowledge"],
+                    "elapsed": elapsed_minutes,
+                }
+            )
 
         if elapsed_minutes > limits["first_response"]:
-            escalation_path.append({
-                "level": "Gerente Operacional",
-                "reason": "Tempo de primeira resposta excedido",
-                "sla_limit": limits["first_response"],
-                "elapsed": elapsed_minutes,
-            })
+            escalation_path.append(
+                {
+                    "level": "Gerente Operacional",
+                    "reason": "Tempo de primeira resposta excedido",
+                    "sla_limit": limits["first_response"],
+                    "elapsed": elapsed_minutes,
+                }
+            )
 
         if elapsed_minutes > limits["resolution"]:
-            escalation_path.append({
-                "level": "Diretoria",
-                "reason": "Tempo de resolução excedido",
-                "sla_limit": limits["resolution"],
-                "elapsed": elapsed_minutes,
-            })
+            escalation_path.append(
+                {
+                    "level": "Diretoria",
+                    "reason": "Tempo de resolução excedido",
+                    "sla_limit": limits["resolution"],
+                    "elapsed": elapsed_minutes,
+                }
+            )
 
         return {
             "should_escalate": len(escalation_path) > 0,
@@ -461,7 +464,7 @@ class OccurrenceAnalyzer:
 
     def detect_patterns(
         self,
-        occurrences: List[dict],
+        occurrences: list[dict],
         time_window_hours: int = 24,
     ) -> dict:
         """
@@ -490,25 +493,16 @@ class OccurrenceAnalyzer:
         # Contar por tipo
         for occ in occurrences:
             occ_type = occ.get("occurrence_type", "unknown")
-            patterns["recurring_types"][occ_type] = (
-                patterns["recurring_types"].get(occ_type, 0) + 1
-            )
+            patterns["recurring_types"][occ_type] = patterns["recurring_types"].get(occ_type, 0) + 1
 
             location = occ.get("location", "unknown")
-            patterns["recurring_locations"][location] = (
-                patterns["recurring_locations"].get(location, 0) + 1
-            )
+            patterns["recurring_locations"][location] = patterns["recurring_locations"].get(location, 0) + 1
 
         # Identificar tipos recorrentes
-        recurring = [
-            t for t, count in patterns["recurring_types"].items() if count >= 3
-        ]
+        recurring = [t for t, count in patterns["recurring_types"].items() if count >= 3]
 
         # Identificar locais problemáticos
-        hot_spots = [
-            loc for loc, count in patterns["recurring_locations"].items()
-            if count >= 3 and loc != "unknown"
-        ]
+        hot_spots = [loc for loc, count in patterns["recurring_locations"].items() if count >= 3 and loc != "unknown"]
 
         return {
             "patterns_found": len(recurring) > 0 or len(hot_spots) > 0,
@@ -526,31 +520,23 @@ class OccurrenceAnalyzer:
 
     def _generate_pattern_recommendations(
         self,
-        recurring_types: List[str],
-        hot_spots: List[str],
-    ) -> List[str]:
+        recurring_types: list[str],
+        hot_spots: list[str],
+    ) -> list[str]:
         """Gera recomendações baseadas nos padrões encontrados."""
         recommendations = []
 
         if OccurrenceType.ALARM.value in recurring_types:
-            recommendations.append(
-                "Verificar calibração dos sensores de alarme"
-            )
+            recommendations.append("Verificar calibração dos sensores de alarme")
 
         if OccurrenceType.EQUIPMENT_FAILURE.value in recurring_types:
-            recommendations.append(
-                "Agendar manutenção preventiva nos equipamentos"
-            )
+            recommendations.append("Agendar manutenção preventiva nos equipamentos")
 
         if OccurrenceType.SUSPICIOUS_ACTIVITY.value in recurring_types:
-            recommendations.append(
-                "Aumentar rondas de vigilância nas áreas afetadas"
-            )
+            recommendations.append("Aumentar rondas de vigilância nas áreas afetadas")
 
         if hot_spots:
-            recommendations.append(
-                f"Revisar iluminação e câmeras nos locais: {', '.join(hot_spots)}"
-            )
+            recommendations.append(f"Revisar iluminação e câmeras nos locais: {', '.join(hot_spots)}")
 
         return recommendations
 

@@ -7,15 +7,14 @@ Implementa:
 - Consulta de retenções e contribuições
 """
 
-from datetime import datetime, timedelta
-from typing import Dict, Optional, Any, List
-from uuid import UUID
 import asyncio
 import logging
-from xml.etree import ElementTree as ET
+from datetime import datetime, timedelta
+from typing import Any
+from uuid import UUID
 
-from ..base_extractor import ExtratorBase, DocumentoExtraido, ResultadoExtracao
-from ...core.credentials import ProvedorCredenciais, TipoCredencial
+from ...core.credentials import TipoCredencial
+from ..base_extractor import DocumentoExtraido, ExtratorBase, ResultadoExtracao
 
 logger = logging.getLogger(__name__)
 
@@ -84,10 +83,10 @@ class ExtratorEFDReinf(ExtratorBase):
     async def extrair(
         self,
         tenant_id: UUID,
-        data_inicio: Optional[datetime] = None,
-        data_fim: Optional[datetime] = None,
-        cnpjs: Optional[List[str]] = None,
-        ufs: Optional[List[str]] = None,
+        data_inicio: datetime | None = None,
+        data_fim: datetime | None = None,
+        cnpjs: list[str] | None = None,
+        ufs: list[str] | None = None,
         incremental: bool = True,
     ) -> ResultadoExtracao:
         """
@@ -113,15 +112,10 @@ class ExtratorEFDReinf(ExtratorBase):
         if data_inicio is None:
             data_inicio = data_fim - timedelta(days=365)
 
-        logger.info(
-            f"Iniciando extração EFD-Reinf: {tenant_id} - "
-            f"Período: {data_inicio.date()} a {data_fim.date()}"
-        )
+        logger.info(f"Iniciando extração EFD-Reinf: {tenant_id} - Período: {data_inicio.date()} a {data_fim.date()}")
 
         try:
-            credencial = await self.credentials.obter_credencial(
-                tenant_id, self.tipo_credencial
-            )
+            credencial = await self.credentials.obter_credencial(tenant_id, self.tipo_credencial)
 
             if not credencial.valida:
                 resultado.status = "falha"
@@ -134,9 +128,7 @@ class ExtratorEFDReinf(ExtratorBase):
                 logger.info(f"Extraindo EFD-Reinf para CNPJ: {cnpj}")
 
                 # Consultar eventos transmitidos
-                docs = await self._consultar_eventos(
-                    tenant_id, cnpj, data_inicio, data_fim
-                )
+                docs = await self._consultar_eventos(tenant_id, cnpj, data_inicio, data_fim)
 
                 for doc in docs:
                     resultado.documentos.append(doc)
@@ -150,9 +142,7 @@ class ExtratorEFDReinf(ExtratorBase):
                     resultado.documentos_processados += 1
 
                 # Consultar totalizadores
-                doc_total = await self._consultar_totalizadores(
-                    tenant_id, cnpj, data_inicio, data_fim
-                )
+                doc_total = await self._consultar_totalizadores(tenant_id, cnpj, data_inicio, data_fim)
                 if doc_total:
                     resultado.documentos.append(doc_total)
                     resultado.documentos_processados += 1
@@ -178,12 +168,12 @@ class ExtratorEFDReinf(ExtratorBase):
         cnpj: str,
         data_inicio: datetime,
         data_fim: datetime,
-    ) -> List[DocumentoExtraido]:
+    ) -> list[DocumentoExtraido]:
         """Consulta eventos EFD-Reinf transmitidos."""
         documentos = []
 
         try:
-            session = await self._get_session(tenant_id, with_cert=True)
+            await self._get_session(tenant_id, with_cert=True)
 
             # Gerar períodos mensais
             periodo_atual = data_inicio.replace(day=1)
@@ -193,27 +183,19 @@ class ExtratorEFDReinf(ExtratorBase):
 
                 # Consultar eventos do período
                 for tipo_evento in self.EVENTOS.keys():
-                    envelope = self._montar_envelope_consulta(
-                        cnpj, periodo_str, tipo_evento
-                    )
+                    self._montar_envelope_consulta(cnpj, periodo_str, tipo_evento)
 
                     # Em produção, fazer requisição SOAP
-                    doc = await self._processar_evento(
-                        cnpj, periodo_str, tipo_evento, {}
-                    )
+                    doc = await self._processar_evento(cnpj, periodo_str, tipo_evento, {})
 
                     if doc:
                         documentos.append(doc)
 
                 # Próximo mês
                 if periodo_atual.month == 12:
-                    periodo_atual = periodo_atual.replace(
-                        year=periodo_atual.year + 1, month=1
-                    )
+                    periodo_atual = periodo_atual.replace(year=periodo_atual.year + 1, month=1)
                 else:
-                    periodo_atual = periodo_atual.replace(
-                        month=periodo_atual.month + 1
-                    )
+                    periodo_atual = periodo_atual.replace(month=periodo_atual.month + 1)
 
                 await asyncio.sleep(1)
 
@@ -256,8 +238,8 @@ class ExtratorEFDReinf(ExtratorBase):
         cnpj: str,
         periodo: str,
         tipo_evento: str,
-        dados_resposta: Dict,
-    ) -> Optional[DocumentoExtraido]:
+        dados_resposta: dict,
+    ) -> DocumentoExtraido | None:
         """Processa dados de um evento EFD-Reinf."""
         try:
             dados = {
@@ -265,17 +247,14 @@ class ExtratorEFDReinf(ExtratorBase):
                 "periodo_apuracao": periodo,
                 "tipo_evento": tipo_evento,
                 "descricao_evento": self.EVENTOS.get(tipo_evento, tipo_evento),
-
                 # Dados do evento (variam por tipo)
                 "numero_recibo": dados_resposta.get("nrRecibo"),
                 "data_transmissao": dados_resposta.get("dhRecepcao"),
                 "situacao": dados_resposta.get("situacao", "pendente_consulta"),
-
                 # Valores (exemplo para R-2010/R-2020)
                 "valor_base_retencao": dados_resposta.get("vlrBaseRet", 0.0),
                 "valor_retencao": dados_resposta.get("vlrRetencao", 0.0),
                 "valor_retido_inss": dados_resposta.get("vlrRetINSS", 0.0),
-
                 "consultado_em": datetime.utcnow().isoformat(),
             }
 
@@ -297,7 +276,7 @@ class ExtratorEFDReinf(ExtratorBase):
         cnpj: str,
         data_inicio: datetime,
         data_fim: datetime,
-    ) -> Optional[DocumentoExtraido]:
+    ) -> DocumentoExtraido | None:
         """Consulta totalizadores EFD-Reinf."""
         try:
             dados = {
@@ -305,7 +284,6 @@ class ExtratorEFDReinf(ExtratorBase):
                 "periodo_inicio": data_inicio.strftime("%Y-%m"),
                 "periodo_fim": data_fim.strftime("%Y-%m"),
                 "tipo": "totalizadores",
-
                 "totais": {
                     "R-2010": {
                         "qtde_eventos": 0,
@@ -333,7 +311,6 @@ class ExtratorEFDReinf(ExtratorBase):
                         "valor_pis_total": 0.0,
                     },
                 },
-
                 "consultado_em": datetime.utcnow().isoformat(),
                 "status": "consulta_manual_necessaria",
             }
@@ -354,7 +331,7 @@ class ExtratorEFDReinf(ExtratorBase):
         tenant_id: UUID,
         cnpj: str,
         numero_recibo: str,
-    ) -> Optional[DocumentoExtraido]:
+    ) -> DocumentoExtraido | None:
         """
         Consulta um evento EFD-Reinf específico pelo número do recibo.
 
@@ -367,18 +344,7 @@ class ExtratorEFDReinf(ExtratorBase):
             DocumentoExtraido ou None
         """
         try:
-            session = await self._get_session(tenant_id, with_cert=True)
-
-            envelope = f"""<?xml version="1.0" encoding="UTF-8"?>
-<soap:Envelope xmlns:soap="{NS_SOAP}">
-    <soap:Body>
-        <ConsultaReinfRecibo xmlns="http://sped.fazenda.gov.br/">
-            <tpAmb>1</tpAmb>
-            <cnpjContribuinte>{cnpj}</cnpjContribuinte>
-            <nrRecibo>{numero_recibo}</nrRecibo>
-        </ConsultaReinfRecibo>
-    </soap:Body>
-</soap:Envelope>"""
+            await self._get_session(tenant_id, with_cert=True)
 
             # Em produção, fazer requisição SOAP
             return DocumentoExtraido(
@@ -401,7 +367,7 @@ class ExtratorEFDReinf(ExtratorBase):
         tenant_id: UUID,
         cnpj: str,
         periodo: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Verifica se o período está fechado (R-2099).
 

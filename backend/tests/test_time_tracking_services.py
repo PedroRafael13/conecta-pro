@@ -1,21 +1,22 @@
 """Testes unitários para Services do módulo de Ponto Eletrônico."""
 
-import pytest
-from datetime import date, time, datetime, timedelta
+from datetime import date, datetime, time, timedelta
 from decimal import Decimal
-from unittest.mock import MagicMock, AsyncMock
+from unittest.mock import AsyncMock, MagicMock
+
+import pytest
 
 from modules.hr.time_tracking.models import (
+    AnomalyType,
+    EntryType,
+    ScheduleType,
     TimeEntry,
     WorkSchedule,
-    EntryType,
-    AnomalyType,
-    ScheduleType,
 )
 from modules.hr.time_tracking.services import (
-    TimeCalculationService,
     AnomalyDetectionService,
     AnomalyScore,
+    TimeCalculationService,
 )
 
 

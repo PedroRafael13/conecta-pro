@@ -5,15 +5,13 @@ Clean Architecture unit of work pattern for transaction management
 """
 
 from abc import ABC, abstractmethod
-from typing import TypeVar, Generic
-from contextlib import asynccontextmanager
 
 from .repository import (
+    IEmployeeRepository,
+    IJournalEntryRepository,
+    IProcurementRepository,
     IProductRepository,
     IStockMovementRepository,
-    IJournalEntryRepository,
-    IEmployeeRepository,
-    IProcurementRepository
 )
 
 
@@ -33,7 +31,7 @@ class IUnitOfWork(ABC):
     procurements: IProcurementRepository
 
     @abstractmethod
-    async def __aenter__(self) -> 'IUnitOfWork':
+    async def __aenter__(self) -> "IUnitOfWork":
         """Inicia transacao."""
         pass
 

@@ -3,17 +3,27 @@ Unit Model - Cadastro de Unidades
 Sprint 30: Cadastro de Clientes/Condomínios
 """
 
-import enum
-from datetime import datetime, date
+from datetime import date, datetime
 from decimal import Decimal
-from typing import Optional, TYPE_CHECKING
+from enum import StrEnum
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from sqlalchemy import (
-    Column, String, Text, Boolean, DateTime, Date,
-    Numeric, Integer, Enum, ForeignKey, Index, UniqueConstraint
+    Boolean,
+    Column,
+    Date,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Index,
+    Integer,
+    Numeric,
+    String,
+    Text,
+    UniqueConstraint,
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import relationship
 
 from core.database import Base
@@ -22,8 +32,9 @@ if TYPE_CHECKING:
     from modules.clients.models.condominium import Condominium
 
 
-class UnitType(str, enum.Enum):
+class UnitType(StrEnum):
     """Tipo de unidade."""
+
     APARTAMENTO = "apartamento"
     CASA = "casa"
     SALA_COMERCIAL = "sala_comercial"
@@ -40,8 +51,9 @@ class UnitType(str, enum.Enum):
     OUTRO = "outro"
 
 
-class UnitStatus(str, enum.Enum):
+class UnitStatus(StrEnum):
     """Status da unidade."""
+
     DISPONIVEL = "disponivel"
     OCUPADA = "ocupada"
     ALUGADA = "alugada"
@@ -63,10 +75,7 @@ class Unit(Base):
     # Identificação
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     condominium_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("condominiums.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True
+        UUID(as_uuid=True), ForeignKey("condominiums.id", ondelete="CASCADE"), nullable=False, index=True
     )
 
     # Identificação da unidade
@@ -194,28 +203,28 @@ class Unit(Base):
         return self.status in (UnitStatus.OCUPADA, UnitStatus.ALUGADA)
 
     @property
-    def current_resident(self) -> Optional[str]:
+    def current_resident(self) -> str | None:
         """Morador atual (ou proprietário se não houver inquilino)."""
         if self.is_tenant and self.resident_name:
             return self.resident_name
         return self.owner_name
 
     @property
-    def current_contact_phone(self) -> Optional[str]:
+    def current_contact_phone(self) -> str | None:
         """Telefone de contato atual."""
         if self.is_tenant and self.resident_phone:
             return self.resident_phone
         return self.owner_phone
 
     @property
-    def current_contact_email(self) -> Optional[str]:
+    def current_contact_email(self) -> str | None:
         """Email de contato atual."""
         if self.is_tenant and self.resident_email:
             return self.resident_email
         return self.owner_email
 
     @property
-    def residency_days(self) -> Optional[int]:
+    def residency_days(self) -> int | None:
         """Dias de residência do morador atual."""
         start = self.resident_start_date if self.is_tenant else self.ownership_start_date
         if not start:
@@ -226,10 +235,7 @@ class Unit(Base):
     def has_access_credentials(self) -> bool:
         """Verifica se tem credenciais de acesso cadastradas."""
         return bool(
-            self.access_card_number or
-            self.access_tag_number or
-            self.biometric_registered or
-            self.facial_registered
+            self.access_card_number or self.access_tag_number or self.biometric_registered or self.facial_registered
         )
 
     @property
@@ -242,10 +248,10 @@ class Unit(Base):
     def set_owner(
         self,
         name: str,
-        document: Optional[str] = None,
-        phone: Optional[str] = None,
-        email: Optional[str] = None,
-        start_date: Optional[date] = None
+        document: str | None = None,
+        phone: str | None = None,
+        email: str | None = None,
+        start_date: date | None = None,
     ) -> None:
         """Define o proprietário."""
         self.owner_name = name
@@ -258,12 +264,12 @@ class Unit(Base):
     def set_resident(
         self,
         name: str,
-        document: Optional[str] = None,
-        phone: Optional[str] = None,
-        email: Optional[str] = None,
-        start_date: Optional[date] = None,
-        end_date: Optional[date] = None,
-        is_tenant: bool = False
+        document: str | None = None,
+        phone: str | None = None,
+        email: str | None = None,
+        start_date: date | None = None,
+        end_date: date | None = None,
+        is_tenant: bool = False,
     ) -> None:
         """Define o morador/inquilino."""
         self.resident_name = name
@@ -301,7 +307,7 @@ class Unit(Base):
         self.last_payment_date = date.today()
         self.updated_at = datetime.utcnow()
 
-    def block_unit(self, reason: Optional[str] = None) -> None:
+    def block_unit(self, reason: str | None = None) -> None:
         """Bloqueia a unidade."""
         self.status = UnitStatus.BLOQUEADA
         if reason:
@@ -350,10 +356,7 @@ class Unit(Base):
         self.updated_at = datetime.utcnow()
 
     def update_counts(
-        self,
-        authorized_persons: Optional[int] = None,
-        vehicles: Optional[int] = None,
-        pets: Optional[int] = None
+        self, authorized_persons: int | None = None, vehicles: int | None = None, pets: int | None = None
     ) -> None:
         """Atualiza contadores."""
         if authorized_persons is not None:
@@ -365,7 +368,7 @@ class Unit(Base):
         self.updated_at = datetime.utcnow()
 
     @staticmethod
-    def generate_code(condominium_code: str, block: Optional[str], number: str) -> str:
+    def generate_code(condominium_code: str, block: str | None, number: str) -> str:
         """Gera código da unidade."""
         if block:
             return f"{condominium_code}-{block}-{number}"

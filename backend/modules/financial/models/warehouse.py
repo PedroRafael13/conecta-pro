@@ -3,8 +3,8 @@
 import uuid
 from datetime import datetime
 from decimal import Decimal
-from enum import Enum
-from typing import TYPE_CHECKING, List, Optional
+from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Index, Numeric, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from modules.financial.models.stock_item import StockItem
 
 
-class WarehouseType(str, Enum):
+class WarehouseType(StrEnum):
     """Tipo de armazém."""
 
     PRINCIPAL = "principal"
@@ -29,7 +29,7 @@ class WarehouseType(str, Enum):
     TERCEIROS = "terceiros"
 
 
-class WarehouseStatus(str, Enum):
+class WarehouseStatus(StrEnum):
     """Status do armazém."""
 
     ATIVO = "ativo"
@@ -39,7 +39,7 @@ class WarehouseStatus(str, Enum):
     ENCERRADO = "encerrado"
 
 
-class StorageType(str, Enum):
+class StorageType(StrEnum):
     """Tipo de armazenagem."""
 
     NORMAL = "normal"
@@ -156,7 +156,7 @@ class Warehouse(Base):
     ativo = Column(Boolean, default=True, nullable=False)
 
     # Relacionamentos
-    stock_items: List["StockItem"] = relationship(
+    stock_items: list["StockItem"] = relationship(
         "StockItem",
         back_populates="warehouse",
         cascade="all, delete-orphan",
@@ -189,7 +189,7 @@ class Warehouse(Base):
         return f"[{self.code}] {self.name}"
 
     @property
-    def occupancy_rate(self) -> Optional[Decimal]:
+    def occupancy_rate(self) -> Decimal | None:
         """Taxa de ocupação (%)."""
         total = int(self.total_positions) if self.total_positions else 0
         occupied = int(self.occupied_positions) if self.occupied_positions else 0

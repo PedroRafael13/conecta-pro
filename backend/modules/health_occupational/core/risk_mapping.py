@@ -8,18 +8,17 @@ Quality Score Target: 99+/100
 Compliance: NR-9 (Portaria MTb 3.214/78) - PPRA/PGR
 """
 
-from typing import Dict, List, Optional, Any, Tuple
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime, date, timedelta
-from uuid import UUID, uuid4
 import logging
-import math
+from dataclasses import dataclass, field
+from datetime import date, datetime, timedelta
+from enum import StrEnum
+from typing import Any
+from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
-from sqlalchemy import Column, String, Boolean, DateTime, Date, Text, Integer, Float, ForeignKey
-from sqlalchemy.dialects.postgresql import UUID as PGUUID, JSONB
-from sqlalchemy.orm import relationship
+from sqlalchemy import Boolean, Column, Date, DateTime, Integer, String, Text
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.ext.declarative import declarative_base
 
 logger = logging.getLogger(__name__)
@@ -27,59 +26,65 @@ logger = logging.getLogger(__name__)
 Base = declarative_base()
 
 
-class RiskCategory(str, Enum):
+class RiskCategory(StrEnum):
     """Categorias de riscos ocupacionais conforme NR-9."""
-    FISICO = "fisico"           # Ruido, vibracoes, temperaturas, etc
-    QUIMICO = "quimico"         # Poeiras, fumos, gases, vapores
-    BIOLOGICO = "biologico"     # Virus, bacterias, fungos
-    ERGONOMICO = "ergonomico"   # Posturas, movimentos repetitivos
-    ACIDENTE = "acidente"       # Mecanicos, eletricos, quedas
+
+    FISICO = "fisico"  # Ruido, vibracoes, temperaturas, etc
+    QUIMICO = "quimico"  # Poeiras, fumos, gases, vapores
+    BIOLOGICO = "biologico"  # Virus, bacterias, fungos
+    ERGONOMICO = "ergonomico"  # Posturas, movimentos repetitivos
+    ACIDENTE = "acidente"  # Mecanicos, eletricos, quedas
 
 
-class RiskLevel(str, Enum):
+class RiskLevel(StrEnum):
     """Niveis de risco."""
-    TRIVIAL = "trivial"         # Nao requer acao
-    TOLERAVEL = "toleravel"     # Monitorar
-    MODERADO = "moderado"       # Controlar
-    SUBSTANCIAL = "substancial" # Acao urgente
-    INTOLERAVEL = "intoleravel" # Parar atividade
+
+    TRIVIAL = "trivial"  # Nao requer acao
+    TOLERAVEL = "toleravel"  # Monitorar
+    MODERADO = "moderado"  # Controlar
+    SUBSTANCIAL = "substancial"  # Acao urgente
+    INTOLERAVEL = "intoleravel"  # Parar atividade
 
 
-class ExposureFrequency(str, Enum):
+class ExposureFrequency(StrEnum):
     """Frequencia de exposicao ao risco."""
-    RARA = "rara"               # Menos de 1x/mes
-    OCASIONAL = "ocasional"     # 1-4x/mes
-    FREQUENTE = "frequente"     # 1-4x/semana
-    CONTINUA = "continua"       # Diaria
+
+    RARA = "rara"  # Menos de 1x/mes
+    OCASIONAL = "ocasional"  # 1-4x/mes
+    FREQUENTE = "frequente"  # 1-4x/semana
+    CONTINUA = "continua"  # Diaria
 
 
-class ControlType(str, Enum):
+class ControlType(StrEnum):
     """Tipos de medidas de controle (hierarquia)."""
-    ELIMINACAO = "eliminacao"           # Eliminar o risco
-    SUBSTITUICAO = "substituicao"       # Substituir por menos perigoso
+
+    ELIMINACAO = "eliminacao"  # Eliminar o risco
+    SUBSTITUICAO = "substituicao"  # Substituir por menos perigoso
     CONTROLE_ENGENHARIA = "engenharia"  # Controles de engenharia
     CONTROLE_ADMINISTRATIVO = "administrativo"  # Procedimentos, sinalizacao
-    EPI = "epi"                         # Equipamento de protecao individual
+    EPI = "epi"  # Equipamento de protecao individual
 
 
 class RiskMappingError(Exception):
     """Erro em operacao de mapeamento de riscos."""
+
     pass
 
 
 @dataclass
 class RiskAgent:
     """Agente de risco identificado."""
+
     id: UUID
     name: str
     category: RiskCategory
     description: str
-    tolerance_limit: Optional[str] = None    # Limite de tolerancia (NR-15)
-    measurement_unit: Optional[str] = None   # Unidade de medida
-    health_effects: List[str] = field(default_factory=list)
-    legal_reference: Optional[str] = None    # Referencia legal (NR)
+    tolerance_limit: str | None = None  # Limite de tolerancia (NR-15)
+    measurement_unit: str | None = None  # Unidade de medida
+    health_effects: list[str] = field(default_factory=list)
+    legal_reference: str | None = None  # Referencia legal (NR)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "id": str(self.id),
             "name": self.name,
@@ -95,20 +100,21 @@ class RiskAgent:
 @dataclass
 class RiskMeasurement:
     """Medicao quantitativa de risco."""
+
     id: UUID
     risk_id: UUID
     measured_value: float
     unit: str
     measurement_date: date
     measurement_method: str
-    equipment_used: Optional[str] = None
-    location: Optional[str] = None
-    conditions: Optional[str] = None
-    measured_by: Optional[str] = None
+    equipment_used: str | None = None
+    location: str | None = None
+    conditions: str | None = None
+    measured_by: str | None = None
     above_limit: bool = False
-    observations: Optional[str] = None
+    observations: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "id": str(self.id),
             "risk_id": str(self.risk_id),
@@ -124,19 +130,20 @@ class RiskMeasurement:
 @dataclass
 class ControlMeasure:
     """Medida de controle de risco."""
+
     id: UUID
     risk_id: UUID
     control_type: ControlType
     description: str
-    status: str                          # planned, in_progress, implemented
-    effectiveness: Optional[str] = None  # alta, media, baixa
-    responsible: Optional[str] = None
-    deadline: Optional[date] = None
-    implemented_at: Optional[date] = None
-    cost_estimate: Optional[float] = None
-    observations: Optional[str] = None
+    status: str  # planned, in_progress, implemented
+    effectiveness: str | None = None  # alta, media, baixa
+    responsible: str | None = None
+    deadline: date | None = None
+    implemented_at: date | None = None
+    cost_estimate: float | None = None
+    observations: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "id": str(self.id),
             "risk_id": str(self.risk_id),
@@ -153,6 +160,7 @@ class ControlMeasure:
 @dataclass
 class OccupationalRisk:
     """Risco ocupacional identificado e avaliado."""
+
     id: UUID
     agent: RiskAgent
     location_id: str
@@ -161,19 +169,19 @@ class OccupationalRisk:
     activity: str
     exposure_frequency: ExposureFrequency
     exposed_workers: int
-    probability: int                     # 1-5
-    severity: int                        # 1-5
+    probability: int  # 1-5
+    severity: int  # 1-5
     risk_level: RiskLevel
-    measurements: List[RiskMeasurement] = field(default_factory=list)
-    control_measures: List[ControlMeasure] = field(default_factory=list)
+    measurements: list[RiskMeasurement] = field(default_factory=list)
+    control_measures: list[ControlMeasure] = field(default_factory=list)
     requires_epi: bool = False
-    required_epi: List[str] = field(default_factory=list)
+    required_epi: list[str] = field(default_factory=list)
     requires_training: bool = False
     identified_at: datetime = field(default_factory=datetime.utcnow)
-    identified_by: Optional[str] = None
-    last_review: Optional[datetime] = None
-    next_review: Optional[date] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    identified_by: str | None = None
+    last_review: datetime | None = None
+    next_review: date | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     @property
     def risk_score(self) -> int:
@@ -195,7 +203,7 @@ class OccupationalRisk:
         else:
             return RiskLevel.INTOLERAVEL
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "id": str(self.id),
             "agent": self.agent.to_dict(),
@@ -222,16 +230,17 @@ class OccupationalRisk:
 @dataclass
 class WorkLocation:
     """Local de trabalho para mapeamento de riscos."""
+
     id: UUID
     name: str
     department: str
-    description: Optional[str] = None
-    area_m2: Optional[float] = None
+    description: str | None = None
+    area_m2: float | None = None
     workers_count: int = 0
-    activities: List[str] = field(default_factory=list)
-    parent_id: Optional[UUID] = None
+    activities: list[str] = field(default_factory=list)
+    parent_id: UUID | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "id": str(self.id),
             "name": self.name,
@@ -246,6 +255,7 @@ class WorkLocation:
 # SQLAlchemy Models
 class OccupationalRiskModel(Base):
     """Modelo de banco para riscos ocupacionais."""
+
     __tablename__ = "health_occupational_risks"
 
     id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
@@ -277,6 +287,7 @@ class OccupationalRiskModel(Base):
 
 class RiskAgentModel(Base):
     """Modelo de banco para agentes de risco."""
+
     __tablename__ = "health_risk_agents"
 
     id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
@@ -293,6 +304,7 @@ class RiskAgentModel(Base):
 
 class PPRAConfig(BaseModel):
     """Configuracao do sistema PPRA/PGR."""
+
     default_review_months: int = Field(default=12, ge=6)
     auto_schedule_reviews: bool = True
     require_quantitative_measurement: bool = False
@@ -317,7 +329,7 @@ class RiskMappingManager:
         ... )
     """
 
-    def __init__(self, config: Optional[PPRAConfig] = None):
+    def __init__(self, config: PPRAConfig | None = None):
         """
         Inicializa o gerenciador PPRA/PGR.
 
@@ -325,9 +337,9 @@ class RiskMappingManager:
             config: Configuracao do sistema.
         """
         self.config = config or PPRAConfig()
-        self._risks: Dict[UUID, OccupationalRisk] = {}
-        self._agents: Dict[UUID, RiskAgent] = {}
-        self._locations: Dict[UUID, WorkLocation] = {}
+        self._risks: dict[UUID, OccupationalRisk] = {}
+        self._agents: dict[UUID, RiskAgent] = {}
+        self._locations: dict[UUID, WorkLocation] = {}
         self._init_default_agents()
         logger.info("RiskMappingManager inicializado")
 
@@ -335,50 +347,66 @@ class RiskMappingManager:
         """Inicializa agentes de risco padrao."""
         default_agents = [
             RiskAgent(
-                id=uuid4(), name="Ruido", category=RiskCategory.FISICO,
+                id=uuid4(),
+                name="Ruido",
+                category=RiskCategory.FISICO,
                 description="Exposicao a niveis de pressao sonora elevados",
-                tolerance_limit="85 dB(A) para 8h", measurement_unit="dB(A)",
+                tolerance_limit="85 dB(A) para 8h",
+                measurement_unit="dB(A)",
                 health_effects=["PAIR", "Estresse", "Fadiga"],
-                legal_reference="NR-15 Anexo 1"
+                legal_reference="NR-15 Anexo 1",
             ),
             RiskAgent(
-                id=uuid4(), name="Calor", category=RiskCategory.FISICO,
+                id=uuid4(),
+                name="Calor",
+                category=RiskCategory.FISICO,
                 description="Exposicao a temperaturas elevadas",
-                tolerance_limit="IBUTG conforme NR-15", measurement_unit="IBUTG",
+                tolerance_limit="IBUTG conforme NR-15",
+                measurement_unit="IBUTG",
                 health_effects=["Desidratacao", "Exaustao termica"],
-                legal_reference="NR-15 Anexo 3"
+                legal_reference="NR-15 Anexo 3",
             ),
             RiskAgent(
-                id=uuid4(), name="Vibracoes", category=RiskCategory.FISICO,
+                id=uuid4(),
+                name="Vibracoes",
+                category=RiskCategory.FISICO,
                 description="Exposicao a vibracoes corpo inteiro ou maos-bracos",
                 measurement_unit="m/s2",
                 health_effects=["Lesoes vasculares", "Dores articulares"],
-                legal_reference="NR-15 Anexo 8"
+                legal_reference="NR-15 Anexo 8",
             ),
             RiskAgent(
-                id=uuid4(), name="Poeira mineral", category=RiskCategory.QUIMICO,
+                id=uuid4(),
+                name="Poeira mineral",
+                category=RiskCategory.QUIMICO,
                 description="Exposicao a poeiras inorganicas",
                 tolerance_limit="Conforme NR-15 Anexo 12",
                 health_effects=["Pneumoconiose", "Silicose"],
-                legal_reference="NR-15 Anexo 12"
+                legal_reference="NR-15 Anexo 12",
             ),
             RiskAgent(
-                id=uuid4(), name="Agentes biologicos", category=RiskCategory.BIOLOGICO,
+                id=uuid4(),
+                name="Agentes biologicos",
+                category=RiskCategory.BIOLOGICO,
                 description="Exposicao a microorganismos patogenicos",
                 health_effects=["Infeccoes", "Doencas infecciosas"],
-                legal_reference="NR-32"
+                legal_reference="NR-32",
             ),
             RiskAgent(
-                id=uuid4(), name="Postura inadequada", category=RiskCategory.ERGONOMICO,
+                id=uuid4(),
+                name="Postura inadequada",
+                category=RiskCategory.ERGONOMICO,
                 description="Manutencao de posturas inadequadas",
                 health_effects=["LER/DORT", "Lombalgia"],
-                legal_reference="NR-17"
+                legal_reference="NR-17",
             ),
             RiskAgent(
-                id=uuid4(), name="Queda de altura", category=RiskCategory.ACIDENTE,
+                id=uuid4(),
+                name="Queda de altura",
+                category=RiskCategory.ACIDENTE,
                 description="Risco de queda de nivel diferente",
                 health_effects=["Fraturas", "Traumatismos"],
-                legal_reference="NR-35"
+                legal_reference="NR-35",
             ),
         ]
 
@@ -396,8 +424,8 @@ class RiskMappingManager:
         severity: int,
         exposure_frequency: ExposureFrequency,
         exposed_workers: int,
-        identified_by: Optional[str] = None,
-        required_epi: Optional[List[str]] = None
+        identified_by: str | None = None,
+        required_epi: list[str] | None = None,
     ) -> OccupationalRisk:
         """
         Identifica e registra um risco ocupacional.
@@ -444,7 +472,10 @@ class RiskMappingManager:
 
         logger.info(
             "Risco identificado: id=%s, agent=%s, location=%s, level=%s",
-            risk.id, agent.name, location_name, risk_level.value
+            risk.id,
+            agent.name,
+            location_name,
+            risk_level.value,
         )
 
         return risk
@@ -456,9 +487,9 @@ class RiskMappingManager:
         unit: str,
         measurement_date: date,
         measurement_method: str,
-        equipment_used: Optional[str] = None,
-        measured_by: Optional[str] = None,
-        tolerance_limit: Optional[float] = None
+        equipment_used: str | None = None,
+        measured_by: str | None = None,
+        tolerance_limit: float | None = None,
     ) -> RiskMeasurement:
         """
         Adiciona medicao quantitativa a um risco.
@@ -499,8 +530,7 @@ class RiskMappingManager:
         risk.measurements.append(measurement)
 
         logger.info(
-            "Medicao adicionada: risk=%s, value=%s %s, above_limit=%s",
-            risk_id, measured_value, unit, above_limit
+            "Medicao adicionada: risk=%s, value=%s %s, above_limit=%s", risk_id, measured_value, unit, above_limit
         )
 
         return measurement
@@ -510,9 +540,9 @@ class RiskMappingManager:
         risk_id: UUID,
         control_type: ControlType,
         description: str,
-        responsible: Optional[str] = None,
-        deadline: Optional[date] = None,
-        cost_estimate: Optional[float] = None
+        responsible: str | None = None,
+        deadline: date | None = None,
+        cost_estimate: float | None = None,
     ) -> ControlMeasure:
         """
         Adiciona medida de controle a um risco.
@@ -545,19 +575,12 @@ class RiskMappingManager:
 
         risk.control_measures.append(measure)
 
-        logger.info(
-            "Medida de controle adicionada: risk=%s, type=%s",
-            risk_id, control_type.value
-        )
+        logger.info("Medida de controle adicionada: risk=%s, type=%s", risk_id, control_type.value)
 
         return measure
 
     async def update_control_status(
-        self,
-        risk_id: UUID,
-        control_id: UUID,
-        status: str,
-        effectiveness: Optional[str] = None
+        self, risk_id: UUID, control_id: UUID, status: str, effectiveness: str | None = None
     ) -> ControlMeasure:
         """
         Atualiza status de medida de controle.
@@ -587,11 +610,7 @@ class RiskMappingManager:
         raise RiskMappingError(f"Medida de controle nao encontrada: {control_id}")
 
     async def reassess_risk(
-        self,
-        risk_id: UUID,
-        new_probability: int,
-        new_severity: int,
-        assessed_by: Optional[str] = None
+        self, risk_id: UUID, new_probability: int, new_severity: int, assessed_by: str | None = None
     ) -> OccupationalRisk:
         """
         Reavalia um risco apos implementacao de controles.
@@ -619,31 +638,30 @@ class RiskMappingManager:
 
         # Registra historico
         risk.metadata["assessment_history"] = risk.metadata.get("assessment_history", [])
-        risk.metadata["assessment_history"].append({
-            "date": datetime.utcnow().isoformat(),
-            "old_level": old_level.value,
-            "new_level": risk.risk_level.value,
-            "assessed_by": assessed_by,
-        })
-
-        logger.info(
-            "Risco reavaliado: id=%s, %s -> %s",
-            risk_id, old_level.value, risk.risk_level.value
+        risk.metadata["assessment_history"].append(
+            {
+                "date": datetime.utcnow().isoformat(),
+                "old_level": old_level.value,
+                "new_level": risk.risk_level.value,
+                "assessed_by": assessed_by,
+            }
         )
+
+        logger.info("Risco reavaliado: id=%s, %s -> %s", risk_id, old_level.value, risk.risk_level.value)
 
         return risk
 
-    async def get_risk(self, risk_id: UUID) -> Optional[OccupationalRisk]:
+    async def get_risk(self, risk_id: UUID) -> OccupationalRisk | None:
         """Recupera risco por ID."""
         return self._risks.get(risk_id)
 
     async def list_risks(
         self,
-        location_id: Optional[str] = None,
-        department: Optional[str] = None,
-        category: Optional[RiskCategory] = None,
-        risk_level: Optional[RiskLevel] = None
-    ) -> List[OccupationalRisk]:
+        location_id: str | None = None,
+        department: str | None = None,
+        category: RiskCategory | None = None,
+        risk_level: RiskLevel | None = None,
+    ) -> list[OccupationalRisk]:
         """
         Lista riscos com filtros.
 
@@ -669,22 +687,16 @@ class RiskMappingManager:
 
         return risks
 
-    async def get_high_risks(self) -> List[OccupationalRisk]:
+    async def get_high_risks(self) -> list[OccupationalRisk]:
         """Lista riscos substanciais ou intoleraveis."""
-        return [
-            r for r in self._risks.values()
-            if r.risk_level in [RiskLevel.SUBSTANCIAL, RiskLevel.INTOLERAVEL]
-        ]
+        return [r for r in self._risks.values() if r.risk_level in [RiskLevel.SUBSTANCIAL, RiskLevel.INTOLERAVEL]]
 
-    async def get_pending_reviews(self) -> List[OccupationalRisk]:
+    async def get_pending_reviews(self) -> list[OccupationalRisk]:
         """Lista riscos com revisao pendente."""
         today = date.today()
-        return [
-            r for r in self._risks.values()
-            if r.next_review and r.next_review <= today
-        ]
+        return [r for r in self._risks.values() if r.next_review and r.next_review <= today]
 
-    async def generate_risk_matrix(self) -> Dict[str, Any]:
+    async def generate_risk_matrix(self) -> dict[str, Any]:
         """
         Gera matriz de riscos.
 
@@ -721,10 +733,8 @@ class RiskMappingManager:
         return matrix
 
     async def generate_ppra_report(
-        self,
-        location_id: Optional[str] = None,
-        department: Optional[str] = None
-    ) -> Dict[str, Any]:
+        self, location_id: str | None = None, department: str | None = None
+    ) -> dict[str, Any]:
         """
         Gera relatorio PPRA/PGR.
 
@@ -766,24 +776,26 @@ class RiskMappingManager:
             for control in risk.control_measures:
                 if control.status != "implemented":
                     report["pending_controls"] = report["summary"]["pending_controls"] + 1
-                    report["action_plan"].append({
-                        "risk": risk.agent.name,
-                        "location": risk.location_name,
-                        "control": control.description,
-                        "type": control.control_type.value,
-                        "responsible": control.responsible,
-                        "deadline": control.deadline.isoformat() if control.deadline else None,
-                    })
+                    report["action_plan"].append(
+                        {
+                            "risk": risk.agent.name,
+                            "location": risk.location_name,
+                            "control": control.description,
+                            "type": control.control_type.value,
+                            "responsible": control.responsible,
+                            "deadline": control.deadline.isoformat() if control.deadline else None,
+                        }
+                    )
 
         report["summary"]["pending_controls"] = len(report["action_plan"])
 
         return report
 
-    async def get_agent(self, agent_id: UUID) -> Optional[RiskAgent]:
+    async def get_agent(self, agent_id: UUID) -> RiskAgent | None:
         """Recupera agente de risco por ID."""
         return self._agents.get(agent_id)
 
-    async def list_agents(self, category: Optional[RiskCategory] = None) -> List[RiskAgent]:
+    async def list_agents(self, category: RiskCategory | None = None) -> list[RiskAgent]:
         """Lista agentes de risco."""
         agents = list(self._agents.values())
         if category:
@@ -798,7 +810,7 @@ class RiskMappingManager:
 
 
 # Singleton
-_risk_manager: Optional[RiskMappingManager] = None
+_risk_manager: RiskMappingManager | None = None
 
 
 def get_risk_manager() -> RiskMappingManager:
@@ -809,7 +821,7 @@ def get_risk_manager() -> RiskMappingManager:
     return _risk_manager
 
 
-def init_risk_manager(config: Optional[PPRAConfig] = None) -> RiskMappingManager:
+def init_risk_manager(config: PPRAConfig | None = None) -> RiskMappingManager:
     """Inicializa o RiskMappingManager singleton."""
     global _risk_manager
     _risk_manager = RiskMappingManager(config)

@@ -13,68 +13,64 @@ Funcionalidades:
 - Dashboard de metricas
 """
 
+from modules.ai.knowledge_base.controllers import kb_router
 from modules.ai.knowledge_base.models import (
+    FAQ,
+    Article,
+    ArticleFeedback,
+    ArticlePriorityEnum,
+    ArticleStatusEnum,
+    ArticleTypeEnum,
+    ArticleVersion,
+    FAQFeedback,
+    FAQSourceEnum,
+    FAQStatusEnum,
+    KBCategory,
     KnowledgeBase,
     KnowledgeBaseStatusEnum,
     KnowledgeBaseTypeEnum,
     KnowledgeBaseVisibilityEnum,
-    KBCategory,
-    Article,
-    ArticleStatusEnum,
-    ArticleTypeEnum,
-    ArticlePriorityEnum,
-    ArticleVersion,
-    ArticleFeedback,
-    FAQ,
-    FAQStatusEnum,
-    FAQSourceEnum,
-    FAQFeedback,
-    QASession,
-    QASessionStatusEnum,
-    QASourceEnum,
     QAInteraction,
     QAInteractionTypeEnum,
     QAResponseTypeEnum,
+    QASession,
+    QASessionStatusEnum,
+    QASourceEnum,
     QASuggestion,
 )
-
+from modules.ai.knowledge_base.repositories import KnowledgeBaseRepository
 from modules.ai.knowledge_base.schemas import (
-    KnowledgeBaseCreate,
-    KnowledgeBaseUpdate,
-    KnowledgeBaseResponse,
-    KnowledgeBaseListResponse,
-    KBCategoryCreate,
-    KBCategoryUpdate,
-    KBCategoryResponse,
     ArticleCreate,
-    ArticleUpdate,
-    ArticleResponse,
     ArticleListResponse,
+    ArticleResponse,
     ArticleSearchResult,
+    ArticleUpdate,
     FAQCreate,
-    FAQUpdate,
-    FAQResponse,
     FAQListResponse,
+    FAQResponse,
     FAQSearchResult,
-    QAQuestionRequest,
+    FAQUpdate,
+    KBCategoryCreate,
+    KBCategoryResponse,
+    KBCategoryUpdate,
+    KnowledgeBaseCreate,
+    KnowledgeBaseDashboard,
+    KnowledgeBaseListResponse,
+    KnowledgeBaseResponse,
+    KnowledgeBaseUpdate,
     QAAnswerResponse,
     QAFeedbackRequest,
-    QASessionResponse,
     QAInteractionResponse,
+    QAQuestionRequest,
+    QASessionResponse,
     SemanticSearchRequest,
     SemanticSearchResponse,
-    KnowledgeBaseDashboard,
 )
-
-from modules.ai.knowledge_base.repositories import KnowledgeBaseRepository
-
 from modules.ai.knowledge_base.services import (
-    SemanticSearchEngine,
-    QAEngine,
     ArticleGenerator,
+    QAEngine,
+    SemanticSearchEngine,
 )
-
-from modules.ai.knowledge_base.controllers import kb_router
 
 __all__ = [
     # Models

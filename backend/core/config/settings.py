@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     """Configurações da aplicação carregadas do ambiente."""
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=[".env", ".env.secrets"],
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
@@ -46,7 +46,7 @@ class Settings(BaseSettings):
     jwt_refresh_token_expire_days: int = Field(default=7)
 
     # CORS - usa string para evitar problemas de parsing
-    cors_origins_str: str = Field(default="http://localhost:3000", alias="cors_origins")
+    cors_origins_str: str = Field(default="https://erp.conectamais.pro", alias="cors_origins")
 
     # Logging
     log_level: str = Field(default="INFO")

@@ -5,18 +5,18 @@ Gerencia layout, conexoes e validacao de workflows visuais.
 """
 
 import logging
+import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
-import uuid
-import json
+from typing import Any
 
+from modules._deprecated_workflows_dataclass.models.action import BUILTIN_ACTIONS, Action, ActionType
+from modules._deprecated_workflows_dataclass.models.condition import Condition, ConditionType
+from modules._deprecated_workflows_dataclass.models.trigger import Trigger, TriggerType
 from modules._deprecated_workflows_dataclass.models.workflow import (
     Workflow,
     WorkflowCategory,
-    WorkflowPriority,
     WorkflowStatus,
-    WorkflowVariable,
 )
 from modules._deprecated_workflows_dataclass.models.workflow_step import (
     StepConnection,
@@ -24,9 +24,6 @@ from modules._deprecated_workflows_dataclass.models.workflow_step import (
     StepType,
     WorkflowStep,
 )
-from modules._deprecated_workflows_dataclass.models.trigger import Trigger, TriggerType
-from modules._deprecated_workflows_dataclass.models.action import Action, ActionType, BUILTIN_ACTIONS
-from modules._deprecated_workflows_dataclass.models.condition import Condition, ConditionType
 
 logger = logging.getLogger(__name__)
 
@@ -34,17 +31,19 @@ logger = logging.getLogger(__name__)
 @dataclass
 class CanvasNode:
     """No do canvas visual."""
+
     id: str
     type: str  # step, trigger, action, condition
     position: StepPosition
-    data: Dict[str, Any] = field(default_factory=dict)
-    inputs: List[str] = field(default_factory=list)
-    outputs: List[str] = field(default_factory=list)
+    data: dict[str, Any] = field(default_factory=dict)
+    inputs: list[str] = field(default_factory=list)
+    outputs: list[str] = field(default_factory=list)
 
 
 @dataclass
 class CanvasEdge:
     """Conexao entre nos do canvas."""
+
     id: str
     source_id: str
     target_id: str
@@ -58,13 +57,16 @@ class CanvasEdge:
 @dataclass
 class CanvasLayout:
     """Layout do canvas."""
-    nodes: List[CanvasNode] = field(default_factory=list)
-    edges: List[CanvasEdge] = field(default_factory=list)
-    viewport: Dict[str, float] = field(default_factory=lambda: {
-        "x": 0,
-        "y": 0,
-        "zoom": 1,
-    })
+
+    nodes: list[CanvasNode] = field(default_factory=list)
+    edges: list[CanvasEdge] = field(default_factory=list)
+    viewport: dict[str, float] = field(
+        default_factory=lambda: {
+            "x": 0,
+            "y": 0,
+            "zoom": 1,
+        }
+    )
 
 
 class WorkflowDesigner:
@@ -87,11 +89,11 @@ class WorkflowDesigner:
     START_Y = 100
 
     def __init__(self):
-        self._workflows: Dict[str, Workflow] = {}
-        self._steps: Dict[str, WorkflowStep] = {}
-        self._triggers: Dict[str, Trigger] = {}
-        self._actions: Dict[str, Action] = {}
-        self._conditions: Dict[str, Condition] = {}
+        self._workflows: dict[str, Workflow] = {}
+        self._steps: dict[str, WorkflowStep] = {}
+        self._triggers: dict[str, Trigger] = {}
+        self._actions: dict[str, Action] = {}
+        self._conditions: dict[str, Condition] = {}
 
     def create_workflow(
         self,
@@ -196,7 +198,7 @@ class WorkflowDesigner:
         condition: str = "",
         label: str = "",
         is_default: bool = False,
-    ) -> Optional[StepConnection]:
+    ) -> StepConnection | None:
         """Conecta dois steps."""
         from_step = self._steps.get(from_step_id)
         to_step = self._steps.get(to_step_id)
@@ -258,9 +260,9 @@ class WorkflowDesigner:
         workflow: Workflow,
         action_type: ActionType,
         name: str = "",
-        config: Dict[str, Any] = None,
+        config: dict[str, Any] = None,
         position: StepPosition = None,
-    ) -> Tuple[WorkflowStep, Action]:
+    ) -> tuple[WorkflowStep, Action]:
         """Adiciona step de acao com action configurada."""
         # Usa action builtin se existir
         builtin_key = action_type.value.replace("_", "_")
@@ -307,7 +309,7 @@ class WorkflowDesigner:
         true_step_id: str = "",
         false_step_id: str = "",
         position: StepPosition = None,
-    ) -> Tuple[WorkflowStep, Condition]:
+    ) -> tuple[WorkflowStep, Condition]:
         """Adiciona step de condicao."""
         condition = Condition(
             name=name,
@@ -333,7 +335,7 @@ class WorkflowDesigner:
         workflow: Workflow,
         trigger_type: TriggerType,
         name: str = "",
-        config: Dict[str, Any] = None,
+        config: dict[str, Any] = None,
     ) -> Trigger:
         """Adiciona trigger ao workflow."""
         trigger = Trigger(
@@ -350,7 +352,7 @@ class WorkflowDesigner:
 
         return trigger
 
-    def validate_workflow(self, workflow: Workflow) -> List[str]:
+    def validate_workflow(self, workflow: Workflow) -> list[str]:
         """
         Valida workflow.
 
@@ -368,8 +370,7 @@ class WorkflowDesigner:
 
         # Verifica START
         start_count = sum(
-            1 for sid in workflow.step_ids
-            if self._steps.get(sid, WorkflowStep()).step_type == StepType.START
+            1 for sid in workflow.step_ids if self._steps.get(sid, WorkflowStep()).step_type == StepType.START
         )
         if start_count == 0:
             errors.append("Workflow deve ter um step START")
@@ -378,8 +379,7 @@ class WorkflowDesigner:
 
         # Verifica END
         end_count = sum(
-            1 for sid in workflow.step_ids
-            if self._steps.get(sid, WorkflowStep()).step_type == StepType.END
+            1 for sid in workflow.step_ids if self._steps.get(sid, WorkflowStep()).step_type == StepType.END
         )
         if end_count == 0:
             errors.append("Workflow deve ter um step END")
@@ -412,15 +412,16 @@ class WorkflowDesigner:
                     if not condition:
                         errors.append(f"Condition {step.condition_id} nao encontrada")
                     elif not condition.true_step_id or not condition.false_step_id:
-                        errors.append(
-                            f"Condition '{step.name}' deve ter branches true e false"
-                        )
+                        errors.append(f"Condition '{step.name}' deve ter branches true e false")
 
         # Verifica ciclos (simplificado)
         visited = set()
         start_step = next(
-            (self._steps[sid] for sid in workflow.step_ids
-             if self._steps.get(sid, WorkflowStep()).step_type == StepType.START),
+            (
+                self._steps[sid]
+                for sid in workflow.step_ids
+                if self._steps.get(sid, WorkflowStep()).step_type == StepType.START
+            ),
             None,
         )
 
@@ -438,7 +439,7 @@ class WorkflowDesigner:
     def _check_path_to_end(
         self,
         step_id: str,
-        all_step_ids: List[str],
+        all_step_ids: list[str],
         visited: set,
     ) -> bool:
         """Verifica se ha caminho ate END (DFS)."""
@@ -523,12 +524,15 @@ class WorkflowDesigner:
         """Calcula layout automatico."""
         layout = CanvasLayout()
         visited = set()
-        levels: Dict[int, List[str]] = {}  # nivel -> [step_ids]
+        levels: dict[int, list[str]] = {}  # nivel -> [step_ids]
 
         # Encontra START
         start_step = next(
-            (self._steps[sid] for sid in workflow.step_ids
-             if self._steps.get(sid, WorkflowStep()).step_type == StepType.START),
+            (
+                self._steps[sid]
+                for sid in workflow.step_ids
+                if self._steps.get(sid, WorkflowStep()).step_type == StepType.START
+            ),
             None,
         )
 
@@ -554,7 +558,7 @@ class WorkflowDesigner:
         self,
         step_id: str,
         level: int,
-        levels: Dict[int, List[str]],
+        levels: dict[int, list[str]],
         visited: set,
     ) -> None:
         """Atribui niveis para layout."""
@@ -572,13 +576,9 @@ class WorkflowDesigner:
             for next_id in step.next_step_ids:
                 self._assign_levels(next_id, level + 1, levels, visited)
 
-    def export_workflow(self, workflow: Workflow) -> Dict[str, Any]:
+    def export_workflow(self, workflow: Workflow) -> dict[str, Any]:
         """Exporta workflow para JSON."""
-        steps = [
-            self._steps[sid].to_dict()
-            for sid in workflow.step_ids
-            if sid in self._steps
-        ]
+        steps = [self._steps[sid].to_dict() for sid in workflow.step_ids if sid in self._steps]
 
         actions = {
             aid: self._actions[aid].to_dict()
@@ -596,11 +596,7 @@ class WorkflowDesigner:
             if cid in self._conditions
         }
 
-        triggers = [
-            self._triggers[tid].to_dict()
-            for tid in workflow.trigger_ids
-            if tid in self._triggers
-        ]
+        triggers = [self._triggers[tid].to_dict() for tid in workflow.trigger_ids if tid in self._triggers]
 
         return {
             "version": "1.0",
@@ -614,7 +610,7 @@ class WorkflowDesigner:
 
     def import_workflow(
         self,
-        data: Dict[str, Any],
+        data: dict[str, Any],
         tenant_id: str,
         new_name: str = None,
     ) -> Workflow:
@@ -630,7 +626,7 @@ class WorkflowDesigner:
         workflow.step_ids = []
 
         # Mapeamento de IDs antigos para novos
-        id_map: Dict[str, str] = {}
+        id_map: dict[str, str] = {}
 
         # Importa steps
         for step_data in data.get("steps", []):
@@ -645,9 +641,7 @@ class WorkflowDesigner:
 
         # Atualiza referencias
         for step in [self._steps[sid] for sid in workflow.step_ids]:
-            step.next_step_ids = [
-                id_map.get(sid, sid) for sid in step.next_step_ids
-            ]
+            step.next_step_ids = [id_map.get(sid, sid) for sid in step.next_step_ids]
             for conn in step.connections:
                 conn.from_step_id = id_map.get(conn.from_step_id, conn.from_step_id)
                 conn.to_step_id = id_map.get(conn.to_step_id, conn.to_step_id)
@@ -687,7 +681,7 @@ class WorkflowDesigner:
             y=self.START_Y,
         )
 
-    def _get_step_style(self, step_type: StepType) -> Tuple[str, str]:
+    def _get_step_style(self, step_type: StepType) -> tuple[str, str]:
         """Retorna icone e cor para tipo de step."""
         styles = {
             StepType.START: ("play", "#10B981"),
@@ -702,13 +696,13 @@ class WorkflowDesigner:
         }
         return styles.get(step_type, ("circle", "#6B7280"))
 
-    def _apply_action_config(self, action: Action, config: Dict[str, Any]) -> None:
+    def _apply_action_config(self, action: Action, config: dict[str, Any]) -> None:
         """Aplica configuracao a action."""
         from modules._deprecated_workflows_dataclass.models.action import (
             EmailConfig,
-            WhatsAppConfig,
             HTTPConfig,
             TaskConfig,
+            WhatsAppConfig,
         )
 
         if action.action_type == ActionType.SEND_EMAIL and "email" in config:
@@ -724,12 +718,12 @@ class WorkflowDesigner:
         elif action.action_type == ActionType.CREATE_TASK and "task" in config:
             action.task_config = TaskConfig(**config["task"])
 
-    def _apply_trigger_config(self, trigger: Trigger, config: Dict[str, Any]) -> None:
+    def _apply_trigger_config(self, trigger: Trigger, config: dict[str, Any]) -> None:
         """Aplica configuracao a trigger."""
         from modules._deprecated_workflows_dataclass.models.trigger import (
             ScheduleConfig,
-            WebhookConfig,
             TriggerEvent,
+            WebhookConfig,
         )
 
         if "event" in config:

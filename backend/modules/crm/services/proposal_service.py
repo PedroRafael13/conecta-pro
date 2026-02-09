@@ -7,7 +7,6 @@ de propostas comerciais no sistema CPQ.
 
 from datetime import date, datetime, timedelta
 from decimal import Decimal
-from typing import Optional
 
 from core.logging import logger
 from modules.crm.models.proposal import ApprovalAction, ProposalStatus, ProposalType
@@ -44,7 +43,7 @@ class ProposalService:
         "admin": Decimal("100.00"),
     }
 
-    def __init__(self, pricing_engine: Optional[PricingEngine] = None) -> None:
+    def __init__(self, pricing_engine: PricingEngine | None = None) -> None:
         """
         Inicializa o servico.
 
@@ -71,7 +70,7 @@ class ProposalService:
         year = datetime.now().year
         return f"{prefix}-{year}-{sequence:05d}"
 
-    def calculate_validity_date(self, days: Optional[int] = None) -> date:
+    def calculate_validity_date(self, days: int | None = None) -> date:
         """
         Calcula data de validade da proposta.
 
@@ -159,9 +158,7 @@ class ProposalService:
 
         return False, "Desconto excede limite maximo permitido"
 
-    def can_transition_status(
-        self, current_status: ProposalStatus, new_status: ProposalStatus
-    ) -> tuple[bool, str]:
+    def can_transition_status(self, current_status: ProposalStatus, new_status: ProposalStatus) -> tuple[bool, str]:
         """
         Verifica se transicao de status e valida.
 

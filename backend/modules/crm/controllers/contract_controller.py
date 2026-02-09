@@ -4,7 +4,6 @@ Controller (endpoints) para Gestão de Contratos.
 
 from datetime import date
 from decimal import Decimal
-from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -78,15 +77,15 @@ async def list_contracts(  # pylint: disable=too-many-locals
     db: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1, description="Página atual"),
     page_size: int = Query(20, ge=1, le=100, description="Itens por página"),
-    status_filter: Optional[ContractStatus] = Query(None, alias="status"),
-    contract_type: Optional[ContractType] = None,
-    client_id: Optional[str] = None,
-    commercial_manager_id: Optional[str] = None,
-    account_manager_id: Optional[str] = None,
-    has_sla: Optional[bool] = None,
-    min_value: Optional[float] = Query(None, ge=0),
-    max_value: Optional[float] = Query(None, ge=0),
-    search: Optional[str] = None,
+    status_filter: ContractStatus | None = Query(None, alias="status"),
+    contract_type: ContractType | None = None,
+    client_id: str | None = None,
+    commercial_manager_id: str | None = None,
+    account_manager_id: str | None = None,
+    has_sla: bool | None = None,
+    min_value: float | None = Query(None, ge=0),
+    max_value: float | None = Query(None, ge=0),
+    search: str | None = None,
 ) -> ContractListResponse:
     """
     Lista contratos com filtros e paginação.
@@ -121,8 +120,8 @@ async def list_contracts(  # pylint: disable=too-many-locals
 async def get_contract_stats(
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
-    client_id: Optional[str] = None,
-    commercial_manager_id: Optional[str] = None,
+    client_id: str | None = None,
+    commercial_manager_id: str | None = None,
 ) -> ContractStats:
     """
     Obtém estatísticas de contratos.
@@ -134,12 +133,12 @@ async def get_contract_stats(
     )
 
 
-@router.get("/alerts", response_model=List[ContractAlert])
+@router.get("/alerts", response_model=list[ContractAlert])
 async def get_contract_alerts(
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
     days_ahead: int = Query(30, ge=1, le=90),
-) -> List[ContractAlert]:
+) -> list[ContractAlert]:
     """
     Obtém alertas de contratos (vencimento, reajuste).
     """
@@ -225,9 +224,7 @@ async def submit_contract_for_signature(
             detail="Contrato não encontrado ou não está em rascunho",
         )
 
-    logger.info(
-        f"Contract enviado para assinatura por {current_user.email}: {contract.contract_number}"
-    )
+    logger.info(f"Contract enviado para assinatura por {current_user.email}: {contract.contract_number}")
     return ContractResponse.model_validate(contract)
 
 
@@ -262,7 +259,7 @@ async def suspend_contract(
     contract_id: str,
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
-    reason: Optional[str] = None,  # pylint: disable=unused-argument
+    reason: str | None = None,  # pylint: disable=unused-argument
 ) -> ContractResponse:
     """
     Suspende um contrato ativo.
@@ -289,7 +286,7 @@ async def terminate_contract(
     contract_id: str,
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
-    reason: Optional[str] = None,  # pylint: disable=unused-argument
+    reason: str | None = None,  # pylint: disable=unused-argument
 ) -> ContractResponse:
     """
     Encerra um contrato.
@@ -346,8 +343,8 @@ async def calculate_adjustment(
     contract_id: str,
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
-    custom_percent: Optional[float] = None,
-    effective_date: Optional[date] = None,
+    custom_percent: float | None = None,
+    effective_date: date | None = None,
 ) -> AdjustmentResult:
     """
     Calcula reajuste do contrato.
@@ -484,9 +481,7 @@ async def create_addendum(
     Cria aditivo do contrato.
     """
     repo = ContractRepository(db)
-    addendum = await repo.create_addendum(
-        contract_id, data, created_by_id=str(current_user.id)
-    )
+    addendum = await repo.create_addendum(contract_id, data, created_by_id=str(current_user.id))
 
     if not addendum:
         raise HTTPException(
@@ -498,12 +493,12 @@ async def create_addendum(
     return ContractAddendumResponse.model_validate(addendum)
 
 
-@router.get("/{contract_id}/addendums", response_model=List[ContractAddendumResponse])
+@router.get("/{contract_id}/addendums", response_model=list[ContractAddendumResponse])
 async def list_addendums(
     contract_id: str,
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
-) -> List[ContractAddendumResponse]:
+) -> list[ContractAddendumResponse]:
     """
     Lista aditivos do contrato.
     """
@@ -561,7 +556,7 @@ async def create_template(
 async def list_templates(
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
-    service_type: Optional[ServiceType] = None,
+    service_type: ServiceType | None = None,
     approved_only: bool = False,
 ) -> ContractTemplateListResponse:
     """
@@ -679,9 +674,7 @@ async def create_sla_report(
     Cria relatório de SLA mensal.
     """
     repo = ContractRepository(db)
-    report = await repo.create_sla_report(
-        contract_id, data, generated_by_id=str(current_user.id)
-    )
+    report = await repo.create_sla_report(contract_id, data, generated_by_id=str(current_user.id))
 
     if not report:
         raise HTTPException(
@@ -693,13 +686,13 @@ async def create_sla_report(
     return ContractSLAReportResponse.model_validate(report)
 
 
-@router.get("/{contract_id}/sla-reports", response_model=List[ContractSLAReportResponse])
+@router.get("/{contract_id}/sla-reports", response_model=list[ContractSLAReportResponse])
 async def list_sla_reports(
     contract_id: str,
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
-    year: Optional[int] = None,
-) -> List[ContractSLAReportResponse]:
+    year: int | None = None,
+) -> list[ContractSLAReportResponse]:
     """
     Lista relatórios de SLA do contrato.
     """

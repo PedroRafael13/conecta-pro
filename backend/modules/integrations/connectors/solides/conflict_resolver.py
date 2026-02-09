@@ -8,16 +8,16 @@ do Sólides e Conecta PRO.
 
 import logging
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 from uuid import UUID
 
+from modules.integrations.connectors.solides.mappers import detect_changes
 from modules.integrations.connectors.solides.models import (
-    SolidesSyncConflict,
     ConflictStatus,
     ConflictStrategy,
+    SolidesSyncConflict,
     SyncSource,
 )
-from modules.integrations.connectors.solides.mappers import detect_changes
 
 logger = logging.getLogger(__name__)
 
@@ -36,8 +36,8 @@ class ConflictResolver:
     def __init__(
         self,
         default_strategy: ConflictStrategy = ConflictStrategy.MOST_RECENT,
-        field_strategies: Optional[Dict[str, ConflictStrategy]] = None,
-        protected_fields: Optional[List[str]] = None
+        field_strategies: dict[str, ConflictStrategy] | None = None,
+        protected_fields: list[str] | None = None,
     ):
         """
         Inicializa o resolvedor.
@@ -53,11 +53,11 @@ class ConflictResolver:
 
     def has_conflict(
         self,
-        solides_data: Dict[str, Any],
-        conecta_data: Dict[str, Any],
+        solides_data: dict[str, Any],
+        conecta_data: dict[str, Any],
         entity_type: str,
-        last_sync_source: Optional[SyncSource] = None
-    ) -> Tuple[bool, Dict[str, Dict[str, Any]]]:
+        last_sync_source: SyncSource | None = None,
+    ) -> tuple[bool, dict[str, dict[str, Any]]]:
         """
         Detecta se há conflito entre dados.
 
@@ -97,13 +97,13 @@ class ConflictResolver:
 
     def resolve(
         self,
-        solides_data: Dict[str, Any],
-        conecta_data: Dict[str, Any],
+        solides_data: dict[str, Any],
+        conecta_data: dict[str, Any],
         entity_type: str,
-        solides_updated_at: Optional[datetime] = None,
-        conecta_updated_at: Optional[datetime] = None,
-        strategy: Optional[ConflictStrategy] = None
-    ) -> Tuple[Dict[str, Any], str]:
+        solides_updated_at: datetime | None = None,
+        conecta_updated_at: datetime | None = None,
+        strategy: ConflictStrategy | None = None,
+    ) -> tuple[dict[str, Any], str]:
         """
         Resolve conflito entre dados.
 
@@ -131,19 +131,14 @@ class ConflictResolver:
             return self._merge_conecta_wins(solides_data, conecta_data)
 
         if strategy == ConflictStrategy.MOST_RECENT:
-            return self._merge_most_recent(
-                solides_data, conecta_data,
-                solides_updated_at, conecta_updated_at
-            )
+            return self._merge_most_recent(solides_data, conecta_data, solides_updated_at, conecta_updated_at)
 
         # Fallback: Sólides wins
         return self._merge_solides_wins(solides_data, conecta_data)
 
     def _merge_solides_wins(
-        self,
-        solides_data: Dict[str, Any],
-        conecta_data: Dict[str, Any]
-    ) -> Tuple[Dict[str, Any], str]:
+        self, solides_data: dict[str, Any], conecta_data: dict[str, Any]
+    ) -> tuple[dict[str, Any], str]:
         """
         Merge onde Sólides prevalece (exceto campos protegidos).
         """
@@ -163,10 +158,8 @@ class ConflictResolver:
         return result, "solides_wins"
 
     def _merge_conecta_wins(
-        self,
-        solides_data: Dict[str, Any],
-        conecta_data: Dict[str, Any]
-    ) -> Tuple[Dict[str, Any], str]:
+        self, solides_data: dict[str, Any], conecta_data: dict[str, Any]
+    ) -> tuple[dict[str, Any], str]:
         """
         Merge onde Conecta prevalece (novos campos do Sólides são adicionados).
         """
@@ -186,11 +179,11 @@ class ConflictResolver:
 
     def _merge_most_recent(
         self,
-        solides_data: Dict[str, Any],
-        conecta_data: Dict[str, Any],
-        solides_updated_at: Optional[datetime],
-        conecta_updated_at: Optional[datetime]
-    ) -> Tuple[Dict[str, Any], str]:
+        solides_data: dict[str, Any],
+        conecta_data: dict[str, Any],
+        solides_updated_at: datetime | None,
+        conecta_updated_at: datetime | None,
+    ) -> tuple[dict[str, Any], str]:
         """
         Merge onde dados mais recentes prevalecem.
         """
@@ -215,9 +208,9 @@ class ConflictResolver:
         db,
         conflict: SolidesSyncConflict,
         strategy: ConflictStrategy,
-        resolved_by: Optional[UUID] = None,
-        resolution_notes: Optional[str] = None
-    ) -> Tuple[Dict[str, Any], SolidesSyncConflict]:
+        resolved_by: UUID | None = None,
+        resolution_notes: str | None = None,
+    ) -> tuple[dict[str, Any], SolidesSyncConflict]:
         """
         Resolve um registro de conflito salvo no banco.
 
@@ -241,7 +234,7 @@ class ConflictResolver:
             entity_type=conflict.entity_type,
             solides_updated_at=conflict.solides_updated_at,
             conecta_updated_at=conflict.conecta_updated_at,
-            strategy=strategy
+            strategy=strategy,
         )
 
         # Atualizar registro
@@ -255,18 +248,12 @@ class ConflictResolver:
         db.commit()
         db.refresh(conflict)
 
-        logger.info(
-            f"Conflito {conflict.id} resolvido usando estratégia {strategy_used}"
-        )
+        logger.info(f"Conflito {conflict.id} resolvido usando estratégia {strategy_used}")
 
         return resolved_data, conflict
 
     def ignore_conflict(
-        self,
-        db,
-        conflict: SolidesSyncConflict,
-        ignored_by: Optional[UUID] = None,
-        notes: Optional[str] = None
+        self, db, conflict: SolidesSyncConflict, ignored_by: UUID | None = None, notes: str | None = None
     ) -> SolidesSyncConflict:
         """
         Marca conflito como ignorado.
@@ -295,6 +282,7 @@ class ConflictResolver:
 
 # ==================== ESTRATÉGIAS PRÉ-CONFIGURADAS ====================
 
+
 def get_employee_conflict_resolver() -> ConflictResolver:
     """
     Retorna resolver configurado para colaboradores.
@@ -320,7 +308,7 @@ def get_employee_conflict_resolver() -> ConflictResolver:
         },
         protected_fields=[
             # Campos que nunca devem ser sobrescritos
-        ]
+        ],
     )
 
 
@@ -329,10 +317,7 @@ def get_department_conflict_resolver() -> ConflictResolver:
     Retorna resolver configurado para departamentos.
     Sólides sempre ganha para departamentos.
     """
-    return ConflictResolver(
-        default_strategy=ConflictStrategy.SOLIDES_WINS,
-        protected_fields=[]
-    )
+    return ConflictResolver(default_strategy=ConflictStrategy.SOLIDES_WINS, protected_fields=[])
 
 
 def get_occurrence_conflict_resolver() -> ConflictResolver:
@@ -345,7 +330,7 @@ def get_occurrence_conflict_resolver() -> ConflictResolver:
         field_strategies={
             "tipo": ConflictStrategy.SOLIDES_WINS,
             "data": ConflictStrategy.SOLIDES_WINS,
-        }
+        },
     )
 
 

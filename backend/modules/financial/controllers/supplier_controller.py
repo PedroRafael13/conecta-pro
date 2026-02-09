@@ -1,7 +1,6 @@
 """Controller para fornecedores."""
 
 import logging
-from typing import List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -58,19 +57,19 @@ async def create_supplier(
 
 @router.get(
     "/",
-    response_model=List[SupplierListResponse],
+    response_model=list[SupplierListResponse],
     summary="Listar fornecedores",
 )
 async def list_suppliers(  # pylint: disable=too-many-locals,unused-argument
     condominio_id: UUID,
-    search: Optional[str] = Query(None, description="Busca por nome, razão social ou CNPJ"),
-    supplier_type: Optional[str] = Query(None, description="Tipo de fornecedor"),
-    category: Optional[str] = Query(None, description="Categoria"),
-    status_filter: Optional[str] = Query(None, alias="status", description="Status"),
-    is_qualified: Optional[bool] = Query(None, description="Apenas qualificados"),
-    is_blocked: Optional[bool] = Query(None, description="Apenas bloqueados"),
-    city: Optional[str] = Query(None, description="Cidade"),
-    state: Optional[str] = Query(None, description="Estado (UF)"),
+    search: str | None = Query(None, description="Busca por nome, razão social ou CNPJ"),
+    supplier_type: str | None = Query(None, description="Tipo de fornecedor"),
+    category: str | None = Query(None, description="Categoria"),
+    status_filter: str | None = Query(None, alias="status", description="Status"),
+    is_qualified: bool | None = Query(None, description="Apenas qualificados"),
+    is_blocked: bool | None = Query(None, description="Apenas bloqueados"),
+    city: str | None = Query(None, description="Cidade"),
+    state: str | None = Query(None, description="Estado (UF)"),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     service: SupplierService = Depends(get_service),
@@ -108,7 +107,7 @@ async def get_stats(  # pylint: disable=unused-argument
 
 @router.get(
     "/search",
-    response_model=List[SupplierListResponse],
+    response_model=list[SupplierListResponse],
     summary="Busca rápida de fornecedores",
 )
 async def search_suppliers(  # pylint: disable=unused-argument
@@ -240,7 +239,7 @@ async def unblock_supplier(  # pylint: disable=unused-argument
 )
 async def qualify_supplier(  # pylint: disable=unused-argument
     supplier_id: UUID,
-    data: Optional[SupplierQualifyRequest] = None,
+    data: SupplierQualifyRequest | None = None,
     service: SupplierService = Depends(get_service),
     current_user: dict = Depends(get_current_user),
 ) -> SupplierResponse:

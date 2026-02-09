@@ -1,8 +1,8 @@
 """Accounting Period model - Período Contábil."""
 
-import enum
 from datetime import date, datetime
 from decimal import Decimal
+from enum import StrEnum
 from typing import TYPE_CHECKING
 
 from sqlalchemy import (
@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     from modules.financial.models.journal_entry import JournalEntry
 
 
-class PeriodType(str, enum.Enum):
+class PeriodType(StrEnum):
     """Tipo do período contábil."""
 
     MONTHLY = "MONTHLY"  # Mensal
@@ -37,7 +37,7 @@ class PeriodType(str, enum.Enum):
     SPECIAL = "SPECIAL"  # Especial (ajuste, auditoria)
 
 
-class PeriodStatus(str, enum.Enum):
+class PeriodStatus(StrEnum):
     """Status do período contábil."""
 
     FUTURE = "FUTURE"  # Futuro (não iniciado)
@@ -48,7 +48,7 @@ class PeriodStatus(str, enum.Enum):
     LOCKED = "LOCKED"  # Bloqueado (permanente)
 
 
-class ClosingType(str, enum.Enum):
+class ClosingType(StrEnum):
     """Tipo de fechamento."""
 
     PROVISIONAL = "PROVISIONAL"  # Provisório
@@ -60,9 +60,7 @@ class AccountingPeriod(Base):
     """Período Contábil - controle de períodos abertos/fechados."""
 
     __tablename__ = "fin_accounting_periods"
-    __table_args__ = (
-        UniqueConstraint("condominio_id", "year", "month", name="uq_period_year_month"),
-    )
+    __table_args__ = (UniqueConstraint("condominio_id", "year", "month", name="uq_period_year_month"),)
 
     # Primary Key
     id = Column(
@@ -167,9 +165,7 @@ class AccountingPeriod(Base):
 
     # Timestamps
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
-    updated_at = Column(
-        DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
-    )
+    updated_at = Column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     deleted_at = Column(DateTime(timezone=True), nullable=True)
 
     # Audit

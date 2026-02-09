@@ -8,10 +8,10 @@ Extensão do sistema Loguru existente com logs JSON estruturados.
 import json
 import time
 from datetime import datetime
-from typing import Optional
 from functools import wraps
 
 from loguru import logger
+
 from core.logging.logger import sanitize_message
 
 
@@ -35,7 +35,7 @@ class GuardianStructuredLogger:
             "version": "3.0.0",
             "module": self.module,
             "message": message,
-            **fields
+            **fields,
         }
 
         # Sanitizar dados sensíveis
@@ -69,10 +69,10 @@ class GuardianStructuredLogger:
             "security_event_type": event_type,
             "severity": severity,
             "description": description,
-            **fields
+            **fields,
         }
 
-        if severity in ['critical', 'high']:
+        if severity in ["critical", "high"]:
             self.error(f"SECURITY: {event_type} - {description}", **log_fields)
         else:
             self.warning(f"SECURITY: {event_type} - {description}", **log_fields)
@@ -97,13 +97,11 @@ def log_api_operation(endpoint: str, method: str, status_code: int, response_tim
         status_code=status_code,
         response_time_ms=response_time_ms,
         event_type="api_request",
-        **fields
+        **fields,
     )
 
 
-def log_campo_operation(
-    operation: str, technician_id: Optional[str] = None, success: bool = True, **fields
-):
+def log_campo_operation(operation: str, technician_id: str | None = None, success: bool = True, **fields):
     """
     Log para operações CAMPO.
     """
@@ -115,13 +113,11 @@ def log_campo_operation(
         technician_id=technician_id,
         success=success,
         event_type="campo_operation",
-        **fields
+        **fields,
     )
 
 
-def log_database_operation(
-    operation: str, table: str, duration_ms: float, success: bool = True, **fields
-):
+def log_database_operation(operation: str, table: str, duration_ms: float, success: bool = True, **fields):
     """
     Log para operações de database.
     """
@@ -135,7 +131,7 @@ def log_database_operation(
         status=db_status,
         success=success,
         event_type="database_operation",
-        **fields
+        **fields,
     )
 
 
@@ -148,7 +144,7 @@ def log_monitoring_event(event_type: str, status: str, details: str, **fields):
         event_type=f"monitoring_{event_type}",
         status=status,
         details=details,
-        **fields
+        **fields,
     )
 
 
@@ -156,12 +152,13 @@ def api_logger_middleware():
     """
     Decorator para logging automático de APIs.
     """
+
     def decorator(func):
         @wraps(func)
         async def wrapper(*args, **kwargs):
             start_time = time.time()
-            endpoint = getattr(func, '__name__', 'unknown')
-            method = 'UNKNOWN'
+            endpoint = getattr(func, "__name__", "unknown")
+            method = "UNKNOWN"
 
             try:
                 # Executar função
@@ -171,12 +168,7 @@ def api_logger_middleware():
                 response_time = (time.time() - start_time) * 1000
 
                 # Log de sucesso
-                log_api_operation(
-                    endpoint=endpoint,
-                    method=method,
-                    status_code=200,
-                    response_time_ms=response_time
-                )
+                log_api_operation(endpoint=endpoint, method=method, status_code=200, response_time_ms=response_time)
 
                 return result
 
@@ -191,12 +183,13 @@ def api_logger_middleware():
                     status_code=500,
                     response_time_ms=response_time,
                     error=str(e),
-                    error_type=type(e).__name__
+                    error_type=type(e).__name__,
                 )
 
                 raise
 
         return wrapper
+
     return decorator
 
 

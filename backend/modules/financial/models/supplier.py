@@ -2,8 +2,8 @@
 
 import uuid
 from datetime import datetime
-from enum import Enum
-from typing import TYPE_CHECKING, List, Optional
+from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Index, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from modules.financial.models.payable_account import PayableAccount
 
 
-class SupplierType(str, Enum):
+class SupplierType(StrEnum):
     """Tipo de fornecedor."""
 
     PESSOA_FISICA = "pessoa_fisica"
@@ -26,7 +26,7 @@ class SupplierType(str, Enum):
     OUTRO = "outro"
 
 
-class SupplierStatus(str, Enum):
+class SupplierStatus(StrEnum):
     """Status do fornecedor."""
 
     ATIVO = "ativo"
@@ -36,7 +36,7 @@ class SupplierStatus(str, Enum):
     SUSPENSO = "suspenso"
 
 
-class SupplierCategory(str, Enum):
+class SupplierCategory(StrEnum):
     """Categoria do fornecedor."""
 
     SERVICOS = "servicos"
@@ -56,7 +56,7 @@ class SupplierCategory(str, Enum):
     OUTRO = "outro"
 
 
-class PaymentTerms(str, Enum):
+class PaymentTerms(StrEnum):
     """Condições de pagamento padrão."""
 
     A_VISTA = "a_vista"
@@ -138,9 +138,7 @@ class Supplier(Base):
     payment_terms_days = Column(String(10), nullable=True)  # Para customizado
     credit_limit = Column(String(20), nullable=True)  # Limite de crédito
     discount_percentage = Column(String(10), nullable=True)  # % desconto padrão
-    default_payment_method_id = Column(
-        UUID(as_uuid=True), ForeignKey("payment_methods.id"), nullable=True
-    )
+    default_payment_method_id = Column(UUID(as_uuid=True), ForeignKey("payment_methods.id"), nullable=True)
 
     # Retenções fiscais
     withhold_iss = Column(Boolean, default=False)  # Reter ISS
@@ -178,9 +176,7 @@ class Supplier(Base):
     ativo = Column(Boolean, default=True, nullable=False)
 
     # Relacionamentos
-    payable_accounts: List["PayableAccount"] = relationship(
-        "PayableAccount", back_populates="supplier"
-    )
+    payable_accounts: list["PayableAccount"] = relationship("PayableAccount", back_populates="supplier")
 
     __table_args__ = (
         Index("ix_suppliers_cpf_cnpj", "cpf_cnpj"),
@@ -209,7 +205,7 @@ class Supplier(Base):
         ]
 
     @property
-    def full_address(self) -> Optional[str]:
+    def full_address(self) -> str | None:
         """Retorna endereço completo formatado."""
         parts = []
         if self.address_street:
@@ -228,7 +224,7 @@ class Supplier(Base):
         return " - ".join(parts) if parts else None
 
     @property
-    def bank_info(self) -> Optional[str]:
+    def bank_info(self) -> str | None:
         """Retorna informações bancárias formatadas."""
         if not self.bank_code:
             return None

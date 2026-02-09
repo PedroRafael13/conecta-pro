@@ -2,21 +2,20 @@
 
 import logging
 from datetime import datetime, timedelta
-from typing import Optional, List, Tuple
 
-from sqlalchemy import select, func, and_, or_
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from modules.recruitment.models.candidate import (
     Candidate,
-    CandidateStatus,
     CandidateSource,
+    CandidateStatus,
 )
 from modules.recruitment.schemas.candidate import (
     CandidateCreate,
-    CandidateUpdate,
     CandidateFilter,
+    CandidateUpdate,
 )
 
 logger = logging.getLogger(__name__)
@@ -37,7 +36,7 @@ class CandidateRepository:
         await self.session.flush()
         return candidate
 
-    async def get_by_id(self, candidate_id: str) -> Optional[Candidate]:
+    async def get_by_id(self, candidate_id: str) -> Candidate | None:
         """Busca candidato por ID."""
         result = await self.session.execute(
             select(Candidate).where(
@@ -49,7 +48,7 @@ class CandidateRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_by_id_with_relations(self, candidate_id: str) -> Optional[Candidate]:
+    async def get_by_id_with_relations(self, candidate_id: str) -> Candidate | None:
         """Busca candidato por ID com relacionamentos."""
         result = await self.session.execute(
             select(Candidate)
@@ -67,7 +66,7 @@ class CandidateRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_by_email(self, email: str) -> Optional[Candidate]:
+    async def get_by_email(self, email: str) -> Candidate | None:
         """Busca candidato por email."""
         result = await self.session.execute(
             select(Candidate).where(
@@ -79,7 +78,7 @@ class CandidateRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_by_cpf(self, cpf: str) -> Optional[Candidate]:
+    async def get_by_cpf(self, cpf: str) -> Candidate | None:
         """Busca candidato por CPF."""
         result = await self.session.execute(
             select(Candidate).where(
@@ -91,9 +90,7 @@ class CandidateRepository:
         )
         return result.scalar_one_or_none()
 
-    async def update(
-        self, candidate_id: str, data: CandidateUpdate
-    ) -> Optional[Candidate]:
+    async def update(self, candidate_id: str, data: CandidateUpdate) -> Candidate | None:
         """Atualiza um candidato."""
         candidate = await self.get_by_id(candidate_id)
         if not candidate:
@@ -120,12 +117,12 @@ class CandidateRepository:
 
     async def list_with_filters(  # pylint: disable=too-many-branches
         self,
-        filters: Optional[CandidateFilter] = None,
+        filters: CandidateFilter | None = None,
         skip: int = 0,
         limit: int = 20,
         order_by: str = "created_at",
         order_desc: bool = True,
-    ) -> Tuple[List[Candidate], int]:
+    ) -> tuple[list[Candidate], int]:
         """Lista candidatos com filtros e paginação."""
         query = select(Candidate).where(Candidate.deleted_at.is_(None))
 
@@ -139,9 +136,7 @@ class CandidateRepository:
             if filters.state:
                 query = query.where(Candidate.state == filters.state)
             if filters.available_immediately is not None:
-                query = query.where(
-                    Candidate.available_immediately == filters.available_immediately
-                )
+                query = query.where(Candidate.available_immediately == filters.available_immediately)
             if filters.has_cnh is not None:
                 query = query.where(Candidate.has_cnh == filters.has_cnh)
             if filters.is_pcd is not None:
@@ -185,9 +180,7 @@ class CandidateRepository:
 
         return list(candidates), total
 
-    async def get_active(
-        self, condominium_id: str = None, skip: int = 0, limit: int = 50
-    ) -> List[Candidate]:
+    async def get_active(self, condominium_id: str = None, skip: int = 0, limit: int = 50) -> list[Candidate]:
         """Retorna candidatos ativos."""
         query = select(Candidate).where(
             and_(
@@ -205,9 +198,7 @@ class CandidateRepository:
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    async def get_by_source(
-        self, source: CandidateSource, skip: int = 0, limit: int = 50
-    ) -> List[Candidate]:
+    async def get_by_source(self, source: CandidateSource, skip: int = 0, limit: int = 50) -> list[Candidate]:
         """Retorna candidatos por fonte."""
         query = (
             select(Candidate)
@@ -225,7 +216,7 @@ class CandidateRepository:
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    async def get_blocked(self, skip: int = 0, limit: int = 50) -> List[Candidate]:
+    async def get_blocked(self, skip: int = 0, limit: int = 50) -> list[Candidate]:
         """Retorna candidatos bloqueados."""
         query = (
             select(Candidate)
@@ -243,9 +234,7 @@ class CandidateRepository:
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    async def search_by_skills(
-        self, skills: List[str], limit: int = 50
-    ) -> List[Candidate]:
+    async def search_by_skills(self, skills: list[str], limit: int = 50) -> list[Candidate]:
         """Busca candidatos por habilidades."""
         # Busca simples por tags
         query = (
@@ -277,9 +266,7 @@ class CandidateRepository:
 
         return filtered
 
-    async def get_recently_active(
-        self, days: int = 30, limit: int = 50
-    ) -> List[Candidate]:
+    async def get_recently_active(self, days: int = 30, limit: int = 50) -> list[Candidate]:
         """Retorna candidatos ativos recentemente."""
         cutoff = datetime.utcnow() - timedelta(days=days)
 
@@ -299,9 +286,7 @@ class CandidateRepository:
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    async def block(
-        self, candidate_id: str, reason: str, blocked_by: str
-    ) -> Optional[Candidate]:
+    async def block(self, candidate_id: str, reason: str, blocked_by: str) -> Candidate | None:
         """Bloqueia candidato."""
         candidate = await self.get_by_id(candidate_id)
         if candidate:
@@ -309,7 +294,7 @@ class CandidateRepository:
             await self.session.flush()
         return candidate
 
-    async def unblock(self, candidate_id: str) -> Optional[Candidate]:
+    async def unblock(self, candidate_id: str) -> Candidate | None:
         """Desbloqueia candidato."""
         candidate = await self.get_by_id(candidate_id)
         if candidate:
@@ -317,7 +302,7 @@ class CandidateRepository:
             await self.session.flush()
         return candidate
 
-    async def mark_as_hired(self, candidate_id: str) -> Optional[Candidate]:
+    async def mark_as_hired(self, candidate_id: str) -> Candidate | None:
         """Marca como contratado."""
         candidate = await self.get_by_id(candidate_id)
         if candidate:

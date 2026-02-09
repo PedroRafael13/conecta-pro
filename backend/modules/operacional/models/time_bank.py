@@ -3,8 +3,7 @@ Modelo TimeBank (Banco de Horas) para Operações.
 """
 
 from datetime import date, datetime
-from enum import Enum
-from typing import Optional
+from enum import StrEnum
 from uuid import uuid4
 
 from sqlalchemy import Boolean, Date, DateTime, Float, String, Text, func
@@ -14,7 +13,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from core.models.base import Base
 
 
-class TimeBankEntryType(str, Enum):
+class TimeBankEntryType(StrEnum):
     """Tipo de entrada no banco de horas."""
 
     CREDIT = "credit"  # Crédito (horas a favor do empregador)
@@ -24,7 +23,7 @@ class TimeBankEntryType(str, Enum):
     EXPIRATION = "expiration"  # Expiração de horas
 
 
-class TimeBankStatus(str, Enum):
+class TimeBankStatus(StrEnum):
     """Status da entrada no banco de horas."""
 
     PENDING = "pending"  # Pendente aprovação
@@ -90,33 +89,33 @@ class TimeBank(Base):
 
     # Datas
     reference_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
-    expiration_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    expiration_date: Mapped[date | None] = mapped_column(Date, nullable=True)
 
     # Relacionamentos opcionais
-    shift_id: Mapped[Optional[str]] = mapped_column(
+    shift_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
     )
-    post_id: Mapped[Optional[str]] = mapped_column(
+    post_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
     )
 
     # Descrição
-    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    reason: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    reason: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     # Aprovação
-    approved_by: Mapped[Optional[str]] = mapped_column(
+    approved_by: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
     )
-    approved_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    rejection_reason: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    rejection_reason: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     # Compensação (quando usado)
-    compensated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    compensation_shift_id: Mapped[Optional[str]] = mapped_column(
+    compensated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    compensation_shift_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
     )
@@ -134,7 +133,7 @@ class TimeBank(Base):
         onupdate=func.now(),
         nullable=False,
     )
-    created_by: Mapped[Optional[str]] = mapped_column(
+    created_by: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
     )
@@ -175,7 +174,7 @@ class TimeBank(Base):
         return -abs(self.hours)
 
     @property
-    def days_until_expiration(self) -> Optional[int]:
+    def days_until_expiration(self) -> int | None:
         """Dias até expiração."""
         if not self.expiration_date:
             return None

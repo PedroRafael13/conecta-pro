@@ -1,10 +1,10 @@
 """Lead Scoring System - Sprint 04."""
 
 from modules.analytics.models.scoring.lead_scorer import (
-    LeadScorer,
-    LeadScore,
-    LeadQuality,
     ConversionProbability,
+    LeadQuality,
+    LeadScore,
+    LeadScorer,
 )
 
 __all__ = [

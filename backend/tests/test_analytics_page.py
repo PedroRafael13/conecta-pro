@@ -5,8 +5,9 @@ Sprint 21: Validacao dos dados do Analytics Dashboard
 Testa a estrutura e logica dos dados de analytics.
 """
 
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock, AsyncMock
 
 
 class TestAnalyticsDataStructure:
@@ -27,10 +28,7 @@ class TestAnalyticsDataStructure:
             dept = emp.get("departamento") or "Sem Departamento"
             dept_map[dept] = dept_map.get(dept, 0) + 1
 
-        result = [
-            {"departamento": k, "total": v}
-            for k, v in sorted(dept_map.items(), key=lambda x: -x[1])
-        ]
+        result = [{"departamento": k, "total": v} for k, v in sorted(dept_map.items(), key=lambda x: -x[1])]
 
         assert len(result) == 3
         assert result[0]["departamento"] == "Operacional"
@@ -45,13 +43,7 @@ class TestAnalyticsDataStructure:
             "cftv": 2,
         }
 
-        result = [
-            {
-                "type": k.replace("_", " ").title(),
-                "total": v
-            }
-            for k, v in by_type.items()
-        ]
+        result = [{"type": k.replace("_", " ").title(), "total": v} for k, v in by_type.items()]
 
         assert len(result) == 3
         assert {"type": "Portaria", "total": 5} in result
@@ -150,7 +142,7 @@ class TestAnalyticsAPIIntegration:
     @pytest.mark.asyncio
     async def test_posts_stats_endpoint_called(self):
         """Testa que endpoint de stats de postos eh chamado."""
-        with patch('httpx.AsyncClient.get') as mock_get:
+        with patch("httpx.AsyncClient.get") as mock_get:
             mock_response = MagicMock()
             mock_response.json.return_value = {
                 "total": 20,

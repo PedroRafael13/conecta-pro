@@ -13,9 +13,9 @@ Este modulo implementa:
 
 import asyncio
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -42,7 +42,7 @@ class QueueConfig(BaseModel):
     processing_timeout: float = Field(default=30.0, ge=1.0, le=600.0)
     max_retries: int = Field(default=3, ge=0, le=10)
     enable_dlq: bool = Field(default=True)
-    dlq_name: Optional[str] = None
+    dlq_name: str | None = None
     priority_enabled: bool = Field(default=True)
 
     def __init__(self, **data: Any) -> None:
@@ -72,7 +72,7 @@ class QueueStats:
     current_size: int = 0
     avg_processing_time: float = 0.0
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Converte para dicionario.
 
         Returns:
@@ -113,12 +113,10 @@ class Queue:
             config: Configuracao da fila.
         """
         self.config = config
-        self._queue: asyncio.PriorityQueue[tuple] = asyncio.PriorityQueue(
-            maxsize=config.max_size
-        )
-        self._dlq: List[Message] = []
+        self._queue: asyncio.PriorityQueue[tuple] = asyncio.PriorityQueue(maxsize=config.max_size)
+        self._dlq: list[Message] = []
         self._stats = QueueStats()
-        self._processing_times: List[float] = []
+        self._processing_times: list[float] = []
         self._lock = asyncio.Lock()
 
         logger.info(
@@ -166,7 +164,7 @@ class Queue:
     async def enqueue(
         self,
         message: Message,
-        priority: Optional[MessagePriority] = None,
+        priority: MessagePriority | None = None,
     ) -> bool:
         """Adiciona mensagem na fila.
 
@@ -202,7 +200,7 @@ class Queue:
 
         return True
 
-    async def dequeue(self, timeout: Optional[float] = None) -> Optional[Message]:
+    async def dequeue(self, timeout: float | None = None) -> Message | None:
         """Remove e retorna a proxima mensagem da fila.
 
         Args:
@@ -224,10 +222,10 @@ class Queue:
 
             return message
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             return None
 
-    async def peek(self) -> Optional[Message]:
+    async def peek(self) -> Message | None:
         """Retorna a proxima mensagem sem remove-la.
 
         Returns:
@@ -244,7 +242,7 @@ class Queue:
             )
             await self._queue.put((priority, timestamp, message))
             return message
-        except asyncio.TimeoutError:
+        except TimeoutError:
             return None
 
     def record_success(self, processing_time: float) -> None:
@@ -260,9 +258,7 @@ class Queue:
         if len(self._processing_times) > 100:
             self._processing_times = self._processing_times[-100:]
 
-        self._stats.avg_processing_time = (
-            sum(self._processing_times) / len(self._processing_times)
-        )
+        self._stats.avg_processing_time = sum(self._processing_times) / len(self._processing_times)
 
     def record_failure(self, message: Message) -> None:
         """Registra falha de processamento.
@@ -294,7 +290,7 @@ class Queue:
             message.id,
         )
 
-    def get_dlq_messages(self) -> List[Message]:
+    def get_dlq_messages(self) -> list[Message]:
         """Retorna mensagens da DLQ.
 
         Returns:
@@ -338,7 +334,7 @@ class Queue:
 
         return count
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Retorna estatisticas da fila.
 
         Returns:
@@ -356,7 +352,7 @@ class Queue:
             "dlq_size": len(self._dlq),
         }
 
-    def get_health(self) -> Dict[str, Any]:
+    def get_health(self) -> dict[str, Any]:
         """Retorna status de saude da fila.
 
         Returns:
@@ -394,7 +390,7 @@ class DeadLetterQueue:
         Args:
             max_size: Tamanho maximo.
         """
-        self._messages: List[Message] = []
+        self._messages: list[Message] = []
         self._max_size = max_size
         self._lock = asyncio.Lock()
 
@@ -434,7 +430,7 @@ class DeadLetterQueue:
 
             return True
 
-    async def get_all(self) -> List[Message]:
+    async def get_all(self) -> list[Message]:
         """Retorna todas as mensagens.
 
         Returns:
@@ -443,7 +439,7 @@ class DeadLetterQueue:
         async with self._lock:
             return list(self._messages)
 
-    async def get_by_topic(self, topic: str) -> List[Message]:
+    async def get_by_topic(self, topic: str) -> list[Message]:
         """Retorna mensagens de um topico.
 
         Args:
@@ -482,13 +478,13 @@ class DeadLetterQueue:
                     return True
             return False
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Retorna estatisticas da DLQ.
 
         Returns:
             Dict com estatisticas.
         """
-        topic_counts: Dict[str, int] = {}
+        topic_counts: dict[str, int] = {}
         for msg in self._messages:
             topic_counts[msg.topic] = topic_counts.get(msg.topic, 0) + 1
 
@@ -501,11 +497,11 @@ class DeadLetterQueue:
 
 
 # Registry de filas
-_queues: Dict[str, Queue] = {}
-_global_dlq: Optional[DeadLetterQueue] = None
+_queues: dict[str, Queue] = {}
+_global_dlq: DeadLetterQueue | None = None
 
 
-def get_queue(name: str) -> Optional[Queue]:
+def get_queue(name: str) -> Queue | None:
     """Retorna uma fila pelo nome.
 
     Args:
@@ -540,7 +536,7 @@ def create_queue(config: QueueConfig) -> Queue:
     return queue
 
 
-def list_queues() -> List[str]:
+def list_queues() -> list[str]:
     """Lista nomes de filas registradas.
 
     Returns:
@@ -549,7 +545,7 @@ def list_queues() -> List[str]:
     return list(_queues.keys())
 
 
-def get_all_queues_stats() -> Dict[str, Any]:
+def get_all_queues_stats() -> dict[str, Any]:
     """Retorna estatisticas de todas as filas.
 
     Returns:

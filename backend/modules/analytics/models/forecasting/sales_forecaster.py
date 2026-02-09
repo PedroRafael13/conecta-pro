@@ -4,21 +4,18 @@ import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID, uuid4
 
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
-from sklearn.linear_model import LinearRegression, Ridge
+from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.analytics.ml.registry.model_registry import (
-    ModelFramework,
     ModelRegistry,
-    ModelStage,
-    ModelType,
 )
 
 logger = logging.getLogger(__name__)
@@ -132,7 +129,7 @@ class SalesForecaster:
 
     def __init__(
         self,
-        model_registry: Optional[ModelRegistry] = None,
+        model_registry: ModelRegistry | None = None,
     ) -> None:
         """
         Inicializa o forecaster.
@@ -150,7 +147,7 @@ class SalesForecaster:
         periods: int = 30,
         granularity: ForecastGranularity = ForecastGranularity.DAILY,
         entity_type: str = "revenue",
-        entity_id: Optional[str] = None,
+        entity_id: str | None = None,
         confidence_level: float = 0.95,
     ) -> SalesForecast:
         """
@@ -170,9 +167,7 @@ class SalesForecaster:
         logger.info(f"Gerando forecast: {entity_type}, {periods} {granularity.value}")
 
         # Obter dados históricos
-        historical_data = await self._get_historical_data(
-            db, entity_type, entity_id, granularity
-        )
+        historical_data = await self._get_historical_data(db, entity_type, entity_id, granularity)
 
         if len(historical_data) < 10:
             logger.warning("Dados insuficientes, usando previsão simplificada")
@@ -183,25 +178,19 @@ class SalesForecaster:
         seasonality = self._detect_seasonality(historical_data, granularity)
 
         # Preparar features
-        X, y = self._prepare_features(historical_data, granularity)
+        x_features, y_target = self._prepare_features(historical_data, granularity)
 
         # Treinar ou carregar modelo
-        model = self._get_or_train_model(X, y)
+        model = self._get_or_train_model(x_features, y_target)
 
         # Gerar previsões
-        predictions = self._generate_predictions(
-            model, historical_data, periods, granularity, confidence_level
-        )
+        predictions = self._generate_predictions(model, historical_data, periods, granularity, confidence_level)
 
         # Calcular métricas de acurácia
-        accuracy_metrics = self._calculate_accuracy_metrics(
-            historical_data, model, X, y
-        )
+        accuracy_metrics = self._calculate_accuracy_metrics(historical_data, model, x_features, y_target)
 
         # Gerar insights
-        insights = self._generate_insights(
-            trend, seasonality, predictions, historical_data
-        )
+        insights = self._generate_insights(trend, seasonality, predictions, historical_data)
 
         return SalesForecast(
             id=uuid4(),
@@ -256,13 +245,15 @@ class SalesForecaster:
                 adj_lower = pred.lower_bound * (1 + growth_adj)
                 adj_upper = pred.upper_bound * (1 + growth_adj)
 
-                adjusted_predictions.append(ForecastPoint(
-                    date=pred.date,
-                    value=adj_value,
-                    lower_bound=adj_lower,
-                    upper_bound=adj_upper,
-                    confidence=pred.confidence,
-                ))
+                adjusted_predictions.append(
+                    ForecastPoint(
+                        date=pred.date,
+                        value=adj_value,
+                        lower_bound=adj_lower,
+                        upper_bound=adj_upper,
+                        confidence=pred.confidence,
+                    )
+                )
 
             results[name] = SalesForecast(
                 id=uuid4(),
@@ -275,7 +266,7 @@ class SalesForecaster:
                 trend=base_forecast.trend,
                 seasonality=base_forecast.seasonality,
                 accuracy_metrics=base_forecast.accuracy_metrics,
-                insights=[f"Cenário {name}: ajuste de {growth_adj*100:+.0f}%"],
+                insights=[f"Cenário {name}: ajuste de {growth_adj * 100:+.0f}%"],
                 model_version=base_forecast.model_version,
             )
 
@@ -310,14 +301,16 @@ class SalesForecaster:
             variance = actual - forecasted
             variance_pct = (variance / forecasted) * 100
 
-            comparisons.append(ForecastComparison(
-                period=current.strftime("%Y-%m-%d"),
-                forecasted=round(forecasted, 2),
-                actual=round(actual, 2),
-                variance=round(variance, 2),
-                variance_pct=round(variance_pct, 2),
-                accuracy=round(100 - abs(variance_pct), 2),
-            ))
+            comparisons.append(
+                ForecastComparison(
+                    period=current.strftime("%Y-%m-%d"),
+                    forecasted=round(forecasted, 2),
+                    actual=round(actual, 2),
+                    variance=round(variance, 2),
+                    variance_pct=round(variance_pct, 2),
+                    accuracy=round(100 - abs(variance_pct), 2),
+                )
+            )
 
             current += timedelta(days=1)
 
@@ -367,7 +360,7 @@ class SalesForecaster:
         self,
         db: AsyncSession,
         entity_type: str,
-        entity_id: Optional[str],
+        entity_id: str | None,
         granularity: ForecastGranularity,
     ) -> pd.DataFrame:
         """Obtém dados históricos para treinamento."""
@@ -401,20 +394,22 @@ class SalesForecaster:
         values = base + trend + weekly + monthly_pattern + noise
         values = np.maximum(values, 0)
 
-        return pd.DataFrame({
-            "date": dates,
-            "value": values,
-        })
+        return pd.DataFrame(
+            {
+                "date": dates,
+                "value": values,
+            }
+        )
 
     def _detect_trend(self, data: pd.DataFrame) -> TrendComponent:
         """Detecta componente de tendência."""
-        X = np.arange(len(data)).reshape(-1, 1)
-        y = data["value"].values
+        x_features = np.arange(len(data)).reshape(-1, 1)
+        y_target = data["value"].values
 
         model = LinearRegression()
-        model.fit(X, y)
+        model.fit(x_features, y_target)
 
-        r_squared = model.score(X, y)
+        r_squared = model.score(x_features, y_target)
         slope = model.coef_[0]
 
         # Classificar tipo de tendência
@@ -456,12 +451,14 @@ class SalesForecaster:
             strength = np.std(weekly_pattern) / np.mean(weekly_pattern)
 
             if strength > 0.05:
-                seasonality.append(SeasonalComponent(
-                    type=SeasonalityType.WEEKLY,
-                    period=7,
-                    strength=round(strength, 4),
-                    pattern=weekly_pattern,
-                ))
+                seasonality.append(
+                    SeasonalComponent(
+                        type=SeasonalityType.WEEKLY,
+                        period=7,
+                        strength=round(strength, 4),
+                        pattern=weekly_pattern,
+                    )
+                )
 
         # Sazonalidade mensal
         if len(values) >= 60:
@@ -479,12 +476,14 @@ class SalesForecaster:
                 strength = np.std(monthly_pattern) / np.mean(monthly_pattern)
 
                 if strength > 0.05:
-                    seasonality.append(SeasonalComponent(
-                        type=SeasonalityType.MONTHLY,
-                        period=30,
-                        strength=round(strength, 4),
-                        pattern=monthly_pattern,
-                    ))
+                    seasonality.append(
+                        SeasonalComponent(
+                            type=SeasonalityType.MONTHLY,
+                            period=30,
+                            strength=round(strength, 4),
+                            pattern=monthly_pattern,
+                        )
+                    )
 
         return seasonality
 
@@ -517,21 +516,32 @@ class SalesForecaster:
         df = df.dropna()
 
         feature_cols = [
-            "day_of_week", "day_of_month", "month", "quarter", "is_weekend",
-            "lag_1", "lag_7", "lag_14", "lag_30",
-            "rolling_mean_7", "rolling_mean_14", "rolling_mean_30",
-            "rolling_std_7", "rolling_std_14", "rolling_std_30",
+            "day_of_week",
+            "day_of_month",
+            "month",
+            "quarter",
+            "is_weekend",
+            "lag_1",
+            "lag_7",
+            "lag_14",
+            "lag_30",
+            "rolling_mean_7",
+            "rolling_mean_14",
+            "rolling_mean_30",
+            "rolling_std_7",
+            "rolling_std_14",
+            "rolling_std_30",
         ]
 
-        X = df[feature_cols].values
-        y = df["value"].values
+        x_features = df[feature_cols].values
+        y_target = df["value"].values
 
-        return X, y
+        return x_features, y_target
 
     def _get_or_train_model(
         self,
-        X: np.ndarray,
-        y: np.ndarray,
+        x_features: np.ndarray,
+        y_target: np.ndarray,
     ) -> Any:
         """Obtém ou treina modelo de previsão."""
         # Tentar carregar modelo existente
@@ -547,8 +557,8 @@ class SalesForecaster:
             )
 
             # Escalar features
-            X_scaled = self._scaler.fit_transform(X)
-            model.fit(X_scaled, y)
+            x_scaled = self._scaler.fit_transform(x_features)
+            model.fit(x_scaled, y_target)
 
             logger.info("Modelo de forecast treinado")
 
@@ -583,24 +593,24 @@ class SalesForecaster:
                 next_date = last_date + timedelta(days=i + 1)
 
             # Criar features para previsão
-            features = self._create_forecast_features(
-                next_date, last_values, i
-            )
+            features = self._create_forecast_features(next_date, last_values, i)
 
             # Predizer
-            X_scaled = self._scaler.transform([features])
-            pred_value = model.predict(X_scaled)[0]
+            x_scaled = self._scaler.transform([features])
+            pred_value = model.predict(x_scaled)[0]
 
             # Intervalo de confiança (aumenta com distância)
             uncertainty = historical_std * (1 + 0.1 * i) * z_score
 
-            predictions.append(ForecastPoint(
-                date=next_date,
-                value=round(max(0, pred_value), 2),
-                lower_bound=round(max(0, pred_value - uncertainty), 2),
-                upper_bound=round(pred_value + uncertainty, 2),
-                confidence=round(confidence_level - 0.01 * i, 4),
-            ))
+            predictions.append(
+                ForecastPoint(
+                    date=next_date,
+                    value=round(max(0, pred_value), 2),
+                    lower_bound=round(max(0, pred_value - uncertainty), 2),
+                    upper_bound=round(pred_value + uncertainty, 2),
+                    confidence=round(confidence_level - 0.01 * i, 4),
+                )
+            )
 
             # Atualizar últimos valores
             last_values = np.append(last_values[1:], pred_value)
@@ -636,17 +646,17 @@ class SalesForecaster:
         self,
         data: pd.DataFrame,
         model: Any,
-        X: np.ndarray,
-        y: np.ndarray,
+        x_features: np.ndarray,
+        y_target: np.ndarray,
     ) -> dict[str, float]:
         """Calcula métricas de acurácia do modelo."""
         # Holdout validation
-        train_size = int(len(X) * 0.8)
-        X_train, X_test = X[:train_size], X[train_size:]
-        y_train, y_test = y[:train_size], y[train_size:]
+        train_size = int(len(x_features) * 0.8)
+        _x_train, x_test = x_features[:train_size], x_features[train_size:]
+        _y_train, y_test = y_target[:train_size], y_target[train_size:]
 
-        X_test_scaled = self._scaler.transform(X_test)
-        y_pred = model.predict(X_test_scaled)
+        x_test_scaled = self._scaler.transform(x_test)
+        y_pred = model.predict(x_test_scaled)
 
         # Métricas
         mse = np.mean((y_test - y_pred) ** 2)
@@ -682,9 +692,7 @@ class SalesForecaster:
         if trend.type == TrendType.LINEAR and trend.slope > 0:
             daily_growth = trend.slope
             monthly_growth = daily_growth * 30
-            insights.append(
-                f"Tendência de crescimento de R$ {monthly_growth:,.0f}/mês"
-            )
+            insights.append(f"Tendência de crescimento de R$ {monthly_growth:,.0f}/mês")
         elif trend.type == TrendType.LINEAR and trend.slope < 0:
             insights.append("Tendência de queda identificada - avaliar ações")
 
@@ -702,9 +710,7 @@ class SalesForecaster:
             historical_avg = historical_data["value"].mean()
 
             if avg > historical_avg * 1.1:
-                insights.append(
-                    f"Previsão {((avg/historical_avg)-1)*100:.0f}% acima da média histórica"
-                )
+                insights.append(f"Previsão {((avg / historical_avg) - 1) * 100:.0f}% acima da média histórica")
             elif avg < historical_avg * 0.9:
                 insights.append("Previsão abaixo da média - revisar estratégias")
 
@@ -734,13 +740,15 @@ class SalesForecaster:
 
             value = base_value * (1 + np.random.uniform(-0.1, 0.1))
 
-            predictions.append(ForecastPoint(
-                date=date,
-                value=round(value, 2),
-                lower_bound=round(value * 0.8, 2),
-                upper_bound=round(value * 1.2, 2),
-                confidence=0.6,
-            ))
+            predictions.append(
+                ForecastPoint(
+                    date=date,
+                    value=round(value, 2),
+                    lower_bound=round(value * 0.8, 2),
+                    upper_bound=round(value * 1.2, 2),
+                    confidence=0.6,
+                )
+            )
 
         return SalesForecast(
             id=uuid4(),

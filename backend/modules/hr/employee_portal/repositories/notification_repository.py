@@ -2,16 +2,15 @@
 
 import logging
 from datetime import datetime
-from typing import Optional, List, Tuple
 from uuid import UUID, uuid4
 
-from sqlalchemy import select, func, and_, desc, update
+from sqlalchemy import and_, desc, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.hr.employee_portal.models import (
     EmployeeNotification,
-    NotificationType,
     NotificationPriority,
+    NotificationType,
 )
 from modules.hr.employee_portal.schemas import NotificationCreate
 
@@ -29,7 +28,7 @@ class NotificationRepository:
         data: NotificationCreate,
         condominio_id: UUID,
         *,
-        created_by: Optional[UUID] = None,
+        created_by: UUID | None = None,
     ) -> EmployeeNotification:
         """Cria nova notificação."""
         notification = EmployeeNotification(
@@ -71,12 +70,12 @@ class NotificationRepository:
 
     async def create_bulk(
         self,
-        employee_ids: List[UUID],
+        employee_ids: list[UUID],
         data: dict,
         condominio_id: UUID,
         *,
-        created_by: Optional[UUID] = None,
-    ) -> List[EmployeeNotification]:
+        created_by: UUID | None = None,
+    ) -> list[EmployeeNotification]:
         """Cria notificações em lote."""
         notifications = []
 
@@ -111,13 +110,9 @@ class NotificationRepository:
         logger.info("Criadas %d notificações em lote", len(notifications))
         return notifications
 
-    async def get_by_id(self, notification_id: UUID) -> Optional[EmployeeNotification]:
+    async def get_by_id(self, notification_id: UUID) -> EmployeeNotification | None:
         """Busca notificação por ID."""
-        result = await self.db.execute(
-            select(EmployeeNotification).where(
-                EmployeeNotification.id == notification_id
-            )
-        )
+        result = await self.db.execute(select(EmployeeNotification).where(EmployeeNotification.id == notification_id))
         return result.scalar_one_or_none()
 
     async def list_by_employee(
@@ -126,24 +121,20 @@ class NotificationRepository:
         *,
         page: int = 1,
         page_size: int = 20,
-        notification_type: Optional[NotificationType] = None,
-        priority: Optional[NotificationPriority] = None,
-        is_read: Optional[bool] = None,
+        notification_type: NotificationType | None = None,
+        priority: NotificationPriority | None = None,
+        is_read: bool | None = None,
         is_active: bool = True,
-    ) -> Tuple[List[EmployeeNotification], int]:
+    ) -> tuple[list[EmployeeNotification], int]:
         """Lista notificações do funcionário."""
-        query = select(EmployeeNotification).where(
-            EmployeeNotification.employee_id == employee_id
-        )
+        query = select(EmployeeNotification).where(EmployeeNotification.employee_id == employee_id)
 
         if is_active:
             query = query.where(EmployeeNotification.is_active.is_(True))
             query = query.where(EmployeeNotification.is_archived.is_(False))
 
         if notification_type:
-            query = query.where(
-                EmployeeNotification.notification_type == notification_type.value
-            )
+            query = query.where(EmployeeNotification.notification_type == notification_type.value)
 
         if priority:
             query = query.where(EmployeeNotification.priority == priority.value)
@@ -152,9 +143,7 @@ class NotificationRepository:
             query = query.where(EmployeeNotification.is_read == is_read)
 
         # Total
-        count_result = await self.db.execute(
-            select(func.count()).select_from(query.subquery())
-        )
+        count_result = await self.db.execute(select(func.count()).select_from(query.subquery()))
         total = count_result.scalar() or 0
 
         # Paginação
@@ -167,7 +156,7 @@ class NotificationRepository:
     async def mark_as_read(
         self,
         notification_id: UUID,
-    ) -> Optional[EmployeeNotification]:
+    ) -> EmployeeNotification | None:
         """Marca notificação como lida."""
         notification = await self.get_by_id(notification_id)
         if not notification:
@@ -181,7 +170,7 @@ class NotificationRepository:
 
     async def mark_multiple_as_read(
         self,
-        notification_ids: List[UUID],
+        notification_ids: list[UUID],
     ) -> int:
         """Marca múltiplas notificações como lidas."""
         now = datetime.utcnow()
@@ -218,7 +207,7 @@ class NotificationRepository:
     async def dismiss(
         self,
         notification_id: UUID,
-    ) -> Optional[EmployeeNotification]:
+    ) -> EmployeeNotification | None:
         """Descarta notificação."""
         notification = await self.get_by_id(notification_id)
         if not notification:
@@ -232,7 +221,7 @@ class NotificationRepository:
 
     async def dismiss_multiple(
         self,
-        notification_ids: List[UUID],
+        notification_ids: list[UUID],
     ) -> int:
         """Descarta múltiplas notificações."""
         now = datetime.utcnow()
@@ -297,7 +286,7 @@ class NotificationRepository:
     async def record_email_sent(
         self,
         notification_id: UUID,
-    ) -> Optional[EmployeeNotification]:
+    ) -> EmployeeNotification | None:
         """Registra envio de email."""
         notification = await self.get_by_id(notification_id)
         if not notification:
@@ -314,7 +303,7 @@ class NotificationRepository:
     async def record_push_sent(
         self,
         notification_id: UUID,
-    ) -> Optional[EmployeeNotification]:
+    ) -> EmployeeNotification | None:
         """Registra envio de push."""
         notification = await self.get_by_id(notification_id)
         if not notification:
@@ -333,7 +322,7 @@ class NotificationRepository:
         channel: str,
         *,
         limit: int = 100,
-    ) -> List[EmployeeNotification]:
+    ) -> list[EmployeeNotification]:
         """Busca notificações pendentes de entrega."""
         query = select(EmployeeNotification).where(
             and_(

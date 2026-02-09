@@ -5,15 +5,17 @@ Gerencia execucoes agendadas e filas de workflows.
 """
 
 import asyncio
+import contextlib
 import heapq
 import logging
+import uuid
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from typing import Any, Callable, Dict, List, Optional, Set
-import uuid
+from typing import Any
 
+from modules._deprecated_workflows_dataclass.models.trigger import ScheduleFrequency, Trigger
 from modules._deprecated_workflows_dataclass.models.workflow import Workflow
-from modules._deprecated_workflows_dataclass.models.trigger import ScheduleConfig, ScheduleFrequency, Trigger
 
 logger = logging.getLogger(__name__)
 
@@ -21,11 +23,12 @@ logger = logging.getLogger(__name__)
 @dataclass(order=True)
 class ScheduledJob:
     """Job agendado."""
+
     run_at: datetime
     id: str = field(compare=False)
     trigger_id: str = field(compare=False)
     workflow_id: str = field(compare=False)
-    input_data: Dict[str, Any] = field(compare=False, default_factory=dict)
+    input_data: dict[str, Any] = field(compare=False, default_factory=dict)
     recurring: bool = field(compare=False, default=False)
     created_at: datetime = field(compare=False, default_factory=datetime.utcnow)
 
@@ -33,6 +36,7 @@ class ScheduledJob:
 @dataclass
 class JobResult:
     """Resultado de execucao de job."""
+
     job_id: str
     execution_id: str
     success: bool
@@ -52,14 +56,14 @@ class WorkflowScheduler:
     """
 
     def __init__(self, max_concurrent: int = 10):
-        self._job_queue: List[ScheduledJob] = []  # Min-heap
-        self._job_map: Dict[str, ScheduledJob] = {}
-        self._running_jobs: Set[str] = set()
-        self._results: Dict[str, JobResult] = {}
+        self._job_queue: list[ScheduledJob] = []  # Min-heap
+        self._job_map: dict[str, ScheduledJob] = {}
+        self._running_jobs: set[str] = set()
+        self._results: dict[str, JobResult] = {}
 
-        self._executor: Optional[Callable] = None
+        self._executor: Callable | None = None
         self._running = False
-        self._scheduler_task: Optional[asyncio.Task] = None
+        self._scheduler_task: asyncio.Task | None = None
         self._semaphore = asyncio.Semaphore(max_concurrent)
 
         self._max_concurrent = max_concurrent
@@ -83,10 +87,8 @@ class WorkflowScheduler:
         self._running = False
         if self._scheduler_task:
             self._scheduler_task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._scheduler_task
-            except asyncio.CancelledError:
-                pass
         logger.info("Workflow Scheduler parado")
 
     def schedule(
@@ -94,7 +96,7 @@ class WorkflowScheduler:
         trigger: Trigger,
         workflow: Workflow,
         run_at: datetime = None,
-        input_data: Dict[str, Any] = None,
+        input_data: dict[str, Any] = None,
     ) -> str:
         """
         Agenda execucao de workflow.
@@ -120,17 +122,13 @@ class WorkflowScheduler:
             trigger_id=trigger.id,
             workflow_id=workflow.id,
             input_data=input_data or {},
-            recurring=trigger.schedule_config.frequency != ScheduleFrequency.ONCE
-            if trigger.schedule_config else False,
+            recurring=trigger.schedule_config.frequency != ScheduleFrequency.ONCE if trigger.schedule_config else False,
         )
 
         heapq.heappush(self._job_queue, job)
         self._job_map[job.id] = job
 
-        logger.info(
-            f"Job {job.id} agendado para {run_at} "
-            f"(workflow: {workflow.name})"
-        )
+        logger.info(f"Job {job.id} agendado para {run_at} (workflow: {workflow.name})")
 
         return job.id
 
@@ -139,7 +137,7 @@ class WorkflowScheduler:
         if job_id not in self._job_map:
             return False
 
-        job = self._job_map.pop(job_id)
+        self._job_map.pop(job_id)
 
         # Remove da fila (lazy removal - marca como cancelado)
         # O job sera ignorado quando processado
@@ -150,10 +148,7 @@ class WorkflowScheduler:
     def cancel_trigger_jobs(self, trigger_id: str) -> int:
         """Cancela todos os jobs de um trigger."""
         cancelled = 0
-        to_cancel = [
-            job_id for job_id, job in self._job_map.items()
-            if job.trigger_id == trigger_id
-        ]
+        to_cancel = [job_id for job_id, job in self._job_map.items() if job.trigger_id == trigger_id]
 
         for job_id in to_cancel:
             if self.cancel_job(job_id):
@@ -161,7 +156,7 @@ class WorkflowScheduler:
 
         return cancelled
 
-    def get_job(self, job_id: str) -> Optional[ScheduledJob]:
+    def get_job(self, job_id: str) -> ScheduledJob | None:
         """Obtem job por ID."""
         return self._job_map.get(job_id)
 
@@ -170,7 +165,7 @@ class WorkflowScheduler:
         workflow_id: str = None,
         trigger_id: str = None,
         limit: int = 100,
-    ) -> List[ScheduledJob]:
+    ) -> list[ScheduledJob]:
         """Lista jobs pendentes."""
         jobs = list(self._job_map.values())
 
@@ -185,7 +180,7 @@ class WorkflowScheduler:
 
         return jobs[:limit]
 
-    def get_job_result(self, job_id: str) -> Optional[JobResult]:
+    def get_job_result(self, job_id: str) -> JobResult | None:
         """Obtem resultado de job executado."""
         return self._results.get(job_id)
 
@@ -292,7 +287,7 @@ class WorkflowScheduler:
 
         logger.info(f"Job reagendado: {new_job.id} para {new_job.run_at}")
 
-    def _calculate_next_run(self, trigger: Trigger) -> Optional[datetime]:
+    def _calculate_next_run(self, trigger: Trigger) -> datetime | None:
         """Calcula proxima execucao baseado no trigger."""
         config = trigger.schedule_config
         if not config:
@@ -355,7 +350,7 @@ class WorkflowScheduler:
 
     # Estatisticas
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Retorna estatisticas do scheduler."""
         return {
             "running": self._running,
@@ -367,7 +362,7 @@ class WorkflowScheduler:
             "failed": sum(1 for r in self._results.values() if not r.success),
         }
 
-    def get_next_scheduled_job(self) -> Optional[ScheduledJob]:
+    def get_next_scheduled_job(self) -> ScheduledJob | None:
         """Retorna proximo job a ser executado."""
         for job in self._job_queue:
             if job.id in self._job_map:

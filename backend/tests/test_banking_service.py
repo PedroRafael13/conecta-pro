@@ -54,43 +54,33 @@ class TestBankingServiceBasic:
         assert service is not None
         assert isinstance(service._adapters, dict)  # pylint: disable=protected-access
 
-    def test_register_bb_account(
-        self, service: BankingService, bb_credentials: BankCredentials
-    ) -> None:
+    def test_register_bb_account(self, service: BankingService, bb_credentials: BankCredentials) -> None:
         """Testa registro de conta BB."""
         service.register_account("conta_bb", "001", bb_credentials)
 
         adapter = service.get_adapter("conta_bb")
         assert adapter.BANK_CODE == "001"
 
-    def test_register_itau_account(
-        self, service: BankingService, itau_credentials: BankCredentials
-    ) -> None:
+    def test_register_itau_account(self, service: BankingService, itau_credentials: BankCredentials) -> None:
         """Testa registro de conta Itau."""
         service.register_account("conta_itau", "341", itau_credentials)
 
         adapter = service.get_adapter("conta_itau")
         assert adapter.BANK_CODE == "341"
 
-    def test_register_bradesco_account(
-        self, service: BankingService, bb_credentials: BankCredentials
-    ) -> None:
+    def test_register_bradesco_account(self, service: BankingService, bb_credentials: BankCredentials) -> None:
         """Testa registro de conta Bradesco."""
         service.register_account("conta_bradesco", "237", bb_credentials)
 
         adapter = service.get_adapter("conta_bradesco")
         assert adapter.BANK_CODE == "237"
 
-    def test_register_unsupported_bank(
-        self, service: BankingService, bb_credentials: BankCredentials
-    ) -> None:
+    def test_register_unsupported_bank(self, service: BankingService, bb_credentials: BankCredentials) -> None:
         """Testa registro de banco nao suportado."""
         with pytest.raises(BankingAdapterError, match="Banco nao suportado"):
             service.register_account("conta_xyz", "999", bb_credentials)
 
-    def test_unregister_account(
-        self, service: BankingService, bb_credentials: BankCredentials
-    ) -> None:
+    def test_unregister_account(self, service: BankingService, bb_credentials: BankCredentials) -> None:
         """Testa remocao de conta."""
         service.register_account("conta_bb", "001", bb_credentials)
         service.unregister_account("conta_bb")
@@ -146,14 +136,10 @@ class TestBankingServiceBalance:
     @pytest.mark.asyncio
     async def test_get_balance(self, service: BankingService, mock_balance: AccountBalance) -> None:
         """Testa consulta de saldo."""
-        credentials = BankCredentials(
-            client_id="test", client_secret="test", agency="1234", account="56789-0"
-        )
+        credentials = BankCredentials(client_id="test", client_secret="test", agency="1234", account="56789-0")
         service.register_account("conta_bb", "001", credentials)
 
-        with patch.object(
-            service.get_adapter("conta_bb"), "get_balance", new_callable=AsyncMock
-        ) as mock_method:
+        with patch.object(service.get_adapter("conta_bb"), "get_balance", new_callable=AsyncMock) as mock_method:
             mock_method.return_value = mock_balance
 
             balance = await service.get_balance("conta_bb")
@@ -180,18 +166,12 @@ class TestBankingServiceTransfer:
         )
 
     @pytest.mark.asyncio
-    async def test_transfer(
-        self, service: BankingService, mock_payment_response: PaymentResponse
-    ) -> None:
+    async def test_transfer(self, service: BankingService, mock_payment_response: PaymentResponse) -> None:
         """Testa transferencia TED."""
-        credentials = BankCredentials(
-            client_id="test", client_secret="test", agency="1234", account="56789-0"
-        )
+        credentials = BankCredentials(client_id="test", client_secret="test", agency="1234", account="56789-0")
         service.register_account("conta_bb", "001", credentials)
 
-        with patch.object(
-            service.get_adapter("conta_bb"), "initiate_payment", new_callable=AsyncMock
-        ) as mock_method:
+        with patch.object(service.get_adapter("conta_bb"), "initiate_payment", new_callable=AsyncMock) as mock_method:
             mock_method.return_value = mock_payment_response
 
             response = await service.transfer(
@@ -237,14 +217,10 @@ class TestBankingServicePix:
     @pytest.mark.asyncio
     async def test_validate_pix_key(self, service: BankingService, mock_pix_key: PixKey) -> None:
         """Testa validacao de chave PIX."""
-        credentials = BankCredentials(
-            client_id="test", client_secret="test", agency="1234", account="56789-0"
-        )
+        credentials = BankCredentials(client_id="test", client_secret="test", agency="1234", account="56789-0")
         service.register_account("conta_bb", "001", credentials)
 
-        with patch.object(
-            service.get_adapter("conta_bb"), "validate_pix_key", new_callable=AsyncMock
-        ) as mock_method:
+        with patch.object(service.get_adapter("conta_bb"), "validate_pix_key", new_callable=AsyncMock) as mock_method:
             mock_method.return_value = mock_pix_key
 
             result = await service.validate_pix_key("conta_bb", "12345678900")
@@ -253,18 +229,12 @@ class TestBankingServicePix:
             assert result.owner_name == "Fulano de Tal"
 
     @pytest.mark.asyncio
-    async def test_pix_transfer(
-        self, service: BankingService, mock_pix_response: PaymentResponse
-    ) -> None:
+    async def test_pix_transfer(self, service: BankingService, mock_pix_response: PaymentResponse) -> None:
         """Testa transferencia PIX."""
-        credentials = BankCredentials(
-            client_id="test", client_secret="test", agency="1234", account="56789-0"
-        )
+        credentials = BankCredentials(client_id="test", client_secret="test", agency="1234", account="56789-0")
         service.register_account("conta_bb", "001", credentials)
 
-        with patch.object(
-            service.get_adapter("conta_bb"), "initiate_pix", new_callable=AsyncMock
-        ) as mock_method:
+        with patch.object(service.get_adapter("conta_bb"), "initiate_pix", new_callable=AsyncMock) as mock_method:
             mock_method.return_value = mock_pix_response
 
             response = await service.pix_transfer(
@@ -287,9 +257,7 @@ class TestBankingServicePaymentStatus:
     @pytest.mark.asyncio
     async def test_get_payment_status(self, service: BankingService) -> None:
         """Testa consulta de status."""
-        credentials = BankCredentials(
-            client_id="test", client_secret="test", agency="1234", account="56789-0"
-        )
+        credentials = BankCredentials(client_id="test", client_secret="test", agency="1234", account="56789-0")
         service.register_account("conta_bb", "001", credentials)
 
         mock_response = PaymentResponse(
@@ -312,14 +280,10 @@ class TestBankingServicePaymentStatus:
     @pytest.mark.asyncio
     async def test_cancel_payment(self, service: BankingService) -> None:
         """Testa cancelamento de pagamento."""
-        credentials = BankCredentials(
-            client_id="test", client_secret="test", agency="1234", account="56789-0"
-        )
+        credentials = BankCredentials(client_id="test", client_secret="test", agency="1234", account="56789-0")
         service.register_account("conta_bb", "001", credentials)
 
-        with patch.object(
-            service.get_adapter("conta_bb"), "cancel_payment", new_callable=AsyncMock
-        ) as mock_method:
+        with patch.object(service.get_adapter("conta_bb"), "cancel_payment", new_callable=AsyncMock) as mock_method:
             mock_method.return_value = True
 
             result = await service.cancel_payment("conta_bb", "PAY123")
@@ -374,9 +338,7 @@ class TestBankingServiceCleanup:
     @pytest.mark.asyncio
     async def test_close_all(self, service: BankingService) -> None:
         """Testa fechamento de todas as conexoes."""
-        credentials = BankCredentials(
-            client_id="test", client_secret="test", agency="1234", account="56789-0"
-        )
+        credentials = BankCredentials(client_id="test", client_secret="test", agency="1234", account="56789-0")
         service.register_account("conta_bb", "001", credentials)
         service.register_account("conta_itau", "341", credentials)
 

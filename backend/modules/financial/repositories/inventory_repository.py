@@ -3,7 +3,6 @@
 import uuid
 from datetime import date, datetime, timedelta
 from decimal import Decimal
-from typing import Optional
 
 from sqlalchemy import and_, func, or_
 from sqlalchemy.orm import Session
@@ -40,11 +39,11 @@ class WarehouseRepository:
         self.db.flush()
         return warehouse
 
-    def get_by_id(self, warehouse_id: uuid.UUID) -> Optional[Warehouse]:
+    def get_by_id(self, warehouse_id: uuid.UUID) -> Warehouse | None:
         """Busca armazém por ID."""
         return self.db.query(Warehouse).filter(Warehouse.id == warehouse_id).first()
 
-    def get_by_code(self, code: str, condominio_id: uuid.UUID) -> Optional[Warehouse]:
+    def get_by_code(self, code: str, condominio_id: uuid.UUID) -> Warehouse | None:
         """Busca armazém por código."""
         return (
             self.db.query(Warehouse)
@@ -61,8 +60,8 @@ class WarehouseRepository:
     def list_all(
         self,
         condominio_id: uuid.UUID,
-        status: Optional[WarehouseStatus] = None,
-        warehouse_type: Optional[str] = None,
+        status: WarehouseStatus | None = None,
+        warehouse_type: str | None = None,
         skip: int = 0,
         limit: int = 100,
     ) -> list[Warehouse]:
@@ -84,7 +83,7 @@ class WarehouseRepository:
     def count(
         self,
         condominio_id: uuid.UUID,
-        status: Optional[WarehouseStatus] = None,
+        status: WarehouseStatus | None = None,
     ) -> int:
         """Conta armazéns."""
         query = self.db.query(func.count(Warehouse.id)).filter(
@@ -111,7 +110,7 @@ class WarehouseRepository:
         warehouse.updated_at = datetime.utcnow()
         self.db.flush()
 
-    def get_main_warehouse(self, condominio_id: uuid.UUID) -> Optional[Warehouse]:
+    def get_main_warehouse(self, condominio_id: uuid.UUID) -> Warehouse | None:
         """Busca armazém principal."""
         return (
             self.db.query(Warehouse)
@@ -191,7 +190,7 @@ class StockItemRepository:
         self.db.flush()
         return stock_item
 
-    def get_by_id(self, item_id: uuid.UUID) -> Optional[StockItem]:
+    def get_by_id(self, item_id: uuid.UUID) -> StockItem | None:
         """Busca item por ID."""
         return self.db.query(StockItem).filter(StockItem.id == item_id).first()
 
@@ -199,8 +198,8 @@ class StockItemRepository:
         self,
         product_id: uuid.UUID,
         warehouse_id: uuid.UUID,
-        batch_number: Optional[str] = None,
-    ) -> Optional[StockItem]:
+        batch_number: str | None = None,
+    ) -> StockItem | None:
         """Busca item por produto + armazém + lote."""
         query = self.db.query(StockItem).filter(
             and_(
@@ -240,7 +239,7 @@ class StockItemRepository:
     def list_by_warehouse(
         self,
         warehouse_id: uuid.UUID,
-        status: Optional[StockItemStatus] = None,
+        status: StockItemStatus | None = None,
         skip: int = 0,
         limit: int = 100,
     ) -> list[StockItem]:
@@ -327,11 +326,7 @@ class StockItemRepository:
         result = (
             self.db.query(
                 func.coalesce(
-                    func.sum(
-                        StockItem.quantity_on_hand
-                        - StockItem.quantity_reserved
-                        - StockItem.quantity_committed
-                    ),
+                    func.sum(StockItem.quantity_on_hand - StockItem.quantity_reserved - StockItem.quantity_committed),
                     0,
                 )
             )
@@ -424,11 +419,11 @@ class StockMovementRepository:
         self.db.flush()
         return movement
 
-    def get_by_id(self, movement_id: uuid.UUID) -> Optional[StockMovement]:
+    def get_by_id(self, movement_id: uuid.UUID) -> StockMovement | None:
         """Busca movimentação por ID."""
         return self.db.query(StockMovement).filter(StockMovement.id == movement_id).first()
 
-    def get_by_number(self, number: str, condominio_id: uuid.UUID) -> Optional[StockMovement]:
+    def get_by_number(self, number: str, condominio_id: uuid.UUID) -> StockMovement | None:
         """Busca movimentação por número."""
         return (
             self.db.query(StockMovement)
@@ -444,12 +439,12 @@ class StockMovementRepository:
     def list_all(
         self,
         condominio_id: uuid.UUID,
-        warehouse_id: Optional[uuid.UUID] = None,
-        product_id: Optional[uuid.UUID] = None,
-        movement_type: Optional[MovementType] = None,
-        status: Optional[MovementStatus] = None,
-        date_from: Optional[date] = None,
-        date_to: Optional[date] = None,
+        warehouse_id: uuid.UUID | None = None,
+        product_id: uuid.UUID | None = None,
+        movement_type: MovementType | None = None,
+        status: MovementStatus | None = None,
+        date_from: date | None = None,
+        date_to: date | None = None,
         skip: int = 0,
         limit: int = 100,
     ) -> list[StockMovement]:
@@ -528,8 +523,8 @@ class StockMovementRepository:
     def count(
         self,
         condominio_id: uuid.UUID,
-        status: Optional[MovementStatus] = None,
-        movement_type: Optional[MovementType] = None,
+        status: MovementStatus | None = None,
+        movement_type: MovementType | None = None,
     ) -> int:
         """Conta movimentações."""
         query = self.db.query(func.count(StockMovement.id)).filter(
@@ -561,8 +556,8 @@ class StockMovementRepository:
     def get_stats(
         self,
         condominio_id: uuid.UUID,
-        date_from: Optional[date] = None,
-        date_to: Optional[date] = None,
+        date_from: date | None = None,
+        date_to: date | None = None,
     ) -> dict:
         """Retorna estatísticas de movimentações."""
         query = self.db.query(StockMovement).filter(
@@ -600,9 +595,7 @@ class StockMovementRepository:
             )
         ).count()
 
-        transfers = query.filter(
-            StockMovement.movement_type == MovementType.TRANSFERENCIA.value
-        ).count()
+        transfers = query.filter(StockMovement.movement_type == MovementType.TRANSFERENCIA.value).count()
 
         adjustments = query.filter(
             StockMovement.movement_type.in_(
@@ -708,11 +701,11 @@ class StockInventoryRepository:
         self.db.flush()
         return inventory
 
-    def get_by_id(self, inventory_id: uuid.UUID) -> Optional[StockInventory]:
+    def get_by_id(self, inventory_id: uuid.UUID) -> StockInventory | None:
         """Busca inventário por ID."""
         return self.db.query(StockInventory).filter(StockInventory.id == inventory_id).first()
 
-    def get_by_number(self, number: str, condominio_id: uuid.UUID) -> Optional[StockInventory]:
+    def get_by_number(self, number: str, condominio_id: uuid.UUID) -> StockInventory | None:
         """Busca inventário por número."""
         return (
             self.db.query(StockInventory)
@@ -728,8 +721,8 @@ class StockInventoryRepository:
     def list_all(
         self,
         condominio_id: uuid.UUID,
-        warehouse_id: Optional[uuid.UUID] = None,
-        status: Optional[InventoryStatus] = None,
+        warehouse_id: uuid.UUID | None = None,
+        status: InventoryStatus | None = None,
         skip: int = 0,
         limit: int = 100,
     ) -> list[StockInventory]:
@@ -771,7 +764,7 @@ class StockInventoryRepository:
     def count(
         self,
         condominio_id: uuid.UUID,
-        status: Optional[InventoryStatus] = None,
+        status: InventoryStatus | None = None,
     ) -> int:
         """Conta inventários."""
         query = self.db.query(func.count(StockInventory.id)).filter(
@@ -877,14 +870,14 @@ class StockInventoryItemRepository:
         self.db.flush()
         return items
 
-    def get_by_id(self, item_id: uuid.UUID) -> Optional[StockInventoryItem]:
+    def get_by_id(self, item_id: uuid.UUID) -> StockInventoryItem | None:
         """Busca item por ID."""
         return self.db.query(StockInventoryItem).filter(StockInventoryItem.id == item_id).first()
 
     def list_by_inventory(
         self,
         inventory_id: uuid.UUID,
-        status: Optional[InventoryItemStatus] = None,
+        status: InventoryItemStatus | None = None,
         skip: int = 0,
         limit: int = 100,
     ) -> list[StockInventoryItem]:
@@ -960,11 +953,11 @@ class StockReservationRepository:
         self.db.flush()
         return reservation
 
-    def get_by_id(self, reservation_id: uuid.UUID) -> Optional[StockReservation]:
+    def get_by_id(self, reservation_id: uuid.UUID) -> StockReservation | None:
         """Busca reserva por ID."""
         return self.db.query(StockReservation).filter(StockReservation.id == reservation_id).first()
 
-    def get_by_number(self, number: str, condominio_id: uuid.UUID) -> Optional[StockReservation]:
+    def get_by_number(self, number: str, condominio_id: uuid.UUID) -> StockReservation | None:
         """Busca reserva por número."""
         return (
             self.db.query(StockReservation)
@@ -980,9 +973,9 @@ class StockReservationRepository:
     def list_all(
         self,
         condominio_id: uuid.UUID,
-        product_id: Optional[uuid.UUID] = None,
-        warehouse_id: Optional[uuid.UUID] = None,
-        status: Optional[ReservationStatus] = None,
+        product_id: uuid.UUID | None = None,
+        warehouse_id: uuid.UUID | None = None,
+        status: ReservationStatus | None = None,
         skip: int = 0,
         limit: int = 100,
     ) -> list[StockReservation]:
@@ -1091,7 +1084,7 @@ class StockReservationRepository:
     def count(
         self,
         condominio_id: uuid.UUID,
-        status: Optional[ReservationStatus] = None,
+        status: ReservationStatus | None = None,
     ) -> int:
         """Conta reservas."""
         query = self.db.query(func.count(StockReservation.id)).filter(

@@ -1,32 +1,32 @@
 """Model Interview - Entrevistas."""
 
-import enum
-from datetime import datetime, date, time
-from typing import Optional, List, TYPE_CHECKING
+from datetime import date, datetime, time
+from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
-    String,
-    Text,
+    JSON,
     Boolean,
-    DateTime,
     Date,
-    Time,
-    Integer,
+    DateTime,
     Enum,
     ForeignKey,
-    JSON,
+    Integer,
+    String,
+    Text,
+    Time,
 )
-from sqlalchemy.dialects.postgresql import UUID, ARRAY
-from sqlalchemy.orm import relationship, Mapped, mapped_column
+from sqlalchemy.dialects.postgresql import ARRAY, UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from core.database import Base
-from core.models import TimestampMixin, SoftDeleteMixin
+from core.models import SoftDeleteMixin, TimestampMixin
 
 if TYPE_CHECKING:
     from .application import Application
 
 
-class InterviewType(str, enum.Enum):
+class InterviewType(StrEnum):
     """Tipo de entrevista."""
 
     TELEFONE = "telefone"
@@ -39,7 +39,7 @@ class InterviewType(str, enum.Enum):
     DINAMICA = "dinamica"
 
 
-class InterviewStatus(str, enum.Enum):
+class InterviewStatus(StrEnum):
     """Status da entrevista."""
 
     AGENDADA = "agendada"
@@ -52,7 +52,7 @@ class InterviewStatus(str, enum.Enum):
     ADIADA = "adiada"
 
 
-class InterviewResult(str, enum.Enum):
+class InterviewResult(StrEnum):
     """Resultado da entrevista."""
 
     APROVADO = "aprovado"
@@ -81,13 +81,9 @@ class Interview(Base, TimestampMixin, SoftDeleteMixin):
     )
 
     # Tipo e status
-    interview_type: Mapped[InterviewType] = mapped_column(
-        Enum(InterviewType), default=InterviewType.VIDEO
-    )
-    status: Mapped[InterviewStatus] = mapped_column(
-        Enum(InterviewStatus), default=InterviewStatus.AGENDADA
-    )
-    result: Mapped[Optional[InterviewResult]] = mapped_column(Enum(InterviewResult))
+    interview_type: Mapped[InterviewType] = mapped_column(Enum(InterviewType), default=InterviewType.VIDEO)
+    status: Mapped[InterviewStatus] = mapped_column(Enum(InterviewStatus), default=InterviewStatus.AGENDADA)
+    result: Mapped[InterviewResult | None] = mapped_column(Enum(InterviewResult))
 
     # Agendamento
     scheduled_date: Mapped[date] = mapped_column(Date, nullable=False)
@@ -96,79 +92,69 @@ class Interview(Base, TimestampMixin, SoftDeleteMixin):
     timezone: Mapped[str] = mapped_column(String(50), default="America/Sao_Paulo")
 
     # Local/Link
-    location: Mapped[Optional[str]] = mapped_column(String(300))
-    meeting_link: Mapped[Optional[str]] = mapped_column(String(500))
-    meeting_platform: Mapped[Optional[str]] = mapped_column(String(50))
-    meeting_id: Mapped[Optional[str]] = mapped_column(String(100))
-    meeting_password: Mapped[Optional[str]] = mapped_column(String(50))
+    location: Mapped[str | None] = mapped_column(String(300))
+    meeting_link: Mapped[str | None] = mapped_column(String(500))
+    meeting_platform: Mapped[str | None] = mapped_column(String(50))
+    meeting_id: Mapped[str | None] = mapped_column(String(100))
+    meeting_password: Mapped[str | None] = mapped_column(String(50))
 
     # Entrevistadores
-    interviewer_ids: Mapped[Optional[List[str]]] = mapped_column(
-        ARRAY(UUID(as_uuid=False)), default=list
-    )
-    interviewer_names: Mapped[Optional[List[str]]] = mapped_column(
-        ARRAY(String), default=list
-    )
-    lead_interviewer_id: Mapped[Optional[str]] = mapped_column(UUID(as_uuid=False))
+    interviewer_ids: Mapped[list[str] | None] = mapped_column(ARRAY(UUID(as_uuid=False)), default=list)
+    interviewer_names: Mapped[list[str] | None] = mapped_column(ARRAY(String), default=list)
+    lead_interviewer_id: Mapped[str | None] = mapped_column(UUID(as_uuid=False))
 
     # Roteiro
-    script: Mapped[Optional[str]] = mapped_column(Text)
-    questions: Mapped[Optional[List[dict]]] = mapped_column(JSON, default=list)
-    competencies_to_assess: Mapped[Optional[List[str]]] = mapped_column(
-        ARRAY(String), default=list
-    )
+    script: Mapped[str | None] = mapped_column(Text)
+    questions: Mapped[list[dict] | None] = mapped_column(JSON, default=list)
+    competencies_to_assess: Mapped[list[str] | None] = mapped_column(ARRAY(String), default=list)
 
     # Realização
-    actual_start_time: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    actual_end_time: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    actual_duration_minutes: Mapped[Optional[int]] = mapped_column(Integer)
+    actual_start_time: Mapped[datetime | None] = mapped_column(DateTime)
+    actual_end_time: Mapped[datetime | None] = mapped_column(DateTime)
+    actual_duration_minutes: Mapped[int | None] = mapped_column(Integer)
 
     # Avaliação
-    score: Mapped[Optional[int]] = mapped_column(Integer)
-    evaluation: Mapped[Optional[dict]] = mapped_column(JSON)
-    strengths: Mapped[Optional[List[str]]] = mapped_column(ARRAY(String), default=list)
-    weaknesses: Mapped[Optional[List[str]]] = mapped_column(ARRAY(String), default=list)
-    competency_scores: Mapped[Optional[dict]] = mapped_column(JSON)
+    score: Mapped[int | None] = mapped_column(Integer)
+    evaluation: Mapped[dict | None] = mapped_column(JSON)
+    strengths: Mapped[list[str] | None] = mapped_column(ARRAY(String), default=list)
+    weaknesses: Mapped[list[str] | None] = mapped_column(ARRAY(String), default=list)
+    competency_scores: Mapped[dict | None] = mapped_column(JSON)
 
     # Feedback
-    feedback: Mapped[Optional[str]] = mapped_column(Text)
-    recommendation: Mapped[Optional[str]] = mapped_column(Text)
-    internal_notes: Mapped[Optional[str]] = mapped_column(Text)
+    feedback: Mapped[str | None] = mapped_column(Text)
+    recommendation: Mapped[str | None] = mapped_column(Text)
+    internal_notes: Mapped[str | None] = mapped_column(Text)
 
     # Candidato
-    candidate_feedback: Mapped[Optional[str]] = mapped_column(Text)
-    candidate_questions: Mapped[Optional[List[str]]] = mapped_column(
-        ARRAY(String), default=list
-    )
+    candidate_feedback: Mapped[str | None] = mapped_column(Text)
+    candidate_questions: Mapped[list[str] | None] = mapped_column(ARRAY(String), default=list)
 
     # Confirmações
     candidate_confirmed: Mapped[bool] = mapped_column(Boolean, default=False)
-    candidate_confirmed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    candidate_confirmed_at: Mapped[datetime | None] = mapped_column(DateTime)
     interviewer_confirmed: Mapped[bool] = mapped_column(Boolean, default=False)
 
     # Lembretes
     reminder_sent: Mapped[bool] = mapped_column(Boolean, default=False)
-    reminder_sent_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    reminder_sent_at: Mapped[datetime | None] = mapped_column(DateTime)
 
     # Cancelamento/Reagendamento
-    cancelled_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    cancelled_by: Mapped[Optional[str]] = mapped_column(UUID(as_uuid=False))
-    cancellation_reason: Mapped[Optional[str]] = mapped_column(Text)
-    rescheduled_from: Mapped[Optional[str]] = mapped_column(UUID(as_uuid=False))
+    cancelled_at: Mapped[datetime | None] = mapped_column(DateTime)
+    cancelled_by: Mapped[str | None] = mapped_column(UUID(as_uuid=False))
+    cancellation_reason: Mapped[str | None] = mapped_column(Text)
+    rescheduled_from: Mapped[str | None] = mapped_column(UUID(as_uuid=False))
     reschedule_count: Mapped[int] = mapped_column(Integer, default=0)
 
     # Gravação
     is_recorded: Mapped[bool] = mapped_column(Boolean, default=False)
-    recording_url: Mapped[Optional[str]] = mapped_column(String(500))
+    recording_url: Mapped[str | None] = mapped_column(String(500))
     recording_consent: Mapped[bool] = mapped_column(Boolean, default=False)
 
     # Responsável
-    created_by: Mapped[Optional[str]] = mapped_column(UUID(as_uuid=False))
+    created_by: Mapped[str | None] = mapped_column(UUID(as_uuid=False))
 
     # Relationship
-    application: Mapped["Application"] = relationship(
-        "Application", back_populates="interviews"
-    )
+    application: Mapped["Application"] = relationship("Application", back_populates="interviews")
 
     def __repr__(self) -> str:
         return f"<Interview {self.id}: {self.interview_type.value} - {self.status.value}>"
@@ -197,10 +183,7 @@ class Interview(Base, TimestampMixin, SoftDeleteMixin):
     @property
     def is_pending_result(self) -> bool:
         """Verifica se aguarda resultado."""
-        return (
-            self.status == InterviewStatus.REALIZADA
-            and self.result == InterviewResult.PENDENTE_AVALIACAO
-        )
+        return self.status == InterviewStatus.REALIZADA and self.result == InterviewResult.PENDENTE_AVALIACAO
 
     @property
     def was_successful(self) -> bool:
@@ -239,9 +222,7 @@ class Interview(Base, TimestampMixin, SoftDeleteMixin):
         self.result = result
         self.actual_end_time = datetime.utcnow()
         if self.actual_start_time:
-            self.actual_duration_minutes = int(
-                (self.actual_end_time - self.actual_start_time).total_seconds() / 60
-            )
+            self.actual_duration_minutes = int((self.actual_end_time - self.actual_start_time).total_seconds() / 60)
         if score is not None:
             self.score = score
         if feedback:
@@ -276,8 +257,8 @@ class Interview(Base, TimestampMixin, SoftDeleteMixin):
     def add_evaluation(
         self,
         competency_scores: dict,
-        strengths: List[str] = None,
-        weaknesses: List[str] = None,
+        strengths: list[str] = None,
+        weaknesses: list[str] = None,
         recommendation: str = None,
     ) -> None:
         """Adiciona avaliação detalhada."""

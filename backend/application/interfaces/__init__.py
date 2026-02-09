@@ -5,12 +5,12 @@ Clean Architecture ports (interfaces)
 """
 
 from .repository import (
-    IRepository,
-    IProductRepository,
-    IStockMovementRepository,
-    IJournalEntryRepository,
     IEmployeeRepository,
-    IProcurementRepository
+    IJournalEntryRepository,
+    IProcurementRepository,
+    IProductRepository,
+    IRepository,
+    IStockMovementRepository,
 )
 from .unit_of_work import IUnitOfWork
 
@@ -21,5 +21,5 @@ __all__ = [
     "IJournalEntryRepository",
     "IEmployeeRepository",
     "IProcurementRepository",
-    "IUnitOfWork"
+    "IUnitOfWork",
 ]

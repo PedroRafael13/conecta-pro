@@ -6,21 +6,19 @@ Endpoints REST para mapeamento de riscos ocupacionais.
 """
 
 import logging
-from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
-from sqlalchemy.orm import Session
 
 from modules.health_occupational.schemas.common import StandardResponse
 from modules.health_occupational.schemas.ppra import (
-    RiskMappingRequest,
-    RiskMappingUpdateRequest,
-    RiskMappingResponse,
-    OccupationalRiskResponse,
     ControlMeasureRequest,
-    ControlMeasureUpdateRequest,
     ControlMeasureResponse,
+    ControlMeasureUpdateRequest,
+    OccupationalRiskResponse,
+    RiskMappingRequest,
+    RiskMappingResponse,
+    RiskMappingUpdateRequest,
 )
 from modules.health_occupational.services.ppra_service import PPRAService
 
@@ -181,8 +179,8 @@ async def update_mapping(
     summary="Lista mapeamentos de risco",
 )
 async def list_mappings(
-    setor: Optional[str] = Query(None, description="Filtrar por setor"),
-    ativo: Optional[bool] = Query(True, description="Filtrar por status"),
+    setor: str | None = Query(None, description="Filtrar por setor"),
+    ativo: bool | None = Query(True, description="Filtrar por status"),
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
     service: PPRAService = Depends(get_ppra_service),
@@ -200,10 +198,7 @@ async def list_mappings(
             success=True,
             message=f"Encontrados {result['total']} mapeamentos",
             data={
-                "mapeamentos": [
-                    RiskMappingResponse.model_validate(m).model_dump()
-                    for m in result["items"]
-                ],
+                "mapeamentos": [RiskMappingResponse.model_validate(m).model_dump() for m in result["items"]],
                 "total": result["total"],
                 "page": result["page"],
                 "size": result["size"],
@@ -378,7 +373,7 @@ async def update_control_measure(
 )
 async def list_control_measures(
     mapping_id: UUID,
-    status_filter: Optional[str] = Query(None, description="Filtrar por status"),
+    status_filter: str | None = Query(None, description="Filtrar por status"),
     service: PPRAService = Depends(get_ppra_service),
 ) -> StandardResponse:
     """Lista medidas de controle de um mapeamento."""

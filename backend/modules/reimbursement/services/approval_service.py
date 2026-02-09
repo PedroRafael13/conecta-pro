@@ -3,14 +3,13 @@
 import logging
 from datetime import date, timedelta
 from decimal import Decimal
-from typing import Dict, List, Optional, Tuple
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.reimbursement.models import (
-    ApprovalLevel,
     APPROVAL_LIMITS,
+    ApprovalLevel,
     ReimbursementRequest,
     ReimbursementStatus,
 )
@@ -32,10 +31,10 @@ class ApprovalService:
     async def list_pending_approvals(
         self,
         condominio_id: UUID,
-        approval_level: Optional[str] = None,
+        approval_level: str | None = None,
         skip: int = 0,
         limit: int = 100,
-    ) -> Tuple[List[ReimbursementRequest], int]:
+    ) -> tuple[list[ReimbursementRequest], int]:
         """Lista solicitações pendentes de aprovação."""
         return await self.repo.list_pending_approvals(
             condominio_id,
@@ -48,7 +47,7 @@ class ApprovalService:
         self,
         request_id: UUID,
         user_id: UUID,
-    ) -> Optional[ReimbursementRequest]:
+    ) -> ReimbursementRequest | None:
         """Inicia análise de uma solicitação."""
         request = await self.repo.get_request_by_id(request_id)
         if not request:
@@ -58,10 +57,7 @@ class ApprovalService:
             raise ValueError("Apenas solicitações pendentes podem entrar em análise")
 
         request.status = ReimbursementStatus.EM_ANALISE.value
-        request.internal_notes = (
-            (request.internal_notes or "") +
-            f"\n[Em análise por {user_id}]"
-        )
+        request.internal_notes = (request.internal_notes or "") + f"\n[Em análise por {user_id}]"
 
         await self.session.commit()
 
@@ -72,10 +68,10 @@ class ApprovalService:
         self,
         request_id: UUID,
         user_id: UUID,
-        comments: Optional[str] = None,
-        approved_items: Optional[List[UUID]] = None,
-        rejected_items: Optional[Dict[UUID, str]] = None,
-    ) -> Optional[ReimbursementRequest]:
+        comments: str | None = None,
+        approved_items: list[UUID] | None = None,
+        rejected_items: dict[UUID, str] | None = None,
+    ) -> ReimbursementRequest | None:
         """Aprova uma solicitação de reembolso."""
         request = await self.repo.get_request_by_id(request_id)
         if not request:
@@ -120,7 +116,7 @@ class ApprovalService:
         request_id: UUID,
         user_id: UUID,
         reason: str,
-    ) -> Optional[ReimbursementRequest]:
+    ) -> ReimbursementRequest | None:
         """Rejeita uma solicitação de reembolso."""
         request = await self.repo.get_request_by_id(request_id)
         if not request:
@@ -140,7 +136,7 @@ class ApprovalService:
         request_id: UUID,
         user_id: UUID,
         reason: str,
-    ) -> Optional[ReimbursementRequest]:
+    ) -> ReimbursementRequest | None:
         """Devolve solicitação para rascunho."""
         request = await self.repo.get_request_by_id(request_id)
         if not request:
@@ -157,7 +153,7 @@ class ApprovalService:
         request_id: UUID,
         item_id: UUID,
         user_id: UUID,
-        approved_amount: Optional[Decimal] = None,
+        approved_amount: Decimal | None = None,
     ) -> bool:
         """Aprova um item específico."""
         request = await self.repo.get_request_by_id(request_id)
@@ -207,7 +203,7 @@ class ApprovalService:
         condominio_id: UUID,
         skip: int = 0,
         limit: int = 100,
-    ) -> Tuple[List[ReimbursementRequest], int]:
+    ) -> tuple[list[ReimbursementRequest], int]:
         """Lista solicitações aprovadas prontas para pagamento."""
         return await self.repo.list_ready_for_payment(condominio_id, skip, limit)
 
@@ -215,9 +211,9 @@ class ApprovalService:
         self,
         request_id: UUID,
         user_id: UUID,
-        due_date: Optional[date] = None,
-        notes: Optional[str] = None,
-    ) -> Optional[ReimbursementRequest]:
+        due_date: date | None = None,
+        notes: str | None = None,
+    ) -> ReimbursementRequest | None:
         """
         Processa pagamento de reembolso criando conta a pagar.
 
@@ -242,15 +238,13 @@ class ApprovalService:
         # Por enquanto, simula a criação da conta a pagar
         # Em produção, isso chamaria o PayableService
         import uuid as uuid_lib
+
         fake_payable_id = uuid_lib.uuid4()
 
         request.mark_as_processed(user_id, fake_payable_id)
 
         if notes:
-            request.internal_notes = (
-                (request.internal_notes or "") +
-                f"\n[Processamento] {notes}"
-            )
+            request.internal_notes = (request.internal_notes or "") + f"\n[Processamento] {notes}"
 
         await self.session.commit()
 

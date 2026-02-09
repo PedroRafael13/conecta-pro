@@ -3,11 +3,9 @@ Schemas Pydantic para AccessLog.
 """
 
 from datetime import datetime
-from typing import Optional
-
-from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from modules.remote_gatehouse.models.access_log import AccessLogType
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class AccessLogCreate(BaseModel):
@@ -16,53 +14,53 @@ class AccessLogCreate(BaseModel):
     guardian_id: str = Field(..., min_length=1, max_length=100)
     log_type: AccessLogType = Field(default=AccessLogType.ENTRY)
     client_id: str = Field(..., description="ID do cliente")
-    contract_id: Optional[str] = Field(None, description="ID do contrato")
-    post_id: Optional[str] = Field(None, description="ID do posto")
+    contract_id: str | None = Field(None, description="ID do contrato")
+    post_id: str | None = Field(None, description="ID do posto")
 
     # Pessoa
     person_name: str = Field(..., min_length=1, max_length=255)
-    person_document: Optional[str] = Field(None, max_length=20)
-    person_type: Optional[str] = Field(None, max_length=30)
-    person_id: Optional[str] = Field(None)
+    person_document: str | None = Field(None, max_length=20)
+    person_type: str | None = Field(None, max_length=30)
+    person_id: str | None = Field(None)
 
     # Localização
-    unit_code: Optional[str] = Field(None, max_length=20)
-    unit_block: Optional[str] = Field(None, max_length=20)
-    access_point: Optional[str] = Field(None, max_length=100)
-    access_point_id: Optional[str] = Field(None, max_length=50)
+    unit_code: str | None = Field(None, max_length=20)
+    unit_block: str | None = Field(None, max_length=20)
+    access_point: str | None = Field(None, max_length=100)
+    access_point_id: str | None = Field(None, max_length=50)
 
     # Método
-    access_method: Optional[str] = Field(None, max_length=30)
-    device_id: Optional[str] = Field(None, max_length=50)
-    device_name: Optional[str] = Field(None, max_length=100)
+    access_method: str | None = Field(None, max_length=30)
+    device_id: str | None = Field(None, max_length=50)
+    device_name: str | None = Field(None, max_length=100)
 
     # Veículo
-    vehicle_plate: Optional[str] = Field(None, max_length=10)
-    vehicle_model: Optional[str] = Field(None, max_length=50)
-    vehicle_color: Optional[str] = Field(None, max_length=30)
+    vehicle_plate: str | None = Field(None, max_length=10)
+    vehicle_model: str | None = Field(None, max_length=50)
+    vehicle_color: str | None = Field(None, max_length=30)
 
     # Operador
-    operator_id: Optional[str] = Field(None)
-    operator_name: Optional[str] = Field(None, max_length=100)
-    authorization_type: Optional[str] = Field(None, max_length=30)
+    operator_id: str | None = Field(None)
+    operator_name: str | None = Field(None, max_length=100)
+    authorization_type: str | None = Field(None, max_length=30)
 
     # Mídia
-    photos: Optional[list[str]] = Field(None)
-    video_clip_url: Optional[str] = Field(None, max_length=500)
+    photos: list[str] | None = Field(None)
+    video_clip_url: str | None = Field(None, max_length=500)
 
     # Observações
-    notes: Optional[str] = Field(None)
-    denial_reason: Optional[str] = Field(None)
+    notes: str | None = Field(None)
+    denial_reason: str | None = Field(None)
 
     # Timestamp
     event_timestamp: datetime = Field(..., description="Data/hora do evento")
 
     # Geo
-    latitude: Optional[float] = Field(None, ge=-90, le=90)
-    longitude: Optional[float] = Field(None, ge=-180, le=180)
+    latitude: float | None = Field(None, ge=-90, le=90)
+    longitude: float | None = Field(None, ge=-180, le=180)
 
     # Metadados
-    guardian_metadata: Optional[dict] = Field(None)
+    guardian_metadata: dict | None = Field(None)
 
     model_config = ConfigDict(use_enum_values=True)
 
@@ -90,33 +88,33 @@ class AccessLogResponse(BaseModel):
     guardian_id: str
     log_type: str
     client_id: str
-    contract_id: Optional[str]
-    post_id: Optional[str]
+    contract_id: str | None
+    post_id: str | None
     person_name: str
-    person_document: Optional[str]
-    person_type: Optional[str]
-    person_id: Optional[str]
-    unit_code: Optional[str]
-    unit_block: Optional[str]
-    access_point: Optional[str]
-    access_point_id: Optional[str]
-    access_method: Optional[str]
-    device_id: Optional[str]
-    device_name: Optional[str]
-    vehicle_plate: Optional[str]
-    vehicle_model: Optional[str]
-    vehicle_color: Optional[str]
-    operator_id: Optional[str]
-    operator_name: Optional[str]
-    authorization_type: Optional[str]
-    photos: Optional[list]
-    video_clip_url: Optional[str]
-    notes: Optional[str]
-    denial_reason: Optional[str]
+    person_document: str | None
+    person_type: str | None
+    person_id: str | None
+    unit_code: str | None
+    unit_block: str | None
+    access_point: str | None
+    access_point_id: str | None
+    access_method: str | None
+    device_id: str | None
+    device_name: str | None
+    vehicle_plate: str | None
+    vehicle_model: str | None
+    vehicle_color: str | None
+    operator_id: str | None
+    operator_name: str | None
+    authorization_type: str | None
+    photos: list | None
+    video_clip_url: str | None
+    notes: str | None
+    denial_reason: str | None
     event_timestamp: datetime
     received_at: datetime
-    latitude: Optional[float]
-    longitude: Optional[float]
+    latitude: float | None
+    longitude: float | None
     is_active: bool
     created_at: datetime
 
@@ -126,17 +124,17 @@ class AccessLogResponse(BaseModel):
 class AccessLogFilter(BaseModel):
     """Schema para filtrar logs de acesso."""
 
-    search: Optional[str] = Field(None, description="Busca textual")
-    log_type: Optional[AccessLogType] = Field(None, description="Tipo de log")
-    client_id: Optional[str] = Field(None, description="ID do cliente")
-    post_id: Optional[str] = Field(None, description="ID do posto")
-    person_type: Optional[str] = Field(None, description="Tipo de pessoa")
-    access_method: Optional[str] = Field(None, description="Método de acesso")
-    unit_code: Optional[str] = Field(None, description="Código da unidade")
-    vehicle_plate: Optional[str] = Field(None, description="Placa do veículo")
-    date_from: Optional[datetime] = Field(None, description="Data inicial")
-    date_to: Optional[datetime] = Field(None, description="Data final")
-    is_denied: Optional[bool] = Field(None, description="Foi negado")
+    search: str | None = Field(None, description="Busca textual")
+    log_type: AccessLogType | None = Field(None, description="Tipo de log")
+    client_id: str | None = Field(None, description="ID do cliente")
+    post_id: str | None = Field(None, description="ID do posto")
+    person_type: str | None = Field(None, description="Tipo de pessoa")
+    access_method: str | None = Field(None, description="Método de acesso")
+    unit_code: str | None = Field(None, description="Código da unidade")
+    vehicle_plate: str | None = Field(None, description="Placa do veículo")
+    date_from: datetime | None = Field(None, description="Data inicial")
+    date_to: datetime | None = Field(None, description="Data final")
+    is_denied: bool | None = Field(None, description="Foi negado")
 
     model_config = ConfigDict(use_enum_values=True)
 

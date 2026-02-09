@@ -6,7 +6,7 @@ Gerencia notificacoes e escalacao de alertas.
 
 import asyncio
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import func, select
@@ -29,14 +29,14 @@ class AlertManagerService:
 
     # Tempo para escalacao automatica (em minutos)
     ESCALATION_TIMES = {
-        AlertLevel.YELLOW: 60,    # 1 hora
-        AlertLevel.ORANGE: 30,    # 30 minutos
-        AlertLevel.RED: 10,       # 10 minutos
+        AlertLevel.YELLOW: 60,  # 1 hora
+        AlertLevel.ORANGE: 30,  # 30 minutos
+        AlertLevel.RED: 10,  # 10 minutos
     }
 
     def __init__(self, db: AsyncSession):
         self.db = db
-        self._notification_handlers: List = []
+        self._notification_handlers: list = []
 
     def register_notification_handler(self, handler) -> None:
         """Registra um handler de notificacao."""
@@ -59,12 +59,9 @@ class AlertManagerService:
                 logger.error(f"Erro no handler de notificacao: {e}")
 
         # Log de notificacao
-        logger.info(
-            f"Notificacao enviada para alerta {alert.id} "
-            f"[{alert.level.value}] {alert.metric_name}"
-        )
+        logger.info(f"Notificacao enviada para alerta {alert.id} [{alert.level.value}] {alert.metric_name}")
 
-    async def check_escalations(self) -> List[Alert]:
+    async def check_escalations(self) -> list[Alert]:
         """
         Verifica alertas que precisam ser escalados.
 
@@ -80,7 +77,7 @@ class AlertManagerService:
                 Alert.level == level,
                 Alert.status == AlertStatus.ACTIVE,
                 Alert.triggered_at < threshold_time,
-                Alert.is_active == True,
+                Alert.is_active,
             )
 
             result = await self.db.execute(stmt)
@@ -89,10 +86,7 @@ class AlertManagerService:
             for alert in alerts:
                 alert.escalate()
                 escalated.append(alert)
-                logger.warning(
-                    f"Alerta {alert.id} escalado automaticamente "
-                    f"(aguardando ha mais de {minutes} minutos)"
-                )
+                logger.warning(f"Alerta {alert.id} escalado automaticamente (aguardando ha mais de {minutes} minutos)")
 
         if escalated:
             await self.db.commit()
@@ -102,7 +96,7 @@ class AlertManagerService:
     async def get_alert_statistics(
         self,
         period_hours: int = 24,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Retorna estatisticas de alertas.
 
@@ -117,7 +111,7 @@ class AlertManagerService:
         # Total de alertas no periodo
         stmt = select(func.count(Alert.id)).where(
             Alert.triggered_at >= threshold,
-            Alert.is_active == True,
+            Alert.is_active,
         )
         result = await self.db.execute(stmt)
         total = result.scalar() or 0
@@ -128,7 +122,7 @@ class AlertManagerService:
             stmt = select(func.count(Alert.id)).where(
                 Alert.triggered_at >= threshold,
                 Alert.level == level,
-                Alert.is_active == True,
+                Alert.is_active,
             )
             result = await self.db.execute(stmt)
             by_level[level.value] = result.scalar() or 0
@@ -139,7 +133,7 @@ class AlertManagerService:
             stmt = select(func.count(Alert.id)).where(
                 Alert.triggered_at >= threshold,
                 Alert.status == status,
-                Alert.is_active == True,
+                Alert.is_active,
             )
             result = await self.db.execute(stmt)
             by_status[status.value] = result.scalar() or 0
@@ -148,25 +142,21 @@ class AlertManagerService:
         stmt = select(Alert).where(
             Alert.triggered_at >= threshold,
             Alert.status == AlertStatus.RESOLVED,
-            Alert.is_active == True,
+            Alert.is_active,
         )
         result = await self.db.execute(stmt)
         resolved_alerts = result.scalars().all()
 
         mttr = 0.0
         if resolved_alerts:
-            total_time = sum(
-                (a.resolved_at - a.triggered_at).total_seconds()
-                for a in resolved_alerts
-                if a.resolved_at
-            )
+            total_time = sum((a.resolved_at - a.triggered_at).total_seconds() for a in resolved_alerts if a.resolved_at)
             mttr = total_time / len(resolved_alerts)
 
         # Taxa de escalacao
         stmt = select(func.count(Alert.id)).where(
             Alert.triggered_at >= threshold,
             Alert.status == AlertStatus.ESCALATED,
-            Alert.is_active == True,
+            Alert.is_active,
         )
         result = await self.db.execute(stmt)
         escalated_count = result.scalar() or 0
@@ -177,7 +167,7 @@ class AlertManagerService:
             select(Alert.metric_name, func.count(Alert.id).label("count"))
             .where(
                 Alert.triggered_at >= threshold,
-                Alert.is_active == True,
+                Alert.is_active,
             )
             .group_by(Alert.metric_name)
             .order_by(func.count(Alert.id).desc())
@@ -210,7 +200,7 @@ class AlertManagerService:
         self,
         period_hours: int = 24,
         interval_minutes: int = 60,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Retorna timeline de alertas agrupados por intervalo.
 
@@ -224,10 +214,14 @@ class AlertManagerService:
         threshold = datetime.utcnow() - timedelta(hours=period_hours)
 
         # Buscar todos os alertas no periodo
-        stmt = select(Alert).where(
-            Alert.triggered_at >= threshold,
-            Alert.is_active == True,
-        ).order_by(Alert.triggered_at)
+        stmt = (
+            select(Alert)
+            .where(
+                Alert.triggered_at >= threshold,
+                Alert.is_active,
+            )
+            .order_by(Alert.triggered_at)
+        )
 
         result = await self.db.execute(stmt)
         alerts = result.scalars().all()
@@ -242,18 +236,17 @@ class AlertManagerService:
             next_time = current_time + interval
 
             # Contar alertas no intervalo
-            interval_alerts = [
-                a for a in alerts
-                if current_time <= a.triggered_at < next_time
-            ]
+            interval_alerts = [a for a in alerts if current_time <= a.triggered_at < next_time]
 
-            timeline.append({
-                "timestamp": current_time.isoformat(),
-                "total": len(interval_alerts),
-                "yellow": sum(1 for a in interval_alerts if a.level == AlertLevel.YELLOW),
-                "orange": sum(1 for a in interval_alerts if a.level == AlertLevel.ORANGE),
-                "red": sum(1 for a in interval_alerts if a.level == AlertLevel.RED),
-            })
+            timeline.append(
+                {
+                    "timestamp": current_time.isoformat(),
+                    "total": len(interval_alerts),
+                    "yellow": sum(1 for a in interval_alerts if a.level == AlertLevel.YELLOW),
+                    "orange": sum(1 for a in interval_alerts if a.level == AlertLevel.ORANGE),
+                    "red": sum(1 for a in interval_alerts if a.level == AlertLevel.RED),
+                }
+            )
 
             current_time = next_time
 
@@ -291,7 +284,7 @@ class AlertManagerService:
         self,
         alert_id: UUID,
         duration_minutes: int = 60,
-    ) -> Optional[Alert]:
+    ) -> Alert | None:
         """
         Suprime um alerta temporariamente.
 
@@ -311,9 +304,7 @@ class AlertManagerService:
 
         alert.suppress()
         alert.details = alert.details or {}
-        alert.details["suppressed_until"] = (
-            datetime.utcnow() + timedelta(minutes=duration_minutes)
-        ).isoformat()
+        alert.details["suppressed_until"] = (datetime.utcnow() + timedelta(minutes=duration_minutes)).isoformat()
 
         await self.db.commit()
         await self.db.refresh(alert)

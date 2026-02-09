@@ -6,44 +6,25 @@ Mapeamento bidirecional entre entidades Sólides e modelos internos Conecta PRO.
 """
 
 import logging
-from datetime import datetime, date
-from decimal import Decimal
-from typing import Any, Dict, Optional, List
+from datetime import date, datetime
+from typing import Any
 from uuid import UUID
-
-from modules.integrations.connectors.solides.schemas import (
-    SolidesColaborador,
-    SolidesColaboradorCreate,
-    SolidesDepartamento,
-    SolidesCargo,
-    SolidesVaga,
-    SolidesCandidato,
-    SolidesInscricao,
-    SolidesAvaliacao,
-    SolidesEndereco,
-    SolidesOcorrencia,
-    SolidesOcorrenciaCreate,
-    SolidesAbsenteismo,
-    SolidesAbsenteismoCreate,
-    SolidesPassaporte,
-    SolidesUnidade,
-)
 
 logger = logging.getLogger(__name__)
 
 
 class SolidesMapperError(Exception):
     """Erro no mapeamento de entidades Sólides."""
+
     pass
 
 
 # ==================== COLABORADOR → EMPLOYEE DATA ====================
 
+
 def solides_colaborador_to_employee(
-    solides_data: Dict[str, Any],
-    condominio_id: UUID,
-    defaults: Optional[Dict[str, Any]] = None
-) -> Dict[str, Any]:
+    solides_data: dict[str, Any], condominio_id: UUID, defaults: dict[str, Any] | None = None
+) -> dict[str, Any]:
     """
     Mapeia colaborador Sólides para dados de funcionário interno.
 
@@ -166,9 +147,7 @@ def solides_colaborador_to_employee(
     }
 
 
-def employee_to_solides_colaborador(
-    employee_data: Dict[str, Any]
-) -> Dict[str, Any]:
+def employee_to_solides_colaborador(employee_data: dict[str, Any]) -> dict[str, Any]:
     """
     Mapeia dados de funcionário interno para criação/atualização no Sólides.
 
@@ -187,10 +166,7 @@ def employee_to_solides_colaborador(
         "outsourced": "Terceirizado",
         "apprentice": "Jovem Aprendiz",
     }
-    tipo_contrato = contract_map.get(
-        employee_data.get("contract_type", "clt"),
-        "CLT"
-    )
+    tipo_contrato = contract_map.get(employee_data.get("contract_type", "clt"), "CLT")
 
     # Mapear sexo
     gender = employee_data.get("gender")
@@ -261,11 +237,10 @@ def employee_to_solides_colaborador(
 
 # ==================== OCORRÊNCIA ====================
 
+
 def solides_ocorrencia_to_occurrence(
-    solides_data: Dict[str, Any],
-    condominio_id: UUID,
-    defaults: Optional[Dict[str, Any]] = None
-) -> Dict[str, Any]:
+    solides_data: dict[str, Any], condominio_id: UUID, defaults: dict[str, Any] | None = None
+) -> dict[str, Any]:
     """
     Mapeia ocorrência Sólides para Occurrence interno.
 
@@ -323,9 +298,7 @@ def solides_ocorrencia_to_occurrence(
     }
 
 
-def occurrence_to_solides_ocorrencia(
-    occurrence_data: Dict[str, Any]
-) -> Dict[str, Any]:
+def occurrence_to_solides_ocorrencia(occurrence_data: dict[str, Any]) -> dict[str, Any]:
     """
     Mapeia Occurrence interno para dados da API Sólides.
 
@@ -358,7 +331,9 @@ def occurrence_to_solides_ocorrencia(
         "data_vigencia": _format_date(occurrence_data.get("effective_date")),
         "duracao_dias": occurrence_data.get("duration_days"),
         "valor_aumento": float(occurrence_data["raise_amount"]) if occurrence_data.get("raise_amount") else None,
-        "percentual_aumento": float(occurrence_data["raise_percentage"]) if occurrence_data.get("raise_percentage") else None,
+        "percentual_aumento": float(occurrence_data["raise_percentage"])
+        if occurrence_data.get("raise_percentage")
+        else None,
         "novo_cargo_id": occurrence_data.get("new_position_id"),
         "observacoes": occurrence_data.get("notes"),
     }
@@ -368,11 +343,10 @@ def occurrence_to_solides_ocorrencia(
 
 # ==================== ABSENTEÍSMO ====================
 
+
 def solides_absenteismo_to_absence(
-    solides_data: Dict[str, Any],
-    condominio_id: UUID,
-    defaults: Optional[Dict[str, Any]] = None
-) -> Dict[str, Any]:
+    solides_data: dict[str, Any], condominio_id: UUID, defaults: dict[str, Any] | None = None
+) -> dict[str, Any]:
     """
     Mapeia absenteísmo Sólides para Absence interno.
 
@@ -436,9 +410,7 @@ def solides_absenteismo_to_absence(
     }
 
 
-def absence_to_solides_absenteismo(
-    absence_data: Dict[str, Any]
-) -> Dict[str, Any]:
+def absence_to_solides_absenteismo(absence_data: dict[str, Any]) -> dict[str, Any]:
     """
     Mapeia Absence interno para dados da API Sólides.
 
@@ -484,11 +456,10 @@ def absence_to_solides_absenteismo(
 
 # ==================== PASSAPORTE COMPORTAMENTAL ====================
 
+
 def solides_passaporte_to_behavioral_profile(
-    solides_data: Dict[str, Any],
-    condominio_id: UUID,
-    defaults: Optional[Dict[str, Any]] = None
-) -> Dict[str, Any]:
+    solides_data: dict[str, Any], condominio_id: UUID, defaults: dict[str, Any] | None = None
+) -> dict[str, Any]:
     """
     Mapeia passaporte comportamental Sólides para dados internos.
 
@@ -542,11 +513,10 @@ def solides_passaporte_to_behavioral_profile(
 
 # ==================== CANDIDATO → CANDIDATE ====================
 
+
 def solides_candidato_to_candidate(
-    solides_data: Dict[str, Any],
-    condominio_id: UUID,
-    defaults: Optional[Dict[str, Any]] = None
-) -> Dict[str, Any]:
+    solides_data: dict[str, Any], condominio_id: UUID, defaults: dict[str, Any] | None = None
+) -> dict[str, Any]:
     """
     Mapeia candidato Sólides para Candidate do Conecta PRO.
 
@@ -638,9 +608,7 @@ def solides_candidato_to_candidate(
     }
 
 
-def candidate_to_solides_candidato(
-    candidate_data: Dict[str, Any]
-) -> Dict[str, Any]:
+def candidate_to_solides_candidato(candidate_data: dict[str, Any]) -> dict[str, Any]:
     """
     Mapeia Candidate interno para dados do Sólides.
 
@@ -687,7 +655,9 @@ def candidate_to_solides_candidato(
         "estado_civil": estado_civil,
         "endereco": endereco,
         "cargo_pretendido": candidate_data.get("headline"),
-        "pretensao_salarial": float(candidate_data["salary_expectation"]) if candidate_data.get("salary_expectation") else None,
+        "pretensao_salarial": float(candidate_data["salary_expectation"])
+        if candidate_data.get("salary_expectation")
+        else None,
         "curriculo_url": candidate_data.get("resume_file_path"),
         "linkedin_url": candidate_data.get("linkedin_url"),
         "portfolio_url": candidate_data.get("portfolio_url"),
@@ -701,11 +671,10 @@ def candidate_to_solides_candidato(
 
 # ==================== DEPARTAMENTO ====================
 
+
 def solides_departamento_to_department(
-    solides_data: Dict[str, Any],
-    condominio_id: UUID,
-    defaults: Optional[Dict[str, Any]] = None
-) -> Dict[str, Any]:
+    solides_data: dict[str, Any], condominio_id: UUID, defaults: dict[str, Any] | None = None
+) -> dict[str, Any]:
     """
     Mapeia departamento Sólides para estrutura interna.
 
@@ -723,7 +692,9 @@ def solides_departamento_to_department(
         "condominio_id": condominio_id,
         "name": solides_data.get("nome", ""),
         "code": solides_data.get("codigo"),
-        "parent_external_id": str(solides_data.get("departamento_pai_id")) if solides_data.get("departamento_pai_id") else None,
+        "parent_external_id": str(solides_data.get("departamento_pai_id"))
+        if solides_data.get("departamento_pai_id")
+        else None,
         "manager_external_id": str(solides_data.get("gestor_id")) if solides_data.get("gestor_id") else None,
         "unit_external_id": str(solides_data.get("unidade_id")) if solides_data.get("unidade_id") else None,
         "is_active": solides_data.get("ativo", True),
@@ -737,17 +708,19 @@ def solides_departamento_to_department(
     }
 
 
-def department_to_solides_departamento(
-    department_data: Dict[str, Any]
-) -> Dict[str, Any]:
+def department_to_solides_departamento(department_data: dict[str, Any]) -> dict[str, Any]:
     """
     Mapeia Department interno para API Sólides.
     """
     result = {
         "nome": department_data.get("name"),
         "codigo": department_data.get("code"),
-        "departamento_pai_id": int(department_data["parent_external_id"]) if department_data.get("parent_external_id") else None,
-        "gestor_id": int(department_data["manager_external_id"]) if department_data.get("manager_external_id") else None,
+        "departamento_pai_id": int(department_data["parent_external_id"])
+        if department_data.get("parent_external_id")
+        else None,
+        "gestor_id": int(department_data["manager_external_id"])
+        if department_data.get("manager_external_id")
+        else None,
         "unidade_id": int(department_data["unit_external_id"]) if department_data.get("unit_external_id") else None,
         "ativo": department_data.get("is_active", True),
     }
@@ -757,11 +730,10 @@ def department_to_solides_departamento(
 
 # ==================== CARGO/POSIÇÃO ====================
 
+
 def solides_cargo_to_position(
-    solides_data: Dict[str, Any],
-    condominio_id: UUID,
-    defaults: Optional[Dict[str, Any]] = None
-) -> Dict[str, Any]:
+    solides_data: dict[str, Any], condominio_id: UUID, defaults: dict[str, Any] | None = None
+) -> dict[str, Any]:
     """
     Mapeia cargo Sólides para estrutura interna.
 
@@ -780,7 +752,9 @@ def solides_cargo_to_position(
         "name": solides_data.get("nome", ""),
         "code": solides_data.get("codigo"),
         "description": solides_data.get("descricao"),
-        "department_external_id": str(solides_data.get("departamento_id")) if solides_data.get("departamento_id") else None,
+        "department_external_id": str(solides_data.get("departamento_id"))
+        if solides_data.get("departamento_id")
+        else None,
         "cbo_code": solides_data.get("cbo_codigo"),
         "level": solides_data.get("nivel"),
         "salary_range_min": solides_data.get("faixa_salarial_min"),
@@ -799,11 +773,10 @@ def solides_cargo_to_position(
 
 # ==================== VAGA → JOB POSITION ====================
 
+
 def solides_vaga_to_job_position(
-    solides_data: Dict[str, Any],
-    condominio_id: UUID,
-    defaults: Optional[Dict[str, Any]] = None
-) -> Dict[str, Any]:
+    solides_data: dict[str, Any], condominio_id: UUID, defaults: dict[str, Any] | None = None
+) -> dict[str, Any]:
     """
     Mapeia vaga Sólides para JobPosition interno.
 
@@ -863,11 +836,10 @@ def solides_vaga_to_job_position(
 
 # ==================== INSCRIÇÃO → APPLICATION ====================
 
+
 def solides_inscricao_to_application(
-    solides_data: Dict[str, Any],
-    condominio_id: UUID,
-    defaults: Optional[Dict[str, Any]] = None
-) -> Dict[str, Any]:
+    solides_data: dict[str, Any], condominio_id: UUID, defaults: dict[str, Any] | None = None
+) -> dict[str, Any]:
     """
     Mapeia inscrição Sólides para Application interno.
 
@@ -928,21 +900,22 @@ def solides_inscricao_to_application(
 
 # ==================== HELPERS ====================
 
-def _clean_document(doc: Optional[str]) -> Optional[str]:
+
+def _clean_document(doc: str | None) -> str | None:
     """Remove formatação de CPF/CNPJ."""
     if not doc:
         return None
     return doc.replace(".", "").replace("-", "").replace("/", "").strip()
 
 
-def _clean_cep(cep: Optional[str]) -> Optional[str]:
+def _clean_cep(cep: str | None) -> str | None:
     """Remove formatação de CEP."""
     if not cep:
         return None
     return cep.replace("-", "").replace(".", "").strip()
 
 
-def _parse_date(date_val: Any) -> Optional[date]:
+def _parse_date(date_val: Any) -> date | None:
     """Parse de data."""
     if not date_val:
         return None
@@ -957,14 +930,14 @@ def _parse_date(date_val: Any) -> Optional[date]:
         formats = ["%Y-%m-%d", "%d/%m/%Y", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%dT%H:%M:%S.%f"]
         for fmt in formats:
             try:
-                return datetime.strptime(date_val[:10], fmt[:min(len(fmt), len(date_val[:10])+2)]).date()
+                return datetime.strptime(date_val[:10], fmt[: min(len(fmt), len(date_val[:10]) + 2)]).date()
             except (ValueError, TypeError):
                 continue
 
     return None
 
 
-def _format_date(date_val: Any) -> Optional[str]:
+def _format_date(date_val: Any) -> str | None:
     """Formata data para string ISO."""
     if not date_val:
         return None
@@ -978,7 +951,7 @@ def _format_date(date_val: Any) -> Optional[str]:
     return None
 
 
-def _parse_datetime(dt_val: Any) -> Optional[datetime]:
+def _parse_datetime(dt_val: Any) -> datetime | None:
     """Parse de datetime."""
     if not dt_val:
         return None
@@ -1003,7 +976,7 @@ def _parse_datetime(dt_val: Any) -> Optional[datetime]:
     return None
 
 
-def _map_marital_status(status: Optional[str]) -> Optional[str]:
+def _map_marital_status(status: str | None) -> str | None:
     """Mapeia estado civil."""
     if not status:
         return None
@@ -1022,7 +995,7 @@ def _map_marital_status(status: Optional[str]) -> Optional[str]:
     return mapping.get(status_lower)
 
 
-def _reverse_map_marital_status(status: Optional[str]) -> Optional[str]:
+def _reverse_map_marital_status(status: str | None) -> str | None:
     """Mapeia estado civil reverso (interno -> Sólides)."""
     if not status:
         return None
@@ -1039,7 +1012,8 @@ def _reverse_map_marital_status(status: Optional[str]) -> Optional[str]:
 
 # ==================== DATA HASH ====================
 
-def compute_solides_entity_hash(entity_type: str, data: Dict[str, Any]) -> str:
+
+def compute_solides_entity_hash(entity_type: str, data: dict[str, Any]) -> str:
     """
     Computa hash de dados da entidade para detectar mudanças.
 
@@ -1055,7 +1029,17 @@ def compute_solides_entity_hash(entity_type: str, data: Dict[str, Any]) -> str:
 
     # Campos relevantes por tipo de entidade
     hash_fields = {
-        "colaboradores": ["nome", "email", "cpf", "situacao", "cargo_id", "departamento_id", "data_admissao", "data_demissao", "salario"],
+        "colaboradores": [
+            "nome",
+            "email",
+            "cpf",
+            "situacao",
+            "cargo_id",
+            "departamento_id",
+            "data_admissao",
+            "data_demissao",
+            "salario",
+        ],
         "departamentos": ["nome", "codigo", "ativo", "gestor_id", "departamento_pai_id"],
         "cargos": ["nome", "codigo", "departamento_id", "nivel", "ativo"],
         "unidades": ["nome", "codigo", "ativo"],
@@ -1075,14 +1059,10 @@ def compute_solides_entity_hash(entity_type: str, data: Dict[str, Any]) -> str:
 
     # Serializar e computar hash
     json_str = json.dumps(hash_data, sort_keys=True, default=str)
-    return hashlib.md5(json_str.encode()).hexdigest()
+    return hashlib.sha256(json_str.encode()).hexdigest()
 
 
-def detect_changes(
-    old_data: Dict[str, Any],
-    new_data: Dict[str, Any],
-    entity_type: str
-) -> Dict[str, Dict[str, Any]]:
+def detect_changes(old_data: dict[str, Any], new_data: dict[str, Any], entity_type: str) -> dict[str, dict[str, Any]]:
     """
     Detecta mudanças entre versões de dados.
 

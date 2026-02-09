@@ -7,17 +7,17 @@ from uuid import uuid4
 import pytest
 
 from modules.document_kits.models.document_kit import (
-    DocumentKit,
-    DocumentKitItem,
-    DocumentKitAssignment,
-    DocumentKitItemStatus,
-    KitType,
-    KitStatus,
-    ItemType,
-    ItemPriority,
     AssignmentStatus,
-    ItemStatusEnum,
+    DocumentKit,
+    DocumentKitAssignment,
+    DocumentKitItem,
+    DocumentKitItemStatus,
     EntityType,
+    ItemPriority,
+    ItemStatusEnum,
+    ItemType,
+    KitStatus,
+    KitType,
 )
 
 

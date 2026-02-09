@@ -7,18 +7,20 @@ Date: 2026-01-30
 """
 
 import sys
-sys.path.insert(0, '/app')
+
+sys.path.insert(0, "/app")
+
+from datetime import date, timedelta
+from unittest.mock import MagicMock, patch
 
 import pytest
-from unittest.mock import MagicMock, patch
-from datetime import date, timedelta
 
 from modules.ai.bartolo.agents.relatorio_agent import RelatorioAgent, RelatorioIntent
-
 
 # =============================================================================
 # TestRelatorioAgentIntents - Deteccao de intents via patterns
 # =============================================================================
+
 
 class TestRelatorioAgentIntents:
     """Testes para deteccao de intents no RelatorioAgent."""
@@ -31,34 +33,37 @@ class TestRelatorioAgentIntents:
     # ==========================================================================
     # GERAR_RELATORIO
     # ==========================================================================
-    @pytest.mark.parametrize("message", [
-        "gerar relatorio",
-        "criar relatorio",
-        "preciso de um relatorio",
-        "relatorio de horas extras",
-        "relatorio de custos",
-        "faca um relatorio",
-        "gere um relatorio",
-        "crie um novo relatorio",
-        "montar relatorio",
-        "monte um relatorio",
-        "quero um relatorio",
-        "pode gerar um relatorio",
-        "produzir relatorio",
-        "produza um relatorio",
-        "preciso relatorio de banco de horas",
-        "relatorio de substituicoes",
-        "relatorio disciplinar",
-        "relatorio de ocorrencias",
-        "relatorio de diaristas",
-        "relatorio de rondas",
-        "relatorio de postos",
-        "relatorio de escalas",
-        "relatorio geral",
-        "novo relatorio",
-        "da para criar um relatorio",
-        "consegue gerar um relatorio",
-    ])
+    @pytest.mark.parametrize(
+        "message",
+        [
+            "gerar relatorio",
+            "criar relatorio",
+            "preciso de um relatorio",
+            "relatorio de horas extras",
+            "relatorio de custos",
+            "faca um relatorio",
+            "gere um relatorio",
+            "crie um novo relatorio",
+            "montar relatorio",
+            "monte um relatorio",
+            "quero um relatorio",
+            "pode gerar um relatorio",
+            "produzir relatorio",
+            "produza um relatorio",
+            "preciso relatorio de banco de horas",
+            "relatorio de substituicoes",
+            "relatorio disciplinar",
+            "relatorio de ocorrencias",
+            "relatorio de diaristas",
+            "relatorio de rondas",
+            "relatorio de postos",
+            "relatorio de escalas",
+            "relatorio geral",
+            "novo relatorio",
+            "da para criar um relatorio",
+            "consegue gerar um relatorio",
+        ],
+    )
     def test_gerar_relatorio(self, agent, message):
         """Testa deteccao de GERAR_RELATORIO."""
         result = agent._detect_intent(message)
@@ -67,19 +72,22 @@ class TestRelatorioAgentIntents:
     # ==========================================================================
     # EXPORTAR_RELATORIO
     # ==========================================================================
-    @pytest.mark.parametrize("message", [
-        "exportar relatorio",
-        "relatorio em pdf",
-        "baixar relatorio",
-        "salvar relatorio como excel",
-        "exporte o relatorio",
-        "download relatorio",
-        "relatorio em xlsx",
-        "relatorio em csv",
-        "relatorio em json",
-        "baixe o relatorio",
-        "salve relatorio em pdf",
-    ])
+    @pytest.mark.parametrize(
+        "message",
+        [
+            "exportar relatorio",
+            "relatorio em pdf",
+            "baixar relatorio",
+            "salvar relatorio como excel",
+            "exporte o relatorio",
+            "download relatorio",
+            "relatorio em xlsx",
+            "relatorio em csv",
+            "relatorio em json",
+            "baixe o relatorio",
+            "salve relatorio em pdf",
+        ],
+    )
     def test_exportar_relatorio(self, agent, message):
         """Testa deteccao de EXPORTAR_RELATORIO."""
         result = agent._detect_intent(message)
@@ -88,17 +96,20 @@ class TestRelatorioAgentIntents:
     # ==========================================================================
     # VER_RELATORIO
     # ==========================================================================
-    @pytest.mark.parametrize("message", [
-        "ver relatorio #123",
-        "detalhes do relatorio",
-        "abrir relatorio RPT-001",
-        "mostrar relatorio completo",
-        "veja o relatorio mensal",
-        "relatorio #456",
-        "relatorio id 789",
-        "info do relatorio",
-        "abra relatorio RPT-002",
-    ])
+    @pytest.mark.parametrize(
+        "message",
+        [
+            "ver relatorio #123",
+            "detalhes do relatorio",
+            "abrir relatorio RPT-001",
+            "mostrar relatorio completo",
+            "veja o relatorio mensal",
+            "relatorio #456",
+            "relatorio id 789",
+            "info do relatorio",
+            "abra relatorio RPT-002",
+        ],
+    )
     def test_ver_relatorio(self, agent, message):
         """Testa deteccao de VER_RELATORIO."""
         result = agent._detect_intent(message)
@@ -107,21 +118,24 @@ class TestRelatorioAgentIntents:
     # ==========================================================================
     # RELATORIO_RAPIDO
     # ==========================================================================
-    @pytest.mark.parametrize("message", [
-        "resumo operacional",
-        "como estao as operacoes",
-        "panorama geral",
-        "numeros do dia",
-        "dashboard operacional",
-        "overview geral",
-        "situacao geral",
-        "status operacional",
-        "dados do dia",
-        "como esta o dia",
-        "como andam as operacoes",
-        "resumo semanal",
-        "resumo mensal",
-    ])
+    @pytest.mark.parametrize(
+        "message",
+        [
+            "resumo operacional",
+            "como estao as operacoes",
+            "panorama geral",
+            "numeros do dia",
+            "dashboard operacional",
+            "overview geral",
+            "situacao geral",
+            "status operacional",
+            "dados do dia",
+            "como esta o dia",
+            "como andam as operacoes",
+            "resumo semanal",
+            "resumo mensal",
+        ],
+    )
     def test_relatorio_rapido(self, agent, message):
         """Testa deteccao de RELATORIO_RAPIDO."""
         result = agent._detect_intent(message)
@@ -130,15 +144,18 @@ class TestRelatorioAgentIntents:
     # ==========================================================================
     # TIPOS_RELATORIO
     # ==========================================================================
-    @pytest.mark.parametrize("message", [
-        "tipos de relatorio disponiveis",
-        "quais relatorios posso gerar",
-        "lista de relatorios",
-        "relatorios disponiveis",
-        "tipos de relatorios possiveis",
-        "quais relatorios consigo gerar",
-        "menu de relatorios",
-    ])
+    @pytest.mark.parametrize(
+        "message",
+        [
+            "tipos de relatorio disponiveis",
+            "quais relatorios posso gerar",
+            "lista de relatorios",
+            "relatorios disponiveis",
+            "tipos de relatorios possiveis",
+            "quais relatorios consigo gerar",
+            "menu de relatorios",
+        ],
+    )
     def test_tipos_relatorio(self, agent, message):
         """Testa deteccao de TIPOS_RELATORIO."""
         result = agent._detect_intent(message)
@@ -147,16 +164,19 @@ class TestRelatorioAgentIntents:
     # ==========================================================================
     # LISTAR_RELATORIOS
     # ==========================================================================
-    @pytest.mark.parametrize("message", [
-        "relatorios gerados",
-        "relatorios recentes",
-        "historico de relatorios",
-        "ultimos relatorios",
-        "ver relatorios recentes",
-        "mostrar relatorios anteriores",
-        "relatorios salvos",
-        "relatorios anteriores",
-    ])
+    @pytest.mark.parametrize(
+        "message",
+        [
+            "relatorios gerados",
+            "relatorios recentes",
+            "historico de relatorios",
+            "ultimos relatorios",
+            "ver relatorios recentes",
+            "mostrar relatorios anteriores",
+            "relatorios salvos",
+            "relatorios anteriores",
+        ],
+    )
     def test_listar_relatorios(self, agent, message):
         """Testa deteccao de LISTAR_RELATORIOS."""
         result = agent._detect_intent(message)
@@ -165,14 +185,17 @@ class TestRelatorioAgentIntents:
     # ==========================================================================
     # ESTATISTICAS
     # ==========================================================================
-    @pytest.mark.parametrize("message", [
-        "estatisticas de relatorios",
-        "quantos relatorios",
-        "stats de relatorios",
-        "metricas de relatorios",
-        "indicadores de relatorios",
-        "total de relatorios",
-    ])
+    @pytest.mark.parametrize(
+        "message",
+        [
+            "estatisticas de relatorios",
+            "quantos relatorios",
+            "stats de relatorios",
+            "metricas de relatorios",
+            "indicadores de relatorios",
+            "total de relatorios",
+        ],
+    )
     def test_estatisticas(self, agent, message):
         """Testa deteccao de ESTATISTICAS."""
         result = agent._detect_intent(message)
@@ -181,14 +204,17 @@ class TestRelatorioAgentIntents:
     # ==========================================================================
     # Testes negativos - nao devem detectar intent
     # ==========================================================================
-    @pytest.mark.parametrize("message", [
-        "ola",
-        "bom dia",
-        "ajuda",
-        "obrigado",
-        "o que voce pode fazer",
-        "como funciona",
-    ])
+    @pytest.mark.parametrize(
+        "message",
+        [
+            "ola",
+            "bom dia",
+            "ajuda",
+            "obrigado",
+            "o que voce pode fazer",
+            "como funciona",
+        ],
+    )
     def test_nao_deve_detectar_intent(self, agent, message):
         """Testa que mensagens genericas nao detectam intent de relatorio."""
         result = agent._detect_intent(message)
@@ -200,25 +226,23 @@ class TestRelatorioAgentIntents:
     def test_gerar_antes_de_listar(self, agent):
         """Garante que 'gerar relatorio' nao detecta LISTAR_RELATORIOS."""
         result = agent._detect_intent("gerar relatorio")
-        assert result == RelatorioIntent.GERAR_RELATORIO, \
-            "Detectou LISTAR_RELATORIOS em vez de GERAR_RELATORIO"
+        assert result == RelatorioIntent.GERAR_RELATORIO, "Detectou LISTAR_RELATORIOS em vez de GERAR_RELATORIO"
 
     def test_exportar_antes_de_ver(self, agent):
         """Garante que 'exportar relatorio' nao detecta VER_RELATORIO."""
         result = agent._detect_intent("exportar relatorio")
-        assert result == RelatorioIntent.EXPORTAR_RELATORIO, \
-            "Detectou VER_RELATORIO em vez de EXPORTAR_RELATORIO"
+        assert result == RelatorioIntent.EXPORTAR_RELATORIO, "Detectou VER_RELATORIO em vez de EXPORTAR_RELATORIO"
 
     def test_relatorio_com_tipo_e_gerar(self, agent):
         """Garante que 'relatorio de horas extras' detecta GERAR_RELATORIO."""
         result = agent._detect_intent("relatorio de horas extras")
-        assert result == RelatorioIntent.GERAR_RELATORIO, \
-            "Nao detectou GERAR_RELATORIO para relatorio com tipo"
+        assert result == RelatorioIntent.GERAR_RELATORIO, "Nao detectou GERAR_RELATORIO para relatorio com tipo"
 
 
 # =============================================================================
 # TestRelatorioAgentHandlers - Handlers de cada intent
 # =============================================================================
+
 
 class TestRelatorioAgentHandlers:
     """Testes para os handlers do RelatorioAgent."""
@@ -309,9 +333,17 @@ class TestRelatorioAgentHandlers:
         tipos = result["data"]["tipos"]
         # Verifica se todos os tipos esperados estao presentes
         expected_keys = [
-            "horas_extras", "custos", "banco_horas", "substituicoes",
-            "disciplinar", "ocorrencias", "diaristas", "rondas",
-            "postos", "escalas", "geral",
+            "horas_extras",
+            "custos",
+            "banco_horas",
+            "substituicoes",
+            "disciplinar",
+            "ocorrencias",
+            "diaristas",
+            "rondas",
+            "postos",
+            "escalas",
+            "geral",
         ]
         for key in expected_keys:
             assert key in tipos, f"Tipo '{key}' nao encontrado"
@@ -348,8 +380,7 @@ class TestRelatorioAgentHandlers:
         assert len(relatorios) > 0
         # Verifica que RPT-xxx esta presente
         ids = [r["id"] for r in relatorios]
-        assert any(id_.startswith("RPT-") for id_ in ids), \
-            "Nenhum relatorio com prefixo RPT- encontrado"
+        assert any(id_.startswith("RPT-") for id_ in ids), "Nenhum relatorio com prefixo RPT- encontrado"
 
     @pytest.mark.asyncio
     async def test_handle_listar_relatorios_structure(self, agent):
@@ -466,7 +497,7 @@ class TestRelatorioAgentHandlers:
         por_tipo = result["data"]["por_tipo"]
         assert isinstance(por_tipo, dict)
         assert len(por_tipo) > 0
-        for key, val in por_tipo.items():
+        for _key, val in por_tipo.items():
             assert isinstance(val, int)
 
     @pytest.mark.asyncio
@@ -611,6 +642,7 @@ class TestRelatorioAgentHandlers:
 # TestRelatorioAgentHelpers - Metodos auxiliares
 # =============================================================================
 
+
 class TestRelatorioAgentHelpers:
     """Testes para metodos auxiliares do RelatorioAgent."""
 
@@ -622,34 +654,37 @@ class TestRelatorioAgentHelpers:
     # ==========================================================================
     # _detect_report_type
     # ==========================================================================
-    @pytest.mark.parametrize("message,expected_type", [
-        ("relatorio de horas extras", "horas_extras"),
-        ("relatorio de hora extra", "horas_extras"),
-        ("relatorio de custos", "custos"),
-        ("relatorio financeiro", "custos"),
-        ("relatorio de despesas", "custos"),
-        ("relatorio de banco de horas", "banco_horas"),
-        ("relatorio de banco horas", "banco_horas"),
-        ("relatorio de substituicoes", "substituicoes"),
-        ("relatorio disciplinar", "disciplinar"),
-        ("relatorio de advertencia", "disciplinar"),
-        ("relatorio de suspensao", "disciplinar"),
-        ("relatorio de ocorrencias", "ocorrencias"),
-        ("relatorio de ocorrencia", "ocorrencias"),
-        ("relatorio de diaristas", "diaristas"),
-        ("relatorio de diarista", "diaristas"),
-        ("relatorio de rondas", "rondas"),
-        ("relatorio de ronda", "rondas"),
-        ("relatorio de inspecao", "rondas"),
-        ("relatorio de postos", "postos"),
-        ("relatorio de posto", "postos"),
-        ("relatorio de escalas", "escalas"),
-        ("relatorio de escala", "escalas"),
-        ("relatorio geral", "geral"),
-        ("relatorio operacional", "geral"),
-        ("relatorio completo", "geral"),
-        ("relatorio consolidado", "geral"),
-    ])
+    @pytest.mark.parametrize(
+        "message,expected_type",
+        [
+            ("relatorio de horas extras", "horas_extras"),
+            ("relatorio de hora extra", "horas_extras"),
+            ("relatorio de custos", "custos"),
+            ("relatorio financeiro", "custos"),
+            ("relatorio de despesas", "custos"),
+            ("relatorio de banco de horas", "banco_horas"),
+            ("relatorio de banco horas", "banco_horas"),
+            ("relatorio de substituicoes", "substituicoes"),
+            ("relatorio disciplinar", "disciplinar"),
+            ("relatorio de advertencia", "disciplinar"),
+            ("relatorio de suspensao", "disciplinar"),
+            ("relatorio de ocorrencias", "ocorrencias"),
+            ("relatorio de ocorrencia", "ocorrencias"),
+            ("relatorio de diaristas", "diaristas"),
+            ("relatorio de diarista", "diaristas"),
+            ("relatorio de rondas", "rondas"),
+            ("relatorio de ronda", "rondas"),
+            ("relatorio de inspecao", "rondas"),
+            ("relatorio de postos", "postos"),
+            ("relatorio de posto", "postos"),
+            ("relatorio de escalas", "escalas"),
+            ("relatorio de escala", "escalas"),
+            ("relatorio geral", "geral"),
+            ("relatorio operacional", "geral"),
+            ("relatorio completo", "geral"),
+            ("relatorio consolidado", "geral"),
+        ],
+    )
     def test_detect_report_type(self, agent, message, expected_type):
         """Testa deteccao de tipo de relatorio."""
         result = agent._detect_report_type(message)
@@ -888,6 +923,7 @@ class TestRelatorioAgentHelpers:
 # TestRelatorioAgentInit - Inicializacao do agente
 # =============================================================================
 
+
 class TestRelatorioAgentInit:
     """Testes para inicializacao do RelatorioAgent."""
 
@@ -900,22 +936,22 @@ class TestRelatorioAgentInit:
     def test_init_with_db_creates_data_connector(self):
         """Testa inicializacao com db cria DataConnector."""
         mock_db = MagicMock()
-        with patch("modules.ai.bartolo.agents.relatorio_agent.RelatorioAgent.__init__",
-                    return_value=None) as mock_init:
+        with patch("modules.ai.bartolo.agents.relatorio_agent.RelatorioAgent.__init__", return_value=None):
             # Testar o fluxo real de init com mock do DataConnector
             agent = RelatorioAgent.__new__(RelatorioAgent)
             agent.db = mock_db
             agent.data_connector = None
 
-            with patch("modules.ai.bartolo.services.data_connector.DataConnector") as MockDC:
+            with patch("modules.ai.bartolo.services.data_connector.DataConnector") as mock_dc:
                 mock_connector = MagicMock()
-                MockDC.return_value = mock_connector
+                mock_dc.return_value = mock_connector
                 # Simular o init manualmente
                 agent.db = mock_db
                 agent.data_connector = None
                 if agent.db and not agent.data_connector:
                     try:
                         from modules.ai.bartolo.services.data_connector import DataConnector
+
                         agent.data_connector = DataConnector(mock_db)
                     except Exception:
                         agent.data_connector = None
@@ -934,10 +970,7 @@ class TestRelatorioAgentInit:
     def test_init_with_db_connector_failure(self):
         """Testa inicializacao quando DataConnector falha."""
         mock_db = MagicMock()
-        with patch(
-            "modules.ai.bartolo.agents.relatorio_agent.RelatorioAgent.__init__",
-            side_effect=None
-        ):
+        with patch("modules.ai.bartolo.agents.relatorio_agent.RelatorioAgent.__init__", side_effect=None):
             # Testar que falha no import nao quebra
             agent = RelatorioAgent.__new__(RelatorioAgent)
             agent.db = mock_db
@@ -1018,6 +1051,7 @@ class TestRelatorioAgentInit:
 # TestRelatorioAgentIntegration - Testes de integracao entre metodos
 # =============================================================================
 
+
 class TestRelatorioAgentIntegration:
     """Testes de integracao entre intent detection e handlers."""
 
@@ -1027,21 +1061,25 @@ class TestRelatorioAgentIntegration:
         return RelatorioAgent()
 
     @pytest.mark.asyncio
-    @pytest.mark.parametrize("message,expected_intent", [
-        ("gerar relatorio de horas extras do mes atual em pdf", RelatorioIntent.GERAR_RELATORIO.value),
-        ("exportar relatorio em pdf", RelatorioIntent.EXPORTAR_RELATORIO.value),
-        ("ver relatorio RPT-001", RelatorioIntent.VER_RELATORIO.value),
-        ("resumo operacional de hoje", RelatorioIntent.RELATORIO_RAPIDO.value),
-        ("quais tipos de relatorio disponiveis", RelatorioIntent.TIPOS_RELATORIO.value),
-        ("relatorios gerados recentemente", RelatorioIntent.LISTAR_RELATORIOS.value),
-        ("estatisticas de relatorios", RelatorioIntent.ESTATISTICAS.value),
-    ])
+    @pytest.mark.parametrize(
+        "message,expected_intent",
+        [
+            ("gerar relatorio de horas extras do mes atual em pdf", RelatorioIntent.GERAR_RELATORIO.value),
+            ("exportar relatorio em pdf", RelatorioIntent.EXPORTAR_RELATORIO.value),
+            ("ver relatorio RPT-001", RelatorioIntent.VER_RELATORIO.value),
+            ("resumo operacional de hoje", RelatorioIntent.RELATORIO_RAPIDO.value),
+            ("quais tipos de relatorio disponiveis", RelatorioIntent.TIPOS_RELATORIO.value),
+            ("relatorios gerados recentemente", RelatorioIntent.LISTAR_RELATORIOS.value),
+            ("estatisticas de relatorios", RelatorioIntent.ESTATISTICAS.value),
+        ],
+    )
     async def test_full_flow_intent_to_handler(self, agent, message, expected_intent):
         """Testa fluxo completo de intent detection ate handler."""
         result = await agent.process(message)
         assert result is not None, f"Resultado None para: '{message}'"
-        assert result["intent"] == expected_intent, \
+        assert result["intent"] == expected_intent, (
             f"Intent errado para: '{message}' - esperado '{expected_intent}', obtido '{result['intent']}'"
+        )
         assert "response" in result
         assert "data" in result
 

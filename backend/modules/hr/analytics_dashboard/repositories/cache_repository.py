@@ -2,16 +2,16 @@
 
 import logging
 from datetime import datetime, timedelta
-from typing import Optional, List, Any
+from typing import Any
 from uuid import UUID
 
-from sqlalchemy import select, update, delete, func, and_
+from sqlalchemy import and_, delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.hr.analytics_dashboard.models import (
     AnalyticsCache,
-    CacheType,
     CacheStatus,
+    CacheType,
 )
 
 logger = logging.getLogger(__name__)
@@ -27,7 +27,7 @@ class CacheRepository:
         self,
         cache_key: str,
         condominio_id: UUID,
-    ) -> Optional[AnalyticsCache]:
+    ) -> AnalyticsCache | None:
         """Busca cache por chave."""
         query = select(AnalyticsCache).where(
             AnalyticsCache.cache_key == cache_key,
@@ -47,7 +47,7 @@ class CacheRepository:
         self,
         cache_key: str,
         condominio_id: UUID,
-    ) -> Optional[AnalyticsCache]:
+    ) -> AnalyticsCache | None:
         """Busca cache válido (não expirado)."""
         query = select(AnalyticsCache).where(
             AnalyticsCache.cache_key == cache_key,
@@ -252,26 +252,20 @@ class CacheRepository:
         total = total_result.scalar()
 
         # Por status
-        status_query = (
-            select(
-                AnalyticsCache.status,
-                func.count(AnalyticsCache.id),
-            )
-            .group_by(AnalyticsCache.status)
-        )
+        status_query = select(
+            AnalyticsCache.status,
+            func.count(AnalyticsCache.id),
+        ).group_by(AnalyticsCache.status)
         if conditions:
             status_query = status_query.where(and_(*conditions))
         status_result = await self.db.execute(status_query)
         by_status = {row[0]: row[1] for row in status_result.all()}
 
         # Por tipo
-        type_query = (
-            select(
-                AnalyticsCache.cache_type,
-                func.count(AnalyticsCache.id),
-            )
-            .group_by(AnalyticsCache.cache_type)
-        )
+        type_query = select(
+            AnalyticsCache.cache_type,
+            func.count(AnalyticsCache.id),
+        ).group_by(AnalyticsCache.cache_type)
         if conditions:
             type_query = type_query.where(and_(*conditions))
         type_result = await self.db.execute(type_query)
@@ -304,7 +298,7 @@ class CacheRepository:
         self,
         condominio_id: UUID,
         limit: int = 10,
-    ) -> List[AnalyticsCache]:
+    ) -> list[AnalyticsCache]:
         """Retorna caches mais acessados."""
         query = (
             select(AnalyticsCache)

@@ -2,7 +2,6 @@
 
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Dict, List, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -18,12 +17,12 @@ class RequisitionItemBase(BaseModel):
     """Schema base para item de requisição."""
 
     description: str = Field(..., min_length=1, max_length=500)
-    specifications: Optional[str] = None
+    specifications: str | None = None
     unit_of_measure: str = Field(default="un", max_length=10)
     quantity_requested: Decimal = Field(..., gt=0)
-    estimated_unit_price: Optional[Decimal] = Field(None, ge=0)
-    product_id: Optional[UUID] = None
-    notes: Optional[str] = None
+    estimated_unit_price: Decimal | None = Field(None, ge=0)
+    product_id: UUID | None = None
+    notes: str | None = None
 
 
 class RequisitionItemCreate(RequisitionItemBase):
@@ -33,14 +32,14 @@ class RequisitionItemCreate(RequisitionItemBase):
 class RequisitionItemUpdate(BaseModel):
     """Schema para atualizar item de requisição."""
 
-    description: Optional[str] = Field(None, min_length=1, max_length=500)
-    specifications: Optional[str] = None
-    unit_of_measure: Optional[str] = None
-    quantity_requested: Optional[Decimal] = Field(None, gt=0)
-    quantity_approved: Optional[Decimal] = Field(None, ge=0)
-    estimated_unit_price: Optional[Decimal] = Field(None, ge=0)
-    product_id: Optional[UUID] = None
-    notes: Optional[str] = None
+    description: str | None = Field(None, min_length=1, max_length=500)
+    specifications: str | None = None
+    unit_of_measure: str | None = None
+    quantity_requested: Decimal | None = Field(None, gt=0)
+    quantity_approved: Decimal | None = Field(None, ge=0)
+    estimated_unit_price: Decimal | None = Field(None, ge=0)
+    product_id: UUID | None = None
+    notes: str | None = None
 
 
 class RequisitionItemResponse(RequisitionItemBase):
@@ -49,10 +48,10 @@ class RequisitionItemResponse(RequisitionItemBase):
     id: UUID
     requisition_id: UUID
     item_number: int
-    quantity_approved: Optional[Decimal] = None
+    quantity_approved: Decimal | None = None
     quantity_ordered: Decimal = Decimal("0")
     quantity_received: Decimal = Decimal("0")
-    estimated_total: Optional[Decimal] = None
+    estimated_total: Decimal | None = None
     created_at: datetime
 
     class Config:  # pylint: disable=too-few-public-methods
@@ -65,22 +64,22 @@ class PurchaseRequisitionBase(BaseModel):
     """Schema base para requisição de compra."""
 
     title: str = Field(..., min_length=1, max_length=200)
-    description: Optional[str] = None
-    justification: Optional[str] = None
+    description: str | None = None
+    justification: str | None = None
     requisition_type: RequisitionType = RequisitionType.MATERIAL
     priority: RequisitionPriority = RequisitionPriority.MEDIA
-    needed_by_date: Optional[date] = None
-    department: Optional[str] = Field(None, max_length=100)
-    cost_center: Optional[str] = Field(None, max_length=50)
+    needed_by_date: date | None = None
+    department: str | None = Field(None, max_length=100)
+    cost_center: str | None = Field(None, max_length=50)
     min_quotations: int = Field(default=3, ge=1, le=10)
-    quotation_deadline: Optional[date] = None
-    delivery_address: Optional[str] = None
-    delivery_contact: Optional[str] = Field(None, max_length=100)
-    delivery_phone: Optional[str] = Field(None, max_length=20)
-    delivery_instructions: Optional[str] = None
-    suggested_supplier_id: Optional[UUID] = None
-    supplier_justification: Optional[str] = None
-    notes: Optional[str] = None
+    quotation_deadline: date | None = None
+    delivery_address: str | None = None
+    delivery_contact: str | None = Field(None, max_length=100)
+    delivery_phone: str | None = Field(None, max_length=20)
+    delivery_instructions: str | None = None
+    suggested_supplier_id: UUID | None = None
+    supplier_justification: str | None = None
+    notes: str | None = None
 
 
 class PurchaseRequisitionCreate(PurchaseRequisitionBase):
@@ -88,29 +87,29 @@ class PurchaseRequisitionCreate(PurchaseRequisitionBase):
 
     condominio_id: UUID
     requester_id: UUID
-    items: List[RequisitionItemCreate] = Field(default=[], min_length=0)
+    items: list[RequisitionItemCreate] = Field(default=[], min_length=0)
 
 
 class PurchaseRequisitionUpdate(BaseModel):
     """Schema para atualizar requisição."""
 
-    title: Optional[str] = Field(None, min_length=1, max_length=200)
-    description: Optional[str] = None
-    justification: Optional[str] = None
-    requisition_type: Optional[RequisitionType] = None
-    priority: Optional[RequisitionPriority] = None
-    needed_by_date: Optional[date] = None
-    department: Optional[str] = None
-    cost_center: Optional[str] = None
-    min_quotations: Optional[int] = None
-    quotation_deadline: Optional[date] = None
-    delivery_address: Optional[str] = None
-    delivery_contact: Optional[str] = None
-    delivery_phone: Optional[str] = None
-    delivery_instructions: Optional[str] = None
-    suggested_supplier_id: Optional[UUID] = None
-    supplier_justification: Optional[str] = None
-    notes: Optional[str] = None
+    title: str | None = Field(None, min_length=1, max_length=200)
+    description: str | None = None
+    justification: str | None = None
+    requisition_type: RequisitionType | None = None
+    priority: RequisitionPriority | None = None
+    needed_by_date: date | None = None
+    department: str | None = None
+    cost_center: str | None = None
+    min_quotations: int | None = None
+    quotation_deadline: date | None = None
+    delivery_address: str | None = None
+    delivery_contact: str | None = None
+    delivery_phone: str | None = None
+    delivery_instructions: str | None = None
+    suggested_supplier_id: UUID | None = None
+    supplier_justification: str | None = None
+    notes: str | None = None
 
 
 class PurchaseRequisitionResponse(PurchaseRequisitionBase):
@@ -124,15 +123,15 @@ class PurchaseRequisitionResponse(PurchaseRequisitionBase):
     requester_id: UUID
     request_date: date
     estimated_total: Decimal = Decimal("0")
-    approved_budget: Optional[Decimal] = None
+    approved_budget: Decimal | None = None
     actual_total: Decimal = Decimal("0")
-    approved_at: Optional[datetime] = None
-    approved_by: Optional[UUID] = None
-    rejection_reason: Optional[str] = None
-    cancellation_reason: Optional[str] = None
-    items: List[RequisitionItemResponse] = []
+    approved_at: datetime | None = None
+    approved_by: UUID | None = None
+    rejection_reason: str | None = None
+    cancellation_reason: str | None = None
+    items: list[RequisitionItemResponse] = []
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
 
     class Config:  # pylint: disable=too-few-public-methods
         """Configuracao do schema."""
@@ -143,7 +142,7 @@ class PurchaseRequisitionResponse(PurchaseRequisitionBase):
 class PurchaseRequisitionListResponse(BaseModel):
     """Schema de resposta para lista de requisições."""
 
-    items: List[PurchaseRequisitionResponse]
+    items: list[PurchaseRequisitionResponse]
     total: int
     page: int = 1
     page_size: int = 50
@@ -152,15 +151,15 @@ class PurchaseRequisitionListResponse(BaseModel):
 class RequisitionApproveRequest(BaseModel):
     """Request para aprovar requisição."""
 
-    comment: Optional[str] = Field(None, max_length=500)
-    approved_budget: Optional[Decimal] = Field(None, ge=0)
+    comment: str | None = Field(None, max_length=500)
+    approved_budget: Decimal | None = Field(None, ge=0)
 
 
 class RequisitionRejectRequest(BaseModel):
     """Request para rejeitar requisição."""
 
     reason: str = Field(..., min_length=5, max_length=500)
-    comment: Optional[str] = Field(None, max_length=500)
+    comment: str | None = Field(None, max_length=500)
 
 
 class RequisitionCancelRequest(BaseModel):
@@ -173,24 +172,24 @@ class RequisitionStats(BaseModel):
     """Estatísticas de requisições."""
 
     total: int = 0
-    by_status: Dict[str, int] = {}
-    by_priority: Dict[str, int] = {}
-    by_type: Dict[str, int] = {}
+    by_status: dict[str, int] = {}
+    by_priority: dict[str, int] = {}
+    by_type: dict[str, int] = {}
     pending_approval: int = 0
     overdue: int = 0
     total_estimated: Decimal = Decimal("0")
-    average_approval_time_hours: Optional[float] = None
+    average_approval_time_hours: float | None = None
 
 
 class RequisitionFilter(BaseModel):
     """Filtros para busca de requisições."""
 
-    status: Optional[List[RequisitionStatus]] = None
-    priority: Optional[List[RequisitionPriority]] = None
-    requisition_type: Optional[List[RequisitionType]] = None
-    requester_id: Optional[UUID] = None
-    date_from: Optional[date] = None
-    date_to: Optional[date] = None
-    needed_by_from: Optional[date] = None
-    needed_by_to: Optional[date] = None
-    search: Optional[str] = None
+    status: list[RequisitionStatus] | None = None
+    priority: list[RequisitionPriority] | None = None
+    requisition_type: list[RequisitionType] | None = None
+    requester_id: UUID | None = None
+    date_from: date | None = None
+    date_to: date | None = None
+    needed_by_from: date | None = None
+    needed_by_to: date | None = None
+    search: str | None = None

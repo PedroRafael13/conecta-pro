@@ -1,15 +1,16 @@
 """Tests para LLMProvider."""
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
+
 from modules.ai.conversation.services.llm_provider import (
-    LLMModel,
-    LLMResponse,
-    LLMProvider,
-    OpenAIProvider,
     ClaudeProvider,
+    LLMModel,
+    LLMProvider,
+    LLMResponse,
     LocalFallbackProvider,
+    OpenAIProvider,
 )
 
 

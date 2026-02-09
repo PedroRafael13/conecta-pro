@@ -3,15 +3,13 @@ Schemas Pydantic para GuardianOccurrence.
 """
 
 from datetime import datetime
-from typing import Optional
-
-from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from modules.remote_gatehouse.models.guardian_occurrence import (
     OccurrenceSeverity,
     OccurrenceStatus,
     OccurrenceType,
 )
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class GuardianOccurrenceCreate(BaseModel):
@@ -21,43 +19,43 @@ class GuardianOccurrenceCreate(BaseModel):
     occurrence_type: OccurrenceType = Field(default=OccurrenceType.OTHER)
     severity: OccurrenceSeverity = Field(default=OccurrenceSeverity.MEDIUM)
     client_id: str = Field(..., description="ID do cliente")
-    contract_id: Optional[str] = Field(None, description="ID do contrato")
-    post_id: Optional[str] = Field(None, description="ID do posto")
+    contract_id: str | None = Field(None, description="ID do contrato")
+    post_id: str | None = Field(None, description="ID do posto")
 
     # Descrição
     title: str = Field(..., min_length=1, max_length=255)
     description: str = Field(..., min_length=1)
-    location: Optional[str] = Field(None, max_length=255)
-    location_details: Optional[str] = Field(None)
+    location: str | None = Field(None, max_length=255)
+    location_details: str | None = Field(None)
 
     # Ações
-    action_taken: Optional[str] = Field(None)
-    action_required: Optional[str] = Field(None)
+    action_taken: str | None = Field(None)
+    action_required: str | None = Field(None)
 
     # Pessoas
-    involved_persons: Optional[list[dict]] = Field(None)
-    witnesses: Optional[list[dict]] = Field(None)
-    reported_by: Optional[str] = Field(None, max_length=100)
-    reported_by_id: Optional[str] = Field(None)
+    involved_persons: list[dict] | None = Field(None)
+    witnesses: list[dict] | None = Field(None)
+    reported_by: str | None = Field(None, max_length=100)
+    reported_by_id: str | None = Field(None)
 
     # Serviços externos
     police_notified: bool = Field(default=False)
-    police_report_number: Optional[str] = Field(None, max_length=50)
+    police_report_number: str | None = Field(None, max_length=50)
     fire_department_notified: bool = Field(default=False)
     ambulance_notified: bool = Field(default=False)
 
     # Mídia
-    images: Optional[list[str]] = Field(None)
-    videos: Optional[list[str]] = Field(None)
-    audio_recordings: Optional[list[str]] = Field(None)
-    attachments: Optional[list[dict]] = Field(None)
+    images: list[str] | None = Field(None)
+    videos: list[str] | None = Field(None)
+    audio_recordings: list[str] | None = Field(None)
+    attachments: list[dict] | None = Field(None)
 
     # Timestamp
     event_timestamp: datetime = Field(..., description="Data/hora do evento")
 
     # Metadados
-    guardian_metadata: Optional[dict] = Field(None)
-    tags: Optional[list[str]] = Field(None)
+    guardian_metadata: dict | None = Field(None)
+    tags: list[str] | None = Field(None)
 
     model_config = ConfigDict(use_enum_values=True)
 
@@ -78,46 +76,46 @@ class GuardianOccurrenceResponse(BaseModel):
     severity: str
     status: str
     client_id: str
-    contract_id: Optional[str]
-    post_id: Optional[str]
+    contract_id: str | None
+    post_id: str | None
     title: str
     description: str
-    location: Optional[str]
-    location_details: Optional[str]
-    action_taken: Optional[str]
-    action_required: Optional[str]
-    resolution: Optional[str]
-    involved_persons: Optional[list]
-    witnesses: Optional[list]
-    reported_by: Optional[str]
-    reported_by_id: Optional[str]
-    operator_id: Optional[str]
-    operator_name: Optional[str]
-    response_time_seconds: Optional[int]
-    resolution_time_seconds: Optional[int]
-    escalated_to: Optional[str]
-    escalation_reason: Optional[str]
-    escalated_at: Optional[datetime]
+    location: str | None
+    location_details: str | None
+    action_taken: str | None
+    action_required: str | None
+    resolution: str | None
+    involved_persons: list | None
+    witnesses: list | None
+    reported_by: str | None
+    reported_by_id: str | None
+    operator_id: str | None
+    operator_name: str | None
+    response_time_seconds: int | None
+    resolution_time_seconds: int | None
+    escalated_to: str | None
+    escalation_reason: str | None
+    escalated_at: datetime | None
     police_notified: bool
-    police_report_number: Optional[str]
+    police_report_number: str | None
     fire_department_notified: bool
     ambulance_notified: bool
-    images: Optional[list]
-    videos: Optional[list]
-    audio_recordings: Optional[list]
-    attachments: Optional[list]
+    images: list | None
+    videos: list | None
+    audio_recordings: list | None
+    attachments: list | None
     event_timestamp: datetime
-    acknowledged_at: Optional[datetime]
-    resolved_at: Optional[datetime]
-    closed_at: Optional[datetime]
+    acknowledged_at: datetime | None
+    resolved_at: datetime | None
+    closed_at: datetime | None
     received_at: datetime
     is_false_alarm: bool
     requires_followup: bool
-    followup_notes: Optional[str]
+    followup_notes: str | None
     is_active: bool
     created_at: datetime
     updated_at: datetime
-    tags: Optional[list]
+    tags: list | None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -125,18 +123,18 @@ class GuardianOccurrenceResponse(BaseModel):
 class GuardianOccurrenceFilter(BaseModel):
     """Schema para filtrar ocorrências."""
 
-    search: Optional[str] = Field(None, description="Busca textual")
-    occurrence_type: Optional[OccurrenceType] = Field(None, description="Tipo")
-    severity: Optional[OccurrenceSeverity] = Field(None, description="Gravidade")
-    status: Optional[OccurrenceStatus] = Field(None, description="Status")
-    client_id: Optional[str] = Field(None, description="ID do cliente")
-    post_id: Optional[str] = Field(None, description="ID do posto")
-    is_open: Optional[bool] = Field(None, description="Está aberta")
-    is_critical: Optional[bool] = Field(None, description="É crítica")
-    is_false_alarm: Optional[bool] = Field(None, description="É falso alarme")
-    requires_followup: Optional[bool] = Field(None, description="Requer follow-up")
-    date_from: Optional[datetime] = Field(None, description="Data inicial")
-    date_to: Optional[datetime] = Field(None, description="Data final")
+    search: str | None = Field(None, description="Busca textual")
+    occurrence_type: OccurrenceType | None = Field(None, description="Tipo")
+    severity: OccurrenceSeverity | None = Field(None, description="Gravidade")
+    status: OccurrenceStatus | None = Field(None, description="Status")
+    client_id: str | None = Field(None, description="ID do cliente")
+    post_id: str | None = Field(None, description="ID do posto")
+    is_open: bool | None = Field(None, description="Está aberta")
+    is_critical: bool | None = Field(None, description="É crítica")
+    is_false_alarm: bool | None = Field(None, description="É falso alarme")
+    requires_followup: bool | None = Field(None, description="Requer follow-up")
+    date_from: datetime | None = Field(None, description="Data inicial")
+    date_to: datetime | None = Field(None, description="Data final")
 
     model_config = ConfigDict(use_enum_values=True)
 
@@ -154,7 +152,7 @@ class GuardianOccurrenceListResponse(BaseModel):
 class GuardianOccurrenceAcknowledge(BaseModel):
     """Schema para reconhecer ocorrência."""
 
-    notes: Optional[str] = Field(None, max_length=1000, description="Observações")
+    notes: str | None = Field(None, max_length=1000, description="Observações")
 
 
 class GuardianOccurrenceResolve(BaseModel):
@@ -163,7 +161,7 @@ class GuardianOccurrenceResolve(BaseModel):
     resolution: str = Field(..., min_length=1, description="Descrição da resolução")
     is_false_alarm: bool = Field(default=False, description="É falso alarme")
     requires_followup: bool = Field(default=False, description="Requer follow-up")
-    followup_notes: Optional[str] = Field(None, description="Notas de follow-up")
+    followup_notes: str | None = Field(None, description="Notas de follow-up")
 
 
 class GuardianOccurrenceEscalate(BaseModel):

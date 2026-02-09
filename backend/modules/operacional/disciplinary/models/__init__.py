@@ -2,14 +2,14 @@
 Models do modulo de Medidas Administrativas.
 """
 
+from .digital_signature import DigitalSignature, SignerType
 from .disciplinary_action import (
     DisciplinaryAction,
-    DisciplinaryActionType,
     DisciplinaryActionStatus,
+    DisciplinaryActionType,
     ReasonCategory,
 )
 from .disciplinary_template import DisciplinaryTemplate
-from .digital_signature import DigitalSignature, SignerType
 
 __all__ = [
     "DisciplinaryAction",

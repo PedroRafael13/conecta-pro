@@ -342,11 +342,13 @@ class TestClosingWorkflow:
         result.add_step(step2)
 
         # Adiciona erro
-        result.add_issue(AuditIssue(
-            issue_type=AuditIssueType.UNBALANCED_ENTRY,
-            severity="ERROR",
-            message="Diferença de R$ 100,00",
-        ))
+        result.add_issue(
+            AuditIssue(
+                issue_type=AuditIssueType.UNBALANCED_ENTRY,
+                severity="ERROR",
+                message="Diferença de R$ 100,00",
+            )
+        )
 
         assert len(result.steps) == 2
         assert result.steps[1].status == "failed"
@@ -400,9 +402,7 @@ class TestAudit:
         )
 
         for _ in range(5):
-            result.add_issue(AuditIssue(
-                AuditIssueType.MISSING_DOCUMENT, "WARNING", "Aviso"
-            ))
+            result.add_issue(AuditIssue(AuditIssueType.MISSING_DOCUMENT, "WARNING", "Aviso"))
 
         assert len(result.issues) == 5
         assert result.has_errors is False

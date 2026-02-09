@@ -1,29 +1,27 @@
 """Gerenciador de sincronização offline."""
 
 import hashlib
-import json
 import logging
 import uuid
 from datetime import datetime, timedelta
-from typing import Any, Optional
 
-from sqlalchemy import select, update, delete, func, and_, or_
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from modules.mobile.models.sync_queue import (
-    SyncQueueItem,
-    SyncOperationType,
-    SyncStatus,
-    ConflictResolution,
-)
 from modules.mobile.models.mobile_session import MobileSession
+from modules.mobile.models.sync_queue import (
+    ConflictResolution,
+    SyncOperationType,
+    SyncQueueItem,
+    SyncStatus,
+)
 from modules.mobile.schemas.sync_schemas import (
+    MobileSyncOperation,
     MobileSyncRequest,
     MobileSyncResponse,
-    MobileSyncOperation,
-    SyncOperationResult,
     ServerChange,
     SyncConflict,
+    SyncOperationResult,
 )
 
 logger = logging.getLogger(__name__)
@@ -112,23 +110,17 @@ class OfflineSyncManager:
         start_time = datetime.utcnow()
 
         # Obter ou criar sessão mobile
-        session = await self._get_or_create_session(
-            db, user_id, sync_request.device_id
-        )
+        session = await self._get_or_create_session(db, user_id, sync_request.device_id)
 
         # Validar sync token
-        last_sync = await self._validate_sync_token(
-            session, sync_request.sync_token
-        )
+        last_sync = await self._validate_sync_token(session, sync_request.sync_token)
 
         # Processar operações do cliente
         operation_results = []
         conflicts = []
 
-        for operation in sync_request.operations[:self.max_operations]:
-            result, conflict = await self._process_operation(
-                db, user_id, operation, last_sync
-            )
+        for operation in sync_request.operations[: self.max_operations]:
+            result, conflict = await self._process_operation(db, user_id, operation, last_sync)
             operation_results.append(result)
             if conflict:
                 conflicts.append(conflict)
@@ -144,10 +136,7 @@ class OfflineSyncManager:
         # Atualizar sessão
         session.sync_token = new_sync_token
         session.last_sync_at = start_time
-        session.pending_operations = len([
-            r for r in operation_results
-            if r.status in ["pending", "conflict"]
-        ])
+        session.pending_operations = len([r for r in operation_results if r.status in ["pending", "conflict"]])
         session.connection_quality = sync_request.connection_quality
 
         await db.commit()
@@ -189,8 +178,8 @@ class OfflineSyncManager:
     async def _validate_sync_token(
         self,
         session: MobileSession,
-        sync_token: Optional[str],
-    ) -> Optional[datetime]:
+        sync_token: str | None,
+    ) -> datetime | None:
         """
         Valida sync token e retorna timestamp do último sync.
 
@@ -218,8 +207,8 @@ class OfflineSyncManager:
         db: AsyncSession,
         user_id: int,
         operation: MobileSyncOperation,
-        last_sync: Optional[datetime],
-    ) -> tuple[SyncOperationResult, Optional[SyncConflict]]:
+        last_sync: datetime | None,
+    ) -> tuple[SyncOperationResult, SyncConflict | None]:
         """
         Processa uma operação de sync.
 
@@ -235,15 +224,11 @@ class OfflineSyncManager:
             ), None
 
         # Verificar conflito
-        conflict = await self._detect_conflict(
-            db, operation, last_sync, table_config
-        )
+        conflict = await self._detect_conflict(db, operation, last_sync, table_config)
 
         if conflict:
             # Aplicar estratégia de resolução
-            resolved, conflict_result = await self._resolve_conflict(
-                db, user_id, operation, conflict, table_config
-            )
+            resolved, conflict_result = await self._resolve_conflict(db, user_id, operation, conflict, table_config)
 
             if not resolved:
                 return SyncOperationResult(
@@ -273,9 +258,9 @@ class OfflineSyncManager:
         self,
         db: AsyncSession,
         operation: MobileSyncOperation,
-        last_sync: Optional[datetime],
+        last_sync: datetime | None,
         table_config: dict,
-    ) -> Optional[dict]:
+    ) -> dict | None:
         """
         Detecta conflito com dados do servidor.
 
@@ -310,17 +295,14 @@ class OfflineSyncManager:
         operation: MobileSyncOperation,
         server_data: dict,
         table_config: dict,
-    ) -> tuple[bool, Optional[SyncConflict]]:
+    ) -> tuple[bool, SyncConflict | None]:
         """
         Resolve conflito entre cliente e servidor.
 
         Returns:
             Tupla (resolvido_automaticamente, conflito_para_usuário)
         """
-        strategy = table_config.get(
-            "conflict_resolution",
-            ConflictResolution.LAST_WRITE_WINS
-        )
+        strategy = table_config.get("conflict_resolution", ConflictResolution.LAST_WRITE_WINS)
 
         if strategy == ConflictResolution.LAST_WRITE_WINS:
             # Cliente mais recente vence
@@ -370,7 +352,7 @@ class OfflineSyncManager:
         self,
         client_data: dict,
         server_data: dict,
-    ) -> Optional[dict]:
+    ) -> dict | None:
         """
         Tenta merge automático de dados.
 
@@ -421,15 +403,13 @@ class OfflineSyncManager:
         db.add(queue_item)
 
         # TODO: Aplicar operação real nas tabelas quando disponíveis
-        logger.info(
-            f"Applied operation: {operation.operation} on {operation.table}:{operation.record_id}"
-        )
+        logger.info(f"Applied operation: {operation.operation} on {operation.table}:{operation.record_id}")
 
     async def _get_server_changes(
         self,
         db: AsyncSession,
         user_id: int,
-        since: Optional[datetime],
+        since: datetime | None,
         tables: list[str],
     ) -> list[ServerChange]:
         """
@@ -454,7 +434,7 @@ class OfflineSyncManager:
             if table not in self.SYNCABLE_TABLES:
                 continue
 
-            table_config = self.SYNCABLE_TABLES[table]
+            self.SYNCABLE_TABLES[table]
 
             # TODO: Implementar query real quando tabelas estiverem disponíveis
             # Por ora, retornar lista vazia (sem mudanças)
@@ -474,7 +454,7 @@ class OfflineSyncManager:
             #         timestamp=record.updated_at,
             #     ))
 
-        return changes[:self.max_server_changes]
+        return changes[: self.max_server_changes]
 
     async def resolve_user_conflict(
         self,
@@ -482,7 +462,7 @@ class OfflineSyncManager:
         user_id: int,
         conflict_id: str,
         resolution: str,  # "use_client", "use_server", "merge"
-        merged_data: Optional[dict] = None,
+        merged_data: dict | None = None,
     ) -> SyncOperationResult:
         """
         Resolve conflito decidido pelo usuário.
@@ -551,14 +531,20 @@ class OfflineSyncManager:
         device_id: str,
     ) -> list[SyncQueueItem]:
         """Obtém operações pendentes para um dispositivo."""
-        query = select(SyncQueueItem).where(
-            SyncQueueItem.user_id == user_id,
-            SyncQueueItem.device_id == device_id,
-            SyncQueueItem.status.in_([
-                SyncStatus.PENDING,
-                SyncStatus.CONFLICT,
-            ]),
-        ).order_by(SyncQueueItem.client_timestamp)
+        query = (
+            select(SyncQueueItem)
+            .where(
+                SyncQueueItem.user_id == user_id,
+                SyncQueueItem.device_id == device_id,
+                SyncQueueItem.status.in_(
+                    [
+                        SyncStatus.PENDING,
+                        SyncStatus.CONFLICT,
+                    ]
+                ),
+            )
+            .order_by(SyncQueueItem.client_timestamp)
+        )
 
         result = await db.execute(query)
         return list(result.scalars().all())

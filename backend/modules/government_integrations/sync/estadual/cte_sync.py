@@ -9,12 +9,14 @@ Extrai e sincroniza:
 """
 
 import logging
-from datetime import datetime, date, timedelta
-from typing import Optional, Dict, Any, List, AsyncGenerator
+from collections.abc import AsyncGenerator
+from datetime import datetime
 from decimal import Decimal
-import xml.etree.ElementTree as ET
+from typing import Any
 
-from ..base_sync import BaseSynchronizer, SyncConfig, SyncResult
+import defusedxml.ElementTree as ET  # noqa: N817
+
+from ..base_sync import BaseSynchronizer, SyncConfig
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +56,7 @@ class CTeSynchronizer(BaseSynchronizer):
     async def _extrair_dados(
         self,
         config: SyncConfig,
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+    ) -> AsyncGenerator[dict[str, Any], None]:
         """
         Extrai CT-e do webservice SEFAZ.
 
@@ -66,10 +68,7 @@ class CTeSynchronizer(BaseSynchronizer):
         """
         cnpj = self._normalizar_cnpj(config.cnpj_empresa)
 
-        logger.info(
-            f"[CT-e] Extraindo dados - CNPJ: {cnpj}, "
-            f"Periodo: {config.data_inicial} a {config.data_final}"
-        )
+        logger.info(f"[CT-e] Extraindo dados - CNPJ: {cnpj}, Periodo: {config.data_inicial} a {config.data_final}")
 
         # 1. CT-e emitidos
         async for cte in self._consultar_cte_emitidos(cnpj, config):
@@ -87,7 +86,7 @@ class CTeSynchronizer(BaseSynchronizer):
         self,
         cnpj: str,
         config: SyncConfig,
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+    ) -> AsyncGenerator[dict[str, Any], None]:
         """Consulta CT-e emitidos pela transportadora."""
         try:
             if not self.sefaz_manager:
@@ -105,12 +104,14 @@ class CTeSynchronizer(BaseSynchronizer):
                 xml = await self._baixar_xml(cte.get("chave"))
                 dados = self._parse_cte_xml(xml) if xml else {}
 
-                dados.update({
-                    "tipo": "cte_emitido",
-                    "chave_acesso": cte.get("chave"),
-                    "direcao": "emitido",
-                    "xml_original": xml,
-                })
+                dados.update(
+                    {
+                        "tipo": "cte_emitido",
+                        "chave_acesso": cte.get("chave"),
+                        "direcao": "emitido",
+                        "xml_original": xml,
+                    }
+                )
 
                 yield dados
 
@@ -122,7 +123,7 @@ class CTeSynchronizer(BaseSynchronizer):
         self,
         cnpj: str,
         config: SyncConfig,
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+    ) -> AsyncGenerator[dict[str, Any], None]:
         """Consulta CT-e onde a empresa e tomadora."""
         try:
             if not self.sefaz_manager:
@@ -137,19 +138,25 @@ class CTeSynchronizer(BaseSynchronizer):
 
             for cte in ctes or []:
                 xml = await self._baixar_xml(cte.get("chave"))
-                dados = self._parse_cte_xml(xml) if xml else {
-                    "numero": cte.get("numero"),
-                    "data_emissao": self._parse_data(cte.get("data_emissao")),
-                    "valor_total": self._parse_decimal(cte.get("valor")),
-                    "cnpj_emitente": cte.get("cnpj_emitente"),
-                }
+                dados = (
+                    self._parse_cte_xml(xml)
+                    if xml
+                    else {
+                        "numero": cte.get("numero"),
+                        "data_emissao": self._parse_data(cte.get("data_emissao")),
+                        "valor_total": self._parse_decimal(cte.get("valor")),
+                        "cnpj_emitente": cte.get("cnpj_emitente"),
+                    }
+                )
 
-                dados.update({
-                    "tipo": "cte_tomado",
-                    "chave_acesso": cte.get("chave"),
-                    "direcao": "tomado",
-                    "xml_original": xml,
-                })
+                dados.update(
+                    {
+                        "tipo": "cte_tomado",
+                        "chave_acesso": cte.get("chave"),
+                        "direcao": "tomado",
+                        "xml_original": xml,
+                    }
+                )
 
                 yield dados
 
@@ -160,7 +167,7 @@ class CTeSynchronizer(BaseSynchronizer):
         self,
         cnpj: str,
         config: SyncConfig,
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+    ) -> AsyncGenerator[dict[str, Any], None]:
         """Consulta eventos dos CT-e."""
         try:
             if not self.sefaz_manager:
@@ -193,7 +200,7 @@ class CTeSynchronizer(BaseSynchronizer):
         except Exception as e:
             logger.error(f"[CT-e] Erro consultando eventos: {e}")
 
-    async def _baixar_xml(self, chave: str) -> Optional[bytes]:
+    async def _baixar_xml(self, chave: str) -> bytes | None:
         """Baixa XML completo do CT-e."""
         try:
             if not self.sefaz_manager or not chave:
@@ -213,11 +220,11 @@ class CTeSynchronizer(BaseSynchronizer):
         self,
         cnpj: str,
         config: SyncConfig,
-    ) -> List[Dict]:
+    ) -> list[dict]:
         """Busca CT-e no banco para consultar eventos."""
         return []
 
-    def _parse_cte_xml(self, xml: bytes) -> Dict[str, Any]:
+    def _parse_cte_xml(self, xml: bytes) -> dict[str, Any]:
         """Extrai dados do XML do CT-e."""
         if not xml:
             return {}
@@ -225,19 +232,19 @@ class CTeSynchronizer(BaseSynchronizer):
         try:
             root = ET.fromstring(xml)
 
-            infCte = root.find(".//cte:infCte", self.NS_CTE)
-            if infCte is None:
-                infCte = root.find(".//infCte")
+            inf_cte = root.find(".//cte:infCte", self.NS_CTE)
+            if inf_cte is None:
+                inf_cte = root.find(".//infCte")
 
-            if infCte is None:
+            if inf_cte is None:
                 return {}
 
-            ide = infCte.find("cte:ide", self.NS_CTE) or infCte.find("ide")
-            emit = infCte.find("cte:emit", self.NS_CTE) or infCte.find("emit")
-            rem = infCte.find("cte:rem", self.NS_CTE) or infCte.find("rem")
-            dest = infCte.find("cte:dest", self.NS_CTE) or infCte.find("dest")
-            vPrest = infCte.find("cte:vPrest", self.NS_CTE) or infCte.find("vPrest")
-            infCarga = infCte.find("cte:infCarga", self.NS_CTE) or infCte.find("infCarga")
+            ide = inf_cte.find("cte:ide", self.NS_CTE) or inf_cte.find("ide")
+            emit = inf_cte.find("cte:emit", self.NS_CTE) or inf_cte.find("emit")
+            rem = inf_cte.find("cte:rem", self.NS_CTE) or inf_cte.find("rem")
+            dest = inf_cte.find("cte:dest", self.NS_CTE) or inf_cte.find("dest")
+            v_prest = inf_cte.find("cte:vPrest", self.NS_CTE) or inf_cte.find("vPrest")
+            inf_carga = inf_cte.find("cte:infCarga", self.NS_CTE) or inf_cte.find("infCarga")
 
             dados = {
                 "numero": self._get_text(ide, "nCT"),
@@ -255,43 +262,55 @@ class CTeSynchronizer(BaseSynchronizer):
             }
 
             if emit:
-                dados.update({
-                    "cnpj_emitente": self._get_text(emit, "CNPJ"),
-                    "razao_social_emitente": self._get_text(emit, "xNome"),
-                    "ie_emitente": self._get_text(emit, "IE"),
-                    "uf_emitente": self._get_text(emit, "enderEmit/UF"),
-                })
+                dados.update(
+                    {
+                        "cnpj_emitente": self._get_text(emit, "CNPJ"),
+                        "razao_social_emitente": self._get_text(emit, "xNome"),
+                        "ie_emitente": self._get_text(emit, "IE"),
+                        "uf_emitente": self._get_text(emit, "enderEmit/UF"),
+                    }
+                )
 
             if rem:
-                dados.update({
-                    "cnpj_remetente": self._get_text(rem, "CNPJ") or self._get_text(rem, "CPF"),
-                    "razao_social_remetente": self._get_text(rem, "xNome"),
-                })
+                dados.update(
+                    {
+                        "cnpj_remetente": self._get_text(rem, "CNPJ") or self._get_text(rem, "CPF"),
+                        "razao_social_remetente": self._get_text(rem, "xNome"),
+                    }
+                )
 
             if dest:
-                dados.update({
-                    "cnpj_destinatario": self._get_text(dest, "CNPJ") or self._get_text(dest, "CPF"),
-                    "razao_social_destinatario": self._get_text(dest, "xNome"),
-                })
+                dados.update(
+                    {
+                        "cnpj_destinatario": self._get_text(dest, "CNPJ") or self._get_text(dest, "CPF"),
+                        "razao_social_destinatario": self._get_text(dest, "xNome"),
+                    }
+                )
 
-            if vPrest:
-                dados.update({
-                    "valor_total": self._parse_decimal(self._get_text(vPrest, "vTPrest")),
-                    "valor_receber": self._parse_decimal(self._get_text(vPrest, "vRec")),
-                })
+            if v_prest:
+                dados.update(
+                    {
+                        "valor_total": self._parse_decimal(self._get_text(v_prest, "vTPrest")),
+                        "valor_receber": self._parse_decimal(self._get_text(v_prest, "vRec")),
+                    }
+                )
 
-            if infCarga:
-                dados.update({
-                    "valor_carga": self._parse_decimal(self._get_text(infCarga, "vCarga")),
-                    "produto_predominante": self._get_text(infCarga, "proPred"),
-                })
+            if inf_carga:
+                dados.update(
+                    {
+                        "valor_carga": self._parse_decimal(self._get_text(inf_carga, "vCarga")),
+                        "produto_predominante": self._get_text(inf_carga, "proPred"),
+                    }
+                )
 
             # NF-e vinculadas
             nfes = []
-            for infNFe in infCte.findall(".//cte:infNFe", self.NS_CTE) or infCte.findall(".//infNFe"):
-                nfes.append({
-                    "chave": self._get_text(infNFe, "chave"),
-                })
+            for inf_nfe in inf_cte.findall(".//cte:infNFe", self.NS_CTE) or inf_cte.findall(".//infNFe"):
+                nfes.append(
+                    {
+                        "chave": self._get_text(inf_nfe, "chave"),
+                    }
+                )
             dados["nfes_vinculadas"] = nfes
 
             return dados
@@ -300,7 +319,7 @@ class CTeSynchronizer(BaseSynchronizer):
             logger.error(f"[CT-e] Erro parseando XML: {e}")
             return {}
 
-    def _get_text(self, element, path: str) -> Optional[str]:
+    def _get_text(self, element, path: str) -> str | None:
         """Obtem texto de elemento XML."""
         if element is None:
             return None
@@ -313,7 +332,7 @@ class CTeSynchronizer(BaseSynchronizer):
 
     async def _processar_registro(
         self,
-        registro: Dict[str, Any],
+        registro: dict[str, Any],
         config: SyncConfig,
     ) -> bool:
         """Processa registro extraido."""
@@ -328,19 +347,17 @@ class CTeSynchronizer(BaseSynchronizer):
 
     async def _salvar_cte(
         self,
-        registro: Dict[str, Any],
+        registro: dict[str, Any],
         config: SyncConfig,
     ) -> bool:
         """Salva ou atualiza CT-e no banco."""
-        from ..models.sync_models import DocumentoFiscal, TipoDocumentoFiscal, StatusDocumentoFiscal
+        from ..models.sync_models import DocumentoFiscal, StatusDocumentoFiscal, TipoDocumentoFiscal
 
         chave = registro.get("chave_acesso")
         if not chave:
             return False
 
-        existente = self.db.query(DocumentoFiscal).filter(
-            DocumentoFiscal.chave_acesso == chave
-        ).first()
+        existente = self.db.query(DocumentoFiscal).filter(DocumentoFiscal.chave_acesso == chave).first()
 
         if existente:
             existente.xml_original = registro.get("xml_original") or existente.xml_original
@@ -381,7 +398,7 @@ class CTeSynchronizer(BaseSynchronizer):
         self.db.add(novo)
         return True
 
-    async def _salvar_evento(self, registro: Dict[str, Any]) -> bool:
+    async def _salvar_evento(self, registro: dict[str, Any]) -> bool:
         """Salva evento de CT-e."""
         from ..models.sync_models import DocumentoFiscal, EventoDocumentoFiscal, StatusDocumentoFiscal
 
@@ -389,18 +406,20 @@ class CTeSynchronizer(BaseSynchronizer):
         if not chave:
             return False
 
-        cte = self.db.query(DocumentoFiscal).filter(
-            DocumentoFiscal.chave_acesso == chave
-        ).first()
+        cte = self.db.query(DocumentoFiscal).filter(DocumentoFiscal.chave_acesso == chave).first()
 
         if not cte:
             return False
 
-        existente = self.db.query(EventoDocumentoFiscal).filter(
-            EventoDocumentoFiscal.documento_id == cte.id,
-            EventoDocumentoFiscal.tipo_evento == registro.get("tipo_evento"),
-            EventoDocumentoFiscal.sequencia == registro.get("sequencia", 1),
-        ).first()
+        existente = (
+            self.db.query(EventoDocumentoFiscal)
+            .filter(
+                EventoDocumentoFiscal.documento_id == cte.id,
+                EventoDocumentoFiscal.tipo_evento == registro.get("tipo_evento"),
+                EventoDocumentoFiscal.sequencia == registro.get("sequencia", 1),
+            )
+            .first()
+        )
 
         if existente:
             return False
@@ -422,30 +441,40 @@ class CTeSynchronizer(BaseSynchronizer):
 
         return True
 
-    def _obter_ultima_sincronizacao(self, cnpj: str) -> Optional[datetime]:
+    def _obter_ultima_sincronizacao(self, cnpj: str) -> datetime | None:
         """Obtem ultima sincronizacao de CT-e."""
-        from ..models.sync_models import SyncLog, StatusSincronizacao
+        from ..models.sync_models import StatusSincronizacao, SyncLog
 
-        ultimo = self.db.query(SyncLog).filter(
-            SyncLog.cnpj_empresa == cnpj,
-            SyncLog.servico == self.SERVICO_NOME,
-            SyncLog.status == StatusSincronizacao.SUCESSO,
-        ).order_by(SyncLog.fim_execucao.desc()).first()
+        ultimo = (
+            self.db.query(SyncLog)
+            .filter(
+                SyncLog.cnpj_empresa == cnpj,
+                SyncLog.servico == self.SERVICO_NOME,
+                SyncLog.status == StatusSincronizacao.SUCESSO,
+            )
+            .order_by(SyncLog.fim_execucao.desc())
+            .first()
+        )
 
         return ultimo.fim_execucao if ultimo else None
 
-    async def obter_resumo(self, cnpj: str) -> Dict[str, Any]:
+    async def obter_resumo(self, cnpj: str) -> dict[str, Any]:
         """Obtem resumo dos CT-e sincronizados."""
-        from ..models.sync_models import DocumentoFiscal, TipoDocumentoFiscal
         from sqlalchemy import func
 
-        totais = self.db.query(
-            func.count(DocumentoFiscal.id),
-            func.sum(DocumentoFiscal.valor_total),
-        ).filter(
-            DocumentoFiscal.cnpj_empresa == cnpj,
-            DocumentoFiscal.tipo == TipoDocumentoFiscal.CTE,
-        ).first()
+        from ..models.sync_models import DocumentoFiscal, TipoDocumentoFiscal
+
+        totais = (
+            self.db.query(
+                func.count(DocumentoFiscal.id),
+                func.sum(DocumentoFiscal.valor_total),
+            )
+            .filter(
+                DocumentoFiscal.cnpj_empresa == cnpj,
+                DocumentoFiscal.tipo == TipoDocumentoFiscal.CTE,
+            )
+            .first()
+        )
 
         return {
             "total_ctes": totais[0] or 0,

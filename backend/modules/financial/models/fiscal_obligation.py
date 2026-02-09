@@ -2,7 +2,7 @@
 
 from datetime import date, datetime
 from decimal import Decimal
-from enum import Enum
+from enum import StrEnum
 from uuid import uuid4
 
 from sqlalchemy import Boolean, Column, Date, DateTime, ForeignKey, Integer, Numeric, String, Text
@@ -12,7 +12,7 @@ from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from core.models.base import Base
 
 
-class ObrigacaoTipo(str, Enum):
+class ObrigacaoTipo(StrEnum):
     """Tipo de obrigacao fiscal."""
 
     # Federais
@@ -46,7 +46,7 @@ class ObrigacaoTipo(str, Enum):
     SUFRAMA_PIN = "suframa_pin"  # Protocolo de Ingresso de Mercadorias
 
 
-class ObrigacaoStatus(str, Enum):
+class ObrigacaoStatus(StrEnum):
     """Status da obrigacao."""
 
     PENDENTE = "pendente"
@@ -62,7 +62,7 @@ class ObrigacaoStatus(str, Enum):
     NAO_APLICAVEL = "nao_aplicavel"
 
 
-class ObrigacaoFrequencia(str, Enum):
+class ObrigacaoFrequencia(StrEnum):
     """Frequencia da obrigacao."""
 
     MENSAL = "mensal"
@@ -74,7 +74,7 @@ class ObrigacaoFrequencia(str, Enum):
     EVENTUAL = "eventual"
 
 
-class ZonaFrancaTipo(str, Enum):
+class ZonaFrancaTipo(StrEnum):
     """Tipo de beneficio Zona Franca."""
 
     ZFM = "zfm"  # Zona Franca de Manaus
@@ -82,7 +82,7 @@ class ZonaFrancaTipo(str, Enum):
     SUFRAMA_OUTRAS = "suframa_outras"  # Outras areas incentivadas
 
 
-class SUFRAMAStatus(str, Enum):
+class SUFRAMAStatus(StrEnum):
     """Status do cadastro SUFRAMA."""
 
     ATIVO = "ativo"
@@ -300,9 +300,7 @@ class SUFRAMAOperacao(Base):
 
     id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
     condominio_id = Column(PGUUID(as_uuid=True), nullable=False, index=True)
-    suframa_config_id = Column(
-        PGUUID(as_uuid=True), ForeignKey("suframa_configs.id"), nullable=False
-    )
+    suframa_config_id = Column(PGUUID(as_uuid=True), ForeignKey("suframa_configs.id"), nullable=False)
 
     # Documento fiscal
     documento_tipo = Column(String(10), nullable=False)  # nfe, nfse
@@ -431,9 +429,7 @@ class SimplesNacionalDAS(Base):
     valor_iss = Column(Numeric(15, 2), nullable=True)
 
     # Status
-    status = Column(
-        String(20), nullable=False, default="pendente"
-    )  # pendente, gerado, pago, vencido
+    status = Column(String(20), nullable=False, default="pendente")  # pendente, gerado, pago, vencido
     data_vencimento = Column(Date, nullable=False)
     data_pagamento = Column(Date, nullable=True)
 
@@ -651,9 +647,7 @@ def calcular_das_anexo_iii(receita_bruta_mes: Decimal, rbt12: Decimal) -> dict:
     # Calcular aliquota efetiva
     # Formula: (RBT12 x Aliquota - Parcela a Deduzir) / RBT12
     if rbt12 > 0:
-        aliquota_efetiva = (
-            ((rbt12 * faixa_info["aliquota"] / 100) - faixa_info["deducao"]) / rbt12 * 100
-        )
+        aliquota_efetiva = ((rbt12 * faixa_info["aliquota"] / 100) - faixa_info["deducao"]) / rbt12 * 100
     else:
         aliquota_efetiva = faixa_info["aliquota"]
 

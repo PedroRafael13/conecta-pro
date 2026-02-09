@@ -4,27 +4,30 @@ QA Session Model - Sprint 53.
 Modelo para sessoes de perguntas e respostas com IA.
 """
 
+import uuid
+from datetime import datetime
+from enum import StrEnum
+
 from sqlalchemy import (
-    Column,
-    String,
-    Text,
     Boolean,
+    Column,
     DateTime,
-    Integer,
     Float,
     ForeignKey,
+    Integer,
+    String,
+    Text,
+)
+from sqlalchemy import (
     Enum as SQLEnum,
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import relationship
-from datetime import datetime
-import uuid
-import enum
 
 from core.models.base import Base
 
 
-class QASessionStatusEnum(str, enum.Enum):
+class QASessionStatusEnum(StrEnum):
     """Status da sessao Q&A."""
 
     ACTIVE = "active"
@@ -33,7 +36,7 @@ class QASessionStatusEnum(str, enum.Enum):
     ESCALATED = "escalated"
 
 
-class QASourceEnum(str, enum.Enum):
+class QASourceEnum(StrEnum):
     """Origem da sessao Q&A."""
 
     WEB_WIDGET = "web_widget"
@@ -46,7 +49,7 @@ class QASourceEnum(str, enum.Enum):
     INTERNAL = "internal"
 
 
-class QAInteractionTypeEnum(str, enum.Enum):
+class QAInteractionTypeEnum(StrEnum):
     """Tipo de interacao."""
 
     QUESTION = "question"
@@ -56,7 +59,7 @@ class QAInteractionTypeEnum(str, enum.Enum):
     ESCALATION = "escalation"
 
 
-class QAResponseTypeEnum(str, enum.Enum):
+class QAResponseTypeEnum(StrEnum):
     """Tipo de resposta."""
 
     DIRECT_ANSWER = "direct_answer"
@@ -153,9 +156,7 @@ class QASession(Base):
 
     # Auditoria
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     ativo = Column(Boolean, default=True, nullable=False)
 
     # Relationships
@@ -245,16 +246,14 @@ class QAInteraction(Base):
 
     # Auditoria
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relationships
     session = relationship("QASession", back_populates="interactions")
     follow_ups = relationship(
         "QAInteraction",
         backref="parent_interaction",
-        remote_side=[id],
+        remote_side=[id],  # noqa: A003
     )
 
     def __repr__(self) -> str:
@@ -310,9 +309,7 @@ class QASuggestion(Base):
 
     # Auditoria
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     ativo = Column(Boolean, default=True, nullable=False)
 
     def __repr__(self) -> str:

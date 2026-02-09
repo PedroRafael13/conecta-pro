@@ -6,7 +6,7 @@ Monitora: Database, Redis, Integrações Externas, Filesystem.
 
 import asyncio
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 import httpx
@@ -17,7 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.logging import logger
 
 
-class HealthStatus(str, Enum):
+class HealthStatus(StrEnum):
     """Status de saúde do componente."""
 
     HEALTHY = "healthy"

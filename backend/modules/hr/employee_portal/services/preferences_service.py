@@ -2,10 +2,11 @@
 
 import logging
 import secrets
-import pyotp
-from typing import Optional, List, Dict, Any
+from datetime import UTC, datetime
+from typing import Any
 from uuid import UUID
 
+import pyotp
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -20,13 +21,9 @@ class PreferencesService:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def get_or_create_preferences(
-        self, employee_id: UUID
-    ) -> EmployeePreferences:
+    async def get_or_create_preferences(self, employee_id: UUID) -> EmployeePreferences:
         """Obtém ou cria preferências do funcionário."""
-        query = select(EmployeePreferences).where(
-            EmployeePreferences.employee_id == employee_id
-        )
+        query = select(EmployeePreferences).where(EmployeePreferences.employee_id == employee_id)
         result = await self.db.execute(query)
         preferences = result.scalar_one_or_none()
 
@@ -38,9 +35,7 @@ class PreferencesService:
 
         return preferences
 
-    async def update_preferences(
-        self, employee_id: UUID, data: Any
-    ) -> EmployeePreferences:
+    async def update_preferences(self, employee_id: UUID, data: Any) -> EmployeePreferences:
         """Atualiza preferências gerais."""
         preferences = await self.get_or_create_preferences(employee_id)
 
@@ -53,21 +48,15 @@ class PreferencesService:
         await self.db.refresh(preferences)
         return preferences
 
-    async def update_notification_settings(
-        self, employee_id: UUID, data: Any
-    ) -> EmployeePreferences:
+    async def update_notification_settings(self, employee_id: UUID, data: Any) -> EmployeePreferences:
         """Atualiza configurações de notificações."""
         return await self.update_preferences(employee_id, data)
 
-    async def update_privacy_settings(
-        self, employee_id: UUID, data: Any
-    ) -> EmployeePreferences:
+    async def update_privacy_settings(self, employee_id: UUID, data: Any) -> EmployeePreferences:
         """Atualiza configurações de privacidade."""
         return await self.update_preferences(employee_id, data)
 
-    async def update_dashboard_widgets(
-        self, employee_id: UUID, widgets: List[str]
-    ) -> EmployeePreferences:
+    async def update_dashboard_widgets(self, employee_id: UUID, widgets: list[str]) -> EmployeePreferences:
         """Atualiza widgets do dashboard."""
         preferences = await self.get_or_create_preferences(employee_id)
         preferences.dashboard_widgets = widgets
@@ -75,7 +64,7 @@ class PreferencesService:
         await self.db.refresh(preferences)
         return preferences
 
-    async def setup_two_factor(self, employee_id: UUID) -> Dict[str, Any]:
+    async def setup_two_factor(self, employee_id: UUID) -> dict[str, Any]:
         """Configura autenticação em dois fatores."""
         secret = pyotp.random_base32()
         totp = pyotp.TOTP(secret)
@@ -86,14 +75,10 @@ class PreferencesService:
 
         return {
             "secret": secret,
-            "qr_code_url": totp.provisioning_uri(
-                name=str(employee_id), issuer_name="ERP Conecta Mais"
-            ),
+            "qr_code_url": totp.provisioning_uri(name=str(employee_id), issuer_name="ERP Conecta Mais"),
         }
 
-    async def verify_and_enable_two_factor(
-        self, employee_id: UUID, code: str
-    ) -> bool:
+    async def verify_and_enable_two_factor(self, employee_id: UUID, code: str) -> bool:
         """Verifica código e ativa 2FA."""
         preferences = await self.get_or_create_preferences(employee_id)
 
@@ -124,7 +109,7 @@ class PreferencesService:
 
         return False
 
-    async def generate_backup_codes(self, employee_id: UUID) -> List[str]:
+    async def generate_backup_codes(self, employee_id: UUID) -> list[str]:
         """Gera códigos de backup para 2FA."""
         codes = [secrets.token_hex(4).upper() for _ in range(10)]
 
@@ -134,16 +119,12 @@ class PreferencesService:
 
         return codes
 
-    async def list_trusted_devices(
-        self, employee_id: UUID
-    ) -> List[Dict[str, Any]]:
+    async def list_trusted_devices(self, employee_id: UUID) -> list[dict[str, Any]]:
         """Lista dispositivos confiáveis."""
         preferences = await self.get_or_create_preferences(employee_id)
         return preferences.trusted_devices or []
 
-    async def add_trusted_device(
-        self, employee_id: UUID, device_info: Any
-    ) -> Dict[str, Any]:
+    async def add_trusted_device(self, employee_id: UUID, device_info: Any) -> dict[str, Any]:
         """Adiciona dispositivo confiável."""
         preferences = await self.get_or_create_preferences(employee_id)
 
@@ -152,7 +133,7 @@ class PreferencesService:
             "name": device_info.name,
             "user_agent": device_info.user_agent,
             "ip_address": device_info.ip_address,
-            "added_at": str(__import__("datetime").datetime.now(UTC)),
+            "added_at": str(datetime.now(UTC)),
         }
 
         devices = preferences.trusted_devices or []
@@ -162,9 +143,7 @@ class PreferencesService:
         await self.db.commit()
         return device
 
-    async def remove_trusted_device(
-        self, employee_id: UUID, device_id: str
-    ) -> bool:
+    async def remove_trusted_device(self, employee_id: UUID, device_id: str) -> bool:
         """Remove dispositivo confiável."""
         preferences = await self.get_or_create_preferences(employee_id)
 

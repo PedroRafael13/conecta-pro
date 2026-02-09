@@ -2,23 +2,23 @@
 
 from datetime import date
 from decimal import Decimal
+from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
 import pytest
 from httpx import AsyncClient
-from unittest.mock import AsyncMock, MagicMock, patch
 
 from modules.financial.costing.schemas import (
-    CostDriverCreate,
-    CostDriverResponse,
     CostActivityCreate,
     CostActivityResponse,
-    CostPoolCreate,
-    CostPoolResponse,
-    CostObjectCreate,
-    CostObjectResponse,
     CostAllocationCreate,
     CostAllocationResponse,
+    CostDriverCreate,
+    CostDriverResponse,
+    CostObjectCreate,
+    CostObjectResponse,
+    CostPoolCreate,
+    CostPoolResponse,
 )
 
 
@@ -196,8 +196,14 @@ class TestCostPoolAPI:
     async def test_pool_types_valid(self):
         """Testa tipos de pool válidos."""
         valid_types = [
-            "OVERHEAD", "LABOR", "EQUIPMENT", "UTILITIES",
-            "MAINTENANCE", "TECHNOLOGY", "ADMINISTRATIVE", "OTHER",
+            "OVERHEAD",
+            "LABOR",
+            "EQUIPMENT",
+            "UTILITIES",
+            "MAINTENANCE",
+            "TECHNOLOGY",
+            "ADMINISTRATIVE",
+            "OTHER",
         ]
 
         for pool_type in valid_types:

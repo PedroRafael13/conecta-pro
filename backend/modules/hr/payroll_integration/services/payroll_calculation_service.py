@@ -3,7 +3,7 @@
 import logging
 from datetime import datetime
 from decimal import ROUND_HALF_UP, Decimal
-from typing import Any, Dict, List
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -89,9 +89,7 @@ class PayrollCalculationService:
             try:
                 # Limpar eventos existentes se recalculando
                 if request.recalculate_all:
-                    await self.event_repo.delete_by_period(
-                        period_id, employee_id=employee.employee_id
-                    )
+                    await self.event_repo.delete_by_period(period_id, employee_id=employee.employee_id)
 
                 # Calcular eventos
                 events = await self._calculate_employee_payroll(
@@ -172,7 +170,7 @@ class PayrollCalculationService:
         employee: EmployeePayrollConfig,
         period: PayrollPeriod,
         condominio_id: UUID,  # pylint: disable=unused-argument
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Calcula folha de um funcionário."""
         events = []
 
@@ -189,30 +187,20 @@ class PayrollCalculationService:
 
         # 3. Horas extras
         if time_data["overtime_50"] > 0:
-            events.append(
-                self._create_overtime_event(employee, period, time_data["overtime_50"], 50)
-            )
+            events.append(self._create_overtime_event(employee, period, time_data["overtime_50"], 50))
         if time_data["overtime_100"] > 0:
-            events.append(
-                self._create_overtime_event(employee, period, time_data["overtime_100"], 100)
-            )
+            events.append(self._create_overtime_event(employee, period, time_data["overtime_100"], 100))
 
         # 4. Adicional noturno
         if time_data["night_hours"] > 0:
-            events.append(
-                self._create_night_shift_event(employee, period, time_data["night_hours"])
-            )
+            events.append(self._create_night_shift_event(employee, period, time_data["night_hours"]))
 
         # 5. Faltas
         if time_data["absence_hours"] > 0:
-            events.append(
-                self._create_absence_event(employee, period, time_data["absence_hours"])
-            )
+            events.append(self._create_absence_event(employee, period, time_data["absence_hours"]))
 
         # 6. Calcular totais para impostos
-        total_earnings = sum(
-            Decimal(str(e["value"])) for e in events if e["event_type"] == EventType.EARNING
-        )
+        total_earnings = sum(Decimal(str(e["value"])) for e in events if e["event_type"] == EventType.EARNING)
 
         # 7. INSS
         inss_value = employee.calculate_inss(total_earnings)
@@ -221,9 +209,7 @@ class PayrollCalculationService:
         # 8. IRRF
         irrf_value = employee.calculate_irrf(total_earnings, inss_value)
         if irrf_value > 0:
-            events.append(
-                self._create_irrf_event(employee, period, irrf_value, total_earnings - inss_value)
-            )
+            events.append(self._create_irrf_event(employee, period, irrf_value, total_earnings - inss_value))
 
         # 9. Benefícios
         benefit_events = self._create_benefit_events(employee, period)
@@ -239,7 +225,7 @@ class PayrollCalculationService:
         self,
         employee: EmployeePayrollConfig,
         period: PayrollPeriod,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Cria evento de salario base."""
         # pylint: disable=import-outside-toplevel
         from modules.hr.payroll_integration.schemas import PayrollEventCreate
@@ -266,7 +252,7 @@ class PayrollCalculationService:
         period: PayrollPeriod,
         hours: Decimal,
         rate: int,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Cria evento de hora extra."""
         # pylint: disable=import-outside-toplevel
         from modules.hr.payroll_integration.schemas import PayrollEventCreate
@@ -300,7 +286,7 @@ class PayrollCalculationService:
         employee: EmployeePayrollConfig,
         period: PayrollPeriod,
         hours: Decimal,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Cria evento de adicional noturno."""
         # pylint: disable=import-outside-toplevel
         from modules.hr.payroll_integration.schemas import PayrollEventCreate
@@ -330,7 +316,7 @@ class PayrollCalculationService:
         employee: EmployeePayrollConfig,
         period: PayrollPeriod,
         hours: Decimal,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Cria evento de falta."""
         # pylint: disable=import-outside-toplevel
         from modules.hr.payroll_integration.schemas import PayrollEventCreate
@@ -359,7 +345,7 @@ class PayrollCalculationService:
         period: PayrollPeriod,
         value: Decimal,
         base: Decimal,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Cria evento de INSS."""
         # pylint: disable=import-outside-toplevel
         from modules.hr.payroll_integration.schemas import PayrollEventCreate
@@ -384,7 +370,7 @@ class PayrollCalculationService:
         period: PayrollPeriod,
         value: Decimal,
         base: Decimal,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Cria evento de IRRF."""
         # pylint: disable=import-outside-toplevel
         from modules.hr.payroll_integration.schemas import PayrollEventCreate
@@ -407,7 +393,7 @@ class PayrollCalculationService:
         self,
         employee: EmployeePayrollConfig,
         period: PayrollPeriod,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Cria eventos de beneficios."""
         # pylint: disable=import-outside-toplevel
         from modules.hr.payroll_integration.schemas import PayrollEventCreate
@@ -476,7 +462,7 @@ class PayrollCalculationService:
         self,
         employee: EmployeePayrollConfig,
         period: PayrollPeriod,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Cria eventos de emprestimos."""
         # pylint: disable=import-outside-toplevel
         from modules.hr.payroll_integration.schemas import PayrollEventCreate
@@ -497,7 +483,7 @@ class PayrollCalculationService:
                     PayrollEventCreate(
                         employee_id=employee.employee_id,
                         period_id=period.id,
-                        event_code=f"9400{i+1}",
+                        event_code=f"9400{i + 1}",
                         event_name=f"Empréstimo {loan.get('bank', '')}",
                         event_type=EventType.DEDUCTION,
                         event_category=EventCategory.LOAN,
@@ -517,19 +503,19 @@ class PayrollCalculationService:
         employee_id: UUID,  # pylint: disable=unused-argument
         start_date,  # pylint: disable=unused-argument
         end_date,  # pylint: disable=unused-argument
-    ) -> Dict[str, Decimal]:
+    ) -> dict[str, Decimal]:
         """Busca dados de ponto (simulado)."""
         # Em producao, consultaria o modulo time_tracking
         # pylint: disable=import-outside-toplevel
         import random
 
         return {
-            "regular_hours": Decimal(str(random.randint(160, 180))),
-            "overtime_50": Decimal(str(random.randint(0, 20))),
-            "overtime_100": Decimal(str(random.randint(0, 8))),
-            "night_hours": Decimal(str(random.randint(0, 40))),
-            "absence_hours": Decimal(str(random.randint(0, 16))),
-            "late_hours": Decimal(str(random.randint(0, 4))),
+            "regular_hours": Decimal(str(random.randint(160, 180))),  # noqa: S311
+            "overtime_50": Decimal(str(random.randint(0, 20))),  # noqa: S311
+            "overtime_100": Decimal(str(random.randint(0, 8))),  # noqa: S311
+            "night_hours": Decimal(str(random.randint(0, 40))),  # noqa: S311
+            "absence_hours": Decimal(str(random.randint(0, 16))),  # noqa: S311
+            "late_hours": Decimal(str(random.randint(0, 4))),  # noqa: S311
         }
 
     async def calculate_salary_preview(  # pylint: disable=too-many-locals

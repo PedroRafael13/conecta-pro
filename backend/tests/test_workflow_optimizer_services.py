@@ -2,16 +2,17 @@
 Tests for Workflow Optimizer Services - Sprint 55.
 """
 
-import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
-from datetime import datetime, timedelta
 import asyncio
+from datetime import datetime, timedelta
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 from modules.ai.workflow_optimizer.services import (
-    WorkflowAnalyzer,
-    WorkflowOptimizer,
-    WorkflowExecutor,
     StepExecutor,
+    WorkflowAnalyzer,
+    WorkflowExecutor,
+    WorkflowOptimizer,
 )
 
 
@@ -74,9 +75,7 @@ class TestWorkflowAnalyzer:
             },
         ]
 
-    def test_analyze_workflow_basic(
-        self, analyzer, sample_workflow, sample_executions
-    ):
+    def test_analyze_workflow_basic(self, analyzer, sample_workflow, sample_executions):
         """Testa analise basica de workflow."""
         result = analyzer.analyze_workflow(
             sample_workflow,
@@ -101,9 +100,7 @@ class TestWorkflowAnalyzer:
         assert result["success_rate"] == 0.0
         assert result["bottleneck_steps"] == []
 
-    def test_identify_bottlenecks(
-        self, analyzer, sample_workflow, sample_executions
-    ):
+    def test_identify_bottlenecks(self, analyzer, sample_workflow, sample_executions):
         """Testa identificacao de bottlenecks."""
         result = analyzer.analyze_workflow(
             sample_workflow,
@@ -118,9 +115,7 @@ class TestWorkflowAnalyzer:
             bottleneck_ids = [b["step_id"] for b in bottlenecks]
             assert "step2" in bottleneck_ids or len(bottlenecks) >= 0
 
-    def test_analyze_frequent_errors(
-        self, analyzer, sample_workflow, sample_executions
-    ):
+    def test_analyze_frequent_errors(self, analyzer, sample_workflow, sample_executions):
         """Testa analise de erros frequentes."""
         result = analyzer.analyze_workflow(
             sample_workflow,
@@ -132,9 +127,7 @@ class TestWorkflowAnalyzer:
         if errors:
             assert errors[0]["count"] >= 1
 
-    def test_generate_optimizations(
-        self, analyzer, sample_workflow, sample_executions
-    ):
+    def test_generate_optimizations(self, analyzer, sample_workflow, sample_executions):
         """Testa geracao de otimizacoes."""
         # Cria execucoes com baixa taxa de sucesso
         executions_with_failures = sample_executions + [

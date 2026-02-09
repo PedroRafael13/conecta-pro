@@ -7,7 +7,7 @@ e aplicação de templates em novos períodos.
 
 import calendar
 from datetime import date, datetime, time, timedelta
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -68,7 +68,7 @@ class ScaleTemplateService:
         metadata = self._calculate_metadata(shifts, scale)
 
         # Coletar postos únicos
-        posts = list(set(shift.post_id for shift in shifts))
+        posts = list({shift.post_id for shift in shifts})
 
         template_data = TemplateData(
             scale_type=scale.scale_type,
@@ -87,15 +87,15 @@ class ScaleTemplateService:
 
     def _extract_shift_patterns(
         self,
-        shifts: List,
+        shifts: list,
         include_employee_mapping: bool,
-    ) -> List[TemplateShiftPattern]:
+    ) -> list[TemplateShiftPattern]:
         """
         Extrai padrões de turnos dos shifts.
 
         Agrupa shifts por funcionário/posto/horário e identifica dias da semana.
         """
-        patterns_dict: Dict[str, Dict[str, Any]] = {}
+        patterns_dict: dict[str, dict[str, Any]] = {}
 
         for shift in shifts:
             if shift.status == "off_day":
@@ -103,10 +103,7 @@ class ScaleTemplateService:
 
             # Criar chave única por funcionário/posto/horário
             employee_key = shift.employee_id if include_employee_mapping else "EMPLOYEE_PLACEHOLDER"
-            pattern_key = (
-                f"{employee_key}:{shift.post_id}:"
-                f"{shift.planned_start_time}:{shift.planned_end_time}"
-            )
+            pattern_key = f"{employee_key}:{shift.post_id}:{shift.planned_start_time}:{shift.planned_end_time}"
 
             if pattern_key not in patterns_dict:
                 patterns_dict[pattern_key] = {
@@ -128,7 +125,7 @@ class ScaleTemplateService:
         patterns = []
         for pattern_data in patterns_dict.values():
             # Converter set de dias para lista ordenada
-            pattern_data["days_of_week"] = sorted(list(pattern_data["days_of_week"]))
+            pattern_data["days_of_week"] = sorted(pattern_data["days_of_week"])
 
             patterns.append(TemplateShiftPattern(**pattern_data))
 
@@ -156,10 +153,10 @@ class ScaleTemplateService:
         else:
             return "personalizado"
 
-    def _calculate_metadata(self, shifts: List, scale: Scale) -> TemplateMetadata:
+    def _calculate_metadata(self, shifts: list, scale: Scale) -> TemplateMetadata:
         """Calcula metadados do template."""
         # Total de funcionários únicos
-        unique_employees = set(s.employee_id for s in shifts if s.employee_id)
+        unique_employees = {s.employee_id for s in shifts if s.employee_id}
         total_employees = len(unique_employees)
 
         # Total de turnos válidos (não folgas)
@@ -182,7 +179,7 @@ class ScaleTemplateService:
 
     async def apply_template_to_period(
         self,
-        template_data: Dict[str, Any],
+        template_data: dict[str, Any],
         apply_request: ScaleTemplateApplyRequest,
         created_by: str,
     ) -> Scale:
@@ -251,9 +248,7 @@ class ScaleTemplateService:
         # Atualizar métricas da escala
         scale = await self.scale_repo.update_metrics(scale.id)
 
-        logger.info(
-            f"Template aplicado: escala {scale.id} criada com {len(shifts_data)} turnos"
-        )
+        logger.info(f"Template aplicado: escala {scale.id} criada com {len(shifts_data)} turnos")
 
         return scale
 
@@ -267,13 +262,13 @@ class ScaleTemplateService:
 
     def _generate_shifts_from_template(
         self,
-        template_data: Dict[str, Any],
+        template_data: dict[str, Any],
         scale_id: str,
         post_id: str,
         month: int,
         year: int,
-        employee_mapping: Dict[str, str],
-    ) -> List[Dict[str, Any]]:
+        employee_mapping: dict[str, str],
+    ) -> list[dict[str, Any]]:
         """
         Gera dados de turnos baseado no template para um período específico.
 

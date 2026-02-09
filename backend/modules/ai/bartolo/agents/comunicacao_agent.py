@@ -8,17 +8,18 @@ Author: Conecta PRO Team
 Date: 2026-01-29
 """
 
-from typing import Dict, Any, List, Optional
-from datetime import datetime, date
-from enum import Enum
 import logging
 import re
+from datetime import date
+from enum import StrEnum
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
-class ComunicacaoIntent(str, Enum):
+class ComunicacaoIntent(StrEnum):
     """Intents relacionados a comunicados e anuncios."""
+
     VER_COMUNICADOS = "ver_comunicados"
     COMUNICADO_DETALHES = "comunicado_detalhes"
     COMUNICADOS_RECENTES = "comunicados_recentes"
@@ -50,31 +51,49 @@ class ComunicacaoAgent:
         # ==================================================================
         # CRIAR_COMUNICADO - Antes de genericos (mais especifico)
         # ==================================================================
-        (r"(?:criar|crie|cria|novo|nova|cadastrar|cadastre|redigir|redija|elaborar|elabore)\s+(?:um\s+)?(?:novo\s+)?comunicado", ComunicacaoIntent.CRIAR_COMUNICADO),
-        (r"(?:criar|crie|cria|novo|nova|cadastrar|cadastre|redigir|redija|elaborar|elabore)\s+(?:um\s+)?(?:novo\s+)?anuncio", ComunicacaoIntent.CRIAR_COMUNICADO),
-        (r"(?:preciso|quero)\s+(?:criar|fazer|redigir|elaborar)\s+(?:um\s+)?comunicado", ComunicacaoIntent.CRIAR_COMUNICADO),
-        (r"(?:pode|consegue|da\s+para)\s+(?:criar|fazer|redigir)\s+(?:um\s+)?comunicado", ComunicacaoIntent.CRIAR_COMUNICADO),
+        (
+            r"(?:criar|crie|cria|novo|nova|cadastrar|cadastre|redigir|redija|elaborar|elabore)\s+(?:um\s+)?(?:novo\s+)?comunicado",
+            ComunicacaoIntent.CRIAR_COMUNICADO,
+        ),
+        (
+            r"(?:criar|crie|cria|novo|nova|cadastrar|cadastre|redigir|redija|elaborar|elabore)\s+(?:um\s+)?(?:novo\s+)?anuncio",
+            ComunicacaoIntent.CRIAR_COMUNICADO,
+        ),
+        (
+            r"(?:preciso|quero)\s+(?:criar|fazer|redigir|elaborar)\s+(?:um\s+)?comunicado",
+            ComunicacaoIntent.CRIAR_COMUNICADO,
+        ),
+        (
+            r"(?:pode|consegue|da\s+para)\s+(?:criar|fazer|redigir)\s+(?:um\s+)?comunicado",
+            ComunicacaoIntent.CRIAR_COMUNICADO,
+        ),
         (r"novo\s+(?:comunicado|anuncio|aviso)", ComunicacaoIntent.CRIAR_COMUNICADO),
-
         # ==================================================================
         # PUBLICAR_COMUNICADO - Antes de genericos
         # ==================================================================
-        (r"(?:publicar|publique|liberar|libere|divulgar|divulgue)\s+(?:o\s+)?comunicado", ComunicacaoIntent.PUBLICAR_COMUNICADO),
-        (r"(?:publicar|publique|liberar|libere|divulgar|divulgue)\s+(?:o\s+)?anuncio", ComunicacaoIntent.PUBLICAR_COMUNICADO),
+        (
+            r"(?:publicar|publique|liberar|libere|divulgar|divulgue)\s+(?:o\s+)?comunicado",
+            ComunicacaoIntent.PUBLICAR_COMUNICADO,
+        ),
+        (
+            r"(?:publicar|publique|liberar|libere|divulgar|divulgue)\s+(?:o\s+)?anuncio",
+            ComunicacaoIntent.PUBLICAR_COMUNICADO,
+        ),
         (r"(?:enviar|envie)\s+(?:o\s+)?comunicado", ComunicacaoIntent.PUBLICAR_COMUNICADO),
         (r"(?:colocar|por)\s+comunicado\s+(?:no\s+)?(?:ar|mural)", ComunicacaoIntent.PUBLICAR_COMUNICADO),
-
         # ==================================================================
         # COMUNICADOS_PENDENTES - Antes de VER_COMUNICADOS (mais especifico)
         # ==================================================================
         (r"comunicados?\s+(?:pendentes?|rascunhos?|nao\s+publicados?)", ComunicacaoIntent.COMUNICADOS_PENDENTES),
         (r"comunicados?\s+(?:em\s+)?(?:rascunho|draft)", ComunicacaoIntent.COMUNICADOS_PENDENTES),
-        (r"comunicados?\s+(?:aguardando|esperando)\s+(?:publicacao|aprovacao)", ComunicacaoIntent.COMUNICADOS_PENDENTES),
+        (
+            r"comunicados?\s+(?:aguardando|esperando)\s+(?:publicacao|aprovacao)",
+            ComunicacaoIntent.COMUNICADOS_PENDENTES,
+        ),
         (r"(?:rascunhos?|drafts?)\s+(?:de\s+)?comunicados?", ComunicacaoIntent.COMUNICADOS_PENDENTES),
         (r"(?:tem|ha|há)\s+(?:algum\s+)?comunicado\s+pendente", ComunicacaoIntent.COMUNICADOS_PENDENTES),
         (r"comunicados?\s+(?:a\s+)?(?:publicar|aprovar)", ComunicacaoIntent.COMUNICADOS_PENDENTES),
         (r"(?:quais?|quantos?)\s+comunicados?\s+pendentes?", ComunicacaoIntent.COMUNICADOS_PENDENTES),
-
         # ==================================================================
         # COMUNICADOS_RECENTES
         # ==================================================================
@@ -84,32 +103,47 @@ class ComunicacaoAgent:
         (r"(?:ultimos?|recentes?)\s+comunicados?", ComunicacaoIntent.COMUNICADOS_RECENTES),
         (r"comunicados?\s+(?:mais\s+)?(?:novos?|recentes?)", ComunicacaoIntent.COMUNICADOS_RECENTES),
         (r"comunicados?\s+(?:do\s+)?(?:dia|momento)", ComunicacaoIntent.COMUNICADOS_RECENTES),
-        (r"(?:o\s+que|quais?)\s+(?:foi|foram)\s+(?:os?\s+)?(?:ultimos?\s+)?comunicados?", ComunicacaoIntent.COMUNICADOS_RECENTES),
-
+        (
+            r"(?:o\s+que|quais?)\s+(?:foi|foram)\s+(?:os?\s+)?(?:ultimos?\s+)?comunicados?",
+            ComunicacaoIntent.COMUNICADOS_RECENTES,
+        ),
         # ==================================================================
         # COMUNICADO_DETALHES
         # ==================================================================
-        (r"(?:detalhe|detalhes|info|informacoes?)\s+(?:do\s+|sobre\s+(?:o\s+)?)?comunicado", ComunicacaoIntent.COMUNICADO_DETALHES),
+        (
+            r"(?:detalhe|detalhes|info|informacoes?)\s+(?:do\s+|sobre\s+(?:o\s+)?)?comunicado",
+            ComunicacaoIntent.COMUNICADO_DETALHES,
+        ),
         (r"(?:ver|veja|mostrar|mostre|abrir|abra)\s+(?:o\s+)?comunicado\s+\w+", ComunicacaoIntent.COMUNICADO_DETALHES),
         (r"comunicado\s+(?:#|id|numero|num)\s*\w+", ComunicacaoIntent.COMUNICADO_DETALHES),
         (r"(?:qual\s+)?(?:o\s+)?conteudo\s+(?:do\s+)?comunicado", ComunicacaoIntent.COMUNICADO_DETALHES),
         (r"(?:quem\s+)?(?:leu|visualizou)\s+(?:o\s+)?comunicado", ComunicacaoIntent.COMUNICADO_DETALHES),
-
         # ==================================================================
         # ESTATISTICAS
         # ==================================================================
-        (r"(?:estatisticas?|stats?|metricas?|numeros?)\s+(?:de\s+|dos?\s+)?comunicados?", ComunicacaoIntent.ESTATISTICAS),
+        (
+            r"(?:estatisticas?|stats?|metricas?|numeros?)\s+(?:de\s+|dos?\s+)?comunicados?",
+            ComunicacaoIntent.ESTATISTICAS,
+        ),
         (r"(?:resumo|overview|panorama)\s+(?:de\s+|dos?\s+)?comunicados?", ComunicacaoIntent.ESTATISTICAS),
         (r"(?:como\s+)?(?:estao|anda|andam)\s+(?:os?\s+)?comunicados?", ComunicacaoIntent.ESTATISTICAS),
         (r"(?:quantos?|total)\s+(?:de\s+)?comunicados?", ComunicacaoIntent.ESTATISTICAS),
         (r"comunicados?\s+(?:em\s+)?(?:numeros?|dados|indicadores?)", ComunicacaoIntent.ESTATISTICAS),
-        (r"(?:taxa|percentual|porcentagem)\s+(?:de\s+)?(?:leitura|visualizacao|confirmacao)", ComunicacaoIntent.ESTATISTICAS),
-
+        (
+            r"(?:taxa|percentual|porcentagem)\s+(?:de\s+)?(?:leitura|visualizacao|confirmacao)",
+            ComunicacaoIntent.ESTATISTICAS,
+        ),
         # ==================================================================
         # VER_COMUNICADOS - Mais generico (por ultimo)
         # ==================================================================
-        (r"(?:ver|veja|mostrar|mostre|exibir|exiba|listar|liste)\s+(?:os\s+)?comunicados?", ComunicacaoIntent.VER_COMUNICADOS),
-        (r"(?:ver|veja|mostrar|mostre|exibir|exiba|listar|liste)\s+(?:os\s+)?anuncios?", ComunicacaoIntent.VER_COMUNICADOS),
+        (
+            r"(?:ver|veja|mostrar|mostre|exibir|exiba|listar|liste)\s+(?:os\s+)?comunicados?",
+            ComunicacaoIntent.VER_COMUNICADOS,
+        ),
+        (
+            r"(?:ver|veja|mostrar|mostre|exibir|exiba|listar|liste)\s+(?:os\s+)?anuncios?",
+            ComunicacaoIntent.VER_COMUNICADOS,
+        ),
         (r"comunicados?\s+(?:ativos?|publicados?|vigentes?)", ComunicacaoIntent.VER_COMUNICADOS),
         (r"comunicados?\s+(?:em\s+)?vigor", ComunicacaoIntent.VER_COMUNICADOS),
         (r"(?:quais?\s+)?(?:os?\s+)?comunicados?", ComunicacaoIntent.VER_COMUNICADOS),
@@ -125,12 +159,13 @@ class ComunicacaoAgent:
         if db and not data_connector:
             try:
                 from modules.ai.bartolo.services.data_connector import DataConnector
+
                 self.data_connector = DataConnector(db)
             except Exception as e:
                 logger.warning(f"Nao foi possivel criar DataConnector: {e}")
                 self.data_connector = None
 
-    async def process(self, message: str, context: Dict[str, Any] = None) -> Dict[str, Any]:
+    async def process(self, message: str, context: dict[str, Any] = None) -> dict[str, Any]:
         """
         Processa uma mensagem relacionada a comunicados.
 
@@ -157,7 +192,7 @@ class ComunicacaoAgent:
         else:
             return await self._handle_default(message, context)
 
-    def _detect_intent(self, message: str) -> Optional[ComunicacaoIntent]:
+    def _detect_intent(self, message: str) -> ComunicacaoIntent | None:
         """Detecta o intent da mensagem."""
         message_lower = message.lower()
 
@@ -170,7 +205,7 @@ class ComunicacaoAgent:
     # Handlers de Intent
     # =========================================================================
 
-    async def _handle_ver_comunicados(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_ver_comunicados(self, message: str, context: dict) -> dict[str, Any]:
         """Lista comunicados ativos/publicados usando DataConnector."""
         # Tentar buscar dados reais via DataConnector
         if self.data_connector:
@@ -193,14 +228,38 @@ class ComunicacaoAgent:
         # Fallback estatico
         today = date.today()
         comunicados_mock = [
-            {"titulo": "Alteracao de procedimento - Portaria", "tipo": "procedimento", "prioridade": "alta", "status": "publicado", "visualizacoes": 45, "confirmacoes": 32, "data_publicacao": today.strftime('%d/%m/%Y') + " 09:00"},
-            {"titulo": "Escala de feriado - Carnaval 2026", "tipo": "escala", "prioridade": "urgente", "status": "publicado", "visualizacoes": 120, "confirmacoes": 95, "data_publicacao": today.strftime('%d/%m/%Y') + " 08:00"},
-            {"titulo": "Novo uniforme disponivel", "tipo": "informativo", "prioridade": "normal", "status": "publicado", "visualizacoes": 30, "confirmacoes": 10, "data_publicacao": today.strftime('%d/%m/%Y') + " 07:30"},
+            {
+                "titulo": "Alteracao de procedimento - Portaria",
+                "tipo": "procedimento",
+                "prioridade": "alta",
+                "status": "publicado",
+                "visualizacoes": 45,
+                "confirmacoes": 32,
+                "data_publicacao": today.strftime("%d/%m/%Y") + " 09:00",
+            },
+            {
+                "titulo": "Escala de feriado - Carnaval 2026",
+                "tipo": "escala",
+                "prioridade": "urgente",
+                "status": "publicado",
+                "visualizacoes": 120,
+                "confirmacoes": 95,
+                "data_publicacao": today.strftime("%d/%m/%Y") + " 08:00",
+            },
+            {
+                "titulo": "Novo uniforme disponivel",
+                "tipo": "informativo",
+                "prioridade": "normal",
+                "status": "publicado",
+                "visualizacoes": 30,
+                "confirmacoes": 10,
+                "data_publicacao": today.strftime("%d/%m/%Y") + " 07:30",
+            },
         ]
 
         lines = []
         for c in comunicados_mock:
-            prio_icon = {"urgente": "🔴", "alta": "🟠", "normal": "🟢", "baixa": "⚪"}.get(c['prioridade'], "🟢")
+            prio_icon = {"urgente": "🔴", "alta": "🟠", "normal": "🟢", "baixa": "⚪"}.get(c["prioridade"], "🟢")
             lines.append(
                 f"- {prio_icon} **{c['titulo']}**\n"
                 f"  Tipo: {c['tipo']} | Prioridade: {c['prioridade']}\n"
@@ -228,7 +287,7 @@ class ComunicacaoAgent:
             ],
         }
 
-    async def _handle_comunicado_detalhes(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_comunicado_detalhes(self, message: str, context: dict) -> dict[str, Any]:
         """Exibe detalhes de um comunicado especifico."""
         # Extrair ID do comunicado da mensagem
         comunicado_id = self._extract_comunicado_id(message)
@@ -239,19 +298,19 @@ class ComunicacaoAgent:
                 if result.success and result.data:
                     # Tentar encontrar pelo titulo parcial ou indice
                     for idx, c in enumerate(result.data):
-                        titulo_lower = c.get('titulo', '').lower()
+                        titulo_lower = c.get("titulo", "").lower()
                         if comunicado_id.lower() in titulo_lower or str(idx + 1) == comunicado_id:
                             response = f"""📋 **DETALHES DO COMUNICADO**
 
-**Titulo:** {c.get('titulo', 'N/A')}
-**Tipo:** {c.get('tipo', 'N/A')}
-**Prioridade:** {c.get('prioridade', 'N/A')}
-**Status:** {c.get('status', 'N/A')}
-**Data Publicacao:** {c.get('data_publicacao', 'N/A')}
+**Titulo:** {c.get("titulo", "N/A")}
+**Tipo:** {c.get("tipo", "N/A")}
+**Prioridade:** {c.get("prioridade", "N/A")}
+**Status:** {c.get("status", "N/A")}
+**Data Publicacao:** {c.get("data_publicacao", "N/A")}
 
 **Metricas de Leitura:**
-- Visualizacoes: **{c.get('visualizacoes', 0)}**
-- Confirmacoes: **{c.get('confirmacoes', 0)}**"""
+- Visualizacoes: **{c.get("visualizacoes", 0)}**
+- Confirmacoes: **{c.get("confirmacoes", 0)}**"""
                             return {
                                 "response": response,
                                 "intent": ComunicacaoIntent.COMUNICADO_DETALHES.value,
@@ -287,7 +346,7 @@ Ou use `/comunicado listar` para ver todos os comunicados disponiveis."""
             ],
         }
 
-    async def _handle_comunicados_recentes(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_comunicados_recentes(self, message: str, context: dict) -> dict[str, Any]:
         """Lista comunicados recentes."""
         if self.data_connector:
             try:
@@ -297,7 +356,9 @@ Ou use `/comunicado listar` para ver todos os comunicados disponiveis."""
                     recentes = result.data[:5]
                     lines = []
                     for idx, c in enumerate(recentes, 1):
-                        prio_icon = {"urgente": "🔴", "alta": "🟠", "normal": "🟢", "baixa": "⚪"}.get(c.get('prioridade', 'normal'), "🟢")
+                        prio_icon = {"urgente": "🔴", "alta": "🟠", "normal": "🟢", "baixa": "⚪"}.get(
+                            c.get("prioridade", "normal"), "🟢"
+                        )
                         lines.append(
                             f"{idx}. {prio_icon} **{c.get('titulo', 'N/A')}**\n"
                             f"   {c.get('data_publicacao', 'N/A')} | "
@@ -329,11 +390,11 @@ Ou use `/comunicado listar` para ver todos os comunicados disponiveis."""
         response = f"""🕐 **COMUNICADOS RECENTES**
 
 1. 🟠 **Alteracao de procedimento - Portaria**
-   {today.strftime('%d/%m/%Y')} 09:00 | Tipo: procedimento | 👁 45 | ✅ 32
+   {today.strftime("%d/%m/%Y")} 09:00 | Tipo: procedimento | 👁 45 | ✅ 32
 2. 🔴 **Escala de feriado - Carnaval 2026**
-   {today.strftime('%d/%m/%Y')} 08:00 | Tipo: escala | 👁 120 | ✅ 95
+   {today.strftime("%d/%m/%Y")} 08:00 | Tipo: escala | 👁 120 | ✅ 95
 3. 🟢 **Novo uniforme disponivel**
-   {today.strftime('%d/%m/%Y')} 07:30 | Tipo: informativo | 👁 30 | ✅ 10
+   {today.strftime("%d/%m/%Y")} 07:30 | Tipo: informativo | 👁 30 | ✅ 10
 
 *Exibindo os 3 comunicados mais recentes.*"""
 
@@ -348,7 +409,7 @@ Ou use `/comunicado listar` para ver todos os comunicados disponiveis."""
             ],
         }
 
-    async def _handle_comunicados_pendentes(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_comunicados_pendentes(self, message: str, context: dict) -> dict[str, Any]:
         """Lista comunicados pendentes/rascunhos."""
         if self.data_connector:
             try:
@@ -356,8 +417,7 @@ Ou use `/comunicado listar` para ver todos os comunicados disponiveis."""
                 if result.success and result.data:
                     # Filtrar rascunhos e pendentes
                     pendentes = [
-                        c for c in result.data
-                        if c.get('status') in ('draft', 'rascunho', 'scheduled', 'agendado')
+                        c for c in result.data if c.get("status") in ("draft", "rascunho", "scheduled", "agendado")
                     ]
 
                     if pendentes:
@@ -368,7 +428,7 @@ Ou use `/comunicado listar` para ver todos os comunicados disponiveis."""
                                 "rascunho": "Rascunho",
                                 "scheduled": "Agendado",
                                 "agendado": "Agendado",
-                            }.get(c.get('status', ''), c.get('status', 'N/A'))
+                            }.get(c.get("status", ""), c.get("status", "N/A"))
 
                             lines.append(
                                 f"{idx}. 📝 **{c.get('titulo', 'N/A')}**\n"
@@ -425,7 +485,7 @@ Ou use `/comunicado listar` para ver todos os comunicados disponiveis."""
             ],
         }
 
-    async def _handle_estatisticas(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_estatisticas(self, message: str, context: dict) -> dict[str, Any]:
         """Exibe estatisticas gerais de comunicados."""
         if self.data_connector:
             try:
@@ -433,17 +493,17 @@ Ou use `/comunicado listar` para ver todos os comunicados disponiveis."""
                 if result.success and result.data:
                     comunicados = result.data
                     total = len(comunicados)
-                    total_views = sum(c.get('visualizacoes', 0) for c in comunicados)
-                    total_confirms = sum(c.get('confirmacoes', 0) for c in comunicados)
-                    urgentes = sum(1 for c in comunicados if c.get('prioridade') in ('urgente', 'alta'))
+                    total_views = sum(c.get("visualizacoes", 0) for c in comunicados)
+                    total_confirms = sum(c.get("confirmacoes", 0) for c in comunicados)
+                    urgentes = sum(1 for c in comunicados if c.get("prioridade") in ("urgente", "alta"))
 
                     # Taxa de confirmacao
                     taxa_confirmacao = (total_confirms / total_views * 100) if total_views > 0 else 0
 
                     # Por tipo
-                    tipos_count: Dict[str, int] = {}
+                    tipos_count: dict[str, int] = {}
                     for c in comunicados:
-                        tipo = c.get('tipo', 'outros')
+                        tipo = c.get("tipo", "outros")
                         tipos_count[tipo] = tipos_count.get(tipo, 0) + 1
 
                     tipos_lines = [f"  - {t.capitalize()}: **{q}**" for t, q in tipos_count.items()]
@@ -461,7 +521,7 @@ Ou use `/comunicado listar` para ver todos os comunicados disponiveis."""
 {chr(10).join(tipos_lines)}
 
 **Indicadores:**
-- {'🟢 Taxa de confirmacao OK' if taxa_confirmacao >= 80 else '🟠 Taxa de confirmacao abaixo de 80%' if taxa_confirmacao >= 50 else '🔴 Taxa de confirmacao critica (< 50%)'}"""
+- {"🟢 Taxa de confirmacao OK" if taxa_confirmacao >= 80 else "🟠 Taxa de confirmacao abaixo de 80%" if taxa_confirmacao >= 50 else "🔴 Taxa de confirmacao critica (< 50%)"}"""
 
                     return {
                         "response": response,
@@ -512,7 +572,7 @@ Ou use `/comunicado listar` para ver todos os comunicados disponiveis."""
             ],
         }
 
-    async def _handle_criar_comunicado(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_criar_comunicado(self, message: str, context: dict) -> dict[str, Any]:
         """Redireciona criacao de comunicado para o sistema de actions."""
         # Extrair dados da mensagem
         dados_extraidos = self._extract_comunicado_data(message)
@@ -576,7 +636,7 @@ Informe os dados para prosseguir."""
             ],
         }
 
-    async def _handle_publicar_comunicado(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_publicar_comunicado(self, message: str, context: dict) -> dict[str, Any]:
         """Redireciona publicacao de comunicado para o sistema de actions."""
         comunicado_id = self._extract_comunicado_id(message)
 
@@ -618,10 +678,12 @@ Ou use `/comunicado pendentes` para ver os comunicados disponiveis para publicac
                     "target": "announcement",
                     "data": {"id": comunicado_id, "action": "publish"},
                 },
-            ] if comunicado_id else [],
+            ]
+            if comunicado_id
+            else [],
         }
 
-    async def _handle_default(self, message: str, context: Dict) -> Optional[Dict[str, Any]]:
+    async def _handle_default(self, message: str, context: dict) -> dict[str, Any] | None:
         """Handler padrao - retorna None para permitir que DataConnector processe."""
         return None
 
@@ -629,28 +691,28 @@ Ou use `/comunicado pendentes` para ver os comunicados disponiveis para publicac
     # Metodos auxiliares
     # =========================================================================
 
-    def _extract_comunicado_id(self, message: str) -> Optional[str]:
+    def _extract_comunicado_id(self, message: str) -> str | None:
         """Extrai identificador do comunicado da mensagem."""
         # UUID
-        uuid_match = re.search(r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}', message.lower())
+        uuid_match = re.search(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", message.lower())
         if uuid_match:
             return uuid_match.group(0)
 
         # Numero sequencial (#1, #2, etc.)
-        num_match = re.search(r'(?:#|n[uú]mero|num)\s*(\d+)', message.lower())
+        num_match = re.search(r"(?:#|n[uú]mero|num)\s*(\d+)", message.lower())
         if num_match:
             return num_match.group(1)
 
         # Indice numerico simples
-        idx_match = re.search(r'comunicado\s+(\d+)', message.lower())
+        idx_match = re.search(r"comunicado\s+(\d+)", message.lower())
         if idx_match:
             return idx_match.group(1)
 
         return None
 
-    def _extract_comunicado_data(self, message: str) -> Dict[str, Any]:
+    def _extract_comunicado_data(self, message: str) -> dict[str, Any]:
         """Extrai dados do comunicado da mensagem."""
-        dados: Dict[str, Any] = {}
+        dados: dict[str, Any] = {}
         msg_lower = message.lower()
 
         # Tipo
@@ -707,7 +769,7 @@ Ou use `/comunicado pendentes` para ver os comunicados disponiveis para publicac
 
         return dados
 
-    def get_capabilities(self) -> List[str]:
+    def get_capabilities(self) -> list[str]:
         """Retorna lista de capabilities do agente."""
         return [
             "Listar comunicados ativos e publicados",

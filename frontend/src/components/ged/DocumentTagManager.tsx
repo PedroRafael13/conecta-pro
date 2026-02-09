@@ -21,15 +21,17 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-;
 import { toast } from 'sonner';
+import { documentTagService } from '@/services/ged';
+import type { DocumentTagResponse } from '@/types/generated/ged/schemas/documentTagResponse';
+import type { TagType } from '@/types/generated/ged/schemas/tagType';
 
 interface DocumentTagManagerProps {
   documentId?: string;
-  selectedTags?: DocumentTag[];
+  selectedTags?: DocumentTagResponse[];
   open: boolean;
   onClose: () => void;
-  onTagsUpdated?: (tags: DocumentTag[]) => void;
+  onTagsUpdated?: (tags: DocumentTagResponse[]) => void;
 }
 
 const TAG_COLORS = [
@@ -62,8 +64,8 @@ export function DocumentTagManager({
   onClose,
   onTagsUpdated,
 }: DocumentTagManagerProps) {
-  const [allTags, setAllTags] = useState<DocumentTag[]>([]);
-  const [documentTags, setDocumentTags] = useState<DocumentTag[]>(selectedTags);
+  const [allTags, setAllTags] = useState<DocumentTagResponse[]>([]);
+  const [documentTags, setDocumentTags] = useState<DocumentTagResponse[]>(selectedTags);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -86,11 +88,13 @@ export function DocumentTagManager({
   const loadTags = async () => {
     setLoading(true);
     try {
-      const response = await documentTagService.list({ page_size: 100 });
-      setAllTags(response.items);
-    } catch (error: any) {
+      const response = await documentTagService.getTags();
+      const items = Array.isArray(response) ? response : (response.items ?? []);
+      setAllTags(items);
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { detail?: string } } };
       toast.error('Erro ao carregar tags', {
-        description: error.response?.data?.detail || 'Erro desconhecido',
+        description: err.response?.data?.detail || 'Erro desconhecido',
       });
     } finally {
       setLoading(false);
@@ -100,9 +104,10 @@ export function DocumentTagManager({
   const loadDocumentTags = async () => {
     if (!documentId) return;
     try {
-      const tags = await documentTagService.listByDocument(documentId);
-      setDocumentTags(tags);
-    } catch (error: any) {
+      const response = await documentTagService.getTags();
+      const items: DocumentTagResponse[] = Array.isArray(response) ? response : (response.items ?? []);
+      setDocumentTags(items);
+    } catch (error: unknown) {
       toast.error('Erro ao carregar tags do documento');
     }
   };
@@ -114,7 +119,7 @@ export function DocumentTagManager({
     }
 
     try {
-      const newTag = await documentTagService.create({
+      const newTag = await documentTagService.createTag({
         name: newTagName,
         description: newTagDescription || undefined,
         tag_type: newTagType,
@@ -128,14 +133,15 @@ export function DocumentTagManager({
       setNewTagType('usuario');
       setNewTagColor('#6B7280');
       setShowCreateForm(false);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { detail?: string } } };
       toast.error('Erro ao criar tag', {
-        description: error.response?.data?.detail || 'Erro desconhecido',
+        description: err.response?.data?.detail || 'Erro desconhecido',
       });
     }
   };
 
-  const handleAddTag = async (tag: DocumentTag) => {
+  const handleAddTag = async (tag: DocumentTagResponse) => {
     if (!documentId) {
       // Modo seleção apenas
       setDocumentTags([...documentTags, tag]);
@@ -144,18 +150,19 @@ export function DocumentTagManager({
     }
 
     try {
-      await documentTagService.addToDocument(tag.id, documentId);
+      await documentTagService.addTagToDocument(documentId, tag.id);
       setDocumentTags([...documentTags, tag]);
       onTagsUpdated?.([...documentTags, tag]);
       toast.success('Tag adicionada');
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { detail?: string } } };
       toast.error('Erro ao adicionar tag', {
-        description: error.response?.data?.detail || 'Erro desconhecido',
+        description: err.response?.data?.detail || 'Erro desconhecido',
       });
     }
   };
 
-  const handleRemoveTag = async (tag: DocumentTag) => {
+  const handleRemoveTag = async (tag: DocumentTagResponse) => {
     if (!documentId) {
       // Modo seleção apenas
       const updated = documentTags.filter((t) => t.id !== tag.id);
@@ -165,14 +172,15 @@ export function DocumentTagManager({
     }
 
     try {
-      await documentTagService.removeFromDocument(tag.id, documentId);
+      await documentTagService.removeTagFromDocument(documentId, tag.id);
       const updated = documentTags.filter((t) => t.id !== tag.id);
       setDocumentTags(updated);
       onTagsUpdated?.(updated);
       toast.success('Tag removida');
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { detail?: string } } };
       toast.error('Erro ao remover tag', {
-        description: error.response?.data?.detail || 'Erro desconhecido',
+        description: err.response?.data?.detail || 'Erro desconhecido',
       });
     }
   };
@@ -337,7 +345,7 @@ export function DocumentTagManager({
               </div>
 
               <Button onClick={handleCreateTag} className="w-full">
-                <TagIcon className="h-4 w-4 mr-2" />
+                <Tag className="h-4 w-4 mr-2" />
                 Criar Tag
               </Button>
             </div>

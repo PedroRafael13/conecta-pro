@@ -233,15 +233,14 @@ class TestMetricsMiddleware:
 
         call_next = AsyncMock(return_value=MagicMock(status_code=200))
 
-        with patch("core.monitoring.metrics.set_info"):
-            with patch("core.config.settings") as mock_settings:
-                mock_settings.app_version = "1.0"
-                mock_settings.environment = "test"
+        with patch("core.monitoring.metrics.set_info"), patch("core.config.settings") as mock_settings:
+            mock_settings.app_version = "1.0"
+            mock_settings.environment = "test"
 
-                middleware = MetricsMiddleware(mock_app)
-                response = await middleware.dispatch(mock_request, call_next)
+            middleware = MetricsMiddleware(mock_app)
+            await middleware.dispatch(mock_request, call_next)
 
-                call_next.assert_called_once()
+            call_next.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_middleware_records_request(self):
@@ -259,23 +258,22 @@ class TestMetricsMiddleware:
 
         call_next = AsyncMock(return_value=mock_response)
 
-        with patch("core.monitoring.metrics.set_info"):
-            with patch("core.config.settings") as mock_settings:
-                mock_settings.app_version = "1.0"
-                mock_settings.environment = "test"
+        with patch("core.monitoring.metrics.set_info"), patch("core.config.settings") as mock_settings:
+            mock_settings.app_version = "1.0"
+            mock_settings.environment = "test"
 
-                import core.monitoring.metrics as m
+            import core.monitoring.metrics as m
 
-                m._collector = MetricsCollector()
+            m._collector = MetricsCollector()
 
-                middleware = MetricsMiddleware(mock_app)
-                response = await middleware.dispatch(mock_request, call_next)
+            middleware = MetricsMiddleware(mock_app)
+            response = await middleware.dispatch(mock_request, call_next)
 
-                assert response == mock_response
+            assert response == mock_response
 
-                # Verifica métricas
-                output = m._collector.format_prometheus()
-                assert "http_requests_total" in output
+            # Verifica métricas
+            output = m._collector.format_prometheus()
+            assert "http_requests_total" in output
 
     @pytest.mark.asyncio
     async def test_middleware_records_error(self):
@@ -293,20 +291,19 @@ class TestMetricsMiddleware:
 
         call_next = AsyncMock(return_value=mock_response)
 
-        with patch("core.monitoring.metrics.set_info"):
-            with patch("core.config.settings") as mock_settings:
-                mock_settings.app_version = "1.0"
-                mock_settings.environment = "test"
+        with patch("core.monitoring.metrics.set_info"), patch("core.config.settings") as mock_settings:
+            mock_settings.app_version = "1.0"
+            mock_settings.environment = "test"
 
-                import core.monitoring.metrics as m
+            import core.monitoring.metrics as m
 
-                m._collector = MetricsCollector()
+            m._collector = MetricsCollector()
 
-                middleware = MetricsMiddleware(mock_app)
-                response = await middleware.dispatch(mock_request, call_next)
+            middleware = MetricsMiddleware(mock_app)
+            await middleware.dispatch(mock_request, call_next)
 
-                output = m._collector.format_prometheus()
-                assert 'status="500"' in output
+            output = m._collector.format_prometheus()
+            assert 'status="500"' in output
 
     def test_get_route_path(self):
         """Testa extração de path da rota."""
@@ -317,13 +314,12 @@ class TestMetricsMiddleware:
         mock_request.url.path = "/api/users/123"
         mock_request.scope = {}
 
-        with patch("core.monitoring.metrics.set_info"):
-            with patch("core.config.settings") as mock_settings:
-                mock_settings.app_version = "1.0"
-                mock_settings.environment = "test"
+        with patch("core.monitoring.metrics.set_info"), patch("core.config.settings") as mock_settings:
+            mock_settings.app_version = "1.0"
+            mock_settings.environment = "test"
 
-                middleware = MetricsMiddleware(mock_app)
-                path = middleware._get_route_path(mock_request)
+            middleware = MetricsMiddleware(mock_app)
+            path = middleware._get_route_path(mock_request)
 
-                # Sem rotas definidas, retorna url.path
-                assert path == "/api/users/123"
+            # Sem rotas definidas, retorna url.path
+            assert path == "/api/users/123"

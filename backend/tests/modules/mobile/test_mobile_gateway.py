@@ -1,23 +1,24 @@
 """Tests for Mobile Gateway."""
 
-import pytest
-from unittest.mock import MagicMock, AsyncMock
 from datetime import datetime
+from unittest.mock import AsyncMock, MagicMock
 
-from modules.mobile.gateway.mobile_gateway import (
-    MobileGateway,
-    DeviceInfo,
-    ProcessingResult,
-)
-from modules.mobile.gateway.device_detector import (
-    DeviceDetector,
-    DetectedDevice,
-    DeviceCapabilities,
-)
+import pytest
+
 from modules.mobile.gateway.compression import (
     CompressionMiddleware,
     compress_data,
     decompress_data,
+)
+from modules.mobile.gateway.device_detector import (
+    DetectedDevice,
+    DeviceCapabilities,
+    DeviceDetector,
+)
+from modules.mobile.gateway.mobile_gateway import (
+    DeviceInfo,
+    MobileGateway,
+    ProcessingResult,
 )
 
 

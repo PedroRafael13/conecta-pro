@@ -2,18 +2,17 @@
 Model de Consentimento LGPD.
 """
 
-import enum
 import uuid
 from datetime import datetime
+from enum import StrEnum
 
-from sqlalchemy import Column, DateTime, Enum, ForeignKey, String, Text, Boolean
+from sqlalchemy import Column, DateTime, Enum, String, Text
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship
 
 from core.models import Base
 
 
-class ConsentStatus(str, enum.Enum):
+class ConsentStatus(StrEnum):
     """Status do consentimento."""
 
     ACTIVE = "active"
@@ -22,7 +21,7 @@ class ConsentStatus(str, enum.Enum):
     PENDING = "pending"
 
 
-class ConsentPurpose(str, enum.Enum):
+class ConsentPurpose(StrEnum):
     """Finalidade do consentimento conforme LGPD."""
 
     MARKETING = "marketing"
@@ -35,7 +34,7 @@ class ConsentPurpose(str, enum.Enum):
     LEGITIMATE_INTEREST = "legitimate_interest"
 
 
-class LegalBasis(str, enum.Enum):
+class LegalBasis(StrEnum):
     """Base legal conforme Art. 7 LGPD."""
 
     CONSENT = "consent"

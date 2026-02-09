@@ -13,32 +13,30 @@ Este modulo implementa um sistema de message bus assíncrono para:
 """
 
 from .bus import (
-    MessageBus,
+    Handler,
     Message,
-    MessageType,
+    MessageBus,
     MessagePriority,
     MessageStatus,
-    Handler,
+    MessageType,
     Subscriber,
     get_message_bus,
     init_message_bus,
 )
-
 from .events import (
+    DomainEvent,
     Event,
     EventType,
-    DomainEvent,
     IntegrationEvent,
     publish_event,
     subscribe_to_event,
 )
-
 from .queues import (
+    DeadLetterQueue,
     Queue,
     QueueConfig,
-    DeadLetterQueue,
-    get_queue,
     create_queue,
+    get_queue,
 )
 
 __all__ = [

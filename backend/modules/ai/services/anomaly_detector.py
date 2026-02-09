@@ -7,7 +7,7 @@ import logging
 import math
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID
 
 from modules.ai.models.anomaly_log import AnomalyLog, AnomalySeverity, AnomalyStatus, AnomalyType
@@ -20,7 +20,7 @@ class AnomalyResult:
     """Resultado de deteccao de anomalia."""
 
     is_anomaly: bool
-    anomaly_type: Optional[AnomalyType]
+    anomaly_type: AnomalyType | None
     severity: AnomalySeverity
     anomaly_score: float  # 0-1
     confidence: float  # 0-1
@@ -39,7 +39,7 @@ class TimeSeriesAnomaly:
     timestamp: datetime
     value: float
     is_anomaly: bool
-    anomaly_type: Optional[AnomalyType]
+    anomaly_type: AnomalyType | None
     expected_value: float
     deviation: float
 
@@ -76,8 +76,8 @@ class AnomalyDetector:
         entity_id: UUID,
         field: str,
         value: float,
-        historical_values: Optional[list[float]] = None,
-        context: Optional[dict] = None,
+        historical_values: list[float] | None = None,
+        context: dict | None = None,
     ) -> AnomalyResult:
         """Detecta anomalia em um valor.
 
@@ -95,9 +95,7 @@ class AnomalyDetector:
         """
         # Coleta dados historicos se nao fornecidos
         if historical_values is None:
-            historical_values = await self._get_historical_values(
-                tenant_id, entity_type, entity_id, field
-            )
+            historical_values = await self._get_historical_values(tenant_id, entity_type, entity_id, field)
 
         if len(historical_values) < 5:
             # Dados insuficientes para deteccao
@@ -140,9 +138,7 @@ class AnomalyDetector:
         explanation = self._generate_explanation(value, stats, z_score, anomaly_type, is_anomaly)
 
         # Identifica fatores contribuintes
-        contributing_factors = self._identify_contributing_factors(
-            value, historical_values, stats, context
-        )
+        contributing_factors = self._identify_contributing_factors(value, historical_values, stats, context)
 
         result = AnomalyResult(
             is_anomaly=is_anomaly,
@@ -392,7 +388,7 @@ class AnomalyDetector:
         historical_values: list[float],
         stats: dict,
         z_score: float,
-    ) -> Optional[AnomalyType]:
+    ) -> AnomalyType | None:
         """Determina o tipo de anomalia.
 
         Args:
@@ -443,7 +439,7 @@ class AnomalyDetector:
         value: float,
         stats: dict,
         z_score: float,
-        anomaly_type: Optional[AnomalyType],
+        anomaly_type: AnomalyType | None,
         is_anomaly: bool,
     ) -> str:
         """Gera explicacao da anomalia.
@@ -471,7 +467,7 @@ class AnomalyDetector:
         return (
             f"Detectado {type_desc}: valor {value:.2f} esta {abs(z_score):.1f} "
             f"desvios padrao {direction} da media ({stats['mean']:.2f}). "
-            f"Faixa esperada: {stats['mean'] - 2*stats['std']:.2f} a {stats['mean'] + 2*stats['std']:.2f}"
+            f"Faixa esperada: {stats['mean'] - 2 * stats['std']:.2f} a {stats['mean'] + 2 * stats['std']:.2f}"
         )
 
     def _identify_contributing_factors(
@@ -479,7 +475,7 @@ class AnomalyDetector:
         value: float,
         historical_values: list[float],
         stats: dict,
-        context: Optional[dict],
+        context: dict | None,
     ) -> list[dict]:
         """Identifica fatores contribuintes.
 
@@ -554,7 +550,7 @@ class AnomalyDetector:
 
         base = 1000
         values = []
-        for i in range(days):
+        for _i in range(days):
             # Gera valor com variacao normal
             variation = random.gauss(0, 0.1)
             values.append(base * (1 + variation))
@@ -600,9 +596,7 @@ class AnomalyDetector:
             detected_at=datetime.utcnow(),
             title=f"Anomalia em {entity_type}.{field}",
             description=result.explanation,
-            contributing_factors={
-                f["factor"]: f["contribution"] for f in result.contributing_factors
-            },
+            contributing_factors={f["factor"]: f["contribution"] for f in result.contributing_factors},
         )
 
         self.db.add(anomaly_log)

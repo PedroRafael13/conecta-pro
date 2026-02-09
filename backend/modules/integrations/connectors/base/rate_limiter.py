@@ -4,11 +4,10 @@ Sprint 33: Integration Framework
 """
 
 import asyncio
+import logging
 import time
 from collections import deque
-from dataclasses import dataclass, field
-from typing import Optional, Deque
-import logging
+from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
 
@@ -16,15 +15,17 @@ logger = logging.getLogger(__name__)
 @dataclass
 class RateLimitConfig:
     """Configuração de rate limiting."""
-    requests_per_second: Optional[float] = None
-    requests_per_minute: Optional[float] = None
-    requests_per_hour: Optional[float] = None
+
+    requests_per_second: float | None = None
+    requests_per_minute: float | None = None
+    requests_per_hour: float | None = None
     burst_size: int = 1  # Quantas requisições podem ser feitas em burst
 
 
 @dataclass
 class RateLimitStats:
     """Estatísticas de rate limiting."""
+
     total_requests: int = 0
     total_waits: int = 0
     total_wait_time_ms: int = 0
@@ -39,11 +40,11 @@ class RateLimiter:
 
     def __init__(
         self,
-        requests_per_second: Optional[float] = None,
-        requests_per_minute: Optional[float] = None,
-        requests_per_hour: Optional[float] = None,
+        requests_per_second: float | None = None,
+        requests_per_minute: float | None = None,
+        requests_per_hour: float | None = None,
         burst_size: int = 1,
-        name: Optional[str] = None
+        name: str | None = None,
     ):
         """
         Inicializa o rate limiter.
@@ -58,11 +59,7 @@ class RateLimiter:
         self.name = name or "RateLimiter"
 
         # Calcular o rate mais restritivo
-        self.rate = self._calculate_rate(
-            requests_per_second,
-            requests_per_minute,
-            requests_per_hour
-        )
+        self.rate = self._calculate_rate(requests_per_second, requests_per_minute, requests_per_hour)
         self.burst_size = max(1, burst_size)
 
         # Token bucket
@@ -76,18 +73,12 @@ class RateLimiter:
         self.stats = RateLimitStats()
 
         # Histórico de timestamps para rate tracking
-        self._request_history: Deque[float] = deque(maxlen=1000)
+        self._request_history: deque[float] = deque(maxlen=1000)
 
-        logger.debug(
-            f"[{self.name}] Inicializado: rate={self.rate}/s, burst={burst_size}"
-        )
+        logger.debug(f"[{self.name}] Inicializado: rate={self.rate}/s, burst={burst_size}")
 
     @staticmethod
-    def _calculate_rate(
-        per_second: Optional[float],
-        per_minute: Optional[float],
-        per_hour: Optional[float]
-    ) -> float:
+    def _calculate_rate(per_second: float | None, per_minute: float | None, per_hour: float | None) -> float:
         """Calcula o rate mais restritivo em requisições por segundo."""
         rates = []
         if per_second:
@@ -110,10 +101,7 @@ class RateLimiter:
         self.last_update = now
 
         # Adiciona tokens proporcionalmente ao tempo
-        self.tokens = min(
-            self.burst_size,
-            self.tokens + (elapsed * self.rate)
-        )
+        self.tokens = min(self.burst_size, self.tokens + (elapsed * self.rate))
 
     async def acquire(self, tokens: int = 1) -> float:
         """
@@ -135,9 +123,7 @@ class RateLimiter:
                 needed = tokens - self.tokens
                 wait_time = needed / self.rate
 
-                logger.debug(
-                    f"[{self.name}] Rate limit: aguardando {wait_time:.2f}s"
-                )
+                logger.debug(f"[{self.name}] Rate limit: aguardando {wait_time:.2f}s")
 
                 # Aguardar
                 await asyncio.sleep(wait_time)
@@ -241,7 +227,7 @@ class AdaptiveRateLimiter(RateLimiter):
         max_rate: float = 100.0,
         backoff_factor: float = 0.5,
         recovery_factor: float = 1.1,
-        name: Optional[str] = None
+        name: str | None = None,
     ):
         """
         Inicializa o rate limiter adaptativo.
@@ -255,9 +241,7 @@ class AdaptiveRateLimiter(RateLimiter):
             name: Nome para logging
         """
         super().__init__(
-            requests_per_second=initial_rate,
-            burst_size=max(1, int(initial_rate)),
-            name=name or "AdaptiveRateLimiter"
+            requests_per_second=initial_rate, burst_size=max(1, int(initial_rate)), name=name or "AdaptiveRateLimiter"
         )
 
         self.initial_rate = initial_rate
@@ -269,7 +253,7 @@ class AdaptiveRateLimiter(RateLimiter):
         self._consecutive_success = 0
         self._recovery_threshold = 10  # Sucessos antes de aumentar rate
 
-    async def report_rate_limit(self, retry_after: Optional[int] = None) -> None:
+    async def report_rate_limit(self, retry_after: int | None = None) -> None:
         """
         Reporta que recebeu rate limit (429).
         Reduz o rate automaticamente.
@@ -283,10 +267,7 @@ class AdaptiveRateLimiter(RateLimiter):
             self.burst_size = max(1, int(self.rate))
             self._consecutive_success = 0
 
-            logger.warning(
-                f"[{self.name}] Rate limit detectado. "
-                f"Rate reduzido: {old_rate:.2f} -> {self.rate:.2f}/s"
-            )
+            logger.warning(f"[{self.name}] Rate limit detectado. Rate reduzido: {old_rate:.2f} -> {self.rate:.2f}/s")
 
             if retry_after:
                 logger.info(f"[{self.name}] Retry-After: {retry_after}s")
@@ -307,9 +288,7 @@ class AdaptiveRateLimiter(RateLimiter):
                 self._consecutive_success = 0
 
                 if self.rate != old_rate:
-                    logger.debug(
-                        f"[{self.name}] Rate aumentado: {old_rate:.2f} -> {self.rate:.2f}/s"
-                    )
+                    logger.debug(f"[{self.name}] Rate aumentado: {old_rate:.2f} -> {self.rate:.2f}/s")
 
     def reset_to_initial(self) -> None:
         """Reseta para o rate inicial."""

@@ -10,20 +10,22 @@ Testa:
 Total: ~60+ testes cobrindo fluxo, validacoes, skip conditions e process_result.
 """
 
-import pytest
 import sys
-sys.path.insert(0, '/app')
 
-from modules.ai.bartolo.wizards.base_wizard import WizardState, StepType
+import pytest
+
+sys.path.insert(0, "/app")
+
+from modules.ai.bartolo.wizards.base_wizard import StepType, WizardState
+from modules.ai.bartolo.wizards.comunicado_wizard import ComunicadoWizard
+from modules.ai.bartolo.wizards.diarista_wizard import DiaristaWizard
 from modules.ai.bartolo.wizards.escala_wizard import EscalaWizard
 from modules.ai.bartolo.wizards.posto_wizard import PostoWizard
-from modules.ai.bartolo.wizards.diarista_wizard import DiaristaWizard
-from modules.ai.bartolo.wizards.comunicado_wizard import ComunicadoWizard
-
 
 # ==========================================================================
 # EscalaWizard
 # ==========================================================================
+
 
 class TestEscalaWizard:
     """Testes para EscalaWizard."""
@@ -53,8 +55,14 @@ class TestEscalaWizard:
         """Testa que todos os step IDs esperados estao presentes."""
         step_ids = [s.id for s in wizard.steps]
         expected = [
-            "posto", "mes_ano", "tipo_escala", "turno",
-            "horario_personalizado", "funcionarios", "observacoes", "confirmacao"
+            "posto",
+            "mes_ano",
+            "tipo_escala",
+            "turno",
+            "horario_personalizado",
+            "funcionarios",
+            "observacoes",
+            "confirmacao",
         ]
         assert step_ids == expected
 
@@ -141,6 +149,7 @@ class TestEscalaWizard:
     def test_parse_mes_ano_fallback(self, wizard):
         """Testa fallback quando formato nao e reconhecido."""
         from datetime import date
+
         mes, ano = wizard._parse_mes_ano("invalido")
         assert mes == date.today().month
         assert ano == date.today().year
@@ -246,6 +255,7 @@ class TestEscalaWizard:
 # PostoWizard
 # ==========================================================================
 
+
 class TestPostoWizard:
     """Testes para PostoWizard."""
 
@@ -274,8 +284,16 @@ class TestPostoWizard:
         """Testa que todos os step IDs esperados estao presentes."""
         step_ids = [s.id for s in wizard.steps]
         expected = [
-            "nome", "tipo", "endereco", "cliente", "turno",
-            "efetivo_minimo", "requisitos", "armamento", "observacoes", "confirmacao"
+            "nome",
+            "tipo",
+            "endereco",
+            "cliente",
+            "turno",
+            "efetivo_minimo",
+            "requisitos",
+            "armamento",
+            "observacoes",
+            "confirmacao",
         ]
         assert step_ids == expected
 
@@ -459,6 +477,7 @@ class TestPostoWizard:
 # DiaristaWizard
 # ==========================================================================
 
+
 class TestDiaristaWizard:
     """Testes para DiaristaWizard."""
 
@@ -487,8 +506,15 @@ class TestDiaristaWizard:
         """Testa que todos os step IDs esperados estao presentes."""
         step_ids = [s.id for s in wizard.steps]
         expected = [
-            "diarista", "data", "horario", "horario_personalizado",
-            "local", "tipo_servico", "valor", "observacoes", "confirmacao"
+            "diarista",
+            "data",
+            "horario",
+            "horario_personalizado",
+            "local",
+            "tipo_servico",
+            "valor",
+            "observacoes",
+            "confirmacao",
         ]
         assert step_ids == expected
 
@@ -696,6 +722,7 @@ class TestDiaristaWizard:
 # ComunicadoWizard
 # ==========================================================================
 
+
 class TestComunicadoWizard:
     """Testes para ComunicadoWizard."""
 
@@ -724,9 +751,16 @@ class TestComunicadoWizard:
         """Testa que todos os step IDs esperados estao presentes."""
         step_ids = [s.id for s in wizard.steps]
         expected = [
-            "tipo", "titulo", "conteudo", "prioridade", "destinatarios",
-            "destinatarios_detalhe", "requer_confirmacao", "publicacao",
-            "data_agendamento", "confirmacao"
+            "tipo",
+            "titulo",
+            "conteudo",
+            "prioridade",
+            "destinatarios",
+            "destinatarios_detalhe",
+            "requer_confirmacao",
+            "publicacao",
+            "data_agendamento",
+            "confirmacao",
         ]
         assert step_ids == expected
 
@@ -987,15 +1021,18 @@ class TestComunicadoWizard:
 # Testes Cross-Wizard
 # ==========================================================================
 
+
 class TestCrossWizard:
     """Testes que abrangem todos os 4 novos wizards."""
 
-    @pytest.fixture(params=[
-        ("escala", EscalaWizard),
-        ("posto", PostoWizard),
-        ("diarista", DiaristaWizard),
-        ("comunicado", ComunicadoWizard),
-    ])
+    @pytest.fixture(
+        params=[
+            ("escala", EscalaWizard),
+            ("posto", PostoWizard),
+            ("diarista", DiaristaWizard),
+            ("comunicado", ComunicadoWizard),
+        ]
+    )
     def wizard_pair(self, request):
         """Fixture parametrizada para todos os wizards."""
         wizard_type, wizard_class = request.param

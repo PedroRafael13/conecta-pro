@@ -18,13 +18,6 @@ Estrutura:
 - controllers/: Endpoints REST
 """
 
-# Lazy import do router para evitar dependências circulares em testes
-def get_router():
-    """Retorna o router do módulo."""
-    from modules.notifications.push.controllers import router
-    return router
-
-
 # Models - importação direta (sem dependências externas pesadas)
 from modules.notifications.push.models import (
     CampaignStatus,
@@ -56,6 +49,15 @@ from modules.notifications.push.services import (
     FCMService,
     PushService,
 )
+
+
+# Lazy import do router para evitar dependências circulares em testes
+def get_router():
+    """Retorna o router do módulo."""
+    from modules.notifications.push.controllers import router
+
+    return router
+
 
 __all__ = [
     # Router (lazy)

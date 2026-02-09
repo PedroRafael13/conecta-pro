@@ -2,7 +2,6 @@
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -31,7 +30,6 @@ from modules.financial.costing.models import (
     ValueAddedType,
 )
 
-
 # =============================================================================
 # COST DRIVER SCHEMAS
 # =============================================================================
@@ -42,20 +40,20 @@ class CostDriverBase(BaseModel):
 
     code: str = Field(..., min_length=1, max_length=30)
     name: str = Field(..., min_length=1, max_length=100)
-    description: Optional[str] = Field(None, max_length=1000)
+    description: str | None = Field(None, max_length=1000)
     driver_type: DriverType = DriverType.TRANSACTION
     driver_category: DriverCategory = DriverCategory.ACTIVITY
     measure_unit: DriverMeasureUnit = DriverMeasureUnit.QUANTITY
-    measure_symbol: Optional[str] = Field(None, max_length=10)
+    measure_symbol: str | None = Field(None, max_length=10)
     unit_cost: Decimal = Field(default=Decimal("0"), ge=0)
-    practical_capacity: Optional[Decimal] = Field(None, ge=0)
-    theoretical_capacity: Optional[Decimal] = Field(None, ge=0)
-    custom_formula: Optional[str] = None
-    formula_variables: Optional[dict] = None
-    data_source: Optional[str] = Field(None, max_length=100)
+    practical_capacity: Decimal | None = Field(None, ge=0)
+    theoretical_capacity: Decimal | None = Field(None, ge=0)
+    custom_formula: str | None = None
+    formula_variables: dict | None = None
+    data_source: str | None = Field(None, max_length=100)
     is_automated: bool = False
-    notes: Optional[str] = None
-    tags: Optional[list[str]] = None
+    notes: str | None = None
+    tags: list[str] | None = None
 
 
 class CostDriverCreate(CostDriverBase):
@@ -67,22 +65,22 @@ class CostDriverCreate(CostDriverBase):
 class CostDriverUpdate(BaseModel):
     """Schema para atualizar Cost Driver."""
 
-    name: Optional[str] = Field(None, min_length=1, max_length=100)
-    description: Optional[str] = Field(None, max_length=1000)
-    driver_type: Optional[DriverType] = None
-    driver_category: Optional[DriverCategory] = None
-    status: Optional[DriverStatus] = None
-    measure_unit: Optional[DriverMeasureUnit] = None
-    measure_symbol: Optional[str] = Field(None, max_length=10)
-    unit_cost: Optional[Decimal] = Field(None, ge=0)
-    practical_capacity: Optional[Decimal] = Field(None, ge=0)
-    theoretical_capacity: Optional[Decimal] = Field(None, ge=0)
-    custom_formula: Optional[str] = None
-    formula_variables: Optional[dict] = None
-    is_automated: Optional[bool] = None
-    notes: Optional[str] = None
-    tags: Optional[list[str]] = None
-    active: Optional[bool] = None
+    name: str | None = Field(None, min_length=1, max_length=100)
+    description: str | None = Field(None, max_length=1000)
+    driver_type: DriverType | None = None
+    driver_category: DriverCategory | None = None
+    status: DriverStatus | None = None
+    measure_unit: DriverMeasureUnit | None = None
+    measure_symbol: str | None = Field(None, max_length=10)
+    unit_cost: Decimal | None = Field(None, ge=0)
+    practical_capacity: Decimal | None = Field(None, ge=0)
+    theoretical_capacity: Decimal | None = Field(None, ge=0)
+    custom_formula: str | None = None
+    formula_variables: dict | None = None
+    is_automated: bool | None = None
+    notes: str | None = None
+    tags: list[str] | None = None
+    active: bool | None = None
 
 
 class CostDriverResponse(CostDriverBase):
@@ -113,12 +111,12 @@ class CostDriverResponse(CostDriverBase):
 class CostDriverFilter(BaseModel):
     """Filtros para Cost Driver."""
 
-    driver_type: Optional[DriverType] = None
-    driver_category: Optional[DriverCategory] = None
-    status: Optional[DriverStatus] = None
-    is_automated: Optional[bool] = None
-    active: Optional[bool] = None
-    search: Optional[str] = None
+    driver_type: DriverType | None = None
+    driver_category: DriverCategory | None = None
+    status: DriverStatus | None = None
+    is_automated: bool | None = None
+    active: bool | None = None
+    search: str | None = None
 
 
 # =============================================================================
@@ -131,27 +129,27 @@ class CostActivityBase(BaseModel):
 
     code: str = Field(..., min_length=1, max_length=30)
     name: str = Field(..., min_length=1, max_length=150)
-    short_name: Optional[str] = Field(None, max_length=50)
-    description: Optional[str] = Field(None, max_length=2000)
+    short_name: str | None = Field(None, max_length=50)
+    description: str | None = Field(None, max_length=2000)
     activity_type: ActivityType = ActivityType.PRIMARY
     activity_level: ActivityLevel = ActivityLevel.UNIT
     value_added_type: ValueAddedType = ValueAddedType.VALUE_ADDED
-    parent_id: Optional[UUID] = None
-    cost_pool_id: Optional[UUID] = None
-    primary_driver_id: Optional[UUID] = None
-    cost_center_id: Optional[UUID] = None
-    practical_capacity: Optional[Decimal] = Field(None, ge=0)
-    capacity_unit: Optional[str] = Field(None, max_length=20)
-    standard_time: Optional[Decimal] = Field(None, ge=0)
-    process_name: Optional[str] = Field(None, max_length=100)
-    subprocess_name: Optional[str] = Field(None, max_length=100)
-    department: Optional[str] = Field(None, max_length=100)
-    responsible_name: Optional[str] = Field(None, max_length=100)
+    parent_id: UUID | None = None
+    cost_pool_id: UUID | None = None
+    primary_driver_id: UUID | None = None
+    cost_center_id: UUID | None = None
+    practical_capacity: Decimal | None = Field(None, ge=0)
+    capacity_unit: str | None = Field(None, max_length=20)
+    standard_time: Decimal | None = Field(None, ge=0)
+    process_name: str | None = Field(None, max_length=100)
+    subprocess_name: str | None = Field(None, max_length=100)
+    department: str | None = Field(None, max_length=100)
+    responsible_name: str | None = Field(None, max_length=100)
     is_core: bool = False
     is_outsourceable: bool = False
     is_automatable: bool = False
-    notes: Optional[str] = None
-    tags: Optional[list[str]] = None
+    notes: str | None = None
+    tags: list[str] | None = None
 
 
 class CostActivityCreate(CostActivityBase):
@@ -163,27 +161,27 @@ class CostActivityCreate(CostActivityBase):
 class CostActivityUpdate(BaseModel):
     """Schema para atualizar Cost Activity."""
 
-    name: Optional[str] = Field(None, min_length=1, max_length=150)
-    short_name: Optional[str] = Field(None, max_length=50)
-    description: Optional[str] = Field(None, max_length=2000)
-    activity_type: Optional[ActivityType] = None
-    activity_level: Optional[ActivityLevel] = None
-    status: Optional[ActivityStatus] = None
-    value_added_type: Optional[ValueAddedType] = None
-    parent_id: Optional[UUID] = None
-    cost_pool_id: Optional[UUID] = None
-    primary_driver_id: Optional[UUID] = None
-    cost_center_id: Optional[UUID] = None
-    practical_capacity: Optional[Decimal] = Field(None, ge=0)
-    standard_time: Optional[Decimal] = Field(None, ge=0)
-    benchmark_cost: Optional[Decimal] = Field(None, ge=0)
-    benchmark_time: Optional[Decimal] = Field(None, ge=0)
-    is_core: Optional[bool] = None
-    is_outsourceable: Optional[bool] = None
-    is_automatable: Optional[bool] = None
-    notes: Optional[str] = None
-    tags: Optional[list[str]] = None
-    active: Optional[bool] = None
+    name: str | None = Field(None, min_length=1, max_length=150)
+    short_name: str | None = Field(None, max_length=50)
+    description: str | None = Field(None, max_length=2000)
+    activity_type: ActivityType | None = None
+    activity_level: ActivityLevel | None = None
+    status: ActivityStatus | None = None
+    value_added_type: ValueAddedType | None = None
+    parent_id: UUID | None = None
+    cost_pool_id: UUID | None = None
+    primary_driver_id: UUID | None = None
+    cost_center_id: UUID | None = None
+    practical_capacity: Decimal | None = Field(None, ge=0)
+    standard_time: Decimal | None = Field(None, ge=0)
+    benchmark_cost: Decimal | None = Field(None, ge=0)
+    benchmark_time: Decimal | None = Field(None, ge=0)
+    is_core: bool | None = None
+    is_outsourceable: bool | None = None
+    is_automatable: bool | None = None
+    notes: str | None = None
+    tags: list[str] | None = None
+    active: bool | None = None
 
 
 class CostActivityResponse(CostActivityBase):
@@ -195,18 +193,18 @@ class CostActivityResponse(CostActivityBase):
     condominio_id: UUID
     status: ActivityStatus
     level: int
-    path: Optional[str]
+    path: str | None
     total_cost: Decimal
     fixed_cost: Decimal
     variable_cost: Decimal
     allocated_cost: Decimal
     activity_rate: Decimal
     used_capacity: Decimal
-    actual_time: Optional[Decimal]
-    time_variance: Optional[Decimal]
+    actual_time: Decimal | None
+    time_variance: Decimal | None
     executions_count: int
-    benchmark_cost: Optional[Decimal]
-    benchmark_time: Optional[Decimal]
+    benchmark_cost: Decimal | None
+    benchmark_time: Decimal | None
     active: bool
     created_at: datetime
     updated_at: datetime
@@ -215,17 +213,17 @@ class CostActivityResponse(CostActivityBase):
 class CostActivityFilter(BaseModel):
     """Filtros para Cost Activity."""
 
-    activity_type: Optional[ActivityType] = None
-    activity_level: Optional[ActivityLevel] = None
-    status: Optional[ActivityStatus] = None
-    value_added_type: Optional[ValueAddedType] = None
-    cost_pool_id: Optional[UUID] = None
-    cost_center_id: Optional[UUID] = None
-    is_core: Optional[bool] = None
-    is_outsourceable: Optional[bool] = None
-    is_automatable: Optional[bool] = None
-    active: Optional[bool] = None
-    search: Optional[str] = None
+    activity_type: ActivityType | None = None
+    activity_level: ActivityLevel | None = None
+    status: ActivityStatus | None = None
+    value_added_type: ValueAddedType | None = None
+    cost_pool_id: UUID | None = None
+    cost_center_id: UUID | None = None
+    is_core: bool | None = None
+    is_outsourceable: bool | None = None
+    is_automatable: bool | None = None
+    active: bool | None = None
+    search: str | None = None
 
 
 # =============================================================================
@@ -238,20 +236,20 @@ class CostPoolBase(BaseModel):
 
     code: str = Field(..., min_length=1, max_length=30)
     name: str = Field(..., min_length=1, max_length=100)
-    description: Optional[str] = Field(None, max_length=1000)
+    description: str | None = Field(None, max_length=1000)
     pool_type: PoolType = PoolType.OVERHEAD
     allocation_basis: AllocationBasis = AllocationBasis.ACTIVITY_BASED
-    parent_id: Optional[UUID] = None
-    cost_center_id: Optional[UUID] = None
+    parent_id: UUID | None = None
+    cost_center_id: UUID | None = None
     budget_amount: Decimal = Field(default=Decimal("0"), ge=0)
-    custom_allocation_formula: Optional[str] = None
-    allocation_weights: Optional[dict] = None
-    manager_name: Optional[str] = Field(None, max_length=100)
-    department: Optional[str] = Field(None, max_length=100)
+    custom_allocation_formula: str | None = None
+    allocation_weights: dict | None = None
+    manager_name: str | None = Field(None, max_length=100)
+    department: str | None = Field(None, max_length=100)
     is_homogeneous: bool = True
     auto_allocate: bool = False
-    notes: Optional[str] = None
-    tags: Optional[list[str]] = None
+    notes: str | None = None
+    tags: list[str] | None = None
 
 
 class CostPoolCreate(CostPoolBase):
@@ -263,21 +261,21 @@ class CostPoolCreate(CostPoolBase):
 class CostPoolUpdate(BaseModel):
     """Schema para atualizar Cost Pool."""
 
-    name: Optional[str] = Field(None, min_length=1, max_length=100)
-    description: Optional[str] = Field(None, max_length=1000)
-    pool_type: Optional[PoolType] = None
-    status: Optional[PoolStatus] = None
-    allocation_basis: Optional[AllocationBasis] = None
-    parent_id: Optional[UUID] = None
-    cost_center_id: Optional[UUID] = None
-    budget_amount: Optional[Decimal] = Field(None, ge=0)
-    custom_allocation_formula: Optional[str] = None
-    allocation_weights: Optional[dict] = None
-    is_homogeneous: Optional[bool] = None
-    auto_allocate: Optional[bool] = None
-    notes: Optional[str] = None
-    tags: Optional[list[str]] = None
-    active: Optional[bool] = None
+    name: str | None = Field(None, min_length=1, max_length=100)
+    description: str | None = Field(None, max_length=1000)
+    pool_type: PoolType | None = None
+    status: PoolStatus | None = None
+    allocation_basis: AllocationBasis | None = None
+    parent_id: UUID | None = None
+    cost_center_id: UUID | None = None
+    budget_amount: Decimal | None = Field(None, ge=0)
+    custom_allocation_formula: str | None = None
+    allocation_weights: dict | None = None
+    is_homogeneous: bool | None = None
+    auto_allocate: bool | None = None
+    notes: str | None = None
+    tags: list[str] | None = None
+    active: bool | None = None
 
 
 class CostPoolResponse(CostPoolBase):
@@ -289,7 +287,7 @@ class CostPoolResponse(CostPoolBase):
     condominio_id: UUID
     status: PoolStatus
     level: int
-    path: Optional[str]
+    path: str | None
     total_cost: Decimal
     allocated_cost: Decimal
     unallocated_cost: Decimal
@@ -306,21 +304,21 @@ class CostPoolResponse(CostPoolBase):
 class CostPoolFilter(BaseModel):
     """Filtros para Cost Pool."""
 
-    pool_type: Optional[PoolType] = None
-    status: Optional[PoolStatus] = None
-    allocation_basis: Optional[AllocationBasis] = None
-    cost_center_id: Optional[UUID] = None
-    is_homogeneous: Optional[bool] = None
-    active: Optional[bool] = None
-    search: Optional[str] = None
+    pool_type: PoolType | None = None
+    status: PoolStatus | None = None
+    allocation_basis: AllocationBasis | None = None
+    cost_center_id: UUID | None = None
+    is_homogeneous: bool | None = None
+    active: bool | None = None
+    search: str | None = None
 
 
 class CostPoolAddCost(BaseModel):
     """Schema para adicionar custo ao pool."""
 
     amount: Decimal = Field(..., gt=0)
-    component_name: Optional[str] = Field(None, max_length=100)
-    description: Optional[str] = None
+    component_name: str | None = Field(None, max_length=100)
+    description: str | None = None
 
 
 # =============================================================================
@@ -333,24 +331,24 @@ class CostObjectBase(BaseModel):
 
     code: str = Field(..., min_length=1, max_length=50)
     name: str = Field(..., min_length=1, max_length=150)
-    short_name: Optional[str] = Field(None, max_length=50)
-    description: Optional[str] = Field(None, max_length=2000)
+    short_name: str | None = Field(None, max_length=50)
+    description: str | None = Field(None, max_length=2000)
     object_type: CostObjectType = CostObjectType.SERVICE
-    category: Optional[str] = Field(None, max_length=100)
-    subcategory: Optional[str] = Field(None, max_length=100)
-    parent_id: Optional[UUID] = None
-    reference_type: Optional[str] = Field(None, max_length=50)
-    reference_id: Optional[UUID] = None
+    category: str | None = Field(None, max_length=100)
+    subcategory: str | None = Field(None, max_length=100)
+    parent_id: UUID | None = None
+    reference_type: str | None = Field(None, max_length=50)
+    reference_id: UUID | None = None
     revenue_budget: Decimal = Field(default=Decimal("0"), ge=0)
     cost_budget: Decimal = Field(default=Decimal("0"), ge=0)
     quantity: Decimal = Field(default=Decimal("0"), ge=0)
-    unit_of_measure: Optional[str] = Field(None, max_length=20)
+    unit_of_measure: str | None = Field(None, max_length=20)
     unit_price: Decimal = Field(default=Decimal("0"), ge=0)
-    owner_name: Optional[str] = Field(None, max_length=100)
-    department: Optional[str] = Field(None, max_length=100)
+    owner_name: str | None = Field(None, max_length=100)
+    department: str | None = Field(None, max_length=100)
     is_strategic: bool = False
-    notes: Optional[str] = None
-    tags: Optional[list[str]] = None
+    notes: str | None = None
+    tags: list[str] | None = None
 
 
 class CostObjectCreate(CostObjectBase):
@@ -362,23 +360,23 @@ class CostObjectCreate(CostObjectBase):
 class CostObjectUpdate(BaseModel):
     """Schema para atualizar Cost Object."""
 
-    name: Optional[str] = Field(None, min_length=1, max_length=150)
-    short_name: Optional[str] = Field(None, max_length=50)
-    description: Optional[str] = Field(None, max_length=2000)
-    object_type: Optional[CostObjectType] = None
-    status: Optional[CostObjectStatus] = None
-    category: Optional[str] = Field(None, max_length=100)
-    subcategory: Optional[str] = Field(None, max_length=100)
-    parent_id: Optional[UUID] = None
-    revenue: Optional[Decimal] = Field(None, ge=0)
-    revenue_budget: Optional[Decimal] = Field(None, ge=0)
-    cost_budget: Optional[Decimal] = Field(None, ge=0)
-    quantity: Optional[Decimal] = Field(None, ge=0)
-    unit_price: Optional[Decimal] = Field(None, ge=0)
-    is_strategic: Optional[bool] = None
-    notes: Optional[str] = None
-    tags: Optional[list[str]] = None
-    active: Optional[bool] = None
+    name: str | None = Field(None, min_length=1, max_length=150)
+    short_name: str | None = Field(None, max_length=50)
+    description: str | None = Field(None, max_length=2000)
+    object_type: CostObjectType | None = None
+    status: CostObjectStatus | None = None
+    category: str | None = Field(None, max_length=100)
+    subcategory: str | None = Field(None, max_length=100)
+    parent_id: UUID | None = None
+    revenue: Decimal | None = Field(None, ge=0)
+    revenue_budget: Decimal | None = Field(None, ge=0)
+    cost_budget: Decimal | None = Field(None, ge=0)
+    quantity: Decimal | None = Field(None, ge=0)
+    unit_price: Decimal | None = Field(None, ge=0)
+    is_strategic: bool | None = None
+    notes: str | None = None
+    tags: list[str] | None = None
+    active: bool | None = None
 
 
 class CostObjectResponse(CostObjectBase):
@@ -390,7 +388,7 @@ class CostObjectResponse(CostObjectBase):
     condominio_id: UUID
     status: CostObjectStatus
     level: int
-    path: Optional[str]
+    path: str | None
     revenue: Decimal
     direct_material_cost: Decimal
     direct_labor_cost: Decimal
@@ -407,8 +405,8 @@ class CostObjectResponse(CostObjectBase):
     contribution_margin_percent: Decimal
     net_margin: Decimal
     net_margin_percent: Decimal
-    profitability_level: Optional[ProfitabilityLevel]
-    profitability_score: Optional[Decimal]
+    profitability_level: ProfitabilityLevel | None
+    profitability_score: Decimal | None
     unit_cost: Decimal
     allocations_count: int
     active: bool
@@ -419,23 +417,23 @@ class CostObjectResponse(CostObjectBase):
 class CostObjectFilter(BaseModel):
     """Filtros para Cost Object."""
 
-    object_type: Optional[CostObjectType] = None
-    status: Optional[CostObjectStatus] = None
-    profitability_level: Optional[ProfitabilityLevel] = None
-    category: Optional[str] = None
-    is_strategic: Optional[bool] = None
-    is_profitable: Optional[bool] = None
-    active: Optional[bool] = None
-    search: Optional[str] = None
+    object_type: CostObjectType | None = None
+    status: CostObjectStatus | None = None
+    profitability_level: ProfitabilityLevel | None = None
+    category: str | None = None
+    is_strategic: bool | None = None
+    is_profitable: bool | None = None
+    active: bool | None = None
+    search: str | None = None
 
 
 class CostObjectAddDirectCost(BaseModel):
     """Schema para adicionar custo direto."""
 
-    material_cost: Optional[Decimal] = Field(None, ge=0)
-    labor_cost: Optional[Decimal] = Field(None, ge=0)
-    other_cost: Optional[Decimal] = Field(None, ge=0)
-    description: Optional[str] = None
+    material_cost: Decimal | None = Field(None, ge=0)
+    labor_cost: Decimal | None = Field(None, ge=0)
+    other_cost: Decimal | None = Field(None, ge=0)
+    description: str | None = None
 
 
 # =============================================================================
@@ -446,24 +444,24 @@ class CostObjectAddDirectCost(BaseModel):
 class CostAllocationBase(BaseModel):
     """Schema base para Cost Allocation."""
 
-    description: Optional[str] = Field(None, max_length=200)
-    reference: Optional[str] = Field(None, max_length=100)
+    description: str | None = Field(None, max_length=200)
+    reference: str | None = Field(None, max_length=100)
     allocation_type: AllocationType = AllocationType.ACTIVITY_TO_OBJECT
     allocation_method: AllocationMethod = AllocationMethod.DRIVER_BASED
-    source_pool_id: Optional[UUID] = None
-    source_activity_id: Optional[UUID] = None
-    source_cost_center_id: Optional[UUID] = None
-    activity_id: Optional[UUID] = None
-    cost_object_id: Optional[UUID] = None
-    target_cost_center_id: Optional[UUID] = None
-    driver_id: Optional[UUID] = None
+    source_pool_id: UUID | None = None
+    source_activity_id: UUID | None = None
+    source_cost_center_id: UUID | None = None
+    activity_id: UUID | None = None
+    cost_object_id: UUID | None = None
+    target_cost_center_id: UUID | None = None
+    driver_id: UUID | None = None
     allocated_amount: Decimal = Field(..., gt=0)
-    driver_quantity: Optional[Decimal] = Field(None, ge=0)
-    driver_rate: Optional[Decimal] = Field(None, ge=0)
-    allocation_percentage: Optional[Decimal] = Field(None, ge=0, le=100)
-    allocation_weight: Optional[Decimal] = Field(None, ge=0)
+    driver_quantity: Decimal | None = Field(None, ge=0)
+    driver_rate: Decimal | None = Field(None, ge=0)
+    allocation_percentage: Decimal | None = Field(None, ge=0, le=100)
+    allocation_weight: Decimal | None = Field(None, ge=0)
     reference_period: str = Field(..., min_length=7, max_length=7)  # "2024-01"
-    notes: Optional[str] = None
+    notes: str | None = None
 
     @field_validator("reference_period")
     @classmethod
@@ -491,13 +489,13 @@ class CostAllocationCreate(CostAllocationBase):
 class CostAllocationUpdate(BaseModel):
     """Schema para atualizar Cost Allocation."""
 
-    description: Optional[str] = Field(None, max_length=200)
-    reference: Optional[str] = Field(None, max_length=100)
-    allocated_amount: Optional[Decimal] = Field(None, gt=0)
-    driver_quantity: Optional[Decimal] = Field(None, ge=0)
-    driver_rate: Optional[Decimal] = Field(None, ge=0)
-    allocation_percentage: Optional[Decimal] = Field(None, ge=0, le=100)
-    notes: Optional[str] = None
+    description: str | None = Field(None, max_length=200)
+    reference: str | None = Field(None, max_length=100)
+    allocated_amount: Decimal | None = Field(None, gt=0)
+    driver_quantity: Decimal | None = Field(None, ge=0)
+    driver_rate: Decimal | None = Field(None, ge=0)
+    allocation_percentage: Decimal | None = Field(None, ge=0, le=100)
+    notes: str | None = None
 
 
 class CostAllocationResponse(CostAllocationBase):
@@ -508,17 +506,17 @@ class CostAllocationResponse(CostAllocationBase):
     id: UUID
     condominio_id: UUID
     allocation_number: str
-    batch_id: Optional[UUID]
+    batch_id: UUID | None
     status: AllocationStatus
     allocation_date: datetime
-    effective_date: Optional[datetime]
+    effective_date: datetime | None
     is_validated: bool
-    validated_at: Optional[datetime]
-    approved_at: Optional[datetime]
-    executed_at: Optional[datetime]
+    validated_at: datetime | None
+    approved_at: datetime | None
+    executed_at: datetime | None
     is_reversed: bool
-    reversed_at: Optional[datetime]
-    reversal_reason: Optional[str]
+    reversed_at: datetime | None
+    reversal_reason: str | None
     is_posted: bool
     is_automatic: bool
     is_recurring: bool
@@ -530,24 +528,24 @@ class CostAllocationResponse(CostAllocationBase):
 class CostAllocationFilter(BaseModel):
     """Filtros para Cost Allocation."""
 
-    allocation_type: Optional[AllocationType] = None
-    status: Optional[AllocationStatus] = None
-    allocation_method: Optional[AllocationMethod] = None
-    source_pool_id: Optional[UUID] = None
-    activity_id: Optional[UUID] = None
-    cost_object_id: Optional[UUID] = None
-    driver_id: Optional[UUID] = None
-    reference_period: Optional[str] = None
-    batch_id: Optional[UUID] = None
-    is_reversed: Optional[bool] = None
-    is_posted: Optional[bool] = None
-    active: Optional[bool] = None
+    allocation_type: AllocationType | None = None
+    status: AllocationStatus | None = None
+    allocation_method: AllocationMethod | None = None
+    source_pool_id: UUID | None = None
+    activity_id: UUID | None = None
+    cost_object_id: UUID | None = None
+    driver_id: UUID | None = None
+    reference_period: str | None = None
+    batch_id: UUID | None = None
+    is_reversed: bool | None = None
+    is_posted: bool | None = None
+    active: bool | None = None
 
 
 class CostAllocationApprove(BaseModel):
     """Schema para aprovar alocação."""
 
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class CostAllocationReverse(BaseModel):
@@ -561,7 +559,7 @@ class CostAllocationBatch(BaseModel):
 
     allocations: list[CostAllocationCreate] = Field(..., min_length=1)
     execute_immediately: bool = False
-    description: Optional[str] = None
+    description: str | None = None
 
 
 # =============================================================================
@@ -574,24 +572,24 @@ class CostAnalysisBase(BaseModel):
 
     code: str = Field(..., min_length=1, max_length=30)
     name: str = Field(..., min_length=1, max_length=150)
-    description: Optional[str] = Field(None, max_length=2000)
+    description: str | None = Field(None, max_length=2000)
     analysis_type: AnalysisType = AnalysisType.ABC_COSTING
     scope: AnalysisScope = AnalysisScope.GLOBAL
     period_start: datetime
     period_end: datetime
-    cost_center_ids: Optional[list[UUID]] = None
-    activity_ids: Optional[list[UUID]] = None
-    pool_ids: Optional[list[UUID]] = None
-    object_ids: Optional[list[UUID]] = None
-    filters: Optional[dict] = None
-    parameters: Optional[dict] = None
-    scenarios: Optional[list[dict]] = None
-    comparison_period_start: Optional[datetime] = None
-    comparison_period_end: Optional[datetime] = None
+    cost_center_ids: list[UUID] | None = None
+    activity_ids: list[UUID] | None = None
+    pool_ids: list[UUID] | None = None
+    object_ids: list[UUID] | None = None
+    filters: dict | None = None
+    parameters: dict | None = None
+    scenarios: list[dict] | None = None
+    comparison_period_start: datetime | None = None
+    comparison_period_end: datetime | None = None
     is_scheduled: bool = False
-    schedule_cron: Optional[str] = Field(None, max_length=50)
-    notes: Optional[str] = None
-    tags: Optional[list[str]] = None
+    schedule_cron: str | None = Field(None, max_length=50)
+    notes: str | None = None
+    tags: list[str] | None = None
 
 
 class CostAnalysisCreate(CostAnalysisBase):
@@ -603,18 +601,18 @@ class CostAnalysisCreate(CostAnalysisBase):
 class CostAnalysisUpdate(BaseModel):
     """Schema para atualizar Cost Analysis."""
 
-    name: Optional[str] = Field(None, min_length=1, max_length=150)
-    description: Optional[str] = Field(None, max_length=2000)
-    period_start: Optional[datetime] = None
-    period_end: Optional[datetime] = None
-    filters: Optional[dict] = None
-    parameters: Optional[dict] = None
-    scenarios: Optional[list[dict]] = None
-    is_scheduled: Optional[bool] = None
-    schedule_cron: Optional[str] = Field(None, max_length=50)
-    notes: Optional[str] = None
-    tags: Optional[list[str]] = None
-    active: Optional[bool] = None
+    name: str | None = Field(None, min_length=1, max_length=150)
+    description: str | None = Field(None, max_length=2000)
+    period_start: datetime | None = None
+    period_end: datetime | None = None
+    filters: dict | None = None
+    parameters: dict | None = None
+    scenarios: list[dict] | None = None
+    is_scheduled: bool | None = None
+    schedule_cron: str | None = Field(None, max_length=50)
+    notes: str | None = None
+    tags: list[str] | None = None
+    active: bool | None = None
 
 
 class CostAnalysisResponse(CostAnalysisBase):
@@ -625,8 +623,8 @@ class CostAnalysisResponse(CostAnalysisBase):
     id: UUID
     condominio_id: UUID
     status: AnalysisStatus
-    reference_period: Optional[str]
-    results: Optional[dict]
+    reference_period: str | None
+    results: dict | None
     total_cost: Decimal
     total_revenue: Decimal
     total_margin: Decimal
@@ -635,22 +633,22 @@ class CostAnalysisResponse(CostAnalysisBase):
     total_indirect_cost: Decimal
     total_allocated: Decimal
     unallocated_cost: Decimal
-    practical_capacity: Optional[Decimal]
-    used_capacity: Optional[Decimal]
-    idle_capacity: Optional[Decimal]
-    idle_capacity_cost: Optional[Decimal]
-    cost_variance: Optional[Decimal]
-    break_even_units: Optional[Decimal]
-    break_even_revenue: Optional[Decimal]
-    safety_margin: Optional[Decimal]
-    insights: Optional[list[dict]]
-    recommendations: Optional[list[dict]]
-    alerts: Optional[list[dict]]
-    started_at: Optional[datetime]
-    completed_at: Optional[datetime]
-    execution_time_ms: Optional[int]
-    report_format: Optional[ReportFormat]
-    report_path: Optional[str]
+    practical_capacity: Decimal | None
+    used_capacity: Decimal | None
+    idle_capacity: Decimal | None
+    idle_capacity_cost: Decimal | None
+    cost_variance: Decimal | None
+    break_even_units: Decimal | None
+    break_even_revenue: Decimal | None
+    safety_margin: Decimal | None
+    insights: list[dict] | None
+    recommendations: list[dict] | None
+    alerts: list[dict] | None
+    started_at: datetime | None
+    completed_at: datetime | None
+    execution_time_ms: int | None
+    report_format: ReportFormat | None
+    report_path: str | None
     is_template: bool
     is_favorite: bool
     active: bool
@@ -661,14 +659,14 @@ class CostAnalysisResponse(CostAnalysisBase):
 class CostAnalysisFilter(BaseModel):
     """Filtros para Cost Analysis."""
 
-    analysis_type: Optional[AnalysisType] = None
-    status: Optional[AnalysisStatus] = None
-    scope: Optional[AnalysisScope] = None
-    is_scheduled: Optional[bool] = None
-    is_template: Optional[bool] = None
-    is_favorite: Optional[bool] = None
-    active: Optional[bool] = None
-    search: Optional[str] = None
+    analysis_type: AnalysisType | None = None
+    status: AnalysisStatus | None = None
+    scope: AnalysisScope | None = None
+    is_scheduled: bool | None = None
+    is_template: bool | None = None
+    is_favorite: bool | None = None
+    active: bool | None = None
+    search: str | None = None
 
 
 class CostAnalysisRun(BaseModel):
@@ -676,7 +674,7 @@ class CostAnalysisRun(BaseModel):
 
     force_recalculate: bool = False
     generate_report: bool = False
-    report_format: Optional[ReportFormat] = None
+    report_format: ReportFormat | None = None
 
 
 # =============================================================================

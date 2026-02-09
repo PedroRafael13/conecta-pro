@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Type
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -39,8 +39,8 @@ class PushProvider(ABC):
         user_id: str,
         title: str,
         body: str,
-        data: Optional[Dict[str, Any]] = None,
-        image_url: Optional[str] = None,
+        data: dict[str, Any] | None = None,
+        image_url: str | None = None,
     ) -> bool:
         """
         Envia push notification para um usuario.
@@ -63,11 +63,11 @@ class PushProvider(ABC):
     @abstractmethod
     async def send_push_bulk(
         self,
-        user_ids: List[str],
+        user_ids: list[str],
         title: str,
         body: str,
-        data: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, bool]:
+        data: dict[str, Any] | None = None,
+    ) -> dict[str, bool]:
         """
         Envia push notification para multiplos usuarios.
 
@@ -91,7 +91,7 @@ class PushProvider(ABC):
         topic: str,
         title: str,
         body: str,
-        data: Optional[Dict[str, Any]] = None,
+        data: dict[str, Any] | None = None,
     ) -> bool:
         """
         Envia push notification para um topico.
@@ -165,7 +165,7 @@ class FirebasePushProvider(PushProvider):
     def __init__(
         self,
         project_id: str,
-        credentials: Optional[Dict[str, Any]] = None,
+        credentials: dict[str, Any] | None = None,
     ) -> None:
         """
         Inicializa o provedor Firebase.
@@ -177,7 +177,7 @@ class FirebasePushProvider(PushProvider):
         self.project_id = project_id
         self.credentials = credentials
         self._initialized = False
-        self._device_tokens: Dict[str, List[str]] = {}  # user_id -> [tokens]
+        self._device_tokens: dict[str, list[str]] = {}  # user_id -> [tokens]
 
     async def _ensure_initialized(self) -> None:
         """Garante que o Firebase esta inicializado."""
@@ -201,8 +201,8 @@ class FirebasePushProvider(PushProvider):
         user_id: str,
         title: str,
         body: str,
-        data: Optional[Dict[str, Any]] = None,
-        image_url: Optional[str] = None,
+        data: dict[str, Any] | None = None,
+        image_url: str | None = None,
     ) -> bool:
         """
         Envia push notification via Firebase.
@@ -242,9 +242,7 @@ class FirebasePushProvider(PushProvider):
             #
             # response = messaging.send_multicast(message)
 
-            logger.info(
-                f"Push enviado para usuario {user_id} em {len(tokens)} dispositivos"
-            )
+            logger.info(f"Push enviado para usuario {user_id} em {len(tokens)} dispositivos")
             return True
 
         except Exception as e:
@@ -253,11 +251,11 @@ class FirebasePushProvider(PushProvider):
 
     async def send_push_bulk(
         self,
-        user_ids: List[str],
+        user_ids: list[str],
         title: str,
         body: str,
-        data: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, bool]:
+        data: dict[str, Any] | None = None,
+    ) -> dict[str, bool]:
         """
         Envia push para multiplos usuarios.
 
@@ -284,7 +282,7 @@ class FirebasePushProvider(PushProvider):
         topic: str,
         title: str,
         body: str,
-        data: Optional[Dict[str, Any]] = None,
+        data: dict[str, Any] | None = None,
     ) -> bool:
         """
         Envia push para topico Firebase.
@@ -402,8 +400,8 @@ class OneSignalPushProvider(PushProvider):
         user_id: str,
         title: str,
         body: str,
-        data: Optional[Dict[str, Any]] = None,
-        image_url: Optional[str] = None,
+        data: dict[str, Any] | None = None,
+        image_url: str | None = None,
     ) -> bool:
         """
         Envia push via OneSignal.
@@ -455,11 +453,11 @@ class OneSignalPushProvider(PushProvider):
 
     async def send_push_bulk(
         self,
-        user_ids: List[str],
+        user_ids: list[str],
         title: str,
         body: str,
-        data: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, bool]:
+        data: dict[str, Any] | None = None,
+    ) -> dict[str, bool]:
         """
         Envia push para multiplos usuarios.
 
@@ -476,18 +474,18 @@ class OneSignalPushProvider(PushProvider):
             # OneSignal suporta envio bulk nativo
             # TODO: Implementar envio bulk
             logger.info(f"Push OneSignal bulk enviado para {len(user_ids)} usuarios")
-            return {user_id: True for user_id in user_ids}
+            return dict.fromkeys(user_ids, True)
 
         except Exception as e:
             logger.error(f"Erro ao enviar push bulk: {e}")
-            return {user_id: False for user_id in user_ids}
+            return dict.fromkeys(user_ids, False)
 
     async def send_to_topic(
         self,
         topic: str,
         title: str,
         body: str,
-        data: Optional[Dict[str, Any]] = None,
+        data: dict[str, Any] | None = None,
     ) -> bool:
         """
         Envia push para segmento/tag.
@@ -570,18 +568,18 @@ class PushProviderFactory:
         >>> provider = PushProviderFactory.get_provider("firebase")
     """
 
-    _providers: Dict[str, Type[PushProvider]] = {
+    _providers: dict[str, type[PushProvider]] = {
         "firebase": FirebasePushProvider,
         "onesignal": OneSignalPushProvider,
     }
-    _instances: Dict[str, PushProvider] = {}
-    _config: Dict[str, Dict[str, Any]] = {}
+    _instances: dict[str, PushProvider] = {}
+    _config: dict[str, dict[str, Any]] = {}
 
     @classmethod
     def register(
         cls,
         name: str,
-        provider_class: Type[PushProvider],
+        provider_class: type[PushProvider],
     ) -> None:
         """
         Registra um provedor de push.
@@ -610,7 +608,7 @@ class PushProviderFactory:
         logger.debug(f"Provedor de push configurado: {name}")
 
     @classmethod
-    def get_provider(cls, name: str) -> Optional[PushProvider]:
+    def get_provider(cls, name: str) -> PushProvider | None:
         """
         Obtem instancia de um provedor.
 
@@ -654,7 +652,7 @@ class PushProviderFactory:
             return None
 
     @classmethod
-    def list_providers(cls) -> List[str]:
+    def list_providers(cls) -> list[str]:
         """
         Lista provedores registrados.
 

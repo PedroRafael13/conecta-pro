@@ -1,20 +1,20 @@
 """Schemas Pydantic para modulo Fiscal - NF-e, NFS-e, SPED, Retencoes."""
-# pylint: disable=too-few-public-methods,no-self-argument,missing-class-docstring
+# pylint: disable=too-few-public-methods,missing-class-docstring
 
 from datetime import date, datetime
 from decimal import Decimal
-from enum import Enum
-from typing import Any, Dict, List, Optional
+from enum import StrEnum
+from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 # ============================================================
 # Enums para Schemas
 # ============================================================
 
 
-class TaxRegimeEnum(str, Enum):
+class TaxRegimeEnum(StrEnum):
     """Regime tributario."""
 
     SIMPLES_NACIONAL = "simples_nacional"
@@ -24,14 +24,14 @@ class TaxRegimeEnum(str, Enum):
     ISENTO = "isento"
 
 
-class NFeTipoEnum(str, Enum):
+class NFeTipoEnum(StrEnum):
     """Tipo de NF-e."""
 
     ENTRADA = "entrada"
     SAIDA = "saida"
 
 
-class NFeStatusEnum(str, Enum):
+class NFeStatusEnum(StrEnum):
     """Status da NF-e."""
 
     RASCUNHO = "rascunho"
@@ -45,7 +45,7 @@ class NFeStatusEnum(str, Enum):
     INUTILIZADA = "inutilizada"
 
 
-class NFSeStatusEnum(str, Enum):
+class NFSeStatusEnum(StrEnum):
     """Status da NFS-e."""
 
     RASCUNHO = "rascunho"
@@ -58,7 +58,7 @@ class NFSeStatusEnum(str, Enum):
     SUBSTITUIDA = "substituida"
 
 
-class SPEDTipoEnum(str, Enum):
+class SPEDTipoEnum(StrEnum):
     """Tipo de arquivo SPED."""
 
     EFD_ICMS_IPI = "efd_icms_ipi"
@@ -69,7 +69,7 @@ class SPEDTipoEnum(str, Enum):
     ESOCIAL = "esocial"
 
 
-class SPEDStatusEnum(str, Enum):
+class SPEDStatusEnum(StrEnum):
     """Status do arquivo SPED."""
 
     GERANDO = "gerando"
@@ -86,7 +86,7 @@ class SPEDStatusEnum(str, Enum):
     RECUSADO = "recusado"
 
 
-class ObrigacaoStatusEnum(str, Enum):
+class ObrigacaoStatusEnum(StrEnum):
     """Status de obrigacao fiscal."""
 
     PENDENTE = "pendente"
@@ -106,10 +106,10 @@ class CFOPBase(BaseModel):
 
     codigo: str = Field(..., min_length=4, max_length=4, description="Codigo CFOP")
     descricao: str = Field(..., min_length=5, max_length=500)
-    descricao_resumida: Optional[str] = Field(None, max_length=100)
+    descricao_resumida: str | None = Field(None, max_length=100)
     tipo: str = Field(..., description="entrada ou saida")
     grupo: str = Field(..., min_length=1, max_length=1, description="1,2,3,5,6,7")
-    natureza: Optional[str] = Field(None, max_length=30)
+    natureza: str | None = Field(None, max_length=30)
 
     # Tributacao
     gera_credito_icms: bool = False
@@ -130,11 +130,11 @@ class CFOPBase(BaseModel):
     zfm_suspende_pis_cofins: bool = False
 
     # CFOP correspondente
-    cfop_correspondente: Optional[str] = Field(None, max_length=4)
+    cfop_correspondente: str | None = Field(None, max_length=4)
 
     # Contas contabeis
-    conta_contabil_debito: Optional[str] = Field(None, max_length=20)
-    conta_contabil_credito: Optional[str] = Field(None, max_length=20)
+    conta_contabil_debito: str | None = Field(None, max_length=20)
+    conta_contabil_credito: str | None = Field(None, max_length=20)
 
 
 class CFOPCreate(CFOPBase):
@@ -144,25 +144,25 @@ class CFOPCreate(CFOPBase):
 class CFOPUpdate(BaseModel):
     """Schema para atualizar CFOP."""
 
-    descricao: Optional[str] = Field(None, max_length=500)
-    descricao_resumida: Optional[str] = Field(None, max_length=100)
-    natureza: Optional[str] = Field(None, max_length=30)
-    gera_credito_icms: Optional[bool] = None
-    gera_debito_icms: Optional[bool] = None
-    gera_credito_ipi: Optional[bool] = None
-    gera_debito_ipi: Optional[bool] = None
-    gera_pis_cofins: Optional[bool] = None
-    movimenta_estoque: Optional[bool] = None
-    movimenta_financeiro: Optional[bool] = None
-    movimenta_contabilidade: Optional[bool] = None
-    zfm_aplicavel: Optional[bool] = None
-    zfm_isenta_icms: Optional[bool] = None
-    zfm_isenta_ipi: Optional[bool] = None
-    zfm_suspende_pis_cofins: Optional[bool] = None
-    cfop_correspondente: Optional[str] = Field(None, max_length=4)
-    conta_contabil_debito: Optional[str] = Field(None, max_length=20)
-    conta_contabil_credito: Optional[str] = Field(None, max_length=20)
-    active: Optional[bool] = None
+    descricao: str | None = Field(None, max_length=500)
+    descricao_resumida: str | None = Field(None, max_length=100)
+    natureza: str | None = Field(None, max_length=30)
+    gera_credito_icms: bool | None = None
+    gera_debito_icms: bool | None = None
+    gera_credito_ipi: bool | None = None
+    gera_debito_ipi: bool | None = None
+    gera_pis_cofins: bool | None = None
+    movimenta_estoque: bool | None = None
+    movimenta_financeiro: bool | None = None
+    movimenta_contabilidade: bool | None = None
+    zfm_aplicavel: bool | None = None
+    zfm_isenta_icms: bool | None = None
+    zfm_isenta_ipi: bool | None = None
+    zfm_suspende_pis_cofins: bool | None = None
+    cfop_correspondente: str | None = Field(None, max_length=4)
+    conta_contabil_debito: str | None = Field(None, max_length=20)
+    conta_contabil_credito: str | None = Field(None, max_length=20)
+    active: bool | None = None
 
 
 class CFOPResponse(CFOPBase):
@@ -170,7 +170,7 @@ class CFOPResponse(CFOPBase):
 
     id: UUID
     created_at: datetime
-    updated_at: Optional[datetime]
+    updated_at: datetime | None
     active: bool
     is_entrada: bool
     is_saida: bool
@@ -184,7 +184,7 @@ class CFOPResponse(CFOPBase):
 class CFOPListResponse(BaseModel):
     """Lista de CFOPs."""
 
-    items: List[CFOPResponse]
+    items: list[CFOPResponse]
     total: int
     page: int
     page_size: int
@@ -193,13 +193,13 @@ class CFOPListResponse(BaseModel):
 class CFOPFilter(BaseModel):
     """Filtro para busca de CFOPs."""
 
-    tipo: Optional[str] = None
-    grupo: Optional[str] = None
-    natureza: Optional[str] = None
-    zfm_aplicavel: Optional[bool] = None
-    movimenta_estoque: Optional[bool] = None
-    active: Optional[bool] = True
-    search: Optional[str] = None
+    tipo: str | None = None
+    grupo: str | None = None
+    natureza: str | None = None
+    zfm_aplicavel: bool | None = None
+    movimenta_estoque: bool | None = None
+    active: bool | None = True
+    search: str | None = None
 
 
 # ============================================================
@@ -212,69 +212,75 @@ class NCMBase(BaseModel):
 
     codigo: str = Field(..., min_length=8, max_length=8, description="Codigo NCM")
     descricao: str = Field(..., min_length=5, max_length=2000)
-    descricao_resumida: Optional[str] = Field(None, max_length=200)
+    descricao_resumida: str | None = Field(None, max_length=200)
 
     # Classificacao
-    capitulo: Optional[str] = Field(None, max_length=2)
-    posicao: Optional[str] = Field(None, max_length=4)
-    subposicao: Optional[str] = Field(None, max_length=6)
+    capitulo: str | None = Field(None, max_length=2)
+    posicao: str | None = Field(None, max_length=4)
+    subposicao: str | None = Field(None, max_length=6)
 
     # IPI
-    ipi_aliquota: Optional[Decimal] = Field(None, ge=0, le=100)
-    ipi_codigo_enquadramento: Optional[str] = Field(None, max_length=5)
-    ipi_unidade_tributavel: Optional[str] = Field(None, max_length=6)
+    ipi_aliquota: Decimal | None = Field(None, ge=0, le=100)
+    ipi_codigo_enquadramento: str | None = Field(None, max_length=5)
+    ipi_unidade_tributavel: str | None = Field(None, max_length=6)
 
     # PIS/COFINS
-    pis_aliquota: Optional[Decimal] = Field(Decimal("1.65"), ge=0, le=100)
-    cofins_aliquota: Optional[Decimal] = Field(Decimal("7.6"), ge=0, le=100)
-    pis_cofins_cst_entrada: Optional[str] = Field("50", max_length=2)
-    pis_cofins_cst_saida: Optional[str] = Field("01", max_length=2)
+    pis_aliquota: Decimal | None = Field(Decimal("1.65"), ge=0, le=100)
+    cofins_aliquota: Decimal | None = Field(Decimal("7.6"), ge=0, le=100)
+    pis_cofins_cst_entrada: str | None = Field("50", max_length=2)
+    pis_cofins_cst_saida: str | None = Field("01", max_length=2)
 
     # ICMS
-    icms_cest: Optional[str] = Field(None, max_length=7)
-    icms_st_mva: Optional[Decimal] = Field(None, ge=0, le=500)
+    icms_cest: str | None = Field(None, max_length=7)
+    icms_st_mva: Decimal | None = Field(None, ge=0, le=500)
 
     # II
-    ii_aliquota: Optional[Decimal] = Field(None, ge=0, le=100)
+    ii_aliquota: Decimal | None = Field(None, ge=0, le=100)
 
     # Tributacao Monofasica
     tributacao_monofasica: bool = False
-    aliquota_monofasica: Optional[Decimal] = Field(None, ge=0, le=100)
+    aliquota_monofasica: Decimal | None = Field(None, ge=0, le=100)
 
     # Zona Franca
     zfm_isento_ipi: bool = False
     zfm_reduz_ii: bool = False
-    zfm_percentual_reducao_ii: Optional[Decimal] = Field(None, ge=0, le=100)
+    zfm_percentual_reducao_ii: Decimal | None = Field(None, ge=0, le=100)
 
     # TIPI
-    tipi_unidade: Optional[str] = Field(None, max_length=10)
-    tipi_nota: Optional[str] = Field(None, max_length=500)
+    tipi_unidade: str | None = Field(None, max_length=10)
+    tipi_nota: str | None = Field(None, max_length=500)
 
     # Vigencia
-    valid_from: Optional[date] = None
-    valid_until: Optional[date] = None
+    valid_from: date | None = None
+    valid_until: date | None = None
 
 
 class NCMCreate(NCMBase):
     """Schema para criar NCM."""
 
-    @validator("capitulo", always=True)
-    def extract_capitulo(cls, v, values):
+    @field_validator("capitulo")
+    @classmethod
+    def extract_capitulo(cls, v: Any, info) -> Any:
         """Extrai capitulo do codigo NCM."""
+        values = info.data
         if not v and "codigo" in values:
             return values["codigo"][:2]
         return v
 
-    @validator("posicao", always=True)
-    def extract_posicao(cls, v, values):
+    @field_validator("posicao")
+    @classmethod
+    def extract_posicao(cls, v: Any, info) -> Any:
         """Extrai posicao do codigo NCM."""
+        values = info.data
         if not v and "codigo" in values:
             return values["codigo"][:4]
         return v
 
-    @validator("subposicao", always=True)
-    def extract_subposicao(cls, v, values):
+    @field_validator("subposicao")
+    @classmethod
+    def extract_subposicao(cls, v: Any, info) -> Any:
         """Extrai subposicao do codigo NCM."""
+        values = info.data
         if not v and "codigo" in values:
             return values["codigo"][:6]
         return v
@@ -283,23 +289,23 @@ class NCMCreate(NCMBase):
 class NCMUpdate(BaseModel):
     """Schema para atualizar NCM."""
 
-    descricao: Optional[str] = Field(None, max_length=2000)
-    descricao_resumida: Optional[str] = Field(None, max_length=200)
-    ipi_aliquota: Optional[Decimal] = None
-    ipi_codigo_enquadramento: Optional[str] = None
-    pis_aliquota: Optional[Decimal] = None
-    cofins_aliquota: Optional[Decimal] = None
-    icms_cest: Optional[str] = None
-    icms_st_mva: Optional[Decimal] = None
-    ii_aliquota: Optional[Decimal] = None
-    tributacao_monofasica: Optional[bool] = None
-    aliquota_monofasica: Optional[Decimal] = None
-    zfm_isento_ipi: Optional[bool] = None
-    zfm_reduz_ii: Optional[bool] = None
-    zfm_percentual_reducao_ii: Optional[Decimal] = None
-    valid_from: Optional[date] = None
-    valid_until: Optional[date] = None
-    active: Optional[bool] = None
+    descricao: str | None = Field(None, max_length=2000)
+    descricao_resumida: str | None = Field(None, max_length=200)
+    ipi_aliquota: Decimal | None = None
+    ipi_codigo_enquadramento: str | None = None
+    pis_aliquota: Decimal | None = None
+    cofins_aliquota: Decimal | None = None
+    icms_cest: str | None = None
+    icms_st_mva: Decimal | None = None
+    ii_aliquota: Decimal | None = None
+    tributacao_monofasica: bool | None = None
+    aliquota_monofasica: Decimal | None = None
+    zfm_isento_ipi: bool | None = None
+    zfm_reduz_ii: bool | None = None
+    zfm_percentual_reducao_ii: Decimal | None = None
+    valid_from: date | None = None
+    valid_until: date | None = None
+    active: bool | None = None
 
 
 class NCMResponse(NCMBase):
@@ -307,7 +313,7 @@ class NCMResponse(NCMBase):
 
     id: UUID
     created_at: datetime
-    updated_at: Optional[datetime]
+    updated_at: datetime | None
     active: bool
     is_vigente: bool
 
@@ -318,7 +324,7 @@ class NCMResponse(NCMBase):
 class NCMListResponse(BaseModel):
     """Lista de NCMs."""
 
-    items: List[NCMResponse]
+    items: list[NCMResponse]
     total: int
     page: int
     page_size: int
@@ -327,13 +333,13 @@ class NCMListResponse(BaseModel):
 class NCMFilter(BaseModel):
     """Filtro para busca de NCMs."""
 
-    capitulo: Optional[str] = None
-    posicao: Optional[str] = None
-    tributacao_monofasica: Optional[bool] = None
-    zfm_isento_ipi: Optional[bool] = None
-    active: Optional[bool] = True
-    vigente: Optional[bool] = True
-    search: Optional[str] = None
+    capitulo: str | None = None
+    posicao: str | None = None
+    tributacao_monofasica: bool | None = None
+    zfm_isento_ipi: bool | None = None
+    active: bool | None = True
+    vigente: bool | None = True
+    search: str | None = None
 
 
 # ============================================================
@@ -345,8 +351,8 @@ class RetencaoFederalBase(BaseModel):
     """Base para configuracao de retencao federal."""
 
     nome: str = Field(..., min_length=3, max_length=100)
-    codigo_servico: Optional[str] = Field(None, max_length=20)
-    descricao: Optional[str] = Field(None, max_length=500)
+    codigo_servico: str | None = Field(None, max_length=20)
+    descricao: str | None = Field(None, max_length=500)
 
     # Tipo de servico
     servico_vigilancia: bool = False
@@ -357,15 +363,15 @@ class RetencaoFederalBase(BaseModel):
     # INSS (11%)
     inss_retido: bool = True
     inss_aliquota: Decimal = Field(Decimal("11.00"), ge=0, le=100)
-    inss_base_minima: Optional[Decimal] = Field(None, ge=0)
+    inss_base_minima: Decimal | None = Field(None, ge=0)
 
     # Liminar INSS
     inss_liminar_ativa: bool = False
-    inss_liminar_numero: Optional[str] = Field(None, max_length=50)
-    inss_liminar_vara: Optional[str] = Field(None, max_length=100)
-    inss_liminar_data: Optional[date] = None
-    inss_liminar_validade: Optional[date] = None
-    inss_liminar_texto: Optional[str] = Field(None, max_length=1000)
+    inss_liminar_numero: str | None = Field(None, max_length=50)
+    inss_liminar_vara: str | None = Field(None, max_length=100)
+    inss_liminar_data: date | None = None
+    inss_liminar_validade: date | None = None
+    inss_liminar_texto: str | None = Field(None, max_length=1000)
 
     # IR (1.5%)
     ir_retido: bool = True
@@ -389,15 +395,15 @@ class RetencaoFederalBase(BaseModel):
 
     # ISS
     iss_retido: bool = False
-    iss_aliquota: Optional[Decimal] = Field(None, ge=0, le=5)
+    iss_aliquota: Decimal | None = Field(None, ge=0, le=5)
 
     # Cliente especifico
-    cliente_id: Optional[UUID] = None
-    cliente_aceita_liminar: Optional[bool] = None
+    cliente_id: UUID | None = None
+    cliente_aceita_liminar: bool | None = None
 
     # Vigencia
     valid_from: date = Field(default_factory=date.today)
-    valid_until: Optional[date] = None
+    valid_until: date | None = None
 
 
 class RetencaoFederalCreate(RetencaoFederalBase):
@@ -409,38 +415,38 @@ class RetencaoFederalCreate(RetencaoFederalBase):
 class RetencaoFederalUpdate(BaseModel):
     """Schema para atualizar configuracao de retencao."""
 
-    nome: Optional[str] = Field(None, max_length=100)
-    descricao: Optional[str] = Field(None, max_length=500)
-    servico_vigilancia: Optional[bool] = None
-    servico_limpeza: Optional[bool] = None
-    servico_locacao_mao_obra: Optional[bool] = None
-    servico_construcao_civil: Optional[bool] = None
-    inss_retido: Optional[bool] = None
-    inss_aliquota: Optional[Decimal] = None
-    inss_base_minima: Optional[Decimal] = None
-    inss_liminar_ativa: Optional[bool] = None
-    inss_liminar_numero: Optional[str] = None
-    inss_liminar_vara: Optional[str] = None
-    inss_liminar_data: Optional[date] = None
-    inss_liminar_validade: Optional[date] = None
-    inss_liminar_texto: Optional[str] = None
-    ir_retido: Optional[bool] = None
-    ir_aliquota: Optional[Decimal] = None
-    ir_base_minima: Optional[Decimal] = None
-    csll_retido: Optional[bool] = None
-    csll_aliquota: Optional[Decimal] = None
-    pis_retido: Optional[bool] = None
-    pis_aliquota: Optional[Decimal] = None
-    cofins_retido: Optional[bool] = None
-    cofins_aliquota: Optional[Decimal] = None
-    pcc_base_minima: Optional[Decimal] = None
-    iss_retido: Optional[bool] = None
-    iss_aliquota: Optional[Decimal] = None
-    cliente_id: Optional[UUID] = None
-    cliente_aceita_liminar: Optional[bool] = None
-    valid_from: Optional[date] = None
-    valid_until: Optional[date] = None
-    active: Optional[bool] = None
+    nome: str | None = Field(None, max_length=100)
+    descricao: str | None = Field(None, max_length=500)
+    servico_vigilancia: bool | None = None
+    servico_limpeza: bool | None = None
+    servico_locacao_mao_obra: bool | None = None
+    servico_construcao_civil: bool | None = None
+    inss_retido: bool | None = None
+    inss_aliquota: Decimal | None = None
+    inss_base_minima: Decimal | None = None
+    inss_liminar_ativa: bool | None = None
+    inss_liminar_numero: str | None = None
+    inss_liminar_vara: str | None = None
+    inss_liminar_data: date | None = None
+    inss_liminar_validade: date | None = None
+    inss_liminar_texto: str | None = None
+    ir_retido: bool | None = None
+    ir_aliquota: Decimal | None = None
+    ir_base_minima: Decimal | None = None
+    csll_retido: bool | None = None
+    csll_aliquota: Decimal | None = None
+    pis_retido: bool | None = None
+    pis_aliquota: Decimal | None = None
+    cofins_retido: bool | None = None
+    cofins_aliquota: Decimal | None = None
+    pcc_base_minima: Decimal | None = None
+    iss_retido: bool | None = None
+    iss_aliquota: Decimal | None = None
+    cliente_id: UUID | None = None
+    cliente_aceita_liminar: bool | None = None
+    valid_from: date | None = None
+    valid_until: date | None = None
+    active: bool | None = None
 
 
 class RetencaoFederalResponse(RetencaoFederalBase):
@@ -450,7 +456,7 @@ class RetencaoFederalResponse(RetencaoFederalBase):
     condominio_id: UUID
     aliquota_pcc: Decimal
     created_at: datetime
-    updated_at: Optional[datetime]
+    updated_at: datetime | None
     active: bool
 
     class Config:
@@ -460,7 +466,7 @@ class RetencaoFederalResponse(RetencaoFederalBase):
 class RetencaoFederalListResponse(BaseModel):
     """Lista de configuracoes de retencao."""
 
-    items: List[RetencaoFederalResponse]
+    items: list[RetencaoFederalResponse]
     total: int
 
 
@@ -468,9 +474,9 @@ class CalculoRetencaoRequest(BaseModel):
     """Request para calculo de retencoes."""
 
     valor_servico: Decimal = Field(..., gt=0)
-    retencao_id: Optional[UUID] = None
+    retencao_id: UUID | None = None
     cliente_aceita_liminar: bool = False
-    tipo_servico: Optional[str] = None
+    tipo_servico: str | None = None
 
 
 class CalculoRetencaoResponse(BaseModel):
@@ -486,8 +492,8 @@ class CalculoRetencaoResponse(BaseModel):
     total: Decimal
     valor_liquido: Decimal
     liminar_aplicada: bool
-    liminar_numero: Optional[str] = None
-    detalhamento: Dict[str, Any]
+    liminar_numero: str | None = None
+    detalhamento: dict[str, Any]
 
 
 # ============================================================
@@ -499,7 +505,7 @@ class NFeItemBase(BaseModel):
     """Base para item de NF-e."""
 
     numero_item: int = Field(..., ge=1)
-    produto_id: Optional[UUID] = None
+    produto_id: UUID | None = None
     codigo_produto: str = Field(..., max_length=60)
     descricao: str = Field(..., max_length=120)
     ncm: str = Field(..., min_length=8, max_length=8)
@@ -508,7 +514,7 @@ class NFeItemBase(BaseModel):
     unidade: str = Field(..., max_length=6)
     quantidade: Decimal = Field(..., gt=0)
     valor_unitario: Decimal = Field(..., gt=0)
-    valor_total: Optional[Decimal] = None
+    valor_total: Decimal | None = None
 
     # Descontos/Acrescimos
     valor_desconto: Decimal = Field(Decimal("0"), ge=0)
@@ -518,39 +524,42 @@ class NFeItemBase(BaseModel):
 
     # ICMS
     icms_origem: str = Field("0", max_length=1)
-    icms_cst: Optional[str] = Field(None, max_length=3)
-    icms_csosn: Optional[str] = Field(None, max_length=3)
+    icms_cst: str | None = Field(None, max_length=3)
+    icms_csosn: str | None = Field(None, max_length=3)
     icms_base_calculo: Decimal = Field(Decimal("0"), ge=0)
     icms_aliquota: Decimal = Field(Decimal("0"), ge=0, le=100)
     icms_valor: Decimal = Field(Decimal("0"), ge=0)
 
     # IPI
-    ipi_cst: Optional[str] = Field(None, max_length=2)
+    ipi_cst: str | None = Field(None, max_length=2)
     ipi_base_calculo: Decimal = Field(Decimal("0"), ge=0)
     ipi_aliquota: Decimal = Field(Decimal("0"), ge=0, le=100)
     ipi_valor: Decimal = Field(Decimal("0"), ge=0)
 
     # PIS
-    pis_cst: Optional[str] = Field(None, max_length=2)
+    pis_cst: str | None = Field(None, max_length=2)
     pis_base_calculo: Decimal = Field(Decimal("0"), ge=0)
     pis_aliquota: Decimal = Field(Decimal("0"), ge=0, le=100)
     pis_valor: Decimal = Field(Decimal("0"), ge=0)
 
     # COFINS
-    cofins_cst: Optional[str] = Field(None, max_length=2)
+    cofins_cst: str | None = Field(None, max_length=2)
     cofins_base_calculo: Decimal = Field(Decimal("0"), ge=0)
     cofins_aliquota: Decimal = Field(Decimal("0"), ge=0, le=100)
     cofins_valor: Decimal = Field(Decimal("0"), ge=0)
 
-    @validator("valor_total", always=True)
-    def calculate_total(cls, v, values):
+    @model_validator(mode="before")
+    @classmethod
+    def calculate_total(cls, data: Any) -> Any:
         """Calcula valor total do item se nao informado."""
-        if v is None:
-            qtd = values.get("quantidade", Decimal("0"))
-            unit = values.get("valor_unitario", Decimal("0"))
-            desc = values.get("valor_desconto", Decimal("0"))
-            return (qtd * unit) - desc
-        return v
+        if isinstance(data, dict):
+            if data.get("valor_total") is None:
+                qtd = data.get("quantidade", Decimal("0"))
+                unit = data.get("valor_unitario", Decimal("0"))
+                desc = data.get("valor_desconto", Decimal("0"))
+                if qtd is not None and unit is not None:
+                    data["valor_total"] = (Decimal(str(qtd)) * Decimal(str(unit))) - Decimal(str(desc))
+        return data
 
 
 class NFeItemCreate(NFeItemBase):
@@ -576,66 +585,66 @@ class NFeBase(BaseModel):
 
     # Identificacao
     serie: int = Field(1, ge=1, le=999)
-    numero: Optional[int] = Field(None, ge=1)
+    numero: int | None = Field(None, ge=1)
     natureza_operacao: str = Field(..., max_length=60)
     data_emissao: datetime = Field(default_factory=datetime.now)
-    data_saida_entrada: Optional[datetime] = None
+    data_saida_entrada: datetime | None = None
 
     # Emitente (pre-configurado ou informado)
     emitente_cnpj: str = Field(..., min_length=14, max_length=14)
     emitente_razao_social: str = Field(..., max_length=60)
-    emitente_ie: Optional[str] = Field(None, max_length=14)
+    emitente_ie: str | None = Field(None, max_length=14)
     emitente_uf: str = Field(..., min_length=2, max_length=2)
     emitente_crt: str = Field("1", max_length=1)  # 1-Simples, 2-SN Exc, 3-Normal
 
     # Destinatario
     destinatario_cpf_cnpj: str = Field(..., max_length=14)
     destinatario_razao_social: str = Field(..., max_length=60)
-    destinatario_ie: Optional[str] = Field(None, max_length=14)
-    destinatario_email: Optional[str] = Field(None, max_length=60)
+    destinatario_ie: str | None = Field(None, max_length=14)
+    destinatario_email: str | None = Field(None, max_length=60)
     destinatario_uf: str = Field(..., min_length=2, max_length=2)
     destinatario_logradouro: str = Field(..., max_length=60)
     destinatario_numero: str = Field(..., max_length=60)
     destinatario_bairro: str = Field(..., max_length=60)
     destinatario_municipio: str = Field(..., max_length=60)
     destinatario_cep: str = Field(..., min_length=8, max_length=8)
-    destinatario_telefone: Optional[str] = Field(None, max_length=14)
+    destinatario_telefone: str | None = Field(None, max_length=14)
 
     # Frete
     modalidade_frete: str = Field("9", max_length=1)  # 0-Emit, 1-Dest, 9-SemFrete
-    transportadora_cnpj: Optional[str] = Field(None, max_length=14)
-    transportadora_razao_social: Optional[str] = Field(None, max_length=60)
+    transportadora_cnpj: str | None = Field(None, max_length=14)
+    transportadora_razao_social: str | None = Field(None, max_length=60)
 
     # Pagamento
     forma_pagamento: str = Field("0", max_length=2)  # 0-AVista, 1-APrazo
     meio_pagamento: str = Field("99", max_length=2)  # 01-Dinheiro, 99-Outros
-    valor_pagamento: Optional[Decimal] = Field(None, ge=0)
+    valor_pagamento: Decimal | None = Field(None, ge=0)
 
     # Informacoes adicionais
-    informacoes_complementares: Optional[str] = Field(None, max_length=5000)
-    informacoes_fisco: Optional[str] = Field(None, max_length=2000)
+    informacoes_complementares: str | None = Field(None, max_length=5000)
+    informacoes_fisco: str | None = Field(None, max_length=2000)
 
     # Zona Franca
     is_zfm: bool = False
-    suframa_destinatario: Optional[str] = Field(None, max_length=9)
+    suframa_destinatario: str | None = Field(None, max_length=9)
 
 
 class NFeCreate(NFeBase):
     """Schema para criar NF-e."""
 
     condominio_id: UUID
-    itens: List[NFeItemCreate] = Field(..., min_items=1)
+    itens: list[NFeItemCreate] = Field(..., min_items=1)
 
 
 class NFeUpdate(BaseModel):
     """Schema para atualizar NF-e (apenas rascunho)."""
 
-    natureza_operacao: Optional[str] = Field(None, max_length=60)
-    data_saida_entrada: Optional[datetime] = None
-    destinatario_email: Optional[str] = Field(None, max_length=60)
-    modalidade_frete: Optional[str] = None
-    informacoes_complementares: Optional[str] = None
-    informacoes_fisco: Optional[str] = None
+    natureza_operacao: str | None = Field(None, max_length=60)
+    data_saida_entrada: datetime | None = None
+    destinatario_email: str | None = Field(None, max_length=60)
+    modalidade_frete: str | None = None
+    informacoes_complementares: str | None = None
+    informacoes_fisco: str | None = None
 
 
 class NFeResponse(NFeBase):
@@ -643,11 +652,11 @@ class NFeResponse(NFeBase):
 
     id: UUID
     condominio_id: UUID
-    chave_acesso: Optional[str]
+    chave_acesso: str | None
     status: NFeStatusEnum
-    protocolo_autorizacao: Optional[str]
-    data_autorizacao: Optional[datetime]
-    motivo_rejeicao: Optional[str]
+    protocolo_autorizacao: str | None
+    data_autorizacao: datetime | None
+    motivo_rejeicao: str | None
 
     # Totais
     valor_total_produtos: Decimal
@@ -661,10 +670,10 @@ class NFeResponse(NFeBase):
     valor_total_outros: Decimal
     valor_total_nota: Decimal
 
-    itens: List[NFeItemResponse]
+    itens: list[NFeItemResponse]
 
     created_at: datetime
-    updated_at: Optional[datetime]
+    updated_at: datetime | None
     active: bool
 
     class Config:
@@ -674,7 +683,7 @@ class NFeResponse(NFeBase):
 class NFeListResponse(BaseModel):
     """Lista de NF-e."""
 
-    items: List[NFeResponse]
+    items: list[NFeResponse]
     total: int
     page: int
     page_size: int
@@ -683,16 +692,16 @@ class NFeListResponse(BaseModel):
 class NFeFilter(BaseModel):
     """Filtro para busca de NF-e."""
 
-    tipo: Optional[NFeTipoEnum] = None
-    status: Optional[NFeStatusEnum] = None
-    serie: Optional[int] = None
-    numero_inicial: Optional[int] = None
-    numero_final: Optional[int] = None
-    data_emissao_inicial: Optional[date] = None
-    data_emissao_final: Optional[date] = None
-    destinatario_cpf_cnpj: Optional[str] = None
-    chave_acesso: Optional[str] = None
-    search: Optional[str] = None
+    tipo: NFeTipoEnum | None = None
+    status: NFeStatusEnum | None = None
+    serie: int | None = None
+    numero_inicial: int | None = None
+    numero_final: int | None = None
+    data_emissao_inicial: date | None = None
+    data_emissao_final: date | None = None
+    destinatario_cpf_cnpj: str | None = None
+    chave_acesso: str | None = None
+    search: str | None = None
 
 
 class NFeEmitirRequest(BaseModel):
@@ -707,11 +716,11 @@ class NFeEmitirResponse(BaseModel):
 
     nfe_id: UUID
     status: NFeStatusEnum
-    chave_acesso: Optional[str]
-    protocolo: Optional[str]
+    chave_acesso: str | None
+    protocolo: str | None
     mensagem: str
-    xml_autorizado: Optional[str]
-    pdf_danfe: Optional[str]
+    xml_autorizado: str | None
+    pdf_danfe: str | None
 
 
 class NFeCancelarRequest(BaseModel):
@@ -739,39 +748,39 @@ class NFSeBase(BaseModel):
     """Base para NFS-e."""
 
     # Identificacao
-    numero_rps: Optional[int] = None
+    numero_rps: int | None = None
     serie_rps: str = Field("A", max_length=5)
     tipo_rps: str = Field("1", max_length=1)  # 1-RPS, 2-Cupom
     natureza_operacao: str = Field("1", max_length=1)  # 1-Tributada, 2-Isenta, etc
-    regime_especial: Optional[str] = Field(None, max_length=1)
+    regime_especial: str | None = Field(None, max_length=1)
 
     data_emissao: datetime = Field(default_factory=datetime.now)
     data_competencia: date = Field(default_factory=date.today)
 
     # Prestador
     prestador_cnpj: str = Field(..., min_length=14, max_length=14)
-    prestador_inscricao_municipal: Optional[str] = Field(None, max_length=15)
+    prestador_inscricao_municipal: str | None = Field(None, max_length=15)
     prestador_razao_social: str = Field(..., max_length=150)
 
     # Tomador
     tomador_cpf_cnpj: str = Field(..., max_length=14)
     tomador_razao_social: str = Field(..., max_length=150)
-    tomador_email: Optional[str] = Field(None, max_length=80)
-    tomador_inscricao_municipal: Optional[str] = Field(None, max_length=15)
+    tomador_email: str | None = Field(None, max_length=80)
+    tomador_inscricao_municipal: str | None = Field(None, max_length=15)
     tomador_logradouro: str = Field(..., max_length=125)
     tomador_numero: str = Field(..., max_length=10)
-    tomador_complemento: Optional[str] = Field(None, max_length=60)
+    tomador_complemento: str | None = Field(None, max_length=60)
     tomador_bairro: str = Field(..., max_length=60)
     tomador_municipio: str = Field(..., max_length=60)
     tomador_uf: str = Field(..., min_length=2, max_length=2)
     tomador_cep: str = Field(..., min_length=8, max_length=8)
-    tomador_telefone: Optional[str] = Field(None, max_length=20)
+    tomador_telefone: str | None = Field(None, max_length=20)
 
     # Servico
     codigo_servico: str = Field(..., max_length=20)  # LC 116
     descricao_servico: str = Field(..., max_length=2000)
-    codigo_cnae: Optional[str] = Field(None, max_length=7)
-    codigo_tributacao_municipio: Optional[str] = Field(None, max_length=20)
+    codigo_cnae: str | None = Field(None, max_length=7)
+    codigo_tributacao_municipio: str | None = Field(None, max_length=20)
 
     # Valores
     valor_servicos: Decimal = Field(..., gt=0)
@@ -781,7 +790,7 @@ class NFSeBase(BaseModel):
 
     # ISS
     iss_aliquota: Decimal = Field(..., ge=0, le=5)
-    iss_valor: Optional[Decimal] = Field(None, ge=0)
+    iss_valor: Decimal | None = Field(None, ge=0)
     iss_retido: bool = False
 
     # Retencoes federais
@@ -794,12 +803,12 @@ class NFSeBase(BaseModel):
 
     # Liminar INSS
     inss_liminar_aplicada: bool = False
-    inss_liminar_numero: Optional[str] = Field(None, max_length=50)
-    inss_liminar_texto: Optional[str] = Field(None, max_length=500)
+    inss_liminar_numero: str | None = Field(None, max_length=50)
+    inss_liminar_texto: str | None = Field(None, max_length=500)
 
     # Informacoes adicionais
-    discriminacao: Optional[str] = Field(None, max_length=2000)
-    observacao: Optional[str] = Field(None, max_length=1000)
+    discriminacao: str | None = Field(None, max_length=2000)
+    observacao: str | None = Field(None, max_length=1000)
 
 
 class NFSeCreate(NFSeBase):
@@ -811,10 +820,10 @@ class NFSeCreate(NFSeBase):
 class NFSeUpdate(BaseModel):
     """Schema para atualizar NFS-e (apenas rascunho)."""
 
-    tomador_email: Optional[str] = Field(None, max_length=80)
-    descricao_servico: Optional[str] = Field(None, max_length=2000)
-    discriminacao: Optional[str] = None
-    observacao: Optional[str] = None
+    tomador_email: str | None = Field(None, max_length=80)
+    descricao_servico: str | None = Field(None, max_length=2000)
+    discriminacao: str | None = None
+    observacao: str | None = None
 
 
 class NFSeResponse(NFSeBase):
@@ -823,19 +832,19 @@ class NFSeResponse(NFSeBase):
     id: UUID
     condominio_id: UUID
     status: NFSeStatusEnum
-    numero_nfse: Optional[str]
-    codigo_verificacao: Optional[str]
-    link_nfse: Optional[str]
-    protocolo: Optional[str]
-    data_processamento: Optional[datetime]
-    mensagem_retorno: Optional[str]
+    numero_nfse: str | None
+    codigo_verificacao: str | None
+    link_nfse: str | None
+    protocolo: str | None
+    data_processamento: datetime | None
+    mensagem_retorno: str | None
 
     # Valores calculados
     valor_liquido: Decimal
     total_retencoes: Decimal
 
     created_at: datetime
-    updated_at: Optional[datetime]
+    updated_at: datetime | None
     active: bool
 
     class Config:
@@ -845,7 +854,7 @@ class NFSeResponse(NFSeBase):
 class NFSeListResponse(BaseModel):
     """Lista de NFS-e."""
 
-    items: List[NFSeResponse]
+    items: list[NFSeResponse]
     total: int
     page: int
     page_size: int
@@ -854,15 +863,15 @@ class NFSeListResponse(BaseModel):
 class NFSeFilter(BaseModel):
     """Filtro para busca de NFS-e."""
 
-    status: Optional[NFSeStatusEnum] = None
-    data_emissao_inicial: Optional[date] = None
-    data_emissao_final: Optional[date] = None
-    competencia_mes: Optional[int] = None
-    competencia_ano: Optional[int] = None
-    tomador_cpf_cnpj: Optional[str] = None
-    codigo_servico: Optional[str] = None
-    numero_nfse: Optional[str] = None
-    search: Optional[str] = None
+    status: NFSeStatusEnum | None = None
+    data_emissao_inicial: date | None = None
+    data_emissao_final: date | None = None
+    competencia_mes: int | None = None
+    competencia_ano: int | None = None
+    tomador_cpf_cnpj: str | None = None
+    codigo_servico: str | None = None
+    numero_nfse: str | None = None
+    search: str | None = None
 
 
 class NFSeEmitirRequest(BaseModel):
@@ -877,13 +886,13 @@ class NFSeEmitirResponse(BaseModel):
 
     nfse_id: UUID
     status: NFSeStatusEnum
-    numero_nfse: Optional[str]
-    codigo_verificacao: Optional[str]
-    link_nfse: Optional[str]
-    protocolo: Optional[str]
+    numero_nfse: str | None
+    codigo_verificacao: str | None
+    link_nfse: str | None
+    protocolo: str | None
     mensagem: str
-    xml: Optional[str]
-    pdf: Optional[str]
+    xml: str | None
+    pdf: str | None
 
 
 class NFSeCancelarRequest(BaseModel):
@@ -891,7 +900,7 @@ class NFSeCancelarRequest(BaseModel):
 
     nfse_id: UUID
     codigo_cancelamento: str = Field(..., max_length=4)
-    motivo_cancelamento: Optional[str] = Field(None, max_length=255)
+    motivo_cancelamento: str | None = Field(None, max_length=255)
 
 
 # ============================================================
@@ -904,9 +913,9 @@ class SPEDFileBase(BaseModel):
 
     tipo: SPEDTipoEnum
     ano: int = Field(..., ge=2000, le=2100)
-    mes: Optional[int] = Field(None, ge=1, le=12)
+    mes: int | None = Field(None, ge=1, le=12)
     finalidade: str = Field("0", max_length=1)  # 0-Original, 1-Retificadora
-    perfil: Optional[str] = Field(None, max_length=1)  # A, B, C
+    perfil: str | None = Field(None, max_length=1)  # A, B, C
 
 
 class SPEDFileCreate(SPEDFileBase):
@@ -921,27 +930,27 @@ class SPEDFileResponse(SPEDFileBase):
     id: UUID
     condominio_id: UUID
     status: SPEDStatusEnum
-    nome_arquivo: Optional[str]
-    hash_arquivo: Optional[str]
-    tamanho_bytes: Optional[int]
+    nome_arquivo: str | None
+    hash_arquivo: str | None
+    tamanho_bytes: int | None
 
     # Transmissao
-    recibo_transmissao: Optional[str]
-    data_transmissao: Optional[datetime]
-    protocolo_entrega: Optional[str]
-    data_processamento: Optional[datetime]
+    recibo_transmissao: str | None
+    data_transmissao: datetime | None
+    protocolo_entrega: str | None
+    data_processamento: datetime | None
 
     # Erros
     total_erros: int
     total_avisos: int
-    erros: Optional[List[Dict[str, Any]]]
-    avisos: Optional[List[Dict[str, Any]]]
+    erros: list[dict[str, Any]] | None
+    avisos: list[dict[str, Any]] | None
 
     # Resumo
-    resumo: Optional[Dict[str, Any]]
+    resumo: dict[str, Any] | None
 
     created_at: datetime
-    updated_at: Optional[datetime]
+    updated_at: datetime | None
     active: bool
 
     class Config:
@@ -951,7 +960,7 @@ class SPEDFileResponse(SPEDFileBase):
 class SPEDFileListResponse(BaseModel):
     """Lista de arquivos SPED."""
 
-    items: List[SPEDFileResponse]
+    items: list[SPEDFileResponse]
     total: int
     page: int
     page_size: int
@@ -960,10 +969,10 @@ class SPEDFileListResponse(BaseModel):
 class SPEDFilter(BaseModel):
     """Filtro para busca de arquivos SPED."""
 
-    tipo: Optional[SPEDTipoEnum] = None
-    status: Optional[SPEDStatusEnum] = None
-    ano: Optional[int] = None
-    mes: Optional[int] = None
+    tipo: SPEDTipoEnum | None = None
+    status: SPEDStatusEnum | None = None
+    ano: int | None = None
+    mes: int | None = None
 
 
 class SPEDGerarRequest(BaseModel):
@@ -971,7 +980,7 @@ class SPEDGerarRequest(BaseModel):
 
     tipo: SPEDTipoEnum
     ano: int
-    mes: Optional[int] = None
+    mes: int | None = None
     finalidade: str = Field("0", description="0-Original, 1-Retificadora")
 
 
@@ -998,11 +1007,11 @@ class ObrigacaoFiscalBase(BaseModel):
 
     tipo: str = Field(..., max_length=30)  # DAS, DCTF, DIRF, EFD, etc
     nome: str = Field(..., max_length=100)
-    descricao: Optional[str] = Field(None, max_length=500)
-    competencia_mes: Optional[int] = Field(None, ge=1, le=12)
+    descricao: str | None = Field(None, max_length=500)
+    competencia_mes: int | None = Field(None, ge=1, le=12)
     competencia_ano: int = Field(..., ge=2000, le=2100)
     data_vencimento: date
-    valor_devido: Optional[Decimal] = Field(None, ge=0)
+    valor_devido: Decimal | None = Field(None, ge=0)
 
 
 class ObrigacaoFiscalCreate(ObrigacaoFiscalBase):
@@ -1014,13 +1023,13 @@ class ObrigacaoFiscalCreate(ObrigacaoFiscalBase):
 class ObrigacaoFiscalUpdate(BaseModel):
     """Schema para atualizar obrigacao fiscal."""
 
-    data_vencimento: Optional[date] = None
-    valor_devido: Optional[Decimal] = None
-    valor_pago: Optional[Decimal] = None
-    data_pagamento: Optional[date] = None
-    numero_recibo: Optional[str] = None
-    observacoes: Optional[str] = None
-    status: Optional[ObrigacaoStatusEnum] = None
+    data_vencimento: date | None = None
+    valor_devido: Decimal | None = None
+    valor_pago: Decimal | None = None
+    data_pagamento: date | None = None
+    numero_recibo: str | None = None
+    observacoes: str | None = None
+    status: ObrigacaoStatusEnum | None = None
 
 
 class ObrigacaoFiscalResponse(ObrigacaoFiscalBase):
@@ -1029,15 +1038,15 @@ class ObrigacaoFiscalResponse(ObrigacaoFiscalBase):
     id: UUID
     condominio_id: UUID
     status: ObrigacaoStatusEnum
-    valor_pago: Optional[Decimal]
-    data_pagamento: Optional[date]
-    numero_recibo: Optional[str]
-    observacoes: Optional[str]
+    valor_pago: Decimal | None
+    data_pagamento: date | None
+    numero_recibo: str | None
+    observacoes: str | None
     dias_para_vencimento: int
     is_atrasada: bool
 
     created_at: datetime
-    updated_at: Optional[datetime]
+    updated_at: datetime | None
     active: bool
 
     class Config:
@@ -1047,7 +1056,7 @@ class ObrigacaoFiscalResponse(ObrigacaoFiscalBase):
 class ObrigacaoFiscalListResponse(BaseModel):
     """Lista de obrigacoes fiscais."""
 
-    items: List[ObrigacaoFiscalResponse]
+    items: list[ObrigacaoFiscalResponse]
     total: int
     proximas_a_vencer: int
     atrasadas: int
@@ -1056,12 +1065,12 @@ class ObrigacaoFiscalListResponse(BaseModel):
 class ObrigacaoFilter(BaseModel):
     """Filtro para busca de obrigacoes."""
 
-    tipo: Optional[str] = None
-    status: Optional[ObrigacaoStatusEnum] = None
-    mes: Optional[int] = None
-    ano: Optional[int] = None
-    vencimento_inicio: Optional[date] = None
-    vencimento_fim: Optional[date] = None
+    tipo: str | None = None
+    status: ObrigacaoStatusEnum | None = None
+    mes: int | None = None
+    ano: int | None = None
+    vencimento_inicio: date | None = None
+    vencimento_fim: date | None = None
 
 
 # ============================================================
@@ -1103,22 +1112,22 @@ class SimplesNacionalDASResponse(SimplesNacionalDASBase):
     id: UUID
     condominio_id: UUID
     status: ObrigacaoStatusEnum
-    numero_documento: Optional[str]
-    codigo_barras: Optional[str]
-    valor_pago: Optional[Decimal]
-    data_pagamento: Optional[date]
-    numero_recibo: Optional[str]
+    numero_documento: str | None
+    codigo_barras: str | None
+    valor_pago: Decimal | None
+    data_pagamento: date | None
+    numero_recibo: str | None
 
     # Reparticao tributos
-    reparticao_irpj: Optional[Decimal]
-    reparticao_csll: Optional[Decimal]
-    reparticao_cofins: Optional[Decimal]
-    reparticao_pis: Optional[Decimal]
-    reparticao_cpp: Optional[Decimal]
-    reparticao_iss: Optional[Decimal]
+    reparticao_irpj: Decimal | None
+    reparticao_csll: Decimal | None
+    reparticao_cofins: Decimal | None
+    reparticao_pis: Decimal | None
+    reparticao_cpp: Decimal | None
+    reparticao_iss: Decimal | None
 
     created_at: datetime
-    updated_at: Optional[datetime]
+    updated_at: datetime | None
     active: bool
 
     class Config:
@@ -1143,7 +1152,7 @@ class DASCalcularResponse(BaseModel):
     parcela_deduzir: Decimal
     aliquota_efetiva: Decimal
     valor_devido: Decimal
-    reparticao: Dict[str, Decimal]
+    reparticao: dict[str, Decimal]
     data_vencimento: date
 
 
@@ -1166,7 +1175,7 @@ class SUFRAMAConfigBase(BaseModel):
     suspensao_pis_cofins: bool = True
 
     # Produtos incentivados
-    ncms_incentivados: Optional[List[str]] = None
+    ncms_incentivados: list[str] | None = None
 
 
 class SUFRAMAConfigCreate(SUFRAMAConfigBase):
@@ -1184,7 +1193,7 @@ class SUFRAMAConfigResponse(SUFRAMAConfigBase):
     dias_para_vencimento: int
 
     created_at: datetime
-    updated_at: Optional[datetime]
+    updated_at: datetime | None
     active: bool
 
     class Config:
@@ -1194,7 +1203,7 @@ class SUFRAMAConfigResponse(SUFRAMAConfigBase):
 class SUFRAMAOperacaoBase(BaseModel):
     """Base para operacao com beneficio SUFRAMA."""
 
-    nfe_id: Optional[UUID] = None
+    nfe_id: UUID | None = None
     data_operacao: date
     valor_operacao: Decimal = Field(..., gt=0)
     valor_ipi_desonerado: Decimal = Field(Decimal("0"), ge=0)
@@ -1203,9 +1212,9 @@ class SUFRAMAOperacaoBase(BaseModel):
     valor_cofins_suspenso: Decimal = Field(Decimal("0"), ge=0)
 
     # PIN (Protocolo de Ingresso)
-    numero_pin: Optional[str] = Field(None, max_length=20)
-    data_pin: Optional[date] = None
-    status_pin: Optional[str] = Field(None, max_length=20)
+    numero_pin: str | None = Field(None, max_length=20)
+    data_pin: date | None = None
+    status_pin: str | None = Field(None, max_length=20)
 
 
 class SUFRAMAOperacaoCreate(SUFRAMAOperacaoBase):
@@ -1231,7 +1240,7 @@ class SUFRAMAOperacaoResponse(SUFRAMAOperacaoBase):
 class SUFRAMAOperacaoListResponse(BaseModel):
     """Lista de operacoes SUFRAMA."""
 
-    items: List[SUFRAMAOperacaoResponse]
+    items: list[SUFRAMAOperacaoResponse]
     total: int
     total_economia_ipi: Decimal
     total_economia_icms: Decimal
@@ -1257,13 +1266,13 @@ class FiscalAIAnalyseRequest(BaseModel):
 class FiscalAIAnalyseResponse(BaseModel):
     """Response da analise fiscal por IA."""
 
-    resumo_periodo: Dict[str, Any]
-    alertas: List[Dict[str, Any]]
-    oportunidades: List[Dict[str, Any]]
-    pendencias: List[Dict[str, Any]]
-    recomendacoes: List[str]
+    resumo_periodo: dict[str, Any]
+    alertas: list[dict[str, Any]]
+    oportunidades: list[dict[str, Any]]
+    pendencias: list[dict[str, Any]]
+    recomendacoes: list[str]
     score_compliance: int  # 0-100
-    projecao_impostos: Dict[str, Decimal]
+    projecao_impostos: dict[str, Decimal]
 
 
 class FiscalAIOptimizeRequest(BaseModel):
@@ -1280,10 +1289,10 @@ class FiscalAIOptimizeResponse(BaseModel):
 
     regime_atual: str
     carga_tributaria_atual: Decimal
-    regimes_simulados: List[Dict[str, Any]]
+    regimes_simulados: list[dict[str, Any]]
     melhor_regime: str
     economia_potencial: Decimal
-    acoes_recomendadas: List[str]
+    acoes_recomendadas: list[str]
 
 
 class FiscalAIPredictRequest(BaseModel):
@@ -1295,10 +1304,10 @@ class FiscalAIPredictRequest(BaseModel):
 class FiscalAIPredictResponse(BaseModel):
     """Response da previsao de obrigacoes."""
 
-    projecao_mensal: List[Dict[str, Any]]
+    projecao_mensal: list[dict[str, Any]]
     total_previsto: Decimal
-    obrigacoes_futuras: List[Dict[str, Any]]
-    alertas_vencimento: List[Dict[str, Any]]
+    obrigacoes_futuras: list[dict[str, Any]]
+    alertas_vencimento: list[dict[str, Any]]
 
 
 # ============================================================
@@ -1326,24 +1335,24 @@ class FiscalStats(BaseModel):
     # Obrigacoes
     obrigacoes_pendentes: int
     obrigacoes_atrasadas: int
-    proxima_obrigacao: Optional[Dict[str, Any]]
+    proxima_obrigacao: dict[str, Any] | None
 
     # Simples Nacional
-    das_mes_atual: Optional[Decimal]
-    faixa_atual: Optional[int]
-    receita_12_meses: Optional[Decimal]
+    das_mes_atual: Decimal | None
+    faixa_atual: int | None
+    receita_12_meses: Decimal | None
 
     # SUFRAMA
-    economia_zfm_mes: Optional[Decimal]
-    economia_zfm_ano: Optional[Decimal]
+    economia_zfm_mes: Decimal | None
+    economia_zfm_ano: Decimal | None
 
 
 class FiscalDashboard(BaseModel):
     """Dashboard fiscal completo."""
 
     stats: FiscalStats
-    notas_recentes: List[Dict[str, Any]]
-    obrigacoes_proximas: List[Dict[str, Any]]
-    alertas: List[Dict[str, Any]]
-    grafico_impostos: List[Dict[str, Any]]
-    grafico_notas: List[Dict[str, Any]]
+    notas_recentes: list[dict[str, Any]]
+    obrigacoes_proximas: list[dict[str, Any]]
+    alertas: list[dict[str, Any]]
+    grafico_impostos: list[dict[str, Any]]
+    grafico_notas: list[dict[str, Any]]

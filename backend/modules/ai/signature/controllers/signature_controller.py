@@ -3,9 +3,8 @@
 import logging
 import uuid
 from datetime import datetime
-from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, HTTPException, Query, status
 
 from modules.ai.signature.schemas import (
     ComparisonResultResponse,
@@ -116,6 +115,7 @@ async def extract_signatures(
         region = None
         if request.region:
             from modules.ai.signature.services.extraction_service import BoundingBox
+
             region = BoundingBox(**request.region)
 
         result = extraction_service.extract_from_base64(
@@ -205,9 +205,9 @@ async def validate_signature(
 )
 async def list_signatures(
     tenant_id: uuid.UUID = Query(..., description="Tenant ID"),
-    owner_id: Optional[uuid.UUID] = Query(None, description="Owner ID"),
-    status: Optional[str] = Query(None, description="Status filter"),
-    signature_type: Optional[str] = Query(None, description="Type filter"),
+    owner_id: uuid.UUID | None = Query(None, description="Owner ID"),
+    status: str | None = Query(None, description="Status filter"),
+    signature_type: str | None = Query(None, description="Type filter"),
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
 ) -> SignatureListResponse:
@@ -303,8 +303,8 @@ async def create_template(
 )
 async def list_templates(
     tenant_id: uuid.UUID = Query(..., description="Tenant ID"),
-    owner_id: Optional[uuid.UUID] = Query(None, description="Owner ID"),
-    status: Optional[str] = Query(None, description="Status filter"),
+    owner_id: uuid.UUID | None = Query(None, description="Owner ID"),
+    status: str | None = Query(None, description="Status filter"),
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
 ) -> TemplateListResponse:
@@ -512,8 +512,8 @@ async def create_request(
 )
 async def list_requests(
     tenant_id: uuid.UUID = Query(..., description="Tenant ID"),
-    status: Optional[str] = Query(None, description="Status filter"),
-    signer_id: Optional[uuid.UUID] = Query(None, description="Signer ID"),
+    status: str | None = Query(None, description="Status filter"),
+    signer_id: uuid.UUID | None = Query(None, description="Signer ID"),
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
 ) -> RequestListResponse:

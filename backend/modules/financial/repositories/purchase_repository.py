@@ -1,8 +1,8 @@
 """Repository para módulo de compras."""
 
+import builtins
 from datetime import date, datetime
 from decimal import Decimal
-from typing import List, Optional
 from uuid import UUID
 
 from sqlalchemy import and_, func, or_, select
@@ -75,7 +75,7 @@ class ProductCategoryRepository:
     async def create(
         self,
         data: ProductCategoryCreate,
-        user_id: Optional[UUID] = None,
+        user_id: UUID | None = None,
     ) -> ProductCategory:
         """Cria uma nova categoria."""
         category = ProductCategory(
@@ -87,7 +87,7 @@ class ProductCategoryRepository:
         await self.session.refresh(category)
         return category
 
-    async def get_by_id(self, category_id: UUID) -> Optional[ProductCategory]:
+    async def get_by_id(self, category_id: UUID) -> ProductCategory | None:
         """Busca categoria por ID."""
         result = await self.session.execute(
             select(ProductCategory)
@@ -105,7 +105,7 @@ class ProductCategoryRepository:
         self,
         code: str,
         condominio_id: UUID,
-    ) -> Optional[ProductCategory]:
+    ) -> ProductCategory | None:
         """Busca categoria por código."""
         result = await self.session.execute(
             select(ProductCategory).where(
@@ -121,10 +121,10 @@ class ProductCategoryRepository:
     async def list(
         self,
         condominio_id: UUID,
-        parent_id: Optional[UUID] = None,
+        parent_id: UUID | None = None,
         skip: int = 0,
         limit: int = 100,
-    ) -> List[ProductCategory]:
+    ) -> list[ProductCategory]:
         """Lista categorias."""
         query = (
             select(ProductCategory)
@@ -146,7 +146,7 @@ class ProductCategoryRepository:
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    async def get_tree(self, condominio_id: UUID) -> List[ProductCategory]:
+    async def get_tree(self, condominio_id: UUID) -> builtins.list[ProductCategory]:
         """Retorna árvore completa de categorias."""
         result = await self.session.execute(
             select(ProductCategory)
@@ -235,7 +235,7 @@ class ProductRepository:
     async def create(
         self,
         data: ProductCreate,
-        user_id: Optional[UUID] = None,
+        user_id: UUID | None = None,
     ) -> Product:
         """Cria um novo produto."""
         product_data = data.model_dump(exclude={"category_ids", "supplier_ids"})
@@ -245,7 +245,7 @@ class ProductRepository:
         await self.session.refresh(product)
         return product
 
-    async def get_by_id(self, product_id: UUID) -> Optional[Product]:
+    async def get_by_id(self, product_id: UUID) -> Product | None:
         """Busca produto por ID."""
         result = await self.session.execute(
             select(Product).where(
@@ -261,7 +261,7 @@ class ProductRepository:
         self,
         code: str,
         condominio_id: UUID,
-    ) -> Optional[Product]:
+    ) -> Product | None:
         """Busca produto por código."""
         result = await self.session.execute(
             select(Product).where(
@@ -277,12 +277,12 @@ class ProductRepository:
     async def list(
         self,
         condominio_id: UUID,
-        search: Optional[str] = None,
-        category_id: Optional[UUID] = None,
-        status: Optional[List[ProductStatus]] = None,
+        search: str | None = None,
+        category_id: UUID | None = None,
+        status: list[ProductStatus] | None = None,
         skip: int = 0,
         limit: int = 100,
-    ) -> List[Product]:
+    ) -> list[Product]:
         """Lista produtos com filtros."""
         query = select(Product).where(
             and_(
@@ -315,9 +315,9 @@ class ProductRepository:
     async def count(
         self,
         condominio_id: UUID,
-        search: Optional[str] = None,
-        category_id: Optional[UUID] = None,
-        status: Optional[List[ProductStatus]] = None,
+        search: str | None = None,
+        category_id: UUID | None = None,
+        status: builtins.list[ProductStatus] | None = None,
     ) -> int:
         """Conta produtos com filtros."""
         query = select(func.count(Product.id)).where(
@@ -463,7 +463,7 @@ class PurchaseRequisitionRepository:
         await self.session.refresh(requisition)
         return requisition
 
-    async def get_by_id(self, requisition_id: UUID) -> Optional[PurchaseRequisition]:
+    async def get_by_id(self, requisition_id: UUID) -> PurchaseRequisition | None:
         """Busca requisição por ID."""
         result = await self.session.execute(
             select(PurchaseRequisition)
@@ -481,7 +481,7 @@ class PurchaseRequisitionRepository:
         self,
         number: str,
         condominio_id: UUID,
-    ) -> Optional[PurchaseRequisition]:
+    ) -> PurchaseRequisition | None:
         """Busca requisição por número."""
         result = await self.session.execute(
             select(PurchaseRequisition)
@@ -499,10 +499,10 @@ class PurchaseRequisitionRepository:
     async def list(
         self,
         condominio_id: UUID,
-        filters: Optional[RequisitionFilter] = None,
+        filters: RequisitionFilter | None = None,
         skip: int = 0,
         limit: int = 50,
-    ) -> List[PurchaseRequisition]:
+    ) -> list[PurchaseRequisition]:
         """Lista requisições com filtros."""
         query = (
             select(PurchaseRequisition)
@@ -517,13 +517,9 @@ class PurchaseRequisitionRepository:
 
         if filters:
             if filters.status:
-                query = query.where(
-                    PurchaseRequisition.status.in_([s.value for s in filters.status])
-                )
+                query = query.where(PurchaseRequisition.status.in_([s.value for s in filters.status]))
             if filters.priority:
-                query = query.where(
-                    PurchaseRequisition.priority.in_([p.value for p in filters.priority])
-                )
+                query = query.where(PurchaseRequisition.priority.in_([p.value for p in filters.priority]))
             if filters.requester_id:
                 query = query.where(PurchaseRequisition.requester_id == filters.requester_id)
             if filters.department:
@@ -548,7 +544,7 @@ class PurchaseRequisitionRepository:
     async def count(
         self,
         condominio_id: UUID,
-        filters: Optional[RequisitionFilter] = None,
+        filters: RequisitionFilter | None = None,
     ) -> int:
         """Conta requisições com filtros."""
         query = select(func.count(PurchaseRequisition.id)).where(
@@ -560,13 +556,9 @@ class PurchaseRequisitionRepository:
 
         if filters:
             if filters.status:
-                query = query.where(
-                    PurchaseRequisition.status.in_([s.value for s in filters.status])
-                )
+                query = query.where(PurchaseRequisition.status.in_([s.value for s in filters.status]))
             if filters.priority:
-                query = query.where(
-                    PurchaseRequisition.priority.in_([p.value for p in filters.priority])
-                )
+                query = query.where(PurchaseRequisition.priority.in_([p.value for p in filters.priority]))
 
         result = await self.session.execute(query)
         return result.scalar_one()
@@ -665,7 +657,7 @@ class PurchaseQuotationRepository:
     async def create(
         self,
         data: PurchaseQuotationCreate,
-        user_id: Optional[UUID] = None,
+        user_id: UUID | None = None,
     ) -> PurchaseQuotation:
         """Cria uma nova cotação."""
         items_data = data.items
@@ -686,7 +678,7 @@ class PurchaseQuotationRepository:
         await self.session.refresh(quotation)
         return quotation
 
-    async def get_by_id(self, quotation_id: UUID) -> Optional[PurchaseQuotation]:
+    async def get_by_id(self, quotation_id: UUID) -> PurchaseQuotation | None:
         """Busca cotação por ID."""
         result = await self.session.execute(
             select(PurchaseQuotation)
@@ -704,7 +696,7 @@ class PurchaseQuotationRepository:
         self,
         number: str,
         condominio_id: UUID,
-    ) -> Optional[PurchaseQuotation]:
+    ) -> PurchaseQuotation | None:
         """Busca cotação por número."""
         result = await self.session.execute(
             select(PurchaseQuotation)
@@ -722,7 +714,7 @@ class PurchaseQuotationRepository:
     async def list_by_requisition(
         self,
         requisition_id: UUID,
-    ) -> List[PurchaseQuotation]:
+    ) -> list[PurchaseQuotation]:
         """Lista cotações de uma requisição."""
         result = await self.session.execute(
             select(PurchaseQuotation)
@@ -740,13 +732,13 @@ class PurchaseQuotationRepository:
     async def list(
         self,
         condominio_id: UUID,
-        status: Optional[List[QuotationStatus]] = None,
-        supplier_id: Optional[UUID] = None,
-        date_from: Optional[date] = None,
-        date_to: Optional[date] = None,
+        status: list[QuotationStatus] | None = None,
+        supplier_id: UUID | None = None,
+        date_from: date | None = None,
+        date_to: date | None = None,
         skip: int = 0,
         limit: int = 50,
-    ) -> List[PurchaseQuotation]:
+    ) -> list[PurchaseQuotation]:
         """Lista cotações com filtros."""
         query = (
             select(PurchaseQuotation)
@@ -775,7 +767,7 @@ class PurchaseQuotationRepository:
     async def count(
         self,
         condominio_id: UUID,
-        status: Optional[List[QuotationStatus]] = None,
+        status: builtins.list[QuotationStatus] | None = None,
     ) -> int:
         """Conta cotações."""
         query = select(func.count(PurchaseQuotation.id)).where(
@@ -858,7 +850,7 @@ class PurchaseOrderRepository:
     async def create(
         self,
         data: PurchaseOrderCreate,
-        user_id: Optional[UUID] = None,
+        user_id: UUID | None = None,
     ) -> PurchaseOrder:
         """Cria uma nova ordem de compra."""
         items_data = data.items
@@ -879,7 +871,7 @@ class PurchaseOrderRepository:
         await self.session.refresh(order)
         return order
 
-    async def get_by_id(self, order_id: UUID) -> Optional[PurchaseOrder]:
+    async def get_by_id(self, order_id: UUID) -> PurchaseOrder | None:
         """Busca ordem por ID."""
         result = await self.session.execute(
             select(PurchaseOrder)
@@ -897,7 +889,7 @@ class PurchaseOrderRepository:
         self,
         number: str,
         condominio_id: UUID,
-    ) -> Optional[PurchaseOrder]:
+    ) -> PurchaseOrder | None:
         """Busca ordem por número."""
         result = await self.session.execute(
             select(PurchaseOrder)
@@ -915,10 +907,10 @@ class PurchaseOrderRepository:
     async def list(
         self,
         condominio_id: UUID,
-        filters: Optional[OrderFilter] = None,
+        filters: OrderFilter | None = None,
         skip: int = 0,
         limit: int = 50,
-    ) -> List[PurchaseOrder]:
+    ) -> list[PurchaseOrder]:
         """Lista ordens com filtros."""
         query = (
             select(PurchaseOrder)
@@ -957,7 +949,7 @@ class PurchaseOrderRepository:
     async def count(
         self,
         condominio_id: UUID,
-        filters: Optional[OrderFilter] = None,
+        filters: OrderFilter | None = None,
     ) -> int:
         """Conta ordens com filtros."""
         query = select(func.count(PurchaseOrder.id)).where(
@@ -1052,9 +1044,7 @@ class PurchaseOrderRepository:
             and_(
                 PurchaseOrder.condominio_id == condominio_id,
                 PurchaseOrder.ativo.is_(True),
-                PurchaseOrder.status.notin_(
-                    [OrderStatus.CANCELADA.value, OrderStatus.REJEITADA.value]
-                ),
+                PurchaseOrder.status.notin_([OrderStatus.CANCELADA.value, OrderStatus.REJEITADA.value]),
             )
         )
         pending_result = await self.session.execute(pending_query)
@@ -1098,7 +1088,7 @@ class GoodsReceiptRepository:
     async def create(
         self,
         data: GoodsReceiptCreate,
-        user_id: Optional[UUID] = None,
+        user_id: UUID | None = None,
     ) -> GoodsReceipt:
         """Cria um novo recebimento."""
         items_data = data.items
@@ -1119,7 +1109,7 @@ class GoodsReceiptRepository:
         await self.session.refresh(receipt)
         return receipt
 
-    async def get_by_id(self, receipt_id: UUID) -> Optional[GoodsReceipt]:
+    async def get_by_id(self, receipt_id: UUID) -> GoodsReceipt | None:
         """Busca recebimento por ID."""
         result = await self.session.execute(
             select(GoodsReceipt)
@@ -1137,7 +1127,7 @@ class GoodsReceiptRepository:
         self,
         number: str,
         condominio_id: UUID,
-    ) -> Optional[GoodsReceipt]:
+    ) -> GoodsReceipt | None:
         """Busca recebimento por número."""
         result = await self.session.execute(
             select(GoodsReceipt)
@@ -1152,7 +1142,7 @@ class GoodsReceiptRepository:
         )
         return result.scalar_one_or_none()
 
-    async def list_by_order(self, order_id: UUID) -> List[GoodsReceipt]:
+    async def list_by_order(self, order_id: UUID) -> list[GoodsReceipt]:
         """Lista recebimentos de uma ordem."""
         result = await self.session.execute(
             select(GoodsReceipt)
@@ -1170,10 +1160,10 @@ class GoodsReceiptRepository:
     async def list(
         self,
         condominio_id: UUID,
-        filters: Optional[ReceiptFilter] = None,
+        filters: ReceiptFilter | None = None,
         skip: int = 0,
         limit: int = 50,
-    ) -> List[GoodsReceipt]:
+    ) -> list[GoodsReceipt]:
         """Lista recebimentos com filtros."""
         query = (
             select(GoodsReceipt)
@@ -1190,9 +1180,7 @@ class GoodsReceiptRepository:
             if filters.status:
                 query = query.where(GoodsReceipt.status.in_([s.value for s in filters.status]))
             if filters.receipt_type:
-                query = query.where(
-                    GoodsReceipt.receipt_type.in_([t.value for t in filters.receipt_type])
-                )
+                query = query.where(GoodsReceipt.receipt_type.in_([t.value for t in filters.receipt_type]))
             if filters.order_id:
                 query = query.where(GoodsReceipt.order_id == filters.order_id)
             if filters.supplier_id:
@@ -1219,7 +1207,7 @@ class GoodsReceiptRepository:
     async def count(
         self,
         condominio_id: UUID,
-        filters: Optional[ReceiptFilter] = None,
+        filters: ReceiptFilter | None = None,
     ) -> int:
         """Conta recebimentos com filtros."""
         query = select(func.count(GoodsReceipt.id)).where(
@@ -1340,7 +1328,7 @@ class PurchaseApprovalRepository:
         await self.session.refresh(approval)
         return approval
 
-    async def get_by_id(self, approval_id: UUID) -> Optional[PurchaseApproval]:
+    async def get_by_id(self, approval_id: UUID) -> PurchaseApproval | None:
         """Busca aprovação por ID."""
         result = await self.session.execute(
             select(PurchaseApproval).where(
@@ -1356,7 +1344,7 @@ class PurchaseApprovalRepository:
         self,
         document_id: UUID,
         approval_type: ApprovalType,
-    ) -> List[PurchaseApproval]:
+    ) -> list[PurchaseApproval]:
         """Busca aprovações de um documento."""
         result = await self.session.execute(
             select(PurchaseApproval)
@@ -1375,7 +1363,7 @@ class PurchaseApprovalRepository:
         self,
         approver_id: UUID,
         condominio_id: UUID,
-    ) -> List[PurchaseApproval]:
+    ) -> list[PurchaseApproval]:
         """Busca aprovações pendentes para um aprovador."""
         result = await self.session.execute(
             select(PurchaseApproval)
@@ -1394,10 +1382,10 @@ class PurchaseApprovalRepository:
     async def list(
         self,
         condominio_id: UUID,
-        filters: Optional[ApprovalFilter] = None,
+        filters: ApprovalFilter | None = None,
         skip: int = 0,
         limit: int = 50,
-    ) -> List[PurchaseApproval]:
+    ) -> list[PurchaseApproval]:
         """Lista aprovações com filtros."""
         query = select(PurchaseApproval).where(
             and_(
@@ -1410,12 +1398,10 @@ class PurchaseApprovalRepository:
             if filters.status:
                 query = query.where(PurchaseApproval.status.in_([s.value for s in filters.status]))
             if filters.approval_type:
-                query = query.where(
-                    PurchaseApproval.approval_type.in_([t.value for t in filters.approval_type])
-                )
+                query = query.where(PurchaseApproval.approval_type.in_([t.value for t in filters.approval_type]))
             if filters.approval_level:
                 query = query.where(
-                    PurchaseApproval.approval_level.in_([l.value for l in filters.approval_level])
+                    PurchaseApproval.approval_level.in_([level.value for level in filters.approval_level])
                 )
             if filters.approver_id:
                 query = query.where(PurchaseApproval.approver_id == filters.approver_id)
@@ -1440,7 +1426,7 @@ class PurchaseApprovalRepository:
     async def count(
         self,
         condominio_id: UUID,
-        filters: Optional[ApprovalFilter] = None,
+        filters: ApprovalFilter | None = None,
     ) -> int:
         """Conta aprovações com filtros."""
         query = select(func.count(PurchaseApproval.id)).where(
@@ -1552,9 +1538,7 @@ class PurchaseApprovalRepository:
         avg_time = avg_result.scalar_one()
 
         approved_count = status_data.get(ApprovalStatus.APROVADO.value, 0)
-        total_responded = sum(
-            status_data.get(s.value, 0) for s in [ApprovalStatus.APROVADO, ApprovalStatus.REJEITADO]
-        )
+        total_responded = sum(status_data.get(s.value, 0) for s in [ApprovalStatus.APROVADO, ApprovalStatus.REJEITADO])
         approval_rate = (approved_count / total_responded * 100) if total_responded > 0 else None
 
         return ApprovalStats(

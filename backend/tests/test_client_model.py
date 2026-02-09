@@ -3,24 +3,38 @@ Testes para os Models do módulo Clients.
 Sprint 30 - Cadastro de Clientes/Condomínios
 """
 
-import pytest
 from datetime import date, datetime, timedelta
 from decimal import Decimal
 from uuid import uuid4
 
-from modules.clients.models import (
-    Client, Condominium, Unit, ClientContract, IntegrationSettings,
-    ClientType, ClientStatus, ClientSegment, DocumentType,
-    CondominiumType, CondominiumStatus, AdministrationType,
-    UnitType, UnitStatus,
-    ContractServiceType, ServiceStatus,
-    IntegrationType, SyncStatus, SyncDirection
-)
+import pytest
 
+from modules.clients.models import (
+    AdministrationType,
+    Client,
+    ClientContract,
+    ClientSegment,
+    ClientStatus,
+    ClientType,
+    Condominium,
+    CondominiumStatus,
+    CondominiumType,
+    ContractServiceType,
+    DocumentType,
+    IntegrationSettings,
+    IntegrationType,
+    ServiceStatus,
+    SyncDirection,
+    SyncStatus,
+    Unit,
+    UnitStatus,
+    UnitType,
+)
 
 # ============================================================
 # FIXTURES
 # ============================================================
+
 
 @pytest.fixture
 def sample_client_data():
@@ -113,6 +127,7 @@ def sample_integration_data(sample_client_data):
 # TESTES DE ENUMS
 # ============================================================
 
+
 class TestEnums:
     """Testes para os Enums do módulo."""
 
@@ -187,6 +202,7 @@ class TestEnums:
 # ============================================================
 # TESTES DO MODEL CLIENT
 # ============================================================
+
 
 class TestClientModel:
     """Testes para o model Client."""
@@ -314,6 +330,7 @@ class TestClientModel:
 # TESTES DO MODEL CONDOMINIUM
 # ============================================================
 
+
 class TestCondominiumModel:
     """Testes para o model Condominium."""
 
@@ -414,6 +431,7 @@ class TestCondominiumModel:
 # ============================================================
 # TESTES DO MODEL UNIT
 # ============================================================
+
 
 class TestUnitModel:
     """Testes para o model Unit."""
@@ -518,6 +536,7 @@ class TestUnitModel:
 # TESTES DO MODEL CLIENT CONTRACT
 # ============================================================
 
+
 class TestClientContractModel:
     """Testes para o model ClientContract."""
 
@@ -605,6 +624,7 @@ class TestClientContractModel:
 # ============================================================
 # TESTES DO MODEL INTEGRATION SETTINGS
 # ============================================================
+
 
 class TestIntegrationSettingsModel:
     """Testes para o model IntegrationSettings."""
@@ -711,30 +731,25 @@ class TestIntegrationSettingsModel:
 # TESTES DE RELACIONAMENTOS
 # ============================================================
 
+
 class TestModelRelationships:
     """Testes para relacionamentos entre models."""
 
-    def test_client_condominium_relationship(
-        self, sample_client_data, sample_condominium_data
-    ):
+    def test_client_condominium_relationship(self, sample_client_data, sample_condominium_data):
         """Testa relacionamento cliente-condomínio."""
         client = Client(**sample_client_data)
         condo = Condominium(**sample_condominium_data)
 
         assert condo.client_id == client.id
 
-    def test_condominium_unit_relationship(
-        self, sample_condominium_data, sample_unit_data
-    ):
+    def test_condominium_unit_relationship(self, sample_condominium_data, sample_unit_data):
         """Testa relacionamento condomínio-unidade."""
         condo = Condominium(**sample_condominium_data)
         unit = Unit(**sample_unit_data)
 
         assert unit.condominium_id == condo.id
 
-    def test_client_contract_relationship(
-        self, sample_client_data, sample_condominium_data, sample_contract_data
-    ):
+    def test_client_contract_relationship(self, sample_client_data, sample_condominium_data, sample_contract_data):
         """Testa relacionamento cliente-contrato."""
         client = Client(**sample_client_data)
         condo = Condominium(**sample_condominium_data)
@@ -743,9 +758,7 @@ class TestModelRelationships:
         assert contract.client_id == client.id
         assert contract.condominium_id == condo.id
 
-    def test_client_integration_relationship(
-        self, sample_client_data, sample_integration_data
-    ):
+    def test_client_integration_relationship(self, sample_client_data, sample_integration_data):
         """Testa relacionamento cliente-integração."""
         client = Client(**sample_client_data)
         integration = IntegrationSettings(**sample_integration_data)
@@ -756,6 +769,7 @@ class TestModelRelationships:
 # ============================================================
 # TESTES DE VALIDAÇÃO
 # ============================================================
+
 
 class TestValidations:
     """Testes de validação de dados."""

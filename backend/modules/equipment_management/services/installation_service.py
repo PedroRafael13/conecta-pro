@@ -2,7 +2,6 @@
 
 import logging
 from datetime import datetime
-from typing import Optional
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -41,33 +40,27 @@ class InstallationService:
             if not equipment:
                 raise ValueError(f"Equipamento não encontrado: {eq_id}")
             if equipment.status.value != "estoque":
-                raise ValueError(
-                    f"Equipamento {equipment.equipment_code} não está disponível para instalação"
-                )
+                raise ValueError(f"Equipamento {equipment.equipment_code} não está disponível para instalação")
 
         installation = await self.repository.create(data)
         await self.session.commit()
         return InstallationResponse.model_validate(installation)
 
-    async def get_by_id(
-        self, installation_id: str | UUID
-    ) -> Optional[InstallationResponse]:
+    async def get_by_id(self, installation_id: str | UUID) -> InstallationResponse | None:
         """Busca instalação por ID."""
         installation = await self.repository.get_by_id(installation_id)
         if not installation:
             return None
         return InstallationResponse.model_validate(installation)
 
-    async def get_by_code(self, code: str) -> Optional[InstallationResponse]:
+    async def get_by_code(self, code: str) -> InstallationResponse | None:
         """Busca instalação por código."""
         installation = await self.repository.get_by_code(code)
         if not installation:
             return None
         return InstallationResponse.model_validate(installation)
 
-    async def update(
-        self, installation_id: str | UUID, data: InstallationUpdate
-    ) -> Optional[InstallationResponse]:
+    async def update(self, installation_id: str | UUID, data: InstallationUpdate) -> InstallationResponse | None:
         """Atualiza uma instalação."""
         installation = await self.repository.update(installation_id, data)
         if not installation:
@@ -84,14 +77,12 @@ class InstallationService:
 
     async def list_with_filters(
         self,
-        filters: Optional[InstallationFilter] = None,
+        filters: InstallationFilter | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> InstallationListResponse:
         """Lista instalações com filtros."""
-        items, total = await self.repository.list_with_filters(
-            filters=filters, page=page, page_size=page_size
-        )
+        items, total = await self.repository.list_with_filters(filters=filters, page=page, page_size=page_size)
 
         total_pages = (total + page_size - 1) // page_size
 
@@ -112,14 +103,10 @@ class InstallationService:
         self, technician_id: str, include_completed: bool = False
     ) -> list[InstallationResponse]:
         """Lista instalações de um técnico."""
-        items = await self.repository.get_by_technician(
-            technician_id, include_completed
-        )
+        items = await self.repository.get_by_technician(technician_id, include_completed)
         return [InstallationResponse.model_validate(item) for item in items]
 
-    async def get_scheduled_for_date(
-        self, date: datetime
-    ) -> list[InstallationResponse]:
+    async def get_scheduled_for_date(self, date: datetime) -> list[InstallationResponse]:
         """Lista instalações agendadas para uma data."""
         items = await self.repository.get_scheduled_for_date(date)
         return [InstallationResponse.model_validate(item) for item in items]
@@ -134,9 +121,7 @@ class InstallationService:
         items = await self.repository.get_pending_acceptance()
         return [InstallationResponse.model_validate(item) for item in items]
 
-    async def start(
-        self, installation_id: str | UUID
-    ) -> Optional[InstallationResponse]:
+    async def start(self, installation_id: str | UUID) -> InstallationResponse | None:
         """Inicia uma instalação."""
         installation = await self.repository.start(installation_id)
         if not installation:
@@ -147,8 +132,8 @@ class InstallationService:
     async def complete(
         self,
         installation_id: str | UUID,
-        technical_report: Optional[str] = None,
-    ) -> Optional[InstallationResponse]:
+        technical_report: str | None = None,
+    ) -> InstallationResponse | None:
         """Conclui uma instalação e atualiza equipamentos."""
         installation = await self.repository.get_by_id(installation_id)
         if not installation:
@@ -168,15 +153,11 @@ class InstallationService:
             )
 
         # Concluir instalação
-        installation = await self.repository.complete(
-            installation_id, technical_report
-        )
+        installation = await self.repository.complete(installation_id, technical_report)
         await self.session.commit()
         return InstallationResponse.model_validate(installation)
 
-    async def cancel(
-        self, installation_id: str | UUID, reason: str
-    ) -> Optional[InstallationResponse]:
+    async def cancel(self, installation_id: str | UUID, reason: str) -> InstallationResponse | None:
         """Cancela uma instalação."""
         installation = await self.repository.cancel(installation_id, reason)
         if not installation:
@@ -188,24 +169,18 @@ class InstallationService:
         self,
         installation_id: str | UUID,
         new_date: datetime,
-        reason: Optional[str] = None,
-    ) -> Optional[InstallationResponse]:
+        reason: str | None = None,
+    ) -> InstallationResponse | None:
         """Reagenda uma instalação."""
-        installation = await self.repository.reschedule(
-            installation_id, new_date, reason
-        )
+        installation = await self.repository.reschedule(installation_id, new_date, reason)
         if not installation:
             return None
         await self.session.commit()
         return InstallationResponse.model_validate(installation)
 
-    async def accept_by_client(
-        self, installation_id: str | UUID, accepted_by: str
-    ) -> Optional[InstallationResponse]:
+    async def accept_by_client(self, installation_id: str | UUID, accepted_by: str) -> InstallationResponse | None:
         """Registra aceite do cliente."""
-        installation = await self.repository.accept_by_client(
-            installation_id, accepted_by
-        )
+        installation = await self.repository.accept_by_client(installation_id, accepted_by)
         if not installation:
             return None
         await self.session.commit()
@@ -216,19 +191,15 @@ class InstallationService:
         installation_id: str | UUID,
         photo_url: str,
         photo_type: str = "after",
-    ) -> Optional[InstallationResponse]:
+    ) -> InstallationResponse | None:
         """Adiciona foto à instalação."""
-        installation = await self.repository.add_photo(
-            installation_id, photo_url, photo_type
-        )
+        installation = await self.repository.add_photo(installation_id, photo_url, photo_type)
         if not installation:
             return None
         await self.session.commit()
         return InstallationResponse.model_validate(installation)
 
-    async def get_stats_by_period(
-        self, date_from: datetime, date_to: datetime
-    ) -> dict:
+    async def get_stats_by_period(self, date_from: datetime, date_to: datetime) -> dict:
         """Estatísticas de instalações por período."""
         return await self.repository.get_stats_by_period(date_from, date_to)
 
@@ -237,7 +208,7 @@ class InstallationService:
         installation_id: str | UUID,
         technician_id: str,
         technician_name: str,
-    ) -> Optional[InstallationResponse]:
+    ) -> InstallationResponse | None:
         """Atribui técnico à instalação."""
         update_data = InstallationUpdate(
             technician_id=technician_id,
@@ -249,14 +220,8 @@ class InstallationService:
         await self.session.commit()
         return InstallationResponse.model_validate(installation)
 
-    async def get_technician_schedule(
-        self, technician_id: str, date: datetime
-    ) -> list[InstallationResponse]:
+    async def get_technician_schedule(self, technician_id: str, date: datetime) -> list[InstallationResponse]:
         """Obtém agenda do técnico para uma data."""
         all_installations = await self.repository.get_scheduled_for_date(date)
-        technician_installations = [
-            inst for inst in all_installations if inst.technician_id == technician_id
-        ]
-        return [
-            InstallationResponse.model_validate(item) for item in technician_installations
-        ]
+        technician_installations = [inst for inst in all_installations if inst.technician_id == technician_id]
+        return [InstallationResponse.model_validate(item) for item in technician_installations]

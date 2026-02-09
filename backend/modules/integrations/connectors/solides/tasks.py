@@ -8,11 +8,9 @@ Tasks agendadas para sincronização automática e health checks.
 import asyncio
 import logging
 import os
-from datetime import datetime, timedelta
-from typing import Optional, List
 from uuid import UUID, uuid4
 
-from celery import shared_task, group
+from celery import shared_task
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +36,7 @@ def run_async(coro):
 
 # ==================== SYNC TASKS ====================
 
+
 @shared_task(
     bind=True,
     name="solides.full_sync",
@@ -47,10 +46,7 @@ def run_async(coro):
     time_limit=3900,
 )
 def sync_solides_full(
-    self,
-    condominio_id: str = None,
-    entity_types: Optional[List[str]] = None,
-    triggered_by: str = "scheduler"
+    self, condominio_id: str = None, entity_types: list[str] | None = None, triggered_by: str = "scheduler"
 ):
     """
     Task para sincronização completa com Sólides.
@@ -60,7 +56,7 @@ def sync_solides_full(
         entity_types: Tipos de entidade (ou todas configuradas)
         triggered_by: Quem disparou (user, scheduler, webhook)
     """
-    logger.info(f"[Solides Task] Iniciando full sync")
+    logger.info("[Solides Task] Iniciando full sync")
 
     async def _sync():
         from modules.integrations.connectors.solides.connector import SolidesConnector
@@ -73,7 +69,7 @@ def sync_solides_full(
             account_id=uuid4(),
             tenant_id=UUID(condominio_id) if condominio_id else uuid4(),
             config={},
-            credentials={"api_token": api_token}
+            credentials={"api_token": api_token},
         )
 
         await connector.setup()
@@ -96,12 +92,7 @@ def sync_solides_full(
                 except Exception as e:
                     logger.error(f"[Solides Task] Erro ao sincronizar {entity_type}: {e}")
 
-            return {
-                "success": True,
-                "triggered_by": triggered_by,
-                "results": results,
-                "total": sum(results.values())
-            }
+            return {"success": True, "triggered_by": triggered_by, "results": results, "total": sum(results.values())}
         finally:
             await connector.teardown()
 
@@ -120,15 +111,11 @@ def sync_solides_full(
     soft_time_limit=600,
     time_limit=660,
 )
-def sync_solides_incremental(
-    self,
-    condominio_id: str = None,
-    entity_types: Optional[List[str]] = None
-):
+def sync_solides_incremental(self, condominio_id: str = None, entity_types: list[str] | None = None):
     """
     Task para sincronização incremental com Sólides.
     """
-    logger.debug(f"[Solides Task] Iniciando incremental sync")
+    logger.debug("[Solides Task] Iniciando incremental sync")
 
     async def _sync():
         from modules.integrations.connectors.solides.connector import SolidesConnector
@@ -141,7 +128,7 @@ def sync_solides_incremental(
             account_id=uuid4(),
             tenant_id=UUID(condominio_id) if condominio_id else uuid4(),
             config={},
-            credentials={"api_token": api_token}
+            credentials={"api_token": api_token},
         )
 
         await connector.setup()
@@ -176,18 +163,11 @@ def sync_all_condominios_incremental():
     # Futuramente: buscar lista de condomínios configurados
     result = sync_solides_incremental.delay()
 
-    return {
-        "condominios": 1,
-        "task_id": str(result.id)
-    }
+    return {"condominios": 1, "task_id": str(result.id)}
 
 
 @shared_task(name="solides.sync_single_entity")
-def sync_single_entity(
-    condominio_id: str = None,
-    entity_type: str = "employees",
-    solides_id: str = None
-):
+def sync_single_entity(condominio_id: str = None, entity_type: str = "employees", solides_id: str = None):
     """
     Task para sincronizar uma única entidade.
     """
@@ -204,7 +184,7 @@ def sync_single_entity(
             account_id=uuid4(),
             tenant_id=UUID(condominio_id) if condominio_id else uuid4(),
             config={},
-            credentials={"api_token": api_token}
+            credentials={"api_token": api_token},
         )
 
         await connector.setup()
@@ -212,11 +192,7 @@ def sync_single_entity(
         try:
             if solides_id:
                 result = await connector.fetch_entity_by_id(entity_type, solides_id)
-                return {
-                    "success": result is not None,
-                    "action": "fetched" if result else "not_found",
-                    "data": result
-                }
+                return {"success": result is not None, "action": "fetched" if result else "not_found", "data": result}
             else:
                 return {"success": False, "error": "solides_id é obrigatório"}
         finally:
@@ -227,12 +203,13 @@ def sync_single_entity(
 
 # ==================== HEALTH CHECK TASKS ====================
 
+
 @shared_task(name="solides.health_check")
 def check_solides_health(condominio_id: str = None):
     """
     Task para verificar saúde da conexão com Sólides.
     """
-    logger.debug(f"[Solides Task] Health check")
+    logger.debug("[Solides Task] Health check")
 
     async def _check():
         from modules.integrations.connectors.solides.connector import SolidesConnector
@@ -245,7 +222,7 @@ def check_solides_health(condominio_id: str = None):
             account_id=uuid4(),
             tenant_id=UUID(condominio_id) if condominio_id else uuid4(),
             config={},
-            credentials={"api_token": api_token}
+            credentials={"api_token": api_token},
         )
 
         await connector.setup()
@@ -256,7 +233,7 @@ def check_solides_health(condominio_id: str = None):
                 "status": "healthy" if result.healthy else "unhealthy",
                 "latency_ms": result.latency_ms,
                 "message": result.message,
-                "api": result.details.get("api", "unknown")
+                "api": result.details.get("api", "unknown"),
             }
         finally:
             await connector.teardown()
@@ -274,13 +251,11 @@ def check_all_solides_health():
     # Executa um único health check global
     result = check_solides_health.delay()
 
-    return {
-        "condominios_checked": 1,
-        "task_id": str(result.id)
-    }
+    return {"condominios_checked": 1, "task_id": str(result.id)}
 
 
 # ==================== WEBHOOK PROCESSING ====================
+
 
 @shared_task(name="solides.process_webhook_queue")
 def process_webhooks():
@@ -306,6 +281,7 @@ def retry_failed_webhooks():
 
 # ==================== CLEANUP TASKS ====================
 
+
 @shared_task(name="solides.cleanup_old_logs")
 def cleanup_old_sync_logs(days: int = 30):
     """
@@ -330,15 +306,13 @@ def cleanup_old_webhook_logs(days: int = 7):
 
 # ==================== HELPER FUNCTIONS ====================
 
+
 def schedule_full_sync(condominio_id: str = None, delay_seconds: int = 0):
     """
     Agenda full sync para um condomínio.
     """
     return sync_solides_full.apply_async(
-        args=[condominio_id],
-        kwargs={"triggered_by": "manual"},
-        countdown=delay_seconds,
-        queue='integrations'
+        args=[condominio_id], kwargs={"triggered_by": "manual"}, countdown=delay_seconds, queue="integrations"
     )
 
 
@@ -346,17 +320,11 @@ def schedule_incremental_sync(condominio_id: str = None):
     """
     Agenda sync incremental para um condomínio.
     """
-    return sync_solides_incremental.apply_async(
-        args=[condominio_id],
-        queue='integrations'
-    )
+    return sync_solides_incremental.apply_async(args=[condominio_id], queue="integrations")
 
 
 def schedule_entity_sync(condominio_id: str, entity_type: str, solides_id: str):
     """
     Agenda sync de uma entidade específica.
     """
-    return sync_single_entity.apply_async(
-        args=[condominio_id, entity_type, solides_id],
-        queue='integrations'
-    )
+    return sync_single_entity.apply_async(args=[condominio_id, entity_type, solides_id], queue="integrations")

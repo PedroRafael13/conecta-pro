@@ -4,11 +4,12 @@ modules/fase5/cct_compliance/enums.py - CCT Enums
 Enumeracoes para compliance CCT SINDCOND 2026
 """
 
-from enum import Enum
+from enum import StrEnum
 
 
-class TipoCargo(str, Enum):
+class TipoCargo(StrEnum):
     """Tipos de cargo conforme CCT SINDCOND."""
+
     # Portaria
     PORTEIRO = "porteiro"
     PORTEIRO_LIDER = "porteiro_lider"
@@ -59,8 +60,9 @@ class TipoCargo(str, Enum):
     COZINHEIRA = "cozinheira"
 
 
-class TipoJornada(str, Enum):
+class TipoJornada(StrEnum):
     """Tipos de jornada de trabalho."""
+
     JORNADA_44H = "44h_semanais"
     ESCALA_12X36 = "12x36"
     ESCALA_6X1 = "6x1"
@@ -69,8 +71,9 @@ class TipoJornada(str, Enum):
     INTERMITENTE = "intermitente"
 
 
-class TipoBeneficio(str, Enum):
+class TipoBeneficio(StrEnum):
     """Tipos de beneficio CCT."""
+
     VALE_ALIMENTACAO = "vale_alimentacao"
     VALE_REFEICAO = "vale_refeicao"
     VALE_TRANSPORTE = "vale_transporte"
@@ -87,8 +90,9 @@ class TipoBeneficio(str, Enum):
     DECIMO_TERCEIRO = "decimo_terceiro"
 
 
-class StatusValidacao(str, Enum):
+class StatusValidacao(StrEnum):
     """Status de validacao CCT."""
+
     CONFORME = "conforme"
     NAO_CONFORME = "nao_conforme"
     PENDENTE = "pendente"
@@ -96,13 +100,15 @@ class StatusValidacao(str, Enum):
     ERRO = "erro"
 
 
-class GrauInsalubridade(str, Enum):
+class GrauInsalubridade(StrEnum):
     """Graus de insalubridade."""
-    MINIMO = "minimo"      # 10%
-    MEDIO = "medio"        # 20%
-    MAXIMO = "maximo"      # 40%
+
+    MINIMO = "minimo"  # 10%
+    MEDIO = "medio"  # 20%
+    MAXIMO = "maximo"  # 40%
 
 
-class GrauPericulosidade(str, Enum):
+class GrauPericulosidade(StrEnum):
     """Grau de periculosidade."""
-    PADRAO = "padrao"      # 30%
+
+    PADRAO = "padrao"  # 30%

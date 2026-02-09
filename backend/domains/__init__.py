@@ -10,14 +10,6 @@ Available Domains:
 - inventory: Product and stock management
 """
 
-from . import procurement
-from . import financial
-from . import hr
-from . import inventory
+from . import financial, hr, inventory, procurement
 
-__all__ = [
-    "procurement",
-    "financial",
-    "hr",
-    "inventory"
-]
+__all__ = ["procurement", "financial", "hr", "inventory"]

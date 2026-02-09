@@ -1,39 +1,38 @@
 """Controller de Kits Documentais - Versão Async com Autenticação."""
 
 import logging
-from typing import List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.database import get_db
 from core.auth.dependencies import CurrentUserId
+from core.database import get_db
 from modules.document_kits.models.document_kit import (
-    KitType,
-    KitStatus,
     AssignmentStatus,
-    ItemStatusEnum,
     EntityType,
+    ItemStatusEnum,
+    KitStatus,
+    KitType,
 )
 from modules.document_kits.schemas.kit_schemas import (
-    DocumentKitCreate,
-    DocumentKitUpdate,
-    DocumentKitResponse,
-    DocumentKitListResponse,
-    DocumentKitItemCreate,
-    DocumentKitItemUpdate,
-    DocumentKitItemResponse,
     DocumentKitAssignmentCreate,
-    DocumentKitAssignmentUpdate,
     DocumentKitAssignmentResponse,
+    DocumentKitAssignmentUpdate,
+    DocumentKitCreate,
+    DocumentKitItemCreate,
+    DocumentKitItemResponse,
     DocumentKitItemStatusResponse,
+    DocumentKitItemUpdate,
+    DocumentKitListResponse,
+    DocumentKitResponse,
+    DocumentKitUpdate,
     KitStatsResponse,
     KitSuggestionResponse,
 )
-from modules.document_kits.services.kit_service import DocumentKitService
 from modules.document_kits.services.kit_ai_service import DocumentKitAIService
 from modules.document_kits.services.kit_operational_service import KitOperationalService
+from modules.document_kits.services.kit_service import DocumentKitService
 
 logger = logging.getLogger(__name__)
 
@@ -78,10 +77,10 @@ async def create_kit(
 async def list_kits(
     condominio_id: UUID = Query(..., description="ID do condominio"),
     user_id: CurrentUserId = None,
-    tipo: Optional[KitType] = None,
-    kit_status: Optional[KitStatus] = Query(None, alias="status"),
-    is_template: Optional[bool] = None,
-    search: Optional[str] = None,
+    tipo: KitType | None = None,
+    kit_status: KitStatus | None = Query(None, alias="status"),
+    is_template: bool | None = None,
+    search: str | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     service: DocumentKitService = Depends(get_service),
@@ -119,13 +118,13 @@ async def get_stats(
     return KitStatsResponse(**stats)
 
 
-@router.get("/templates", response_model=List[DocumentKitResponse])
+@router.get("/templates", response_model=list[DocumentKitResponse])
 async def list_templates(
     condominio_id: UUID = Query(..., description="ID do condominio"),
     user_id: CurrentUserId = None,
-    tipo: Optional[KitType] = None,
+    tipo: KitType | None = None,
     service: DocumentKitService = Depends(get_service),
-) -> List[DocumentKitResponse]:
+) -> list[DocumentKitResponse]:
     """Lista templates de kits."""
     kits = await service.list_kits(
         condominio_id=condominio_id,
@@ -265,14 +264,14 @@ async def add_item(
     return DocumentKitItemResponse.model_validate(item)
 
 
-@router.get("/{kit_id}/items", response_model=List[DocumentKitItemResponse])
+@router.get("/{kit_id}/items", response_model=list[DocumentKitItemResponse])
 async def list_items(
     kit_id: UUID,
     condominio_id: UUID = Query(..., description="ID do condominio"),
     user_id: CurrentUserId = None,
     only_active: bool = True,
     service: DocumentKitService = Depends(get_service),
-) -> List[DocumentKitItemResponse]:
+) -> list[DocumentKitItemResponse]:
     """Lista itens de um kit."""
     items = await service.list_kit_items(kit_id, condominio_id, only_active)
     return [DocumentKitItemResponse.model_validate(i) for i in items]
@@ -325,7 +324,7 @@ async def delete_item(
 @router.post("/{kit_id}/items/reorder", status_code=status.HTTP_204_NO_CONTENT)
 async def reorder_items(
     kit_id: UUID,
-    item_orders: List[dict],
+    item_orders: list[dict],
     condominio_id: UUID = Query(..., description="ID do condominio"),
     user_id: CurrentUserId = None,
     service: DocumentKitService = Depends(get_service),
@@ -355,19 +354,19 @@ async def assign_kit(
         raise HTTPException(status_code=400, detail=str(e)) from e
 
 
-@router.get("/assignments", response_model=List[DocumentKitAssignmentResponse])
+@router.get("/assignments", response_model=list[DocumentKitAssignmentResponse])
 async def list_assignments(
     condominio_id: UUID = Query(..., description="ID do condominio"),
     user_id: CurrentUserId = None,
-    kit_id: Optional[UUID] = None,
-    entity_type: Optional[EntityType] = None,
-    entity_id: Optional[UUID] = None,
-    assignment_status: Optional[AssignmentStatus] = Query(None, alias="status"),
-    vencidos: Optional[bool] = None,
+    kit_id: UUID | None = None,
+    entity_type: EntityType | None = None,
+    entity_id: UUID | None = None,
+    assignment_status: AssignmentStatus | None = Query(None, alias="status"),
+    vencidos: bool | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     service: DocumentKitService = Depends(get_service),
-) -> List[DocumentKitAssignmentResponse]:
+) -> list[DocumentKitAssignmentResponse]:
     """Lista atribuicoes."""
     assignments = await service.list_assignments(
         condominio_id=condominio_id,
@@ -382,12 +381,12 @@ async def list_assignments(
     return [DocumentKitAssignmentResponse.model_validate(a) for a in assignments]
 
 
-@router.get("/assignments/pending", response_model=List[DocumentKitAssignmentResponse])
+@router.get("/assignments/pending", response_model=list[DocumentKitAssignmentResponse])
 async def list_pending_assignments(
     condominio_id: UUID = Query(..., description="ID do condominio"),
     user_id: CurrentUserId = None,
     service: DocumentKitService = Depends(get_service),
-) -> List[DocumentKitAssignmentResponse]:
+) -> list[DocumentKitAssignmentResponse]:
     """Lista atribuicoes pendentes."""
     assignments = await service.list_assignments(
         condominio_id=condominio_id,
@@ -396,12 +395,12 @@ async def list_pending_assignments(
     return [DocumentKitAssignmentResponse.model_validate(a) for a in assignments]
 
 
-@router.get("/assignments/overdue", response_model=List[DocumentKitAssignmentResponse])
+@router.get("/assignments/overdue", response_model=list[DocumentKitAssignmentResponse])
 async def list_overdue_assignments(
     condominio_id: UUID = Query(..., description="ID do condominio"),
     user_id: CurrentUserId = None,
     service: DocumentKitService = Depends(get_service),
-) -> List[DocumentKitAssignmentResponse]:
+) -> list[DocumentKitAssignmentResponse]:
     """Lista atribuicoes vencidas."""
     assignments = await service.list_assignments(
         condominio_id=condominio_id,
@@ -536,19 +535,17 @@ async def notify_assignment(
 
 @router.get(
     "/assignments/{assignment_id}/statuses",
-    response_model=List[DocumentKitItemStatusResponse],
+    response_model=list[DocumentKitItemStatusResponse],
 )
 async def list_item_statuses(
     assignment_id: UUID,
     condominio_id: UUID = Query(..., description="ID do condominio"),
     user_id: CurrentUserId = None,
-    item_status: Optional[ItemStatusEnum] = Query(None, alias="status"),
+    item_status: ItemStatusEnum | None = Query(None, alias="status"),
     service: DocumentKitService = Depends(get_service),
-) -> List[DocumentKitItemStatusResponse]:
+) -> list[DocumentKitItemStatusResponse]:
     """Lista status de itens de uma atribuicao."""
-    statuses = await service.list_assignment_statuses(
-        assignment_id, condominio_id, item_status
-    )
+    statuses = await service.list_assignment_statuses(assignment_id, condominio_id, item_status)
     return [DocumentKitItemStatusResponse.model_validate(s) for s in statuses]
 
 
@@ -592,7 +589,7 @@ async def approve_document(
     status_id: UUID,
     condominio_id: UUID = Query(..., description="ID do condominio"),
     user_id: CurrentUserId = None,
-    observacoes: Optional[str] = None,
+    observacoes: str | None = None,
     service: DocumentKitService = Depends(get_service),
 ) -> DocumentKitItemStatusResponse:
     """Aprova documento."""
@@ -627,7 +624,7 @@ async def mark_not_applicable(
     status_id: UUID,
     condominio_id: UUID = Query(..., description="ID do condominio"),
     user_id: CurrentUserId = None,
-    motivo: Optional[str] = None,
+    motivo: str | None = None,
     service: DocumentKitService = Depends(get_service),
 ) -> DocumentKitItemStatusResponse:
     """Marca item como nao aplicavel."""
@@ -641,23 +638,21 @@ async def mark_not_applicable(
 # === AI Endpoints ===
 
 
-@router.get("/ai/suggest", response_model=List[KitSuggestionResponse])
+@router.get("/ai/suggest", response_model=list[KitSuggestionResponse])
 async def suggest_kits(
     entity_type: EntityType,
     condominio_id: UUID = Query(..., description="ID do condominio"),
     user_id: CurrentUserId = None,
-    cargo: Optional[str] = None,
-    departamento: Optional[str] = None,
+    cargo: str | None = None,
+    departamento: str | None = None,
     ai_service: DocumentKitAIService = Depends(get_ai_service),
-) -> List[KitSuggestionResponse]:
+) -> list[KitSuggestionResponse]:
     """Sugere kits para uma entidade."""
     entity_data = {
         "cargo": cargo or "",
         "departamento": departamento or "",
     }
-    suggestions = await ai_service.suggest_kits_for_entity(
-        condominio_id, entity_type, entity_data
-    )
+    suggestions = await ai_service.suggest_kits_for_entity(condominio_id, entity_type, entity_data)
     return [KitSuggestionResponse(**s) for s in suggestions]
 
 
@@ -670,9 +665,7 @@ async def analyze_compliance(
     ai_service: DocumentKitAIService = Depends(get_ai_service),
 ) -> dict:
     """Analisa conformidade de uma entidade."""
-    return await ai_service.analyze_compliance_risk(
-        condominio_id, entity_type, entity_id
-    )
+    return await ai_service.analyze_compliance_risk(condominio_id, entity_type, entity_id)
 
 
 @router.get("/ai/predict/{assignment_id}")
@@ -690,13 +683,13 @@ async def predict_completion(
     return await ai_service.predict_completion_date(assignment)
 
 
-@router.get("/ai/priorities", response_model=List[dict])
+@router.get("/ai/priorities", response_model=list[dict])
 async def get_priorities(
     condominio_id: UUID = Query(..., description="ID do condominio"),
     user_id: CurrentUserId = None,
     limit: int = Query(10, ge=1, le=50),
     ai_service: DocumentKitAIService = Depends(get_ai_service),
-) -> List[dict]:
+) -> list[dict]:
     """Retorna atribuicoes prioritarias."""
     return await ai_service.get_priority_assignments(condominio_id, limit)
 
@@ -711,13 +704,13 @@ async def analyze_usage(
     return await ai_service.analyze_kit_usage(condominio_id)
 
 
-@router.get("/ai/expiring", response_model=List[dict])
+@router.get("/ai/expiring", response_model=list[dict])
 async def get_expiring_documents(
     condominio_id: UUID = Query(..., description="ID do condominio"),
     user_id: CurrentUserId = None,
     days_ahead: int = Query(30, ge=1, le=365),
     ai_service: DocumentKitAIService = Depends(get_ai_service),
-) -> List[dict]:
+) -> list[dict]:
     """Lista documentos proximos do vencimento."""
     return await ai_service.get_expiring_documents(condominio_id, days_ahead)
 
@@ -725,15 +718,15 @@ async def get_expiring_documents(
 # === Operational Integration Endpoints ===
 
 
-@router.get("/operational/employees", response_model=List[dict])
+@router.get("/operational/employees", response_model=list[dict])
 async def get_employees_by_condominium(
     condominium_id: str,
     user_id: CurrentUserId = None,
-    start_date: Optional[str] = Query(None, description="Data inicial (YYYY-MM-DD)"),
-    end_date: Optional[str] = Query(None, description="Data final (YYYY-MM-DD)"),
+    start_date: str | None = Query(None, description="Data inicial (YYYY-MM-DD)"),
+    end_date: str | None = Query(None, description="Data final (YYYY-MM-DD)"),
     include_inactive: bool = Query(False, description="Incluir funcionarios inativos"),
     op_service: KitOperationalService = Depends(get_operational_service),
-) -> List[dict]:
+) -> list[dict]:
     """Busca todos os colaboradores alocados em um condominio no periodo."""
     try:
         from datetime import date
@@ -766,7 +759,7 @@ async def get_employees_by_condominium(
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
-@router.get("/operational/employees/month", response_model=List[dict])
+@router.get("/operational/employees/month", response_model=list[dict])
 async def get_employees_by_month(
     condominium_id: str,
     month: int = Query(..., ge=1, le=12, description="Mes (1-12)"),
@@ -774,7 +767,7 @@ async def get_employees_by_month(
     user_id: CurrentUserId = None,
     include_inactive: bool = Query(False, description="Incluir funcionarios inativos"),
     op_service: KitOperationalService = Depends(get_operational_service),
-) -> List[dict]:
+) -> list[dict]:
     """Busca colaboradores de um condominio em um mes especifico."""
     try:
         employees_data = await op_service.get_employees_by_month(
@@ -804,11 +797,11 @@ async def get_employees_by_month(
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
-@router.get("/operational/condominiums", response_model=List[dict])
+@router.get("/operational/condominiums", response_model=list[dict])
 async def get_condominiums_with_employees(
     user_id: CurrentUserId = None,
     op_service: KitOperationalService = Depends(get_operational_service),
-) -> List[dict]:
+) -> list[dict]:
     """Busca TODOS os condominios que possuem funcionarios alocados atualmente."""
     try:
         result = await op_service.get_condominiums_with_employees()
@@ -826,8 +819,8 @@ async def get_condominiums_with_employees(
 async def validate_condominium_has_employees(
     condominium_id: str,
     user_id: CurrentUserId = None,
-    month: Optional[int] = Query(None, ge=1, le=12, description="Mes (1-12)"),
-    year: Optional[int] = Query(None, ge=2020, le=2100, description="Ano"),
+    month: int | None = Query(None, ge=1, le=12, description="Mes (1-12)"),
+    year: int | None = Query(None, ge=2020, le=2100, description="Ano"),
     op_service: KitOperationalService = Depends(get_operational_service),
 ) -> dict:
     """Valida se um condominio possui funcionarios no periodo."""

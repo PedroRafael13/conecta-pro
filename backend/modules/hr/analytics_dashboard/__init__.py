@@ -2,19 +2,19 @@
 
 from .controllers import router
 from .models import (
-    DashboardConfig,
-    DashboardWidget,
-    KPIDefinition,
     AnalyticsCache,
-    ScheduledReport,
+    DashboardConfig,
     DashboardType,
     DashboardVisibility,
-    WidgetType,
+    DashboardWidget,
     DataSource,
     KPICategory,
+    KPIDefinition,
     KPIUnit,
-    ReportType,
     ReportFormat,
+    ReportType,
+    ScheduledReport,
+    WidgetType,
 )
 from .services import (
     DashboardService,

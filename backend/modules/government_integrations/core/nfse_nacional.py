@@ -20,23 +20,19 @@ Características:
 
 import base64
 import gzip
-import json
-import hashlib
-import ssl
-import re
 import logging
+import re
+import ssl
 import tempfile
-from datetime import datetime, date, timedelta, timezone
-from decimal import Decimal
-from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass, field
-from enum import Enum
-from uuid import UUID, uuid4
-import xml.etree.ElementTree as ET
-from xml.dom import minidom
+from datetime import UTC, datetime
+from decimal import Decimal
+from enum import StrEnum
+from typing import Any
 
 try:
     import httpx
+
     HTTPX_AVAILABLE = True
 except ImportError:
     HTTPX_AVAILABLE = False
@@ -57,18 +53,20 @@ NFSE_NACIONAL_ENDPOINTS = {
         "api_url": "https://www.producaorestrita.nfse.gov.br/api",
         "portal": "https://www.producaorestrita.nfse.gov.br/EmissorNacional",
         "swagger": "https://www.producaorestrita.nfse.gov.br/swagger/",
-    }
+    },
 }
 
 
-class AmbienteNacional(str, Enum):
+class AmbienteNacional(StrEnum):
     """Ambientes do Padrão Nacional."""
+
     PRODUCAO = "producao"
     HOMOLOGACAO = "homologacao"
 
 
-class TipoTributacao(str, Enum):
+class TipoTributacao(StrEnum):
     """Tipos de tributação no Padrão Nacional."""
+
     TRIBUTACAO_MUNICIPIO = "1"
     TRIBUTACAO_FORA_MUNICIPIO = "2"
     ISENCAO = "3"
@@ -78,8 +76,9 @@ class TipoTributacao(str, Enum):
     EXPORTACAO_SERVICO = "7"
 
 
-class RegimeEspecial(str, Enum):
+class RegimeEspecial(StrEnum):
     """Regimes especiais de tributação."""
+
     SEM_REGIME = "0"
     MICROEMPRESA = "1"
     ESTIMATIVA = "2"
@@ -92,11 +91,12 @@ class RegimeEspecial(str, Enum):
 @dataclass
 class PrestadorNacional:
     """Dados do prestador no Padrão Nacional."""
+
     cnpj: str
     inscricao_municipal: str
     codigo_municipio: str  # Código IBGE
     razao_social: str
-    nome_fantasia: Optional[str] = None
+    nome_fantasia: str | None = None
     regime_especial: RegimeEspecial = RegimeEspecial.ME_EPP_SIMPLES
     optante_simples: bool = True
 
@@ -104,25 +104,27 @@ class PrestadorNacional:
 @dataclass
 class TomadorNacional:
     """Dados do tomador no Padrão Nacional."""
+
     cpf_cnpj: str
     razao_social: str
-    endereco: Dict[str, str] = field(default_factory=dict)
-    email: Optional[str] = None
-    telefone: Optional[str] = None
-    inscricao_municipal: Optional[str] = None
+    endereco: dict[str, str] = field(default_factory=dict)
+    email: str | None = None
+    telefone: str | None = None
+    inscricao_municipal: str | None = None
     tipo_documento: str = "CNPJ"  # CPF ou CNPJ
 
 
 @dataclass
 class ServicoNacional:
     """Dados do serviço no Padrão Nacional."""
+
     codigo_tributacao_nacional: str  # Código do item da NBS ou LC 116
     descricao: str
     valor_servico: Decimal
     valor_deducao: Decimal = Decimal("0")
     valor_desconto_incondicionado: Decimal = Decimal("0")
     valor_desconto_condicionado: Decimal = Decimal("0")
-    codigo_cnae: Optional[str] = None
+    codigo_cnae: str | None = None
     aliquota_iss: Decimal = Decimal("0.05")
     iss_retido: bool = False
 
@@ -134,18 +136,19 @@ class DPSNacional:
 
     No Padrão Nacional, o RPS foi substituído pela DPS.
     """
+
     # Identificação
-    id_dps: Optional[str] = None
-    numero: Optional[str] = None
+    id_dps: str | None = None
+    numero: str | None = None
 
     # Prestador
-    prestador: Optional[PrestadorNacional] = None
+    prestador: PrestadorNacional | None = None
 
     # Tomador
-    tomador: Optional[TomadorNacional] = None
+    tomador: TomadorNacional | None = None
 
     # Serviço
-    servico: Optional[ServicoNacional] = None
+    servico: ServicoNacional | None = None
 
     # Datas
     data_competencia: datetime = field(default_factory=datetime.now)
@@ -154,24 +157,22 @@ class DPSNacional:
     tipo_tributacao: TipoTributacao = TipoTributacao.TRIBUTACAO_MUNICIPIO
 
     # Valores calculados
-    valor_liquido: Optional[Decimal] = None
-    valor_iss: Optional[Decimal] = None
+    valor_liquido: Decimal | None = None
+    valor_iss: Decimal | None = None
 
     def calcular_valores(self):
         """Calcula valores derivados."""
         if self.servico:
             base_calculo = (
-                self.servico.valor_servico -
-                self.servico.valor_deducao -
-                self.servico.valor_desconto_incondicionado
+                self.servico.valor_servico - self.servico.valor_deducao - self.servico.valor_desconto_incondicionado
             )
             self.valor_iss = base_calculo * self.servico.aliquota_iss
 
             self.valor_liquido = (
-                self.servico.valor_servico -
-                self.servico.valor_deducao -
-                self.servico.valor_desconto_incondicionado -
-                (self.valor_iss if self.servico.iss_retido else Decimal("0"))
+                self.servico.valor_servico
+                - self.servico.valor_deducao
+                - self.servico.valor_desconto_incondicionado
+                - (self.valor_iss if self.servico.iss_retido else Decimal("0"))
             )
 
 
@@ -208,8 +209,8 @@ class NFSeNacionalManager:
         self,
         ambiente: AmbienteNacional = AmbienteNacional.HOMOLOGACAO,
         cnpj: str = "",
-        certificado_path: Optional[str] = None,
-        certificado_senha: Optional[str] = None,
+        certificado_path: str | None = None,
+        certificado_senha: str | None = None,
     ):
         """
         Inicializa o manager.
@@ -225,17 +226,11 @@ class NFSeNacionalManager:
         self.certificado_path = certificado_path
         self.certificado_senha = certificado_senha
 
-        self.url_base = (
-            self.URL_PRODUCAO if ambiente == AmbienteNacional.PRODUCAO
-            else self.URL_HOMOLOGACAO
-        )
+        self.url_base = self.URL_PRODUCAO if ambiente == AmbienteNacional.PRODUCAO else self.URL_HOMOLOGACAO
 
-        logger.info(
-            f"NFSe Nacional Manager inicializado (PREPARAÇÃO) - "
-            f"Ambiente: {ambiente.value}"
-        )
+        logger.info(f"NFSe Nacional Manager inicializado (PREPARAÇÃO) - Ambiente: {ambiente.value}")
 
-    def emitir_dps(self, dps: DPSNacional) -> Dict[str, Any]:
+    def emitir_dps(self, dps: DPSNacional) -> dict[str, Any]:
         """
         Emite DPS (Declaração de Prestação de Serviços).
 
@@ -265,7 +260,9 @@ class NFSeNacionalManager:
                 "toma": {
                     "CNPJ" if len(dps.tomador.cpf_cnpj) == 14 else "CPF": dps.tomador.cpf_cnpj,
                     "xNome": dps.tomador.razao_social,
-                } if dps.tomador else None,
+                }
+                if dps.tomador
+                else None,
                 "serv": {
                     "cServ": {
                         "cTribNac": dps.servico.codigo_tributacao_nacional,
@@ -274,7 +271,9 @@ class NFSeNacionalManager:
                     "xDescServ": dps.servico.descricao,
                     "vServ": str(dps.servico.valor_servico),
                     "vDescIncworking": str(dps.servico.valor_desconto_incondicionado),
-                } if dps.servico else None,
+                }
+                if dps.servico
+                else None,
                 "valores": {
                     "vServPrest": {
                         "vServ": str(dps.servico.valor_servico) if dps.servico else "0",
@@ -286,24 +285,21 @@ class NFSeNacionalManager:
                             "pAliq": str(dps.servico.aliquota_iss * 100) if dps.servico else "5",
                             "tpRetISSQN": 1 if dps.servico and dps.servico.iss_retido else 2,
                         }
-                    }
-                }
+                    },
+                },
             }
         }
 
-        logger.warning(
-            "NFSe Padrão Nacional: Emissão simulada (migração não disponível ainda)"
-        )
+        logger.warning("NFSe Padrão Nacional: Emissão simulada (migração não disponível ainda)")
 
         return {
             "status": "preparacao",
-            "mensagem": "Padrão Nacional ainda não disponível em Manaus. "
-                       "Use NFSeManausManager para emissões atuais.",
+            "mensagem": "Padrão Nacional ainda não disponível em Manaus. Use NFSeManausManager para emissões atuais.",
             "payload_previsto": payload,
             "previsao_migracao": "2026",
         }
 
-    def consultar_status_migracao(self) -> Dict[str, Any]:
+    def consultar_status_migracao(self) -> dict[str, Any]:
         """
         Consulta status da migração para o Padrão Nacional.
 
@@ -327,10 +323,10 @@ class NFSeNacionalManager:
                 "portal_nacional": "https://www.gov.br/nfse",
                 "documentacao": "https://www.gov.br/nfse/pt-br/acesso-a-informacao/manuais",
                 "semef_manaus": "https://semef.manaus.am.gov.br",
-            }
+            },
         }
 
-    def comparar_padroes(self) -> Dict[str, Any]:
+    def comparar_padroes(self) -> dict[str, Any]:
         """
         Compara características entre padrão atual e Padrão Nacional.
 
@@ -408,16 +404,17 @@ MAPEAMENTO_SERVICOS_VIGILANCIA = {
 @dataclass
 class NFSeNacionalResult:
     """Resultado de operação com NFS-e Nacional."""
+
     sucesso: bool
     mensagem: str
-    codigo: Optional[str] = None
-    chave_acesso: Optional[str] = None
-    numero_nfse: Optional[int] = None
-    codigo_verificacao: Optional[str] = None
-    link_nfse: Optional[str] = None
-    xml_nfse: Optional[str] = None
-    pdf_danfse: Optional[bytes] = None
-    dados_retorno: Optional[Dict[str, Any]] = None
+    codigo: str | None = None
+    chave_acesso: str | None = None
+    numero_nfse: int | None = None
+    codigo_verificacao: str | None = None
+    link_nfse: str | None = None
+    xml_nfse: str | None = None
+    pdf_danfse: bytes | None = None
+    dados_retorno: dict[str, Any] | None = None
     tempo_resposta: float = 0.0
 
 
@@ -442,8 +439,8 @@ class NFSeNacionalClient:
     def __init__(
         self,
         ambiente: str = "2",
-        cert_path: Optional[str] = None,
-        cert_password: Optional[str] = None,
+        cert_path: str | None = None,
+        cert_password: str | None = None,
     ):
         """
         Inicializa o cliente NFS-e Nacional.
@@ -464,9 +461,9 @@ class NFSeNacionalClient:
         self.cert_path = cert_path
         self.cert_password = cert_password
 
-        self._client: Optional[httpx.AsyncClient] = None
-        self._cert_pem_path: Optional[str] = None
-        self._key_pem_path: Optional[str] = None
+        self._client: httpx.AsyncClient | None = None
+        self._cert_pem_path: str | None = None
+        self._key_pem_path: str | None = None
 
         logger.info(f"NFSeNacionalClient inicializado: Ambiente={'Produção' if ambiente == '1' else 'Homologação'}")
 
@@ -477,18 +474,16 @@ class NFSeNacionalClient:
 
             if self.cert_path:
                 from .certificate_manager import CertificateManager
-                cert_manager = CertificateManager(
-                    pfx_path=self.cert_path,
-                    password=self.cert_password
-                )
+
+                cert_manager = CertificateManager(pfx_path=self.cert_path, password=self.cert_password)
                 cert_manager.load()
 
                 # Exportar para arquivos temporários PEM
-                with tempfile.NamedTemporaryFile(mode='wb', suffix='.pem', delete=False) as cert_file:
+                with tempfile.NamedTemporaryFile(mode="wb", suffix=".pem", delete=False) as cert_file:
                     cert_file.write(cert_manager.get_certificate_pem())
                     self._cert_pem_path = cert_file.name
 
-                with tempfile.NamedTemporaryFile(mode='wb', suffix='.pem', delete=False) as key_file:
+                with tempfile.NamedTemporaryFile(mode="wb", suffix=".pem", delete=False) as key_file:
                     key_file.write(cert_manager.get_private_key_pem())
                     self._key_pem_path = key_file.name
 
@@ -501,7 +496,7 @@ class NFSeNacionalClient:
                 headers={
                     "Content-Type": "application/json",
                     "Accept": "application/json",
-                }
+                },
             )
 
         return self._client
@@ -514,6 +509,7 @@ class NFSeNacionalClient:
 
         # Limpar arquivos temporários
         import os
+
         if self._cert_pem_path and os.path.exists(self._cert_pem_path):
             os.unlink(self._cert_pem_path)
         if self._key_pem_path and os.path.exists(self._key_pem_path):
@@ -521,15 +517,15 @@ class NFSeNacionalClient:
 
     def _compress_and_encode_xml(self, xml: str) -> str:
         """Compacta (GZip) e codifica (Base64) o XML."""
-        xml_bytes = xml.encode('utf-8')
+        xml_bytes = xml.encode("utf-8")
         compressed = gzip.compress(xml_bytes)
-        return base64.b64encode(compressed).decode('ascii')
+        return base64.b64encode(compressed).decode("ascii")
 
     def _decode_and_decompress_xml(self, encoded: str) -> str:
         """Decodifica (Base64) e descompacta (GZip) o XML."""
         compressed = base64.b64decode(encoded)
         xml_bytes = gzip.decompress(compressed)
-        return xml_bytes.decode('utf-8')
+        return xml_bytes.decode("utf-8")
 
     async def enviar_dps(self, dps: DPSNacional) -> NFSeNacionalResult:
         """
@@ -542,6 +538,7 @@ class NFSeNacionalClient:
             Resultado da operação
         """
         import time
+
         start_time = time.time()
 
         try:
@@ -553,11 +550,13 @@ class NFSeNacionalClient:
             payload = {
                 "infDPS": {
                     "tpAmb": int(self.ambiente),
-                    "dhEmi": datetime.now(timezone.utc).isoformat(),
+                    "dhEmi": datetime.now(UTC).isoformat(),
                     "verAplic": "CONECTA_PRO_1.0",
                     "dCompet": dps.data_competencia.strftime("%Y-%m"),
-                    "prest": dps.prestador.to_dict() if hasattr(dps.prestador, 'to_dict') else {
-                        "CNPJ": re.sub(r'[^\d]', '', dps.prestador.cnpj),
+                    "prest": dps.prestador.to_dict()
+                    if hasattr(dps.prestador, "to_dict")
+                    else {
+                        "CNPJ": re.sub(r"[^\d]", "", dps.prestador.cnpj),
                         "IM": dps.prestador.inscricao_municipal,
                     },
                     "serv": {
@@ -567,13 +566,15 @@ class NFSeNacionalClient:
                     "valores": {
                         "vServPrest": float(dps.servico.valor_servico),
                         "vISS": float(dps.valor_iss or 0),
-                    }
+                    },
                 }
             }
 
             if dps.tomador:
                 payload["infDPS"]["toma"] = {
-                    "CPF" if len(re.sub(r'[^\d]', '', dps.tomador.cpf_cnpj)) == 11 else "CNPJ": re.sub(r'[^\d]', '', dps.tomador.cpf_cnpj),
+                    "CPF" if len(re.sub(r"[^\d]", "", dps.tomador.cpf_cnpj)) == 11 else "CNPJ": re.sub(
+                        r"[^\d]", "", dps.tomador.cpf_cnpj
+                    ),
                     "xNome": dps.tomador.razao_social,
                 }
 
@@ -590,7 +591,7 @@ class NFSeNacionalClient:
                     codigo_verificacao=data.get("codigoVerificacao"),
                     link_nfse=data.get("link"),
                     dados_retorno=data,
-                    tempo_resposta=tempo_resposta
+                    tempo_resposta=tempo_resposta,
                 )
             else:
                 data = response.json() if "application/json" in response.headers.get("content-type", "") else {}
@@ -599,20 +600,17 @@ class NFSeNacionalClient:
                     mensagem=data.get("message", f"Erro HTTP {response.status_code}"),
                     codigo=str(response.status_code),
                     dados_retorno=data,
-                    tempo_resposta=tempo_resposta
+                    tempo_resposta=tempo_resposta,
                 )
 
         except Exception as e:
             logger.error(f"Erro ao enviar DPS: {e}")
-            return NFSeNacionalResult(
-                sucesso=False,
-                mensagem=str(e),
-                tempo_resposta=time.time() - start_time
-            )
+            return NFSeNacionalResult(sucesso=False, mensagem=str(e), tempo_resposta=time.time() - start_time)
 
     async def consultar_nfse(self, chave_acesso: str) -> NFSeNacionalResult:
         """Consulta uma NFS-e pela chave de acesso."""
         import time
+
         start_time = time.time()
 
         try:
@@ -633,27 +631,24 @@ class NFSeNacionalClient:
                     numero_nfse=data.get("numero"),
                     xml_nfse=xml_nfse,
                     dados_retorno=data,
-                    tempo_resposta=tempo_resposta
+                    tempo_resposta=tempo_resposta,
                 )
             else:
                 return NFSeNacionalResult(
                     sucesso=False,
                     mensagem=f"Erro HTTP {response.status_code}",
                     codigo=str(response.status_code),
-                    tempo_resposta=tempo_resposta
+                    tempo_resposta=tempo_resposta,
                 )
 
         except Exception as e:
             logger.error(f"Erro ao consultar NFS-e: {e}")
-            return NFSeNacionalResult(
-                sucesso=False,
-                mensagem=str(e),
-                tempo_resposta=time.time() - start_time
-            )
+            return NFSeNacionalResult(sucesso=False, mensagem=str(e), tempo_resposta=time.time() - start_time)
 
     async def baixar_danfse(self, chave_acesso: str) -> NFSeNacionalResult:
         """Baixa o DANFSE (PDF) de uma NFS-e."""
         import time
+
         start_time = time.time()
 
         try:
@@ -667,13 +662,11 @@ class NFSeNacionalClient:
                     mensagem="DANFSE baixado",
                     chave_acesso=chave_acesso,
                     pdf_danfse=response.content,
-                    tempo_resposta=tempo_resposta
+                    tempo_resposta=tempo_resposta,
                 )
             else:
                 return NFSeNacionalResult(
-                    sucesso=False,
-                    mensagem=f"Erro HTTP {response.status_code}",
-                    tempo_resposta=tempo_resposta
+                    sucesso=False, mensagem=f"Erro HTTP {response.status_code}", tempo_resposta=tempo_resposta
                 )
 
         except Exception as e:
@@ -682,6 +675,7 @@ class NFSeNacionalClient:
     async def cancelar_nfse(self, chave_acesso: str, codigo: str, motivo: str) -> NFSeNacionalResult:
         """Registra evento de cancelamento de NFS-e."""
         import time
+
         start_time = time.time()
 
         try:
@@ -696,13 +690,11 @@ class NFSeNacionalClient:
                     mensagem="NFS-e cancelada",
                     chave_acesso=chave_acesso,
                     dados_retorno=response.json(),
-                    tempo_resposta=tempo_resposta
+                    tempo_resposta=tempo_resposta,
                 )
             else:
                 return NFSeNacionalResult(
-                    sucesso=False,
-                    mensagem=f"Erro HTTP {response.status_code}",
-                    tempo_resposta=tempo_resposta
+                    sucesso=False, mensagem=f"Erro HTTP {response.status_code}", tempo_resposta=tempo_resposta
                 )
 
         except Exception as e:

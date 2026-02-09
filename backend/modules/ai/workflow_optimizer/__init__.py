@@ -9,27 +9,27 @@ Otimizador inteligente de workflows com:
 - Metricas e dashboard
 """
 
+from modules.ai.workflow_optimizer.controllers import router
 from modules.ai.workflow_optimizer.models import (
     AIWorkflow,
     AIWorkflowExecution,
-    WorkflowTemplate,
-    WorkflowOptimization,
-    WorkflowMetrics,
-    WorkflowStatusEnum,
-    WorkflowTypeEnum,
-    TriggerTypeEnum,
-    StepTypeEnum,
     ExecutionStatusEnum,
     OptimizationTypeEnum,
-)
-from modules.ai.workflow_optimizer.services import (
-    WorkflowAnalyzer,
-    WorkflowOptimizer,
-    WorkflowExecutor,
-    StepExecutor,
+    StepTypeEnum,
+    TriggerTypeEnum,
+    WorkflowMetrics,
+    WorkflowOptimization,
+    WorkflowStatusEnum,
+    WorkflowTemplate,
+    WorkflowTypeEnum,
 )
 from modules.ai.workflow_optimizer.repositories import WorkflowRepository
-from modules.ai.workflow_optimizer.controllers import router
+from modules.ai.workflow_optimizer.services import (
+    StepExecutor,
+    WorkflowAnalyzer,
+    WorkflowExecutor,
+    WorkflowOptimizer,
+)
 
 __all__ = [
     # Models

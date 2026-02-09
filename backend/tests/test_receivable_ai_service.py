@@ -110,21 +110,21 @@ class TestReceivableAIService:
             for _ in range(12)
         ]
 
-        with patch.object(ai_service.customer_repo, "get_by_id") as mock_cust:
-            with patch.object(ai_service.account_repo, "get_by_customer") as mock_acc:
-                mock_cust.return_value = sample_customer
-                mock_acc.return_value = accounts
+        with (
+            patch.object(ai_service.customer_repo, "get_by_id") as mock_cust,
+            patch.object(ai_service.account_repo, "get_by_customer") as mock_acc,
+        ):
+            mock_cust.return_value = sample_customer
+            mock_acc.return_value = accounts
 
-                risk = await ai_service.calculate_customer_risk(sample_customer.id)
+            risk = await ai_service.calculate_customer_risk(sample_customer.id)
 
-                assert risk.risk_level == "baixo"
-                assert risk.risk_score < 30
-                assert "Excelente" in risk.recommendations[0] or len(risk.recommendations) > 0
+            assert risk.risk_level == "baixo"
+            assert risk.risk_score < 30
+            assert "Excelente" in risk.recommendations[0] or len(risk.recommendations) > 0
 
     @pytest.mark.asyncio
-    async def test_calculate_customer_risk_high(
-        self, ai_service, sample_customer, sample_accounts
-    ):
+    async def test_calculate_customer_risk_high(self, ai_service, sample_customer, sample_accounts):
         """Testa calculo de risco alto."""
         sample_customer.total_debt = Decimal("5000.00")
         sample_customer.overdue_debt = Decimal("4000.00")
@@ -146,15 +146,17 @@ class TestReceivableAIService:
             )
             bad_accounts.append(acc)
 
-        with patch.object(ai_service.customer_repo, "get_by_id") as mock_cust:
-            with patch.object(ai_service.account_repo, "get_by_customer") as mock_acc:
-                mock_cust.return_value = sample_customer
-                mock_acc.return_value = bad_accounts
+        with (
+            patch.object(ai_service.customer_repo, "get_by_id") as mock_cust,
+            patch.object(ai_service.account_repo, "get_by_customer") as mock_acc,
+        ):
+            mock_cust.return_value = sample_customer
+            mock_acc.return_value = bad_accounts
 
-                risk = await ai_service.calculate_customer_risk(sample_customer.id)
+            risk = await ai_service.calculate_customer_risk(sample_customer.id)
 
-                assert risk.risk_level in ["alto", "critico"]
-                assert risk.risk_score >= 60
+            assert risk.risk_level in ["alto", "critico"]
+            assert risk.risk_score >= 60
 
     @pytest.mark.asyncio
     async def test_calculate_customer_risk_not_found(self, ai_service):
@@ -170,29 +172,27 @@ class TestReceivableAIService:
             assert risk.risk_level == "desconhecido"
 
     @pytest.mark.asyncio
-    async def test_get_collection_priorities(
-        self, ai_service, sample_customer, sample_accounts
-    ):
+    async def test_get_collection_priorities(self, ai_service, sample_customer, sample_accounts):
         """Testa priorizacao de cobrancas."""
         condominio_id = sample_customer.condominio_id
 
         overdue_accounts = [a for a in sample_accounts if a.status == ReceivableStatus.VENCIDA.value]
 
-        with patch.object(ai_service.account_repo, "get_overdue") as mock_overdue:
-            with patch.object(ai_service.customer_repo, "get_by_id") as mock_cust:
-                mock_overdue.return_value = overdue_accounts
-                mock_cust.return_value = sample_customer
+        with (
+            patch.object(ai_service.account_repo, "get_overdue") as mock_overdue,
+            patch.object(ai_service.customer_repo, "get_by_id") as mock_cust,
+        ):
+            mock_overdue.return_value = overdue_accounts
+            mock_cust.return_value = sample_customer
 
-                priorities = await ai_service.get_collection_priorities(
-                    condominio_id, limit=10
-                )
+            priorities = await ai_service.get_collection_priorities(condominio_id, limit=10)
 
-                assert len(priorities) > 0
-                # Deve ter prioridades ordenadas
-                for p in priorities:
-                    assert p.priority_score >= 0
-                    assert p.priority_level in ["baixa", "media", "alta", "urgente"]
-                    assert p.recommended_action is not None
+            assert len(priorities) > 0
+            # Deve ter prioridades ordenadas
+            for p in priorities:
+                assert p.priority_score >= 0
+                assert p.priority_level in ["baixa", "media", "alta", "urgente"]
+                assert p.recommended_action is not None
 
     @pytest.mark.asyncio
     async def test_get_collection_priorities_empty(self, ai_service):
@@ -202,9 +202,7 @@ class TestReceivableAIService:
         with patch.object(ai_service.account_repo, "get_overdue") as mock_overdue:
             mock_overdue.return_value = []
 
-            priorities = await ai_service.get_collection_priorities(
-                condominio_id, limit=10
-            )
+            priorities = await ai_service.get_collection_priorities(condominio_id, limit=10)
 
             assert len(priorities) == 0
 
@@ -289,75 +287,79 @@ class TestReceivableAIService:
             for _ in range(3)
         ]
 
-        with patch.object(ai_service.customer_repo, "list") as mock_list:
-            with patch.object(ai_service.account_repo, "get_overdue") as mock_overdue:
-                mock_list.return_value = customers
-                mock_overdue.return_value = overdue_accounts
+        with (
+            patch.object(ai_service.customer_repo, "list") as mock_list,
+            patch.object(ai_service.account_repo, "get_overdue") as mock_overdue,
+        ):
+            mock_list.return_value = customers
+            mock_overdue.return_value = overdue_accounts
 
-                analysis = await ai_service.analyze_delinquency(condominio_id)
+            analysis = await ai_service.analyze_delinquency(condominio_id)
 
-                assert analysis.condominio_id == condominio_id
-                assert analysis.total_customers == 10
-                assert analysis.delinquency_rate >= 0
-                assert analysis.delinquency_rate <= 100
-                assert len(analysis.aging_breakdown) > 0
-                assert analysis.trend in ["melhorando", "estavel", "piorando"]
-                assert len(analysis.recommendations) > 0
+            assert analysis.condominio_id == condominio_id
+            assert analysis.total_customers == 10
+            assert analysis.delinquency_rate >= 0
+            assert analysis.delinquency_rate <= 100
+            assert len(analysis.aging_breakdown) > 0
+            assert analysis.trend in ["melhorando", "estavel", "piorando"]
+            assert len(analysis.recommendations) > 0
 
     @pytest.mark.asyncio
     async def test_analyze_delinquency_no_customers(self, ai_service):
         """Testa analise sem clientes."""
         condominio_id = uuid.uuid4()
 
-        with patch.object(ai_service.customer_repo, "list") as mock_list:
-            with patch.object(ai_service.account_repo, "get_overdue") as mock_overdue:
-                mock_list.return_value = []
-                mock_overdue.return_value = []
+        with (
+            patch.object(ai_service.customer_repo, "list") as mock_list,
+            patch.object(ai_service.account_repo, "get_overdue") as mock_overdue,
+        ):
+            mock_list.return_value = []
+            mock_overdue.return_value = []
 
-                analysis = await ai_service.analyze_delinquency(condominio_id)
+            analysis = await ai_service.analyze_delinquency(condominio_id)
 
-                assert analysis.total_customers == 0
-                assert analysis.delinquent_customers == 0
-                assert analysis.delinquency_rate == 0
+            assert analysis.total_customers == 0
+            assert analysis.delinquent_customers == 0
+            assert analysis.delinquency_rate == 0
 
     @pytest.mark.asyncio
     async def test_risk_factors(self, ai_service, sample_customer, sample_accounts):
         """Testa fatores de risco retornados."""
-        with patch.object(ai_service.customer_repo, "get_by_id") as mock_cust:
-            with patch.object(ai_service.account_repo, "get_by_customer") as mock_acc:
-                mock_cust.return_value = sample_customer
-                mock_acc.return_value = sample_accounts
+        with (
+            patch.object(ai_service.customer_repo, "get_by_id") as mock_cust,
+            patch.object(ai_service.account_repo, "get_by_customer") as mock_acc,
+        ):
+            mock_cust.return_value = sample_customer
+            mock_acc.return_value = sample_accounts
 
-                risk = await ai_service.calculate_customer_risk(sample_customer.id)
+            risk = await ai_service.calculate_customer_risk(sample_customer.id)
 
-                assert isinstance(risk.factors, list)
-                # Deve ter pelo menos um fator de risco
-                assert len(risk.factors) > 0 or risk.risk_score == 0
+            assert isinstance(risk.factors, list)
+            # Deve ter pelo menos um fator de risco
+            assert len(risk.factors) > 0 or risk.risk_score == 0
 
     @pytest.mark.asyncio
-    async def test_collection_recommended_actions(
-        self, ai_service, sample_customer, sample_accounts
-    ):
+    async def test_collection_recommended_actions(self, ai_service, sample_customer, sample_accounts):
         """Testa acoes recomendadas para cobranca."""
         condominio_id = sample_customer.condominio_id
         overdue_accounts = [a for a in sample_accounts if a.status == ReceivableStatus.VENCIDA.value]
 
-        with patch.object(ai_service.account_repo, "get_overdue") as mock_overdue:
-            with patch.object(ai_service.customer_repo, "get_by_id") as mock_cust:
-                mock_overdue.return_value = overdue_accounts
-                mock_cust.return_value = sample_customer
+        with (
+            patch.object(ai_service.account_repo, "get_overdue") as mock_overdue,
+            patch.object(ai_service.customer_repo, "get_by_id") as mock_cust,
+        ):
+            mock_overdue.return_value = overdue_accounts
+            mock_cust.return_value = sample_customer
 
-                priorities = await ai_service.get_collection_priorities(
-                    condominio_id, limit=10
-                )
+            priorities = await ai_service.get_collection_priorities(condominio_id, limit=10)
 
-                for p in priorities:
-                    assert p.recommended_action in [
-                        "lembrete",
-                        "notificacao",
-                        "cobranca_telefone",
-                        "carta_cobranca",
-                        "negativacao",
-                        "protesto",
-                        "acao_judicial",
-                    ]
+            for p in priorities:
+                assert p.recommended_action in [
+                    "lembrete",
+                    "notificacao",
+                    "cobranca_telefone",
+                    "carta_cobranca",
+                    "negativacao",
+                    "protesto",
+                    "acao_judicial",
+                ]

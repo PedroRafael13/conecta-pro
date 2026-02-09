@@ -12,6 +12,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from fastapi import FastAPI
+
 from api.v1 import router as api_router
 
 
@@ -35,7 +36,6 @@ def extract_config_openapi():
 
     # Filtrar apenas endpoints do módulo CONFIG
     config_paths = {}
-    config_tags = ["Config"]
 
     for path, methods in full_schema.get("paths", {}).items():
         # Verificar se o path é do módulo config
@@ -112,26 +112,15 @@ API do módulo de Configurações do Conecta PRO.
             "version": "1.0.0",
         },
         "servers": [
-            {
-                "url": "http://localhost:8000",
-                "description": "Desenvolvimento Local"
-            },
-            {
-                "url": "https://api.conectapro.com.br",
-                "description": "Produção"
-            }
+            {"url": "http://localhost:8000", "description": "Desenvolvimento Local"},
+            {"url": "https://api.conectapro.com.br", "description": "Produção"},
         ],
         "paths": config_paths,
         "components": {
             "schemas": config_schemas,
             "securitySchemes": full_schema.get("components", {}).get("securitySchemes", {}),
         },
-        "tags": [
-            {
-                "name": "Config",
-                "description": "Configurações, Multi-tenant, Feature Flags e Templates"
-            }
-        ],
+        "tags": [{"name": "Config", "description": "Configurações, Multi-tenant, Feature Flags e Templates"}],
     }
 
     # Salvar arquivo
@@ -139,19 +128,19 @@ API do módulo de Configurações do Conecta PRO.
     with open(output_file, "w", encoding="utf-8") as f:
         json.dump(config_spec, f, indent=2, ensure_ascii=False)
 
-    print(f"✅ OpenAPI spec extraído com sucesso!")
+    print("✅ OpenAPI spec extraído com sucesso!")
     print(f"📄 Arquivo: {output_file}")
     print(f"📊 Endpoints encontrados: {len(config_paths)}")
     print(f"📦 Schemas extraídos: {len(config_schemas)}")
 
     # Estatísticas por tipo de endpoint
     methods_count = {}
-    for path, methods in config_paths.items():
+    for _path, methods in config_paths.items():
         for method in methods.keys():
             if method in ["get", "post", "put", "patch", "delete"]:
                 methods_count[method.upper()] = methods_count.get(method.upper(), 0) + 1
 
-    print(f"\n📈 Distribuição por método HTTP:")
+    print("\n📈 Distribuição por método HTTP:")
     for method, count in sorted(methods_count.items()):
         print(f"   {method}: {count}")
 

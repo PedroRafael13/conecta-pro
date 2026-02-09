@@ -4,21 +4,22 @@ Email Repository - Sprint 54.
 Repositorio para persistencia de emails e entidades relacionadas.
 """
 
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, and_, or_, desc, update
-from sqlalchemy.orm import selectinload
-from typing import List, Optional, Dict, Any, Tuple
-from uuid import UUID
 from datetime import datetime, timedelta
+from typing import Any
+from uuid import UUID
+
+from sqlalchemy import and_, desc, func, or_, select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from modules.ai.email_assistant.models import (
     Email,
-    EmailResponse,
-    EmailTemplate,
-    EmailRule,
-    EmailStatusEnum,
     EmailCategoryEnum,
     EmailPriorityEnum,
+    EmailResponse,
+    EmailRule,
+    EmailStatusEnum,
+    EmailTemplate,
 )
 
 
@@ -33,7 +34,7 @@ class EmailRepository:
     # Email CRUD
     # =========================================================================
 
-    async def create_email(self, email_data: Dict[str, Any]) -> Email:
+    async def create_email(self, email_data: dict[str, Any]) -> Email:
         """Cria novo email."""
         email = Email(**email_data)
         self.session.add(email)
@@ -45,7 +46,7 @@ class EmailRepository:
         self,
         email_id: UUID,
         include_responses: bool = False,
-    ) -> Optional[Email]:
+    ) -> Email | None:
         """Busca email por ID."""
         query = select(Email).where(Email.id == email_id)
 
@@ -55,7 +56,7 @@ class EmailRepository:
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
-    async def get_email_by_message_id(self, message_id: str) -> Optional[Email]:
+    async def get_email_by_message_id(self, message_id: str) -> Email | None:
         """Busca email por message_id."""
         query = select(Email).where(Email.message_id == message_id)
         result = await self.session.execute(query)
@@ -65,18 +66,18 @@ class EmailRepository:
         self,
         skip: int = 0,
         limit: int = 100,
-        status: Optional[EmailStatusEnum] = None,
-        category: Optional[EmailCategoryEnum] = None,
-        priority: Optional[EmailPriorityEnum] = None,
-        is_spam: Optional[bool] = None,
-        condominio_id: Optional[UUID] = None,
-        assigned_to: Optional[UUID] = None,
-        from_date: Optional[datetime] = None,
-        to_date: Optional[datetime] = None,
-        search: Optional[str] = None,
-    ) -> Tuple[List[Email], int]:
+        status: EmailStatusEnum | None = None,
+        category: EmailCategoryEnum | None = None,
+        priority: EmailPriorityEnum | None = None,
+        is_spam: bool | None = None,
+        condominio_id: UUID | None = None,
+        assigned_to: UUID | None = None,
+        from_date: datetime | None = None,
+        to_date: datetime | None = None,
+        search: str | None = None,
+    ) -> tuple[list[Email], int]:
         """Lista emails com filtros."""
-        query = select(Email).where(Email.ativo == True)
+        query = select(Email).where(Email.ativo)
 
         # Filtros
         if status:
@@ -119,8 +120,8 @@ class EmailRepository:
     async def update_email(
         self,
         email_id: UUID,
-        update_data: Dict[str, Any],
-    ) -> Optional[Email]:
+        update_data: dict[str, Any],
+    ) -> Email | None:
         """Atualiza email."""
         email = await self.get_email_by_id(email_id)
         if not email:
@@ -138,8 +139,8 @@ class EmailRepository:
     async def update_email_classification(
         self,
         email_id: UUID,
-        classification: Dict[str, Any],
-    ) -> Optional[Email]:
+        classification: dict[str, Any],
+    ) -> Email | None:
         """Atualiza classificacao do email."""
         update_data = {
             "status": EmailStatusEnum.CLASSIFIED,
@@ -168,48 +169,63 @@ class EmailRepository:
         }
         return await self.update_email(email_id, update_data)
 
-    async def mark_as_spam(self, email_id: UUID) -> Optional[Email]:
+    async def mark_as_spam(self, email_id: UUID) -> Email | None:
         """Marca email como spam."""
-        return await self.update_email(email_id, {
-            "is_spam": True,
-            "status": EmailStatusEnum.SPAM,
-        })
+        return await self.update_email(
+            email_id,
+            {
+                "is_spam": True,
+                "status": EmailStatusEnum.SPAM,
+            },
+        )
 
-    async def mark_as_phishing(self, email_id: UUID) -> Optional[Email]:
+    async def mark_as_phishing(self, email_id: UUID) -> Email | None:
         """Marca email como phishing."""
-        return await self.update_email(email_id, {
-            "is_phishing": True,
-            "category": EmailCategoryEnum.PHISHING,
-            "status": EmailStatusEnum.SPAM,
-        })
+        return await self.update_email(
+            email_id,
+            {
+                "is_phishing": True,
+                "category": EmailCategoryEnum.PHISHING,
+                "status": EmailStatusEnum.SPAM,
+            },
+        )
 
     async def assign_email(
         self,
         email_id: UUID,
-        user_id: Optional[UUID] = None,
-        team: Optional[str] = None,
-        reason: Optional[str] = None,
-    ) -> Optional[Email]:
+        user_id: UUID | None = None,
+        team: str | None = None,
+        reason: str | None = None,
+    ) -> Email | None:
         """Atribui email a usuario/equipe."""
-        return await self.update_email(email_id, {
-            "assigned_to": user_id,
-            "assigned_team": team,
-            "routing_reason": reason,
-        })
+        return await self.update_email(
+            email_id,
+            {
+                "assigned_to": user_id,
+                "assigned_team": team,
+                "routing_reason": reason,
+            },
+        )
 
-    async def archive_email(self, email_id: UUID) -> Optional[Email]:
+    async def archive_email(self, email_id: UUID) -> Email | None:
         """Arquiva email."""
-        return await self.update_email(email_id, {
-            "status": EmailStatusEnum.ARCHIVED,
-        })
+        return await self.update_email(
+            email_id,
+            {
+                "status": EmailStatusEnum.ARCHIVED,
+            },
+        )
 
     async def delete_email(self, email_id: UUID, soft: bool = True) -> bool:
         """Deleta email."""
         if soft:
-            email = await self.update_email(email_id, {
-                "ativo": False,
-                "status": EmailStatusEnum.DELETED,
-            })
+            email = await self.update_email(
+                email_id,
+                {
+                    "ativo": False,
+                    "status": EmailStatusEnum.DELETED,
+                },
+            )
             return email is not None
         else:
             email = await self.get_email_by_id(email_id)
@@ -225,7 +241,7 @@ class EmailRepository:
 
     async def create_response(
         self,
-        response_data: Dict[str, Any],
+        response_data: dict[str, Any],
     ) -> EmailResponse:
         """Cria resposta de email."""
         response = EmailResponse(**response_data)
@@ -237,7 +253,7 @@ class EmailRepository:
     async def get_response_by_id(
         self,
         response_id: UUID,
-    ) -> Optional[EmailResponse]:
+    ) -> EmailResponse | None:
         """Busca resposta por ID."""
         query = select(EmailResponse).where(EmailResponse.id == response_id)
         result = await self.session.execute(query)
@@ -246,21 +262,17 @@ class EmailRepository:
     async def list_responses_by_email(
         self,
         email_id: UUID,
-    ) -> List[EmailResponse]:
+    ) -> list[EmailResponse]:
         """Lista respostas de um email."""
-        query = (
-            select(EmailResponse)
-            .where(EmailResponse.email_id == email_id)
-            .order_by(desc(EmailResponse.created_at))
-        )
+        query = select(EmailResponse).where(EmailResponse.email_id == email_id).order_by(desc(EmailResponse.created_at))
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
     async def update_response(
         self,
         response_id: UUID,
-        update_data: Dict[str, Any],
-    ) -> Optional[EmailResponse]:
+        update_data: dict[str, Any],
+    ) -> EmailResponse | None:
         """Atualiza resposta."""
         response = await self.get_response_by_id(response_id)
         if not response:
@@ -278,13 +290,16 @@ class EmailRepository:
     async def mark_response_sent(
         self,
         response_id: UUID,
-    ) -> Optional[EmailResponse]:
+    ) -> EmailResponse | None:
         """Marca resposta como enviada."""
-        return await self.update_response(response_id, {
-            "is_sent": True,
-            "is_draft": False,
-            "sent_at": datetime.utcnow(),
-        })
+        return await self.update_response(
+            response_id,
+            {
+                "is_sent": True,
+                "is_draft": False,
+                "sent_at": datetime.utcnow(),
+            },
+        )
 
     # =========================================================================
     # Email Template CRUD
@@ -292,7 +307,7 @@ class EmailRepository:
 
     async def create_template(
         self,
-        template_data: Dict[str, Any],
+        template_data: dict[str, Any],
     ) -> EmailTemplate:
         """Cria template."""
         template = EmailTemplate(**template_data)
@@ -304,22 +319,18 @@ class EmailRepository:
     async def get_template_by_id(
         self,
         template_id: UUID,
-    ) -> Optional[EmailTemplate]:
+    ) -> EmailTemplate | None:
         """Busca template por ID."""
-        query = select(EmailTemplate).where(
-            and_(EmailTemplate.id == template_id, EmailTemplate.ativo == True)
-        )
+        query = select(EmailTemplate).where(and_(EmailTemplate.id == template_id, EmailTemplate.ativo))
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
     async def get_template_by_code(
         self,
         code: str,
-    ) -> Optional[EmailTemplate]:
+    ) -> EmailTemplate | None:
         """Busca template por codigo."""
-        query = select(EmailTemplate).where(
-            and_(EmailTemplate.code == code, EmailTemplate.ativo == True)
-        )
+        query = select(EmailTemplate).where(and_(EmailTemplate.code == code, EmailTemplate.ativo))
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
@@ -327,12 +338,12 @@ class EmailRepository:
         self,
         skip: int = 0,
         limit: int = 100,
-        category: Optional[EmailCategoryEnum] = None,
-        is_active: Optional[bool] = None,
-        search: Optional[str] = None,
-    ) -> Tuple[List[EmailTemplate], int]:
+        category: EmailCategoryEnum | None = None,
+        is_active: bool | None = None,
+        search: str | None = None,
+    ) -> tuple[list[EmailTemplate], int]:
         """Lista templates."""
-        query = select(EmailTemplate).where(EmailTemplate.ativo == True)
+        query = select(EmailTemplate).where(EmailTemplate.ativo)
 
         if category:
             query = query.where(EmailTemplate.category == category)
@@ -359,15 +370,15 @@ class EmailRepository:
 
     async def find_templates_by_keywords(
         self,
-        keywords: List[str],
-    ) -> List[EmailTemplate]:
+        keywords: list[str],
+    ) -> list[EmailTemplate]:
         """Busca templates por keywords."""
         query = (
             select(EmailTemplate)
             .where(
                 and_(
-                    EmailTemplate.ativo == True,
-                    EmailTemplate.is_active == True,
+                    EmailTemplate.ativo,
+                    EmailTemplate.is_active,
                     EmailTemplate.trigger_keywords.overlap(keywords),
                 )
             )
@@ -379,14 +390,14 @@ class EmailRepository:
     async def find_templates_by_intent(
         self,
         intent: str,
-    ) -> List[EmailTemplate]:
+    ) -> list[EmailTemplate]:
         """Busca templates por intent."""
         query = (
             select(EmailTemplate)
             .where(
                 and_(
-                    EmailTemplate.ativo == True,
-                    EmailTemplate.is_active == True,
+                    EmailTemplate.ativo,
+                    EmailTemplate.is_active,
                     EmailTemplate.trigger_intents.contains([intent]),
                 )
             )
@@ -398,8 +409,8 @@ class EmailRepository:
     async def update_template(
         self,
         template_id: UUID,
-        update_data: Dict[str, Any],
-    ) -> Optional[EmailTemplate]:
+        update_data: dict[str, Any],
+    ) -> EmailTemplate | None:
         """Atualiza template."""
         template = await self.get_template_by_id(template_id)
         if not template:
@@ -454,7 +465,7 @@ class EmailRepository:
     # Email Rule CRUD
     # =========================================================================
 
-    async def create_rule(self, rule_data: Dict[str, Any]) -> EmailRule:
+    async def create_rule(self, rule_data: dict[str, Any]) -> EmailRule:
         """Cria regra."""
         rule = EmailRule(**rule_data)
         self.session.add(rule)
@@ -462,11 +473,9 @@ class EmailRepository:
         await self.session.refresh(rule)
         return rule
 
-    async def get_rule_by_id(self, rule_id: UUID) -> Optional[EmailRule]:
+    async def get_rule_by_id(self, rule_id: UUID) -> EmailRule | None:
         """Busca regra por ID."""
-        query = select(EmailRule).where(
-            and_(EmailRule.id == rule_id, EmailRule.ativo == True)
-        )
+        query = select(EmailRule).where(and_(EmailRule.id == rule_id, EmailRule.ativo))
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
@@ -474,11 +483,11 @@ class EmailRepository:
         self,
         skip: int = 0,
         limit: int = 100,
-        is_active: Optional[bool] = None,
-        condominio_id: Optional[UUID] = None,
-    ) -> Tuple[List[EmailRule], int]:
+        is_active: bool | None = None,
+        condominio_id: UUID | None = None,
+    ) -> tuple[list[EmailRule], int]:
         """Lista regras."""
-        query = select(EmailRule).where(EmailRule.ativo == True)
+        query = select(EmailRule).where(EmailRule.ativo)
 
         if is_active is not None:
             query = query.where(EmailRule.is_active == is_active)
@@ -503,16 +512,13 @@ class EmailRepository:
 
     async def get_active_rules(
         self,
-        condominio_id: Optional[UUID] = None,
-    ) -> List[EmailRule]:
+        condominio_id: UUID | None = None,
+    ) -> list[EmailRule]:
         """Busca regras ativas ordenadas por prioridade."""
-        query = (
-            select(EmailRule)
-            .where(
-                and_(
-                    EmailRule.ativo == True,
-                    EmailRule.is_active == True,
-                )
+        query = select(EmailRule).where(
+            and_(
+                EmailRule.ativo,
+                EmailRule.is_active,
             )
         )
 
@@ -532,8 +538,8 @@ class EmailRepository:
     async def update_rule(
         self,
         rule_id: UUID,
-        update_data: Dict[str, Any],
-    ) -> Optional[EmailRule]:
+        update_data: dict[str, Any],
+    ) -> EmailRule | None:
         """Atualiza regra."""
         rule = await self.get_rule_by_id(rule_id)
         if not rule:
@@ -575,12 +581,12 @@ class EmailRepository:
 
     async def get_email_stats(
         self,
-        condominio_id: Optional[UUID] = None,
-        from_date: Optional[datetime] = None,
-        to_date: Optional[datetime] = None,
-    ) -> Dict[str, Any]:
+        condominio_id: UUID | None = None,
+        from_date: datetime | None = None,
+        to_date: datetime | None = None,
+    ) -> dict[str, Any]:
         """Obtem estatisticas de emails."""
-        base_query = select(Email).where(Email.ativo == True)
+        base_query = select(Email).where(Email.ativo)
 
         if condominio_id:
             base_query = base_query.where(Email.condominio_id == condominio_id)
@@ -595,11 +601,7 @@ class EmailRepository:
         total = total_result.scalar()
 
         # Por status
-        status_query = (
-            select(Email.status, func.count())
-            .where(Email.ativo == True)
-            .group_by(Email.status)
-        )
+        status_query = select(Email.status, func.count()).where(Email.ativo).group_by(Email.status)
         if condominio_id:
             status_query = status_query.where(Email.condominio_id == condominio_id)
         status_result = await self.session.execute(status_query)
@@ -608,7 +610,7 @@ class EmailRepository:
         # Por categoria
         category_query = (
             select(Email.category, func.count())
-            .where(and_(Email.ativo == True, Email.category.isnot(None)))
+            .where(and_(Email.ativo, Email.category.isnot(None)))
             .group_by(Email.category)
         )
         if condominio_id:
@@ -617,28 +619,20 @@ class EmailRepository:
         by_category = {str(row[0].value): row[1] for row in category_result if row[0]}
 
         # Por prioridade
-        priority_query = (
-            select(Email.priority, func.count())
-            .where(Email.ativo == True)
-            .group_by(Email.priority)
-        )
+        priority_query = select(Email.priority, func.count()).where(Email.ativo).group_by(Email.priority)
         if condominio_id:
             priority_query = priority_query.where(Email.condominio_id == condominio_id)
         priority_result = await self.session.execute(priority_query)
         by_priority = {str(row[0].value): row[1] for row in priority_result if row[0]}
 
         # Spam e Phishing
-        spam_query = select(func.count()).where(
-            and_(Email.ativo == True, Email.is_spam == True)
-        )
+        spam_query = select(func.count()).where(and_(Email.ativo, Email.is_spam))
         if condominio_id:
             spam_query = spam_query.where(Email.condominio_id == condominio_id)
         spam_result = await self.session.execute(spam_query)
         spam_count = spam_result.scalar()
 
-        phishing_query = select(func.count()).where(
-            and_(Email.ativo == True, Email.is_phishing == True)
-        )
+        phishing_query = select(func.count()).where(and_(Email.ativo, Email.is_phishing))
         if condominio_id:
             phishing_query = phishing_query.where(Email.condominio_id == condominio_id)
         phishing_result = await self.session.execute(phishing_query)
@@ -646,7 +640,7 @@ class EmailRepository:
 
         # Media de tempo de processamento
         avg_time_query = select(func.avg(Email.processing_time_ms)).where(
-            and_(Email.ativo == True, Email.processing_time_ms > 0)
+            and_(Email.ativo, Email.processing_time_ms > 0)
         )
         if condominio_id:
             avg_time_query = avg_time_query.where(Email.condominio_id == condominio_id)
@@ -656,7 +650,7 @@ class EmailRepository:
         # Por sentimento
         sentiment_query = (
             select(Email.sentiment, func.count())
-            .where(and_(Email.ativo == True, Email.sentiment.isnot(None)))
+            .where(and_(Email.ativo, Email.sentiment.isnot(None)))
             .group_by(Email.sentiment)
         )
         if condominio_id:
@@ -680,8 +674,8 @@ class EmailRepository:
     async def get_email_trend(
         self,
         days: int = 30,
-        condominio_id: Optional[UUID] = None,
-    ) -> List[Dict[str, Any]]:
+        condominio_id: UUID | None = None,
+    ) -> list[dict[str, Any]]:
         """Obtem tendencia de emails nos ultimos dias."""
         from_date = datetime.utcnow() - timedelta(days=days)
 
@@ -692,7 +686,7 @@ class EmailRepository:
             )
             .where(
                 and_(
-                    Email.ativo == True,
+                    Email.ativo,
                     Email.received_at >= from_date,
                 )
             )
@@ -704,22 +698,19 @@ class EmailRepository:
             query = query.where(Email.condominio_id == condominio_id)
 
         result = await self.session.execute(query)
-        return [
-            {"date": str(row.date), "count": row.count}
-            for row in result
-        ]
+        return [{"date": str(row.date), "count": row.count} for row in result]
 
     async def get_top_templates(
         self,
         limit: int = 5,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Obtem templates mais usados."""
         query = (
             select(EmailTemplate)
             .where(
                 and_(
-                    EmailTemplate.ativo == True,
-                    EmailTemplate.is_active == True,
+                    EmailTemplate.ativo,
+                    EmailTemplate.is_active,
                 )
             )
             .order_by(desc(EmailTemplate.usage_count))

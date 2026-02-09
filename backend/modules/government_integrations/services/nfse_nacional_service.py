@@ -9,24 +9,24 @@ Portal: https://www.gov.br/nfse
 Documentacao: https://www.gov.br/nfse/pt-br/acesso-a-informacao/manuais
 """
 
-import os
 import logging
-from datetime import datetime, date
+import os
+from datetime import datetime
 from decimal import Decimal
-from typing import Dict, Any, List, Optional
+from typing import Any
 
-from modules.government_integrations.core.nfse_nacional import (
-    NFSeNacionalManager,
-    AmbienteNacional,
-    TipoTributacao,
-    RegimeEspecial,
-    DPSNacional,
-    PrestadorNacional,
-    TomadorNacional,
-    ServicoNacional,
-    MAPEAMENTO_SERVICOS_VIGILANCIA,
-)
 from modules.government_integrations.core import CertificateManager
+from modules.government_integrations.core.nfse_nacional import (
+    MAPEAMENTO_SERVICOS_VIGILANCIA,
+    AmbienteNacional,
+    DPSNacional,
+    NFSeNacionalManager,
+    PrestadorNacional,
+    RegimeEspecial,
+    ServicoNacional,
+    TipoTributacao,
+    TomadorNacional,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -51,8 +51,8 @@ class NFSeNacionalService:
 
     def __init__(self):
         """Inicializa o service com configuracoes do ambiente."""
-        self._manager: Optional[NFSeNacionalManager] = None
-        self._cert_manager: Optional[CertificateManager] = None
+        self._manager: NFSeNacionalManager | None = None
+        self._cert_manager: CertificateManager | None = None
 
         # Configuracoes do ambiente
         self.cnpj = os.getenv("NFSE_NACIONAL_CNPJ", os.getenv("NFSE_MANAUS_CNPJ", "35710481000103"))
@@ -62,10 +62,7 @@ class NFSeNacionalService:
         self.razao_social = os.getenv("NFSE_NACIONAL_RAZAO_SOCIAL", "Conecta Plus Servicos LTDA")
 
         # Certificado digital
-        self.cert_path = os.getenv(
-            "CERTIFICATE_PATH",
-            "/opt/conecta-pro/credentials/certificates/certificado.pfx"
-        )
+        self.cert_path = os.getenv("CERTIFICATE_PATH", "/opt/conecta-pro/credentials/certificates/certificado.pfx")
         self.cert_password = os.getenv("CERTIFICATE_PASSWORD", "")
 
         logger.info(f"NFSe Nacional Service inicializado - CNPJ: {self.cnpj}")
@@ -76,10 +73,7 @@ class NFSeNacionalService:
             # Inicializar certificado se disponivel
             if os.path.exists(self.cert_path) and self.cert_password:
                 try:
-                    self._cert_manager = CertificateManager(
-                        pfx_path=self.cert_path,
-                        password=self.cert_password
-                    )
+                    self._cert_manager = CertificateManager(pfx_path=self.cert_path, password=self.cert_password)
                     self._cert_manager.load()
                     logger.info(f"Certificado carregado: {self._cert_manager.info.subject_cn}")
                 except Exception as e:
@@ -89,11 +83,7 @@ class NFSeNacionalService:
                 logger.warning("Certificado nao configurado para NFS-e Nacional")
                 self._cert_manager = None
 
-            ambiente = (
-                AmbienteNacional.PRODUCAO
-                if self.ambiente == "producao"
-                else AmbienteNacional.HOMOLOGACAO
-            )
+            ambiente = AmbienteNacional.PRODUCAO if self.ambiente == "producao" else AmbienteNacional.HOMOLOGACAO
 
             self._manager = NFSeNacionalManager(
                 ambiente=ambiente,
@@ -106,12 +96,12 @@ class NFSeNacionalService:
 
     def emitir_dps(
         self,
-        tomador_data: Dict[str, Any],
-        servico_data: Dict[str, Any],
-        prestador_data: Optional[Dict[str, Any]] = None,
-        competencia: Optional[str] = None,
+        tomador_data: dict[str, Any],
+        servico_data: dict[str, Any],
+        prestador_data: dict[str, Any] | None = None,
+        competencia: str | None = None,
         tipo_tributacao: str = "1",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Emite DPS (Declaracao de Prestacao de Servicos).
 
@@ -210,15 +200,17 @@ class NFSeNacionalService:
         resultado = manager.emitir_dps(dps)
 
         # Adicionar informacoes extras
-        resultado.update({
-            "id_dps": dps.id_dps,
-            "numero_dps": dps.numero,
-            "valor_servico": str(valor_servico),
-            "valor_iss": str(dps.valor_iss) if dps.valor_iss else "0",
-            "valor_liquido": str(dps.valor_liquido) if dps.valor_liquido else str(valor_servico),
-            "tomador_cpf_cnpj": tomador.cpf_cnpj,
-            "data_emissao": datetime.now().isoformat(),
-        })
+        resultado.update(
+            {
+                "id_dps": dps.id_dps,
+                "numero_dps": dps.numero,
+                "valor_servico": str(valor_servico),
+                "valor_iss": str(dps.valor_iss) if dps.valor_iss else "0",
+                "valor_liquido": str(dps.valor_liquido) if dps.valor_liquido else str(valor_servico),
+                "tomador_cpf_cnpj": tomador.cpf_cnpj,
+                "data_emissao": datetime.now().isoformat(),
+            }
+        )
 
         logger.info(
             f"DPS preparada: ID={dps.id_dps}, "
@@ -229,7 +221,7 @@ class NFSeNacionalService:
 
         return resultado
 
-    def consultar_dps(self, id_dps: str) -> Dict[str, Any]:
+    def consultar_dps(self, id_dps: str) -> dict[str, Any]:
         """
         Consulta DPS pelo ID.
 
@@ -250,7 +242,7 @@ class NFSeNacionalService:
             "nota": "Use NFSeManausService para consultas no padrao atual (ABRASF).",
         }
 
-    def consultar_nfse(self, numero_nfse: str) -> Dict[str, Any]:
+    def consultar_nfse(self, numero_nfse: str) -> dict[str, Any]:
         """
         Consulta NFS-e pelo numero nacional.
 
@@ -272,11 +264,8 @@ class NFSeNacionalService:
         }
 
     def cancelar_nfse(
-        self,
-        numero_nfse: str,
-        motivo_cancelamento: str = "1",
-        justificativa: Optional[str] = None
-    ) -> Dict[str, Any]:
+        self, numero_nfse: str, motivo_cancelamento: str = "1", justificativa: str | None = None
+    ) -> dict[str, Any]:
         """
         Cancela uma NFS-e no Padrao Nacional.
 
@@ -304,9 +293,9 @@ class NFSeNacionalService:
     def substituir_nfse(
         self,
         numero_nfse_substituida: str,
-        tomador_data: Dict[str, Any],
-        servico_data: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        tomador_data: dict[str, Any],
+        servico_data: dict[str, Any],
+    ) -> dict[str, Any]:
         """
         Substitui uma NFS-e no Padrao Nacional.
 
@@ -329,7 +318,7 @@ class NFSeNacionalService:
             "nota": "Use NFSeManausService para substituicoes no padrao atual.",
         }
 
-    def consultar_eventos(self, numero_nfse: str) -> Dict[str, Any]:
+    def consultar_eventos(self, numero_nfse: str) -> dict[str, Any]:
         """
         Consulta eventos de uma NFS-e.
 
@@ -350,7 +339,7 @@ class NFSeNacionalService:
             "mensagem": "Consulta de eventos em preparacao.",
         }
 
-    def consultar_status_migracao(self) -> Dict[str, Any]:
+    def consultar_status_migracao(self) -> dict[str, Any]:
         """
         Consulta status da migracao para o Padrao Nacional.
 
@@ -360,7 +349,7 @@ class NFSeNacionalService:
         manager = self._get_manager()
         return manager.consultar_status_migracao()
 
-    def comparar_padroes(self) -> Dict[str, Any]:
+    def comparar_padroes(self) -> dict[str, Any]:
         """
         Compara caracteristicas entre padrao atual e Padrao Nacional.
 
@@ -370,7 +359,7 @@ class NFSeNacionalService:
         manager = self._get_manager()
         return manager.comparar_padroes()
 
-    def obter_mapeamento_servicos(self) -> List[Dict[str, Any]]:
+    def obter_mapeamento_servicos(self) -> list[dict[str, Any]]:
         """
         Obtem mapeamento de codigos de servico ABRASF para NBS.
 
@@ -379,14 +368,16 @@ class NFSeNacionalService:
         """
         mapeamentos = []
         for codigo_abrasf, dados in MAPEAMENTO_SERVICOS_VIGILANCIA.items():
-            mapeamentos.append({
-                "codigo_abrasf": codigo_abrasf,
-                "codigo_nbs": dados["nbs"],
-                "descricao": dados["descricao"],
-            })
+            mapeamentos.append(
+                {
+                    "codigo_abrasf": codigo_abrasf,
+                    "codigo_nbs": dados["nbs"],
+                    "descricao": dados["descricao"],
+                }
+            )
         return mapeamentos
 
-    def validar_conexao(self) -> Dict[str, Any]:
+    def validar_conexao(self) -> dict[str, Any]:
         """
         Valida conexao e status do Padrao Nacional.
 
@@ -418,7 +409,7 @@ class NFSeNacionalService:
 
         return resultado
 
-    def listar_codigos_servico_nacional(self) -> List[Dict[str, Any]]:
+    def listar_codigos_servico_nacional(self) -> list[dict[str, Any]]:
         """
         Lista codigos de servico disponiveis no Padrao Nacional.
 
@@ -467,7 +458,7 @@ class NFSeNacionalService:
 
 
 # Singleton para uso global
-_nfse_nacional_service: Optional[NFSeNacionalService] = None
+_nfse_nacional_service: NFSeNacionalService | None = None
 
 
 def get_nfse_nacional_service() -> NFSeNacionalService:

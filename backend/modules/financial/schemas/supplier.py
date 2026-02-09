@@ -1,7 +1,6 @@
 """Schemas para fornecedores."""
 
 from datetime import datetime
-from typing import List, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, Field
@@ -18,52 +17,52 @@ class SupplierBase(BaseModel):
     """Base para fornecedor."""
 
     name: str = Field(..., min_length=2, max_length=200)
-    trade_name: Optional[str] = Field(None, max_length=200)
+    trade_name: str | None = Field(None, max_length=200)
     supplier_type: SupplierType = SupplierType.PESSOA_JURIDICA
-    category: Optional[SupplierCategory] = None
-    cpf_cnpj: Optional[str] = Field(None, max_length=18)
-    state_registration: Optional[str] = Field(None, max_length=20)
-    municipal_registration: Optional[str] = Field(None, max_length=20)
-    cnae: Optional[str] = Field(None, max_length=10)
+    category: SupplierCategory | None = None
+    cpf_cnpj: str | None = Field(None, max_length=18)
+    state_registration: str | None = Field(None, max_length=20)
+    municipal_registration: str | None = Field(None, max_length=20)
+    cnae: str | None = Field(None, max_length=10)
 
     # Contato
-    email: Optional[EmailStr] = None
-    phone: Optional[str] = Field(None, max_length=20)
-    mobile: Optional[str] = Field(None, max_length=20)
-    whatsapp: Optional[str] = Field(None, max_length=20)
-    website: Optional[str] = Field(None, max_length=200)
+    email: EmailStr | None = None
+    phone: str | None = Field(None, max_length=20)
+    mobile: str | None = Field(None, max_length=20)
+    whatsapp: str | None = Field(None, max_length=20)
+    website: str | None = Field(None, max_length=200)
 
     # Contato principal
-    contact_name: Optional[str] = Field(None, max_length=100)
-    contact_email: Optional[EmailStr] = None
-    contact_phone: Optional[str] = Field(None, max_length=20)
-    contact_position: Optional[str] = Field(None, max_length=50)
+    contact_name: str | None = Field(None, max_length=100)
+    contact_email: EmailStr | None = None
+    contact_phone: str | None = Field(None, max_length=20)
+    contact_position: str | None = Field(None, max_length=50)
 
     # Endereço
-    address_street: Optional[str] = Field(None, max_length=200)
-    address_number: Optional[str] = Field(None, max_length=20)
-    address_complement: Optional[str] = Field(None, max_length=100)
-    address_neighborhood: Optional[str] = Field(None, max_length=100)
-    address_city: Optional[str] = Field(None, max_length=100)
-    address_state: Optional[str] = Field(None, max_length=2)
-    address_zip: Optional[str] = Field(None, max_length=10)
+    address_street: str | None = Field(None, max_length=200)
+    address_number: str | None = Field(None, max_length=20)
+    address_complement: str | None = Field(None, max_length=100)
+    address_neighborhood: str | None = Field(None, max_length=100)
+    address_city: str | None = Field(None, max_length=100)
+    address_state: str | None = Field(None, max_length=2)
+    address_zip: str | None = Field(None, max_length=10)
 
     # Dados bancários
-    bank_code: Optional[str] = Field(None, max_length=10)
-    bank_name: Optional[str] = Field(None, max_length=100)
-    bank_agency: Optional[str] = Field(None, max_length=10)
-    bank_agency_digit: Optional[str] = Field(None, max_length=2)
-    bank_account: Optional[str] = Field(None, max_length=20)
-    bank_account_digit: Optional[str] = Field(None, max_length=2)
-    bank_account_type: Optional[str] = Field(None, max_length=20)
-    pix_key: Optional[str] = Field(None, max_length=100)
-    pix_key_type: Optional[str] = Field(None, max_length=20)
+    bank_code: str | None = Field(None, max_length=10)
+    bank_name: str | None = Field(None, max_length=100)
+    bank_agency: str | None = Field(None, max_length=10)
+    bank_agency_digit: str | None = Field(None, max_length=2)
+    bank_account: str | None = Field(None, max_length=20)
+    bank_account_digit: str | None = Field(None, max_length=2)
+    bank_account_type: str | None = Field(None, max_length=20)
+    pix_key: str | None = Field(None, max_length=100)
+    pix_key_type: str | None = Field(None, max_length=20)
 
     # Condições comerciais
     payment_terms: PaymentTerms = PaymentTerms.DIAS_30
-    payment_terms_days: Optional[str] = None
-    credit_limit: Optional[str] = None
-    discount_percentage: Optional[str] = None
+    payment_terms_days: str | None = None
+    credit_limit: str | None = None
+    discount_percentage: str | None = None
 
     # Retenções fiscais
     withhold_iss: bool = False
@@ -74,8 +73,8 @@ class SupplierBase(BaseModel):
     withhold_inss: bool = False
 
     # Tags e observações
-    tags: List[str] = Field(default_factory=list)
-    notes: Optional[str] = None
+    tags: list[str] = Field(default_factory=list)
+    notes: str | None = None
 
 
 class SupplierCreate(SupplierBase):
@@ -87,59 +86,59 @@ class SupplierCreate(SupplierBase):
 class SupplierUpdate(BaseModel):
     """Schema para atualização de fornecedor."""
 
-    name: Optional[str] = Field(None, min_length=2, max_length=200)
-    trade_name: Optional[str] = Field(None, max_length=200)
-    supplier_type: Optional[SupplierType] = None
-    category: Optional[SupplierCategory] = None
-    status: Optional[SupplierStatus] = None
-    cpf_cnpj: Optional[str] = Field(None, max_length=18)
+    name: str | None = Field(None, min_length=2, max_length=200)
+    trade_name: str | None = Field(None, max_length=200)
+    supplier_type: SupplierType | None = None
+    category: SupplierCategory | None = None
+    status: SupplierStatus | None = None
+    cpf_cnpj: str | None = Field(None, max_length=18)
 
     # Contato
-    email: Optional[EmailStr] = None
-    phone: Optional[str] = Field(None, max_length=20)
-    mobile: Optional[str] = Field(None, max_length=20)
-    whatsapp: Optional[str] = Field(None, max_length=20)
-    website: Optional[str] = Field(None, max_length=200)
+    email: EmailStr | None = None
+    phone: str | None = Field(None, max_length=20)
+    mobile: str | None = Field(None, max_length=20)
+    whatsapp: str | None = Field(None, max_length=20)
+    website: str | None = Field(None, max_length=200)
 
     # Contato principal
-    contact_name: Optional[str] = Field(None, max_length=100)
-    contact_email: Optional[EmailStr] = None
-    contact_phone: Optional[str] = Field(None, max_length=20)
-    contact_position: Optional[str] = Field(None, max_length=50)
+    contact_name: str | None = Field(None, max_length=100)
+    contact_email: EmailStr | None = None
+    contact_phone: str | None = Field(None, max_length=20)
+    contact_position: str | None = Field(None, max_length=50)
 
     # Endereço
-    address_street: Optional[str] = Field(None, max_length=200)
-    address_number: Optional[str] = Field(None, max_length=20)
-    address_complement: Optional[str] = Field(None, max_length=100)
-    address_neighborhood: Optional[str] = Field(None, max_length=100)
-    address_city: Optional[str] = Field(None, max_length=100)
-    address_state: Optional[str] = Field(None, max_length=2)
-    address_zip: Optional[str] = Field(None, max_length=10)
+    address_street: str | None = Field(None, max_length=200)
+    address_number: str | None = Field(None, max_length=20)
+    address_complement: str | None = Field(None, max_length=100)
+    address_neighborhood: str | None = Field(None, max_length=100)
+    address_city: str | None = Field(None, max_length=100)
+    address_state: str | None = Field(None, max_length=2)
+    address_zip: str | None = Field(None, max_length=10)
 
     # Dados bancários
-    bank_code: Optional[str] = Field(None, max_length=10)
-    bank_name: Optional[str] = Field(None, max_length=100)
-    bank_agency: Optional[str] = Field(None, max_length=10)
-    bank_account: Optional[str] = Field(None, max_length=20)
-    pix_key: Optional[str] = Field(None, max_length=100)
-    pix_key_type: Optional[str] = Field(None, max_length=20)
+    bank_code: str | None = Field(None, max_length=10)
+    bank_name: str | None = Field(None, max_length=100)
+    bank_agency: str | None = Field(None, max_length=10)
+    bank_account: str | None = Field(None, max_length=20)
+    pix_key: str | None = Field(None, max_length=100)
+    pix_key_type: str | None = Field(None, max_length=20)
 
     # Condições comerciais
-    payment_terms: Optional[PaymentTerms] = None
-    credit_limit: Optional[str] = None
-    discount_percentage: Optional[str] = None
+    payment_terms: PaymentTerms | None = None
+    credit_limit: str | None = None
+    discount_percentage: str | None = None
 
     # Retenções fiscais
-    withhold_iss: Optional[bool] = None
-    withhold_ir: Optional[bool] = None
-    withhold_pis: Optional[bool] = None
-    withhold_cofins: Optional[bool] = None
-    withhold_csll: Optional[bool] = None
-    withhold_inss: Optional[bool] = None
+    withhold_iss: bool | None = None
+    withhold_ir: bool | None = None
+    withhold_pis: bool | None = None
+    withhold_cofins: bool | None = None
+    withhold_csll: bool | None = None
+    withhold_inss: bool | None = None
 
     # Tags e observações
-    tags: Optional[List[str]] = None
-    notes: Optional[str] = None
+    tags: list[str] | None = None
+    notes: str | None = None
 
 
 class SupplierResponse(SupplierBase):
@@ -147,20 +146,20 @@ class SupplierResponse(SupplierBase):
 
     id: UUID
     condominio_id: UUID
-    code: Optional[str] = None
+    code: str | None = None
     status: SupplierStatus
     is_qualified: bool = False
-    qualified_at: Optional[datetime] = None
+    qualified_at: datetime | None = None
     is_blocked: bool = False
-    blocked_reason: Optional[str] = None
-    blocked_at: Optional[datetime] = None
-    rating: Optional[str] = None
+    blocked_reason: str | None = None
+    blocked_at: datetime | None = None
+    rating: str | None = None
     rating_count: str = "0"
-    full_address: Optional[str] = None
-    bank_info: Optional[str] = None
+    full_address: str | None = None
+    bank_info: str | None = None
     is_active: bool
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
 
     class Config:  # pylint: disable=too-few-public-methods
         """Configuração do schema."""
@@ -172,18 +171,18 @@ class SupplierListResponse(BaseModel):
     """Schema de lista de fornecedores."""
 
     id: UUID
-    code: Optional[str] = None
+    code: str | None = None
     name: str
-    trade_name: Optional[str] = None
+    trade_name: str | None = None
     supplier_type: str
-    category: Optional[str] = None
+    category: str | None = None
     status: str
-    cpf_cnpj: Optional[str] = None
-    email: Optional[str] = None
-    phone: Optional[str] = None
+    cpf_cnpj: str | None = None
+    email: str | None = None
+    phone: str | None = None
     is_qualified: bool = False
     is_blocked: bool = False
-    rating: Optional[str] = None
+    rating: str | None = None
 
     class Config:  # pylint: disable=too-few-public-methods
         """Configuração do schema."""
@@ -194,15 +193,15 @@ class SupplierListResponse(BaseModel):
 class SupplierFilter(BaseModel):
     """Filtros para busca de fornecedores."""
 
-    search: Optional[str] = None  # Busca em nome, cpf_cnpj, email
-    supplier_type: Optional[SupplierType] = None
-    category: Optional[SupplierCategory] = None
-    status: Optional[SupplierStatus] = None
-    is_qualified: Optional[bool] = None
-    is_blocked: Optional[bool] = None
-    city: Optional[str] = None
-    state: Optional[str] = None
-    tags: Optional[List[str]] = None
+    search: str | None = None  # Busca em nome, cpf_cnpj, email
+    supplier_type: SupplierType | None = None
+    category: SupplierCategory | None = None
+    status: SupplierStatus | None = None
+    is_qualified: bool | None = None
+    is_blocked: bool | None = None
+    city: str | None = None
+    state: str | None = None
+    tags: list[str] | None = None
 
 
 class SupplierStats(BaseModel):
@@ -226,4 +225,4 @@ class SupplierBlockRequest(BaseModel):
 class SupplierQualifyRequest(BaseModel):
     """Request para qualificar fornecedor."""
 
-    notes: Optional[str] = Field(None, max_length=500)
+    notes: str | None = Field(None, max_length=500)

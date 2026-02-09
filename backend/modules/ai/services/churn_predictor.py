@@ -7,7 +7,7 @@ import logging
 import time
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID
 
 # Note: Prediction and PredictionType used in type hints only
@@ -32,13 +32,13 @@ class ChurnFactors:
     value_trend: float = 0.0  # % mudanca no valor
 
     # Satisfacao
-    nps_score: Optional[float] = None
-    csat_score: Optional[float] = None
+    nps_score: float | None = None
+    csat_score: float | None = None
     complaints_count: int = 0
 
     # Contrato
     contract_age_months: int = 0
-    days_until_renewal: Optional[int] = None
+    days_until_renewal: int | None = None
     renewal_count: int = 0
 
     # Uso
@@ -56,7 +56,7 @@ class ChurnPrediction:
     confidence: float  # 0-1
     main_factors: list  # fatores principais
     recommendations: list  # acoes recomendadas
-    expected_churn_date: Optional[datetime] = None
+    expected_churn_date: datetime | None = None
     lifetime_value_at_risk: float = 0.0
 
 
@@ -92,7 +92,7 @@ class ChurnPredictor:
         self,
         tenant_id: UUID,
         client_id: UUID,
-        factors: Optional[ChurnFactors] = None,
+        factors: ChurnFactors | None = None,
     ) -> ChurnPrediction:
         """Preve probabilidade de churn para um cliente.
 
@@ -524,7 +524,7 @@ class ChurnPredictor:
             f"{factors.complaints_count} reclamacoes",
             "contract": f"Contrato ha {factors.contract_age_months} meses, "
             f"renovacao em {factors.days_until_renewal or 'N/A'} dias",
-            "usage": f"Uso de features: {factors.feature_usage_rate*100:.0f}%, "
+            "usage": f"Uso de features: {factors.feature_usage_rate * 100:.0f}%, "
             f"logins/mes: {factors.login_frequency:.1f}",
         }
         return details.get(category, "")
@@ -649,7 +649,7 @@ class ChurnPredictor:
         self,
         factors: ChurnFactors,
         probability: float,
-    ) -> Optional[datetime]:
+    ) -> datetime | None:
         """Estima data provavel de churn.
 
         Args:

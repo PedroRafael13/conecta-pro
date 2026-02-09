@@ -2,7 +2,6 @@
 
 import logging
 from datetime import datetime
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -38,9 +37,7 @@ async def get_ai_service(db: AsyncSession = Depends(get_db)) -> MaintenanceAISer
     return MaintenanceAIService(db)
 
 
-@router.post(
-    "/", response_model=MaintenanceResponse, status_code=status.HTTP_201_CREATED
-)
+@router.post("/", response_model=MaintenanceResponse, status_code=status.HTTP_201_CREATED)
 async def create_maintenance(
     data: MaintenanceCreate,
     service: MaintenanceService = Depends(get_service),
@@ -60,19 +57,19 @@ async def create_maintenance(
 
 @router.get("/", response_model=MaintenanceListResponse)
 async def list_maintenances(  # pylint: disable=too-many-locals
-    search: Optional[str] = Query(None),
-    maintenance_type: Optional[str] = Query(None),
-    status_filter: Optional[str] = Query(None, alias="status"),
-    priority: Optional[str] = Query(None),
-    equipment_id: Optional[str] = Query(None),
-    client_id: Optional[str] = Query(None),
-    technician_id: Optional[str] = Query(None),
-    is_overdue: Optional[bool] = Query(None),
-    is_warranty: Optional[bool] = Query(None),
-    problem_resolved: Optional[bool] = Query(None),
-    needs_followup: Optional[bool] = Query(None),
-    date_from: Optional[datetime] = Query(None),
-    date_to: Optional[datetime] = Query(None),
+    search: str | None = Query(None),
+    maintenance_type: str | None = Query(None),
+    status_filter: str | None = Query(None, alias="status"),
+    priority: str | None = Query(None),
+    equipment_id: str | None = Query(None),
+    client_id: str | None = Query(None),
+    technician_id: str | None = Query(None),
+    is_overdue: bool | None = Query(None),
+    is_warranty: bool | None = Query(None),
+    problem_resolved: bool | None = Query(None),
+    needs_followup: bool | None = Query(None),
+    date_from: datetime | None = Query(None),
+    date_to: datetime | None = Query(None),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     service: MaintenanceService = Depends(get_service),
@@ -98,9 +95,9 @@ async def list_maintenances(  # pylint: disable=too-many-locals
 
 @router.get("/stats", response_model=MaintenanceStats)
 async def get_stats(
-    client_id: Optional[str] = Query(None),
-    date_from: Optional[datetime] = Query(None),
-    date_to: Optional[datetime] = Query(None),
+    client_id: str | None = Query(None),
+    date_from: datetime | None = Query(None),
+    date_to: datetime | None = Query(None),
     service: MaintenanceService = Depends(get_service),
 ) -> MaintenanceStats:
     """Obtém estatísticas de manutenções."""
@@ -201,7 +198,7 @@ async def predict_failure(
 
 @router.get("/ai/recommend-schedule")
 async def recommend_schedule(
-    client_id: Optional[str] = Query(None),
+    client_id: str | None = Query(None),
     ai_service: MaintenanceAIService = Depends(get_ai_service),
 ) -> list[dict]:
     """Recomenda agenda de manutenções preventivas."""
@@ -220,7 +217,7 @@ async def optimize_route(
 
 @router.get("/ai/patterns")
 async def analyze_patterns(
-    client_id: Optional[str] = Query(None),
+    client_id: str | None = Query(None),
     months: int = Query(12, ge=1, le=24),
     ai_service: MaintenanceAIService = Depends(get_ai_service),
 ) -> dict:
@@ -323,13 +320,11 @@ async def start_maintenance(
 async def complete_maintenance(
     maintenance_id: str,
     problem_resolved: bool = True,
-    equipment_status_after: Optional[str] = None,
+    equipment_status_after: str | None = None,
     service: MaintenanceService = Depends(get_service),
 ) -> MaintenanceResponse:
     """Conclui uma manutenção."""
-    maintenance = await service.complete(
-        maintenance_id, problem_resolved, equipment_status_after
-    )
+    maintenance = await service.complete(maintenance_id, problem_resolved, equipment_status_after)
     if not maintenance:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -373,15 +368,13 @@ async def mark_waiting_parts(
 async def add_part_replaced(
     maintenance_id: str,
     part_name: str,
-    part_code: Optional[str] = None,
+    part_code: str | None = None,
     quantity: int = 1,
     unit_cost: float = 0.0,
     service: MaintenanceService = Depends(get_service),
 ) -> MaintenanceResponse:
     """Adiciona peça substituída."""
-    maintenance = await service.add_part_replaced(
-        maintenance_id, part_name, part_code, quantity, unit_cost
-    )
+    maintenance = await service.add_part_replaced(maintenance_id, part_name, part_code, quantity, unit_cost)
     if not maintenance:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -415,9 +408,7 @@ async def assign_technician(
     service: MaintenanceService = Depends(get_service),
 ) -> MaintenanceResponse:
     """Atribui técnico à manutenção."""
-    maintenance = await service.assign_technician(
-        maintenance_id, technician_id, technician_name
-    )
+    maintenance = await service.assign_technician(maintenance_id, technician_id, technician_name)
     if not maintenance:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -430,13 +421,11 @@ async def assign_technician(
 async def schedule_preventive(
     equipment_id: str,
     interval_days: int = Query(90, ge=1),
-    checklist_template_id: Optional[str] = None,
+    checklist_template_id: str | None = None,
     service: MaintenanceService = Depends(get_service),
 ) -> MaintenanceResponse:
     """Agenda manutenção preventiva para equipamento."""
-    maintenance = await service.schedule_preventive(
-        equipment_id, interval_days, checklist_template_id
-    )
+    maintenance = await service.schedule_preventive(equipment_id, interval_days, checklist_template_id)
     if not maintenance:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

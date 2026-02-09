@@ -3,6 +3,7 @@
 import hashlib
 import logging
 from pathlib import Path
+from typing import Any
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
 from fastapi.responses import FileResponse
@@ -421,7 +422,7 @@ async def get_preview_url(
     document_id: str,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> dict:
+) -> dict[str, str]:
     """Retorna URL de preview do documento."""
     service = DocumentService(db)
     document = await service.get_by_id(document_id)
@@ -441,7 +442,7 @@ async def get_view_url(
     document_id: str,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> dict:
+) -> dict[str, str]:
     """Retorna URL de visualização do documento."""
     service = DocumentService(db)
     document = await service.get_by_id(document_id)
@@ -523,7 +524,7 @@ async def create_new_version(
 async def check_expiry(
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> dict:
+) -> dict[str, int]:
     """Verifica e marca documentos expirados."""
     service = DocumentService(db)
     count = await service.check_expiry()
@@ -537,7 +538,7 @@ async def classify_document(
     file_name: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> dict:
+) -> dict[str, Any]:
     """Classifica documento usando IA."""
     service = DocumentAIService(db)
     return await service.classify_document(text, file_name)
@@ -562,7 +563,7 @@ async def extract_keywords(
     max_keywords: int = Query(20, ge=1, le=50),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> dict:
+) -> dict[str, list[str]]:
     """Extrai palavras-chave do texto."""
     service = DocumentAIService(db)
     keywords = await service.extract_keywords(text, max_keywords)
@@ -576,7 +577,7 @@ async def check_duplicates(
     condominium_id: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> dict:
+) -> dict[str, Any]:
     """Verifica documentos duplicados."""
     service = DocumentAIService(db)
     return await service.find_duplicates(checksum, title, condominium_id)
@@ -587,7 +588,7 @@ async def get_insights(
     condominium_id: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> dict:
+) -> dict[str, Any]:
     """Retorna insights sobre documentos."""
     service = DocumentAIService(db)
     return await service.get_insights(condominium_id)
@@ -599,7 +600,7 @@ async def get_trends(
     days: int = Query(30, ge=7, le=365),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> dict:
+) -> dict[str, Any]:
     """Retorna tendências de documentos."""
     service = DocumentAIService(db)
     return await service.get_trends(condominium_id, days)
@@ -610,7 +611,7 @@ async def get_ai_dashboard(
     condominium_id: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> dict:
+) -> dict[str, Any]:
     """Retorna dashboard com IA."""
     service = DocumentAIService(db)
     return await service.get_dashboard(condominium_id)

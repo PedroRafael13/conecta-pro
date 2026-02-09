@@ -3,15 +3,23 @@ Services Module - Gestão de Serviços
 Sprint 31: Gestão de Serviços
 """
 
-from modules.services.models import (
-    ServiceCatalog, ServiceOrder, ServiceExecution,
-    ServiceReport, SLAConfig,
-    ServiceCategory, ServiceType, ServiceStatus,
-    OrderStatus, OrderPriority, ExecutionStatus,
-    ReportType, SLAMetricType
-)
-from modules.services.services import ServiceManagementService, ServiceAIService
 from modules.services.controllers import router
+from modules.services.models import (
+    ExecutionStatus,
+    OrderPriority,
+    OrderStatus,
+    ReportType,
+    ServiceCatalog,
+    ServiceCategory,
+    ServiceExecution,
+    ServiceOrder,
+    ServiceReport,
+    ServiceStatus,
+    ServiceType,
+    SLAConfig,
+    SLAMetricType,
+)
+from modules.services.services import ServiceAIService, ServiceManagementService
 
 __all__ = [
     # Models

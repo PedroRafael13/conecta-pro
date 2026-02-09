@@ -1,22 +1,22 @@
 """Repository para Overtime."""
 
+import builtins
 from datetime import date
-from typing import Optional, List, Tuple
 from uuid import UUID
 
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.hr.time_tracking.models import (
-    Overtime,
-    OvertimeType,
-    OvertimeStatus,
     CompensationType,
+    Overtime,
+    OvertimeStatus,
+    OvertimeType,
 )
 from modules.hr.time_tracking.schemas import (
     OvertimeCreate,
-    OvertimeUpdate,
     OvertimeFilter,
+    OvertimeUpdate,
 )
 
 
@@ -42,7 +42,7 @@ class OvertimeRepository:
         await self.db.refresh(overtime)
         return overtime
 
-    async def get_by_id(self, overtime_id: UUID) -> Optional[Overtime]:
+    async def get_by_id(self, overtime_id: UUID) -> Overtime | None:
         """Busca hora extra por ID."""
         result = await self.db.execute(
             select(Overtime).where(
@@ -52,7 +52,7 @@ class OvertimeRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_by_code(self, code: str) -> Optional[Overtime]:
+    async def get_by_code(self, code: str) -> Overtime | None:
         """Busca hora extra por código."""
         result = await self.db.execute(
             select(Overtime).where(
@@ -85,7 +85,7 @@ class OvertimeRepository:
         filters: OvertimeFilter = None,
         skip: int = 0,
         limit: int = 100,
-    ) -> Tuple[List[Overtime], int]:
+    ) -> tuple[list[Overtime], int]:
         """Lista horas extras com filtros."""
         query = select(Overtime).where(Overtime.is_deleted.is_(False))
 
@@ -114,9 +114,7 @@ class OvertimeRepository:
             if filters.is_paid is not None:
                 query = query.where(Overtime.is_paid == filters.is_paid)
             if filters.requires_pre_approval is not None:
-                query = query.where(
-                    Overtime.requires_pre_approval == filters.requires_pre_approval
-                )
+                query = query.where(Overtime.requires_pre_approval == filters.requires_pre_approval)
 
         count_query = select(func.count()).select_from(query.subquery())
         total_result = await self.db.execute(count_query)
@@ -133,15 +131,17 @@ class OvertimeRepository:
         employee_id: str,
         start_date: date,
         end_date: date,
-    ) -> List[Overtime]:
+    ) -> builtins.list[Overtime]:
         """Busca horas extras de um funcionário em um período."""
         result = await self.db.execute(
-            select(Overtime).where(
+            select(Overtime)
+            .where(
                 Overtime.employee_id == employee_id,
                 Overtime.overtime_date >= start_date,
                 Overtime.overtime_date <= end_date,
                 Overtime.is_deleted.is_(False),
-            ).order_by(Overtime.overtime_date)
+            )
+            .order_by(Overtime.overtime_date)
         )
         return list(result.scalars().all())
 
@@ -150,13 +150,15 @@ class OvertimeRepository:
         condominium_id: str = None,
         skip: int = 0,
         limit: int = 100,
-    ) -> List[Overtime]:
+    ) -> builtins.list[Overtime]:
         """Busca horas extras pendentes de aprovação."""
         query = select(Overtime).where(
-            Overtime.status.in_([
-                OvertimeStatus.PENDENTE,
-                OvertimeStatus.PRE_APROVADO,
-            ]),
+            Overtime.status.in_(
+                [
+                    OvertimeStatus.PENDENTE,
+                    OvertimeStatus.PRE_APROVADO,
+                ]
+            ),
             Overtime.is_deleted.is_(False),
         )
 
@@ -171,7 +173,7 @@ class OvertimeRepository:
         self,
         employee_id: str = None,
         condominium_id: str = None,
-    ) -> List[Overtime]:
+    ) -> builtins.list[Overtime]:
         """Busca horas extras aprovadas pendentes de compensação."""
         query = select(Overtime).where(
             Overtime.status == OvertimeStatus.APROVADO,
@@ -191,7 +193,7 @@ class OvertimeRepository:
     async def get_pending_payment(
         self,
         condominium_id: str = None,
-    ) -> List[Overtime]:
+    ) -> builtins.list[Overtime]:
         """Busca horas extras aprovadas pendentes de pagamento."""
         query = select(Overtime).where(
             Overtime.status == OvertimeStatus.APROVADO,
@@ -226,24 +228,18 @@ class OvertimeRepository:
             base_where.append(Overtime.overtime_date <= date_to)
 
         # Total
-        total_result = await self.db.execute(
-            select(func.count()).where(*base_where)
-        )
+        total_result = await self.db.execute(select(func.count()).where(*base_where))
         total = total_result.scalar() or 0
 
         # Por status
         status_result = await self.db.execute(
-            select(Overtime.status, func.count())
-            .where(*base_where)
-            .group_by(Overtime.status)
+            select(Overtime.status, func.count()).where(*base_where).group_by(Overtime.status)
         )
         by_status = {row[0].value: row[1] for row in status_result.all()}
 
         # Por tipo
         type_result = await self.db.execute(
-            select(Overtime.overtime_type, func.count())
-            .where(*base_where)
-            .group_by(Overtime.overtime_type)
+            select(Overtime.overtime_type, func.count()).where(*base_where).group_by(Overtime.overtime_type)
         )
         by_type = {row[0].value: row[1] for row in type_result.all()}
 
@@ -269,10 +265,12 @@ class OvertimeRepository:
         pending_result = await self.db.execute(
             select(func.count()).where(
                 *base_where,
-                Overtime.status.in_([
-                    OvertimeStatus.PENDENTE,
-                    OvertimeStatus.PRE_APROVADO,
-                ]),
+                Overtime.status.in_(
+                    [
+                        OvertimeStatus.PENDENTE,
+                        OvertimeStatus.PRE_APROVADO,
+                    ]
+                ),
             )
         )
         pending_count = pending_result.scalar() or 0
@@ -286,10 +284,7 @@ class OvertimeRepository:
             )
             .group_by(Overtime.compensation_type)
         )
-        by_compensation = {
-            row[0].value if row[0] else "indefinido": row[1]
-            for row in compensation_result.all()
-        }
+        by_compensation = {row[0].value if row[0] else "indefinido": row[1] for row in compensation_result.all()}
 
         return {
             "total_records": total,

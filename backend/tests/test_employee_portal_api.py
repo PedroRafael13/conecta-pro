@@ -1,25 +1,25 @@
 """Testes para API do Portal do Funcionário."""
 
-import pytest
 from datetime import date, timedelta
 from decimal import Decimal
-from uuid import uuid4
 from unittest.mock import AsyncMock, MagicMock, patch
+from uuid import uuid4
 
+import pytest
 from fastapi.testclient import TestClient
 
-from modules.hr.employee_portal.schemas import (
-    VacationRequestCreate,
-    VacationCalculationRequest,
-    VacationBalanceResponse,
-    VacationCalculationResponse,
-)
 from modules.hr.employee_portal.models import (
+    DocumentType,
+    NotificationPriority,
+    NotificationType,
     PaySlipStatus,
     VacationStatus,
-    DocumentType,
-    NotificationType,
-    NotificationPriority,
+)
+from modules.hr.employee_portal.schemas import (
+    VacationBalanceResponse,
+    VacationCalculationRequest,
+    VacationCalculationResponse,
+    VacationRequestCreate,
 )
 
 
@@ -399,14 +399,14 @@ class TestVacationCalculationService:
 
     def test_inss_calculation_cap(self):
         """Testa teto do INSS."""
-        base = Decimal("10000.00")
+        Decimal("10000.00")
         cap = Decimal("908.85")
         # Acima do teto, valor fixo
         assert cap == Decimal("908.85")
 
     def test_irrf_isento(self):
         """Testa IRRF - faixa isenta (até R$ 2.259,20)."""
-        base = Decimal("2000.00")
+        Decimal("2000.00")
         expected = Decimal("0")
         assert expected == Decimal("0")
 

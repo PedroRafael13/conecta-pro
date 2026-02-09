@@ -3,8 +3,7 @@ Controller para Busca Global do Sistema
 """
 
 import time
-from typing import List, Literal, Optional
-from uuid import UUID
+from typing import Literal
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
@@ -12,11 +11,11 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from core.database import get_db
+from modules.operacional.inspection_rounds.models import InspectionRound
 from modules.operacional.models.employee import Employee
 from modules.operacional.models.post import Post
 from modules.operacional.models.scale import Scale
 from modules.operacional.occurrences.models import Occurrence
-from modules.operacional.inspection_rounds.models import InspectionRound
 
 router = APIRouter(prefix="/search", tags=["Search - Busca Global"])
 
@@ -34,7 +33,7 @@ class SearchResult(BaseModel):
 class SearchResponse(BaseModel):
     """Schema de resposta da busca global."""
 
-    results: List[SearchResult] = Field(default_factory=list)
+    results: list[SearchResult] = Field(default_factory=list)
     total: int = 0
     took_ms: int = 0
 
@@ -58,7 +57,7 @@ async def global_search(
     Retorna no máximo 20 resultados ordenados por relevância.
     """
     start_time = time.time()
-    results: List[SearchResult] = []
+    results: list[SearchResult] = []
 
     query_lower = q.lower().strip()
 
@@ -75,7 +74,7 @@ async def global_search(
                     Employee.matricula.ilike(f"%{query_lower}%"),
                 )
             )
-            .filter(Employee.is_active == True)
+            .filter(Employee.is_active)
             .limit(5)
             .all()
         )

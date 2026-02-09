@@ -5,12 +5,12 @@ Agente de compliance CCT SINDCOND 2026
 """
 
 import logging
-from typing import Dict, Any
 from decimal import Decimal
+from typing import Any
 
-from .base import BaseAgent, AgentType, AgentTask, AgentMessage
+from ..cct_compliance.enums import TipoBeneficio, TipoCargo, TipoJornada
 from ..cct_compliance.service import CCTComplianceService
-from ..cct_compliance.enums import TipoCargo, TipoJornada, TipoBeneficio
+from .base import AgentMessage, AgentTask, AgentType, BaseAgent
 
 logger = logging.getLogger(__name__)
 
@@ -27,11 +27,11 @@ class CCTComplianceAgent(BaseAgent):
     5. Suportar propostas comerciais
     """
 
-    def __init__(self, config: Dict[str, Any] = None):
+    def __init__(self, config: dict[str, Any] = None):
         super().__init__(AgentType.CCT_COMPLIANCE, config)
         self.cct_service = CCTComplianceService()
 
-    async def process_task(self, task: AgentTask) -> Dict[str, Any]:
+    async def process_task(self, task: AgentTask) -> dict[str, Any]:
         """Processa tarefa de CCT."""
         task_type = task.task_type
 
@@ -60,7 +60,7 @@ class CCTComplianceAgent(BaseAgent):
                 to_agent=message.from_agent,
                 message_type="validacao_resultado",
                 payload=result,
-                reply_to=message.message_id
+                reply_to=message.message_id,
             )
             await self.send_message(reply)
 
@@ -72,18 +72,18 @@ class CCTComplianceAgent(BaseAgent):
                 to_agent=message.from_agent,
                 message_type="proposta_gerada",
                 payload=result,
-                reply_to=message.message_id
+                reply_to=message.message_id,
             )
             await self.send_message(reply)
 
-    async def _validar_salario(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    async def _validar_salario(self, data: dict[str, Any]) -> dict[str, Any]:
         """Valida salario contra CCT."""
         cargo = TipoCargo(data["cargo"])
         salario = Decimal(str(data["salario"]))
 
         return self.cct_service.validar_salario(cargo, salario)
 
-    async def _validar_completo(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    async def _validar_completo(self, data: dict[str, Any]) -> dict[str, Any]:
         """Executa validacao completa."""
         cargo = TipoCargo(data["cargo"])
         salario = Decimal(str(data["salario"]))
@@ -91,28 +91,23 @@ class CCTComplianceAgent(BaseAgent):
         beneficios = [TipoBeneficio(b) for b in data.get("beneficios", [])]
 
         validacao = self.cct_service.validar_completo(
-            cargo=cargo,
-            salario=salario,
-            jornada=jornada,
-            beneficios=beneficios
+            cargo=cargo, salario=salario, jornada=jornada, beneficios=beneficios
         )
 
         # Enviar alerta se nao conforme
         if validacao.status.value == "nao_conforme":
-            await self.send_message(AgentMessage(
-                from_agent=self.agent_type,
-                to_agent=AgentType.INTEGRATION_HUB,
-                message_type="alerta_cct",
-                payload={
-                    "cargo": cargo.value,
-                    "status": validacao.status.value,
-                    "alertas": validacao.alertas
-                }
-            ))
+            await self.send_message(
+                AgentMessage(
+                    from_agent=self.agent_type,
+                    to_agent=AgentType.INTEGRATION_HUB,
+                    message_type="alerta_cct",
+                    payload={"cargo": cargo.value, "status": validacao.status.value, "alertas": validacao.alertas},
+                )
+            )
 
         return validacao.model_dump()
 
-    async def _calcular_custo(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    async def _calcular_custo(self, data: dict[str, Any]) -> dict[str, Any]:
         """Calcula custo de funcionario."""
         cargo = TipoCargo(data["cargo"])
         salario = Decimal(str(data["salario"])) if "salario" in data else None
@@ -120,18 +115,12 @@ class CCTComplianceAgent(BaseAgent):
         incluir_encargos = data.get("incluir_encargos", True)
 
         return self.cct_service.calcular_custo_funcionario(
-            cargo=cargo,
-            salario_base=salario,
-            jornada=jornada,
-            incluir_encargos=incluir_encargos
+            cargo=cargo, salario_base=salario, jornada=jornada, incluir_encargos=incluir_encargos
         )
 
-    async def _gerar_proposta(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    async def _gerar_proposta(self, data: dict[str, Any]) -> dict[str, Any]:
         """Gera proposta comercial."""
         cargos = data.get("cargos", [])
         margem = Decimal(str(data.get("margem", "15")))
 
-        return self.cct_service.gerar_proposta_comercial(
-            cargos=cargos,
-            margem_lucro_percentual=margem
-        )
+        return self.cct_service.gerar_proposta_comercial(cargos=cargos, margem_lucro_percentual=margem)

@@ -1,67 +1,67 @@
 """Schemas Pydantic para Folder."""
 
 from datetime import datetime
-from typing import Optional, List
-from pydantic import BaseModel, Field, ConfigDict
 
-from modules.ged.models.folder import FolderType, FolderStatus
+from pydantic import BaseModel, ConfigDict, Field
+
+from modules.ged.models.folder import FolderStatus, FolderType
 
 
 class FolderBase(BaseModel):
     """Schema base de Folder."""
 
     name: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = Field(None, max_length=2000)
+    description: str | None = Field(None, max_length=2000)
     folder_type: FolderType = Field(default=FolderType.CONDOMINIO)
-    parent_id: Optional[str] = None
-    condominium_id: Optional[str] = None
-    contract_id: Optional[str] = None
-    employee_id: Optional[str] = None
-    client_id: Optional[str] = None
+    parent_id: str | None = None
+    condominium_id: str | None = None
+    contract_id: str | None = None
+    employee_id: str | None = None
+    client_id: str | None = None
     is_public: bool = False
     inherit_permissions: bool = True
-    max_file_size_mb: Optional[int] = Field(None, ge=1, le=1000)
-    allowed_extensions: Optional[List[str]] = None
+    max_file_size_mb: int | None = Field(None, ge=1, le=1000)
+    allowed_extensions: list[str] | None = None
     require_approval: bool = False
     auto_versioning: bool = True
-    retention_days: Optional[int] = Field(None, ge=1)
-    retention_policy: Optional[str] = Field(None, max_length=100)
+    retention_days: int | None = Field(None, ge=1)
+    retention_policy: str | None = Field(None, max_length=100)
     delete_after_retention: bool = False
-    icon: Optional[str] = Field(None, max_length=50)
-    color: Optional[str] = Field(None, pattern=r"^#[0-9A-Fa-f]{6}$")
+    icon: str | None = Field(None, max_length=50)
+    color: str | None = Field(None, pattern=r"^#[0-9A-Fa-f]{6}$")
     order: int = Field(default=0, ge=0)
-    tags: Optional[List[str]] = None
-    metadata: Optional[dict] = None
+    tags: list[str] | None = None
+    metadata: dict | None = None
 
 
 class FolderCreate(FolderBase):
     """Schema para criar Folder."""
 
-    owner_id: Optional[str] = None
-    created_by: Optional[str] = None
+    owner_id: str | None = None
+    created_by: str | None = None
 
 
 class FolderUpdate(BaseModel):
     """Schema para atualizar Folder."""
 
-    name: Optional[str] = Field(None, min_length=1, max_length=255)
-    description: Optional[str] = Field(None, max_length=2000)
-    folder_type: Optional[FolderType] = None
-    parent_id: Optional[str] = None
-    is_public: Optional[bool] = None
-    inherit_permissions: Optional[bool] = None
-    max_file_size_mb: Optional[int] = Field(None, ge=1, le=1000)
-    allowed_extensions: Optional[List[str]] = None
-    require_approval: Optional[bool] = None
-    auto_versioning: Optional[bool] = None
-    retention_days: Optional[int] = Field(None, ge=1)
-    retention_policy: Optional[str] = Field(None, max_length=100)
-    delete_after_retention: Optional[bool] = None
-    icon: Optional[str] = Field(None, max_length=50)
-    color: Optional[str] = Field(None, pattern=r"^#[0-9A-Fa-f]{6}$")
-    order: Optional[int] = Field(None, ge=0)
-    tags: Optional[List[str]] = None
-    metadata: Optional[dict] = None
+    name: str | None = Field(None, min_length=1, max_length=255)
+    description: str | None = Field(None, max_length=2000)
+    folder_type: FolderType | None = None
+    parent_id: str | None = None
+    is_public: bool | None = None
+    inherit_permissions: bool | None = None
+    max_file_size_mb: int | None = Field(None, ge=1, le=1000)
+    allowed_extensions: list[str] | None = None
+    require_approval: bool | None = None
+    auto_versioning: bool | None = None
+    retention_days: int | None = Field(None, ge=1)
+    retention_policy: str | None = Field(None, max_length=100)
+    delete_after_retention: bool | None = None
+    icon: str | None = Field(None, max_length=50)
+    color: str | None = Field(None, pattern=r"^#[0-9A-Fa-f]{6}$")
+    order: int | None = Field(None, ge=0)
+    tags: list[str] | None = None
+    metadata: dict | None = None
 
 
 class FolderResponse(BaseModel):
@@ -72,37 +72,37 @@ class FolderResponse(BaseModel):
     id: str
     code: str
     name: str
-    description: Optional[str]
-    parent_id: Optional[str]
+    description: str | None
+    parent_id: str | None
     path: str
     level: int
     folder_type: FolderType
     status: FolderStatus
-    condominium_id: Optional[str]
-    contract_id: Optional[str]
-    employee_id: Optional[str]
-    client_id: Optional[str]
+    condominium_id: str | None
+    contract_id: str | None
+    employee_id: str | None
+    client_id: str | None
     owner_id: str
     is_public: bool
     inherit_permissions: bool
-    permissions: Optional[dict]
-    max_file_size_mb: Optional[int]
-    allowed_extensions: Optional[List[str]]
+    permissions: dict | None
+    max_file_size_mb: int | None
+    allowed_extensions: list[str] | None
     require_approval: bool
     auto_versioning: bool
-    retention_days: Optional[int]
-    retention_policy: Optional[str]
+    retention_days: int | None
+    retention_policy: str | None
     delete_after_retention: bool
-    icon: Optional[str]
-    color: Optional[str]
+    icon: str | None
+    color: str | None
     order: int
-    tags: Optional[List[str]]
+    tags: list[str] | None
     document_count: int
     subfolder_count: int
     total_size_bytes: int
     created_at: datetime
     updated_at: datetime
-    archived_at: Optional[datetime]
+    archived_at: datetime | None
     created_by: str
 
     # Computed
@@ -117,7 +117,7 @@ class FolderResponse(BaseModel):
 class FolderListResponse(BaseModel):
     """Schema de lista de Folders."""
 
-    items: List[FolderResponse]
+    items: list[FolderResponse]
     total: int
     page: int
     page_size: int
@@ -127,14 +127,14 @@ class FolderListResponse(BaseModel):
 class FolderFilter(BaseModel):
     """Schema de filtro de Folders."""
 
-    folder_type: Optional[FolderType] = None
-    status: Optional[FolderStatus] = None
-    parent_id: Optional[str] = None
-    condominium_id: Optional[str] = None
-    owner_id: Optional[str] = None
-    is_public: Optional[bool] = None
-    is_root: Optional[bool] = None
-    search: Optional[str] = None
+    folder_type: FolderType | None = None
+    status: FolderStatus | None = None
+    parent_id: str | None = None
+    condominium_id: str | None = None
+    owner_id: str | None = None
+    is_public: bool | None = None
+    is_root: bool | None = None
+    search: str | None = None
 
 
 class FolderTreeNode(BaseModel):
@@ -147,18 +147,18 @@ class FolderTreeNode(BaseModel):
     path: str
     folder_type: FolderType
     status: FolderStatus
-    icon: Optional[str]
-    color: Optional[str]
+    icon: str | None
+    color: str | None
     document_count: int
     subfolder_count: int
-    children: List["FolderTreeNode"] = []
+    children: list["FolderTreeNode"] = []
 
 
 class FolderPermissionRequest(BaseModel):
     """Schema para gerenciar permissões."""
 
     user_id: str
-    permissions: List[str]  # ["leitura", "escrita", "exclusao", "admin"]
+    permissions: list[str]  # ["leitura", "escrita", "exclusao", "admin"]
 
 
 class FolderStats(BaseModel):

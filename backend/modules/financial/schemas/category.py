@@ -1,7 +1,6 @@
 """Schemas para categorias de contas a pagar."""
 
 from datetime import datetime
-from typing import List, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -13,26 +12,26 @@ class PayableCategoryBase(BaseModel):
     """Base para categoria."""
 
     name: str = Field(..., min_length=2, max_length=100)
-    code: Optional[str] = Field(None, max_length=20)
-    description: Optional[str] = None
+    code: str | None = Field(None, max_length=20)
+    description: str | None = None
     category_type: CategoryType = CategoryType.DESPESA
-    nature: Optional[CategoryNature] = None
+    nature: CategoryNature | None = None
 
-    parent_id: Optional[UUID] = None
+    parent_id: UUID | None = None
 
     allows_children: bool = True
     requires_cost_center: bool = False
     requires_project: bool = False
 
-    accounting_code: Optional[str] = Field(None, max_length=20)
-    cost_center_default: Optional[str] = Field(None, max_length=50)
+    accounting_code: str | None = Field(None, max_length=20)
+    cost_center_default: str | None = Field(None, max_length=50)
 
-    budget_monthly: Optional[str] = None
-    budget_yearly: Optional[str] = None
+    budget_monthly: str | None = None
+    budget_yearly: str | None = None
     alert_percentage: int = Field(default=80, ge=0, le=100)
 
-    icon: Optional[str] = Field(None, max_length=50)
-    color: Optional[str] = Field(None, max_length=20)
+    icon: str | None = Field(None, max_length=50)
+    color: str | None = Field(None, max_length=20)
     display_order: int = Field(default=0, ge=0)
 
 
@@ -45,30 +44,30 @@ class PayableCategoryCreate(PayableCategoryBase):
 class PayableCategoryUpdate(BaseModel):
     """Schema para atualização de categoria."""
 
-    name: Optional[str] = Field(None, min_length=2, max_length=100)
-    code: Optional[str] = Field(None, max_length=20)
-    description: Optional[str] = None
-    category_type: Optional[CategoryType] = None
-    nature: Optional[CategoryNature] = None
+    name: str | None = Field(None, min_length=2, max_length=100)
+    code: str | None = Field(None, max_length=20)
+    description: str | None = None
+    category_type: CategoryType | None = None
+    nature: CategoryNature | None = None
 
-    parent_id: Optional[UUID] = None
+    parent_id: UUID | None = None
 
-    allows_children: Optional[bool] = None
-    requires_cost_center: Optional[bool] = None
-    requires_project: Optional[bool] = None
+    allows_children: bool | None = None
+    requires_cost_center: bool | None = None
+    requires_project: bool | None = None
 
-    accounting_code: Optional[str] = Field(None, max_length=20)
-    cost_center_default: Optional[str] = Field(None, max_length=50)
+    accounting_code: str | None = Field(None, max_length=20)
+    cost_center_default: str | None = Field(None, max_length=50)
 
-    budget_monthly: Optional[str] = None
-    budget_yearly: Optional[str] = None
-    alert_percentage: Optional[int] = Field(None, ge=0, le=100)
+    budget_monthly: str | None = None
+    budget_yearly: str | None = None
+    alert_percentage: int | None = Field(None, ge=0, le=100)
 
-    icon: Optional[str] = Field(None, max_length=50)
-    color: Optional[str] = Field(None, max_length=20)
-    display_order: Optional[int] = Field(None, ge=0)
+    icon: str | None = Field(None, max_length=50)
+    color: str | None = Field(None, max_length=20)
+    display_order: int | None = Field(None, ge=0)
 
-    is_active: Optional[bool] = None
+    is_active: bool | None = None
 
 
 class PayableCategoryResponse(PayableCategoryBase):
@@ -76,14 +75,14 @@ class PayableCategoryResponse(PayableCategoryBase):
 
     id: UUID
     condominio_id: UUID
-    path: Optional[str] = None
+    path: str | None = None
     depth: int
     full_name: str
     is_leaf: bool
     is_system: bool
     is_active: bool
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
 
     class Config:  # pylint: disable=too-few-public-methods
         """Configuração do schema."""
@@ -95,17 +94,17 @@ class PayableCategoryTreeResponse(BaseModel):
     """Schema de árvore de categorias."""
 
     id: UUID
-    code: Optional[str] = None
+    code: str | None = None
     name: str
     full_name: str
     category_type: str
-    nature: Optional[str] = None
+    nature: str | None = None
     depth: int
     is_leaf: bool
     is_active: bool
-    icon: Optional[str] = None
-    color: Optional[str] = None
-    children: List["PayableCategoryTreeResponse"] = Field(default_factory=list)
+    icon: str | None = None
+    color: str | None = None
+    children: list["PayableCategoryTreeResponse"] = Field(default_factory=list)
 
     class Config:  # pylint: disable=too-few-public-methods
         """Configuração do schema."""
@@ -117,15 +116,15 @@ class PayableCategoryListResponse(BaseModel):
     """Schema de lista de categorias."""
 
     id: UUID
-    code: Optional[str] = None
+    code: str | None = None
     name: str
     full_name: str
     category_type: str
-    nature: Optional[str] = None
+    nature: str | None = None
     depth: int
     is_leaf: bool
     is_active: bool
-    parent_id: Optional[UUID] = None
+    parent_id: UUID | None = None
 
     class Config:  # pylint: disable=too-few-public-methods
         """Configuração do schema."""
@@ -136,9 +135,9 @@ class PayableCategoryListResponse(BaseModel):
 class PayableCategoryFilter(BaseModel):
     """Filtros para busca de categorias."""
 
-    search: Optional[str] = None
-    category_type: Optional[CategoryType] = None
-    nature: Optional[CategoryNature] = None
-    parent_id: Optional[UUID] = None
-    is_active: Optional[bool] = None
-    is_leaf: Optional[bool] = None
+    search: str | None = None
+    category_type: CategoryType | None = None
+    nature: CategoryNature | None = None
+    parent_id: UUID | None = None
+    is_active: bool | None = None
+    is_leaf: bool | None = None

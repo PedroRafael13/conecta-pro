@@ -2,9 +2,8 @@
 Service para Ordem de Servico.
 """
 
-from datetime import datetime, date, time
+from datetime import date, time
 from decimal import Decimal
-from typing import Optional, List, Tuple
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,11 +12,11 @@ from modules.campo.models.ordem_servico import OrdemServico, StatusOS
 from modules.campo.repositories.ordem_servico_repository import OrdemServicoRepository
 from modules.campo.schemas.ordem_servico import (
     OrdemServicoCreate,
+    OrdemServicoListItem,
     OrdemServicoUpdate,
+    OSDashboardStats,
     OSFiltro,
     OSPaginatedResponse,
-    OSDashboardStats,
-    OrdemServicoListItem,
 )
 
 
@@ -37,15 +36,15 @@ class OrdemServicoService:
         """Cria uma nova OS."""
         return await self.repository.create(data, created_by)
 
-    async def obter_os(self, os_id: UUID) -> Optional[OrdemServico]:
+    async def obter_os(self, os_id: UUID) -> OrdemServico | None:
         """Obtem OS por ID."""
         return await self.repository.get_by_id(os_id)
 
-    async def obter_os_por_numero(self, numero: str) -> Optional[OrdemServico]:
+    async def obter_os_por_numero(self, numero: str) -> OrdemServico | None:
         """Obtem OS por numero."""
         return await self.repository.get_by_numero(numero)
 
-    async def atualizar_os(self, os_id: UUID, data: OrdemServicoUpdate, updated_by: UUID = None) -> Optional[OrdemServico]:
+    async def atualizar_os(self, os_id: UUID, data: OrdemServicoUpdate, updated_by: UUID = None) -> OrdemServico | None:
         """Atualiza uma OS."""
         os = await self.repository.get_by_id(os_id)
         if not os:
@@ -65,7 +64,7 @@ class OrdemServicoService:
 
     async def listar_os(
         self,
-        filtro: Optional[OSFiltro] = None,
+        filtro: OSFiltro | None = None,
         page: int = 1,
         page_size: int = 50,
     ) -> OSPaginatedResponse:
@@ -81,20 +80,20 @@ class OrdemServicoService:
             pages=(total + page_size - 1) // page_size,
         )
 
-    async def listar_os_cliente(self, cliente_id: UUID) -> List[OrdemServico]:
+    async def listar_os_cliente(self, cliente_id: UUID) -> list[OrdemServico]:
         """Lista OS de um cliente."""
         return await self.repository.list_by_cliente(cliente_id)
 
     async def listar_os_tecnico(
         self,
         tecnico_id: UUID,
-        data: Optional[date] = None,
+        data: date | None = None,
         apenas_abertas: bool = False,
-    ) -> List[OrdemServico]:
+    ) -> list[OrdemServico]:
         """Lista OS de um tecnico."""
         return await self.repository.list_by_tecnico(tecnico_id, data, apenas_abertas)
 
-    async def listar_os_atrasadas(self) -> List[OrdemServico]:
+    async def listar_os_atrasadas(self) -> list[OrdemServico]:
         """Lista OS com SLA vencido."""
         return await self.repository.list_atrasadas()
 
@@ -109,7 +108,7 @@ class OrdemServicoService:
         horario_inicio: time,
         horario_fim: time = None,
         tecnico_id: UUID = None,
-    ) -> Optional[OrdemServico]:
+    ) -> OrdemServico | None:
         """Agenda uma OS."""
         os = await self.repository.get_by_id(os_id)
         if not os:
@@ -123,7 +122,7 @@ class OrdemServicoService:
         await self.db.refresh(os)
         return os
 
-    async def iniciar_deslocamento(self, os_id: UUID) -> Optional[OrdemServico]:
+    async def iniciar_deslocamento(self, os_id: UUID) -> OrdemServico | None:
         """Marca inicio do deslocamento."""
         os = await self.repository.get_by_id(os_id)
         if not os:
@@ -142,7 +141,7 @@ class OrdemServicoService:
         os_id: UUID,
         latitude: float = None,
         longitude: float = None,
-    ) -> Optional[OrdemServico]:
+    ) -> OrdemServico | None:
         """Registra check-in no local."""
         os = await self.repository.get_by_id(os_id)
         if not os:
@@ -161,7 +160,7 @@ class OrdemServicoService:
         os_id: UUID,
         latitude: float = None,
         longitude: float = None,
-    ) -> Optional[OrdemServico]:
+    ) -> OrdemServico | None:
         """Registra check-out do local."""
         os = await self.repository.get_by_id(os_id)
         if not os:
@@ -175,7 +174,7 @@ class OrdemServicoService:
         await self.db.refresh(os)
         return os
 
-    async def pausar_os(self, os_id: UUID, motivo: str = None) -> Optional[OrdemServico]:
+    async def pausar_os(self, os_id: UUID, motivo: str = None) -> OrdemServico | None:
         """Pausa uma OS em andamento."""
         os = await self.repository.get_by_id(os_id)
         if not os:
@@ -189,7 +188,7 @@ class OrdemServicoService:
         await self.db.refresh(os)
         return os
 
-    async def retomar_os(self, os_id: UUID) -> Optional[OrdemServico]:
+    async def retomar_os(self, os_id: UUID) -> OrdemServico | None:
         """Retoma uma OS pausada."""
         os = await self.repository.get_by_id(os_id)
         if not os:
@@ -203,7 +202,7 @@ class OrdemServicoService:
         await self.db.refresh(os)
         return os
 
-    async def concluir_os(self, os_id: UUID, solucao: str = None) -> Optional[OrdemServico]:
+    async def concluir_os(self, os_id: UUID, solucao: str = None) -> OrdemServico | None:
         """Conclui uma OS."""
         os = await self.repository.get_by_id(os_id)
         if not os:
@@ -218,7 +217,7 @@ class OrdemServicoService:
         await self.db.refresh(os)
         return os
 
-    async def cancelar_os(self, os_id: UUID, motivo: str, cancelado_por: UUID) -> Optional[OrdemServico]:
+    async def cancelar_os(self, os_id: UUID, motivo: str, cancelado_por: UUID) -> OrdemServico | None:
         """Cancela uma OS."""
         os = await self.repository.get_by_id(os_id)
         if not os:
@@ -232,7 +231,7 @@ class OrdemServicoService:
         await self.db.refresh(os)
         return os
 
-    async def reagendar_os(self, os_id: UUID, nova_data: date, motivo: str) -> Optional[OrdemServico]:
+    async def reagendar_os(self, os_id: UUID, nova_data: date, motivo: str) -> OrdemServico | None:
         """Reagenda uma OS."""
         os = await self.repository.get_by_id(os_id)
         if not os:
@@ -255,7 +254,7 @@ class OrdemServicoService:
         os_id: UUID,
         nota: int,
         comentario: str = None,
-    ) -> Optional[OrdemServico]:
+    ) -> OrdemServico | None:
         """Registra avaliacao do cliente."""
         os = await self.repository.get_by_id(os_id)
         if not os:
@@ -275,7 +274,7 @@ class OrdemServicoService:
         url: str,
         nome: str,
         documento: str = None,
-    ) -> Optional[OrdemServico]:
+    ) -> OrdemServico | None:
         """Registra assinatura do cliente."""
         os = await self.repository.get_by_id(os_id)
         if not os:
@@ -296,7 +295,7 @@ class OrdemServicoService:
         tipo: str,
         url: str,
         descricao: str = None,
-    ) -> Optional[OrdemServico]:
+    ) -> OrdemServico | None:
         """Adiciona foto a OS."""
         os = await self.repository.get_by_id(os_id)
         if not os:
@@ -317,8 +316,8 @@ class OrdemServicoService:
     async def atualizar_materiais(
         self,
         os_id: UUID,
-        materiais_utilizados: List[dict],
-    ) -> Optional[OrdemServico]:
+        materiais_utilizados: list[dict],
+    ) -> OrdemServico | None:
         """Atualiza materiais utilizados."""
         os = await self.repository.get_by_id(os_id)
         if not os:
@@ -328,8 +327,7 @@ class OrdemServicoService:
 
         # Recalcular valor de materiais
         valor_materiais = sum(
-            Decimal(str(m.get("valor_unitario", 0))) * m.get("quantidade", 1)
-            for m in materiais_utilizados
+            Decimal(str(m.get("valor_unitario", 0))) * m.get("quantidade", 1) for m in materiais_utilizados
         )
         os.valor_materiais = valor_materiais
         os.calcular_valores()

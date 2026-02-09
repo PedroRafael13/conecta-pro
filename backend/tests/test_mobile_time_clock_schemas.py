@@ -1,37 +1,38 @@
 """Testes para schemas do módulo Mobile Time Clock."""
 
-import pytest
 from datetime import datetime, time
 from uuid import uuid4
+
+import pytest
 from pydantic import ValidationError
 
 from modules.hr.mobile_time_clock.schemas import (
-    # Device
-    MobileDeviceRegister,
-    MobileDeviceUpdate,
+    CheckInBiometric,
+    # CheckIn
+    CheckInLocation,
+    CheckInPhoto,
+    CheckInValidation,
+    # Geofence
+    Coordinate,
+    DeviceHeartbeat,
+    GeofenceCheckRequest,
+    GeofenceZoneCreate,
+    GeofenceZoneFilter,
+    GeofenceZoneUpdate,
+    MobileCheckInCreate,
+    MobileCheckInFilter,
+    MobileCheckInReview,
     MobileDeviceApprove,
     MobileDeviceBlock,
     MobileDeviceFilter,
-    DeviceHeartbeat,
-    # CheckIn
-    CheckInLocation,
-    CheckInBiometric,
-    CheckInPhoto,
-    CheckInValidation,
-    MobileCheckInCreate,
-    MobileCheckInReview,
-    MobileCheckInFilter,
-    # Geofence
-    Coordinate,
-    GeofenceZoneCreate,
-    GeofenceZoneUpdate,
-    GeofenceZoneFilter,
-    GeofenceCheckRequest,
+    # Device
+    MobileDeviceRegister,
+    MobileDeviceUpdate,
+    OfflineQueueBatch,
+    OfflineQueueCleanup,
+    OfflineQueueFilter,
     # Offline
     OfflineQueueItemCreate,
-    OfflineQueueBatch,
-    OfflineQueueFilter,
-    OfflineQueueCleanup,
 )
 
 

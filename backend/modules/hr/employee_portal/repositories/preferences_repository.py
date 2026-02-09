@@ -2,7 +2,6 @@
 
 import logging
 from datetime import datetime
-from typing import Optional
 from uuid import UUID, uuid4
 
 from sqlalchemy import select
@@ -50,18 +49,16 @@ class PreferencesRepository:
         logger.info("Preferências criadas para funcionário %s", data.employee_id)
         return preferences
 
-    async def get_by_id(self, preferences_id: UUID) -> Optional[EmployeePreferences]:
+    async def get_by_id(self, preferences_id: UUID) -> EmployeePreferences | None:
         """Busca preferências por ID."""
-        result = await self.db.execute(
-            select(EmployeePreferences).where(EmployeePreferences.id == preferences_id)
-        )
+        result = await self.db.execute(select(EmployeePreferences).where(EmployeePreferences.id == preferences_id))
         return result.scalar_one_or_none()
 
     async def get_by_employee(
         self,
         employee_id: UUID,
         condominio_id: UUID,
-    ) -> Optional[EmployeePreferences]:
+    ) -> EmployeePreferences | None:
         """Busca preferências do funcionário."""
         result = await self.db.execute(
             select(EmployeePreferences).where(
@@ -82,8 +79,8 @@ class PreferencesRepository:
         if not preferences:
             # pylint: disable=import-outside-toplevel
             from modules.hr.employee_portal.models import (
-                ThemePreference,
                 LanguagePreference,
+                ThemePreference,
             )
 
             preferences = EmployeePreferences(
@@ -110,7 +107,7 @@ class PreferencesRepository:
         employee_id: UUID,
         condominio_id: UUID,
         data: PreferencesUpdate,
-    ) -> Optional[EmployeePreferences]:
+    ) -> EmployeePreferences | None:
         """Atualiza preferências do funcionário."""
         preferences = await self.get_by_employee(employee_id, condominio_id)
         if not preferences:
@@ -136,7 +133,7 @@ class PreferencesRepository:
         employee_id: UUID,
         condominio_id: UUID,
         theme: str,
-    ) -> Optional[EmployeePreferences]:
+    ) -> EmployeePreferences | None:
         """Atualiza apenas o tema."""
         preferences = await self.get_by_employee(employee_id, condominio_id)
         if not preferences:
@@ -154,7 +151,7 @@ class PreferencesRepository:
         employee_id: UUID,
         condominio_id: UUID,
         language: str,
-    ) -> Optional[EmployeePreferences]:
+    ) -> EmployeePreferences | None:
         """Atualiza apenas o idioma."""
         preferences = await self.get_by_employee(employee_id, condominio_id)
         if not preferences:
@@ -172,7 +169,7 @@ class PreferencesRepository:
         employee_id: UUID,
         condominio_id: UUID,
         widgets: list,
-    ) -> Optional[EmployeePreferences]:
+    ) -> EmployeePreferences | None:
         """Atualiza widgets do dashboard."""
         preferences = await self.get_by_employee(employee_id, condominio_id)
         if not preferences:
@@ -190,7 +187,7 @@ class PreferencesRepository:
         employee_id: UUID,
         condominio_id: UUID,
         device: dict,
-    ) -> Optional[EmployeePreferences]:
+    ) -> EmployeePreferences | None:
         """Adiciona dispositivo confiável."""
         preferences = await self.get_by_employee(employee_id, condominio_id)
         if not preferences:
@@ -224,16 +221,14 @@ class PreferencesRepository:
         employee_id: UUID,
         condominio_id: UUID,
         device_id: str,
-    ) -> Optional[EmployeePreferences]:
+    ) -> EmployeePreferences | None:
         """Remove dispositivo confiável."""
         preferences = await self.get_by_employee(employee_id, condominio_id)
         if not preferences:
             return None
 
         trusted = preferences.trusted_devices or []
-        preferences.trusted_devices = [
-            d for d in trusted if d.get("device_id") != device_id
-        ]
+        preferences.trusted_devices = [d for d in trusted if d.get("device_id") != device_id]
         preferences.updated_at = datetime.utcnow()
         await self.db.commit()
         await self.db.refresh(preferences)
@@ -245,9 +240,9 @@ class PreferencesRepository:
         employee_id: UUID,
         condominio_id: UUID,
         *,
-        ip_address: Optional[str] = None,
-        device_info: Optional[str] = None,
-    ) -> Optional[EmployeePreferences]:
+        ip_address: str | None = None,
+        device_info: str | None = None,
+    ) -> EmployeePreferences | None:
         """Registra login do funcionário."""
         preferences = await self.get_or_create(employee_id, condominio_id)
 
@@ -266,7 +261,7 @@ class PreferencesRepository:
         employee_id: UUID,
         condominio_id: UUID,
         method: str,
-    ) -> Optional[EmployeePreferences]:
+    ) -> EmployeePreferences | None:
         """Habilita autenticação de dois fatores."""
         preferences = await self.get_by_employee(employee_id, condominio_id)
         if not preferences:
@@ -286,7 +281,7 @@ class PreferencesRepository:
         self,
         employee_id: UUID,
         condominio_id: UUID,
-    ) -> Optional[EmployeePreferences]:
+    ) -> EmployeePreferences | None:
         """Desabilita autenticação de dois fatores."""
         preferences = await self.get_by_employee(employee_id, condominio_id)
         if not preferences:
@@ -306,7 +301,7 @@ class PreferencesRepository:
         self,
         employee_id: UUID,
         condominio_id: UUID,
-    ) -> Optional[EmployeePreferences]:
+    ) -> EmployeePreferences | None:
         """Reseta preferências para padrões."""
         preferences = await self.get_by_employee(employee_id, condominio_id)
         if not preferences:
@@ -314,8 +309,8 @@ class PreferencesRepository:
 
         # pylint: disable=import-outside-toplevel
         from modules.hr.employee_portal.models import (
-            ThemePreference,
             LanguagePreference,
+            ThemePreference,
         )
 
         # Resetar para valores padrão

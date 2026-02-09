@@ -2,32 +2,33 @@
 Testes do Service do módulo Config
 Sprint 35: Configurações e Multi-tenant
 """
+
 # pylint: disable=redefined-outer-name,unused-argument
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 from modules.config.models import (
-    Tenant,
-    TenantStatus,
-    TenantPlan,
-    TenantType,
-    TenantSettings,
-    SettingCategory,
-    SettingType,
-    SystemConfig,
-    ConfigScope,
     ConfigPriority,
+    ConfigScope,
     FeatureFlag,
     FlagStatus,
     FlagType,
-    RolloutStrategy,
-    NotificationTemplate,
     NotificationChannel,
+    NotificationTemplate,
     NotificationType,
+    RolloutStrategy,
+    SettingCategory,
+    SettingType,
+    SystemConfig,
     TemplateStatus,
+    Tenant,
+    TenantPlan,
+    TenantSettings,
+    TenantStatus,
+    TenantType,
 )
 from modules.config.services import ConfigService
 
@@ -66,7 +67,7 @@ def sample_tenant():
         features_habilitadas=["reports"],
         modulos_habilitados=["crm"],
         ativo=True,
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
 
 
@@ -193,61 +194,69 @@ class TestConfigServiceTenant:
     @pytest.mark.asyncio
     async def test_update_tenant(self, config_service, sample_tenant):
         """Testa atualização de tenant."""
-        with patch.object(config_service.repository, "get_tenant") as mock_get:
-            with patch.object(config_service.repository, "update_tenant") as mock_update:
-                mock_get.return_value = sample_tenant
-                sample_tenant.nome = "Tenant Atualizado"
-                mock_update.return_value = sample_tenant
+        with (
+            patch.object(config_service.repository, "get_tenant") as mock_get,
+            patch.object(config_service.repository, "update_tenant") as mock_update,
+        ):
+            mock_get.return_value = sample_tenant
+            sample_tenant.nome = "Tenant Atualizado"
+            mock_update.return_value = sample_tenant
 
-                result = await config_service.update_tenant(
-                    sample_tenant.id,
-                    nome="Tenant Atualizado",
-                )
+            result = await config_service.update_tenant(
+                sample_tenant.id,
+                nome="Tenant Atualizado",
+            )
 
-                assert result.nome == "Tenant Atualizado"
+            assert result.nome == "Tenant Atualizado"
 
     @pytest.mark.asyncio
     async def test_activate_tenant(self, config_service, sample_tenant):
         """Testa ativação de tenant."""
         sample_tenant.status = TenantStatus.INACTIVE
-        with patch.object(config_service.repository, "get_tenant") as mock_get:
-            with patch.object(config_service.repository, "update_tenant") as mock_update:
-                mock_get.return_value = sample_tenant
-                sample_tenant.status = TenantStatus.ACTIVE
-                mock_update.return_value = sample_tenant
+        with (
+            patch.object(config_service.repository, "get_tenant") as mock_get,
+            patch.object(config_service.repository, "update_tenant") as mock_update,
+        ):
+            mock_get.return_value = sample_tenant
+            sample_tenant.status = TenantStatus.ACTIVE
+            mock_update.return_value = sample_tenant
 
-                result = await config_service.activate_tenant(sample_tenant.id)
+            result = await config_service.activate_tenant(sample_tenant.id)
 
-                assert result.status == TenantStatus.ACTIVE
+            assert result.status == TenantStatus.ACTIVE
 
     @pytest.mark.asyncio
     async def test_suspend_tenant(self, config_service, sample_tenant):
         """Testa suspensão de tenant."""
-        with patch.object(config_service.repository, "get_tenant") as mock_get:
-            with patch.object(config_service.repository, "update_tenant") as mock_update:
-                mock_get.return_value = sample_tenant
-                sample_tenant.status = TenantStatus.SUSPENDED
-                mock_update.return_value = sample_tenant
+        with (
+            patch.object(config_service.repository, "get_tenant") as mock_get,
+            patch.object(config_service.repository, "update_tenant") as mock_update,
+        ):
+            mock_get.return_value = sample_tenant
+            sample_tenant.status = TenantStatus.SUSPENDED
+            mock_update.return_value = sample_tenant
 
-                result = await config_service.suspend_tenant(
-                    sample_tenant.id,
-                    reason="Teste",
-                )
+            result = await config_service.suspend_tenant(
+                sample_tenant.id,
+                reason="Teste",
+            )
 
-                assert result.status == TenantStatus.SUSPENDED
+            assert result.status == TenantStatus.SUSPENDED
 
     @pytest.mark.asyncio
     async def test_cancel_tenant(self, config_service, sample_tenant):
         """Testa cancelamento de tenant."""
-        with patch.object(config_service.repository, "get_tenant") as mock_get:
-            with patch.object(config_service.repository, "update_tenant") as mock_update:
-                mock_get.return_value = sample_tenant
-                sample_tenant.status = TenantStatus.CANCELLED
-                mock_update.return_value = sample_tenant
+        with (
+            patch.object(config_service.repository, "get_tenant") as mock_get,
+            patch.object(config_service.repository, "update_tenant") as mock_update,
+        ):
+            mock_get.return_value = sample_tenant
+            sample_tenant.status = TenantStatus.CANCELLED
+            mock_update.return_value = sample_tenant
 
-                result = await config_service.cancel_tenant(sample_tenant.id)
+            result = await config_service.cancel_tenant(sample_tenant.id)
 
-                assert result.status == TenantStatus.CANCELLED
+            assert result.status == TenantStatus.CANCELLED
 
 
 class TestConfigServiceSettings:
@@ -280,36 +289,36 @@ class TestConfigServiceSettings:
     @pytest.mark.asyncio
     async def test_update_setting_value(self, config_service, sample_setting):
         """Testa atualização de valor de setting."""
-        with patch.object(config_service.repository, "get_tenant_setting") as mock_get:
-            with patch.object(
-                config_service.repository, "update_tenant_setting"
-            ) as mock_update:
-                mock_get.return_value = sample_setting
-                sample_setting.valor = "false"
-                mock_update.return_value = sample_setting
+        with (
+            patch.object(config_service.repository, "get_tenant_setting") as mock_get,
+            patch.object(config_service.repository, "update_tenant_setting") as mock_update,
+        ):
+            mock_get.return_value = sample_setting
+            sample_setting.valor = "false"
+            mock_update.return_value = sample_setting
 
-                result = await config_service.update_setting_value(
-                    sample_setting.id,
-                    valor="false",
-                )
+            result = await config_service.update_setting_value(
+                sample_setting.id,
+                valor="false",
+            )
 
-                assert result.valor == "false"
+            assert result.valor == "false"
 
     @pytest.mark.asyncio
     async def test_reset_setting(self, config_service, sample_setting):
         """Testa reset de setting para valor padrão."""
         sample_setting.valor_padrao = "default_value"
-        with patch.object(config_service.repository, "get_tenant_setting") as mock_get:
-            with patch.object(
-                config_service.repository, "update_tenant_setting"
-            ) as mock_update:
-                mock_get.return_value = sample_setting
-                sample_setting.valor = sample_setting.valor_padrao
-                mock_update.return_value = sample_setting
+        with (
+            patch.object(config_service.repository, "get_tenant_setting") as mock_get,
+            patch.object(config_service.repository, "update_tenant_setting") as mock_update,
+        ):
+            mock_get.return_value = sample_setting
+            sample_setting.valor = sample_setting.valor_padrao
+            mock_update.return_value = sample_setting
 
-                result = await config_service.reset_setting(sample_setting.id)
+            result = await config_service.reset_setting(sample_setting.id)
 
-                assert result.valor == "default_value"
+            assert result.valor == "default_value"
 
 
 class TestConfigServiceSystemConfig:
@@ -344,9 +353,7 @@ class TestConfigServiceSystemConfig:
         with patch.object(config_service.repository, "list_system_configs") as mock_list:
             mock_list.return_value = ([sample_config], 1)
 
-            configs, total = await config_service.list_system_configs(
-                escopo=ConfigScope.GLOBAL
-            )
+            configs, total = await config_service.list_system_configs(escopo=ConfigScope.GLOBAL)
 
             assert len(configs) == 1
             assert total == 1
@@ -372,81 +379,91 @@ class TestConfigServiceFeatureFlag:
     async def test_enable_flag(self, config_service, sample_flag):
         """Testa ativação de flag."""
         sample_flag.status = FlagStatus.INACTIVE
-        with patch.object(config_service.repository, "get_feature_flag") as mock_get:
-            with patch.object(config_service.repository, "update_feature_flag") as mock_update:
-                mock_get.return_value = sample_flag
-                sample_flag.status = FlagStatus.ACTIVE
-                sample_flag.estrategia = RolloutStrategy.ALL
-                mock_update.return_value = sample_flag
+        with (
+            patch.object(config_service.repository, "get_feature_flag") as mock_get,
+            patch.object(config_service.repository, "update_feature_flag") as mock_update,
+        ):
+            mock_get.return_value = sample_flag
+            sample_flag.status = FlagStatus.ACTIVE
+            sample_flag.estrategia = RolloutStrategy.ALL
+            mock_update.return_value = sample_flag
 
-                result = await config_service.enable_flag(sample_flag.id)
+            result = await config_service.enable_flag(sample_flag.id)
 
-                assert result.status == FlagStatus.ACTIVE
+            assert result.status == FlagStatus.ACTIVE
 
     @pytest.mark.asyncio
     async def test_disable_flag(self, config_service, sample_flag):
         """Testa desativação de flag."""
-        with patch.object(config_service.repository, "get_feature_flag") as mock_get:
-            with patch.object(config_service.repository, "update_feature_flag") as mock_update:
-                mock_get.return_value = sample_flag
-                sample_flag.status = FlagStatus.INACTIVE
-                sample_flag.estrategia = RolloutStrategy.NONE
-                mock_update.return_value = sample_flag
+        with (
+            patch.object(config_service.repository, "get_feature_flag") as mock_get,
+            patch.object(config_service.repository, "update_feature_flag") as mock_update,
+        ):
+            mock_get.return_value = sample_flag
+            sample_flag.status = FlagStatus.INACTIVE
+            sample_flag.estrategia = RolloutStrategy.NONE
+            mock_update.return_value = sample_flag
 
-                result = await config_service.disable_flag(sample_flag.id)
+            result = await config_service.disable_flag(sample_flag.id)
 
-                assert result.status == FlagStatus.INACTIVE
+            assert result.status == FlagStatus.INACTIVE
 
     @pytest.mark.asyncio
     async def test_set_flag_percentage(self, config_service, sample_flag):
         """Testa definir percentual de flag."""
-        with patch.object(config_service.repository, "get_feature_flag") as mock_get:
-            with patch.object(config_service.repository, "update_feature_flag") as mock_update:
-                mock_get.return_value = sample_flag
-                sample_flag.percentual = 75
-                mock_update.return_value = sample_flag
+        with (
+            patch.object(config_service.repository, "get_feature_flag") as mock_get,
+            patch.object(config_service.repository, "update_feature_flag") as mock_update,
+        ):
+            mock_get.return_value = sample_flag
+            sample_flag.percentual = 75
+            mock_update.return_value = sample_flag
 
-                result = await config_service.set_flag_percentage(sample_flag.id, 75)
+            result = await config_service.set_flag_percentage(sample_flag.id, 75)
 
-                assert result.percentual == 75
+            assert result.percentual == 75
 
     @pytest.mark.asyncio
     async def test_start_gradual_rollout(self, config_service, sample_flag):
         """Testa início de rollout gradual."""
-        with patch.object(config_service.repository, "get_feature_flag") as mock_get:
-            with patch.object(config_service.repository, "update_feature_flag") as mock_update:
-                mock_get.return_value = sample_flag
-                sample_flag.estrategia = RolloutStrategy.GRADUAL
-                sample_flag.percentual_alvo = 100
-                sample_flag.incremento_diario = 10
-                mock_update.return_value = sample_flag
+        with (
+            patch.object(config_service.repository, "get_feature_flag") as mock_get,
+            patch.object(config_service.repository, "update_feature_flag") as mock_update,
+        ):
+            mock_get.return_value = sample_flag
+            sample_flag.estrategia = RolloutStrategy.GRADUAL
+            sample_flag.percentual_alvo = 100
+            sample_flag.incremento_diario = 10
+            mock_update.return_value = sample_flag
 
-                result = await config_service.start_gradual_rollout(
-                    sample_flag.id,
-                    target=100,
-                    daily_increment=10,
-                )
+            result = await config_service.start_gradual_rollout(
+                sample_flag.id,
+                target=100,
+                daily_increment=10,
+            )
 
-                assert result.estrategia == RolloutStrategy.GRADUAL
-                assert result.percentual_alvo == 100
+            assert result.estrategia == RolloutStrategy.GRADUAL
+            assert result.percentual_alvo == 100
 
     @pytest.mark.asyncio
     async def test_toggle_tenant_flag(self, config_service, sample_flag):
         """Testa toggle de tenant em flag."""
         tenant_id = str(uuid.uuid4())
-        with patch.object(config_service.repository, "get_feature_flag") as mock_get:
-            with patch.object(config_service.repository, "update_feature_flag") as mock_update:
-                mock_get.return_value = sample_flag
-                sample_flag.tenants_habilitados.append(tenant_id)
-                mock_update.return_value = sample_flag
+        with (
+            patch.object(config_service.repository, "get_feature_flag") as mock_get,
+            patch.object(config_service.repository, "update_feature_flag") as mock_update,
+        ):
+            mock_get.return_value = sample_flag
+            sample_flag.tenants_habilitados.append(tenant_id)
+            mock_update.return_value = sample_flag
 
-                result = await config_service.toggle_tenant_flag(
-                    sample_flag.id,
-                    tenant_id=tenant_id,
-                    enabled=True,
-                )
+            result = await config_service.toggle_tenant_flag(
+                sample_flag.id,
+                tenant_id=tenant_id,
+                enabled=True,
+            )
 
-                assert tenant_id in result.tenants_habilitados
+            assert tenant_id in result.tenants_habilitados
 
     @pytest.mark.asyncio
     async def test_evaluate_flag(self, config_service, sample_flag):
@@ -470,9 +487,7 @@ class TestConfigServiceNotificationTemplate:
     @pytest.mark.asyncio
     async def test_create_template(self, config_service, sample_template):
         """Testa criação de template."""
-        with patch.object(
-            config_service.repository, "create_notification_template"
-        ) as mock_create:
+        with patch.object(config_service.repository, "create_notification_template") as mock_create:
             mock_create.return_value = sample_template
 
             result = await config_service.create_notification_template(
@@ -488,43 +503,37 @@ class TestConfigServiceNotificationTemplate:
     async def test_activate_template(self, config_service, sample_template):
         """Testa ativação de template."""
         sample_template.status = TemplateStatus.DRAFT
-        with patch.object(
-            config_service.repository, "get_notification_template"
-        ) as mock_get:
-            with patch.object(
-                config_service.repository, "update_notification_template"
-            ) as mock_update:
-                mock_get.return_value = sample_template
-                sample_template.status = TemplateStatus.ACTIVE
-                mock_update.return_value = sample_template
+        with (
+            patch.object(config_service.repository, "get_notification_template") as mock_get,
+            patch.object(config_service.repository, "update_notification_template") as mock_update,
+        ):
+            mock_get.return_value = sample_template
+            sample_template.status = TemplateStatus.ACTIVE
+            mock_update.return_value = sample_template
 
-                result = await config_service.activate_template(sample_template.id)
+            result = await config_service.activate_template(sample_template.id)
 
-                assert result.status == TemplateStatus.ACTIVE
+            assert result.status == TemplateStatus.ACTIVE
 
     @pytest.mark.asyncio
     async def test_deactivate_template(self, config_service, sample_template):
         """Testa desativação de template."""
-        with patch.object(
-            config_service.repository, "get_notification_template"
-        ) as mock_get:
-            with patch.object(
-                config_service.repository, "update_notification_template"
-            ) as mock_update:
-                mock_get.return_value = sample_template
-                sample_template.status = TemplateStatus.INACTIVE
-                mock_update.return_value = sample_template
+        with (
+            patch.object(config_service.repository, "get_notification_template") as mock_get,
+            patch.object(config_service.repository, "update_notification_template") as mock_update,
+        ):
+            mock_get.return_value = sample_template
+            sample_template.status = TemplateStatus.INACTIVE
+            mock_update.return_value = sample_template
 
-                result = await config_service.deactivate_template(sample_template.id)
+            result = await config_service.deactivate_template(sample_template.id)
 
-                assert result.status == TemplateStatus.INACTIVE
+            assert result.status == TemplateStatus.INACTIVE
 
     @pytest.mark.asyncio
     async def test_render_template(self, config_service, sample_template):
         """Testa renderização de template."""
-        with patch.object(
-            config_service.repository, "get_notification_template"
-        ) as mock_get:
+        with patch.object(config_service.repository, "get_notification_template") as mock_get:
             mock_get.return_value = sample_template
 
             result = await config_service.render_template(
@@ -538,33 +547,31 @@ class TestConfigServiceNotificationTemplate:
     @pytest.mark.asyncio
     async def test_clone_template(self, config_service, sample_template):
         """Testa clonagem de template."""
-        with patch.object(
-            config_service.repository, "get_notification_template"
-        ) as mock_get:
-            with patch.object(
-                config_service.repository, "create_notification_template"
-            ) as mock_create:
-                mock_get.return_value = sample_template
-                cloned = NotificationTemplate(
-                    id=uuid.uuid4(),
-                    codigo="ALERT_EMAIL_V2",
-                    nome="Email de Alerta V2",
-                    canal=sample_template.canal,
-                    corpo=sample_template.corpo,
-                    status=TemplateStatus.DRAFT,
-                    versao=1,
-                    template_pai_id=sample_template.id,
-                )
-                mock_create.return_value = cloned
+        with (
+            patch.object(config_service.repository, "get_notification_template") as mock_get,
+            patch.object(config_service.repository, "create_notification_template") as mock_create,
+        ):
+            mock_get.return_value = sample_template
+            cloned = NotificationTemplate(
+                id=uuid.uuid4(),
+                codigo="ALERT_EMAIL_V2",
+                nome="Email de Alerta V2",
+                canal=sample_template.canal,
+                corpo=sample_template.corpo,
+                status=TemplateStatus.DRAFT,
+                versao=1,
+                template_pai_id=sample_template.id,
+            )
+            mock_create.return_value = cloned
 
-                result = await config_service.clone_template(
-                    sample_template.id,
-                    new_code="ALERT_EMAIL_V2",
-                    new_name="Email de Alerta V2",
-                )
+            result = await config_service.clone_template(
+                sample_template.id,
+                new_code="ALERT_EMAIL_V2",
+                new_name="Email de Alerta V2",
+            )
 
-                assert result.codigo == "ALERT_EMAIL_V2"
-                assert result.template_pai_id == sample_template.id
+            assert result.codigo == "ALERT_EMAIL_V2"
+            assert result.template_pai_id == sample_template.id
 
 
 class TestConfigServiceDashboard:
@@ -573,9 +580,7 @@ class TestConfigServiceDashboard:
     @pytest.mark.asyncio
     async def test_get_config_dashboard(self, config_service):
         """Testa obtenção do dashboard de configurações."""
-        with patch.object(
-            config_service.repository, "get_dashboard_stats"
-        ) as mock_stats:
+        with patch.object(config_service.repository, "get_dashboard_stats") as mock_stats:
             mock_stats.return_value = {
                 "total_tenants": 100,
                 "tenants_ativos": 90,
@@ -595,20 +600,20 @@ class TestConfigServiceDashboard:
     @pytest.mark.asyncio
     async def test_get_tenant_dashboard(self, config_service, sample_tenant):
         """Testa obtenção do dashboard de tenant."""
-        with patch.object(config_service.repository, "get_tenant") as mock_get:
-            with patch.object(
-                config_service.repository, "get_tenant_stats"
-            ) as mock_stats:
-                mock_get.return_value = sample_tenant
-                mock_stats.return_value = {
-                    "total_settings": 25,
-                    "total_templates": 10,
-                }
+        with (
+            patch.object(config_service.repository, "get_tenant") as mock_get,
+            patch.object(config_service.repository, "get_tenant_stats") as mock_stats,
+        ):
+            mock_get.return_value = sample_tenant
+            mock_stats.return_value = {
+                "total_settings": 25,
+                "total_templates": 10,
+            }
 
-                result = await config_service.get_tenant_dashboard(sample_tenant.id)
+            result = await config_service.get_tenant_dashboard(sample_tenant.id)
 
-                assert result["tenant"] == sample_tenant
-                assert "total_settings" in result
+            assert result["tenant"] == sample_tenant
+            assert "total_settings" in result
 
 
 class TestConfigServiceValidation:
@@ -617,9 +622,7 @@ class TestConfigServiceValidation:
     @pytest.mark.asyncio
     async def test_validate_tenant_codigo_unico(self, config_service, sample_tenant):
         """Testa validação de código único de tenant."""
-        with patch.object(
-            config_service.repository, "get_tenant_by_codigo"
-        ) as mock_get:
+        with patch.object(config_service.repository, "get_tenant_by_codigo") as mock_get:
             mock_get.return_value = sample_tenant
 
             # Se código já existe, deve retornar o tenant existente
@@ -631,9 +634,7 @@ class TestConfigServiceValidation:
     @pytest.mark.asyncio
     async def test_validate_flag_codigo_unico(self, config_service, sample_flag):
         """Testa validação de código único de flag."""
-        with patch.object(
-            config_service.repository, "get_flag_by_codigo"
-        ) as mock_get:
+        with patch.object(config_service.repository, "get_flag_by_codigo") as mock_get:
             mock_get.return_value = sample_flag
 
             result = await config_service.get_flag_by_codigo(sample_flag.codigo)
@@ -642,13 +643,9 @@ class TestConfigServiceValidation:
             assert result.codigo == sample_flag.codigo
 
     @pytest.mark.asyncio
-    async def test_validate_setting_chave_unica_por_tenant(
-        self, config_service, sample_setting
-    ):
+    async def test_validate_setting_chave_unica_por_tenant(self, config_service, sample_setting):
         """Testa validação de chave única por tenant."""
-        with patch.object(
-            config_service.repository, "get_setting_by_key"
-        ) as mock_get:
+        with patch.object(config_service.repository, "get_setting_by_key") as mock_get:
             mock_get.return_value = sample_setting
 
             result = await config_service.get_setting_by_key(

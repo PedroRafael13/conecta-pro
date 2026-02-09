@@ -1,16 +1,14 @@
 """Signed Document model for storing signed documents."""
 
-import enum
 import uuid
 from datetime import datetime
-from typing import Optional, List
+from enum import StrEnum
 
 from sqlalchemy import (
     Boolean,
     Column,
     DateTime,
     Enum,
-    Float,
     ForeignKey,
     Integer,
     String,
@@ -22,7 +20,7 @@ from sqlalchemy.orm import relationship
 from core.models.base import Base
 
 
-class SignedDocumentStatus(str, enum.Enum):
+class SignedDocumentStatus(StrEnum):
     """Status of signed document."""
 
     PENDING = "pending"
@@ -33,7 +31,7 @@ class SignedDocumentStatus(str, enum.Enum):
     ARCHIVED = "archived"
 
 
-class DocumentIntegrityStatus(str, enum.Enum):
+class DocumentIntegrityStatus(StrEnum):
     """Integrity status of document."""
 
     VALID = "valid"
@@ -42,7 +40,7 @@ class DocumentIntegrityStatus(str, enum.Enum):
     UNKNOWN = "unknown"
 
 
-class ArchiveStatus(str, enum.Enum):
+class ArchiveStatus(StrEnum):
     """Archive status."""
 
     NOT_ARCHIVED = "not_archived"
@@ -247,9 +245,9 @@ class SignedDocument(Base):
         self,
         signature_id: uuid.UUID,
         signer_name: str,
-        signer_email: Optional[str] = None,
-        page: Optional[int] = None,
-        position: Optional[dict] = None,
+        signer_email: str | None = None,
+        page: int | None = None,
+        position: dict | None = None,
     ) -> None:
         """Add a signature to the document."""
         # Update signature IDs
@@ -260,22 +258,26 @@ class SignedDocument(Base):
         # Update signers
         if self.signers is None:
             self.signers = []
-        self.signers.append({
-            "name": signer_name,
-            "email": signer_email,
-            "signed_at": datetime.utcnow().isoformat(),
-            "signature_id": str(signature_id),
-        })
+        self.signers.append(
+            {
+                "name": signer_name,
+                "email": signer_email,
+                "signed_at": datetime.utcnow().isoformat(),
+                "signature_id": str(signature_id),
+            }
+        )
 
         # Update positions
         if page is not None and position is not None:
             if self.signature_positions is None:
                 self.signature_positions = []
-            self.signature_positions.append({
-                "page": page,
-                "signature_id": str(signature_id),
-                **position,
-            })
+            self.signature_positions.append(
+                {
+                    "page": page,
+                    "signature_id": str(signature_id),
+                    **position,
+                }
+            )
 
         # Update counts and timestamps
         self.total_signatures_collected += 1

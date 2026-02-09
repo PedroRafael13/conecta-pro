@@ -6,25 +6,17 @@ Endpoints REST para exames medicos ocupacionais e ASO.
 """
 
 import logging
-from datetime import datetime
-from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
-from sqlalchemy.orm import Session
 
 from modules.health_occupational.schemas.common import StandardResponse
 from modules.health_occupational.schemas.pcmso import (
-    MedicalExamRequest,
-    MedicalExamUpdateRequest,
-    MedicalExamResponse,
-    MedicalExamListResponse,
     ASORequest,
-    ASOUpdateRequest,
     ASOResponse,
-    ASOListResponse,
-    ComplementaryExamRequest,
-    ComplementaryExamResponse,
+    MedicalExamRequest,
+    MedicalExamResponse,
+    MedicalExamUpdateRequest,
 )
 from modules.health_occupational.services.pcmso_service import PCMSOService
 
@@ -187,8 +179,8 @@ async def update_exam(
 )
 async def list_employee_exams(
     funcionario_id: UUID = Path(..., description="UUID do funcionario"),
-    status_filter: Optional[str] = Query(None, description="Filtrar por status"),
-    tipo_filter: Optional[str] = Query(None, description="Filtrar por tipo"),
+    status_filter: str | None = Query(None, description="Filtrar por status"),
+    tipo_filter: str | None = Query(None, description="Filtrar por tipo"),
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
     service: PCMSOService = Depends(get_pcmso_service),
@@ -461,7 +453,9 @@ async def sign_aso(
             data={
                 "aso_id": str(aso.id),
                 "assinatura_funcionario": aso.assinatura_funcionario,
-                "data_assinatura": aso.data_assinatura_funcionario.isoformat() if aso.data_assinatura_funcionario else None,
+                "data_assinatura": aso.data_assinatura_funcionario.isoformat()
+                if aso.data_assinatura_funcionario
+                else None,
             },
         )
 

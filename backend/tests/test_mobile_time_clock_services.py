@@ -1,32 +1,33 @@
 """Testes para services do módulo Mobile Time Clock."""
 
-import pytest
 from datetime import datetime, time, timedelta
-from uuid import uuid4
 from unittest.mock import AsyncMock, MagicMock, patch
+from uuid import uuid4
+
+import pytest
 
 from modules.hr.mobile_time_clock.models import (
-    MobileDevice,
-    MobileCheckIn,
-    GeofenceZone,
-    OfflineQueue,
-    DeviceStatus,
-    CheckInType,
     CheckInStatus,
-    ZoneType,
-    ZoneCategory,
+    CheckInType,
+    DeviceStatus,
+    GeofenceZone,
+    MobileCheckIn,
+    MobileDevice,
+    OfflineQueue,
     QueueStatus,
+    ZoneCategory,
+    ZoneType,
 )
 from modules.hr.mobile_time_clock.schemas import (
-    MobileCheckInCreate,
-    CheckInLocation,
     CheckInBiometric,
+    CheckInLocation,
     CheckInPhoto,
     CheckInValidation,
     GeofenceCheckRequest,
     GeofenceZoneCreate,
-    MobileDeviceRegister,
+    MobileCheckInCreate,
     MobileDeviceApprove,
+    MobileDeviceRegister,
     OfflineQueueItemCreate,
 )
 
@@ -414,7 +415,7 @@ class TestDeviceServiceUnit:
         )
 
         # Incrementar falhas
-        for i in range(10):
+        for _i in range(10):
             device.failed_attempts += 1
             device.last_failed_at = datetime.utcnow()
 

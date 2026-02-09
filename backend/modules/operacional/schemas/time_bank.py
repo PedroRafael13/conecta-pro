@@ -3,7 +3,6 @@ Schemas Pydantic para TimeBank (Banco de Horas).
 """
 
 from datetime import date, datetime
-from typing import Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -17,8 +16,8 @@ class TimeBankBase(BaseModel):
     entry_type: TimeBankEntryType = Field(..., description="Tipo de entrada")
     hours: float = Field(..., description="Quantidade de horas")
     reference_date: date = Field(..., description="Data de referência")
-    description: Optional[str] = Field(None, description="Descrição")
-    reason: Optional[str] = Field(None, max_length=255, description="Motivo")
+    description: str | None = Field(None, description="Descrição")
+    reason: str | None = Field(None, max_length=255, description="Motivo")
 
     @model_validator(mode="after")
     def validate_hours(self) -> "TimeBankBase":
@@ -31,21 +30,21 @@ class TimeBankBase(BaseModel):
 class TimeBankCreate(TimeBankBase):
     """Schema para criação de TimeBank."""
 
-    shift_id: Optional[str] = Field(None, description="ID do turno relacionado")
-    post_id: Optional[str] = Field(None, description="ID do posto")
-    expiration_date: Optional[date] = Field(None, description="Data de expiração")
+    shift_id: str | None = Field(None, description="ID do turno relacionado")
+    post_id: str | None = Field(None, description="ID do posto")
+    expiration_date: date | None = Field(None, description="Data de expiração")
 
 
 class TimeBankUpdate(BaseModel):
     """Schema para atualização parcial de TimeBank."""
 
-    status: Optional[TimeBankStatus] = None
-    hours: Optional[float] = None
-    description: Optional[str] = None
-    reason: Optional[str] = Field(None, max_length=255)
-    expiration_date: Optional[date] = None
-    rejection_reason: Optional[str] = Field(None, max_length=255)
-    is_active: Optional[bool] = None
+    status: TimeBankStatus | None = None
+    hours: float | None = None
+    description: str | None = None
+    reason: str | None = Field(None, max_length=255)
+    expiration_date: date | None = None
+    rejection_reason: str | None = Field(None, max_length=255)
+    is_active: bool | None = None
 
 
 class TimeBankResponse(BaseModel):
@@ -61,16 +60,16 @@ class TimeBankResponse(BaseModel):
     balance_before: float
     balance_after: float
     reference_date: date
-    expiration_date: Optional[date]
-    shift_id: Optional[str]
-    post_id: Optional[str]
-    description: Optional[str]
-    reason: Optional[str]
-    approved_by: Optional[str]
-    approved_at: Optional[datetime]
-    rejection_reason: Optional[str]
-    compensated_at: Optional[datetime]
-    compensation_shift_id: Optional[str]
+    expiration_date: date | None
+    shift_id: str | None
+    post_id: str | None
+    description: str | None
+    reason: str | None
+    approved_by: str | None
+    approved_at: datetime | None
+    rejection_reason: str | None
+    compensated_at: datetime | None
+    compensation_shift_id: str | None
     is_active: bool
     created_at: datetime
     updated_at: datetime
@@ -81,13 +80,13 @@ class TimeBankResponse(BaseModel):
     is_expired: bool
     is_pending: bool
     signed_hours: float
-    days_until_expiration: Optional[int]
+    days_until_expiration: int | None
 
 
 class TimeBankListResponse(BaseModel):
     """Schema para listagem paginada de TimeBank."""
 
-    items: List[TimeBankResponse]
+    items: list[TimeBankResponse]
     total: int
     page: int
     page_size: int
@@ -97,15 +96,15 @@ class TimeBankListResponse(BaseModel):
 class TimeBankFilter(BaseModel):
     """Schema para filtros de busca de TimeBank."""
 
-    employee_id: Optional[str] = None
-    entry_type: Optional[TimeBankEntryType] = None
-    status: Optional[TimeBankStatus] = None
-    shift_id: Optional[str] = None
-    post_id: Optional[str] = None
-    start_date: Optional[date] = None
-    end_date: Optional[date] = None
-    is_expired: Optional[bool] = None
-    is_pending: Optional[bool] = None
+    employee_id: str | None = None
+    entry_type: TimeBankEntryType | None = None
+    status: TimeBankStatus | None = None
+    shift_id: str | None = None
+    post_id: str | None = None
+    start_date: date | None = None
+    end_date: date | None = None
+    is_expired: bool | None = None
+    is_pending: bool | None = None
 
     @model_validator(mode="after")
     def validate_dates(self) -> "TimeBankFilter":
@@ -119,7 +118,7 @@ class TimeBankFilter(BaseModel):
 class TimeBankApprove(BaseModel):
     """Schema para aprovação de entrada no banco."""
 
-    notes: Optional[str] = Field(None, description="Observações")
+    notes: str | None = Field(None, description="Observações")
 
 
 class TimeBankReject(BaseModel):
@@ -133,8 +132,8 @@ class TimeBankCompensate(BaseModel):
 
     hours: float = Field(..., gt=0, description="Horas a compensar")
     compensation_date: date = Field(..., description="Data da compensação")
-    shift_id: Optional[str] = Field(None, description="ID do turno de compensação")
-    notes: Optional[str] = Field(None, description="Observações")
+    shift_id: str | None = Field(None, description="ID do turno de compensação")
+    notes: str | None = Field(None, description="Observações")
 
 
 class TimeBankSummary(BaseModel):
@@ -161,5 +160,5 @@ class TimeBankStats(BaseModel):
     total_expired_hours: float
     total_pending_hours: float
     avg_balance: float
-    by_status: Dict[str, int]
-    by_entry_type: Dict[str, float]
+    by_status: dict[str, int]
+    by_entry_type: dict[str, float]

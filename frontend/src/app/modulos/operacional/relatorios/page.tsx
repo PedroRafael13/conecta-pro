@@ -4,7 +4,6 @@ import { AlertCircle, ArrowLeft, BarChart3, Filter, RefreshCw, FileSpreadsheet, 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-;
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/useAuth';
@@ -30,8 +29,10 @@ const formatPercent = (value: number) => `${value.toFixed(1)}%`;
 export default function RelatoriosPage() {
   const router = useRouter();
   const { isLoading: authLoading, isAuthenticated } = useAuth();
-  const { data: posts = [] } = usePosts();
-  const { data: employees = [] } = useEmployees();
+  const { data: postsData } = usePosts();
+  const posts = postsData?.items ?? [];
+  const { data: employeesData } = useEmployees();
+  const employees = employeesData?.items ?? [];
 
   const now = useMemo(() => new Date(), []);
   const [startDate, setStartDate] = useState(
@@ -99,7 +100,7 @@ export default function RelatoriosPage() {
 
   const postMap = useMemo(() => {
     return posts.reduce<Record<string, Post>>((acc, post) => {
-      acc[post.id] = post;
+      acc[post.id] = post as Post;
       return acc;
     }, {});
   }, [posts]);

@@ -1,21 +1,21 @@
 """Service para Folder."""
 
+import builtins
 import logging
-from typing import Optional, List
 
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from modules.ged.models.folder import FolderPermission, FolderType
 from modules.ged.repositories.folder_repository import FolderRepository
-from modules.ged.models.folder import FolderType, FolderPermission
 from modules.ged.schemas.folder import (
     FolderCreate,
-    FolderUpdate,
     FolderFilter,
-    FolderResponse,
     FolderListResponse,
-    FolderTreeNode,
+    FolderResponse,
     FolderStats,
+    FolderTreeNode,
+    FolderUpdate,
 )
 
 logger = logging.getLogger(__name__)
@@ -46,30 +46,26 @@ class FolderService:
                     data.parent_id,
                     data.condominium_id,
                 )
-                raise ValueError(
-                    f"Já existe uma pasta com o nome '{data.name}' neste local"
-                )
+                raise ValueError(f"Já existe uma pasta com o nome '{data.name}' neste local")
             # Outro tipo de erro de integridade
             logger.error("Erro de integridade ao criar pasta: %s", str(e))
             raise ValueError("Erro ao criar pasta: violação de integridade")
 
-    async def get_by_id(self, folder_id: str) -> Optional[FolderResponse]:
+    async def get_by_id(self, folder_id: str) -> FolderResponse | None:
         """Busca pasta por ID."""
         folder = await self.repository.get_by_id(folder_id)
         if not folder:
             return None
         return FolderResponse.model_validate(folder)
 
-    async def get_by_code(self, code: str) -> Optional[FolderResponse]:
+    async def get_by_code(self, code: str) -> FolderResponse | None:
         """Busca pasta por código."""
         folder = await self.repository.get_by_code(code)
         if not folder:
             return None
         return FolderResponse.model_validate(folder)
 
-    async def update(
-        self, folder_id: str, data: FolderUpdate
-    ) -> Optional[FolderResponse]:
+    async def update(self, folder_id: str, data: FolderUpdate) -> FolderResponse | None:
         """Atualiza uma pasta."""
         try:
             folder = await self.repository.update(folder_id, data)
@@ -81,12 +77,8 @@ class FolderService:
         except IntegrityError as e:
             await self.session.rollback()
             if "idx_ged_folders_unique_name" in str(e.orig):
-                logger.warning(
-                    "Tentativa de renomear para nome duplicado: %s", data.name
-                )
-                raise ValueError(
-                    f"Já existe uma pasta com o nome '{data.name}' neste local"
-                )
+                logger.warning("Tentativa de renomear para nome duplicado: %s", data.name)
+                raise ValueError(f"Já existe uma pasta com o nome '{data.name}' neste local")
             logger.error("Erro de integridade ao atualizar pasta: %s", str(e))
             raise ValueError("Erro ao atualizar pasta: violação de integridade")
 
@@ -105,7 +97,7 @@ class FolderService:
 
     async def list(
         self,
-        filters: Optional[FolderFilter] = None,
+        filters: FolderFilter | None = None,
         page: int = 1,
         page_size: int = 20,
         order_by: str = "created_at",
@@ -131,21 +123,17 @@ class FolderService:
             pages=pages,
         )
 
-    async def get_root_folders(
-        self, condominium_id: str = None
-    ) -> List[FolderResponse]:
+    async def get_root_folders(self, condominium_id: str = None) -> builtins.list[FolderResponse]:
         """Retorna pastas raiz."""
         folders = await self.repository.get_root_folders(condominium_id)
         return [FolderResponse.model_validate(f) for f in folders]
 
-    async def get_children(self, folder_id: str) -> List[FolderResponse]:
+    async def get_children(self, folder_id: str) -> builtins.list[FolderResponse]:
         """Retorna subpastas."""
         folders = await self.repository.get_children(folder_id)
         return [FolderResponse.model_validate(f) for f in folders]
 
-    async def get_tree(
-        self, root_id: str = None, condominium_id: str = None
-    ) -> List[FolderTreeNode]:
+    async def get_tree(self, root_id: str = None, condominium_id: str = None) -> builtins.list[FolderTreeNode]:
         """Retorna árvore de pastas."""
         folders = await self.repository.get_tree(root_id, condominium_id)
 
@@ -175,16 +163,12 @@ class FolderService:
 
         return root_nodes
 
-    async def get_by_type(
-        self, folder_type: FolderType, condominium_id: str = None
-    ) -> List[FolderResponse]:
+    async def get_by_type(self, folder_type: FolderType, condominium_id: str = None) -> builtins.list[FolderResponse]:
         """Retorna pastas por tipo."""
         folders = await self.repository.get_by_type(folder_type, condominium_id)
         return [FolderResponse.model_validate(f) for f in folders]
 
-    async def archive(
-        self, folder_id: str, archived_by: str
-    ) -> Optional[FolderResponse]:
+    async def archive(self, folder_id: str, archived_by: str) -> FolderResponse | None:
         """Arquiva pasta."""
         folder = await self.repository.archive(folder_id, archived_by)
         if not folder:
@@ -193,7 +177,7 @@ class FolderService:
         logger.info("Pasta arquivada: %s", folder_id)
         return FolderResponse.model_validate(folder)
 
-    async def unarchive(self, folder_id: str) -> Optional[FolderResponse]:
+    async def unarchive(self, folder_id: str) -> FolderResponse | None:
         """Desarquiva pasta."""
         folder = await self.repository.unarchive(folder_id)
         if not folder:
@@ -202,7 +186,7 @@ class FolderService:
         logger.info("Pasta desarquivada: %s", folder_id)
         return FolderResponse.model_validate(folder)
 
-    async def block(self, folder_id: str) -> Optional[FolderResponse]:
+    async def block(self, folder_id: str) -> FolderResponse | None:
         """Bloqueia pasta."""
         folder = await self.repository.block(folder_id)
         if not folder:
@@ -211,7 +195,7 @@ class FolderService:
         logger.info("Pasta bloqueada: %s", folder_id)
         return FolderResponse.model_validate(folder)
 
-    async def unblock(self, folder_id: str) -> Optional[FolderResponse]:
+    async def unblock(self, folder_id: str) -> FolderResponse | None:
         """Desbloqueia pasta."""
         folder = await self.repository.unblock(folder_id)
         if not folder:
@@ -220,9 +204,7 @@ class FolderService:
         logger.info("Pasta desbloqueada: %s", folder_id)
         return FolderResponse.model_validate(folder)
 
-    async def move(
-        self, folder_id: str, new_parent_id: str = None
-    ) -> Optional[FolderResponse]:
+    async def move(self, folder_id: str, new_parent_id: str = None) -> FolderResponse | None:
         """Move pasta para novo pai."""
         # Verifica se não está movendo para si mesmo ou descendente
         if new_parent_id:
@@ -240,7 +222,7 @@ class FolderService:
 
     async def grant_permission(
         self, folder_id: str, user_id: str, permission: FolderPermission
-    ) -> Optional[FolderResponse]:
+    ) -> FolderResponse | None:
         """Concede permissão ao usuário."""
         folder = await self.repository.get_by_id(folder_id)
         if not folder:
@@ -253,7 +235,7 @@ class FolderService:
 
     async def revoke_permission(
         self, folder_id: str, user_id: str, permission: FolderPermission
-    ) -> Optional[FolderResponse]:
+    ) -> FolderResponse | None:
         """Revoga permissão do usuário."""
         folder = await self.repository.get_by_id(folder_id)
         if not folder:
@@ -264,18 +246,14 @@ class FolderService:
         logger.info("Permissão revogada: %s -> %s", folder_id, user_id)
         return FolderResponse.model_validate(folder)
 
-    async def check_permission(
-        self, folder_id: str, user_id: str, permission: FolderPermission
-    ) -> bool:
+    async def check_permission(self, folder_id: str, user_id: str, permission: FolderPermission) -> bool:
         """Verifica permissão do usuário."""
         folder = await self.repository.get_by_id(folder_id)
         if not folder:
             return False
         return folder.has_permission(user_id, permission)
 
-    async def search(
-        self, query: str, condominium_id: str = None, limit: int = 10
-    ) -> List[FolderResponse]:
+    async def search(self, query: str, condominium_id: str = None, limit: int = 10) -> builtins.list[FolderResponse]:
         """Busca pastas por texto."""
         folders = await self.repository.search(query, condominium_id, limit)
         return [FolderResponse.model_validate(f) for f in folders]
@@ -287,7 +265,7 @@ class FolderService:
 
     async def create_default_structure(
         self, condominium_id: str, owner_id: str, created_by: str
-    ) -> List[FolderResponse]:
+    ) -> builtins.list[FolderResponse]:
         """Cria estrutura padrão de pastas."""
         default_folders = [
             {"name": "Contratos", "type": FolderType.CONTRATO, "icon": "file-contract"},
@@ -312,7 +290,5 @@ class FolderService:
             created.append(FolderResponse.model_validate(folder))
 
         await self.session.commit()
-        logger.info(
-            "Estrutura padrão criada para condomínio: %s", condominium_id
-        )
+        logger.info("Estrutura padrão criada para condomínio: %s", condominium_id)
         return created

@@ -1,31 +1,32 @@
 """Testes unitários para Models do módulo de Ponto Eletrônico."""
 
-import pytest
-from datetime import date, time, datetime, timedelta
+from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from uuid import uuid4
 
+import pytest
+
 from modules.hr.time_tracking.models import (
-    TimeEntry,
-    WorkSchedule,
+    AnomalyType,
+    CompensationType,
+    DayOfWeek,
+    EntryStatus,
+    EntryType,
+    JustificationCategory,
+    JustificationStatus,
+    JustificationType,
     Overtime,
+    OvertimeReason,
+    OvertimeStatus,
+    OvertimeType,
+    RegistrationMethod,
+    ScheduleStatus,
+    ScheduleType,
+    TimeEntry,
     TimeJustification,
     TimeSheet,
-    EntryType,
-    EntryStatus,
-    RegistrationMethod,
-    AnomalyType,
-    ScheduleType,
-    ScheduleStatus,
-    DayOfWeek,
-    OvertimeType,
-    OvertimeStatus,
-    OvertimeReason,
-    CompensationType,
-    JustificationType,
-    JustificationStatus,
-    JustificationCategory,
     TimeSheetStatus,
+    WorkSchedule,
 )
 
 

@@ -4,7 +4,6 @@ Sprint 34 - AI Predictions.
 """
 
 from datetime import datetime
-from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -23,10 +22,10 @@ class PredictionCreate(BaseModel):
     prediction_type: PredictionType = Field(..., description="Tipo de previsao")
     entity_type: str = Field(..., description="Tipo da entidade")
     entity_id: UUID = Field(..., description="ID da entidade")
-    model_id: Optional[UUID] = Field(None, description="ID do modelo a usar")
-    features: Optional[dict] = Field(None, description="Features de entrada")
+    model_id: UUID | None = Field(None, description="ID do modelo a usar")
+    features: dict | None = Field(None, description="Features de entrada")
     valid_days: int = Field(30, ge=1, le=365, description="Dias de validade")
-    tags: Optional[list[str]] = Field(None, description="Tags")
+    tags: list[str] | None = Field(None, description="Tags")
 
 
 class PredictionResponse(BaseModel):
@@ -38,18 +37,18 @@ class PredictionResponse(BaseModel):
     status: PredictionStatus
     entity_type: str
     entity_id: UUID
-    model_id: Optional[UUID] = None
-    prediction_value: Optional[float] = None
-    prediction_label: Optional[str] = None
-    prediction_probabilities: Optional[dict] = None
-    confidence_score: Optional[float] = None
-    explanation: Optional[str] = None
-    feature_importance: Optional[dict] = None
-    valid_from: Optional[datetime] = None
-    valid_until: Optional[datetime] = None
-    processing_time_ms: Optional[int] = None
+    model_id: UUID | None = None
+    prediction_value: float | None = None
+    prediction_label: str | None = None
+    prediction_probabilities: dict | None = None
+    confidence_score: float | None = None
+    explanation: str | None = None
+    feature_importance: dict | None = None
+    valid_from: datetime | None = None
+    valid_until: datetime | None = None
+    processing_time_ms: int | None = None
     created_at: datetime
-    completed_at: Optional[datetime] = None
+    completed_at: datetime | None = None
 
     class Config:
         """Config."""
@@ -69,9 +68,9 @@ class PredictionListResponse(BaseModel):
 class PredictionFeedback(BaseModel):
     """Schema para feedback de previsao."""
 
-    actual_value: Optional[float] = Field(None, description="Valor real")
-    actual_label: Optional[str] = Field(None, description="Label real")
-    notes: Optional[str] = Field(None, description="Notas")
+    actual_value: float | None = Field(None, description="Valor real")
+    actual_label: str | None = Field(None, description="Label real")
+    notes: str | None = Field(None, description="Notas")
 
 
 # ============ ML Model Schemas ============
@@ -82,28 +81,28 @@ class MLModelCreate(BaseModel):
 
     name: str = Field(..., min_length=1, max_length=200)
     slug: str = Field(..., min_length=1, max_length=100)
-    description: Optional[str] = None
+    description: str | None = None
     model_type: ModelType
     algorithm: str = Field(..., min_length=1, max_length=100)
-    framework: Optional[str] = None
-    hyperparameters: Optional[dict] = None
-    input_features: Optional[list[str]] = None
-    target_variable: Optional[str] = None
+    framework: str | None = None
+    hyperparameters: dict | None = None
+    input_features: list[str] | None = None
+    target_variable: str | None = None
     prediction_threshold: float = Field(0.5, ge=0, le=1)
     confidence_threshold: float = Field(0.7, ge=0, le=1)
-    tags: Optional[list[str]] = None
+    tags: list[str] | None = None
 
 
 class MLModelUpdate(BaseModel):
     """Schema para atualizar modelo."""
 
-    name: Optional[str] = Field(None, min_length=1, max_length=200)
-    description: Optional[str] = None
-    hyperparameters: Optional[dict] = None
-    prediction_threshold: Optional[float] = Field(None, ge=0, le=1)
-    confidence_threshold: Optional[float] = Field(None, ge=0, le=1)
-    auto_retrain: Optional[bool] = None
-    tags: Optional[list[str]] = None
+    name: str | None = Field(None, min_length=1, max_length=200)
+    description: str | None = None
+    hyperparameters: dict | None = None
+    prediction_threshold: float | None = Field(None, ge=0, le=1)
+    confidence_threshold: float | None = Field(None, ge=0, le=1)
+    auto_retrain: bool | None = None
+    tags: list[str] | None = None
 
 
 class MLModelResponse(BaseModel):
@@ -113,25 +112,25 @@ class MLModelResponse(BaseModel):
     tenant_id: UUID
     name: str
     slug: str
-    description: Optional[str] = None
+    description: str | None = None
     version: str
     model_type: ModelType
     status: ModelStatus
     algorithm: str
-    framework: Optional[str] = None
-    hyperparameters: Optional[dict] = None
-    input_features: Optional[list[str]] = None
-    target_variable: Optional[str] = None
-    training_metrics: Optional[dict] = None
-    validation_metrics: Optional[dict] = None
+    framework: str | None = None
+    hyperparameters: dict | None = None
+    input_features: list[str] | None = None
+    target_variable: str | None = None
+    training_metrics: dict | None = None
+    validation_metrics: dict | None = None
     total_predictions: int = 0
     successful_predictions: int = 0
-    avg_prediction_time_ms: Optional[int] = None
+    avg_prediction_time_ms: int | None = None
     is_default: bool = False
     active: bool = True
     created_at: datetime
-    trained_at: Optional[datetime] = None
-    deployed_at: Optional[datetime] = None
+    trained_at: datetime | None = None
+    deployed_at: datetime | None = None
 
     class Config:
         """Config."""
@@ -147,11 +146,11 @@ class FeatureStoreCreate(BaseModel):
 
     name: str = Field(..., min_length=1, max_length=200)
     slug: str = Field(..., min_length=1, max_length=100)
-    description: Optional[str] = None
+    description: str | None = None
     entity_type: str = Field(..., min_length=1, max_length=100)
-    data_source: Optional[str] = None
-    refresh_frequency: Optional[str] = None
-    tags: Optional[list[str]] = None
+    data_source: str | None = None
+    refresh_frequency: str | None = None
+    tags: list[str] | None = None
 
 
 class FeatureStoreResponse(BaseModel):
@@ -161,13 +160,13 @@ class FeatureStoreResponse(BaseModel):
     tenant_id: UUID
     name: str
     slug: str
-    description: Optional[str] = None
+    description: str | None = None
     entity_type: str
     status: str
     total_features: int = 0
     total_entities: int = 0
-    data_quality_score: Optional[float] = None
-    last_refresh_at: Optional[datetime] = None
+    data_quality_score: float | None = None
+    last_refresh_at: datetime | None = None
     active: bool = True
     created_at: datetime
 
@@ -182,12 +181,12 @@ class FeatureCreate(BaseModel):
 
     name: str = Field(..., min_length=1, max_length=200)
     slug: str = Field(..., min_length=1, max_length=100)
-    description: Optional[str] = None
+    description: str | None = None
     data_type: str
-    source_column: Optional[str] = None
-    transformation: Optional[str] = None
-    validation_rules: Optional[dict] = None
-    category: Optional[str] = None
+    source_column: str | None = None
+    transformation: str | None = None
+    validation_rules: dict | None = None
+    category: str | None = None
 
 
 class FeatureResponse(BaseModel):
@@ -197,11 +196,11 @@ class FeatureResponse(BaseModel):
     feature_store_id: UUID
     name: str
     slug: str
-    description: Optional[str] = None
+    description: str | None = None
     data_type: str
     status: str
-    importance_score: Optional[float] = None
-    statistics: Optional[dict] = None
+    importance_score: float | None = None
+    statistics: dict | None = None
     active: bool = True
     created_at: datetime
 
@@ -219,13 +218,13 @@ class TrainingJobCreate(BaseModel):
 
     model_id: UUID
     name: str = Field(..., min_length=1, max_length=200)
-    description: Optional[str] = None
-    config: Optional[dict] = None
-    hyperparameters: Optional[dict] = None
-    feature_store_id: Optional[UUID] = None
+    description: str | None = None
+    config: dict | None = None
+    hyperparameters: dict | None = None
+    feature_store_id: UUID | None = None
     validation_split: float = Field(0.2, ge=0, le=0.5)
     test_split: float = Field(0.1, ge=0, le=0.3)
-    cv_folds: Optional[int] = Field(None, ge=2, le=10)
+    cv_folds: int | None = Field(None, ge=2, le=10)
     timeout_seconds: int = Field(3600, ge=60, le=86400)
 
 
@@ -236,19 +235,19 @@ class TrainingJobResponse(BaseModel):
     tenant_id: UUID
     model_id: UUID
     name: str
-    description: Optional[str] = None
+    description: str | None = None
     status: str
     progress_percent: float = 0
-    current_epoch: Optional[int] = None
-    total_epochs: Optional[int] = None
-    training_loss: Optional[float] = None
-    validation_loss: Optional[float] = None
-    final_metrics: Optional[dict] = None
-    duration_seconds: Optional[int] = None
-    error_message: Optional[str] = None
+    current_epoch: int | None = None
+    total_epochs: int | None = None
+    training_loss: float | None = None
+    validation_loss: float | None = None
+    final_metrics: dict | None = None
+    duration_seconds: int | None = None
+    error_message: str | None = None
     created_at: datetime
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
 
     class Config:
         """Config."""
@@ -263,16 +262,16 @@ class ChurnPredictionRequest(BaseModel):
     """Schema para requisitar previsao de churn."""
 
     client_id: UUID = Field(..., description="ID do cliente")
-    days_since_last_interaction: Optional[int] = Field(None, ge=0)
-    interaction_frequency: Optional[float] = Field(None, ge=0)
-    support_tickets_count: Optional[int] = Field(None, ge=0)
-    payment_delays_count: Optional[int] = Field(None, ge=0)
-    nps_score: Optional[float] = Field(None, ge=0, le=10)
-    csat_score: Optional[float] = Field(None, ge=1, le=5)
-    contract_value: Optional[float] = Field(None, ge=0)
-    contract_age_months: Optional[int] = Field(None, ge=0)
-    days_until_renewal: Optional[int] = Field(None, ge=0)
-    feature_usage_rate: Optional[float] = Field(None, ge=0, le=1)
+    days_since_last_interaction: int | None = Field(None, ge=0)
+    interaction_frequency: float | None = Field(None, ge=0)
+    support_tickets_count: int | None = Field(None, ge=0)
+    payment_delays_count: int | None = Field(None, ge=0)
+    nps_score: float | None = Field(None, ge=0, le=10)
+    csat_score: float | None = Field(None, ge=1, le=5)
+    contract_value: float | None = Field(None, ge=0)
+    contract_age_months: int | None = Field(None, ge=0)
+    days_until_renewal: int | None = Field(None, ge=0)
+    feature_usage_rate: float | None = Field(None, ge=0, le=1)
 
 
 class ChurnPredictionResponse(BaseModel):
@@ -284,9 +283,9 @@ class ChurnPredictionResponse(BaseModel):
     confidence: float = Field(..., ge=0, le=1)
     main_factors: list[dict]
     recommendations: list[dict]
-    expected_churn_date: Optional[datetime] = None
+    expected_churn_date: datetime | None = None
     lifetime_value_at_risk: float = 0
-    prediction_id: Optional[UUID] = None
+    prediction_id: UUID | None = None
 
 
 # ============ Forecast Schemas ============
@@ -296,7 +295,7 @@ class ForecastRequest(BaseModel):
     """Schema para requisitar forecast."""
 
     entity_type: str = Field(..., description="Tipo da entidade")
-    entity_id: Optional[UUID] = Field(None, description="ID especifico")
+    entity_id: UUID | None = Field(None, description="ID especifico")
     forecast_type: str = Field(..., description="Tipo: revenue, expense, demand")
     periods: int = Field(6, ge=1, le=24, description="Numero de periodos")
     period_type: str = Field("month", description="day, week, month, quarter")
@@ -316,7 +315,7 @@ class ForecastResponse(BaseModel):
     confidence: float
     scenarios: dict  # pessimist, base, optimist
     forecasts: list[dict]
-    prediction_id: Optional[UUID] = None
+    prediction_id: UUID | None = None
 
 
 # ============ Anomaly Schemas ============
@@ -329,15 +328,15 @@ class AnomalyCreate(BaseModel):
     entity_id: UUID = Field(..., description="ID da entidade")
     field: str = Field(..., description="Campo a verificar")
     value: float = Field(..., description="Valor observado")
-    historical_values: Optional[list[float]] = Field(None, description="Valores historicos")
-    context: Optional[dict] = Field(None, description="Contexto adicional")
+    historical_values: list[float] | None = Field(None, description="Valores historicos")
+    context: dict | None = Field(None, description="Contexto adicional")
 
 
 class AnomalyResponse(BaseModel):
     """Schema de resposta de anomalia."""
 
     is_anomaly: bool
-    anomaly_type: Optional[AnomalyType] = None
+    anomaly_type: AnomalyType | None = None
     severity: AnomalySeverity
     anomaly_score: float = Field(..., ge=0, le=1)
     confidence: float = Field(..., ge=0, le=1)
@@ -347,7 +346,7 @@ class AnomalyResponse(BaseModel):
     deviation_score: float
     explanation: str
     contributing_factors: list[dict]
-    anomaly_id: Optional[UUID] = None
+    anomaly_id: UUID | None = None
 
 
 # ============ Recommendation Schemas ============
@@ -360,7 +359,7 @@ class RecommendationRequest(BaseModel):
     target_entity_id: UUID = Field(..., description="ID da entidade alvo")
     recommendation_type: RecommendationType
     limit: int = Field(5, ge=1, le=20)
-    context: Optional[dict] = Field(None, description="Contexto adicional")
+    context: dict | None = Field(None, description="Contexto adicional")
     algorithm: str = Field("hybrid", description="Algoritmo a usar")
 
 
@@ -372,17 +371,17 @@ class RecommendationResponse(BaseModel):
     status: RecommendationStatus
     target_entity_type: str
     target_entity_id: UUID
-    recommended_entity_type: Optional[str] = None
-    recommended_entity_id: Optional[UUID] = None
-    recommended_entity_name: Optional[str] = None
+    recommended_entity_type: str | None = None
+    recommended_entity_id: UUID | None = None
+    recommended_entity_name: str | None = None
     title: str
-    description: Optional[str] = None
-    reason: Optional[str] = None
-    relevance_score: Optional[float] = None
-    confidence_score: Optional[float] = None
-    expected_value: Optional[float] = None
-    rank_position: Optional[int] = None
-    valid_until: Optional[datetime] = None
+    description: str | None = None
+    reason: str | None = None
+    relevance_score: float | None = None
+    confidence_score: float | None = None
+    expected_value: float | None = None
+    rank_position: int | None = None
+    valid_until: datetime | None = None
     created_at: datetime
 
     class Config:
@@ -414,8 +413,8 @@ class PredictionStatsResponse(BaseModel):
     with_feedback: int
     feedback_rate: float
     accuracy: float
-    avg_percentage_error: Optional[float] = None
-    avg_processing_time_ms: Optional[float] = None
+    avg_percentage_error: float | None = None
+    avg_processing_time_ms: float | None = None
     by_type: dict
 
 
@@ -426,7 +425,7 @@ class ModelStatsResponse(BaseModel):
     model_name: str
     total_predictions: int
     success_rate: float
-    avg_prediction_time_ms: Optional[int] = None
-    drift_score: Optional[float] = None
+    avg_prediction_time_ms: int | None = None
+    drift_score: float | None = None
     drift_detected: bool = False
     needs_retraining: bool = False

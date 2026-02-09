@@ -5,23 +5,22 @@ Orquestra a execucao de workflows, steps e acoes.
 """
 
 import asyncio
+import contextlib
 import logging
-from datetime import datetime, timedelta
-from typing import Any, Callable, Dict, List, Optional
-import uuid
+from collections.abc import Callable
+from datetime import datetime
+from typing import Any
 
-from modules._deprecated_workflows_dataclass.models.workflow import Workflow, WorkflowStatus
-from modules._deprecated_workflows_dataclass.models.workflow_step import StepType, WorkflowStep
-from modules._deprecated_workflows_dataclass.models.trigger import Trigger
-from modules._deprecated_workflows_dataclass.models.action import Action, ActionResult
+from modules._deprecated_workflows_dataclass.models.action import Action
 from modules._deprecated_workflows_dataclass.models.condition import Condition
 from modules._deprecated_workflows_dataclass.models.execution import (
-    ExecutionLog,
     ExecutionStatus,
     LogLevel,
     StepExecution,
     WorkflowExecution,
 )
+from modules._deprecated_workflows_dataclass.models.workflow import Workflow
+from modules._deprecated_workflows_dataclass.models.workflow_step import StepType, WorkflowStep
 from modules._deprecated_workflows_dataclass.services.action_executor import ActionExecutor
 from modules._deprecated_workflows_dataclass.services.condition_evaluator import ConditionEvaluator
 
@@ -35,22 +34,22 @@ class ExecutionContext:
         self,
         workflow: Workflow,
         execution: WorkflowExecution,
-        input_data: Dict[str, Any] = None,
+        input_data: dict[str, Any] = None,
     ):
         self.workflow = workflow
         self.execution = execution
-        self.variables: Dict[str, Any] = {}
+        self.variables: dict[str, Any] = {}
         self.input = input_data or {}
-        self.output: Dict[str, Any] = {}
-        self.step_outputs: Dict[str, Dict[str, Any]] = {}
+        self.output: dict[str, Any] = {}
+        self.step_outputs: dict[str, dict[str, Any]] = {}
         self.current_step_id: str = ""
-        self.loop_stack: List[Dict[str, Any]] = []
+        self.loop_stack: list[dict[str, Any]] = []
 
         # Inicializa variaveis do workflow
         for var in workflow.variables:
             self.variables[var.name] = var.default_value
 
-    def get_full_context(self) -> Dict[str, Any]:
+    def get_full_context(self) -> dict[str, Any]:
         """Retorna contexto completo."""
         return {
             "workflow_id": self.workflow.id,
@@ -72,19 +71,21 @@ class ExecutionContext:
         """Obtem variavel."""
         return self.variables.get(name, default)
 
-    def set_step_output(self, step_id: str, output: Dict[str, Any]) -> None:
+    def set_step_output(self, step_id: str, output: dict[str, Any]) -> None:
         """Define output de step."""
         self.step_outputs[step_id] = output
 
-    def enter_loop(self, collection: List[Any], variable: str, index_var: str) -> None:
+    def enter_loop(self, collection: list[Any], variable: str, index_var: str) -> None:
         """Entra em loop."""
-        self.loop_stack.append({
-            "collection": collection,
-            "variable": variable,
-            "index_var": index_var,
-            "index": 0,
-            "item": collection[0] if collection else None,
-        })
+        self.loop_stack.append(
+            {
+                "collection": collection,
+                "variable": variable,
+                "index_var": index_var,
+                "index": 0,
+                "item": collection[0] if collection else None,
+            }
+        )
 
     def next_iteration(self) -> bool:
         """Avanca para proxima iteracao."""
@@ -129,23 +130,23 @@ class WorkflowExecutor:
         self.condition_evaluator = condition_evaluator or ConditionEvaluator()
 
         # Storage (em producao, usar repositorio)
-        self._workflows: Dict[str, Workflow] = {}
-        self._steps: Dict[str, WorkflowStep] = {}
-        self._actions: Dict[str, Action] = {}
-        self._conditions: Dict[str, Condition] = {}
-        self._executions: Dict[str, WorkflowExecution] = {}
+        self._workflows: dict[str, Workflow] = {}
+        self._steps: dict[str, WorkflowStep] = {}
+        self._actions: dict[str, Action] = {}
+        self._conditions: dict[str, Condition] = {}
+        self._executions: dict[str, WorkflowExecution] = {}
 
         # Callbacks
-        self._on_execution_start: Optional[Callable] = None
-        self._on_execution_complete: Optional[Callable] = None
-        self._on_step_complete: Optional[Callable] = None
+        self._on_execution_start: Callable | None = None
+        self._on_execution_complete: Callable | None = None
+        self._on_step_complete: Callable | None = None
 
     def register_workflow(
         self,
         workflow: Workflow,
-        steps: List[WorkflowStep],
-        actions: Dict[str, Action] = None,
-        conditions: Dict[str, Condition] = None,
+        steps: list[WorkflowStep],
+        actions: dict[str, Action] = None,
+        conditions: dict[str, Condition] = None,
     ) -> None:
         """Registra workflow para execucao."""
         self._workflows[workflow.id] = workflow
@@ -165,7 +166,7 @@ class WorkflowExecutor:
     async def execute(
         self,
         workflow_id: str,
-        input_data: Dict[str, Any] = None,
+        input_data: dict[str, Any] = None,
         trigger_id: str = "",
         triggered_by: str = "system",
     ) -> str:
@@ -212,7 +213,7 @@ class WorkflowExecutor:
         self,
         workflow: Workflow,
         execution: WorkflowExecution,
-        input_data: Dict[str, Any],
+        input_data: dict[str, Any],
     ) -> None:
         """Executa workflow."""
         # Cria contexto
@@ -250,7 +251,7 @@ class WorkflowExecutor:
         self,
         step_id: str,
         context: ExecutionContext,
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Executa um step do workflow.
 
@@ -288,7 +289,7 @@ class WorkflowExecutor:
             async with asyncio.timeout(step.timeout_seconds):
                 next_step_id = await self._process_step(step, context, step_exec)
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             step_exec.fail("Timeout na execucao do step")
             if step.on_error == "continue":
                 next_step_id = step.get_next_step()
@@ -340,7 +341,7 @@ class WorkflowExecutor:
         step: WorkflowStep,
         context: ExecutionContext,
         step_exec: StepExecution,
-    ) -> Optional[str]:
+    ) -> str | None:
         """Processa step baseado no tipo."""
         if step.step_type == StepType.START:
             step_exec.complete()
@@ -378,7 +379,7 @@ class WorkflowExecutor:
         step: WorkflowStep,
         context: ExecutionContext,
         step_exec: StepExecution,
-    ) -> Optional[str]:
+    ) -> str | None:
         """Processa step de acao."""
         action = self._actions.get(step.action_id)
         if not action:
@@ -409,7 +410,7 @@ class WorkflowExecutor:
         step: WorkflowStep,
         context: ExecutionContext,
         step_exec: StepExecution,
-    ) -> Optional[str]:
+    ) -> str | None:
         """Processa step de condicao."""
         condition = self._conditions.get(step.condition_id)
         if not condition:
@@ -419,10 +420,12 @@ class WorkflowExecutor:
         cond_context = context.get_full_context()
         next_step_id = self.condition_evaluator.get_next_step(condition, cond_context)
 
-        step_exec.complete({
-            "condition_result": next_step_id == condition.true_step_id,
-            "next_step_id": next_step_id,
-        })
+        step_exec.complete(
+            {
+                "condition_result": next_step_id == condition.true_step_id,
+                "next_step_id": next_step_id,
+            }
+        )
 
         return next_step_id
 
@@ -431,7 +434,7 @@ class WorkflowExecutor:
         step: WorkflowStep,
         context: ExecutionContext,
         step_exec: StepExecution,
-    ) -> Optional[str]:
+    ) -> str | None:
         """Processa step de loop."""
         # Obtem colecao
         full_context = context.get_full_context()
@@ -446,7 +449,7 @@ class WorkflowExecutor:
 
         # Limita iteracoes
         if len(collection) > step.max_iterations:
-            collection = collection[:step.max_iterations]
+            collection = collection[: step.max_iterations]
 
         # Entra no loop
         context.enter_loop(collection, step.loop_variable, step.loop_index_variable)
@@ -475,10 +478,12 @@ class WorkflowExecutor:
         finally:
             context.exit_loop()
 
-        step_exec.complete({
-            "iterations": iterations,
-            "outputs": loop_outputs,
-        })
+        step_exec.complete(
+            {
+                "iterations": iterations,
+                "outputs": loop_outputs,
+            }
+        )
 
         # Retorna step apos o loop (ultimo da lista ou definido)
         return step.get_next_step()
@@ -488,7 +493,7 @@ class WorkflowExecutor:
         step: WorkflowStep,
         context: ExecutionContext,
         step_exec: StepExecution,
-    ) -> Optional[str]:
+    ) -> str | None:
         """Processa step paralelo."""
         if not step.parallel_step_ids:
             step_exec.complete()
@@ -529,20 +534,21 @@ class WorkflowExecutor:
         step: WorkflowStep,
         context: ExecutionContext,
         step_exec: StepExecution,
-    ) -> Optional[str]:
+    ) -> str | None:
         """Processa step de delay."""
         delay_seconds = step.delay_seconds
 
         # Delay dinamico
         if step.delay_expression:
             full_context = context.get_full_context()
-            try:
-                delay_seconds = int(self._resolve_path(
-                    step.delay_expression,
-                    full_context,
-                ) or 0)
-            except (TypeError, ValueError):
-                pass
+            with contextlib.suppress(TypeError, ValueError):
+                delay_seconds = int(
+                    self._resolve_path(
+                        step.delay_expression,
+                        full_context,
+                    )
+                    or 0
+                )
 
         # Delay ate data/hora especifica
         if step.delay_until:
@@ -565,7 +571,7 @@ class WorkflowExecutor:
         step: WorkflowStep,
         context: ExecutionContext,
         step_exec: StepExecution,
-    ) -> Optional[str]:
+    ) -> str | None:
         """Processa step de subprocess (workflow aninhado)."""
         if not step.subprocess_workflow_id:
             raise ValueError("Subprocess workflow ID ausente")
@@ -592,7 +598,7 @@ class WorkflowExecutor:
 
         return step.get_next_step()
 
-    def _find_start_step(self, workflow: Workflow) -> Optional[str]:
+    def _find_start_step(self, workflow: Workflow) -> str | None:
         """Encontra step inicial."""
         for step_id in workflow.step_ids:
             step = self._steps.get(step_id)
@@ -602,7 +608,7 @@ class WorkflowExecutor:
         # Se nao tem START, usa primeiro step
         return workflow.step_ids[0] if workflow.step_ids else None
 
-    def _resolve_path(self, path: str, context: Dict[str, Any]) -> Any:
+    def _resolve_path(self, path: str, context: dict[str, Any]) -> Any:
         """Resolve path de variavel."""
         if not path:
             return None
@@ -629,7 +635,7 @@ class WorkflowExecutor:
 
     # API de gerenciamento
 
-    def get_execution(self, execution_id: str) -> Optional[WorkflowExecution]:
+    def get_execution(self, execution_id: str) -> WorkflowExecution | None:
         """Obtem execucao por ID."""
         return self._executions.get(execution_id)
 
@@ -638,7 +644,7 @@ class WorkflowExecutor:
         workflow_id: str = None,
         status: ExecutionStatus = None,
         limit: int = 100,
-    ) -> List[WorkflowExecution]:
+    ) -> list[WorkflowExecution]:
         """Lista execucoes."""
         executions = list(self._executions.values())
 
@@ -665,7 +671,7 @@ class WorkflowExecutor:
         execution.cancel(reason)
         return True
 
-    async def retry_execution(self, execution_id: str) -> Optional[str]:
+    async def retry_execution(self, execution_id: str) -> str | None:
         """Retenta execucao falha."""
         execution = self._executions.get(execution_id)
         if not execution:

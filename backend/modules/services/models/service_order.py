@@ -3,17 +3,14 @@ ServiceOrder Model - Ordens de Serviço
 Sprint 31: Gestão de Serviços
 """
 
-import enum
-from datetime import datetime, date
+from datetime import date, datetime
 from decimal import Decimal
-from typing import Optional, List, TYPE_CHECKING
+from enum import StrEnum
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
-from sqlalchemy import (
-    Column, String, Text, Boolean, DateTime, Date,
-    Numeric, Integer, Enum, ForeignKey, Index
-)
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy import Boolean, Column, Date, DateTime, Enum, ForeignKey, Index, Integer, Numeric, String, Text
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 
 from core.database import Base
@@ -24,8 +21,9 @@ if TYPE_CHECKING:
     from modules.services.models.service_report import ServiceReport
 
 
-class OrderStatus(str, enum.Enum):
+class OrderStatus(StrEnum):
     """Status da ordem de serviço."""
+
     RASCUNHO = "rascunho"
     PENDENTE = "pendente"
     APROVADA = "aprovada"
@@ -37,8 +35,9 @@ class OrderStatus(str, enum.Enum):
     REJEITADA = "rejeitada"
 
 
-class OrderPriority(str, enum.Enum):
+class OrderPriority(StrEnum):
     """Prioridade da ordem."""
+
     BAIXA = "baixa"
     NORMAL = "normal"
     ALTA = "alta"
@@ -51,6 +50,7 @@ class ServiceOrder(Base):
     Model para ordens de serviço.
     Representa uma solicitação de execução de serviço.
     """
+
     __tablename__ = "service_orders"
 
     # Primary key
@@ -60,22 +60,14 @@ class ServiceOrder(Base):
     order_number = Column(String(30), nullable=False, unique=True)
 
     # Foreign keys
-    service_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("service_catalog.id", ondelete="RESTRICT"),
-        nullable=False
-    )
+    service_id = Column(UUID(as_uuid=True), ForeignKey("service_catalog.id", ondelete="RESTRICT"), nullable=False)
     client_id = Column(UUID(as_uuid=True), nullable=False)
     condominium_id = Column(UUID(as_uuid=True), nullable=True)
     contract_id = Column(UUID(as_uuid=True), nullable=True)
 
     # Status e prioridade
-    status = Column(
-        Enum(OrderStatus), nullable=False, default=OrderStatus.RASCUNHO
-    )
-    priority = Column(
-        Enum(OrderPriority), nullable=False, default=OrderPriority.NORMAL
-    )
+    status = Column(Enum(OrderStatus), nullable=False, default=OrderStatus.RASCUNHO)
+    priority = Column(Enum(OrderPriority), nullable=False, default=OrderPriority.NORMAL)
 
     # Descrição
     title = Column(String(200), nullable=False)
@@ -155,22 +147,14 @@ class ServiceOrder(Base):
     # Auditoria
     ativo = Column(Boolean, nullable=False, default=True)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(
-        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
     created_by = Column(UUID(as_uuid=True), nullable=True)
     updated_by = Column(UUID(as_uuid=True), nullable=True)
 
     # Relacionamentos
-    service: "ServiceCatalog" = relationship(
-        "ServiceCatalog", back_populates="orders"
-    )
-    executions: List["ServiceExecution"] = relationship(
-        "ServiceExecution", back_populates="order", lazy="dynamic"
-    )
-    reports: List["ServiceReport"] = relationship(
-        "ServiceReport", back_populates="order", lazy="dynamic"
-    )
+    service: "ServiceCatalog" = relationship("ServiceCatalog", back_populates="orders")
+    executions: list["ServiceExecution"] = relationship("ServiceExecution", back_populates="order", lazy="dynamic")
+    reports: list["ServiceReport"] = relationship("ServiceReport", back_populates="order", lazy="dynamic")
 
     # Índices
     __table_args__ = (
@@ -193,7 +177,7 @@ class ServiceOrder(Base):
         self.status = OrderStatus.PENDENTE
         self.updated_at = datetime.utcnow()
 
-    def approve(self, approved_by: UUID, notes: Optional[str] = None) -> None:
+    def approve(self, approved_by: UUID, notes: str | None = None) -> None:
         """Aprova a ordem."""
         self.status = OrderStatus.APROVADA
         self.approved_at = datetime.utcnow()
@@ -209,12 +193,7 @@ class ServiceOrder(Base):
         self.rejection_reason = reason
         self.updated_at = datetime.utcnow()
 
-    def schedule(
-        self,
-        scheduled_date: date,
-        time_start: str,
-        time_end: Optional[str] = None
-    ) -> None:
+    def schedule(self, scheduled_date: date, time_start: str, time_end: str | None = None) -> None:
         """Agenda a ordem."""
         self.status = OrderStatus.AGENDADA
         self.scheduled_date = scheduled_date
@@ -229,12 +208,10 @@ class ServiceOrder(Base):
         if not self.first_response_at:
             self.first_response_at = datetime.utcnow()
             if self.sla_response_deadline:
-                self.sla_response_met = (
-                    datetime.utcnow() <= self.sla_response_deadline
-                )
+                self.sla_response_met = datetime.utcnow() <= self.sla_response_deadline
         self.updated_at = datetime.utcnow()
 
-    def pause(self, reason: Optional[str] = None) -> None:
+    def pause(self, reason: str | None = None) -> None:
         """Pausa a ordem."""
         self.status = OrderStatus.PAUSADA
         if reason:
@@ -246,7 +223,7 @@ class ServiceOrder(Base):
         self.status = OrderStatus.EM_ANDAMENTO
         self.updated_at = datetime.utcnow()
 
-    def complete(self, final_value: Optional[Decimal] = None) -> None:
+    def complete(self, final_value: Decimal | None = None) -> None:
         """Conclui a ordem."""
         self.status = OrderStatus.CONCLUIDA
         self.completed_at = datetime.utcnow()
@@ -256,13 +233,9 @@ class ServiceOrder(Base):
             self.final_value = self.estimated_value
         if self.started_at:
             delta = self.completed_at - self.started_at
-            self.actual_duration_hours = Decimal(
-                str(round(delta.total_seconds() / 3600, 2))
-            )
+            self.actual_duration_hours = Decimal(str(round(delta.total_seconds() / 3600, 2)))
         if self.sla_resolution_deadline:
-            self.sla_resolution_met = (
-                self.completed_at <= self.sla_resolution_deadline
-            )
+            self.sla_resolution_met = self.completed_at <= self.sla_resolution_deadline
         self.updated_at = datetime.utcnow()
 
     def cancel(self, cancelled_by: UUID, reason: str) -> None:
@@ -273,7 +246,7 @@ class ServiceOrder(Base):
         self.cancellation_reason = reason
         self.updated_at = datetime.utcnow()
 
-    def rate(self, rating: int, comment: Optional[str] = None) -> None:
+    def rate(self, rating: int, comment: str | None = None) -> None:
         """Avalia a ordem."""
         if not 1 <= rating <= 5:
             raise ValueError("Rating deve ser entre 1 e 5")
@@ -282,9 +255,7 @@ class ServiceOrder(Base):
         self.rated_at = datetime.utcnow()
         self.updated_at = datetime.utcnow()
 
-    def assign_technician(
-        self, technician_id: UUID, technician_name: str
-    ) -> None:
+    def assign_technician(self, technician_id: UUID, technician_name: str) -> None:
         """Atribui técnico à ordem."""
         self.assigned_technician_id = technician_id
         self.assigned_technician_name = technician_name

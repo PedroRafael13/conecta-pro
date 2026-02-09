@@ -10,8 +10,7 @@ Fornece modelos para:
 
 from datetime import date, datetime
 from decimal import Decimal
-from enum import Enum
-from typing import Any, Dict, List, Optional
+from enum import StrEnum
 from uuid import uuid4
 
 from sqlalchemy import (
@@ -19,42 +18,47 @@ from sqlalchemy import (
     Column,
     Date,
     DateTime,
-    Enum as SQLEnum,
     ForeignKey,
-    Integer,
+    Index,
     Numeric,
     String,
     Text,
-    Index,
 )
-from sqlalchemy.dialects.postgresql import UUID as PG_UUID, JSONB
+from sqlalchemy import (
+    Enum as SQLEnum,
+)
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import relationship
 
 from core.database import Base
-
 
 # =============================================================================
 # ENUMS
 # =============================================================================
 
-class TipoDocumentoFiscal(str, Enum):
+
+class TipoDocumentoFiscal(StrEnum):
     """Tipos de documento fiscal."""
+
     RPA = "rpa"  # Recibo de Pagamento Autônomo
     NFSE = "nfse"  # Nota Fiscal de Serviços Eletrônica
     RECIBO_SIMPLES = "recibo_simples"
     DECLARACAO = "declaracao"
 
 
-class StatusDocumentoFiscal(str, Enum):
+class StatusDocumentoFiscal(StrEnum):
     """Status do documento fiscal."""
+
     RASCUNHO = "rascunho"
     EMITIDO = "emitido"
     CANCELADO = "cancelado"
     SUBSTITUIDO = "substituido"
 
 
-class TipoRetencao(str, Enum):
+class TipoRetencao(StrEnum):
     """Tipos de retenção fiscal."""
+
     INSS = "inss"  # Instituto Nacional do Seguro Social
     ISS = "iss"  # Imposto Sobre Serviços
     IRRF = "irrf"  # Imposto de Renda Retido na Fonte
@@ -63,8 +67,9 @@ class TipoRetencao(str, Enum):
     CSLL = "csll"  # Contribuição Social sobre o Lucro Líquido
 
 
-class TipoEventoESocial(str, Enum):
+class TipoEventoESocial(StrEnum):
     """Tipos de evento e-Social relacionados a autônomos."""
+
     S2300 = "S-2300"  # Trabalhador Sem Vínculo - Início
     S2306 = "S-2306"  # Trabalhador Sem Vínculo - Alteração Contratual
     S2399 = "S-2399"  # Trabalhador Sem Vínculo - Término
@@ -72,8 +77,9 @@ class TipoEventoESocial(str, Enum):
     S1210 = "S-1210"  # Pagamentos de Rendimentos do Trabalho
 
 
-class StatusEventoESocial(str, Enum):
+class StatusEventoESocial(StrEnum):
     """Status do evento e-Social."""
+
     PENDENTE = "pendente"
     ENVIADO = "enviado"
     PROCESSANDO = "processando"
@@ -86,10 +92,12 @@ class StatusEventoESocial(str, Enum):
 # MODELS
 # =============================================================================
 
+
 class DocumentoFiscal(Base):
     """
     Documento fiscal (RPA, NFS-e, etc) emitido para diaristas.
     """
+
     __tablename__ = "documentos_fiscais_diaristas"
 
     id = Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4)
@@ -100,8 +108,12 @@ class DocumentoFiscal(Base):
     status = Column(SQLEnum(StatusDocumentoFiscal), nullable=False, default=StatusDocumentoFiscal.RASCUNHO)
 
     # Relacionamentos
-    diarist_id = Column(PG_UUID(as_uuid=True), ForeignKey("diaristas.id", ondelete="CASCADE"), nullable=False, index=True)
-    payment_id = Column(PG_UUID(as_uuid=True), ForeignKey("diarist_payments.id", ondelete="SET NULL"), nullable=True, index=True)
+    diarist_id = Column(
+        PG_UUID(as_uuid=True), ForeignKey("diaristas.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    payment_id = Column(
+        PG_UUID(as_uuid=True), ForeignKey("diarist_payments.id", ondelete="SET NULL"), nullable=True, index=True
+    )
 
     # Período e datas
     competencia = Column(String(7), nullable=False)  # YYYY-MM
@@ -165,9 +177,9 @@ class DocumentoFiscal(Base):
 
     # Índices
     __table_args__ = (
-        Index('ix_doc_fiscal_competencia', 'competencia'),
-        Index('ix_doc_fiscal_prestador_cpf', 'prestador_cpf'),
-        Index('ix_doc_fiscal_status', 'status'),
+        Index("ix_doc_fiscal_competencia", "competencia"),
+        Index("ix_doc_fiscal_prestador_cpf", "prestador_cpf"),
+        Index("ix_doc_fiscal_status", "status"),
     )
 
     def __repr__(self):
@@ -176,12 +188,7 @@ class DocumentoFiscal(Base):
     @property
     def total_retencoes(self) -> Decimal:
         """Retorna total de retenções."""
-        return (
-            self.valor_inss +
-            self.valor_iss +
-            self.valor_irrf +
-            self.valor_outras_retencoes
-        )
+        return self.valor_inss + self.valor_iss + self.valor_irrf + self.valor_outras_retencoes
 
     def calcular_liquido(self):
         """Recalcula valor líquido."""
@@ -192,12 +199,18 @@ class RetencaoFiscal(Base):
     """
     Retenção fiscal detalhada de um documento.
     """
+
     __tablename__ = "retencoes_fiscais_diaristas"
 
     id = Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4)
 
     # Relacionamento
-    documento_id = Column(PG_UUID(as_uuid=True), ForeignKey("documentos_fiscais_diaristas.id", ondelete="CASCADE"), nullable=False, index=True)
+    documento_id = Column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("documentos_fiscais_diaristas.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
 
     # Tipo e valores
     tipo = Column(SQLEnum(TipoRetencao), nullable=False)
@@ -226,6 +239,7 @@ class EventoESocial(Base):
     """
     Eventos e-Social relacionados a trabalhadores autônomos.
     """
+
     __tablename__ = "eventos_esocial_diaristas"
 
     id = Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4)
@@ -235,8 +249,12 @@ class EventoESocial(Base):
     status = Column(SQLEnum(StatusEventoESocial), nullable=False, default=StatusEventoESocial.PENDENTE)
 
     # Relacionamentos
-    diarist_id = Column(PG_UUID(as_uuid=True), ForeignKey("diaristas.id", ondelete="CASCADE"), nullable=False, index=True)
-    documento_id = Column(PG_UUID(as_uuid=True), ForeignKey("documentos_fiscais_diaristas.id", ondelete="SET NULL"), nullable=True)
+    diarist_id = Column(
+        PG_UUID(as_uuid=True), ForeignKey("diaristas.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    documento_id = Column(
+        PG_UUID(as_uuid=True), ForeignKey("documentos_fiscais_diaristas.id", ondelete="SET NULL"), nullable=True
+    )
 
     # Dados do evento
     competencia = Column(String(7), nullable=False)  # YYYY-MM
@@ -266,9 +284,9 @@ class EventoESocial(Base):
 
     # Índices
     __table_args__ = (
-        Index('ix_evento_esocial_competencia', 'competencia'),
-        Index('ix_evento_esocial_tipo', 'tipo_evento'),
-        Index('ix_evento_esocial_status', 'status'),
+        Index("ix_evento_esocial_competencia", "competencia"),
+        Index("ix_evento_esocial_tipo", "tipo_evento"),
+        Index("ix_evento_esocial_status", "status"),
     )
 
     def __repr__(self):
@@ -280,6 +298,7 @@ class TabelaINSS(Base):
     Tabela de alíquotas do INSS para contribuintes individuais.
     Atualizada anualmente.
     """
+
     __tablename__ = "tabela_inss"
 
     id = Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4)
@@ -317,6 +336,7 @@ class TabelaIRRF(Base):
     Tabela de alíquotas do IRRF.
     Atualizada anualmente.
     """
+
     __tablename__ = "tabela_irrf"
 
     id = Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4)

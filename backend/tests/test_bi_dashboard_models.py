@@ -1,44 +1,45 @@
 """Testes unitarios para models de BI Dashboard - Sprint 30."""
 
-import pytest
 from datetime import datetime, timedelta
 from decimal import Decimal
 from uuid import uuid4
 
+import pytest
+
+from modules.financial.bi_dashboard.models.analytics_cache import (
+    AnalyticsCache,
+    CacheStatus,
+    CacheType,
+)
 from modules.financial.bi_dashboard.models.dashboard_config import (
-    FinancialDashboard,
-    DashboardType,
-    DashboardStatus,
     DashboardLayout,
+    DashboardStatus,
+    DashboardType,
+    FinancialDashboard,
     RefreshInterval,
 )
 from modules.financial.bi_dashboard.models.dashboard_widget import (
-    FinancialWidget,
-    WidgetType,
-    WidgetSize,
     ChartType,
     DataSource,
+    FinancialWidget,
+    WidgetSize,
+    WidgetType,
 )
 from modules.financial.bi_dashboard.models.kpi_definition import (
+    AlertLevel,
     FinancialKPI,
     KPICategory,
     KPIFrequency,
     KPIStatus,
     KPITrend,
-    AlertLevel,
 )
 from modules.financial.bi_dashboard.models.scheduled_report import (
-    ScheduledReport,
-    ReportType,
+    DeliveryMethod,
     ReportFormat,
     ReportFrequency,
     ReportStatus,
-    DeliveryMethod,
-)
-from modules.financial.bi_dashboard.models.analytics_cache import (
-    AnalyticsCache,
-    CacheStatus,
-    CacheType,
+    ReportType,
+    ScheduledReport,
 )
 
 
@@ -397,9 +398,7 @@ class TestScheduledReport:
             metodo_entrega=DeliveryMethod.EMAIL,
         )
         next_exec = report.calculate_next_execution()
-        expected = datetime.utcnow().replace(
-            hour=6, minute=0, second=0, microsecond=0
-        ) + timedelta(days=1)
+        expected = datetime.utcnow().replace(hour=6, minute=0, second=0, microsecond=0) + timedelta(days=1)
         assert next_exec.date() == expected.date()
 
     def test_report_calculate_next_execution_weekly(self):

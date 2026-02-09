@@ -8,10 +8,10 @@ CRUD e operações de banco de dados para:
 - Relatórios SLA
 """
 
+import builtins
 import uuid
 from datetime import date, datetime
 from decimal import Decimal
-from typing import List, Optional, Tuple
 
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -96,12 +96,8 @@ class ContractRepository:
             clauses=data.clauses,
             signature_required=data.signature_required,
             signature_provider=data.signature_provider,
-            commercial_manager_id=(
-                uuid.UUID(data.commercial_manager_id) if data.commercial_manager_id else None
-            ),
-            account_manager_id=(
-                uuid.UUID(data.account_manager_id) if data.account_manager_id else None
-            ),
+            commercial_manager_id=(uuid.UUID(data.commercial_manager_id) if data.commercial_manager_id else None),
+            account_manager_id=(uuid.UUID(data.account_manager_id) if data.account_manager_id else None),
             created_by=uuid.UUID(created_by_id),
         )
 
@@ -115,7 +111,7 @@ class ContractRepository:
 
         return contract
 
-    async def get_by_id(self, contract_id: str) -> Optional[Contract]:
+    async def get_by_id(self, contract_id: str) -> Contract | None:
         """Busca contrato por ID com itens."""
         result = await self.db.execute(
             select(Contract)
@@ -132,7 +128,7 @@ class ContractRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_by_number(self, contract_number: str) -> Optional[Contract]:
+    async def get_by_number(self, contract_number: str) -> Contract | None:
         """Busca contrato pelo número."""
         result = await self.db.execute(
             select(Contract)
@@ -148,10 +144,10 @@ class ContractRepository:
 
     async def list(  # pylint: disable=too-many-branches
         self,
-        filters: Optional[ContractFilter] = None,
+        filters: ContractFilter | None = None,
         page: int = 1,
         page_size: int = 20,
-    ) -> Tuple[list[Contract], int]:
+    ) -> tuple[list[Contract], int]:
         """Lista contratos com filtros e paginação."""
         query = select(Contract).where(Contract.is_active.is_(True))
 
@@ -163,13 +159,9 @@ class ContractRepository:
             if filters.client_id:
                 query = query.where(Contract.client_id == uuid.UUID(filters.client_id))
             if filters.commercial_manager_id:
-                query = query.where(
-                    Contract.commercial_manager_id == uuid.UUID(filters.commercial_manager_id)
-                )
+                query = query.where(Contract.commercial_manager_id == uuid.UUID(filters.commercial_manager_id))
             if filters.account_manager_id:
-                query = query.where(
-                    Contract.account_manager_id == uuid.UUID(filters.account_manager_id)
-                )
+                query = query.where(Contract.account_manager_id == uuid.UUID(filters.account_manager_id))
             if filters.has_sla is not None:
                 query = query.where(Contract.has_sla == filters.has_sla)
             if filters.min_value is not None:
@@ -212,7 +204,7 @@ class ContractRepository:
         self,
         contract_id: str,
         data: ContractUpdate,
-    ) -> Optional[Contract]:
+    ) -> Contract | None:
         """Atualiza um contrato."""
         contract = await self.get_by_id(contract_id)
 
@@ -257,8 +249,8 @@ class ContractRepository:
         self,
         contract_id: str,
         new_status: ContractStatus,
-        user_id: Optional[str] = None,  # pylint: disable=unused-argument
-    ) -> Optional[Contract]:
+        user_id: str | None = None,  # pylint: disable=unused-argument
+    ) -> Contract | None:
         """Atualiza status do contrato."""
         contract = await self.get_by_id(contract_id)
 
@@ -314,8 +306,8 @@ class ContractRepository:
 
     async def get_stats(  # pylint: disable=too-many-locals
         self,
-        client_id: Optional[str] = None,
-        commercial_manager_id: Optional[str] = None,
+        client_id: str | None = None,
+        commercial_manager_id: str | None = None,
     ) -> ContractStats:
         """Calcula estatísticas de contratos."""
         base_query = select(Contract).where(Contract.is_active.is_(True))
@@ -323,18 +315,14 @@ class ContractRepository:
         if client_id:
             base_query = base_query.where(Contract.client_id == uuid.UUID(client_id))
         if commercial_manager_id:
-            base_query = base_query.where(
-                Contract.commercial_manager_id == uuid.UUID(commercial_manager_id)
-            )
+            base_query = base_query.where(Contract.commercial_manager_id == uuid.UUID(commercial_manager_id))
 
         result = await self.db.execute(base_query)
         contracts = list(result.scalars().all())
 
         total = len(contracts)
         active = len([c for c in contracts if c.status == ContractStatus.ACTIVE])
-        total_revenue = sum(
-            c.monthly_value for c in contracts if c.status == ContractStatus.ACTIVE
-        )
+        total_revenue = sum(c.monthly_value for c in contracts if c.status == ContractStatus.ACTIVE)
         avg_value = total_revenue / active if active > 0 else Decimal("0")
         expiring = len([c for c in contracts if c.is_expiring_soon])
         needs_adj = len([c for c in contracts if c.needs_adjustment])
@@ -368,7 +356,7 @@ class ContractRepository:
         self,
         contract_id: str,
         data: ContractItemCreate,
-    ) -> Optional[ContractItem]:
+    ) -> ContractItem | None:
         """Adiciona item ao contrato."""
         contract = await self.get_by_id(contract_id)
 
@@ -405,7 +393,7 @@ class ContractRepository:
         contract_id: str,
         item_id: str,
         data: ContractItemUpdate,
-    ) -> Optional[ContractItem]:
+    ) -> ContractItem | None:
         """Atualiza item do contrato."""
         contract = await self.get_by_id(contract_id)
 
@@ -483,7 +471,7 @@ class ContractRepository:
         contract_id: str,
         data: ContractAddendumCreate,
         created_by_id: str,
-    ) -> Optional[ContractAddendum]:
+    ) -> ContractAddendum | None:
         """Cria aditivo do contrato."""
         contract = await self.get_by_id(contract_id)
 
@@ -518,7 +506,7 @@ class ContractRepository:
         self,
         addendum_id: str,
         signature_document_id: str,
-    ) -> Optional[ContractAddendum]:
+    ) -> ContractAddendum | None:
         """Assina aditivo e aplica alterações."""
         result = await self.db.execute(
             select(ContractAddendum)
@@ -555,7 +543,7 @@ class ContractRepository:
 
         return addendum
 
-    async def list_addendums(self, contract_id: str) -> List[ContractAddendum]:
+    async def list_addendums(self, contract_id: str) -> builtins.list[ContractAddendum]:
         """Lista aditivos do contrato."""
         result = await self.db.execute(
             select(ContractAddendum)
@@ -589,7 +577,7 @@ class ContractRepository:
 
         return template
 
-    async def get_template_by_id(self, template_id: str) -> Optional[ContractTemplate]:
+    async def get_template_by_id(self, template_id: str) -> ContractTemplate | None:
         """Busca template por ID."""
         result = await self.db.execute(
             select(ContractTemplate).where(
@@ -603,9 +591,9 @@ class ContractRepository:
 
     async def list_templates(
         self,
-        service_type: Optional[str] = None,
+        service_type: str | None = None,
         approved_only: bool = False,
-    ) -> List[ContractTemplate]:
+    ) -> builtins.list[ContractTemplate]:
         """Lista templates disponíveis."""
         query = select(ContractTemplate).where(ContractTemplate.is_active.is_(True))
 
@@ -623,7 +611,7 @@ class ContractRepository:
         self,
         template_id: str,
         data: ContractTemplateUpdate,
-    ) -> Optional[ContractTemplate]:
+    ) -> ContractTemplate | None:
         """Atualiza template."""
         template = await self.get_template_by_id(template_id)
 
@@ -652,7 +640,7 @@ class ContractRepository:
         self,
         template_id: str,
         approved_by_id: str,
-    ) -> Optional[ContractTemplate]:
+    ) -> ContractTemplate | None:
         """Aprova template juridicamente."""
         template = await self.get_template_by_id(template_id)
 
@@ -689,7 +677,7 @@ class ContractRepository:
         contract_id: str,
         data: ContractSLAReportCreate,
         generated_by_id: str,
-    ) -> Optional[ContractSLAReport]:
+    ) -> ContractSLAReport | None:
         """Cria relatório de SLA mensal."""
         contract = await self.get_by_id(contract_id)
 
@@ -735,7 +723,7 @@ class ContractRepository:
         report_id: str,
         approved_by_id: str,
         disputed: bool = False,
-    ) -> Optional[ContractSLAReport]:
+    ) -> ContractSLAReport | None:
         """Aprova ou disputa relatório de SLA."""
         result = await self.db.execute(
             select(ContractSLAReport).where(
@@ -762,8 +750,8 @@ class ContractRepository:
     async def list_sla_reports(
         self,
         contract_id: str,
-        year: Optional[int] = None,
-    ) -> List[ContractSLAReport]:
+        year: int | None = None,
+    ) -> builtins.list[ContractSLAReport]:
         """Lista relatórios de SLA do contrato."""
         query = select(ContractSLAReport).where(
             and_(
@@ -791,9 +779,7 @@ class ContractRepository:
         pattern = f"CONT-{year}-%"
 
         result = await self.db.execute(
-            select(func.count())
-            .select_from(Contract)
-            .where(Contract.contract_number.like(pattern))
+            select(func.count()).select_from(Contract).where(Contract.contract_number.like(pattern))
         )
         count = result.scalar() or 0
         return count + 1

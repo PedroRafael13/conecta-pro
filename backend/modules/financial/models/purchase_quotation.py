@@ -3,11 +3,20 @@
 import uuid
 from datetime import datetime
 from decimal import Decimal
-from enum import Enum
-from typing import TYPE_CHECKING, List, Optional
+from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
-    Boolean, Column, Date, DateTime, ForeignKey, Index, Integer, Numeric, String, Text,
+    Boolean,
+    Column,
+    Date,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    Numeric,
+    String,
+    Text,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
@@ -19,7 +28,7 @@ if TYPE_CHECKING:
     from modules.financial.models.purchase_requisition import PurchaseRequisition
 
 
-class QuotationStatus(str, Enum):
+class QuotationStatus(StrEnum):
     """Status da cotação."""
 
     SOLICITADA = "solicitada"
@@ -34,7 +43,7 @@ class QuotationStatus(str, Enum):
     CANCELADA = "cancelada"
 
 
-class PaymentCondition(str, Enum):
+class PaymentCondition(StrEnum):
     """Condição de pagamento."""
 
     A_VISTA = "a_vista"
@@ -50,7 +59,7 @@ class PaymentCondition(str, Enum):
     ENTRADA_SALDO = "entrada_saldo"
 
 
-class DeliveryType(str, Enum):
+class DeliveryType(StrEnum):
     """Tipo de entrega."""
 
     CIF = "cif"  # Frete incluso
@@ -100,9 +109,7 @@ class PurchaseQuotation(Base):
     expected_delivery_date = Column(Date, nullable=True)  # Prazo de entrega prometido
 
     # Condições comerciais
-    payment_condition = Column(
-        String(20), nullable=True, default=PaymentCondition.DIAS_30.value
-    )
+    payment_condition = Column(String(20), nullable=True, default=PaymentCondition.DIAS_30.value)
     payment_installments = Column(Integer, nullable=True)  # Número de parcelas
     delivery_type = Column(String(20), nullable=True, default=DeliveryType.CIF.value)
     delivery_days = Column(Integer, nullable=True)  # Prazo em dias úteis
@@ -159,17 +166,13 @@ class PurchaseQuotation(Base):
     ativo = Column(Boolean, default=True, nullable=False)
 
     # Relacionamentos
-    requisition: "PurchaseRequisition" = relationship(
-        "PurchaseRequisition", back_populates="quotations"
-    )
-    items: List["PurchaseQuotationItem"] = relationship(
+    requisition: "PurchaseRequisition" = relationship("PurchaseRequisition", back_populates="quotations")
+    items: list["PurchaseQuotationItem"] = relationship(
         "PurchaseQuotationItem",
         back_populates="quotation",
         cascade="all, delete-orphan",
     )
-    orders: List["PurchaseOrder"] = relationship(
-        "PurchaseOrder", back_populates="quotation"
-    )
+    orders: list["PurchaseOrder"] = relationship("PurchaseOrder", back_populates="quotation")
 
     __table_args__ = (
         Index("ix_purchase_quotations_number", "number"),
@@ -207,14 +210,10 @@ class PurchaseQuotation(Base):
     @property
     def total_with_taxes(self) -> Decimal:
         """Total incluindo impostos."""
-        return (
-            self.total
-            + (self.ipi_amount or Decimal("0"))
-            + (self.icms_amount or Decimal("0"))
-        )
+        return self.total + (self.ipi_amount or Decimal("0")) + (self.icms_amount or Decimal("0"))
 
     @property
-    def days_until_expiry(self) -> Optional[int]:
+    def days_until_expiry(self) -> int | None:
         """Dias até expirar."""
         if self.validity_date:
             delta = self.validity_date - datetime.utcnow().date()
@@ -246,9 +245,7 @@ class PurchaseQuotation(Base):
         self.rejected_at = datetime.utcnow()
         self.rejected_by = rejector_id
 
-    def select(
-        self, selector_id: uuid.UUID, justification: Optional[str] = None
-    ) -> None:
+    def select(self, selector_id: uuid.UUID, justification: str | None = None) -> None:
         """Seleciona como vencedora."""
         self.status = QuotationStatus.SELECIONADA.value
         self.selected_at = datetime.utcnow()
@@ -347,9 +344,7 @@ class PurchaseQuotationItem(Base):
     )
 
     # Produto
-    product_id = Column(
-        UUID(as_uuid=True), ForeignKey("products.id"), nullable=True, index=True
-    )
+    product_id = Column(UUID(as_uuid=True), ForeignKey("products.id"), nullable=True, index=True)
 
     # Identificação
     item_number = Column(Integer, nullable=False)
@@ -391,9 +386,7 @@ class PurchaseQuotationItem(Base):
     ativo = Column(Boolean, default=True, nullable=False)
 
     # Relacionamentos
-    quotation: "PurchaseQuotation" = relationship(
-        "PurchaseQuotation", back_populates="items"
-    )
+    quotation: "PurchaseQuotation" = relationship("PurchaseQuotation", back_populates="items")
 
     __table_args__ = (
         Index("ix_purchase_quotation_items_quotation", "quotation_id"),
@@ -431,13 +424,9 @@ class PurchaseQuotationItem(Base):
             "supplier_code": self.supplier_code,
             "unit_of_measure": self.unit_of_measure,
             "quantity_requested": float(self.quantity_requested),
-            "quantity_offered": (
-                float(self.quantity_offered) if self.quantity_offered else None
-            ),
+            "quantity_offered": (float(self.quantity_offered) if self.quantity_offered else None),
             "unit_price": float(self.unit_price) if self.unit_price else None,
-            "discount_percentage": (
-                float(self.discount_percentage) if self.discount_percentage else 0
-            ),
+            "discount_percentage": (float(self.discount_percentage) if self.discount_percentage else 0),
             "total": float(self.total) if self.total else None,
             "delivery_days": self.delivery_days,
             "meets_specs": self.meets_specs,

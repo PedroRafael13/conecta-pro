@@ -4,31 +4,58 @@ Testes de API para o módulo de Auditoria e Compliance.
 Sprint 33: Auditoria e Compliance
 """
 
-import pytest
-from httpx import AsyncClient
-from unittest.mock import patch, MagicMock, AsyncMock
 from datetime import datetime, timedelta
+from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
+import pytest
+from httpx import AsyncClient
+
 from modules.audit.models import (
-    AuditLog, AuditAction, AuditCategory, AuditSeverity, AuditResult,
-    ComplianceRule, ComplianceFramework, RuleCategory, RuleSeverity, RuleStatus,
-    ComplianceCheck, CheckType, CheckStatus, CheckResult,
-    DataRetention, DataCategory, RetentionPeriod, RetentionAction, RetentionStatus,
-    AccessHistory, AccessType, AccessResult, DeviceType, RiskLevel
+    AccessHistory,
+    AccessResult,
+    AccessType,
+    AuditAction,
+    AuditCategory,
+    AuditLog,
+    AuditResult,
+    AuditSeverity,
+    CheckResult,
+    CheckStatus,
+    CheckType,
+    ComplianceCheck,
+    ComplianceFramework,
+    ComplianceRule,
+    DataCategory,
+    DataRetention,
+    DeviceType,
+    RetentionAction,
+    RetentionPeriod,
+    RetentionStatus,
+    RiskLevel,
+    RuleCategory,
+    RuleSeverity,
+    RuleStatus,
 )
 from modules.audit.schemas import (
-    AuditLogResponse, AuditLogList, AuditLogStats,
-    ComplianceRuleResponse, ComplianceRuleList,
-    ComplianceCheckResponse, ComplianceCheckList,
-    DataRetentionResponse, DataRetentionList,
-    AccessHistoryResponse, AccessHistoryList, AccessHistoryStats
+    AccessHistoryList,
+    AccessHistoryResponse,
+    AccessHistoryStats,
+    AuditLogList,
+    AuditLogResponse,
+    AuditLogStats,
+    ComplianceCheckList,
+    ComplianceCheckResponse,
+    ComplianceRuleList,
+    ComplianceRuleResponse,
+    DataRetentionList,
+    DataRetentionResponse,
 )
-
 
 # ========================
 # Fixtures
 # ========================
+
 
 @pytest.fixture
 def mock_audit_service():
@@ -52,7 +79,7 @@ def sample_audit_log():
         result=AuditResult.SUCCESS,
         ip_address="192.168.1.100",
         user_agent="Mozilla/5.0",
-        created_at=datetime.utcnow()
+        created_at=datetime.utcnow(),
     )
 
 
@@ -69,7 +96,7 @@ def sample_compliance_rule():
         category=RuleCategory.DATA_PROTECTION,
         severity=RuleSeverity.HIGH,
         status=RuleStatus.ACTIVE,
-        created_at=datetime.utcnow()
+        created_at=datetime.utcnow(),
     )
 
 
@@ -85,7 +112,7 @@ def sample_compliance_check():
         status=CheckStatus.COMPLETED,
         result=CheckResult.COMPLIANT,
         compliance_score=95.0,
-        created_at=datetime.utcnow()
+        created_at=datetime.utcnow(),
     )
 
 
@@ -101,7 +128,7 @@ def sample_data_retention():
         retention_period=RetentionPeriod.YEARS_5,
         retention_action=RetentionAction.ARCHIVE,
         status=RetentionStatus.ACTIVE,
-        created_at=datetime.utcnow()
+        created_at=datetime.utcnow(),
     )
 
 
@@ -117,7 +144,7 @@ def sample_access_history():
         ip_address="192.168.1.100",
         device_type=DeviceType.DESKTOP,
         risk_level=RiskLevel.LOW,
-        created_at=datetime.utcnow()
+        created_at=datetime.utcnow(),
     )
 
 
@@ -125,25 +152,20 @@ def sample_access_history():
 # Testes de Audit Logs
 # ========================
 
+
 class TestAuditLogAPI:
     """Testes dos endpoints de logs de auditoria."""
 
     @pytest.mark.asyncio
     async def test_list_audit_logs_success(self, mock_audit_service, sample_audit_log):
         """Testa listagem de logs com sucesso."""
-        mock_audit_service.list_audit_logs = AsyncMock(return_value={
-            "items": [sample_audit_log],
-            "total": 1,
-            "page": 1,
-            "page_size": 20
-        })
+        mock_audit_service.list_audit_logs = AsyncMock(
+            return_value={"items": [sample_audit_log], "total": 1, "page": 1, "page_size": 20}
+        )
 
-        with patch('modules.audit.controllers.audit_controller.get_audit_service',
-                   return_value=mock_audit_service):
+        with patch("modules.audit.controllers.audit_controller.get_audit_service", return_value=mock_audit_service):
             result = await mock_audit_service.list_audit_logs(
-                tenant_id=sample_audit_log.tenant_id,
-                page=1,
-                page_size=20
+                tenant_id=sample_audit_log.tenant_id, page=1, page_size=20
             )
 
         assert result["total"] == 1
@@ -152,25 +174,13 @@ class TestAuditLogAPI:
     @pytest.mark.asyncio
     async def test_list_audit_logs_with_filters(self, mock_audit_service):
         """Testa listagem de logs com filtros."""
-        mock_audit_service.list_audit_logs = AsyncMock(return_value={
-            "items": [],
-            "total": 0,
-            "page": 1,
-            "page_size": 20
-        })
-
-        filters = {
-            "action": AuditAction.CREATE,
-            "category": AuditCategory.DATA,
-            "severity": AuditSeverity.HIGH
-        }
-
-        result = await mock_audit_service.list_audit_logs(
-            tenant_id=uuid4(),
-            filters=filters,
-            page=1,
-            page_size=20
+        mock_audit_service.list_audit_logs = AsyncMock(
+            return_value={"items": [], "total": 0, "page": 1, "page_size": 20}
         )
+
+        filters = {"action": AuditAction.CREATE, "category": AuditCategory.DATA, "severity": AuditSeverity.HIGH}
+
+        result = await mock_audit_service.list_audit_logs(tenant_id=uuid4(), filters=filters, page=1, page_size=20)
 
         assert result["total"] == 0
         mock_audit_service.list_audit_logs.assert_called_once()
@@ -181,8 +191,7 @@ class TestAuditLogAPI:
         mock_audit_service.get_audit_log = AsyncMock(return_value=sample_audit_log)
 
         result = await mock_audit_service.get_audit_log(
-            tenant_id=sample_audit_log.tenant_id,
-            log_id=sample_audit_log.id
+            tenant_id=sample_audit_log.tenant_id, log_id=sample_audit_log.id
         )
 
         assert result.id == sample_audit_log.id
@@ -193,10 +202,7 @@ class TestAuditLogAPI:
         """Testa busca de log inexistente."""
         mock_audit_service.get_audit_log = AsyncMock(return_value=None)
 
-        result = await mock_audit_service.get_audit_log(
-            tenant_id=uuid4(),
-            log_id=uuid4()
-        )
+        result = await mock_audit_service.get_audit_log(tenant_id=uuid4(), log_id=uuid4())
 
         assert result is None
 
@@ -212,8 +218,8 @@ class TestAuditLogAPI:
                 "action": "CREATE",
                 "category": "DATA",
                 "entity_type": "Lead",
-                "description": "Lead criado"
-            }
+                "description": "Lead criado",
+            },
         )
 
         assert result.action == AuditAction.CREATE
@@ -221,17 +227,17 @@ class TestAuditLogAPI:
     @pytest.mark.asyncio
     async def test_get_audit_stats(self, mock_audit_service):
         """Testa obtenção de estatísticas de auditoria."""
-        mock_audit_service.get_audit_stats = AsyncMock(return_value={
-            "total_logs": 1000,
-            "by_action": {"CREATE": 400, "UPDATE": 300, "DELETE": 100, "READ": 200},
-            "by_category": {"DATA": 500, "AUTH": 300, "SYSTEM": 200},
-            "by_severity": {"INFO": 700, "WARNING": 200, "ERROR": 80, "CRITICAL": 20}
-        })
+        mock_audit_service.get_audit_stats = AsyncMock(
+            return_value={
+                "total_logs": 1000,
+                "by_action": {"CREATE": 400, "UPDATE": 300, "DELETE": 100, "READ": 200},
+                "by_category": {"DATA": 500, "AUTH": 300, "SYSTEM": 200},
+                "by_severity": {"INFO": 700, "WARNING": 200, "ERROR": 80, "CRITICAL": 20},
+            }
+        )
 
         result = await mock_audit_service.get_audit_stats(
-            tenant_id=uuid4(),
-            start_date=datetime.utcnow() - timedelta(days=30),
-            end_date=datetime.utcnow()
+            tenant_id=uuid4(), start_date=datetime.utcnow() - timedelta(days=30), end_date=datetime.utcnow()
         )
 
         assert result["total_logs"] == 1000
@@ -251,23 +257,19 @@ class TestAuditLogAPI:
 # Testes de Compliance Rules
 # ========================
 
+
 class TestComplianceRuleAPI:
     """Testes dos endpoints de regras de compliance."""
 
     @pytest.mark.asyncio
     async def test_list_compliance_rules_success(self, mock_audit_service, sample_compliance_rule):
         """Testa listagem de regras com sucesso."""
-        mock_audit_service.list_compliance_rules = AsyncMock(return_value={
-            "items": [sample_compliance_rule],
-            "total": 1,
-            "page": 1,
-            "page_size": 20
-        })
+        mock_audit_service.list_compliance_rules = AsyncMock(
+            return_value={"items": [sample_compliance_rule], "total": 1, "page": 1, "page_size": 20}
+        )
 
         result = await mock_audit_service.list_compliance_rules(
-            tenant_id=sample_compliance_rule.tenant_id,
-            page=1,
-            page_size=20
+            tenant_id=sample_compliance_rule.tenant_id, page=1, page_size=20
         )
 
         assert result["total"] == 1
@@ -285,8 +287,8 @@ class TestComplianceRuleAPI:
                 "name": "Consentimento de Dados",
                 "framework": "LGPD",
                 "category": "DATA_PROTECTION",
-                "severity": "HIGH"
-            }
+                "severity": "HIGH",
+            },
         )
 
         assert result.code == "LGPD-001"
@@ -301,7 +303,7 @@ class TestComplianceRuleAPI:
         result = await mock_audit_service.update_compliance_rule(
             tenant_id=sample_compliance_rule.tenant_id,
             rule_id=sample_compliance_rule.id,
-            data={"name": "Consentimento Atualizado"}
+            data={"name": "Consentimento Atualizado"},
         )
 
         assert result.name == "Consentimento Atualizado"
@@ -328,23 +330,19 @@ class TestComplianceRuleAPI:
 # Testes de Compliance Checks
 # ========================
 
+
 class TestComplianceCheckAPI:
     """Testes dos endpoints de verificações de compliance."""
 
     @pytest.mark.asyncio
     async def test_list_compliance_checks_success(self, mock_audit_service, sample_compliance_check):
         """Testa listagem de verificações."""
-        mock_audit_service.list_compliance_checks = AsyncMock(return_value={
-            "items": [sample_compliance_check],
-            "total": 1,
-            "page": 1,
-            "page_size": 20
-        })
+        mock_audit_service.list_compliance_checks = AsyncMock(
+            return_value={"items": [sample_compliance_check], "total": 1, "page": 1, "page_size": 20}
+        )
 
         result = await mock_audit_service.list_compliance_checks(
-            tenant_id=sample_compliance_check.tenant_id,
-            page=1,
-            page_size=20
+            tenant_id=sample_compliance_check.tenant_id, page=1, page_size=20
         )
 
         assert result["total"] == 1
@@ -357,42 +355,29 @@ class TestComplianceCheckAPI:
 
         result = await mock_audit_service.create_compliance_check(
             tenant_id=sample_compliance_check.tenant_id,
-            data={
-                "rule_id": str(sample_compliance_check.rule_id),
-                "check_type": "AUTOMATED"
-            }
+            data={"rule_id": str(sample_compliance_check.rule_id), "check_type": "AUTOMATED"},
         )
 
         assert result.check_type == CheckType.AUTOMATED
 
     @pytest.mark.asyncio
-    async def test_complete_compliance_check_compliant(
-        self, mock_audit_service, sample_compliance_check
-    ):
+    async def test_complete_compliance_check_compliant(self, mock_audit_service, sample_compliance_check):
         """Testa conclusão de verificação como compliant."""
         sample_compliance_check.status = CheckStatus.IN_PROGRESS
         sample_compliance_check.complete_compliant(95.0, {"test": "passed"})
-        mock_audit_service.update_compliance_check = AsyncMock(
-            return_value=sample_compliance_check
-        )
+        mock_audit_service.update_compliance_check = AsyncMock(return_value=sample_compliance_check)
 
         assert sample_compliance_check.result == CheckResult.COMPLIANT
         assert sample_compliance_check.compliance_score == 95.0
 
     @pytest.mark.asyncio
-    async def test_complete_compliance_check_non_compliant(
-        self, mock_audit_service, sample_compliance_check
-    ):
+    async def test_complete_compliance_check_non_compliant(self, mock_audit_service, sample_compliance_check):
         """Testa conclusão de verificação como não compliant."""
         sample_compliance_check.status = CheckStatus.IN_PROGRESS
         sample_compliance_check.complete_non_compliant(
-            45.0,
-            ["Violação 1", "Violação 2"],
-            {"recommendation": "Corrigir"}
+            45.0, ["Violação 1", "Violação 2"], {"recommendation": "Corrigir"}
         )
-        mock_audit_service.update_compliance_check = AsyncMock(
-            return_value=sample_compliance_check
-        )
+        mock_audit_service.update_compliance_check = AsyncMock(return_value=sample_compliance_check)
 
         assert sample_compliance_check.result == CheckResult.NON_COMPLIANT
         assert len(sample_compliance_check.violations) == 2
@@ -402,9 +387,7 @@ class TestComplianceCheckAPI:
         """Testa escalonamento de verificação."""
         sample_compliance_check.result = CheckResult.NON_COMPLIANT
         sample_compliance_check.escalate("supervisor", "Múltiplas violações críticas")
-        mock_audit_service.update_compliance_check = AsyncMock(
-            return_value=sample_compliance_check
-        )
+        mock_audit_service.update_compliance_check = AsyncMock(return_value=sample_compliance_check)
 
         assert sample_compliance_check.escalated is True
         assert sample_compliance_check.escalated_to == "supervisor"
@@ -414,38 +397,28 @@ class TestComplianceCheckAPI:
 # Testes de Data Retention
 # ========================
 
+
 class TestDataRetentionAPI:
     """Testes dos endpoints de retenção de dados."""
 
     @pytest.mark.asyncio
-    async def test_list_data_retention_policies_success(
-        self, mock_audit_service, sample_data_retention
-    ):
+    async def test_list_data_retention_policies_success(self, mock_audit_service, sample_data_retention):
         """Testa listagem de políticas."""
-        mock_audit_service.list_data_retention_policies = AsyncMock(return_value={
-            "items": [sample_data_retention],
-            "total": 1,
-            "page": 1,
-            "page_size": 20
-        })
+        mock_audit_service.list_data_retention_policies = AsyncMock(
+            return_value={"items": [sample_data_retention], "total": 1, "page": 1, "page_size": 20}
+        )
 
         result = await mock_audit_service.list_data_retention_policies(
-            tenant_id=sample_data_retention.tenant_id,
-            page=1,
-            page_size=20
+            tenant_id=sample_data_retention.tenant_id, page=1, page_size=20
         )
 
         assert result["total"] == 1
         assert result["items"][0].data_category == DataCategory.CUSTOMER
 
     @pytest.mark.asyncio
-    async def test_create_data_retention_policy_success(
-        self, mock_audit_service, sample_data_retention
-    ):
+    async def test_create_data_retention_policy_success(self, mock_audit_service, sample_data_retention):
         """Testa criação de política."""
-        mock_audit_service.create_data_retention_policy = AsyncMock(
-            return_value=sample_data_retention
-        )
+        mock_audit_service.create_data_retention_policy = AsyncMock(return_value=sample_data_retention)
 
         result = await mock_audit_service.create_data_retention_policy(
             tenant_id=sample_data_retention.tenant_id,
@@ -454,8 +427,8 @@ class TestDataRetentionAPI:
                 "entity_type": "Lead",
                 "data_category": "CUSTOMER",
                 "retention_period": "YEARS_5",
-                "retention_action": "ARCHIVE"
-            }
+                "retention_action": "ARCHIVE",
+            },
         )
 
         assert result.retention_period == RetentionPeriod.YEARS_5
@@ -464,9 +437,7 @@ class TestDataRetentionAPI:
     async def test_enable_legal_hold(self, mock_audit_service, sample_data_retention):
         """Testa ativação de retenção legal."""
         sample_data_retention.enable_legal_hold("Processo judicial", "ADV-001")
-        mock_audit_service.update_data_retention_policy = AsyncMock(
-            return_value=sample_data_retention
-        )
+        mock_audit_service.update_data_retention_policy = AsyncMock(return_value=sample_data_retention)
 
         assert sample_data_retention.legal_hold is True
         assert sample_data_retention.legal_hold_reference == "ADV-001"
@@ -476,9 +447,7 @@ class TestDataRetentionAPI:
         """Testa desativação de retenção legal."""
         sample_data_retention.legal_hold = True
         sample_data_retention.disable_legal_hold()
-        mock_audit_service.update_data_retention_policy = AsyncMock(
-            return_value=sample_data_retention
-        )
+        mock_audit_service.update_data_retention_policy = AsyncMock(return_value=sample_data_retention)
 
         assert sample_data_retention.legal_hold is False
 
@@ -486,9 +455,7 @@ class TestDataRetentionAPI:
     async def test_record_execution(self, mock_audit_service, sample_data_retention):
         """Testa registro de execução da política."""
         sample_data_retention.record_execution(100, True)
-        mock_audit_service.update_data_retention_policy = AsyncMock(
-            return_value=sample_data_retention
-        )
+        mock_audit_service.update_data_retention_policy = AsyncMock(return_value=sample_data_retention)
 
         assert sample_data_retention.last_execution is not None
         assert sample_data_retention.records_affected == 100
@@ -499,25 +466,19 @@ class TestDataRetentionAPI:
 # Testes de Access History
 # ========================
 
+
 class TestAccessHistoryAPI:
     """Testes dos endpoints de histórico de acesso."""
 
     @pytest.mark.asyncio
-    async def test_list_access_history_success(
-        self, mock_audit_service, sample_access_history
-    ):
+    async def test_list_access_history_success(self, mock_audit_service, sample_access_history):
         """Testa listagem de histórico."""
-        mock_audit_service.list_access_history = AsyncMock(return_value={
-            "items": [sample_access_history],
-            "total": 1,
-            "page": 1,
-            "page_size": 20
-        })
+        mock_audit_service.list_access_history = AsyncMock(
+            return_value={"items": [sample_access_history], "total": 1, "page": 1, "page_size": 20}
+        )
 
         result = await mock_audit_service.list_access_history(
-            tenant_id=sample_access_history.tenant_id,
-            page=1,
-            page_size=20
+            tenant_id=sample_access_history.tenant_id, page=1, page_size=20
         )
 
         assert result["total"] == 1
@@ -534,8 +495,8 @@ class TestAccessHistoryAPI:
                 "user_id": str(sample_access_history.user_id),
                 "access_type": "LOGIN",
                 "result": "SUCCESS",
-                "ip_address": "192.168.1.100"
-            }
+                "ip_address": "192.168.1.100",
+            },
         )
 
         assert result.access_type == AccessType.LOGIN
@@ -544,19 +505,19 @@ class TestAccessHistoryAPI:
     @pytest.mark.asyncio
     async def test_get_access_stats(self, mock_audit_service):
         """Testa obtenção de estatísticas de acesso."""
-        mock_audit_service.get_access_stats = AsyncMock(return_value={
-            "total_accesses": 5000,
-            "successful_logins": 4800,
-            "failed_logins": 200,
-            "unique_users": 150,
-            "by_device_type": {"DESKTOP": 3000, "MOBILE": 1500, "TABLET": 500},
-            "by_risk_level": {"LOW": 4500, "MEDIUM": 400, "HIGH": 80, "CRITICAL": 20}
-        })
+        mock_audit_service.get_access_stats = AsyncMock(
+            return_value={
+                "total_accesses": 5000,
+                "successful_logins": 4800,
+                "failed_logins": 200,
+                "unique_users": 150,
+                "by_device_type": {"DESKTOP": 3000, "MOBILE": 1500, "TABLET": 500},
+                "by_risk_level": {"LOW": 4500, "MEDIUM": 400, "HIGH": 80, "CRITICAL": 20},
+            }
+        )
 
         result = await mock_audit_service.get_access_stats(
-            tenant_id=uuid4(),
-            start_date=datetime.utcnow() - timedelta(days=30),
-            end_date=datetime.utcnow()
+            tenant_id=uuid4(), start_date=datetime.utcnow() - timedelta(days=30), end_date=datetime.utcnow()
         )
 
         assert result["total_accesses"] == 5000
@@ -596,20 +557,23 @@ class TestAccessHistoryAPI:
 # Testes de Dashboard
 # ========================
 
+
 class TestDashboardAPI:
     """Testes dos endpoints de dashboard."""
 
     @pytest.mark.asyncio
     async def test_get_audit_dashboard(self, mock_audit_service):
         """Testa obtenção do dashboard de auditoria."""
-        mock_audit_service.get_audit_dashboard = AsyncMock(return_value={
-            "total_logs": 10000,
-            "logs_today": 500,
-            "security_events": 50,
-            "requires_review": 10,
-            "recent_critical": [],
-            "trend": {"day_1": 480, "day_2": 520}
-        })
+        mock_audit_service.get_audit_dashboard = AsyncMock(
+            return_value={
+                "total_logs": 10000,
+                "logs_today": 500,
+                "security_events": 50,
+                "requires_review": 10,
+                "recent_critical": [],
+                "trend": {"day_1": 480, "day_2": 520},
+            }
+        )
 
         result = await mock_audit_service.get_audit_dashboard(tenant_id=uuid4())
 
@@ -619,17 +583,16 @@ class TestDashboardAPI:
     @pytest.mark.asyncio
     async def test_get_compliance_overview(self, mock_audit_service):
         """Testa obtenção do overview de compliance."""
-        mock_audit_service.get_compliance_overview = AsyncMock(return_value={
-            "total_rules": 50,
-            "active_rules": 45,
-            "compliance_rate": 92.5,
-            "pending_checks": 5,
-            "non_compliant_items": 3,
-            "by_framework": {
-                "LGPD": {"total": 20, "compliant": 18},
-                "GDPR": {"total": 15, "compliant": 14}
+        mock_audit_service.get_compliance_overview = AsyncMock(
+            return_value={
+                "total_rules": 50,
+                "active_rules": 45,
+                "compliance_rate": 92.5,
+                "pending_checks": 5,
+                "non_compliant_items": 3,
+                "by_framework": {"LGPD": {"total": 20, "compliant": 18}, "GDPR": {"total": 15, "compliant": 14}},
             }
-        })
+        )
 
         result = await mock_audit_service.get_compliance_overview(tenant_id=uuid4())
 
@@ -639,14 +602,16 @@ class TestDashboardAPI:
     @pytest.mark.asyncio
     async def test_get_security_overview(self, mock_audit_service):
         """Testa obtenção do overview de segurança."""
-        mock_audit_service.get_security_overview = AsyncMock(return_value={
-            "total_accesses": 5000,
-            "failed_logins": 200,
-            "anomalies_detected": 15,
-            "high_risk_accesses": 8,
-            "alerts_triggered": 5,
-            "active_sessions": 120
-        })
+        mock_audit_service.get_security_overview = AsyncMock(
+            return_value={
+                "total_accesses": 5000,
+                "failed_logins": 200,
+                "anomalies_detected": 15,
+                "high_risk_accesses": 8,
+                "alerts_triggered": 5,
+                "active_sessions": 120,
+            }
+        )
 
         result = await mock_audit_service.get_security_overview(tenant_id=uuid4())
 
@@ -658,46 +623,34 @@ class TestDashboardAPI:
 # Testes de Validação
 # ========================
 
+
 class TestValidation:
     """Testes de validação de entrada."""
 
     @pytest.mark.asyncio
     async def test_invalid_audit_action(self, mock_audit_service):
         """Testa validação de ação inválida."""
-        mock_audit_service.create_audit_log = AsyncMock(
-            side_effect=ValueError("Invalid action")
-        )
+        mock_audit_service.create_audit_log = AsyncMock(side_effect=ValueError("Invalid action"))
 
         with pytest.raises(ValueError):
-            await mock_audit_service.create_audit_log(
-                tenant_id=uuid4(),
-                data={"action": "INVALID_ACTION"}
-            )
+            await mock_audit_service.create_audit_log(tenant_id=uuid4(), data={"action": "INVALID_ACTION"})
 
     @pytest.mark.asyncio
     async def test_invalid_compliance_framework(self, mock_audit_service):
         """Testa validação de framework inválido."""
-        mock_audit_service.create_compliance_rule = AsyncMock(
-            side_effect=ValueError("Invalid framework")
-        )
+        mock_audit_service.create_compliance_rule = AsyncMock(side_effect=ValueError("Invalid framework"))
 
         with pytest.raises(ValueError):
-            await mock_audit_service.create_compliance_rule(
-                tenant_id=uuid4(),
-                data={"framework": "INVALID_FRAMEWORK"}
-            )
+            await mock_audit_service.create_compliance_rule(tenant_id=uuid4(), data={"framework": "INVALID_FRAMEWORK"})
 
     @pytest.mark.asyncio
     async def test_invalid_retention_period(self, mock_audit_service):
         """Testa validação de período de retenção inválido."""
-        mock_audit_service.create_data_retention_policy = AsyncMock(
-            side_effect=ValueError("Invalid retention period")
-        )
+        mock_audit_service.create_data_retention_policy = AsyncMock(side_effect=ValueError("Invalid retention period"))
 
         with pytest.raises(ValueError):
             await mock_audit_service.create_data_retention_policy(
-                tenant_id=uuid4(),
-                data={"retention_period": "INVALID_PERIOD"}
+                tenant_id=uuid4(), data={"retention_period": "INVALID_PERIOD"}
             )
 
 
@@ -705,25 +658,24 @@ class TestValidation:
 # Testes de Paginação
 # ========================
 
+
 class TestPagination:
     """Testes de paginação."""
 
     @pytest.mark.asyncio
     async def test_pagination_first_page(self, mock_audit_service):
         """Testa primeira página."""
-        mock_audit_service.list_audit_logs = AsyncMock(return_value={
-            "items": [MagicMock() for _ in range(20)],
-            "total": 100,
-            "page": 1,
-            "page_size": 20,
-            "total_pages": 5
-        })
-
-        result = await mock_audit_service.list_audit_logs(
-            tenant_id=uuid4(),
-            page=1,
-            page_size=20
+        mock_audit_service.list_audit_logs = AsyncMock(
+            return_value={
+                "items": [MagicMock() for _ in range(20)],
+                "total": 100,
+                "page": 1,
+                "page_size": 20,
+                "total_pages": 5,
+            }
         )
+
+        result = await mock_audit_service.list_audit_logs(tenant_id=uuid4(), page=1, page_size=20)
 
         assert len(result["items"]) == 20
         assert result["total_pages"] == 5
@@ -731,19 +683,17 @@ class TestPagination:
     @pytest.mark.asyncio
     async def test_pagination_last_page(self, mock_audit_service):
         """Testa última página."""
-        mock_audit_service.list_audit_logs = AsyncMock(return_value={
-            "items": [MagicMock() for _ in range(5)],
-            "total": 45,
-            "page": 3,
-            "page_size": 20,
-            "total_pages": 3
-        })
-
-        result = await mock_audit_service.list_audit_logs(
-            tenant_id=uuid4(),
-            page=3,
-            page_size=20
+        mock_audit_service.list_audit_logs = AsyncMock(
+            return_value={
+                "items": [MagicMock() for _ in range(5)],
+                "total": 45,
+                "page": 3,
+                "page_size": 20,
+                "total_pages": 3,
+            }
         )
+
+        result = await mock_audit_service.list_audit_logs(tenant_id=uuid4(), page=3, page_size=20)
 
         assert len(result["items"]) == 5
         assert result["page"] == 3
@@ -753,22 +703,17 @@ class TestPagination:
 # Testes de Erro
 # ========================
 
+
 class TestErrorHandling:
     """Testes de tratamento de erros."""
 
     @pytest.mark.asyncio
     async def test_database_error(self, mock_audit_service):
         """Testa erro de banco de dados."""
-        mock_audit_service.list_audit_logs = AsyncMock(
-            side_effect=Exception("Database connection failed")
-        )
+        mock_audit_service.list_audit_logs = AsyncMock(side_effect=Exception("Database connection failed"))
 
         with pytest.raises(Exception) as exc_info:
-            await mock_audit_service.list_audit_logs(
-                tenant_id=uuid4(),
-                page=1,
-                page_size=20
-            )
+            await mock_audit_service.list_audit_logs(tenant_id=uuid4(), page=1, page_size=20)
 
         assert "Database connection failed" in str(exc_info.value)
 
@@ -777,22 +722,14 @@ class TestErrorHandling:
         """Testa erro de recurso não encontrado."""
         mock_audit_service.get_audit_log = AsyncMock(return_value=None)
 
-        result = await mock_audit_service.get_audit_log(
-            tenant_id=uuid4(),
-            log_id=uuid4()
-        )
+        result = await mock_audit_service.get_audit_log(tenant_id=uuid4(), log_id=uuid4())
 
         assert result is None
 
     @pytest.mark.asyncio
     async def test_permission_denied(self, mock_audit_service):
         """Testa erro de permissão negada."""
-        mock_audit_service.delete_audit_log = AsyncMock(
-            side_effect=PermissionError("Permission denied")
-        )
+        mock_audit_service.delete_audit_log = AsyncMock(side_effect=PermissionError("Permission denied"))
 
         with pytest.raises(PermissionError):
-            await mock_audit_service.delete_audit_log(
-                tenant_id=uuid4(),
-                log_id=uuid4()
-            )
+            await mock_audit_service.delete_audit_log(tenant_id=uuid4(), log_id=uuid4())

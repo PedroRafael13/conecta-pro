@@ -5,10 +5,11 @@ Responsavel pela classificacao automatica de tipos de documentos
 usando regras, keywords e machine learning.
 """
 
+import contextlib
 import logging
 import re
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from ..models.document import DocumentType
 from ..models.extraction_template import ExtractionTemplate
@@ -23,10 +24,10 @@ class ClassificationResult:
 
     document_type: DocumentType
     confidence: float
-    matched_keywords: List[str] = field(default_factory=list)
-    matched_patterns: List[str] = field(default_factory=list)
-    alternative_types: List[Tuple[DocumentType, float]] = field(default_factory=list)
-    template_id: Optional[str] = None
+    matched_keywords: list[str] = field(default_factory=list)
+    matched_patterns: list[str] = field(default_factory=list)
+    alternative_types: list[tuple[DocumentType, float]] = field(default_factory=list)
+    template_id: str | None = None
 
 
 @dataclass
@@ -34,10 +35,10 @@ class ClassificationRule:
     """Regra de classificacao."""
 
     document_type: DocumentType
-    keywords: List[str] = field(default_factory=list)
-    patterns: List[str] = field(default_factory=list)
-    required_keywords: List[str] = field(default_factory=list)
-    excluded_keywords: List[str] = field(default_factory=list)
+    keywords: list[str] = field(default_factory=list)
+    patterns: list[str] = field(default_factory=list)
+    required_keywords: list[str] = field(default_factory=list)
+    excluded_keywords: list[str] = field(default_factory=list)
     min_keyword_matches: int = 1
     weight: float = 1.0
 
@@ -48,7 +49,7 @@ class ClassifierConfig:
 
     min_confidence: float = 0.5
     use_ml_model: bool = False
-    ml_model_path: Optional[str] = None
+    ml_model_path: str | None = None
     fallback_type: DocumentType = DocumentType.DESCONHECIDO
 
 
@@ -64,7 +65,7 @@ class DocumentClassifier:
     """
 
     # Regras de classificacao por tipo de documento
-    DEFAULT_RULES: List[ClassificationRule] = [
+    DEFAULT_RULES: list[ClassificationRule] = [
         # Boleto
         ClassificationRule(
             document_type=DocumentType.BOLETO,
@@ -418,8 +419,8 @@ class DocumentClassifier:
 
     def __init__(
         self,
-        config: Optional[ClassifierConfig] = None,
-        custom_rules: Optional[List[ClassificationRule]] = None,
+        config: ClassifierConfig | None = None,
+        custom_rules: list[ClassificationRule] | None = None,
     ):
         """
         Inicializa classificador.
@@ -434,7 +435,7 @@ class DocumentClassifier:
             self.rules.extend(custom_rules)
 
         # Compilar padroes
-        self._compiled_patterns: Dict[DocumentType, List[re.Pattern]] = {}
+        self._compiled_patterns: dict[DocumentType, list[re.Pattern]] = {}
         self._compile_patterns()
 
     def _compile_patterns(self) -> None:
@@ -451,7 +452,7 @@ class DocumentClassifier:
     async def classify(
         self,
         ocr_result: OCRResult,
-        templates: Optional[List[ExtractionTemplate]] = None,
+        templates: list[ExtractionTemplate] | None = None,
     ) -> ClassificationResult:
         """
         Classifica documento.
@@ -466,7 +467,7 @@ class DocumentClassifier:
         full_text = ocr_result.get_full_text().lower()
 
         # Calcular scores para cada tipo
-        scores: Dict[DocumentType, Tuple[float, List[str], List[str]]] = {}
+        scores: dict[DocumentType, tuple[float, list[str], list[str]]] = {}
 
         for rule in self.rules:
             score, matched_kw, matched_pat = self._evaluate_rule(rule, full_text)
@@ -477,9 +478,7 @@ class DocumentClassifier:
         # Matching com templates
         template_match = None
         if templates:
-            template_match, template_score = self._match_templates(
-                ocr_result, templates
-            )
+            template_match, template_score = self._match_templates(ocr_result, templates)
             if template_match:
                 doc_type = self._template_to_document_type(template_match.document_type)
                 if doc_type in scores:
@@ -508,11 +507,7 @@ class DocumentClassifier:
         confidence = min(best_score / 10, 1.0)
 
         # Alternativas
-        alternatives = [
-            (doc_type, min(score / 10, 1.0))
-            for doc_type, (score, _, _) in sorted_scores[1:4]
-            if score > 0
-        ]
+        alternatives = [(doc_type, min(score / 10, 1.0)) for doc_type, (score, _, _) in sorted_scores[1:4] if score > 0]
 
         return ClassificationResult(
             document_type=best_type,
@@ -523,9 +518,7 @@ class DocumentClassifier:
             template_id=template_match.id if template_match else None,
         )
 
-    def _evaluate_rule(
-        self, rule: ClassificationRule, text: str
-    ) -> Tuple[float, List[str], List[str]]:
+    def _evaluate_rule(self, rule: ClassificationRule, text: str) -> tuple[float, list[str], list[str]]:
         """Avalia uma regra de classificacao."""
         matched_keywords = []
         matched_patterns = []
@@ -565,8 +558,8 @@ class DocumentClassifier:
     def _match_templates(
         self,
         ocr_result: OCRResult,
-        templates: List[ExtractionTemplate],
-    ) -> Tuple[Optional[ExtractionTemplate], float]:
+        templates: list[ExtractionTemplate],
+    ) -> tuple[ExtractionTemplate | None, float]:
         """Encontra template que melhor corresponde."""
         full_text = ocr_result.get_full_text().lower()
         best_template = None
@@ -632,19 +625,15 @@ class DocumentClassifier:
         # Recompilar padroes
         patterns = []
         for pattern in rule.patterns:
-            try:
+            with contextlib.suppress(re.error):
                 patterns.append(re.compile(pattern, re.IGNORECASE))
-            except re.error:
-                pass
         self._compiled_patterns[rule.document_type] = patterns
 
-    def get_supported_types(self) -> List[DocumentType]:
+    def get_supported_types(self) -> list[DocumentType]:
         """Retorna tipos suportados."""
-        return list(set(rule.document_type for rule in self.rules))
+        return list({rule.document_type for rule in self.rules})
 
-    def explain_classification(
-        self, result: ClassificationResult
-    ) -> Dict[str, Any]:
+    def explain_classification(self, result: ClassificationResult) -> dict[str, Any]:
         """Explica a classificacao realizada."""
         return {
             "document_type": result.document_type.value,
@@ -654,8 +643,5 @@ class DocumentClassifier:
                 "matched_patterns": result.matched_patterns,
                 "template_used": result.template_id is not None,
             },
-            "alternatives": [
-                {"type": t.value, "confidence": f"{c * 100:.1f}%"}
-                for t, c in result.alternative_types
-            ],
+            "alternatives": [{"type": t.value, "confidence": f"{c * 100:.1f}%"} for t, c in result.alternative_types],
         }

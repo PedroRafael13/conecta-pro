@@ -2,21 +2,23 @@
 
 import secrets
 from datetime import datetime, timedelta
-from enum import Enum
-from typing import Optional, TYPE_CHECKING
+from enum import StrEnum
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from sqlalchemy import (
-    String,
     Boolean,
     DateTime,
-    Text,
     ForeignKey,
     Integer,
+    String,
+    Text,
+)
+from sqlalchemy import (
     Enum as SQLEnum,
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB
-from sqlalchemy.orm import relationship, Mapped, mapped_column
+from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from core.database import Base
 
@@ -24,7 +26,7 @@ if TYPE_CHECKING:
     from modules.ged.models.document import Document
 
 
-class SignatureType(str, Enum):
+class SignatureType(StrEnum):
     """Tipos de assinatura."""
 
     SIMPLES = "simples"  # Assinatura simples (nome/email)
@@ -34,7 +36,7 @@ class SignatureType(str, Enum):
     CARIMBO = "carimbo"  # Carimbo de tempo
 
 
-class SignatureStatus(str, Enum):
+class SignatureStatus(StrEnum):
     """Status da assinatura."""
 
     PENDENTE = "pendente"
@@ -45,7 +47,7 @@ class SignatureStatus(str, Enum):
     INVALIDO = "invalido"
 
 
-class SignatureRole(str, Enum):
+class SignatureRole(StrEnum):
     """Papel do signatário."""
 
     PARTE = "parte"  # Parte contratante
@@ -62,36 +64,27 @@ class DocumentSignature(Base):
     __tablename__ = "ged_document_signatures"
 
     # Identificação
-    id: Mapped[str] = mapped_column(
-        UUID(as_uuid=False), primary_key=True, default=lambda: str(uuid4())
-    )
+    id: Mapped[str] = mapped_column(UUID(as_uuid=False), primary_key=True, default=lambda: str(uuid4()))
     document_id: Mapped[str] = mapped_column(
         UUID(as_uuid=False), ForeignKey("ged_documents.id"), nullable=False, index=True
     )
 
     # Signatário
-    signer_id: Mapped[Optional[str]] = mapped_column(
-        UUID(as_uuid=False), nullable=True
-    )
+    signer_id: Mapped[str | None] = mapped_column(UUID(as_uuid=False), nullable=True)
     signer_name: Mapped[str] = mapped_column(String(255), nullable=False)
     signer_email: Mapped[str] = mapped_column(String(255), nullable=False)
-    signer_document: Mapped[Optional[str]] = mapped_column(
-        String(20), nullable=True
-    )  # CPF/CNPJ
-    signer_phone: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    signer_document: Mapped[str | None] = mapped_column(String(20), nullable=True)  # CPF/CNPJ
+    signer_phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
     signer_role: Mapped[SignatureRole] = mapped_column(
-        SQLEnum(SignatureRole, native_enum=False, create_constraint=False),
-        default=SignatureRole.PARTE
+        SQLEnum(SignatureRole, native_enum=False, create_constraint=False), default=SignatureRole.PARTE
     )
 
     # Tipo e Status
     signature_type: Mapped[SignatureType] = mapped_column(
-        SQLEnum(SignatureType, native_enum=False, create_constraint=False),
-        default=SignatureType.ELETRONICA
+        SQLEnum(SignatureType, native_enum=False, create_constraint=False), default=SignatureType.ELETRONICA
     )
     status: Mapped[SignatureStatus] = mapped_column(
-        SQLEnum(SignatureStatus, native_enum=False, create_constraint=False),
-        default=SignatureStatus.PENDENTE
+        SQLEnum(SignatureStatus, native_enum=False, create_constraint=False), default=SignatureStatus.PENDENTE
     )
 
     # Ordem de assinatura
@@ -99,69 +92,57 @@ class DocumentSignature(Base):
     is_sequential: Mapped[bool] = mapped_column(Boolean, default=False)
 
     # Token de assinatura
-    signature_token: Mapped[Optional[str]] = mapped_column(
-        String(100), unique=True, nullable=True
-    )
-    token_expires_at: Mapped[Optional[datetime]] = mapped_column(
-        DateTime, nullable=True
-    )
+    signature_token: Mapped[str | None] = mapped_column(String(100), unique=True, nullable=True)
+    token_expires_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     # Dados da assinatura
-    signature_data: Mapped[Optional[str]] = mapped_column(
-        Text, nullable=True
-    )  # Base64 da assinatura visual
-    signature_hash: Mapped[Optional[str]] = mapped_column(
-        String(64), nullable=True
-    )  # SHA-256 do documento assinado
-    certificate_data: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    signature_data: Mapped[str | None] = mapped_column(Text, nullable=True)  # Base64 da assinatura visual
+    signature_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)  # SHA-256 do documento assinado
+    certificate_data: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     # {"issuer": "", "subject": "", "serial": "", "valid_from": "", "valid_until": ""}
 
     # Localização da assinatura
-    page_number: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    position_x: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    position_y: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    width: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    height: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    page_number: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    position_x: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    position_y: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    width: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    height: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     # Rastreabilidade
-    ip_address: Mapped[Optional[str]] = mapped_column(String(45), nullable=True)
-    user_agent: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
-    geolocation: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    ip_address: Mapped[str | None] = mapped_column(String(45), nullable=True)
+    user_agent: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    geolocation: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     # {"latitude": 0.0, "longitude": 0.0, "city": "", "country": ""}
 
     # Verificação
-    verification_code: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    verification_code: Mapped[str | None] = mapped_column(String(20), nullable=True)
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
-    verified_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    verification_method: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    verified_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    verification_method: Mapped[str | None] = mapped_column(String(50), nullable=True)
 
     # Recusa
-    refusal_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    refusal_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Notificações
     notification_sent: Mapped[bool] = mapped_column(Boolean, default=False)
-    notification_sent_at: Mapped[Optional[datetime]] = mapped_column(
-        DateTime, nullable=True
-    )
+    notification_sent_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     reminder_count: Mapped[int] = mapped_column(Integer, default=0)
-    last_reminder_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    last_reminder_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     # Prazo
-    deadline: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    deadline: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
-    signed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    refused_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    signed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    refused_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     # Auditoria
     created_by: Mapped[str] = mapped_column(UUID(as_uuid=False), nullable=False)
 
     # Metadados
-    extra_metadata: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    extra_metadata: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 
     # Relacionamentos
     document: Mapped["Document"] = relationship("Document", back_populates="signatures")
@@ -200,7 +181,7 @@ class DocumentSignature(Base):
         return datetime.utcnow() < self.token_expires_at
 
     @property
-    def days_until_deadline(self) -> Optional[int]:
+    def days_until_deadline(self) -> int | None:
         """Retorna dias até o prazo."""
         if not self.deadline:
             return None

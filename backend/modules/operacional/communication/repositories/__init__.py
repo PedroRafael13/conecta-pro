@@ -7,9 +7,9 @@ Quality Score Target: 99+/100
 """
 
 from .communication_repository import (
+    AlertRepository,
     AnnouncementRepository,
     NotificationRepository,
-    AlertRepository,
 )
 
 __all__ = [

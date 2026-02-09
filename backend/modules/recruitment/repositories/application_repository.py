@@ -2,9 +2,8 @@
 
 import logging
 from datetime import datetime
-from typing import Optional, List, Tuple
 
-from sqlalchemy import select, func, and_
+from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -15,8 +14,8 @@ from modules.recruitment.models.application import (
 )
 from modules.recruitment.schemas.application import (
     ApplicationCreate,
-    ApplicationUpdate,
     ApplicationFilter,
+    ApplicationUpdate,
 )
 
 logger = logging.getLogger(__name__)
@@ -36,7 +35,7 @@ class ApplicationRepository:
         await self.session.flush()
         return application
 
-    async def get_by_id(self, application_id: str) -> Optional[Application]:
+    async def get_by_id(self, application_id: str) -> Application | None:
         """Busca candidatura por ID."""
         result = await self.session.execute(
             select(Application).where(
@@ -48,9 +47,7 @@ class ApplicationRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_by_id_with_relations(
-        self, application_id: str
-    ) -> Optional[Application]:
+    async def get_by_id_with_relations(self, application_id: str) -> Application | None:
         """Busca candidatura por ID com relacionamentos."""
         result = await self.session.execute(
             select(Application)
@@ -68,9 +65,7 @@ class ApplicationRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_by_candidate_and_position(
-        self, candidate_id: str, position_id: str
-    ) -> Optional[Application]:
+    async def get_by_candidate_and_position(self, candidate_id: str, position_id: str) -> Application | None:
         """Busca candidatura por candidato e vaga."""
         result = await self.session.execute(
             select(Application).where(
@@ -83,9 +78,7 @@ class ApplicationRepository:
         )
         return result.scalar_one_or_none()
 
-    async def update(
-        self, application_id: str, data: ApplicationUpdate
-    ) -> Optional[Application]:
+    async def update(self, application_id: str, data: ApplicationUpdate) -> Application | None:
         """Atualiza uma candidatura."""
         application = await self.get_by_id(application_id)
         if not application:
@@ -111,20 +104,18 @@ class ApplicationRepository:
 
     async def list_with_filters(  # pylint: disable=too-many-branches
         self,
-        filters: Optional[ApplicationFilter] = None,
+        filters: ApplicationFilter | None = None,
         skip: int = 0,
         limit: int = 20,
         order_by: str = "applied_at",
         order_desc: bool = True,
-    ) -> Tuple[List[Application], int]:
+    ) -> tuple[list[Application], int]:
         """Lista candidaturas com filtros e paginação."""
         query = select(Application).where(Application.deleted_at.is_(None))
 
         if filters:
             if filters.job_position_id:
-                query = query.where(
-                    Application.job_position_id == filters.job_position_id
-                )
+                query = query.where(Application.job_position_id == filters.job_position_id)
             if filters.candidate_id:
                 query = query.where(Application.candidate_id == filters.candidate_id)
             if filters.status:
@@ -138,9 +129,7 @@ class ApplicationRepository:
             if filters.max_score:
                 query = query.where(Application.final_score <= filters.max_score)
             if filters.assigned_recruiter_id:
-                query = query.where(
-                    Application.assigned_recruiter_id == filters.assigned_recruiter_id
-                )
+                query = query.where(Application.assigned_recruiter_id == filters.assigned_recruiter_id)
             if filters.applied_after:
                 query = query.where(Application.applied_at >= filters.applied_after)
             if filters.applied_before:
@@ -172,7 +161,7 @@ class ApplicationRepository:
         status: ApplicationStatus = None,
         skip: int = 0,
         limit: int = 50,
-    ) -> List[Application]:
+    ) -> list[Application]:
         """Retorna candidaturas de uma vaga."""
         query = select(Application).where(
             and_(
@@ -193,9 +182,7 @@ class ApplicationRepository:
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    async def get_by_candidate(
-        self, candidate_id: str, skip: int = 0, limit: int = 50
-    ) -> List[Application]:
+    async def get_by_candidate(self, candidate_id: str, skip: int = 0, limit: int = 50) -> list[Application]:
         """Retorna candidaturas de um candidato."""
         query = (
             select(Application)
@@ -213,9 +200,7 @@ class ApplicationRepository:
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    async def get_active(
-        self, position_id: str = None, skip: int = 0, limit: int = 50
-    ) -> List[Application]:
+    async def get_active(self, position_id: str = None, skip: int = 0, limit: int = 50) -> list[Application]:
         """Retorna candidaturas ativas."""
         inactive_statuses = [
             ApplicationStatus.TRIAGEM_REPROVADO,
@@ -240,9 +225,7 @@ class ApplicationRepository:
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    async def get_shortlisted(
-        self, position_id: str, skip: int = 0, limit: int = 50
-    ) -> List[Application]:
+    async def get_shortlisted(self, position_id: str, skip: int = 0, limit: int = 50) -> list[Application]:
         """Retorna candidaturas na lista restrita."""
         query = (
             select(Application)
@@ -261,9 +244,7 @@ class ApplicationRepository:
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    async def get_favorites(
-        self, position_id: str = None, skip: int = 0, limit: int = 50
-    ) -> List[Application]:
+    async def get_favorites(self, position_id: str = None, skip: int = 0, limit: int = 50) -> list[Application]:
         """Retorna candidaturas favoritas."""
         query = select(Application).where(
             and_(
@@ -285,7 +266,7 @@ class ApplicationRepository:
         application_id: str,
         new_status: ApplicationStatus,
         notes: str = None,
-    ) -> Optional[Application]:
+    ) -> Application | None:
         """Avança candidatura de estágio."""
         application = await self.get_by_id(application_id)
         if application:
@@ -299,7 +280,7 @@ class ApplicationRepository:
         reason: RejectionReason,
         details: str = None,
         rejected_by: str = None,
-    ) -> Optional[Application]:
+    ) -> Application | None:
         """Rejeita candidatura."""
         application = await self.get_by_id(application_id)
         if application:
@@ -307,9 +288,7 @@ class ApplicationRepository:
             await self.session.flush()
         return application
 
-    async def hire(
-        self, application_id: str, start_date: datetime = None
-    ) -> Optional[Application]:
+    async def hire(self, application_id: str, start_date: datetime = None) -> Application | None:
         """Contrata candidato."""
         application = await self.get_by_id(application_id)
         if application:
@@ -412,8 +391,6 @@ class ApplicationRepository:
             stats["avg_time_to_hire_days"] = round(total_hire_days / hire_count, 1)
 
         if applications:
-            stats["conversion_rate"] = round(
-                (stats["hired"] / len(applications)) * 100, 1
-            )
+            stats["conversion_rate"] = round((stats["hired"] / len(applications)) * 100, 1)
 
         return stats

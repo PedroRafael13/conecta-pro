@@ -5,26 +5,28 @@ Validador de qualidade 99+/100 - Enterprise Grade
 """
 
 import logging
-from typing import Dict, List, Optional, Any
+from dataclasses import dataclass, field
 from datetime import datetime
 from decimal import Decimal
-from enum import Enum
-from dataclasses import dataclass, field
+from enum import StrEnum
+from typing import Any
 from uuid import UUID, uuid4
 
 logger = logging.getLogger(__name__)
 
 
-class IssueSeverity(str, Enum):
+class IssueSeverity(StrEnum):
     """Severidade de issues de qualidade."""
+
     INFO = "info"
     WARNING = "warning"
     ERROR = "error"
     CRITICAL = "critical"
 
 
-class QualityMetricType(str, Enum):
+class QualityMetricType(StrEnum):
     """Tipos de metricas de qualidade."""
+
     CODE_COVERAGE = "code_coverage"
     TYPE_SAFETY = "type_safety"
     ERROR_HANDLING = "error_handling"
@@ -38,10 +40,11 @@ class QualityMetricType(str, Enum):
 @dataclass
 class QualityMetric:
     """Metrica de qualidade individual."""
+
     name: str
     score: Decimal
     weight: Decimal = field(default=Decimal("1"))
-    details: Optional[Dict[str, Any]] = None
+    details: dict[str, Any] | None = None
     threshold: Decimal = field(default=Decimal("95"))
 
     def __post_init__(self):
@@ -60,26 +63,28 @@ class QualityMetric:
 @dataclass
 class QualityIssue:
     """Issue de qualidade detectada."""
+
     code: str
     message: str
     severity: IssueSeverity
-    file_path: Optional[str] = None
-    line_number: Optional[int] = None
-    suggestion: Optional[str] = None
+    file_path: str | None = None
+    line_number: int | None = None
+    suggestion: str | None = None
 
 
 @dataclass
 class QualityReport:
     """Relatorio completo de qualidade."""
+
     component: str
     phase: str
     overall_score: Decimal
     passed: bool
-    metrics: List[QualityMetric]
-    issues: List[QualityIssue]
+    metrics: list[QualityMetric]
+    issues: list[QualityIssue]
     report_id: UUID = field(default_factory=uuid4)
     validated_at: datetime = field(default_factory=datetime.utcnow)
-    recommendations: List[str] = field(default_factory=list)
+    recommendations: list[str] = field(default_factory=list)
 
     def __post_init__(self):
         if not isinstance(self.overall_score, Decimal):
@@ -116,7 +121,7 @@ class QualityValidator:
     }
 
     def __init__(self):
-        self._cache: Dict[str, QualityReport] = {}
+        self._cache: dict[str, QualityReport] = {}
 
     async def validate(self, component: str, phase: str) -> QualityReport:
         """Executa validacao de qualidade."""
@@ -136,12 +141,14 @@ class QualityValidator:
 
         metrics = []
         for name, score in metric_scores.items():
-            metrics.append(QualityMetric(
-                name=name,
-                score=score,
-                weight=self.WEIGHTS.get(name, Decimal("1")),
-                threshold=self.THRESHOLDS.get(name, Decimal("95"))
-            ))
+            metrics.append(
+                QualityMetric(
+                    name=name,
+                    score=score,
+                    weight=self.WEIGHTS.get(name, Decimal("1")),
+                    threshold=self.THRESHOLDS.get(name, Decimal("95")),
+                )
+            )
 
         # Calcular score ponderado
         total_weighted = sum(m.score * m.weight for m in metrics)
@@ -161,13 +168,13 @@ class QualityValidator:
             passed=passed,
             metrics=metrics,
             issues=issues,
-            recommendations=recommendations
+            recommendations=recommendations,
         )
 
         logger.info(f"Quality validation: {overall_score}/100 ({'PASSED' if passed else 'FAILED'})")
         return report
 
-    def get_summary(self, report: QualityReport) -> Dict[str, Any]:
+    def get_summary(self, report: QualityReport) -> dict[str, Any]:
         """Retorna resumo do relatorio."""
         return {
             "report_id": str(report.report_id),
@@ -178,5 +185,5 @@ class QualityValidator:
             "issues_count": len(report.issues),
             "critical_issues": report.critical_issues_count,
             "metrics": {m.name: float(m.score) for m in report.metrics},
-            "recommendations": report.recommendations
+            "recommendations": report.recommendations,
         }

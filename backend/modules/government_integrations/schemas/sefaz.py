@@ -2,7 +2,7 @@
 Schemas para integrações com SEFAZ (NFe/NFCe).
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -22,15 +22,15 @@ class NFERequest(BaseModel):
         description="Tipo do documento",
         pattern=r"^(nfe|nfce)$",
     )
-    destinatario: Dict[str, Any] = Field(..., description="Dados do destinatario")
-    produtos: List[Dict[str, Any]] = Field(
+    destinatario: dict[str, Any] = Field(..., description="Dados do destinatario")
+    produtos: list[dict[str, Any]] = Field(
         ...,
         min_length=1,
         max_length=990,
         description="Lista de produtos",
     )
-    pagamento: Dict[str, Any] = Field(..., description="Dados de pagamento")
-    observacoes: Optional[str] = Field(
+    pagamento: dict[str, Any] = Field(..., description="Dados de pagamento")
+    observacoes: str | None = Field(
         default=None,
         max_length=5000,
         description="Observacoes",

@@ -5,10 +5,10 @@ Implementa padrao Repository com operacoes CRUD async usando SQLAlchemy 2.0.
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 from uuid import uuid4
 
-from sqlalchemy import and_, func, or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logging import logger
@@ -39,7 +39,7 @@ class ClimateSurveyRepository:
         """
         self.db = db
 
-    async def create(self, data: SurveyCreate, created_by: Optional[str] = None) -> ClimateSurvey:
+    async def create(self, data: SurveyCreate, created_by: str | None = None) -> ClimateSurvey:
         """
         Cria uma nova pesquisa de clima.
 
@@ -73,7 +73,7 @@ class ClimateSurveyRepository:
         logger.info(f"ClimateSurvey criada: {survey.id} - {survey.nome}")
         return survey
 
-    async def get_by_id(self, survey_id: str) -> Optional[ClimateSurvey]:
+    async def get_by_id(self, survey_id: str) -> ClimateSurvey | None:
         """
         Busca pesquisa por ID.
 
@@ -83,12 +83,10 @@ class ClimateSurveyRepository:
         Returns:
             ClimateSurvey ou None
         """
-        result = await self.db.execute(
-            select(ClimateSurvey).where(ClimateSurvey.id == survey_id)
-        )
+        result = await self.db.execute(select(ClimateSurvey).where(ClimateSurvey.id == survey_id))
         return result.scalar_one_or_none()
 
-    async def get_active(self, empresa_id: Optional[str] = None) -> Optional[ClimateSurvey]:
+    async def get_active(self, empresa_id: str | None = None) -> ClimateSurvey | None:
         """
         Busca pesquisa ativa.
 
@@ -118,11 +116,11 @@ class ClimateSurveyRepository:
 
     async def list(
         self,
-        empresa_id: Optional[str] = None,
-        ativo: Optional[bool] = None,
+        empresa_id: str | None = None,
+        ativo: bool | None = None,
         page: int = 1,
         page_size: int = 20,
-    ) -> Tuple[List[ClimateSurvey], int]:
+    ) -> tuple[list[ClimateSurvey], int]:
         """
         Lista pesquisas com filtros e paginacao.
 
@@ -169,7 +167,7 @@ class ClimateSurveyRepository:
 
         return surveys, total
 
-    async def update(self, survey_id: str, data: SurveyUpdate) -> Optional[ClimateSurvey]:
+    async def update(self, survey_id: str, data: SurveyUpdate) -> ClimateSurvey | None:
         """
         Atualiza uma pesquisa.
 
@@ -261,17 +259,17 @@ class ClimateResponseRepository:
         self,
         survey_id: str,
         funcionario_hash: str,
-        respostas: Dict[str, int],
+        respostas: dict[str, int],
         score_calculado: float,
-        scores_por_dimensao: Dict[str, float],
+        scores_por_dimensao: dict[str, float],
         tempo_resposta_segundos: int,
-        posto_id: Optional[str] = None,
-        equipe_id: Optional[str] = None,
-        empresa_id: Optional[str] = None,
-        cliente_id: Optional[str] = None,
-        comentarios: Optional[Dict[str, str]] = None,
-        ip_hash: Optional[str] = None,
-        user_agent_hash: Optional[str] = None,
+        posto_id: str | None = None,
+        equipe_id: str | None = None,
+        empresa_id: str | None = None,
+        cliente_id: str | None = None,
+        comentarios: dict[str, str] | None = None,
+        ip_hash: str | None = None,
+        user_agent_hash: str | None = None,
     ) -> ClimateResponse:
         """
         Cria uma nova resposta de pesquisa.
@@ -324,7 +322,7 @@ class ClimateResponseRepository:
         logger.debug(f"ClimateResponse criada: {response.id}")
         return response
 
-    async def get_by_id(self, response_id: str) -> Optional[ClimateResponse]:
+    async def get_by_id(self, response_id: str) -> ClimateResponse | None:
         """
         Busca resposta por ID.
 
@@ -334,9 +332,7 @@ class ClimateResponseRepository:
         Returns:
             ClimateResponse ou None
         """
-        result = await self.db.execute(
-            select(ClimateResponse).where(ClimateResponse.id == response_id)
-        )
+        result = await self.db.execute(select(ClimateResponse).where(ClimateResponse.id == response_id))
         return result.scalar_one_or_none()
 
     async def check_already_responded(
@@ -371,7 +367,7 @@ class ClimateResponseRepository:
         survey_id: str,
         periodo_inicio: str,
         periodo_fim: str,
-    ) -> List[ClimateResponse]:
+    ) -> list[ClimateResponse]:
         """
         Busca respostas por periodo.
 
@@ -399,7 +395,7 @@ class ClimateResponseRepository:
         entidade_tipo: EntityType,
         entidade_id: str,
         periodo: str,
-    ) -> List[ClimateResponse]:
+    ) -> list[ClimateResponse]:
         """
         Busca respostas por entidade e periodo.
 
@@ -428,7 +424,7 @@ class ClimateResponseRepository:
     async def count_by_periodo(
         self,
         periodo: str,
-        empresa_id: Optional[str] = None,
+        empresa_id: str | None = None,
     ) -> int:
         """
         Conta respostas por periodo.
@@ -440,9 +436,7 @@ class ClimateResponseRepository:
         Returns:
             Total de respostas
         """
-        query = select(func.count(ClimateResponse.id)).where(
-            ClimateResponse.periodo == periodo
-        )
+        query = select(func.count(ClimateResponse.id)).where(ClimateResponse.periodo == periodo)
 
         if empresa_id:
             query = query.where(ClimateResponse.empresa_id == empresa_id)
@@ -453,7 +447,7 @@ class ClimateResponseRepository:
     async def get_score_medio_periodo(
         self,
         periodo: str,
-        empresa_id: Optional[str] = None,
+        empresa_id: str | None = None,
     ) -> float:
         """
         Calcula score medio do periodo.
@@ -465,9 +459,7 @@ class ClimateResponseRepository:
         Returns:
             Score medio
         """
-        query = select(func.avg(ClimateResponse.score_calculado)).where(
-            ClimateResponse.periodo == periodo
-        )
+        query = select(func.avg(ClimateResponse.score_calculado)).where(ClimateResponse.periodo == periodo)
 
         if empresa_id:
             query = query.where(ClimateResponse.empresa_id == empresa_id)
@@ -481,7 +473,7 @@ class ClimateResponseRepository:
         filters: ClimateFilter,
         page: int = 1,
         page_size: int = 50,
-    ) -> Tuple[List[ClimateResponse], int]:
+    ) -> tuple[list[ClimateResponse], int]:
         """
         Lista respostas com filtros.
 
@@ -557,19 +549,19 @@ class ClimateScoreRepository:
         entidade_id: str,
         periodo: str,
         score: float,
-        scores_dimensao: Dict[str, float],
+        scores_dimensao: dict[str, float],
         total_respostas: int,
         taxa_participacao: float = 0.0,
         tendencia: float = 0.0,
-        fatores_positivos: Optional[List[str]] = None,
-        fatores_negativos: Optional[List[str]] = None,
+        fatores_positivos: list[str] | None = None,
+        fatores_negativos: list[str] | None = None,
         enps_score: float = 0.0,
         enps_promotores: int = 0,
         enps_neutros: int = 0,
         enps_detratores: int = 0,
-        entidade_nome: Optional[str] = None,
-        empresa_id: Optional[str] = None,
-        alertas: Optional[List[Dict[str, Any]]] = None,
+        entidade_nome: str | None = None,
+        empresa_id: str | None = None,
+        alertas: list[dict[str, Any]] | None = None,
     ) -> ClimateScore:
         """
         Cria ou atualiza um score de clima.
@@ -597,9 +589,7 @@ class ClimateScoreRepository:
             ClimateScore criado ou atualizado
         """
         # Verificar se ja existe
-        existing = await self.get_by_entidade_periodo(
-            entidade_tipo, entidade_id, periodo
-        )
+        existing = await self.get_by_entidade_periodo(entidade_tipo, entidade_id, periodo)
 
         if existing:
             # Atualizar
@@ -654,7 +644,7 @@ class ClimateScoreRepository:
         logger.debug(f"ClimateScore criado: {climate_score.id}")
         return climate_score
 
-    async def get_by_id(self, score_id: str) -> Optional[ClimateScore]:
+    async def get_by_id(self, score_id: str) -> ClimateScore | None:
         """
         Busca score por ID.
 
@@ -664,9 +654,7 @@ class ClimateScoreRepository:
         Returns:
             ClimateScore ou None
         """
-        result = await self.db.execute(
-            select(ClimateScore).where(ClimateScore.id == score_id)
-        )
+        result = await self.db.execute(select(ClimateScore).where(ClimateScore.id == score_id))
         return result.scalar_one_or_none()
 
     async def get_by_entidade_periodo(
@@ -674,7 +662,7 @@ class ClimateScoreRepository:
         entidade_tipo: EntityType,
         entidade_id: str,
         periodo: str,
-    ) -> Optional[ClimateScore]:
+    ) -> ClimateScore | None:
         """
         Busca score por entidade e periodo.
 
@@ -700,7 +688,7 @@ class ClimateScoreRepository:
         entidade_tipo: EntityType,
         entidade_id: str,
         periodos: int = 6,
-    ) -> List[ClimateScore]:
+    ) -> list[ClimateScore]:
         """
         Busca historico de scores de uma entidade.
 
@@ -727,9 +715,9 @@ class ClimateScoreRepository:
     async def get_scores_by_periodo(
         self,
         periodo: str,
-        entidade_tipo: Optional[EntityType] = None,
-        empresa_id: Optional[str] = None,
-    ) -> List[ClimateScore]:
+        entidade_tipo: EntityType | None = None,
+        empresa_id: str | None = None,
+    ) -> list[ClimateScore]:
         """
         Busca scores de um periodo.
 
@@ -759,8 +747,8 @@ class ClimateScoreRepository:
         periodo: str,
         entidade_tipo: EntityType,
         limit: int = 5,
-        empresa_id: Optional[str] = None,
-    ) -> List[ClimateScore]:
+        empresa_id: str | None = None,
+    ) -> list[ClimateScore]:
         """
         Busca melhores scores do periodo.
 
@@ -791,8 +779,8 @@ class ClimateScoreRepository:
         periodo: str,
         entidade_tipo: EntityType,
         limit: int = 5,
-        empresa_id: Optional[str] = None,
-    ) -> List[ClimateScore]:
+        empresa_id: str | None = None,
+    ) -> list[ClimateScore]:
         """
         Busca piores scores do periodo.
 
@@ -824,7 +812,7 @@ class ClimateScoreRepository:
         entidade_tipo: EntityType,
         entidade_id: str,
         periodo: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Calcula score agregado de uma entidade.
 
@@ -838,9 +826,7 @@ class ClimateScoreRepository:
         """
         # Buscar respostas
         response_repo = ClimateResponseRepository(self.db)
-        respostas = await response_repo.get_responses_by_entidade(
-            entidade_tipo, entidade_id, periodo
-        )
+        respostas = await response_repo.get_responses_by_entidade(entidade_tipo, entidade_id, periodo)
 
         if not respostas:
             return {
@@ -854,16 +840,14 @@ class ClimateScoreRepository:
         score_medio = sum(scores) / len(scores)
 
         # Agregar scores por dimensao
-        dimensoes: Dict[str, List[float]] = {}
+        dimensoes: dict[str, list[float]] = {}
         for resposta in respostas:
             for dim, score in resposta.scores_por_dimensao.items():
                 if dim not in dimensoes:
                     dimensoes[dim] = []
                 dimensoes[dim].append(score)
 
-        scores_dimensao = {
-            dim: round(sum(vals) / len(vals), 2) for dim, vals in dimensoes.items()
-        }
+        scores_dimensao = {dim: round(sum(vals) / len(vals), 2) for dim, vals in dimensoes.items()}
 
         return {
             "score": round(score_medio, 2),
@@ -893,11 +877,11 @@ class ClimateAlertRepository:
         mensagem: str,
         severidade: AlertSeverity = AlertSeverity.MEDIA,
         score_atual: float = 0.0,
-        score_anterior: Optional[float] = None,
+        score_anterior: float | None = None,
         variacao: float = 0.0,
-        dimensao: Optional[str] = None,
-        entidade_nome: Optional[str] = None,
-        empresa_id: Optional[str] = None,
+        dimensao: str | None = None,
+        entidade_nome: str | None = None,
+        empresa_id: str | None = None,
     ) -> ClimateAlert:
         """
         Cria um novo alerta de clima.
@@ -943,7 +927,7 @@ class ClimateAlertRepository:
         logger.warning(f"ClimateAlert criado: {alert.tipo_alerta} - {alert.mensagem}")
         return alert
 
-    async def get_by_id(self, alert_id: str) -> Optional[ClimateAlert]:
+    async def get_by_id(self, alert_id: str) -> ClimateAlert | None:
         """
         Busca alerta por ID.
 
@@ -953,17 +937,15 @@ class ClimateAlertRepository:
         Returns:
             ClimateAlert ou None
         """
-        result = await self.db.execute(
-            select(ClimateAlert).where(ClimateAlert.id == alert_id)
-        )
+        result = await self.db.execute(select(ClimateAlert).where(ClimateAlert.id == alert_id))
         return result.scalar_one_or_none()
 
     async def list_active(
         self,
-        empresa_id: Optional[str] = None,
-        severidade: Optional[AlertSeverity] = None,
+        empresa_id: str | None = None,
+        severidade: AlertSeverity | None = None,
         limit: int = 50,
-    ) -> List[ClimateAlert]:
+    ) -> list[ClimateAlert]:
         """
         Lista alertas ativos.
 
@@ -993,8 +975,8 @@ class ClimateAlertRepository:
 
     async def count_by_severidade(
         self,
-        empresa_id: Optional[str] = None,
-    ) -> Dict[str, int]:
+        empresa_id: str | None = None,
+    ) -> dict[str, int]:
         """
         Conta alertas ativos por severidade.
 
@@ -1024,8 +1006,8 @@ class ClimateAlertRepository:
         self,
         alert_id: str,
         resolvido_por: str,
-        notas_resolucao: Optional[str] = None,
-    ) -> Optional[ClimateAlert]:
+        notas_resolucao: str | None = None,
+    ) -> ClimateAlert | None:
         """
         Resolve um alerta.
 

@@ -2,20 +2,18 @@
 Repository para Ordem de Servico.
 """
 
-from datetime import datetime, date, timedelta
-from typing import Optional, List, Tuple
+from datetime import date, datetime, timedelta
 from uuid import UUID
 
-from sqlalchemy import func, or_, and_, select, update
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
-from modules.campo.models.ordem_servico import OrdemServico, TipoOS, StatusOS, PrioridadeOS
+from modules.campo.models.ordem_servico import OrdemServico, StatusOS
 from modules.campo.schemas.ordem_servico import (
     OrdemServicoCreate,
     OrdemServicoUpdate,
-    OSFiltro,
     OSDashboardStats,
+    OSFiltro,
 )
 
 
@@ -94,18 +92,14 @@ class OrdemServicoRepository:
         await self.db.refresh(os)
         return os
 
-    async def get_by_id(self, os_id: UUID) -> Optional[OrdemServico]:
+    async def get_by_id(self, os_id: UUID) -> OrdemServico | None:
         """Busca OS por ID."""
-        result = await self.db.execute(
-            select(OrdemServico).where(OrdemServico.id == os_id)
-        )
+        result = await self.db.execute(select(OrdemServico).where(OrdemServico.id == os_id))
         return result.scalar_one_or_none()
 
-    async def get_by_numero(self, numero: str) -> Optional[OrdemServico]:
+    async def get_by_numero(self, numero: str) -> OrdemServico | None:
         """Busca OS por numero."""
-        result = await self.db.execute(
-            select(OrdemServico).where(OrdemServico.numero == numero)
-        )
+        result = await self.db.execute(select(OrdemServico).where(OrdemServico.numero == numero))
         return result.scalar_one_or_none()
 
     async def update(self, os: OrdemServico, data: OrdemServicoUpdate, updated_by: UUID = None) -> OrdemServico:
@@ -114,9 +108,9 @@ class OrdemServicoRepository:
 
         for field, value in update_data.items():
             if field == "materiais_previstos" and value:
-                value = [m.model_dump() if hasattr(m, 'model_dump') else m for m in value]
+                value = [m.model_dump() if hasattr(m, "model_dump") else m for m in value]
             if field == "materiais_utilizados" and value:
-                value = [m.model_dump() if hasattr(m, 'model_dump') else m for m in value]
+                value = [m.model_dump() if hasattr(m, "model_dump") else m for m in value]
             setattr(os, field, value)
 
         os.updated_by = updated_by
@@ -143,14 +137,14 @@ class OrdemServicoRepository:
 
     async def list_all(
         self,
-        filtro: Optional[OSFiltro] = None,
+        filtro: OSFiltro | None = None,
         skip: int = 0,
         limit: int = 50,
         order_by: str = "created_at",
         order_desc: bool = True,
-    ) -> Tuple[List[OrdemServico], int]:
+    ) -> tuple[list[OrdemServico], int]:
         """Lista OS com filtros e paginacao."""
-        query = select(OrdemServico).where(OrdemServico.is_active == True)
+        query = select(OrdemServico).where(OrdemServico.is_active)
 
         if filtro:
             if filtro.tipo:
@@ -180,7 +174,7 @@ class OrdemServicoRepository:
                     and_(
                         OrdemServico.sla_vencimento.isnot(None),
                         OrdemServico.sla_vencimento < datetime.utcnow(),
-                        OrdemServico.status.notin_([StatusOS.CONCLUIDA, StatusOS.CANCELADA])
+                        OrdemServico.status.notin_([StatusOS.CONCLUIDA, StatusOS.CANCELADA]),
                     )
                 )
             if filtro.avaliado is True:
@@ -217,16 +211,11 @@ class OrdemServicoRepository:
         result = await self.db.execute(query)
         return result.scalars().all(), total
 
-    async def list_by_cliente(self, cliente_id: UUID, limit: int = 50) -> List[OrdemServico]:
+    async def list_by_cliente(self, cliente_id: UUID, limit: int = 50) -> list[OrdemServico]:
         """Lista OS de um cliente."""
         result = await self.db.execute(
             select(OrdemServico)
-            .where(
-                and_(
-                    OrdemServico.cliente_id == cliente_id,
-                    OrdemServico.is_active == True
-                )
-            )
+            .where(and_(OrdemServico.cliente_id == cliente_id, OrdemServico.is_active))
             .order_by(OrdemServico.created_at.desc())
             .limit(limit)
         )
@@ -235,26 +224,26 @@ class OrdemServicoRepository:
     async def list_by_tecnico(
         self,
         tecnico_id: UUID,
-        data: Optional[date] = None,
+        data: date | None = None,
         apenas_abertas: bool = False,
-    ) -> List[OrdemServico]:
+    ) -> list[OrdemServico]:
         """Lista OS de um tecnico."""
-        query = select(OrdemServico).where(
-            and_(
-                OrdemServico.tecnico_id == tecnico_id,
-                OrdemServico.is_active == True
-            )
-        )
+        query = select(OrdemServico).where(and_(OrdemServico.tecnico_id == tecnico_id, OrdemServico.is_active))
 
         if data:
             query = query.where(OrdemServico.data_agendada == data)
 
         if apenas_abertas:
             query = query.where(
-                OrdemServico.status.in_([
-                    StatusOS.ABERTA, StatusOS.AGENDADA, StatusOS.EM_DESLOCAMENTO,
-                    StatusOS.EM_ANDAMENTO, StatusOS.PAUSADA
-                ])
+                OrdemServico.status.in_(
+                    [
+                        StatusOS.ABERTA,
+                        StatusOS.AGENDADA,
+                        StatusOS.EM_DESLOCAMENTO,
+                        StatusOS.EM_ANDAMENTO,
+                        StatusOS.PAUSADA,
+                    ]
+                )
             )
 
         query = query.order_by(OrdemServico.horario_inicio_previsto.asc().nullslast())
@@ -262,7 +251,7 @@ class OrdemServicoRepository:
         result = await self.db.execute(query)
         return result.scalars().all()
 
-    async def list_atrasadas(self, limit: int = 100) -> List[OrdemServico]:
+    async def list_atrasadas(self, limit: int = 100) -> list[OrdemServico]:
         """Lista OS com SLA vencido."""
         result = await self.db.execute(
             select(OrdemServico)
@@ -270,7 +259,7 @@ class OrdemServicoRepository:
                 and_(
                     OrdemServico.sla_vencimento < datetime.utcnow(),
                     OrdemServico.status.notin_([StatusOS.CONCLUIDA, StatusOS.CANCELADA]),
-                    OrdemServico.is_active == True
+                    OrdemServico.is_active,
                 )
             )
             .order_by(OrdemServico.sla_vencimento.asc())
@@ -284,15 +273,15 @@ class OrdemServicoRepository:
 
     async def get_stats(
         self,
-        cliente_id: Optional[UUID] = None,
-        tecnico_id: Optional[UUID] = None,
+        cliente_id: UUID | None = None,
+        tecnico_id: UUID | None = None,
         periodo_dias: int = 30,
     ) -> OSDashboardStats:
         """Obtem estatisticas de OS."""
         hoje = date.today()
         inicio_periodo = hoje - timedelta(days=periodo_dias)
 
-        base_filter = [OrdemServico.is_active == True]
+        base_filter = [OrdemServico.is_active]
         if cliente_id:
             base_filter.append(OrdemServico.cliente_id == cliente_id)
         if tecnico_id:
@@ -302,12 +291,7 @@ class OrdemServicoRepository:
         result = await self.db.execute(
             select(func.count())
             .select_from(OrdemServico)
-            .where(
-                and_(
-                    *base_filter,
-                    OrdemServico.status == StatusOS.ABERTA
-                )
-            )
+            .where(and_(*base_filter, OrdemServico.status == StatusOS.ABERTA))
         )
         total_abertas = result.scalar() or 0
 
@@ -315,12 +299,7 @@ class OrdemServicoRepository:
         result = await self.db.execute(
             select(func.count())
             .select_from(OrdemServico)
-            .where(
-                and_(
-                    *base_filter,
-                    OrdemServico.status == StatusOS.AGENDADA
-                )
-            )
+            .where(and_(*base_filter, OrdemServico.status == StatusOS.AGENDADA))
         )
         total_agendadas = result.scalar() or 0
 
@@ -328,12 +307,7 @@ class OrdemServicoRepository:
         result = await self.db.execute(
             select(func.count())
             .select_from(OrdemServico)
-            .where(
-                and_(
-                    *base_filter,
-                    OrdemServico.status.in_([StatusOS.EM_DESLOCAMENTO, StatusOS.EM_ANDAMENTO])
-                )
-            )
+            .where(and_(*base_filter, OrdemServico.status.in_([StatusOS.EM_DESLOCAMENTO, StatusOS.EM_ANDAMENTO])))
         )
         total_em_andamento = result.scalar() or 0
 
@@ -345,7 +319,7 @@ class OrdemServicoRepository:
                 and_(
                     *base_filter,
                     OrdemServico.status == StatusOS.CONCLUIDA,
-                    func.date(OrdemServico.data_conclusao) == hoje
+                    func.date(OrdemServico.data_conclusao) == hoje,
                 )
             )
         )
@@ -359,7 +333,7 @@ class OrdemServicoRepository:
                 and_(
                     *base_filter,
                     OrdemServico.status == StatusOS.CONCLUIDA,
-                    func.date(OrdemServico.data_conclusao) >= inicio_periodo
+                    func.date(OrdemServico.data_conclusao) >= inicio_periodo,
                 )
             )
         )
@@ -373,7 +347,7 @@ class OrdemServicoRepository:
                 and_(
                     *base_filter,
                     OrdemServico.sla_vencimento < datetime.utcnow(),
-                    OrdemServico.status.notin_([StatusOS.CONCLUIDA, StatusOS.CANCELADA])
+                    OrdemServico.status.notin_([StatusOS.CONCLUIDA, StatusOS.CANCELADA]),
                 )
             )
         )
@@ -388,7 +362,7 @@ class OrdemServicoRepository:
                     *base_filter,
                     OrdemServico.status == StatusOS.CONCLUIDA,
                     OrdemServico.tempo_execucao_minutos.isnot(None),
-                    func.date(OrdemServico.data_conclusao) >= inicio_periodo
+                    func.date(OrdemServico.data_conclusao) >= inicio_periodo,
                 )
             )
         )
@@ -402,7 +376,7 @@ class OrdemServicoRepository:
                 and_(
                     *base_filter,
                     OrdemServico.avaliacao_nota.isnot(None),
-                    func.date(OrdemServico.data_conclusao) >= inicio_periodo
+                    func.date(OrdemServico.data_conclusao) >= inicio_periodo,
                 )
             )
         )
@@ -429,8 +403,7 @@ class OrdemServicoRepository:
 
         # Buscar ultimo numero do ano
         result = await self.db.execute(
-            select(func.max(OrdemServico.numero))
-            .where(OrdemServico.numero.like(f"OS-{ano}-%"))
+            select(func.max(OrdemServico.numero)).where(OrdemServico.numero.like(f"OS-{ano}-%"))
         )
         ultimo = result.scalar()
 

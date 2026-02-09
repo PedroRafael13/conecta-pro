@@ -3,8 +3,8 @@ Modelo Post (Posto de Trabalho) para Operações.
 """
 
 from datetime import datetime, time
-from enum import Enum
-from typing import TYPE_CHECKING, List, Optional
+from enum import StrEnum
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from sqlalchemy import Boolean, DateTime, Float, Integer, String, Text, Time, func
@@ -14,12 +14,13 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from core.models.base import Base
 
 if TYPE_CHECKING:
-    from .allocation import Allocation
     from modules.operacional.occurrences.models import Occurrence
+
+    from .allocation import Allocation
     from .scale import Scale
 
 
-class PostType(str, Enum):
+class PostType(StrEnum):
     """Tipo de posto de trabalho."""
 
     VIGILANTE = "vigilante"
@@ -36,7 +37,7 @@ class PostType(str, Enum):
     PORTARIA = "portaria"
 
 
-class PostStatus(str, Enum):
+class PostStatus(StrEnum):
     """Status do posto."""
 
     ACTIVE = "active"
@@ -45,7 +46,7 @@ class PostStatus(str, Enum):
     SUSPENDED = "suspended"
 
 
-class ShiftType(str, Enum):
+class ShiftType(StrEnum):
     """Tipo de turno do posto."""
 
     DIURNO = "diurno"  # 07h-19h
@@ -99,7 +100,7 @@ class Post(Base):
         index=True,
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
-    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Tipo e Status
     post_type: Mapped[str] = mapped_column(
@@ -121,34 +122,34 @@ class Post(Base):
     )
 
     # Relacionamentos externos (IDs de outros módulos)
-    contract_id: Mapped[Optional[str]] = mapped_column(
+    contract_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
         index=True,
     )
-    client_id: Mapped[Optional[str]] = mapped_column(
+    client_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
         index=True,
     )
 
     # Localização
-    address: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
-    city: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    state: Mapped[Optional[str]] = mapped_column(String(2), nullable=True)
-    zip_code: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
-    latitude: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    longitude: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    address: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    city: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    state: Mapped[str | None] = mapped_column(String(2), nullable=True)
+    zip_code: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    latitude: Mapped[float | None] = mapped_column(Float, nullable=True)
+    longitude: Mapped[float | None] = mapped_column(Float, nullable=True)
 
     # Horários padrão (nomes conforme schema do banco)
-    shift_start_time: Mapped[Optional[time]] = mapped_column(Time, nullable=True)
-    shift_end_time: Mapped[Optional[time]] = mapped_column(Time, nullable=True)
+    shift_start_time: Mapped[time | None] = mapped_column(Time, nullable=True)
+    shift_end_time: Mapped[time | None] = mapped_column(Time, nullable=True)
     break_duration_minutes: Mapped[int] = mapped_column(Integer, default=60, nullable=False)
     night_shift_bonus_percent: Mapped[float] = mapped_column(Float, default=20.0, nullable=False)
     hazard_pay_percent: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
 
     # Requisitos e certificações (JSON)
-    required_certifications: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    required_certifications: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 
     # Capacidade e Custos
     required_headcount: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
@@ -162,12 +163,12 @@ class Post(Base):
     requires_vehicle: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     # Contatos de emergência
-    supervisor_name: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
-    supervisor_phone: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
-    emergency_contact: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
-    emergency_phone: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
-    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    extra_data: Mapped[Optional[dict]] = mapped_column("metadata", JSONB, nullable=True)
+    supervisor_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    supervisor_phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    emergency_contact: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    emergency_phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    extra_data: Mapped[dict | None] = mapped_column("metadata", JSONB, nullable=True)
 
     # Campos de controle
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
@@ -182,23 +183,23 @@ class Post(Base):
         onupdate=func.now(),
         nullable=False,
     )
-    created_by: Mapped[Optional[str]] = mapped_column(
+    created_by: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
     )
 
     # Relacionamentos (lazy="noload" para evitar erros de schema em tabelas relacionadas)
-    allocations: Mapped[List["Allocation"]] = relationship(
+    allocations: Mapped[list["Allocation"]] = relationship(
         "Allocation",
         back_populates="post",
         lazy="noload",
     )
-    scales: Mapped[List["Scale"]] = relationship(
+    scales: Mapped[list["Scale"]] = relationship(
         "Scale",
         back_populates="post",
         lazy="noload",
     )
-    occurrences: Mapped[List["Occurrence"]] = relationship(
+    occurrences: Mapped[list["Occurrence"]] = relationship(
         "Occurrence",
         back_populates="post",
         lazy="noload",

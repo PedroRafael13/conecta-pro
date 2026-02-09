@@ -2,7 +2,6 @@
 
 from datetime import date, datetime
 from decimal import Decimal
-from typing import List, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
@@ -17,20 +16,20 @@ class PayrollEventBase(BaseModel):
     event_name: str = Field(..., min_length=1, max_length=100)
     event_type: EventType
     event_category: EventCategory
-    reference: Optional[Decimal] = Field(None, ge=0)
-    reference_unit: Optional[str] = Field(None, max_length=20)
-    base_value: Optional[Decimal] = None
-    rate: Optional[Decimal] = Field(None, ge=0)
+    reference: Decimal | None = Field(None, ge=0)
+    reference_unit: str | None = Field(None, max_length=20)
+    base_value: Decimal | None = None
+    rate: Decimal | None = Field(None, ge=0)
     value: Decimal = Field(..., ge=0)
-    source: Optional[str] = None
-    event_date: Optional[date] = None
-    event_start: Optional[date] = None
-    event_end: Optional[date] = None
-    esocial_code: Optional[str] = Field(None, max_length=20)
-    esocial_incidences: Optional[dict] = Field(default_factory=dict)
+    source: str | None = None
+    event_date: date | None = None
+    event_start: date | None = None
+    event_end: date | None = None
+    esocial_code: str | None = Field(None, max_length=20)
+    esocial_incidences: dict | None = Field(default_factory=dict)
     is_recurring: bool = False
     is_proportional: bool = False
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class PayrollEventCreate(PayrollEventBase):
@@ -43,10 +42,10 @@ class PayrollEventCreate(PayrollEventBase):
 class PayrollEventUpdate(BaseModel):
     """Schema para atualização de evento."""
 
-    event_name: Optional[str] = Field(None, min_length=1, max_length=100)
-    reference: Optional[Decimal] = Field(None, ge=0)
-    value: Optional[Decimal] = Field(None, ge=0)
-    notes: Optional[str] = None
+    event_name: str | None = Field(None, min_length=1, max_length=100)
+    reference: Decimal | None = Field(None, ge=0)
+    value: Decimal | None = Field(None, ge=0)
+    notes: str | None = None
 
 
 class PayrollEventResponse(BaseModel):
@@ -60,26 +59,26 @@ class PayrollEventResponse(BaseModel):
     event_name: str
     event_type: str
     event_category: str
-    reference: Optional[Decimal]
-    reference_unit: Optional[str]
-    base_value: Optional[Decimal]
-    rate: Optional[Decimal]
+    reference: Decimal | None
+    reference_unit: str | None
+    base_value: Decimal | None
+    rate: Decimal | None
     value: Decimal
-    source: Optional[str]
-    event_date: Optional[date]
-    esocial_code: Optional[str]
-    esocial_incidences: Optional[dict]
+    source: str | None
+    event_date: date | None
+    esocial_code: str | None
+    esocial_incidences: dict | None
     status: str
     is_recurring: bool
     is_proportional: bool
-    original_value: Optional[Decimal]
-    adjustment_reason: Optional[str]
-    notes: Optional[str]
+    original_value: Decimal | None
+    adjustment_reason: str | None
+    notes: str | None
     is_earning: bool
     is_deduction: bool
     signed_value: Decimal
     created_at: datetime
-    updated_at: Optional[datetime]
+    updated_at: datetime | None
 
     model_config = {"from_attributes": True}
 
@@ -87,7 +86,7 @@ class PayrollEventResponse(BaseModel):
 class PayrollEventListResponse(BaseModel):
     """Lista paginada de eventos."""
 
-    items: List["PayrollEventResponse"]
+    items: list["PayrollEventResponse"]
     total: int
     page: int
     page_size: int
@@ -98,11 +97,11 @@ class PayrollEventBulkCreate(BaseModel):
     """Schema para criação em lote de eventos."""
 
     period_id: UUID
-    events: List[PayrollEventCreate]
+    events: list[PayrollEventCreate]
 
     @field_validator("events")
     @classmethod
-    def validate_events(cls, v: List[PayrollEventCreate]) -> List[PayrollEventCreate]:
+    def validate_events(cls, v: list[PayrollEventCreate]) -> list[PayrollEventCreate]:
         """Valida lista de eventos."""
         if not v:
             raise ValueError("Lista de eventos não pode estar vazia")
@@ -138,18 +137,18 @@ class EmployeePayrollSummary(BaseModel):
 
     employee_id: UUID
     employee_name: str
-    employee_cpf: Optional[str]
-    department: Optional[str]
-    position: Optional[str]
-    admission_date: Optional[date]
+    employee_cpf: str | None
+    department: str | None
+    position: str | None
+    admission_date: date | None
     base_salary: Decimal
     total_earnings: Decimal
     total_deductions: Decimal
     net_salary: Decimal
-    total_hours: Optional[Decimal]
-    overtime_hours: Optional[Decimal]
-    absence_hours: Optional[Decimal]
-    events: List[EmployeeEventSummary] = Field(default_factory=list)
+    total_hours: Decimal | None
+    overtime_hours: Decimal | None
+    absence_hours: Decimal | None
+    events: list[EmployeeEventSummary] = Field(default_factory=list)
     inss: Decimal = Field(default=Decimal("0"))
     irrf: Decimal = Field(default=Decimal("0"))
     fgts: Decimal = Field(default=Decimal("0"))
@@ -160,7 +159,7 @@ class EventsByCategory(BaseModel):
 
     category: str
     category_name: str
-    events: List[PayrollEventResponse]
+    events: list[PayrollEventResponse]
     total: Decimal
 
 
@@ -175,5 +174,5 @@ class PeriodEventsResponse(BaseModel):
     total_earnings: Decimal
     total_deductions: Decimal
     total_net: Decimal
-    events_by_category: List[EventsByCategory]
-    employees_summary: List[EmployeePayrollSummary]
+    events_by_category: list[EventsByCategory]
+    employees_summary: list[EmployeePayrollSummary]

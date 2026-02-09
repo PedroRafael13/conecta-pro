@@ -3,9 +3,8 @@
 Sprint 34 - AI Predictions.
 """
 
-import enum
 from datetime import datetime
-from typing import Optional
+from enum import StrEnum
 
 from sqlalchemy import Boolean, Column, DateTime, Enum, Float, Integer, String, Text
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
@@ -13,7 +12,7 @@ from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from core.models import Base
 
 
-class RecommendationType(str, enum.Enum):
+class RecommendationType(StrEnum):
     """Tipo de recomendacao."""
 
     PRODUCT = "PRODUCT"  # Recomendacao de produto
@@ -29,7 +28,7 @@ class RecommendationType(str, enum.Enum):
     NEXT_BEST_ACTION = "NEXT_BEST_ACTION"  # Proxima melhor acao
 
 
-class RecommendationStatus(str, enum.Enum):
+class RecommendationStatus(StrEnum):
     """Status da recomendacao."""
 
     PENDING = "PENDING"  # Pendente
@@ -168,7 +167,9 @@ class Recommendation(Base):
 
     def __repr__(self) -> str:
         """Representacao string."""
-        return f"<Recommendation {self.recommendation_type.value} for {self.target_entity_type}:{self.target_entity_id}>"
+        return (
+            f"<Recommendation {self.recommendation_type.value} for {self.target_entity_type}:{self.target_entity_id}>"
+        )
 
     @property
     def is_valid(self) -> bool:
@@ -195,14 +196,14 @@ class Recommendation(Base):
         ]
 
     @property
-    def time_to_click_seconds(self) -> Optional[int]:
+    def time_to_click_seconds(self) -> int | None:
         """Tempo ate o clique."""
         if not self.shown_at or not self.clicked_at:
             return None
         return int((self.clicked_at - self.shown_at).total_seconds())
 
     @property
-    def time_to_conversion_seconds(self) -> Optional[int]:
+    def time_to_conversion_seconds(self) -> int | None:
         """Tempo ate a conversao."""
         if not self.shown_at or not self.conversion_at:
             return None
@@ -223,7 +224,7 @@ class Recommendation(Base):
         self.status = RecommendationStatus.ACCEPTED
         self.action_at = datetime.utcnow()
 
-    def reject(self, feedback: Optional[str] = None, reason: Optional[str] = None) -> None:
+    def reject(self, feedback: str | None = None, reason: str | None = None) -> None:
         """Rejeita a recomendacao.
 
         Args:
@@ -245,8 +246,8 @@ class Recommendation(Base):
 
     def convert(
         self,
-        value: Optional[float] = None,
-        entity_id: Optional[str] = None,
+        value: float | None = None,
+        entity_id: str | None = None,
     ) -> None:
         """Marca como convertida.
 
@@ -265,7 +266,7 @@ class Recommendation(Base):
     def add_feedback(
         self,
         feedback_type: str,
-        feedback_text: Optional[str] = None,
+        feedback_text: str | None = None,
     ) -> None:
         """Adiciona feedback.
 

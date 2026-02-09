@@ -17,14 +17,12 @@ Date: 2026-01-16
 """
 
 import logging
-import xml.etree.ElementTree as ET
-from dataclasses import dataclass, field
-from datetime import datetime, date
-from decimal import Decimal
-from enum import Enum
-from typing import Dict, List, Optional, Any, Tuple
-from uuid import UUID, uuid4
-import asyncio
+from dataclasses import dataclass
+from datetime import date, datetime
+from enum import StrEnum
+from typing import Any
+
+import defusedxml.ElementTree as ET  # noqa: N817
 import httpx
 
 from .certificate_manager import CertificateManager
@@ -33,14 +31,16 @@ from .xml_signer import NFEXMLSigner, SignatureType
 logger = logging.getLogger(__name__)
 
 
-class AmbienteSEFAZ(str, Enum):
+class AmbienteSEFAZ(StrEnum):
     """Ambiente SEFAZ."""
+
     PRODUCAO = "1"
     HOMOLOGACAO = "2"
 
 
-class TipoEvento(str, Enum):
+class TipoEvento(StrEnum):
     """Tipos de eventos NF-e."""
+
     CANCELAMENTO = "110111"
     CARTA_CORRECAO = "110110"
     CIENCIA_OPERACAO = "210210"
@@ -49,8 +49,9 @@ class TipoEvento(str, Enum):
     OPERACAO_NAO_REALIZADA = "210240"
 
 
-class StatusServico(str, Enum):
+class StatusServico(StrEnum):
     """Status do servico SEFAZ."""
+
     OPERANDO = "107"
     PARALISADO_TEMPORARIAMENTE = "108"
     PARALISADO_SEM_PREVISAO = "109"
@@ -59,15 +60,16 @@ class StatusServico(str, Enum):
 @dataclass
 class EndpointConfig:
     """Configuracao de endpoint SEFAZ-AM."""
+
     producao: str
     homologacao: str
     versao: str = "4.00"
     metodo: str = "POST"
-    soap_action: Optional[str] = None
+    soap_action: str | None = None
 
 
 # Endpoints oficiais SEFAZ-AM conforme documentacao
-ENDPOINTS_SEFAZ_AM: Dict[str, EndpointConfig] = {
+ENDPOINTS_SEFAZ_AM: dict[str, EndpointConfig] = {
     "NfeStatusServico": EndpointConfig(
         producao="https://nfe.sefaz.am.gov.br/services2/services/NfeStatusServico4",
         homologacao="https://homnfe.sefaz.am.gov.br/services2/services/NfeStatusServico4",
@@ -123,53 +125,57 @@ NS_XSD = "http://www.w3.org/2001/XMLSchema"
 @dataclass
 class ResultadoConsulta:
     """Resultado de consulta SEFAZ."""
+
     sucesso: bool
     codigo: str
     mensagem: str
-    dados: Optional[Dict[str, Any]] = None
-    xml_retorno: Optional[str] = None
+    dados: dict[str, Any] | None = None
+    xml_retorno: str | None = None
     tempo_resposta_ms: float = 0
 
 
 @dataclass
 class ResultadoAutorizacao:
     """Resultado de autorizacao NF-e."""
+
     sucesso: bool
     codigo: str
     mensagem: str
-    protocolo: Optional[str] = None
-    chave_acesso: Optional[str] = None
-    data_autorizacao: Optional[datetime] = None
-    xml_protocolo: Optional[str] = None
-    numero_recibo: Optional[str] = None
+    protocolo: str | None = None
+    chave_acesso: str | None = None
+    data_autorizacao: datetime | None = None
+    xml_protocolo: str | None = None
+    numero_recibo: str | None = None
 
 
 @dataclass
 class ResultadoEvento:
     """Resultado de evento NF-e."""
+
     sucesso: bool
     codigo: str
     mensagem: str
-    protocolo: Optional[str] = None
-    tipo_evento: Optional[str] = None
-    sequencia: Optional[int] = None
-    data_registro: Optional[datetime] = None
-    xml_evento: Optional[str] = None
+    protocolo: str | None = None
+    tipo_evento: str | None = None
+    sequencia: int | None = None
+    data_registro: datetime | None = None
+    xml_evento: str | None = None
 
 
 @dataclass
 class InformacaoCadastral:
     """Informacoes cadastrais de contribuinte."""
-    cnpj: Optional[str] = None
-    cpf: Optional[str] = None
+
+    cnpj: str | None = None
+    cpf: str | None = None
     inscricao_estadual: str = ""
     razao_social: str = ""
-    nome_fantasia: Optional[str] = None
+    nome_fantasia: str | None = None
     situacao: str = ""
-    data_situacao: Optional[date] = None
-    regime_tributario: Optional[str] = None
-    cnae_principal: Optional[str] = None
-    endereco: Optional[Dict[str, Any]] = None
+    data_situacao: date | None = None
+    regime_tributario: str | None = None
+    cnae_principal: str | None = None
+    endereco: dict[str, Any] | None = None
 
 
 class SefazAMClient:
@@ -196,7 +202,7 @@ class SefazAMClient:
         self.ambiente = ambiente
         self.timeout = timeout
         self.xml_signer = NFEXMLSigner(certificate_manager)
-        self._http_client: Optional[httpx.AsyncClient] = None
+        self._http_client: httpx.AsyncClient | None = None
 
     async def _get_client(self) -> httpx.AsyncClient:
         """Obtem cliente HTTP com certificado."""
@@ -207,7 +213,7 @@ class SefazAMClient:
             self._http_client = httpx.AsyncClient(
                 cert=cert_info,
                 timeout=httpx.Timeout(self.timeout),
-                verify=False,  # TODO: Configurar CA bundle ICP-Brasil
+                verify=False,  # noqa: S501 # TODO: Configurar CA bundle ICP-Brasil
             )
         return self._http_client
 
@@ -244,7 +250,7 @@ class SefazAMClient:
         self,
         servico: str,
         xml_body: str,
-    ) -> Tuple[int, str, float]:
+    ) -> tuple[int, str, float]:
         """
         Envia requisicao SOAP para SEFAZ.
 
@@ -267,10 +273,7 @@ class SefazAMClient:
             response = await client.post(url, content=envelope, headers=headers)
             tempo_ms = (datetime.now() - inicio).total_seconds() * 1000
 
-            logger.info(
-                f"[SEFAZ-AM] {servico} - Status: {response.status_code}, "
-                f"Tempo: {tempo_ms:.0f}ms"
-            )
+            logger.info(f"[SEFAZ-AM] {servico} - Status: {response.status_code}, Tempo: {tempo_ms:.0f}ms")
 
             return response.status_code, response.text, tempo_ms
 
@@ -307,9 +310,7 @@ class SefazAMClient:
         </nfeDadosMsg>'''
 
         try:
-            status_code, response_text, tempo_ms = await self._enviar_requisicao(
-                "NfeStatusServico", xml_body
-            )
+            status_code, response_text, tempo_ms = await self._enviar_requisicao("NfeStatusServico", xml_body)
 
             if status_code == 200:
                 return self._parse_status_servico(response_text, tempo_ms)
@@ -334,13 +335,14 @@ class SefazAMClient:
         try:
             # Remover todos os namespaces para facilitar parse
             import re
-            xml_clean = re.sub(r'\sxmlns[^"]*"[^"]*"', '', xml_response)
-            xml_clean = re.sub(r'<(\w+):', r'<', xml_clean)
-            xml_clean = re.sub(r'</(\w+):', r'</', xml_clean)
+
+            xml_clean = re.sub(r'\sxmlns[^"]*"[^"]*"', "", xml_response)
+            xml_clean = re.sub(r"<(\w+):", r"<", xml_clean)
+            xml_clean = re.sub(r"</(\w+):", r"</", xml_clean)
             root = ET.fromstring(xml_clean)
 
             # Buscar retConsStatServ
-            ret = root.find('.//retConsStatServ')
+            ret = root.find(".//retConsStatServ")
             if ret is None:
                 return ResultadoConsulta(
                     sucesso=False,
@@ -350,10 +352,10 @@ class SefazAMClient:
                     tempo_resposta_ms=tempo_ms,
                 )
 
-            cstat = ret.findtext('cStat', '')
-            xmotivo = ret.findtext('xMotivo', '')
-            dhrecbto = ret.findtext('dhRecbto', '')
-            tmed = ret.findtext('tMed', '')
+            cstat = ret.findtext("cStat", "")
+            xmotivo = ret.findtext("xMotivo", "")
+            dhrecbto = ret.findtext("dhRecbto", "")
+            tmed = ret.findtext("tMed", "")
 
             sucesso = cstat == StatusServico.OPERANDO.value
 
@@ -416,9 +418,7 @@ class SefazAMClient:
         </nfeDadosMsg>'''
 
         try:
-            status_code, response_text, tempo_ms = await self._enviar_requisicao(
-                "NfeAutorizacao", xml_body
-            )
+            status_code, response_text, tempo_ms = await self._enviar_requisicao("NfeAutorizacao", xml_body)
 
             if status_code == 200:
                 return self._parse_autorizacao(response_text)
@@ -440,11 +440,11 @@ class SefazAMClient:
     def _parse_autorizacao(self, xml_response: str) -> ResultadoAutorizacao:
         """Parse da resposta de autorizacao."""
         try:
-            xml_clean = xml_response.replace('xmlns="http://www.portalfiscal.inf.br/nfe"', '')
+            xml_clean = xml_response.replace('xmlns="http://www.portalfiscal.inf.br/nfe"', "")
             root = ET.fromstring(xml_clean)
 
             # Verificar se e resposta sincrona (retEnviNFe) ou assincrona (retEnviNFe com recibo)
-            ret = root.find('.//retEnviNFe')
+            ret = root.find(".//retEnviNFe")
             if ret is None:
                 return ResultadoAutorizacao(
                     sucesso=False,
@@ -453,23 +453,23 @@ class SefazAMClient:
                     xml_protocolo=xml_response,
                 )
 
-            cstat = ret.findtext('cStat', '')
-            xmotivo = ret.findtext('xMotivo', '')
+            cstat = ret.findtext("cStat", "")
+            xmotivo = ret.findtext("xMotivo", "")
 
             # Resposta sincrona - protocolo direto
-            prot_nfe = ret.find('.//protNFe/infProt')
+            prot_nfe = ret.find(".//protNFe/infProt")
             if prot_nfe is not None:
-                cstat_prot = prot_nfe.findtext('cStat', '')
-                chave = prot_nfe.findtext('chNFe', '')
-                protocolo = prot_nfe.findtext('nProt', '')
-                dh_recbto = prot_nfe.findtext('dhRecbto', '')
+                cstat_prot = prot_nfe.findtext("cStat", "")
+                chave = prot_nfe.findtext("chNFe", "")
+                protocolo = prot_nfe.findtext("nProt", "")
+                dh_recbto = prot_nfe.findtext("dhRecbto", "")
 
-                sucesso = cstat_prot in ['100', '150']  # 100=Autorizado, 150=Autorizado fora prazo
+                sucesso = cstat_prot in ["100", "150"]  # 100=Autorizado, 150=Autorizado fora prazo
 
                 return ResultadoAutorizacao(
                     sucesso=sucesso,
                     codigo=cstat_prot,
-                    mensagem=prot_nfe.findtext('xMotivo', ''),
+                    mensagem=prot_nfe.findtext("xMotivo", ""),
                     protocolo=protocolo,
                     chave_acesso=chave,
                     data_autorizacao=self._parse_datetime(dh_recbto),
@@ -477,7 +477,7 @@ class SefazAMClient:
                 )
 
             # Resposta assincrona - apenas recibo
-            n_rec = ret.findtext('infRec/nRec', '')
+            n_rec = ret.findtext("infRec/nRec", "")
             if n_rec:
                 return ResultadoAutorizacao(
                     sucesso=True,
@@ -531,9 +531,7 @@ class SefazAMClient:
         </nfeDadosMsg>'''
 
         try:
-            status_code, response_text, tempo_ms = await self._enviar_requisicao(
-                "NfeRetAutorizacao", xml_body
-            )
+            status_code, response_text, tempo_ms = await self._enviar_requisicao("NfeRetAutorizacao", xml_body)
 
             if status_code == 200:
                 return self._parse_retorno_autorizacao(response_text)
@@ -555,10 +553,10 @@ class SefazAMClient:
     def _parse_retorno_autorizacao(self, xml_response: str) -> ResultadoAutorizacao:
         """Parse da resposta de retorno de autorizacao."""
         try:
-            xml_clean = xml_response.replace('xmlns="http://www.portalfiscal.inf.br/nfe"', '')
+            xml_clean = xml_response.replace('xmlns="http://www.portalfiscal.inf.br/nfe"', "")
             root = ET.fromstring(xml_clean)
 
-            ret = root.find('.//retConsReciNFe')
+            ret = root.find(".//retConsReciNFe")
             if ret is None:
                 return ResultadoAutorizacao(
                     sucesso=False,
@@ -567,10 +565,10 @@ class SefazAMClient:
                     xml_protocolo=xml_response,
                 )
 
-            cstat = ret.findtext('cStat', '')
+            cstat = ret.findtext("cStat", "")
 
             # Lote ainda em processamento
-            if cstat == '105':
+            if cstat == "105":
                 return ResultadoAutorizacao(
                     sucesso=False,
                     codigo=cstat,
@@ -579,19 +577,19 @@ class SefazAMClient:
                 )
 
             # Protocolo disponivel
-            prot_nfe = ret.find('.//protNFe/infProt')
+            prot_nfe = ret.find(".//protNFe/infProt")
             if prot_nfe is not None:
-                cstat_prot = prot_nfe.findtext('cStat', '')
-                chave = prot_nfe.findtext('chNFe', '')
-                protocolo = prot_nfe.findtext('nProt', '')
-                dh_recbto = prot_nfe.findtext('dhRecbto', '')
+                cstat_prot = prot_nfe.findtext("cStat", "")
+                chave = prot_nfe.findtext("chNFe", "")
+                protocolo = prot_nfe.findtext("nProt", "")
+                dh_recbto = prot_nfe.findtext("dhRecbto", "")
 
-                sucesso = cstat_prot in ['100', '150']
+                sucesso = cstat_prot in ["100", "150"]
 
                 return ResultadoAutorizacao(
                     sucesso=sucesso,
                     codigo=cstat_prot,
-                    mensagem=prot_nfe.findtext('xMotivo', ''),
+                    mensagem=prot_nfe.findtext("xMotivo", ""),
                     protocolo=protocolo,
                     chave_acesso=chave,
                     data_autorizacao=self._parse_datetime(dh_recbto),
@@ -601,7 +599,7 @@ class SefazAMClient:
             return ResultadoAutorizacao(
                 sucesso=False,
                 codigo=cstat,
-                mensagem=ret.findtext('xMotivo', ''),
+                mensagem=ret.findtext("xMotivo", ""),
                 xml_protocolo=xml_response,
             )
 
@@ -646,9 +644,7 @@ class SefazAMClient:
         </nfeDadosMsg>'''
 
         try:
-            status_code, response_text, tempo_ms = await self._enviar_requisicao(
-                "NfeConsulta", xml_body
-            )
+            status_code, response_text, tempo_ms = await self._enviar_requisicao("NfeConsulta", xml_body)
 
             if status_code == 200:
                 return self._parse_consulta_nfe(response_text, tempo_ms)
@@ -671,10 +667,10 @@ class SefazAMClient:
     def _parse_consulta_nfe(self, xml_response: str, tempo_ms: float) -> ResultadoConsulta:
         """Parse da resposta de consulta NF-e."""
         try:
-            xml_clean = xml_response.replace('xmlns="http://www.portalfiscal.inf.br/nfe"', '')
+            xml_clean = xml_response.replace('xmlns="http://www.portalfiscal.inf.br/nfe"', "")
             root = ET.fromstring(xml_clean)
 
-            ret = root.find('.//retConsSitNFe')
+            ret = root.find(".//retConsSitNFe")
             if ret is None:
                 return ResultadoConsulta(
                     sucesso=False,
@@ -684,37 +680,39 @@ class SefazAMClient:
                     tempo_resposta_ms=tempo_ms,
                 )
 
-            cstat = ret.findtext('cStat', '')
-            xmotivo = ret.findtext('xMotivo', '')
+            cstat = ret.findtext("cStat", "")
+            xmotivo = ret.findtext("xMotivo", "")
 
             # Extrair dados do protocolo
-            prot_nfe = ret.find('.//protNFe/infProt')
+            prot_nfe = ret.find(".//protNFe/infProt")
             dados = {}
 
             if prot_nfe is not None:
                 dados = {
-                    "chave_acesso": prot_nfe.findtext('chNFe', ''),
-                    "protocolo": prot_nfe.findtext('nProt', ''),
-                    "data_autorizacao": prot_nfe.findtext('dhRecbto', ''),
-                    "digest_value": prot_nfe.findtext('digVal', ''),
-                    "status_protocolo": prot_nfe.findtext('cStat', ''),
+                    "chave_acesso": prot_nfe.findtext("chNFe", ""),
+                    "protocolo": prot_nfe.findtext("nProt", ""),
+                    "data_autorizacao": prot_nfe.findtext("dhRecbto", ""),
+                    "digest_value": prot_nfe.findtext("digVal", ""),
+                    "status_protocolo": prot_nfe.findtext("cStat", ""),
                 }
 
             # Extrair eventos associados
             eventos = []
-            for proc_evento in ret.findall('.//procEventoNFe'):
-                inf_evento = proc_evento.find('.//infEvento')
+            for proc_evento in ret.findall(".//procEventoNFe"):
+                inf_evento = proc_evento.find(".//infEvento")
                 if inf_evento is not None:
-                    eventos.append({
-                        "tipo": inf_evento.findtext('tpEvento', ''),
-                        "sequencia": inf_evento.findtext('nSeqEvento', ''),
-                        "data": inf_evento.findtext('dhEvento', ''),
-                        "descricao": inf_evento.findtext('xEvento', ''),
-                    })
+                    eventos.append(
+                        {
+                            "tipo": inf_evento.findtext("tpEvento", ""),
+                            "sequencia": inf_evento.findtext("nSeqEvento", ""),
+                            "data": inf_evento.findtext("dhEvento", ""),
+                            "descricao": inf_evento.findtext("xEvento", ""),
+                        }
+                    )
 
             dados["eventos"] = eventos
 
-            sucesso = cstat == '100'
+            sucesso = cstat == "100"
 
             return ResultadoConsulta(
                 sucesso=sucesso,
@@ -745,7 +743,7 @@ class SefazAMClient:
         numero_inicial: int,
         numero_final: int,
         justificativa: str,
-        ano: Optional[int] = None,
+        ano: int | None = None,
     ) -> ResultadoConsulta:
         """
         Inutiliza faixa de numeracao de NF-e.
@@ -776,10 +774,7 @@ class SefazAMClient:
 
         # Montar ID da inutilizacao
         # ID = "ID" + cUF + ano + CNPJ + mod + serie + nNFIni + nNFFin
-        id_inut = (
-            f"ID{self.UF_CODIGO}{ano_2d}{cnpj:014}"
-            f"55{serie:03d}{numero_inicial:09d}{numero_final:09d}"
-        )
+        id_inut = f"ID{self.UF_CODIGO}{ano_2d}{cnpj:014}55{serie:03d}{numero_inicial:09d}{numero_final:09d}"
 
         xml_inut = f'''<inutNFe xmlns="{NS_NFE}" versao="4.00">
             <infInut Id="{id_inut}">
@@ -808,9 +803,7 @@ class SefazAMClient:
         </nfeDadosMsg>'''
 
         try:
-            status_code, response_text, tempo_ms = await self._enviar_requisicao(
-                "NfeInutilizacao", xml_body
-            )
+            status_code, response_text, tempo_ms = await self._enviar_requisicao("NfeInutilizacao", xml_body)
 
             if status_code == 200:
                 return self._parse_inutilizacao(response_text, tempo_ms)
@@ -833,10 +826,10 @@ class SefazAMClient:
     def _parse_inutilizacao(self, xml_response: str, tempo_ms: float) -> ResultadoConsulta:
         """Parse da resposta de inutilizacao."""
         try:
-            xml_clean = xml_response.replace('xmlns="http://www.portalfiscal.inf.br/nfe"', '')
+            xml_clean = xml_response.replace('xmlns="http://www.portalfiscal.inf.br/nfe"', "")
             root = ET.fromstring(xml_clean)
 
-            ret = root.find('.//retInutNFe/infInut')
+            ret = root.find(".//retInutNFe/infInut")
             if ret is None:
                 return ResultadoConsulta(
                     sucesso=False,
@@ -846,11 +839,11 @@ class SefazAMClient:
                     tempo_resposta_ms=tempo_ms,
                 )
 
-            cstat = ret.findtext('cStat', '')
-            xmotivo = ret.findtext('xMotivo', '')
-            protocolo = ret.findtext('nProt', '')
+            cstat = ret.findtext("cStat", "")
+            xmotivo = ret.findtext("xMotivo", "")
+            protocolo = ret.findtext("nProt", "")
 
-            sucesso = cstat == '102'  # 102 = Inutilizacao homologada
+            sucesso = cstat == "102"  # 102 = Inutilizacao homologada
 
             return ResultadoConsulta(
                 sucesso=sucesso,
@@ -858,7 +851,7 @@ class SefazAMClient:
                 mensagem=xmotivo,
                 dados={
                     "protocolo": protocolo,
-                    "data_inutilizacao": ret.findtext('dhRecbto', ''),
+                    "data_inutilizacao": ret.findtext("dhRecbto", ""),
                 },
                 xml_retorno=xml_response,
                 tempo_resposta_ms=tempo_ms,
@@ -883,8 +876,8 @@ class SefazAMClient:
         tipo_evento: TipoEvento,
         cnpj: str,
         sequencia: int = 1,
-        justificativa: Optional[str] = None,
-        correcao: Optional[str] = None,
+        justificativa: str | None = None,
+        correcao: str | None = None,
     ) -> ResultadoEvento:
         """
         Registra evento na NF-e.
@@ -923,22 +916,22 @@ class SefazAMClient:
 
         # Montar detalhamento conforme tipo
         if tipo_evento == TipoEvento.CANCELAMENTO:
-            det_evento = f'''<detEvento versao="1.00">
+            det_evento = f"""<detEvento versao="1.00">
                 <descEvento>Cancelamento</descEvento>
                 <nProt></nProt>
                 <xJust>{justificativa}</xJust>
-            </detEvento>'''
+            </detEvento>"""
         elif tipo_evento == TipoEvento.CARTA_CORRECAO:
-            det_evento = f'''<detEvento versao="1.00">
+            det_evento = f"""<detEvento versao="1.00">
                 <descEvento>Carta de Correcao</descEvento>
                 <xCorrecao>{correcao}</xCorrecao>
                 <xCondUso>A Carta de Correcao e disciplinada pelo paragrafo 1o-A do art. 7o do Convenio S/N, de 15 de dezembro de 1970 e pode ser utilizada para regularizacao de erro ocorrido na emissao de documento fiscal, desde que o erro nao esteja relacionado com: I - as variaveis que determinam o valor do imposto tais como: base de calculo, aliquota, diferenca de preco, quantidade, valor da operacao ou da prestacao; II - a correcao de dados cadastrais que implique mudanca do remetente ou do destinatario; III - a data de emissao ou de saida.</xCondUso>
-            </detEvento>'''
+            </detEvento>"""
         else:
             # Manifestacao do destinatario
-            det_evento = f'''<detEvento versao="1.00">
+            det_evento = f"""<detEvento versao="1.00">
                 <descEvento>{self._get_descricao_evento(tipo_evento)}</descEvento>
-            </detEvento>'''
+            </detEvento>"""
 
         xml_evento = f'''<evento xmlns="{NS_NFE}" versao="1.00">
             <infEvento Id="{id_evento}">
@@ -969,9 +962,7 @@ class SefazAMClient:
         </nfeDadosMsg>'''
 
         try:
-            status_code, response_text, tempo_ms = await self._enviar_requisicao(
-                "RecepcaoEvento", xml_body
-            )
+            status_code, response_text, tempo_ms = await self._enviar_requisicao("RecepcaoEvento", xml_body)
 
             if status_code == 200:
                 return self._parse_evento(response_text, tipo_evento)
@@ -1005,10 +996,10 @@ class SefazAMClient:
     def _parse_evento(self, xml_response: str, tipo_evento: TipoEvento) -> ResultadoEvento:
         """Parse da resposta de evento."""
         try:
-            xml_clean = xml_response.replace('xmlns="http://www.portalfiscal.inf.br/nfe"', '')
+            xml_clean = xml_response.replace('xmlns="http://www.portalfiscal.inf.br/nfe"', "")
             root = ET.fromstring(xml_clean)
 
-            ret = root.find('.//retEvento/infEvento')
+            ret = root.find(".//retEvento/infEvento")
             if ret is None:
                 return ResultadoEvento(
                     sucesso=False,
@@ -1017,14 +1008,14 @@ class SefazAMClient:
                     xml_evento=xml_response,
                 )
 
-            cstat = ret.findtext('cStat', '')
-            xmotivo = ret.findtext('xMotivo', '')
-            protocolo = ret.findtext('nProt', '')
-            sequencia = ret.findtext('nSeqEvento', '')
-            dh_reg = ret.findtext('dhRegEvento', '')
+            cstat = ret.findtext("cStat", "")
+            xmotivo = ret.findtext("xMotivo", "")
+            protocolo = ret.findtext("nProt", "")
+            sequencia = ret.findtext("nSeqEvento", "")
+            dh_reg = ret.findtext("dhRegEvento", "")
 
             # Codigos de sucesso para eventos
-            sucesso = cstat in ['135', '136']  # 135=Evento registrado, 136=Evento ja registrado
+            sucesso = cstat in ["135", "136"]  # 135=Evento registrado, 136=Evento ja registrado
 
             return ResultadoEvento(
                 sucesso=sucesso,
@@ -1051,9 +1042,9 @@ class SefazAMClient:
 
     async def consultar_cadastro(
         self,
-        inscricao_estadual: Optional[str] = None,
-        cnpj: Optional[str] = None,
-        cpf: Optional[str] = None,
+        inscricao_estadual: str | None = None,
+        cnpj: str | None = None,
+        cpf: str | None = None,
     ) -> ResultadoConsulta:
         """
         Consulta cadastro de contribuinte.
@@ -1095,9 +1086,7 @@ class SefazAMClient:
         </nfeDadosMsg>'''
 
         try:
-            status_code, response_text, tempo_ms = await self._enviar_requisicao(
-                "CadConsultaCadastro", xml_body
-            )
+            status_code, response_text, tempo_ms = await self._enviar_requisicao("CadConsultaCadastro", xml_body)
 
             if status_code == 200:
                 return self._parse_cadastro(response_text, tempo_ms)
@@ -1120,10 +1109,10 @@ class SefazAMClient:
     def _parse_cadastro(self, xml_response: str, tempo_ms: float) -> ResultadoConsulta:
         """Parse da resposta de consulta cadastral."""
         try:
-            xml_clean = xml_response.replace('xmlns="http://www.portalfiscal.inf.br/nfe"', '')
+            xml_clean = xml_response.replace('xmlns="http://www.portalfiscal.inf.br/nfe"', "")
             root = ET.fromstring(xml_clean)
 
-            ret = root.find('.//retConsCad/infCons')
+            ret = root.find(".//retConsCad/infCons")
             if ret is None:
                 return ResultadoConsulta(
                     sucesso=False,
@@ -1133,39 +1122,39 @@ class SefazAMClient:
                     tempo_resposta_ms=tempo_ms,
                 )
 
-            cstat = ret.findtext('cStat', '')
-            xmotivo = ret.findtext('xMotivo', '')
+            cstat = ret.findtext("cStat", "")
+            xmotivo = ret.findtext("xMotivo", "")
 
             # Extrair dados do cadastro
             contribuintes = []
-            for inf_cad in ret.findall('.//infCad'):
+            for inf_cad in ret.findall(".//infCad"):
                 contribuinte = InformacaoCadastral(
-                    cnpj=inf_cad.findtext('CNPJ'),
-                    cpf=inf_cad.findtext('CPF'),
-                    inscricao_estadual=inf_cad.findtext('IE', ''),
-                    razao_social=inf_cad.findtext('xNome', ''),
-                    nome_fantasia=inf_cad.findtext('xFant'),
-                    situacao=inf_cad.findtext('cSit', ''),
-                    regime_tributario=inf_cad.findtext('xRegApur'),
-                    cnae_principal=inf_cad.findtext('CNAE'),
+                    cnpj=inf_cad.findtext("CNPJ"),
+                    cpf=inf_cad.findtext("CPF"),
+                    inscricao_estadual=inf_cad.findtext("IE", ""),
+                    razao_social=inf_cad.findtext("xNome", ""),
+                    nome_fantasia=inf_cad.findtext("xFant"),
+                    situacao=inf_cad.findtext("cSit", ""),
+                    regime_tributario=inf_cad.findtext("xRegApur"),
+                    cnae_principal=inf_cad.findtext("CNAE"),
                 )
 
                 # Endereco
-                ender = inf_cad.find('.//ender')
+                ender = inf_cad.find(".//ender")
                 if ender is not None:
                     contribuinte.endereco = {
-                        "logradouro": ender.findtext('xLgr', ''),
-                        "numero": ender.findtext('nro', ''),
-                        "complemento": ender.findtext('xCpl'),
-                        "bairro": ender.findtext('xBairro', ''),
-                        "codigo_municipio": ender.findtext('cMun', ''),
-                        "municipio": ender.findtext('xMun', ''),
-                        "cep": ender.findtext('CEP', ''),
+                        "logradouro": ender.findtext("xLgr", ""),
+                        "numero": ender.findtext("nro", ""),
+                        "complemento": ender.findtext("xCpl"),
+                        "bairro": ender.findtext("xBairro", ""),
+                        "codigo_municipio": ender.findtext("cMun", ""),
+                        "municipio": ender.findtext("xMun", ""),
+                        "cep": ender.findtext("CEP", ""),
                     }
 
                 contribuintes.append(contribuinte)
 
-            sucesso = cstat in ['111', '112']  # 111=Um cadastro, 112=Multiplos
+            sucesso = cstat in ["111", "112"]  # 111=Um cadastro, 112=Multiplos
 
             return ResultadoConsulta(
                 sucesso=sucesso,
@@ -1208,8 +1197,8 @@ class SefazAMClient:
         self,
         cnpj: str,
         ultimo_nsu: str = "0",
-        nsu_especifico: Optional[str] = None,
-        chave_acesso: Optional[str] = None,
+        nsu_especifico: str | None = None,
+        chave_acesso: str | None = None,
     ) -> ResultadoConsulta:
         """
         Consulta DF-e destinados ao CNPJ (Distribuicao Nacional).
@@ -1234,11 +1223,11 @@ class SefazAMClient:
 
         # Montar consulta conforme tipo
         if chave_acesso:
-            consulta = f'<consChNFe><chNFe>{chave_acesso}</chNFe></consChNFe>'
+            consulta = f"<consChNFe><chNFe>{chave_acesso}</chNFe></consChNFe>"
         elif nsu_especifico:
-            consulta = f'<consNSU><NSU>{nsu_especifico:015}</NSU></consNSU>'
+            consulta = f"<consNSU><NSU>{nsu_especifico:015}</NSU></consNSU>"
         else:
-            consulta = f'<distNSU><ultNSU>{ultimo_nsu:015}</ultNSU></distNSU>'
+            consulta = f"<distNSU><ultNSU>{ultimo_nsu:015}</ultNSU></distNSU>"
 
         xml_body = f'''<nfeDadosMsg xmlns="{NS_NFE}">
             <distDFeInt xmlns="{NS_NFE}" versao="1.01">
@@ -1283,10 +1272,10 @@ class SefazAMClient:
     def _parse_dfe_distribuicao(self, xml_response: str, tempo_ms: float) -> ResultadoConsulta:
         """Parse da resposta de distribuicao DF-e."""
         try:
-            xml_clean = xml_response.replace('xmlns="http://www.portalfiscal.inf.br/nfe"', '')
+            xml_clean = xml_response.replace('xmlns="http://www.portalfiscal.inf.br/nfe"', "")
             root = ET.fromstring(xml_clean)
 
-            ret = root.find('.//retDistDFeInt')
+            ret = root.find(".//retDistDFeInt")
             if ret is None:
                 return ResultadoConsulta(
                     sucesso=False,
@@ -1296,26 +1285,28 @@ class SefazAMClient:
                     tempo_resposta_ms=tempo_ms,
                 )
 
-            cstat = ret.findtext('cStat', '')
-            xmotivo = ret.findtext('xMotivo', '')
-            ultimo_nsu = ret.findtext('ultNSU', '')
-            max_nsu = ret.findtext('maxNSU', '')
+            cstat = ret.findtext("cStat", "")
+            xmotivo = ret.findtext("xMotivo", "")
+            ultimo_nsu = ret.findtext("ultNSU", "")
+            max_nsu = ret.findtext("maxNSU", "")
 
             # Extrair documentos
             documentos = []
-            for doc in ret.findall('.//docZip'):
-                nsu = doc.get('NSU', '')
-                schema = doc.get('schema', '')
+            for doc in ret.findall(".//docZip"):
+                nsu = doc.get("NSU", "")
+                schema = doc.get("schema", "")
                 # Conteudo esta em base64 gzip
                 conteudo_b64 = doc.text
 
-                documentos.append({
-                    "nsu": nsu,
-                    "schema": schema,
-                    "conteudo_compactado": conteudo_b64,
-                })
+                documentos.append(
+                    {
+                        "nsu": nsu,
+                        "schema": schema,
+                        "conteudo_compactado": conteudo_b64,
+                    }
+                )
 
-            sucesso = cstat in ['137', '138']  # 137=Nenhum doc, 138=Documentos localizados
+            sucesso = cstat in ["137", "138"]  # 137=Nenhum doc, 138=Documentos localizados
 
             return ResultadoConsulta(
                 sucesso=sucesso,
@@ -1344,13 +1335,13 @@ class SefazAMClient:
     # METODOS AUXILIARES
     # =========================================================================
 
-    def _parse_datetime(self, dt_str: Optional[str]) -> Optional[datetime]:
+    def _parse_datetime(self, dt_str: str | None) -> datetime | None:
         """Converte string de data/hora para datetime."""
         if not dt_str:
             return None
         try:
             # Formato ISO com timezone
-            return datetime.fromisoformat(dt_str.replace('Z', '+00:00'))
+            return datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
         except ValueError:
             try:
                 # Formato sem timezone
@@ -1363,6 +1354,7 @@ class SefazAMClient:
 # SERVICO PARA USO NO CONECTA PRO
 # =========================================================================
 
+
 class SefazAMService:
     """Servico de integracao SEFAZ-AM para o Conecta PRO."""
 
@@ -1370,7 +1362,7 @@ class SefazAMService:
         """Inicializa o servico."""
         self.db = db_session
         self.certificate_manager = certificate_manager
-        self._client: Optional[SefazAMClient] = None
+        self._client: SefazAMClient | None = None
 
     async def _get_client(self, ambiente: AmbienteSEFAZ = AmbienteSEFAZ.PRODUCAO) -> SefazAMClient:
         """Obtem cliente SEFAZ-AM."""
@@ -1381,7 +1373,7 @@ class SefazAMService:
             )
         return self._client
 
-    async def verificar_status(self) -> Dict[str, Any]:
+    async def verificar_status(self) -> dict[str, Any]:
         """Verifica status do servico SEFAZ-AM."""
         client = await self._get_client()
         resultado = await client.consultar_status_servico()
@@ -1394,7 +1386,7 @@ class SefazAMService:
             "dados": resultado.dados,
         }
 
-    async def consultar_nfe(self, chave_acesso: str) -> Dict[str, Any]:
+    async def consultar_nfe(self, chave_acesso: str) -> dict[str, Any]:
         """Consulta NF-e por chave de acesso."""
         client = await self._get_client()
         resultado = await client.consultar_nfe(chave_acesso)
@@ -1407,7 +1399,7 @@ class SefazAMService:
             "xml": resultado.xml_retorno,
         }
 
-    async def consultar_cadastro_ie(self, inscricao_estadual: str) -> Dict[str, Any]:
+    async def consultar_cadastro_ie(self, inscricao_estadual: str) -> dict[str, Any]:
         """Consulta cadastro por IE."""
         client = await self._get_client()
         resultado = await client.consultar_cadastro(inscricao_estadual=inscricao_estadual)
@@ -1419,7 +1411,7 @@ class SefazAMService:
             "contribuintes": resultado.dados.get("contribuintes", []) if resultado.dados else [],
         }
 
-    async def consultar_cadastro_cnpj(self, cnpj: str) -> Dict[str, Any]:
+    async def consultar_cadastro_cnpj(self, cnpj: str) -> dict[str, Any]:
         """Consulta cadastro por CNPJ."""
         client = await self._get_client()
         resultado = await client.consultar_cadastro(cnpj=cnpj)
@@ -1435,7 +1427,7 @@ class SefazAMService:
         self,
         cnpj: str,
         ultimo_nsu: str = "0",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Consulta notas destinadas ao CNPJ."""
         client = await self._get_client()
         resultado = await client.consultar_dfe_destinadas(cnpj, ultimo_nsu)
@@ -1453,7 +1445,7 @@ class SefazAMService:
         chave_acesso: str,
         cnpj: str,
         justificativa: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Cancela NF-e."""
         client = await self._get_client()
         resultado = await client.registrar_evento(
@@ -1477,7 +1469,7 @@ class SefazAMService:
         cnpj: str,
         correcao: str,
         sequencia: int = 1,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Registra carta de correcao."""
         client = await self._get_client()
         resultado = await client.registrar_evento(
@@ -1503,7 +1495,7 @@ class SefazAMService:
         numero_inicial: int,
         numero_final: int,
         justificativa: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Inutiliza faixa de numeracao."""
         client = await self._get_client()
         resultado = await client.inutilizar_numeracao(

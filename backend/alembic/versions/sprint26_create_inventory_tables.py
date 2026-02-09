@@ -13,7 +13,7 @@ Tables:
 - fin_stock_reservations: Reservas de estoque
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
@@ -22,9 +22,9 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "sprint26_inventory"
-down_revision: Union[str, None] = "sprint25_purchase"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "sprint25_purchase"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
@@ -627,9 +627,7 @@ def upgrade() -> None:
     op.create_index("ix_fin_stock_movements_type", "fin_stock_movements", ["movement_type"])
     op.create_index("ix_fin_stock_movements_status", "fin_stock_movements", ["status"])
     op.create_index("ix_fin_stock_movements_date", "fin_stock_movements", ["movement_date"])
-    op.create_index(
-        "ix_fin_stock_movements_source", "fin_stock_movements", ["source_type", "source_id"]
-    )
+    op.create_index("ix_fin_stock_movements_source", "fin_stock_movements", ["source_type", "source_id"])
     op.create_unique_constraint(
         "uq_fin_stock_movements_number_condo",
         "fin_stock_movements",
@@ -671,9 +669,7 @@ def upgrade() -> None:
         ),
         # Scope
         sa.Column("scope_filter", postgresql.JSONB, nullable=True),
-        sa.Column(
-            "product_categories", postgresql.ARRAY(postgresql.UUID(as_uuid=True)), nullable=True
-        ),
+        sa.Column("product_categories", postgresql.ARRAY(postgresql.UUID(as_uuid=True)), nullable=True),
         sa.Column("abc_classes", postgresql.ARRAY(sa.String(1)), nullable=True),
         sa.Column("locations", postgresql.ARRAY(sa.String(50)), nullable=True),
         # Dates
@@ -743,18 +739,12 @@ def upgrade() -> None:
     )
 
     # Indexes for fin_stock_inventories
-    op.create_index(
-        "ix_fin_stock_inventories_condominio", "fin_stock_inventories", ["condominio_id"]
-    )
-    op.create_index(
-        "ix_fin_stock_inventories_number", "fin_stock_inventories", ["inventory_number"]
-    )
+    op.create_index("ix_fin_stock_inventories_condominio", "fin_stock_inventories", ["condominio_id"])
+    op.create_index("ix_fin_stock_inventories_number", "fin_stock_inventories", ["inventory_number"])
     op.create_index("ix_fin_stock_inventories_warehouse", "fin_stock_inventories", ["warehouse_id"])
     op.create_index("ix_fin_stock_inventories_type", "fin_stock_inventories", ["inventory_type"])
     op.create_index("ix_fin_stock_inventories_status", "fin_stock_inventories", ["status"])
-    op.create_index(
-        "ix_fin_stock_inventories_scheduled", "fin_stock_inventories", ["scheduled_date"]
-    )
+    op.create_index("ix_fin_stock_inventories_scheduled", "fin_stock_inventories", ["scheduled_date"])
     op.create_unique_constraint(
         "uq_fin_stock_inventories_number_condo",
         "fin_stock_inventories",
@@ -855,17 +845,11 @@ def upgrade() -> None:
     )
 
     # Indexes for fin_stock_inventory_items
-    op.create_index(
-        "ix_fin_stock_inv_items_inventory", "fin_stock_inventory_items", ["inventory_id"]
-    )
-    op.create_index(
-        "ix_fin_stock_inv_items_stock_item", "fin_stock_inventory_items", ["stock_item_id"]
-    )
+    op.create_index("ix_fin_stock_inv_items_inventory", "fin_stock_inventory_items", ["inventory_id"])
+    op.create_index("ix_fin_stock_inv_items_stock_item", "fin_stock_inventory_items", ["stock_item_id"])
     op.create_index("ix_fin_stock_inv_items_product", "fin_stock_inventory_items", ["product_id"])
     op.create_index("ix_fin_stock_inv_items_status", "fin_stock_inventory_items", ["status"])
-    op.create_index(
-        "ix_fin_stock_inv_items_location", "fin_stock_inventory_items", ["location_code"]
-    )
+    op.create_index("ix_fin_stock_inv_items_location", "fin_stock_inventory_items", ["location_code"])
     op.create_unique_constraint(
         "uq_fin_stock_inv_items_inv_stock",
         "fin_stock_inventory_items",
@@ -980,28 +964,16 @@ def upgrade() -> None:
     )
 
     # Indexes for fin_stock_reservations
-    op.create_index(
-        "ix_fin_stock_reservations_condominio", "fin_stock_reservations", ["condominio_id"]
-    )
-    op.create_index(
-        "ix_fin_stock_reservations_number", "fin_stock_reservations", ["reservation_number"]
-    )
-    op.create_index(
-        "ix_fin_stock_reservations_stock_item", "fin_stock_reservations", ["stock_item_id"]
-    )
+    op.create_index("ix_fin_stock_reservations_condominio", "fin_stock_reservations", ["condominio_id"])
+    op.create_index("ix_fin_stock_reservations_number", "fin_stock_reservations", ["reservation_number"])
+    op.create_index("ix_fin_stock_reservations_stock_item", "fin_stock_reservations", ["stock_item_id"])
     op.create_index("ix_fin_stock_reservations_product", "fin_stock_reservations", ["product_id"])
-    op.create_index(
-        "ix_fin_stock_reservations_warehouse", "fin_stock_reservations", ["warehouse_id"]
-    )
-    op.create_index(
-        "ix_fin_stock_reservations_type", "fin_stock_reservations", ["reservation_type"]
-    )
+    op.create_index("ix_fin_stock_reservations_warehouse", "fin_stock_reservations", ["warehouse_id"])
+    op.create_index("ix_fin_stock_reservations_type", "fin_stock_reservations", ["reservation_type"])
     op.create_index("ix_fin_stock_reservations_status", "fin_stock_reservations", ["status"])
     op.create_index("ix_fin_stock_reservations_priority", "fin_stock_reservations", ["priority"])
     op.create_index("ix_fin_stock_reservations_expiry", "fin_stock_reservations", ["expiry_date"])
-    op.create_index(
-        "ix_fin_stock_reservations_source", "fin_stock_reservations", ["source_type", "source_id"]
-    )
+    op.create_index("ix_fin_stock_reservations_source", "fin_stock_reservations", ["source_type", "source_id"])
     op.create_unique_constraint(
         "uq_fin_stock_reservations_number_condo",
         "fin_stock_reservations",

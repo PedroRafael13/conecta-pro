@@ -4,27 +4,27 @@ Service para MDF-e (Manifesto Eletronico de Documentos Fiscais).
 Camada de servico que encapsula a logica de negocio do MDF-e.
 """
 
-import os
-import logging
 import hashlib
+import logging
+import os
 from datetime import datetime
 from decimal import Decimal
-from typing import Dict, List, Optional, Any
+from typing import Any
 
 from ..core.mdfe import (
-    MDFeManager,
-    MDFe,
     Condutor,
-    Veiculo,
-    Reboque,
     DocumentoVinculado,
+    MDFe,
+    MDFeManager,
+    ModalTransporteMDFe,
     Municipio,
     Percurso,
-    ModalTransporteMDFe,
-    TipoEmitente,
-    TipoCarroceria,
-    TipoRodado,
+    Reboque,
     SituacaoMDFe,
+    TipoCarroceria,
+    TipoEmitente,
+    TipoRodado,
+    Veiculo,
 )
 
 logger = logging.getLogger(__name__)
@@ -80,11 +80,11 @@ class MDFeService:
         )
 
         # Cache de MDF-e criados (em producao, usar banco de dados)
-        self._mdfes: Dict[str, MDFe] = {}
+        self._mdfes: dict[str, MDFe] = {}
 
         logger.info(f"MDFeService iniciado: CNPJ={self.cnpj}, UF={self.uf}, Ambiente={self.ambiente}")
 
-    def validar_status(self) -> Dict[str, Any]:
+    def validar_status(self) -> dict[str, Any]:
         """Valida e retorna status da configuracao."""
         return {
             "cnpj": self.cnpj,
@@ -103,7 +103,7 @@ class MDFeService:
             ],
         }
 
-    def criar_mdfe(self, dados: Dict[str, Any]) -> Dict[str, Any]:
+    def criar_mdfe(self, dados: dict[str, Any]) -> dict[str, Any]:
         """
         Cria um novo MDF-e.
 
@@ -131,10 +131,7 @@ class MDFeService:
 
         # Percurso
         if dados.get("percurso"):
-            mdfe.percurso = [
-                Percurso(uf=p["uf"])
-                for p in dados["percurso"]
-            ]
+            mdfe.percurso = [Percurso(uf=p["uf"]) for p in dados["percurso"]]
 
         # Data inicio viagem
         if dados.get("data_inicio_viagem"):
@@ -142,15 +139,11 @@ class MDFeService:
 
         # Municipios de carregamento
         if dados.get("municipios_carregamento"):
-            mdfe.municipios_carregamento = [
-                self._criar_municipio(m) for m in dados["municipios_carregamento"]
-            ]
+            mdfe.municipios_carregamento = [self._criar_municipio(m) for m in dados["municipios_carregamento"]]
 
         # Municipios de descarregamento
         if dados.get("municipios_descarregamento"):
-            mdfe.municipios_descarregamento = [
-                self._criar_municipio(m) for m in dados["municipios_descarregamento"]
-            ]
+            mdfe.municipios_descarregamento = [self._criar_municipio(m) for m in dados["municipios_descarregamento"]]
             # Conta documentos
             for mun in mdfe.municipios_descarregamento:
                 for doc in mun.documentos:
@@ -169,16 +162,11 @@ class MDFeService:
 
         # Reboques
         if dados.get("reboques"):
-            mdfe.reboques = [
-                self._criar_reboque(r) for r in dados["reboques"]
-            ]
+            mdfe.reboques = [self._criar_reboque(r) for r in dados["reboques"]]
 
         # Condutores
         if dados.get("condutores"):
-            mdfe.condutores = [
-                Condutor(cpf=c["cpf"], nome=c["nome"])
-                for c in dados["condutores"]
-            ]
+            mdfe.condutores = [Condutor(cpf=c["cpf"], nome=c["nome"]) for c in dados["condutores"]]
 
         # CIOT
         mdfe.ciot = dados.get("ciot")
@@ -213,7 +201,7 @@ class MDFeService:
             "quantidade_nfe": mdfe.quantidade_nfe,
         }
 
-    def _criar_municipio(self, dados: Dict[str, Any]) -> Municipio:
+    def _criar_municipio(self, dados: dict[str, Any]) -> Municipio:
         """Cria objeto Municipio a partir dos dados."""
         documentos = []
         if dados.get("documentos"):
@@ -232,7 +220,7 @@ class MDFeService:
             documentos=documentos,
         )
 
-    def _criar_veiculo(self, dados: Dict[str, Any]) -> Veiculo:
+    def _criar_veiculo(self, dados: dict[str, Any]) -> Veiculo:
         """Cria objeto Veiculo a partir dos dados."""
         return Veiculo(
             placa=dados["placa"],
@@ -249,7 +237,7 @@ class MDFeService:
             proprietario_uf=dados.get("proprietario_uf"),
         )
 
-    def _criar_reboque(self, dados: Dict[str, Any]) -> Reboque:
+    def _criar_reboque(self, dados: dict[str, Any]) -> Reboque:
         """Cria objeto Reboque a partir dos dados."""
         return Reboque(
             placa=dados["placa"],
@@ -261,7 +249,7 @@ class MDFeService:
             tipo_carroceria=TipoCarroceria(dados.get("tipo_carroceria", "02")),
         )
 
-    def gerar_xml(self, mdfe_id: str) -> Dict[str, Any]:
+    def gerar_xml(self, mdfe_id: str) -> dict[str, Any]:
         """
         Gera XML do MDF-e.
 
@@ -278,7 +266,7 @@ class MDFeService:
         xml = self.manager.gerar_xml(mdfe)
 
         # Calcula hash
-        hash_md5 = hashlib.md5(xml.encode()).hexdigest()
+        hash_md5 = hashlib.sha256(xml.encode()).hexdigest()
 
         logger.info(f"XML gerado para MDF-e {mdfe_id}")
 
@@ -289,7 +277,7 @@ class MDFeService:
             "hash_md5": hash_md5,
         }
 
-    def encerrar_mdfe(self, dados: Dict[str, Any]) -> Dict[str, Any]:
+    def encerrar_mdfe(self, dados: dict[str, Any]) -> dict[str, Any]:
         """
         Gera evento de encerramento do MDF-e.
 
@@ -335,7 +323,7 @@ class MDFeService:
             "data_encerramento": resultado["evento"]["data_evento"],
         }
 
-    def incluir_condutor(self, dados: Dict[str, Any]) -> Dict[str, Any]:
+    def incluir_condutor(self, dados: dict[str, Any]) -> dict[str, Any]:
         """
         Gera evento de inclusao de condutor.
 
@@ -376,7 +364,7 @@ class MDFeService:
             "status": resultado["status"],
         }
 
-    def consultar_status_servico(self) -> Dict[str, Any]:
+    def consultar_status_servico(self) -> dict[str, Any]:
         """
         Consulta status do servico MDF-e na SEFAZ.
 
@@ -393,7 +381,7 @@ class MDFeService:
             "mensagem": resultado["mensagem"],
         }
 
-    def consultar_nao_encerrados(self) -> Dict[str, Any]:
+    def consultar_nao_encerrados(self) -> dict[str, Any]:
         """
         Consulta MDF-e nao encerrados.
 
@@ -422,34 +410,19 @@ class MDFeService:
             "sefaz_pendente": len(sefaz_result),
         }
 
-    def listar_modais(self) -> Dict[str, Any]:
+    def listar_modais(self) -> dict[str, Any]:
         """Lista modais de transporte disponiveis."""
-        return {
-            "modais": [
-                {"codigo": k, "descricao": v}
-                for k, v in self.MODAIS.items()
-            ]
-        }
+        return {"modais": [{"codigo": k, "descricao": v} for k, v in self.MODAIS.items()]}
 
-    def listar_tipos_emitente(self) -> Dict[str, Any]:
+    def listar_tipos_emitente(self) -> dict[str, Any]:
         """Lista tipos de emitente disponiveis."""
-        return {
-            "tipos_emitente": [
-                {"codigo": k, "descricao": v}
-                for k, v in self.TIPOS_EMITENTE.items()
-            ]
-        }
+        return {"tipos_emitente": [{"codigo": k, "descricao": v} for k, v in self.TIPOS_EMITENTE.items()]}
 
-    def listar_tipos_carroceria(self) -> Dict[str, Any]:
+    def listar_tipos_carroceria(self) -> dict[str, Any]:
         """Lista tipos de carroceria disponiveis."""
-        return {
-            "tipos_carroceria": [
-                {"codigo": k, "descricao": v}
-                for k, v in self.TIPOS_CARROCERIA.items()
-            ]
-        }
+        return {"tipos_carroceria": [{"codigo": k, "descricao": v} for k, v in self.TIPOS_CARROCERIA.items()]}
 
-    def buscar_mdfe(self, mdfe_id: str) -> Optional[Dict[str, Any]]:
+    def buscar_mdfe(self, mdfe_id: str) -> dict[str, Any] | None:
         """
         Busca um MDF-e pelo ID.
 
@@ -479,13 +452,10 @@ class MDFeService:
             "peso_bruto_total": str(mdfe.peso_bruto_total),
             "quantidade_cte": mdfe.quantidade_cte,
             "quantidade_nfe": mdfe.quantidade_nfe,
-            "condutores": [
-                {"cpf": c.cpf, "nome": c.nome}
-                for c in mdfe.condutores
-            ],
+            "condutores": [{"cpf": c.cpf, "nome": c.nome} for c in mdfe.condutores],
         }
 
-    def listar_mdfes(self) -> Dict[str, Any]:
+    def listar_mdfes(self) -> dict[str, Any]:
         """Lista todos os MDF-e em memoria."""
         return {
             "quantidade": len(self._mdfes),
@@ -501,7 +471,7 @@ class MDFeService:
             ],
         }
 
-    def limpar_dados(self) -> Dict[str, Any]:
+    def limpar_dados(self) -> dict[str, Any]:
         """Limpa dados em memoria."""
         quantidade = len(self._mdfes)
         self._mdfes.clear()
@@ -512,7 +482,7 @@ class MDFeService:
 
 
 # Singleton
-_service_instance: Optional[MDFeService] = None
+_service_instance: MDFeService | None = None
 
 
 def get_mdfe_service() -> MDFeService:

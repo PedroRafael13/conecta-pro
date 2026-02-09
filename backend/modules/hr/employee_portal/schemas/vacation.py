@@ -1,8 +1,7 @@
 """Schemas para solicitações de férias."""
 
-from datetime import datetime, date
+from datetime import date, datetime
 from decimal import Decimal
-from typing import Optional, List
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -40,11 +39,11 @@ class VacationPeriodResponse(BaseModel):
     is_expired: bool
     is_fully_used: bool
     double_payment: bool
-    expires_at: Optional[date]
+    expires_at: date | None
     is_within_concession: bool
     days_until_expiration: int
     created_at: datetime
-    updated_at: Optional[datetime]
+    updated_at: datetime | None
 
     model_config = {"from_attributes": True}
 
@@ -70,14 +69,14 @@ class VacationRequestBase(BaseModel):
     sell_days: int = Field(default=0, ge=0, le=10)
     sell_requested: bool = False
     advance_13th_requested: bool = False
-    employee_notes: Optional[str] = Field(None, max_length=1000)
+    employee_notes: str | None = Field(None, max_length=1000)
 
 
 class VacationRequestCreate(VacationRequestBase):
     """Schema para criação de solicitação de férias."""
 
-    vacation_period_id: Optional[UUID] = None
-    substitute_employee_id: Optional[UUID] = None
+    vacation_period_id: UUID | None = None
+    substitute_employee_id: UUID | None = None
 
     @model_validator(mode="after")
     def validate_dates(self) -> "VacationRequestCreate":
@@ -87,10 +86,7 @@ class VacationRequestCreate(VacationRequestBase):
 
         days_diff = (self.end_date - self.start_date).days + 1
         if days_diff != self.days_requested:
-            raise ValueError(
-                f"Dias solicitados ({self.days_requested}) não corresponde "
-                f"ao período ({days_diff} dias)"
-            )
+            raise ValueError(f"Dias solicitados ({self.days_requested}) não corresponde ao período ({days_diff} dias)")
 
         if self.sell_days > 0 and not self.sell_requested:
             raise ValueError("sell_requested deve ser True quando sell_days > 0")
@@ -112,14 +108,14 @@ class VacationRequestCreate(VacationRequestBase):
 class VacationRequestUpdate(BaseModel):
     """Schema para atualização de solicitação de férias."""
 
-    start_date: Optional[date] = None
-    end_date: Optional[date] = None
-    days_requested: Optional[int] = Field(None, ge=5, le=30)
-    sell_days: Optional[int] = Field(None, ge=0, le=10)
-    sell_requested: Optional[bool] = None
-    advance_13th_requested: Optional[bool] = None
-    employee_notes: Optional[str] = Field(None, max_length=1000)
-    substitute_employee_id: Optional[UUID] = None
+    start_date: date | None = None
+    end_date: date | None = None
+    days_requested: int | None = Field(None, ge=5, le=30)
+    sell_days: int | None = Field(None, ge=0, le=10)
+    sell_requested: bool | None = None
+    advance_13th_requested: bool | None = None
+    employee_notes: str | None = Field(None, max_length=1000)
+    substitute_employee_id: UUID | None = None
 
 
 class VacationRequestResponse(BaseModel):
@@ -128,7 +124,7 @@ class VacationRequestResponse(BaseModel):
     id: UUID
     condominio_id: UUID
     employee_id: UUID
-    vacation_period_id: Optional[UUID]
+    vacation_period_id: UUID | None
     request_code: str
     vacation_type: str
     status: str
@@ -139,45 +135,45 @@ class VacationRequestResponse(BaseModel):
     sell_days: int
     sell_requested: bool
     advance_13th_requested: bool
-    advance_13th_approved: Optional[bool]
+    advance_13th_approved: bool | None
 
-    vacation_salary: Optional[Decimal]
-    vacation_bonus: Optional[Decimal]
-    sell_value: Optional[Decimal]
-    advance_13th_value: Optional[Decimal]
-    inss_deduction: Optional[Decimal]
-    irrf_deduction: Optional[Decimal]
-    other_deductions: Optional[Decimal]
-    net_value: Optional[Decimal]
+    vacation_salary: Decimal | None
+    vacation_bonus: Decimal | None
+    sell_value: Decimal | None
+    advance_13th_value: Decimal | None
+    inss_deduction: Decimal | None
+    irrf_deduction: Decimal | None
+    other_deductions: Decimal | None
+    net_value: Decimal | None
 
-    calculation_details: Optional[dict]
-    employee_notes: Optional[str]
-    manager_notes: Optional[str]
-    hr_notes: Optional[str]
+    calculation_details: dict | None
+    employee_notes: str | None
+    manager_notes: str | None
+    hr_notes: str | None
 
-    submitted_at: Optional[datetime]
-    manager_approved: Optional[bool]
-    manager_approved_at: Optional[datetime]
-    manager_rejection_reason: Optional[str]
-    hr_approved: Optional[bool]
-    hr_approved_at: Optional[datetime]
-    hr_rejection_reason: Optional[str]
+    submitted_at: datetime | None
+    manager_approved: bool | None
+    manager_approved_at: datetime | None
+    manager_rejection_reason: str | None
+    hr_approved: bool | None
+    hr_approved_at: datetime | None
+    hr_rejection_reason: str | None
 
-    scheduled_at: Optional[datetime]
-    cancelled_at: Optional[datetime]
-    cancel_reason: Optional[str]
-    interrupted_at: Optional[datetime]
-    interrupt_reason: Optional[str]
-    days_enjoyed_before_interrupt: Optional[int]
+    scheduled_at: datetime | None
+    cancelled_at: datetime | None
+    cancel_reason: str | None
+    interrupted_at: datetime | None
+    interrupt_reason: str | None
+    days_enjoyed_before_interrupt: int | None
 
-    return_date: Optional[date]
-    actual_return_date: Optional[date]
-    payment_date: Optional[date]
-    paid_at: Optional[datetime]
-    payslip_id: Optional[UUID]
+    return_date: date | None
+    actual_return_date: date | None
+    payment_date: date | None
+    paid_at: datetime | None
+    payslip_id: UUID | None
 
-    substitute_employee_id: Optional[UUID]
-    substitute_name: Optional[str]
+    substitute_employee_id: UUID | None
+    substitute_name: str | None
 
     is_pending: bool
     is_approved: bool
@@ -186,7 +182,7 @@ class VacationRequestResponse(BaseModel):
     is_within_legal_notice: bool
 
     created_at: datetime
-    updated_at: Optional[datetime]
+    updated_at: datetime | None
 
     model_config = {"from_attributes": True}
 
@@ -202,14 +198,14 @@ class VacationRequestSummary(BaseModel):
     end_date: date
     days_requested: int
     sell_days: int
-    net_value: Optional[Decimal]
+    net_value: Decimal | None
     days_until_start: int
 
 
 class VacationRequestListResponse(BaseModel):
     """Lista paginada de solicitações de férias."""
 
-    items: List[VacationRequestSummary]
+    items: list[VacationRequestSummary]
     total: int
     page: int
     page_size: int
@@ -220,8 +216,8 @@ class VacationApprovalRequest(BaseModel):
     """Request para aprovação/rejeição de férias."""
 
     approved: bool
-    notes: Optional[str] = Field(None, max_length=1000)
-    rejection_reason: Optional[str] = Field(None, max_length=1000)
+    notes: str | None = Field(None, max_length=1000)
+    rejection_reason: str | None = Field(None, max_length=1000)
 
     @model_validator(mode="after")
     def validate_rejection(self) -> "VacationApprovalRequest":
@@ -235,22 +231,22 @@ class VacationBalanceResponse(BaseModel):
     """Resposta com saldo de férias."""
 
     employee_id: UUID
-    periods: List[VacationPeriodSummary]
+    periods: list[VacationPeriodSummary]
     total_days_available: int
     total_days_used: int
     total_days_sold: int
     total_days_remaining: int
     pending_requests_count: int
-    next_period_start: Optional[date]
+    next_period_start: date | None
     has_expiring_period: bool
-    days_until_next_expiration: Optional[int]
+    days_until_next_expiration: int | None
 
 
 class VacationCalculationRequest(BaseModel):
     """Request para cálculo de férias."""
 
     employee_id: UUID
-    vacation_period_id: Optional[UUID] = None
+    vacation_period_id: UUID | None = None
     start_date: date
     days_requested: int = Field(..., ge=5, le=30)
     sell_days: int = Field(default=0, ge=0, le=10)

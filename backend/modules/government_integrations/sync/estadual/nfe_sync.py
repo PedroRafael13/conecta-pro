@@ -9,12 +9,14 @@ Extrai e sincroniza:
 """
 
 import logging
-from datetime import datetime, date, timedelta
-from typing import Optional, Dict, Any, List, AsyncGenerator
+from collections.abc import AsyncGenerator
+from datetime import datetime
 from decimal import Decimal
-import xml.etree.ElementTree as ET
+from typing import Any
 
-from ..base_sync import BaseSynchronizer, SyncConfig, SyncResult
+import defusedxml.ElementTree as ET  # noqa: N817
+
+from ..base_sync import BaseSynchronizer, SyncConfig
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +40,7 @@ class NFeSynchronizer(BaseSynchronizer):
     async def _extrair_dados(
         self,
         config: SyncConfig,
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+    ) -> AsyncGenerator[dict[str, Any], None]:
         """
         Extrai NF-e do webservice SEFAZ.
 
@@ -50,10 +52,7 @@ class NFeSynchronizer(BaseSynchronizer):
         """
         cnpj = self._normalizar_cnpj(config.cnpj_empresa)
 
-        logger.info(
-            f"[NF-e] Extraindo notas - CNPJ: {cnpj}, "
-            f"Periodo: {config.data_inicial} a {config.data_final}"
-        )
+        logger.info(f"[NF-e] Extraindo notas - CNPJ: {cnpj}, Periodo: {config.data_inicial} a {config.data_final}")
 
         # 1. Notas emitidas pela empresa
         async for nota in self._consultar_notas_emitidas(cnpj, config):
@@ -71,7 +70,7 @@ class NFeSynchronizer(BaseSynchronizer):
         self,
         cnpj: str,
         config: SyncConfig,
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+    ) -> AsyncGenerator[dict[str, Any], None]:
         """Consulta NF-e emitidas pela empresa."""
         try:
             if not self.sefaz_manager:
@@ -91,12 +90,14 @@ class NFeSynchronizer(BaseSynchronizer):
                 xml = await self._baixar_xml(nota.get("chave"))
 
                 dados = self._parse_nfe_xml(xml) if xml else {}
-                dados.update({
-                    "tipo": "nfe_emitida",
-                    "chave_acesso": nota.get("chave"),
-                    "tipo_participacao": "emitente",
-                    "xml_original": xml,
-                })
+                dados.update(
+                    {
+                        "tipo": "nfe_emitida",
+                        "chave_acesso": nota.get("chave"),
+                        "tipo_participacao": "emitente",
+                        "xml_original": xml,
+                    }
+                )
 
                 yield dados
 
@@ -108,7 +109,7 @@ class NFeSynchronizer(BaseSynchronizer):
         self,
         cnpj: str,
         config: SyncConfig,
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+    ) -> AsyncGenerator[dict[str, Any], None]:
         """Consulta NF-e destinadas a empresa (DF-e)."""
         try:
             if not self.sefaz_manager:
@@ -132,21 +133,27 @@ class NFeSynchronizer(BaseSynchronizer):
                         cnpj,
                     )
 
-                dados = self._parse_nfe_xml(xml) if xml else {
-                    "numero": nota.get("numero"),
-                    "data_emissao": self._parse_data(nota.get("data_emissao")),
-                    "valor_total": self._parse_decimal(nota.get("valor")),
-                    "cnpj_emitente": nota.get("cnpj_emitente"),
-                    "razao_social_emitente": nota.get("razao_social"),
-                }
+                dados = (
+                    self._parse_nfe_xml(xml)
+                    if xml
+                    else {
+                        "numero": nota.get("numero"),
+                        "data_emissao": self._parse_data(nota.get("data_emissao")),
+                        "valor_total": self._parse_decimal(nota.get("valor")),
+                        "cnpj_emitente": nota.get("cnpj_emitente"),
+                        "razao_social_emitente": nota.get("razao_social"),
+                    }
+                )
 
-                dados.update({
-                    "tipo": "nfe_destinada",
-                    "chave_acesso": nota.get("chave"),
-                    "tipo_participacao": "destinatario",
-                    "situacao_manifestacao": nota.get("situacao"),
-                    "xml_original": xml,
-                })
+                dados.update(
+                    {
+                        "tipo": "nfe_destinada",
+                        "chave_acesso": nota.get("chave"),
+                        "tipo_participacao": "destinatario",
+                        "situacao_manifestacao": nota.get("situacao"),
+                        "xml_original": xml,
+                    }
+                )
 
                 yield dados
 
@@ -157,7 +164,7 @@ class NFeSynchronizer(BaseSynchronizer):
         self,
         cnpj: str,
         config: SyncConfig,
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+    ) -> AsyncGenerator[dict[str, Any], None]:
         """Consulta eventos das NF-e (cancelamento, CC-e)."""
         try:
             if not self.sefaz_manager:
@@ -192,7 +199,7 @@ class NFeSynchronizer(BaseSynchronizer):
         except Exception as e:
             logger.error(f"[NF-e] Erro consultando eventos: {e}")
 
-    async def _baixar_xml(self, chave: str) -> Optional[bytes]:
+    async def _baixar_xml(self, chave: str) -> bytes | None:
         """Baixa XML completo da NF-e."""
         try:
             if not self.sefaz_manager or not chave:
@@ -212,7 +219,7 @@ class NFeSynchronizer(BaseSynchronizer):
         self,
         chave: str,
         cnpj_destinatario: str,
-    ) -> Optional[bytes]:
+    ) -> bytes | None:
         """Baixa XML de nota destinada via manifestacao."""
         try:
             if not self.sefaz_manager:
@@ -233,12 +240,12 @@ class NFeSynchronizer(BaseSynchronizer):
         self,
         cnpj: str,
         config: SyncConfig,
-    ) -> List[Dict]:
+    ) -> list[dict]:
         """Busca notas no banco para consultar eventos."""
         # Implementacao depende do modelo real
         return []
 
-    def _parse_nfe_xml(self, xml: bytes) -> Dict[str, Any]:
+    def _parse_nfe_xml(self, xml: bytes) -> dict[str, Any]:
         """Extrai dados do XML da NF-e."""
         if not xml:
             return {}
@@ -247,19 +254,19 @@ class NFeSynchronizer(BaseSynchronizer):
             root = ET.fromstring(xml)
 
             # Encontrar elementos principais
-            infNFe = root.find(".//nfe:infNFe", self.NS_NFE)
-            if infNFe is None:
+            inf_nfe = root.find(".//nfe:infNFe", self.NS_NFE)
+            if inf_nfe is None:
                 # Tentar sem namespace
-                infNFe = root.find(".//infNFe")
+                inf_nfe = root.find(".//infNFe")
 
-            if infNFe is None:
+            if inf_nfe is None:
                 return {}
 
             # Identificacao
-            ide = infNFe.find("nfe:ide", self.NS_NFE) or infNFe.find("ide")
-            emit = infNFe.find("nfe:emit", self.NS_NFE) or infNFe.find("emit")
-            dest = infNFe.find("nfe:dest", self.NS_NFE) or infNFe.find("dest")
-            total = infNFe.find("nfe:total/nfe:ICMSTot", self.NS_NFE) or infNFe.find("total/ICMSTot")
+            ide = inf_nfe.find("nfe:ide", self.NS_NFE) or inf_nfe.find("ide")
+            emit = inf_nfe.find("nfe:emit", self.NS_NFE) or inf_nfe.find("emit")
+            dest = inf_nfe.find("nfe:dest", self.NS_NFE) or inf_nfe.find("dest")
+            total = inf_nfe.find("nfe:total/nfe:ICMSTot", self.NS_NFE) or inf_nfe.find("total/ICMSTot")
 
             dados = {
                 "numero": self._get_text(ide, "nNF"),
@@ -270,53 +277,58 @@ class NFeSynchronizer(BaseSynchronizer):
 
             # Emitente
             if emit is not None:
-                dados.update({
-                    "cnpj_emitente": self._get_text(emit, "CNPJ"),
-                    "razao_social_emitente": self._get_text(emit, "xNome"),
-                    "uf_emitente": self._get_text(emit, "enderEmit/UF"),
-                })
+                dados.update(
+                    {
+                        "cnpj_emitente": self._get_text(emit, "CNPJ"),
+                        "razao_social_emitente": self._get_text(emit, "xNome"),
+                        "uf_emitente": self._get_text(emit, "enderEmit/UF"),
+                    }
+                )
 
             # Destinatario
             if dest is not None:
-                dados.update({
-                    "cnpj_cpf_destinatario": (
-                        self._get_text(dest, "CNPJ") or
-                        self._get_text(dest, "CPF")
-                    ),
-                    "razao_social_destinatario": self._get_text(dest, "xNome"),
-                    "uf_destinatario": self._get_text(dest, "enderDest/UF"),
-                })
+                dados.update(
+                    {
+                        "cnpj_cpf_destinatario": (self._get_text(dest, "CNPJ") or self._get_text(dest, "CPF")),
+                        "razao_social_destinatario": self._get_text(dest, "xNome"),
+                        "uf_destinatario": self._get_text(dest, "enderDest/UF"),
+                    }
+                )
 
             # Valores
             if total is not None:
-                dados.update({
-                    "valor_total": self._parse_decimal(self._get_text(total, "vNF")),
-                    "valor_produtos": self._parse_decimal(self._get_text(total, "vProd")),
-                    "valor_desconto": self._parse_decimal(self._get_text(total, "vDesc")),
-                    "valor_frete": self._parse_decimal(self._get_text(total, "vFrete")),
-                    "valor_icms": self._parse_decimal(self._get_text(total, "vICMS")),
-                    "valor_icms_st": self._parse_decimal(self._get_text(total, "vST")),
-                    "valor_ipi": self._parse_decimal(self._get_text(total, "vIPI")),
-                    "valor_pis": self._parse_decimal(self._get_text(total, "vPIS")),
-                    "valor_cofins": self._parse_decimal(self._get_text(total, "vCOFINS")),
-                })
+                dados.update(
+                    {
+                        "valor_total": self._parse_decimal(self._get_text(total, "vNF")),
+                        "valor_produtos": self._parse_decimal(self._get_text(total, "vProd")),
+                        "valor_desconto": self._parse_decimal(self._get_text(total, "vDesc")),
+                        "valor_frete": self._parse_decimal(self._get_text(total, "vFrete")),
+                        "valor_icms": self._parse_decimal(self._get_text(total, "vICMS")),
+                        "valor_icms_st": self._parse_decimal(self._get_text(total, "vST")),
+                        "valor_ipi": self._parse_decimal(self._get_text(total, "vIPI")),
+                        "valor_pis": self._parse_decimal(self._get_text(total, "vPIS")),
+                        "valor_cofins": self._parse_decimal(self._get_text(total, "vCOFINS")),
+                    }
+                )
 
             # Itens
             itens = []
-            for det in infNFe.findall("nfe:det", self.NS_NFE) or infNFe.findall("det"):
+            for det in inf_nfe.findall("nfe:det", self.NS_NFE) or inf_nfe.findall("det"):
                 prod = det.find("nfe:prod", self.NS_NFE) or det.find("prod")
                 if prod is not None:
-                    itens.append({
-                        "numero_item": det.get("nItem"),
-                        "codigo": self._get_text(prod, "cProd"),
-                        "descricao": self._get_text(prod, "xProd"),
-                        "ncm": self._get_text(prod, "NCM"),
-                        "cfop": self._get_text(prod, "CFOP"),
-                        "unidade": self._get_text(prod, "uCom"),
-                        "quantidade": self._parse_decimal(self._get_text(prod, "qCom")),
-                        "valor_unitario": self._parse_decimal(self._get_text(prod, "vUnCom")),
-                        "valor_total": self._parse_decimal(self._get_text(prod, "vProd")),
-                    })
+                    itens.append(
+                        {
+                            "numero_item": det.get("nItem"),
+                            "codigo": self._get_text(prod, "cProd"),
+                            "descricao": self._get_text(prod, "xProd"),
+                            "ncm": self._get_text(prod, "NCM"),
+                            "cfop": self._get_text(prod, "CFOP"),
+                            "unidade": self._get_text(prod, "uCom"),
+                            "quantidade": self._parse_decimal(self._get_text(prod, "qCom")),
+                            "valor_unitario": self._parse_decimal(self._get_text(prod, "vUnCom")),
+                            "valor_total": self._parse_decimal(self._get_text(prod, "vProd")),
+                        }
+                    )
             dados["itens"] = itens
 
             return dados
@@ -325,7 +337,7 @@ class NFeSynchronizer(BaseSynchronizer):
             logger.error(f"[NF-e] Erro parseando XML: {e}")
             return {}
 
-    def _get_text(self, element, path: str) -> Optional[str]:
+    def _get_text(self, element, path: str) -> str | None:
         """Obtem texto de elemento XML."""
         if element is None:
             return None
@@ -340,7 +352,7 @@ class NFeSynchronizer(BaseSynchronizer):
 
     async def _processar_registro(
         self,
-        registro: Dict[str, Any],
+        registro: dict[str, Any],
         config: SyncConfig,
     ) -> bool:
         """Processa registro extraido."""
@@ -355,13 +367,15 @@ class NFeSynchronizer(BaseSynchronizer):
 
     async def _salvar_nota(
         self,
-        registro: Dict[str, Any],
+        registro: dict[str, Any],
         config: SyncConfig,
     ) -> bool:
         """Salva ou atualiza NF-e no banco."""
         from ..models.sync_models import (
-            DocumentoFiscal, TipoDocumentoFiscal,
-            StatusDocumentoFiscal, TipoParticipacao
+            DocumentoFiscal,
+            StatusDocumentoFiscal,
+            TipoDocumentoFiscal,
+            TipoParticipacao,
         )
 
         chave = registro.get("chave_acesso")
@@ -369,9 +383,7 @@ class NFeSynchronizer(BaseSynchronizer):
             return False
 
         # Verificar se existe
-        existente = self.db.query(DocumentoFiscal).filter(
-            DocumentoFiscal.chave_acesso == chave
-        ).first()
+        existente = self.db.query(DocumentoFiscal).filter(DocumentoFiscal.chave_acesso == chave).first()
 
         # Determinar tipo
         tipo_doc = TipoDocumentoFiscal.NFE
@@ -421,28 +433,30 @@ class NFeSynchronizer(BaseSynchronizer):
             self.db.add(nova)
             return True
 
-    async def _salvar_evento(self, registro: Dict[str, Any]) -> bool:
+    async def _salvar_evento(self, registro: dict[str, Any]) -> bool:
         """Salva evento de NF-e."""
-        from ..models.sync_models import DocumentoFiscal, EventoDocumentoFiscal
+        from ..models.sync_models import DocumentoFiscal, EventoDocumentoFiscal, StatusDocumentoFiscal
 
         chave = registro.get("chave_acesso")
         if not chave:
             return False
 
         # Buscar nota
-        nota = self.db.query(DocumentoFiscal).filter(
-            DocumentoFiscal.chave_acesso == chave
-        ).first()
+        nota = self.db.query(DocumentoFiscal).filter(DocumentoFiscal.chave_acesso == chave).first()
 
         if not nota:
             return False
 
         # Verificar se evento ja existe
-        existente = self.db.query(EventoDocumentoFiscal).filter(
-            EventoDocumentoFiscal.documento_id == nota.id,
-            EventoDocumentoFiscal.tipo_evento == registro.get("tipo_evento"),
-            EventoDocumentoFiscal.sequencia == registro.get("sequencia", 1),
-        ).first()
+        existente = (
+            self.db.query(EventoDocumentoFiscal)
+            .filter(
+                EventoDocumentoFiscal.documento_id == nota.id,
+                EventoDocumentoFiscal.tipo_evento == registro.get("tipo_evento"),
+                EventoDocumentoFiscal.sequencia == registro.get("sequencia", 1),
+            )
+            .first()
+        )
 
         if existente:
             return False
@@ -466,15 +480,20 @@ class NFeSynchronizer(BaseSynchronizer):
 
         return True
 
-    def _obter_ultima_sincronizacao(self, cnpj: str) -> Optional[datetime]:
+    def _obter_ultima_sincronizacao(self, cnpj: str) -> datetime | None:
         """Obtem ultima sincronizacao de NF-e."""
-        from ..models.sync_models import SyncLog, StatusSincronizacao
+        from ..models.sync_models import StatusSincronizacao, SyncLog
 
-        ultimo = self.db.query(SyncLog).filter(
-            SyncLog.cnpj_empresa == cnpj,
-            SyncLog.servico == self.SERVICO_NOME,
-            SyncLog.status == StatusSincronizacao.SUCESSO,
-        ).order_by(SyncLog.fim_execucao.desc()).first()
+        ultimo = (
+            self.db.query(SyncLog)
+            .filter(
+                SyncLog.cnpj_empresa == cnpj,
+                SyncLog.servico == self.SERVICO_NOME,
+                SyncLog.status == StatusSincronizacao.SUCESSO,
+            )
+            .order_by(SyncLog.fim_execucao.desc())
+            .first()
+        )
 
         return ultimo.fim_execucao if ultimo else None
 
@@ -488,7 +507,7 @@ class NFeSynchronizer(BaseSynchronizer):
         chave: str,
         tipo_manifestacao: str,
         justificativa: str = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Realiza manifestacao do destinatario.
 
@@ -513,35 +532,44 @@ class NFeSynchronizer(BaseSynchronizer):
 
         return resultado
 
-    async def obter_resumo(self, cnpj: str) -> Dict[str, Any]:
+    async def obter_resumo(self, cnpj: str) -> dict[str, Any]:
         """Obtem resumo das NF-e sincronizadas."""
-        from ..models.sync_models import DocumentoFiscal, TipoDocumentoFiscal
         from sqlalchemy import func
 
+        from ..models.sync_models import DocumentoFiscal, TipoDocumentoFiscal
+
         # Totais
-        totais = self.db.query(
-            func.count(DocumentoFiscal.id),
-            func.sum(DocumentoFiscal.valor_total),
-        ).filter(
-            DocumentoFiscal.cnpj_empresa == cnpj,
-            DocumentoFiscal.tipo.in_([TipoDocumentoFiscal.NFE, TipoDocumentoFiscal.NFCE]),
-        ).first()
+        totais = (
+            self.db.query(
+                func.count(DocumentoFiscal.id),
+                func.sum(DocumentoFiscal.valor_total),
+            )
+            .filter(
+                DocumentoFiscal.cnpj_empresa == cnpj,
+                DocumentoFiscal.tipo.in_([TipoDocumentoFiscal.NFE, TipoDocumentoFiscal.NFCE]),
+            )
+            .first()
+        )
 
         # Por tipo de participacao
-        por_participacao = self.db.query(
-            DocumentoFiscal.tipo_participacao,
-            func.count(DocumentoFiscal.id),
-            func.sum(DocumentoFiscal.valor_total),
-        ).filter(
-            DocumentoFiscal.cnpj_empresa == cnpj,
-        ).group_by(DocumentoFiscal.tipo_participacao).all()
+        por_participacao = (
+            self.db.query(
+                DocumentoFiscal.tipo_participacao,
+                func.count(DocumentoFiscal.id),
+                func.sum(DocumentoFiscal.valor_total),
+            )
+            .filter(
+                DocumentoFiscal.cnpj_empresa == cnpj,
+            )
+            .group_by(DocumentoFiscal.tipo_participacao)
+            .all()
+        )
 
         return {
             "total_notas": totais[0] or 0,
             "valor_total": float(totais[1] or 0),
             "por_participacao": {
-                str(p.value): {"quantidade": q, "valor": float(v or 0)}
-                for p, q, v in por_participacao
+                str(p.value): {"quantidade": q, "valor": float(v or 0)} for p, q, v in por_participacao
             },
             "ultima_sincronizacao": self._obter_ultima_sincronizacao(cnpj),
         }

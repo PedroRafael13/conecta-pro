@@ -9,8 +9,7 @@ Quality Score Target: 99+/100
 from __future__ import annotations
 
 from datetime import datetime
-from enum import Enum
-from typing import Optional
+from enum import StrEnum
 from uuid import uuid4
 
 from sqlalchemy import Boolean, DateTime, String, func
@@ -20,7 +19,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from core.models.base import Base
 
 
-class NotificationType(str, Enum):
+class NotificationType(StrEnum):
     """Tipo de notificacao."""
 
     OCORRENCIA = "ocorrencia"  # Notificacao de ocorrencia
@@ -35,7 +34,7 @@ class NotificationType(str, Enum):
     SISTEMA = "sistema"  # Notificacao do sistema
 
 
-class NotificationChannel(str, Enum):
+class NotificationChannel(StrEnum):
     """Canal de envio da notificacao."""
 
     PUSH = "push"  # Push notification
@@ -124,13 +123,13 @@ class Notification(Base):
     )
 
     # Referencia (entidade relacionada)
-    reference_type: Mapped[Optional[str]] = mapped_column(
+    reference_type: Mapped[str | None] = mapped_column(
         String(50),
         nullable=True,
         index=True,
         comment="Tipo da entidade referenciada (occurrence, shift, etc)",
     )
-    reference_id: Mapped[Optional[str]] = mapped_column(
+    reference_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
         index=True,
@@ -146,33 +145,33 @@ class Notification(Base):
     )
 
     # Rastreamento
-    sent_at: Mapped[Optional[datetime]] = mapped_column(
+    sent_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
         index=True,
         comment="Data/hora em que foi enviada",
     )
-    read_at: Mapped[Optional[datetime]] = mapped_column(
+    read_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
         index=True,
         comment="Data/hora em que foi lida",
     )
-    clicked_at: Mapped[Optional[datetime]] = mapped_column(
+    clicked_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
         comment="Data/hora em que o usuario clicou na acao",
     )
 
     # Acao
-    action_url: Mapped[Optional[str]] = mapped_column(
+    action_url: Mapped[str | None] = mapped_column(
         String(500),
         nullable=True,
         comment="URL para redirecionamento ao clicar",
     )
 
     # Dados Adicionais
-    extra_data: Mapped[Optional[dict]] = mapped_column(
+    extra_data: Mapped[dict | None] = mapped_column(
         JSONB,
         nullable=True,
         default=dict,
@@ -212,7 +211,7 @@ class Notification(Base):
         return self.clicked_at is not None
 
     @property
-    def time_to_read(self) -> Optional[float]:
+    def time_to_read(self) -> float | None:
         """
         Calcula tempo entre envio e leitura (em segundos).
 
@@ -225,7 +224,7 @@ class Notification(Base):
         return delta.total_seconds()
 
     @property
-    def time_to_click(self) -> Optional[float]:
+    def time_to_click(self) -> float | None:
         """
         Calcula tempo entre leitura e clique (em segundos).
 
@@ -286,12 +285,12 @@ class Notification(Base):
         title: str,
         body: str,
         notification_type: NotificationType = NotificationType.SISTEMA,
-        channels: Optional[list[NotificationChannel]] = None,
-        reference_type: Optional[str] = None,
-        reference_id: Optional[str] = None,
-        action_url: Optional[str] = None,
-        extra_data: Optional[dict] = None,
-    ) -> "Notification":
+        channels: list[NotificationChannel] | None = None,
+        reference_type: str | None = None,
+        reference_id: str | None = None,
+        action_url: str | None = None,
+        extra_data: dict | None = None,
+    ) -> Notification:
         """
         Factory method para criar notificacao.
 

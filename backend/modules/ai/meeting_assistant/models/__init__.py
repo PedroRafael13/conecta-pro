@@ -4,22 +4,22 @@ Meeting Assistant Models - Sprint 49.
 
 from .meeting import (
     Meeting,
-    MeetingParticipant,
     MeetingNote,
-    MeetingSummary,
+    MeetingParticipant,
     MeetingStatusEnum,
+    MeetingSummary,
     MeetingTypeEnum,
-    ParticipantStatusEnum,
     ParticipantRoleEnum,
+    ParticipantStatusEnum,
     RecurrenceTypeEnum,
 )
 from .task import (
+    DependencyTypeEnum,
     Task,
     TaskDependency,
-    TaskStatusEnum,
     TaskPriorityEnum,
+    TaskStatusEnum,
     TaskTypeEnum,
-    DependencyTypeEnum,
 )
 
 __all__ = [

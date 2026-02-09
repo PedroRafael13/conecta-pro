@@ -7,12 +7,12 @@ incluindo metadados, status de processamento e resultados de OCR.
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from enum import Enum
-from typing import Any, Dict, List, Optional
+from enum import StrEnum
+from typing import Any
 from uuid import uuid4
 
 
-class DocumentType(str, Enum):
+class DocumentType(StrEnum):
     """Tipos de documentos suportados."""
 
     # Financeiros
@@ -65,7 +65,7 @@ class DocumentType(str, Enum):
     DESCONHECIDO = "desconhecido"
 
 
-class DocumentStatus(str, Enum):
+class DocumentStatus(StrEnum):
     """Status do documento no sistema."""
 
     UPLOADED = "uploaded"  # Arquivo enviado
@@ -81,7 +81,7 @@ class DocumentStatus(str, Enum):
     ARCHIVED = "archived"  # Arquivado
 
 
-class DocumentSource(str, Enum):
+class DocumentSource(StrEnum):
     """Origem do documento."""
 
     UPLOAD = "upload"  # Upload manual
@@ -93,7 +93,7 @@ class DocumentSource(str, Enum):
     WEBHOOK = "webhook"  # Via webhook
 
 
-class ProcessingStatus(str, Enum):
+class ProcessingStatus(StrEnum):
     """Status de cada etapa de processamento."""
 
     PENDING = "pending"
@@ -109,25 +109,23 @@ class ProcessingStep:
 
     name: str
     status: ProcessingStatus = ProcessingStatus.PENDING
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
-    duration_ms: Optional[int] = None
-    error: Optional[str] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
+    duration_ms: int | None = None
+    error: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def start(self) -> None:
         """Marca inicio da etapa."""
         self.status = ProcessingStatus.IN_PROGRESS
         self.started_at = datetime.utcnow()
 
-    def complete(self, metadata: Optional[Dict[str, Any]] = None) -> None:
+    def complete(self, metadata: dict[str, Any] | None = None) -> None:
         """Marca conclusao da etapa."""
         self.status = ProcessingStatus.COMPLETED
         self.completed_at = datetime.utcnow()
         if self.started_at:
-            self.duration_ms = int(
-                (self.completed_at - self.started_at).total_seconds() * 1000
-            )
+            self.duration_ms = int((self.completed_at - self.started_at).total_seconds() * 1000)
         if metadata:
             self.metadata.update(metadata)
 
@@ -137,9 +135,7 @@ class ProcessingStep:
         self.completed_at = datetime.utcnow()
         self.error = error
         if self.started_at:
-            self.duration_ms = int(
-                (self.completed_at - self.started_at).total_seconds() * 1000
-            )
+            self.duration_ms = int((self.completed_at - self.started_at).total_seconds() * 1000)
 
 
 @dataclass
@@ -150,13 +146,13 @@ class ImageMetadata:
     height: int
     format: str  # PNG, JPEG, PDF, TIFF
     size_bytes: int
-    dpi: Optional[int] = None
-    color_mode: Optional[str] = None  # RGB, GRAYSCALE, BINARY
+    dpi: int | None = None
+    color_mode: str | None = None  # RGB, GRAYSCALE, BINARY
     pages: int = 1
-    orientation: Optional[str] = None  # PORTRAIT, LANDSCAPE
-    quality_score: Optional[float] = None  # 0-100
+    orientation: str | None = None  # PORTRAIT, LANDSCAPE
+    quality_score: float | None = None  # 0-100
     is_skewed: bool = False
-    skew_angle: Optional[float] = None
+    skew_angle: float | None = None
     has_noise: bool = False
     is_blurry: bool = False
 
@@ -194,62 +190,62 @@ class Document:
     name: str = ""
     original_name: str = ""
     document_type: DocumentType = DocumentType.DESCONHECIDO
-    predicted_type: Optional[DocumentType] = None
+    predicted_type: DocumentType | None = None
     type_confidence: float = 0.0
     status: DocumentStatus = DocumentStatus.UPLOADED
     source: DocumentSource = DocumentSource.UPLOAD
 
     # Arquivo
     file_path: str = ""
-    file_url: Optional[str] = None
+    file_url: str | None = None
     file_hash: str = ""
     mime_type: str = ""
     file_size: int = 0
 
     # Imagem
-    image_metadata: Optional[ImageMetadata] = None
-    preprocessed_path: Optional[str] = None
-    thumbnail_path: Optional[str] = None
+    image_metadata: ImageMetadata | None = None
+    preprocessed_path: str | None = None
+    thumbnail_path: str | None = None
 
     # Processamento
-    processing_steps: List[ProcessingStep] = field(default_factory=list)
-    current_step: Optional[str] = None
+    processing_steps: list[ProcessingStep] = field(default_factory=list)
+    current_step: str | None = None
     total_processing_time_ms: int = 0
 
     # Resultados
-    ocr_result_id: Optional[str] = None
+    ocr_result_id: str | None = None
     extracted_fields_count: int = 0
     validation_passed: bool = False
     confidence_score: float = 0.0
 
     # Revisao
     needs_review: bool = False
-    review_reason: Optional[str] = None
-    review_notes: Optional[str] = None
-    reviewed_by: Optional[str] = None
-    reviewed_at: Optional[datetime] = None
+    review_reason: str | None = None
+    review_notes: str | None = None
+    reviewed_by: str | None = None
+    reviewed_at: datetime | None = None
 
     # Organizacao
-    folder_id: Optional[str] = None
-    tags: List[str] = field(default_factory=list)
-    reference_id: Optional[str] = None  # ID de referencia externa
-    reference_type: Optional[str] = None  # Tipo de referencia (lead, contract, etc)
+    folder_id: str | None = None
+    tags: list[str] = field(default_factory=list)
+    reference_id: str | None = None  # ID de referencia externa
+    reference_type: str | None = None  # Tipo de referencia (lead, contract, etc)
 
     # Metadados
-    metadata: Dict[str, Any] = field(default_factory=dict)
-    extracted_data: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
+    extracted_data: dict[str, Any] = field(default_factory=dict)
 
     # Timestamps
     created_at: datetime = field(default_factory=datetime.utcnow)
     updated_at: datetime = field(default_factory=datetime.utcnow)
-    processed_at: Optional[datetime] = None
-    expires_at: Optional[datetime] = None
+    processed_at: datetime | None = None
+    expires_at: datetime | None = None
 
     # Controle
     is_active: bool = True
     is_archived: bool = False
     version: int = 1
-    parent_id: Optional[str] = None  # Para versoes de documento
+    parent_id: str | None = None  # Para versoes de documento
 
     def __post_init__(self) -> None:
         """Inicializa etapas de processamento padrao."""
@@ -263,7 +259,7 @@ class Document:
                 ProcessingStep(name="validation"),
             ]
 
-    def get_step(self, name: str) -> Optional[ProcessingStep]:
+    def get_step(self, name: str) -> ProcessingStep | None:
         """Obtem etapa por nome."""
         for step in self.processing_steps:
             if step.name == name:
@@ -280,9 +276,7 @@ class Document:
             return True
         return False
 
-    def complete_step(
-        self, name: str, metadata: Optional[Dict[str, Any]] = None
-    ) -> bool:
+    def complete_step(self, name: str, metadata: dict[str, Any] | None = None) -> bool:
         """Completa uma etapa de processamento."""
         step = self.get_step(name)
         if step:
@@ -304,11 +298,7 @@ class Document:
 
     def _update_total_time(self) -> None:
         """Atualiza tempo total de processamento."""
-        self.total_processing_time_ms = sum(
-            step.duration_ms or 0
-            for step in self.processing_steps
-            if step.duration_ms
-        )
+        self.total_processing_time_ms = sum(step.duration_ms or 0 for step in self.processing_steps if step.duration_ms)
 
     def mark_for_review(self, reason: str) -> None:
         """Marca documento para revisao manual."""
@@ -317,7 +307,7 @@ class Document:
         self.status = DocumentStatus.REVIEW_NEEDED
         self.updated_at = datetime.utcnow()
 
-    def complete_review(self, reviewed_by: str, notes: Optional[str] = None) -> None:
+    def complete_review(self, reviewed_by: str, notes: str | None = None) -> None:
         """Completa revisao do documento."""
         self.needs_review = False
         self.reviewed_by = reviewed_by
@@ -350,13 +340,13 @@ class Document:
             self.tags.remove(tag)
             self.updated_at = datetime.utcnow()
 
-    def set_extracted_data(self, data: Dict[str, Any]) -> None:
+    def set_extracted_data(self, data: dict[str, Any]) -> None:
         """Define dados extraidos."""
         self.extracted_data = data
         self.extracted_fields_count = len(data)
         self.updated_at = datetime.utcnow()
 
-    def get_processing_summary(self) -> Dict[str, Any]:
+    def get_processing_summary(self) -> dict[str, Any]:
         """Retorna resumo do processamento."""
         return {
             "status": self.status.value,
@@ -377,7 +367,7 @@ class Document:
             "validation_passed": self.validation_passed,
         }
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Converte para dicionario."""
         return {
             "id": self.id,
@@ -385,9 +375,7 @@ class Document:
             "name": self.name,
             "original_name": self.original_name,
             "document_type": self.document_type.value,
-            "predicted_type": (
-                self.predicted_type.value if self.predicted_type else None
-            ),
+            "predicted_type": (self.predicted_type.value if self.predicted_type else None),
             "type_confidence": self.type_confidence,
             "status": self.status.value,
             "source": self.source.value,

@@ -4,8 +4,8 @@ Gerencia regras de comissão, cálculos e pagamentos.
 """
 
 from datetime import date, datetime
-from enum import Enum
-from typing import TYPE_CHECKING, Optional
+from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     Boolean,
@@ -24,10 +24,10 @@ from sqlalchemy.orm import relationship
 from core.models import Base
 
 if TYPE_CHECKING:
-    from modules.crm.models.proposal import Proposal
+    pass
 
 
-class CommissionType(str, Enum):
+class CommissionType(StrEnum):
     """Tipo de comissão."""
 
     FIXED = "fixed"  # Valor fixo por venda
@@ -37,7 +37,7 @@ class CommissionType(str, Enum):
     BONUS = "bonus"  # Bônus por meta
 
 
-class CommissionTrigger(str, Enum):
+class CommissionTrigger(StrEnum):
     """Gatilho para pagamento da comissão."""
 
     ON_SIGNATURE = "on_signature"  # Na assinatura do contrato
@@ -47,7 +47,7 @@ class CommissionTrigger(str, Enum):
     MONTHLY = "monthly"  # Mensal (recorrente)
 
 
-class CommissionStatus(str, Enum):
+class CommissionStatus(StrEnum):
     """Status da comissão."""
 
     PENDING = "pending"  # Pendente (aguardando gatilho)
@@ -57,7 +57,7 @@ class CommissionStatus(str, Enum):
     REVERSED = "reversed"  # Estornada
 
 
-class PaymentMethod(str, Enum):
+class PaymentMethod(StrEnum):
     """Método de pagamento da comissão."""
 
     PAYROLL = "payroll"  # Folha de pagamento
@@ -76,9 +76,7 @@ class CommissionRule(Base):
     description = Column(Text, nullable=True)
 
     # Tipo e cálculo
-    commission_type = Column(
-        String(20), default=CommissionType.PERCENTAGE.value, nullable=False
-    )
+    commission_type = Column(String(20), default=CommissionType.PERCENTAGE.value, nullable=False)
     base_value = Column(Float, default=0.0, nullable=False)  # Valor ou percentual base
     min_value = Column(Float, nullable=True)  # Comissão mínima
     max_value = Column(Float, nullable=True)  # Comissão máxima
@@ -88,9 +86,7 @@ class CommissionRule(Base):
     progressive_scale = Column(Text, nullable=True)  # JSON string
 
     # Gatilho de pagamento
-    trigger = Column(
-        String(20), default=CommissionTrigger.ON_FIRST_PAYMENT.value, nullable=False
-    )
+    trigger = Column(String(20), default=CommissionTrigger.ON_FIRST_PAYMENT.value, nullable=False)
     trigger_delay_days = Column(Integer, default=0, nullable=False)  # Dias após gatilho
 
     # Filtros de aplicação
@@ -110,9 +106,7 @@ class CommissionRule(Base):
     # Controle
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
-    )
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     created_by_id = Column(
         UUID(as_uuid=False),
         ForeignKey("users.id", ondelete="SET NULL"),
@@ -263,9 +257,7 @@ class Commission(Base):
     final_commission = Column(Float, nullable=False)  # Comissão final
 
     # Status e datas
-    status = Column(
-        String(20), default=CommissionStatus.PENDING.value, nullable=False, index=True
-    )
+    status = Column(String(20), default=CommissionStatus.PENDING.value, nullable=False, index=True)
     trigger = Column(String(20), nullable=False)
     trigger_date = Column(Date, nullable=True)  # Data do gatilho
     due_date = Column(Date, nullable=True)  # Data prevista para pagamento
@@ -282,9 +274,7 @@ class Commission(Base):
     # Controle
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
-    )
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     created_by_id = Column(
         UUID(as_uuid=False),
         ForeignKey("users.id", ondelete="SET NULL"),
@@ -299,9 +289,7 @@ class Commission(Base):
 
     # Relationships
     rule = relationship("CommissionRule", back_populates="commissions")
-    payments = relationship(
-        "CommissionPayment", back_populates="commission", cascade="all, delete-orphan"
-    )
+    payments = relationship("CommissionPayment", back_populates="commission", cascade="all, delete-orphan")
 
     @property
     def is_pending(self) -> bool:
@@ -340,7 +328,7 @@ class Commission(Base):
         return self.due_date < date.today()
 
     @property
-    def days_until_due(self) -> Optional[int]:
+    def days_until_due(self) -> int | None:
         """Dias até vencimento."""
         if not self.due_date:
             return None
@@ -363,9 +351,7 @@ class CommissionPayment(Base):  # pylint: disable=too-few-public-methods
 
     # Pagamento
     amount = Column(Float, nullable=False)
-    payment_method = Column(
-        String(20), default=PaymentMethod.PAYROLL.value, nullable=False
-    )
+    payment_method = Column(String(20), default=PaymentMethod.PAYROLL.value, nullable=False)
     payment_date = Column(Date, nullable=False)
 
     # Referência
@@ -430,9 +416,7 @@ class CommissionSummary(Base):
     is_closed = Column(Boolean, default=False, nullable=False)  # Mês fechado
     closed_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
-    )
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     @property
     def is_target_achieved(self) -> bool:

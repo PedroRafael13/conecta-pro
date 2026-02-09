@@ -1,28 +1,28 @@
 """Model para contracheques/holerites."""
 
-from datetime import datetime
-from enum import Enum
 import uuid
+from datetime import datetime
+from enum import StrEnum
 
 from sqlalchemy import (
-    Column,
-    String,
     Boolean,
-    DateTime,
+    Column,
     Date,
+    DateTime,
     ForeignKey,
+    Index,
     Integer,
     Numeric,
-    Index,
-    UniqueConstraint,
+    String,
     Text,
+    UniqueConstraint,
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 from core.database import Base
 
 
-class PaySlipStatus(str, Enum):
+class PaySlipStatus(StrEnum):
     """Status do contracheque."""
 
     DRAFT = "draft"  # Rascunho (em processamento)
@@ -33,7 +33,7 @@ class PaySlipStatus(str, Enum):
     CANCELLED = "cancelled"  # Cancelado
 
 
-class PaySlipType(str, Enum):
+class PaySlipType(StrEnum):
     """Tipo de contracheque."""
 
     MONTHLY = "monthly"  # Mensal (normal)
@@ -219,11 +219,7 @@ class PaySlip(Base):
     @property
     def can_contest(self) -> bool:
         """Verifica se pode ser contestado."""
-        return (
-            self.is_viewable
-            and not self.contested
-            and not self.acknowledged_at
-        )
+        return self.is_viewable and not self.contested and not self.acknowledged_at
 
     def record_view(self) -> None:
         """Registra visualização do contracheque."""

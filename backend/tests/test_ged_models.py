@@ -1,44 +1,45 @@
 """Testes para os models do módulo GED."""
 
-import pytest
 from datetime import datetime, timedelta
 from uuid import uuid4
 
-from modules.ged.models.folder import (
-    Folder,
-    FolderType,
-    FolderStatus,
-    FolderPermission,
-)
+import pytest
+
 from modules.ged.models.document import (
     Document,
-    DocumentType,
-    DocumentStatus,
     DocumentCategory,
     DocumentConfidentiality,
+    DocumentStatus,
+    DocumentType,
     FileType,
-)
-from modules.ged.models.document_version import (
-    DocumentVersion,
-    VersionType,
-    VersionStatus,
 )
 from modules.ged.models.document_share import (
     DocumentShare,
-    ShareType,
     SharePermission,
     ShareStatus,
-)
-from modules.ged.models.document_tag import (
-    DocumentTag,
-    TagType,
-    TagColor,
+    ShareType,
 )
 from modules.ged.models.document_signature import (
     DocumentSignature,
-    SignatureType,
-    SignatureStatus,
     SignatureRole,
+    SignatureStatus,
+    SignatureType,
+)
+from modules.ged.models.document_tag import (
+    DocumentTag,
+    TagColor,
+    TagType,
+)
+from modules.ged.models.document_version import (
+    DocumentVersion,
+    VersionStatus,
+    VersionType,
+)
+from modules.ged.models.folder import (
+    Folder,
+    FolderPermission,
+    FolderStatus,
+    FolderType,
 )
 
 

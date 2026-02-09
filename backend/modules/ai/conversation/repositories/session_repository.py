@@ -1,8 +1,7 @@
 """Repository para ChatSession."""
 
 import logging
-from datetime import datetime, UTC
-from typing import Optional
+from datetime import UTC, datetime
 from uuid import UUID
 
 from sqlalchemy import and_, desc, func, or_
@@ -30,10 +29,10 @@ class ChatSessionRepository:
         self,
         user_id: int,
         title: str = "Nova Conversa",
-        description: Optional[str] = None,
-        module_context: Optional[str] = None,
-        initial_context: Optional[dict] = None,
-        tags: Optional[list[str]] = None,
+        description: str | None = None,
+        module_context: str | None = None,
+        initial_context: dict | None = None,
+        tags: list[str] | None = None,
     ) -> ChatSession:
         """
         Cria nova sessao de chat.
@@ -65,7 +64,7 @@ class ChatSessionRepository:
         logger.info(f"Sessao criada: {session.id}")
         return session
 
-    async def get_by_id(self, session_id: UUID) -> Optional[ChatSession]:
+    async def get_by_id(self, session_id: UUID) -> ChatSession | None:
         """
         Busca sessao por ID.
 
@@ -75,9 +74,7 @@ class ChatSessionRepository:
         Returns:
             ChatSession ou None
         """
-        result = await self.db.execute(
-            select(ChatSession).where(ChatSession.id == session_id)
-        )
+        result = await self.db.execute(select(ChatSession).where(ChatSession.id == session_id))
         return result.scalar_one_or_none()
 
     async def get_by_user(
@@ -102,7 +99,7 @@ class ChatSessionRepository:
         query = select(ChatSession).where(ChatSession.user_id == user_id)
 
         if not include_archived:
-            query = query.where(ChatSession.is_archived == False)
+            query = query.where(not ChatSession.is_archived)
 
         query = (
             query.order_by(desc(ChatSession.is_pinned))
@@ -114,9 +111,7 @@ class ChatSessionRepository:
         result = await self.db.execute(query)
         return list(result.scalars().all())
 
-    async def count_by_user(
-        self, user_id: int, include_archived: bool = False
-    ) -> int:
+    async def count_by_user(self, user_id: int, include_archived: bool = False) -> int:
         """
         Conta sessoes de um usuario.
 
@@ -127,12 +122,10 @@ class ChatSessionRepository:
         Returns:
             Total de sessoes
         """
-        query = select(func.count(ChatSession.id)).where(
-            ChatSession.user_id == user_id
-        )
+        query = select(func.count(ChatSession.id)).where(ChatSession.user_id == user_id)
 
         if not include_archived:
-            query = query.where(ChatSession.is_archived == False)
+            query = query.where(not ChatSession.is_archived)
 
         result = await self.db.execute(query)
         return result.scalar() or 0
@@ -141,7 +134,7 @@ class ChatSessionRepository:
         self,
         session_id: UUID,
         **kwargs,
-    ) -> Optional[ChatSession]:
+    ) -> ChatSession | None:
         """
         Atualiza sessao.
 
@@ -191,7 +184,7 @@ class ChatSessionRepository:
             session.last_message_at = datetime.now(UTC)
             await self.db.commit()
 
-    async def archive(self, session_id: UUID) -> Optional[ChatSession]:
+    async def archive(self, session_id: UUID) -> ChatSession | None:
         """
         Arquiva sessao.
 
@@ -203,7 +196,7 @@ class ChatSessionRepository:
         """
         return await self.update(session_id, is_archived=True, is_active=False)
 
-    async def unarchive(self, session_id: UUID) -> Optional[ChatSession]:
+    async def unarchive(self, session_id: UUID) -> ChatSession | None:
         """
         Desarquiva sessao.
 
@@ -215,7 +208,7 @@ class ChatSessionRepository:
         """
         return await self.update(session_id, is_archived=False, is_active=True)
 
-    async def pin(self, session_id: UUID) -> Optional[ChatSession]:
+    async def pin(self, session_id: UUID) -> ChatSession | None:
         """
         Fixa sessao.
 
@@ -227,7 +220,7 @@ class ChatSessionRepository:
         """
         return await self.update(session_id, is_pinned=True)
 
-    async def unpin(self, session_id: UUID) -> Optional[ChatSession]:
+    async def unpin(self, session_id: UUID) -> ChatSession | None:
         """
         Remove fixacao.
 
@@ -302,7 +295,7 @@ class ChatSessionRepository:
         search_query = select(ChatSession).where(
             and_(
                 ChatSession.user_id == user_id,
-                ChatSession.is_archived == False,
+                not ChatSession.is_archived,
                 or_(
                     ChatSession.title.ilike(f"%{query}%"),
                     ChatSession.description.ilike(f"%{query}%"),
@@ -310,11 +303,7 @@ class ChatSessionRepository:
             )
         )
 
-        search_query = (
-            search_query.order_by(desc(ChatSession.last_message_at))
-            .offset(skip)
-            .limit(limit)
-        )
+        search_query = search_query.order_by(desc(ChatSession.last_message_at)).offset(skip).limit(limit)
 
         result = await self.db.execute(search_query)
         return list(result.scalars().all())
@@ -341,7 +330,7 @@ class ChatSessionRepository:
         query = select(ChatSession).where(
             and_(
                 ChatSession.user_id == user_id,
-                ChatSession.is_active == True,
+                ChatSession.is_active,
                 ChatSession.last_message_at >= cutoff,
             )
         )
@@ -352,7 +341,7 @@ class ChatSessionRepository:
     async def get_or_create(
         self,
         user_id: int,
-        session_id: Optional[UUID] = None,
+        session_id: UUID | None = None,
         title: str = "Nova Conversa",
     ) -> ChatSession:
         """
@@ -384,25 +373,21 @@ class ChatSessionRepository:
             Dicionario com estatisticas
         """
         # Total de sessoes
-        total_query = select(func.count(ChatSession.id)).where(
-            ChatSession.user_id == user_id
-        )
+        total_query = select(func.count(ChatSession.id)).where(ChatSession.user_id == user_id)
         total = (await self.db.execute(total_query)).scalar() or 0
 
         # Sessoes ativas
         active_query = select(func.count(ChatSession.id)).where(
             and_(
                 ChatSession.user_id == user_id,
-                ChatSession.is_active == True,
-                ChatSession.is_archived == False,
+                ChatSession.is_active,
+                not ChatSession.is_archived,
             )
         )
         active = (await self.db.execute(active_query)).scalar() or 0
 
         # Total de mensagens
-        messages_query = select(func.sum(ChatSession.message_count)).where(
-            ChatSession.user_id == user_id
-        )
+        messages_query = select(func.sum(ChatSession.message_count)).where(ChatSession.user_id == user_id)
         messages = (await self.db.execute(messages_query)).scalar() or 0
 
         return {

@@ -4,25 +4,45 @@ Testes de Serviço para o módulo de Auditoria e Compliance.
 Sprint 33: Auditoria e Compliance
 """
 
-import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
 from datetime import datetime, timedelta
+from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
-from modules.audit.models import (
-    AuditLog, AuditAction, AuditCategory, AuditSeverity, AuditResult,
-    ComplianceRule, ComplianceFramework, RuleCategory, RuleSeverity, RuleStatus,
-    ComplianceCheck, CheckType, CheckStatus, CheckResult,
-    DataRetention, DataCategory, RetentionPeriod, RetentionAction, RetentionStatus,
-    AccessHistory, AccessType, AccessResult, DeviceType, RiskLevel
-)
-from modules.audit.services.audit_service import AuditService
-from modules.audit.repositories.audit_repository import AuditRepository
+import pytest
 
+from modules.audit.models import (
+    AccessHistory,
+    AccessResult,
+    AccessType,
+    AuditAction,
+    AuditCategory,
+    AuditLog,
+    AuditResult,
+    AuditSeverity,
+    CheckResult,
+    CheckStatus,
+    CheckType,
+    ComplianceCheck,
+    ComplianceFramework,
+    ComplianceRule,
+    DataCategory,
+    DataRetention,
+    DeviceType,
+    RetentionAction,
+    RetentionPeriod,
+    RetentionStatus,
+    RiskLevel,
+    RuleCategory,
+    RuleSeverity,
+    RuleStatus,
+)
+from modules.audit.repositories.audit_repository import AuditRepository
+from modules.audit.services.audit_service import AuditService
 
 # ========================
 # Fixtures
 # ========================
+
 
 @pytest.fixture
 def mock_repository():
@@ -54,6 +74,7 @@ def sample_user_id():
 # Testes de AuditLog Service
 # ========================
 
+
 class TestAuditLogService:
     """Testes do serviço de logs de auditoria."""
 
@@ -65,14 +86,10 @@ class TestAuditLogService:
             "category": AuditCategory.DATA,
             "entity_type": "Lead",
             "entity_id": str(uuid4()),
-            "description": "Lead criado"
+            "description": "Lead criado",
         }
 
-        expected_log = AuditLog(
-            id=uuid4(),
-            tenant_id=sample_tenant_id,
-            **log_data
-        )
+        expected_log = AuditLog(id=uuid4(), tenant_id=sample_tenant_id, **log_data)
         mock_repository.create_audit_log.return_value = expected_log
 
         result = audit_service.create_audit_log(sample_tenant_id, log_data)
@@ -80,9 +97,7 @@ class TestAuditLogService:
         mock_repository.create_audit_log.assert_called_once()
         assert result.action == AuditAction.CREATE
 
-    def test_create_audit_log_with_metadata(
-        self, audit_service, mock_repository, sample_tenant_id
-    ):
+    def test_create_audit_log_with_metadata(self, audit_service, mock_repository, sample_tenant_id):
         """Testa criação de log com metadados."""
         log_data = {
             "user_id": uuid4(),
@@ -91,28 +106,22 @@ class TestAuditLogService:
             "entity_type": "Lead",
             "metadata": {"old_value": "A", "new_value": "B"},
             "data_before": {"status": "novo"},
-            "data_after": {"status": "qualificado"}
+            "data_after": {"status": "qualificado"},
         }
 
-        expected_log = AuditLog(
-            id=uuid4(),
-            tenant_id=sample_tenant_id,
-            **log_data
-        )
+        expected_log = AuditLog(id=uuid4(), tenant_id=sample_tenant_id, **log_data)
         mock_repository.create_audit_log.return_value = expected_log
 
         result = audit_service.create_audit_log(sample_tenant_id, log_data)
 
         assert result.metadata == {"old_value": "A", "new_value": "B"}
 
-    def test_list_audit_logs_with_filters(
-        self, audit_service, mock_repository, sample_tenant_id
-    ):
+    def test_list_audit_logs_with_filters(self, audit_service, mock_repository, sample_tenant_id):
         """Testa listagem com filtros."""
         filters = {
             "action": AuditAction.CREATE,
             "severity": AuditSeverity.HIGH,
-            "start_date": datetime.utcnow() - timedelta(days=7)
+            "start_date": datetime.utcnow() - timedelta(days=7),
         }
 
         mock_repository.list_audit_logs.return_value = ([], 0)
@@ -126,13 +135,11 @@ class TestAuditLogService:
         mock_repository.get_audit_stats.return_value = {
             "total_logs": 1000,
             "by_action": {"CREATE": 400, "UPDATE": 300},
-            "by_severity": {"INFO": 800, "WARNING": 150}
+            "by_severity": {"INFO": 800, "WARNING": 150},
         }
 
         result = audit_service.get_audit_stats(
-            sample_tenant_id,
-            datetime.utcnow() - timedelta(days=30),
-            datetime.utcnow()
+            sample_tenant_id, datetime.utcnow() - timedelta(days=30), datetime.utcnow()
         )
 
         assert result["total_logs"] == 1000
@@ -146,18 +153,13 @@ class TestAuditLogService:
             user_id=uuid4(),
             action=AuditAction.DELETE,
             category=AuditCategory.DATA,
-            entity_type="Lead"
+            entity_type="Lead",
         )
 
         mock_repository.get_audit_log.return_value = log
         mock_repository.update_audit_log.return_value = log
 
-        result = audit_service.mark_for_review(
-            sample_tenant_id,
-            log_id,
-            "admin",
-            "Verificar exclusão"
-        )
+        result = audit_service.mark_for_review(sample_tenant_id, log_id, "admin", "Verificar exclusão")
 
         assert result.requires_review is True
 
@@ -165,10 +167,7 @@ class TestAuditLogService:
         """Testa arquivamento de logs antigos."""
         mock_repository.archive_old_logs.return_value = 500
 
-        result = audit_service.archive_old_logs(
-            sample_tenant_id,
-            days_old=365
-        )
+        result = audit_service.archive_old_logs(sample_tenant_id, days_old=365)
 
         assert result == 500
         mock_repository.archive_old_logs.assert_called_once()
@@ -178,26 +177,21 @@ class TestAuditLogService:
 # Testes de ComplianceRule Service
 # ========================
 
+
 class TestComplianceRuleService:
     """Testes do serviço de regras de compliance."""
 
-    def test_create_compliance_rule_success(
-        self, audit_service, mock_repository, sample_tenant_id
-    ):
+    def test_create_compliance_rule_success(self, audit_service, mock_repository, sample_tenant_id):
         """Testa criação de regra."""
         rule_data = {
             "code": "LGPD-001",
             "name": "Consentimento de Dados",
             "framework": ComplianceFramework.LGPD,
             "category": RuleCategory.DATA_PROTECTION,
-            "severity": RuleSeverity.HIGH
+            "severity": RuleSeverity.HIGH,
         }
 
-        expected_rule = ComplianceRule(
-            id=uuid4(),
-            tenant_id=sample_tenant_id,
-            **rule_data
-        )
+        expected_rule = ComplianceRule(id=uuid4(), tenant_id=sample_tenant_id, **rule_data)
         mock_repository.create_compliance_rule.return_value = expected_rule
 
         result = audit_service.create_compliance_rule(sample_tenant_id, rule_data)
@@ -205,9 +199,7 @@ class TestComplianceRuleService:
         assert result.code == "LGPD-001"
         assert result.framework == ComplianceFramework.LGPD
 
-    def test_activate_compliance_rule(
-        self, audit_service, mock_repository, sample_tenant_id
-    ):
+    def test_activate_compliance_rule(self, audit_service, mock_repository, sample_tenant_id):
         """Testa ativação de regra."""
         rule_id = uuid4()
         rule = ComplianceRule(
@@ -218,7 +210,7 @@ class TestComplianceRuleService:
             framework=ComplianceFramework.LGPD,
             category=RuleCategory.DATA_PROTECTION,
             severity=RuleSeverity.HIGH,
-            status=RuleStatus.DRAFT
+            status=RuleStatus.DRAFT,
         )
 
         mock_repository.get_compliance_rule.return_value = rule
@@ -228,9 +220,7 @@ class TestComplianceRuleService:
 
         assert result.status == RuleStatus.ACTIVE
 
-    def test_deprecate_compliance_rule(
-        self, audit_service, mock_repository, sample_tenant_id
-    ):
+    def test_deprecate_compliance_rule(self, audit_service, mock_repository, sample_tenant_id):
         """Testa depreciação de regra."""
         rule_id = uuid4()
         rule = ComplianceRule(
@@ -241,30 +231,21 @@ class TestComplianceRuleService:
             framework=ComplianceFramework.LGPD,
             category=RuleCategory.DATA_PROTECTION,
             severity=RuleSeverity.HIGH,
-            status=RuleStatus.ACTIVE
+            status=RuleStatus.ACTIVE,
         )
 
         mock_repository.get_compliance_rule.return_value = rule
         mock_repository.update_compliance_rule.return_value = rule
 
-        result = audit_service.deprecate_rule(
-            sample_tenant_id,
-            rule_id,
-            "Nova versão disponível"
-        )
+        result = audit_service.deprecate_rule(sample_tenant_id, rule_id, "Nova versão disponível")
 
         assert result.status == RuleStatus.DEPRECATED
 
-    def test_list_rules_by_framework(
-        self, audit_service, mock_repository, sample_tenant_id
-    ):
+    def test_list_rules_by_framework(self, audit_service, mock_repository, sample_tenant_id):
         """Testa listagem por framework."""
         mock_repository.list_compliance_rules.return_value = ([], 0)
 
-        audit_service.list_rules_by_framework(
-            sample_tenant_id,
-            ComplianceFramework.LGPD
-        )
+        audit_service.list_rules_by_framework(sample_tenant_id, ComplianceFramework.LGPD)
 
         mock_repository.list_compliance_rules.assert_called_once()
 
@@ -279,7 +260,7 @@ class TestComplianceRuleService:
             category=RuleCategory.DATA_PROTECTION,
             severity=RuleSeverity.HIGH,
             checks_total=100,
-            checks_passed=95
+            checks_passed=95,
         )
 
         mock_repository.get_compliance_rule.return_value = rule
@@ -293,33 +274,23 @@ class TestComplianceRuleService:
 # Testes de ComplianceCheck Service
 # ========================
 
+
 class TestComplianceCheckService:
     """Testes do serviço de verificações de compliance."""
 
-    def test_create_compliance_check_success(
-        self, audit_service, mock_repository, sample_tenant_id
-    ):
+    def test_create_compliance_check_success(self, audit_service, mock_repository, sample_tenant_id):
         """Testa criação de verificação."""
         rule_id = uuid4()
-        check_data = {
-            "rule_id": rule_id,
-            "check_type": CheckType.AUTOMATED
-        }
+        check_data = {"rule_id": rule_id, "check_type": CheckType.AUTOMATED}
 
-        expected_check = ComplianceCheck(
-            id=uuid4(),
-            tenant_id=sample_tenant_id,
-            **check_data
-        )
+        expected_check = ComplianceCheck(id=uuid4(), tenant_id=sample_tenant_id, **check_data)
         mock_repository.create_compliance_check.return_value = expected_check
 
         result = audit_service.create_compliance_check(sample_tenant_id, check_data)
 
         assert result.check_type == CheckType.AUTOMATED
 
-    def test_start_compliance_check(
-        self, audit_service, mock_repository, sample_tenant_id
-    ):
+    def test_start_compliance_check(self, audit_service, mock_repository, sample_tenant_id):
         """Testa início de verificação."""
         check_id = uuid4()
         check = ComplianceCheck(
@@ -327,7 +298,7 @@ class TestComplianceCheckService:
             tenant_id=sample_tenant_id,
             rule_id=uuid4(),
             check_type=CheckType.AUTOMATED,
-            status=CheckStatus.PENDING
+            status=CheckStatus.PENDING,
         )
 
         mock_repository.get_compliance_check.return_value = check
@@ -337,9 +308,7 @@ class TestComplianceCheckService:
 
         assert result.status == CheckStatus.IN_PROGRESS
 
-    def test_complete_check_compliant(
-        self, audit_service, mock_repository, sample_tenant_id
-    ):
+    def test_complete_check_compliant(self, audit_service, mock_repository, sample_tenant_id):
         """Testa conclusão como compliant."""
         check_id = uuid4()
         check = ComplianceCheck(
@@ -347,25 +316,18 @@ class TestComplianceCheckService:
             tenant_id=sample_tenant_id,
             rule_id=uuid4(),
             check_type=CheckType.AUTOMATED,
-            status=CheckStatus.IN_PROGRESS
+            status=CheckStatus.IN_PROGRESS,
         )
 
         mock_repository.get_compliance_check.return_value = check
         mock_repository.update_compliance_check.return_value = check
 
-        result = audit_service.complete_check_compliant(
-            sample_tenant_id,
-            check_id,
-            95.0,
-            {"all_tests": "passed"}
-        )
+        result = audit_service.complete_check_compliant(sample_tenant_id, check_id, 95.0, {"all_tests": "passed"})
 
         assert result.result == CheckResult.COMPLIANT
         assert result.compliance_score == 95.0
 
-    def test_complete_check_non_compliant(
-        self, audit_service, mock_repository, sample_tenant_id
-    ):
+    def test_complete_check_non_compliant(self, audit_service, mock_repository, sample_tenant_id):
         """Testa conclusão como não compliant."""
         check_id = uuid4()
         check = ComplianceCheck(
@@ -373,7 +335,7 @@ class TestComplianceCheckService:
             tenant_id=sample_tenant_id,
             rule_id=uuid4(),
             check_type=CheckType.AUTOMATED,
-            status=CheckStatus.IN_PROGRESS
+            status=CheckStatus.IN_PROGRESS,
         )
 
         mock_repository.get_compliance_check.return_value = check
@@ -381,11 +343,7 @@ class TestComplianceCheckService:
 
         violations = ["Dados sem consentimento", "Acesso não autorizado"]
         result = audit_service.complete_check_non_compliant(
-            sample_tenant_id,
-            check_id,
-            45.0,
-            violations,
-            {"recommendation": "Corrigir imediatamente"}
+            sample_tenant_id, check_id, 45.0, violations, {"recommendation": "Corrigir imediatamente"}
         )
 
         assert result.result == CheckResult.NON_COMPLIANT
@@ -400,18 +358,13 @@ class TestComplianceCheckService:
             rule_id=uuid4(),
             check_type=CheckType.MANUAL,
             status=CheckStatus.COMPLETED,
-            result=CheckResult.NON_COMPLIANT
+            result=CheckResult.NON_COMPLIANT,
         )
 
         mock_repository.get_compliance_check.return_value = check
         mock_repository.update_compliance_check.return_value = check
 
-        result = audit_service.escalate_check(
-            sample_tenant_id,
-            check_id,
-            "supervisor",
-            "Múltiplas violações críticas"
-        )
+        result = audit_service.escalate_check(sample_tenant_id, check_id, "supervisor", "Múltiplas violações críticas")
 
         assert result.escalated is True
         assert result.escalated_to == "supervisor"
@@ -429,26 +382,21 @@ class TestComplianceCheckService:
 # Testes de DataRetention Service
 # ========================
 
+
 class TestDataRetentionService:
     """Testes do serviço de retenção de dados."""
 
-    def test_create_retention_policy_success(
-        self, audit_service, mock_repository, sample_tenant_id
-    ):
+    def test_create_retention_policy_success(self, audit_service, mock_repository, sample_tenant_id):
         """Testa criação de política."""
         policy_data = {
             "name": "Retenção de Leads",
             "entity_type": "Lead",
             "data_category": DataCategory.CUSTOMER,
             "retention_period": RetentionPeriod.YEARS_5,
-            "retention_action": RetentionAction.ARCHIVE
+            "retention_action": RetentionAction.ARCHIVE,
         }
 
-        expected_policy = DataRetention(
-            id=uuid4(),
-            tenant_id=sample_tenant_id,
-            **policy_data
-        )
+        expected_policy = DataRetention(id=uuid4(), tenant_id=sample_tenant_id, **policy_data)
         mock_repository.create_data_retention.return_value = expected_policy
 
         result = audit_service.create_retention_policy(sample_tenant_id, policy_data)
@@ -465,18 +413,13 @@ class TestDataRetentionService:
             entity_type="Lead",
             data_category=DataCategory.CUSTOMER,
             retention_period=RetentionPeriod.YEARS_5,
-            retention_action=RetentionAction.ARCHIVE
+            retention_action=RetentionAction.ARCHIVE,
         )
 
         mock_repository.get_data_retention.return_value = policy
         mock_repository.update_data_retention.return_value = policy
 
-        result = audit_service.enable_legal_hold(
-            sample_tenant_id,
-            policy_id,
-            "Processo judicial",
-            "ADV-001"
-        )
+        result = audit_service.enable_legal_hold(sample_tenant_id, policy_id, "Processo judicial", "ADV-001")
 
         assert result.legal_hold is True
         assert result.legal_hold_reference == "ADV-001"
@@ -492,7 +435,7 @@ class TestDataRetentionService:
             data_category=DataCategory.CUSTOMER,
             retention_period=RetentionPeriod.YEARS_5,
             retention_action=RetentionAction.ARCHIVE,
-            legal_hold=True
+            legal_hold=True,
         )
 
         mock_repository.get_data_retention.return_value = policy
@@ -502,9 +445,7 @@ class TestDataRetentionService:
 
         assert result.legal_hold is False
 
-    def test_execute_retention_policy(
-        self, audit_service, mock_repository, sample_tenant_id
-    ):
+    def test_execute_retention_policy(self, audit_service, mock_repository, sample_tenant_id):
         """Testa execução de política."""
         policy_id = uuid4()
         policy = DataRetention(
@@ -515,17 +456,13 @@ class TestDataRetentionService:
             data_category=DataCategory.CUSTOMER,
             retention_period=RetentionPeriod.YEARS_5,
             retention_action=RetentionAction.ARCHIVE,
-            status=RetentionStatus.ACTIVE
+            status=RetentionStatus.ACTIVE,
         )
 
         mock_repository.get_data_retention.return_value = policy
         mock_repository.update_data_retention.return_value = policy
 
-        result = audit_service.execute_retention_policy(
-            sample_tenant_id,
-            policy_id,
-            records_affected=100
-        )
+        result = audit_service.execute_retention_policy(sample_tenant_id, policy_id, records_affected=100)
 
         assert result.execution_count == 1
         assert result.records_affected == 100
@@ -543,48 +480,37 @@ class TestDataRetentionService:
 # Testes de AccessHistory Service
 # ========================
 
+
 class TestAccessHistoryService:
     """Testes do serviço de histórico de acesso."""
 
-    def test_create_login_record_success(
-        self, audit_service, mock_repository, sample_tenant_id, sample_user_id
-    ):
+    def test_create_login_record_success(self, audit_service, mock_repository, sample_tenant_id, sample_user_id):
         """Testa criação de registro de login."""
         access_data = {
             "user_id": sample_user_id,
             "access_type": AccessType.LOGIN,
             "result": AccessResult.SUCCESS,
-            "ip_address": "192.168.1.100"
+            "ip_address": "192.168.1.100",
         }
 
-        expected_access = AccessHistory(
-            id=uuid4(),
-            tenant_id=sample_tenant_id,
-            **access_data
-        )
+        expected_access = AccessHistory(id=uuid4(), tenant_id=sample_tenant_id, **access_data)
         mock_repository.create_access_history.return_value = expected_access
 
         result = audit_service.create_access_history(sample_tenant_id, access_data)
 
         assert result.access_type == AccessType.LOGIN
 
-    def test_record_failed_login(
-        self, audit_service, mock_repository, sample_tenant_id, sample_user_id
-    ):
+    def test_record_failed_login(self, audit_service, mock_repository, sample_tenant_id, sample_user_id):
         """Testa registro de login falho."""
         access_data = {
             "user_id": sample_user_id,
             "access_type": AccessType.LOGIN,
             "result": AccessResult.FAILED,
             "ip_address": "192.168.1.100",
-            "failure_reason": "Senha incorreta"
+            "failure_reason": "Senha incorreta",
         }
 
-        expected_access = AccessHistory(
-            id=uuid4(),
-            tenant_id=sample_tenant_id,
-            **access_data
-        )
+        expected_access = AccessHistory(id=uuid4(), tenant_id=sample_tenant_id, **access_data)
         mock_repository.create_access_history.return_value = expected_access
 
         result = audit_service.create_access_history(sample_tenant_id, access_data)
@@ -600,17 +526,13 @@ class TestAccessHistoryService:
             user_id=uuid4(),
             access_type=AccessType.LOGIN,
             result=AccessResult.SUCCESS,
-            ip_address="192.168.1.100"
+            ip_address="192.168.1.100",
         )
 
         mock_repository.get_access_history.return_value = access
         mock_repository.update_access_history.return_value = access
 
-        result = audit_service.flag_anomaly(
-            sample_tenant_id,
-            access_id,
-            "Login de localização incomum"
-        )
+        result = audit_service.flag_anomaly(sample_tenant_id, access_id, "Login de localização incomum")
 
         assert result.is_anomaly is True
 
@@ -623,25 +545,18 @@ class TestAccessHistoryService:
             user_id=uuid4(),
             access_type=AccessType.LOGIN,
             result=AccessResult.FAILED,
-            ip_address="192.168.1.100"
+            ip_address="192.168.1.100",
         )
 
         mock_repository.get_access_history.return_value = access
         mock_repository.update_access_history.return_value = access
 
-        result = audit_service.trigger_alert(
-            sample_tenant_id,
-            access_id,
-            "alert-001",
-            "Múltiplas tentativas falhas"
-        )
+        result = audit_service.trigger_alert(sample_tenant_id, access_id, "alert-001", "Múltiplas tentativas falhas")
 
         assert result.alert_triggered is True
         assert result.alert_id == "alert-001"
 
-    def test_calculate_risk_for_access(
-        self, audit_service, mock_repository, sample_tenant_id
-    ):
+    def test_calculate_risk_for_access(self, audit_service, mock_repository, sample_tenant_id):
         """Testa cálculo de risco."""
         access_id = uuid4()
         access = AccessHistory(
@@ -652,7 +567,7 @@ class TestAccessHistoryService:
             result=AccessResult.SUCCESS,
             ip_address="192.168.1.100",
             is_anomaly=True,
-            is_new_device=True
+            is_new_device=True,
         )
 
         mock_repository.get_access_history.return_value = access
@@ -667,20 +582,16 @@ class TestAccessHistoryService:
         mock_repository.get_access_stats.return_value = {
             "total_accesses": 5000,
             "successful_logins": 4800,
-            "failed_logins": 200
+            "failed_logins": 200,
         }
 
         result = audit_service.get_access_stats(
-            sample_tenant_id,
-            datetime.utcnow() - timedelta(days=30),
-            datetime.utcnow()
+            sample_tenant_id, datetime.utcnow() - timedelta(days=30), datetime.utcnow()
         )
 
         assert result["total_accesses"] == 5000
 
-    def test_get_suspicious_accesses(
-        self, audit_service, mock_repository, sample_tenant_id
-    ):
+    def test_get_suspicious_accesses(self, audit_service, mock_repository, sample_tenant_id):
         """Testa busca de acessos suspeitos."""
         mock_repository.get_suspicious_accesses.return_value = []
 
@@ -693,44 +604,37 @@ class TestAccessHistoryService:
 # Testes de Dashboard Service
 # ========================
 
+
 class TestDashboardService:
     """Testes do serviço de dashboard."""
 
     def test_get_audit_dashboard(self, audit_service, mock_repository, sample_tenant_id):
         """Testa obtenção do dashboard de auditoria."""
-        mock_repository.get_audit_stats.return_value = {
-            "total_logs": 10000,
-            "logs_today": 500,
-            "security_events": 50
-        }
+        mock_repository.get_audit_stats.return_value = {"total_logs": 10000, "logs_today": 500, "security_events": 50}
         mock_repository.get_recent_critical_logs.return_value = []
 
         result = audit_service.get_audit_dashboard(sample_tenant_id)
 
         assert "total_logs" in result
 
-    def test_get_compliance_overview(
-        self, audit_service, mock_repository, sample_tenant_id
-    ):
+    def test_get_compliance_overview(self, audit_service, mock_repository, sample_tenant_id):
         """Testa obtenção do overview de compliance."""
         mock_repository.get_compliance_overview.return_value = {
             "total_rules": 50,
             "active_rules": 45,
-            "compliance_rate": 92.5
+            "compliance_rate": 92.5,
         }
 
         result = audit_service.get_compliance_overview(sample_tenant_id)
 
         assert result["compliance_rate"] == 92.5
 
-    def test_get_security_overview(
-        self, audit_service, mock_repository, sample_tenant_id
-    ):
+    def test_get_security_overview(self, audit_service, mock_repository, sample_tenant_id):
         """Testa obtenção do overview de segurança."""
         mock_repository.get_access_stats.return_value = {
             "total_accesses": 5000,
             "failed_logins": 200,
-            "anomalies_detected": 15
+            "anomalies_detected": 15,
         }
 
         result = audit_service.get_security_overview(sample_tenant_id)
@@ -741,6 +645,7 @@ class TestDashboardService:
 # ========================
 # Testes de Validação
 # ========================
+
 
 class TestValidation:
     """Testes de validação."""
@@ -777,19 +682,18 @@ class TestValidation:
 # Testes de Integração
 # ========================
 
+
 class TestIntegration:
     """Testes de integração entre componentes."""
 
-    def test_audit_log_triggers_compliance_check(
-        self, audit_service, mock_repository, sample_tenant_id
-    ):
+    def test_audit_log_triggers_compliance_check(self, audit_service, mock_repository, sample_tenant_id):
         """Testa se log de auditoria pode disparar verificação."""
         log_data = {
             "user_id": uuid4(),
             "action": AuditAction.DELETE,
             "category": AuditCategory.DATA,
             "entity_type": "Lead",
-            "severity": AuditSeverity.HIGH
+            "severity": AuditSeverity.HIGH,
         }
 
         log = AuditLog(id=uuid4(), tenant_id=sample_tenant_id, **log_data)
@@ -800,33 +704,26 @@ class TestIntegration:
 
         mock_repository.create_audit_log.assert_called_once()
 
-    def test_access_history_triggers_alert(
-        self, audit_service, mock_repository, sample_tenant_id
-    ):
+    def test_access_history_triggers_alert(self, audit_service, mock_repository, sample_tenant_id):
         """Testa se histórico de acesso pode disparar alerta."""
         access_data = {
             "user_id": uuid4(),
             "access_type": AccessType.LOGIN,
             "result": AccessResult.FAILED,
             "ip_address": "192.168.1.100",
-            "failed_attempts": 5
+            "failed_attempts": 5,
         }
 
         access = AccessHistory(id=uuid4(), tenant_id=sample_tenant_id, **access_data)
         mock_repository.create_access_history.return_value = access
         mock_repository.get_recent_failed_attempts.return_value = 5
 
-        result = audit_service.create_access_with_alert_check(
-            sample_tenant_id,
-            access_data
-        )
+        result = audit_service.create_access_with_alert_check(sample_tenant_id, access_data)
 
         # Com 5 tentativas falhas, deve disparar alerta
         assert result is not None
 
-    def test_retention_policy_affects_audit_logs(
-        self, audit_service, mock_repository, sample_tenant_id
-    ):
+    def test_retention_policy_affects_audit_logs(self, audit_service, mock_repository, sample_tenant_id):
         """Testa se política de retenção afeta logs."""
         policy = DataRetention(
             id=uuid4(),
@@ -836,7 +733,7 @@ class TestIntegration:
             data_category=DataCategory.AUDIT,
             retention_period=RetentionPeriod.YEARS_7,
             retention_action=RetentionAction.ARCHIVE,
-            status=RetentionStatus.ACTIVE
+            status=RetentionStatus.ACTIVE,
         )
 
         mock_repository.get_data_retention.return_value = policy
@@ -851,20 +748,14 @@ class TestIntegration:
 # Testes de Performance
 # ========================
 
+
 class TestPerformance:
     """Testes de performance."""
 
-    def test_bulk_create_audit_logs(
-        self, audit_service, mock_repository, sample_tenant_id
-    ):
+    def test_bulk_create_audit_logs(self, audit_service, mock_repository, sample_tenant_id):
         """Testa criação em lote de logs."""
         logs_data = [
-            {
-                "user_id": uuid4(),
-                "action": AuditAction.CREATE,
-                "category": AuditCategory.DATA,
-                "entity_type": "Lead"
-            }
+            {"user_id": uuid4(), "action": AuditAction.CREATE, "category": AuditCategory.DATA, "entity_type": "Lead"}
             for _ in range(100)
         ]
 
@@ -874,9 +765,7 @@ class TestPerformance:
 
         assert result == 100
 
-    def test_batch_compliance_check(
-        self, audit_service, mock_repository, sample_tenant_id
-    ):
+    def test_batch_compliance_check(self, audit_service, mock_repository, sample_tenant_id):
         """Testa verificação em lote."""
         rule_ids = [uuid4() for _ in range(10)]
 

@@ -8,7 +8,6 @@ Quality Score Target: 99+/100
 
 import logging
 from datetime import datetime
-from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -22,19 +21,19 @@ from modules.operacional.communication.models.announcement import (
     AnnouncementTargetType,
 )
 from modules.operacional.communication.schemas.communication_schemas import (
+    AnnouncementAcknowledgeRequest,
     AnnouncementCreate,
-    AnnouncementUpdate,
-    AnnouncementResponse,
-    AnnouncementListResponse,
     AnnouncementFilter,
+    AnnouncementListResponse,
     AnnouncementPublishRequest,
     AnnouncementReadStats,
-    AnnouncementAcknowledgeRequest,
+    AnnouncementResponse,
+    AnnouncementUpdate,
 )
 from modules.operacional.communication.services.announcement_service import (
-    AnnouncementService,
     AnnouncementNotFoundError,
     AnnouncementPublishError,
+    AnnouncementService,
 )
 
 logger = logging.getLogger(__name__)
@@ -47,7 +46,7 @@ def _get_tenant_id(user: CurrentActiveUser) -> str:
     return getattr(user, "tenant_id", str(user.id))
 
 
-def _get_user_roles(user: CurrentActiveUser) -> List[str]:
+def _get_user_roles(user: CurrentActiveUser) -> list[str]:
     """Extrai roles do usuario."""
     role = getattr(user, "role", None)
     return [role] if role else []
@@ -108,14 +107,14 @@ async def list_announcements(
     db: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1, description="Pagina atual"),
     page_size: int = Query(20, ge=1, le=100, description="Itens por pagina"),
-    status_filter: Optional[AnnouncementStatus] = Query(None, alias="status"),
-    priority: Optional[AnnouncementPriority] = None,
-    category: Optional[AnnouncementCategory] = None,
-    target_type: Optional[AnnouncementTargetType] = None,
-    requires_acknowledgment: Optional[bool] = None,
-    search: Optional[str] = Query(None, max_length=100),
-    created_after: Optional[datetime] = None,
-    created_before: Optional[datetime] = None,
+    status_filter: AnnouncementStatus | None = Query(None, alias="status"),
+    priority: AnnouncementPriority | None = None,
+    category: AnnouncementCategory | None = None,
+    target_type: AnnouncementTargetType | None = None,
+    requires_acknowledgment: bool | None = None,
+    search: str | None = Query(None, max_length=100),
+    created_after: datetime | None = None,
+    created_before: datetime | None = None,
 ) -> AnnouncementListResponse:
     """
     Lista comunicados com filtros.
@@ -298,9 +297,7 @@ async def update_announcement(
 
     try:
         announcement = await service.update(announcement_id, data, tenant_id)
-        logger.info(
-            f"Comunicado atualizado por {current_user.email}: {announcement_id}"
-        )
+        logger.info(f"Comunicado atualizado por {current_user.email}: {announcement_id}")
         return AnnouncementResponse.model_validate(announcement)
 
     except AnnouncementNotFoundError:
@@ -337,9 +334,7 @@ async def delete_announcement(
 
     try:
         await service.delete(announcement_id, tenant_id)
-        logger.info(
-            f"Comunicado removido por {current_user.email}: {announcement_id}"
-        )
+        logger.info(f"Comunicado removido por {current_user.email}: {announcement_id}")
 
     except AnnouncementNotFoundError:
         raise HTTPException(
@@ -388,9 +383,7 @@ async def publish_announcement(
         )
 
         action = "agendado" if request_data.schedule_at else "publicado"
-        logger.info(
-            f"Comunicado {action} por {current_user.email}: {announcement_id}"
-        )
+        logger.info(f"Comunicado {action} por {current_user.email}: {announcement_id}")
 
         return AnnouncementResponse.model_validate(announcement)
 
@@ -458,9 +451,7 @@ async def acknowledge_announcement(
             tenant_id=tenant_id,
         )
 
-        logger.info(
-            f"Comunicado confirmado por {current_user.email}: {announcement_id}"
-        )
+        logger.info(f"Comunicado confirmado por {current_user.email}: {announcement_id}")
 
         return {
             "success": True,

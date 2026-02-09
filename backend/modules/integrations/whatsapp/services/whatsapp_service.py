@@ -8,11 +8,10 @@ Responsavel por:
 - Relatorios de envio
 """
 
-import enum
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 from decimal import Decimal
-from typing import Optional
+from enum import StrEnum
 from uuid import UUID
 
 from sqlalchemy import and_, func, select
@@ -37,7 +36,7 @@ from modules.integrations.whatsapp.models.whatsapp_config import (
 )
 
 
-class SendResult(str, enum.Enum):
+class SendResult(StrEnum):
     """Resultado do envio."""
 
     SUCCESS = "SUCCESS"
@@ -54,10 +53,10 @@ class SendResponse:
     """Resposta de envio de mensagem."""
 
     result: SendResult
-    message_id: Optional[UUID] = None
-    external_id: Optional[str] = None
-    error_code: Optional[str] = None
-    error_message: Optional[str] = None
+    message_id: UUID | None = None
+    external_id: str | None = None
+    error_code: str | None = None
+    error_message: str | None = None
 
     @property
     def is_success(self) -> bool:
@@ -151,13 +150,13 @@ class WhatsAppService:
         template_name: str,
         recipient_phone: str,
         variables: dict,
-        recipient_name: Optional[str] = None,
-        recipient_id: Optional[UUID] = None,
+        recipient_name: str | None = None,
+        recipient_id: UUID | None = None,
         purpose: MessagePurpose = MessagePurpose.NOTIFICATION,
         priority: MessagePriority = MessagePriority.NORMAL,
-        context_type: Optional[str] = None,
-        context_id: Optional[UUID] = None,
-        schedule_at: Optional[datetime] = None,
+        context_type: str | None = None,
+        context_id: UUID | None = None,
+        schedule_at: datetime | None = None,
     ) -> SendResponse:
         """Envia mensagem usando template.
 
@@ -259,9 +258,9 @@ class WhatsAppService:
         recipient_name: str,
         amount: Decimal,
         due_date: date,
-        boleto_url: Optional[str] = None,
-        recipient_id: Optional[UUID] = None,
-        context_id: Optional[UUID] = None,
+        boleto_url: str | None = None,
+        recipient_id: UUID | None = None,
+        context_id: UUID | None = None,
     ) -> SendResponse:
         """Envia lembrete de cobranca.
 
@@ -440,9 +439,7 @@ class WhatsAppService:
             report.total_cost += msg.cost
 
             if msg.template_name:
-                report.templates_used[msg.template_name] = (
-                    report.templates_used.get(msg.template_name, 0) + 1
-                )
+                report.templates_used[msg.template_name] = report.templates_used.get(msg.template_name, 0) + 1
 
         # Mensagens recebidas
         query_in = select(func.count(MessageLog.id)).where(
@@ -513,15 +510,12 @@ class WhatsAppService:
         Returns:
             Quantidade cancelada.
         """
-        query = (
-            select(MessageQueue)
-            .where(
-                and_(
-                    MessageQueue.tenant_id == tenant_id,
-                    MessageQueue.context_type == context_type,
-                    MessageQueue.context_id == context_id,
-                    MessageQueue.status == MessageStatus.QUEUED,
-                )
+        query = select(MessageQueue).where(
+            and_(
+                MessageQueue.tenant_id == tenant_id,
+                MessageQueue.context_type == context_type,
+                MessageQueue.context_id == context_id,
+                MessageQueue.status == MessageStatus.QUEUED,
             )
         )
         result = await self.session.execute(query)
@@ -537,7 +531,7 @@ class WhatsAppService:
 
     # --- Metodos privados ---
 
-    async def _get_active_config(self, tenant_id: UUID) -> Optional[WhatsAppConfig]:
+    async def _get_active_config(self, tenant_id: UUID) -> WhatsAppConfig | None:
         """Busca configuracao ativa."""
         query = select(WhatsAppConfig).where(
             and_(
@@ -553,7 +547,7 @@ class WhatsAppService:
         self,
         tenant_id: UUID,
         name: str,
-    ) -> Optional[MessageTemplate]:
+    ) -> MessageTemplate | None:
         """Busca template por nome."""
         query = select(MessageTemplate).where(
             and_(
@@ -732,7 +726,7 @@ class WhatsAppService:
         await self.session.commit()
 
     @staticmethod
-    def _normalize_phone(phone: str) -> Optional[str]:
+    def _normalize_phone(phone: str) -> str | None:
         """Normaliza numero de telefone para formato internacional."""
         if not phone:
             return None

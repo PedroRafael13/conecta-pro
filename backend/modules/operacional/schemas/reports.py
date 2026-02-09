@@ -3,7 +3,6 @@ Schemas Pydantic para Relatorios Operacionais.
 """
 
 from datetime import date
-from typing import List
 
 from pydantic import BaseModel, Field
 
@@ -27,7 +26,7 @@ class CoverageReportResponse(BaseModel):
     total_allocations: int
     active_allocations: int
     coverage_rate: float
-    items: List[CoverageReportItem]
+    items: list[CoverageReportItem]
 
 
 class HoursReportItem(BaseModel):
@@ -47,7 +46,7 @@ class HoursReportResponse(BaseModel):
     total_employees: int
     total_hours: float
     total_overtime: float
-    items: List[HoursReportItem]
+    items: list[HoursReportItem]
 
 
 class CostsReportItem(BaseModel):
@@ -66,4 +65,4 @@ class CostsReportResponse(BaseModel):
     end_date: date
     total_posts: int
     total_cost: float
-    items: List[CostsReportItem]
+    items: list[CostsReportItem]

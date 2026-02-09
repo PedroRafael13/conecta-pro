@@ -3,8 +3,8 @@
 Sprint 33 - Workflow Engine (Unificado).
 """
 
-import enum
 from datetime import datetime
+from enum import StrEnum
 
 from sqlalchemy import (
     Boolean,
@@ -21,7 +21,7 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from core.models import Base
 
 
-class ActionType(str, enum.Enum):
+class ActionType(StrEnum):
     """Tipo de acao."""
 
     # Comunicacao
@@ -77,7 +77,7 @@ class ActionType(str, enum.Enum):
     SUBPROCESS = "SUBPROCESS"
 
 
-class ActionCategory(str, enum.Enum):
+class ActionCategory(StrEnum):
     """Categoria da acao."""
 
     COMMUNICATION = "COMMUNICATION"
@@ -245,9 +245,7 @@ class WorkflowAction(Base):
         if self.avg_execution_time_ms == 0:
             self.avg_execution_time_ms = execution_time_ms
         else:
-            self.avg_execution_time_ms = (
-                self.avg_execution_time_ms * 0.9 + execution_time_ms * 0.1
-            )
+            self.avg_execution_time_ms = self.avg_execution_time_ms * 0.9 + execution_time_ms * 0.1
 
     def validate(self) -> list[str]:
         """Valida configuracao da action.

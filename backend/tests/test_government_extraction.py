@@ -4,26 +4,27 @@ Testes de Extração de Dados Governamentais.
 Valida orquestrador, extratores e jobs.
 """
 
-import pytest
 import asyncio
-from datetime import datetime, timedelta
-from uuid import uuid4
-from unittest.mock import AsyncMock, MagicMock, patch
-import sys
 import os
+import sys
+from datetime import datetime, timedelta
+from unittest.mock import AsyncMock, MagicMock, patch
+from uuid import uuid4
+
+import pytest
 
 # Adicionar path do módulo
-sys.path.insert(0, '/opt/conecta-pro/backend')
+sys.path.insert(0, "/opt/conecta-pro/backend")
 
-from modules.government_integrations.extractors.orchestrator import (
-    OrquestradorExtracao,
-    ConfiguracaoExtracao,
-    TipoServico,
-    ResultadoExtracao,
-)
 from modules.government_integrations.extractors.base_extractor import (
-    ExtratorBase,
     DocumentoExtraido,
+    ExtratorBase,
+)
+from modules.government_integrations.extractors.orchestrator import (
+    ConfiguracaoExtracao,
+    OrquestradorExtracao,
+    ResultadoExtracao,
+    TipoServico,
 )
 
 
@@ -183,7 +184,7 @@ class TestOrquestradorExtracao:
     def test_instanciacao(self, orquestrador):
         """Testa criação do orquestrador."""
         assert orquestrador is not None
-        assert hasattr(orquestrador, 'iniciar_extracao')
+        assert hasattr(orquestrador, "iniciar_extracao")
         print("✓ Orquestrador instanciado OK")
 
     @pytest.mark.asyncio
@@ -192,16 +193,15 @@ class TestOrquestradorExtracao:
         tenant_id = uuid4()
 
         # Mock do provedor de credenciais
-        with patch.object(orquestrador, 'credenciais') as mock_cred:
-            mock_cred.verificar_certificado = AsyncMock(return_value={
-                "valido": True,
-                "dias_restantes": 30,
-            })
-
-            resultado = await orquestrador._validar_prerequisitos(
-                tenant_id,
-                [TipoServico.SEFAZ_NFE]
+        with patch.object(orquestrador, "credenciais") as mock_cred:
+            mock_cred.verificar_certificado = AsyncMock(
+                return_value={
+                    "valido": True,
+                    "dias_restantes": 30,
+                }
             )
+
+            resultado = await orquestrador._validar_prerequisitos(tenant_id, [TipoServico.SEFAZ_NFE])
 
             # Deve retornar True ou dict de validação
             assert resultado is not None
@@ -226,7 +226,7 @@ class TestOrquestradorExtracao:
             documentos_novos=1,
         )
 
-        with patch.object(orquestrador, '_executar_extrator', new_callable=AsyncMock) as mock_exec:
+        with patch.object(orquestrador, "_executar_extrator", new_callable=AsyncMock) as mock_exec:
             mock_exec.return_value = mock_resultado
 
             resultado = await orquestrador.iniciar_extracao(tenant_id, config)
@@ -259,8 +259,8 @@ class TestExtratoresIndividuais:
         extrator = ExtratoreSocial()
 
         assert extrator.tipo_servico == "esocial"
-        assert hasattr(extrator, 'EVENTOS_PERIODICOS')
-        assert hasattr(extrator, 'EVENTOS_NAO_PERIODICOS')
+        assert hasattr(extrator, "EVENTOS_PERIODICOS")
+        assert hasattr(extrator, "EVENTOS_NAO_PERIODICOS")
         print("✓ Extrator eSocial instanciado OK")
 
     @pytest.mark.asyncio
@@ -302,9 +302,9 @@ class TestJobsCelery:
     def test_import_sync_tasks(self):
         """Testa importação das tasks de sync."""
         from modules.government_integrations.jobs.sync_tasks import (
-            sincronizar_nfe,
             sincronizar_esocial,
             sincronizar_fgts,
+            sincronizar_nfe,
             sincronizar_nfse,
             sincronizar_rfb,
             sincronizar_todos,
@@ -321,11 +321,11 @@ class TestJobsCelery:
     def test_import_monitoring_tasks(self):
         """Testa importação das tasks de monitoramento."""
         from modules.government_integrations.jobs.monitoring_tasks import (
-            verificar_disponibilidade,
-            verificar_certificados,
-            reprocessar_falhas,
-            limpar_cache,
             gerar_relatorio_diario,
+            limpar_cache,
+            reprocessar_falhas,
+            verificar_certificados,
+            verificar_disponibilidade,
         )
 
         assert verificar_disponibilidade is not None
@@ -349,9 +349,9 @@ class TestControllersAPI:
     def test_import_dashboard_controller(self):
         """Testa importação do dashboard controller."""
         from modules.government_integrations.controllers.dashboard_controller import (
-            router,
-            DashboardService,
             DashboardResponse,
+            DashboardService,
+            router,
         )
 
         assert router is not None
@@ -361,9 +361,9 @@ class TestControllersAPI:
     def test_import_extraction_controller(self):
         """Testa importação do extraction controller."""
         from modules.government_integrations.controllers.extraction_controller import (
-            router,
-            IniciarExtracaoRequest,
             ExtracaoResponse,
+            IniciarExtracaoRequest,
+            router,
         )
 
         assert router is not None
@@ -377,8 +377,8 @@ class TestControllersAPI:
         service = DashboardService()
 
         assert service is not None
-        assert hasattr(service, 'obter_dashboard')
-        assert hasattr(service, 'obter_metricas')
+        assert hasattr(service, "obter_dashboard")
+        assert hasattr(service, "obter_metricas")
         print("✓ DashboardService instanciado OK")
 
 

@@ -1,22 +1,21 @@
 """Controller para notificações do portal."""
 
 import logging
-from typing import Optional, List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Body, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.database import get_async_session
 from core.auth.dependencies import get_current_user, require_roles
-from modules.hr.employee_portal.services import PortalNotificationService
+from core.database import get_async_session
+from modules.hr.employee_portal.models import NotificationType
 from modules.hr.employee_portal.schemas import (
-    NotificationResponse,
-    NotificationListResponse,
     NotificationCreate,
+    NotificationListResponse,
+    NotificationResponse,
     UnreadCountResponse,
 )
-from modules.hr.employee_portal.models import NotificationType
+from modules.hr.employee_portal.services import PortalNotificationService
 
 logger = logging.getLogger(__name__)
 
@@ -29,8 +28,8 @@ router = APIRouter(prefix="/notifications", tags=["Portal - Notificações"])
     summary="Listar notificações",
 )
 async def list_notifications(
-    is_read: Optional[bool] = Query(None, description="Filtrar por lidas/não lidas"),
-    notification_type: Optional[NotificationType] = Query(None, alias="type"),
+    is_read: bool | None = Query(None, description="Filtrar por lidas/não lidas"),
+    notification_type: NotificationType | None = Query(None, alias="type"),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_async_session),
@@ -126,7 +125,7 @@ async def mark_as_read(
     summary="Marcar múltiplas como lidas",
 )
 async def mark_multiple_as_read(
-    notification_ids: List[UUID] = Body(..., min_length=1, max_length=100),
+    notification_ids: list[UUID] = Body(..., min_length=1, max_length=100),
     db: AsyncSession = Depends(get_async_session),
     current_user: dict = Depends(get_current_user),
 ):
@@ -228,7 +227,7 @@ async def send_notification(
     dependencies=[Depends(require_roles(["admin", "hr"]))],
 )
 async def send_bulk_notification(
-    employee_ids: List[UUID] = Body(..., min_length=1, max_length=1000),
+    employee_ids: list[UUID] = Body(..., min_length=1, max_length=1000),
     notification_type: NotificationType = Body(...),
     title: str = Body(..., min_length=1, max_length=200),
     message: str = Body(..., min_length=1, max_length=2000),

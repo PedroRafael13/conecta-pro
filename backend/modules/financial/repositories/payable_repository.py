@@ -1,8 +1,8 @@
 """Repository para contas a pagar."""
 
+import builtins
 from datetime import date, datetime, timedelta
 from decimal import Decimal
-from typing import List, Optional
 from uuid import UUID
 
 from sqlalchemy import and_, func, or_, select
@@ -37,7 +37,7 @@ class PayableAccountRepository:
     async def create(
         self,
         data: PayableAccountCreate,
-        user_id: Optional[UUID] = None,
+        user_id: UUID | None = None,
     ) -> PayableAccount:
         """Cria uma nova conta a pagar."""
         # Calcula retenções totais
@@ -51,9 +51,7 @@ class PayableAccountRepository:
         )
 
         # Calcula valor líquido
-        net_value = (
-            data.gross_value - data.discount_value + data.addition_value - total_withholdings
-        )
+        net_value = data.gross_value - data.discount_value + data.addition_value - total_withholdings
 
         payable = PayableAccount(
             **data.model_dump(),
@@ -109,7 +107,7 @@ class PayableAccountRepository:
         self,
         payable_id: UUID,
         with_relations: bool = False,
-    ) -> Optional[PayableAccount]:
+    ) -> PayableAccount | None:
         """Busca conta a pagar por ID."""
         query = select(PayableAccount).where(
             and_(
@@ -131,10 +129,10 @@ class PayableAccountRepository:
     async def list(
         self,
         condominio_id: UUID,
-        filters: Optional[PayableAccountFilter] = None,
+        filters: PayableAccountFilter | None = None,
         skip: int = 0,
         limit: int = 100,
-    ) -> List[PayableAccount]:
+    ) -> list[PayableAccount]:
         """Lista contas a pagar com filtros."""
         query = select(PayableAccount).where(
             and_(
@@ -235,7 +233,7 @@ class PayableAccountRepository:
     async def count(
         self,
         condominio_id: UUID,
-        filters: Optional[PayableAccountFilter] = None,
+        filters: PayableAccountFilter | None = None,
     ) -> int:
         """Conta contas a pagar com filtros."""
         query = select(func.count(PayableAccount.id)).where(
@@ -290,7 +288,7 @@ class PayableAccountRepository:
         self,
         condominio_id: UUID,
         limit: int = 100,
-    ) -> List[PayableAccount]:
+    ) -> builtins.list[PayableAccount]:
         """Busca contas vencidas."""
         today = date.today()
         result = await self.session.execute(
@@ -319,7 +317,7 @@ class PayableAccountRepository:
         condominio_id: UUID,
         days: int = 7,
         limit: int = 100,
-    ) -> List[PayableAccount]:
+    ) -> builtins.list[PayableAccount]:
         """Busca contas a vencer em X dias."""
         today = date.today()
         end_date = date(today.year, today.month, today.day)
@@ -351,9 +349,9 @@ class PayableAccountRepository:
     async def get_by_supplier(
         self,
         supplier_id: UUID,
-        status: Optional[PayableStatus] = None,
+        status: PayableStatus | None = None,
         limit: int = 100,
-    ) -> List[PayableAccount]:
+    ) -> builtins.list[PayableAccount]:
         """Busca contas por fornecedor."""
         query = select(PayableAccount).where(
             and_(
@@ -452,10 +450,7 @@ class PayableAccountRepository:
         )
 
         category_result = await self.session.execute(category_query)
-        category_data = {
-            row.name: {"count": row.count, "value": float(row.total or 0)}
-            for row in category_result
-        }
+        category_data = {row.name: {"count": row.count, "value": float(row.total or 0)} for row in category_result}
 
         # Por fornecedor (top 10)
         supplier_query = (
@@ -480,10 +475,7 @@ class PayableAccountRepository:
         )
 
         supplier_result = await self.session.execute(supplier_query)
-        supplier_data = {
-            row.name: {"count": row.count, "value": float(row.total or 0)}
-            for row in supplier_result
-        }
+        supplier_data = {row.name: {"count": row.count, "value": float(row.total or 0)} for row in supplier_result}
 
         # Por prioridade
         priority_query = (
@@ -524,7 +516,7 @@ class PayableInstallmentRepository:
         """Inicializa o repository."""
         self.session = session
 
-    async def get_by_id(self, installment_id: UUID) -> Optional[PayableInstallment]:
+    async def get_by_id(self, installment_id: UUID) -> PayableInstallment | None:
         """Busca parcela por ID."""
         result = await self.session.execute(
             select(PayableInstallment)
@@ -541,7 +533,7 @@ class PayableInstallmentRepository:
     async def list_by_account(
         self,
         payable_account_id: UUID,
-    ) -> List[PayableInstallment]:
+    ) -> list[PayableInstallment]:
         """Lista parcelas de uma conta."""
         result = await self.session.execute(
             select(PayableInstallment)
@@ -558,10 +550,10 @@ class PayableInstallmentRepository:
     async def get_pending(
         self,
         condominio_id: UUID,
-        due_date_start: Optional[date] = None,
-        due_date_end: Optional[date] = None,
+        due_date_start: date | None = None,
+        due_date_end: date | None = None,
         limit: int = 100,
-    ) -> List[PayableInstallment]:
+    ) -> list[PayableInstallment]:
         """Busca parcelas pendentes."""
         query = select(PayableInstallment).where(
             and_(
@@ -614,7 +606,7 @@ class PayablePaymentRepository:
     async def create(
         self,
         data: PayablePaymentCreate,
-        user_id: Optional[UUID] = None,
+        user_id: UUID | None = None,
     ) -> PayablePayment:
         """Cria um novo pagamento."""
         # Busca a parcela
@@ -626,13 +618,7 @@ class PayablePaymentRepository:
             raise ValueError("Parcela não encontrada")
 
         # Calcula valor líquido
-        net_value = (
-            data.paid_value
-            - data.discount_value
-            + data.interest_value
-            + data.penalty_value
-            + data.fee_value
-        )
+        net_value = data.paid_value - data.discount_value + data.interest_value + data.penalty_value + data.fee_value
 
         payment = PayablePayment(
             installment_id=data.installment_id,
@@ -669,7 +655,7 @@ class PayablePaymentRepository:
         await self.session.refresh(payment)
         return payment
 
-    async def get_by_id(self, payment_id: UUID) -> Optional[PayablePayment]:
+    async def get_by_id(self, payment_id: UUID) -> PayablePayment | None:
         """Busca pagamento por ID."""
         result = await self.session.execute(
             select(PayablePayment).where(
@@ -684,7 +670,7 @@ class PayablePaymentRepository:
     async def list_by_installment(
         self,
         installment_id: UUID,
-    ) -> List[PayablePayment]:
+    ) -> list[PayablePayment]:
         """Lista pagamentos de uma parcela."""
         result = await self.session.execute(
             select(PayablePayment)
@@ -704,7 +690,7 @@ class PayablePaymentRepository:
         start_date: date,
         end_date: date,
         limit: int = 500,
-    ) -> List[PayablePayment]:
+    ) -> list[PayablePayment]:
         """Busca pagamentos por período."""
         result = await self.session.execute(
             select(PayablePayment)
@@ -725,7 +711,7 @@ class PayablePaymentRepository:
         self,
         condominio_id: UUID,
         limit: int = 100,
-    ) -> List[PayablePayment]:
+    ) -> list[PayablePayment]:
         """Busca pagamentos pendentes de conciliação."""
         result = await self.session.execute(
             select(PayablePayment)

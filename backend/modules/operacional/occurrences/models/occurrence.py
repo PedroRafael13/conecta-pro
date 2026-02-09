@@ -3,11 +3,11 @@ Modelo Occurrence (Ocorrência) para Operações.
 """
 
 from datetime import datetime
-from enum import Enum
-from typing import TYPE_CHECKING, List, Optional
+from enum import StrEnum
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
-from sqlalchemy import Boolean, DateTime, Float, ForeignKey, String, Text, func
+from sqlalchemy import Boolean, DateTime, ForeignKey, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from modules.operacional.models import Post
 
 
-class OccurrenceType(str, Enum):
+class OccurrenceType(StrEnum):
     """Tipo de não conformidade/infração encontrada em fiscalização."""
 
     ABANDONO_POSTO = "abandono_posto"
@@ -37,7 +37,7 @@ class OccurrenceType(str, Enum):
     OUTROS = "outros"
 
 
-class OccurrenceSeverity(str, Enum):
+class OccurrenceSeverity(StrEnum):
     """Nível de severidade da infração (para ação disciplinar)."""
 
     LEVE = "leve"  # Advertência verbal
@@ -46,7 +46,7 @@ class OccurrenceSeverity(str, Enum):
     GRAVISSIMA = "gravissima"  # Demissão por justa causa
 
 
-class OccurrenceCategory(str, Enum):
+class OccurrenceCategory(StrEnum):
     """Categoria da infração."""
 
     DISCIPLINAR = "disciplinar"
@@ -57,7 +57,7 @@ class OccurrenceCategory(str, Enum):
     OUTROS = "outros"
 
 
-class OccurrenceStatus(str, Enum):
+class OccurrenceStatus(StrEnum):
     """Status da ocorrência."""
 
     ABERTA = "aberta"
@@ -104,7 +104,7 @@ class Occurrence(Base):
     """
 
     __tablename__ = "occurrences"
-    __table_args__ = {'extend_existing': True}
+    __table_args__ = {"extend_existing": True}
 
     # Identificação
     id: Mapped[str] = mapped_column(UUID(as_uuid=False), primary_key=True, default=lambda: str(uuid4()))
@@ -148,7 +148,7 @@ class Occurrence(Base):
     )
 
     # Ronda relacionada (OPCIONAL)
-    patrol_round_id: Mapped[Optional[str]] = mapped_column(
+    patrol_round_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
         index=True,
@@ -156,28 +156,28 @@ class Occurrence(Base):
     )
 
     # Testemunhas
-    witnesses: Mapped[Optional[str]] = mapped_column(Text, nullable=True, comment="Testemunhas da infração")
+    witnesses: Mapped[str | None] = mapped_column(Text, nullable=True, comment="Testemunhas da infração")
 
     # Datas
     occurred_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, index=True)
     reported_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=func.now())
-    resolved_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     # Resolução e Ação Corretiva
-    corrective_action: Mapped[Optional[str]] = mapped_column(
+    corrective_action: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
         comment="Ação corretiva aplicada (advertência verbal, escrita, suspensão, etc)",
     )
-    resolution_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    resolved_by_id: Mapped[Optional[str]] = mapped_column(
+    resolution_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    resolved_by_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         ForeignKey("users.id", ondelete="SET NULL"),
         nullable=True,
     )
 
     # Evidências (fotos/vídeos)
-    attachments: Mapped[Optional[dict]] = mapped_column(
+    attachments: Mapped[dict | None] = mapped_column(
         JSONB,
         nullable=True,
         comment="Fotos/vídeos como evidência da infração",
@@ -187,7 +187,7 @@ class Occurrence(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), onupdate=func.now(), nullable=False)
-    created_by: Mapped[Optional[str]] = mapped_column(UUID(as_uuid=False), nullable=True)
+    created_by: Mapped[str | None] = mapped_column(UUID(as_uuid=False), nullable=True)
 
     # Relacionamentos
     post: Mapped["Post"] = relationship("Post", back_populates="occurrences", lazy="joined")
@@ -206,7 +206,7 @@ class Occurrence(Base):
         return self.severity in [OccurrenceSeverity.GRAVE.value, OccurrenceSeverity.GRAVISSIMA.value]
 
     @property
-    def resolution_time_hours(self) -> Optional[float]:
+    def resolution_time_hours(self) -> float | None:
         """Calcula tempo de resolução em horas."""
         if self.resolved_at and self.reported_at:
             delta = self.resolved_at - self.reported_at

@@ -4,9 +4,9 @@ Sprint: Módulo Operacional - Sistema de Notificações Push
 """
 
 import logging
+
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
-from apscheduler.triggers.cron import CronTrigger
 
 from modules.operacional.services.notification_triggers import (
     run_late_employees_check,

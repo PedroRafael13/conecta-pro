@@ -6,26 +6,28 @@ Gerencia detecção e resolução de duplicatas.
 
 import uuid
 from datetime import datetime
-from enum import Enum
-from typing import Any, Dict, List, Optional
+from enum import StrEnum
+from typing import Any
 
 from sqlalchemy import (
     Boolean,
     Column,
     DateTime,
-    Enum as SQLEnum,
     Float,
     ForeignKey,
     Integer,
     String,
     Text,
 )
+from sqlalchemy import (
+    Enum as SQLEnum,
+)
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 from core.database import Base
 
 
-class DuplicateStatusEnum(str, Enum):
+class DuplicateStatusEnum(StrEnum):
     """Status do grupo de duplicatas."""
 
     DETECTED = "detected"
@@ -36,7 +38,7 @@ class DuplicateStatusEnum(str, Enum):
     AUTO_MERGED = "auto_merged"
 
 
-class DuplicateTypeEnum(str, Enum):
+class DuplicateTypeEnum(StrEnum):
     """Tipo de duplicata."""
 
     EXACT = "exact"  # Duplicata exata
@@ -46,7 +48,7 @@ class DuplicateTypeEnum(str, Enum):
     SEMANTIC = "semantic"  # Similaridade semântica
 
 
-class MergeStrategyEnum(str, Enum):
+class MergeStrategyEnum(StrEnum):
     """Estratégia de merge."""
 
     KEEP_FIRST = "keep_first"  # Manter primeiro registro
@@ -70,12 +72,10 @@ class DuplicateRecord(Base):
     status = Column(
         SQLEnum(DuplicateStatusEnum, name="dq_duplicate_status_enum"),
         nullable=False,
-        default=DuplicateStatusEnum.DETECTED
+        default=DuplicateStatusEnum.DETECTED,
     )
     duplicate_type = Column(
-        SQLEnum(DuplicateTypeEnum, name="dq_duplicate_type_enum"),
-        nullable=False,
-        default=DuplicateTypeEnum.FUZZY
+        SQLEnum(DuplicateTypeEnum, name="dq_duplicate_type_enum"), nullable=False, default=DuplicateTypeEnum.FUZZY
     )
 
     # Entidade
@@ -100,10 +100,7 @@ class DuplicateRecord(Base):
     field_comparisons = Column(JSONB, default=list)
 
     # Merge
-    merge_strategy = Column(
-        SQLEnum(MergeStrategyEnum, name="dq_merge_strategy_enum"),
-        nullable=True
-    )
+    merge_strategy = Column(SQLEnum(MergeStrategyEnum, name="dq_merge_strategy_enum"), nullable=True)
     merged_record_id = Column(UUID(as_uuid=True), nullable=True)
     merged_at = Column(DateTime, nullable=True)
     merged_by = Column(UUID(as_uuid=True), nullable=True)
@@ -150,7 +147,7 @@ class DuplicateRecord(Base):
         return self.status in [
             DuplicateStatusEnum.DETECTED,
             DuplicateStatusEnum.REVIEWING,
-            DuplicateStatusEnum.CONFIRMED
+            DuplicateStatusEnum.CONFIRMED,
         ]
 
     @property
@@ -159,7 +156,7 @@ class DuplicateRecord(Base):
         return self.status in [
             DuplicateStatusEnum.MERGED,
             DuplicateStatusEnum.REJECTED,
-            DuplicateStatusEnum.AUTO_MERGED
+            DuplicateStatusEnum.AUTO_MERGED,
         ]
 
     @property
@@ -198,7 +195,7 @@ class DuplicateRecord(Base):
         merged_id: uuid.UUID,
         strategy: MergeStrategyEnum,
         user_id: uuid.UUID = None,
-        auto: bool = False
+        auto: bool = False,
     ) -> None:
         """Realiza merge."""
         self.status = DuplicateStatusEnum.AUTO_MERGED if auto else DuplicateStatusEnum.MERGED
@@ -216,24 +213,19 @@ class DuplicateRecord(Base):
         if user_id:
             self.reviewed_by = user_id
 
-    def add_field_comparison(
-        self,
-        field: str,
-        value1: Any,
-        value2: Any,
-        score: float,
-        is_match: bool
-    ) -> None:
+    def add_field_comparison(self, field: str, value1: Any, value2: Any, score: float, is_match: bool) -> None:
         """Adiciona comparação de campo."""
         if not self.field_comparisons:
             self.field_comparisons = []
-        self.field_comparisons.append({
-            "field": field,
-            "value1": str(value1) if value1 else None,
-            "value2": str(value2) if value2 else None,
-            "score": score,
-            "is_match": is_match
-        })
+        self.field_comparisons.append(
+            {
+                "field": field,
+                "value1": str(value1) if value1 else None,
+                "value2": str(value2) if value2 else None,
+                "score": score,
+                "is_match": is_match,
+            }
+        )
         if not self.field_scores:
             self.field_scores = {}
         self.field_scores[field] = score
@@ -249,7 +241,7 @@ class DuplicateRecord(Base):
             if field not in self.conflicting_fields:
                 self.conflicting_fields.append(field)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Converte para dicionário."""
         return {
             "id": str(self.id),
@@ -269,7 +261,7 @@ class DuplicateRecord(Base):
             "created_at": self.created_at.isoformat(),
         }
 
-    def to_summary_dict(self) -> Dict[str, Any]:
+    def to_summary_dict(self) -> dict[str, Any]:
         """Converte para dicionário resumido."""
         return {
             "id": str(self.id),

@@ -3,7 +3,6 @@
 import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Any, Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -15,13 +14,13 @@ class UserProfile:
     """Perfil do usuário para personalização."""
 
     user_id: int
-    first_name: Optional[str] = None
-    email: Optional[str] = None
-    phone: Optional[str] = None
+    first_name: str | None = None
+    email: str | None = None
+    phone: str | None = None
     timezone: str = "America/Sao_Paulo"
     locale: str = "pt-BR"
-    age_group: Optional[str] = None
-    business_sector: Optional[str] = None
+    age_group: str | None = None
+    business_sector: str | None = None
     engagement_style: str = "professional"
     activity_patterns: dict = None
     preferences: dict = None
@@ -45,7 +44,7 @@ class PersonalizedNotification:
     preferred_channel: str
     engagement_score: float
     personalization_factors: dict
-    ab_test_variant: Optional[str] = None
+    ab_test_variant: str | None = None
 
 
 class PersonalizationEngine:
@@ -86,7 +85,7 @@ class PersonalizationEngine:
         user_id: int,
         notification_type: str,
         base_content: dict,
-        context: Optional[dict] = None,
+        context: dict | None = None,
     ) -> PersonalizedNotification:
         """
         Personaliza notificação para usuário específico.
@@ -108,19 +107,13 @@ class PersonalizationEngine:
         engagement_history = await self.get_engagement_history(db, user_id)
 
         # 3. Determinar timing ótimo
-        optimal_time = await self.calculate_optimal_timing(
-            user_profile, engagement_history
-        )
+        optimal_time = await self.calculate_optimal_timing(user_profile, engagement_history)
 
         # 4. Selecionar canal preferido
-        preferred_channel = await self.select_optimal_channel(
-            db, user_profile, notification_type
-        )
+        preferred_channel = await self.select_optimal_channel(db, user_profile, notification_type)
 
         # 5. Personalizar conteúdo
-        personalized_content = await self.personalize_content(
-            base_content, user_profile, context or {}
-        )
+        personalized_content = await self.personalize_content(base_content, user_profile, context or {})
 
         # 6. Calcular probabilidade de engajamento
         engagement_score = await self.predict_engagement(
@@ -301,9 +294,7 @@ class PersonalizationEngine:
         preferred_channels = preferences.get("preferred_channels", ["push", "email"])
 
         # Performance por canal (simplificado)
-        channel_performance = await self._get_channel_performance(
-            db, user_profile.user_id, notification_type
-        )
+        channel_performance = await self._get_channel_performance(db, user_profile.user_id, notification_type)
 
         # Calcular scores
         channel_scores = {}
@@ -366,9 +357,7 @@ class PersonalizationEngine:
             "system": {"in_app": 1.3, "push": 1.1, "email": 1.0, "sms": 0.5},
         }
 
-        type_multiplier = type_multipliers.get(
-            notification_type, {}
-        ).get(channel, 1.0)
+        type_multiplier = type_multipliers.get(notification_type, {}).get(channel, 1.0)
 
         return base_score + (performance_score * type_multiplier)
 
@@ -387,33 +376,23 @@ class PersonalizationEngine:
 
         # Substituir variáveis de usuário
         if user_profile.first_name:
-            personalized["title"] = personalized.get("title", "").replace(
-                "{name}", user_profile.first_name
-            )
-            personalized["body"] = personalized.get("body", "").replace(
-                "{name}", user_profile.first_name
-            )
+            personalized["title"] = personalized.get("title", "").replace("{name}", user_profile.first_name)
+            personalized["body"] = personalized.get("body", "").replace("{name}", user_profile.first_name)
 
         # Substituir variáveis de contexto
         for key, value in context.items():
             placeholder = f"{{{key}}}"
             if "title" in personalized:
-                personalized["title"] = personalized["title"].replace(
-                    placeholder, str(value)
-                )
+                personalized["title"] = personalized["title"].replace(placeholder, str(value))
             if "body" in personalized:
-                personalized["body"] = personalized["body"].replace(
-                    placeholder, str(value)
-                )
+                personalized["body"] = personalized["body"].replace(placeholder, str(value))
 
         # Ajustar tom baseado no perfil
         tone = self._determine_communication_tone(user_profile)
         personalized = self._adjust_content_tone(personalized, tone)
 
         # Adicionar CTA personalizada
-        personalized["cta"] = self._generate_personalized_cta(
-            base_content, user_profile
-        )
+        personalized["cta"] = self._generate_personalized_cta(base_content, user_profile)
 
         return personalized
 
@@ -518,10 +497,7 @@ class PersonalizationEngine:
 
         # Calcular score final
         engagement_probability = (
-            base_engagement * 0.4
-            + channel_factor * 0.3
-            + (type_factor * 0.15)
-            + (timing_factor * 0.15)
+            base_engagement * 0.4 + channel_factor * 0.3 + (type_factor * 0.15) + (timing_factor * 0.15)
         )
 
         return min(max(engagement_probability, 0.0), 1.0)
@@ -529,12 +505,8 @@ class PersonalizationEngine:
     def get_personalization_factors(self, user_profile: UserProfile) -> dict:
         """Retorna fatores usados na personalização."""
         return {
-            "user_engagement_level": user_profile.engagement_metrics.get(
-                "engagement_score", 0
-            ),
-            "preferred_channels": user_profile.preferences.get(
-                "preferred_channels", []
-            ),
+            "user_engagement_level": user_profile.engagement_metrics.get("engagement_score", 0),
+            "preferred_channels": user_profile.preferences.get("preferred_channels", []),
             "peak_hours": user_profile.activity_patterns.get("peak_hours", []),
             "communication_tone": self._determine_communication_tone(user_profile),
             "churn_risk": user_profile.engagement_metrics.get("churn_risk", 0),
@@ -545,7 +517,7 @@ class PersonalizationEngine:
         db: AsyncSession,
         user_id: int,
         notification_type: str,
-    ) -> tuple[bool, Optional[str]]:
+    ) -> tuple[bool, str | None]:
         """
         Verifica se notificação deve ser suprimida.
 

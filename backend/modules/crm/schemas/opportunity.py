@@ -3,7 +3,6 @@ Schemas Pydantic para Opportunity.
 """
 
 from datetime import date, datetime
-from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
@@ -18,24 +17,24 @@ class OpportunityBase(BaseModel):
     """Schema base para Opportunity."""
 
     title: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = None
+    description: str | None = None
     contact_name: str = Field(..., min_length=1, max_length=255)
     contact_email: EmailStr
-    contact_phone: Optional[str] = Field(None, max_length=20)
-    company_name: Optional[str] = Field(None, max_length=255)
+    contact_phone: str | None = Field(None, max_length=20)
+    company_name: str | None = Field(None, max_length=255)
     value: float = Field(default=0.0, ge=0)
     probability: int = Field(default=10, ge=0, le=100)
-    expected_close_date: Optional[date] = None
-    notes: Optional[str] = None
+    expected_close_date: date | None = None
+    notes: str | None = None
 
 
 class OpportunityCreate(OpportunityBase):
     """Schema para criação de Opportunity."""
 
-    lead_id: Optional[str] = None
+    lead_id: str | None = None
     stage: OpportunityStage = OpportunityStage.QUALIFICATION
     priority: OpportunityPriority = OpportunityPriority.MEDIUM
-    owner_id: Optional[str] = None
+    owner_id: str | None = None
 
 
 class OpportunityCreateFromLead(BaseModel):
@@ -43,49 +42,49 @@ class OpportunityCreateFromLead(BaseModel):
 
     lead_id: str
     title: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = None
+    description: str | None = None
     value: float = Field(default=0.0, ge=0)
     probability: int = Field(default=20, ge=0, le=100)
-    expected_close_date: Optional[date] = None
+    expected_close_date: date | None = None
     priority: OpportunityPriority = OpportunityPriority.MEDIUM
-    owner_id: Optional[str] = None
-    notes: Optional[str] = None
+    owner_id: str | None = None
+    notes: str | None = None
 
 
 class OpportunityUpdate(BaseModel):
     """Schema para atualização de Opportunity."""
 
-    title: Optional[str] = Field(None, min_length=1, max_length=255)
-    description: Optional[str] = None
-    contact_name: Optional[str] = Field(None, min_length=1, max_length=255)
-    contact_email: Optional[EmailStr] = None
-    contact_phone: Optional[str] = Field(None, max_length=20)
-    company_name: Optional[str] = Field(None, max_length=255)
-    stage: Optional[OpportunityStage] = None
-    priority: Optional[OpportunityPriority] = None
-    value: Optional[float] = Field(None, ge=0)
-    probability: Optional[int] = Field(None, ge=0, le=100)
-    expected_close_date: Optional[date] = None
-    owner_id: Optional[str] = None
-    notes: Optional[str] = None
+    title: str | None = Field(None, min_length=1, max_length=255)
+    description: str | None = None
+    contact_name: str | None = Field(None, min_length=1, max_length=255)
+    contact_email: EmailStr | None = None
+    contact_phone: str | None = Field(None, max_length=20)
+    company_name: str | None = Field(None, max_length=255)
+    stage: OpportunityStage | None = None
+    priority: OpportunityPriority | None = None
+    value: float | None = Field(None, ge=0)
+    probability: int | None = Field(None, ge=0, le=100)
+    expected_close_date: date | None = None
+    owner_id: str | None = None
+    notes: str | None = None
 
 
 class OpportunityStageUpdate(BaseModel):
     """Schema para atualização de estágio."""
 
     stage: OpportunityStage
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class OpportunityClose(BaseModel):
     """Schema para fechar oportunidade (ganhou ou perdeu)."""
 
     won: bool
-    actual_close_date: Optional[date] = None
-    notes: Optional[str] = None
+    actual_close_date: date | None = None
+    notes: str | None = None
     # Campos para perda
-    loss_reason: Optional[LossReason] = None
-    competitor: Optional[str] = Field(None, max_length=255)
+    loss_reason: LossReason | None = None
+    competitor: str | None = Field(None, max_length=255)
 
 
 class OpportunityResponse(BaseModel):
@@ -95,25 +94,25 @@ class OpportunityResponse(BaseModel):
 
     id: str
     title: str
-    description: Optional[str]
-    lead_id: Optional[str]
+    description: str | None
+    lead_id: str | None
     contact_name: str
     contact_email: str
-    contact_phone: Optional[str]
-    company_name: Optional[str]
+    contact_phone: str | None
+    company_name: str | None
     stage: OpportunityStage
     priority: OpportunityPriority
     value: float
     probability: int
     weighted_value: float
-    expected_close_date: Optional[date]
-    actual_close_date: Optional[date]
-    owner_id: Optional[str]
-    loss_reason: Optional[LossReason]
-    competitor: Optional[str]
-    win_notes: Optional[str]
-    loss_notes: Optional[str]
-    notes: Optional[str]
+    expected_close_date: date | None
+    actual_close_date: date | None
+    owner_id: str | None
+    loss_reason: LossReason | None
+    competitor: str | None
+    win_notes: str | None
+    loss_notes: str | None
+    notes: str | None
     is_open: bool
     is_won: bool
     is_lost: bool
@@ -137,15 +136,15 @@ class OpportunityListResponse(BaseModel):
 class OpportunityFilter(BaseModel):
     """Schema para filtros de busca."""
 
-    stage: Optional[OpportunityStage] = None
-    priority: Optional[OpportunityPriority] = None
-    owner_id: Optional[str] = None
-    is_open: Optional[bool] = None
-    is_overdue: Optional[bool] = None
-    min_value: Optional[float] = None
-    max_value: Optional[float] = None
-    company_name: Optional[str] = None
-    search: Optional[str] = None
+    stage: OpportunityStage | None = None
+    priority: OpportunityPriority | None = None
+    owner_id: str | None = None
+    is_open: bool | None = None
+    is_overdue: bool | None = None
+    min_value: float | None = None
+    max_value: float | None = None
+    company_name: str | None = None
+    search: str | None = None
 
 
 class PipelineStats(BaseModel):

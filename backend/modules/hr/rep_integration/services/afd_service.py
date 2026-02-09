@@ -5,25 +5,25 @@ Arquivo-Fonte de Dados conforme Portaria 671 MTE.
 
 import hashlib
 import logging
-from datetime import datetime, date
-from typing import List, Dict, Any
-from uuid import UUID
 import os
 import tempfile
+from datetime import date, datetime
+from typing import Any
+from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.hr.rep_integration.models import AFDRecord
 from modules.hr.rep_integration.repositories import (
-    REPDeviceRepository,
     AFDRecordRepository,
+    REPDeviceRepository,
 )
 from modules.hr.rep_integration.schemas import (
     AFDExportRequest,
     AFDExportResponse,
-    AFDValidationResult,
     AFDImportRequest,
     AFDImportResponse,
+    AFDValidationResult,
 )
 
 logger = logging.getLogger(__name__)
@@ -188,24 +188,30 @@ class AFDService:
             else:
                 invalid_lines += 1
                 for error in validation.get("errors", []):
-                    errors.append({
-                        "line": i,
-                        "content": line[:50],
-                        "error": error,
-                    })
+                    errors.append(
+                        {
+                            "line": i,
+                            "content": line[:50],
+                            "error": error,
+                        }
+                    )
 
         # Verificações adicionais
         if not header_info:
-            warnings.append({
-                "type": "missing_header",
-                "message": "Arquivo sem cabeçalho (tipo 1)",
-            })
+            warnings.append(
+                {
+                    "type": "missing_header",
+                    "message": "Arquivo sem cabeçalho (tipo 1)",
+                }
+            )
 
         if not company_info:
-            warnings.append({
-                "type": "missing_company",
-                "message": "Arquivo sem dados do empregador (tipo 2)",
-            })
+            warnings.append(
+                {
+                    "type": "missing_company",
+                    "message": "Arquivo sem dados do empregador (tipo 2)",
+                }
+            )
 
         # Ordenar datas
         date_range_start = min(dates) if dates else None
@@ -314,26 +320,30 @@ class AFDService:
                 # pylint: disable=import-outside-toplevel
                 from modules.hr.rep_integration.schemas import AFDRecordCreate
 
-                await self.afd_repo.create(AFDRecordCreate(
-                    device_id=device.id,
-                    condominio_id=device.condominio_id,
-                    nsr=nsr,
-                    record_type=record_type,
-                    afd_line=line,
-                    record_date=parsed.get("record_date"),
-                    record_time=parsed.get("record_time"),
-                    pis_number=parsed.get("pis_number"),
-                    line_hash=line_hash,
-                ))
+                await self.afd_repo.create(
+                    AFDRecordCreate(
+                        device_id=device.id,
+                        condominio_id=device.condominio_id,
+                        nsr=nsr,
+                        record_type=record_type,
+                        afd_line=line,
+                        record_date=parsed.get("record_date"),
+                        record_time=parsed.get("record_time"),
+                        pis_number=parsed.get("pis_number"),
+                        line_hash=line_hash,
+                    )
+                )
 
                 imported += 1
 
             except Exception as e:  # pylint: disable=broad-exception-caught
                 error_count += 1
-                errors.append({
-                    "line": line[:50],
-                    "error": str(e),
-                })
+                errors.append(
+                    {
+                        "line": line[:50],
+                        "error": str(e),
+                    }
+                )
 
         return AFDImportResponse(
             success=error_count == 0,
@@ -349,7 +359,7 @@ class AFDService:
         self,
         device_id: UUID = None,
         condominio_id: UUID = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Retorna estatísticas de registros AFD."""
         return await self.afd_repo.get_statistics(
             device_id=device_id,
@@ -359,7 +369,7 @@ class AFDService:
     async def get_export_periods(
         self,
         device_id: UUID,  # pylint: disable=unused-argument
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Retorna períodos disponíveis para exportação."""
         # TODO: Implementar busca de períodos com registros  # pylint: disable=fixme
         return []

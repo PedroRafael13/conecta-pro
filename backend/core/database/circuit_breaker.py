@@ -5,9 +5,10 @@ Previne cascata de falhas quando um serviço está indisponível.
 
 import asyncio
 import time
+from collections.abc import Callable
 from enum import Enum
 from functools import wraps
-from typing import Any, Callable, Optional
+from typing import Any
 
 from loguru import logger
 
@@ -50,7 +51,7 @@ class CircuitBreaker:
 
         self._state = CircuitState.CLOSED
         self._failure_count = 0
-        self._last_failure_time: Optional[float] = None
+        self._last_failure_time: float | None = None
         self._lock = asyncio.Lock()
 
     @property
@@ -95,10 +96,7 @@ class CircuitBreaker:
                 logger.warning(f"Circuit {self.name}: HALF_OPEN -> OPEN (falha na recuperacao)")
                 self._state = CircuitState.OPEN
             elif self._failure_count >= self.failure_threshold:
-                logger.error(
-                    f"Circuit {self.name}: CLOSED -> OPEN "
-                    f"(threshold {self.failure_threshold} atingido)"
-                )
+                logger.error(f"Circuit {self.name}: CLOSED -> OPEN (threshold {self.failure_threshold} atingido)")
                 self._state = CircuitState.OPEN
 
     async def call(self, func: Callable, *args: Any, **kwargs: Any) -> Any:

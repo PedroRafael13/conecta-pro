@@ -15,30 +15,29 @@ Endpoints disponíveis:
 """
 
 import logging
-import time
 import os
-from datetime import datetime, date
-from typing import Optional, Dict, Any, List
-from uuid import UUID
+import time
 from dataclasses import dataclass
+from datetime import date, datetime
+from typing import Any
 
 import httpx
 
+from modules.integrations.connectors.base.auth import AuthStrategy
 from modules.integrations.connectors.base.connector import (
     BaseConnector,
     ConnectorCapabilities,
-    SyncResult,
-    HealthCheckResult,
     EntityResult,
+    HealthCheckResult,
+    SyncResult,
 )
-from modules.integrations.connectors.base.auth import AuthStrategy
-from modules.integrations.connectors.base.rate_limiter import AdaptiveRateLimiter
-from modules.integrations.connectors.base.http_client import HTTPClientConfig
 from modules.integrations.connectors.base.exceptions import (
-    ConnectorError,
     APIError,
     AuthenticationError,
+    ConnectorError,
 )
+from modules.integrations.connectors.base.http_client import HTTPClientConfig
+from modules.integrations.connectors.base.rate_limiter import AdaptiveRateLimiter
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +48,7 @@ class SolidesTokenAuth(AuthStrategy):
     Autenticação via Basic Auth Sólides.
     Formato: Basic <base64_encoded_credentials>
     """
+
     api_token: str  # Token já em base64
 
     async def authenticate(self, client: httpx.AsyncClient) -> None:
@@ -63,7 +63,7 @@ class SolidesTokenAuth(AuthStrategy):
         """Token Sólides não expira automaticamente."""
         return False
 
-    def get_headers(self) -> Dict[str, str]:
+    def get_headers(self) -> dict[str, str]:
         """Retorna headers de autenticação."""
         return {"Authorization": f"Basic {self.api_token}"}
 
@@ -167,7 +167,7 @@ class SolidesConnector(BaseConnector):
             raise ConnectorError(
                 "Token Sólides não configurado. Configure 'api_token' nas credenciais ou SOLIDES_API_TOKEN no ambiente.",
                 connector=self.NAME,
-                error_code="MISSING_TOKEN"
+                error_code="MISSING_TOKEN",
             )
 
         return SolidesTokenAuth(api_token=api_token)
@@ -179,7 +179,7 @@ class SolidesConnector(BaseConnector):
             initial_rate=rate_limit / 60,  # Converte para req/s
             min_rate=0.5,
             max_rate=2.0,
-            name=f"{self.NAME}-ratelimiter"
+            name=f"{self.NAME}-ratelimiter",
         )
 
     def _create_http_config(self) -> HTTPClientConfig:
@@ -194,7 +194,7 @@ class SolidesConnector(BaseConnector):
                 "User-Agent": f"ConectaPRO-Integration/{self.VERSION}",
                 "Accept": "application/json",
                 "Content-Type": "application/json",
-            }
+            },
         )
 
     def _get_endpoint(self, entity_type: str, operation: str = "list") -> str:
@@ -232,21 +232,21 @@ class SolidesConnector(BaseConnector):
                     healthy=True,
                     latency_ms=latency,
                     message=f"Conexão OK - {welcome_msg}",
-                    details={"api": "Sólides DP (Tangerino)", "api_url": self._get_base_url()}
+                    details={"api": "Sólides DP (Tangerino)", "api_url": self._get_base_url()},
                 )
             elif response.status_code == 401:
                 return HealthCheckResult(
                     healthy=False,
                     latency_ms=latency,
                     message="Falha de autenticação - Token inválido ou expirado",
-                    details={"status_code": 401}
+                    details={"status_code": 401},
                 )
             else:
                 return HealthCheckResult(
                     healthy=False,
                     latency_ms=latency,
                     message=f"Status inesperado: {response.status_code}",
-                    details={"response": response.text[:200]}
+                    details={"response": response.text[:200]},
                 )
 
         except AuthenticationError as e:
@@ -255,24 +255,21 @@ class SolidesConnector(BaseConnector):
                 healthy=False,
                 latency_ms=latency,
                 message=f"Erro de autenticação: {str(e)}",
-                details={"error_type": "AuthenticationError"}
+                details={"error_type": "AuthenticationError"},
             )
         except Exception as e:
             latency = int((time.monotonic() - start) * 1000)
             return HealthCheckResult(
-                healthy=False,
-                latency_ms=latency,
-                message=str(e),
-                details={"error_type": type(e).__name__}
+                healthy=False, latency_ms=latency, message=str(e), details={"error_type": type(e).__name__}
             )
 
     async def fetch_entities(
         self,
         entity_type: str,
-        cursor: Optional[str] = None,
-        updated_since: Optional[datetime] = None,
+        cursor: str | None = None,
+        updated_since: datetime | None = None,
         page_size: int = 100,
-        filters: Optional[Dict[str, Any]] = None
+        filters: dict[str, Any] | None = None,
     ) -> SyncResult:
         """
         Busca entidades do Sólides DP.
@@ -289,15 +286,13 @@ class SolidesConnector(BaseConnector):
         """
         if entity_type not in self.ENTITY_ENDPOINTS:
             raise ConnectorError(
-                f"Entidade não suportada: {entity_type}",
-                connector=self.NAME,
-                error_code="INVALID_ENTITY"
+                f"Entidade não suportada: {entity_type}", connector=self.NAME, error_code="INVALID_ENTITY"
             )
 
         endpoint = self._get_endpoint(entity_type)
 
         # Montar parâmetros - Sólides DP usa 'size' e 'page'
-        params: Dict[str, Any] = {
+        params: dict[str, Any] = {
             "size": min(page_size, 100),
         }
 
@@ -309,7 +304,7 @@ class SolidesConnector(BaseConnector):
 
         # Filtro de data (sync incremental)
         if updated_since:
-            date_field = self.DATE_FIELDS.get(entity_type, "updatedAt")
+            self.DATE_FIELDS.get(entity_type, "updatedAt")
             params["updatedAfter"] = updated_since.strftime("%Y-%m-%dT%H:%M:%S")
 
         # Filtros adicionais
@@ -320,20 +315,14 @@ class SolidesConnector(BaseConnector):
             response = await self.http.get(endpoint, params=params)
 
             if response.status_code == 404:
-                return SyncResult(
-                    success=True,
-                    data=[],
-                    cursor=None,
-                    has_more=False,
-                    total_count=0
-                )
+                return SyncResult(success=True, data=[], cursor=None, has_more=False, total_count=0)
 
             if response.status_code != 200:
                 raise APIError(
                     f"Erro ao buscar {entity_type}: {response.status_code}",
                     connector=self.NAME,
                     status_code=response.status_code,
-                    response_body=response.text[:500]
+                    response_body=response.text[:500],
                 )
 
             data = response.json()
@@ -360,10 +349,7 @@ class SolidesConnector(BaseConnector):
             has_more = current_page < (total_pages - 1)
             next_cursor = str(current_page + 1) if has_more else None
 
-            logger.debug(
-                f"[{self.NAME}] Buscou {len(items)} {entity_type} "
-                f"(página {current_page + 1}/{total_pages})"
-            )
+            logger.debug(f"[{self.NAME}] Buscou {len(items)} {entity_type} (página {current_page + 1}/{total_pages})")
 
             return SyncResult(
                 success=True,
@@ -371,28 +357,16 @@ class SolidesConnector(BaseConnector):
                 cursor=next_cursor,
                 has_more=has_more,
                 total_count=total_count,
-                metadata={
-                    "page": current_page,
-                    "total_pages": total_pages,
-                    "per_page": params["size"]
-                }
+                metadata={"page": current_page, "total_pages": total_pages, "per_page": params["size"]},
             )
 
         except APIError:
             raise
         except Exception as e:
             logger.error(f"[{self.NAME}] Erro ao buscar {entity_type}: {e}")
-            return SyncResult(
-                success=False,
-                data=[],
-                errors=[{"error": str(e), "entity_type": entity_type}]
-            )
+            return SyncResult(success=False, data=[], errors=[{"error": str(e), "entity_type": entity_type}])
 
-    async def fetch_entity_by_id(
-        self,
-        entity_type: str,
-        external_id: str
-    ) -> Optional[Dict[str, Any]]:
+    async def fetch_entity_by_id(self, entity_type: str, external_id: str) -> dict[str, Any] | None:
         """
         Busca uma entidade específica pelo ID.
 
@@ -404,10 +378,7 @@ class SolidesConnector(BaseConnector):
             Dados da entidade ou None
         """
         if entity_type not in self.ENTITY_DETAIL_ENDPOINTS:
-            raise ConnectorError(
-                f"Entidade não suportada: {entity_type}",
-                connector=self.NAME
-            )
+            raise ConnectorError(f"Entidade não suportada: {entity_type}", connector=self.NAME)
 
         # Usa o endpoint de detalhe com o ID
         endpoint_template = self._get_endpoint(entity_type, operation="detail")
@@ -421,9 +392,7 @@ class SolidesConnector(BaseConnector):
 
             if response.status_code != 200:
                 raise APIError(
-                    f"Erro ao buscar {entity_type}/{external_id}",
-                    connector=self.NAME,
-                    status_code=response.status_code
+                    f"Erro ao buscar {entity_type}/{external_id}", connector=self.NAME, status_code=response.status_code
                 )
 
             data = response.json()
@@ -436,18 +405,10 @@ class SolidesConnector(BaseConnector):
             logger.error(f"[{self.NAME}] Erro ao buscar {entity_type}/{external_id}: {e}")
             return None
 
-    async def create_entity(
-        self,
-        entity_type: str,
-        data: Dict[str, Any]
-    ) -> EntityResult:
+    async def create_entity(self, entity_type: str, data: dict[str, Any]) -> EntityResult:
         """Cria entidade no Sólides DP."""
         if entity_type not in self.ENTITY_CREATE_ENDPOINTS:
-            return EntityResult(
-                success=False,
-                action="error",
-                error=f"Entidade {entity_type} não suporta criação"
-            )
+            return EntityResult(success=False, action="error", error=f"Entidade {entity_type} não suporta criação")
 
         endpoint = self._get_endpoint(entity_type, operation="create")
 
@@ -463,7 +424,7 @@ class SolidesConnector(BaseConnector):
                     success=True,
                     external_id=str(external_id) if external_id else None,
                     action="created",
-                    data=result_data
+                    data=result_data,
                 )
             elif response.status_code == 422:
                 # Erro de validação
@@ -471,35 +432,24 @@ class SolidesConnector(BaseConnector):
                 return EntityResult(
                     success=False,
                     action="validation_error",
-                    error=str(error_data.get("errors", error_data.get("message", error_data)))
+                    error=str(error_data.get("errors", error_data.get("message", error_data))),
                 )
             else:
                 return EntityResult(
-                    success=False,
-                    action="error",
-                    error=f"Status {response.status_code}: {response.text[:200]}"
+                    success=False, action="error", error=f"Status {response.status_code}: {response.text[:200]}"
                 )
 
         except Exception as e:
-            return EntityResult(
-                success=False,
-                action="error",
-                error=str(e)
-            )
+            return EntityResult(success=False, action="error", error=str(e))
 
-    async def update_entity(
-        self,
-        entity_type: str,
-        external_id: str,
-        data: Dict[str, Any]
-    ) -> EntityResult:
+    async def update_entity(self, entity_type: str, external_id: str, data: dict[str, Any]) -> EntityResult:
         """Atualiza entidade no Sólides DP."""
         if entity_type not in self.ENTITY_DETAIL_ENDPOINTS:
             return EntityResult(
                 success=False,
                 external_id=external_id,
                 action="error",
-                error=f"Entidade {entity_type} não suporta atualização"
+                error=f"Entidade {entity_type} não suporta atualização",
             )
 
         endpoint_template = self._get_endpoint(entity_type, operation="detail")
@@ -512,17 +462,11 @@ class SolidesConnector(BaseConnector):
                 result = response.json()
 
                 return EntityResult(
-                    success=True,
-                    external_id=external_id,
-                    action="updated",
-                    data=result.get("data", result)
+                    success=True, external_id=external_id, action="updated", data=result.get("data", result)
                 )
             elif response.status_code == 404:
                 return EntityResult(
-                    success=False,
-                    external_id=external_id,
-                    action="not_found",
-                    error="Entidade não encontrada"
+                    success=False, external_id=external_id, action="not_found", error="Entidade não encontrada"
                 )
             elif response.status_code == 422:
                 error_data = response.json()
@@ -530,29 +474,20 @@ class SolidesConnector(BaseConnector):
                     success=False,
                     external_id=external_id,
                     action="validation_error",
-                    error=str(error_data.get("errors", error_data.get("message", error_data)))
+                    error=str(error_data.get("errors", error_data.get("message", error_data))),
                 )
             else:
                 return EntityResult(
                     success=False,
                     external_id=external_id,
                     action="error",
-                    error=f"Status {response.status_code}: {response.text[:200]}"
+                    error=f"Status {response.status_code}: {response.text[:200]}",
                 )
 
         except Exception as e:
-            return EntityResult(
-                success=False,
-                external_id=external_id,
-                action="error",
-                error=str(e)
-            )
+            return EntityResult(success=False, external_id=external_id, action="error", error=str(e))
 
-    async def delete_entity(
-        self,
-        entity_type: str,
-        external_id: str
-    ) -> EntityResult:
+    async def delete_entity(self, entity_type: str, external_id: str) -> EntityResult:
         """
         Remove/demite entidade no Sólides DP.
         Nota: Sólides DP geralmente não suporta DELETE direto.
@@ -562,14 +497,10 @@ class SolidesConnector(BaseConnector):
             success=False,
             external_id=external_id,
             action="error",
-            error="Sólides DP não suporta remoção direta de entidades"
+            error="Sólides DP não suporta remoção direta de entidades",
         )
 
-    async def _delete_entity_internal(
-        self,
-        entity_type: str,
-        external_id: str
-    ) -> EntityResult:
+    async def _delete_entity_internal(self, entity_type: str, external_id: str) -> EntityResult:
         """Método interno para delete (caso futura API suporte)."""
         endpoint_template = self._get_endpoint(entity_type, operation="detail")
         endpoint = endpoint_template.format(id=external_id)
@@ -578,87 +509,55 @@ class SolidesConnector(BaseConnector):
             response = await self.http.delete(endpoint)
 
             if response.status_code in [200, 204]:
-                return EntityResult(
-                    success=True,
-                    external_id=external_id,
-                    action="deleted"
-                )
+                return EntityResult(success=True, external_id=external_id, action="deleted")
             elif response.status_code == 404:
                 return EntityResult(
-                    success=False,
-                    external_id=external_id,
-                    action="not_found",
-                    error="Entidade não encontrada"
+                    success=False, external_id=external_id, action="not_found", error="Entidade não encontrada"
                 )
             else:
                 return EntityResult(
                     success=False,
                     external_id=external_id,
                     action="error",
-                    error=f"Status {response.status_code}: {response.text[:200]}"
+                    error=f"Status {response.status_code}: {response.text[:200]}",
                 )
 
         except Exception as e:
-            return EntityResult(
-                success=False,
-                external_id=external_id,
-                action="error",
-                error=str(e)
-            )
+            return EntityResult(success=False, external_id=external_id, action="error", error=str(e))
 
     # ==================== MÉTODOS ESPECÍFICOS SÓLIDES DP ====================
 
-    async def fetch_employee(self, employee_id: str) -> Optional[Dict[str, Any]]:
+    async def fetch_employee(self, employee_id: str) -> dict[str, Any] | None:
         """Busca colaborador específico com todos os dados."""
         return await self.fetch_entity_by_id("employees", employee_id)
 
-    async def fetch_employees_active(
-        self,
-        page: int = 0,
-        per_page: int = 100
-    ) -> SyncResult:
+    async def fetch_employees_active(self, page: int = 0, per_page: int = 100) -> SyncResult:
         """Busca apenas colaboradores ativos."""
         return await self.fetch_entities(
-            entity_type="employees",
-            cursor=str(page),
-            page_size=per_page,
-            filters={"status": "ACTIVE"}
+            entity_type="employees", cursor=str(page), page_size=per_page, filters={"status": "ACTIVE"}
         )
 
-    async def create_employee(self, data: Dict[str, Any]) -> EntityResult:
+    async def create_employee(self, data: dict[str, Any]) -> EntityResult:
         """Cria novo colaborador no Sólides DP."""
         return await self.create_entity("employees", data)
 
-    async def update_employee(
-        self,
-        employee_id: str,
-        data: Dict[str, Any]
-    ) -> EntityResult:
+    async def update_employee(self, employee_id: str, data: dict[str, Any]) -> EntityResult:
         """Atualiza colaborador existente."""
         return await self.update_entity("employees", employee_id, data)
 
     async def terminate_employee(
-        self,
-        employee_id: str,
-        termination_date: date,
-        reason: Optional[str] = None
+        self, employee_id: str, termination_date: date, reason: str | None = None
     ) -> EntityResult:
         """Demite colaborador."""
-        data = {
-            "terminationDate": termination_date.isoformat(),
-            "status": "TERMINATED"
-        }
+        data = {"terminationDate": termination_date.isoformat(), "status": "TERMINATED"}
         if reason:
             data["terminationReason"] = reason
 
         return await self.update_entity("employees", employee_id, data)
 
     async def fetch_occurrences_by_employee(
-        self,
-        employee_id: str,
-        start_date: Optional[date] = None,
-        end_date: Optional[date] = None
-    ) -> List[Dict[str, Any]]:
+        self, employee_id: str, start_date: date | None = None, end_date: date | None = None
+    ) -> list[dict[str, Any]]:
         """
         Busca ocorrências de um colaborador específico.
 
@@ -676,10 +575,7 @@ class SolidesConnector(BaseConnector):
         if end_date:
             filters["endDate"] = end_date.isoformat()
 
-        result = await self.fetch_entities(
-            entity_type="occurrences",
-            filters=filters
-        )
+        result = await self.fetch_entities(entity_type="occurrences", filters=filters)
 
         return result.data if result.success else []
 
@@ -689,7 +585,7 @@ class SolidesConnector(BaseConnector):
         occurrence_type: str,
         description: str,
         occurrence_date: date,
-        additional_data: Optional[Dict[str, Any]] = None
+        additional_data: dict[str, Any] | None = None,
     ) -> EntityResult:
         """
         Cria nova ocorrência para colaborador.
@@ -716,11 +612,8 @@ class SolidesConnector(BaseConnector):
         return await self.create_entity("occurrences", data)
 
     async def fetch_absences_by_employee(
-        self,
-        employee_id: str,
-        start_date: Optional[date] = None,
-        end_date: Optional[date] = None
-    ) -> List[Dict[str, Any]]:
+        self, employee_id: str, start_date: date | None = None, end_date: date | None = None
+    ) -> list[dict[str, Any]]:
         """
         Busca absenteísmos de um colaborador específico.
 
@@ -738,45 +631,38 @@ class SolidesConnector(BaseConnector):
         if end_date:
             filters["endDate"] = end_date.isoformat()
 
-        result = await self.fetch_entities(
-            entity_type="absences",
-            filters=filters
-        )
+        result = await self.fetch_entities(entity_type="absences", filters=filters)
 
         return result.data if result.success else []
 
-    async def fetch_departments(self) -> List[Dict[str, Any]]:
+    async def fetch_departments(self) -> list[dict[str, Any]]:
         """Busca todos os departamentos."""
         result = await self.fetch_entities("departments")
         return result.data if result.success else []
 
-    async def fetch_job_roles(self) -> List[Dict[str, Any]]:
+    async def fetch_job_roles(self) -> list[dict[str, Any]]:
         """Busca todos os cargos."""
         result = await self.fetch_entities("job_roles")
         return result.data if result.success else []
 
-    async def fetch_workplaces(self) -> List[Dict[str, Any]]:
+    async def fetch_workplaces(self) -> list[dict[str, Any]]:
         """Busca todos os locais de trabalho."""
         result = await self.fetch_entities("workplaces")
         return result.data if result.success else []
 
-    async def fetch_work_schedules(self) -> List[Dict[str, Any]]:
+    async def fetch_work_schedules(self) -> list[dict[str, Any]]:
         """Busca todas as escalas de trabalho."""
         result = await self.fetch_entities("work_schedules")
         return result.data if result.success else []
 
-    async def fetch_cost_centers(self) -> List[Dict[str, Any]]:
+    async def fetch_cost_centers(self) -> list[dict[str, Any]]:
         """Busca todos os centros de custo."""
         result = await self.fetch_entities("cost_centers")
         return result.data if result.success else []
 
     # ==================== WEBHOOKS ====================
 
-    async def validate_webhook(
-        self,
-        headers: Dict[str, str],
-        body: bytes
-    ) -> bool:
+    async def validate_webhook(self, headers: dict[str, str], body: bytes) -> bool:
         """
         Valida assinatura de webhook do Sólides.
 
@@ -787,8 +673,8 @@ class SolidesConnector(BaseConnector):
         Returns:
             True se válido
         """
-        import hmac
         import hashlib
+        import hmac
 
         webhook_secret = self.credentials.get("webhook_secret") or os.getenv("SOLIDES_WEBHOOK_SECRET")
 
@@ -804,11 +690,7 @@ class SolidesConnector(BaseConnector):
             return False
 
         # Calcula HMAC SHA256
-        expected = hmac.new(
-            webhook_secret.encode(),
-            body,
-            hashlib.sha256
-        ).hexdigest()
+        expected = hmac.new(webhook_secret.encode(), body, hashlib.sha256).hexdigest()
 
         # Remove prefixo sha256= se presente
         if signature.startswith("sha256="):
@@ -825,6 +707,7 @@ class SolidesConnector(BaseConnector):
 # Registrar conector (se o registry existir)
 try:
     from modules.integrations.sync.engine import ConnectorRegistry
+
     ConnectorRegistry.register(SolidesConnector)
 except ImportError:
     pass

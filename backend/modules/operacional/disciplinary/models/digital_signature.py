@@ -10,8 +10,7 @@ Quality Score Target: 99+/100
 """
 
 from datetime import datetime
-from enum import Enum
-from typing import Optional
+from enum import StrEnum
 from uuid import uuid4
 
 from sqlalchemy import Boolean, DateTime, Float, String, Text, func
@@ -21,7 +20,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from core.models.base import Base
 
 
-class SignerType(str, Enum):
+class SignerType(StrEnum):
     """Tipo de signatario."""
 
     EMPLOYEE = "employee"  # Funcionario
@@ -95,12 +94,12 @@ class DigitalSignature(Base):
         nullable=False,
         comment="Nome do signatario (snapshot)",
     )
-    signer_cpf: Mapped[Optional[str]] = mapped_column(
+    signer_cpf: Mapped[str | None] = mapped_column(
         String(14),
         nullable=True,
         comment="CPF do signatario (snapshot)",
     )
-    signer_email: Mapped[Optional[str]] = mapped_column(
+    signer_email: Mapped[str | None] = mapped_column(
         String(255),
         nullable=True,
         comment="Email do signatario (snapshot)",
@@ -133,34 +132,34 @@ class DigitalSignature(Base):
     )
 
     # === Rastreabilidade ===
-    ip_address: Mapped[Optional[str]] = mapped_column(
+    ip_address: Mapped[str | None] = mapped_column(
         String(45),
         nullable=True,
         comment="Endereco IP de onde foi assinado (IPv4 ou IPv6)",
     )
-    user_agent: Mapped[Optional[str]] = mapped_column(
+    user_agent: Mapped[str | None] = mapped_column(
         String(500),
         nullable=True,
         comment="User-Agent do navegador",
     )
 
     # === Geolocalizacao ===
-    latitude: Mapped[Optional[float]] = mapped_column(
+    latitude: Mapped[float | None] = mapped_column(
         Float,
         nullable=True,
         comment="Latitude da localizacao",
     )
-    longitude: Mapped[Optional[float]] = mapped_column(
+    longitude: Mapped[float | None] = mapped_column(
         Float,
         nullable=True,
         comment="Longitude da localizacao",
     )
-    geolocation_accuracy: Mapped[Optional[float]] = mapped_column(
+    geolocation_accuracy: Mapped[float | None] = mapped_column(
         Float,
         nullable=True,
         comment="Precisao da geolocalizacao em metros",
     )
-    geolocation_timestamp: Mapped[Optional[datetime]] = mapped_column(
+    geolocation_timestamp: Mapped[datetime | None] = mapped_column(
         DateTime,
         nullable=True,
         comment="Timestamp da captura de geolocalizacao",
@@ -173,29 +172,29 @@ class DigitalSignature(Base):
         nullable=False,
         comment="Se a assinatura e valida",
     )
-    validated_at: Mapped[Optional[datetime]] = mapped_column(
+    validated_at: Mapped[datetime | None] = mapped_column(
         DateTime,
         nullable=True,
         comment="Data/hora da validacao",
     )
-    invalidated_at: Mapped[Optional[datetime]] = mapped_column(
+    invalidated_at: Mapped[datetime | None] = mapped_column(
         DateTime,
         nullable=True,
         comment="Data/hora da invalidacao",
     )
-    invalidation_reason: Mapped[Optional[str]] = mapped_column(
+    invalidation_reason: Mapped[str | None] = mapped_column(
         String(500),
         nullable=True,
         comment="Motivo da invalidacao",
     )
 
     # === Metadados ===
-    device_fingerprint: Mapped[Optional[str]] = mapped_column(
+    device_fingerprint: Mapped[str | None] = mapped_column(
         String(255),
         nullable=True,
         comment="Fingerprint do dispositivo",
     )
-    session_id: Mapped[Optional[str]] = mapped_column(
+    session_id: Mapped[str | None] = mapped_column(
         String(100),
         nullable=True,
         comment="ID da sessao do usuario",
@@ -224,7 +223,7 @@ class DigitalSignature(Base):
         return self.latitude is not None and self.longitude is not None
 
     @property
-    def geolocation_tuple(self) -> Optional[tuple[float, float]]:
+    def geolocation_tuple(self) -> tuple[float, float] | None:
         """Retorna tupla (latitude, longitude) ou None."""
         if self.has_geolocation:
             return (self.latitude, self.longitude)  # type: ignore

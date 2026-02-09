@@ -12,13 +12,14 @@ Funções:
 """
 
 import logging
-import hashlib
-from datetime import datetime, date
-from decimal import Decimal
-from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, field
-from enum import Enum
-import xml.etree.ElementTree as ET
+from datetime import date, datetime
+from decimal import Decimal
+from enum import StrEnum
+from typing import Any
+from xml.etree.ElementTree import Element, SubElement  # noqa: S405
+
+import defusedxml.ElementTree as ET  # noqa: N817
 
 from .certificate_manager import CertificateManager
 from .xml_signer import XMLSigner
@@ -26,8 +27,9 @@ from .xml_signer import XMLSigner
 logger = logging.getLogger(__name__)
 
 
-class NFSeStatus(str, Enum):
+class NFSeStatus(StrEnum):
     """Status da NFS-e."""
+
     PENDENTE = "pendente"
     PROCESSANDO = "processando"
     AUTORIZADA = "autorizada"
@@ -36,18 +38,20 @@ class NFSeStatus(str, Enum):
     ERRO = "erro"
 
 
-class TipoTributacao(str, Enum):
+class TipoTributacao(StrEnum):
     """Tipo de tributação do ISS."""
+
     NORMAL = "1"  # Tributação no município
     RETIDO = "2"  # ISS retido pelo tomador
-    IMUNE = "3"   # Imune
+    IMUNE = "3"  # Imune
     ISENTO = "4"  # Isento
     EXIGIBILIDADE_SUSPENSA = "5"  # Exigibilidade suspensa por decisão judicial
     EXIGIBILIDADE_SUSPENSA_ADM = "6"  # Exigibilidade suspensa por processo administrativo
 
 
-class NaturezaOperacao(str, Enum):
+class NaturezaOperacao(StrEnum):
     """Natureza da operação."""
+
     TRIBUTACAO_MUNICIPIO = "1"
     TRIBUTACAO_FORA_MUNICIPIO = "2"
     ISENCAO = "3"
@@ -60,6 +64,7 @@ class NaturezaOperacao(str, Enum):
 @dataclass
 class Tomador:
     """Dados do tomador do serviço."""
+
     cpf_cnpj: str
     razao_social: str
     endereco: str
@@ -68,17 +73,18 @@ class Tomador:
     cidade: str
     uf: str
     cep: str
-    email: Optional[str] = None
-    telefone: Optional[str] = None
-    inscricao_municipal: Optional[str] = None
-    complemento: Optional[str] = None
+    email: str | None = None
+    telefone: str | None = None
+    inscricao_municipal: str | None = None
+    complemento: str | None = None
 
 
 @dataclass
 class Servico:
     """Dados do serviço prestado."""
+
     codigo_servico: str  # Código do serviço (Lista de Serviços LC 116)
-    discriminacao: str   # Descrição do serviço
+    discriminacao: str  # Descrição do serviço
     valor_servicos: Decimal
     valor_deducoes: Decimal = Decimal("0")
     valor_pis: Decimal = Decimal("0")
@@ -89,8 +95,8 @@ class Servico:
     valor_iss: Decimal = Decimal("0")
     aliquota_iss: Decimal = Decimal("0.05")  # 5% padrão Manaus
     iss_retido: bool = False
-    codigo_cnae: Optional[str] = None
-    codigo_tributacao_municipio: Optional[str] = None
+    codigo_cnae: str | None = None
+    codigo_tributacao_municipio: str | None = None
 
     @property
     def base_calculo(self) -> Decimal:
@@ -100,28 +106,35 @@ class Servico:
     @property
     def valor_liquido(self) -> Decimal:
         """Calcula valor líquido da nota."""
-        return (self.valor_servicos - self.valor_deducoes -
-                self.valor_pis - self.valor_cofins -
-                self.valor_inss - self.valor_ir -
-                self.valor_csll - (self.valor_iss if self.iss_retido else Decimal("0")))
+        return (
+            self.valor_servicos
+            - self.valor_deducoes
+            - self.valor_pis
+            - self.valor_cofins
+            - self.valor_inss
+            - self.valor_ir
+            - self.valor_csll
+            - (self.valor_iss if self.iss_retido else Decimal("0"))
+        )
 
 
 @dataclass
 class NFSeManaus:
     """Representação de uma NFS-e de Manaus."""
+
     # Identificação
-    numero: Optional[str] = None
-    codigo_verificacao: Optional[str] = None
+    numero: str | None = None
+    codigo_verificacao: str | None = None
 
     # Prestador (dados da empresa)
     prestador_cnpj: str = ""
     prestador_inscricao_municipal: str = ""
 
     # Tomador
-    tomador: Optional[Tomador] = None
+    tomador: Tomador | None = None
 
     # Serviço
-    servico: Optional[Servico] = None
+    servico: Servico | None = None
 
     # Datas
     data_emissao: datetime = field(default_factory=datetime.now)
@@ -129,17 +142,17 @@ class NFSeManaus:
 
     # Tributação
     natureza_operacao: NaturezaOperacao = NaturezaOperacao.TRIBUTACAO_MUNICIPIO
-    regime_especial_tributacao: Optional[str] = None
+    regime_especial_tributacao: str | None = None
     optante_simples: bool = True
     incentivador_cultural: bool = False
 
     # Status
     status: NFSeStatus = NFSeStatus.PENDENTE
-    mensagem_retorno: Optional[str] = None
+    mensagem_retorno: str | None = None
 
     # XML
-    xml_envio: Optional[str] = None
-    xml_retorno: Optional[str] = None
+    xml_envio: str | None = None
+    xml_retorno: str | None = None
 
 
 class NFSeManausManager:
@@ -219,14 +232,8 @@ class NFSeManausManager:
             self.xml_signer = XMLSigner(certificate_manager)
 
         # URLs
-        self.url_base = (
-            self.URL_BASE_PRODUCAO if ambiente == "producao"
-            else self.URL_BASE_HOMOLOGACAO
-        )
-        self.wsdl_url = (
-            self.WSDL_PRODUCAO if ambiente == "producao"
-            else self.WSDL_HOMOLOGACAO
-        )
+        self.url_base = self.URL_BASE_PRODUCAO if ambiente == "producao" else self.URL_BASE_HOMOLOGACAO
+        self.wsdl_url = self.WSDL_PRODUCAO if ambiente == "producao" else self.WSDL_HOMOLOGACAO
 
     def gerar_rps(self, nfse: NFSeManaus) -> str:
         """
@@ -239,95 +246,94 @@ class NFSeManausManager:
             XML do RPS
         """
         # Namespace
-        ns = {"ns": self.NS_TIPOS}
 
         # Root
-        rps = ET.Element("Rps")
+        rps = Element("Rps")
 
         # InfDeclaracaoPrestacaoServico
-        inf_rps = ET.SubElement(rps, "InfDeclaracaoPrestacaoServico")
+        inf_rps = SubElement(rps, "InfDeclaracaoPrestacaoServico")
 
         # Rps (identificação)
-        rps_id = ET.SubElement(inf_rps, "Rps")
-        ident_rps = ET.SubElement(rps_id, "IdentificacaoRps")
-        ET.SubElement(ident_rps, "Numero").text = str(int(datetime.now().timestamp()))
-        ET.SubElement(ident_rps, "Serie").text = "RPS"
-        ET.SubElement(ident_rps, "Tipo").text = "1"  # RPS
-        ET.SubElement(rps_id, "DataEmissao").text = nfse.data_emissao.strftime("%Y-%m-%d")
-        ET.SubElement(rps_id, "Status").text = "1"  # Normal
+        rps_id = SubElement(inf_rps, "Rps")
+        ident_rps = SubElement(rps_id, "IdentificacaoRps")
+        SubElement(ident_rps, "Numero").text = str(int(datetime.now().timestamp()))
+        SubElement(ident_rps, "Serie").text = "RPS"
+        SubElement(ident_rps, "Tipo").text = "1"  # RPS
+        SubElement(rps_id, "DataEmissao").text = nfse.data_emissao.strftime("%Y-%m-%d")
+        SubElement(rps_id, "Status").text = "1"  # Normal
 
         # Competência
-        ET.SubElement(inf_rps, "Competencia").text = nfse.competencia.strftime("%Y-%m-%d")
+        SubElement(inf_rps, "Competencia").text = nfse.competencia.strftime("%Y-%m-%d")
 
         # Serviço
-        servico = ET.SubElement(inf_rps, "Servico")
-        valores = ET.SubElement(servico, "Valores")
-        ET.SubElement(valores, "ValorServicos").text = str(nfse.servico.valor_servicos)
-        ET.SubElement(valores, "ValorDeducoes").text = str(nfse.servico.valor_deducoes)
-        ET.SubElement(valores, "ValorPis").text = str(nfse.servico.valor_pis)
-        ET.SubElement(valores, "ValorCofins").text = str(nfse.servico.valor_cofins)
-        ET.SubElement(valores, "ValorInss").text = str(nfse.servico.valor_inss)
-        ET.SubElement(valores, "ValorIr").text = str(nfse.servico.valor_ir)
-        ET.SubElement(valores, "ValorCsll").text = str(nfse.servico.valor_csll)
-        ET.SubElement(valores, "IssRetido").text = "1" if nfse.servico.iss_retido else "2"
-        ET.SubElement(valores, "ValorIss").text = str(nfse.servico.valor_iss)
-        ET.SubElement(valores, "BaseCalculo").text = str(nfse.servico.base_calculo)
-        ET.SubElement(valores, "Aliquota").text = str(nfse.servico.aliquota_iss)
-        ET.SubElement(valores, "ValorLiquidoNfse").text = str(nfse.servico.valor_liquido)
+        servico = SubElement(inf_rps, "Servico")
+        valores = SubElement(servico, "Valores")
+        SubElement(valores, "ValorServicos").text = str(nfse.servico.valor_servicos)
+        SubElement(valores, "ValorDeducoes").text = str(nfse.servico.valor_deducoes)
+        SubElement(valores, "ValorPis").text = str(nfse.servico.valor_pis)
+        SubElement(valores, "ValorCofins").text = str(nfse.servico.valor_cofins)
+        SubElement(valores, "ValorInss").text = str(nfse.servico.valor_inss)
+        SubElement(valores, "ValorIr").text = str(nfse.servico.valor_ir)
+        SubElement(valores, "ValorCsll").text = str(nfse.servico.valor_csll)
+        SubElement(valores, "IssRetido").text = "1" if nfse.servico.iss_retido else "2"
+        SubElement(valores, "ValorIss").text = str(nfse.servico.valor_iss)
+        SubElement(valores, "BaseCalculo").text = str(nfse.servico.base_calculo)
+        SubElement(valores, "Aliquota").text = str(nfse.servico.aliquota_iss)
+        SubElement(valores, "ValorLiquidoNfse").text = str(nfse.servico.valor_liquido)
 
-        ET.SubElement(servico, "ItemListaServico").text = nfse.servico.codigo_servico
+        SubElement(servico, "ItemListaServico").text = nfse.servico.codigo_servico
         if nfse.servico.codigo_cnae:
-            ET.SubElement(servico, "CodigoCnae").text = nfse.servico.codigo_cnae
-        ET.SubElement(servico, "Discriminacao").text = nfse.servico.discriminacao
-        ET.SubElement(servico, "CodigoMunicipio").text = self.CODIGO_MUNICIPIO
+            SubElement(servico, "CodigoCnae").text = nfse.servico.codigo_cnae
+        SubElement(servico, "Discriminacao").text = nfse.servico.discriminacao
+        SubElement(servico, "CodigoMunicipio").text = self.CODIGO_MUNICIPIO
 
         # Prestador
-        prestador = ET.SubElement(inf_rps, "Prestador")
-        cpf_cnpj_prest = ET.SubElement(prestador, "CpfCnpj")
-        ET.SubElement(cpf_cnpj_prest, "Cnpj").text = self.cnpj
-        ET.SubElement(prestador, "InscricaoMunicipal").text = self.inscricao_municipal
+        prestador = SubElement(inf_rps, "Prestador")
+        cpf_cnpj_prest = SubElement(prestador, "CpfCnpj")
+        SubElement(cpf_cnpj_prest, "Cnpj").text = self.cnpj
+        SubElement(prestador, "InscricaoMunicipal").text = self.inscricao_municipal
 
         # Tomador
         if nfse.tomador:
-            tomador = ET.SubElement(inf_rps, "Tomador")
-            ident_tomador = ET.SubElement(tomador, "IdentificacaoTomador")
-            cpf_cnpj_tom = ET.SubElement(ident_tomador, "CpfCnpj")
+            tomador = SubElement(inf_rps, "Tomador")
+            ident_tomador = SubElement(tomador, "IdentificacaoTomador")
+            cpf_cnpj_tom = SubElement(ident_tomador, "CpfCnpj")
 
             doc = nfse.tomador.cpf_cnpj.replace(".", "").replace("-", "").replace("/", "")
             if len(doc) == 11:
-                ET.SubElement(cpf_cnpj_tom, "Cpf").text = doc
+                SubElement(cpf_cnpj_tom, "Cpf").text = doc
             else:
-                ET.SubElement(cpf_cnpj_tom, "Cnpj").text = doc
+                SubElement(cpf_cnpj_tom, "Cnpj").text = doc
 
             if nfse.tomador.inscricao_municipal:
-                ET.SubElement(ident_tomador, "InscricaoMunicipal").text = nfse.tomador.inscricao_municipal
+                SubElement(ident_tomador, "InscricaoMunicipal").text = nfse.tomador.inscricao_municipal
 
-            ET.SubElement(tomador, "RazaoSocial").text = nfse.tomador.razao_social
+            SubElement(tomador, "RazaoSocial").text = nfse.tomador.razao_social
 
-            endereco = ET.SubElement(tomador, "Endereco")
-            ET.SubElement(endereco, "Endereco").text = nfse.tomador.endereco
-            ET.SubElement(endereco, "Numero").text = nfse.tomador.numero
+            endereco = SubElement(tomador, "Endereco")
+            SubElement(endereco, "Endereco").text = nfse.tomador.endereco
+            SubElement(endereco, "Numero").text = nfse.tomador.numero
             if nfse.tomador.complemento:
-                ET.SubElement(endereco, "Complemento").text = nfse.tomador.complemento
-            ET.SubElement(endereco, "Bairro").text = nfse.tomador.bairro
-            ET.SubElement(endereco, "CodigoMunicipio").text = self.CODIGO_MUNICIPIO
-            ET.SubElement(endereco, "Uf").text = nfse.tomador.uf
-            ET.SubElement(endereco, "Cep").text = nfse.tomador.cep.replace("-", "")
+                SubElement(endereco, "Complemento").text = nfse.tomador.complemento
+            SubElement(endereco, "Bairro").text = nfse.tomador.bairro
+            SubElement(endereco, "CodigoMunicipio").text = self.CODIGO_MUNICIPIO
+            SubElement(endereco, "Uf").text = nfse.tomador.uf
+            SubElement(endereco, "Cep").text = nfse.tomador.cep.replace("-", "")
 
             if nfse.tomador.email or nfse.tomador.telefone:
-                contato = ET.SubElement(tomador, "Contato")
+                contato = SubElement(tomador, "Contato")
                 if nfse.tomador.telefone:
-                    ET.SubElement(contato, "Telefone").text = nfse.tomador.telefone
+                    SubElement(contato, "Telefone").text = nfse.tomador.telefone
                 if nfse.tomador.email:
-                    ET.SubElement(contato, "Email").text = nfse.tomador.email
+                    SubElement(contato, "Email").text = nfse.tomador.email
 
         # Regime especial
-        ET.SubElement(inf_rps, "OptanteSimplesNacional").text = "1" if nfse.optante_simples else "2"
-        ET.SubElement(inf_rps, "IncentivoFiscal").text = "1" if nfse.incentivador_cultural else "2"
+        SubElement(inf_rps, "OptanteSimplesNacional").text = "1" if nfse.optante_simples else "2"
+        SubElement(inf_rps, "IncentivoFiscal").text = "1" if nfse.incentivador_cultural else "2"
 
         return ET.tostring(rps, encoding="unicode")
 
-    def enviar_lote_rps(self, lista_nfse: List[NFSeManaus]) -> Dict[str, Any]:
+    def enviar_lote_rps(self, lista_nfse: list[NFSeManaus]) -> dict[str, Any]:
         """
         Envia lote de RPS para geração de NFS-e.
 
@@ -338,17 +344,17 @@ class NFSeManausManager:
             Resultado do envio
         """
         # Monta lote
-        lote = ET.Element("EnviarLoteRpsSincronoEnvio", xmlns=self.NS_TIPOS)
+        lote = Element("EnviarLoteRpsSincronoEnvio", xmlns=self.NS_TIPOS)
 
-        lote_rps = ET.SubElement(lote, "LoteRps")
-        ET.SubElement(lote_rps, "NumeroLote").text = str(int(datetime.now().timestamp()))
+        lote_rps = SubElement(lote, "LoteRps")
+        SubElement(lote_rps, "NumeroLote").text = str(int(datetime.now().timestamp()))
 
-        cpf_cnpj = ET.SubElement(lote_rps, "CpfCnpj")
-        ET.SubElement(cpf_cnpj, "Cnpj").text = self.cnpj
-        ET.SubElement(lote_rps, "InscricaoMunicipal").text = self.inscricao_municipal
-        ET.SubElement(lote_rps, "QuantidadeRps").text = str(len(lista_nfse))
+        cpf_cnpj = SubElement(lote_rps, "CpfCnpj")
+        SubElement(cpf_cnpj, "Cnpj").text = self.cnpj
+        SubElement(lote_rps, "InscricaoMunicipal").text = self.inscricao_municipal
+        SubElement(lote_rps, "QuantidadeRps").text = str(len(lista_nfse))
 
-        lista_rps = ET.SubElement(lote_rps, "ListaRps")
+        lista_rps = SubElement(lote_rps, "ListaRps")
 
         for nfse in lista_nfse:
             rps_xml = self.gerar_rps(nfse)
@@ -364,18 +370,9 @@ class NFSeManausManager:
 
         logger.info(f"Enviando lote com {len(lista_nfse)} RPS")
 
-        return {
-            "xml_envio": xml_assinado,
-            "quantidade": len(lista_nfse),
-            "status": "pendente"
-        }
+        return {"xml_envio": xml_assinado, "quantidade": len(lista_nfse), "status": "pendente"}
 
-    def consultar_nfse_por_rps(
-        self,
-        numero_rps: str,
-        serie: str = "RPS",
-        tipo: str = "1"
-    ) -> Dict[str, Any]:
+    def consultar_nfse_por_rps(self, numero_rps: str, serie: str = "RPS", tipo: str = "1") -> dict[str, Any]:
         """
         Consulta NFS-e pelo número do RPS.
 
@@ -387,26 +384,23 @@ class NFSeManausManager:
         Returns:
             Dados da NFS-e
         """
-        consulta = ET.Element("ConsultarNfseRpsEnvio", xmlns=self.NS_TIPOS)
+        consulta = Element("ConsultarNfseRpsEnvio", xmlns=self.NS_TIPOS)
 
-        ident_rps = ET.SubElement(consulta, "IdentificacaoRps")
-        ET.SubElement(ident_rps, "Numero").text = numero_rps
-        ET.SubElement(ident_rps, "Serie").text = serie
-        ET.SubElement(ident_rps, "Tipo").text = tipo
+        ident_rps = SubElement(consulta, "IdentificacaoRps")
+        SubElement(ident_rps, "Numero").text = numero_rps
+        SubElement(ident_rps, "Serie").text = serie
+        SubElement(ident_rps, "Tipo").text = tipo
 
-        prestador = ET.SubElement(consulta, "Prestador")
-        cpf_cnpj = ET.SubElement(prestador, "CpfCnpj")
-        ET.SubElement(cpf_cnpj, "Cnpj").text = self.cnpj
-        ET.SubElement(prestador, "InscricaoMunicipal").text = self.inscricao_municipal
+        prestador = SubElement(consulta, "Prestador")
+        cpf_cnpj = SubElement(prestador, "CpfCnpj")
+        SubElement(cpf_cnpj, "Cnpj").text = self.cnpj
+        SubElement(prestador, "InscricaoMunicipal").text = self.inscricao_municipal
 
         xml_str = ET.tostring(consulta, encoding="unicode")
 
-        return {
-            "xml_consulta": xml_str,
-            "numero_rps": numero_rps
-        }
+        return {"xml_consulta": xml_str, "numero_rps": numero_rps}
 
-    def consultar_nfse_por_numero(self, numero_nfse: str) -> Dict[str, Any]:
+    def consultar_nfse_por_numero(self, numero_nfse: str) -> dict[str, Any]:
         """
         Consulta NFS-e pelo número da nota.
 
@@ -416,27 +410,20 @@ class NFSeManausManager:
         Returns:
             Dados da NFS-e
         """
-        consulta = ET.Element("ConsultarNfseEnvio", xmlns=self.NS_TIPOS)
+        consulta = Element("ConsultarNfseEnvio", xmlns=self.NS_TIPOS)
 
-        prestador = ET.SubElement(consulta, "Prestador")
-        cpf_cnpj = ET.SubElement(prestador, "CpfCnpj")
-        ET.SubElement(cpf_cnpj, "Cnpj").text = self.cnpj
-        ET.SubElement(prestador, "InscricaoMunicipal").text = self.inscricao_municipal
+        prestador = SubElement(consulta, "Prestador")
+        cpf_cnpj = SubElement(prestador, "CpfCnpj")
+        SubElement(cpf_cnpj, "Cnpj").text = self.cnpj
+        SubElement(prestador, "InscricaoMunicipal").text = self.inscricao_municipal
 
-        ET.SubElement(consulta, "NumeroNfse").text = numero_nfse
+        SubElement(consulta, "NumeroNfse").text = numero_nfse
 
         xml_str = ET.tostring(consulta, encoding="unicode")
 
-        return {
-            "xml_consulta": xml_str,
-            "numero_nfse": numero_nfse
-        }
+        return {"xml_consulta": xml_str, "numero_nfse": numero_nfse}
 
-    def cancelar_nfse(
-        self,
-        numero_nfse: str,
-        codigo_cancelamento: str = "1"
-    ) -> Dict[str, Any]:
+    def cancelar_nfse(self, numero_nfse: str, codigo_cancelamento: str = "1") -> dict[str, Any]:
         """
         Cancela uma NFS-e.
 
@@ -447,19 +434,19 @@ class NFSeManausManager:
         Returns:
             Resultado do cancelamento
         """
-        cancelamento = ET.Element("CancelarNfseEnvio", xmlns=self.NS_TIPOS)
+        cancelamento = Element("CancelarNfseEnvio", xmlns=self.NS_TIPOS)
 
-        pedido = ET.SubElement(cancelamento, "Pedido")
-        inf_pedido = ET.SubElement(pedido, "InfPedidoCancelamento")
+        pedido = SubElement(cancelamento, "Pedido")
+        inf_pedido = SubElement(pedido, "InfPedidoCancelamento")
 
-        ident_nfse = ET.SubElement(inf_pedido, "IdentificacaoNfse")
-        ET.SubElement(ident_nfse, "Numero").text = numero_nfse
-        cpf_cnpj = ET.SubElement(ident_nfse, "CpfCnpj")
-        ET.SubElement(cpf_cnpj, "Cnpj").text = self.cnpj
-        ET.SubElement(ident_nfse, "InscricaoMunicipal").text = self.inscricao_municipal
-        ET.SubElement(ident_nfse, "CodigoMunicipio").text = self.CODIGO_MUNICIPIO
+        ident_nfse = SubElement(inf_pedido, "IdentificacaoNfse")
+        SubElement(ident_nfse, "Numero").text = numero_nfse
+        cpf_cnpj = SubElement(ident_nfse, "CpfCnpj")
+        SubElement(cpf_cnpj, "Cnpj").text = self.cnpj
+        SubElement(ident_nfse, "InscricaoMunicipal").text = self.inscricao_municipal
+        SubElement(ident_nfse, "CodigoMunicipio").text = self.CODIGO_MUNICIPIO
 
-        ET.SubElement(inf_pedido, "CodigoCancelamento").text = codigo_cancelamento
+        SubElement(inf_pedido, "CodigoCancelamento").text = codigo_cancelamento
 
         xml_str = ET.tostring(cancelamento, encoding="unicode")
         if self.xml_signer:
@@ -472,14 +459,10 @@ class NFSeManausManager:
         return {
             "xml_cancelamento": xml_assinado,
             "numero_nfse": numero_nfse,
-            "codigo_cancelamento": codigo_cancelamento
+            "codigo_cancelamento": codigo_cancelamento,
         }
 
-    def substituir_nfse(
-        self,
-        numero_nfse_substituida: str,
-        nova_nfse: NFSeManaus
-    ) -> Dict[str, Any]:
+    def substituir_nfse(self, numero_nfse_substituida: str, nova_nfse: NFSeManaus) -> dict[str, Any]:
         """
         Substitui uma NFS-e por outra.
 
@@ -490,13 +473,13 @@ class NFSeManausManager:
         Returns:
             Resultado da substituição
         """
-        substituicao = ET.Element("SubstituirNfseEnvio", xmlns=self.NS_TIPOS)
+        substituicao = Element("SubstituirNfseEnvio", xmlns=self.NS_TIPOS)
 
         # Pedido de substituição
-        pedido = ET.SubElement(substituicao, "SubstituicaoNfse")
+        pedido = SubElement(substituicao, "SubstituicaoNfse")
 
         # NFS-e a ser substituída
-        ET.SubElement(pedido, "NfseSubstituida").text = numero_nfse_substituida
+        SubElement(pedido, "NfseSubstituida").text = numero_nfse_substituida
 
         # Nova NFS-e (RPS)
         rps_xml = self.gerar_rps(nova_nfse)
@@ -511,17 +494,9 @@ class NFSeManausManager:
 
         logger.info(f"Substituindo NFS-e {numero_nfse_substituida}")
 
-        return {
-            "xml_substituicao": xml_assinado,
-            "numero_substituida": numero_nfse_substituida
-        }
+        return {"xml_substituicao": xml_assinado, "numero_substituida": numero_nfse_substituida}
 
-    def _montar_envelope_soap(
-        self,
-        operacao: str,
-        xml_cabecalho: str,
-        xml_dados: str
-    ) -> str:
+    def _montar_envelope_soap(self, operacao: str, xml_cabecalho: str, xml_dados: str) -> str:
         """
         Monta envelope SOAP para comunicação com WebService.
 
@@ -557,12 +532,7 @@ class NFSeManausManager:
         endpoint = self.ENDPOINTS.get(operacao, "").upper()
         return f"http://www.e-nfs.com.braction{endpoint}.Execute"
 
-    def enviar_requisicao(
-        self,
-        operacao: str,
-        xml_dados: str,
-        timeout: int = 30
-    ) -> Dict[str, Any]:
+    def enviar_requisicao(self, operacao: str, xml_dados: str, timeout: int = 30) -> dict[str, Any]:
         """
         Envia requisição SOAP para o WebService.
 
@@ -590,11 +560,12 @@ class NFSeManausManager:
         try:
             response = requests.post(
                 url,
-                data=envelope.encode('utf-8'),
+                data=envelope.encode("utf-8"),
                 headers=headers,
                 timeout=timeout,
                 cert=(self.cert_manager.get_cert_path(), self.cert_manager.get_key_path())
-                if self.cert_manager else None
+                if self.cert_manager
+                else None,
             )
 
             resultado = {
@@ -608,12 +579,13 @@ class NFSeManausManager:
             if response.status_code == 200:
                 if "Outputxml" in response.text:
                     import re
-                    match = re.search(r'<Outputxml>(.*?)</Outputxml>', response.text, re.DOTALL)
+
+                    match = re.search(r"<Outputxml>(.*?)</Outputxml>", response.text, re.DOTALL)
                     if match:
                         resultado["outputxml"] = match.group(1)
                         resultado["sucesso"] = True
                 elif "Fault" in response.text:
-                    match = re.search(r'<faultstring>(.*?)</faultstring>', response.text, re.DOTALL)
+                    match = re.search(r"<faultstring>(.*?)</faultstring>", response.text, re.DOTALL)
                     if match:
                         resultado["erro"] = match.group(1)
                         resultado["sucesso"] = False
@@ -622,11 +594,7 @@ class NFSeManausManager:
 
         except requests.RequestException as e:
             logger.error(f"Erro na requisição {operacao}: {e}")
-            return {
-                "sucesso": False,
-                "erro": str(e),
-                "operacao": operacao
-            }
+            return {"sucesso": False, "erro": str(e), "operacao": operacao}
 
 
 # Códigos de serviço comuns para vigilância/segurança

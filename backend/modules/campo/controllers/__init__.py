@@ -4,16 +4,12 @@
 # CONTROLLERS HERDADOS (Portaria Remota / Seguranca Fisica)
 # ===================================================================
 from .access_log_controller import router as access_log_router
+from .campo_service_controller import router as campo_service_router
+from .checklist_controller import router as checklist_router
 from .equipment_status_controller import router as equipment_status_router
+from .estoque_controller import router as estoque_router
 from .guardian_occurrence_controller import router as occurrence_router
 from .guardian_sync_controller import router as sync_router
-
-# ===================================================================
-# CONTROLLERS DE SEGURANCA CIBERNETICA
-# ===================================================================
-from .security_audit_controller import router as security_audit_router
-from .ssh_gateway_controller import router as ssh_gateway_router
-from .campo_service_controller import router as campo_service_router
 
 # ===================================================================
 # SISTEMA DE MONITORAMENTO
@@ -24,10 +20,14 @@ from .monitoring_controller import router as monitoring_router
 # NOVOS CONTROLLERS - CAMPO (OS, Visitas, Checklists)
 # ===================================================================
 from .ordem_servico_controller import router as ordem_servico_router
-from .visita_controller import router as visita_router
-from .checklist_controller import router as checklist_router
 from .roteirizacao_controller import router as roteirizacao_router
-from .estoque_controller import router as estoque_router
+
+# ===================================================================
+# CONTROLLERS DE SEGURANCA CIBERNETICA
+# ===================================================================
+from .security_audit_controller import router as security_audit_router
+from .ssh_gateway_controller import router as ssh_gateway_router
+from .visita_controller import router as visita_router
 
 __all__ = [
     # Legacy controllers (Portaria Remota)

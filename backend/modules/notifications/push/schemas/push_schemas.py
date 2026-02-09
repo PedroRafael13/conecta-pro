@@ -4,10 +4,10 @@ Sprint 37 - Push Notifications Mobile.
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 from modules.notifications.push.models import (
     CampaignStatus,
@@ -34,14 +34,14 @@ class DeviceRegisterRequest(BaseModel):
 
     # App info
     app_id: str = Field(..., min_length=1, max_length=200)
-    app_version: Optional[str] = Field(None, max_length=50)
-    app_build: Optional[str] = Field(None, max_length=50)
+    app_version: str | None = Field(None, max_length=50)
+    app_build: str | None = Field(None, max_length=50)
 
     # Device info
-    platform_version: Optional[str] = Field(None, max_length=50)
-    device_model: Optional[str] = Field(None, max_length=100)
-    device_manufacturer: Optional[str] = Field(None, max_length=100)
-    device_name: Optional[str] = Field(None, max_length=200)
+    platform_version: str | None = Field(None, max_length=50)
+    device_model: str | None = Field(None, max_length=100)
+    device_manufacturer: str | None = Field(None, max_length=100)
+    device_name: str | None = Field(None, max_length=200)
     device_language: str = Field(default="pt_BR", max_length=10)
     device_timezone: str = Field(default="America/Sao_Paulo", max_length=50)
 
@@ -56,32 +56,32 @@ class DeviceRegisterRequest(BaseModel):
     badge_enabled: bool = True
 
     # Topics
-    subscribed_topics: List[str] = Field(default_factory=list)
-    tags: Dict[str, Any] = Field(default_factory=dict)
+    subscribed_topics: list[str] = Field(default_factory=list)
+    tags: dict[str, Any] = Field(default_factory=dict)
 
     # Location (opcional)
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
-    country: Optional[str] = Field(None, max_length=2)
-    city: Optional[str] = Field(None, max_length=100)
+    latitude: float | None = None
+    longitude: float | None = None
+    country: str | None = Field(None, max_length=2)
+    city: str | None = Field(None, max_length=100)
 
 
 class DeviceUpdateRequest(BaseModel):
     """Schema para atualização de dispositivo."""
 
-    device_token: Optional[str] = None
-    app_version: Optional[str] = Field(None, max_length=50)
-    platform_version: Optional[str] = Field(None, max_length=50)
+    device_token: str | None = None
+    app_version: str | None = Field(None, max_length=50)
+    platform_version: str | None = Field(None, max_length=50)
 
-    notifications_enabled: Optional[bool] = None
-    sound_enabled: Optional[bool] = None
-    badge_enabled: Optional[bool] = None
+    notifications_enabled: bool | None = None
+    sound_enabled: bool | None = None
+    badge_enabled: bool | None = None
 
-    subscribed_topics: Optional[List[str]] = None
-    tags: Optional[Dict[str, Any]] = None
+    subscribed_topics: list[str] | None = None
+    tags: dict[str, Any] | None = None
 
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
+    latitude: float | None = None
+    longitude: float | None = None
 
 
 class DeviceResponse(BaseModel):
@@ -95,20 +95,20 @@ class DeviceResponse(BaseModel):
     status: DeviceStatus
 
     app_id: str
-    app_version: Optional[str] = None
-    device_model: Optional[str] = None
+    app_version: str | None = None
+    device_model: str | None = None
 
     notifications_enabled: bool = True
-    subscribed_topics: List[str] = Field(default_factory=list)
+    subscribed_topics: list[str] = Field(default_factory=list)
 
-    last_active_at: Optional[datetime] = None
+    last_active_at: datetime | None = None
     total_notifications_sent: int = 0
     total_notifications_opened: int = 0
-    engagement_score: Optional[float] = None
+    engagement_score: float | None = None
 
     active: bool = True
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
 
     class Config:
         from_attributes = True
@@ -117,7 +117,7 @@ class DeviceResponse(BaseModel):
 class DeviceListResponse(BaseModel):
     """Schema de lista de dispositivos."""
 
-    items: List[DeviceResponse]
+    items: list[DeviceResponse]
     total: int
     page: int
     page_size: int
@@ -133,7 +133,7 @@ class ActionButtonSchema(BaseModel):
 
     id: str = Field(..., min_length=1, max_length=50)
     title: str = Field(..., min_length=1, max_length=50)
-    icon: Optional[str] = Field(None, max_length=100)
+    icon: str | None = Field(None, max_length=100)
     action: str = Field(..., min_length=1, max_length=200)  # URL or deep link
 
 
@@ -141,40 +141,40 @@ class CampaignCreateRequest(BaseModel):
     """Schema para criação de campanha."""
 
     name: str = Field(..., min_length=1, max_length=200)
-    description: Optional[str] = None
+    description: str | None = None
     campaign_type: CampaignType = CampaignType.ONE_TIME
 
     # Conteúdo principal
     title: str = Field(..., min_length=1, max_length=100)
     body: str = Field(..., min_length=1, max_length=500)
-    image_url: Optional[str] = Field(None, max_length=500)
-    icon_url: Optional[str] = Field(None, max_length=500)
+    image_url: str | None = Field(None, max_length=500)
+    icon_url: str | None = Field(None, max_length=500)
 
     # iOS específico
-    ios_subtitle: Optional[str] = Field(None, max_length=100)
+    ios_subtitle: str | None = Field(None, max_length=100)
     ios_sound: str = Field(default="default", max_length=100)
-    ios_badge: Optional[int] = None
+    ios_badge: int | None = None
 
     # Android específico
     android_channel_id: str = Field(default="default", max_length=100)
-    android_color: Optional[str] = Field(None, max_length=10)
+    android_color: str | None = Field(None, max_length=10)
     android_priority: str = Field(default="high", max_length=10)
 
     # Ações
-    click_action: Optional[str] = Field(None, max_length=200)
-    action_buttons: List[ActionButtonSchema] = Field(default_factory=list)
-    data_payload: Dict[str, Any] = Field(default_factory=dict)
+    click_action: str | None = Field(None, max_length=200)
+    action_buttons: list[ActionButtonSchema] = Field(default_factory=list)
+    data_payload: dict[str, Any] = Field(default_factory=dict)
 
     # Targeting
     target_type: TargetType = TargetType.ALL
-    target_segment_id: Optional[UUID] = None
-    target_users: List[UUID] = Field(default_factory=list)
-    target_topics: List[str] = Field(default_factory=list)
-    target_tags: Dict[str, List[str]] = Field(default_factory=dict)
-    target_platforms: List[str] = Field(default=["ios", "android"])
+    target_segment_id: UUID | None = None
+    target_users: list[UUID] = Field(default_factory=list)
+    target_topics: list[str] = Field(default_factory=list)
+    target_tags: dict[str, list[str]] = Field(default_factory=dict)
+    target_platforms: list[str] = Field(default=["ios", "android"])
 
     # Agendamento
-    scheduled_at: Optional[datetime] = None
+    scheduled_at: datetime | None = None
     timezone: str = Field(default="America/Sao_Paulo", max_length=50)
     optimal_time: bool = False
 
@@ -183,25 +183,25 @@ class CampaignCreateRequest(BaseModel):
     rate_limit_per_second: int = Field(default=1000, ge=1)
 
     # Categoria
-    category: Optional[str] = Field(None, max_length=50)
-    tags: List[str] = Field(default_factory=list)
+    category: str | None = Field(None, max_length=50)
+    tags: list[str] = Field(default_factory=list)
 
 
 class CampaignUpdateRequest(BaseModel):
     """Schema para atualização de campanha."""
 
-    name: Optional[str] = Field(None, min_length=1, max_length=200)
-    description: Optional[str] = None
+    name: str | None = Field(None, min_length=1, max_length=200)
+    description: str | None = None
 
-    title: Optional[str] = Field(None, min_length=1, max_length=100)
-    body: Optional[str] = Field(None, min_length=1, max_length=500)
-    image_url: Optional[str] = Field(None, max_length=500)
+    title: str | None = Field(None, min_length=1, max_length=100)
+    body: str | None = Field(None, min_length=1, max_length=500)
+    image_url: str | None = Field(None, max_length=500)
 
-    click_action: Optional[str] = Field(None, max_length=200)
-    data_payload: Optional[Dict[str, Any]] = None
+    click_action: str | None = Field(None, max_length=200)
+    data_payload: dict[str, Any] | None = None
 
-    scheduled_at: Optional[datetime] = None
-    status: Optional[CampaignStatus] = None
+    scheduled_at: datetime | None = None
+    status: CampaignStatus | None = None
 
 
 class CampaignResponse(BaseModel):
@@ -210,22 +210,22 @@ class CampaignResponse(BaseModel):
     id: UUID
     tenant_id: UUID
     name: str
-    description: Optional[str] = None
+    description: str | None = None
 
     campaign_type: CampaignType
     status: CampaignStatus
 
     title: str
     body: str
-    image_url: Optional[str] = None
-    click_action: Optional[str] = None
+    image_url: str | None = None
+    click_action: str | None = None
 
     target_type: TargetType
-    target_platforms: List[str] = Field(default_factory=list)
+    target_platforms: list[str] = Field(default_factory=list)
 
-    scheduled_at: Optional[datetime] = None
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
+    scheduled_at: datetime | None = None
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
 
     total_targeted: int = 0
     total_sent: int = 0
@@ -233,16 +233,16 @@ class CampaignResponse(BaseModel):
     total_opened: int = 0
     total_clicked: int = 0
 
-    delivery_rate: Optional[float] = None
-    open_rate: Optional[float] = None
-    click_rate: Optional[float] = None
+    delivery_rate: float | None = None
+    open_rate: float | None = None
+    click_rate: float | None = None
 
-    category: Optional[str] = None
-    tags: List[str] = Field(default_factory=list)
+    category: str | None = None
+    tags: list[str] = Field(default_factory=list)
 
     active: bool = True
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
 
     class Config:
         from_attributes = True
@@ -251,7 +251,7 @@ class CampaignResponse(BaseModel):
 class CampaignListResponse(BaseModel):
     """Schema de lista de campanhas."""
 
-    items: List[CampaignResponse]
+    items: list[CampaignResponse]
     total: int
     page: int
     page_size: int
@@ -266,36 +266,37 @@ class SendPushRequest(BaseModel):
     """Schema para envio de push notification."""
 
     # Destinatários (um dos campos obrigatório)
-    user_ids: List[UUID] = Field(default_factory=list)
-    device_ids: List[UUID] = Field(default_factory=list)
-    device_tokens: List[str] = Field(default_factory=list)
-    topics: List[str] = Field(default_factory=list)
+    user_ids: list[UUID] = Field(default_factory=list)
+    device_ids: list[UUID] = Field(default_factory=list)
+    device_tokens: list[str] = Field(default_factory=list)
+    topics: list[str] = Field(default_factory=list)
 
     # Conteúdo
     title: str = Field(..., min_length=1, max_length=100)
     body: str = Field(..., min_length=1, max_length=500)
-    subtitle: Optional[str] = Field(None, max_length=100)
-    image_url: Optional[str] = Field(None, max_length=500)
+    subtitle: str | None = Field(None, max_length=100)
+    image_url: str | None = Field(None, max_length=500)
 
     # Ações
-    click_action: Optional[str] = Field(None, max_length=200)
-    action_buttons: List[ActionButtonSchema] = Field(default_factory=list)
-    data_payload: Dict[str, Any] = Field(default_factory=dict)
+    click_action: str | None = Field(None, max_length=200)
+    action_buttons: list[ActionButtonSchema] = Field(default_factory=list)
+    data_payload: dict[str, Any] = Field(default_factory=dict)
 
     # Configurações
     priority: NotificationPriority = NotificationPriority.HIGH
     ttl_seconds: int = Field(default=86400, ge=60)
-    collapse_key: Optional[str] = Field(None, max_length=100)
+    collapse_key: str | None = Field(None, max_length=100)
     mutable_content: bool = False
     content_available: bool = False
 
     # Contexto
-    category: Optional[str] = Field(None, max_length=50)
-    source_type: Optional[str] = Field(None, max_length=50)
-    source_id: Optional[UUID] = None
+    category: str | None = Field(None, max_length=50)
+    source_type: str | None = Field(None, max_length=50)
+    source_id: UUID | None = None
 
-    @validator("user_ids", "device_ids", "device_tokens", "topics", pre=True, always=True)
-    def at_least_one_target(cls, v, values):  # pylint: disable=no-self-argument
+    @field_validator("user_ids", "device_ids", "device_tokens", "topics")
+    @classmethod
+    def at_least_one_target(cls, v: Any) -> Any:
         """Valida que pelo menos um destinatário foi fornecido."""
         return v
 
@@ -305,11 +306,11 @@ class SendPushResponse(BaseModel):
 
     success: bool
     message: str
-    notification_ids: List[str] = Field(default_factory=list)
+    notification_ids: list[str] = Field(default_factory=list)
     total_targeted: int = 0
     total_queued: int = 0
     total_failed: int = 0
-    failed_devices: List[str] = Field(default_factory=list)
+    failed_devices: list[str] = Field(default_factory=list)
 
 
 class NotificationResponse(BaseModel):
@@ -318,7 +319,7 @@ class NotificationResponse(BaseModel):
     id: UUID
     notification_id: str
     tenant_id: UUID
-    user_id: Optional[UUID] = None
+    user_id: UUID | None = None
 
     platform: str
     status: NotificationStatus
@@ -326,17 +327,17 @@ class NotificationResponse(BaseModel):
 
     title: str
     body: str
-    image_url: Optional[str] = None
+    image_url: str | None = None
 
-    sent_at: Optional[datetime] = None
-    delivered_at: Optional[datetime] = None
-    opened_at: Optional[datetime] = None
+    sent_at: datetime | None = None
+    delivered_at: datetime | None = None
+    opened_at: datetime | None = None
 
     opened: bool = False
     clicked: bool = False
 
-    error_code: Optional[str] = None
-    error_message: Optional[str] = None
+    error_code: str | None = None
+    error_message: str | None = None
 
     created_at: datetime
 
@@ -361,8 +362,8 @@ class SegmentCreateRequest(BaseModel):
     """Schema para criação de segmento."""
 
     name: str = Field(..., min_length=1, max_length=200)
-    description: Optional[str] = None
-    rules: List[SegmentRuleSchema] = Field(..., min_items=1)
+    description: str | None = None
+    rules: list[SegmentRuleSchema] = Field(..., min_items=1)
     rules_logic: str = Field(default="AND", pattern=r"^(AND|OR)$")
     is_dynamic: bool = True
 
@@ -373,12 +374,12 @@ class SegmentResponse(BaseModel):
     id: UUID
     tenant_id: UUID
     name: str
-    description: Optional[str] = None
-    rules: List[Dict[str, Any]]
+    description: str | None = None
+    rules: list[dict[str, Any]]
     rules_logic: str
     is_dynamic: bool
-    cached_count: Optional[int] = None
-    cached_at: Optional[datetime] = None
+    cached_count: int | None = None
+    cached_at: datetime | None = None
     active: bool = True
     created_at: datetime
 
@@ -397,9 +398,9 @@ class MetricsQueryRequest(BaseModel):
     period: MetricPeriod = MetricPeriod.DAILY
     start_date: datetime
     end_date: datetime
-    platform: Optional[str] = None
-    campaign_id: Optional[UUID] = None
-    app_id: Optional[str] = None
+    platform: str | None = None
+    campaign_id: UUID | None = None
+    app_id: str | None = None
 
 
 class MetricsSummaryResponse(BaseModel):
@@ -421,7 +422,7 @@ class MetricsSummaryResponse(BaseModel):
     total_devices_active: int = 0
     new_devices: int = 0
 
-    platform_breakdown: Dict[str, Dict[str, int]] = Field(default_factory=dict)
+    platform_breakdown: dict[str, dict[str, int]] = Field(default_factory=dict)
 
 
 class CampaignAnalyticsResponse(BaseModel):
@@ -442,11 +443,11 @@ class CampaignAnalyticsResponse(BaseModel):
     click_rate: float = 0.0
     conversion_rate: float = 0.0
 
-    avg_time_to_open_seconds: Optional[int] = None
+    avg_time_to_open_seconds: int | None = None
 
-    by_platform: Dict[str, Dict[str, int]] = Field(default_factory=dict)
-    by_hour: Dict[str, Dict[str, int]] = Field(default_factory=dict)
-    errors: Dict[str, int] = Field(default_factory=dict)
+    by_platform: dict[str, dict[str, int]] = Field(default_factory=dict)
+    by_hour: dict[str, dict[str, int]] = Field(default_factory=dict)
+    errors: dict[str, int] = Field(default_factory=dict)
 
 
 # ============================================================================
@@ -458,16 +459,16 @@ class TopicSubscribeRequest(BaseModel):
     """Schema para inscrição em tópico."""
 
     topic: str = Field(..., min_length=1, max_length=100)
-    device_ids: List[UUID] = Field(default_factory=list)
-    user_ids: List[UUID] = Field(default_factory=list)
+    device_ids: list[UUID] = Field(default_factory=list)
+    user_ids: list[UUID] = Field(default_factory=list)
 
 
 class TopicUnsubscribeRequest(BaseModel):
     """Schema para desinscrição de tópico."""
 
     topic: str = Field(..., min_length=1, max_length=100)
-    device_ids: List[UUID] = Field(default_factory=list)
-    user_ids: List[UUID] = Field(default_factory=list)
+    device_ids: list[UUID] = Field(default_factory=list)
+    user_ids: list[UUID] = Field(default_factory=list)
 
 
 class TopicResponse(BaseModel):
@@ -475,4 +476,4 @@ class TopicResponse(BaseModel):
 
     topic: str
     subscriber_count: int = 0
-    last_notification_at: Optional[datetime] = None
+    last_notification_at: datetime | None = None

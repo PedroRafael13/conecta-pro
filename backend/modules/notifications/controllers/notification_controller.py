@@ -5,7 +5,6 @@ Sprint 36 - Notification Hub.
 
 import logging
 from datetime import datetime
-from typing import List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -94,7 +93,7 @@ async def send_notification(
 async def cancel_notification(
     notification_id: str,
     current_user: CurrentActiveUser,
-    reason: Optional[str] = None,
+    reason: str | None = None,
     db: Session = Depends(get_db),
 ) -> dict:
     """Cancela uma notificação pendente ou agendada."""
@@ -117,15 +116,15 @@ async def cancel_notification(
 # =============================================================================
 
 
-@router.get("/channels", response_model=List[ChannelConfigResponse])
+@router.get("/channels", response_model=list[ChannelConfigResponse])
 async def list_channels(
     current_user: CurrentActiveUser,
-    channel_type: Optional[str] = None,
+    channel_type: str | None = None,
     active: bool = True,
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-) -> List[ChannelConfigResponse]:
+) -> list[ChannelConfigResponse]:
     """Lista canais de notificação configurados."""
     tenant_id = get_tenant_id(current_user)
 
@@ -251,16 +250,16 @@ async def update_channel(
 # =============================================================================
 
 
-@router.get("/templates", response_model=List[TemplateResponse])
+@router.get("/templates", response_model=list[TemplateResponse])
 async def list_templates(
     current_user: CurrentActiveUser,
-    category: Optional[str] = None,
-    template_status: Optional[str] = None,
+    category: str | None = None,
+    template_status: str | None = None,
     active: bool = True,
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-) -> List[TemplateResponse]:
+) -> list[TemplateResponse]:
     """Lista templates de notificação."""
     tenant_id = get_tenant_id(current_user)
 
@@ -455,9 +454,7 @@ async def update_my_preferences(
     update_data = data.model_dump(exclude_unset=True)
 
     if "category_preferences" in update_data and update_data["category_preferences"]:
-        update_data["category_preferences"] = {
-            k: v.model_dump() for k, v in data.category_preferences.items()
-        }
+        update_data["category_preferences"] = {k: v.model_dump() for k, v in data.category_preferences.items()}
 
     for field, value in update_data.items():
         setattr(preference, field, value)
@@ -474,11 +471,7 @@ async def unsubscribe(
     db: Session = Depends(get_db),
 ) -> dict:
     """Processa unsubscribe via link."""
-    preference = (
-        db.query(NotificationPreference)
-        .filter(NotificationPreference.verification_token == token)
-        .first()
-    )
+    preference = db.query(NotificationPreference).filter(NotificationPreference.verification_token == token).first()
 
     if not preference:
         raise HTTPException(
@@ -498,16 +491,16 @@ async def unsubscribe(
 # =============================================================================
 
 
-@router.get("/queue", response_model=List[QueueItemResponse])
+@router.get("/queue", response_model=list[QueueItemResponse])
 async def list_queue(
     current_user: CurrentActiveUser,
-    queue_status: Optional[str] = None,
-    channel_type: Optional[str] = None,
-    user_id: Optional[UUID] = None,
+    queue_status: str | None = None,
+    channel_type: str | None = None,
+    user_id: UUID | None = None,
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-) -> List[QueueItemResponse]:
+) -> list[QueueItemResponse]:
     """Lista itens da fila de notificações."""
     tenant_id = get_tenant_id(current_user)
 
@@ -555,7 +548,7 @@ async def get_queue_stats(
 async def process_queue(
     current_user: CurrentActiveUser,
     batch_size: int = Query(default=100, ge=1, le=1000),
-    channel_type: Optional[str] = None,
+    channel_type: str | None = None,
     db: Session = Depends(get_db),
 ) -> dict:
     """Processa itens pendentes da fila."""
@@ -583,18 +576,18 @@ async def process_queue(
 # =============================================================================
 
 
-@router.get("/history", response_model=List[QueueItemResponse])
+@router.get("/history", response_model=list[QueueItemResponse])
 async def get_notification_history(
     current_user: CurrentActiveUser,
-    user_id: Optional[UUID] = None,
-    channel_type: Optional[str] = None,
-    history_status: Optional[str] = None,
-    start_date: Optional[datetime] = None,
-    end_date: Optional[datetime] = None,
+    user_id: UUID | None = None,
+    channel_type: str | None = None,
+    history_status: str | None = None,
+    start_date: datetime | None = None,
+    end_date: datetime | None = None,
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-) -> List[QueueItemResponse]:
+) -> list[QueueItemResponse]:
     """Obtém histórico de notificações enviadas."""
     tenant_id = get_tenant_id(current_user)
 
@@ -615,12 +608,12 @@ async def get_notification_history(
     return notifications
 
 
-@router.get("/logs/{notification_id}", response_model=List[LogEntryResponse])
+@router.get("/logs/{notification_id}", response_model=list[LogEntryResponse])
 async def get_notification_logs(
     notification_id: str,
     current_user: CurrentActiveUser,
     db: Session = Depends(get_db),
-) -> List[LogEntryResponse]:
+) -> list[LogEntryResponse]:
     """Obtém logs de uma notificação específica."""
     tenant_id = get_tenant_id(current_user)
 
@@ -678,11 +671,7 @@ async def track_open(
     db: Session = Depends(get_db),
 ) -> dict:
     """Endpoint de tracking de abertura (pixel)."""
-    queue_item = (
-        db.query(NotificationQueue)
-        .filter(NotificationQueue.notification_id == notification_id)
-        .first()
-    )
+    queue_item = db.query(NotificationQueue).filter(NotificationQueue.notification_id == notification_id).first()
 
     if queue_item:
         queue_item.opened = True
@@ -700,11 +689,7 @@ async def track_click(
     db: Session = Depends(get_db),
 ) -> RedirectResponse:
     """Endpoint de tracking de clique."""
-    queue_item = (
-        db.query(NotificationQueue)
-        .filter(NotificationQueue.notification_id == notification_id)
-        .first()
-    )
+    queue_item = db.query(NotificationQueue).filter(NotificationQueue.notification_id == notification_id).first()
 
     if queue_item:
         queue_item.clicked = True
@@ -729,7 +714,7 @@ async def track_click(
 async def subscribe_push(
     device_token: str,
     platform: str,
-    device_info: Optional[dict] = None,
+    device_info: dict | None = None,
     current_user: CurrentActiveUser = None,
     db: Session = Depends(get_db),
 ) -> dict:
@@ -844,8 +829,8 @@ async def send_push_notification(
     title: str,
     body: str,
     user_id: UUID,
-    data: Optional[dict] = None,
-    action_url: Optional[str] = None,
+    data: dict | None = None,
+    action_url: str | None = None,
     current_user: CurrentActiveUser = None,
     db: Session = Depends(get_db),
 ) -> dict:

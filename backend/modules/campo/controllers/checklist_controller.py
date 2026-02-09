@@ -2,34 +2,33 @@
 Controller para Checklist.
 """
 
-from typing import Optional, List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
-from modules.campo.services.checklist_service import ChecklistService
+from modules.campo.models.checklist import TipoServico
 from modules.campo.schemas.checklist import (
-    ChecklistTemplateCreate,
-    ChecklistTemplateUpdate,
-    ChecklistTemplateRead,
-    ChecklistTemplateListItem,
-    ChecklistItemCreate,
-    ChecklistItemUpdate,
-    ChecklistItemRead,
-    ChecklistPreenchidoRead,
-    ChecklistIniciarRequest,
-    ChecklistResponderRequest,
-    ChecklistConcluirRequest,
-    ReordenarItensRequest,
     ChecklistComItens,
+    ChecklistConcluirRequest,
+    ChecklistIniciarRequest,
+    ChecklistItemCreate,
+    ChecklistItemRead,
+    ChecklistItemUpdate,
     ChecklistPreenchidoCompleto,
-    ValidacaoResult,
+    ChecklistPreenchidoRead,
+    ChecklistResponderRequest,
+    ChecklistTemplateCreate,
+    ChecklistTemplateListItem,
+    ChecklistTemplateRead,
+    ChecklistTemplateUpdate,
+    ReordenarItensRequest,
     TemplateFiltro,
     TemplatePaginatedResponse,
+    ValidacaoResult,
 )
-from modules.campo.models.checklist import TipoServico
+from modules.campo.services.checklist_service import ChecklistService
 
 router = APIRouter()
 
@@ -43,6 +42,7 @@ def get_service(db: AsyncSession = Depends(get_db)) -> ChecklistService:
 # TEMPLATE
 # =============================================================================
 
+
 @router.post("/templates", response_model=ChecklistTemplateRead, status_code=status.HTTP_201_CREATED)
 async def criar_template(
     data: ChecklistTemplateCreate,
@@ -55,11 +55,11 @@ async def criar_template(
 
 @router.get("/templates", response_model=TemplatePaginatedResponse)
 async def listar_templates(
-    tipo_servico: Optional[TipoServico] = None,
-    categoria_equipamento: Optional[str] = None,
-    is_obrigatorio: Optional[bool] = None,
-    is_ativo: Optional[bool] = True,
-    busca: Optional[str] = None,
+    tipo_servico: TipoServico | None = None,
+    categoria_equipamento: str | None = None,
+    is_obrigatorio: bool | None = None,
+    is_ativo: bool | None = True,
+    busca: str | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
     service: ChecklistService = Depends(get_service),
@@ -138,6 +138,7 @@ async def clonar_template(
 # ITENS
 # =============================================================================
 
+
 @router.post("/itens", response_model=ChecklistItemRead, status_code=status.HTTP_201_CREATED)
 async def adicionar_item(
     data: ChecklistItemCreate,
@@ -211,7 +212,10 @@ async def reordenar_itens(
 # PREENCHIMENTO
 # =============================================================================
 
-@router.post("/os/{ordem_servico_id}/iniciar", response_model=ChecklistPreenchidoRead, status_code=status.HTTP_201_CREATED)
+
+@router.post(
+    "/os/{ordem_servico_id}/iniciar", response_model=ChecklistPreenchidoRead, status_code=status.HTTP_201_CREATED
+)
 async def iniciar_checklist(
     ordem_servico_id: UUID,
     data: ChecklistIniciarRequest,

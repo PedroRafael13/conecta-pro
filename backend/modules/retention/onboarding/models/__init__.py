@@ -7,10 +7,10 @@ o gerenciamento do processo de integração de novos funcionários.
 
 from .onboarding_models import (
     OnboardingChecklist,
-    OnboardingStep,
     OnboardingProgress,
-    StepType,
+    OnboardingStep,
     ProgressStatus,
+    StepType,
 )
 
 __all__ = [

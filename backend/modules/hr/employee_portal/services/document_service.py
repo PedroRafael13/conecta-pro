@@ -1,12 +1,11 @@
 """Service para documentos do funcionário."""
 
 import logging
-from typing import Optional, List, Tuple
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from modules.hr.employee_portal.models import EmployeeDocument, DocumentType
+from modules.hr.employee_portal.models import DocumentType, EmployeeDocument
 from modules.hr.employee_portal.repositories import DocumentRepository
 from modules.hr.employee_portal.schemas import DocumentCreate
 
@@ -25,12 +24,12 @@ class DocumentService:
         data: DocumentCreate,
         condominio_id: UUID,
         *,
-        created_by: Optional[UUID] = None,
+        created_by: UUID | None = None,
     ) -> EmployeeDocument:
         """Faz upload de documento."""
         return await self.repo.create(data, condominio_id, created_by=created_by)
 
-    async def get_document(self, document_id: UUID) -> Optional[EmployeeDocument]:
+    async def get_document(self, document_id: UUID) -> EmployeeDocument | None:
         """Busca documento por ID."""
         return await self.repo.get_by_id(document_id)
 
@@ -40,12 +39,12 @@ class DocumentService:
         *,
         page: int = 1,
         page_size: int = 20,
-        document_type: Optional[DocumentType] = None,
-        category: Optional[str] = None,
-        search: Optional[str] = None,
+        document_type: DocumentType | None = None,
+        category: str | None = None,
+        search: str | None = None,
         only_pending_ack: bool = False,
         only_pending_signature: bool = False,
-    ) -> Tuple[List[EmployeeDocument], int]:
+    ) -> tuple[list[EmployeeDocument], int]:
         """Lista documentos do funcionário."""
         return await self.repo.list_by_employee(
             employee_id,
@@ -63,7 +62,7 @@ class DocumentService:
         self,
         document_id: UUID,
         employee_id: UUID,
-    ) -> Optional[EmployeeDocument]:
+    ) -> EmployeeDocument | None:
         """Visualiza documento (registra view)."""
         document = await self.repo.get_by_id(document_id)
         if not document or document.employee_id != employee_id:
@@ -78,7 +77,7 @@ class DocumentService:
         self,
         document_id: UUID,
         employee_id: UUID,
-    ) -> Optional[EmployeeDocument]:
+    ) -> EmployeeDocument | None:
         """Download do documento (registra download)."""
         document = await self.repo.get_by_id(document_id)
         if not document or document.employee_id != employee_id:
@@ -91,9 +90,9 @@ class DocumentService:
         document_id: UUID,
         employee_id: UUID,
         *,
-        ip_address: Optional[str] = None,
-        device_info: Optional[str] = None,
-    ) -> Optional[EmployeeDocument]:
+        ip_address: str | None = None,
+        device_info: str | None = None,
+    ) -> EmployeeDocument | None:
         """Registra ciência no documento."""
         document = await self.repo.get_by_id(document_id)
         if not document or document.employee_id != employee_id:
@@ -114,8 +113,8 @@ class DocumentService:
         employee_id: UUID,
         signature_hash: str,
         *,
-        certificate: Optional[str] = None,
-    ) -> Optional[EmployeeDocument]:
+        certificate: str | None = None,
+    ) -> EmployeeDocument | None:
         """Assina documento digitalmente."""
         document = await self.repo.get_by_id(document_id)
         if not document or document.employee_id != employee_id:
@@ -135,9 +134,9 @@ class DocumentService:
         self,
         document_id: UUID,
         *,
-        published_by: Optional[UUID] = None,
+        published_by: UUID | None = None,
         send_notification: bool = True,
-    ) -> Optional[EmployeeDocument]:
+    ) -> EmployeeDocument | None:
         """Publica documento."""
         return await self.repo.publish(
             document_id,
@@ -155,7 +154,7 @@ class DocumentService:
     async def get_document_categories(
         self,
         employee_id: UUID,
-    ) -> List[str]:
+    ) -> list[str]:
         """Retorna categorias de documentos disponíveis."""
         # Reservado para personalização por funcionário
         _ = employee_id  # Para uso futuro

@@ -4,11 +4,12 @@ modules/fase5/email_intelligence/enums.py - Email Intelligence Enums
 Enumeracoes para analise de emails
 """
 
-from enum import Enum
+from enum import StrEnum
 
 
-class EmailCategory(str, Enum):
+class EmailCategory(StrEnum):
     """Categorias de email."""
+
     PROPOSTA_COMERCIAL = "proposta_comercial"
     SOLICITACAO_ORCAMENTO = "solicitacao_orcamento"
     RECLAMACAO = "reclamacao"
@@ -23,16 +24,18 @@ class EmailCategory(str, Enum):
     OUTROS = "outros"
 
 
-class EmailPriority(str, Enum):
+class EmailPriority(StrEnum):
     """Prioridade do email."""
+
     URGENTE = "urgente"
     ALTA = "alta"
     MEDIA = "media"
     BAIXA = "baixa"
 
 
-class EmailIntent(str, Enum):
+class EmailIntent(StrEnum):
     """Intencao identificada no email."""
+
     SOLICITAR_PROPOSTA = "solicitar_proposta"
     SOLICITAR_INFORMACAO = "solicitar_informacao"
     FAZER_RECLAMACAO = "fazer_reclamacao"
@@ -47,8 +50,9 @@ class EmailIntent(str, Enum):
     OUTRO = "outro"
 
 
-class SentimentType(str, Enum):
+class SentimentType(StrEnum):
     """Tipo de sentimento identificado."""
+
     POSITIVO = "positivo"
     NEUTRO = "neutro"
     NEGATIVO = "negativo"
@@ -56,8 +60,9 @@ class SentimentType(str, Enum):
     FRUSTRADO = "frustrado"
 
 
-class EmailStatus(str, Enum):
+class EmailStatus(StrEnum):
     """Status do email."""
+
     NAO_LIDO = "nao_lido"
     LIDO = "lido"
     RESPONDIDO = "respondido"
@@ -66,8 +71,9 @@ class EmailStatus(str, Enum):
     SPAM = "spam"
 
 
-class ActionType(str, Enum):
+class ActionType(StrEnum):
     """Tipo de acao sugerida."""
+
     RESPONDER = "responder"
     ENCAMINHAR = "encaminhar"
     AGENDAR = "agendar"

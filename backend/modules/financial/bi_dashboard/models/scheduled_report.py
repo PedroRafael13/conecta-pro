@@ -1,31 +1,31 @@
 """Model de Relatorio Agendado Financeiro."""
 
-from datetime import datetime, date, timedelta
+from datetime import date, datetime, timedelta
 from decimal import Decimal
-from enum import Enum
-from typing import Any, Optional
-from uuid import UUID, uuid4
+from enum import StrEnum
+from uuid import uuid4
 
 from sqlalchemy import (
     Boolean,
     Column,
     Date,
     DateTime,
-    Enum as SQLEnum,
     ForeignKey,
     Integer,
-    Numeric,
     String,
     Text,
     Time,
 )
-from sqlalchemy.dialects.postgresql import JSONB, UUID as PGUUID
-from sqlalchemy.orm import relationship
+from sqlalchemy import (
+    Enum as SQLEnum,
+)
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import UUID as PGUUID
 
 from core.models.base import Base
 
 
-class ReportType(str, Enum):
+class ReportType(StrEnum):
     """Tipo de relatorio."""
 
     CASH_FLOW = "CASH_FLOW"
@@ -43,7 +43,7 @@ class ReportType(str, Enum):
     CUSTOM = "CUSTOM"
 
 
-class ReportFormat(str, Enum):
+class ReportFormat(StrEnum):
     """Formato do relatorio."""
 
     PDF = "PDF"
@@ -53,7 +53,7 @@ class ReportFormat(str, Enum):
     HTML = "HTML"
 
 
-class ReportFrequency(str, Enum):
+class ReportFrequency(StrEnum):
     """Frequencia de geracao."""
 
     ONCE = "ONCE"
@@ -65,7 +65,7 @@ class ReportFrequency(str, Enum):
     YEARLY = "YEARLY"
 
 
-class ReportStatus(str, Enum):
+class ReportStatus(StrEnum):
     """Status do relatorio."""
 
     ACTIVE = "ACTIVE"
@@ -75,7 +75,7 @@ class ReportStatus(str, Enum):
     ERROR = "ERROR"
 
 
-class DeliveryMethod(str, Enum):
+class DeliveryMethod(StrEnum):
     """Metodo de entrega."""
 
     EMAIL = "EMAIL"
@@ -263,7 +263,9 @@ class ScheduledReport(Base):
                 month = now.month
                 year = now.year
             return datetime(
-                year, month, day,
+                year,
+                month,
+                day,
                 self.hora_execucao.hour,
                 self.hora_execucao.minute,
             )

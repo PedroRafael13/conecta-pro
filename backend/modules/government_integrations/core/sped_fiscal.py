@@ -19,38 +19,42 @@ Blocos do arquivo:
 - Bloco 9: Controle e Encerramento do Arquivo
 """
 
-import logging
-from datetime import datetime, date
-from decimal import Decimal
-from typing import Dict, List, Optional, Any, TextIO
-from dataclasses import dataclass, field
-from enum import Enum
 import hashlib
+import logging
+from dataclasses import dataclass, field
+from datetime import date
+from decimal import Decimal
+from enum import StrEnum
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
-class FinalidadeArquivo(str, Enum):
+class FinalidadeArquivo(StrEnum):
     """Finalidade do arquivo SPED."""
+
     ORIGINAL = "0"
     SUBSTITUTO = "1"
 
 
-class PerfilArquivo(str, Enum):
+class PerfilArquivo(StrEnum):
     """Perfil de apresentação do arquivo."""
+
     PERFIL_A = "A"  # Completo
     PERFIL_B = "B"  # Intermediário
     PERFIL_C = "C"  # Simplificado
 
 
-class TipoAtividade(str, Enum):
+class TipoAtividade(StrEnum):
     """Indicador de tipo de atividade."""
+
     INDUSTRIAL = "0"
     OUTROS = "1"
 
 
-class IndicadorMovimento(str, Enum):
+class IndicadorMovimento(StrEnum):
     """Indicador de movimento."""
+
     COM_DADOS = "0"
     SEM_DADOS = "1"
 
@@ -58,32 +62,35 @@ class IndicadorMovimento(str, Enum):
 @dataclass
 class Participante:
     """Participante (fornecedor/cliente)."""
+
     codigo: str
     nome: str
     cnpj_cpf: str
-    inscricao_estadual: Optional[str] = None
-    codigo_municipio: Optional[str] = None
-    uf: Optional[str] = None
-    endereco: Optional[str] = None
-    cep: Optional[str] = None
+    inscricao_estadual: str | None = None
+    codigo_municipio: str | None = None
+    uf: str | None = None
+    endereco: str | None = None
+    cep: str | None = None
 
 
 @dataclass
 class Produto:
     """Produto/Item."""
+
     codigo: str
     descricao: str
-    codigo_barras: Optional[str] = None
+    codigo_barras: str | None = None
     unidade: str = "UN"
     tipo_item: str = "00"  # 00=Mercadoria, 01=Matéria-prima, etc
-    ncm: Optional[str] = None
-    cest: Optional[str] = None
+    ncm: str | None = None
+    cest: str | None = None
     aliquota_icms: Decimal = Decimal("0")
 
 
 @dataclass
 class DocumentoFiscal:
     """Documento fiscal (NF-e, CT-e, etc)."""
+
     tipo: str  # 55=NF-e, 57=CT-e, 65=NFC-e
     chave: str
     numero: str
@@ -97,12 +104,13 @@ class DocumentoFiscal:
     valor_pis: Decimal = Decimal("0")
     valor_cofins: Decimal = Decimal("0")
     cfop: str = ""
-    itens: List[Dict[str, Any]] = field(default_factory=list)
+    itens: list[dict[str, Any]] = field(default_factory=list)
 
 
 @dataclass
 class ApuracaoICMS:
     """Apuração de ICMS do período."""
+
     periodo: str  # YYYY-MM
     valor_debitos: Decimal = Decimal("0")
     valor_creditos: Decimal = Decimal("0")
@@ -115,7 +123,12 @@ class ApuracaoICMS:
     @property
     def saldo_apurado(self) -> Decimal:
         debitos = self.valor_debitos + self.valor_estorno_creditos + self.valor_ajustes_debito
-        creditos = self.valor_creditos + self.valor_estorno_debitos + self.valor_ajustes_credito + self.valor_saldo_credor_anterior
+        creditos = (
+            self.valor_creditos
+            + self.valor_estorno_debitos
+            + self.valor_ajustes_credito
+            + self.valor_saldo_credor_anterior
+        )
         return debitos - creditos
 
     @property
@@ -130,6 +143,7 @@ class ApuracaoICMS:
 @dataclass
 class Inventario:
     """Item do inventário (Bloco H)."""
+
     codigo_item: str
     descricao: str
     unidade: str
@@ -137,7 +151,7 @@ class Inventario:
     valor_unitario: Decimal
     valor_total: Decimal
     propriedade: str = "0"  # 0=próprio, 1=terceiros, 2=propriedade em poder de terceiros
-    conta_contabil: Optional[str] = None
+    conta_contabil: str | None = None
 
 
 class SPEDFiscalManager:
@@ -178,11 +192,11 @@ class SPEDFiscalManager:
         self.perfil = perfil
 
         # Dados para geração
-        self.participantes: Dict[str, Participante] = {}
-        self.produtos: Dict[str, Produto] = {}
-        self.documentos: List[DocumentoFiscal] = []
-        self.inventario: List[Inventario] = []
-        self.apuracao_icms: Optional[ApuracaoICMS] = None
+        self.participantes: dict[str, Participante] = {}
+        self.produtos: dict[str, Produto] = {}
+        self.documentos: list[DocumentoFiscal] = []
+        self.inventario: list[Inventario] = []
+        self.apuracao_icms: ApuracaoICMS | None = None
 
     def adicionar_participante(self, participante: Participante) -> None:
         """Adiciona um participante ao cadastro."""
@@ -226,10 +240,7 @@ class SPEDFiscalManager:
         return apuracao
 
     def gerar_arquivo(
-        self,
-        periodo_inicio: date,
-        periodo_fim: date,
-        finalidade: FinalidadeArquivo = FinalidadeArquivo.ORIGINAL
+        self, periodo_inicio: date, periodo_fim: date, finalidade: FinalidadeArquivo = FinalidadeArquivo.ORIGINAL
     ) -> str:
         """
         Gera o arquivo SPED Fiscal.
@@ -266,33 +277,31 @@ class SPEDFiscalManager:
         return conteudo
 
     def _gerar_bloco_0(
-        self,
-        periodo_inicio: date,
-        periodo_fim: date,
-        finalidade: FinalidadeArquivo,
-        contador: Dict
-    ) -> List[str]:
+        self, periodo_inicio: date, periodo_fim: date, finalidade: FinalidadeArquivo, contador: dict
+    ) -> list[str]:
         """Gera bloco 0 - Abertura e Identificação."""
         linhas = []
 
         # Registro 0000 - Abertura do Arquivo
-        r0000 = self._pipe([
-            "0000",
-            self.VERSAO_LEIAUTE,
-            "0",  # Código finalidade
-            periodo_inicio.strftime("%d%m%Y"),
-            periodo_fim.strftime("%d%m%Y"),
-            self.razao_social[:100],
-            self.cnpj,
-            "",  # CPF
-            self.uf,
-            self.ie,
-            self.cod_mun,
-            "",  # IM
-            "",  # SUFRAMA
-            self.perfil.value,
-            TipoAtividade.OUTROS.value,
-        ])
+        r0000 = self._pipe(
+            [
+                "0000",
+                self.VERSAO_LEIAUTE,
+                "0",  # Código finalidade
+                periodo_inicio.strftime("%d%m%Y"),
+                periodo_fim.strftime("%d%m%Y"),
+                self.razao_social[:100],
+                self.cnpj,
+                "",  # CPF
+                self.uf,
+                self.ie,
+                self.cod_mun,
+                "",  # IM
+                "",  # SUFRAMA
+                self.perfil.value,
+                TipoAtividade.OUTROS.value,
+            ]
+        )
         linhas.append(r0000)
         self._contar(contador, "0000")
 
@@ -301,78 +310,86 @@ class SPEDFiscalManager:
         self._contar(contador, "0001")
 
         # Registro 0005 - Dados Complementares
-        r0005 = self._pipe([
-            "0005",
-            self.razao_social,  # Fantasia
-            "",  # CEP
-            "",  # Endereço
-            "",  # Número
-            "",  # Complemento
-            "",  # Bairro
-            "",  # Telefone
-            "",  # Fax
-            "",  # Email
-        ])
+        r0005 = self._pipe(
+            [
+                "0005",
+                self.razao_social,  # Fantasia
+                "",  # CEP
+                "",  # Endereço
+                "",  # Número
+                "",  # Complemento
+                "",  # Bairro
+                "",  # Telefone
+                "",  # Fax
+                "",  # Email
+            ]
+        )
         linhas.append(r0005)
         self._contar(contador, "0005")
 
         # Registro 0100 - Contador
-        r0100 = self._pipe([
-            "0100",
-            "CONTADOR",
-            "00000000000",  # CPF
-            "000000",  # CRC
-            "",  # CNPJ escritório
-            "",  # CEP
-            "",  # Endereço
-            "",  # Número
-            "",  # Complemento
-            "",  # Bairro
-            "",  # Telefone
-            "",  # Fax
-            "",  # Email
-            "",  # Código município
-        ])
+        r0100 = self._pipe(
+            [
+                "0100",
+                "CONTADOR",
+                "00000000000",  # CPF
+                "000000",  # CRC
+                "",  # CNPJ escritório
+                "",  # CEP
+                "",  # Endereço
+                "",  # Número
+                "",  # Complemento
+                "",  # Bairro
+                "",  # Telefone
+                "",  # Fax
+                "",  # Email
+                "",  # Código município
+            ]
+        )
         linhas.append(r0100)
         self._contar(contador, "0100")
 
         # Registro 0150 - Participantes
         for part in self.participantes.values():
-            r0150 = self._pipe([
-                "0150",
-                part.codigo,
-                part.nome,
-                "1" if len(part.cnpj_cpf) == 14 else "2",  # Tipo pessoa
-                part.cnpj_cpf if len(part.cnpj_cpf) == 14 else "",
-                part.cnpj_cpf if len(part.cnpj_cpf) == 11 else "",
-                part.inscricao_estadual or "",
-                part.codigo_municipio or "",
-                "",  # SUFRAMA
-                part.endereco or "",
-                "",  # Número
-                "",  # Complemento
-                "",  # Bairro
-            ])
+            r0150 = self._pipe(
+                [
+                    "0150",
+                    part.codigo,
+                    part.nome,
+                    "1" if len(part.cnpj_cpf) == 14 else "2",  # Tipo pessoa
+                    part.cnpj_cpf if len(part.cnpj_cpf) == 14 else "",
+                    part.cnpj_cpf if len(part.cnpj_cpf) == 11 else "",
+                    part.inscricao_estadual or "",
+                    part.codigo_municipio or "",
+                    "",  # SUFRAMA
+                    part.endereco or "",
+                    "",  # Número
+                    "",  # Complemento
+                    "",  # Bairro
+                ]
+            )
             linhas.append(r0150)
             self._contar(contador, "0150")
 
         # Registro 0200 - Produtos
         for prod in self.produtos.values():
-            r0200 = self._pipe([
-                "0200",
-                prod.codigo,
-                prod.descricao,
-                prod.codigo_barras or "",
-                "",  # Código anterior
-                prod.unidade,
-                prod.tipo_item,
-                prod.ncm or "",
-                "",  # EX_IPI
-                "",  # Gênero
-                "",  # Serviço
-                str(prod.aliquota_icms),
-                prod.cest or "",
-            ])
+            r0200 = self._pipe(
+                [
+                    "0200",
+                    prod.codigo,
+                    prod.descricao,
+                    prod.codigo_barras or "",
+                    "",  # Código anterior
+                    prod.unidade,
+                    prod.tipo_item,
+                    prod.ncm or "",
+                    "",  # EX_IPI
+                    "",  # Gênero
+                    "",  # Serviço
+                    str(prod.aliquota_icms),
+                    prod.cest or "",
+                ]
+            )
             linhas.append(r0200)
             self._contar(contador, "0200")
 
@@ -383,7 +400,7 @@ class SPEDFiscalManager:
 
         return linhas
 
-    def _gerar_bloco_c(self, contador: Dict) -> List[str]:
+    def _gerar_bloco_c(self, contador: dict) -> list[str]:
         """Gera bloco C - Documentos Fiscais de Mercadorias."""
         linhas = []
 
@@ -397,55 +414,59 @@ class SPEDFiscalManager:
 
         for doc in docs_nfe:
             # Registro C100 - Nota Fiscal Eletrônica
-            r_c100 = self._pipe([
-                "C100",
-                "0" if doc.cfop.startswith(("1", "2", "3")) else "1",  # IND_OPER
-                "0",  # IND_EMIT (próprio)
-                doc.participante.codigo,
-                doc.tipo,
-                "00",  # SIT_DOC
-                doc.serie,
-                doc.numero,
-                doc.chave,
-                doc.data_emissao.strftime("%d%m%Y"),
-                doc.data_entrada_saida.strftime("%d%m%Y"),
-                str(doc.valor_total),
-                "0",  # IND_PGTO
-                str(doc.valor_total),  # VL_DESC
-                "0",  # VL_ABAT_NT
-                "0",  # VL_MERC
-                "0",  # IND_FRT
-                "0",  # VL_FRT
-                "0",  # VL_SEG
-                "0",  # VL_OUT_DA
-                str(doc.valor_icms),  # VL_BC_ICMS
-                str(doc.valor_icms),  # VL_ICMS
-                "0",  # VL_BC_ICMS_ST
-                "0",  # VL_ICMS_ST
-                "0",  # VL_IPI
-                str(doc.valor_pis),  # VL_PIS
-                str(doc.valor_cofins),  # VL_COFINS
-                "0",  # VL_PIS_ST
-                "0",  # VL_COFINS_ST
-            ])
+            r_c100 = self._pipe(
+                [
+                    "C100",
+                    "0" if doc.cfop.startswith(("1", "2", "3")) else "1",  # IND_OPER
+                    "0",  # IND_EMIT (próprio)
+                    doc.participante.codigo,
+                    doc.tipo,
+                    "00",  # SIT_DOC
+                    doc.serie,
+                    doc.numero,
+                    doc.chave,
+                    doc.data_emissao.strftime("%d%m%Y"),
+                    doc.data_entrada_saida.strftime("%d%m%Y"),
+                    str(doc.valor_total),
+                    "0",  # IND_PGTO
+                    str(doc.valor_total),  # VL_DESC
+                    "0",  # VL_ABAT_NT
+                    "0",  # VL_MERC
+                    "0",  # IND_FRT
+                    "0",  # VL_FRT
+                    "0",  # VL_SEG
+                    "0",  # VL_OUT_DA
+                    str(doc.valor_icms),  # VL_BC_ICMS
+                    str(doc.valor_icms),  # VL_ICMS
+                    "0",  # VL_BC_ICMS_ST
+                    "0",  # VL_ICMS_ST
+                    "0",  # VL_IPI
+                    str(doc.valor_pis),  # VL_PIS
+                    str(doc.valor_cofins),  # VL_COFINS
+                    "0",  # VL_PIS_ST
+                    "0",  # VL_COFINS_ST
+                ]
+            )
             linhas.append(r_c100)
             self._contar(contador, "C100")
 
             # Registro C190 - Analítico por CFOP
-            r_c190 = self._pipe([
-                "C190",
-                "00",  # CST
-                doc.cfop,
-                str(doc.valor_icms),  # Alíquota
-                str(doc.valor_total),  # VL_OPR
-                str(doc.valor_total),  # VL_BC_ICMS
-                str(doc.valor_icms),  # VL_ICMS
-                "0",  # VL_BC_ICMS_ST
-                "0",  # VL_ICMS_ST
-                "0",  # VL_RED_BC
-                "0",  # VL_IPI
-                doc.cfop,  # COD_OBS
-            ])
+            r_c190 = self._pipe(
+                [
+                    "C190",
+                    "00",  # CST
+                    doc.cfop,
+                    str(doc.valor_icms),  # Alíquota
+                    str(doc.valor_total),  # VL_OPR
+                    str(doc.valor_total),  # VL_BC_ICMS
+                    str(doc.valor_icms),  # VL_ICMS
+                    "0",  # VL_BC_ICMS_ST
+                    "0",  # VL_ICMS_ST
+                    "0",  # VL_RED_BC
+                    "0",  # VL_IPI
+                    doc.cfop,  # COD_OBS
+                ]
+            )
             linhas.append(r_c190)
             self._contar(contador, "C190")
 
@@ -456,7 +477,7 @@ class SPEDFiscalManager:
 
         return linhas
 
-    def _gerar_bloco_e(self, periodo_inicio: date, contador: Dict) -> List[str]:
+    def _gerar_bloco_e(self, periodo_inicio: date, contador: dict) -> list[str]:
         """Gera bloco E - Apuração ICMS/IPI."""
         linhas = []
 
@@ -471,31 +492,35 @@ class SPEDFiscalManager:
         ap = self.apuracao_icms or ApuracaoICMS(periodo=periodo_inicio.strftime("%Y-%m"))
 
         # Registro E100 - Período de Apuração
-        r_e100 = self._pipe([
-            "E100",
-            periodo_inicio.strftime("%d%m%Y"),
-            periodo_inicio.replace(day=28).strftime("%d%m%Y"),
-        ])
+        r_e100 = self._pipe(
+            [
+                "E100",
+                periodo_inicio.strftime("%d%m%Y"),
+                periodo_inicio.replace(day=28).strftime("%d%m%Y"),
+            ]
+        )
         linhas.append(r_e100)
         self._contar(contador, "E100")
 
         # Registro E110 - Apuração ICMS
-        r_e110 = self._pipe([
-            "E110",
-            str(ap.valor_debitos),
-            str(ap.valor_ajustes_debito),
-            str(ap.valor_debitos + ap.valor_ajustes_debito),
-            str(ap.valor_creditos),
-            str(ap.valor_ajustes_credito),
-            str(ap.valor_creditos + ap.valor_ajustes_credito),
-            str(ap.valor_saldo_credor_anterior),
-            str(ap.saldo_devedor),
-            str(ap.saldo_credor),
-            str(ap.saldo_devedor),  # Dedução
-            str(ap.saldo_devedor),  # A recolher
-            str(ap.saldo_credor),   # Saldo credor transportar
-            "0",  # DEB_ESP
-        ])
+        r_e110 = self._pipe(
+            [
+                "E110",
+                str(ap.valor_debitos),
+                str(ap.valor_ajustes_debito),
+                str(ap.valor_debitos + ap.valor_ajustes_debito),
+                str(ap.valor_creditos),
+                str(ap.valor_ajustes_credito),
+                str(ap.valor_creditos + ap.valor_ajustes_credito),
+                str(ap.valor_saldo_credor_anterior),
+                str(ap.saldo_devedor),
+                str(ap.saldo_credor),
+                str(ap.saldo_devedor),  # Dedução
+                str(ap.saldo_devedor),  # A recolher
+                str(ap.saldo_credor),  # Saldo credor transportar
+                "0",  # DEB_ESP
+            ]
+        )
         linhas.append(r_e110)
         self._contar(contador, "E110")
 
@@ -506,7 +531,7 @@ class SPEDFiscalManager:
 
         return linhas
 
-    def _gerar_bloco_h(self, data_inventario: date, contador: Dict) -> List[str]:
+    def _gerar_bloco_h(self, data_inventario: date, contador: dict) -> list[str]:
         """Gera bloco H - Inventário Físico."""
         linhas = []
 
@@ -518,30 +543,34 @@ class SPEDFiscalManager:
         if self.inventario:
             # Registro H005 - Totais do Inventário
             valor_total = sum(i.valor_total for i in self.inventario)
-            r_h005 = self._pipe([
-                "H005",
-                data_inventario.strftime("%d%m%Y"),
-                str(valor_total),
-                "00",  # MOT_INV (fim do período)
-            ])
+            r_h005 = self._pipe(
+                [
+                    "H005",
+                    data_inventario.strftime("%d%m%Y"),
+                    str(valor_total),
+                    "00",  # MOT_INV (fim do período)
+                ]
+            )
             linhas.append(r_h005)
             self._contar(contador, "H005")
 
             # Registro H010 - Itens do Inventário
             for item in self.inventario:
-                r_h010 = self._pipe([
-                    "H010",
-                    item.codigo_item,
-                    item.unidade,
-                    str(item.quantidade),
-                    str(item.valor_unitario),
-                    str(item.valor_total),
-                    item.propriedade,
-                    "",  # COD_PART
-                    "",  # TXT_COMPL
-                    item.conta_contabil or "",
-                    "0",  # VL_ITEM_IR
-                ])
+                r_h010 = self._pipe(
+                    [
+                        "H010",
+                        item.codigo_item,
+                        item.unidade,
+                        str(item.quantidade),
+                        str(item.valor_unitario),
+                        str(item.valor_total),
+                        item.propriedade,
+                        "",  # COD_PART
+                        "",  # TXT_COMPL
+                        item.conta_contabil or "",
+                        "0",  # VL_ITEM_IR
+                    ]
+                )
                 linhas.append(r_h010)
                 self._contar(contador, "H010")
 
@@ -552,7 +581,7 @@ class SPEDFiscalManager:
 
         return linhas
 
-    def _gerar_bloco_9(self, contador: Dict) -> List[str]:
+    def _gerar_bloco_9(self, contador: dict) -> list[str]:
         """Gera bloco 9 - Controle e Encerramento."""
         linhas = []
 
@@ -581,17 +610,17 @@ class SPEDFiscalManager:
 
         return linhas
 
-    def _pipe(self, campos: List[str]) -> str:
+    def _pipe(self, campos: list[str]) -> str:
         """Formata campos com separador pipe."""
         return "|" + "|".join(campos) + "|"
 
-    def _contar(self, contador: Dict, registro: str) -> None:
+    def _contar(self, contador: dict, registro: str) -> None:
         """Conta registros."""
         if registro not in contador["registros"]:
             contador["registros"][registro] = 0
         contador["registros"][registro] += 1
 
-    def validar_arquivo(self, conteudo: str) -> Dict[str, Any]:
+    def validar_arquivo(self, conteudo: str) -> dict[str, Any]:
         """
         Valida o arquivo SPED gerado.
 
@@ -624,5 +653,5 @@ class SPEDFiscalManager:
             "erros": erros,
             "avisos": avisos,
             "total_registros": len(linhas),
-            "hash": hashlib.md5(conteudo.encode()).hexdigest(),
+            "hash": hashlib.sha256(conteudo.encode()).hexdigest(),
         }

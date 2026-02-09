@@ -4,25 +4,24 @@ Service para EFD-Reinf.
 Camada de serviço para operações de EFD-Reinf.
 """
 
-import os
 import logging
-from datetime import datetime, date
+import os
+from datetime import date, datetime
 from decimal import Decimal
-from typing import Dict, List, Optional, Any
+from typing import Any
 
+from ..core.certificate_manager import CertificateManager
 from ..core.efd_reinf import (
-    EFDReinfManager,
-    TipoAmbiente,
-    TipoInscricao,
+    NATUREZAS_RENDIMENTO,
     ClassificacaoTributaria,
+    EFDReinfManager,
     IndRetificacao,
     InfoContribuinte,
-    RetencaoServico,
     PagamentoBeneficiarioPF,
     PagamentoBeneficiarioPJ,
-    NATUREZAS_RENDIMENTO,
+    RetencaoServico,
+    TipoAmbiente,
 )
-from ..core.certificate_manager import CertificateManager
 
 logger = logging.getLogger(__name__)
 
@@ -37,19 +36,13 @@ class EFDReinfService:
         self.cert_path = os.getenv("CERTIFICATE_PATH", "")
         self.cert_password = os.getenv("CERTIFICATE_PASSWORD", "")
 
-        self.ambiente = (
-            TipoAmbiente.PRODUCAO if self.ambiente_str == "producao"
-            else TipoAmbiente.PRODUCAO_RESTRITA
-        )
+        self.ambiente = TipoAmbiente.PRODUCAO if self.ambiente_str == "producao" else TipoAmbiente.PRODUCAO_RESTRITA
 
         # Certificado é opcional
         self.cert_manager = None
         if self.cert_path and os.path.exists(self.cert_path):
             try:
-                self.cert_manager = CertificateManager(
-                    certificate_path=self.cert_path,
-                    password=self.cert_password
-                )
+                self.cert_manager = CertificateManager(certificate_path=self.cert_path, password=self.cert_password)
                 logger.info("Certificado digital carregado para EFD-Reinf")
             except Exception as e:
                 logger.warning(f"Certificado não carregado: {e}")
@@ -60,25 +53,22 @@ class EFDReinfService:
             cnpj=self.cnpj,
         )
 
-        logger.info(
-            f"EFD-Reinf Service inicializado - Ambiente: {self.ambiente_str}, "
-            f"CNPJ: {self.cnpj}"
-        )
+        logger.info(f"EFD-Reinf Service inicializado - Ambiente: {self.ambiente_str}, CNPJ: {self.cnpj}")
 
     def gerar_r1000(
         self,
         razao_social: str,
         classificacao_tributaria: str,
         inicio_validade: str,
-        fim_validade: Optional[str] = None,
-        natureza_juridica: Optional[str] = None,
+        fim_validade: str | None = None,
+        natureza_juridica: str | None = None,
         ind_coop: str = "0",
         ind_constr: str = "0",
         ind_desoneracao: str = "0",
-        telefone: Optional[str] = None,
-        email: Optional[str] = None,
+        telefone: str | None = None,
+        email: str | None = None,
         retificacao: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Gera evento R-1000 - Informações do Contribuinte.
 
@@ -138,9 +128,9 @@ class EFDReinfService:
     def gerar_r2010(
         self,
         periodo_apuracao: str,
-        retencoes: List[Dict[str, Any]],
+        retencoes: list[dict[str, Any]],
         retificacao: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Gera evento R-2010 - Retenção Contribuição Previdenciária - Serviços Tomados.
 
@@ -167,8 +157,7 @@ class EFDReinfService:
                 serie_nf=ret.get("serie_nf", "1"),
                 numero_nf=ret.get("numero_nf", ""),
                 data_emissao_nf=(
-                    datetime.strptime(ret["data_emissao_nf"], "%Y-%m-%d").date()
-                    if ret.get("data_emissao_nf") else None
+                    datetime.strptime(ret["data_emissao_nf"], "%Y-%m-%d").date() if ret.get("data_emissao_nf") else None
                 ),
                 codigo_servico=ret.get("codigo_servico", "100000001"),
                 ind_cprb=ret.get("ind_cprb", "0"),
@@ -181,10 +170,7 @@ class EFDReinfService:
 
         xml = self.manager.gerar_r2010(periodo_apuracao, lista_retencoes, ind_ret)
 
-        logger.info(
-            f"Evento R-2010 gerado: {len(lista_retencoes)} retenções, "
-            f"período {periodo_apuracao}"
-        )
+        logger.info(f"Evento R-2010 gerado: {len(lista_retencoes)} retenções, período {periodo_apuracao}")
 
         return {
             "evento": "R-2010",
@@ -202,9 +188,9 @@ class EFDReinfService:
     def gerar_r4010(
         self,
         periodo_apuracao: str,
-        pagamentos: List[Dict[str, Any]],
+        pagamentos: list[dict[str, Any]],
         retificacao: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Gera evento R-4010 - Pagamentos a Beneficiário Pessoa Física.
 
@@ -243,10 +229,7 @@ class EFDReinfService:
 
         xml = self.manager.gerar_r4010(periodo_apuracao, lista_pagamentos, ind_ret)
 
-        logger.info(
-            f"Evento R-4010 gerado: {len(lista_pagamentos)} pagamentos PF, "
-            f"período {periodo_apuracao}"
-        )
+        logger.info(f"Evento R-4010 gerado: {len(lista_pagamentos)} pagamentos PF, período {periodo_apuracao}")
 
         return {
             "evento": "R-4010",
@@ -264,9 +247,9 @@ class EFDReinfService:
     def gerar_r4020(
         self,
         periodo_apuracao: str,
-        pagamentos: List[Dict[str, Any]],
+        pagamentos: list[dict[str, Any]],
         retificacao: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Gera evento R-4020 - Pagamentos a Beneficiário Pessoa Jurídica.
 
@@ -302,20 +285,14 @@ class EFDReinfService:
             lista_pagamentos.append(pagamento)
             valor_total_bruto += pagamento.valor_bruto
             valor_total_retencoes += (
-                pagamento.valor_irrf +
-                pagamento.valor_csll +
-                pagamento.valor_cofins +
-                pagamento.valor_pis
+                pagamento.valor_irrf + pagamento.valor_csll + pagamento.valor_cofins + pagamento.valor_pis
             )
 
         ind_ret = IndRetificacao.RETIFICADOR if retificacao else IndRetificacao.ORIGINAL
 
         xml = self.manager.gerar_r4020(periodo_apuracao, lista_pagamentos, ind_ret)
 
-        logger.info(
-            f"Evento R-4020 gerado: {len(lista_pagamentos)} pagamentos PJ, "
-            f"período {periodo_apuracao}"
-        )
+        logger.info(f"Evento R-4020 gerado: {len(lista_pagamentos)} pagamentos PJ, período {periodo_apuracao}")
 
         return {
             "evento": "R-4020",
@@ -334,7 +311,7 @@ class EFDReinfService:
         self,
         periodo_apuracao: str,
         retificacao: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Gera evento R-2099 - Fechamento dos Eventos Periódicos.
 
@@ -361,7 +338,7 @@ class EFDReinfService:
             "status": "gerado",
         }
 
-    def enviar_lote(self, eventos_xml: List[str]) -> Dict[str, Any]:
+    def enviar_lote(self, eventos_xml: list[str]) -> dict[str, Any]:
         """
         Envia lote de eventos para a Receita Federal.
 
@@ -383,7 +360,7 @@ class EFDReinfService:
             "mensagem": "Lote preparado para envio" if self.cert_manager else "Modo simulado (sem certificado)",
         }
 
-    def listar_naturezas_rendimento(self) -> Dict[str, Any]:
+    def listar_naturezas_rendimento(self) -> dict[str, Any]:
         """
         Lista as naturezas de rendimento disponíveis.
 
@@ -394,15 +371,11 @@ class EFDReinfService:
         pj = {k: v for k, v in NATUREZAS_RENDIMENTO.items() if k.startswith("15")}
 
         return {
-            "pessoa_fisica": [
-                {"codigo": k, "descricao": v} for k, v in pf.items()
-            ],
-            "pessoa_juridica": [
-                {"codigo": k, "descricao": v} for k, v in pj.items()
-            ],
+            "pessoa_fisica": [{"codigo": k, "descricao": v} for k, v in pf.items()],
+            "pessoa_juridica": [{"codigo": k, "descricao": v} for k, v in pj.items()],
         }
 
-    def listar_classificacoes_tributarias(self) -> Dict[str, Any]:
+    def listar_classificacoes_tributarias(self) -> dict[str, Any]:
         """
         Lista as classificações tributárias disponíveis.
 
@@ -424,12 +397,11 @@ class EFDReinfService:
 
         return {
             "classificacoes": [
-                {"codigo": ct.value, "descricao": descricoes.get(ct.value, ct.name)}
-                for ct in ClassificacaoTributaria
+                {"codigo": ct.value, "descricao": descricoes.get(ct.value, ct.name)} for ct in ClassificacaoTributaria
             ]
         }
 
-    def validar_status(self) -> Dict[str, Any]:
+    def validar_status(self) -> dict[str, Any]:
         """
         Valida status da configuração EFD-Reinf.
 
@@ -441,9 +413,7 @@ class EFDReinfService:
             "url": self.manager.url,
             "cnpj": self.cnpj,
             "certificado_configurado": self.cert_manager is not None,
-            "certificado_valido": (
-                self.cert_manager._loaded if self.cert_manager else False
-            ),
+            "certificado_valido": (self.cert_manager._loaded if self.cert_manager else False),
             "versao_layout": self.manager.VERSAO,
             "eventos_disponiveis": [
                 "R-1000 - Informações do Contribuinte",
@@ -456,7 +426,7 @@ class EFDReinfService:
 
 
 # Singleton
-_efd_reinf_service: Optional[EFDReinfService] = None
+_efd_reinf_service: EFDReinfService | None = None
 
 
 def get_efd_reinf_service() -> EFDReinfService:

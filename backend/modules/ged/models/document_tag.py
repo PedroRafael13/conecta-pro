@@ -2,23 +2,25 @@
 
 import re
 from datetime import datetime
-from enum import Enum
-from typing import Optional, List, TYPE_CHECKING
+from enum import StrEnum
+from typing import TYPE_CHECKING, Optional
 from uuid import uuid4
 
 from sqlalchemy import (
-    Column,
-    String,
     Boolean,
+    Column,
     DateTime,
-    Text,
     ForeignKey,
     Integer,
+    String,
     Table,
+    Text,
+)
+from sqlalchemy import (
     Enum as SQLEnum,
 )
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship, Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from core.database import Base
 
@@ -26,7 +28,7 @@ if TYPE_CHECKING:
     from modules.ged.models.document import Document
 
 
-class TagType(str, Enum):
+class TagType(StrEnum):
     """Tipos de tag."""
 
     SISTEMA = "sistema"  # Tag do sistema (imutável)
@@ -39,7 +41,7 @@ class TagType(str, Enum):
     USUARIO = "usuario"  # Tag criada por usuário
 
 
-class TagColor(str, Enum):
+class TagColor(StrEnum):
     """Cores predefinidas para tags."""
 
     VERMELHO = "#EF4444"
@@ -80,31 +82,25 @@ class DocumentTag(Base):
     __tablename__ = "ged_document_tags"
 
     # Identificação
-    id: Mapped[str] = mapped_column(
-        UUID(as_uuid=False), primary_key=True, default=lambda: str(uuid4())
-    )
+    id: Mapped[str] = mapped_column(UUID(as_uuid=False), primary_key=True, default=lambda: str(uuid4()))
     name: Mapped[str] = mapped_column(String(50), nullable=False)
     slug: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
-    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Classificação
-    tag_type: Mapped[TagType] = mapped_column(
-        SQLEnum(TagType), default=TagType.USUARIO
-    )
+    tag_type: Mapped[TagType] = mapped_column(SQLEnum(TagType), default=TagType.USUARIO)
 
     # Hierarquia (para tags de categoria)
-    parent_id: Mapped[Optional[str]] = mapped_column(
+    parent_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False), ForeignKey("ged_document_tags.id"), nullable=True
     )
 
     # Visual
     color: Mapped[str] = mapped_column(String(7), default="#6B7280")
-    icon: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    icon: Mapped[str | None] = mapped_column(String(50), nullable=True)
 
     # Escopo
-    condominium_id: Mapped[Optional[str]] = mapped_column(
-        UUID(as_uuid=False), nullable=True, index=True
-    )
+    condominium_id: Mapped[str | None] = mapped_column(UUID(as_uuid=False), nullable=True, index=True)
     is_global: Mapped[bool] = mapped_column(Boolean, default=False)
 
     # Status
@@ -113,28 +109,22 @@ class DocumentTag(Base):
 
     # Estatísticas
     usage_count: Mapped[int] = mapped_column(Integer, default=0)
-    last_used_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    last_used_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     # Ordem
     order: Mapped[int] = mapped_column(Integer, default=0)
 
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Auditoria
     created_by: Mapped[str] = mapped_column(UUID(as_uuid=False), nullable=False)
 
     # Relacionamentos
-    parent: Mapped[Optional["DocumentTag"]] = relationship(
-        "DocumentTag", remote_side=[id], back_populates="children"
-    )
-    children: Mapped[List["DocumentTag"]] = relationship(
-        "DocumentTag", back_populates="parent"
-    )
-    documents: Mapped[List["Document"]] = relationship(
+    parent: Mapped[Optional["DocumentTag"]] = relationship("DocumentTag", remote_side=[id], back_populates="children")  # noqa: A003
+    children: Mapped[list["DocumentTag"]] = relationship("DocumentTag", back_populates="parent")
+    documents: Mapped[list["Document"]] = relationship(
         "Document",
         secondary="ged_document_tag_associations",
         back_populates="tags",

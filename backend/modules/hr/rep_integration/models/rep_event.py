@@ -5,20 +5,20 @@ Conformidade com Portaria 671 MTE - formato AFD.
 """
 
 import uuid
-from datetime import datetime, date, time
-from enum import Enum
-from typing import Optional, TYPE_CHECKING
+from datetime import date, datetime, time
+from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     Boolean,
-    DateTime,
     Date,
-    Time,
+    DateTime,
+    ForeignKey,
+    Index,
     Integer,
     String,
     Text,
-    Index,
-    ForeignKey,
+    Time,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -26,38 +26,41 @@ from sqlalchemy.orm import Mapped, mapped_column
 from core.database import Base
 
 if TYPE_CHECKING:
-    from .rep_device import REPDevice
+    pass
 
 
-class EventType(str, Enum):
+class EventType(StrEnum):
     """Tipos de evento conforme Portaria 671."""
-    ENTRY = "entry"          # Entrada (código 1)
-    EXIT = "exit"            # Saída (código 2)
+
+    ENTRY = "entry"  # Entrada (código 1)
+    EXIT = "exit"  # Saída (código 2)
     BREAK_START = "break_start"  # Início intervalo (código 3)
-    BREAK_END = "break_end"      # Fim intervalo (código 4)
+    BREAK_END = "break_end"  # Fim intervalo (código 4)
     EXTRA_ENTRY = "extra_entry"  # Entrada extra (código 5)
-    EXTRA_EXIT = "extra_exit"    # Saída extra (código 6)
+    EXTRA_EXIT = "extra_exit"  # Saída extra (código 6)
 
 
-class IdentificationMethod(str, Enum):
+class IdentificationMethod(StrEnum):
     """Métodos de identificação."""
+
     BIOMETRIC = "biometric"
     FACIAL = "facial"
     RFID = "rfid"
-    PASSWORD = "password"
+    PASSWORD = "password"  # noqa: S105
     QRCODE = "qrcode"
     MANUAL = "manual"
     NFC = "nfc"
 
 
-class EventStatus(str, Enum):
+class EventStatus(StrEnum):
     """Status do evento."""
-    RECEIVED = "received"      # Recebido do REP
-    VALIDATED = "validated"    # Validado
-    PROCESSED = "processed"    # Processado (criou TimeEntry)
-    ERROR = "error"            # Erro no processamento
-    DUPLICATE = "duplicate"    # Duplicado (ignorado)
-    REJECTED = "rejected"      # Rejeitado (funcionário não cadastrado, etc.)
+
+    RECEIVED = "received"  # Recebido do REP
+    VALIDATED = "validated"  # Validado
+    PROCESSED = "processed"  # Processado (criou TimeEntry)
+    ERROR = "error"  # Erro no processamento
+    DUPLICATE = "duplicate"  # Duplicado (ignorado)
+    REJECTED = "rejected"  # Rejeitado (funcionário não cadastrado, etc.)
 
 
 class REPEvent(Base):
@@ -112,24 +115,24 @@ class REPEvent(Base):
     )
 
     # Identificação do funcionário
-    employee_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    employee_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         nullable=True,
         index=True,
         comment="ID do funcionário no sistema",
     )
-    pis_number: Mapped[Optional[str]] = mapped_column(
+    pis_number: Mapped[str | None] = mapped_column(
         String(11),
         nullable=True,
         index=True,
         comment="Número PIS/PASEP",
     )
-    employee_code: Mapped[Optional[str]] = mapped_column(
+    employee_code: Mapped[str | None] = mapped_column(
         String(50),
         nullable=True,
         comment="Código do funcionário no REP",
     )
-    employee_name: Mapped[Optional[str]] = mapped_column(
+    employee_name: Mapped[str | None] = mapped_column(
         String(200),
         nullable=True,
         comment="Nome recebido do REP",
@@ -141,30 +144,30 @@ class REPEvent(Base):
         nullable=False,
         default=IdentificationMethod.BIOMETRIC.value,
     )
-    identification_score: Mapped[Optional[int]] = mapped_column(
+    identification_score: Mapped[int | None] = mapped_column(
         Integer,
         nullable=True,
         comment="Score de confiança (0-100) para biometria/facial",
     )
 
     # Dados biométricos (hash, não o template)
-    biometric_hash: Mapped[Optional[str]] = mapped_column(
+    biometric_hash: Mapped[str | None] = mapped_column(
         String(64),
         nullable=True,
         comment="Hash SHA-256 do template biométrico",
     )
-    finger_index: Mapped[Optional[int]] = mapped_column(
+    finger_index: Mapped[int | None] = mapped_column(
         Integer,
         nullable=True,
         comment="Índice do dedo (1-10)",
     )
 
     # Dados de cartão RFID
-    card_number: Mapped[Optional[str]] = mapped_column(
+    card_number: Mapped[str | None] = mapped_column(
         String(50),
         nullable=True,
     )
-    card_facility_code: Mapped[Optional[str]] = mapped_column(
+    card_facility_code: Mapped[str | None] = mapped_column(
         String(20),
         nullable=True,
     )
@@ -174,19 +177,19 @@ class REPEvent(Base):
         Boolean,
         default=False,
     )
-    photo_path: Mapped[Optional[str]] = mapped_column(
+    photo_path: Mapped[str | None] = mapped_column(
         String(500),
         nullable=True,
     )
 
     # Geolocalização (se disponível)
-    latitude: Mapped[Optional[float]] = mapped_column(
+    latitude: Mapped[float | None] = mapped_column(
         nullable=True,
     )
-    longitude: Mapped[Optional[float]] = mapped_column(
+    longitude: Mapped[float | None] = mapped_column(
         nullable=True,
     )
-    location_accuracy: Mapped[Optional[float]] = mapped_column(
+    location_accuracy: Mapped[float | None] = mapped_column(
         nullable=True,
         comment="Precisão em metros",
     )
@@ -197,22 +200,22 @@ class REPEvent(Base):
         default=EventStatus.RECEIVED.value,
         index=True,
     )
-    processed_at: Mapped[Optional[datetime]] = mapped_column(
+    processed_at: Mapped[datetime | None] = mapped_column(
         DateTime,
         nullable=True,
     )
-    time_entry_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    time_entry_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         nullable=True,
         comment="ID do TimeEntry gerado",
     )
 
     # Erros
-    error_message: Mapped[Optional[str]] = mapped_column(
+    error_message: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
     )
-    error_code: Mapped[Optional[str]] = mapped_column(
+    error_code: Mapped[str | None] = mapped_column(
         String(20),
         nullable=True,
     )
@@ -226,12 +229,12 @@ class REPEvent(Base):
     )
 
     # Dados brutos do REP
-    raw_data: Mapped[Optional[dict]] = mapped_column(
+    raw_data: Mapped[dict | None] = mapped_column(
         JSONB,
         nullable=True,
         comment="Dados brutos recebidos do REP",
     )
-    afd_line: Mapped[Optional[str]] = mapped_column(
+    afd_line: Mapped[str | None] = mapped_column(
         String(100),
         nullable=True,
         comment="Linha AFD gerada",
@@ -242,14 +245,14 @@ class REPEvent(Base):
         Boolean,
         default=True,
     )
-    validation_errors: Mapped[Optional[list]] = mapped_column(
+    validation_errors: Mapped[list | None] = mapped_column(
         JSONB,
         nullable=True,
         default=list,
     )
 
     # Sync tracking
-    sync_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    sync_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         nullable=True,
         comment="ID da sincronização que trouxe este evento",
@@ -270,8 +273,7 @@ class REPEvent(Base):
         Index("ix_rep_events_device_datetime", "device_id", "event_datetime"),
         Index("ix_rep_events_employee_date", "employee_id", "event_date"),
         Index("ix_rep_events_pis_date", "pis_number", "event_date"),
-        Index("ix_rep_events_status_pending", "status",
-              postgresql_where="status IN ('received', 'validated')"),
+        Index("ix_rep_events_status_pending", "status", postgresql_where="status IN ('received', 'validated')"),
     )
 
     def __repr__(self) -> str:
@@ -285,10 +287,7 @@ class REPEvent(Base):
     @property
     def can_retry(self) -> bool:
         """Verifica se pode tentar reprocessar."""
-        return (
-            self.status == EventStatus.ERROR.value and
-            self.retry_count < self.max_retries
-        )
+        return self.status == EventStatus.ERROR.value and self.retry_count < self.max_retries
 
     def generate_afd_line(self) -> str:
         """Gera linha AFD conforme Portaria 671.

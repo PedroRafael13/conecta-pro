@@ -1,18 +1,16 @@
 """Signature Validation Service for authenticating and validating signatures."""
 
-import hashlib
 import logging
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from modules.ai.signature.services.comparison_service import (
     ComparisonResult,
     SignatureComparisonService,
 )
 from modules.ai.signature.services.extraction_service import (
-    ExtractedSignature,
     SignatureExtractionService,
 )
 
@@ -25,9 +23,9 @@ class QualityCheckResult:
 
     passed: bool = False
     quality_score: float = 0.0
-    issues: List[str] = field(default_factory=list)
-    recommendations: List[str] = field(default_factory=list)
-    details: Dict[str, Any] = field(default_factory=dict)
+    issues: list[str] = field(default_factory=list)
+    recommendations: list[str] = field(default_factory=list)
+    details: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict:
         """Convert to dictionary."""
@@ -46,9 +44,9 @@ class FraudAnalysisResult:
 
     is_suspicious: bool = False
     risk_level: str = "low"  # low, medium, high, critical
-    fraud_indicators: List[str] = field(default_factory=list)
+    fraud_indicators: list[str] = field(default_factory=list)
     confidence: float = 0.0
-    analysis_details: Dict[str, Any] = field(default_factory=dict)
+    analysis_details: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict:
         """Convert to dictionary."""
@@ -71,13 +69,13 @@ class ValidationResult:
     overall_score: float = 0.0
     confidence: float = 0.0
     status: str = "pending"  # pending, valid, invalid, suspicious, error
-    quality_check: Optional[QualityCheckResult] = None
-    comparison_result: Optional[ComparisonResult] = None
-    fraud_analysis: Optional[FraudAnalysisResult] = None
-    errors: List[str] = field(default_factory=list)
-    warnings: List[str] = field(default_factory=list)
+    quality_check: QualityCheckResult | None = None
+    comparison_result: ComparisonResult | None = None
+    fraud_analysis: FraudAnalysisResult | None = None
+    errors: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
     processing_time_ms: int = 0
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict:
         """Convert to dictionary."""
@@ -117,8 +115,8 @@ class SignatureValidationService:
 
     def __init__(
         self,
-        comparison_service: Optional[SignatureComparisonService] = None,
-        extraction_service: Optional[SignatureExtractionService] = None,
+        comparison_service: SignatureComparisonService | None = None,
+        extraction_service: SignatureExtractionService | None = None,
         enable_fraud_detection: bool = True,
         enable_quality_check: bool = True,
         strict_mode: bool = False,
@@ -144,9 +142,9 @@ class SignatureValidationService:
 
     def validate(
         self,
-        signature: Dict[str, Any],
-        template: Optional[Dict[str, Any]] = None,
-        context: Optional[Dict[str, Any]] = None,
+        signature: dict[str, Any],
+        template: dict[str, Any] | None = None,
+        context: dict[str, Any] | None = None,
     ) -> ValidationResult:
         """Validate a signature.
 
@@ -172,9 +170,7 @@ class SignatureValidationService:
             # 2. Compare with template if provided
             if template:
                 mode = "strict" if self.strict_mode else "normal"
-                result.comparison_result = self.comparison_service.compare(
-                    signature, template, mode
-                )
+                result.comparison_result = self.comparison_service.compare(signature, template, mode)
 
                 if result.comparison_result.is_match:
                     result.is_authentic = True
@@ -183,14 +179,10 @@ class SignatureValidationService:
 
             # 3. Fraud detection
             if self.enable_fraud_detection:
-                result.fraud_analysis = self.analyze_fraud(
-                    signature, template, context
-                )
+                result.fraud_analysis = self.analyze_fraud(signature, template, context)
                 if result.fraud_analysis.is_suspicious:
                     result.status = "suspicious"
-                    result.warnings.append(
-                        f"Fraud risk: {result.fraud_analysis.risk_level}"
-                    )
+                    result.warnings.append(f"Fraud risk: {result.fraud_analysis.risk_level}")
 
             # 4. Calculate overall score and validity
             result.overall_score = self._calculate_overall_score(result)
@@ -213,14 +205,12 @@ class SignatureValidationService:
             result.status = "error"
 
         end_time = datetime.utcnow()
-        result.processing_time_ms = int(
-            (end_time - start_time).total_seconds() * 1000
-        )
+        result.processing_time_ms = int((end_time - start_time).total_seconds() * 1000)
         result.metadata["context"] = context
 
         return result
 
-    def check_quality(self, signature: Dict[str, Any]) -> QualityCheckResult:
+    def check_quality(self, signature: dict[str, Any]) -> QualityCheckResult:
         """Check signature quality.
 
         Args:
@@ -296,9 +286,9 @@ class SignatureValidationService:
 
     def analyze_fraud(
         self,
-        signature: Dict[str, Any],
-        template: Optional[Dict[str, Any]] = None,
-        context: Optional[Dict[str, Any]] = None,
+        signature: dict[str, Any],
+        template: dict[str, Any] | None = None,
+        context: dict[str, Any] | None = None,
     ) -> FraudAnalysisResult:
         """Analyze signature for fraud indicators.
 
@@ -374,8 +364,8 @@ class SignatureValidationService:
 
     def validate_certificate(
         self,
-        certificate_data: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        certificate_data: dict[str, Any],
+    ) -> dict[str, Any]:
         """Validate digital certificate.
 
         Args:
@@ -438,7 +428,7 @@ class SignatureValidationService:
         document_hash: str,
         expected_hash: str,
         algorithm: str = "sha256",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Validate document integrity.
 
         Args:
@@ -487,9 +477,7 @@ class SignatureValidationService:
 
         # Fraud score (inverted - lower is better)
         if result.fraud_analysis:
-            fraud_score = 1 - result.fraud_analysis.analysis_details.get(
-                "risk_score", 0
-            )
+            fraud_score = 1 - result.fraud_analysis.analysis_details.get("risk_score", 0)
             scores.append(fraud_score)
             weights.append(0.3)
 
@@ -497,7 +485,7 @@ class SignatureValidationService:
             return 0.0
 
         total_weight = sum(weights)
-        weighted_score = sum(s * w for s, w in zip(scores, weights))
+        weighted_score = sum(s * w for s, w in zip(scores, weights, strict=False))
 
         return weighted_score / total_weight if total_weight > 0 else 0.0
 
@@ -525,15 +513,12 @@ class SignatureValidationService:
             return False
 
         # Must not be suspicious (unless overridden)
-        if (
-            result.fraud_analysis
-            and result.fraud_analysis.risk_level in ["high", "critical"]
-        ):
+        if result.fraud_analysis and result.fraud_analysis.risk_level in ["high", "critical"]:
             return False
 
         return True
 
-    def _detect_copy_paste(self, signature: Dict[str, Any]) -> float:
+    def _detect_copy_paste(self, signature: dict[str, Any]) -> float:
         """Detect copy/paste indicators."""
         # Check for perfectly rectangular edges
         # Check for compression artifacts
@@ -548,7 +533,7 @@ class SignatureValidationService:
 
         return 0.1
 
-    def _detect_manipulation(self, signature: Dict[str, Any]) -> float:
+    def _detect_manipulation(self, signature: dict[str, Any]) -> float:
         """Detect digital manipulation."""
         # Check for inconsistent compression
         # Check for edge irregularities
@@ -563,7 +548,7 @@ class SignatureValidationService:
 
         return 0.1
 
-    def _detect_tracing(self, signature: Dict[str, Any]) -> float:
+    def _detect_tracing(self, signature: dict[str, Any]) -> float:
         """Detect tracing indicators."""
         # Check for unnatural stroke patterns
         # Check for too-smooth curves
@@ -580,9 +565,9 @@ class SignatureValidationService:
 
     def _check_consistency(
         self,
-        signature: Dict[str, Any],
-        template: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        signature: dict[str, Any],
+        template: dict[str, Any],
+    ) -> dict[str, Any]:
         """Check consistency with template."""
         result = {
             "variation_score": 0.0,
@@ -609,8 +594,8 @@ class SignatureValidationService:
 
     def _context_check(
         self,
-        signature: Dict[str, Any],
-        context: Dict[str, Any],
+        signature: dict[str, Any],
+        context: dict[str, Any],
     ) -> float:
         """Check signature against context."""
         score = 1.0
@@ -633,7 +618,7 @@ class SignatureValidationService:
 
         return score
 
-    def _check_biometric_anomalies(self, signature: Dict[str, Any]) -> float:
+    def _check_biometric_anomalies(self, signature: dict[str, Any]) -> float:
         """Check for biometric pattern anomalies."""
         pressure = signature.get("pressure_data", [])
         velocity = signature.get("velocity_data", [])
@@ -664,8 +649,8 @@ class SignatureValidationService:
 
     def _calculate_risk_score(
         self,
-        indicators: List[str],
-        analysis: Dict[str, Any],
+        indicators: list[str],
+        analysis: dict[str, Any],
     ) -> float:
         """Calculate overall fraud risk score."""
         # Base score from number of indicators

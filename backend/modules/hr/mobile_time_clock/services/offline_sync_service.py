@@ -2,30 +2,29 @@
 
 import logging
 from datetime import datetime
-from typing import List
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.hr.mobile_time_clock.models import (
-    OfflineQueue,
     MobileDevice,
+    OfflineQueue,
 )
 from modules.hr.mobile_time_clock.repositories import (
-    OfflineQueueRepository,
-    MobileDeviceRepository,
     MobileCheckInRepository,
+    MobileDeviceRepository,
+    OfflineQueueRepository,
 )
 from modules.hr.mobile_time_clock.schemas import (
-    OfflineQueueItemCreate,
-    OfflineQueueBatch,
-    SyncResult,
-    SyncBatchResult,
-    MobileCheckInCreate,
-    CheckInLocation,
     CheckInBiometric,
+    CheckInLocation,
     CheckInPhoto,
     CheckInValidation,
+    MobileCheckInCreate,
+    OfflineQueueBatch,
+    OfflineQueueItemCreate,
+    SyncBatchResult,
+    SyncResult,
 )
 from modules.hr.mobile_time_clock.services.checkin_validation_service import (
     CheckInValidationService,
@@ -70,7 +69,7 @@ class OfflineSyncService:
         self,
         batch: OfflineQueueBatch,
         device: MobileDevice,
-    ) -> List[OfflineQueue]:
+    ) -> list[OfflineQueue]:
         """Adiciona batch de itens à fila."""
         items = await self.queue_repo.create_batch(
             items=batch.items,
@@ -94,9 +93,7 @@ class OfflineSyncService:
 
             # Verificar expiração
             if item.is_expired:
-                await self.queue_repo.mark_failed(
-                    item.id, "Item expirado", "EXPIRED"
-                )
+                await self.queue_repo.mark_failed(item.id, "Item expirado", "EXPIRED")
                 return SyncResult(
                     offline_id=item.offline_id,
                     success=False,
@@ -243,7 +240,7 @@ class OfflineSyncService:
     async def cleanup_queue(
         self,
         older_than_hours: int = 72,
-        statuses: List[str] = None,
+        statuses: list[str] = None,
         dry_run: bool = True,
     ) -> dict:
         """Limpa itens antigos da fila."""
@@ -277,7 +274,7 @@ class OfflineSyncService:
 
     async def retry_items(
         self,
-        item_ids: List[UUID],
+        item_ids: list[UUID],
         force: bool = False,
     ) -> int:
         """Força retry de itens específicos."""

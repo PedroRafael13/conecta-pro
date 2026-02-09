@@ -1,7 +1,7 @@
 """Model de sessao de chat."""
 
-from datetime import datetime, UTC
-from typing import TYPE_CHECKING, Optional
+from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
@@ -77,9 +77,7 @@ class ChatSession(Base):
             "description": self.description,
             "module_context": self.module_context,
             "message_count": self.message_count,
-            "last_message_at": (
-                self.last_message_at.isoformat() if self.last_message_at else None
-            ),
+            "last_message_at": (self.last_message_at.isoformat() if self.last_message_at else None),
             "is_active": self.is_active,
             "is_archived": self.is_archived,
             "is_pinned": self.is_pinned,

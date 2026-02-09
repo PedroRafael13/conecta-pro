@@ -1,8 +1,8 @@
 """Fraud Detection System - Sprint 04."""
 
 from modules.analytics.models.fraud.fraud_detector import (
-    FraudDetector,
     FraudAlert,
+    FraudDetector,
     FraudRiskLevel,
     FraudType,
 )

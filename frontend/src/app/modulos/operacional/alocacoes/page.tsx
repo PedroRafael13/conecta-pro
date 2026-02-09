@@ -4,7 +4,6 @@ import { Users, ArrowLeft, Filter, Eye, Calendar, ChevronLeft, ChevronRight, Ref
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-;
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Modal, ModalFooter } from '@/components/ui/modal';
@@ -16,25 +15,29 @@ import { getErrorMessage } from '@/lib/api';
 import { AllocationDetailModal } from '@/components/operacional/allocation-detail-modal';
 import { AllocationFormModal } from '@/components/operacional/allocation-form-modal';
 import { ExportButton } from '@/components/ui/export-button';
-import type { Allocation, AllocationStatus, AllocationTerminate, Employee, Post } from '@/types/operacional';
+import type { Allocation, AllocationFilter, AllocationStatus, AllocationTerminate, Employee, Post } from '@/types/operacional';
 import { ALLOCATION_STATUS_LABELS } from '@/types/operacional';
 
 export default function AlocacoesPage() {
   const router = useRouter();
   const { isLoading: authLoading, isAuthenticated } = useAuth();
   const {
-    data: allocations = [],
+    data: allocationsData,
     isLoading,
     error,
-    refetch: refresh,
+    refetch,
   } = useAllocations();
-  const total = allocations.length;
+  const allocations = (allocationsData?.items ?? []) as Allocation[];
+  const total = allocationsData?.total ?? allocations.length;
+  const refresh = () => { refetch(); };
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
   const totalPages = Math.ceil(total / pageSize);
-  const [filters, setFilters] = useState({});
-  const { data: posts = [] } = usePosts();
-  const { data: employees = [] } = useEmployees();
+  const [filters, setFilters] = useState<AllocationFilter>({});
+  const { data: postsData } = usePosts();
+  const posts = (postsData?.items ?? []) as Post[];
+  const { data: employeesData } = useEmployees();
+  const employees = (employeesData?.items ?? []) as Employee[];
   const terminateAllocationMutation = useTerminateAllocation();
   const createAllocationMutation = useCreateAllocation();
 
@@ -169,7 +172,7 @@ export default function AlocacoesPage() {
     setSelectedAllocation(allocation);
     setTransferData({
       new_post_id: '',
-      transfer_date: new Date().toISOString().split('T')[0],
+      transfer_date: new Date().toISOString().split('T')[0] ?? '',
       notes: '',
     });
     setTransferError(null);
@@ -446,8 +449,8 @@ export default function AlocacoesPage() {
         {error && (
           <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-6 flex items-center gap-3">
             <AlertCircle className="w-5 h-5 text-red-500" />
-            <p className="text-red-500">{error}</p>
-            <Button variant="outline" size="sm" onClick={refresh} className="ml-auto">
+            <p className="text-red-500">{error instanceof Error ? error.message : 'Erro ao carregar alocações'}</p>
+            <Button variant="outline" size="sm" onClick={() => refresh()} className="ml-auto">
               Tentar novamente
             </Button>
           </div>

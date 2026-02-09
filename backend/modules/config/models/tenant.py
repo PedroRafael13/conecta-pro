@@ -4,22 +4,19 @@ Sprint 35: Configurações e Multi-tenant
 """
 # pylint: disable=too-many-instance-attributes
 
-import enum
 from datetime import datetime, timedelta
-from typing import Optional
+from enum import StrEnum
 from uuid import uuid4
 
-from sqlalchemy import (
-    Column, String, Text, Boolean, DateTime,
-    Integer, Enum, Index
-)
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy import Boolean, Column, DateTime, Enum, Index, Integer, String, Text
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 from core.database import Base
 
 
-class TenantStatus(str, enum.Enum):
+class TenantStatus(StrEnum):
     """Status do tenant."""
+
     ATIVO = "ativo"
     INATIVO = "inativo"
     SUSPENSO = "suspenso"
@@ -28,8 +25,9 @@ class TenantStatus(str, enum.Enum):
     CANCELADO = "cancelado"
 
 
-class TenantPlan(str, enum.Enum):
+class TenantPlan(StrEnum):
     """Plano do tenant."""
+
     FREE = "free"
     STARTER = "starter"
     PROFESSIONAL = "professional"
@@ -37,8 +35,9 @@ class TenantPlan(str, enum.Enum):
     CUSTOM = "custom"
 
 
-class TenantType(str, enum.Enum):
+class TenantType(StrEnum):
     """Tipo de tenant."""
+
     EMPRESA = "empresa"
     CONDOMINIO = "condominio"
     FRANQUIA = "franquia"
@@ -58,21 +57,9 @@ class Tenant(Base):
     descricao = Column(Text, nullable=True)
 
     # Tipo e status
-    tenant_type = Column(
-        Enum(TenantType),
-        nullable=False,
-        default=TenantType.EMPRESA
-    )
-    status = Column(
-        Enum(TenantStatus),
-        nullable=False,
-        default=TenantStatus.TRIAL
-    )
-    plan = Column(
-        Enum(TenantPlan),
-        nullable=False,
-        default=TenantPlan.FREE
-    )
+    tenant_type = Column(Enum(TenantType), nullable=False, default=TenantType.EMPRESA)
+    status = Column(Enum(TenantStatus), nullable=False, default=TenantStatus.TRIAL)
+    plan = Column(Enum(TenantPlan), nullable=False, default=TenantPlan.FREE)
 
     # Documentos
     cnpj = Column(String(18), nullable=True, unique=True)
@@ -195,7 +182,7 @@ class Tenant(Base):
         return round((self.api_calls_mes / self.max_api_calls_month) * 100, 2)
 
     @property
-    def full_domain(self) -> Optional[str]:
+    def full_domain(self) -> str | None:
         """Retorna domínio completo."""
         if self.dominio_personalizado:
             return self.dominio_personalizado
@@ -318,14 +305,7 @@ class Tenant(Base):
         self.updated_at = datetime.utcnow()
 
     def set_address(
-        self,
-        logradouro: str,
-        numero: str,
-        bairro: str,
-        cidade: str,
-        estado: str,
-        cep: str,
-        complemento: str = None
+        self, logradouro: str, numero: str, bairro: str, cidade: str, estado: str, cep: str, complemento: str = None
     ) -> None:
         """Define endereço do tenant."""
         self.endereco = {
@@ -335,7 +315,7 @@ class Tenant(Base):
             "bairro": bairro,
             "cidade": cidade,
             "estado": estado,
-            "cep": cep
+            "cep": cep,
         }
         self.updated_at = datetime.utcnow()
 

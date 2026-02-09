@@ -3,8 +3,7 @@ Model Equipment - Cadastro de Equipamentos de Segurança Eletrônica.
 """
 
 from datetime import datetime
-from enum import Enum
-from typing import Optional
+from enum import StrEnum
 from uuid import uuid4
 
 from sqlalchemy import Boolean, DateTime, Float, Integer, String, Text
@@ -14,7 +13,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from core.models.base import Base
 
 
-class EquipmentType(str, Enum):
+class EquipmentType(StrEnum):
     """Tipos de equipamento."""
 
     CAMERA_IP = "camera_ip"
@@ -42,7 +41,7 @@ class EquipmentType(str, Enum):
     OUTRO = "outro"
 
 
-class EquipmentCategory(str, Enum):
+class EquipmentCategory(StrEnum):
     """Categorias de equipamento."""
 
     CFTV = "cftv"  # Câmeras, DVR, NVR
@@ -54,7 +53,7 @@ class EquipmentCategory(str, Enum):
     OUTRO = "outro"
 
 
-class EquipmentStatus(str, Enum):
+class EquipmentStatus(StrEnum):
     """Status do equipamento."""
 
     ESTOQUE = "estoque"  # Em estoque, aguardando instalação
@@ -110,32 +109,32 @@ class Equipment(Base):
     # Informações do produto
     brand: Mapped[str] = mapped_column(String(100), nullable=False)
     model: Mapped[str] = mapped_column(String(100), nullable=False)
-    serial_number: Mapped[Optional[str]] = mapped_column(
+    serial_number: Mapped[str | None] = mapped_column(
         String(100),
         unique=True,
         nullable=True,
     )
-    part_number: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    firmware_version: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    part_number: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    firmware_version: Mapped[str | None] = mapped_column(String(50), nullable=True)
 
     # Descrição
     name: Mapped[str] = mapped_column(String(200), nullable=False)
-    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Aquisição
-    supplier_id: Mapped[Optional[str]] = mapped_column(
+    supplier_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
     )
-    supplier_name: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
-    purchase_date: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    purchase_value: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    invoice_number: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    supplier_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    purchase_date: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    purchase_value: Mapped[float | None] = mapped_column(Float, nullable=True)
+    invoice_number: Mapped[str | None] = mapped_column(String(50), nullable=True)
 
     # Garantia
-    warranty_start: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    warranty_end: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    warranty_months: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    warranty_start: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    warranty_end: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    warranty_months: Mapped[int | None] = mapped_column(Integer, nullable=True)
     has_extended_warranty: Mapped[bool] = mapped_column(Boolean, default=False)
 
     # Localização atual (estoque ou cliente)
@@ -143,83 +142,83 @@ class Equipment(Base):
         String(20),
         default="estoque",
     )  # estoque, cliente
-    location_id: Mapped[Optional[str]] = mapped_column(
+    location_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
     )  # warehouse_id ou client_id
-    location_name: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
-    location_details: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    location_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    location_details: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Cliente/Contrato (quando instalado)
-    client_id: Mapped[Optional[str]] = mapped_column(
+    client_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
         index=True,
     )
-    client_name: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
-    contract_id: Mapped[Optional[str]] = mapped_column(
+    client_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    contract_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
     )
-    post_id: Mapped[Optional[str]] = mapped_column(UUID(as_uuid=False), nullable=True)
+    post_id: Mapped[str | None] = mapped_column(UUID(as_uuid=False), nullable=True)
 
     # Instalação
-    installation_id: Mapped[Optional[str]] = mapped_column(
+    installation_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
     )
-    installed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    installed_location: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    gps_latitude: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    gps_longitude: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    installed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    installed_location: Mapped[str | None] = mapped_column(Text, nullable=True)
+    gps_latitude: Mapped[float | None] = mapped_column(Float, nullable=True)
+    gps_longitude: Mapped[float | None] = mapped_column(Float, nullable=True)
 
     # Configuração técnica
-    ip_address: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    mac_address: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    port: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    http_port: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    rtsp_port: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    username: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    password_hash: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
-    technical_config: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    ip_address: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    mac_address: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    port: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    http_port: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    rtsp_port: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    username: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    technical_config: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 
     # Status operacional (para equipamentos instalados)
     is_online: Mapped[bool] = mapped_column(Boolean, default=False)
-    last_online_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    last_offline_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    uptime_percent: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    last_online_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    last_offline_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    uptime_percent: Mapped[float | None] = mapped_column(Float, nullable=True)
 
     # Manutenção
-    last_maintenance_at: Mapped[Optional[datetime]] = mapped_column(
+    last_maintenance_at: Mapped[datetime | None] = mapped_column(
         DateTime,
         nullable=True,
     )
-    next_maintenance_at: Mapped[Optional[datetime]] = mapped_column(
+    next_maintenance_at: Mapped[datetime | None] = mapped_column(
         DateTime,
         nullable=True,
     )
-    maintenance_interval_days: Mapped[Optional[int]] = mapped_column(
+    maintenance_interval_days: Mapped[int | None] = mapped_column(
         Integer,
         nullable=True,
     )
     total_maintenances: Mapped[int] = mapped_column(Integer, default=0)
 
     # Depreciação
-    depreciation_rate: Mapped[Optional[float]] = mapped_column(
+    depreciation_rate: Mapped[float | None] = mapped_column(
         Float,
         nullable=True,
     )  # % ao ano
-    current_value: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    useful_life_months: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    current_value: Mapped[float | None] = mapped_column(Float, nullable=True)
+    useful_life_months: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     # Imagens
-    images: Mapped[Optional[list]] = mapped_column(JSONB, nullable=True)
-    qr_code_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    images: Mapped[list | None] = mapped_column(JSONB, nullable=True)
+    qr_code_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
     # Metadados
-    tags: Mapped[Optional[list]] = mapped_column(JSONB, nullable=True)
-    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    metadata_extra: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    tags: Mapped[list | None] = mapped_column(JSONB, nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    metadata_extra: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 
     # Auditoria
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
@@ -234,7 +233,7 @@ class Equipment(Base):
         onupdate=datetime.utcnow,
         nullable=False,
     )
-    created_by: Mapped[Optional[str]] = mapped_column(
+    created_by: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
     )
@@ -253,7 +252,7 @@ class Equipment(Base):
         return datetime.utcnow() < self.warranty_end
 
     @property
-    def days_until_warranty_end(self) -> Optional[int]:
+    def days_until_warranty_end(self) -> int | None:
         """Dias até o fim da garantia."""
         if not self.warranty_end:
             return None
@@ -268,7 +267,7 @@ class Equipment(Base):
         return datetime.utcnow() >= self.next_maintenance_at
 
     @property
-    def days_until_maintenance(self) -> Optional[int]:
+    def days_until_maintenance(self) -> int | None:
         """Dias até a próxima manutenção."""
         if not self.next_maintenance_at:
             return None
@@ -282,8 +281,8 @@ class Equipment(Base):
         client_name: str,
         installation_id: str,
         location: str,
-        latitude: Optional[float] = None,
-        longitude: Optional[float] = None,
+        latitude: float | None = None,
+        longitude: float | None = None,
     ) -> None:
         """Marca equipamento como instalado."""
         self.status = EquipmentStatus.INSTALADO.value
@@ -298,7 +297,7 @@ class Equipment(Base):
         self.gps_latitude = latitude
         self.gps_longitude = longitude
 
-    def uninstall(self, reason: Optional[str] = None) -> None:
+    def uninstall(self, reason: str | None = None) -> None:
         """Remove equipamento de instalação."""
         self.status = EquipmentStatus.ESTOQUE.value
         self.location_type = "estoque"
@@ -325,7 +324,7 @@ class Equipment(Base):
         self.is_online = False
         self.last_offline_at = datetime.utcnow()
 
-    def send_to_maintenance(self, reason: Optional[str] = None) -> None:
+    def send_to_maintenance(self, reason: str | None = None) -> None:
         """Envia para manutenção."""
         self.status = EquipmentStatus.MANUTENCAO.value
         if reason:
@@ -353,7 +352,7 @@ class Equipment(Base):
         self.is_active = False
         self.notes = f"Baixa: {reason}"
 
-    def calculate_depreciation(self) -> Optional[float]:
+    def calculate_depreciation(self) -> float | None:
         """Calcula valor depreciado atual."""
         if not all([self.purchase_value, self.purchase_date, self.depreciation_rate]):
             return None

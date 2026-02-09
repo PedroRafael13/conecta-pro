@@ -3,11 +3,8 @@ Controller para cálculos de FGTS e INSS.
 """
 
 import logging
-import sys
 
 from fastapi import APIRouter, HTTPException, status
-
-
 
 # Imports relativos do módulo pai
 from modules.government_integrations.utils import CalculoError

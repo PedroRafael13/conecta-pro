@@ -2,9 +2,10 @@
 Testes do Early Warning System.
 """
 
-import pytest
 from datetime import datetime, timedelta
 from uuid import uuid4
+
+import pytest
 
 from modules.monitoring.models.alert import Alert, AlertLevel, AlertStatus
 from modules.monitoring.models.metric_threshold import MetricThreshold, ThresholdType

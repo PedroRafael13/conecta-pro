@@ -1,10 +1,10 @@
 """Model para solicitações de reembolso."""
 
 import uuid
-from datetime import date, datetime
+from datetime import datetime
 from decimal import Decimal
-from enum import Enum
-from typing import TYPE_CHECKING, List, Optional
+from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     Boolean,
@@ -24,11 +24,11 @@ from sqlalchemy.orm import relationship
 from core.models import Base
 
 if TYPE_CHECKING:
-    from modules.reimbursement.models.reimbursement_item import ReimbursementItem
     from modules.reimbursement.models.reimbursement_attachment import ReimbursementAttachment
+    from modules.reimbursement.models.reimbursement_item import ReimbursementItem
 
 
-class ReimbursementStatus(str, Enum):
+class ReimbursementStatus(StrEnum):
     """Status da solicitação de reembolso."""
 
     RASCUNHO = "rascunho"  # Ainda não submetido
@@ -40,7 +40,7 @@ class ReimbursementStatus(str, Enum):
     CANCELADO = "cancelado"  # Cancelado
 
 
-class ApprovalLevel(str, Enum):
+class ApprovalLevel(StrEnum):
     """Nível de aprovação baseado no valor."""
 
     SUPERVISOR = "supervisor"  # Até R$ 500
@@ -129,13 +129,13 @@ class ReimbursementRequest(Base):
     is_active = Column(Boolean, default=True, nullable=False)
 
     # Relacionamentos
-    items: List["ReimbursementItem"] = relationship(
+    items: list["ReimbursementItem"] = relationship(
         "ReimbursementItem",
         back_populates="request",
         cascade="all, delete-orphan",
         lazy="selectin",
     )
-    attachments: List["ReimbursementAttachment"] = relationship(
+    attachments: list["ReimbursementAttachment"] = relationship(
         "ReimbursementAttachment",
         back_populates="request",
         cascade="all, delete-orphan",
@@ -169,11 +169,7 @@ class ReimbursementRequest(Base):
 
     def calculate_approved_total(self) -> Decimal:
         """Calcula o valor total aprovado dos itens."""
-        total = sum(
-            item.approved_amount or item.amount
-            for item in self.items
-            if item.is_active and item.is_approved
-        )
+        total = sum(item.approved_amount or item.amount for item in self.items if item.is_active and item.is_approved)
         return Decimal(str(total)) if total else Decimal("0.00")
 
     def determine_approval_level(self) -> ApprovalLevel:
@@ -202,7 +198,7 @@ class ReimbursementRequest(Base):
         self.status = ReimbursementStatus.PENDENTE.value
         self.submitted_at = datetime.utcnow()
 
-    def approve(self, user_id: uuid.UUID, comments: Optional[str] = None) -> None:
+    def approve(self, user_id: uuid.UUID, comments: str | None = None) -> None:
         """Aprova a solicitação."""
         if self.status not in [
             ReimbursementStatus.PENDENTE.value,
@@ -231,7 +227,7 @@ class ReimbursementRequest(Base):
         self.rejection_reason = reason
         self.status = ReimbursementStatus.REJEITADO.value
 
-    def cancel(self, reason: Optional[str] = None) -> None:
+    def cancel(self, reason: str | None = None) -> None:
         """Cancela a solicitação."""
         if self.status in [
             ReimbursementStatus.PROCESSADO.value,
@@ -257,7 +253,7 @@ class ReimbursementRequest(Base):
         self.processed_at = datetime.utcnow()
         self.status = ReimbursementStatus.PROCESSADO.value
 
-    def return_to_draft(self, reason: Optional[str] = None) -> None:
+    def return_to_draft(self, reason: str | None = None) -> None:
         """Retorna a solicitação para rascunho (devolução)."""
         if self.status not in [
             ReimbursementStatus.PENDENTE.value,

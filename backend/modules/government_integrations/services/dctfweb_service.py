@@ -4,21 +4,19 @@ Service para DCTFWeb.
 Camada de serviço para operações de DCTFWeb.
 """
 
-import os
 import logging
-from datetime import datetime, date
-from decimal import Decimal
-from typing import Dict, List, Optional, Any
+import os
+from datetime import datetime
+from typing import Any
 
 from ..core.dctfweb import (
-    DCTFWebManager,
-    DCTFWebDeclaracao,
-    DebitoContribuicao,
-    CreditoVinculavel,
     DARF,
-    TipoDeclaracao,
-    SituacaoDeclaracao,
+    CreditoVinculavel,
+    DCTFWebDeclaracao,
+    DCTFWebManager,
+    DebitoContribuicao,
     TipoCredito,
+    TipoDeclaracao,
 )
 
 logger = logging.getLogger(__name__)
@@ -39,16 +37,13 @@ class DCTFWebService:
             ambiente=self.ambiente,
         )
 
-        logger.info(
-            f"DCTFWeb Service inicializado - Ambiente: {self.ambiente}, "
-            f"CNPJ: {self.cnpj}"
-        )
+        logger.info(f"DCTFWeb Service inicializado - Ambiente: {self.ambiente}, CNPJ: {self.cnpj}")
 
     def criar_declaracao(
         self,
         periodo_apuracao: str,
         tipo: str = "1",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Cria uma nova declaração DCTFWeb.
 
@@ -83,8 +78,8 @@ class DCTFWebService:
     def importar_esocial(
         self,
         periodo_apuracao: str,
-        dados_esocial: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        dados_esocial: dict[str, Any],
+    ) -> dict[str, Any]:
         """
         Cria declaração e importa dados do eSocial.
 
@@ -99,8 +94,7 @@ class DCTFWebService:
         declaracao = self.manager.importar_esocial(declaracao, dados_esocial)
 
         logger.info(
-            f"Importado eSocial para DCTFWeb: {len(declaracao.debitos)} débitos, "
-            f"{len(declaracao.creditos)} créditos"
+            f"Importado eSocial para DCTFWeb: {len(declaracao.debitos)} débitos, {len(declaracao.creditos)} créditos"
         )
 
         return self._declaracao_to_dict(declaracao)
@@ -108,8 +102,8 @@ class DCTFWebService:
     def importar_reinf(
         self,
         periodo_apuracao: str,
-        dados_reinf: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        dados_reinf: dict[str, Any],
+    ) -> dict[str, Any]:
         """
         Cria declaração e importa dados da EFD-Reinf.
 
@@ -130,9 +124,9 @@ class DCTFWebService:
     def consolidar_declaracao(
         self,
         periodo_apuracao: str,
-        dados_esocial: Optional[Dict[str, Any]] = None,
-        dados_reinf: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        dados_esocial: dict[str, Any] | None = None,
+        dados_reinf: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """
         Consolida declaração com dados do eSocial e EFD-Reinf.
 
@@ -152,20 +146,17 @@ class DCTFWebService:
         if dados_reinf:
             declaracao = self.manager.importar_reinf(declaracao, dados_reinf)
 
-        logger.info(
-            f"DCTFWeb consolidada: {len(declaracao.debitos)} débitos, "
-            f"{len(declaracao.creditos)} créditos"
-        )
+        logger.info(f"DCTFWeb consolidada: {len(declaracao.debitos)} débitos, {len(declaracao.creditos)} créditos")
 
         return self._declaracao_to_dict(declaracao)
 
     def gerar_darfs(
         self,
         periodo_apuracao: str,
-        dados_esocial: Optional[Dict[str, Any]] = None,
-        dados_reinf: Optional[Dict[str, Any]] = None,
-        data_vencimento: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        dados_esocial: dict[str, Any] | None = None,
+        dados_reinf: dict[str, Any] | None = None,
+        data_vencimento: str | None = None,
+    ) -> dict[str, Any]:
         """
         Gera DARFs para uma declaração.
 
@@ -206,9 +197,9 @@ class DCTFWebService:
     def transmitir(
         self,
         periodo_apuracao: str,
-        dados_esocial: Optional[Dict[str, Any]] = None,
-        dados_reinf: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        dados_esocial: dict[str, Any] | None = None,
+        dados_reinf: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """
         Transmite declaração DCTFWeb.
 
@@ -235,7 +226,7 @@ class DCTFWebService:
 
         return resultado
 
-    def consultar(self, periodo_apuracao: str) -> Dict[str, Any]:
+    def consultar(self, periodo_apuracao: str) -> dict[str, Any]:
         """
         Consulta declaração por período.
 
@@ -247,21 +238,16 @@ class DCTFWebService:
         """
         return self.manager.consultar(periodo_apuracao)
 
-    def listar_codigos_receita(self) -> Dict[str, Any]:
+    def listar_codigos_receita(self) -> dict[str, Any]:
         """
         Lista códigos de receita disponíveis.
 
         Returns:
             Dict com códigos de receita
         """
-        return {
-            "codigos": [
-                {"codigo": k, "descricao": v}
-                for k, v in self.manager.CODIGOS_RECEITA.items()
-            ]
-        }
+        return {"codigos": [{"codigo": k, "descricao": v} for k, v in self.manager.CODIGOS_RECEITA.items()]}
 
-    def listar_tipos_declaracao(self) -> Dict[str, Any]:
+    def listar_tipos_declaracao(self) -> dict[str, Any]:
         """
         Lista tipos de declaração disponíveis.
 
@@ -275,14 +261,9 @@ class DCTFWebService:
             "4": "DCTFWeb Especial",
         }
 
-        return {
-            "tipos": [
-                {"codigo": t.value, "descricao": descricoes.get(t.value, t.name)}
-                for t in TipoDeclaracao
-            ]
-        }
+        return {"tipos": [{"codigo": t.value, "descricao": descricoes.get(t.value, t.name)} for t in TipoDeclaracao]}
 
-    def listar_tipos_credito(self) -> Dict[str, Any]:
+    def listar_tipos_credito(self) -> dict[str, Any]:
         """
         Lista tipos de crédito vinculáveis.
 
@@ -298,14 +279,9 @@ class DCTFWebService:
             "6": "Parcelamento",
         }
 
-        return {
-            "tipos": [
-                {"codigo": t.value, "descricao": descricoes.get(t.value, t.name)}
-                for t in TipoCredito
-            ]
-        }
+        return {"tipos": [{"codigo": t.value, "descricao": descricoes.get(t.value, t.name)} for t in TipoCredito]}
 
-    def validar_status(self) -> Dict[str, Any]:
+    def validar_status(self) -> dict[str, Any]:
         """
         Valida status da configuração DCTFWeb.
 
@@ -338,7 +314,7 @@ class DCTFWebService:
         }
         return descricoes.get(tipo, tipo.name)
 
-    def _declaracao_to_dict(self, declaracao: DCTFWebDeclaracao) -> Dict[str, Any]:
+    def _declaracao_to_dict(self, declaracao: DCTFWebDeclaracao) -> dict[str, Any]:
         """Converte declaração para dict."""
         return {
             "numero_recibo": declaracao.numero_recibo,
@@ -346,10 +322,7 @@ class DCTFWebService:
             "tipo_descricao": self._get_tipo_descricao(declaracao.tipo),
             "situacao": declaracao.situacao.value,
             "periodo_apuracao": declaracao.periodo_apuracao,
-            "data_transmissao": (
-                declaracao.data_transmissao.isoformat()
-                if declaracao.data_transmissao else None
-            ),
+            "data_transmissao": (declaracao.data_transmissao.isoformat() if declaracao.data_transmissao else None),
             "cnpj": declaracao.cnpj,
             "razao_social": declaracao.razao_social,
             "debitos": [self._debito_to_dict(d) for d in declaracao.debitos],
@@ -360,7 +333,7 @@ class DCTFWebService:
             "darfs": [self._darf_to_dict(d) for d in declaracao.darfs],
         }
 
-    def _debito_to_dict(self, debito: DebitoContribuicao) -> Dict[str, Any]:
+    def _debito_to_dict(self, debito: DebitoContribuicao) -> dict[str, Any]:
         """Converte débito para dict."""
         return {
             "codigo_receita": debito.codigo_receita,
@@ -371,7 +344,7 @@ class DCTFWebService:
             "periodo_apuracao": debito.periodo_apuracao,
         }
 
-    def _credito_to_dict(self, credito: CreditoVinculavel) -> Dict[str, Any]:
+    def _credito_to_dict(self, credito: CreditoVinculavel) -> dict[str, Any]:
         """Converte crédito para dict."""
         return {
             "tipo": credito.tipo.value,
@@ -381,7 +354,7 @@ class DCTFWebService:
             "numero_documento": credito.numero_documento,
         }
 
-    def _darf_to_dict(self, darf: DARF) -> Dict[str, Any]:
+    def _darf_to_dict(self, darf: DARF) -> dict[str, Any]:
         """Converte DARF para dict."""
         return {
             "codigo_receita": darf.codigo_receita,
@@ -398,7 +371,7 @@ class DCTFWebService:
 
 
 # Singleton
-_dctfweb_service: Optional[DCTFWebService] = None
+_dctfweb_service: DCTFWebService | None = None
 
 
 def get_dctfweb_service() -> DCTFWebService:

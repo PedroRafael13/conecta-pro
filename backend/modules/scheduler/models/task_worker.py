@@ -3,10 +3,9 @@
 Sprint 35 - Task Scheduler.
 """
 
-import enum
 import uuid
 from datetime import datetime
-from typing import Optional
+from enum import StrEnum
 
 from sqlalchemy import Boolean, Column, DateTime, Enum, Float, Integer, String
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
@@ -15,7 +14,7 @@ from sqlalchemy.orm import relationship
 from core.models.base import Base
 
 
-class WorkerStatus(str, enum.Enum):
+class WorkerStatus(StrEnum):
     """Status do worker."""
 
     STARTING = "starting"  # Iniciando
@@ -141,7 +140,7 @@ class TaskWorker(Base):
         return max(0, self.concurrency - self.tasks_in_progress)
 
     @property
-    def success_rate(self) -> Optional[float]:
+    def success_rate(self) -> float | None:
         """Taxa de sucesso."""
         if self.total_tasks_processed == 0:
             return None

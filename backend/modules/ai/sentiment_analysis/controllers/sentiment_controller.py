@@ -6,66 +6,54 @@ Endpoints para analise de sentimento.
 
 import logging
 from datetime import datetime, timedelta
-from typing import Optional, List
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database import get_async_session
-from core.auth.dependencies import get_current_user, CurrentActiveUser
-
 from modules.ai.sentiment_analysis.models import (
-    TrendPeriod,
-    TrendDirection,
-    InsightType,
     InsightPriority,
+    InsightType,
     RuleCategory,
-    SourceType,
     SentimentType,
+    SourceType,
+    TrendPeriod,
 )
-from modules.ai.sentiment_analysis.models.sentiment_trend import TrendCategory
 from modules.ai.sentiment_analysis.models.feedback_insight import InsightStatus
+from modules.ai.sentiment_analysis.models.sentiment_trend import TrendCategory
 from modules.ai.sentiment_analysis.repositories import SentimentRepository
-from modules.ai.sentiment_analysis.services import (
-    SentimentAnalyzer,
-    TrendCalculator,
-    InsightGenerator,
-    SentimentAlertService,
-)
 from modules.ai.sentiment_analysis.schemas import (
     # Analysis
     AnalyzeTextRequest,
     AnalyzeTextResponse,
     BatchAnalyzeRequest,
     BatchAnalyzeResponse,
-    SentimentAnalysisResponse,
+    FeedbackInsightCreate,
+    FeedbackInsightListResponse,
+    FeedbackInsightResponse,
+    FeedbackInsightUpdate,
+    InsightSummary,
     SentimentAnalysisListResponse,
+    SentimentAnalysisResponse,
     SentimentAnalysisSummary,
     SentimentAnalysisUpdate,
-    SentimentAnalysisFilter,
-    # Rule
+    # Dashboard
     SentimentRuleCreate,
-    SentimentRuleUpdate,
-    SentimentRuleResponse,
     SentimentRuleListResponse,
+    SentimentRuleResponse,
+    SentimentRuleUpdate,
+    SentimentTrendListResponse,
     # Trend
     SentimentTrendResponse,
-    SentimentTrendListResponse,
     TrendSummary,
-    TrendComparisonResponse,
-    TrendFilter,
-    # Insight
-    FeedbackInsightCreate,
-    FeedbackInsightUpdate,
-    FeedbackInsightResponse,
-    FeedbackInsightListResponse,
-    InsightSummary,
-    InsightFilter,
-    # Dashboard
-    SentimentDashboardResponse,
-    SentimentMetricsResponse,
-    EmotionDistributionResponse,
+)
+from modules.ai.sentiment_analysis.services import (
+    InsightGenerator,
+    SentimentAlertService,
+    SentimentAnalyzer,
+    TrendCalculator,
 )
 
 logger = logging.getLogger(__name__)
@@ -76,6 +64,7 @@ router = APIRouter(prefix="/sentiment", tags=["AI - Sentiment Analysis"])
 # ============================================================
 # Analysis Endpoints
 # ============================================================
+
 
 @router.post(
     "/analyze",
@@ -127,15 +116,15 @@ async def batch_analyze(
 async def list_analyses(
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
-    sentiment_type: Optional[SentimentType] = None,
-    source_type: Optional[SourceType] = None,
-    customer_id: Optional[UUID] = None,
-    has_urgency: Optional[bool] = None,
-    has_complaint: Optional[bool] = None,
-    requires_action: Optional[bool] = None,
-    is_reviewed: Optional[bool] = None,
-    date_from: Optional[datetime] = None,
-    date_to: Optional[datetime] = None,
+    sentiment_type: SentimentType | None = None,
+    source_type: SourceType | None = None,
+    customer_id: UUID | None = None,
+    has_urgency: bool | None = None,
+    has_complaint: bool | None = None,
+    requires_action: bool | None = None,
+    is_reviewed: bool | None = None,
+    date_from: datetime | None = None,
+    date_to: datetime | None = None,
     order_by: str = Query("created_at", regex="^(created_at|sentiment_score|analyzed_at)$"),
     order_desc: bool = True,
     session: AsyncSession = Depends(get_async_session),
@@ -233,7 +222,7 @@ async def update_analysis(
 
 @router.get(
     "/analyses/customer/{customer_id}",
-    response_model=List[SentimentAnalysisSummary],
+    response_model=list[SentimentAnalysisSummary],
     summary="Analises por cliente",
 )
 async def get_customer_analyses(
@@ -241,7 +230,7 @@ async def get_customer_analyses(
     limit: int = Query(50, ge=1, le=200),
     session: AsyncSession = Depends(get_async_session),
     current_user: CurrentActiveUser = ...,  # Required
-) -> List[SentimentAnalysisSummary]:
+) -> list[SentimentAnalysisSummary]:
     """Busca analises de um cliente especifico."""
     repository = SentimentRepository(session)
     analyses = await repository.get_analyses_by_customer(customer_id, limit)
@@ -250,7 +239,7 @@ async def get_customer_analyses(
 
 @router.get(
     "/analyses/critical",
-    response_model=List[SentimentAnalysisSummary],
+    response_model=list[SentimentAnalysisSummary],
     summary="Analises criticas",
 )
 async def get_critical_analyses(
@@ -258,7 +247,7 @@ async def get_critical_analyses(
     limit: int = Query(50, ge=1, le=100),
     session: AsyncSession = Depends(get_async_session),
     current_user: CurrentActiveUser = ...,  # Required
-) -> List[SentimentAnalysisSummary]:
+) -> list[SentimentAnalysisSummary]:
     """Busca analises criticas recentes."""
     repository = SentimentRepository(session)
     analyses = await repository.get_critical_analyses(hours=hours, limit=limit)
@@ -268,6 +257,7 @@ async def get_critical_analyses(
 # ============================================================
 # Rule Endpoints
 # ============================================================
+
 
 @router.post(
     "/rules",
@@ -294,8 +284,8 @@ async def create_rule(
 async def list_rules(
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
-    category: Optional[RuleCategory] = None,
-    is_active: Optional[bool] = None,
+    category: RuleCategory | None = None,
+    is_active: bool | None = None,
     session: AsyncSession = Depends(get_async_session),
     current_user: CurrentActiveUser = ...,  # Required
 ) -> SentimentRuleListResponse:
@@ -453,17 +443,18 @@ async def initialize_default_rules(
 # Trend Endpoints
 # ============================================================
 
+
 @router.get(
     "/trends",
     response_model=SentimentTrendListResponse,
     summary="Listar tendencias",
 )
 async def list_trends(
-    period_type: Optional[TrendPeriod] = None,
-    category: Optional[str] = None,
+    period_type: TrendPeriod | None = None,
+    category: str | None = None,
     limit: int = Query(50, ge=1, le=200),
-    date_from: Optional[datetime] = None,
-    date_to: Optional[datetime] = None,
+    date_from: datetime | None = None,
+    date_to: datetime | None = None,
     session: AsyncSession = Depends(get_async_session),
     current_user: CurrentActiveUser = ...,  # Required
 ) -> SentimentTrendListResponse:
@@ -517,7 +508,7 @@ async def calculate_trend(
     period_start: datetime,
     period_end: datetime,
     category: TrendCategory = TrendCategory.OVERALL,
-    category_value: Optional[str] = None,
+    category_value: str | None = None,
     session: AsyncSession = Depends(get_async_session),
     current_user: CurrentActiveUser = ...,  # Required
 ) -> SentimentTrendResponse:
@@ -554,9 +545,7 @@ async def compare_trends(
         current_end = now
     elif period_type == TrendPeriod.WEEKLY:
         days_since_monday = now.weekday()
-        current_start = (now - timedelta(days=days_since_monday)).replace(
-            hour=0, minute=0, second=0, microsecond=0
-        )
+        current_start = (now - timedelta(days=days_since_monday)).replace(hour=0, minute=0, second=0, microsecond=0)
         current_end = now
     else:
         current_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
@@ -598,6 +587,7 @@ async def get_trend_timeline(
 # ============================================================
 # Insight Endpoints
 # ============================================================
+
 
 @router.post(
     "/insights",
@@ -665,11 +655,11 @@ async def create_insight(
 async def list_insights(
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
-    insight_type: Optional[InsightType] = None,
-    priority: Optional[InsightPriority] = None,
-    status_filter: Optional[InsightStatus] = Query(None, alias="status"),
-    category: Optional[str] = None,
-    is_actionable: Optional[bool] = None,
+    insight_type: InsightType | None = None,
+    priority: InsightPriority | None = None,
+    status_filter: InsightStatus | None = Query(None, alias="status"),
+    category: str | None = None,
+    is_actionable: bool | None = None,
     session: AsyncSession = Depends(get_async_session),
     current_user: CurrentActiveUser = ...,  # Required
 ) -> FeedbackInsightListResponse:
@@ -700,14 +690,14 @@ async def list_insights(
 
 @router.get(
     "/insights/active",
-    response_model=List[InsightSummary],
+    response_model=list[InsightSummary],
     summary="Insights ativos",
 )
 async def get_active_insights(
     limit: int = Query(20, ge=1, le=100),
     session: AsyncSession = Depends(get_async_session),
     current_user: CurrentActiveUser = ...,  # Required
-) -> List[InsightSummary]:
+) -> list[InsightSummary]:
     """Retorna insights ativos."""
     generator = InsightGenerator(session)
     insights = await generator.get_active_insights(limit=limit)
@@ -716,14 +706,14 @@ async def get_active_insights(
 
 @router.get(
     "/insights/critical",
-    response_model=List[InsightSummary],
+    response_model=list[InsightSummary],
     summary="Insights criticos",
 )
 async def get_critical_insights(
     limit: int = Query(10, ge=1, le=50),
     session: AsyncSession = Depends(get_async_session),
     current_user: CurrentActiveUser = ...,  # Required
-) -> List[InsightSummary]:
+) -> list[InsightSummary]:
     """Retorna insights criticos."""
     generator = InsightGenerator(session)
     insights = await generator.get_critical_insights(limit=limit)
@@ -810,7 +800,7 @@ async def acknowledge_insight(
 async def assign_insight(
     insight_id: UUID,
     user_id: UUID,
-    team: Optional[str] = None,
+    team: str | None = None,
     session: AsyncSession = Depends(get_async_session),
     current_user: CurrentActiveUser = ...,  # Required
 ) -> FeedbackInsightResponse:
@@ -835,15 +825,13 @@ async def assign_insight(
 async def resolve_insight(
     insight_id: UUID,
     outcome: str,
-    notes: Optional[str] = None,
+    notes: str | None = None,
     session: AsyncSession = Depends(get_async_session),
     current_user: CurrentActiveUser = ...,  # Required
 ) -> FeedbackInsightResponse:
     """Resolve um insight."""
     generator = InsightGenerator(session)
-    insight = await generator.resolve_insight(
-        insight_id, current_user.id, outcome, notes
-    )
+    insight = await generator.resolve_insight(insight_id, current_user.id, outcome, notes)
 
     if not insight:
         raise HTTPException(
@@ -862,16 +850,14 @@ async def resolve_insight(
 async def insight_feedback(
     insight_id: UUID,
     was_useful: bool,
-    rating: Optional[int] = Query(None, ge=1, le=5),
-    notes: Optional[str] = None,
+    rating: int | None = Query(None, ge=1, le=5),
+    notes: str | None = None,
     session: AsyncSession = Depends(get_async_session),
     current_user: CurrentActiveUser = ...,  # Required
 ) -> FeedbackInsightResponse:
     """Adiciona feedback sobre utilidade do insight."""
     generator = InsightGenerator(session)
-    insight = await generator.add_insight_feedback(
-        insight_id, was_useful, rating, notes
-    )
+    insight = await generator.add_insight_feedback(insight_id, was_useful, rating, notes)
 
     if not insight:
         raise HTTPException(
@@ -908,6 +894,7 @@ async def generate_insights(
 # Dashboard & Stats Endpoints
 # ============================================================
 
+
 @router.get(
     "/dashboard",
     summary="Dashboard de sentimento",
@@ -926,8 +913,8 @@ async def get_dashboard(
     summary="Estatisticas de sentimento",
 )
 async def get_stats(
-    date_from: Optional[datetime] = None,
-    date_to: Optional[datetime] = None,
+    date_from: datetime | None = None,
+    date_to: datetime | None = None,
     session: AsyncSession = Depends(get_async_session),
     current_user: CurrentActiveUser = ...,  # Required
 ):
@@ -944,8 +931,8 @@ async def get_stats(
     summary="Distribuicao de emocoes",
 )
 async def get_emotion_stats(
-    date_from: Optional[datetime] = None,
-    date_to: Optional[datetime] = None,
+    date_from: datetime | None = None,
+    date_to: datetime | None = None,
     session: AsyncSession = Depends(get_async_session),
     current_user: CurrentActiveUser = ...,  # Required
 ):
@@ -963,9 +950,7 @@ async def get_emotion_stats(
         "emotions": distribution,
         "total": total,
         "primary_emotion": primary,
-        "primary_emotion_pct": (
-            (distribution.get(primary, 0) / total * 100) if total > 0 else 0
-        ),
+        "primary_emotion_pct": ((distribution.get(primary, 0) / total * 100) if total > 0 else 0),
     }
 
 
@@ -975,8 +960,8 @@ async def get_emotion_stats(
 )
 async def get_top_keywords(
     limit: int = Query(20, ge=1, le=100),
-    date_from: Optional[datetime] = None,
-    date_to: Optional[datetime] = None,
+    date_from: datetime | None = None,
+    date_to: datetime | None = None,
     session: AsyncSession = Depends(get_async_session),
     current_user: CurrentActiveUser = ...,  # Required
 ):

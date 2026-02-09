@@ -1,9 +1,8 @@
 """Repository para DocumentVersion."""
 
 import logging
-from typing import Optional, List
 
-from sqlalchemy import select, func, and_
+from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.ged.models.document_version import (
@@ -49,20 +48,14 @@ class DocumentVersionRepository:
 
         await self.session.flush()
 
-    async def get_by_id(self, version_id: str) -> Optional[DocumentVersion]:
+    async def get_by_id(self, version_id: str) -> DocumentVersion | None:
         """Busca versão por ID."""
-        result = await self.session.execute(
-            select(DocumentVersion).where(DocumentVersion.id == version_id)
-        )
+        result = await self.session.execute(select(DocumentVersion).where(DocumentVersion.id == version_id))
         return result.scalar_one_or_none()
 
-    async def get_by_document(
-        self, document_id: str, include_archived: bool = False
-    ) -> List[DocumentVersion]:
+    async def get_by_document(self, document_id: str, include_archived: bool = False) -> list[DocumentVersion]:
         """Retorna versões de um documento."""
-        query = select(DocumentVersion).where(
-            DocumentVersion.document_id == document_id
-        )
+        query = select(DocumentVersion).where(DocumentVersion.document_id == document_id)
 
         if not include_archived:
             query = query.where(DocumentVersion.status != VersionStatus.OBSOLETA)
@@ -71,7 +64,7 @@ class DocumentVersionRepository:
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    async def get_current(self, document_id: str) -> Optional[DocumentVersion]:
+    async def get_current(self, document_id: str) -> DocumentVersion | None:
         """Retorna versão atual do documento."""
         result = await self.session.execute(
             select(DocumentVersion).where(
@@ -83,9 +76,7 @@ class DocumentVersionRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_by_number(
-        self, document_id: str, version_number: int
-    ) -> Optional[DocumentVersion]:
+    async def get_by_number(self, document_id: str, version_number: int) -> DocumentVersion | None:
         """Busca versão específica."""
         result = await self.session.execute(
             select(DocumentVersion).where(
@@ -97,7 +88,7 @@ class DocumentVersionRepository:
         )
         return result.scalar_one_or_none()
 
-    async def set_as_current(self, version_id: str) -> Optional[DocumentVersion]:
+    async def set_as_current(self, version_id: str) -> DocumentVersion | None:
         """Define versão como atual."""
         version = await self.get_by_id(version_id)
         if not version:
@@ -110,7 +101,7 @@ class DocumentVersionRepository:
         await self.session.flush()
         return version
 
-    async def archive(self, version_id: str) -> Optional[DocumentVersion]:
+    async def archive(self, version_id: str) -> DocumentVersion | None:
         """Arquiva versão."""
         version = await self.get_by_id(version_id)
         if not version:
@@ -119,7 +110,7 @@ class DocumentVersionRepository:
         await self.session.flush()
         return version
 
-    async def mark_as_obsolete(self, version_id: str) -> Optional[DocumentVersion]:
+    async def mark_as_obsolete(self, version_id: str) -> DocumentVersion | None:
         """Marca versão como obsoleta."""
         version = await self.get_by_id(version_id)
         if not version:
@@ -128,9 +119,7 @@ class DocumentVersionRepository:
         await self.session.flush()
         return version
 
-    async def approve(
-        self, version_id: str, approved_by: str
-    ) -> Optional[DocumentVersion]:
+    async def approve(self, version_id: str, approved_by: str) -> DocumentVersion | None:
         """Aprova versão."""
         version = await self.get_by_id(version_id)
         if not version:
@@ -155,24 +144,18 @@ class DocumentVersionRepository:
 
     async def get_version_count(self, document_id: str) -> int:
         """Retorna contagem de versões."""
-        result = await self.session.execute(
-            select(func.count()).where(DocumentVersion.document_id == document_id)
-        )
+        result = await self.session.execute(select(func.count()).where(DocumentVersion.document_id == document_id))
         return result.scalar() or 0
 
     async def get_next_version_number(self, document_id: str) -> int:
         """Retorna próximo número de versão."""
         result = await self.session.execute(
-            select(func.max(DocumentVersion.version_number)).where(
-                DocumentVersion.document_id == document_id
-            )
+            select(func.max(DocumentVersion.version_number)).where(DocumentVersion.document_id == document_id)
         )
         max_version = result.scalar() or 0
         return max_version + 1
 
-    async def compare_versions(
-        self, version_id_1: str, version_id_2: str
-    ) -> Optional[dict]:
+    async def compare_versions(self, version_id_1: str, version_id_2: str) -> dict | None:
         """Compara duas versões."""
         version1 = await self.get_by_id(version_id_1)
         version2 = await self.get_by_id(version_id_2)
@@ -182,9 +165,7 @@ class DocumentVersionRepository:
 
         return version1.compare_with(version2)
 
-    async def delete_old_versions(
-        self, document_id: str, keep_count: int = 10
-    ) -> int:
+    async def delete_old_versions(self, document_id: str, keep_count: int = 10) -> int:
         """Remove versões antigas, mantendo as N mais recentes."""
         versions = await self.get_by_document(document_id, include_archived=True)
 

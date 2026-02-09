@@ -2,14 +2,15 @@
 Configurações e fixtures para testes do módulo de integrações governamentais.
 """
 
-import pytest
-from datetime import datetime
-from uuid import uuid4
-from unittest.mock import AsyncMock, MagicMock
-
 # Adicionar path do módulo
 import sys
-sys.path.insert(0, '/opt/conecta-pro/backend/modules/government_integrations')
+from datetime import datetime
+from unittest.mock import AsyncMock, MagicMock
+from uuid import uuid4
+
+import pytest
+
+sys.path.insert(0, "/opt/conecta-pro/backend/modules/government_integrations")
 
 
 @pytest.fixture

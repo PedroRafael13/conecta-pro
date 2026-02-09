@@ -1,7 +1,6 @@
 """Controller para Equipment."""
 
 import logging
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -47,16 +46,16 @@ async def create_equipment(
 
 @router.get("/", response_model=EquipmentListResponse)
 async def list_equipment(
-    search: Optional[str] = Query(None),
-    equipment_type: Optional[str] = Query(None),
-    category: Optional[str] = Query(None),
-    status_filter: Optional[str] = Query(None, alias="status"),
-    brand: Optional[str] = Query(None),
-    client_id: Optional[str] = Query(None),
-    contract_id: Optional[str] = Query(None),
-    is_online: Optional[bool] = Query(None),
-    is_in_warranty: Optional[bool] = Query(None),
-    needs_maintenance: Optional[bool] = Query(None),
+    search: str | None = Query(None),
+    equipment_type: str | None = Query(None),
+    category: str | None = Query(None),
+    status_filter: str | None = Query(None, alias="status"),
+    brand: str | None = Query(None),
+    client_id: str | None = Query(None),
+    contract_id: str | None = Query(None),
+    is_online: bool | None = Query(None),
+    is_in_warranty: bool | None = Query(None),
+    needs_maintenance: bool | None = Query(None),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     service: EquipmentService = Depends(get_service),
@@ -79,7 +78,7 @@ async def list_equipment(
 
 @router.get("/stats", response_model=EquipmentStats)
 async def get_stats(
-    client_id: Optional[str] = Query(None),
+    client_id: str | None = Query(None),
     service: EquipmentService = Depends(get_service),
 ) -> EquipmentStats:
     """Obtém estatísticas de equipamentos."""
@@ -202,11 +201,11 @@ async def install_equipment(
     equipment_id: str,
     client_id: str,
     client_name: str,
-    contract_id: Optional[str] = None,
-    installation_id: Optional[str] = None,
-    location: Optional[str] = None,
-    latitude: Optional[float] = None,
-    longitude: Optional[float] = None,
+    contract_id: str | None = None,
+    installation_id: str | None = None,
+    location: str | None = None,
+    latitude: float | None = None,
+    longitude: float | None = None,
     service: EquipmentService = Depends(get_service),
 ) -> EquipmentResponse:
     """Registra instalação de equipamento."""

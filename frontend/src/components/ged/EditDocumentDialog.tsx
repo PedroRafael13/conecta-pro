@@ -1,6 +1,6 @@
 'use client';
 
-import { FileText, Calendar, Lock, CheckCircle, FileSignature, Settings } from 'lucide-react';
+import { FileText, Calendar, Lock, CheckCircle, FileSignature } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -22,8 +22,16 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-;
 import { toast } from 'sonner';
+import {
+  type DocumentResponse,
+  type DocumentType,
+  type DocumentCategory,
+  type DocumentConfidentiality,
+  DOCUMENT_TYPES,
+  DOCUMENT_CATEGORIES,
+} from '@/types/generated/ged/conectaPROMóduloGED.schemas';
+import { useUpdateDocument } from '@/hooks/ged/useGedDocuments';
 
 const CONFIDENTIALITY_LEVELS: {
   value: DocumentConfidentiality;
@@ -37,8 +45,34 @@ const CONFIDENTIALITY_LEVELS: {
   { value: 'secreto', label: 'Secreto', description: 'Máxima segurança' },
 ];
 
+const DOCUMENT_TYPE_OPTIONS = Object.entries(DOCUMENT_TYPES).map(([key, value]) => ({
+  value,
+  label: key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' '),
+}));
+
+const DOCUMENT_CATEGORY_OPTIONS = Object.entries(DOCUMENT_CATEGORIES).map(([key, value]) => ({
+  value,
+  label: key.charAt(0).toUpperCase() + key.slice(1),
+}));
+
+interface FormData {
+  title: string;
+  description: string;
+  document_type: DocumentType;
+  category: DocumentCategory;
+  confidentiality: DocumentConfidentiality;
+  is_public: boolean;
+  valid_from: string;
+  valid_until: string;
+  is_perpetual: boolean;
+  requires_approval: boolean;
+  requires_signature: boolean;
+  signature_deadline: string;
+  external_reference: string;
+}
+
 interface EditDocumentDialogProps {
-  document: Document | null;
+  document: DocumentResponse | null;
   open: boolean;
   onClose: () => void;
   onUpdated?: () => void;
@@ -51,12 +85,12 @@ export function EditDocumentDialog({
   onUpdated,
 }: EditDocumentDialogProps) {
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     title: '',
     description: '',
-    document_type: 'outro' as DocumentType,
-    category: 'outro' as DocumentCategory,
-    confidentiality: 'interno' as DocumentConfidentiality,
+    document_type: DOCUMENT_TYPES.outro,
+    category: DOCUMENT_CATEGORIES.outro,
+    confidentiality: 'interno',
     is_public: false,
     valid_from: '',
     valid_until: '',
@@ -66,6 +100,8 @@ export function EditDocumentDialog({
     signature_deadline: '',
     external_reference: '',
   });
+
+  const updateMutation = useUpdateDocument();
 
   useEffect(() => {
     if (document) {
@@ -92,20 +128,24 @@ export function EditDocumentDialog({
 
     setLoading(true);
     try {
-      await documentService.update(document.id, formData);
+      await updateMutation.mutateAsync({
+        documentId: document.id,
+        data: formData,
+      });
       toast.success('Documento atualizado com sucesso');
       onUpdated?.();
       onClose();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { detail?: string } } };
       toast.error('Erro ao atualizar documento', {
-        description: error.response?.data?.detail || 'Erro desconhecido',
+        description: err.response?.data?.detail || 'Erro desconhecido',
       });
     } finally {
       setLoading(false);
     }
   };
 
-  const updateField = (field: string, value: any) => {
+  const updateField = <K extends keyof FormData>(field: K, value: FormData[K]) => {
     setFormData({ ...formData, [field]: value });
   };
 
@@ -165,13 +205,13 @@ export function EditDocumentDialog({
                 <Label>Tipo de Documento</Label>
                 <Select
                   value={formData.document_type}
-                  onValueChange={(v) => updateField('document_type', v)}
+                  onValueChange={(v) => updateField('document_type', v as DocumentType)}
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {DOCUMENT_TYPES.map((type) => (
+                    {DOCUMENT_TYPE_OPTIONS.map((type) => (
                       <SelectItem key={type.value} value={type.value}>
                         {type.label}
                       </SelectItem>
@@ -184,13 +224,13 @@ export function EditDocumentDialog({
                 <Label>Categoria</Label>
                 <Select
                   value={formData.category}
-                  onValueChange={(v) => updateField('category', v)}
+                  onValueChange={(v) => updateField('category', v as DocumentCategory)}
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {DOCUMENT_CATEGORIES.map((cat) => (
+                    {DOCUMENT_CATEGORY_OPTIONS.map((cat) => (
                       <SelectItem key={cat.value} value={cat.value}>
                         {cat.label}
                       </SelectItem>
@@ -262,7 +302,7 @@ export function EditDocumentDialog({
               <Label>Nível de Confidencialidade</Label>
               <Select
                 value={formData.confidentiality}
-                onValueChange={(v) => updateField('confidentiality', v)}
+                onValueChange={(v) => updateField('confidentiality', v as DocumentConfidentiality)}
               >
                 <SelectTrigger>
                   <SelectValue />

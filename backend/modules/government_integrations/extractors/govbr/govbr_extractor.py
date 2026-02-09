@@ -7,17 +7,17 @@ Implementa:
 - Integração com serviços federais
 """
 
-from datetime import datetime, timedelta
-from typing import Dict, Optional, Any, List
-from uuid import UUID
 import asyncio
-import logging
 import base64
 import hashlib
+import logging
 import secrets
+from datetime import datetime
+from typing import Any
+from uuid import UUID
 
-from ..base_extractor import ExtratorBase, DocumentoExtraido, ResultadoExtracao
-from ...core.credentials import ProvedorCredenciais, TipoCredencial
+from ...core.credentials import TipoCredencial
+from ..base_extractor import DocumentoExtraido, ExtratorBase, ResultadoExtracao
 
 logger = logging.getLogger(__name__)
 
@@ -70,10 +70,10 @@ class ExtratorGovBR(ExtratorBase):
     async def extrair(
         self,
         tenant_id: UUID,
-        data_inicio: Optional[datetime] = None,
-        data_fim: Optional[datetime] = None,
-        cnpjs: Optional[List[str]] = None,
-        ufs: Optional[List[str]] = None,
+        data_inicio: datetime | None = None,
+        data_fim: datetime | None = None,
+        cnpjs: list[str] | None = None,
+        ufs: list[str] | None = None,
         incremental: bool = True,
     ) -> ResultadoExtracao:
         """
@@ -97,9 +97,7 @@ class ExtratorGovBR(ExtratorBase):
         logger.info(f"Iniciando extração Gov.br: {tenant_id}")
 
         try:
-            credencial = await self.credentials.obter_credencial(
-                tenant_id, self.tipo_credencial
-            )
+            credencial = await self.credentials.obter_credencial(tenant_id, self.tipo_credencial)
 
             if not credencial.valida:
                 resultado.status = "falha"
@@ -150,13 +148,12 @@ class ExtratorGovBR(ExtratorBase):
         self,
         tenant_id: UUID,
         cnpj: str,
-    ) -> Optional[DocumentoExtraido]:
+    ) -> DocumentoExtraido | None:
         """Consulta dados cadastrais no Gov.br."""
         try:
             dados = {
                 "cnpj": cnpj,
                 "tipo": "dados_cadastrais",
-
                 "empresa": {
                     "razao_social": None,
                     "nome_fantasia": None,
@@ -166,7 +163,6 @@ class ExtratorGovBR(ExtratorBase):
                     "porte": None,
                     "capital_social": None,
                 },
-
                 "endereco": {
                     "logradouro": None,
                     "numero": None,
@@ -176,19 +172,15 @@ class ExtratorGovBR(ExtratorBase):
                     "uf": None,
                     "cep": None,
                 },
-
                 "contato": {
                     "telefone": None,
                     "email": None,
                 },
-
                 "atividades": {
                     "principal": None,
                     "secundarias": [],
                 },
-
                 "socios": [],
-
                 "consultado_em": datetime.utcnow().isoformat(),
                 "status": "consulta_manual_necessaria",
             }
@@ -213,13 +205,12 @@ class ExtratorGovBR(ExtratorBase):
         self,
         tenant_id: UUID,
         cnpj: str,
-    ) -> Optional[DocumentoExtraido]:
+    ) -> DocumentoExtraido | None:
         """Consulta procurações eletrônicas."""
         try:
             dados = {
                 "cnpj": cnpj,
                 "tipo": "procuracoes",
-
                 "procuracoes_concedidas": [],
                 # Exemplo:
                 # {
@@ -230,16 +221,13 @@ class ExtratorGovBR(ExtratorBase):
                 #     "data_fim": "2024-12-31",
                 #     "situacao": "vigente",
                 # }
-
                 "procuracoes_recebidas": [],
-
                 "resumo": {
                     "total_concedidas": 0,
                     "total_recebidas": 0,
                     "vigentes": 0,
                     "expiradas": 0,
                 },
-
                 "consultado_em": datetime.utcnow().isoformat(),
                 "status": "consulta_manual_necessaria",
             }
@@ -259,13 +247,12 @@ class ExtratorGovBR(ExtratorBase):
         self,
         tenant_id: UUID,
         cnpj: str,
-    ) -> Optional[DocumentoExtraido]:
+    ) -> DocumentoExtraido | None:
         """Consulta vínculos empresariais no Gov.br."""
         try:
             dados = {
                 "cnpj": cnpj,
                 "tipo": "vinculos_empresariais",
-
                 "vinculos": [],
                 # Exemplo:
                 # {
@@ -276,14 +263,12 @@ class ExtratorGovBR(ExtratorBase):
                 #     "data_entrada": "2020-01-01",
                 #     "participacao": 50.0,
                 # }
-
                 "resumo": {
                     "total_vinculos": 0,
                     "como_socio": 0,
                     "como_administrador": 0,
                     "como_representante": 0,
                 },
-
                 "consultado_em": datetime.utcnow().isoformat(),
                 "status": "consulta_manual_necessaria",
             }
@@ -303,9 +288,9 @@ class ExtratorGovBR(ExtratorBase):
         self,
         client_id: str,
         redirect_uri: str,
-        state: Optional[str] = None,
+        state: str | None = None,
         ambiente: str = "producao",
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         """
         Gera URL para autenticação OAuth2 no Gov.br.
 
@@ -323,9 +308,7 @@ class ExtratorGovBR(ExtratorBase):
 
         # PKCE
         code_verifier = secrets.token_urlsafe(64)
-        code_challenge = base64.urlsafe_b64encode(
-            hashlib.sha256(code_verifier.encode()).digest()
-        ).decode().rstrip("=")
+        code_challenge = base64.urlsafe_b64encode(hashlib.sha256(code_verifier.encode()).digest()).decode().rstrip("=")
 
         urls = self.URLS[ambiente]
 
@@ -356,7 +339,7 @@ class ExtratorGovBR(ExtratorBase):
         redirect_uri: str,
         code_verifier: str,
         ambiente: str = "producao",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Troca código de autorização por token de acesso.
 
@@ -385,13 +368,12 @@ class ExtratorGovBR(ExtratorBase):
                 "code_verifier": code_verifier,
             }
 
-            async with aiohttp.ClientSession() as session:
-                async with session.post(urls["token"], data=data) as response:
-                    if response.status == 200:
-                        return await response.json()
-                    else:
-                        erro = await response.text()
-                        return {"erro": f"Erro {response.status}: {erro}"}
+            async with aiohttp.ClientSession() as session, session.post(urls["token"], data=data) as response:
+                if response.status == 200:
+                    return await response.json()
+                else:
+                    erro = await response.text()
+                    return {"erro": f"Erro {response.status}: {erro}"}
 
         except Exception as e:
             logger.error(f"Erro ao trocar código por token: {e}")
@@ -401,7 +383,7 @@ class ExtratorGovBR(ExtratorBase):
         self,
         access_token: str,
         ambiente: str = "producao",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Obtém informações do usuário autenticado.
 
@@ -419,13 +401,12 @@ class ExtratorGovBR(ExtratorBase):
 
             headers = {"Authorization": f"Bearer {access_token}"}
 
-            async with aiohttp.ClientSession() as session:
-                async with session.get(urls["userinfo"], headers=headers) as response:
-                    if response.status == 200:
-                        return await response.json()
-                    else:
-                        erro = await response.text()
-                        return {"erro": f"Erro {response.status}: {erro}"}
+            async with aiohttp.ClientSession() as session, session.get(urls["userinfo"], headers=headers) as response:
+                if response.status == 200:
+                    return await response.json()
+                else:
+                    erro = await response.text()
+                    return {"erro": f"Erro {response.status}: {erro}"}
 
         except Exception as e:
             logger.error(f"Erro ao obter informações do usuário: {e}")

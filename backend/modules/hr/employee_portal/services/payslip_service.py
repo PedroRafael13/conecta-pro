@@ -2,7 +2,6 @@
 
 import logging
 from datetime import datetime
-from typing import Optional, List, Tuple
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,8 +10,8 @@ from modules.hr.employee_portal.models import PaySlip, PaySlipStatus, PaySlipTyp
 from modules.hr.employee_portal.repositories import PaySlipRepository
 from modules.hr.employee_portal.schemas import (
     PaySlipCreate,
-    PaySlipEarningItem,
     PaySlipDeductionItem,
+    PaySlipEarningItem,
 )
 
 logger = logging.getLogger(__name__)
@@ -30,12 +29,12 @@ class PaySlipService:
         data: PaySlipCreate,
         condominio_id: UUID,
         *,
-        created_by: Optional[UUID] = None,
+        created_by: UUID | None = None,
     ) -> PaySlip:
         """Cria novo contracheque."""
         return await self.repo.create(data, condominio_id, created_by=created_by)
 
-    async def get_payslip(self, payslip_id: UUID) -> Optional[PaySlip]:
+    async def get_payslip(self, payslip_id: UUID) -> PaySlip | None:
         """Busca contracheque por ID."""
         return await self.repo.get_by_id(payslip_id)
 
@@ -45,9 +44,9 @@ class PaySlipService:
         *,
         page: int = 1,
         page_size: int = 20,
-        year: Optional[int] = None,
-        payslip_type: Optional[PaySlipType] = None,
-    ) -> Tuple[List[PaySlip], int]:
+        year: int | None = None,
+        payslip_type: PaySlipType | None = None,
+    ) -> tuple[list[PaySlip], int]:
         """Lista contracheques do funcionário."""
         return await self.repo.list_by_employee(
             employee_id,
@@ -62,7 +61,7 @@ class PaySlipService:
         self,
         payslip_id: UUID,
         employee_id: UUID,
-    ) -> Optional[PaySlip]:
+    ) -> PaySlip | None:
         """Visualiza contracheque (registra view)."""
         payslip = await self.repo.get_by_id(payslip_id)
         if not payslip or payslip.employee_id != employee_id:
@@ -77,7 +76,7 @@ class PaySlipService:
         self,
         payslip_id: UUID,
         employee_id: UUID,
-    ) -> Optional[PaySlip]:
+    ) -> PaySlip | None:
         """Download do contracheque (registra download)."""
         payslip = await self.repo.get_by_id(payslip_id)
         if not payslip or payslip.employee_id != employee_id:
@@ -92,7 +91,7 @@ class PaySlipService:
         self,
         payslip_id: UUID,
         employee_id: UUID,
-    ) -> Optional[PaySlip]:
+    ) -> PaySlip | None:
         """Registra ciência no contracheque."""
         payslip = await self.repo.get_by_id(payslip_id)
         if not payslip or payslip.employee_id != employee_id:
@@ -105,7 +104,7 @@ class PaySlipService:
         payslip_id: UUID,
         employee_id: UUID,
         reason: str,
-    ) -> Optional[PaySlip]:
+    ) -> PaySlip | None:
         """Contesta contracheque."""
         payslip = await self.repo.get_by_id(payslip_id)
         if not payslip or payslip.employee_id != employee_id:
@@ -150,7 +149,7 @@ class PaySlipService:
     async def generate_pdf(
         self,
         payslip_id: UUID,
-    ) -> Optional[str]:
+    ) -> str | None:
         """Gera PDF do contracheque."""
         payslip = await self.repo.get_by_id(payslip_id)
         if not payslip:
@@ -171,8 +170,8 @@ class PaySlipService:
         self,
         payslip_id: UUID,
         *,
-        published_by: Optional[UUID] = None,
-    ) -> Optional[PaySlip]:
+        published_by: UUID | None = None,
+    ) -> PaySlip | None:
         """Publica contracheque (visível para funcionário)."""
         return await self.repo.publish(payslip_id, published_by=published_by)
 
@@ -182,7 +181,7 @@ class PaySlipService:
         year: int,
         month: int,
         *,
-        published_by: Optional[UUID] = None,
+        published_by: UUID | None = None,
     ) -> int:
         """Publica contracheques em lote."""
         payslips, _ = await self.repo.list_by_condominio(
@@ -204,8 +203,8 @@ class PaySlipService:
 
     def calculate_totals(
         self,
-        earnings: List[PaySlipEarningItem],
-        deductions: List[PaySlipDeductionItem],
+        earnings: list[PaySlipEarningItem],
+        deductions: list[PaySlipDeductionItem],
     ) -> dict:
         """Calcula totais do contracheque."""
         total_earnings = sum(e.value for e in earnings)

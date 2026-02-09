@@ -3,29 +3,38 @@ Tests for Services Module - Service Layer
 Sprint 31: Gestão de Serviços
 """
 
-import pytest
-from datetime import datetime, date, timedelta
+from datetime import date, datetime, timedelta
 from decimal import Decimal
-from uuid import uuid4
 from unittest.mock import MagicMock, patch
+from uuid import uuid4
+
+import pytest
 
 from modules.services.models import (
-    ServiceCatalog, ServiceOrder, ServiceExecution,
-    ServiceReport, SLAConfig,
-    ServiceCategory, ServiceType, ServiceStatus,
-    OrderStatus, OrderPriority, ExecutionStatus,
-    ReportType, SLAMetricType
-)
-from modules.services.services import (
-    ServiceManagementService, ServiceAIService
+    ExecutionStatus,
+    OrderPriority,
+    OrderStatus,
+    ReportType,
+    ServiceCatalog,
+    ServiceCategory,
+    ServiceExecution,
+    ServiceOrder,
+    ServiceReport,
+    ServiceStatus,
+    ServiceType,
+    SLAConfig,
+    SLAMetricType,
 )
 from modules.services.schemas import (
-    ServiceCatalogCreate, ServiceCatalogUpdate,
-    ServiceOrderCreate, ServiceOrderUpdate,
+    ServiceCatalogCreate,
+    ServiceCatalogUpdate,
     ServiceExecutionCreate,
+    ServiceOrderCreate,
+    ServiceOrderUpdate,
     ServiceReportCreate,
-    SLAConfigCreate
+    SLAConfigCreate,
 )
+from modules.services.services import ServiceAIService, ServiceManagementService
 
 
 @pytest.fixture
@@ -49,7 +58,7 @@ def mock_service_catalog():
         status=ServiceStatus.ATIVO,
         base_price=Decimal("500.00"),
         is_available=True,
-        requires_approval=False
+        requires_approval=False,
     )
 
 
@@ -63,7 +72,7 @@ def mock_service_order():
         client_id=uuid4(),
         title="Manutenção de Ar Condicionado",
         status=OrderStatus.RASCUNHO,
-        priority=OrderPriority.NORMAL
+        priority=OrderPriority.NORMAL,
     )
 
 
@@ -79,7 +88,7 @@ def mock_sla_config():
         is_default=True,
         total_orders=10,
         orders_within_sla=9,
-        orders_breached=1
+        orders_breached=1,
     )
 
 
@@ -88,10 +97,7 @@ class TestServiceManagementService:
 
     def test_create_service(self, mock_db, mock_service_catalog):
         """Test creating a service."""
-        with patch(
-            'modules.services.services.service_management_service.'
-            'ServiceRepository'
-        ) as mock_repo_class:
+        with patch("modules.services.services.service_management_service.ServiceRepository") as mock_repo_class:
             repo = MagicMock()
             repo.create_service_catalog.return_value = mock_service_catalog
             mock_repo_class.return_value = repo
@@ -103,7 +109,7 @@ class TestServiceManagementService:
                 name="Manutenção Predial",
                 category=ServiceCategory.MANUTENCAO_PREDIAL,
                 service_type=ServiceType.PREVENTIVO,
-                base_price=Decimal("500.00")
+                base_price=Decimal("500.00"),
             )
 
             result = svc.create_service(data, uuid4())
@@ -113,10 +119,7 @@ class TestServiceManagementService:
 
     def test_update_service(self, mock_db, mock_service_catalog):
         """Test updating a service."""
-        with patch(
-            'modules.services.services.service_management_service.'
-            'ServiceRepository'
-        ) as mock_repo_class:
+        with patch("modules.services.services.service_management_service.ServiceRepository") as mock_repo_class:
             repo = MagicMock()
             repo.get_service_catalog_by_id.return_value = mock_service_catalog
             mock_service_catalog.name = "Manutenção Predial Atualizado"
@@ -133,10 +136,7 @@ class TestServiceManagementService:
 
     def test_activate_service(self, mock_db, mock_service_catalog):
         """Test activating a service."""
-        with patch(
-            'modules.services.services.service_management_service.'
-            'ServiceRepository'
-        ) as mock_repo_class:
+        with patch("modules.services.services.service_management_service.ServiceRepository") as mock_repo_class:
             repo = MagicMock()
             mock_service_catalog.status = ServiceStatus.INATIVO
             repo.get_service_catalog_by_id.return_value = mock_service_catalog
@@ -151,10 +151,7 @@ class TestServiceManagementService:
 
     def test_deactivate_service(self, mock_db, mock_service_catalog):
         """Test deactivating a service."""
-        with patch(
-            'modules.services.services.service_management_service.'
-            'ServiceRepository'
-        ) as mock_repo_class:
+        with patch("modules.services.services.service_management_service.ServiceRepository") as mock_repo_class:
             repo = MagicMock()
             repo.get_service_catalog_by_id.return_value = mock_service_catalog
             mock_repo_class.return_value = repo
@@ -168,10 +165,7 @@ class TestServiceManagementService:
 
     def test_calculate_service_price(self, mock_db, mock_service_catalog):
         """Test calculating service price."""
-        with patch(
-            'modules.services.services.service_management_service.'
-            'ServiceRepository'
-        ) as mock_repo_class:
+        with patch("modules.services.services.service_management_service.ServiceRepository") as mock_repo_class:
             repo = MagicMock()
             repo.get_service_catalog_by_id.return_value = mock_service_catalog
             mock_repo_class.return_value = repo
@@ -179,18 +173,13 @@ class TestServiceManagementService:
             svc = ServiceManagementService(mock_db)
             svc.repository = repo
 
-            result = svc.calculate_service_price(
-                mock_service_catalog.id, 1.0, False
-            )
+            result = svc.calculate_service_price(mock_service_catalog.id, 1.0, False)
 
             assert result == Decimal("500.00")
 
     def test_create_order(self, mock_db, mock_service_catalog, mock_service_order):
         """Test creating an order."""
-        with patch(
-            'modules.services.services.service_management_service.'
-            'ServiceRepository'
-        ) as mock_repo_class:
+        with patch("modules.services.services.service_management_service.ServiceRepository") as mock_repo_class:
             repo = MagicMock()
             repo.get_service_catalog_by_id.return_value = mock_service_catalog
             repo.create_service_order.return_value = mock_service_order
@@ -200,9 +189,7 @@ class TestServiceManagementService:
             svc.repository = repo
 
             data = ServiceOrderCreate(
-                service_id=mock_service_catalog.id,
-                client_id=uuid4(),
-                title="Manutenção de Ar Condicionado"
+                service_id=mock_service_catalog.id, client_id=uuid4(), title="Manutenção de Ar Condicionado"
             )
 
             result = svc.create_order(data, uuid4())
@@ -212,10 +199,7 @@ class TestServiceManagementService:
 
     def test_create_order_service_unavailable(self, mock_db, mock_service_catalog):
         """Test creating order with unavailable service."""
-        with patch(
-            'modules.services.services.service_management_service.'
-            'ServiceRepository'
-        ) as mock_repo_class:
+        with patch("modules.services.services.service_management_service.ServiceRepository") as mock_repo_class:
             repo = MagicMock()
             mock_service_catalog.is_available = False
             repo.get_service_catalog_by_id.return_value = mock_service_catalog
@@ -224,21 +208,14 @@ class TestServiceManagementService:
             svc = ServiceManagementService(mock_db)
             svc.repository = repo
 
-            data = ServiceOrderCreate(
-                service_id=mock_service_catalog.id,
-                client_id=uuid4(),
-                title="Teste"
-            )
+            data = ServiceOrderCreate(service_id=mock_service_catalog.id, client_id=uuid4(), title="Teste")
 
             with pytest.raises(ValueError, match="indisponível"):
                 svc.create_order(data)
 
     def test_approve_order(self, mock_db, mock_service_order):
         """Test approving an order."""
-        with patch(
-            'modules.services.services.service_management_service.'
-            'ServiceRepository'
-        ) as mock_repo_class:
+        with patch("modules.services.services.service_management_service.ServiceRepository") as mock_repo_class:
             repo = MagicMock()
             mock_service_order.status = OrderStatus.PENDENTE
             repo.get_service_order_by_id.return_value = mock_service_order
@@ -253,10 +230,7 @@ class TestServiceManagementService:
 
     def test_schedule_order(self, mock_db, mock_service_order):
         """Test scheduling an order."""
-        with patch(
-            'modules.services.services.service_management_service.'
-            'ServiceRepository'
-        ) as mock_repo_class:
+        with patch("modules.services.services.service_management_service.ServiceRepository") as mock_repo_class:
             repo = MagicMock()
             mock_service_order.status = OrderStatus.APROVADA
             repo.get_service_order_by_id.return_value = mock_service_order
@@ -266,24 +240,14 @@ class TestServiceManagementService:
             svc.repository = repo
 
             schedule_date = date.today() + timedelta(days=3)
-            result = svc.schedule_order(
-                mock_service_order.id,
-                schedule_date,
-                "09:00",
-                "12:00"
-            )
+            result = svc.schedule_order(mock_service_order.id, schedule_date, "09:00", "12:00")
 
             assert result.status == OrderStatus.AGENDADA
             assert result.scheduled_date == schedule_date
 
-    def test_complete_order(
-        self, mock_db, mock_service_order, mock_service_catalog, mock_sla_config
-    ):
+    def test_complete_order(self, mock_db, mock_service_order, mock_service_catalog, mock_sla_config):
         """Test completing an order."""
-        with patch(
-            'modules.services.services.service_management_service.'
-            'ServiceRepository'
-        ) as mock_repo_class:
+        with patch("modules.services.services.service_management_service.ServiceRepository") as mock_repo_class:
             repo = MagicMock()
             mock_service_order.status = OrderStatus.EM_ANDAMENTO
             mock_service_order.started_at = datetime.utcnow() - timedelta(hours=2)
@@ -296,20 +260,13 @@ class TestServiceManagementService:
             svc = ServiceManagementService(mock_db)
             svc.repository = repo
 
-            result = svc.complete_order(
-                mock_service_order.id,
-                Decimal("500.00"),
-                "Serviço concluído com sucesso"
-            )
+            result = svc.complete_order(mock_service_order.id, Decimal("500.00"), "Serviço concluído com sucesso")
 
             assert result.status == OrderStatus.CONCLUIDA
 
     def test_cancel_order(self, mock_db, mock_service_order):
         """Test canceling an order."""
-        with patch(
-            'modules.services.services.service_management_service.'
-            'ServiceRepository'
-        ) as mock_repo_class:
+        with patch("modules.services.services.service_management_service.ServiceRepository") as mock_repo_class:
             repo = MagicMock()
             mock_service_order.status = OrderStatus.AGENDADA
             repo.get_service_order_by_id.return_value = mock_service_order
@@ -318,19 +275,13 @@ class TestServiceManagementService:
             svc = ServiceManagementService(mock_db)
             svc.repository = repo
 
-            result = svc.cancel_order(
-                mock_service_order.id,
-                "Cliente solicitou cancelamento"
-            )
+            result = svc.cancel_order(mock_service_order.id, "Cliente solicitou cancelamento")
 
             assert result.status == OrderStatus.CANCELADA
 
     def test_rate_order(self, mock_db, mock_service_order, mock_service_catalog):
         """Test rating an order."""
-        with patch(
-            'modules.services.services.service_management_service.'
-            'ServiceRepository'
-        ) as mock_repo_class:
+        with patch("modules.services.services.service_management_service.ServiceRepository") as mock_repo_class:
             repo = MagicMock()
             mock_service_order.status = OrderStatus.CONCLUIDA
             repo.get_service_order_by_id.return_value = mock_service_order
@@ -340,23 +291,16 @@ class TestServiceManagementService:
             svc = ServiceManagementService(mock_db)
             svc.repository = repo
 
-            result = svc.rate_order(
-                mock_service_order.id, 5, "Excelente serviço!"
-            )
+            result = svc.rate_order(mock_service_order.id, 5, "Excelente serviço!")
 
             assert result.rating == 5
 
     def test_get_overdue_orders(self, mock_db, mock_service_order):
         """Test getting overdue orders."""
-        with patch(
-            'modules.services.services.service_management_service.'
-            'ServiceRepository'
-        ) as mock_repo_class:
+        with patch("modules.services.services.service_management_service.ServiceRepository") as mock_repo_class:
             repo = MagicMock()
             mock_service_order.status = OrderStatus.EM_ANDAMENTO
-            mock_service_order.sla_resolution_deadline = (
-                datetime.utcnow() - timedelta(hours=1)
-            )
+            mock_service_order.sla_resolution_deadline = datetime.utcnow() - timedelta(hours=1)
             repo.list_service_orders.return_value = [mock_service_order]
             mock_repo_class.return_value = repo
 
@@ -369,10 +313,7 @@ class TestServiceManagementService:
 
     def test_create_sla_config(self, mock_db, mock_sla_config):
         """Test creating SLA config."""
-        with patch(
-            'modules.services.services.service_management_service.'
-            'ServiceRepository'
-        ) as mock_repo_class:
+        with patch("modules.services.services.service_management_service.ServiceRepository") as mock_repo_class:
             repo = MagicMock()
             repo.create_sla_config.return_value = mock_sla_config
             mock_repo_class.return_value = repo
@@ -381,9 +322,7 @@ class TestServiceManagementService:
             svc.repository = repo
 
             data = SLAConfigCreate(
-                name="SLA Padrão",
-                metric_type=SLAMetricType.TEMPO_RESOLUCAO,
-                resolution_time_minutes=480
+                name="SLA Padrão", metric_type=SLAMetricType.TEMPO_RESOLUCAO, resolution_time_minutes=480
             )
 
             result = svc.create_sla_config(data, uuid4())
@@ -392,10 +331,7 @@ class TestServiceManagementService:
 
     def test_get_sla_compliance_report(self, mock_db, mock_sla_config):
         """Test getting SLA compliance report."""
-        with patch(
-            'modules.services.services.service_management_service.'
-            'ServiceRepository'
-        ) as mock_repo_class:
+        with patch("modules.services.services.service_management_service.ServiceRepository") as mock_repo_class:
             repo = MagicMock()
             repo.get_sla_config_by_id.return_value = mock_sla_config
             mock_repo_class.return_value = repo
@@ -414,9 +350,7 @@ class TestServiceAIService:
 
     def test_analyze_service(self, mock_db, mock_service_catalog, mock_service_order):
         """Test analyzing a service."""
-        with patch(
-            'modules.services.services.service_ai_service.ServiceRepository'
-        ) as mock_repo_class:
+        with patch("modules.services.services.service_ai_service.ServiceRepository") as mock_repo_class:
             repo = MagicMock()
             repo.get_service_catalog_by_id.return_value = mock_service_catalog
             mock_service_order.status = OrderStatus.CONCLUIDA
@@ -436,9 +370,7 @@ class TestServiceAIService:
 
     def test_analyze_all_services(self, mock_db, mock_service_catalog):
         """Test analyzing all services."""
-        with patch(
-            'modules.services.services.service_ai_service.ServiceRepository'
-        ) as mock_repo_class:
+        with patch("modules.services.services.service_ai_service.ServiceRepository") as mock_repo_class:
             repo = MagicMock()
             repo.list_service_catalogs.return_value = [mock_service_catalog]
             repo.get_service_catalog_by_id.return_value = mock_service_catalog
@@ -454,9 +386,7 @@ class TestServiceAIService:
 
     def test_get_service_recommendations(self, mock_db, mock_service_catalog):
         """Test getting service recommendations."""
-        with patch(
-            'modules.services.services.service_ai_service.ServiceRepository'
-        ) as mock_repo_class:
+        with patch("modules.services.services.service_ai_service.ServiceRepository") as mock_repo_class:
             repo = MagicMock()
             repo.list_service_catalogs.return_value = [mock_service_catalog]
             repo.list_service_orders.return_value = []
@@ -471,9 +401,7 @@ class TestServiceAIService:
 
     def test_predict_service_demand(self, mock_db, mock_service_catalog, mock_service_order):
         """Test predicting service demand."""
-        with patch(
-            'modules.services.services.service_ai_service.ServiceRepository'
-        ) as mock_repo_class:
+        with patch("modules.services.services.service_ai_service.ServiceRepository") as mock_repo_class:
             repo = MagicMock()
             repo.get_service_catalog_by_id.return_value = mock_service_catalog
             repo.list_service_orders.return_value = [mock_service_order]
@@ -489,9 +417,7 @@ class TestServiceAIService:
 
     def test_analyze_sla(self, mock_db, mock_sla_config):
         """Test analyzing SLA."""
-        with patch(
-            'modules.services.services.service_ai_service.ServiceRepository'
-        ) as mock_repo_class:
+        with patch("modules.services.services.service_ai_service.ServiceRepository") as mock_repo_class:
             repo = MagicMock()
             repo.get_sla_config_by_id.return_value = mock_sla_config
             repo.list_service_orders.return_value = []
@@ -507,9 +433,7 @@ class TestServiceAIService:
 
     def test_get_sla_dashboard(self, mock_db, mock_sla_config):
         """Test getting SLA dashboard."""
-        with patch(
-            'modules.services.services.service_ai_service.ServiceRepository'
-        ) as mock_repo_class:
+        with patch("modules.services.services.service_ai_service.ServiceRepository") as mock_repo_class:
             repo = MagicMock()
             repo.list_sla_configs.return_value = [mock_sla_config]
             mock_repo_class.return_value = repo
@@ -524,9 +448,7 @@ class TestServiceAIService:
 
     def test_analyze_order_patterns(self, mock_db, mock_service_order):
         """Test analyzing order patterns."""
-        with patch(
-            'modules.services.services.service_ai_service.ServiceRepository'
-        ) as mock_repo_class:
+        with patch("modules.services.services.service_ai_service.ServiceRepository") as mock_repo_class:
             repo = MagicMock()
             repo.list_service_orders.return_value = [mock_service_order]
             repo.get_service_catalog_by_id.return_value = None
@@ -543,9 +465,7 @@ class TestServiceAIService:
 
     def test_identify_bottlenecks(self, mock_db, mock_service_order, mock_sla_config):
         """Test identifying bottlenecks."""
-        with patch(
-            'modules.services.services.service_ai_service.ServiceRepository'
-        ) as mock_repo_class:
+        with patch("modules.services.services.service_ai_service.ServiceRepository") as mock_repo_class:
             repo = MagicMock()
             # Many pending orders = bottleneck
             pending_orders = [mock_service_order] * 30
@@ -562,13 +482,9 @@ class TestServiceAIService:
 
             assert len(result) >= 0
 
-    def test_get_executive_dashboard(
-        self, mock_db, mock_service_catalog, mock_service_order, mock_sla_config
-    ):
+    def test_get_executive_dashboard(self, mock_db, mock_service_catalog, mock_service_order, mock_sla_config):
         """Test getting executive dashboard."""
-        with patch(
-            'modules.services.services.service_ai_service.ServiceRepository'
-        ) as mock_repo_class:
+        with patch("modules.services.services.service_ai_service.ServiceRepository") as mock_repo_class:
             repo = MagicMock()
             repo.list_service_catalogs.return_value = [mock_service_catalog]
             repo.list_service_orders.return_value = [mock_service_order]
@@ -580,29 +496,23 @@ class TestServiceAIService:
             svc.repository = repo
 
             # Mock the stats methods
-            with patch.object(svc, 'get_service_catalog_stats') as mock_cat:
-                with patch.object(svc, 'get_order_stats') as mock_order:
-                    with patch.object(svc, 'get_sla_dashboard') as mock_sla:
-                        with patch.object(svc, 'identify_bottlenecks') as mock_bn:
-                            from modules.services.schemas import (
-                                ServiceCatalogStats, ServiceOrderStats
-                            )
-                            mock_cat.return_value = ServiceCatalogStats(
-                                total_services=100,
-                                active_services=80,
-                                total_revenue=Decimal("50000.00")
-                            )
-                            mock_order.return_value = ServiceOrderStats(
-                                total_orders=500,
-                                overdue_count=5
-                            )
-                            mock_sla.return_value = {
-                                "summary": {"average_compliance": 95.0}
-                            }
-                            mock_bn.return_value = []
+            with (
+                patch.object(svc, "get_service_catalog_stats") as mock_cat,
+                patch.object(svc, "get_order_stats") as mock_order,
+                patch.object(svc, "get_sla_dashboard") as mock_sla,
+                patch.object(svc, "identify_bottlenecks") as mock_bn,
+            ):
+                from modules.services.schemas import ServiceCatalogStats, ServiceOrderStats
 
-                            result = svc.get_executive_dashboard()
+                mock_cat.return_value = ServiceCatalogStats(
+                    total_services=100, active_services=80, total_revenue=Decimal("50000.00")
+                )
+                mock_order.return_value = ServiceOrderStats(total_orders=500, overdue_count=5)
+                mock_sla.return_value = {"summary": {"average_compliance": 95.0}}
+                mock_bn.return_value = []
 
-                            assert "services" in result
-                            assert "orders" in result
-                            assert "sla" in result
+                result = svc.get_executive_dashboard()
+
+                assert "services" in result
+                assert "orders" in result
+                assert "sla" in result

@@ -3,33 +3,32 @@ Controller para Ordem de Servico.
 """
 
 from datetime import date
-from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
-from modules.campo.services.ordem_servico_service import OrdemServicoService
+from modules.campo.models.ordem_servico import OrigemOS, PrioridadeOS, StatusOS, TipoOS
 from modules.campo.schemas.ordem_servico import (
     OrdemServicoCreate,
-    OrdemServicoUpdate,
-    OrdemServicoRead,
     OrdemServicoListItem,
+    OrdemServicoRead,
+    OrdemServicoUpdate,
     OSAgendarRequest,
+    OSAssinaturaRequest,
+    OSAvaliacaoRequest,
+    OSCancelarRequest,
     OSCheckinRequest,
     OSCheckoutRequest,
     OSConcluirRequest,
-    OSCancelarRequest,
-    OSReagendarRequest,
-    OSAvaliacaoRequest,
-    OSAssinaturaRequest,
-    OSFotoRequest,
-    OSFiltro,
-    OSPaginatedResponse,
     OSDashboardStats,
+    OSFiltro,
+    OSFotoRequest,
+    OSPaginatedResponse,
+    OSReagendarRequest,
 )
-from modules.campo.models.ordem_servico import TipoOS, StatusOS, PrioridadeOS, OrigemOS
+from modules.campo.services.ordem_servico_service import OrdemServicoService
 
 router = APIRouter()
 
@@ -43,6 +42,7 @@ def get_service(db: AsyncSession = Depends(get_db)) -> OrdemServicoService:
 # CRUD
 # =============================================================================
 
+
 @router.post("/", response_model=OrdemServicoRead, status_code=status.HTTP_201_CREATED)
 async def criar_os(
     data: OrdemServicoCreate,
@@ -55,18 +55,18 @@ async def criar_os(
 
 @router.get("/", response_model=OSPaginatedResponse)
 async def listar_os(
-    tipo: Optional[TipoOS] = None,
-    status_os: Optional[StatusOS] = Query(None, alias="status"),
-    prioridade: Optional[PrioridadeOS] = None,
-    origem: Optional[OrigemOS] = None,
-    cliente_id: Optional[UUID] = None,
-    tecnico_id: Optional[UUID] = None,
-    data_inicio: Optional[date] = None,
-    data_fim: Optional[date] = None,
-    cidade: Optional[str] = None,
-    estado: Optional[str] = None,
-    sla_vencido: Optional[bool] = None,
-    busca: Optional[str] = None,
+    tipo: TipoOS | None = None,
+    status_os: StatusOS | None = Query(None, alias="status"),
+    prioridade: PrioridadeOS | None = None,
+    origem: OrigemOS | None = None,
+    cliente_id: UUID | None = None,
+    tecnico_id: UUID | None = None,
+    data_inicio: date | None = None,
+    data_fim: date | None = None,
+    cidade: str | None = None,
+    estado: str | None = None,
+    sla_vencido: bool | None = None,
+    busca: str | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
     service: OrdemServicoService = Depends(get_service),
@@ -101,7 +101,7 @@ async def listar_os_atrasadas(
 @router.get("/tecnico/{tecnico_id}", response_model=list[OrdemServicoListItem])
 async def listar_os_tecnico(
     tecnico_id: UUID,
-    data: Optional[date] = None,
+    data: date | None = None,
     apenas_abertas: bool = False,
     service: OrdemServicoService = Depends(get_service),
 ):
@@ -122,8 +122,8 @@ async def listar_os_cliente(
 
 @router.get("/dashboard", response_model=OSDashboardStats)
 async def obter_dashboard(
-    cliente_id: Optional[UUID] = None,
-    tecnico_id: Optional[UUID] = None,
+    cliente_id: UUID | None = None,
+    tecnico_id: UUID | None = None,
     periodo_dias: int = Query(30, ge=1, le=365),
     service: OrdemServicoService = Depends(get_service),
 ):
@@ -182,6 +182,7 @@ async def excluir_os(
 # =============================================================================
 # ACOES DO FLUXO
 # =============================================================================
+
 
 @router.post("/{os_id}/agendar", response_model=OrdemServicoRead)
 async def agendar_os(
@@ -255,7 +256,7 @@ async def fazer_checkout(
 @router.post("/{os_id}/pausar", response_model=OrdemServicoRead)
 async def pausar_os(
     os_id: UUID,
-    motivo: Optional[str] = None,
+    motivo: str | None = None,
     service: OrdemServicoService = Depends(get_service),
 ):
     """Pausa uma OS em andamento."""
@@ -336,6 +337,7 @@ async def reagendar_os(
 # =============================================================================
 # AVALIACAO E ASSINATURA
 # =============================================================================
+
 
 @router.post("/{os_id}/avaliacao", response_model=OrdemServicoRead)
 async def registrar_avaliacao(

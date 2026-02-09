@@ -167,9 +167,7 @@ class TestCashFlowBankingServiceBasic:
             account="56789-0",
         )
 
-    def test_service_creation(
-        self, mock_session: MagicMock, mock_banking_service: MagicMock
-    ) -> None:
+    def test_service_creation(self, mock_session: MagicMock, mock_banking_service: MagicMock) -> None:
         """Testa criacao do servico."""
         service = CashFlowBankingService(
             session=mock_session,
@@ -358,9 +356,7 @@ class TestCashFlowBankingServiceAlerts:
         mock.get_balance = AsyncMock()
         return mock
 
-    def test_generate_alerts_low_balance(
-        self, mock_session: MagicMock, mock_banking_service: MagicMock
-    ) -> None:
+    def test_generate_alerts_low_balance(self, mock_session: MagicMock, mock_banking_service: MagicMock) -> None:
         """Testa alerta de saldo baixo."""
         service = CashFlowBankingService(
             session=mock_session,
@@ -381,9 +377,7 @@ class TestCashFlowBankingServiceAlerts:
         assert alerts[0]["type"] == "LOW_BALANCE"
         assert alerts[0]["severity"] == "warning"
 
-    def test_generate_alerts_critical_balance(
-        self, mock_session: MagicMock, mock_banking_service: MagicMock
-    ) -> None:
+    def test_generate_alerts_critical_balance(self, mock_session: MagicMock, mock_banking_service: MagicMock) -> None:
         """Testa alerta de saldo critico."""
         service = CashFlowBankingService(
             session=mock_session,
@@ -404,9 +398,7 @@ class TestCashFlowBankingServiceAlerts:
         assert alerts[0]["type"] == "CRITICAL_BALANCE"
         assert alerts[0]["severity"] == "critical"
 
-    def test_generate_alerts_projected_low(
-        self, mock_session: MagicMock, mock_banking_service: MagicMock
-    ) -> None:
+    def test_generate_alerts_projected_low(self, mock_session: MagicMock, mock_banking_service: MagicMock) -> None:
         """Testa alerta de saldo projetado baixo."""
         service = CashFlowBankingService(
             session=mock_session,
@@ -431,9 +423,7 @@ class TestCashFlowBankingServiceAlerts:
         assert len(alerts) == 1
         assert alerts[0]["type"] == "PROJECTED_LOW"
 
-    def test_generate_alerts_connection_error(
-        self, mock_session: MagicMock, mock_banking_service: MagicMock
-    ) -> None:
+    def test_generate_alerts_connection_error(self, mock_session: MagicMock, mock_banking_service: MagicMock) -> None:
         """Testa alerta de erro de conexao."""
         service = CashFlowBankingService(
             session=mock_session,
@@ -508,9 +498,7 @@ class TestCashFlowBankingServiceProjection:
             ),
         ]
 
-        with patch.object(
-            service.cashflow_service, "get_projection", new_callable=AsyncMock
-        ) as mock_cf:
+        with patch.object(service.cashflow_service, "get_projection", new_callable=AsyncMock) as mock_cf:
             mock_cf.return_value = mock_projections
 
             result = await service.get_projection_with_balance(
@@ -556,9 +544,7 @@ class TestCashFlowBankingServiceInvestment:
             banking_service=mock_banking_service,
         )
 
-        with patch.object(
-            service.cashflow_service, "get_projection", new_callable=AsyncMock
-        ) as mock_cf:
+        with patch.object(service.cashflow_service, "get_projection", new_callable=AsyncMock) as mock_cf:
             mock_cf.return_value = []
 
             suggestions = await service.get_investment_suggestions(
@@ -606,9 +592,7 @@ class TestCashFlowBankingServiceInvestment:
             )
             projections.append(proj)
 
-        with patch.object(
-            service.cashflow_service, "get_projection", new_callable=AsyncMock
-        ) as mock_cf:
+        with patch.object(service.cashflow_service, "get_projection", new_callable=AsyncMock) as mock_cf:
             mock_cf.return_value = projections
 
             suggestions = await service.get_investment_suggestions(
@@ -654,21 +638,11 @@ class TestCashFlowBankingServiceDashboard:
         )
 
         with (
-            patch.object(
-                service.cashflow_service, "get_projection", new_callable=AsyncMock
-            ) as mock_proj,
-            patch.object(
-                service.cashflow_service, "get_summary", new_callable=AsyncMock
-            ) as mock_sum,
-            patch.object(
-                service.cashflow_service, "get_category_breakdown", new_callable=AsyncMock
-            ) as mock_cat,
-            patch.object(
-                service.cashflow_service, "get_supplier_breakdown", new_callable=AsyncMock
-            ) as mock_sup,
-            patch.object(
-                service.cashflow_service, "get_monthly_trend", new_callable=AsyncMock
-            ) as mock_trend,
+            patch.object(service.cashflow_service, "get_projection", new_callable=AsyncMock) as mock_proj,
+            patch.object(service.cashflow_service, "get_summary", new_callable=AsyncMock) as mock_sum,
+            patch.object(service.cashflow_service, "get_category_breakdown", new_callable=AsyncMock) as mock_cat,
+            patch.object(service.cashflow_service, "get_supplier_breakdown", new_callable=AsyncMock) as mock_sup,
+            patch.object(service.cashflow_service, "get_monthly_trend", new_callable=AsyncMock) as mock_trend,
         ):
             mock_proj.return_value = []
             mock_sum.return_value = {"period_days": 30}

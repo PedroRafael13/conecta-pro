@@ -11,8 +11,8 @@ import os
 import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple
+from enum import StrEnum
+from typing import Any
 
 from PIL import Image
 
@@ -30,7 +30,7 @@ from ..models.ocr_result import (
 logger = logging.getLogger(__name__)
 
 
-class OCRLanguage(str, Enum):
+class OCRLanguage(StrEnum):
     """Idiomas suportados para OCR."""
 
     PORTUGUESE = "por"
@@ -49,10 +49,10 @@ class OCRConfig:
     primary_provider: OCRProvider = OCRProvider.TESSERACT
 
     # Fallback providers
-    fallback_providers: List[OCRProvider] = field(default_factory=list)
+    fallback_providers: list[OCRProvider] = field(default_factory=list)
 
     # Idiomas
-    languages: List[str] = field(default_factory=lambda: ["por", "eng"])
+    languages: list[str] = field(default_factory=lambda: ["por", "eng"])
 
     # Qualidade
     min_confidence: float = 0.6
@@ -65,14 +65,14 @@ class OCRConfig:
     enable_gpu: bool = False
 
     # Tesseract
-    tesseract_path: Optional[str] = None
+    tesseract_path: str | None = None
     tesseract_config: str = "--oem 3 --psm 3"
 
     # Cloud providers
-    google_credentials_path: Optional[str] = None
+    google_credentials_path: str | None = None
     aws_region: str = "us-east-1"
-    azure_endpoint: Optional[str] = None
-    azure_key: Optional[str] = None
+    azure_endpoint: str | None = None
+    azure_key: str | None = None
 
     # Pos-processamento
     merge_lines: bool = True
@@ -84,9 +84,7 @@ class BaseOCRProvider(ABC):
     """Interface base para providers de OCR."""
 
     @abstractmethod
-    async def process(
-        self, image_path: str, languages: List[str]
-    ) -> OCRResult:
+    async def process(self, image_path: str, languages: list[str]) -> OCRResult:
         """Processa imagem e retorna resultado OCR."""
         pass
 
@@ -109,9 +107,7 @@ class TesseractProvider(BaseOCRProvider):
 
         return shutil.which(self._tesseract_cmd) is not None
 
-    async def process(
-        self, image_path: str, languages: List[str]
-    ) -> OCRResult:
+    async def process(self, image_path: str, languages: list[str]) -> OCRResult:
         """Processa imagem com Tesseract."""
         try:
             import pytesseract
@@ -131,7 +127,7 @@ class TesseractProvider(BaseOCRProvider):
                     if osd.get("rotate"):
                         image = image.rotate(-osd["rotate"], expand=True)
                 except Exception:
-                    pass
+                    logger.debug("Erro ao detectar orientacao da imagem")
 
             # Configurar idiomas
             lang_str = "+".join(languages)
@@ -148,9 +144,7 @@ class TesseractProvider(BaseOCRProvider):
             pages = self._build_pages(data, image.width, image.height)
 
             # Texto completo
-            full_text = pytesseract.image_to_string(
-                image, lang=lang_str, config=self.config.tesseract_config
-            )
+            full_text = pytesseract.image_to_string(image, lang=lang_str, config=self.config.tesseract_config)
 
             # Calcular confianca media
             confidences = [c for c in data["conf"] if c > 0]
@@ -171,13 +165,11 @@ class TesseractProvider(BaseOCRProvider):
             logger.error(f"Erro Tesseract: {e}")
             raise
 
-    def _build_pages(
-        self, data: Dict, width: int, height: int
-    ) -> List[OCRPage]:
+    def _build_pages(self, data: dict, width: int, height: int) -> list[OCRPage]:
         """Constroi paginas a partir dos dados Tesseract."""
-        pages: Dict[int, OCRPage] = {}
-        blocks: Dict[Tuple[int, int], OCRBlock] = {}
-        lines: Dict[Tuple[int, int, int], OCRLine] = {}
+        pages: dict[int, OCRPage] = {}
+        blocks: dict[tuple[int, int], OCRBlock] = {}
+        lines: dict[tuple[int, int, int], OCRLine] = {}
 
         for i in range(len(data["text"])):
             text = data["text"][i].strip()
@@ -230,29 +222,19 @@ class TesseractProvider(BaseOCRProvider):
         for line_key, line in lines.items():
             page_num, block_num, _ = line_key
             line.text = " ".join(w.text for w in line.words)
-            line.confidence = (
-                sum(w.confidence for w in line.words) / len(line.words)
-                if line.words
-                else 0
-            )
+            line.confidence = sum(w.confidence for w in line.words) / len(line.words) if line.words else 0
             blocks[(page_num, block_num)].lines.append(line)
 
         for block_key, block in blocks.items():
             page_num, _ = block_key
             block.text = "\n".join(line.text for line in block.lines)
-            block.confidence = (
-                sum(line.confidence for line in block.lines) / len(block.lines)
-                if block.lines
-                else 0
-            )
+            block.confidence = sum(line.confidence for line in block.lines) / len(block.lines) if block.lines else 0
             pages[page_num].blocks.append(block)
 
         # Calcular confianca das paginas
         for page in pages.values():
             if page.blocks:
-                page.confidence = sum(b.confidence for b in page.blocks) / len(
-                    page.blocks
-                )
+                page.confidence = sum(b.confidence for b in page.blocks) / len(page.blocks)
 
         return list(pages.values())
 
@@ -267,13 +249,13 @@ class EasyOCRProvider(BaseOCRProvider):
     def is_available(self) -> bool:
         """Verifica se EasyOCR esta disponivel."""
         try:
-            import easyocr
+            import easyocr  # noqa: F401
 
             return True
         except ImportError:
             return False
 
-    def _get_reader(self, languages: List[str]):
+    def _get_reader(self, languages: list[str]):
         """Obtem reader EasyOCR."""
         import easyocr
 
@@ -286,13 +268,11 @@ class EasyOCRProvider(BaseOCRProvider):
             "deu": "de",
             "ita": "it",
         }
-        langs = [lang_map.get(l, l) for l in languages]
+        langs = [lang_map.get(lang, lang) for lang in languages]
 
         return easyocr.Reader(langs, gpu=self.config.enable_gpu)
 
-    async def process(
-        self, image_path: str, languages: List[str]
-    ) -> OCRResult:
+    async def process(self, image_path: str, languages: list[str]) -> OCRResult:
         """Processa imagem com EasyOCR."""
         try:
             start_time = time.time()
@@ -347,16 +327,12 @@ class EasyOCRProvider(BaseOCRProvider):
                 current_block.lines.append(current_line)
 
             if current_block.lines:
-                current_block.text = "\n".join(l.text for l in current_block.lines)
+                current_block.text = "\n".join(line.text for line in current_block.lines)
                 page.blocks.append(current_block)
 
             # Calcular metricas
-            all_words = [w for b in page.blocks for l in b.lines for w in l.words]
-            avg_confidence = (
-                sum(w.confidence for w in all_words) / len(all_words)
-                if all_words
-                else 0
-            )
+            all_words = [w for b in page.blocks for line in b.lines for w in line.words]
+            avg_confidence = sum(w.confidence for w in all_words) / len(all_words) if all_words else 0
 
             full_text = "\n".join(b.text for b in page.blocks)
             processing_time = int((time.time() - start_time) * 1000)
@@ -387,9 +363,7 @@ class GoogleVisionProvider(BaseOCRProvider):
             return os.path.exists(self.config.google_credentials_path)
         return os.environ.get("GOOGLE_APPLICATION_CREDENTIALS") is not None
 
-    async def process(
-        self, image_path: str, languages: List[str]
-    ) -> OCRResult:
+    async def process(self, image_path: str, languages: list[str]) -> OCRResult:
         """Processa imagem com Google Vision."""
         try:
             from google.cloud import vision
@@ -397,9 +371,7 @@ class GoogleVisionProvider(BaseOCRProvider):
             start_time = time.time()
 
             if self.config.google_credentials_path:
-                os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = (
-                    self.config.google_credentials_path
-                )
+                os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = self.config.google_credentials_path
 
             client = vision.ImageAnnotatorClient()
 
@@ -421,9 +393,7 @@ class GoogleVisionProvider(BaseOCRProvider):
             context = vision.ImageContext(language_hints=lang_hints)
 
             # Fazer OCR
-            response = client.document_text_detection(
-                image=image, image_context=context
-            )
+            response = client.document_text_detection(image=image, image_context=context)
 
             # Processar resposta
             pages = self._parse_response(response)
@@ -439,9 +409,7 @@ class GoogleVisionProvider(BaseOCRProvider):
                         for word in line.words:
                             all_confidences.append(word.confidence)
 
-            avg_confidence = (
-                sum(all_confidences) / len(all_confidences) if all_confidences else 0
-            )
+            avg_confidence = sum(all_confidences) / len(all_confidences) if all_confidences else 0
 
             return OCRResult(
                 provider=OCRProvider.GOOGLE_VISION,
@@ -456,7 +424,7 @@ class GoogleVisionProvider(BaseOCRProvider):
             logger.error(f"Erro Google Vision: {e}")
             raise
 
-    def _parse_response(self, response) -> List[OCRPage]:
+    def _parse_response(self, response) -> list[OCRPage]:
         """Parseia resposta do Google Vision."""
         pages = []
 
@@ -501,14 +469,10 @@ class GoogleVisionProvider(BaseOCRProvider):
                         line.words.append(ocr_word)
 
                     line.text = " ".join(w.text for w in line.words)
-                    line.confidence = (
-                        sum(w.confidence for w in line.words) / len(line.words)
-                        if line.words
-                        else 0
-                    )
+                    line.confidence = sum(w.confidence for w in line.words) / len(line.words) if line.words else 0
                     block.lines.append(line)
 
-                block.text = "\n".join(l.text for l in block.lines)
+                block.text = "\n".join(line.text for line in block.lines)
                 page.blocks.append(block)
 
             pages.append(page)
@@ -530,7 +494,7 @@ class OCREngine:
         OCRProvider.GOOGLE_VISION: GoogleVisionProvider,
     }
 
-    def __init__(self, config: Optional[OCRConfig] = None):
+    def __init__(self, config: OCRConfig | None = None):
         """
         Inicializa OCR Engine.
 
@@ -538,7 +502,7 @@ class OCREngine:
             config: Configuracao do engine
         """
         self.config = config or OCRConfig()
-        self._providers: Dict[OCRProvider, BaseOCRProvider] = {}
+        self._providers: dict[OCRProvider, BaseOCRProvider] = {}
         self._initialize_providers()
 
     def _initialize_providers(self) -> None:
@@ -550,9 +514,7 @@ class OCREngine:
             if provider.is_available():
                 self._providers[self.config.primary_provider] = provider
             else:
-                logger.warning(
-                    f"Provider primario {self.config.primary_provider} nao disponivel"
-                )
+                logger.warning(f"Provider primario {self.config.primary_provider} nao disponivel")
 
         # Fallback providers
         for provider_name in self.config.fallback_providers:
@@ -565,8 +527,8 @@ class OCREngine:
     async def process(
         self,
         image_path: str,
-        languages: Optional[List[str]] = None,
-        provider: Optional[OCRProvider] = None,
+        languages: list[str] | None = None,
+        provider: OCRProvider | None = None,
     ) -> OCRResult:
         """
         Processa documento com OCR.
@@ -591,8 +553,8 @@ class OCREngine:
     async def _process_single(
         self,
         image_path: str,
-        languages: List[str],
-        provider: Optional[OCRProvider] = None,
+        languages: list[str],
+        provider: OCRProvider | None = None,
     ) -> OCRResult:
         """Processa uma unica imagem."""
         # Determinar provider
@@ -603,9 +565,7 @@ class OCREngine:
         else:
             if self.config.primary_provider in self._providers:
                 providers_to_try.append(self.config.primary_provider)
-            providers_to_try.extend(
-                p for p in self.config.fallback_providers if p in self._providers
-            )
+            providers_to_try.extend(p for p in self.config.fallback_providers if p in self._providers)
 
         if not providers_to_try:
             raise RuntimeError("Nenhum provider de OCR disponivel")
@@ -635,12 +595,12 @@ class OCREngine:
     async def _process_pages(
         self,
         pages_dir: str,
-        languages: List[str],
-        provider: Optional[OCRProvider] = None,
+        languages: list[str],
+        provider: OCRProvider | None = None,
     ) -> OCRResult:
         """Processa multiplas paginas."""
         pages = sorted(os.listdir(pages_dir))
-        all_pages: List[OCRPage] = []
+        all_pages: list[OCRPage] = []
         all_text = []
         total_confidence = 0
         total_time = 0
@@ -657,9 +617,7 @@ class OCREngine:
                     return result
                 return None
 
-        tasks = [
-            process_page(page_file, i + 1) for i, page_file in enumerate(pages)
-        ]
+        tasks = [process_page(page_file, i + 1) for i, page_file in enumerate(pages)]
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
         for result in results:
@@ -697,7 +655,7 @@ class OCREngine:
                         lines_by_y[key].append(line)
 
             # Detectar linhas com multiplas colunas
-            for y_pos, lines in lines_by_y.items():
+            for _y_pos, lines in lines_by_y.items():
                 if len(lines) > 2:
                     # Possivel linha de tabela
                     for line in lines:
@@ -707,9 +665,7 @@ class OCREngine:
 
         return result
 
-    async def _detect_barcodes(
-        self, result: OCRResult, image_path: str
-    ) -> OCRResult:
+    async def _detect_barcodes(self, result: OCRResult, image_path: str) -> OCRResult:
         """Detecta codigos de barra na imagem."""
         try:
             from pyzbar import pyzbar
@@ -721,9 +677,7 @@ class OCREngine:
                 # Criar bloco para barcode
                 x, y, w, h = barcode.rect
                 block = OCRBlock(
-                    block_type=BlockType.BARCODE
-                    if barcode.type != "QRCODE"
-                    else BlockType.QR_CODE,
+                    block_type=BlockType.BARCODE if barcode.type != "QRCODE" else BlockType.QR_CODE,
                     bounding_box=BoundingBox(x=x, y=y, width=w, height=h),
                     barcode_type=barcode.type,
                     barcode_value=barcode.data.decode("utf-8"),
@@ -741,11 +695,11 @@ class OCREngine:
 
         return result
 
-    def get_available_providers(self) -> List[OCRProvider]:
+    def get_available_providers(self) -> list[OCRProvider]:
         """Retorna lista de providers disponiveis."""
         return list(self._providers.keys())
 
-    def get_provider_info(self) -> Dict[str, Any]:
+    def get_provider_info(self) -> dict[str, Any]:
         """Retorna informacoes sobre providers."""
         return {
             "primary": self.config.primary_provider.value,

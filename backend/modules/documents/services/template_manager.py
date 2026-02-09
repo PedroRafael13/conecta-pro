@@ -8,9 +8,8 @@ incluindo CRUD, versionamento e templates builtin.
 import json
 import logging
 import os
-from dataclasses import asdict
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from ..models.extraction_template import (
     ExtractionTemplate,
@@ -33,7 +32,7 @@ class TemplateManager:
     extracao estruturada de documentos.
     """
 
-    def __init__(self, templates_path: Optional[str] = None):
+    def __init__(self, templates_path: str | None = None):
         """
         Inicializa gerenciador.
 
@@ -43,7 +42,7 @@ class TemplateManager:
         self.templates_path = templates_path or "/opt/conecta-pro/data/templates"
         os.makedirs(self.templates_path, exist_ok=True)
 
-        self._templates: Dict[str, ExtractionTemplate] = {}
+        self._templates: dict[str, ExtractionTemplate] = {}
         self._load_builtin_templates()
 
     def _load_builtin_templates(self) -> None:
@@ -576,7 +575,7 @@ class TemplateManager:
 
         logger.info(f"Carregados {len(self._templates)} templates builtin")
 
-    def get_template(self, template_id: str) -> Optional[ExtractionTemplate]:
+    def get_template(self, template_id: str) -> ExtractionTemplate | None:
         """
         Obtem template por ID.
 
@@ -593,9 +592,7 @@ class TemplateManager:
         # Tentar carregar do disco
         return self._load_from_file(template_id)
 
-    def get_templates_by_type(
-        self, document_type: str
-    ) -> List[ExtractionTemplate]:
+    def get_templates_by_type(self, document_type: str) -> list[ExtractionTemplate]:
         """
         Obtem templates por tipo de documento.
 
@@ -611,9 +608,7 @@ class TemplateManager:
             if t.document_type == document_type and t.status == TemplateStatus.ACTIVE
         ]
 
-    def get_templates_by_category(
-        self, category: TemplateCategory
-    ) -> List[ExtractionTemplate]:
+    def get_templates_by_category(self, category: TemplateCategory) -> list[ExtractionTemplate]:
         """
         Obtem templates por categoria.
 
@@ -627,11 +622,11 @@ class TemplateManager:
 
     def list_templates(
         self,
-        tenant_id: Optional[str] = None,
-        category: Optional[TemplateCategory] = None,
-        status: Optional[TemplateStatus] = None,
+        tenant_id: str | None = None,
+        category: TemplateCategory | None = None,
+        status: TemplateStatus | None = None,
         include_builtin: bool = True,
-    ) -> List[ExtractionTemplate]:
+    ) -> list[ExtractionTemplate]:
         """
         Lista templates com filtros.
 
@@ -661,9 +656,7 @@ class TemplateManager:
 
         return sorted(templates, key=lambda t: t.name)
 
-    def create_template(
-        self, template: ExtractionTemplate
-    ) -> ExtractionTemplate:
+    def create_template(self, template: ExtractionTemplate) -> ExtractionTemplate:
         """
         Cria novo template.
 
@@ -694,8 +687,8 @@ class TemplateManager:
     def update_template(
         self,
         template_id: str,
-        updates: Dict[str, Any],
-    ) -> Optional[ExtractionTemplate]:
+        updates: dict[str, Any],
+    ) -> ExtractionTemplate | None:
         """
         Atualiza template existente.
 
@@ -763,8 +756,8 @@ class TemplateManager:
         self,
         template_id: str,
         new_name: str,
-        tenant_id: Optional[str] = None,
-    ) -> Optional[ExtractionTemplate]:
+        tenant_id: str | None = None,
+    ) -> ExtractionTemplate | None:
         """
         Clona um template.
 
@@ -825,14 +818,14 @@ class TemplateManager:
         with open(file_path, "w", encoding="utf-8") as f:
             json.dump(template.to_dict(), f, indent=2, ensure_ascii=False)
 
-    def _load_from_file(self, template_id: str) -> Optional[ExtractionTemplate]:
+    def _load_from_file(self, template_id: str) -> ExtractionTemplate | None:
         """Carrega template de arquivo."""
         file_path = os.path.join(self.templates_path, f"{template_id}.json")
         if not os.path.exists(file_path):
             return None
 
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 data = json.load(f)
 
             template = self._dict_to_template(data)
@@ -844,7 +837,7 @@ class TemplateManager:
             logger.error(f"Erro ao carregar template {template_id}: {e}")
             return None
 
-    def _dict_to_template(self, data: Dict[str, Any]) -> ExtractionTemplate:
+    def _dict_to_template(self, data: dict[str, Any]) -> ExtractionTemplate:
         """Converte dicionario para template."""
         # Converter campos
         fields = []
@@ -856,9 +849,7 @@ class TemplateManager:
                     anchor=r.get("anchor"),
                     anchor_position=r.get("anchor_position", "after"),
                     group=r.get("group", 0),
-                    post_processors=[
-                        PostProcessor(p) for p in r.get("post_processors", [])
-                    ],
+                    post_processors=[PostProcessor(p) for p in r.get("post_processors", [])],
                 )
                 for r in field_data.get("rules", [])
             ]
@@ -897,11 +888,11 @@ class TemplateManager:
             is_public=data.get("is_public", False),
         )
 
-    def get_builtin_templates(self) -> List[ExtractionTemplate]:
+    def get_builtin_templates(self) -> list[ExtractionTemplate]:
         """Retorna templates builtin."""
         return [t for t in self._templates.values() if t.is_official]
 
-    def export_template(self, template_id: str) -> Optional[Dict[str, Any]]:
+    def export_template(self, template_id: str) -> dict[str, Any] | None:
         """Exporta template como dicionario."""
         template = self.get_template(template_id)
         if template:
@@ -910,8 +901,8 @@ class TemplateManager:
 
     def import_template(
         self,
-        data: Dict[str, Any],
-        tenant_id: Optional[str] = None,
+        data: dict[str, Any],
+        tenant_id: str | None = None,
     ) -> ExtractionTemplate:
         """Importa template de dicionario."""
         template = self._dict_to_template(data)

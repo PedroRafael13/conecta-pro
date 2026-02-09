@@ -12,8 +12,8 @@ import logging
 from datetime import datetime
 from uuid import uuid4
 
-from ..action_schemas import ActionRequest, ActionPreview, ActionResult
-from ..action_types import ActionType, ActionStatus
+from ..action_schemas import ActionPreview, ActionRequest, ActionResult
+from ..action_types import ActionStatus, ActionType
 from .base_executor import BaseActionExecutor
 
 logger = logging.getLogger(__name__)
@@ -23,13 +23,15 @@ try:
     from modules.operacional.substituicao.repositories.substituicao_repository import (
         SubstituicaoRepository,
     )
+
     _HAS_SUBSTITUICAO_REPO = True
 except ImportError:
     _HAS_SUBSTITUICAO_REPO = False
 
 # Import condicional do servico de alocacao
 try:
-    from modules.operacional.alocacao.services.alocacao_service import AlocacaoService
+    from modules.operacional.alocacao.services.alocacao_service import AlocacaoService  # noqa: F401
+
     _HAS_ALOCACAO_SERVICE = True
 except ImportError:
     _HAS_ALOCACAO_SERVICE = False
@@ -142,7 +144,9 @@ class SubstitutionActionExecutor(BaseActionExecutor):
         if employee_id:
             title = f"Substituicao de {employee_id}"
 
-        description = f"Criar substituicao temporaria no posto {post_code}" if post_code else "Criar substituicao temporaria"
+        description = (
+            f"Criar substituicao temporaria no posto {post_code}" if post_code else "Criar substituicao temporaria"
+        )
 
         # Permissao
         required_perm = "substitutions:create"
@@ -151,7 +155,8 @@ class SubstitutionActionExecutor(BaseActionExecutor):
 
         if user_role:
             try:
-                from modules.operacional.permissions import has_permission, Permission
+                from modules.operacional.permissions import Permission, has_permission
+
                 user_has_perm = has_permission(user_role, Permission.SUBSTITUTIONS_CREATE)
             except Exception:
                 user_has_perm = True

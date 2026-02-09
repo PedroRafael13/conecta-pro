@@ -4,23 +4,21 @@ Sprint 35: Configurações e Multi-tenant
 """
 # pylint: disable=too-many-instance-attributes
 
-import enum
 import re
 from datetime import datetime
+from enum import StrEnum
 from typing import Any
 from uuid import uuid4
 
-from sqlalchemy import (
-    Column, String, Text, Boolean, DateTime,
-    Integer, ForeignKey, Enum, Index
-)
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, Index, Integer, String, Text
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 from core.database import Base
 
 
-class SettingCategory(str, enum.Enum):
+class SettingCategory(StrEnum):
     """Categoria de configuração."""
+
     GERAL = "geral"
     SEGURANCA = "seguranca"
     NOTIFICACAO = "notificacao"
@@ -36,15 +34,16 @@ class SettingCategory(str, enum.Enum):
     AUDITORIA = "auditoria"
 
 
-class SettingType(str, enum.Enum):
+class SettingType(StrEnum):
     """Tipo de valor da configuração."""
+
     STRING = "string"
     INTEGER = "integer"
     FLOAT = "float"
     BOOLEAN = "boolean"
     JSON = "json"
     LIST = "list"
-    PASSWORD = "password"
+    PASSWORD = "password"  # noqa: S105
     EMAIL = "email"
     URL = "url"
     DATE = "date"
@@ -59,12 +58,7 @@ class TenantSettings(Base):
     __tablename__ = "tenant_settings"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("tenants.id"),
-        nullable=False,
-        index=True
-    )
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False, index=True)
 
     # Identificação da configuração
     chave = Column(String(100), nullable=False)  # Ex: "email.smtp_host"
@@ -72,16 +66,8 @@ class TenantSettings(Base):
     descricao = Column(Text, nullable=True)
 
     # Categoria e tipo
-    category = Column(
-        Enum(SettingCategory),
-        nullable=False,
-        default=SettingCategory.GERAL
-    )
-    setting_type = Column(
-        Enum(SettingType),
-        nullable=False,
-        default=SettingType.STRING
-    )
+    category = Column(Enum(SettingCategory), nullable=False, default=SettingCategory.GERAL)
+    setting_type = Column(Enum(SettingType), nullable=False, default=SettingType.STRING)
 
     # Valor
     valor = Column(Text, nullable=True)  # Valor atual
@@ -198,12 +184,7 @@ class TenantSettings(Base):
         self.last_modified_at = datetime.utcnow()
         self.updated_at = datetime.utcnow()
 
-    def _add_to_history(
-        self,
-        old_value: str,
-        new_value: str,
-        modified_by: UUID = None
-    ) -> None:
+    def _add_to_history(self, old_value: str, new_value: str, modified_by: UUID = None) -> None:
         """Adiciona entrada ao histórico."""
         if self.history is None:
             self.history = []
@@ -212,7 +193,7 @@ class TenantSettings(Base):
             "timestamp": datetime.utcnow().isoformat(),
             "old_value": old_value if not self.sensitive else "***",
             "new_value": new_value if not self.sensitive else "***",
-            "modified_by": str(modified_by) if modified_by else None
+            "modified_by": str(modified_by) if modified_by else None,
         }
         self.history = [*self.history[-49:], entry]  # Mantém últimas 50
 
@@ -300,7 +281,7 @@ class TenantSettings(Base):
         category: SettingCategory,
         setting_type: SettingType,
         valor_default: str = None,
-        **kwargs
+        **kwargs,
     ) -> "TenantSettings":
         """Factory method para criar configuração."""
         return cls(
@@ -310,5 +291,5 @@ class TenantSettings(Base):
             category=category,
             setting_type=setting_type,
             valor_default=valor_default,
-            **kwargs
+            **kwargs,
         )

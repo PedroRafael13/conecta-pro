@@ -139,7 +139,26 @@ export default function ArquivosPage() {
 
   // Status badge
   const getStatusBadge = (status: string) => {
-    const statusInfo = DOCUMENT_STATUS.find(s => s.value === status);
+    const statusLabels: Record<string, string> = {
+      rascunho: 'Rascunho',
+      pendente_aprovacao: 'Pendente Aprovação',
+      aprovado: 'Aprovado',
+      rejeitado: 'Rejeitado',
+      publicado: 'Publicado',
+      arquivado: 'Arquivado',
+      expirado: 'Expirado',
+      excluido: 'Excluído',
+    };
+    const statusColors: Record<string, string> = {
+      rascunho: 'gray',
+      pendente_aprovacao: 'yellow',
+      aprovado: 'green',
+      rejeitado: 'red',
+      publicado: 'blue',
+      arquivado: 'gray',
+      expirado: 'orange',
+      excluido: 'red',
+    };
     const colors: Record<string, string> = {
       gray: 'bg-gray-100 text-gray-800',
       yellow: 'bg-yellow-100 text-yellow-800',
@@ -148,9 +167,10 @@ export default function ArquivosPage() {
       blue: 'bg-blue-100 text-blue-800',
       orange: 'bg-orange-100 text-orange-800',
     };
+    const color = statusColors[status] ?? 'gray';
     return (
-      <Badge className={colors[statusInfo?.color || 'gray'] + ' border-0'}>
-        {statusInfo?.label || status}
+      <Badge className={(colors[color] ?? colors['gray']) + ' border-0'}>
+        {statusLabels[status] ?? status}
       </Badge>
     );
   };
@@ -206,7 +226,7 @@ export default function ArquivosPage() {
 
     for (let i = 0; i < uploadFiles.length; i++) {
       const uploadFile = uploadFiles[i];
-      if (uploadFile.status !== 'pending') continue;
+      if (!uploadFile || uploadFile.status !== 'pending') continue;
 
       setUploadFiles(prev => prev.map((f, idx) =>
         idx === i ? { ...f, status: 'uploading', progress: 0 } : f
@@ -224,7 +244,7 @@ export default function ArquivosPage() {
         await uploadMutation.mutateAsync({
           data: {
             file: uploadFile.file,
-            title: uploadFile.file.name.split('.')[0],
+            title: uploadFile.file.name.split('.')[0] ?? uploadFile.file.name,
             folder_id: selectedFolderId || '',
             document_type: selectedDocType,
             category: selectedCategory,
@@ -391,9 +411,9 @@ export default function ArquivosPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos os tipos</SelectItem>
-                {DOCUMENT_TYPES.map((type) => (
-                  <SelectItem key={type.value} value={type.value}>
-                    {type.label}
+                {Object.entries(DOCUMENT_TYPES).map(([key, value]) => (
+                  <SelectItem key={key} value={value}>
+                    {key.replace(/_/g, ' ')}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -407,9 +427,9 @@ export default function ArquivosPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos os status</SelectItem>
-                {DOCUMENT_STATUS.map((status) => (
-                  <SelectItem key={status.value} value={status.value}>
-                    {status.label}
+                {Object.entries(DOCUMENT_STATUS).map(([key, value]) => (
+                  <SelectItem key={key} value={value}>
+                    {key.replace(/_/g, ' ')}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -469,10 +489,10 @@ export default function ArquivosPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {DOCUMENT_TYPES.find(t => t.value === doc.document_type)?.label || doc.document_type}
+                      {doc.document_type.replace(/_/g, ' ')}
                     </TableCell>
                     <TableCell>
-                      {DOCUMENT_CATEGORIES.find(c => c.value === doc.category)?.label || doc.category}
+                      {doc.category.replace(/_/g, ' ')}
                     </TableCell>
                     <TableCell>{getStatusBadge(doc.status)}</TableCell>
                     <TableCell>{formatFileSize(doc.file_size_bytes)}</TableCell>
@@ -619,9 +639,9 @@ export default function ArquivosPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {DOCUMENT_TYPES.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.label}
+                  {Object.entries(DOCUMENT_TYPES).map(([key, value]) => (
+                    <SelectItem key={key} value={value}>
+                      {key.replace(/_/g, ' ')}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -634,9 +654,9 @@ export default function ArquivosPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {DOCUMENT_CATEGORIES.map((cat) => (
-                    <SelectItem key={cat.value} value={cat.value}>
-                      {cat.label}
+                  {Object.entries(DOCUMENT_CATEGORIES).map(([key, value]) => (
+                    <SelectItem key={key} value={value}>
+                      {key.replace(/_/g, ' ')}
                     </SelectItem>
                   ))}
                 </SelectContent>

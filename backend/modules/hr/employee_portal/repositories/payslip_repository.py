@@ -2,10 +2,9 @@
 
 import logging
 from datetime import datetime
-from typing import Optional, List, Tuple
 from uuid import UUID, uuid4
 
-from sqlalchemy import select, func, and_, desc
+from sqlalchemy import and_, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.hr.employee_portal.models import PaySlip, PaySlipStatus, PaySlipType
@@ -25,7 +24,7 @@ class PaySlipRepository:
         data: PaySlipCreate,
         condominio_id: UUID,
         *,
-        created_by: Optional[UUID] = None,
+        created_by: UUID | None = None,
     ) -> PaySlip:
         """Cria novo contracheque."""
         payslip = PaySlip(
@@ -81,21 +80,18 @@ class PaySlipRepository:
         # pylint: disable=import-outside-toplevel
         import random
         import string
-        suffix = "".join(random.choices(string.ascii_uppercase + string.digits, k=6))
+
+        suffix = "".join(random.choices(string.ascii_uppercase + string.digits, k=6))  # noqa: S311
         return f"HL{year}{month:02d}{suffix}"
 
-    async def get_by_id(self, payslip_id: UUID) -> Optional[PaySlip]:
+    async def get_by_id(self, payslip_id: UUID) -> PaySlip | None:
         """Busca contracheque por ID."""
-        result = await self.db.execute(
-            select(PaySlip).where(PaySlip.id == payslip_id)
-        )
+        result = await self.db.execute(select(PaySlip).where(PaySlip.id == payslip_id))
         return result.scalar_one_or_none()
 
-    async def get_by_code(self, code: str) -> Optional[PaySlip]:
+    async def get_by_code(self, code: str) -> PaySlip | None:
         """Busca contracheque por código."""
-        result = await self.db.execute(
-            select(PaySlip).where(PaySlip.payslip_code == code)
-        )
+        result = await self.db.execute(select(PaySlip).where(PaySlip.payslip_code == code))
         return result.scalar_one_or_none()
 
     async def list_by_employee(
@@ -104,20 +100,22 @@ class PaySlipRepository:
         *,
         page: int = 1,
         page_size: int = 20,
-        status: Optional[PaySlipStatus] = None,
-        payslip_type: Optional[PaySlipType] = None,
-        year: Optional[int] = None,
+        status: PaySlipStatus | None = None,
+        payslip_type: PaySlipType | None = None,
+        year: int | None = None,
         only_viewable: bool = True,
-    ) -> Tuple[List[PaySlip], int]:
+    ) -> tuple[list[PaySlip], int]:
         """Lista contracheques por funcionário."""
         query = select(PaySlip).where(PaySlip.employee_id == employee_id)
 
         if only_viewable:
             query = query.where(
-                PaySlip.status.in_([
-                    PaySlipStatus.PUBLISHED.value,
-                    PaySlipStatus.RECTIFIED.value,
-                ])
+                PaySlip.status.in_(
+                    [
+                        PaySlipStatus.PUBLISHED.value,
+                        PaySlipStatus.RECTIFIED.value,
+                    ]
+                )
             )
         elif status:
             query = query.where(PaySlip.status == status.value)
@@ -129,9 +127,7 @@ class PaySlipRepository:
             query = query.where(PaySlip.reference_year == year)
 
         # Total
-        count_result = await self.db.execute(
-            select(func.count()).select_from(query.subquery())
-        )
+        count_result = await self.db.execute(select(func.count()).select_from(query.subquery()))
         total = count_result.scalar() or 0
 
         # Paginação
@@ -151,10 +147,10 @@ class PaySlipRepository:
         *,
         page: int = 1,
         page_size: int = 50,
-        status: Optional[PaySlipStatus] = None,
-        year: Optional[int] = None,
-        month: Optional[int] = None,
-    ) -> Tuple[List[PaySlip], int]:
+        status: PaySlipStatus | None = None,
+        year: int | None = None,
+        month: int | None = None,
+    ) -> tuple[list[PaySlip], int]:
         """Lista contracheques por condomínio."""
         query = select(PaySlip).where(PaySlip.condominio_id == condominio_id)
 
@@ -168,9 +164,7 @@ class PaySlipRepository:
             query = query.where(PaySlip.reference_month == month)
 
         # Total
-        count_result = await self.db.execute(
-            select(func.count()).select_from(query.subquery())
-        )
+        count_result = await self.db.execute(select(func.count()).select_from(query.subquery()))
         total = count_result.scalar() or 0
 
         # Paginação
@@ -184,7 +178,7 @@ class PaySlipRepository:
         self,
         payslip_id: UUID,
         data: PaySlipUpdate,
-    ) -> Optional[PaySlip]:
+    ) -> PaySlip | None:
         """Atualiza contracheque."""
         payslip = await self.get_by_id(payslip_id)
         if not payslip:
@@ -208,8 +202,8 @@ class PaySlipRepository:
         self,
         payslip_id: UUID,
         *,
-        published_by: Optional[UUID] = None,
-    ) -> Optional[PaySlip]:
+        published_by: UUID | None = None,
+    ) -> PaySlip | None:
         """Publica contracheque (visível para funcionário)."""
         payslip = await self.get_by_id(payslip_id)
         if not payslip:
@@ -225,7 +219,7 @@ class PaySlipRepository:
         logger.info("Contracheque %s publicado", payslip_id)
         return payslip
 
-    async def record_view(self, payslip_id: UUID) -> Optional[PaySlip]:
+    async def record_view(self, payslip_id: UUID) -> PaySlip | None:
         """Registra visualização do contracheque."""
         payslip = await self.get_by_id(payslip_id)
         if not payslip:
@@ -237,7 +231,7 @@ class PaySlipRepository:
 
         return payslip
 
-    async def record_download(self, payslip_id: UUID) -> Optional[PaySlip]:
+    async def record_download(self, payslip_id: UUID) -> PaySlip | None:
         """Registra download do contracheque."""
         payslip = await self.get_by_id(payslip_id)
         if not payslip:
@@ -252,7 +246,7 @@ class PaySlipRepository:
     async def acknowledge(
         self,
         payslip_id: UUID,
-    ) -> Optional[PaySlip]:
+    ) -> PaySlip | None:
         """Registra ciência do contracheque."""
         payslip = await self.get_by_id(payslip_id)
         if not payslip:
@@ -272,7 +266,7 @@ class PaySlipRepository:
         self,
         payslip_id: UUID,
         reason: str,
-    ) -> Optional[PaySlip]:
+    ) -> PaySlip | None:
         """Registra contestação do contracheque."""
         payslip = await self.get_by_id(payslip_id)
         if not payslip:
@@ -296,8 +290,8 @@ class PaySlipRepository:
         payslip_id: UUID,
         resolution: str,
         *,
-        resolved_by: Optional[UUID] = None,  # pylint: disable=unused-argument
-    ) -> Optional[PaySlip]:
+        resolved_by: UUID | None = None,  # pylint: disable=unused-argument
+    ) -> PaySlip | None:
         """Resolve contestação do contracheque."""
         payslip = await self.get_by_id(payslip_id)
         if not payslip:
@@ -338,7 +332,7 @@ class PaySlipRepository:
         )
         return result.scalar() or 0
 
-    async def get_years_available(self, employee_id: UUID) -> List[int]:
+    async def get_years_available(self, employee_id: UUID) -> list[int]:
         """Retorna anos disponíveis para o funcionário."""
         result = await self.db.execute(
             select(PaySlip.reference_year)

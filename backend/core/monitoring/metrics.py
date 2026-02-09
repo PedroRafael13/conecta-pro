@@ -5,7 +5,7 @@ Expoe metricas em formato Prometheus no endpoint /metrics.
 
 import time
 from collections import defaultdict
-from typing import Callable, Dict, List, Optional
+from collections.abc import Callable
 
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -19,23 +19,23 @@ class MetricsCollector:
 
     def __init__(self):
         # Contadores
-        self._counters: Dict[str, Dict[str, int]] = defaultdict(lambda: defaultdict(int))
+        self._counters: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
 
         # Histogramas (latencia)
-        self._histograms: Dict[str, List[float]] = defaultdict(list)
+        self._histograms: dict[str, list[float]] = defaultdict(list)
 
         # Gauges (valores atuais)
-        self._gauges: Dict[str, Dict[str, float]] = defaultdict(dict)
+        self._gauges: dict[str, dict[str, float]] = defaultdict(dict)
 
         # Info
-        self._info: Dict[str, Dict[str, str]] = {}
+        self._info: dict[str, dict[str, str]] = {}
 
-    def inc_counter(self, name: str, labels: Optional[Dict[str, str]] = None, value: int = 1):
+    def inc_counter(self, name: str, labels: dict[str, str] | None = None, value: int = 1):
         """Incrementa contador."""
         label_key = self._labels_to_key(labels or {})
         self._counters[name][label_key] += value
 
-    def observe_histogram(self, name: str, value: float, labels: Optional[Dict[str, str]] = None):
+    def observe_histogram(self, name: str, value: float, labels: dict[str, str] | None = None):
         """Registra valor em histograma."""
         label_key = self._labels_to_key(labels or {})
         key = f"{name}{label_key}"
@@ -45,23 +45,23 @@ class MetricsCollector:
         if len(self._histograms[key]) > 1000:
             self._histograms[key] = self._histograms[key][-1000:]
 
-    def set_gauge(self, name: str, value: float, labels: Optional[Dict[str, str]] = None):
+    def set_gauge(self, name: str, value: float, labels: dict[str, str] | None = None):
         """Define valor de gauge."""
         label_key = self._labels_to_key(labels or {})
         self._gauges[name][label_key] = value
 
-    def set_info(self, name: str, labels: Dict[str, str]):
+    def set_info(self, name: str, labels: dict[str, str]):
         """Define info metric."""
         self._info[name] = labels
 
-    def _labels_to_key(self, labels: Dict[str, str]) -> str:
+    def _labels_to_key(self, labels: dict[str, str]) -> str:
         """Converte labels para chave unica."""
         if not labels:
             return ""
         sorted_items = sorted(labels.items())
         return "{" + ",".join(f'{k}="{v}"' for k, v in sorted_items) + "}"
 
-    def _calculate_histogram_stats(self, values: List[float]) -> Dict[str, float]:
+    def _calculate_histogram_stats(self, values: list[float]) -> dict[str, float]:
         """Calcula estatisticas do histograma."""
         if not values:
             return {"count": 0, "sum": 0, "avg": 0, "p50": 0, "p90": 0, "p99": 0}
@@ -87,12 +87,14 @@ class MetricsCollector:
         lines = []
         for name, labels in self._info.items():
             label_str = ",".join(f'{k}="{v}"' for k, v in labels.items())
-            lines.extend([
-                f"# HELP {name} Application information",
-                f"# TYPE {name} gauge",
-                f"{name}{{{label_str}}} 1",
-                "",
-            ])
+            lines.extend(
+                [
+                    f"# HELP {name} Application information",
+                    f"# TYPE {name} gauge",
+                    f"{name}{{{label_str}}} 1",
+                    "",
+                ]
+            )
         return lines
 
     def _format_counter_metrics(self) -> list:
@@ -123,7 +125,7 @@ class MetricsCollector:
         """Formata metricas de histogram."""
         lines = []
         buckets = [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0]
-        histogram_names = set(key.split("{")[0] for key in self._histograms.keys())
+        histogram_names = {key.split("{")[0] for key in self._histograms.keys()}
 
         for name in histogram_names:
             lines.extend([f"# HELP {name} Histogram metric", f"# TYPE {name} histogram"])
@@ -132,7 +134,7 @@ class MetricsCollector:
                 if not key.startswith(name):
                     continue
 
-                label_part = key[len(name):]
+                label_part = key[len(name) :]
                 stats = self._calculate_histogram_stats(values)
 
                 for bucket in buckets:
@@ -141,11 +143,13 @@ class MetricsCollector:
                     lines.append(f"{name}_bucket{bucket_label} {count}")
 
                 inf_label = self._format_bucket_label(label_part, "+Inf")
-                lines.extend([
-                    f"{name}_bucket{inf_label} {len(values)}",
-                    f"{name}_sum{label_part} {stats['sum']:.6f}",
-                    f"{name}_count{label_part} {stats['count']}",
-                ])
+                lines.extend(
+                    [
+                        f"{name}_bucket{inf_label} {len(values)}",
+                        f"{name}_sum{label_part} {stats['sum']:.6f}",
+                        f"{name}_count{label_part} {stats['count']}",
+                    ]
+                )
             lines.append("")
         return lines
 
@@ -168,22 +172,22 @@ def get_metrics() -> str:
     return _collector.format_prometheus()
 
 
-def increment_counter(name: str, labels: Optional[Dict[str, str]] = None, value: int = 1):
+def increment_counter(name: str, labels: dict[str, str] | None = None, value: int = 1):
     """Incrementa contador."""
     _collector.inc_counter(name, labels, value)
 
 
-def observe_histogram(name: str, value: float, labels: Optional[Dict[str, str]] = None):
+def observe_histogram(name: str, value: float, labels: dict[str, str] | None = None):
     """Registra valor em histograma."""
     _collector.observe_histogram(name, value, labels)
 
 
-def set_gauge(name: str, value: float, labels: Optional[Dict[str, str]] = None):
+def set_gauge(name: str, value: float, labels: dict[str, str] | None = None):
     """Define valor de gauge."""
     _collector.set_gauge(name, value, labels)
 
 
-def set_info(name: str, labels: Dict[str, str]):
+def set_info(name: str, labels: dict[str, str]):
     """Define info metric."""
     _collector.set_info(name, labels)
 

@@ -3,7 +3,6 @@
 import logging
 from datetime import date, timedelta
 from statistics import mean, stdev
-from typing import Dict, List, Optional
 from uuid import UUID
 
 from sqlalchemy import and_, func, select
@@ -38,9 +37,9 @@ class PayableAIService:
     async def detect_anomalies(
         self,
         condominio_id: UUID,
-        account: Optional[PayableAccount] = None,
+        account: PayableAccount | None = None,
         period_months: int = 6,
-    ) -> List[Dict]:
+    ) -> list[dict]:
         """Detecta anomalias em contas a pagar."""
         anomalies = []
 
@@ -72,7 +71,7 @@ class PayableAIService:
         self,
         account: PayableAccount,
         period_months: int,
-    ) -> List[Dict]:
+    ) -> list[dict]:
         """Analisa uma conta específica."""
         anomalies = []
 
@@ -105,7 +104,7 @@ class PayableAIService:
         self,
         account: PayableAccount,
         period_months: int,
-    ) -> Optional[Dict]:
+    ) -> dict | None:
         """Verifica anomalia de valor."""
         start_date = date.today() - timedelta(days=period_months * 30)
 
@@ -137,10 +136,7 @@ class PayableAIService:
                 return {
                     "type": PayableAnomalyType.VALUE_SPIKE,
                     "account_id": str(account.id),
-                    "description": (
-                        f"Valor {current_value:.2f} está {z_score:.1f} "
-                        f"desvios acima da média ({avg:.2f})"
-                    ),
+                    "description": (f"Valor {current_value:.2f} está {z_score:.1f} desvios acima da média ({avg:.2f})"),
                     "severity": "high" if z_score > 3 else "medium",
                     "data": {
                         "current_value": current_value,
@@ -154,8 +150,7 @@ class PayableAIService:
                     "type": PayableAnomalyType.VALUE_DROP,
                     "account_id": str(account.id),
                     "description": (
-                        f"Valor {current_value:.2f} está {abs(z_score):.1f} "
-                        f"desvios abaixo da média ({avg:.2f})"
+                        f"Valor {current_value:.2f} está {abs(z_score):.1f} desvios abaixo da média ({avg:.2f})"
                     ),
                     "severity": "low",
                     "data": {
@@ -168,7 +163,7 @@ class PayableAIService:
 
         return None
 
-    async def _check_duplicate(self, account: PayableAccount) -> Optional[Dict]:
+    async def _check_duplicate(self, account: PayableAccount) -> dict | None:
         """Verifica possível duplicidade."""
         # Busca contas similares no mesmo período
         date_range = timedelta(days=5)
@@ -203,7 +198,7 @@ class PayableAIService:
 
         return None
 
-    async def _check_new_supplier(self, account: PayableAccount) -> Optional[Dict]:
+    async def _check_new_supplier(self, account: PayableAccount) -> dict | None:
         """Verifica se é um fornecedor novo."""
         # Verifica se há histórico com este fornecedor
         query = select(func.count(PayableAccount.id)).where(
@@ -237,7 +232,7 @@ class PayableAIService:
 
         return None
 
-    async def _check_category_anomaly(self, account: PayableAccount) -> Optional[Dict]:
+    async def _check_category_anomaly(self, account: PayableAccount) -> dict | None:
         """Verifica se a categoria é incomum para o fornecedor."""
         # Busca categoria mais comum para este fornecedor
         query = (
@@ -265,9 +260,7 @@ class PayableAIService:
             common_categories = {row[0] for row in rows[:2]}
 
             if account.category_id not in common_categories:
-                cat_query = select(PayableCategory.name).where(
-                    PayableCategory.id == account.category_id
-                )
+                cat_query = select(PayableCategory.name).where(PayableCategory.id == account.category_id)
                 cat_result = await self.session.execute(cat_query)
                 cat_name = cat_result.scalar_one_or_none() or "Desconhecida"
 
@@ -288,7 +281,7 @@ class PayableAIService:
         self,
         condominio_id: UUID,
         months_ahead: int = 3,
-    ) -> List[Dict]:
+    ) -> list[dict]:
         """Prevê fluxo de caixa futuro baseado em histórico."""
         predictions = []
         today = date.today()
@@ -357,7 +350,7 @@ class PayableAIService:
     async def suggest_optimizations(
         self,
         condominio_id: UUID,
-    ) -> List[Dict]:
+    ) -> list[dict]:
         """Sugere otimizações baseadas em análise de dados."""
         suggestions = []
 
@@ -368,14 +361,9 @@ class PayableAIService:
                 {
                     "type": "negotiation",
                     "title": "Fornecedores para Negociação",
-                    "description": (
-                        "Fornecedores com alto volume de pagamentos "
-                        "podem oferecer melhores condições"
-                    ),
+                    "description": ("Fornecedores com alto volume de pagamentos podem oferecer melhores condições"),
                     "items": frequent_suppliers,
-                    "potential_savings": sum(
-                        s.get("potential_savings", 0) for s in frequent_suppliers
-                    ),
+                    "potential_savings": sum(s.get("potential_savings", 0) for s in frequent_suppliers),
                 }
             )
 
@@ -408,7 +396,7 @@ class PayableAIService:
     async def _analyze_frequent_suppliers(
         self,
         condominio_id: UUID,
-    ) -> List[Dict]:
+    ) -> list[dict]:
         """Analisa fornecedores frequentes."""
         last_year = date.today() - timedelta(days=365)
 
@@ -449,7 +437,7 @@ class PayableAIService:
     async def _analyze_growing_categories(  # pylint: disable=too-many-locals
         self,
         condominio_id: UUID,
-    ) -> List[Dict]:
+    ) -> list[dict]:
         """Analisa categorias com crescimento."""
         today = date.today()
         current_quarter_start = today.replace(day=1)
@@ -529,7 +517,7 @@ class PayableAIService:
     async def _analyze_consolidation_opportunities(
         self,
         condominio_id: UUID,
-    ) -> List[Dict]:
+    ) -> list[dict]:
         """Analisa oportunidades de consolidação."""
         # Busca fornecedores com múltiplos pagamentos no mesmo mês
         today = date.today()
@@ -548,9 +536,7 @@ class PayableAIService:
                 and_(
                     PayableAccount.condominio_id == condominio_id,
                     PayableAccount.ativo.is_(True),
-                    PayableAccount.status.in_(
-                        [PayableStatus.PENDENTE.value, PayableStatus.APROVADA.value]
-                    ),
+                    PayableAccount.status.in_([PayableStatus.PENDENTE.value, PayableStatus.APROVADA.value]),
                     PayableAccount.due_date >= month_start,
                     PayableAccount.due_date <= month_end,
                 )

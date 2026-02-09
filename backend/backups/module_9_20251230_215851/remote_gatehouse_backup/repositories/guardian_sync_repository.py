@@ -3,11 +3,7 @@ Repository para GuardianSync.
 """
 
 from datetime import datetime
-from typing import Optional
 from uuid import uuid4
-
-from sqlalchemy import func, or_, select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.remote_gatehouse.models.guardian_sync import (
     GuardianSync,
@@ -19,6 +15,8 @@ from modules.remote_gatehouse.schemas.guardian_sync import (
     GuardianSyncFilter,
     GuardianSyncStats,
 )
+from sqlalchemy import func, or_, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class GuardianSyncRepository:
@@ -51,7 +49,7 @@ class GuardianSyncRepository:
         await self.db.refresh(sync)
         return sync
 
-    async def get_by_id(self, sync_id: str) -> Optional[GuardianSync]:
+    async def get_by_id(self, sync_id: str) -> GuardianSync | None:
         """Busca sincronização por ID."""
         result = await self.db.execute(
             select(GuardianSync).where(
@@ -61,7 +59,7 @@ class GuardianSyncRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_by_code(self, sync_code: str) -> Optional[GuardianSync]:
+    async def get_by_code(self, sync_code: str) -> GuardianSync | None:
         """Busca sincronização por código."""
         result = await self.db.execute(
             select(GuardianSync).where(
@@ -75,7 +73,7 @@ class GuardianSyncRepository:
         self,
         entity_type: str,
         entity_id: str,
-    ) -> Optional[GuardianSync]:
+    ) -> GuardianSync | None:
         """Busca última sincronização por entidade."""
         result = await self.db.execute(
             select(GuardianSync)
@@ -151,7 +149,7 @@ class GuardianSyncRepository:
 
         return syncs, total
 
-    async def get_pending(self, limit: int = 100) -> list[GuardianSync]:
+    async def get_pending(self, limit: int = 100) -> list[GuardianSync]:  # noqa: A003
         """Busca sincronizações pendentes."""
         result = await self.db.execute(
             select(GuardianSync)
@@ -164,7 +162,7 @@ class GuardianSyncRepository:
         )
         return list(result.scalars().all())
 
-    async def get_failed_for_retry(self, limit: int = 50) -> list[GuardianSync]:
+    async def get_failed_for_retry(self, limit: int = 50) -> list[GuardianSync]:  # noqa: A003
         """Busca sincronizações falhas que podem ser reprocessadas."""
         now = datetime.utcnow()
         result = await self.db.execute(
@@ -183,7 +181,7 @@ class GuardianSyncRepository:
         )
         return list(result.scalars().all())
 
-    async def mark_in_progress(self, sync_id: str) -> Optional[GuardianSync]:
+    async def mark_in_progress(self, sync_id: str) -> GuardianSync | None:
         """Marca sincronização como em andamento."""
         sync = await self.get_by_id(sync_id)
         if sync:
@@ -197,7 +195,7 @@ class GuardianSyncRepository:
         sync_id: str,
         response: dict | None = None,
         external_id: str | None = None,
-    ) -> Optional[GuardianSync]:
+    ) -> GuardianSync | None:
         """Marca sincronização como concluída."""
         sync = await self.get_by_id(sync_id)
         if sync:
@@ -213,7 +211,7 @@ class GuardianSyncRepository:
         sync_id: str,
         error: str,
         details: dict | None = None,
-    ) -> Optional[GuardianSync]:
+    ) -> GuardianSync | None:
         """Marca sincronização como falha."""
         sync = await self.get_by_id(sync_id)
         if sync:
@@ -226,7 +224,7 @@ class GuardianSyncRepository:
         self,
         sync_id: str,
         notes: str | None = None,
-    ) -> Optional[GuardianSync]:
+    ) -> GuardianSync | None:
         """Incrementa retentativa e reprocessa."""
         sync = await self.get_by_id(sync_id)
         if sync and sync.can_retry:
@@ -250,34 +248,26 @@ class GuardianSyncRepository:
             base_query = base_query.where(GuardianSync.client_id == client_id)
 
         # Contagem total
-        total_result = await self.db.execute(
-            select(func.count()).select_from(base_query.subquery())
-        )
+        total_result = await self.db.execute(select(func.count()).select_from(base_query.subquery()))
         total = total_result.scalar() or 0
 
         # Contagem por status
         status_counts = {}
         for status in SyncStatus:
             status_query = base_query.where(GuardianSync.status == status.value)
-            count_result = await self.db.execute(
-                select(func.count()).select_from(status_query.subquery())
-            )
+            count_result = await self.db.execute(select(func.count()).select_from(status_query.subquery()))
             status_counts[status.value] = count_result.scalar() or 0
 
         # Por direção
         direction_counts = {}
         for direction in SyncDirection:
             dir_query = base_query.where(GuardianSync.direction == direction.value)
-            count_result = await self.db.execute(
-                select(func.count()).select_from(dir_query.subquery())
-            )
+            count_result = await self.db.execute(select(func.count()).select_from(dir_query.subquery()))
             direction_counts[direction.value] = count_result.scalar() or 0
 
         # Média de retentativas
         avg_result = await self.db.execute(
-            select(func.avg(GuardianSync.retry_count)).select_from(
-                base_query.subquery()
-            )
+            select(func.avg(GuardianSync.retry_count)).select_from(base_query.subquery())
         )
         avg_retry = avg_result.scalar() or 0.0
 

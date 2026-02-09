@@ -5,10 +5,10 @@ Agente de integracao entre todas as fases do sistema
 """
 
 import logging
-from typing import Dict, Any, List
 from datetime import datetime
+from typing import Any
 
-from .base import BaseAgent, AgentType, AgentTask, AgentMessage
+from .base import AgentMessage, AgentTask, AgentType, BaseAgent
 
 logger = logging.getLogger(__name__)
 
@@ -25,23 +25,18 @@ class IntegrationHubAgent(BaseAgent):
     5. Agregar metricas
     """
 
-    def __init__(self, config: Dict[str, Any] = None):
+    def __init__(self, config: dict[str, Any] = None):
         super().__init__(AgentType.INTEGRATION_HUB, config)
-        self.registered_agents: Dict[AgentType, BaseAgent] = {}
-        self.pending_workflows: Dict[str, Dict[str, Any]] = {}
-        self.metrics = {
-            "messages_routed": 0,
-            "workflows_completed": 0,
-            "workflows_failed": 0,
-            "alerts_generated": 0
-        }
+        self.registered_agents: dict[AgentType, BaseAgent] = {}
+        self.pending_workflows: dict[str, dict[str, Any]] = {}
+        self.metrics = {"messages_routed": 0, "workflows_completed": 0, "workflows_failed": 0, "alerts_generated": 0}
 
     def register_agent(self, agent: BaseAgent) -> None:
         """Registra um agente no hub."""
         self.registered_agents[agent.agent_type] = agent
         logger.info(f"Agent {agent.agent_type.value} registered in hub")
 
-    async def process_task(self, task: AgentTask) -> Dict[str, Any]:
+    async def process_task(self, task: AgentTask) -> dict[str, Any]:
         """Processa tarefa de integracao."""
         task_type = task.task_type
 
@@ -81,7 +76,7 @@ class IntegrationHubAgent(BaseAgent):
                 self.pending_workflows[workflow_id]["completed_at"] = datetime.utcnow().isoformat()
                 self.metrics["workflows_completed"] += 1
 
-    async def _route_message(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    async def _route_message(self, data: dict[str, Any]) -> dict[str, Any]:
         """Roteia mensagem para agente destino."""
         target_agent = AgentType(data["to_agent"])
         message = AgentMessage(**data["message"])
@@ -99,7 +94,7 @@ class IntegrationHubAgent(BaseAgent):
             await self.registered_agents[message.to_agent].receive_message(message)
             self.metrics["messages_routed"] += 1
 
-    async def _start_workflow(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    async def _start_workflow(self, data: dict[str, Any]) -> dict[str, Any]:
         """Inicia um workflow cross-phase."""
         workflow_type = data.get("workflow_type")
         workflow_id = f"wf_{workflow_type}_{datetime.utcnow().timestamp()}"
@@ -110,7 +105,7 @@ class IntegrationHubAgent(BaseAgent):
             "data": data,
             "status": "running",
             "started_at": datetime.utcnow().isoformat(),
-            "steps_completed": []
+            "steps_completed": [],
         }
 
         if workflow_type == "proposta_comercial":
@@ -123,11 +118,7 @@ class IntegrationHubAgent(BaseAgent):
 
         return {"workflow_id": workflow_id, "status": "started"}
 
-    async def _execute_proposta_workflow(
-        self,
-        workflow_id: str,
-        data: Dict[str, Any]
-    ) -> None:
+    async def _execute_proposta_workflow(self, workflow_id: str, data: dict[str, Any]) -> None:
         """Executa workflow de proposta comercial."""
         # Passo 1: Solicitar validacao CCT
         if AgentType.CCT_COMPLIANCE in self.registered_agents:
@@ -139,17 +130,13 @@ class IntegrationHubAgent(BaseAgent):
                     payload={
                         "workflow_id": workflow_id,
                         "cargos": data.get("cargos", []),
-                        "margem": data.get("margem", 15)
-                    }
+                        "margem": data.get("margem", 15),
+                    },
                 )
             )
             self.pending_workflows[workflow_id]["steps_completed"].append("cct_validation")
 
-    async def _execute_admissao_workflow(
-        self,
-        workflow_id: str,
-        data: Dict[str, Any]
-    ) -> None:
+    async def _execute_admissao_workflow(self, workflow_id: str, data: dict[str, Any]) -> None:
         """Executa workflow de admissao."""
         # Passo 1: Validar cargo CCT
         if AgentType.CCT_COMPLIANCE in self.registered_agents:
@@ -158,40 +145,39 @@ class IntegrationHubAgent(BaseAgent):
                     from_agent=self.agent_type,
                     to_agent=AgentType.CCT_COMPLIANCE,
                     message_type="validar_funcionario",
-                    payload={
-                        "workflow_id": workflow_id,
-                        **data
-                    }
+                    payload={"workflow_id": workflow_id, **data},
                 )
             )
             self.pending_workflows[workflow_id]["steps_completed"].append("cct_validation")
 
-    async def _handle_proposta_solicitada(self, data: Dict[str, Any]) -> None:
+    async def _handle_proposta_solicitada(self, data: dict[str, Any]) -> None:
         """Lida com solicitacao de proposta vinda do email."""
         logger.info(f"Proposta solicitada via email: {data.get('email_id')}")
 
         # Iniciar workflow de proposta
-        await self._start_workflow({
-            "workflow_type": "proposta_comercial",
-            "source": "email",
-            "email_id": data.get("email_id"),
-            "analysis": data.get("analysis")
-        })
+        await self._start_workflow(
+            {
+                "workflow_type": "proposta_comercial",
+                "source": "email",
+                "email_id": data.get("email_id"),
+                "analysis": data.get("analysis"),
+            }
+        )
 
-    async def _handle_alerta_cct(self, data: Dict[str, Any]) -> None:
+    async def _handle_alerta_cct(self, data: dict[str, Any]) -> None:
         """Lida com alerta de nao conformidade CCT."""
         logger.warning(f"Alerta CCT: {data.get('cargo')} - {data.get('alertas')}")
         self.metrics["alerts_generated"] += 1
 
         # Em producao: enviar notificacao, criar tarefa, etc.
 
-    async def _get_system_status(self) -> Dict[str, Any]:
+    async def _get_system_status(self) -> dict[str, Any]:
         """Retorna status de todos os agentes."""
         status = {
             "hub_status": self.get_status(),
             "registered_agents": {},
             "pending_workflows": len(self.pending_workflows),
-            "metrics": self.metrics
+            "metrics": self.metrics,
         }
 
         for agent_type, agent in self.registered_agents.items():
@@ -199,13 +185,9 @@ class IntegrationHubAgent(BaseAgent):
 
         return status
 
-    async def _aggregate_metrics(self) -> Dict[str, Any]:
+    async def _aggregate_metrics(self) -> dict[str, Any]:
         """Agrega metricas de todos os agentes."""
-        aggregated = {
-            "timestamp": datetime.utcnow().isoformat(),
-            "hub_metrics": self.metrics,
-            "agent_metrics": {}
-        }
+        aggregated = {"timestamp": datetime.utcnow().isoformat(), "hub_metrics": self.metrics, "agent_metrics": {}}
 
         for agent_type, agent in self.registered_agents.items():
             agent_status = agent.get_status()

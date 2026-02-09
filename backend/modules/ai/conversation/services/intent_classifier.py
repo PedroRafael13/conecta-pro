@@ -2,7 +2,6 @@
 
 import re
 from dataclasses import dataclass
-from typing import Optional
 
 from modules.ai.conversation.models.chat_message import IntentCategory
 
@@ -196,8 +195,7 @@ class IntentClassifier:
     def _compile_patterns(self) -> None:
         """Pre-compila os padroes regex."""
         self._entity_regex = {
-            name: re.compile(pattern, re.IGNORECASE)
-            for name, pattern in self.ENTITY_PATTERNS.items()
+            name: re.compile(pattern, re.IGNORECASE) for name, pattern in self.ENTITY_PATTERNS.items()
         }
 
     def _normalize_text(self, text: str) -> str:
@@ -243,9 +241,7 @@ class IntentClassifier:
 
         return entities
 
-    def _calculate_intent_score(
-        self, normalized_text: str, intent: IntentCategory
-    ) -> tuple[float, list[str]]:
+    def _calculate_intent_score(self, normalized_text: str, intent: IntentCategory) -> tuple[float, list[str]]:
         """Calcula score para uma intencao."""
         config = self.INTENT_PATTERNS.get(intent)
         if not config:
@@ -267,10 +263,7 @@ class IntentClassifier:
                     matched_keywords.append(keyword)
             else:
                 # Verifica se a palavra-chave esta presente
-                if keyword_normalized in normalized_text:
-                    matched_keywords.append(keyword)
-                # Verifica palavras individuais
-                elif any(keyword_normalized in word for word in words):
+                if keyword_normalized in normalized_text or any(keyword_normalized in word for word in words):
                     matched_keywords.append(keyword)
 
         if not matched_keywords:
@@ -282,9 +275,7 @@ class IntentClassifier:
 
         return final_score, matched_keywords
 
-    def classify(
-        self, message: str, context: Optional[dict] = None
-    ) -> IntentResult:
+    def classify(self, message: str, context: dict | None = None) -> IntentResult:
         """
         Classifica a intencao da mensagem.
 
@@ -336,9 +327,7 @@ class IntentClassifier:
             entities=entities,
         )
 
-    async def classify_async(
-        self, message: str, context: Optional[dict] = None
-    ) -> IntentResult:
+    async def classify_async(self, message: str, context: dict | None = None) -> IntentResult:
         """Versao assincrona do classify."""
         return self.classify(message, context)
 

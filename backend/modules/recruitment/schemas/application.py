@@ -1,9 +1,8 @@
 """Schemas para Application."""
 
 from datetime import datetime
-from typing import Optional, List
 
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from modules.recruitment.models.application import (
     ApplicationStatus,
@@ -14,10 +13,10 @@ from modules.recruitment.models.application import (
 class ApplicationBase(BaseModel):
     """Schema base para Application."""
 
-    cover_letter: Optional[str] = None
-    screening_answers: Optional[List[dict]] = Field(default_factory=list)
-    referral_employee_id: Optional[str] = None
-    referral_notes: Optional[str] = None
+    cover_letter: str | None = None
+    screening_answers: list[dict] | None = Field(default_factory=list)
+    referral_employee_id: str | None = None
+    referral_notes: str | None = None
 
 
 class ApplicationCreate(ApplicationBase):
@@ -25,24 +24,24 @@ class ApplicationCreate(ApplicationBase):
 
     job_position_id: str
     candidate_id: str
-    created_by: Optional[str] = None
+    created_by: str | None = None
 
 
 class ApplicationUpdate(BaseModel):
     """Schema para atualização de candidatura."""
 
-    status: Optional[ApplicationStatus] = None
-    current_stage: Optional[int] = None
-    current_stage_name: Optional[str] = None
-    matching_score: Optional[int] = Field(None, ge=0, le=100)
-    interview_score: Optional[int] = Field(None, ge=0, le=100)
-    test_score: Optional[int] = Field(None, ge=0, le=100)
-    is_favorite: Optional[bool] = None
-    is_shortlisted: Optional[bool] = None
-    recruiter_notes: Optional[str] = None
-    hiring_manager_notes: Optional[str] = None
-    feedback: Optional[str] = None
-    assigned_recruiter_id: Optional[str] = None
+    status: ApplicationStatus | None = None
+    current_stage: int | None = None
+    current_stage_name: str | None = None
+    matching_score: int | None = Field(None, ge=0, le=100)
+    interview_score: int | None = Field(None, ge=0, le=100)
+    test_score: int | None = Field(None, ge=0, le=100)
+    is_favorite: bool | None = None
+    is_shortlisted: bool | None = None
+    recruiter_notes: str | None = None
+    hiring_manager_notes: str | None = None
+    feedback: str | None = None
+    assigned_recruiter_id: str | None = None
 
 
 class ApplicationResponse(ApplicationBase):
@@ -55,33 +54,33 @@ class ApplicationResponse(ApplicationBase):
     candidate_id: str
     status: ApplicationStatus
     current_stage: int
-    current_stage_name: Optional[str] = None
+    current_stage_name: str | None = None
     matching_score: int = 0
-    interview_score: Optional[int] = None
-    test_score: Optional[int] = None
-    final_score: Optional[int] = None
-    ranking_position: Optional[int] = None
+    interview_score: int | None = None
+    test_score: int | None = None
+    final_score: int | None = None
+    ranking_position: int | None = None
     is_favorite: bool = False
     is_shortlisted: bool = False
-    status_history: Optional[List[dict]] = None
-    recruiter_notes: Optional[str] = None
-    hiring_manager_notes: Optional[str] = None
-    feedback: Optional[str] = None
-    rejection_reason: Optional[RejectionReason] = None
-    rejection_details: Optional[str] = None
-    rejected_at: Optional[datetime] = None
-    proposal_sent_at: Optional[datetime] = None
-    proposal_amount: Optional[int] = None
-    proposal_accepted: Optional[bool] = None
-    hired_at: Optional[datetime] = None
-    start_date: Optional[datetime] = None
+    status_history: list[dict] | None = None
+    recruiter_notes: str | None = None
+    hiring_manager_notes: str | None = None
+    feedback: str | None = None
+    rejection_reason: RejectionReason | None = None
+    rejection_details: str | None = None
+    rejected_at: datetime | None = None
+    proposal_sent_at: datetime | None = None
+    proposal_amount: int | None = None
+    proposal_accepted: bool | None = None
+    hired_at: datetime | None = None
+    start_date: datetime | None = None
     applied_at: datetime
-    last_update_at: Optional[datetime] = None
-    viewed_at: Optional[datetime] = None
-    assigned_recruiter_id: Optional[str] = None
-    created_by: Optional[str] = None
+    last_update_at: datetime | None = None
+    viewed_at: datetime | None = None
+    assigned_recruiter_id: str | None = None
+    created_by: str | None = None
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
 
     # Computed
     is_active: bool
@@ -94,7 +93,7 @@ class ApplicationResponse(ApplicationBase):
 class ApplicationListResponse(BaseModel):
     """Schema de lista de candidaturas."""
 
-    items: List[ApplicationResponse]
+    items: list[ApplicationResponse]
     total: int
     page: int
     page_size: int
@@ -104,16 +103,16 @@ class ApplicationListResponse(BaseModel):
 class ApplicationFilter(BaseModel):
     """Schema para filtro de candidaturas."""
 
-    job_position_id: Optional[str] = None
-    candidate_id: Optional[str] = None
-    status: Optional[ApplicationStatus] = None
-    is_favorite: Optional[bool] = None
-    is_shortlisted: Optional[bool] = None
-    min_score: Optional[int] = None
-    max_score: Optional[int] = None
-    assigned_recruiter_id: Optional[str] = None
-    applied_after: Optional[datetime] = None
-    applied_before: Optional[datetime] = None
+    job_position_id: str | None = None
+    candidate_id: str | None = None
+    status: ApplicationStatus | None = None
+    is_favorite: bool | None = None
+    is_shortlisted: bool | None = None
+    min_score: int | None = None
+    max_score: int | None = None
+    assigned_recruiter_id: str | None = None
+    applied_after: datetime | None = None
+    applied_before: datetime | None = None
 
 
 class ApplicationStats(BaseModel):
@@ -135,14 +134,14 @@ class ApplicationAdvance(BaseModel):
     """Schema para avançar candidatura."""
 
     new_status: ApplicationStatus
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class ApplicationReject(BaseModel):
     """Schema para rejeitar candidatura."""
 
     reason: RejectionReason
-    details: Optional[str] = None
+    details: str | None = None
     send_notification: bool = True
 
 
@@ -150,9 +149,9 @@ class ApplicationProposal(BaseModel):
     """Schema para proposta."""
 
     amount: int = Field(..., gt=0)
-    benefits: Optional[List[str]] = Field(default_factory=list)
-    start_date: Optional[datetime] = None
-    notes: Optional[str] = None
+    benefits: list[str] | None = Field(default_factory=list)
+    start_date: datetime | None = None
+    notes: str | None = None
 
 
 class ApplicationHire(BaseModel):
@@ -160,13 +159,13 @@ class ApplicationHire(BaseModel):
 
     start_date: datetime
     final_salary: int = Field(..., gt=0)
-    position_id: Optional[str] = None
-    notes: Optional[str] = None
+    position_id: str | None = None
+    notes: str | None = None
 
 
 class ApplicationBulkAction(BaseModel):
     """Schema para ação em lote."""
 
-    application_ids: List[str]
+    application_ids: list[str]
     action: str
-    notes: Optional[str] = None
+    notes: str | None = None

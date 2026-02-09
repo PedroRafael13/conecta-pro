@@ -1,16 +1,17 @@
 """Testes para PayrollEvent model."""
 
-import pytest
 from datetime import datetime
 from decimal import Decimal
 from uuid import uuid4
 
+import pytest
+
 from modules.hr.payroll_integration.models import (
-    PayrollEvent,
-    EventType,
+    DEFAULT_RUBRICAS,
     EventCategory,
     EventStatus,
-    DEFAULT_RUBRICAS,
+    EventType,
+    PayrollEvent,
 )
 
 

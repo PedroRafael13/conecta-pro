@@ -2,17 +2,19 @@
  * Testes unitários do Detalhe de Edital
  */
 
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen } from '@testing-library/react';
 import { render } from '@/test/helpers/test-utils';
 import { mockEdital } from '@/test/fixtures/licitacoes';
 import * as tendersHooks from '@/hooks/bidding/useTenders';
 
-vi.mock('@/hooks/bidding/useTenders');
+vi.mock('@/hooks/bidding/useTenders', () => ({
+  useBuscarEdital: vi.fn(),
+}));
 
 // Componente simulado de detalhe
 const EditalDetail = ({ id }: { id: string }) => {
-  const { data: edital, isLoading } = (tendersHooks as any).useTender(id);
+  const { data: edital, isLoading } = (tendersHooks as any).useBuscarEdital(id);
 
   if (isLoading) return <div>Carregando...</div>;
   if (!edital) return <div>Edital não encontrado</div>;
@@ -32,11 +34,15 @@ const EditalDetail = ({ id }: { id: string }) => {
 };
 
 describe('Detalhe de Edital', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('deve renderizar informações do edital', () => {
-    vi.spyOn(tendersHooks, 'useBuscarEdital').mockReturnValue({
+    vi.mocked(tendersHooks.useBuscarEdital).mockReturnValue({
       data: mockEdital,
       isLoading: false,
-    } as never);
+    } as any);
 
     render(<EditalDetail id="edital-001" />);
 
@@ -47,10 +53,10 @@ describe('Detalhe de Edital', () => {
   });
 
   it('deve mostrar loading state', () => {
-    vi.spyOn(tendersHooks, 'useBuscarEdital').mockReturnValue({
+    vi.mocked(tendersHooks.useBuscarEdital).mockReturnValue({
       data: undefined,
       isLoading: true,
-    } as never);
+    } as any);
 
     render(<EditalDetail id="edital-001" />);
 
@@ -58,10 +64,10 @@ describe('Detalhe de Edital', () => {
   });
 
   it('deve mostrar mensagem quando edital não existe', () => {
-    vi.spyOn(tendersHooks, 'useBuscarEdital').mockReturnValue({
+    vi.mocked(tendersHooks.useBuscarEdital).mockReturnValue({
       data: null,
       isLoading: false,
-    } as never);
+    } as any);
 
     render(<EditalDetail id="invalid-id" />);
 
@@ -69,10 +75,10 @@ describe('Detalhe de Edital', () => {
   });
 
   it('deve renderizar botões de ação', () => {
-    vi.spyOn(tendersHooks, 'useBuscarEdital').mockReturnValue({
+    vi.mocked(tendersHooks.useBuscarEdital).mockReturnValue({
       data: mockEdital,
       isLoading: false,
-    } as never);
+    } as any);
 
     render(<EditalDetail id="edital-001" />);
 

@@ -1,23 +1,22 @@
 """Controller para endpoints de Dashboard."""
 
 import logging
-from typing import Optional, List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.database import get_db
 from core.auth.dependencies import get_current_user
+from core.database import get_db
 from modules.hr.analytics_dashboard.schemas import (
-    DashboardConfigCreate,
-    DashboardConfigUpdate,
-    DashboardConfigResponse,
-    DashboardListResponse,
     DashboardCloneRequest,
+    DashboardConfigCreate,
+    DashboardConfigResponse,
+    DashboardConfigUpdate,
+    DashboardListResponse,
     DashboardWidgetCreate,
-    DashboardWidgetUpdate,
     DashboardWidgetResponse,
+    DashboardWidgetUpdate,
     WidgetBatchPositionUpdate,
     WidgetDataResponse,
 )
@@ -27,9 +26,9 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/dashboards", tags=["Dashboards"])
 
 
-@router.get("/", response_model=List[DashboardListResponse])
+@router.get("/", response_model=list[DashboardListResponse])
 async def list_dashboards(
-    dashboard_type: Optional[str] = Query(None, description="Filtrar por tipo"),
+    dashboard_type: str | None = Query(None, description="Filtrar por tipo"),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
@@ -191,7 +190,8 @@ async def refresh_dashboard(
 
 # ==================== Widget Endpoints ====================
 
-@router.get("/{dashboard_id}/widgets", response_model=List[DashboardWidgetResponse])
+
+@router.get("/{dashboard_id}/widgets", response_model=list[DashboardWidgetResponse])
 async def list_widgets(
     dashboard_id: UUID,
     db: AsyncSession = Depends(get_db),

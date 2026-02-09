@@ -5,8 +5,9 @@ Sprint 21: Monitoramento avancado para UptimeRobot
 Testa o endpoint /health/detailed que verifica DB, Redis e Celery.
 """
 
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-from unittest.mock import patch, AsyncMock, MagicMock
 
 
 class TestHealthDetailed:
@@ -18,10 +19,11 @@ class TestHealthDetailed:
         from main_production import health_check_detailed
 
         # Mock das dependencias
-        with patch('main_production.get_redis') as mock_redis, \
-             patch('main_production.get_db_session') as mock_db, \
-             patch('redis.from_url') as mock_celery_redis:
-
+        with (
+            patch("main_production.get_redis") as mock_redis,
+            patch("main_production.get_db_session") as mock_db,
+            patch("redis.from_url") as mock_celery_redis,
+        ):
             # Setup mocks
             mock_redis_client = AsyncMock()
             mock_redis_client.ping = AsyncMock(return_value=True)
@@ -50,10 +52,11 @@ class TestHealthDetailed:
         """Testa que health detailed retorna campos obrigatorios."""
         from main_production import health_check_detailed
 
-        with patch('main_production.get_redis') as mock_redis, \
-             patch('main_production.get_db_session') as mock_db, \
-             patch('redis.from_url') as mock_celery_redis:
-
+        with (
+            patch("main_production.get_redis") as mock_redis,
+            patch("main_production.get_db_session") as mock_db,
+            patch("redis.from_url") as mock_celery_redis,
+        ):
             # Setup basico - pode falhar, queremos testar estrutura
             mock_redis.return_value = None
             mock_db.side_effect = Exception("DB Error")
@@ -74,10 +77,11 @@ class TestHealthDetailed:
         """Testa que retorna unhealthy quando DB falha."""
         from main_production import health_check_detailed
 
-        with patch('main_production.get_redis') as mock_redis, \
-             patch('main_production.get_db_session') as mock_db, \
-             patch('redis.from_url') as mock_celery_redis:
-
+        with (
+            patch("main_production.get_redis") as mock_redis,
+            patch("main_production.get_db_session") as mock_db,
+            patch("redis.from_url") as mock_celery_redis,
+        ):
             # Redis OK
             mock_redis_client = AsyncMock()
             mock_redis_client.ping = AsyncMock(return_value=True)
@@ -101,10 +105,11 @@ class TestHealthDetailed:
         """Testa que latencia eh rastreada para cada servico."""
         from main_production import health_check_detailed
 
-        with patch('main_production.get_redis') as mock_redis, \
-             patch('main_production.get_db_session') as mock_db, \
-             patch('redis.from_url') as mock_celery_redis:
-
+        with (
+            patch("main_production.get_redis") as mock_redis,
+            patch("main_production.get_db_session") as mock_db,
+            patch("redis.from_url") as mock_celery_redis,
+        ):
             # Todos os servicos OK
             mock_redis_client = AsyncMock()
             mock_redis_client.ping = AsyncMock(return_value=True)
@@ -122,7 +127,7 @@ class TestHealthDetailed:
             result = await health_check_detailed()
 
             # Verifica que latencia eh um numero ou None
-            for check_name, check_data in result["checks"].items():
+            for _check_name, check_data in result["checks"].items():
                 latency = check_data.get("latency_ms")
                 assert latency is None or isinstance(latency, (int, float))
 

@@ -1,15 +1,14 @@
 """Schemas para notificações do funcionário."""
 
 from datetime import datetime
-from typing import Optional, List
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
 from modules.hr.employee_portal.models import (
-    NotificationType,
-    NotificationPriority,
     NotificationChannel,
+    NotificationPriority,
+    NotificationType,
 )
 
 
@@ -22,28 +21,26 @@ class NotificationCreate(BaseModel):
 
     title: str = Field(..., min_length=1, max_length=200)
     message: str = Field(..., min_length=1, max_length=5000)
-    short_message: Optional[str] = Field(None, max_length=200)
+    short_message: str | None = Field(None, max_length=200)
 
-    icon: Optional[str] = Field(None, max_length=50)
-    color: Optional[str] = Field(None, max_length=20)
-    image_url: Optional[str] = Field(None, max_length=500)
+    icon: str | None = Field(None, max_length=50)
+    color: str | None = Field(None, max_length=20)
+    image_url: str | None = Field(None, max_length=500)
 
-    action_url: Optional[str] = Field(None, max_length=500)
-    action_label: Optional[str] = Field(None, max_length=50)
-    action_type: Optional[str] = Field(None, max_length=30)
+    action_url: str | None = Field(None, max_length=500)
+    action_label: str | None = Field(None, max_length=50)
+    action_type: str | None = Field(None, max_length=30)
 
-    reference_type: Optional[str] = Field(None, max_length=50)
-    reference_id: Optional[UUID] = None
+    reference_type: str | None = Field(None, max_length=50)
+    reference_id: UUID | None = None
 
-    channels: List[NotificationChannel] = Field(
-        default_factory=lambda: [NotificationChannel.PORTAL]
-    )
+    channels: list[NotificationChannel] = Field(default_factory=lambda: [NotificationChannel.PORTAL])
 
-    scheduled_at: Optional[datetime] = None
-    expires_at: Optional[datetime] = None
+    scheduled_at: datetime | None = None
+    expires_at: datetime | None = None
 
     is_recurring: bool = False
-    recurrence_pattern: Optional[str] = Field(None, max_length=50)
+    recurrence_pattern: str | None = Field(None, max_length=50)
 
     extra_data: dict = Field(default_factory=dict)
 
@@ -60,47 +57,47 @@ class NotificationResponse(BaseModel):
 
     title: str
     message: str
-    short_message: Optional[str]
+    short_message: str | None
 
-    icon: Optional[str]
-    color: Optional[str]
-    image_url: Optional[str]
+    icon: str | None
+    color: str | None
+    image_url: str | None
 
-    action_url: Optional[str]
-    action_label: Optional[str]
-    action_type: Optional[str]
+    action_url: str | None
+    action_label: str | None
+    action_type: str | None
 
-    reference_type: Optional[str]
-    reference_id: Optional[UUID]
+    reference_type: str | None
+    reference_id: UUID | None
 
-    channels: List[str]
+    channels: list[str]
     delivered_channels: dict
 
     is_read: bool
-    read_at: Optional[datetime]
-    clicked_at: Optional[datetime]
-    dismissed_at: Optional[datetime]
+    read_at: datetime | None
+    clicked_at: datetime | None
+    dismissed_at: datetime | None
 
     email_sent: bool
-    email_sent_at: Optional[datetime]
+    email_sent_at: datetime | None
     email_opened: bool
-    email_opened_at: Optional[datetime]
+    email_opened_at: datetime | None
 
     push_sent: bool
-    push_sent_at: Optional[datetime]
+    push_sent_at: datetime | None
     push_clicked: bool
-    push_clicked_at: Optional[datetime]
+    push_clicked_at: datetime | None
 
     sms_sent: bool
-    sms_sent_at: Optional[datetime]
+    sms_sent_at: datetime | None
     sms_delivered: bool
 
-    scheduled_at: Optional[datetime]
-    expires_at: Optional[datetime]
+    scheduled_at: datetime | None
+    expires_at: datetime | None
 
     is_recurring: bool
-    recurrence_pattern: Optional[str]
-    next_occurrence: Optional[datetime]
+    recurrence_pattern: str | None
+    next_occurrence: datetime | None
 
     extra_data: dict
 
@@ -110,7 +107,7 @@ class NotificationResponse(BaseModel):
     is_pending_delivery: bool
 
     created_at: datetime
-    updated_at: Optional[datetime]
+    updated_at: datetime | None
 
     model_config = {"from_attributes": True}
 
@@ -123,10 +120,10 @@ class NotificationSummary(BaseModel):
     priority: str
     title: str
     short_message: str
-    icon: Optional[str]
-    color: Optional[str]
-    action_url: Optional[str]
-    action_label: Optional[str]
+    icon: str | None
+    color: str | None
+    action_url: str | None
+    action_label: str | None
     is_read: bool
     created_at: datetime
 
@@ -134,7 +131,7 @@ class NotificationSummary(BaseModel):
 class NotificationListResponse(BaseModel):
     """Lista paginada de notificações."""
 
-    items: List[NotificationSummary]
+    items: list[NotificationSummary]
     total: int
     page: int
     page_size: int
@@ -145,7 +142,7 @@ class NotificationListResponse(BaseModel):
 class NotificationMarkReadRequest(BaseModel):
     """Request para marcar notificações como lidas."""
 
-    notification_ids: List[UUID] = Field(..., min_length=1, max_length=100)
+    notification_ids: list[UUID] = Field(..., min_length=1, max_length=100)
 
 
 class NotificationMarkReadResponse(BaseModel):
@@ -158,45 +155,45 @@ class NotificationMarkReadResponse(BaseModel):
 class NotificationDismissRequest(BaseModel):
     """Request para descartar notificações."""
 
-    notification_ids: List[UUID] = Field(..., min_length=1, max_length=100)
+    notification_ids: list[UUID] = Field(..., min_length=1, max_length=100)
 
 
 class NotificationPreferencesUpdate(BaseModel):
     """Atualização de preferências de notificação."""
 
     # Portal
-    notifications_enabled: Optional[bool] = None
-    notification_sound: Optional[bool] = None
-    notification_badge: Optional[bool] = None
+    notifications_enabled: bool | None = None
+    notification_sound: bool | None = None
+    notification_badge: bool | None = None
 
     # Email
-    email_notifications_enabled: Optional[bool] = None
-    email_payslip: Optional[bool] = None
-    email_documents: Optional[bool] = None
-    email_vacation: Optional[bool] = None
-    email_announcements: Optional[bool] = None
-    email_birthday: Optional[bool] = None
-    email_digest: Optional[bool] = None
-    email_digest_time: Optional[str] = Field(None, pattern=r"^\d{2}:\d{2}$")
+    email_notifications_enabled: bool | None = None
+    email_payslip: bool | None = None
+    email_documents: bool | None = None
+    email_vacation: bool | None = None
+    email_announcements: bool | None = None
+    email_birthday: bool | None = None
+    email_digest: bool | None = None
+    email_digest_time: str | None = Field(None, pattern=r"^\d{2}:\d{2}$")
 
     # Push
-    push_notifications_enabled: Optional[bool] = None
-    push_payslip: Optional[bool] = None
-    push_documents: Optional[bool] = None
-    push_vacation: Optional[bool] = None
-    push_announcements: Optional[bool] = None
-    push_time_entry: Optional[bool] = None
-    push_quiet_hours: Optional[bool] = None
-    push_quiet_start: Optional[str] = Field(None, pattern=r"^\d{2}:\d{2}$")
-    push_quiet_end: Optional[str] = Field(None, pattern=r"^\d{2}:\d{2}$")
+    push_notifications_enabled: bool | None = None
+    push_payslip: bool | None = None
+    push_documents: bool | None = None
+    push_vacation: bool | None = None
+    push_announcements: bool | None = None
+    push_time_entry: bool | None = None
+    push_quiet_hours: bool | None = None
+    push_quiet_start: str | None = Field(None, pattern=r"^\d{2}:\d{2}$")
+    push_quiet_end: str | None = Field(None, pattern=r"^\d{2}:\d{2}$")
 
     # SMS
-    sms_notifications_enabled: Optional[bool] = None
-    sms_urgent_only: Optional[bool] = None
+    sms_notifications_enabled: bool | None = None
+    sms_urgent_only: bool | None = None
 
     # WhatsApp
-    whatsapp_notifications_enabled: Optional[bool] = None
-    whatsapp_phone: Optional[str] = Field(None, max_length=20)
+    whatsapp_notifications_enabled: bool | None = None
+    whatsapp_phone: str | None = Field(None, max_length=20)
 
 
 class UnreadCountResponse(BaseModel):
@@ -205,48 +202,46 @@ class UnreadCountResponse(BaseModel):
     total_unread: int
     by_type: dict  # {"payslip_available": 2, "document_available": 1, ...}
     by_priority: dict  # {"urgent": 1, "high": 2, "normal": 5, "low": 0}
-    oldest_unread_at: Optional[datetime]
+    oldest_unread_at: datetime | None
 
 
 class NotificationFilterRequest(BaseModel):
     """Filtros para busca de notificações."""
 
-    employee_id: Optional[UUID] = None
-    notification_type: Optional[NotificationType] = None
-    priority: Optional[NotificationPriority] = None
-    is_read: Optional[bool] = None
-    is_active: Optional[bool] = None
-    is_archived: Optional[bool] = None
-    reference_type: Optional[str] = None
-    reference_id: Optional[UUID] = None
-    created_from: Optional[datetime] = None
-    created_to: Optional[datetime] = None
-    channel: Optional[NotificationChannel] = None
+    employee_id: UUID | None = None
+    notification_type: NotificationType | None = None
+    priority: NotificationPriority | None = None
+    is_read: bool | None = None
+    is_active: bool | None = None
+    is_archived: bool | None = None
+    reference_type: str | None = None
+    reference_id: UUID | None = None
+    created_from: datetime | None = None
+    created_to: datetime | None = None
+    channel: NotificationChannel | None = None
 
 
 class NotificationBulkCreateRequest(BaseModel):
     """Request para criação em lote de notificações."""
 
-    employee_ids: List[UUID] = Field(..., min_length=1, max_length=1000)
+    employee_ids: list[UUID] = Field(..., min_length=1, max_length=1000)
     notification_type: NotificationType
     priority: NotificationPriority = NotificationPriority.NORMAL
 
     title: str = Field(..., min_length=1, max_length=200)
     message: str = Field(..., min_length=1, max_length=5000)
-    short_message: Optional[str] = Field(None, max_length=200)
+    short_message: str | None = Field(None, max_length=200)
 
-    icon: Optional[str] = Field(None, max_length=50)
-    color: Optional[str] = Field(None, max_length=20)
+    icon: str | None = Field(None, max_length=50)
+    color: str | None = Field(None, max_length=20)
 
-    action_url: Optional[str] = Field(None, max_length=500)
-    action_label: Optional[str] = Field(None, max_length=50)
+    action_url: str | None = Field(None, max_length=500)
+    action_label: str | None = Field(None, max_length=50)
 
-    channels: List[NotificationChannel] = Field(
-        default_factory=lambda: [NotificationChannel.PORTAL]
-    )
+    channels: list[NotificationChannel] = Field(default_factory=lambda: [NotificationChannel.PORTAL])
 
-    scheduled_at: Optional[datetime] = None
-    expires_at: Optional[datetime] = None
+    scheduled_at: datetime | None = None
+    expires_at: datetime | None = None
 
 
 class NotificationBulkCreateResponse(BaseModel):
@@ -254,4 +249,4 @@ class NotificationBulkCreateResponse(BaseModel):
 
     total_requested: int
     total_created: int
-    notification_ids: List[UUID]
+    notification_ids: list[UUID]

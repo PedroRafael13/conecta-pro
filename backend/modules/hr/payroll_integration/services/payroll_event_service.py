@@ -2,7 +2,7 @@
 
 import logging
 from decimal import Decimal
-from typing import Any, Dict, List, Optional
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -66,7 +66,7 @@ class PayrollEventService:
         condominio_id: UUID,
         *,
         user_id: UUID = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Cria eventos em lote."""
         period = await self.period_repo.get_by_id(data.period_id)
         if not period:
@@ -105,7 +105,7 @@ class PayrollEventService:
         )
         return results
 
-    async def get_event(self, event_id: UUID) -> Optional[PayrollEvent]:
+    async def get_event(self, event_id: UUID) -> PayrollEvent | None:
         """Busca evento por ID."""
         return await self.event_repo.get_by_id(event_id)
 
@@ -133,7 +133,7 @@ class PayrollEventService:
         self,
         employee_id: UUID,
         period_id: UUID,
-    ) -> List[PayrollEvent]:
+    ) -> list[PayrollEvent]:
         """Retorna todos eventos de um funcionário no período."""
         return await self.event_repo.list_by_employee(employee_id, period_id)
 
@@ -196,7 +196,7 @@ class PayrollEventService:
         self,
         event_id: UUID,
         data: PayrollEventUpdate,
-    ) -> Optional[PayrollEvent]:
+    ) -> PayrollEvent | None:
         """Atualiza evento."""
         event = await self.event_repo.get_by_id(event_id)
         if not event:
@@ -213,7 +213,7 @@ class PayrollEventService:
         event_id: UUID,
         data: EventAdjustmentRequest,
         user_id: UUID,
-    ) -> Optional[PayrollEvent]:
+    ) -> PayrollEvent | None:
         """Ajusta valor do evento."""
         event = await self.event_repo.get_by_id(event_id)
         if not event:
@@ -235,7 +235,7 @@ class PayrollEventService:
         event_id: UUID,
         reason: str,
         user_id: UUID,
-    ) -> Optional[PayrollEvent]:
+    ) -> PayrollEvent | None:
         """Cancela evento."""
         event = await self.event_repo.get_by_id(event_id)
         if not event:
@@ -250,14 +250,14 @@ class PayrollEventService:
     async def get_events_by_category(
         self,
         period_id: UUID,
-    ) -> Dict[str, List[PayrollEvent]]:
+    ) -> dict[str, list[PayrollEvent]]:
         """Retorna eventos agrupados por categoria."""
         return await self.event_repo.get_events_by_category(period_id)
 
     async def get_period_totals(
         self,
         period_id: UUID,
-    ) -> Dict[str, Decimal]:
+    ) -> dict[str, Decimal]:
         """Retorna totais do período."""
         return await self.event_repo.get_period_totals(period_id)
 
@@ -268,7 +268,7 @@ class PayrollEventService:
         condominio_id: UUID,
         *,
         user_id: UUID = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Recalcula folha de um funcionário."""
         # Importar aqui para evitar circular import
         # pylint: disable=import-outside-toplevel
@@ -340,7 +340,7 @@ class PayrollEventService:
         condominio_id: UUID,  # pylint: disable=unused-argument
         *,
         user_id: UUID = None,  # pylint: disable=unused-argument
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Importa eventos de arquivo."""
         # Validar período
         period = await self.period_repo.get_by_id(period_id)

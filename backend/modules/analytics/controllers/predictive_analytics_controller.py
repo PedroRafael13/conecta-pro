@@ -1,16 +1,12 @@
 """Controller para Predictive Analytics API."""
 
 import logging
-from datetime import datetime
-from typing import Any, Optional
-from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
-
 from modules.analytics.ml.features.feature_store import FeatureStore
 from modules.analytics.ml.registry.model_registry import ModelRegistry, ModelStage
 from modules.analytics.models.churn.churn_predictor import ChurnPredictor, ChurnRiskLevel
@@ -33,6 +29,7 @@ analytics_router = APIRouter(prefix="/analytics", tags=["Predictive Analytics"])
 
 # ============== Schemas ==============
 
+
 class ChurnPredictionRequest(BaseModel):
     """Request para predição de churn."""
 
@@ -48,7 +45,7 @@ class ChurnPredictionResponse(BaseModel):
     confidence: float
     contributing_factors: list[dict]
     retention_actions: list[dict]
-    predicted_churn_date: Optional[str]
+    predicted_churn_date: str | None
     lifetime_value_at_risk: float
 
 
@@ -76,20 +73,20 @@ class ForecastResponse(BaseModel):
 class TransactionAnalysisRequest(BaseModel):
     """Request para análise de transação."""
 
-    id: Optional[str] = None
-    user_id: Optional[int] = None
+    id: str | None = None
+    user_id: int | None = None
     amount: float
-    type: Optional[str] = None
-    hour: Optional[int] = None
-    device_id: Optional[str] = None
-    ip_address: Optional[str] = None
+    type: str | None = None
+    hour: int | None = None
+    device_id: str | None = None
+    ip_address: str | None = None
     recent_transactions_count: int = 0
 
 
 class FraudAlertResponse(BaseModel):
     """Response de análise de fraude."""
 
-    transaction_id: Optional[str]
+    transaction_id: str | None
     risk_score: float
     risk_level: str
     fraud_type: str
@@ -101,12 +98,12 @@ class FraudAlertResponse(BaseModel):
 class LeadScoreRequest(BaseModel):
     """Request para scoring de lead."""
 
-    id: Optional[str] = None
-    title: Optional[str] = None
+    id: str | None = None
+    title: str | None = None
     company_size: int = 0
     industry_fit: float = 0.5
     budget_range: float = 0
-    decision_timeline: Optional[str] = None
+    decision_timeline: str | None = None
     website_visits: int = 0
     page_views: int = 0
     time_on_site: int = 0
@@ -129,7 +126,7 @@ class LeadScoreResponse(BaseModel):
     insights: list[dict]
     next_best_action: str
     estimated_value: float
-    time_to_conversion: Optional[int]
+    time_to_conversion: int | None
 
 
 class ModelHealthResponse(BaseModel):
@@ -158,6 +155,7 @@ model_monitor = ModelMonitor(model_registry)
 
 
 # ============== Churn Endpoints ==============
+
 
 @analytics_router.post(
     "/churn/predict",
@@ -196,8 +194,7 @@ async def predict_churn(
                 for a in prediction.retention_actions
             ],
             predicted_churn_date=(
-                prediction.predicted_churn_date.isoformat()
-                if prediction.predicted_churn_date else None
+                prediction.predicted_churn_date.isoformat() if prediction.predicted_churn_date else None
             ),
             lifetime_value_at_risk=prediction.lifetime_value_at_risk,
         )
@@ -218,9 +215,7 @@ async def get_high_risk_users(
     """Lista usuários com alto risco de churn ordenados por probabilidade."""
     try:
         risk_level = ChurnRiskLevel(min_risk)
-        predictions = await churn_predictor.get_high_risk_users(
-            db, limit, risk_level
-        )
+        predictions = await churn_predictor.get_high_risk_users(db, limit, risk_level)
 
         return {
             "total": len(predictions),
@@ -269,6 +264,7 @@ async def get_churn_analytics(
 
 
 # ============== Forecast Endpoints ==============
+
 
 @analytics_router.post(
     "/forecast/sales",
@@ -357,9 +353,7 @@ async def get_forecast_accuracy(
 ):
     """Obtém relatório de acurácia das previsões históricas."""
     try:
-        report = await sales_forecaster.get_forecast_accuracy_report(
-            db, lookback_days
-        )
+        report = await sales_forecaster.get_forecast_accuracy_report(db, lookback_days)
         return report
     except Exception as e:
         logger.error(f"Erro no relatório de acurácia: {e}")
@@ -367,6 +361,7 @@ async def get_forecast_accuracy(
 
 
 # ============== Fraud Endpoints ==============
+
 
 @analytics_router.post(
     "/fraud/analyze",
@@ -415,8 +410,8 @@ async def analyze_transaction(
     summary="Listar alertas de fraude",
 )
 async def get_fraud_alerts(
-    min_risk: Optional[str] = Query(default=None),
-    acknowledged: Optional[bool] = Query(default=None),
+    min_risk: str | None = Query(default=None),
+    acknowledged: bool | None = Query(default=None),
     limit: int = Query(default=50, le=200),
 ):
     """Lista alertas de fraude filtrados."""
@@ -450,7 +445,7 @@ async def get_fraud_alerts(
 async def update_alert_status(
     alert_id: str,
     new_status: str,
-    notes: Optional[str] = None,
+    notes: str | None = None,
 ):
     """Atualiza o status de um alerta de fraude."""
     try:
@@ -512,6 +507,7 @@ async def get_user_risk_profile(
 
 
 # ============== Lead Scoring Endpoints ==============
+
 
 @analytics_router.post(
     "/leads/score",
@@ -585,14 +581,14 @@ async def get_top_leads(
             "total": len(leads),
             "leads": [
                 {
-                    "lead_id": l.lead_id,
-                    "score": l.total_score,
-                    "quality": l.quality.value,
-                    "conversion_probability": l.conversion_probability,
-                    "estimated_value": l.estimated_value,
-                    "next_action": l.next_best_action,
+                    "lead_id": lead.lead_id,
+                    "score": lead.total_score,
+                    "quality": lead.quality.value,
+                    "conversion_probability": lead.conversion_probability,
+                    "estimated_value": lead.estimated_value,
+                    "next_action": lead.next_best_action,
                 }
-                for l in leads
+                for lead in leads
             ],
         }
     except ValueError:
@@ -627,6 +623,7 @@ async def get_scoring_analytics(
 
 # ============== Model Management Endpoints ==============
 
+
 @analytics_router.get(
     "/models",
     summary="Listar modelos registrados",
@@ -643,7 +640,7 @@ async def list_models():
 )
 async def list_model_versions(
     model_name: str,
-    stage: Optional[str] = None,
+    stage: str | None = None,
 ):
     """Lista versões de um modelo específico."""
     try:
@@ -693,6 +690,7 @@ async def promote_model(
 
 
 # ============== Monitoring Endpoints ==============
+
 
 @analytics_router.get(
     "/monitoring/dashboard",
@@ -763,8 +761,8 @@ async def get_model_health(
     summary="Listar alertas de monitoramento",
 )
 async def get_monitoring_alerts(
-    model_name: Optional[str] = None,
-    acknowledged: Optional[bool] = None,
+    model_name: str | None = None,
+    acknowledged: bool | None = None,
 ):
     """Lista alertas de drift e degradação."""
     alerts = model_monitor.get_alerts(model_name, acknowledged=acknowledged)
@@ -801,21 +799,20 @@ async def acknowledge_monitoring_alert(alert_id: str):
 
 # ============== Feature Store Endpoints ==============
 
+
 @analytics_router.get(
     "/features/user/{user_id}",
     summary="Features de um usuário",
 )
 async def get_user_features(
     user_id: int,
-    features: Optional[str] = Query(default=None),
+    features: str | None = Query(default=None),
     db: AsyncSession = Depends(get_db),
 ):
     """Obtém features calculadas de um usuário."""
     try:
         include = features.split(",") if features else None
-        user_features = await feature_store.get_user_features(
-            db, user_id, include=include
-        )
+        user_features = await feature_store.get_user_features(db, user_id, include=include)
         return user_features
     except Exception as e:
         logger.error(f"Erro ao obter features: {e}")

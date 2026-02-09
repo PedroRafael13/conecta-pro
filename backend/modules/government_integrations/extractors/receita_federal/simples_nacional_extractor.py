@@ -8,14 +8,14 @@ Implementa:
 - Consulta DEFIS (declaração anual)
 """
 
-from datetime import datetime, timedelta
-from typing import Dict, Optional, Any, List
-from uuid import UUID
 import asyncio
 import logging
+from datetime import datetime, timedelta
+from typing import Any
+from uuid import UUID
 
-from ..base_extractor import ExtratorBase, DocumentoExtraido, ResultadoExtracao
-from ...core.credentials import ProvedorCredenciais, TipoCredencial
+from ...core.credentials import TipoCredencial
+from ..base_extractor import DocumentoExtraido, ExtratorBase, ResultadoExtracao
 
 logger = logging.getLogger(__name__)
 
@@ -58,10 +58,10 @@ class ExtratorSimplesNacional(ExtratorBase):
     async def extrair(
         self,
         tenant_id: UUID,
-        data_inicio: Optional[datetime] = None,
-        data_fim: Optional[datetime] = None,
-        cnpjs: Optional[List[str]] = None,
-        ufs: Optional[List[str]] = None,
+        data_inicio: datetime | None = None,
+        data_fim: datetime | None = None,
+        cnpjs: list[str] | None = None,
+        ufs: list[str] | None = None,
         incremental: bool = True,
     ) -> ResultadoExtracao:
         """
@@ -88,14 +88,11 @@ class ExtratorSimplesNacional(ExtratorBase):
             data_inicio = data_fim - timedelta(days=365)
 
         logger.info(
-            f"Iniciando extração Simples Nacional: {tenant_id} - "
-            f"Período: {data_inicio.date()} a {data_fim.date()}"
+            f"Iniciando extração Simples Nacional: {tenant_id} - Período: {data_inicio.date()} a {data_fim.date()}"
         )
 
         try:
-            credencial = await self.credentials.obter_credencial(
-                tenant_id, self.tipo_credencial
-            )
+            credencial = await self.credentials.obter_credencial(tenant_id, self.tipo_credencial)
 
             if not credencial.valida:
                 resultado.status = "falha"
@@ -116,17 +113,13 @@ class ExtratorSimplesNacional(ExtratorBase):
                         resultado.documentos_novos += 1
 
                 # Consultar PGDAS-D (apurações mensais)
-                docs_pgdas = await self._consultar_pgdas(
-                    tenant_id, cnpj, data_inicio, data_fim
-                )
+                docs_pgdas = await self._consultar_pgdas(tenant_id, cnpj, data_inicio, data_fim)
                 for doc in docs_pgdas:
                     resultado.documentos.append(doc)
                     resultado.documentos_processados += 1
 
                 # Consultar DEFIS (declaração anual)
-                docs_defis = await self._consultar_defis(
-                    tenant_id, cnpj, data_inicio, data_fim
-                )
+                docs_defis = await self._consultar_defis(tenant_id, cnpj, data_inicio, data_fim)
                 for doc in docs_defis:
                     resultado.documentos.append(doc)
                     resultado.documentos_processados += 1
@@ -156,34 +149,29 @@ class ExtratorSimplesNacional(ExtratorBase):
         self,
         tenant_id: UUID,
         cnpj: str,
-    ) -> Optional[DocumentoExtraido]:
+    ) -> DocumentoExtraido | None:
         """Consulta opção pelo Simples Nacional."""
         try:
-            session = await self._get_session(tenant_id, with_cert=True)
+            await self._get_session(tenant_id, with_cert=True)
 
             # Em produção, consultar portal do Simples Nacional
             dados = {
                 "cnpj": cnpj,
                 "tipo": "opcao_simples",
-
                 "opcao": {
                     "optante_simples": None,  # True/False após consulta
                     "data_opcao": None,
                     "data_exclusao": None,
                     "motivo_exclusao": None,
-
                     "optante_mei": None,
                     "data_enquadramento_mei": None,
                 },
-
                 "situacao_atual": {
                     "regime": "verificar",  # "simples", "mei", "normal"
                     "anexo_predominante": None,
                     "sublimite_uf": None,
                 },
-
                 "historico": [],
-
                 "consultado_em": datetime.utcnow().isoformat(),
                 "status": "consulta_manual_necessaria",
             }
@@ -210,12 +198,12 @@ class ExtratorSimplesNacional(ExtratorBase):
         cnpj: str,
         data_inicio: datetime,
         data_fim: datetime,
-    ) -> List[DocumentoExtraido]:
+    ) -> list[DocumentoExtraido]:
         """Consulta apurações PGDAS-D."""
         documentos = []
 
         try:
-            session = await self._get_session(tenant_id, with_cert=True)
+            await self._get_session(tenant_id, with_cert=True)
 
             # Gerar períodos mensais
             periodo_atual = data_inicio.replace(day=1)
@@ -227,12 +215,10 @@ class ExtratorSimplesNacional(ExtratorBase):
                     "cnpj": cnpj,
                     "tipo": "pgdas",
                     "periodo_apuracao": periodo_str,
-
                     "apuracao": {
                         "transmitida": None,
                         "data_transmissao": None,
                         "numero_recibo": None,
-
                         # Receitas por anexo
                         "receitas": {
                             "anexo_i": 0.0,
@@ -241,14 +227,11 @@ class ExtratorSimplesNacional(ExtratorBase):
                             "anexo_iv": 0.0,
                             "anexo_v": 0.0,
                         },
-
                         "receita_bruta_total": 0.0,
                         "receita_bruta_12_meses": 0.0,
-
                         # Tributos
                         "aliquota_efetiva": 0.0,
                         "valor_devido": 0.0,
-
                         # DAS
                         "das": {
                             "numero": None,
@@ -257,7 +240,6 @@ class ExtratorSimplesNacional(ExtratorBase):
                             "situacao": "verificar",
                         },
                     },
-
                     "consultado_em": datetime.utcnow().isoformat(),
                     "status": "consulta_manual_necessaria",
                 }
@@ -274,13 +256,9 @@ class ExtratorSimplesNacional(ExtratorBase):
 
                 # Próximo mês
                 if periodo_atual.month == 12:
-                    periodo_atual = periodo_atual.replace(
-                        year=periodo_atual.year + 1, month=1
-                    )
+                    periodo_atual = periodo_atual.replace(year=periodo_atual.year + 1, month=1)
                 else:
-                    periodo_atual = periodo_atual.replace(
-                        month=periodo_atual.month + 1
-                    )
+                    periodo_atual = periodo_atual.replace(month=periodo_atual.month + 1)
 
         except Exception as e:
             logger.error(f"Erro ao consultar PGDAS: {e}")
@@ -293,12 +271,12 @@ class ExtratorSimplesNacional(ExtratorBase):
         cnpj: str,
         data_inicio: datetime,
         data_fim: datetime,
-    ) -> List[DocumentoExtraido]:
+    ) -> list[DocumentoExtraido]:
         """Consulta declarações DEFIS (anuais)."""
         documentos = []
 
         try:
-            session = await self._get_session(tenant_id, with_cert=True)
+            await self._get_session(tenant_id, with_cert=True)
 
             # Anos no período
             ano_inicio = data_inicio.year
@@ -309,23 +287,18 @@ class ExtratorSimplesNacional(ExtratorBase):
                     "cnpj": cnpj,
                     "tipo": "defis",
                     "ano_calendario": ano,
-
                     "declaracao": {
                         "transmitida": None,
                         "data_transmissao": None,
                         "numero_recibo": None,
-
                         "receita_bruta_total": 0.0,
                         "folha_salarios": 0.0,
                         "numero_empregados": 0,
-
                         "distribuicao_lucros": 0.0,
                         "pro_labore": 0.0,
-
                         "retificadora": False,
                         "numero_retificacao": 0,
                     },
-
                     "consultado_em": datetime.utcnow().isoformat(),
                     "status": "consulta_manual_necessaria",
                 }
@@ -349,19 +322,17 @@ class ExtratorSimplesNacional(ExtratorBase):
         self,
         tenant_id: UUID,
         cnpj: str,
-    ) -> Optional[DocumentoExtraido]:
+    ) -> DocumentoExtraido | None:
         """Consulta débitos do Simples Nacional."""
         try:
             dados = {
                 "cnpj": cnpj,
                 "tipo": "debitos_simples",
-
                 "resumo": {
                     "total_das_vencidos": 0.0,
                     "quantidade_das_vencidos": 0,
                     "total_parcelado": 0.0,
                 },
-
                 "das_em_aberto": [],
                 # Exemplo:
                 # {
@@ -371,9 +342,7 @@ class ExtratorSimplesNacional(ExtratorBase):
                 #     "valor_atualizado": 520.00,
                 #     "situacao": "vencido",
                 # }
-
                 "parcelamentos": [],
-
                 "consultado_em": datetime.utcnow().isoformat(),
                 "status": "consulta_manual_necessaria",
             }
@@ -394,8 +363,8 @@ class ExtratorSimplesNacional(ExtratorBase):
         tenant_id: UUID,
         cnpj: str,
         periodo: str,
-        receitas: Dict[str, float],
-    ) -> Dict[str, Any]:
+        receitas: dict[str, float],
+    ) -> dict[str, Any]:
         """
         Calcula DAS para um período.
 

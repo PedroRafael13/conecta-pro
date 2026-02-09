@@ -175,14 +175,16 @@ class TestCacheSet:
         """Testa TTL default."""
         mock_client = AsyncMock()
 
-        with patch("core.cache.redis.get_redis", return_value=mock_client):
-            with patch("core.cache.redis.settings") as mock_settings:
-                mock_settings.redis_ttl = 300
+        with (
+            patch("core.cache.redis.get_redis", return_value=mock_client),
+            patch("core.cache.redis.settings") as mock_settings,
+        ):
+            mock_settings.redis_ttl = 300
 
-                await cache_set("test_key", "value")
+            await cache_set("test_key", "value")
 
-                call_args = mock_client.setex.call_args
-                assert call_args[0][1] == 300
+            call_args = mock_client.setex.call_args
+            assert call_args[0][1] == 300
 
 
 class TestCacheDelete:
@@ -272,64 +274,60 @@ class TestCacheResponseDecorator:
     @pytest.mark.asyncio
     async def test_cache_miss(self):
         """Testa cache miss."""
-        with patch("core.cache.redis.cache_get") as mock_get:
-            with patch("core.cache.redis.cache_set") as mock_set:
-                mock_get.return_value = None
+        with patch("core.cache.redis.cache_get") as mock_get, patch("core.cache.redis.cache_set") as mock_set:
+            mock_get.return_value = None
 
-                @cache_response(ttl=60)
-                async def my_func():
-                    return {"fresh": True}
+            @cache_response(ttl=60)
+            async def my_func():
+                return {"fresh": True}
 
-                result = await my_func()
+            result = await my_func()
 
-                assert result == {"fresh": True}
-                mock_set.assert_called_once()
+            assert result == {"fresh": True}
+            mock_set.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_cache_error_get(self):
         """Testa erro ao buscar cache."""
-        with patch("core.cache.redis.cache_get") as mock_get:
-            with patch("core.cache.redis.cache_set") as mock_set:
-                mock_get.side_effect = Exception("Redis error")
+        with patch("core.cache.redis.cache_get") as mock_get, patch("core.cache.redis.cache_set"):
+            mock_get.side_effect = Exception("Redis error")
 
-                @cache_response(ttl=60)
-                async def my_func():
-                    return {"fresh": True}
+            @cache_response(ttl=60)
+            async def my_func():
+                return {"fresh": True}
 
-                result = await my_func()
+            result = await my_func()
 
-                # Deve retornar resultado mesmo com erro no cache
-                assert result == {"fresh": True}
+            # Deve retornar resultado mesmo com erro no cache
+            assert result == {"fresh": True}
 
     @pytest.mark.asyncio
     async def test_cache_error_set(self):
         """Testa erro ao salvar cache."""
-        with patch("core.cache.redis.cache_get") as mock_get:
-            with patch("core.cache.redis.cache_set") as mock_set:
-                mock_get.return_value = None
-                mock_set.side_effect = Exception("Redis error")
+        with patch("core.cache.redis.cache_get") as mock_get, patch("core.cache.redis.cache_set") as mock_set:
+            mock_get.return_value = None
+            mock_set.side_effect = Exception("Redis error")
 
-                @cache_response(ttl=60)
-                async def my_func():
-                    return {"fresh": True}
+            @cache_response(ttl=60)
+            async def my_func():
+                return {"fresh": True}
 
-                result = await my_func()
+            result = await my_func()
 
-                # Deve retornar resultado mesmo com erro no cache
-                assert result == {"fresh": True}
+            # Deve retornar resultado mesmo com erro no cache
+            assert result == {"fresh": True}
 
     @pytest.mark.asyncio
     async def test_cache_with_prefix(self):
         """Testa prefixo customizado."""
-        with patch("core.cache.redis.cache_get") as mock_get:
-            with patch("core.cache.redis.cache_set") as mock_set:
-                mock_get.return_value = None
+        with patch("core.cache.redis.cache_get") as mock_get, patch("core.cache.redis.cache_set") as mock_set:
+            mock_get.return_value = None
 
-                @cache_response(ttl=60, prefix="custom")
-                async def my_func():
-                    return {"data": 1}
+            @cache_response(ttl=60, prefix="custom")
+            async def my_func():
+                return {"data": 1}
 
-                await my_func()
+            await my_func()
 
-                call_args = mock_set.call_args
-                assert call_args[0][0].startswith("custom:")
+            call_args = mock_set.call_args
+            assert call_args[0][0].startswith("custom:")

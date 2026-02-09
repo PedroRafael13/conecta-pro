@@ -4,10 +4,13 @@ Testes dos Services Document Intelligence.
 Testes para DocumentClassifier, DataExtractor, TemplateManager.
 """
 
+from unittest.mock import AsyncMock, MagicMock
+
 import pytest
-from unittest.mock import MagicMock, AsyncMock
 
 from modules.documents.models.document import DocumentType
+from modules.documents.models.extracted_field import FieldType
+from modules.documents.models.extraction_template import TemplateCategory
 from modules.documents.models.ocr_result import (
     OCRBlock,
     OCRLine,
@@ -15,17 +18,15 @@ from modules.documents.models.ocr_result import (
     OCRResult,
     OCRWord,
 )
-from modules.documents.models.extracted_field import FieldType
-from modules.documents.models.extraction_template import TemplateCategory
+from modules.documents.services.data_extractor import (
+    DataExtractor,
+    ExtractionConfig,
+)
 from modules.documents.services.document_classifier import (
     ClassificationResult,
     ClassificationRule,
     ClassifierConfig,
     DocumentClassifier,
-)
-from modules.documents.services.data_extractor import (
-    DataExtractor,
-    ExtractionConfig,
 )
 from modules.documents.services.template_manager import TemplateManager
 
@@ -213,7 +214,7 @@ class TestDataExtractor:
         CPF: 529.982.247-25
         Telefone: (11) 99988-7766
         """
-        word = OCRWord(text=text)
+        OCRWord(text=text)
         line1 = OCRLine(words=[], text="Nome: João da Silva")
         line2 = OCRLine(words=[], text="CPF: 529.982.247-25")
         block = OCRBlock(lines=[line1, line2])

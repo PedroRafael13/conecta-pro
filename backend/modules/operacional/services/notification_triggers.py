@@ -4,11 +4,9 @@ Sprint: Módulo Operacional - Sistema de Notificações Push
 """
 
 import logging
-from datetime import date, datetime, timedelta, time
-from typing import Dict, List
+from datetime import date, datetime, timedelta
 from uuid import UUID
 
-from sqlalchemy import and_
 from sqlalchemy.orm import Session
 
 from core.database import get_db
@@ -29,7 +27,7 @@ LATE_TOLERANCE_MINUTES = 15
 PENDING_APPROVAL_HOURS = 24
 
 
-def _get_active_tenants(db: Session) -> List[UUID]:
+def _get_active_tenants(db: Session) -> list[UUID]:
     """Busca todos os tenant_ids ativos.
 
     Returns:
@@ -101,23 +99,16 @@ class OperacionalNotificationTriggers:
                 # Notifica o gestor do colaborador, se existir
                 gestor_id = getattr(employee, "gestor_id", None)
                 if not gestor_id:
-                    logger.debug(
-                        f"Colaborador {employee.nome} sem gestor_id, pulando notificação"
-                    )
+                    logger.debug(f"Colaborador {employee.nome} sem gestor_id, pulando notificação")
                     continue
 
                 planned = shift.planned_start_time
-                minutes_late = int(
-                    (now - datetime.combine(today, planned)).total_seconds() / 60
-                )
+                minutes_late = int((now - datetime.combine(today, planned)).total_seconds() / 60)
 
                 result = self.push_service.send_push_notification(
                     user_id=UUID(str(gestor_id)),
                     title="Colaborador Atrasado",
-                    body=(
-                        f"{employee.nome} está {minutes_late}min atrasado(a) "
-                        f"para o posto {post.name}"
-                    ),
+                    body=(f"{employee.nome} está {minutes_late}min atrasado(a) para o posto {post.name}"),
                     data={
                         "type": "late_employee",
                         "employee_id": str(employee.id),
@@ -132,16 +123,17 @@ class OperacionalNotificationTriggers:
                 if result.get("success"):
                     notifications_sent += 1
 
-                details.append({
-                    "employee": employee.nome,
-                    "post": post.name,
-                    "minutes_late": minutes_late,
-                    "notified_gestor": str(gestor_id),
-                })
+                details.append(
+                    {
+                        "employee": employee.nome,
+                        "post": post.name,
+                        "minutes_late": minutes_late,
+                        "notified_gestor": str(gestor_id),
+                    }
+                )
 
             logger.info(
-                f"Tenant {self.tenant_id}: {len(late_shifts)} atrasados, "
-                f"{notifications_sent} notificações enviadas"
+                f"Tenant {self.tenant_id}: {len(late_shifts)} atrasados, {notifications_sent} notificações enviadas"
             )
 
             return {
@@ -192,17 +184,12 @@ class OperacionalNotificationTriggers:
                 if not sub.requested_by:
                     continue
 
-                hours_pending = int(
-                    (datetime.now() - sub.requested_at).total_seconds() / 3600
-                )
+                hours_pending = int((datetime.now() - sub.requested_at).total_seconds() / 3600)
 
                 result = self.push_service.send_push_notification(
                     user_id=UUID(str(sub.requested_by)),
                     title="Substituição Pendente",
-                    body=(
-                        f"Sua solicitação de substituição no posto {post.name} "
-                        f"está pendente há {hours_pending}h"
-                    ),
+                    body=(f"Sua solicitação de substituição no posto {post.name} está pendente há {hours_pending}h"),
                     data={
                         "type": "pending_substitution",
                         "substitution_id": str(sub.id),
@@ -216,16 +203,17 @@ class OperacionalNotificationTriggers:
                 if result.get("success"):
                     notifications_sent += 1
 
-                details.append({
-                    "substitution_id": str(sub.id),
-                    "post": post.name,
-                    "hours_pending": hours_pending,
-                    "requested_by": str(sub.requested_by),
-                })
+                details.append(
+                    {
+                        "substitution_id": str(sub.id),
+                        "post": post.name,
+                        "hours_pending": hours_pending,
+                        "requested_by": str(sub.requested_by),
+                    }
+                )
 
             logger.info(
-                f"Tenant {self.tenant_id}: {len(pending_subs)} pendentes, "
-                f"{notifications_sent} notificações enviadas"
+                f"Tenant {self.tenant_id}: {len(pending_subs)} pendentes, {notifications_sent} notificações enviadas"
             )
 
             return {

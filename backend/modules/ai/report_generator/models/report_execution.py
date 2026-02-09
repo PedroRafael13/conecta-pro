@@ -6,19 +6,20 @@ Registra cada execução de geração de relatório com métricas e status.
 
 import uuid
 from datetime import datetime
-from enum import Enum
-from typing import Any, Dict, List, Optional
+from enum import StrEnum
+from typing import Any
 
 from sqlalchemy import (
-    Boolean,
     Column,
     DateTime,
-    Enum as SQLEnum,
     Float,
     ForeignKey,
     Integer,
     String,
     Text,
+)
+from sqlalchemy import (
+    Enum as SQLEnum,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
@@ -26,7 +27,7 @@ from sqlalchemy.orm import relationship
 from core.database import Base
 
 
-class ExecutionStatusEnum(str, Enum):
+class ExecutionStatusEnum(StrEnum):
     """Status da execução."""
 
     PENDING = "pending"
@@ -44,7 +45,7 @@ class ExecutionStatusEnum(str, Enum):
     TIMEOUT = "timeout"
 
 
-class ExecutionTriggerEnum(str, Enum):
+class ExecutionTriggerEnum(StrEnum):
     """Gatilho da execução."""
 
     MANUAL = "manual"
@@ -72,9 +73,7 @@ class ReportExecution(Base):
 
     # Status
     status = Column(
-        SQLEnum(ExecutionStatusEnum, name="execution_status_enum"),
-        nullable=False,
-        default=ExecutionStatusEnum.PENDING
+        SQLEnum(ExecutionStatusEnum, name="execution_status_enum"), nullable=False, default=ExecutionStatusEnum.PENDING
     )
     progress = Column(Float, default=0.0)  # 0-100
     current_step = Column(String(100), nullable=True)
@@ -83,7 +82,7 @@ class ReportExecution(Base):
     trigger = Column(
         SQLEnum(ExecutionTriggerEnum, name="execution_trigger_enum"),
         nullable=False,
-        default=ExecutionTriggerEnum.MANUAL
+        default=ExecutionTriggerEnum.MANUAL,
     )
     triggered_by = Column(UUID(as_uuid=True), nullable=True)
 
@@ -246,7 +245,7 @@ class ReportExecution(Base):
             self.current_step = step
         self.updated_at = datetime.utcnow()
 
-    def add_log(self, level: str, message: str, data: Dict = None) -> None:
+    def add_log(self, level: str, message: str, data: dict = None) -> None:
         """Adiciona log de execução."""
         if not self.execution_logs:
             self.execution_logs = []
@@ -259,13 +258,7 @@ class ReportExecution(Base):
             log_entry["data"] = data
         self.execution_logs.append(log_entry)
 
-    def set_error(
-        self,
-        message: str,
-        code: str = None,
-        details: Dict = None,
-        stack_trace: str = None
-    ) -> None:
+    def set_error(self, message: str, code: str = None, details: dict = None, stack_trace: str = None) -> None:
         """Define erro da execução."""
         self.status = ExecutionStatusEnum.FAILED
         self.error_message = message
@@ -275,26 +268,22 @@ class ReportExecution(Base):
         self.failed_at = datetime.utcnow()
         self._calculate_total_time()
 
-    def add_output_file(
-        self,
-        format_type: str,
-        path: str,
-        size_bytes: int,
-        url: str = None
-    ) -> None:
+    def add_output_file(self, format_type: str, path: str, size_bytes: int, url: str = None) -> None:
         """Adiciona arquivo de saída."""
         if not self.output_files:
             self.output_files = []
         if not self.storage_paths:
             self.storage_paths = {}
 
-        self.output_files.append({
-            "format": format_type,
-            "path": path,
-            "size_bytes": size_bytes,
-            "url": url,
-            "created_at": datetime.utcnow().isoformat(),
-        })
+        self.output_files.append(
+            {
+                "format": format_type,
+                "path": path,
+                "size_bytes": size_bytes,
+                "url": url,
+                "created_at": datetime.utcnow().isoformat(),
+            }
+        )
         self.storage_paths[format_type] = path
 
         if format_type not in self.generated_formats:
@@ -302,13 +291,7 @@ class ReportExecution(Base):
 
         self.file_size_bytes += size_bytes
 
-    def record_delivery(
-        self,
-        method: str,
-        recipient: str,
-        success: bool,
-        error: str = None
-    ) -> None:
+    def record_delivery(self, method: str, recipient: str, success: bool, error: str = None) -> None:
         """Registra entrega."""
         if not self.delivery_status:
             self.delivery_status = {}
@@ -324,29 +307,33 @@ class ReportExecution(Base):
         }
 
         if success:
-            self.delivered_to.append({
-                "method": method,
-                "recipient": recipient,
-                "timestamp": datetime.utcnow().isoformat(),
-            })
+            self.delivered_to.append(
+                {
+                    "method": method,
+                    "recipient": recipient,
+                    "timestamp": datetime.utcnow().isoformat(),
+                }
+            )
         else:
-            self.delivery_errors.append({
-                "method": method,
-                "recipient": recipient,
-                "error": error,
-                "timestamp": datetime.utcnow().isoformat(),
-            })
+            self.delivery_errors.append(
+                {
+                    "method": method,
+                    "recipient": recipient,
+                    "error": error,
+                    "timestamp": datetime.utcnow().isoformat(),
+                }
+            )
 
     def _calculate_total_time(self) -> None:
         """Calcula tempo total de execução."""
         self.total_time_ms = (
-            self.queue_time_ms +
-            self.data_collection_time_ms +
-            self.processing_time_ms +
-            self.insight_generation_time_ms +
-            self.rendering_time_ms +
-            self.export_time_ms +
-            self.delivery_time_ms
+            self.queue_time_ms
+            + self.data_collection_time_ms
+            + self.processing_time_ms
+            + self.insight_generation_time_ms
+            + self.rendering_time_ms
+            + self.export_time_ms
+            + self.delivery_time_ms
         )
 
     def prepare_retry(self) -> "ReportExecution":
@@ -368,7 +355,7 @@ class ReportExecution(Base):
             organization_id=self.organization_id,
         )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Converte para dicionário."""
         return {
             "id": str(self.id),
@@ -389,7 +376,7 @@ class ReportExecution(Base):
             "output_files": self.output_files,
         }
 
-    def to_summary_dict(self) -> Dict[str, Any]:
+    def to_summary_dict(self) -> dict[str, Any]:
         """Converte para dicionário resumido."""
         return {
             "id": str(self.id),

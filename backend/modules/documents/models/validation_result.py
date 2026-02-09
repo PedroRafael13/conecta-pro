@@ -5,14 +5,15 @@ Define estruturas para validacao de dados extraidos,
 incluindo regras, resultados e estatisticas.
 """
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
-from enum import Enum
-from typing import Any, Callable, Dict, List, Optional
+from enum import StrEnum
+from typing import Any
 from uuid import uuid4
 
 
-class ValidationType(str, Enum):
+class ValidationType(StrEnum):
     """Tipos de validacao."""
 
     # Formato
@@ -54,7 +55,7 @@ class ValidationType(str, Enum):
     CUSTOM = "custom"
 
 
-class ValidationSeverity(str, Enum):
+class ValidationSeverity(StrEnum):
     """Severidade da validacao."""
 
     ERROR = "error"
@@ -62,7 +63,7 @@ class ValidationSeverity(str, Enum):
     INFO = "info"
 
 
-class ValidationStatus(str, Enum):
+class ValidationStatus(StrEnum):
     """Status da validacao."""
 
     PENDING = "pending"
@@ -90,25 +91,25 @@ class ValidationRule:
 
     id: str = field(default_factory=lambda: str(uuid4()))
     name: str = ""
-    description: Optional[str] = None
+    description: str | None = None
     validation_type: ValidationType = ValidationType.FORMAT
     field_name: str = ""
-    field_names: List[str] = field(default_factory=list)  # Para cross-field
+    field_names: list[str] = field(default_factory=list)  # Para cross-field
 
     # Parametros
-    params: Dict[str, Any] = field(default_factory=dict)
-    pattern: Optional[str] = None
-    min_value: Optional[Any] = None
-    max_value: Optional[Any] = None
-    min_length: Optional[int] = None
-    max_length: Optional[int] = None
-    allowed_values: List[Any] = field(default_factory=list)
-    reference_field: Optional[str] = None
+    params: dict[str, Any] = field(default_factory=dict)
+    pattern: str | None = None
+    min_value: Any | None = None
+    max_value: Any | None = None
+    min_length: int | None = None
+    max_length: int | None = None
+    allowed_values: list[Any] = field(default_factory=list)
+    reference_field: str | None = None
 
     # Mensagens
     error_message: str = "Validacao falhou"
-    error_message_template: Optional[str] = None
-    suggestion: Optional[str] = None
+    error_message_template: str | None = None
+    suggestion: str | None = None
 
     # Configuracoes
     severity: ValidationSeverity = ValidationSeverity.ERROR
@@ -117,7 +118,7 @@ class ValidationRule:
     order: int = 0
 
     # Funcao customizada
-    custom_validator: Optional[Callable] = None
+    custom_validator: Callable | None = None
 
     def format_error_message(self, value: Any, **kwargs: Any) -> str:
         """Formata mensagem de erro."""
@@ -133,7 +134,7 @@ class ValidationRule:
                 pass
         return self.error_message
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Converte para dicionario."""
         return {
             "id": self.id,
@@ -158,22 +159,22 @@ class FieldValidationResult:
     validated_value: Any = None
 
     # Resultados
-    rules_passed: List[str] = field(default_factory=list)
-    rules_failed: List[str] = field(default_factory=list)
-    errors: List[str] = field(default_factory=list)
-    warnings: List[str] = field(default_factory=list)
-    suggestions: List[str] = field(default_factory=list)
+    rules_passed: list[str] = field(default_factory=list)
+    rules_failed: list[str] = field(default_factory=list)
+    errors: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
+    suggestions: list[str] = field(default_factory=list)
 
     # Correcoes
     auto_corrected: bool = False
-    original_value: Optional[Any] = None
-    correction_applied: Optional[str] = None
+    original_value: Any | None = None
+    correction_applied: str | None = None
 
     # Metadados
     validation_time_ms: int = 0
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def add_error(self, message: str, rule_name: Optional[str] = None) -> None:
+    def add_error(self, message: str, rule_name: str | None = None) -> None:
         """Adiciona erro."""
         self.errors.append(message)
         self.is_valid = False
@@ -201,7 +202,7 @@ class FieldValidationResult:
         self.auto_corrected = True
         self.correction_applied = correction_type
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Converte para dicionario."""
         return {
             "field_name": self.field_name,
@@ -235,7 +236,7 @@ class ValidationResult:
 
     id: str = field(default_factory=lambda: str(uuid4()))
     document_id: str = ""
-    template_id: Optional[str] = None
+    template_id: str | None = None
 
     # Status
     status: ValidationStatus = ValidationStatus.PENDING
@@ -243,7 +244,7 @@ class ValidationResult:
     overall_score: float = 0.0
 
     # Resultados por campo
-    field_results: Dict[str, FieldValidationResult] = field(default_factory=dict)
+    field_results: dict[str, FieldValidationResult] = field(default_factory=dict)
 
     # Contadores
     total_fields: int = 0
@@ -254,19 +255,19 @@ class ValidationResult:
     fields_auto_corrected: int = 0
 
     # Erros e avisos globais
-    global_errors: List[str] = field(default_factory=list)
-    global_warnings: List[str] = field(default_factory=list)
+    global_errors: list[str] = field(default_factory=list)
+    global_warnings: list[str] = field(default_factory=list)
 
     # Cross-field validations
-    cross_field_results: List[Dict[str, Any]] = field(default_factory=list)
+    cross_field_results: list[dict[str, Any]] = field(default_factory=list)
 
     # Performance
     total_validation_time_ms: int = 0
     rules_executed: int = 0
 
     # Metadados
-    validated_by: Optional[str] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    validated_by: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
     created_at: datetime = field(default_factory=datetime.utcnow)
 
     def add_field_result(self, result: FieldValidationResult) -> None:
@@ -300,7 +301,7 @@ class ValidationResult:
 
     def add_cross_field_result(
         self,
-        fields: List[str],
+        fields: list[str],
         rule_name: str,
         passed: bool,
         message: str,
@@ -337,28 +338,28 @@ class ValidationResult:
 
         self._update_score()
 
-    def get_errors(self) -> List[str]:
+    def get_errors(self) -> list[str]:
         """Obtem todos os erros."""
         errors = list(self.global_errors)
         for result in self.field_results.values():
             errors.extend(result.errors)
         return errors
 
-    def get_warnings(self) -> List[str]:
+    def get_warnings(self) -> list[str]:
         """Obtem todos os avisos."""
         warnings = list(self.global_warnings)
         for result in self.field_results.values():
             warnings.extend(result.warnings)
         return warnings
 
-    def get_suggestions(self) -> List[str]:
+    def get_suggestions(self) -> list[str]:
         """Obtem todas as sugestoes."""
         suggestions = []
         for result in self.field_results.values():
             suggestions.extend(result.suggestions)
         return suggestions
 
-    def get_corrected_data(self) -> Dict[str, Any]:
+    def get_corrected_data(self) -> dict[str, Any]:
         """Obtem dados corrigidos."""
         data = {}
         for field_name, result in self.field_results.items():
@@ -368,7 +369,7 @@ class ValidationResult:
                 data[field_name] = result.value
         return data
 
-    def get_summary(self) -> Dict[str, Any]:
+    def get_summary(self) -> dict[str, Any]:
         """Obtem resumo da validacao."""
         return {
             "status": self.status.value,
@@ -384,16 +385,14 @@ class ValidationResult:
             "validation_time_ms": self.total_validation_time_ms,
         }
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Converte para dicionario."""
         return {
             "id": self.id,
             "document_id": self.document_id,
             "template_id": self.template_id,
             "summary": self.get_summary(),
-            "field_results": {
-                k: v.to_dict() for k, v in self.field_results.items()
-            },
+            "field_results": {k: v.to_dict() for k, v in self.field_results.items()},
             "global_errors": self.global_errors,
             "global_warnings": self.global_warnings,
             "cross_field_results": self.cross_field_results,
@@ -468,7 +467,7 @@ def validate_cep(value: str) -> bool:
     return len(cep) == 8
 
 
-BUILTIN_VALIDATORS: Dict[ValidationType, Callable[[str], bool]] = {
+BUILTIN_VALIDATORS: dict[ValidationType, Callable[[str], bool]] = {
     ValidationType.CPF: validate_cpf,
     ValidationType.CNPJ: validate_cnpj,
     ValidationType.EMAIL: validate_email,

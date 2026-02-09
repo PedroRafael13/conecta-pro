@@ -1,16 +1,15 @@
 """Schemas Pydantic para KPIDefinition."""
 
 from datetime import datetime
-from typing import Optional, List
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
 from modules.hr.analytics_dashboard.models import (
     KPICategory,
-    KPIUnit,
     KPIDirection,
     KPIFrequency,
+    KPIUnit,
 )
 
 
@@ -19,7 +18,7 @@ class KPIDefinitionBase(BaseModel):
 
     code: str = Field(..., min_length=1, max_length=50, pattern="^[A-Z_]+$")
     name: str = Field(..., min_length=1, max_length=100)
-    description: Optional[str] = Field(None, max_length=500)
+    description: str | None = Field(None, max_length=500)
     category: KPICategory = KPICategory.ATTENDANCE
 
 
@@ -29,52 +28,52 @@ class KPIDefinitionCreate(KPIDefinitionBase):
     # Unidade e formato
     unit: KPIUnit = KPIUnit.PERCENTAGE
     decimal_places: int = Field(default=2, ge=0, le=6)
-    format_pattern: Optional[str] = None
-    prefix: Optional[str] = Field(None, max_length=10)
-    suffix: Optional[str] = Field(None, max_length=10)
+    format_pattern: str | None = None
+    prefix: str | None = Field(None, max_length=10)
+    suffix: str | None = Field(None, max_length=10)
 
     # Direção e metas
     direction: KPIDirection = KPIDirection.UP
-    target_value: Optional[float] = None
-    min_value: Optional[float] = None
-    max_value: Optional[float] = None
+    target_value: float | None = None
+    min_value: float | None = None
+    max_value: float | None = None
 
     # Thresholds
-    threshold_critical: Optional[float] = None
-    threshold_warning: Optional[float] = None
-    threshold_good: Optional[float] = None
-    threshold_excellent: Optional[float] = None
+    threshold_critical: float | None = None
+    threshold_warning: float | None = None
+    threshold_good: float | None = None
+    threshold_excellent: float | None = None
 
     # Cálculo
-    calculation_formula: Optional[str] = None
-    calculation_query: Optional[str] = None
-    calculation_params: Optional[dict] = None
+    calculation_formula: str | None = None
+    calculation_query: str | None = None
+    calculation_params: dict | None = None
     frequency: KPIFrequency = KPIFrequency.DAILY
 
     # Comparações
     enable_comparison: bool = True
-    comparison_periods: Optional[List[str]] = None
+    comparison_periods: list[str] | None = None
 
     # Benchmark
-    industry_benchmark: Optional[float] = None
-    benchmark_source: Optional[str] = None
+    industry_benchmark: float | None = None
+    benchmark_source: str | None = None
 
     # Alertas
     alert_enabled: bool = False
-    alert_recipients: Optional[List[str]] = None
-    alert_conditions: Optional[dict] = None
+    alert_recipients: list[str] | None = None
+    alert_conditions: dict | None = None
 
     # Visualização
     default_chart_type: str = "line_chart"
-    color_scheme: Optional[dict] = None
-    icon: Optional[str] = None
+    color_scheme: dict | None = None
+    icon: str | None = None
 
     # Drill-down
     drill_down_enabled: bool = True
-    drill_down_dimensions: Optional[List[str]] = None
+    drill_down_dimensions: list[str] | None = None
 
-    tags: Optional[List[str]] = None
-    settings: Optional[dict] = None
+    tags: list[str] | None = None
+    settings: dict | None = None
 
     is_featured: bool = False
 
@@ -88,64 +87,64 @@ class KPIDefinitionCreate(KPIDefinitionBase):
 class KPIDefinitionUpdate(BaseModel):
     """Schema para atualização de KPI."""
 
-    name: Optional[str] = Field(None, min_length=1, max_length=100)
-    description: Optional[str] = Field(None, max_length=500)
-    category: Optional[KPICategory] = None
+    name: str | None = Field(None, min_length=1, max_length=100)
+    description: str | None = Field(None, max_length=500)
+    category: KPICategory | None = None
 
-    unit: Optional[KPIUnit] = None
-    decimal_places: Optional[int] = Field(None, ge=0, le=6)
-    prefix: Optional[str] = Field(None, max_length=10)
-    suffix: Optional[str] = Field(None, max_length=10)
+    unit: KPIUnit | None = None
+    decimal_places: int | None = Field(None, ge=0, le=6)
+    prefix: str | None = Field(None, max_length=10)
+    suffix: str | None = Field(None, max_length=10)
 
-    direction: Optional[KPIDirection] = None
-    target_value: Optional[float] = None
+    direction: KPIDirection | None = None
+    target_value: float | None = None
 
-    threshold_critical: Optional[float] = None
-    threshold_warning: Optional[float] = None
-    threshold_good: Optional[float] = None
-    threshold_excellent: Optional[float] = None
+    threshold_critical: float | None = None
+    threshold_warning: float | None = None
+    threshold_good: float | None = None
+    threshold_excellent: float | None = None
 
-    frequency: Optional[KPIFrequency] = None
+    frequency: KPIFrequency | None = None
 
-    industry_benchmark: Optional[float] = None
+    industry_benchmark: float | None = None
 
-    alert_enabled: Optional[bool] = None
-    alert_recipients: Optional[List[str]] = None
+    alert_enabled: bool | None = None
+    alert_recipients: list[str] | None = None
 
-    default_chart_type: Optional[str] = None
-    icon: Optional[str] = None
+    default_chart_type: str | None = None
+    icon: str | None = None
 
-    is_featured: Optional[bool] = None
-    tags: Optional[List[str]] = None
-    settings: Optional[dict] = None
+    is_featured: bool | None = None
+    tags: list[str] | None = None
+    settings: dict | None = None
 
 
 class KPIDefinitionResponse(KPIDefinitionBase):
     """Schema de resposta de KPI."""
 
     id: UUID
-    condominio_id: Optional[UUID] = None
+    condominio_id: UUID | None = None
 
     unit: str
     decimal_places: int
-    prefix: Optional[str] = None
-    suffix: Optional[str] = None
+    prefix: str | None = None
+    suffix: str | None = None
 
     direction: str
-    target_value: Optional[float] = None
+    target_value: float | None = None
 
-    threshold_critical: Optional[float] = None
-    threshold_warning: Optional[float] = None
-    threshold_good: Optional[float] = None
-    threshold_excellent: Optional[float] = None
+    threshold_critical: float | None = None
+    threshold_warning: float | None = None
+    threshold_good: float | None = None
+    threshold_excellent: float | None = None
 
     frequency: str
     enable_comparison: bool
 
-    industry_benchmark: Optional[float] = None
+    industry_benchmark: float | None = None
 
     default_chart_type: str
-    icon: Optional[str] = None
+    icon: str | None = None
 
     drill_down_enabled: bool
 
@@ -153,7 +152,7 @@ class KPIDefinitionResponse(KPIDefinitionBase):
     is_system: bool
     sort_order: int
 
-    tags: Optional[List[str]] = None
+    tags: list[str] | None = None
 
     created_at: datetime
     updated_at: datetime
@@ -166,9 +165,9 @@ class KPIValueRequest(BaseModel):
 
     kpi_code: str
     condominio_id: UUID
-    period_start: Optional[datetime] = None
-    period_end: Optional[datetime] = None
-    filters: Optional[dict] = None
+    period_start: datetime | None = None
+    period_end: datetime | None = None
+    filters: dict | None = None
     include_comparison: bool = True
     include_trend: bool = True
 
@@ -201,11 +200,11 @@ class KPIValueResponse(BaseModel):
     formatted_value: str
     status: str  # excellent, good, warning, critical, neutral
 
-    target_value: Optional[float] = None
-    target_percentage: Optional[float] = None
+    target_value: float | None = None
+    target_percentage: float | None = None
 
-    trend: Optional[KPITrend] = None
-    comparisons: Optional[List[KPIComparison]] = None
+    trend: KPITrend | None = None
+    comparisons: list[KPIComparison] | None = None
 
     period_start: datetime
     period_end: datetime
@@ -217,7 +216,7 @@ class KPIValueResponse(BaseModel):
 class KPIDashboardResponse(BaseModel):
     """Schema para dashboard de KPIs."""
 
-    kpis: List[KPIValueResponse]
+    kpis: list[KPIValueResponse]
     period_start: datetime
     period_end: datetime
     condominio_id: UUID
@@ -232,7 +231,7 @@ class KPIHistoryRequest(BaseModel):
     granularity: str = Field(default="daily", pattern="^(hourly|daily|weekly|monthly)$")
     period_start: datetime
     period_end: datetime
-    filters: Optional[dict] = None
+    filters: dict | None = None
 
 
 class KPIHistoryPoint(BaseModel):
@@ -249,7 +248,7 @@ class KPIHistoryResponse(BaseModel):
     kpi_code: str
     kpi_name: str
     granularity: str
-    data_points: List[KPIHistoryPoint]
+    data_points: list[KPIHistoryPoint]
     statistics: dict  # min, max, avg, trend
 
 
@@ -260,7 +259,7 @@ class KPIAlertConfig(BaseModel):
     enabled: bool = True
     condition: str = Field(..., pattern="^(above|below|equals|change)$")
     threshold: float
-    comparison_value: Optional[float] = None  # Para condition=change (%)
-    recipients: List[str]
-    channels: List[str] = ["email"]  # email, push, webhook
+    comparison_value: float | None = None  # Para condition=change (%)
+    recipients: list[str]
+    channels: list[str] = ["email"]  # email, push, webhook
     cooldown_minutes: int = Field(default=60, ge=5, le=1440)

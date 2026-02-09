@@ -17,7 +17,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from datetime import date
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
 from core.config import settings
@@ -58,20 +59,20 @@ async def generate_scales(month: int = None, year: int = None):
             result = await service.generate_scales_for_current_month()
 
         # Exibir resultado
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("GERAÇÃO DE ESCALAS - RESULTADO")
-        print("="*60)
+        print("=" * 60)
         print(f"Status: {'SUCESSO' if result['success'] else 'ERRO'}")
         print(f"Mensagem: {result['message']}")
         print(f"Escalas criadas: {result['scales_created']}")
         print(f"Turnos criados: {result['shifts_created']}")
 
-        if result['errors']:
+        if result["errors"]:
             print("\nErros:")
-            for error in result['errors']:
+            for error in result["errors"]:
                 print(f"  - {error}")
 
-        print("="*60 + "\n")
+        print("=" * 60 + "\n")
 
     await engine.dispose()
 

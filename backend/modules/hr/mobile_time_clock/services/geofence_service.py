@@ -2,7 +2,6 @@
 
 import logging
 from datetime import datetime
-from typing import Optional, List, Tuple
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -89,7 +88,7 @@ class GeofenceService:
         employee_id: str = None,
         wifi_ssid: str = None,
         beacon_uuid: str = None,
-    ) -> Tuple[bool, Optional[GeofenceZone], dict]:
+    ) -> tuple[bool, GeofenceZone | None, dict]:
         """Valida localização para check-in.
 
         Retorna:
@@ -127,8 +126,7 @@ class GeofenceService:
             details["accuracy_valid"] = True
         else:
             details["errors"].append(
-                f"Precisão insuficiente: {accuracy_meters:.0f}m "
-                f"(requerido: {zone.min_accuracy_meters}m)"
+                f"Precisão insuficiente: {accuracy_meters:.0f}m (requerido: {zone.min_accuracy_meters}m)"
             )
 
         # Verificar horário
@@ -162,13 +160,15 @@ class GeofenceService:
                 details["beacon_valid"] = False
                 details["errors"].append("Beacon requerido mas não detectado")
 
-        is_valid = all([
-            details["location_valid"],
-            details["accuracy_valid"],
-            details["time_valid"],
-            details["wifi_valid"],
-            details["beacon_valid"],
-        ])
+        is_valid = all(
+            [
+                details["location_valid"],
+                details["accuracy_valid"],
+                details["time_valid"],
+                details["wifi_valid"],
+                details["beacon_valid"],
+            ]
+        )
 
         return is_valid, zone, details
 
@@ -178,7 +178,7 @@ class GeofenceService:
         employee_id: str,
         latitude: float = None,
         longitude: float = None,
-    ) -> List[dict]:
+    ) -> list[dict]:
         """Retorna zonas disponíveis para o funcionário."""
         zones = await self.repository.get_by_condominio(condominio_id, active_only=True)
 
@@ -199,12 +199,8 @@ class GeofenceService:
                 "is_primary": zone.is_primary,
                 "priority": zone.priority,
                 "allow_all_hours": zone.allow_all_hours,
-                "allowed_start_time": (
-                    str(zone.allowed_start_time) if zone.allowed_start_time else None
-                ),
-                "allowed_end_time": (
-                    str(zone.allowed_end_time) if zone.allowed_end_time else None
-                ),
+                "allowed_start_time": (str(zone.allowed_start_time) if zone.allowed_start_time else None),
+                "allowed_end_time": (str(zone.allowed_end_time) if zone.allowed_end_time else None),
                 "allowed_days": zone.allowed_days,
             }
 
@@ -235,7 +231,7 @@ class GeofenceService:
         self,
         zone_id: UUID,
         data: GeofenceZoneUpdate,
-    ) -> Optional[GeofenceZone]:
+    ) -> GeofenceZone | None:
         """Atualiza zona existente."""
         zone = await self.repository.update(zone_id, data)
         if zone:

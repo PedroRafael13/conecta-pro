@@ -15,24 +15,22 @@ Date: 2026-01-29
 
 import logging
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from uuid import uuid4
-from typing import Optional
 
+from modules.operacional.communication.models.announcement import (
+    AnnouncementCategory,
+    AnnouncementPriority,
+    AnnouncementStatus,
+    AnnouncementTargetType,
+)
 from modules.operacional.communication.repositories.communication_repository import (
     AnnouncementRepository,
-)
-from modules.operacional.communication.models.announcement import (
-    AnnouncementStatus,
 )
 from modules.operacional.communication.schemas.communication_schemas import (
     AnnouncementCreate,
 )
-from modules.operacional.communication.models.announcement import (
-    AnnouncementCategory,
-    AnnouncementPriority,
-    AnnouncementTargetType,
-)
+
 from ..action_schemas import ActionPreview, ActionResult
 from ..action_types import ActionStatus
 from .base_executor import BaseActionExecutor
@@ -44,8 +42,10 @@ logger = logging.getLogger(__name__)
 # Tipos de acao de comunicacao (a serem integrados em ActionType futuramente)
 # ---------------------------------------------------------------------------
 
-class CommunicationActionType(str, Enum):
+
+class CommunicationActionType(StrEnum):
     """Tipos de acoes de comunicacao."""
+
     CREATE_ANNOUNCEMENT = "create_announcement"
     PUBLISH_ANNOUNCEMENT = "publish_announcement"
 
@@ -109,17 +109,17 @@ class CommunicationActionExecutor(BaseActionExecutor):
     @staticmethod
     def _get_action_value(request) -> str:
         """Extrai o valor string do action_type do request."""
-        action_type = getattr(request, 'action_type', None)
+        action_type = getattr(request, "action_type", None)
         if action_type is None:
             return ""
-        if hasattr(action_type, 'value'):
+        if hasattr(action_type, "value"):
             return action_type.value
         return str(action_type)
 
     @staticmethod
     def _get_action_type_enum(request):
         """Retorna o action_type do request (enum ou string)."""
-        return getattr(request, 'action_type', CommunicationActionType.CREATE_ANNOUNCEMENT)
+        return getattr(request, "action_type", CommunicationActionType.CREATE_ANNOUNCEMENT)
 
     # =========================================================================
     # Preview methods
@@ -127,12 +127,12 @@ class CommunicationActionExecutor(BaseActionExecutor):
 
     async def _create_announcement_preview(self, request) -> ActionPreview:
         """Cria preview para criacao de comunicado."""
-        params = getattr(request, 'parameters', {}) or {}
-        title = params.get('title', '')
-        content = params.get('content', '')
-        priority = params.get('priority', 'normal')
-        category = params.get('category', 'informativo')
-        target_type = params.get('target_type', 'all')
+        params = getattr(request, "parameters", {}) or {}
+        title = params.get("title", "")
+        content = params.get("content", "")
+        priority = params.get("priority", "normal")
+        category = params.get("category", "informativo")
+        target_type = params.get("target_type", "all")
 
         changes_summary = []
         warnings = []
@@ -165,11 +165,11 @@ class CommunicationActionExecutor(BaseActionExecutor):
             warnings.append(f"Categoria '{category}' invalida. Opcoes: {', '.join(valid_categories)}")
 
         # Aviso para comunicados urgentes
-        if priority in ('urgente', 'alta'):
+        if priority in ("urgente", "alta"):
             warnings.append("Comunicado com prioridade alta/urgente: sera enviada notificacao push aos destinatarios")
 
         # Verificar se requer confirmacao
-        requires_ack = params.get('requires_acknowledgment', False)
+        requires_ack = params.get("requires_acknowledgment", False)
         if requires_ack:
             changes_summary.append("Requer confirmacao de leitura: Sim")
 
@@ -178,12 +178,13 @@ class CommunicationActionExecutor(BaseActionExecutor):
 
         # Permissao
         required_perm = "posts:view"
-        user_role = getattr(self, 'user_role', None)
+        user_role = getattr(self, "user_role", None)
         user_has_perm = True
 
         if user_role:
             try:
-                from modules.operacional.permissions import has_permission, Permission
+                from modules.operacional.permissions import Permission, has_permission
+
                 user_has_perm = has_permission(user_role, Permission.POSTS_VIEW)
             except Exception as e:
                 logger.warning(f"Erro ao verificar permissao: {e}")
@@ -206,9 +207,9 @@ class CommunicationActionExecutor(BaseActionExecutor):
 
     async def _publish_announcement_preview(self, request) -> ActionPreview:
         """Cria preview para publicacao de comunicado."""
-        params = getattr(request, 'parameters', {}) or {}
-        announcement_id = params.get('announcement_id')
-        tenant_id = params.get('tenant_id', '')
+        params = getattr(request, "parameters", {}) or {}
+        announcement_id = params.get("announcement_id")
+        tenant_id = params.get("tenant_id", "")
 
         warnings = []
         affected_entities = []
@@ -228,14 +229,16 @@ class CommunicationActionExecutor(BaseActionExecutor):
             title_text = "Publicar Comunicado"
             description = "Comunicado nao encontrado"
         else:
-            affected_entities.append({
-                "type": "announcement",
-                "id": announcement.id,
-                "title": getattr(announcement, 'titulo', getattr(announcement, 'title', 'N/A')),
-            })
+            affected_entities.append(
+                {
+                    "type": "announcement",
+                    "id": announcement.id,
+                    "title": getattr(announcement, "titulo", getattr(announcement, "title", "N/A")),
+                }
+            )
 
-            ann_title = getattr(announcement, 'titulo', getattr(announcement, 'title', 'N/A'))
-            ann_status = getattr(announcement, 'status', 'N/A')
+            ann_title = getattr(announcement, "titulo", getattr(announcement, "title", "N/A"))
+            ann_status = getattr(announcement, "status", "N/A")
 
             changes_summary.append(f"Comunicado: {ann_title}")
             changes_summary.append(f"Status atual: {ann_status}")
@@ -244,11 +247,15 @@ class CommunicationActionExecutor(BaseActionExecutor):
             # Verificar se pode ser publicado
             if ann_status in (AnnouncementStatus.PUBLISHED.value, AnnouncementStatus.PUBLICADO.value):
                 warnings.append("Comunicado ja esta publicado")
-            elif ann_status in (AnnouncementStatus.CANCELLED.value, AnnouncementStatus.EXPIRED.value, AnnouncementStatus.ARQUIVADO.value):
+            elif ann_status in (
+                AnnouncementStatus.CANCELLED.value,
+                AnnouncementStatus.EXPIRED.value,
+                AnnouncementStatus.ARQUIVADO.value,
+            ):
                 warnings.append(f"Comunicado com status '{ann_status}' nao pode ser publicado")
 
-            ann_priority = getattr(announcement, 'prioridade', getattr(announcement, 'priority', 'normal'))
-            if ann_priority in ('urgente', 'alta'):
+            ann_priority = getattr(announcement, "prioridade", getattr(announcement, "priority", "normal"))
+            if ann_priority in ("urgente", "alta"):
                 warnings.append("Comunicado urgente/alta prioridade: sera enviada notificacao push")
 
             title_text = f"Publicar Comunicado - {ann_title}"
@@ -256,12 +263,13 @@ class CommunicationActionExecutor(BaseActionExecutor):
 
         # Permissao
         required_perm = "posts:view"
-        user_role = getattr(self, 'user_role', None)
+        user_role = getattr(self, "user_role", None)
         user_has_perm = True
 
         if user_role:
             try:
-                from modules.operacional.permissions import has_permission, Permission
+                from modules.operacional.permissions import Permission, has_permission
+
                 user_has_perm = has_permission(user_role, Permission.POSTS_VIEW)
             except Exception as e:
                 logger.warning(f"Erro ao verificar permissao: {e}")
@@ -293,14 +301,14 @@ class CommunicationActionExecutor(BaseActionExecutor):
         started_at: datetime,
     ) -> ActionResult:
         """Executa criacao de comunicado."""
-        params = getattr(request, 'parameters', {}) or {}
-        title = params.get('title', '')
-        content = params.get('content', '')
-        priority = params.get('priority', 'normal')
-        category = params.get('category', 'informativo')
-        target_type_str = params.get('target_type', 'all')
-        tenant_id = params.get('tenant_id', '')
-        requires_ack = params.get('requires_acknowledgment', False)
+        params = getattr(request, "parameters", {}) or {}
+        title = params.get("title", "")
+        content = params.get("content", "")
+        priority = params.get("priority", "normal")
+        category = params.get("category", "informativo")
+        target_type_str = params.get("target_type", "all")
+        tenant_id = params.get("tenant_id", "")
+        requires_ack = params.get("requires_acknowledgment", False)
 
         if not title:
             raise ValueError("Titulo do comunicado e obrigatorio")
@@ -332,15 +340,15 @@ class CommunicationActionExecutor(BaseActionExecutor):
             priority=priority_enum,
             category=category_enum,
             target_type=target_enum,
-            target_ids=params.get('target_ids'),
-            target_roles=params.get('target_roles'),
+            target_ids=params.get("target_ids"),
+            target_roles=params.get("target_roles"),
             requires_acknowledgment=requires_ack,
-            publish_at=params.get('publish_at'),
-            expires_at=params.get('expires_at'),
+            publish_at=params.get("publish_at"),
+            expires_at=params.get("expires_at"),
         )
 
         # Usar UUID real do usuario
-        user_uuid = getattr(self, 'user_uuid', None) or getattr(request, 'user_id', '')
+        user_uuid = getattr(self, "user_uuid", None) or getattr(request, "user_id", "")
 
         # Criar via repository
         repo = AnnouncementRepository(self.db)
@@ -382,9 +390,9 @@ class CommunicationActionExecutor(BaseActionExecutor):
         started_at: datetime,
     ) -> ActionResult:
         """Executa publicacao de comunicado."""
-        params = getattr(request, 'parameters', {}) or {}
-        announcement_id = params.get('announcement_id')
-        tenant_id = params.get('tenant_id', '')
+        params = getattr(request, "parameters", {}) or {}
+        announcement_id = params.get("announcement_id")
+        tenant_id = params.get("tenant_id", "")
 
         if not announcement_id:
             raise ValueError("ID do comunicado e obrigatorio")
@@ -392,7 +400,7 @@ class CommunicationActionExecutor(BaseActionExecutor):
             raise ValueError("Tenant ID e obrigatorio")
 
         # Usar UUID real do usuario
-        user_uuid = getattr(self, 'user_uuid', None) or getattr(request, 'user_id', '')
+        user_uuid = getattr(self, "user_uuid", None) or getattr(request, "user_id", "")
 
         # Buscar comunicado
         repo = AnnouncementRepository(self.db)
@@ -401,16 +409,20 @@ class CommunicationActionExecutor(BaseActionExecutor):
         if not announcement:
             raise ValueError(f"Comunicado '{announcement_id}' nao encontrado")
 
-        ann_status = getattr(announcement, 'status', '')
+        ann_status = getattr(announcement, "status", "")
 
         # Verificar se pode ser publicado
         if ann_status in (AnnouncementStatus.PUBLISHED.value, AnnouncementStatus.PUBLICADO.value):
             raise ValueError("Comunicado ja esta publicado")
-        if ann_status in (AnnouncementStatus.CANCELLED.value, AnnouncementStatus.EXPIRED.value, AnnouncementStatus.ARQUIVADO.value):
+        if ann_status in (
+            AnnouncementStatus.CANCELLED.value,
+            AnnouncementStatus.EXPIRED.value,
+            AnnouncementStatus.ARQUIVADO.value,
+        ):
             raise ValueError(f"Comunicado com status '{ann_status}' nao pode ser publicado")
 
         # Publicar via repository
-        schedule_at = params.get('schedule_at')
+        schedule_at = params.get("schedule_at")
         published = await repo.publish(
             announcement_id=announcement_id,
             tenant_id=tenant_id,
@@ -419,15 +431,12 @@ class CommunicationActionExecutor(BaseActionExecutor):
         )
 
         if not published:
-            raise ValueError(
-                f"Nao foi possivel publicar o comunicado. "
-                f"Status atual: {ann_status}."
-            )
+            raise ValueError(f"Nao foi possivel publicar o comunicado. Status atual: {ann_status}.")
 
         action_label = "agendado" if schedule_at else "publicado"
         logger.info(f"Comunicado {action_label} via Bartolo: {published.id}")
 
-        ann_title = getattr(published, 'titulo', getattr(published, 'title', 'N/A'))
+        ann_title = getattr(published, "titulo", getattr(published, "title", "N/A"))
 
         return ActionResult(
             action_id=action_id,
@@ -441,15 +450,11 @@ class CommunicationActionExecutor(BaseActionExecutor):
                 "status": published.status,
                 "published_by": user_uuid,
                 "published_at": (
-                    getattr(published, 'published_at', None).isoformat()
-                    if getattr(published, 'published_at', None)
+                    getattr(published, "published_at", None).isoformat()
+                    if getattr(published, "published_at", None)
                     else None
                 ),
-                "scheduled_at": (
-                    schedule_at.isoformat()
-                    if schedule_at
-                    else None
-                ),
+                "scheduled_at": (schedule_at.isoformat() if schedule_at else None),
             },
             affected_entities=[
                 {"type": "announcement", "id": published.id},

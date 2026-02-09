@@ -1,13 +1,13 @@
 """Signature Recognition Schemas."""
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-
 # ============== Enums ==============
+
 
 class SignatureTypeEnum(str):
     """Signature type enumeration."""
@@ -33,28 +33,27 @@ class SignatureStatusEnum(str):
 
 # ============== Request Schemas ==============
 
+
 class SignatureUploadRequest(BaseModel):
     """Request for uploading a signature."""
 
-    owner_id: Optional[UUID] = None
-    owner_type: Optional[str] = Field(None, max_length=50)
-    owner_name: Optional[str] = Field(None, max_length=255)
-    owner_document: Optional[str] = Field(None, max_length=50)
+    owner_id: UUID | None = None
+    owner_type: str | None = Field(None, max_length=50)
+    owner_name: str | None = Field(None, max_length=255)
+    owner_document: str | None = Field(None, max_length=50)
     signature_type: str = Field(default="handwritten")
     source: str = Field(default="upload")
-    image_data: Optional[str] = Field(None, description="Base64 encoded image")
-    metadata: Optional[Dict[str, Any]] = None
-    tags: Optional[List[str]] = None
-    notes: Optional[str] = None
+    image_data: str | None = Field(None, description="Base64 encoded image")
+    metadata: dict[str, Any] | None = None
+    tags: list[str] | None = None
+    notes: str | None = None
 
 
 class SignatureExtractRequest(BaseModel):
     """Request for extracting signatures from image."""
 
     image_data: str = Field(..., description="Base64 encoded image")
-    region: Optional[Dict[str, int]] = Field(
-        None, description="Region {x, y, width, height}"
-    )
+    region: dict[str, int] | None = Field(None, description="Region {x, y, width, height}")
     method: str = Field(default="auto", description="auto, contour, edge, template")
     min_confidence: float = Field(default=0.5, ge=0, le=1)
     max_signatures: int = Field(default=10, ge=1, le=50)
@@ -63,24 +62,22 @@ class SignatureExtractRequest(BaseModel):
 class SignatureCompareRequest(BaseModel):
     """Request for comparing two signatures."""
 
-    signature1_id: Optional[UUID] = None
-    signature1_data: Optional[Dict[str, Any]] = None
-    signature2_id: Optional[UUID] = None
-    signature2_data: Optional[Dict[str, Any]] = None
-    template_id: Optional[UUID] = None
+    signature1_id: UUID | None = None
+    signature1_data: dict[str, Any] | None = None
+    signature2_id: UUID | None = None
+    signature2_data: dict[str, Any] | None = None
+    template_id: UUID | None = None
     mode: str = Field(default="normal", description="strict, normal, relaxed")
-    custom_threshold: Optional[float] = Field(None, ge=0, le=1)
+    custom_threshold: float | None = Field(None, ge=0, le=1)
 
 
 class SignatureValidateRequest(BaseModel):
     """Request for validating a signature."""
 
-    signature_id: Optional[UUID] = None
-    signature_data: Optional[Dict[str, Any]] = None
-    template_id: Optional[UUID] = None
-    context: Optional[Dict[str, Any]] = Field(
-        None, description="Validation context (purpose, document_type, etc.)"
-    )
+    signature_id: UUID | None = None
+    signature_data: dict[str, Any] | None = None
+    template_id: UUID | None = None
+    context: dict[str, Any] | None = Field(None, description="Validation context (purpose, document_type, etc.)")
     strict_mode: bool = Field(default=False)
 
 
@@ -88,62 +85,63 @@ class TemplateCreateRequest(BaseModel):
     """Request for creating a signature template."""
 
     name: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = None
-    code: Optional[str] = Field(None, max_length=50)
+    description: str | None = None
+    code: str | None = Field(None, max_length=50)
     owner_id: UUID
     owner_type: str = Field(..., max_length=50)
-    owner_name: Optional[str] = Field(None, max_length=255)
-    owner_document: Optional[str] = Field(None, max_length=50)
+    owner_name: str | None = Field(None, max_length=255)
+    owner_document: str | None = Field(None, max_length=50)
     template_type: str = Field(default="personal")
     matching_mode: str = Field(default="normal")
     similarity_threshold: float = Field(default=0.75, ge=0, le=1)
     min_samples_required: int = Field(default=3, ge=1, le=10)
-    allowed_document_types: Optional[List[str]] = None
-    allowed_purposes: Optional[List[str]] = None
-    metadata: Optional[Dict[str, Any]] = None
+    allowed_document_types: list[str] | None = None
+    allowed_purposes: list[str] | None = None
+    metadata: dict[str, Any] | None = None
 
 
 class TemplateAddSampleRequest(BaseModel):
     """Request for adding sample to template."""
 
-    signature_id: Optional[UUID] = None
-    image_data: Optional[str] = Field(None, description="Base64 encoded image")
+    signature_id: UUID | None = None
+    image_data: str | None = Field(None, description="Base64 encoded image")
 
 
 class SignatureRequestCreate(BaseModel):
     """Request for creating a signature request."""
 
     title: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = None
+    description: str | None = None
     priority: str = Field(default="normal")
     purpose: str = Field(default="approval")
-    document_id: Optional[UUID] = None
-    document_name: Optional[str] = Field(None, max_length=255)
-    signer_id: Optional[UUID] = None
-    signer_type: Optional[str] = Field(None, max_length=50)
+    document_id: UUID | None = None
+    document_name: str | None = Field(None, max_length=255)
+    signer_id: UUID | None = None
+    signer_type: str | None = Field(None, max_length=50)
     signer_name: str = Field(..., min_length=1, max_length=255)
-    signer_email: Optional[str] = Field(None, max_length=255)
-    signer_phone: Optional[str] = Field(None, max_length=20)
-    template_id: Optional[UUID] = None
-    signature_page: Optional[int] = None
-    signature_position: Optional[Dict[str, int]] = None
-    due_date: Optional[datetime] = None
-    expires_at: Optional[datetime] = None
+    signer_email: str | None = Field(None, max_length=255)
+    signer_phone: str | None = Field(None, max_length=20)
+    template_id: UUID | None = None
+    signature_page: int | None = None
+    signature_position: dict[str, int] | None = None
+    due_date: datetime | None = None
+    expires_at: datetime | None = None
     reminder_frequency: str = Field(default="none")
     requires_authentication: bool = Field(default=False)
-    metadata: Optional[Dict[str, Any]] = None
+    metadata: dict[str, Any] | None = None
 
 
 class SignatureSubmitRequest(BaseModel):
     """Request for submitting a signature."""
 
     image_data: str = Field(..., description="Base64 encoded signature image")
-    biometric_data: Optional[Dict[str, Any]] = None
-    device_info: Optional[str] = None
-    location: Optional[Dict[str, Any]] = None
+    biometric_data: dict[str, Any] | None = None
+    device_info: str | None = None
+    location: dict[str, Any] | None = None
 
 
 # ============== Response Schemas ==============
+
 
 class BoundingBoxResponse(BaseModel):
     """Bounding box response."""
@@ -158,7 +156,7 @@ class ExtractedSignatureResponse(BaseModel):
     """Extracted signature response."""
 
     id: str
-    bounding_box: Optional[BoundingBoxResponse] = None
+    bounding_box: BoundingBoxResponse | None = None
     confidence: float
     quality_score: float
     contrast_score: float
@@ -176,12 +174,12 @@ class ExtractionResultResponse(BaseModel):
     """Extraction result response."""
 
     success: bool
-    signatures: List[ExtractedSignatureResponse]
+    signatures: list[ExtractedSignatureResponse]
     total_found: int
     processing_time_ms: int
-    errors: List[str]
-    warnings: List[str]
-    metadata: Dict[str, Any]
+    errors: list[str]
+    warnings: list[str]
+    metadata: dict[str, Any]
 
 
 class FeatureScoreResponse(BaseModel):
@@ -191,7 +189,7 @@ class FeatureScoreResponse(BaseModel):
     score: float
     weight: float
     weighted_score: float
-    details: Dict[str, Any]
+    details: dict[str, Any]
 
 
 class ComparisonResultResponse(BaseModel):
@@ -201,12 +199,12 @@ class ComparisonResultResponse(BaseModel):
     similarity_score: float
     confidence: float
     threshold_used: float
-    feature_scores: List[FeatureScoreResponse]
+    feature_scores: list[FeatureScoreResponse]
     method_used: str
-    anomalies: List[str]
-    warnings: List[str]
+    anomalies: list[str]
+    warnings: list[str]
     processing_time_ms: int
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
 
 
 class QualityCheckResponse(BaseModel):
@@ -214,9 +212,9 @@ class QualityCheckResponse(BaseModel):
 
     passed: bool
     quality_score: float
-    issues: List[str]
-    recommendations: List[str]
-    details: Dict[str, Any]
+    issues: list[str]
+    recommendations: list[str]
+    details: dict[str, Any]
 
 
 class FraudAnalysisResponse(BaseModel):
@@ -224,9 +222,9 @@ class FraudAnalysisResponse(BaseModel):
 
     is_suspicious: bool
     risk_level: str
-    fraud_indicators: List[str]
+    fraud_indicators: list[str]
     confidence: float
-    analysis_details: Dict[str, Any]
+    analysis_details: dict[str, Any]
 
 
 class ValidationResultResponse(BaseModel):
@@ -238,11 +236,11 @@ class ValidationResultResponse(BaseModel):
     overall_score: float
     confidence: float
     status: str
-    quality_check: Optional[QualityCheckResponse] = None
-    comparison_result: Optional[ComparisonResultResponse] = None
-    fraud_analysis: Optional[FraudAnalysisResponse] = None
-    errors: List[str]
-    warnings: List[str]
+    quality_check: QualityCheckResponse | None = None
+    comparison_result: ComparisonResultResponse | None = None
+    fraud_analysis: FraudAnalysisResponse | None = None
+    errors: list[str]
+    warnings: list[str]
     processing_time_ms: int
 
 
@@ -251,18 +249,18 @@ class SignatureResponse(BaseModel):
 
     id: UUID
     tenant_id: UUID
-    owner_id: Optional[UUID] = None
-    owner_name: Optional[str] = None
-    signature_type: Optional[str] = None
-    signature_format: Optional[str] = None
-    status: Optional[str] = None
-    source: Optional[str] = None
-    quality_score: Optional[float] = None
+    owner_id: UUID | None = None
+    owner_name: str | None = None
+    signature_type: str | None = None
+    signature_format: str | None = None
+    status: str | None = None
+    source: str | None = None
+    quality_score: float | None = None
     is_verified: bool
     is_valid: bool
-    width: Optional[int] = None
-    height: Optional[int] = None
-    created_at: Optional[datetime] = None
+    width: int | None = None
+    height: int | None = None
+    created_at: datetime | None = None
 
     class Config:
         """Pydantic config."""
@@ -277,18 +275,18 @@ class TemplateResponse(BaseModel):
     tenant_id: UUID
     name: str
     owner_id: UUID
-    owner_name: Optional[str] = None
-    template_type: Optional[str] = None
-    status: Optional[str] = None
-    matching_mode: Optional[str] = None
+    owner_name: str | None = None
+    template_type: str | None = None
+    status: str | None = None
+    matching_mode: str | None = None
     sample_count: int
     min_samples_required: int
     similarity_threshold: float
     is_valid: bool
     has_enough_samples: bool
-    success_rate: Optional[float] = None
+    success_rate: float | None = None
     total_verifications: int
-    created_at: Optional[datetime] = None
+    created_at: datetime | None = None
 
     class Config:
         """Pydantic config."""
@@ -302,19 +300,19 @@ class VerificationResponse(BaseModel):
     id: UUID
     tenant_id: UUID
     signature_id: UUID
-    template_id: Optional[UUID] = None
-    status: Optional[str] = None
-    result: Optional[str] = None
-    risk_level: Optional[str] = None
-    method: Optional[str] = None
-    overall_score: Optional[float] = None
-    similarity_score: Optional[float] = None
-    confidence: Optional[float] = None
-    passed_threshold: Optional[bool] = None
+    template_id: UUID | None = None
+    status: str | None = None
+    result: str | None = None
+    risk_level: str | None = None
+    method: str | None = None
+    overall_score: float | None = None
+    similarity_score: float | None = None
+    confidence: float | None = None
+    passed_threshold: bool | None = None
     is_match: bool
     requires_manual_review: bool
-    processing_time_ms: Optional[int] = None
-    created_at: Optional[datetime] = None
+    processing_time_ms: int | None = None
+    created_at: datetime | None = None
 
     class Config:
         """Pydantic config."""
@@ -328,20 +326,20 @@ class SignatureRequestResponse(BaseModel):
     id: UUID
     tenant_id: UUID
     title: str
-    status: Optional[str] = None
-    priority: Optional[str] = None
-    purpose: Optional[str] = None
+    status: str | None = None
+    priority: str | None = None
+    purpose: str | None = None
     signer_name: str
-    signer_email: Optional[str] = None
-    document_name: Optional[str] = None
-    due_date: Optional[datetime] = None
-    expires_at: Optional[datetime] = None
+    signer_email: str | None = None
+    document_name: str | None = None
+    due_date: datetime | None = None
+    expires_at: datetime | None = None
     is_pending: bool
     is_signed: bool
     is_expired: bool
     is_overdue: bool
-    signed_at: Optional[datetime] = None
-    created_at: Optional[datetime] = None
+    signed_at: datetime | None = None
+    created_at: datetime | None = None
 
     class Config:
         """Pydantic config."""
@@ -355,18 +353,18 @@ class SignedDocumentResponse(BaseModel):
     id: UUID
     tenant_id: UUID
     title: str
-    reference_code: Optional[str] = None
-    status: Optional[str] = None
-    integrity_status: Optional[str] = None
+    reference_code: str | None = None
+    status: str | None = None
+    integrity_status: str | None = None
     total_signatures_required: int
     total_signatures_collected: int
     signatures_remaining: int
     completion_percentage: float
     is_complete: bool
     is_valid: bool
-    verification_code: Optional[str] = None
-    completed_at: Optional[datetime] = None
-    created_at: Optional[datetime] = None
+    verification_code: str | None = None
+    completed_at: datetime | None = None
+    created_at: datetime | None = None
 
     class Config:
         """Pydantic config."""
@@ -386,7 +384,7 @@ class SignatureStatsResponse(BaseModel):
     total_verifications: int
     successful_verifications: int
     failed_verifications: int
-    average_match_score: Optional[float] = None
+    average_match_score: float | None = None
     pending_requests: int
     completed_requests: int
     signed_documents: int
@@ -394,10 +392,11 @@ class SignatureStatsResponse(BaseModel):
 
 # ============== List Response ==============
 
+
 class SignatureListResponse(BaseModel):
     """Paginated signature list response."""
 
-    items: List[SignatureResponse]
+    items: list[SignatureResponse]
     total: int
     page: int
     size: int
@@ -407,7 +406,7 @@ class SignatureListResponse(BaseModel):
 class TemplateListResponse(BaseModel):
     """Paginated template list response."""
 
-    items: List[TemplateResponse]
+    items: list[TemplateResponse]
     total: int
     page: int
     size: int
@@ -417,7 +416,7 @@ class TemplateListResponse(BaseModel):
 class RequestListResponse(BaseModel):
     """Paginated request list response."""
 
-    items: List[SignatureRequestResponse]
+    items: list[SignatureRequestResponse]
     total: int
     page: int
     size: int

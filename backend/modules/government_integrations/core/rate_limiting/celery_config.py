@@ -4,30 +4,32 @@ Configuração Celery para Integrações Governamentais.
 Define filas, prioridades e roteamento de tasks.
 """
 
-from datetime import timedelta
-from typing import Dict, List, Optional, Any
-from dataclasses import dataclass
-from enum import IntEnum
 import logging
+from dataclasses import dataclass
+from datetime import timedelta
+from enum import IntEnum
+from typing import Any
 
 from celery import Celery
-from kombu import Queue, Exchange
+from kombu import Exchange, Queue
 
 logger = logging.getLogger(__name__)
 
 
 class TaskPriority(IntEnum):
     """Prioridades de tasks (menor = mais prioritário)."""
-    CRITICA = 1      # Prazo legal iminente
-    ALTA = 2         # eSocial, FGTS
-    NORMAL = 5       # NF-e, CT-e padrão
-    BAIXA = 7        # Sincronização batch
+
+    CRITICA = 1  # Prazo legal iminente
+    ALTA = 2  # eSocial, FGTS
+    NORMAL = 5  # NF-e, CT-e padrão
+    BAIXA = 7  # Sincronização batch
     BACKGROUND = 10  # Limpeza, relatórios
 
 
 @dataclass
 class CeleryConfig:
     """Configuração do Celery."""
+
     broker_url: str = "redis://localhost:6379/0"
     result_backend: str = "redis://localhost:6379/0"
 
@@ -38,7 +40,7 @@ class CeleryConfig:
     # Serialização
     task_serializer: str = "json"
     result_serializer: str = "json"
-    accept_content: List[str] = None
+    accept_content: list[str] = None
 
     # Comportamento
     task_acks_late: bool = True  # Confirma após execução
@@ -73,58 +75,17 @@ EXCHANGES = {
 QUEUES = [
     # Filas de alta prioridade
     Queue(
-        "gov.esocial",
-        EXCHANGES["government_priority"],
-        routing_key="esocial",
-        queue_arguments={"x-max-priority": 10}
+        "gov.esocial", EXCHANGES["government_priority"], routing_key="esocial", queue_arguments={"x-max-priority": 10}
     ),
-    Queue(
-        "gov.fgts",
-        EXCHANGES["government_priority"],
-        routing_key="fgts",
-        queue_arguments={"x-max-priority": 10}
-    ),
-
+    Queue("gov.fgts", EXCHANGES["government_priority"], routing_key="fgts", queue_arguments={"x-max-priority": 10}),
     # Filas padrão por serviço
-    Queue(
-        "gov.sefaz.nfe",
-        EXCHANGES["government"],
-        routing_key="sefaz.nfe",
-        queue_arguments={"x-max-priority": 10}
-    ),
-    Queue(
-        "gov.sefaz.cte",
-        EXCHANGES["government"],
-        routing_key="sefaz.cte",
-        queue_arguments={"x-max-priority": 10}
-    ),
-    Queue(
-        "gov.sefaz.mdfe",
-        EXCHANGES["government"],
-        routing_key="sefaz.mdfe",
-        queue_arguments={"x-max-priority": 10}
-    ),
-    Queue(
-        "gov.nfse",
-        EXCHANGES["government"],
-        routing_key="nfse",
-        queue_arguments={"x-max-priority": 10}
-    ),
-    Queue(
-        "gov.sped",
-        EXCHANGES["government"],
-        routing_key="sped",
-        queue_arguments={"x-max-priority": 10}
-    ),
-
+    Queue("gov.sefaz.nfe", EXCHANGES["government"], routing_key="sefaz.nfe", queue_arguments={"x-max-priority": 10}),
+    Queue("gov.sefaz.cte", EXCHANGES["government"], routing_key="sefaz.cte", queue_arguments={"x-max-priority": 10}),
+    Queue("gov.sefaz.mdfe", EXCHANGES["government"], routing_key="sefaz.mdfe", queue_arguments={"x-max-priority": 10}),
+    Queue("gov.nfse", EXCHANGES["government"], routing_key="nfse", queue_arguments={"x-max-priority": 10}),
+    Queue("gov.sped", EXCHANGES["government"], routing_key="sped", queue_arguments={"x-max-priority": 10}),
     # Fila de baixa prioridade (batch, sync)
-    Queue(
-        "gov.batch",
-        EXCHANGES["government"],
-        routing_key="batch",
-        queue_arguments={"x-max-priority": 5}
-    ),
-
+    Queue("gov.batch", EXCHANGES["government"], routing_key="batch", queue_arguments={"x-max-priority": 5}),
     # Dead Letter Queue
     Queue(
         "gov.dlq",
@@ -216,10 +177,7 @@ BEAT_SCHEDULE = {
 }
 
 
-def criar_celery_app(
-    config: Optional[CeleryConfig] = None,
-    name: str = "government_integrations"
-) -> Celery:
+def criar_celery_app(config: CeleryConfig | None = None, name: str = "government_integrations") -> Celery:
     """
     Cria e configura aplicação Celery.
 
@@ -278,7 +236,7 @@ def criar_celery_app(
     return app
 
 
-def get_celery_config() -> Dict[str, Any]:
+def get_celery_config() -> dict[str, Any]:
     """Retorna configuração atual como dicionário."""
     config = CeleryConfig()
     return {
@@ -291,11 +249,7 @@ def get_celery_config() -> Dict[str, Any]:
 
 
 # Decoradores para tasks com rate limiting integrado
-def governo_task(
-    servico: str,
-    prioridade: TaskPriority = TaskPriority.NORMAL,
-    rate_limit: Optional[str] = None
-):
+def governo_task(servico: str, prioridade: TaskPriority = TaskPriority.NORMAL, rate_limit: str | None = None):
     """
     Decorador para tasks de integração governamental.
 
@@ -309,6 +263,7 @@ def governo_task(
         def consultar_nfe(chave: str):
             ...
     """
+
     def decorator(func):
         # Importar aqui para evitar circular import
         from functools import wraps

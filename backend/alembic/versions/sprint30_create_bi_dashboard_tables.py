@@ -4,17 +4,19 @@ Revision ID: sprint30_bi_dashboard
 Revises: sprint29_costing
 Create Date: 2025-01-20 10:00:00.000000
 """
-from typing import Sequence, Union
 
-from alembic import op
+from collections.abc import Sequence
+
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
+from alembic import op
+
 # revision identifiers, used by Alembic.
 revision: str = "sprint30_bi_dashboard"
-down_revision: Union[str, None] = "sprint29_costing"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "sprint29_costing"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
@@ -140,23 +142,45 @@ def upgrade() -> None:
         sa.Column("condominio_id", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column("nome", sa.String(200), nullable=False),
         sa.Column("descricao", sa.Text, nullable=True),
-        sa.Column("tipo", postgresql.ENUM(
-            "executive", "operational", "analytical", "tactical", "custom",
-            name="dashboard_type", create_type=False
-        ), nullable=False, server_default="custom"),
-        sa.Column("status", postgresql.ENUM(
-            "draft", "published", "archived",
-            name="dashboard_status", create_type=False
-        ), nullable=False, server_default="draft"),
-        sa.Column("layout", postgresql.ENUM(
-            "grid", "freeform", "fixed", "responsive",
-            name="dashboard_layout", create_type=False
-        ), nullable=False, server_default="grid"),
-        sa.Column("refresh_interval", postgresql.ENUM(
-            "realtime", "minute_1", "minute_5", "minute_15",
-            "minute_30", "hour_1", "hour_6", "hour_12", "day_1", "manual",
-            name="refresh_interval", create_type=False
-        ), nullable=False, server_default="minute_5"),
+        sa.Column(
+            "tipo",
+            postgresql.ENUM(
+                "executive", "operational", "analytical", "tactical", "custom", name="dashboard_type", create_type=False
+            ),
+            nullable=False,
+            server_default="custom",
+        ),
+        sa.Column(
+            "status",
+            postgresql.ENUM("draft", "published", "archived", name="dashboard_status", create_type=False),
+            nullable=False,
+            server_default="draft",
+        ),
+        sa.Column(
+            "layout",
+            postgresql.ENUM("grid", "freeform", "fixed", "responsive", name="dashboard_layout", create_type=False),
+            nullable=False,
+            server_default="grid",
+        ),
+        sa.Column(
+            "refresh_interval",
+            postgresql.ENUM(
+                "realtime",
+                "minute_1",
+                "minute_5",
+                "minute_15",
+                "minute_30",
+                "hour_1",
+                "hour_6",
+                "hour_12",
+                "day_1",
+                "manual",
+                name="refresh_interval",
+                create_type=False,
+            ),
+            nullable=False,
+            server_default="minute_5",
+        ),
         sa.Column("configuracoes", postgresql.JSONB, nullable=True),
         sa.Column("filtros_globais", postgresql.JSONB, nullable=True),
         sa.Column("permissoes", postgresql.JSONB, nullable=True),
@@ -204,31 +228,80 @@ def upgrade() -> None:
         ),
         sa.Column("titulo", sa.String(200), nullable=False),
         sa.Column("descricao", sa.Text, nullable=True),
-        sa.Column("tipo", postgresql.ENUM(
-            "card", "chart", "table", "gauge", "map",
-            "list", "text", "image", "kpi", "filter", "custom",
-            name="widget_type", create_type=False
-        ), nullable=False, server_default="card"),
-        sa.Column("tamanho", postgresql.ENUM(
-            "small", "medium", "large", "xlarge", "full",
-            name="widget_size", create_type=False
-        ), nullable=False, server_default="medium"),
+        sa.Column(
+            "tipo",
+            postgresql.ENUM(
+                "card",
+                "chart",
+                "table",
+                "gauge",
+                "map",
+                "list",
+                "text",
+                "image",
+                "kpi",
+                "filter",
+                "custom",
+                name="widget_type",
+                create_type=False,
+            ),
+            nullable=False,
+            server_default="card",
+        ),
+        sa.Column(
+            "tamanho",
+            postgresql.ENUM("small", "medium", "large", "xlarge", "full", name="widget_size", create_type=False),
+            nullable=False,
+            server_default="medium",
+        ),
         sa.Column("posicao_x", sa.Integer, nullable=False, server_default="0"),
         sa.Column("posicao_y", sa.Integer, nullable=False, server_default="0"),
         sa.Column("largura", sa.Integer, nullable=False, server_default="4"),
         sa.Column("altura", sa.Integer, nullable=False, server_default="3"),
-        sa.Column("tipo_grafico", postgresql.ENUM(
-            "line", "bar", "pie", "donut", "area", "scatter",
-            "bubble", "heatmap", "treemap", "funnel", "radar",
-            "waterfall", "candlestick", "gauge", "sparkline", "combo",
-            name="chart_type", create_type=False
-        ), nullable=True),
-        sa.Column("fonte_dados", postgresql.ENUM(
-            "cash_flow", "accounts_payable", "accounts_receivable",
-            "bank_accounts", "purchases", "inventory", "accounting",
-            "fiscal", "costing", "budget", "custom_query", "external_api",
-            name="data_source", create_type=False
-        ), nullable=True),
+        sa.Column(
+            "tipo_grafico",
+            postgresql.ENUM(
+                "line",
+                "bar",
+                "pie",
+                "donut",
+                "area",
+                "scatter",
+                "bubble",
+                "heatmap",
+                "treemap",
+                "funnel",
+                "radar",
+                "waterfall",
+                "candlestick",
+                "gauge",
+                "sparkline",
+                "combo",
+                name="chart_type",
+                create_type=False,
+            ),
+            nullable=True,
+        ),
+        sa.Column(
+            "fonte_dados",
+            postgresql.ENUM(
+                "cash_flow",
+                "accounts_payable",
+                "accounts_receivable",
+                "bank_accounts",
+                "purchases",
+                "inventory",
+                "accounting",
+                "fiscal",
+                "costing",
+                "budget",
+                "custom_query",
+                "external_api",
+                name="data_source",
+                create_type=False,
+            ),
+            nullable=True,
+        ),
         sa.Column("query_config", postgresql.JSONB, nullable=True),
         sa.Column("metricas", postgresql.JSONB, nullable=True),
         sa.Column("dimensoes", postgresql.JSONB, nullable=True),
@@ -272,21 +345,45 @@ def upgrade() -> None:
         sa.Column("codigo", sa.String(50), nullable=False),
         sa.Column("nome", sa.String(200), nullable=False),
         sa.Column("descricao", sa.Text, nullable=True),
-        sa.Column("categoria", postgresql.ENUM(
-            "liquidity", "profitability", "efficiency", "leverage",
-            "activity", "growth", "cash_flow", "budget", "custom",
-            name="kpi_category", create_type=False
-        ), nullable=False, server_default="custom"),
+        sa.Column(
+            "categoria",
+            postgresql.ENUM(
+                "liquidity",
+                "profitability",
+                "efficiency",
+                "leverage",
+                "activity",
+                "growth",
+                "cash_flow",
+                "budget",
+                "custom",
+                name="kpi_category",
+                create_type=False,
+            ),
+            nullable=False,
+            server_default="custom",
+        ),
         sa.Column("formula", sa.Text, nullable=False),
         sa.Column("variaveis", postgresql.JSONB, nullable=True),
         sa.Column("unidade", sa.String(20), nullable=True),
         sa.Column("formato", sa.String(50), nullable=True),
         sa.Column("casas_decimais", sa.Integer, nullable=False, server_default="2"),
-        sa.Column("frequencia", postgresql.ENUM(
-            "daily", "weekly", "biweekly", "monthly",
-            "quarterly", "semiannual", "annual",
-            name="kpi_frequency", create_type=False
-        ), nullable=False, server_default="monthly"),
+        sa.Column(
+            "frequencia",
+            postgresql.ENUM(
+                "daily",
+                "weekly",
+                "biweekly",
+                "monthly",
+                "quarterly",
+                "semiannual",
+                "annual",
+                name="kpi_frequency",
+                create_type=False,
+            ),
+            nullable=False,
+            server_default="monthly",
+        ),
         sa.Column("meta_valor", sa.Numeric(18, 4), nullable=True),
         sa.Column("meta_tipo", sa.String(20), nullable=True),
         sa.Column("threshold_warning", sa.Numeric(18, 4), nullable=True),
@@ -295,18 +392,23 @@ def upgrade() -> None:
         sa.Column("valor_atual", sa.Numeric(18, 4), nullable=True),
         sa.Column("valor_anterior", sa.Numeric(18, 4), nullable=True),
         sa.Column("variacao_percent", sa.Numeric(10, 4), nullable=True),
-        sa.Column("status", postgresql.ENUM(
-            "active", "inactive", "calculating", "error",
-            name="kpi_status", create_type=False
-        ), nullable=False, server_default="active"),
-        sa.Column("tendencia", postgresql.ENUM(
-            "up", "down", "stable", "volatile",
-            name="kpi_trend", create_type=False
-        ), nullable=True),
-        sa.Column("alert_level", postgresql.ENUM(
-            "none", "info", "warning", "critical",
-            name="alert_level", create_type=False
-        ), nullable=False, server_default="none"),
+        sa.Column(
+            "status",
+            postgresql.ENUM("active", "inactive", "calculating", "error", name="kpi_status", create_type=False),
+            nullable=False,
+            server_default="active",
+        ),
+        sa.Column(
+            "tendencia",
+            postgresql.ENUM("up", "down", "stable", "volatile", name="kpi_trend", create_type=False),
+            nullable=True,
+        ),
+        sa.Column(
+            "alert_level",
+            postgresql.ENUM("none", "info", "warning", "critical", name="alert_level", create_type=False),
+            nullable=False,
+            server_default="none",
+        ),
         sa.Column("historico", postgresql.JSONB, nullable=True),
         sa.Column("historico_max_registros", sa.Integer, server_default="365"),
         sa.Column("ultima_atualizacao", sa.DateTime, nullable=True),
@@ -349,25 +451,52 @@ def upgrade() -> None:
         sa.Column("condominio_id", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column("nome", sa.String(200), nullable=False),
         sa.Column("descricao", sa.Text, nullable=True),
-        sa.Column("tipo", postgresql.ENUM(
-            "dashboard_snapshot", "kpi_report", "financial_summary",
-            "custom_report", "variance_report", "trend_report",
-            "forecast_report", "comparison_report",
-            name="report_type", create_type=False
-        ), nullable=False, server_default="custom_report"),
-        sa.Column("formato", postgresql.ENUM(
-            "pdf", "excel", "csv", "json", "html",
-            name="report_format", create_type=False
-        ), nullable=False, server_default="pdf"),
-        sa.Column("frequencia", postgresql.ENUM(
-            "once", "daily", "weekly", "biweekly", "monthly",
-            "quarterly", "semiannual", "annual",
-            name="report_frequency", create_type=False
-        ), nullable=False, server_default="monthly"),
-        sa.Column("status", postgresql.ENUM(
-            "active", "paused", "cancelled", "completed",
-            name="report_status", create_type=False
-        ), nullable=False, server_default="active"),
+        sa.Column(
+            "tipo",
+            postgresql.ENUM(
+                "dashboard_snapshot",
+                "kpi_report",
+                "financial_summary",
+                "custom_report",
+                "variance_report",
+                "trend_report",
+                "forecast_report",
+                "comparison_report",
+                name="report_type",
+                create_type=False,
+            ),
+            nullable=False,
+            server_default="custom_report",
+        ),
+        sa.Column(
+            "formato",
+            postgresql.ENUM("pdf", "excel", "csv", "json", "html", name="report_format", create_type=False),
+            nullable=False,
+            server_default="pdf",
+        ),
+        sa.Column(
+            "frequencia",
+            postgresql.ENUM(
+                "once",
+                "daily",
+                "weekly",
+                "biweekly",
+                "monthly",
+                "quarterly",
+                "semiannual",
+                "annual",
+                name="report_frequency",
+                create_type=False,
+            ),
+            nullable=False,
+            server_default="monthly",
+        ),
+        sa.Column(
+            "status",
+            postgresql.ENUM("active", "paused", "cancelled", "completed", name="report_status", create_type=False),
+            nullable=False,
+            server_default="active",
+        ),
         sa.Column("dashboard_id", postgresql.UUID(as_uuid=True), nullable=True),
         sa.Column("kpi_ids", postgresql.JSONB, nullable=True),
         sa.Column("configuracoes", postgresql.JSONB, nullable=True),
@@ -375,10 +504,12 @@ def upgrade() -> None:
         sa.Column("periodo_inicio", sa.Date, nullable=True),
         sa.Column("periodo_fim", sa.Date, nullable=True),
         sa.Column("periodo_relativo_dias", sa.Integer, nullable=True),
-        sa.Column("metodo_entrega", postgresql.ENUM(
-            "email", "webhook", "storage", "notification",
-            name="delivery_method", create_type=False
-        ), nullable=False, server_default="email"),
+        sa.Column(
+            "metodo_entrega",
+            postgresql.ENUM("email", "webhook", "storage", "notification", name="delivery_method", create_type=False),
+            nullable=False,
+            server_default="email",
+        ),
         sa.Column("destinatarios_email", postgresql.JSONB, nullable=True),
         sa.Column("webhook_url", sa.String(500), nullable=True),
         sa.Column("storage_path", sa.String(500), nullable=True),
@@ -416,18 +547,29 @@ def upgrade() -> None:
         "analytics_cache",
         sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True),
         sa.Column("cache_key", sa.String(255), nullable=False),
-        sa.Column("cache_type", postgresql.ENUM(
-            "widget_data", "kpi_value", "report_data",
-            "aggregation", "forecast", "analytics",
-            name="cache_type", create_type=False
-        ), nullable=False),
+        sa.Column(
+            "cache_type",
+            postgresql.ENUM(
+                "widget_data",
+                "kpi_value",
+                "report_data",
+                "aggregation",
+                "forecast",
+                "analytics",
+                name="cache_type",
+                create_type=False,
+            ),
+            nullable=False,
+        ),
         sa.Column("condominio_id", postgresql.UUID(as_uuid=True), nullable=True),
         sa.Column("data", postgresql.JSONB, nullable=True),
         sa.Column("tamanho_bytes", sa.Integer, nullable=True),
-        sa.Column("status", postgresql.ENUM(
-            "valid", "expired", "invalidated", "refreshing",
-            name="cache_status", create_type=False
-        ), nullable=False, server_default="valid"),
+        sa.Column(
+            "status",
+            postgresql.ENUM("valid", "expired", "invalidated", "refreshing", name="cache_status", create_type=False),
+            nullable=False,
+            server_default="valid",
+        ),
         sa.Column("ttl_segundos", sa.Integer, nullable=False, server_default="300"),
         sa.Column("expira_em", sa.DateTime, nullable=True),
         sa.Column("hits", sa.Integer, nullable=False, server_default="0"),

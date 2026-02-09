@@ -8,45 +8,45 @@ Testes para:
 - Endpoints REST: Upload, validacao, listagem de certificados
 """
 
-import pytest
 import base64
 import hashlib
 from datetime import datetime, timedelta
-from unittest.mock import AsyncMock, MagicMock, patch, PropertyMock
-from uuid import uuid4
 from io import BytesIO
+from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
+from uuid import uuid4
 
+import pytest
 from fastapi import HTTPException, status
 from fastapi.testclient import TestClient
 
 # Imports do modulo de certificados
 from modules.government_integrations.core.certificate_manager import (
-    CertificateManager,
-    CertificateStore,
     CertificateInfo,
+    CertificateManager,
     CertificateStatus,
+    CertificateStore,
     CertificateType,
 )
 from modules.government_integrations.core.xml_signer import (
-    XMLSigner,
-    ESocialXMLSigner,
-    NFEXMLSigner,
-    CTEXMLSigner,
-    MDFEXMLSigner,
-    SignatureType,
-    SignatureConfig,
-    DigestMethod,
-    SignatureMethod,
-    CanonicalizationMethod,
-    TransformMethod,
-    NAMESPACES,
     DEFAULT_CONFIGS,
+    NAMESPACES,
+    CanonicalizationMethod,
+    CTEXMLSigner,
+    DigestMethod,
+    ESocialXMLSigner,
+    MDFEXMLSigner,
+    NFEXMLSigner,
+    SignatureConfig,
+    SignatureMethod,
+    SignatureType,
+    TransformMethod,
+    XMLSigner,
 )
-
 
 # =============================================================================
 # Fixtures
 # =============================================================================
+
 
 @pytest.fixture
 def mock_certificate_info():
@@ -65,7 +65,7 @@ def mock_certificate_info():
         certificate_type=CertificateType.A1,
         status=CertificateStatus.VALID,
         key_size=2048,
-        signature_algorithm="sha256WithRSAEncryption"
+        signature_algorithm="sha256WithRSAEncryption",
     )
 
 
@@ -115,19 +115,19 @@ def mock_pfx_data():
 @pytest.fixture
 def sample_xml_content():
     """Fixture para XML de exemplo para assinatura."""
-    return '''<?xml version="1.0" encoding="UTF-8"?>
+    return """<?xml version="1.0" encoding="UTF-8"?>
 <documento Id="DOC123456">
     <dados>
         <campo1>Valor1</campo1>
         <campo2>Valor2</campo2>
     </dados>
-</documento>'''
+</documento>"""
 
 
 @pytest.fixture
 def sample_nfe_xml():
     """Fixture para XML de NF-e."""
-    return '''<?xml version="1.0" encoding="UTF-8"?>
+    return """<?xml version="1.0" encoding="UTF-8"?>
 <NFe xmlns="http://www.portalfiscal.inf.br/nfe">
     <infNFe Id="NFe35210112345678000199550010000000011000000017" versao="4.00">
         <ide>
@@ -138,13 +138,13 @@ def sample_nfe_xml():
             <CNPJ>12345678000199</CNPJ>
         </emit>
     </infNFe>
-</NFe>'''
+</NFe>"""
 
 
 @pytest.fixture
 def sample_esocial_xml():
     """Fixture para XML de eSocial."""
-    return '''<?xml version="1.0" encoding="UTF-8"?>
+    return """<?xml version="1.0" encoding="UTF-8"?>
 <eSocial xmlns="http://www.esocial.gov.br/schema/evt/evtAdmissao/v_S_01_01_00">
     <evtAdmissao Id="ID1123456789012345678901234567890123456789">
         <ideEvento>
@@ -156,12 +156,13 @@ def sample_esocial_xml():
             <nrInsc>12345678000199</nrInsc>
         </ideEmpregador>
     </evtAdmissao>
-</eSocial>'''
+</eSocial>"""
 
 
 # =============================================================================
 # TestCertificateInfo - Testes para dataclass CertificateInfo
 # =============================================================================
+
 
 class TestCertificateInfo:
     """Testes para CertificateInfo dataclass."""
@@ -221,15 +222,13 @@ class TestCertificateInfo:
 # TestCertificateManager - Testes para o gerenciador de certificados A1
 # =============================================================================
 
+
 class TestCertificateManager:
     """Testes para CertificateManager."""
 
     def test_init_with_path(self):
         """Testa inicializacao com caminho de arquivo."""
-        manager = CertificateManager(
-            pfx_path="/path/to/cert.pfx",
-            password="senha123"
-        )
+        manager = CertificateManager(pfx_path="/path/to/cert.pfx", password="senha123")
 
         assert manager._pfx_path == "/path/to/cert.pfx"
         assert manager._password == b"senha123"
@@ -237,10 +236,7 @@ class TestCertificateManager:
 
     def test_init_with_data(self, mock_pfx_data):
         """Testa inicializacao com dados binarios."""
-        manager = CertificateManager(
-            pfx_data=mock_pfx_data,
-            password="senha123"
-        )
+        manager = CertificateManager(pfx_data=mock_pfx_data, password="senha123")
 
         assert manager._pfx_data == mock_pfx_data
         assert manager._loaded is False
@@ -266,10 +262,7 @@ class TestCertificateManager:
     @pytest.mark.asyncio
     async def test_load_file_not_found(self):
         """Testa erro ao carregar arquivo inexistente."""
-        manager = CertificateManager(
-            pfx_path="/path/nonexistent.pfx",
-            password="senha"
-        )
+        manager = CertificateManager(pfx_path="/path/nonexistent.pfx", password="senha")
 
         with pytest.raises(ValueError):
             manager.load()
@@ -279,12 +272,9 @@ class TestCertificateManager:
         """Testa erro com senha invalida."""
         from OpenSSL import crypto
 
-        manager = CertificateManager(
-            pfx_data=mock_pfx_data,
-            password="senha_errada"
-        )
+        manager = CertificateManager(pfx_data=mock_pfx_data, password="senha_errada")
 
-        with patch.object(crypto, 'load_pkcs12', side_effect=crypto.Error("bad password")):
+        with patch.object(crypto, "load_pkcs12", side_effect=crypto.Error("bad password")):
             with pytest.raises(ValueError) as exc_info:
                 manager.load()
 
@@ -292,48 +282,47 @@ class TestCertificateManager:
 
     def test_load_success_mocked(self, mock_certificate_info):
         """Testa carregamento com sucesso (mockado)."""
-        manager = CertificateManager(
-            pfx_data=b"mock_data",
-            password="senha123"
-        )
+        manager = CertificateManager(pfx_data=b"mock_data", password="senha123")
 
         # Mock dos objetos OpenSSL e cryptography
-        with patch('modules.government_integrations.core.certificate_manager.crypto') as mock_crypto:
-            with patch('modules.government_integrations.core.certificate_manager.x509') as mock_x509:
-                with patch('modules.government_integrations.core.certificate_manager.serialization') as mock_serial:
-                    with patch.object(CertificateManager, '_extract_info', return_value=mock_certificate_info):
-                        # Setup mocks
-                        mock_pkcs12 = MagicMock()
-                        mock_cert = MagicMock()
-                        mock_pkey = MagicMock()
+        with (
+            patch("modules.government_integrations.core.certificate_manager.crypto") as mock_crypto,
+            patch("modules.government_integrations.core.certificate_manager.x509") as mock_x509,
+            patch("modules.government_integrations.core.certificate_manager.serialization") as mock_serial,
+            patch.object(CertificateManager, "_extract_info", return_value=mock_certificate_info),
+        ):
+            # Setup mocks
+            mock_pkcs12 = MagicMock()
+            mock_cert = MagicMock()
+            mock_pkey = MagicMock()
 
-                        mock_pkcs12.get_certificate.return_value = mock_cert
-                        mock_pkcs12.get_privatekey.return_value = mock_pkey
-                        mock_crypto.load_pkcs12.return_value = mock_pkcs12
-                        mock_crypto.dump_certificate.return_value = b"PEM_CERT"
-                        mock_crypto.dump_privatekey.return_value = b"PEM_KEY"
+            mock_pkcs12.get_certificate.return_value = mock_cert
+            mock_pkcs12.get_privatekey.return_value = mock_pkey
+            mock_crypto.load_pkcs12.return_value = mock_pkcs12
+            mock_crypto.dump_certificate.return_value = b"PEM_CERT"
+            mock_crypto.dump_privatekey.return_value = b"PEM_KEY"
 
-                        # Mock x509 certificate
-                        mock_x509_cert = MagicMock()
-                        mock_x509_cert.subject = MagicMock()
-                        mock_x509_cert.issuer = MagicMock()
-                        mock_x509_cert.serial_number = 123456789
-                        mock_x509_cert.not_valid_before = datetime.utcnow() - timedelta(days=30)
-                        mock_x509_cert.not_valid_after = datetime.utcnow() + timedelta(days=335)
-                        mock_x509_cert.fingerprint.return_value = b"1234567890" * 4
-                        mock_x509_cert.public_key.return_value = MagicMock(key_size=2048)
+            # Mock x509 certificate
+            mock_x509_cert = MagicMock()
+            mock_x509_cert.subject = MagicMock()
+            mock_x509_cert.issuer = MagicMock()
+            mock_x509_cert.serial_number = 123456789
+            mock_x509_cert.not_valid_before = datetime.utcnow() - timedelta(days=30)
+            mock_x509_cert.not_valid_after = datetime.utcnow() + timedelta(days=335)
+            mock_x509_cert.fingerprint.return_value = b"1234567890" * 4
+            mock_x509_cert.public_key.return_value = MagicMock(key_size=2048)
 
-                        mock_x509.load_pem_x509_certificate.return_value = mock_x509_cert
+            mock_x509.load_pem_x509_certificate.return_value = mock_x509_cert
 
-                        # Mock private key
-                        mock_private_key = MagicMock()
-                        mock_serial.load_pem_private_key.return_value = mock_private_key
+            # Mock private key
+            mock_private_key = MagicMock()
+            mock_serial.load_pem_private_key.return_value = mock_private_key
 
-                        # Executar
-                        result = manager.load()
+            # Executar
+            result = manager.load()
 
-                        assert result is True
-                        assert manager._loaded is True
+            assert result is True
+            assert manager._loaded is True
 
     def test_already_loaded(self, mock_certificate_info):
         """Testa que certificado ja carregado retorna True."""
@@ -349,7 +338,7 @@ class TestCertificateManager:
         """Testa que acessar info dispara load."""
         manager = CertificateManager(pfx_data=b"mock", password="senha")
 
-        with patch.object(manager, 'load') as mock_load:
+        with patch.object(manager, "load") as mock_load:
             mock_load.return_value = True
             manager._info = MagicMock()
 
@@ -361,7 +350,7 @@ class TestCertificateManager:
         """Testa que acessar certificate dispara load."""
         manager = CertificateManager(pfx_data=b"mock", password="senha")
 
-        with patch.object(manager, 'load') as mock_load:
+        with patch.object(manager, "load") as mock_load:
             mock_load.return_value = True
             manager._certificate = MagicMock()
 
@@ -375,7 +364,7 @@ class TestCertificateManager:
         manager._loaded = True
         manager._certificate = MagicMock()
 
-        with patch('modules.government_integrations.core.certificate_manager.crypto') as mock_crypto:
+        with patch("modules.government_integrations.core.certificate_manager.crypto") as mock_crypto:
             mock_crypto.dump_certificate.return_value = b"-----BEGIN CERTIFICATE-----\nMOCK\n-----END CERTIFICATE-----"
             mock_crypto.FILETYPE_PEM = 1
 
@@ -389,7 +378,7 @@ class TestCertificateManager:
         manager._loaded = True
         manager._certificate = MagicMock()
 
-        with patch('modules.government_integrations.core.certificate_manager.crypto') as mock_crypto:
+        with patch("modules.government_integrations.core.certificate_manager.crypto") as mock_crypto:
             mock_crypto.dump_certificate.return_value = b"\x30\x82\x01"  # DER bytes
             mock_crypto.FILETYPE_ASN1 = 2
 
@@ -403,10 +392,10 @@ class TestCertificateManager:
         manager._loaded = True
         manager._certificate = MagicMock()
 
-        with patch.object(manager, 'get_certificate_der', return_value=b"mock_der_data"):
+        with patch.object(manager, "get_certificate_der", return_value=b"mock_der_data"):
             result = manager.get_certificate_base64()
 
-            expected = base64.b64encode(b"mock_der_data").decode('ascii')
+            expected = base64.b64encode(b"mock_der_data").decode("ascii")
             assert result == expected
 
     def test_sign_data(self):
@@ -427,10 +416,10 @@ class TestCertificateManager:
         """Testa assinatura de dados em base64."""
         manager = CertificateManager(pfx_data=b"mock", password="senha")
 
-        with patch.object(manager, 'sign_data', return_value=b"mock_signature"):
+        with patch.object(manager, "sign_data", return_value=b"mock_signature"):
             result = manager.sign_data_base64(b"data", "sha256")
 
-            expected = base64.b64encode(b"mock_signature").decode('ascii')
+            expected = base64.b64encode(b"mock_signature").decode("ascii")
             assert result == expected
 
     def test_verify_signature_valid(self):
@@ -501,7 +490,7 @@ class TestCertificateManager:
         """Testa que validacao carrega certificado se necessario."""
         manager = CertificateManager(pfx_data=b"mock", password="senha")
 
-        with patch.object(manager, 'load', side_effect=Exception("Load error")):
+        with patch.object(manager, "load", side_effect=Exception("Load error")):
             is_valid, message = manager.validate()
 
             assert is_valid is False
@@ -538,6 +527,7 @@ class TestCertificateManager:
 # TestCertificateStore - Testes para armazenamento de multiplos certificados
 # =============================================================================
 
+
 class TestCertificateStore:
     """Testes para CertificateStore."""
 
@@ -555,21 +545,19 @@ class TestCertificateStore:
 
     def test_add_certificate(self, mock_certificate_info):
         """Testa adicao de certificado."""
-        store = CertificateStore(storage_path="/tmp/test_certs")
+        store = CertificateStore(storage_path="/tmp/test_certs")  # noqa: S108
 
-        with patch.object(CertificateManager, 'load', return_value=True):
-            with patch.object(CertificateManager, 'info', new_callable=PropertyMock) as mock_info:
-                mock_info.return_value = mock_certificate_info
+        with (
+            patch.object(CertificateManager, "load", return_value=True),
+            patch.object(CertificateManager, "info", new_callable=PropertyMock) as mock_info,
+        ):
+            mock_info.return_value = mock_certificate_info
 
-                with patch.object(store, '_save_certificate'):
-                    result = store.add_certificate(
-                        identifier="12345678000199",
-                        pfx_data=b"mock_pfx",
-                        password="senha"
-                    )
+            with patch.object(store, "_save_certificate"):
+                result = store.add_certificate(identifier="12345678000199", pfx_data=b"mock_pfx", password="senha")
 
-                    assert result.subject_cn == mock_certificate_info.subject_cn
-                    assert "12345678000199" in store._certificates
+                assert result.subject_cn == mock_certificate_info.subject_cn
+                assert "12345678000199" in store._certificates
 
     def test_get_certificate_found(self, mock_certificate_info):
         """Testa obtencao de certificado existente."""
@@ -591,10 +579,10 @@ class TestCertificateStore:
 
     def test_remove_certificate_success(self):
         """Testa remocao de certificado com sucesso."""
-        store = CertificateStore(storage_path="/tmp/test")
+        store = CertificateStore(storage_path="/tmp/test")  # noqa: S108
         store._certificates["test_id"] = MagicMock()
 
-        with patch.object(store, '_delete_certificate_file'):
+        with patch.object(store, "_delete_certificate_file"):
             result = store.remove_certificate("test_id")
 
             assert result is True
@@ -634,6 +622,7 @@ class TestCertificateStore:
 # TestXMLSigner - Testes para assinatura XML
 # =============================================================================
 
+
 class TestXMLSigner:
     """Testes para XMLSigner."""
 
@@ -666,11 +655,7 @@ class TestXMLSigner:
         """Testa assinatura generica de XML."""
         signer = XMLSigner(mock_cert_manager)
 
-        result = signer.sign(
-            sample_xml_content,
-            signature_type=SignatureType.GENERIC,
-            reference_uri="#DOC123456"
-        )
+        result = signer.sign(sample_xml_content, signature_type=SignatureType.GENERIC, reference_uri="#DOC123456")
 
         assert "<?xml" in result
         assert "Signature" in result
@@ -687,13 +672,10 @@ class TestXMLSigner:
             digest_method=DigestMethod.SHA256,
             signature_method=SignatureMethod.RSA_SHA256,
             canonicalization=CanonicalizationMethod.C14N_EXCLUSIVE,
-            reference_uri="#DOC123456"
+            reference_uri="#DOC123456",
         )
 
-        result = signer.sign(
-            sample_xml_content,
-            config=config
-        )
+        result = signer.sign(sample_xml_content, config=config)
 
         assert "Signature" in result
         assert "sha256" in result.lower() or "SHA256" in result
@@ -712,10 +694,7 @@ class TestXMLSigner:
         signer = XMLSigner(mock_cert_manager)
 
         with pytest.raises(ValueError) as exc_info:
-            signer.sign(
-                sample_xml_content,
-                reference_uri="#NONEXISTENT"
-            )
+            signer.sign(sample_xml_content, reference_uri="#NONEXISTENT")
 
         # Aceita mensagem com ou sem acento
         assert "encontrado" in str(exc_info.value).lower()
@@ -725,7 +704,7 @@ class TestXMLSigner:
         signer = XMLSigner(mock_cert_manager)
         from lxml import etree
 
-        xml_doc = etree.fromstring(sample_xml_content.encode('utf-8'))
+        xml_doc = etree.fromstring(sample_xml_content.encode("utf-8"))
         element = signer._find_element_to_sign(xml_doc, "")
 
         assert element.tag == "documento"
@@ -735,21 +714,18 @@ class TestXMLSigner:
         signer = XMLSigner(mock_cert_manager)
         from lxml import etree
 
-        xml_doc = etree.fromstring(sample_xml_content.encode('utf-8'))
+        xml_doc = etree.fromstring(sample_xml_content.encode("utf-8"))
         element = signer._find_element_to_sign(xml_doc, "#DOC123456")
 
-        assert element.get('Id') == "DOC123456"
+        assert element.get("Id") == "DOC123456"
 
     def test_calculate_digest_sha1(self, mock_cert_manager, sample_xml_content):
         """Testa calculo de digest SHA1."""
         signer = XMLSigner(mock_cert_manager)
         from lxml import etree
 
-        xml_doc = etree.fromstring(sample_xml_content.encode('utf-8'))
-        config = SignatureConfig(
-            signature_type=SignatureType.GENERIC,
-            digest_method=DigestMethod.SHA1
-        )
+        xml_doc = etree.fromstring(sample_xml_content.encode("utf-8"))
+        config = SignatureConfig(signature_type=SignatureType.GENERIC, digest_method=DigestMethod.SHA1)
 
         result = signer._calculate_digest(xml_doc, config)
 
@@ -762,11 +738,8 @@ class TestXMLSigner:
         signer = XMLSigner(mock_cert_manager)
         from lxml import etree
 
-        xml_doc = etree.fromstring(sample_xml_content.encode('utf-8'))
-        config = SignatureConfig(
-            signature_type=SignatureType.GENERIC,
-            digest_method=DigestMethod.SHA256
-        )
+        xml_doc = etree.fromstring(sample_xml_content.encode("utf-8"))
+        config = SignatureConfig(signature_type=SignatureType.GENERIC, digest_method=DigestMethod.SHA256)
 
         result = signer._calculate_digest(xml_doc, config)
 
@@ -779,11 +752,8 @@ class TestXMLSigner:
         signer = XMLSigner(mock_cert_manager)
         from lxml import etree
 
-        xml_doc = etree.fromstring(sample_xml_content.encode('utf-8'))
-        config = SignatureConfig(
-            signature_type=SignatureType.GENERIC,
-            canonicalization=CanonicalizationMethod.C14N
-        )
+        xml_doc = etree.fromstring(sample_xml_content.encode("utf-8"))
+        config = SignatureConfig(signature_type=SignatureType.GENERIC, canonicalization=CanonicalizationMethod.C14N)
 
         result = signer._canonicalize(xml_doc, config)
 
@@ -794,10 +764,9 @@ class TestXMLSigner:
         signer = XMLSigner(mock_cert_manager)
         from lxml import etree
 
-        xml_doc = etree.fromstring(sample_xml_content.encode('utf-8'))
+        xml_doc = etree.fromstring(sample_xml_content.encode("utf-8"))
         config = SignatureConfig(
-            signature_type=SignatureType.GENERIC,
-            canonicalization=CanonicalizationMethod.C14N_EXCLUSIVE
+            signature_type=SignatureType.GENERIC, canonicalization=CanonicalizationMethod.C14N_EXCLUSIVE
         )
 
         result = signer._canonicalize(xml_doc, config)
@@ -808,27 +777,24 @@ class TestXMLSigner:
         """Testa criacao do elemento Signature."""
         signer = XMLSigner(mock_cert_manager)
 
-        config = SignatureConfig(
-            signature_type=SignatureType.GENERIC,
-            reference_uri="#TEST123"
-        )
+        config = SignatureConfig(signature_type=SignatureType.GENERIC, reference_uri="#TEST123")
 
         result = signer._create_signature_element("digest_value_test", config)
 
         # Verificar estrutura
         assert result.tag == "{http://www.w3.org/2000/09/xmldsig#}Signature"
 
-        signed_info = result.find('.//ds:SignedInfo', NAMESPACES)
+        signed_info = result.find(".//ds:SignedInfo", NAMESPACES)
         assert signed_info is not None
 
-        reference = signed_info.find('.//ds:Reference', NAMESPACES)
+        reference = signed_info.find(".//ds:Reference", NAMESPACES)
         assert reference is not None
-        assert reference.get('URI') == "#TEST123"
+        assert reference.get("URI") == "#TEST123"
 
-        key_info = result.find('.//ds:KeyInfo', NAMESPACES)
+        key_info = result.find(".//ds:KeyInfo", NAMESPACES)
         assert key_info is not None
 
-        x509_cert = result.find('.//ds:X509Certificate', NAMESPACES)
+        x509_cert = result.find(".//ds:X509Certificate", NAMESPACES)
         assert x509_cert is not None
         assert x509_cert.text == "MOCK_CERT_BASE64=="
 
@@ -837,10 +803,7 @@ class TestXMLSigner:
         signer = XMLSigner(mock_cert_manager)
 
         # Assinar primeiro
-        signed_xml = signer.sign(
-            sample_xml_content,
-            reference_uri="#DOC123456"
-        )
+        signed_xml = signer.sign(sample_xml_content, reference_uri="#DOC123456")
 
         # Verificar
         is_valid, message = signer.verify(signed_xml)
@@ -875,6 +838,7 @@ class TestXMLSigner:
 # TestESocialXMLSigner - Testes para assinador eSocial
 # =============================================================================
 
+
 class TestESocialXMLSigner:
     """Testes para ESocialXMLSigner."""
 
@@ -891,10 +855,7 @@ class TestESocialXMLSigner:
         """Testa assinatura de evento eSocial."""
         signer = ESocialXMLSigner(mock_cert_manager)
 
-        result = signer.sign_event(
-            sample_esocial_xml,
-            event_id="ID1123456789012345678901234567890123456789"
-        )
+        result = signer.sign_event(sample_esocial_xml, event_id="ID1123456789012345678901234567890123456789")
 
         assert "Signature" in result
         assert "SignatureValue" in result
@@ -917,6 +878,7 @@ class TestESocialXMLSigner:
 # TestNFEXMLSigner - Testes para assinador NF-e
 # =============================================================================
 
+
 class TestNFEXMLSigner:
     """Testes para NFEXMLSigner."""
 
@@ -933,10 +895,7 @@ class TestNFEXMLSigner:
         """Testa assinatura de NF-e."""
         signer = NFEXMLSigner(mock_cert_manager)
 
-        result = signer.sign_nfe(
-            sample_nfe_xml,
-            inf_nfe_id="NFe35210112345678000199550010000000011000000017"
-        )
+        result = signer.sign_nfe(sample_nfe_xml, inf_nfe_id="NFe35210112345678000199550010000000011000000017")
 
         assert "Signature" in result
 
@@ -944,10 +903,7 @@ class TestNFEXMLSigner:
         """Testa assinatura de NFC-e."""
         signer = NFEXMLSigner(mock_cert_manager)
 
-        result = signer.sign_nfce(
-            sample_nfe_xml,
-            inf_nfe_id="NFe35210112345678000199550010000000011000000017"
-        )
+        result = signer.sign_nfce(sample_nfe_xml, inf_nfe_id="NFe35210112345678000199550010000000011000000017")
 
         assert "Signature" in result
 
@@ -955,19 +911,16 @@ class TestNFEXMLSigner:
         """Testa assinatura de cancelamento."""
         signer = NFEXMLSigner(mock_cert_manager)
 
-        cancel_xml = '''<?xml version="1.0" encoding="UTF-8"?>
+        cancel_xml = """<?xml version="1.0" encoding="UTF-8"?>
         <envEvento xmlns="http://www.portalfiscal.inf.br/nfe">
             <evento>
                 <infEvento Id="ID110111012345678000199550010000000011100000001">
                     <tpEvento>110111</tpEvento>
                 </infEvento>
             </evento>
-        </envEvento>'''
+        </envEvento>"""
 
-        result = signer.sign_cancellation(
-            cancel_xml,
-            inf_evento_id="ID110111012345678000199550010000000011100000001"
-        )
+        result = signer.sign_cancellation(cancel_xml, inf_evento_id="ID110111012345678000199550010000000011100000001")
 
         assert "Signature" in result
 
@@ -982,6 +935,7 @@ class TestNFEXMLSigner:
 # =============================================================================
 # TestCTEXMLSigner - Testes para assinador CT-e
 # =============================================================================
+
 
 class TestCTEXMLSigner:
     """Testes para CTEXMLSigner."""
@@ -999,19 +953,16 @@ class TestCTEXMLSigner:
         """Testa assinatura de CT-e."""
         signer = CTEXMLSigner(mock_cert_manager)
 
-        cte_xml = '''<?xml version="1.0" encoding="UTF-8"?>
+        cte_xml = """<?xml version="1.0" encoding="UTF-8"?>
         <CTe xmlns="http://www.portalfiscal.inf.br/cte">
             <infCte Id="CTe35210112345678000199570010000000011000000013">
                 <ide>
                     <cUF>35</cUF>
                 </ide>
             </infCte>
-        </CTe>'''
+        </CTe>"""
 
-        result = signer.sign_cte(
-            cte_xml,
-            inf_cte_id="CTe35210112345678000199570010000000011000000013"
-        )
+        result = signer.sign_cte(cte_xml, inf_cte_id="CTe35210112345678000199570010000000011000000013")
 
         assert "Signature" in result
 
@@ -1019,6 +970,7 @@ class TestCTEXMLSigner:
 # =============================================================================
 # TestMDFEXMLSigner - Testes para assinador MDF-e
 # =============================================================================
+
 
 class TestMDFEXMLSigner:
     """Testes para MDFEXMLSigner."""
@@ -1036,19 +988,16 @@ class TestMDFEXMLSigner:
         """Testa assinatura de MDF-e."""
         signer = MDFEXMLSigner(mock_cert_manager)
 
-        mdfe_xml = '''<?xml version="1.0" encoding="UTF-8"?>
+        mdfe_xml = """<?xml version="1.0" encoding="UTF-8"?>
         <MDFe xmlns="http://www.portalfiscal.inf.br/mdfe">
             <infMDFe Id="MDFe35210112345678000199580010000000011000000015">
                 <ide>
                     <cUF>35</cUF>
                 </ide>
             </infMDFe>
-        </MDFe>'''
+        </MDFe>"""
 
-        result = signer.sign_mdfe(
-            mdfe_xml,
-            inf_mdfe_id="MDFe35210112345678000199580010000000011000000015"
-        )
+        result = signer.sign_mdfe(mdfe_xml, inf_mdfe_id="MDFe35210112345678000199580010000000011000000015")
 
         assert "Signature" in result
 
@@ -1056,6 +1005,7 @@ class TestMDFEXMLSigner:
 # =============================================================================
 # TestSignatureConfig - Testes para configuracao de assinatura
 # =============================================================================
+
 
 class TestSignatureConfig:
     """Testes para SignatureConfig."""
@@ -1070,8 +1020,7 @@ class TestSignatureConfig:
     def test_custom_transforms(self):
         """Testa transforms customizados."""
         config = SignatureConfig(
-            signature_type=SignatureType.GENERIC,
-            transforms=[TransformMethod.ENVELOPED, TransformMethod.C14N_EXCLUSIVE]
+            signature_type=SignatureType.GENERIC, transforms=[TransformMethod.ENVELOPED, TransformMethod.C14N_EXCLUSIVE]
         )
 
         assert TransformMethod.C14N_EXCLUSIVE in config.transforms
@@ -1088,6 +1037,7 @@ class TestSignatureConfig:
 # =============================================================================
 # TestCertificateEndpoints - Testes para endpoints REST
 # =============================================================================
+
 
 class TestCertificateEndpoints:
     """Testes para endpoints REST de certificados."""
@@ -1123,15 +1073,12 @@ class TestCertificateEndpoints:
 
         mock_store.add.return_value = "cert_123"
 
-        with patch('modules.government_integrations.controllers.certificate_controller.CertificateManager') as MockManager:
-            MockManager.return_value = mock_cert_manager
+        with patch(
+            "modules.government_integrations.controllers.certificate_controller.CertificateManager"
+        ) as mock_manager:
+            mock_manager.return_value = mock_cert_manager
 
-            result = await upload_certificate(
-                file=mock_file,
-                password="senha123",
-                alias="meu_cert",
-                store=mock_store
-            )
+            result = await upload_certificate(file=mock_file, password="senha123", alias="meu_cert", store=mock_store)
 
             assert result.success is True
             assert result.certificate_id == "cert_123"
@@ -1146,11 +1093,7 @@ class TestCertificateEndpoints:
         mock_file.filename = "certificado.txt"
 
         with pytest.raises(HTTPException) as exc_info:
-            await upload_certificate(
-                file=mock_file,
-                password="senha",
-                store=mock_store
-            )
+            await upload_certificate(file=mock_file, password="senha", store=mock_store)
 
         assert exc_info.value.status_code == 400
         assert "Formato invalido" in exc_info.value.detail
@@ -1164,11 +1107,7 @@ class TestCertificateEndpoints:
         mock_file.filename = None
 
         with pytest.raises(HTTPException) as exc_info:
-            await upload_certificate(
-                file=mock_file,
-                password="senha",
-                store=mock_store
-            )
+            await upload_certificate(file=mock_file, password="senha", store=mock_store)
 
         assert exc_info.value.status_code == 400
 
@@ -1180,15 +1119,13 @@ class TestCertificateEndpoints:
         mock_cert_manager = MagicMock()
         mock_cert_manager.load.return_value = False
 
-        with patch('modules.government_integrations.controllers.certificate_controller.CertificateManager') as MockManager:
-            MockManager.return_value = mock_cert_manager
+        with patch(
+            "modules.government_integrations.controllers.certificate_controller.CertificateManager"
+        ) as mock_manager:
+            mock_manager.return_value = mock_cert_manager
 
             with pytest.raises(HTTPException) as exc_info:
-                await upload_certificate(
-                    file=mock_file,
-                    password="senha_errada",
-                    store=mock_store
-                )
+                await upload_certificate(file=mock_file, password="senha_errada", store=mock_store)
 
             assert exc_info.value.status_code == 400
             assert "Verifique a senha" in exc_info.value.detail
@@ -1203,13 +1140,12 @@ class TestCertificateEndpoints:
         mock_cert_manager.validate.return_value = (True, "Certificado valido")
         mock_cert_manager.get_info.return_value = mock_certificate_info
 
-        with patch('modules.government_integrations.controllers.certificate_controller.CertificateManager') as MockManager:
-            MockManager.return_value = mock_cert_manager
+        with patch(
+            "modules.government_integrations.controllers.certificate_controller.CertificateManager"
+        ) as mock_manager:
+            mock_manager.return_value = mock_cert_manager
 
-            result = await validate_certificate(
-                file=mock_file,
-                password="senha123"
-            )
+            result = await validate_certificate(file=mock_file, password="senha123")
 
             assert result.is_valid is True
             assert result.subject == mock_certificate_info.subject_cn
@@ -1224,13 +1160,12 @@ class TestCertificateEndpoints:
         mock_cert_manager.validate.return_value = (False, "Certificado expirado")
         mock_cert_manager.get_info.return_value = mock_certificate_info_expired
 
-        with patch('modules.government_integrations.controllers.certificate_controller.CertificateManager') as MockManager:
-            MockManager.return_value = mock_cert_manager
+        with patch(
+            "modules.government_integrations.controllers.certificate_controller.CertificateManager"
+        ) as mock_manager:
+            mock_manager.return_value = mock_cert_manager
 
-            result = await validate_certificate(
-                file=mock_file,
-                password="senha123"
-            )
+            result = await validate_certificate(file=mock_file, password="senha123")
 
             assert result.is_valid is False
 
@@ -1244,13 +1179,12 @@ class TestCertificateEndpoints:
         mock_cert_manager.validate.return_value = (True, "Certificado valido")
         mock_cert_manager.get_info.return_value = mock_certificate_info_expiring_soon
 
-        with patch('modules.government_integrations.controllers.certificate_controller.CertificateManager') as MockManager:
-            MockManager.return_value = mock_cert_manager
+        with patch(
+            "modules.government_integrations.controllers.certificate_controller.CertificateManager"
+        ) as mock_manager:
+            mock_manager.return_value = mock_cert_manager
 
-            result = await validate_certificate(
-                file=mock_file,
-                password="senha123"
-            )
+            result = await validate_certificate(file=mock_file, password="senha123")
 
             assert result.is_valid is True
             assert len(result.warnings) > 0
@@ -1298,10 +1232,7 @@ class TestCertificateEndpoints:
 
         mock_store.get.return_value = mock_manager
 
-        result = await get_certificate(
-            certificate_id="cert_123",
-            store=mock_store
-        )
+        result = await get_certificate(certificate_id="cert_123", store=mock_store)
 
         assert result.certificate_id == "cert_123"
         assert result.subject_cn == mock_certificate_info.subject_cn
@@ -1314,10 +1245,7 @@ class TestCertificateEndpoints:
         mock_store.get.return_value = None
 
         with pytest.raises(HTTPException) as exc_info:
-            await get_certificate(
-                certificate_id="nonexistent",
-                store=mock_store
-            )
+            await get_certificate(certificate_id="nonexistent", store=mock_store)
 
         assert exc_info.value.status_code == 404
 
@@ -1329,10 +1257,7 @@ class TestCertificateEndpoints:
         mock_store.get.return_value = MagicMock()
         mock_store.remove.return_value = None
 
-        result = await delete_certificate(
-            certificate_id="cert_123",
-            store=mock_store
-        )
+        result = await delete_certificate(certificate_id="cert_123", store=mock_store)
 
         assert result.success is True
         mock_store.remove.assert_called_once_with("cert_123")
@@ -1345,10 +1270,7 @@ class TestCertificateEndpoints:
         mock_store.get.return_value = None
 
         with pytest.raises(HTTPException) as exc_info:
-            await delete_certificate(
-                certificate_id="nonexistent",
-                store=mock_store
-            )
+            await delete_certificate(certificate_id="nonexistent", store=mock_store)
 
         assert exc_info.value.status_code == 404
 
@@ -1362,10 +1284,7 @@ class TestCertificateEndpoints:
 
         mock_store.get.return_value = mock_manager
 
-        result = await get_public_key(
-            certificate_id="cert_123",
-            store=mock_store
-        )
+        result = await get_public_key(certificate_id="cert_123", store=mock_store)
 
         assert result["certificate_id"] == "cert_123"
         assert result["public_certificate"] == "MOCK_CERT_BASE64=="
@@ -1379,10 +1298,7 @@ class TestCertificateEndpoints:
         mock_store.get.return_value = None
 
         with pytest.raises(HTTPException) as exc_info:
-            await get_public_key(
-                certificate_id="nonexistent",
-                store=mock_store
-            )
+            await get_public_key(certificate_id="nonexistent", store=mock_store)
 
         assert exc_info.value.status_code == 404
 
@@ -1397,11 +1313,7 @@ class TestCertificateEndpoints:
 
         mock_store.get.return_value = mock_manager
 
-        result = await test_signature(
-            certificate_id="cert_123",
-            data="dados_para_assinar",
-            store=mock_store
-        )
+        result = await test_signature(certificate_id="cert_123", data="dados_para_assinar", store=mock_store)
 
         assert result["certificate_id"] == "cert_123"
         assert result["original_data"] == "dados_para_assinar"
@@ -1416,11 +1328,7 @@ class TestCertificateEndpoints:
         mock_store.get.return_value = None
 
         with pytest.raises(HTTPException) as exc_info:
-            await test_signature(
-                certificate_id="nonexistent",
-                data="test",
-                store=mock_store
-            )
+            await test_signature(certificate_id="nonexistent", data="test", store=mock_store)
 
         assert exc_info.value.status_code == 404
 
@@ -1428,6 +1336,7 @@ class TestCertificateEndpoints:
 # =============================================================================
 # TestEnums - Testes para enumeracoes
 # =============================================================================
+
 
 class TestEnums:
     """Testes para enumeracoes do modulo."""
@@ -1478,33 +1387,35 @@ class TestEnums:
 # TestNamespaces - Testes para namespaces XML
 # =============================================================================
 
+
 class TestNamespaces:
     """Testes para namespaces XML."""
 
     def test_xmldsig_namespace(self):
         """Testa namespace XMLDSig."""
-        assert NAMESPACES['ds'] == 'http://www.w3.org/2000/09/xmldsig#'
+        assert NAMESPACES["ds"] == "http://www.w3.org/2000/09/xmldsig#"
 
     def test_esocial_namespace(self):
         """Testa namespace eSocial."""
-        assert 'esocial.gov.br' in NAMESPACES['esocial']
+        assert "esocial.gov.br" in NAMESPACES["esocial"]
 
     def test_nfe_namespace(self):
         """Testa namespace NF-e."""
-        assert 'portalfiscal.inf.br/nfe' in NAMESPACES['nfe']
+        assert "portalfiscal.inf.br/nfe" in NAMESPACES["nfe"]
 
     def test_cte_namespace(self):
         """Testa namespace CT-e."""
-        assert 'portalfiscal.inf.br/cte' in NAMESPACES['cte']
+        assert "portalfiscal.inf.br/cte" in NAMESPACES["cte"]
 
     def test_mdfe_namespace(self):
         """Testa namespace MDF-e."""
-        assert 'portalfiscal.inf.br/mdfe' in NAMESPACES['mdfe']
+        assert "portalfiscal.inf.br/mdfe" in NAMESPACES["mdfe"]
 
 
 # =============================================================================
 # TestIntegration - Testes de integracao
 # =============================================================================
+
 
 class TestIntegration:
     """Testes de integracao do modulo de certificados."""
@@ -1526,10 +1437,7 @@ class TestIntegration:
         signer = XMLSigner(mock_cert_manager)
 
         # Assinar
-        signed_xml = signer.sign(
-            sample_xml_content,
-            reference_uri="#DOC123456"
-        )
+        signed_xml = signer.sign(sample_xml_content, reference_uri="#DOC123456")
 
         # Verificar estrutura
         assert "<?xml" in signed_xml
@@ -1550,7 +1458,7 @@ class TestIntegration:
 
     def test_certificate_lifecycle(self, mock_certificate_info):
         """Testa ciclo de vida do certificado."""
-        store = CertificateStore(storage_path="/tmp/test_lifecycle")
+        store = CertificateStore(storage_path="/tmp/test_lifecycle")  # noqa: S108
 
         # Criar um manager pre-carregado (mockado)
         manager = MagicMock(spec=CertificateManager)
@@ -1569,7 +1477,7 @@ class TestIntegration:
         assert "test_cert" in certs
 
         # Remover
-        with patch.object(store, '_delete_certificate_file'):
+        with patch.object(store, "_delete_certificate_file"):
             result = store.remove_certificate("test_cert")
             assert result is True
 

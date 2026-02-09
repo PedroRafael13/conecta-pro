@@ -4,22 +4,21 @@ Service para SPED Contábil (ECD).
 Camada de serviço que encapsula a lógica de negócio do SPED Contábil.
 """
 
-import os
 import logging
-from datetime import datetime, date
+import os
+from datetime import datetime
 from decimal import Decimal
-from typing import Dict, List, Optional, Any
+from typing import Any
 
 from ..core.sped_contabil import (
-    SPEDContabilManager,
     ContaContabil,
-    LancamentoContabil,
-    SaldoPeriodico,
     DemonstrativoBalancoPatrimonial,
     DemonstrativoDRE,
-    TipoECD,
-    TipoConta,
+    LancamentoContabil,
     NaturezaConta,
+    SPEDContabilManager,
+    TipoConta,
+    TipoECD,
 )
 
 logger = logging.getLogger(__name__)
@@ -60,12 +59,14 @@ class SPEDContabilService:
         self.manager = SPEDContabilManager(
             cnpj=self.cnpj,
             razao_social=self.razao_social,
-            tipo_ecd=TipoECD(self.tipo_ecd) if self.tipo_ecd in ["G", "R", "A", "Z", "B"] else TipoECD.LIVRO_DIARIO_GERAL,
+            tipo_ecd=TipoECD(self.tipo_ecd)
+            if self.tipo_ecd in ["G", "R", "A", "Z", "B"]
+            else TipoECD.LIVRO_DIARIO_GERAL,
         )
 
         logger.info(f"SPEDContabilService iniciado: CNPJ={self.cnpj}")
 
-    def validar_status(self) -> Dict[str, Any]:
+    def validar_status(self) -> dict[str, Any]:
         """Valida e retorna status da configuração."""
         return {
             "cnpj": self.cnpj,
@@ -83,7 +84,7 @@ class SPEDContabilService:
             ],
         }
 
-    def adicionar_conta(self, dados: Dict[str, Any]) -> Dict[str, Any]:
+    def adicionar_conta(self, dados: dict[str, Any]) -> dict[str, Any]:
         """
         Adiciona uma conta ao plano de contas.
 
@@ -117,7 +118,7 @@ class SPEDContabilService:
             "natureza": conta.natureza.value,
         }
 
-    def adicionar_lancamento(self, dados: Dict[str, Any]) -> Dict[str, Any]:
+    def adicionar_lancamento(self, dados: dict[str, Any]) -> dict[str, Any]:
         """
         Adiciona um lançamento contábil.
 
@@ -151,7 +152,7 @@ class SPEDContabilService:
             "historico": lancamento.historico,
         }
 
-    def definir_balanco(self, dados: Dict[str, Any]) -> Dict[str, Any]:
+    def definir_balanco(self, dados: dict[str, Any]) -> dict[str, Any]:
         """
         Define o balanço patrimonial.
 
@@ -185,7 +186,7 @@ class SPEDContabilService:
             "total_passivo_pl": str(balanco.total_passivo_pl),
         }
 
-    def definir_dre(self, dados: Dict[str, Any]) -> Dict[str, Any]:
+    def definir_dre(self, dados: dict[str, Any]) -> dict[str, Any]:
         """
         Define a DRE.
 
@@ -228,11 +229,7 @@ class SPEDContabilService:
             "lucro_liquido": str(dre.lucro_liquido),
         }
 
-    def calcular_saldos(
-        self,
-        periodo_inicio: str,
-        periodo_fim: str
-    ) -> Dict[str, Any]:
+    def calcular_saldos(self, periodo_inicio: str, periodo_fim: str) -> dict[str, Any]:
         """
         Calcula saldos periódicos.
 
@@ -274,11 +271,11 @@ class SPEDContabilService:
         periodo_inicio: str,
         periodo_fim: str,
         numero_ordem: str = "00001",
-        contas: Optional[List[Dict[str, Any]]] = None,
-        lancamentos: Optional[List[Dict[str, Any]]] = None,
-        balanco: Optional[Dict[str, Any]] = None,
-        dre: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        contas: list[dict[str, Any]] | None = None,
+        lancamentos: list[dict[str, Any]] | None = None,
+        balanco: dict[str, Any] | None = None,
+        dre: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """
         Gera o arquivo SPED Contábil.
 
@@ -301,8 +298,8 @@ class SPEDContabilService:
                 self.adicionar_conta(c)
 
         if lancamentos:
-            for l in lancamentos:
-                self.adicionar_lancamento(l)
+            for lanc in lancamentos:
+                self.adicionar_lancamento(lanc)
 
         if balanco:
             self.definir_balanco(balanco)
@@ -329,7 +326,7 @@ class SPEDContabilService:
             "conteudo": conteudo,
         }
 
-    def validar_arquivo(self, conteudo: str) -> Dict[str, Any]:
+    def validar_arquivo(self, conteudo: str) -> dict[str, Any]:
         """
         Valida um arquivo SPED.
 
@@ -341,25 +338,15 @@ class SPEDContabilService:
         """
         return self.manager.validar_arquivo(conteudo)
 
-    def listar_blocos(self) -> Dict[str, Any]:
+    def listar_blocos(self) -> dict[str, Any]:
         """Lista blocos do SPED Contábil."""
-        return {
-            "blocos": [
-                {"codigo": k, "descricao": v}
-                for k, v in self.BLOCOS.items()
-            ]
-        }
+        return {"blocos": [{"codigo": k, "descricao": v} for k, v in self.BLOCOS.items()]}
 
-    def listar_tipos_ecd(self) -> Dict[str, Any]:
+    def listar_tipos_ecd(self) -> dict[str, Any]:
         """Lista tipos de ECD."""
-        return {
-            "tipos": [
-                {"codigo": k, "descricao": v}
-                for k, v in self.TIPOS_ECD.items()
-            ]
-        }
+        return {"tipos": [{"codigo": k, "descricao": v} for k, v in self.TIPOS_ECD.items()]}
 
-    def listar_contas(self) -> Dict[str, Any]:
+    def listar_contas(self) -> dict[str, Any]:
         """Lista contas do plano de contas."""
         return {
             "contas": [
@@ -374,23 +361,23 @@ class SPEDContabilService:
             ]
         }
 
-    def listar_lancamentos(self) -> Dict[str, Any]:
+    def listar_lancamentos(self) -> dict[str, Any]:
         """Lista lançamentos."""
         return {
             "lancamentos": [
                 {
-                    "numero": l.numero,
-                    "data": l.data.isoformat(),
-                    "conta_debito": l.conta_debito,
-                    "conta_credito": l.conta_credito,
-                    "valor": str(l.valor),
-                    "historico": l.historico,
+                    "numero": lanc.numero,
+                    "data": lanc.data.isoformat(),
+                    "conta_debito": lanc.conta_debito,
+                    "conta_credito": lanc.conta_credito,
+                    "valor": str(lanc.valor),
+                    "historico": lanc.historico,
                 }
-                for l in self.manager.lancamentos
+                for lanc in self.manager.lancamentos
             ]
         }
 
-    def limpar_dados(self) -> Dict[str, Any]:
+    def limpar_dados(self) -> dict[str, Any]:
         """Limpa dados do manager."""
         self.manager.plano_contas.clear()
         self.manager.lancamentos.clear()
@@ -402,7 +389,7 @@ class SPEDContabilService:
 
 
 # Singleton
-_service_instance: Optional[SPEDContabilService] = None
+_service_instance: SPEDContabilService | None = None
 
 
 def get_sped_contabil_service() -> SPEDContabilService:

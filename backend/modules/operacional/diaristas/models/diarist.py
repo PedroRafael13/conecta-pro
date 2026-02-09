@@ -1,31 +1,31 @@
 """Models de Diaristas."""
 
-from datetime import datetime, date, time
-from enum import Enum
-from typing import Optional
+from datetime import date, datetime, time
+from enum import StrEnum
 from uuid import UUID, uuid4
 
 from sqlalchemy import (
-    Column,
-    String,
     Boolean,
-    DateTime,
+    Column,
     Date,
-    Time,
-    Enum as SAEnum,
+    DateTime,
     ForeignKey,
-    Text,
+    Index,
     Integer,
     Numeric,
-    Index,
+    String,
+    Text,
+    Time,
 )
-from sqlalchemy.dialects.postgresql import UUID as PG_UUID, JSONB, ARRAY, ENUM as PG_ENUM
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB
+from sqlalchemy.dialects.postgresql import ENUM as PG_ENUM
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import relationship
 
 from core.models.base import Base
 
 
-class DiaristType(str, Enum):
+class DiaristType(StrEnum):
     """Tipos de diarista."""
 
     LIMPEZA = "limpeza"
@@ -40,7 +40,7 @@ class DiaristType(str, Enum):
     OUTRO = "outro"
 
 
-class DiaristStatus(str, Enum):
+class DiaristStatus(StrEnum):
     """Status do diarista."""
 
     ATIVO = "ativo"
@@ -52,7 +52,7 @@ class DiaristStatus(str, Enum):
     DESLIGADO = "desligado"
 
 
-class DocumentType(str, Enum):
+class DocumentType(StrEnum):
     """Tipos de documento."""
 
     CPF = "cpf"
@@ -65,7 +65,7 @@ class DocumentType(str, Enum):
     PASSAPORTE = "passaporte"
 
 
-class AssignmentType(str, Enum):
+class AssignmentType(StrEnum):
     """Tipos de alocacao."""
 
     AVULSO = "avulso"
@@ -75,7 +75,7 @@ class AssignmentType(str, Enum):
     EMERGENCIAL = "emergencial"
 
 
-class AssignmentStatus(str, Enum):
+class AssignmentStatus(StrEnum):
     """Status da alocacao."""
 
     RASCUNHO = "rascunho"
@@ -88,7 +88,7 @@ class AssignmentStatus(str, Enum):
     EXPIRADO = "expirado"
 
 
-class RecurrenceType(str, Enum):
+class RecurrenceType(StrEnum):
     """Tipos de recorrencia."""
 
     DIARIA = "diaria"
@@ -99,7 +99,7 @@ class RecurrenceType(str, Enum):
     NENHUMA = "nenhuma"
 
 
-class ScheduleStatus(str, Enum):
+class ScheduleStatus(StrEnum):
     """Status da agenda. Valores uppercase para alinhar com PG ENUM schedule_status."""
 
     AGENDADO = "AGENDADO"
@@ -110,7 +110,7 @@ class ScheduleStatus(str, Enum):
     NAO_COMPARECEU = "NAO_COMPARECEU"
 
 
-class PaymentStatus(str, Enum):
+class PaymentStatus(StrEnum):
     """Status do pagamento. Valores uppercase para alinhar com PG ENUM payment_status."""
 
     PENDENTE = "PENDENTE"
@@ -120,7 +120,7 @@ class PaymentStatus(str, Enum):
     ESTORNADO = "ESTORNADO"
 
 
-class PaymentMethod(str, Enum):
+class PaymentMethod(StrEnum):
     """Metodos de pagamento."""
 
     DINHEIRO = "dinheiro"
@@ -131,7 +131,7 @@ class PaymentMethod(str, Enum):
     CARTAO = "cartao"
 
 
-class Weekday(str, Enum):
+class Weekday(StrEnum):
     """Dias da semana."""
 
     SEGUNDA = "segunda"
@@ -197,9 +197,7 @@ class Diarist(Base):
     pix = Column(String(100))
 
     # Status
-    status = Column(
-        String(30), nullable=False, default=DiaristStatus.ATIVO.value, index=True
-    )
+    status = Column(String(30), nullable=False, default=DiaristStatus.ATIVO.value, index=True)
 
     # Metricas
     avaliacao_media = Column(Numeric(3, 2), default=0)
@@ -226,7 +224,7 @@ class Diarist(Base):
         ]
 
     @property
-    def idade(self) -> Optional[int]:
+    def idade(self) -> int | None:
         """Calcula idade."""
         if not self.data_nascimento:
             return None
@@ -234,10 +232,7 @@ class Diarist(Base):
         return (
             today.year
             - self.data_nascimento.year
-            - (
-                (today.month, today.day)
-                < (self.data_nascimento.month, self.data_nascimento.day)
-            )
+            - ((today.month, today.day) < (self.data_nascimento.month, self.data_nascimento.day))
         )
 
     def ativar(self) -> None:
@@ -318,12 +313,8 @@ class DiaristAssignment(Base):
     unidade_id = Column(PG_UUID(as_uuid=True))
 
     # Tipo e status
-    tipo = Column(
-        String(30), nullable=False, default=AssignmentType.AVULSO.value, index=True
-    )
-    status = Column(
-        String(30), nullable=False, default=AssignmentStatus.RASCUNHO.value, index=True
-    )
+    tipo = Column(String(30), nullable=False, default=AssignmentType.AVULSO.value, index=True)
+    status = Column(String(30), nullable=False, default=AssignmentStatus.RASCUNHO.value, index=True)
 
     # Servico
     descricao = Column(Text)
@@ -335,9 +326,7 @@ class DiaristAssignment(Base):
     hora_fim = Column(Time, default=time(17, 0))
 
     # Recorrencia
-    recorrencia = Column(
-        String(30), nullable=False, default=RecurrenceType.NENHUMA.value
-    )
+    recorrencia = Column(String(30), nullable=False, default=RecurrenceType.NENHUMA.value)
     dias_semana = Column(JSONB, default=list)
 
     # Financeiro
@@ -350,9 +339,7 @@ class DiaristAssignment(Base):
     diarist = relationship("Diarist", back_populates="assignments")
     schedules = relationship("DiaristSchedule", back_populates="assignment")
 
-    __table_args__ = (
-        Index("ix_diarist_assignments_periodo", "data_inicio", "data_fim"),
-    )
+    __table_args__ = (Index("ix_diarist_assignments_periodo", "data_inicio", "data_fim"),)
 
     @property
     def is_ativo(self) -> bool:
@@ -369,7 +356,7 @@ class DiaristAssignment(Base):
         return self.recorrencia != RecurrenceType.NENHUMA.value
 
     @property
-    def dias_restantes(self) -> Optional[int]:
+    def dias_restantes(self) -> int | None:
         """Calcula dias restantes."""
         if not self.data_fim:
             return None
@@ -458,9 +445,19 @@ class DiaristSchedule(Base):
 
     # Status (ENUM PostgreSQL schedule_status com valores uppercase)
     status = Column(
-        PG_ENUM('AGENDADO', 'CONFIRMADO', 'EM_ANDAMENTO', 'CONCLUIDO', 'CANCELADO', 'NAO_COMPARECEU',
-                name='schedule_status', create_type=False),
-        nullable=False, default="AGENDADO", index=True
+        PG_ENUM(
+            "AGENDADO",
+            "CONFIRMADO",
+            "EM_ANDAMENTO",
+            "CONCLUIDO",
+            "CANCELADO",
+            "NAO_COMPARECEU",
+            name="schedule_status",
+            create_type=False,
+        ),
+        nullable=False,
+        default="AGENDADO",
+        index=True,
     )
 
     # Tarefas e observacoes
@@ -471,9 +468,7 @@ class DiaristSchedule(Base):
     diarist = relationship("Diarist", back_populates="schedules")
     assignment = relationship("DiaristAssignment", back_populates="schedules")
 
-    __table_args__ = (
-        Index("ix_diarist_schedules_data_diarist", "data_trabalho", "diarist_id"),
-    )
+    __table_args__ = (Index("ix_diarist_schedules_data_diarist", "data_trabalho", "diarist_id"),)
 
     @property
     def is_confirmado(self) -> bool:
@@ -496,7 +491,7 @@ class DiaristSchedule(Base):
         return self.checkout_real is not None
 
     @property
-    def duracao_minutos(self) -> Optional[int]:
+    def duracao_minutos(self) -> int | None:
         """Calcula duracao em minutos."""
         if not self.checkin_real or not self.checkout_real:
             return None
@@ -509,8 +504,8 @@ class DiaristSchedule(Base):
 
     def fazer_checkin(
         self,
-        latitude: Optional[float] = None,
-        longitude: Optional[float] = None,
+        latitude: float | None = None,
+        longitude: float | None = None,
     ) -> None:
         """Registra check-in."""
         self.checkin_real = datetime.utcnow()
@@ -520,8 +515,8 @@ class DiaristSchedule(Base):
 
     def fazer_checkout(
         self,
-        latitude: Optional[float] = None,
-        longitude: Optional[float] = None,
+        latitude: float | None = None,
+        longitude: float | None = None,
     ) -> None:
         """Registra check-out."""
         self.checkout_real = datetime.utcnow()
@@ -529,12 +524,12 @@ class DiaristSchedule(Base):
         self.checkout_longitude = longitude
         self.status = ScheduleStatus.CONCLUIDO.value
 
-    def marcar_falta(self, motivo: Optional[str] = None) -> None:
+    def marcar_falta(self, motivo: str | None = None) -> None:
         """Marca como nao compareceu."""
         self.status = ScheduleStatus.NAO_COMPARECEU.value
         self.motivo_status = motivo
 
-    def cancelar(self, motivo: Optional[str] = None) -> None:
+    def cancelar(self, motivo: str | None = None) -> None:
         """Cancela agenda."""
         self.status = ScheduleStatus.CANCELADO.value
 
@@ -585,9 +580,10 @@ class DiaristPayment(Base):
     forma_pagamento = Column(String(30))
     comprovante_url = Column(String(500))
     status = Column(
-        PG_ENUM('PENDENTE', 'APROVADO', 'PAGO', 'CANCELADO', 'ESTORNADO',
-                name='payment_status', create_type=False),
-        nullable=False, default="PENDENTE", index=True
+        PG_ENUM("PENDENTE", "APROVADO", "PAGO", "CANCELADO", "ESTORNADO", name="payment_status", create_type=False),
+        nullable=False,
+        default="PENDENTE",
+        index=True,
     )
 
     # Schedules incluidos
@@ -609,10 +605,7 @@ class DiaristPayment(Base):
         """Verifica se esta vencido."""
         if not self.data_vencimento:
             return False
-        return (
-            date.today() > self.data_vencimento
-            and self.status == PaymentStatus.PENDENTE.value
-        )
+        return date.today() > self.data_vencimento and self.status == PaymentStatus.PENDENTE.value
 
     @property
     def total_retencoes(self) -> float:
@@ -631,8 +624,8 @@ class DiaristPayment(Base):
 
     def pagar(
         self,
-        data_pagamento: Optional[date] = None,
-        comprovante_url: Optional[str] = None,
+        data_pagamento: date | None = None,
+        comprovante_url: str | None = None,
     ) -> None:
         """Registra pagamento."""
         self.status = PaymentStatus.PAGO.value
@@ -668,9 +661,7 @@ class DiaristEvaluation(Base):
         ForeignKey("diarist_schedules.id", ondelete="SET NULL"),
         index=True,
     )
-    avaliador_id = Column(
-        PG_UUID(as_uuid=True), ForeignKey("users.id"), nullable=False
-    )
+    avaliador_id = Column(PG_UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
 
     # Notas (1-5)
     nota_geral = Column(Integer, nullable=False)

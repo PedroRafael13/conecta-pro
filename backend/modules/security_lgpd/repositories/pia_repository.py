@@ -2,16 +2,16 @@
 Repository de Avaliacao de Impacto de Privacidade (PIA) LGPD.
 """
 
+import builtins
 import logging
 from datetime import datetime
-from typing import List, Optional
 from uuid import UUID
 
 from sqlalchemy.orm import Session
 
 from modules.security_lgpd.models.pia_assessment import (
-    PIAAssessment,
     AssessmentStatus,
+    PIAAssessment,
     RiskLevel,
 )
 
@@ -47,7 +47,7 @@ class PIARepository:
         logger.info("Avaliacao PIA criada: %s", assessment.id)
         return assessment
 
-    def get_by_id(self, assessment_id: UUID) -> Optional[PIAAssessment]:
+    def get_by_id(self, assessment_id: UUID) -> PIAAssessment | None:
         """Busca avaliacao por ID.
 
         Args:
@@ -58,7 +58,7 @@ class PIARepository:
         """
         return self.db.query(PIAAssessment).filter(PIAAssessment.id == assessment_id).first()
 
-    def get_by_project_name(self, project_name: str) -> Optional[PIAAssessment]:
+    def get_by_project_name(self, project_name: str) -> PIAAssessment | None:
         """Busca avaliacao por nome do projeto.
 
         Args:
@@ -67,11 +67,7 @@ class PIARepository:
         Returns:
             Avaliacao ou None.
         """
-        return (
-            self.db.query(PIAAssessment)
-            .filter(PIAAssessment.project_name == project_name)
-            .first()
-        )
+        return self.db.query(PIAAssessment).filter(PIAAssessment.project_name == project_name).first()
 
     def update(self, assessment: PIAAssessment) -> PIAAssessment:
         """Atualiza uma avaliacao.
@@ -89,11 +85,11 @@ class PIARepository:
 
     def list(
         self,
-        status: Optional[AssessmentStatus] = None,
-        risk_level: Optional[RiskLevel] = None,
+        status: AssessmentStatus | None = None,
+        risk_level: RiskLevel | None = None,
         limit: int = 100,
         offset: int = 0,
-    ) -> List[PIAAssessment]:
+    ) -> list[PIAAssessment]:
         """Lista avaliacoes com filtros.
 
         Args:
@@ -112,14 +108,9 @@ class PIARepository:
         if risk_level:
             query = query.filter(PIAAssessment.risk_level == risk_level)
 
-        return (
-            query.order_by(PIAAssessment.created_at.desc())
-            .offset(offset)
-            .limit(limit)
-            .all()
-        )
+        return query.order_by(PIAAssessment.created_at.desc()).offset(offset).limit(limit).all()
 
-    def list_requiring_dpia(self) -> List[PIAAssessment]:
+    def list_requiring_dpia(self) -> builtins.list[PIAAssessment]:
         """Lista avaliacoes que requerem DPIA completo.
 
         Returns:
@@ -127,13 +118,13 @@ class PIARepository:
         """
         return (
             self.db.query(PIAAssessment)
-            .filter(PIAAssessment.requires_dpia == True)
+            .filter(PIAAssessment.requires_dpia)
             .filter(PIAAssessment.status != AssessmentStatus.ARCHIVED)
             .order_by(PIAAssessment.created_at.desc())
             .all()
         )
 
-    def list_high_risk(self) -> List[PIAAssessment]:
+    def list_high_risk(self) -> builtins.list[PIAAssessment]:
         """Lista avaliacoes de alto risco.
 
         Returns:
@@ -151,7 +142,7 @@ class PIARepository:
         self,
         assessment_id: UUID,
         approved_by: str,
-    ) -> Optional[PIAAssessment]:
+    ) -> PIAAssessment | None:
         """Aprova uma avaliacao.
 
         Args:
@@ -177,11 +168,7 @@ class PIARepository:
         """
         from sqlalchemy import func
 
-        result = (
-            self.db.query(PIAAssessment.status, func.count(PIAAssessment.id))
-            .group_by(PIAAssessment.status)
-            .all()
-        )
+        result = self.db.query(PIAAssessment.status, func.count(PIAAssessment.id)).group_by(PIAAssessment.status).all()
         return {status.value: count for status, count in result}
 
     def count_by_risk_level(self) -> dict:

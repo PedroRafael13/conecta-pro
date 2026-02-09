@@ -2,7 +2,8 @@
 Controller (endpoints) para TimeBank (Banco de Horas).
 """
 
-from datetime import date
+from datetime import date, timedelta
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -159,8 +160,6 @@ async def get_expiring_entries(
     entries, _ = await repo.list(filters=filters, page=1, page_size=500)
 
     # Filtrar manualmente por enquanto
-    from datetime import timedelta  # pylint: disable=import-outside-toplevel
-
     limit_date = date.today() + timedelta(days=days)
     expiring = [e for e in entries if e.expiration_date and e.expiration_date <= limit_date]
 
@@ -218,7 +217,7 @@ async def get_stats(
 async def get_expiration_alerts(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
-) -> list[dict]:
+) -> list[dict[str, Any]]:
     """
     Obtém alertas de expiração de horas.
     """
@@ -229,7 +228,7 @@ async def get_expiration_alerts(
     entries, _ = await repo.list(filters=filters, page=1, page_size=1000)
 
     # Converter para dicionário e verificar alertas
-    entries_dict = [
+    entries_dict: list[dict[str, Any]] = [
         {
             "id": str(e.id),
             "employee_id": str(e.employee_id),
@@ -398,7 +397,7 @@ async def compensate_hours(
         )
 
     # Validar compensação
-    validation = time_bank_service.validate_compensation_request(
+    validation: dict[str, Any] = time_bank_service.validate_compensation_request(
         summary.current_balance,
         data.hours,
         data.compensation_date,
@@ -434,9 +433,9 @@ async def get_monthly_summary(
     employee_id: str,
     month: int = Query(..., ge=1, le=12),
     year: int = Query(..., ge=2020, le=2100),
-    current_user: CurrentActiveUser = None,
+    current_user: CurrentActiveUser | None = None,
     db: AsyncSession = Depends(get_db),
-) -> dict:
+) -> dict[str, Any]:
     """
     Obtém resumo mensal do banco de horas de um funcionário.
     """
@@ -447,7 +446,7 @@ async def get_monthly_summary(
     entries, _ = await repo.list(filters=filters, page=1, page_size=1000)
 
     # Converter para formato do serviço
-    entries_dict = [
+    entries_dict: list[dict[str, Any]] = [
         {
             "id": str(e.id),
             "entry_type": e.entry_type,

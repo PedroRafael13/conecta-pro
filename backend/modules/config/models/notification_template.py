@@ -3,8 +3,8 @@ NotificationTemplate Model - Templates de Notificação
 Sprint 35: Configurações e Multi-tenant
 """
 
-import enum
 from datetime import datetime
+from enum import StrEnum
 from uuid import uuid4
 
 from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, Index, Integer, String, Text
@@ -13,7 +13,7 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from core.database import Base
 
 
-class NotificationChannel(str, enum.Enum):
+class NotificationChannel(StrEnum):
     """Canal de notificação."""
 
     EMAIL = "email"
@@ -26,7 +26,7 @@ class NotificationChannel(str, enum.Enum):
     TELEGRAM = "telegram"
 
 
-class NotificationType(str, enum.Enum):
+class NotificationType(StrEnum):
     """Tipo de notificação."""
 
     TRANSACIONAL = "transacional"  # Confirmações, recibos
@@ -38,7 +38,7 @@ class NotificationType(str, enum.Enum):
     SISTEMA = "sistema"  # Notificações do sistema
 
 
-class TemplateStatus(str, enum.Enum):
+class TemplateStatus(StrEnum):
     """Status do template."""
 
     RASCUNHO = "rascunho"

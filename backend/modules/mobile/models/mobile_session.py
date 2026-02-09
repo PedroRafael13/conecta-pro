@@ -1,10 +1,9 @@
 """Model de sessão mobile."""
 
-from datetime import datetime, UTC
-from typing import Optional
+from datetime import UTC, datetime
 from uuid import uuid4
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 
@@ -142,9 +141,9 @@ class MobileSession(Base):
 
     def update_device_state(
         self,
-        connection_quality: Optional[str] = None,
-        battery_level: Optional[int] = None,
-        storage_available: Optional[int] = None,
+        connection_quality: str | None = None,
+        battery_level: int | None = None,
+        storage_available: int | None = None,
     ) -> None:
         """Atualiza estado do dispositivo."""
         if connection_quality:

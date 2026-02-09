@@ -2,17 +2,16 @@
 
 import uuid
 from datetime import datetime, time
-from enum import Enum
-from typing import Optional
+from enum import StrEnum
 
 from sqlalchemy import (
     Boolean,
     DateTime,
-    Time,
+    Index,
     Integer,
     String,
     Text,
-    Index,
+    Time,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -20,23 +19,25 @@ from sqlalchemy.orm import Mapped, mapped_column
 from core.database import Base
 
 
-class ReportType(str, Enum):
+class ReportType(StrEnum):
     """Tipo de relatório."""
-    ATTENDANCE = "attendance"            # Frequência
-    OVERTIME = "overtime"                # Horas extras
-    PUNCTUALITY = "punctuality"          # Pontualidade
-    ABSENCES = "absences"                # Faltas
-    BANK_HOURS = "bank_hours"            # Banco de horas
-    TIMESHEET = "timesheet"              # Folha de ponto
-    COMPLIANCE = "compliance"            # Conformidade CLT
+
+    ATTENDANCE = "attendance"  # Frequência
+    OVERTIME = "overtime"  # Horas extras
+    PUNCTUALITY = "punctuality"  # Pontualidade
+    ABSENCES = "absences"  # Faltas
+    BANK_HOURS = "bank_hours"  # Banco de horas
+    TIMESHEET = "timesheet"  # Folha de ponto
+    COMPLIANCE = "compliance"  # Conformidade CLT
     EXECUTIVE_SUMMARY = "executive_summary"  # Resumo executivo
     DEPARTMENT_ANALYSIS = "department_analysis"  # Análise por departamento
     EMPLOYEE_DETAIL = "employee_detail"  # Detalhe por funcionário
-    CUSTOM = "custom"                    # Personalizado
+    CUSTOM = "custom"  # Personalizado
 
 
-class ReportFormat(str, Enum):
+class ReportFormat(StrEnum):
     """Formato de exportação."""
+
     PDF = "pdf"
     EXCEL = "excel"
     CSV = "csv"
@@ -44,31 +45,34 @@ class ReportFormat(str, Enum):
     HTML = "html"
 
 
-class ScheduleFrequency(str, Enum):
+class ScheduleFrequency(StrEnum):
     """Frequência de agendamento."""
-    ONCE = "once"              # Uma vez
-    DAILY = "daily"            # Diário
-    WEEKLY = "weekly"          # Semanal
-    BIWEEKLY = "biweekly"      # Quinzenal
-    MONTHLY = "monthly"        # Mensal
-    QUARTERLY = "quarterly"    # Trimestral
-    YEARLY = "yearly"          # Anual
+
+    ONCE = "once"  # Uma vez
+    DAILY = "daily"  # Diário
+    WEEKLY = "weekly"  # Semanal
+    BIWEEKLY = "biweekly"  # Quinzenal
+    MONTHLY = "monthly"  # Mensal
+    QUARTERLY = "quarterly"  # Trimestral
+    YEARLY = "yearly"  # Anual
 
 
-class DeliveryMethod(str, Enum):
+class DeliveryMethod(StrEnum):
     """Método de entrega."""
+
     EMAIL = "email"
     DOWNLOAD = "download"
     SFTP = "sftp"
     WEBHOOK = "webhook"
-    STORAGE = "storage"        # Cloud storage
+    STORAGE = "storage"  # Cloud storage
 
 
-class ReportStatus(str, Enum):
+class ReportStatus(StrEnum):
     """Status do relatório agendado."""
+
     ACTIVE = "active"
     PAUSED = "paused"
-    COMPLETED = "completed"    # Para ONCE
+    COMPLETED = "completed"  # Para ONCE
     FAILED = "failed"
     DISABLED = "disabled"
 
@@ -97,28 +101,28 @@ class ScheduledReport(Base):
 
     # Informações básicas
     name: Mapped[str] = mapped_column(String(100), nullable=False)
-    description: Mapped[Optional[str]] = mapped_column(Text)
+    description: Mapped[str | None] = mapped_column(Text)
     report_type: Mapped[str] = mapped_column(
         String(30),
         default=ReportType.ATTENDANCE.value,
     )
 
     # Configuração do relatório
-    template_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True))
-    report_config: Mapped[Optional[dict]] = mapped_column(JSONB, default=dict)
-    columns: Mapped[Optional[list]] = mapped_column(JSONB, default=list)
-    filters: Mapped[Optional[dict]] = mapped_column(JSONB, default=dict)
-    grouping: Mapped[Optional[list]] = mapped_column(JSONB, default=list)
-    sorting: Mapped[Optional[list]] = mapped_column(JSONB, default=list)
+    template_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    report_config: Mapped[dict | None] = mapped_column(JSONB, default=dict)
+    columns: Mapped[list | None] = mapped_column(JSONB, default=list)
+    filters: Mapped[dict | None] = mapped_column(JSONB, default=dict)
+    grouping: Mapped[list | None] = mapped_column(JSONB, default=list)
+    sorting: Mapped[list | None] = mapped_column(JSONB, default=list)
 
     # Período dos dados
     period_type: Mapped[str] = mapped_column(
         String(30),
         default="previous_month",
     )  # previous_day, previous_week, previous_month, custom, rolling_X_days
-    custom_period_start: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    custom_period_end: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    rolling_days: Mapped[Optional[int]] = mapped_column(Integer)
+    custom_period_start: Mapped[datetime | None] = mapped_column(DateTime)
+    custom_period_end: Mapped[datetime | None] = mapped_column(DateTime)
+    rolling_days: Mapped[int | None] = mapped_column(Integer)
 
     # Formato de saída
     output_format: Mapped[str] = mapped_column(
@@ -136,38 +140,38 @@ class ScheduledReport(Base):
     )
     schedule_time: Mapped[time] = mapped_column(Time, default=time(6, 0))
     # 1-31 para monthly, 0-6 para weekly
-    schedule_day: Mapped[Optional[int]] = mapped_column(Integer)
-    schedule_month: Mapped[Optional[int]] = mapped_column(Integer)  # yearly
+    schedule_day: Mapped[int | None] = mapped_column(Integer)
+    schedule_month: Mapped[int | None] = mapped_column(Integer)  # yearly
     timezone: Mapped[str] = mapped_column(String(50), default="America/Sao_Paulo")
 
     # Próxima execução
-    next_run_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    last_run_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    next_run_at: Mapped[datetime | None] = mapped_column(DateTime)
+    last_run_at: Mapped[datetime | None] = mapped_column(DateTime)
 
     # Entrega
     delivery_method: Mapped[str] = mapped_column(
         String(20),
         default=DeliveryMethod.EMAIL.value,
     )
-    recipients: Mapped[Optional[list]] = mapped_column(JSONB, default=list)
-    cc_recipients: Mapped[Optional[list]] = mapped_column(JSONB, default=list)
-    email_subject: Mapped[Optional[str]] = mapped_column(String(200))
-    email_body: Mapped[Optional[str]] = mapped_column(Text)
+    recipients: Mapped[list | None] = mapped_column(JSONB, default=list)
+    cc_recipients: Mapped[list | None] = mapped_column(JSONB, default=list)
+    email_subject: Mapped[str | None] = mapped_column(String(200))
+    email_body: Mapped[str | None] = mapped_column(Text)
 
     # Configuração de entrega alternativa
-    sftp_config: Mapped[Optional[dict]] = mapped_column(JSONB, default=dict)
-    webhook_url: Mapped[Optional[str]] = mapped_column(String(500))
-    storage_path: Mapped[Optional[str]] = mapped_column(String(500))
+    sftp_config: Mapped[dict | None] = mapped_column(JSONB, default=dict)
+    webhook_url: Mapped[str | None] = mapped_column(String(500))
+    storage_path: Mapped[str | None] = mapped_column(String(500))
 
     # Estatísticas
     run_count: Mapped[int] = mapped_column(Integer, default=0)
     success_count: Mapped[int] = mapped_column(Integer, default=0)
     failure_count: Mapped[int] = mapped_column(Integer, default=0)
-    last_status: Mapped[Optional[str]] = mapped_column(String(20))
-    last_error: Mapped[Optional[str]] = mapped_column(Text)
-    last_file_path: Mapped[Optional[str]] = mapped_column(String(500))
-    last_file_size_bytes: Mapped[Optional[int]] = mapped_column(Integer)
-    avg_generation_time_ms: Mapped[Optional[int]] = mapped_column(Integer)
+    last_status: Mapped[str | None] = mapped_column(String(20))
+    last_error: Mapped[str | None] = mapped_column(Text)
+    last_file_path: Mapped[str | None] = mapped_column(String(500))
+    last_file_size_bytes: Mapped[int | None] = mapped_column(Integer)
+    avg_generation_time_ms: Mapped[int | None] = mapped_column(Integer)
 
     # Status
     status: Mapped[str] = mapped_column(
@@ -177,20 +181,20 @@ class ScheduledReport(Base):
     )
 
     # Data de término (para ONCE ou limite de execuções)
-    end_date: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    max_runs: Mapped[Optional[int]] = mapped_column(Integer)
+    end_date: Mapped[datetime | None] = mapped_column(DateTime)
+    max_runs: Mapped[int | None] = mapped_column(Integer)
 
     # Notificações
     notify_on_success: Mapped[bool] = mapped_column(Boolean, default=False)
     notify_on_failure: Mapped[bool] = mapped_column(Boolean, default=True)
-    notification_recipients: Mapped[Optional[list]] = mapped_column(JSONB, default=list)
+    notification_recipients: Mapped[list | None] = mapped_column(JSONB, default=list)
 
     # Metadados
-    tags: Mapped[Optional[list]] = mapped_column(JSONB, default=list)
-    settings: Mapped[Optional[dict]] = mapped_column(JSONB, default=dict)
+    tags: Mapped[list | None] = mapped_column(JSONB, default=list)
+    settings: Mapped[dict | None] = mapped_column(JSONB, default=dict)
 
     # Auditoria
-    created_by: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True))
+    created_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime,
@@ -239,10 +243,11 @@ class ScheduledReport(Base):
             return False
         return self.end_date < datetime.utcnow()
 
-    def calculate_next_run(self) -> Optional[datetime]:
+    def calculate_next_run(self) -> datetime | None:
         """Calcula próxima execução baseado na frequência."""
         # pylint: disable=import-outside-toplevel
         from datetime import timedelta
+
         from dateutil.relativedelta import relativedelta
 
         base = self.last_run_at or datetime.utcnow()
@@ -290,8 +295,7 @@ class ScheduledReport(Base):
         return next_run
 
     def record_run(
-        self, success: bool, error: str = None, file_path: str = None,
-        file_size: int = None, duration_ms: int = None
+        self, success: bool, error: str = None, file_path: str = None, file_size: int = None, duration_ms: int = None
     ) -> None:
         """Registra execução do relatório."""
         self.run_count += 1
@@ -315,9 +319,7 @@ class ScheduledReport(Base):
             if self.avg_generation_time_ms:
                 # Média móvel
                 prev_total = self.avg_generation_time_ms * (self.run_count - 1)
-                self.avg_generation_time_ms = int(
-                    (prev_total + duration_ms) / self.run_count
-                )
+                self.avg_generation_time_ms = int((prev_total + duration_ms) / self.run_count)
             else:
                 self.avg_generation_time_ms = duration_ms
 

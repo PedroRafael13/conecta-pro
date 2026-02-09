@@ -3,7 +3,7 @@ Schemas para dashboard de monitoramento.
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -44,7 +44,7 @@ class SystemHealthResponse(BaseModel):
     overall_score: float = Field(..., ge=0, le=100)
     timestamp: datetime
     uptime_seconds: float
-    categories: List[CategoryHealth]
+    categories: list[CategoryHealth]
     active_alerts: int
     critical_alerts: int
 
@@ -53,9 +53,9 @@ class DashboardResponse(BaseModel):
     """Resposta completa do dashboard de monitoramento."""
 
     health: SystemHealthResponse
-    metrics: List[MetricStatus]
-    recent_alerts: List[Dict[str, Any]]
-    statistics: Dict[str, Any]
+    metrics: list[MetricStatus]
+    recent_alerts: list[dict[str, Any]]
+    statistics: dict[str, Any]
 
 
 class MetricHistory(BaseModel):
@@ -63,7 +63,7 @@ class MetricHistory(BaseModel):
 
     metric_name: str
     period: str  # 1h, 6h, 24h, 7d
-    data_points: List[Dict[str, Any]]  # [{timestamp, value, level}]
+    data_points: list[dict[str, Any]]  # [{timestamp, value, level}]
     min_value: float
     max_value: float
     avg_value: float
@@ -102,7 +102,7 @@ class AlertTrend(BaseModel):
 
     period: str  # 24h, 7d, 30d
     total_alerts: int
-    alerts_by_level: Dict[str, int]
-    alerts_by_hour: List[Dict[str, Any]]
-    top_metrics: List[Dict[str, Any]]
-    mttr_trend: List[Dict[str, Any]]  # Mean Time To Resolve
+    alerts_by_level: dict[str, int]
+    alerts_by_hour: list[dict[str, Any]]
+    top_metrics: list[dict[str, Any]]
+    mttr_trend: list[dict[str, Any]]  # Mean Time To Resolve

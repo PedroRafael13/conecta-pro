@@ -5,11 +5,11 @@ Motor de perguntas e respostas com IA.
 """
 
 import logging
-import time
 import re
-from typing import List, Dict, Any, Optional, Tuple
-from uuid import UUID, uuid4
+import time
 from datetime import datetime
+from typing import Any
+from uuid import UUID
 
 from modules.ai.knowledge_base.services.semantic_search import SemanticSearchEngine
 
@@ -51,11 +51,11 @@ class QAEngine:
     def process_question(
         self,
         question: str,
-        articles: List[Dict[str, Any]],
-        faqs: List[Dict[str, Any]],
-        context: Dict[str, Any] = None,
-        session_history: List[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        articles: list[dict[str, Any]],
+        faqs: list[dict[str, Any]],
+        context: dict[str, Any] = None,
+        session_history: list[dict[str, Any]] = None,
+    ) -> dict[str, Any]:
         """
         Processa uma pergunta e gera resposta.
 
@@ -105,12 +105,8 @@ class QAEngine:
         )
 
         # Gera follow-ups e sugestoes
-        response["follow_up_questions"] = self._generate_follow_ups(
-            question, response, context
-        )
-        response["suggestions"] = self._generate_suggestions(
-            question, faq_results, article_results
-        )
+        response["follow_up_questions"] = self._generate_follow_ups(question, response, context)
+        response["suggestions"] = self._generate_suggestions(question, faq_results, article_results)
 
         # Calcula tempo de processamento
         response["processing_time_ms"] = int((time.time() - start_time) * 1000)
@@ -127,8 +123,8 @@ class QAEngine:
     def _search_faqs(
         self,
         query: str,
-        faqs: List[Dict[str, Any]],
-    ) -> List[Dict[str, Any]]:
+        faqs: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
         """Busca FAQs relevantes."""
         if not faqs:
             return []
@@ -160,23 +156,25 @@ class QAEngine:
         formatted = []
         for result in results:
             original = result["document"]["original"]
-            formatted.append({
-                "id": original.get("id"),
-                "question": original.get("question"),
-                "answer": original.get("answer"),
-                "answer_short": original.get("answer_short"),
-                "relevance_score": result["final_score"],
-                "confidence": min(result["final_score"] * 1.2, 1.0),
-                "matched_variation": None,
-            })
+            formatted.append(
+                {
+                    "id": original.get("id"),
+                    "question": original.get("question"),
+                    "answer": original.get("answer"),
+                    "answer_short": original.get("answer_short"),
+                    "relevance_score": result["final_score"],
+                    "confidence": min(result["final_score"] * 1.2, 1.0),
+                    "matched_variation": None,
+                }
+            )
 
         return formatted
 
     def _search_articles(
         self,
         query: str,
-        articles: List[Dict[str, Any]],
-    ) -> List[Dict[str, Any]]:
+        articles: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
         """Busca artigos relevantes."""
         if not articles:
             return []
@@ -208,26 +206,28 @@ class QAEngine:
         formatted = []
         for result in results:
             original = result["document"]["original"]
-            formatted.append({
-                "id": original.get("id"),
-                "title": original.get("title"),
-                "excerpt": original.get("excerpt") or original.get("summary", "")[:200],
-                "article_type": original.get("article_type"),
-                "relevance_score": result["final_score"],
-                "matched_keywords": result.get("matched_keywords", []),
-                "highlights": result.get("highlights", []),
-            })
+            formatted.append(
+                {
+                    "id": original.get("id"),
+                    "title": original.get("title"),
+                    "excerpt": original.get("excerpt") or original.get("summary", "")[:200],
+                    "article_type": original.get("article_type"),
+                    "relevance_score": result["final_score"],
+                    "matched_keywords": result.get("matched_keywords", []),
+                    "highlights": result.get("highlights", []),
+                }
+            )
 
         return formatted
 
     def _generate_response(
         self,
         question: str,
-        faq_results: List[Dict[str, Any]],
-        article_results: List[Dict[str, Any]],
-        intent: Dict[str, Any],
-        context: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        faq_results: list[dict[str, Any]],
+        article_results: list[dict[str, Any]],
+        intent: dict[str, Any],
+        context: dict[str, Any],
+    ) -> dict[str, Any]:
         """Gera resposta baseada nos resultados."""
         # Verifica se tem FAQ com alta confianca
         if faq_results and faq_results[0]["confidence"] >= self.confidence_threshold:
@@ -258,9 +258,7 @@ class QAEngine:
 
         # Verifica se tem resultados combinados
         if faq_results or article_results:
-            combined_answer = self._generate_combined_answer(
-                question, faq_results, article_results
-            )
+            combined_answer = self._generate_combined_answer(question, faq_results, article_results)
             confidence = max(
                 (faq_results[0]["confidence"] if faq_results else 0) * 0.8,
                 (article_results[0]["relevance_score"] if article_results else 0) * 0.7,
@@ -290,11 +288,11 @@ class QAEngine:
         answer: str,
         confidence: float,
         answer_formatted: str = None,
-        sources: List[Dict[str, Any]] = None,
-        matched_faqs: List[Dict[str, Any]] = None,
-        matched_articles: List[Dict[str, Any]] = None,
+        sources: list[dict[str, Any]] = None,
+        matched_faqs: list[dict[str, Any]] = None,
+        matched_articles: list[dict[str, Any]] = None,
         processing_time_ms: int = 0,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Constroi objeto de resposta."""
         return {
             "response_type": response_type,
@@ -312,8 +310,8 @@ class QAEngine:
     def _check_need_clarification(
         self,
         question: str,
-        context: Dict[str, Any],
-    ) -> Optional[str]:
+        context: dict[str, Any],
+    ) -> str | None:
         """Verifica se precisa de esclarecimento."""
         question_lower = question.lower()
 
@@ -328,8 +326,8 @@ class QAEngine:
     def _enhance_query(
         self,
         question: str,
-        context: Dict[str, Any],
-        history: List[Dict[str, Any]],
+        context: dict[str, Any],
+        history: list[dict[str, Any]],
     ) -> str:
         """Melhora query com contexto."""
         enhanced = question
@@ -349,7 +347,7 @@ class QAEngine:
     def _extract_answer_from_article(
         self,
         question: str,
-        article: Dict[str, Any],
+        article: dict[str, Any],
     ) -> str:
         """Extrai resposta relevante do artigo."""
         # Usa excerpt se disponivel
@@ -366,8 +364,8 @@ class QAEngine:
     def _generate_combined_answer(
         self,
         question: str,
-        faqs: List[Dict[str, Any]],
-        articles: List[Dict[str, Any]],
+        faqs: list[dict[str, Any]],
+        articles: list[dict[str, Any]],
     ) -> str:
         """Gera resposta combinando multiplas fontes."""
         parts = []
@@ -390,25 +388,29 @@ class QAEngine:
 
     def _collect_sources(
         self,
-        faqs: List[Dict[str, Any]],
-        articles: List[Dict[str, Any]],
-    ) -> List[Dict[str, Any]]:
+        faqs: list[dict[str, Any]],
+        articles: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
         """Coleta fontes usadas na resposta."""
         sources = []
 
         for faq in faqs[:3]:
-            sources.append({
-                "type": "faq",
-                "id": faq.get("id"),
-                "title": faq.get("question", "")[:100],
-            })
+            sources.append(
+                {
+                    "type": "faq",
+                    "id": faq.get("id"),
+                    "title": faq.get("question", "")[:100],
+                }
+            )
 
         for article in articles[:3]:
-            sources.append({
-                "type": "article",
-                "id": article.get("id"),
-                "title": article.get("title", "")[:100],
-            })
+            sources.append(
+                {
+                    "type": "article",
+                    "id": article.get("id"),
+                    "title": article.get("title", "")[:100],
+                }
+            )
 
         return sources
 
@@ -432,9 +434,9 @@ class QAEngine:
     def _generate_follow_ups(
         self,
         question: str,
-        response: Dict[str, Any],
-        context: Dict[str, Any],
-    ) -> List[str]:
+        response: dict[str, Any],
+        context: dict[str, Any],
+    ) -> list[str]:
         """Gera perguntas de follow-up."""
         follow_ups = []
 
@@ -456,9 +458,9 @@ class QAEngine:
     def _generate_suggestions(
         self,
         question: str,
-        faqs: List[Dict[str, Any]],
-        articles: List[Dict[str, Any]],
-    ) -> List[str]:
+        faqs: list[dict[str, Any]],
+        articles: list[dict[str, Any]],
+    ) -> list[str]:
         """Gera sugestoes de perguntas relacionadas."""
         suggestions = []
 
@@ -476,9 +478,9 @@ class QAEngine:
         self,
         interaction_id: UUID,
         is_helpful: bool,
-        rating: Optional[int] = None,
-        feedback_text: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        rating: int | None = None,
+        feedback_text: str | None = None,
+    ) -> dict[str, Any]:
         """Registra avaliacao de resposta."""
         return {
             "interaction_id": str(interaction_id),
@@ -488,7 +490,7 @@ class QAEngine:
             "recorded_at": datetime.utcnow().isoformat(),
         }
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Retorna estatisticas do motor."""
         return {
             "confidence_threshold": self.confidence_threshold,

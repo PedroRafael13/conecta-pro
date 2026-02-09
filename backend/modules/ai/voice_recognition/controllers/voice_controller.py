@@ -4,46 +4,43 @@ Voice Recognition Controller - Sprint 52.
 REST API endpoints for voice recognition.
 """
 
-from typing import Optional, List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database.session import get_db
-from core.auth.dependencies import get_current_user, CurrentActiveUser
+from modules.ai.voice_recognition.repositories import VoiceRecognitionRepository
 from modules.ai.voice_recognition.schemas import (
-    VoiceRecordingCreate,
-    VoiceRecordingUpdate,
-    VoiceRecordingResponse,
-    VoiceRecordingUpload,
-    TranscriptionCreate,
-    TranscriptionResponse,
-    TranscribeRequest,
-    CommandDefinitionCreate,
-    CommandDefinitionUpdate,
-    CommandDefinitionResponse,
-    VoiceCommandCreate,
-    VoiceCommandResponse,
-    CommandExecuteRequest,
-    CommandExecuteResponse,
-    CallAnalysisCreate,
+    AnalyzeCallRequest,
     CallAnalysisResponse,
     CallAnalysisSummary,
-    AnalyzeCallRequest,
+    CommandDefinitionCreate,
+    CommandDefinitionResponse,
+    CommandDefinitionUpdate,
+    CommandExecuteRequest,
+    CommandExecuteResponse,
+    TranscribeRequest,
+    TranscriptionCreate,
+    TranscriptionResponse,
+    VoiceCommandResponse,
     VoiceRecognitionDashboard,
+    VoiceRecordingCreate,
+    VoiceRecordingResponse,
+    VoiceRecordingUpdate,
 )
-from modules.ai.voice_recognition.repositories import VoiceRecognitionRepository
 from modules.ai.voice_recognition.services import (
+    CallAnalyzer,
     SpeechRecognizer,
     VoiceCommandProcessor,
-    CallAnalyzer,
 )
 
 voice_router = APIRouter(prefix="/voice", tags=["Voice Recognition"])
 
 
 # ============== Voice Recording Endpoints ==============
+
 
 @voice_router.post("/recordings", response_model=VoiceRecordingResponse, status_code=status.HTTP_201_CREATED)
 async def create_recording(
@@ -60,11 +57,11 @@ async def create_recording(
     return recording
 
 
-@voice_router.get("/recordings", response_model=List[VoiceRecordingResponse])
+@voice_router.get("/recordings", response_model=list[VoiceRecordingResponse])
 async def list_recordings(
-    source: Optional[str] = None,
-    status: Optional[str] = None,
-    user_id: Optional[UUID] = None,
+    source: str | None = None,
+    status: str | None = None,
+    user_id: UUID | None = None,
     skip: int = 0,
     limit: int = 100,
     current_user: CurrentActiveUser = None,
@@ -126,6 +123,7 @@ async def delete_recording(
 
 # ============== Transcription Endpoints ==============
 
+
 @voice_router.post("/transcriptions", response_model=TranscriptionResponse, status_code=status.HTTP_201_CREATED)
 async def create_transcription(
     data: TranscriptionCreate,
@@ -155,13 +153,15 @@ async def transcribe_recording(
         raise HTTPException(status_code=404, detail="Recording not found")
 
     # Create transcription record
-    transcription = repo.create_transcription({
-        "tenant_id": current_user.tenant_id,
-        "recording_id": request.recording_id,
-        "provider": request.provider,
-        "language": request.language,
-        "speaker_labels": request.enable_speaker_labels,
-    })
+    transcription = repo.create_transcription(
+        {
+            "tenant_id": current_user.tenant_id,
+            "recording_id": request.recording_id,
+            "provider": request.provider,
+            "language": request.language,
+            "speaker_labels": request.enable_speaker_labels,
+        }
+    )
 
     # Simulate transcription (in production, use actual audio data)
     recognizer = SpeechRecognizer(default_provider=request.provider)
@@ -175,34 +175,40 @@ async def transcribe_recording(
     )
 
     # Update transcription with results
-    transcription = repo.update_transcription(transcription.id, {
-        "status": result["status"],
-        "text": result["text"],
-        "text_formatted": result["text_formatted"],
-        "words": result["words"],
-        "segments": result["segments"],
-        "word_count": result["word_count"],
-        "confidence_score": result["confidence_score"],
-        "detected_language": result["detected_language"],
-        "speaker_count": result["speaker_count"],
-        "speakers": result["speakers"],
-        "duration_seconds": result["duration_seconds"],
-        "processing_time_ms": result["processing_time_ms"],
-    })
+    transcription = repo.update_transcription(
+        transcription.id,
+        {
+            "status": result["status"],
+            "text": result["text"],
+            "text_formatted": result["text_formatted"],
+            "words": result["words"],
+            "segments": result["segments"],
+            "word_count": result["word_count"],
+            "confidence_score": result["confidence_score"],
+            "detected_language": result["detected_language"],
+            "speaker_count": result["speaker_count"],
+            "speakers": result["speakers"],
+            "duration_seconds": result["duration_seconds"],
+            "processing_time_ms": result["processing_time_ms"],
+        },
+    )
 
     # Update recording status
-    repo.update_recording(request.recording_id, {
-        "status": "transcribed",
-        "duration_seconds": result["duration_seconds"],
-    })
+    repo.update_recording(
+        request.recording_id,
+        {
+            "status": "transcribed",
+            "duration_seconds": result["duration_seconds"],
+        },
+    )
 
     return transcription
 
 
-@voice_router.get("/transcriptions", response_model=List[TranscriptionResponse])
+@voice_router.get("/transcriptions", response_model=list[TranscriptionResponse])
 async def list_transcriptions(
-    status: Optional[str] = None,
-    provider: Optional[str] = None,
+    status: str | None = None,
+    provider: str | None = None,
     skip: int = 0,
     limit: int = 100,
     current_user: CurrentActiveUser = None,
@@ -250,7 +256,10 @@ async def get_recording_transcription(
 
 # ============== Voice Command Endpoints ==============
 
-@voice_router.post("/commands/definitions", response_model=CommandDefinitionResponse, status_code=status.HTTP_201_CREATED)
+
+@voice_router.post(
+    "/commands/definitions", response_model=CommandDefinitionResponse, status_code=status.HTTP_201_CREATED
+)
 async def create_command_definition(
     data: CommandDefinitionCreate,
     current_user: CurrentActiveUser = ...,  # Required
@@ -271,9 +280,9 @@ async def create_command_definition(
     return definition
 
 
-@voice_router.get("/commands/definitions", response_model=List[CommandDefinitionResponse])
+@voice_router.get("/commands/definitions", response_model=list[CommandDefinitionResponse])
 async def list_command_definitions(
-    category: Optional[str] = None,
+    category: str | None = None,
     is_active: bool = True,
     current_user: CurrentActiveUser = None,
     db: Session = Depends(get_db),
@@ -335,20 +344,22 @@ async def execute_voice_command(
     )
 
     # Create command log
-    command = repo.create_voice_command({
-        "tenant_id": current_user.tenant_id,
-        "user_id": current_user.id,
-        "raw_text": request.text,
-        "normalized_text": request.text.lower().strip(),
-        "command_code": result.get("command_code"),
-        "confidence": result.get("confidence"),
-        "status": result.get("status"),
-        "parameters": result.get("parameters", {}),
-        "alternatives": result.get("alternatives", []),
-        "requires_confirmation": result.get("requires_confirmation", False),
-        "session_id": request.session_id,
-        "context": request.context,
-    })
+    command = repo.create_voice_command(
+        {
+            "tenant_id": current_user.tenant_id,
+            "user_id": current_user.id,
+            "raw_text": request.text,
+            "normalized_text": request.text.lower().strip(),
+            "command_code": result.get("command_code"),
+            "confidence": result.get("confidence"),
+            "status": result.get("status"),
+            "parameters": result.get("parameters", {}),
+            "alternatives": result.get("alternatives", []),
+            "requires_confirmation": result.get("requires_confirmation", False),
+            "session_id": request.session_id,
+            "context": request.context,
+        }
+    )
 
     # Execute if ready and auto_confirm
     if result.get("status") == "ready" and (request.auto_confirm or not result.get("requires_confirmation")):
@@ -359,13 +370,16 @@ async def execute_voice_command(
         )
 
         # Update command log
-        repo.update_voice_command(command.id, {
-            "status": "completed" if exec_result.get("success") else "failed",
-            "action_result": exec_result.get("result"),
-            "response_text": exec_result.get("response_text"),
-            "execution_time_ms": exec_result.get("execution_time_ms"),
-            "error_message": exec_result.get("error") if not exec_result.get("success") else None,
-        })
+        repo.update_voice_command(
+            command.id,
+            {
+                "status": "completed" if exec_result.get("success") else "failed",
+                "action_result": exec_result.get("result"),
+                "response_text": exec_result.get("response_text"),
+                "execution_time_ms": exec_result.get("execution_time_ms"),
+                "error_message": exec_result.get("error") if not exec_result.get("success") else None,
+            },
+        )
 
         result["result"] = exec_result.get("result")
         result["response_text"] = exec_result.get("response_text")
@@ -386,11 +400,11 @@ async def execute_voice_command(
     )
 
 
-@voice_router.get("/commands", response_model=List[VoiceCommandResponse])
+@voice_router.get("/commands", response_model=list[VoiceCommandResponse])
 async def list_voice_commands(
-    user_id: Optional[UUID] = None,
-    status: Optional[str] = None,
-    command_code: Optional[str] = None,
+    user_id: UUID | None = None,
+    status: str | None = None,
+    command_code: str | None = None,
     skip: int = 0,
     limit: int = 100,
     current_user: CurrentActiveUser = None,
@@ -413,22 +427,26 @@ async def list_voice_commands(
 async def add_command_feedback(
     command_id: UUID,
     feedback: str,
-    feedback_text: Optional[str] = None,
+    feedback_text: str | None = None,
     current_user: CurrentActiveUser = None,
     db: Session = Depends(get_db),
 ):
     """Add feedback to a voice command."""
     repo = VoiceRecognitionRepository(db)
-    command = repo.update_voice_command(command_id, {
-        "user_feedback": feedback,
-        "feedback_text": feedback_text,
-    })
+    command = repo.update_voice_command(
+        command_id,
+        {
+            "user_feedback": feedback,
+            "feedback_text": feedback_text,
+        },
+    )
     if not command:
         raise HTTPException(status_code=404, detail="Command not found")
     return {"status": "ok", "message": "Feedback recorded"}
 
 
 # ============== Call Analysis Endpoints ==============
+
 
 @voice_router.post("/calls/analyze", response_model=CallAnalysisResponse)
 async def analyze_call(
@@ -455,14 +473,16 @@ async def analyze_call(
         raise HTTPException(status_code=400, detail="Transcription required for analysis")
 
     # Create analysis record
-    analysis = repo.create_call_analysis({
-        "tenant_id": current_user.tenant_id,
-        "recording_id": request.recording_id,
-        "transcription_id": transcription.id,
-        "agent_id": request.agent_id,
-        "customer_id": request.customer_id,
-        "status": "analyzing",
-    })
+    analysis = repo.create_call_analysis(
+        {
+            "tenant_id": current_user.tenant_id,
+            "recording_id": request.recording_id,
+            "transcription_id": transcription.id,
+            "agent_id": request.agent_id,
+            "customer_id": request.customer_id,
+            "status": "analyzing",
+        }
+    )
 
     # Perform analysis
     analyzer = CallAnalyzer()
@@ -482,13 +502,13 @@ async def analyze_call(
     return analysis
 
 
-@voice_router.get("/calls/analyses", response_model=List[CallAnalysisSummary])
+@voice_router.get("/calls/analyses", response_model=list[CallAnalysisSummary])
 async def list_call_analyses(
-    status: Optional[str] = None,
-    call_type: Optional[str] = None,
-    sentiment: Optional[str] = None,
-    escalation_needed: Optional[bool] = None,
-    agent_id: Optional[UUID] = None,
+    status: str | None = None,
+    call_type: str | None = None,
+    sentiment: str | None = None,
+    escalation_needed: bool | None = None,
+    agent_id: UUID | None = None,
     skip: int = 0,
     limit: int = 100,
     current_user: CurrentActiveUser = None,
@@ -560,6 +580,7 @@ async def get_recording_analysis(
 
 # ============== Dashboard ==============
 
+
 @voice_router.get("/dashboard", response_model=VoiceRecognitionDashboard)
 async def get_dashboard(
     current_user: CurrentActiveUser = ...,  # Required
@@ -591,6 +612,7 @@ async def get_dashboard(
 
 
 # ============== Utilities ==============
+
 
 @voice_router.get("/providers")
 async def list_providers(

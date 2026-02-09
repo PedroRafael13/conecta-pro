@@ -9,22 +9,22 @@ Implementa:
 """
 
 from .event_bus import (
-    EventBus,
     Event,
+    EventBus,
     EventHandler,
     get_event_bus,
 )
 from .event_types import (
-    TipoEvento,
     EventoDocumentoFiscal,
+    EventoErro,
     EventoFolhaPagamento,
     EventoSincronizacao,
     EventoSistema,
-    EventoErro,
+    TipoEvento,
 )
 from .outbox import (
-    OutboxManager,
     OutboxEntry,
+    OutboxManager,
     get_outbox_manager,
 )
 

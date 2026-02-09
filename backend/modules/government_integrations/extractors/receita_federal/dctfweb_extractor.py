@@ -7,15 +7,14 @@ Implementa:
 - Consulta de débitos e créditos
 """
 
-from datetime import datetime, timedelta
-from typing import Dict, Optional, Any, List
-from uuid import UUID
 import asyncio
 import logging
-from xml.etree import ElementTree as ET
+from datetime import datetime, timedelta
+from typing import Any
+from uuid import UUID
 
-from ..base_extractor import ExtratorBase, DocumentoExtraido, ResultadoExtracao
-from ...core.credentials import ProvedorCredenciais, TipoCredencial
+from ...core.credentials import TipoCredencial
+from ..base_extractor import DocumentoExtraido, ExtratorBase, ResultadoExtracao
 
 logger = logging.getLogger(__name__)
 
@@ -55,10 +54,10 @@ class ExtratorDCTFWeb(ExtratorBase):
     async def extrair(
         self,
         tenant_id: UUID,
-        data_inicio: Optional[datetime] = None,
-        data_fim: Optional[datetime] = None,
-        cnpjs: Optional[List[str]] = None,
-        ufs: Optional[List[str]] = None,
+        data_inicio: datetime | None = None,
+        data_fim: datetime | None = None,
+        cnpjs: list[str] | None = None,
+        ufs: list[str] | None = None,
         incremental: bool = True,
     ) -> ResultadoExtracao:
         """
@@ -84,16 +83,11 @@ class ExtratorDCTFWeb(ExtratorBase):
         if data_inicio is None:
             data_inicio = data_fim - timedelta(days=365)
 
-        logger.info(
-            f"Iniciando extração DCTFWeb: {tenant_id} - "
-            f"Período: {data_inicio.date()} a {data_fim.date()}"
-        )
+        logger.info(f"Iniciando extração DCTFWeb: {tenant_id} - Período: {data_inicio.date()} a {data_fim.date()}")
 
         try:
             # Obter credenciais (certificado digital)
-            credencial = await self.credentials.obter_credencial(
-                tenant_id, self.tipo_credencial
-            )
+            credencial = await self.credentials.obter_credencial(tenant_id, self.tipo_credencial)
 
             if not credencial.valida:
                 resultado.status = "falha"
@@ -107,9 +101,7 @@ class ExtratorDCTFWeb(ExtratorBase):
 
                 # Consultar declarações por tipo
                 for tipo in ["mensal", "anual", "especial"]:
-                    docs = await self._consultar_declaracoes(
-                        tenant_id, cnpj, data_inicio, data_fim, tipo
-                    )
+                    docs = await self._consultar_declaracoes(tenant_id, cnpj, data_inicio, data_fim, tipo)
 
                     for doc in docs:
                         resultado.documentos.append(doc)
@@ -123,9 +115,7 @@ class ExtratorDCTFWeb(ExtratorBase):
                         resultado.documentos_processados += 1
 
                 # Consultar débitos consolidados
-                doc_debitos = await self._consultar_debitos(
-                    tenant_id, cnpj, data_inicio, data_fim
-                )
+                doc_debitos = await self._consultar_debitos(tenant_id, cnpj, data_inicio, data_fim)
                 if doc_debitos:
                     resultado.documentos.append(doc_debitos)
                     resultado.documentos_processados += 1
@@ -152,12 +142,12 @@ class ExtratorDCTFWeb(ExtratorBase):
         data_inicio: datetime,
         data_fim: datetime,
         tipo: str,
-    ) -> List[DocumentoExtraido]:
+    ) -> list[DocumentoExtraido]:
         """Consulta declarações DCTFWeb por tipo."""
         documentos = []
 
         try:
-            session = await self._get_session(tenant_id, with_cert=True)
+            await self._get_session(tenant_id, with_cert=True)
 
             # Gerar períodos mensais
             periodo_atual = data_inicio.replace(day=1)
@@ -174,22 +164,16 @@ class ExtratorDCTFWeb(ExtratorBase):
 
                 # Simular consulta ao e-CAC/SPED
                 # Em produção, fazer requisição real com certificado
-                doc = await self._processar_declaracao(
-                    cnpj, periodo_str, tipo, payload
-                )
+                doc = await self._processar_declaracao(cnpj, periodo_str, tipo, payload)
 
                 if doc:
                     documentos.append(doc)
 
                 # Próximo mês
                 if periodo_atual.month == 12:
-                    periodo_atual = periodo_atual.replace(
-                        year=periodo_atual.year + 1, month=1
-                    )
+                    periodo_atual = periodo_atual.replace(year=periodo_atual.year + 1, month=1)
                 else:
-                    periodo_atual = periodo_atual.replace(
-                        month=periodo_atual.month + 1
-                    )
+                    periodo_atual = periodo_atual.replace(month=periodo_atual.month + 1)
 
                 await asyncio.sleep(1)
 
@@ -211,8 +195,8 @@ class ExtratorDCTFWeb(ExtratorBase):
         cnpj: str,
         periodo: str,
         tipo: str,
-        dados_resposta: Dict,
-    ) -> Optional[DocumentoExtraido]:
+        dados_resposta: dict,
+    ) -> DocumentoExtraido | None:
         """Processa dados de uma declaração DCTFWeb."""
         try:
             # Estrutura de dados da DCTFWeb
@@ -221,12 +205,10 @@ class ExtratorDCTFWeb(ExtratorBase):
                 "periodo_apuracao": periodo,
                 "tipo_declaracao": tipo,
                 "descricao_tipo": self.TIPOS_DECLARACAO.get(tipo, tipo),
-
                 # Informações da declaração
                 "numero_recibo": dados_resposta.get("numeroRecibo"),
                 "data_transmissao": dados_resposta.get("dataTransmissao"),
                 "situacao": dados_resposta.get("situacao", "pendente_consulta"),
-
                 # Débitos
                 "debitos": {
                     "inss": dados_resposta.get("debitoINSS", 0.0),
@@ -237,7 +219,6 @@ class ExtratorDCTFWeb(ExtratorBase):
                     "outros": dados_resposta.get("outrosDebitos", 0.0),
                     "total": dados_resposta.get("totalDebitos", 0.0),
                 },
-
                 # Créditos
                 "creditos": {
                     "salario_familia": dados_resposta.get("creditoSalFamilia", 0.0),
@@ -246,10 +227,8 @@ class ExtratorDCTFWeb(ExtratorBase):
                     "compensacoes": dados_resposta.get("compensacoes", 0.0),
                     "total": dados_resposta.get("totalCreditos", 0.0),
                 },
-
                 # Saldo
                 "saldo_devedor": dados_resposta.get("saldoDevedor", 0.0),
-
                 "consultado_em": datetime.utcnow().isoformat(),
             }
 
@@ -271,7 +250,7 @@ class ExtratorDCTFWeb(ExtratorBase):
         cnpj: str,
         data_inicio: datetime,
         data_fim: datetime,
-    ) -> Optional[DocumentoExtraido]:
+    ) -> DocumentoExtraido | None:
         """Consulta débitos consolidados DCTFWeb."""
         try:
             # Resumo de débitos por tributo
@@ -280,7 +259,6 @@ class ExtratorDCTFWeb(ExtratorBase):
                 "periodo_inicio": data_inicio.strftime("%Y-%m"),
                 "periodo_fim": data_fim.strftime("%Y-%m"),
                 "tipo": "resumo_debitos",
-
                 "tributos": [
                     {
                         "codigo": "1082-01",
@@ -304,11 +282,9 @@ class ExtratorDCTFWeb(ExtratorBase):
                         "em_aberto": 0.0,
                     },
                 ],
-
                 "total_debitos": 0.0,
                 "total_pago": 0.0,
                 "total_em_aberto": 0.0,
-
                 "consultado_em": datetime.utcnow().isoformat(),
                 "status": "consulta_manual_necessaria",
             }
@@ -330,7 +306,7 @@ class ExtratorDCTFWeb(ExtratorBase):
         cnpj: str,
         periodo: str,
         tipo: str = "mensal",
-    ) -> Optional[DocumentoExtraido]:
+    ) -> DocumentoExtraido | None:
         """
         Consulta uma declaração DCTFWeb específica.
 
@@ -344,7 +320,7 @@ class ExtratorDCTFWeb(ExtratorBase):
             DocumentoExtraido ou None
         """
         try:
-            session = await self._get_session(tenant_id, with_cert=True)
+            await self._get_session(tenant_id, with_cert=True)
 
             # Em produção, fazer requisição ao e-CAC
             dados = {
@@ -363,7 +339,7 @@ class ExtratorDCTFWeb(ExtratorBase):
         self,
         tenant_id: UUID,
         cnpj: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Verifica pendências de DCTFWeb.
 
@@ -387,11 +363,13 @@ class ExtratorDCTFWeb(ExtratorBase):
 
                 # Em produção, verificar se existe declaração transmitida
                 # Aqui apenas indicamos como pendente
-                resultado["pendencias"].append({
-                    "periodo": periodo,
-                    "tipo": "mensal",
-                    "situacao": "verificar",
-                })
+                resultado["pendencias"].append(
+                    {
+                        "periodo": periodo,
+                        "tipo": "mensal",
+                        "situacao": "verificar",
+                    }
+                )
 
             resultado["total_pendencias"] = len(resultado["pendencias"])
 

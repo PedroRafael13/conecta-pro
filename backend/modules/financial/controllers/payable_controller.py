@@ -2,7 +2,7 @@
 
 import logging
 from datetime import date
-from typing import List, Optional
+from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -71,26 +71,26 @@ async def create_account(
 
 @router.get(
     "",
-    response_model=List[PayableAccountListResponse],
+    response_model=list[PayableAccountListResponse],
     summary="Listar contas a pagar",
 )
 async def list_accounts(  # pylint: disable=too-many-locals
     condominio_id: UUID,
-    search: Optional[str] = Query(None, description="Busca na descrição"),
-    supplier_id: Optional[UUID] = Query(None, description="Filtrar por fornecedor"),
-    category_id: Optional[UUID] = Query(None, description="Filtrar por categoria"),
-    status_filter: Optional[str] = Query(None, alias="status", description="Status"),
-    due_date_start: Optional[date] = Query(None, description="Vencimento inicial"),
-    due_date_end: Optional[date] = Query(None, description="Vencimento final"),
-    is_recurring: Optional[bool] = Query(None, description="Apenas recorrentes"),
-    is_overdue: Optional[bool] = Query(None, description="Apenas vencidas"),
-    min_value: Optional[float] = Query(None, description="Valor mínimo"),
-    max_value: Optional[float] = Query(None, description="Valor máximo"),
+    search: str | None = Query(None, description="Busca na descrição"),
+    supplier_id: UUID | None = Query(None, description="Filtrar por fornecedor"),
+    category_id: UUID | None = Query(None, description="Filtrar por categoria"),
+    status_filter: str | None = Query(None, alias="status", description="Status"),
+    due_date_start: date | None = Query(None, description="Vencimento inicial"),
+    due_date_end: date | None = Query(None, description="Vencimento final"),
+    is_recurring: bool | None = Query(None, description="Apenas recorrentes"),
+    is_overdue: bool | None = Query(None, description="Apenas vencidas"),
+    min_value: float | None = Query(None, description="Valor mínimo"),
+    max_value: float | None = Query(None, description="Valor máximo"),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     service: PayableService = Depends(get_service),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-):
+) -> list[PayableAccountListResponse]:
     """Lista contas a pagar com filtros."""
     filters = PayableAccountFilter(
         search=search,
@@ -117,7 +117,7 @@ async def list_accounts(  # pylint: disable=too-many-locals
     summary="Estatísticas de contas a pagar",
 )
 async def get_stats(
-    condominio_id: Optional[UUID] = Query(None, description="ID do condomínio (opcional)"),
+    condominio_id: UUID | None = Query(None, description="ID do condomínio (opcional)"),
     service: PayableService = Depends(get_service),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> PayableAccountStats:
@@ -127,15 +127,15 @@ async def get_stats(
 
 @router.get(
     "/overdue",
-    response_model=List[PayableAccountListResponse],
+    response_model=list[PayableAccountListResponse],
     summary="Contas vencidas",
 )
 async def get_overdue(
-    condominio_id: Optional[UUID] = Query(None, description="ID do condomínio (opcional)"),
+    condominio_id: UUID | None = Query(None, description="ID do condomínio (opcional)"),
     limit: int = Query(100, ge=1, le=500),
     service: PayableService = Depends(get_service),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-):
+) -> list[PayableAccountListResponse]:
     """Retorna contas vencidas."""
     accounts = await service.get_overdue_accounts(condominio_id, limit)
     return [PayableAccountListResponse.model_validate(a) for a in accounts]
@@ -143,7 +143,7 @@ async def get_overdue(
 
 @router.get(
     "/due-soon",
-    response_model=List[PayableAccountListResponse],
+    response_model=list[PayableAccountListResponse],
     summary="Contas a vencer",
 )
 async def get_due_soon(
@@ -152,7 +152,7 @@ async def get_due_soon(
     limit: int = Query(100, ge=1, le=500),
     service: PayableService = Depends(get_service),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-):
+) -> list[PayableAccountListResponse]:
     """Retorna contas a vencer nos próximos dias."""
     accounts = await service.get_due_soon_accounts(condominio_id, days, limit)
     return [PayableAccountListResponse.model_validate(a) for a in accounts]
@@ -211,7 +211,7 @@ async def delete_account(
     account_id: UUID,
     service: PayableService = Depends(get_service),
     current_user: dict = Depends(get_current_user),
-):
+) -> None:
     """Exclui uma conta a pagar (soft delete)."""
     try:
         deleted = await service.delete_account(account_id, UUID(current_user["id"]))
@@ -234,7 +234,7 @@ async def delete_account(
 )
 async def approve_account(
     account_id: UUID,
-    notes: Optional[str] = None,
+    notes: str | None = None,
     service: PayableService = Depends(get_service),
     current_user: dict = Depends(get_current_user),
 ) -> PayableAccountResponse:
@@ -259,7 +259,7 @@ async def bulk_approve(
     data: PayableBulkApproveRequest,
     service: PayableService = Depends(get_service),
     current_user: dict = Depends(get_current_user),
-):
+) -> dict[str, int]:
     """Aprova múltiplas contas."""
     success, errors = await service.bulk_approve(data, UUID(current_user["id"]))
     return {
@@ -325,14 +325,14 @@ async def schedule_payment(
 
 @router.get(
     "/{account_id}/installments",
-    response_model=List[PayableInstallmentResponse],
+    response_model=list[PayableInstallmentResponse],
     summary="Listar parcelas",
 )
 async def list_installments(
     account_id: UUID,
     service: PayableService = Depends(get_service),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-):
+) -> list[PayableInstallmentResponse]:
     """Lista parcelas de uma conta."""
     installments = await service.list_installments(account_id)
     return [PayableInstallmentResponse.model_validate(i) for i in installments]
@@ -340,20 +340,18 @@ async def list_installments(
 
 @router.get(
     "/installments/pending",
-    response_model=List[PayableInstallmentResponse],
+    response_model=list[PayableInstallmentResponse],
     summary="Parcelas pendentes",
 )
 async def get_pending_installments(
     condominio_id: UUID,
-    due_date_start: Optional[date] = Query(None),
-    due_date_end: Optional[date] = Query(None),
+    due_date_start: date | None = Query(None),
+    due_date_end: date | None = Query(None),
     service: PayableService = Depends(get_service),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-):
+) -> list[PayableInstallmentResponse]:
     """Retorna parcelas pendentes."""
-    installments = await service.get_pending_installments(
-        condominio_id, due_date_start, due_date_end
-    )
+    installments = await service.get_pending_installments(condominio_id, due_date_start, due_date_end)
     return [PayableInstallmentResponse.model_validate(i) for i in installments]
 
 
@@ -394,9 +392,7 @@ async def renegotiate_installment(
 ) -> PayableInstallmentResponse:
     """Renegocia uma parcela."""
     try:
-        installment = await service.renegotiate_installment(
-            installment_id, data, UUID(current_user["id"])
-        )
+        installment = await service.renegotiate_installment(installment_id, data, UUID(current_user["id"]))
         if not installment:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -438,7 +434,7 @@ async def bulk_payment(
     data: PayableBulkPaymentRequest,
     service: PayableService = Depends(get_service),
     current_user: dict = Depends(get_current_user),
-):
+) -> dict[str, Any]:
     """Processa pagamento em lote."""
     success, errors, payment_ids = await service.bulk_payment(data, UUID(current_user["id"]))
     return {
@@ -499,14 +495,14 @@ async def reconcile_payment(
 
 @router.get(
     "/payments/pending-reconciliation",
-    response_model=List[PayablePaymentResponse],
+    response_model=list[PayablePaymentResponse],
     summary="Pagamentos pendentes de reconciliação",
 )
 async def get_pending_reconciliation(
     condominio_id: UUID,
     service: PayableService = Depends(get_service),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-):
+) -> list[PayablePaymentResponse]:
     """Retorna pagamentos pendentes de reconciliação."""
     payments = await service.get_pending_reconciliation(condominio_id)
     return [PayablePaymentResponse.model_validate(p) for p in payments]
@@ -521,10 +517,10 @@ async def get_pending_reconciliation(
 )
 async def process_recurring(
     condominio_id: UUID,
-    reference_date: Optional[date] = None,
+    reference_date: date | None = None,
     service: PayableService = Depends(get_service),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-):
+) -> dict[str, Any]:
     """Processa contas recorrentes e gera novas."""
     accounts = await service.process_recurring_accounts(condominio_id, reference_date)
     return {

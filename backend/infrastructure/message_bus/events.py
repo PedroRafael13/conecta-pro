@@ -12,10 +12,11 @@ Este modulo implementa:
 """
 
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
-from enum import Enum
-from typing import Any, Awaitable, Callable, Dict, List, Optional
+from enum import StrEnum
+from typing import Any
 from uuid import uuid4
 
 from .bus import (
@@ -30,7 +31,7 @@ from .bus import (
 logger = logging.getLogger(__name__)
 
 
-class EventType(str, Enum):
+class EventType(StrEnum):
     """Tipos de eventos do sistema.
 
     Organizado por fase/dominio para facilitar routing.
@@ -97,12 +98,12 @@ class Event:
     id: str = field(default_factory=lambda: str(uuid4()))
     type: EventType = EventType.SISTEMA_INICIADO
     source: str = ""
-    data: Dict[str, Any] = field(default_factory=dict)
+    data: dict[str, Any] = field(default_factory=dict)
     timestamp: datetime = field(default_factory=datetime.utcnow)
     version: str = "1.0"
-    correlation_id: Optional[str] = None
-    causation_id: Optional[str] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    correlation_id: str | None = None
+    causation_id: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def to_message(
         self,
@@ -131,7 +132,7 @@ class Event:
             metadata=self.metadata,
         )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Converte evento para dicionario.
 
         Returns:
@@ -163,22 +164,24 @@ class DomainEvent(Event):
         domain: Nome do dominio (procurement, financial, hr, inventory).
     """
 
-    aggregate_id: Optional[str] = None
-    aggregate_type: Optional[str] = None
+    aggregate_id: str | None = None
+    aggregate_type: str | None = None
     domain: str = ""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Converte para dicionario incluindo campos de dominio.
 
         Returns:
             Dict com dados completos.
         """
         base = super().to_dict()
-        base.update({
-            "aggregate_id": self.aggregate_id,
-            "aggregate_type": self.aggregate_type,
-            "domain": self.domain,
-        })
+        base.update(
+            {
+                "aggregate_id": self.aggregate_id,
+                "aggregate_type": self.aggregate_type,
+                "domain": self.domain,
+            }
+        )
         return base
 
 
@@ -197,23 +200,25 @@ class IntegrationEvent(Event):
     """
 
     source_service: str = ""
-    target_services: List[str] = field(default_factory=list)
+    target_services: list[str] = field(default_factory=list)
     requires_acknowledgment: bool = False
     ttl_seconds: int = 3600
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Converte para dicionario incluindo campos de integracao.
 
         Returns:
             Dict com dados completos.
         """
         base = super().to_dict()
-        base.update({
-            "source_service": self.source_service,
-            "target_services": self.target_services,
-            "requires_acknowledgment": self.requires_acknowledgment,
-            "ttl_seconds": self.ttl_seconds,
-        })
+        base.update(
+            {
+                "source_service": self.source_service,
+                "target_services": self.target_services,
+                "requires_acknowledgment": self.requires_acknowledgment,
+                "ttl_seconds": self.ttl_seconds,
+            }
+        )
         return base
 
 
@@ -255,7 +260,7 @@ async def publish_event(
 def subscribe_to_event(
     event_type: EventType,
     handler: HandlerFunc,
-    filter_func: Optional[Callable[[Message], bool]] = None,
+    filter_func: Callable[[Message], bool] | None = None,
 ) -> str:
     """Registra um subscriber para um tipo de evento.
 
@@ -291,7 +296,7 @@ def subscribe_to_event(
 def subscribe_to_pattern(
     pattern: str,
     handler: HandlerFunc,
-    filter_func: Optional[Callable[[Message], bool]] = None,
+    filter_func: Callable[[Message], bool] | None = None,
 ) -> str:
     """Registra um subscriber para um padrao de eventos.
 
@@ -339,7 +344,7 @@ class EventHandler(Handler):
         """
         self.event_type = event_type
 
-    async def handle(self, message: Message) -> Optional[Any]:
+    async def handle(self, message: Message) -> Any | None:
         """Processa uma mensagem de evento.
 
         Args:
@@ -370,10 +375,10 @@ class EventHandler(Handler):
 
     async def on_event(
         self,
-        data: Dict[str, Any],
+        data: dict[str, Any],
         source: str,
         message: Message,
-    ) -> Optional[Any]:
+    ) -> Any | None:
         """Metodo a ser sobrescrito pelas subclasses.
 
         Args:

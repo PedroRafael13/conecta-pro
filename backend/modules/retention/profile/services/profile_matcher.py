@@ -5,29 +5,25 @@ Calcula compatibilidade entre perfil operacional e requisitos do posto.
 """
 
 import logging
-from datetime import datetime
-from typing import Optional, List, Dict, Any, Tuple
+from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.retention.profile.models.profile_models import (
-    OperationalProfile,
-    PostMatch,
     PERFIL_IDEAL_POR_TIPO,
-)
-from modules.retention.profile.schemas.profile_schemas import (
-    PostMatchResponse,
-    PostMatchDetail,
-    BestMatchesResponse,
-    BestFuncionariosResponse,
-    IdealProfileByType,
-    PostTypesResponse,
-    MatchFilter,
-    PostTypeEnum,
-    MatchNivelEnum,
-    ProfileDimensionEnum,
+    OperationalProfile,
 )
 from modules.retention.profile.repositories.profile_repository import ProfileRepository
+from modules.retention.profile.schemas.profile_schemas import (
+    BestFuncionariosResponse,
+    BestMatchesResponse,
+    IdealProfileByType,
+    MatchNivelEnum,
+    PostMatchDetail,
+    PostMatchResponse,
+    PostTypeEnum,
+    PostTypesResponse,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -106,7 +102,7 @@ class ProfileMatcher:
         funcionario_id: str,
         posto_id: str,
         posto_tipo: str,
-        condominium_id: Optional[str] = None,
+        condominium_id: str | None = None,
     ) -> PostMatchDetail:
         """
         Calcula match entre funcionario e posto.
@@ -128,25 +124,20 @@ class ProfileMatcher:
         # Busca perfil do funcionario
         profile = await self.repository.get_latest_profile(funcionario_id)
         if not profile:
-            raise ValueError(
-                f"Funcionario {funcionario_id} nao possui perfil operacional avaliado"
-            )
+            raise ValueError(f"Funcionario {funcionario_id} nao possui perfil operacional avaliado")
 
         # Valida tipo de posto
         posto_tipo_lower = posto_tipo.lower()
         if posto_tipo_lower not in PERFIL_IDEAL_POR_TIPO:
             raise ValueError(
-                f"Tipo de posto invalido: {posto_tipo}. "
-                f"Tipos validos: {', '.join(PERFIL_IDEAL_POR_TIPO.keys())}"
+                f"Tipo de posto invalido: {posto_tipo}. Tipos validos: {', '.join(PERFIL_IDEAL_POR_TIPO.keys())}"
             )
 
         # Calcula score
         score = self._calcular_score_match(profile, posto_tipo_lower)
 
         # Analisa fatores
-        fatores_positivos, fatores_negativos = self._analisar_fatores(
-            profile, posto_tipo_lower
-        )
+        fatores_positivos, fatores_negativos = self._analisar_fatores(profile, posto_tipo_lower)
 
         # Scores detalhados
         scores_detalhados = self._calcular_scores_detalhados(profile, posto_tipo_lower)
@@ -158,9 +149,7 @@ class ProfileMatcher:
         sugestoes = self._gerar_sugestoes_desenvolvimento(profile, posto_tipo_lower)
 
         # Probabilidade de sucesso (baseada no score e fatores)
-        prob_sucesso = self._calcular_probabilidade_sucesso(
-            score, len(fatores_positivos), len(fatores_negativos)
-        )
+        prob_sucesso = self._calcular_probabilidade_sucesso(score, len(fatores_positivos), len(fatores_negativos))
 
         # Salva/atualiza match no banco
         match = await self.repository.create_match(
@@ -208,9 +197,7 @@ class ProfileMatcher:
             probabilidade_sucesso=prob_sucesso,
         )
 
-    def _calcular_score_match(
-        self, profile: OperationalProfile, posto_tipo: str
-    ) -> float:
+    def _calcular_score_match(self, profile: OperationalProfile, posto_tipo: str) -> float:
         """
         Calcula score de compatibilidade.
 
@@ -239,9 +226,7 @@ class ProfileMatcher:
         score = 100 - (soma_diferencas / 4)
         return max(0, min(100, round(score, 2)))
 
-    def _analisar_fatores(
-        self, profile: OperationalProfile, posto_tipo: str
-    ) -> Tuple[List[str], List[str]]:
+    def _analisar_fatores(self, profile: OperationalProfile, posto_tipo: str) -> tuple[list[str], list[str]]:
         """
         Analisa fatores positivos e negativos do match.
 
@@ -273,9 +258,7 @@ class ProfileMatcher:
 
             if diferenca >= 10:
                 # Funcionario supera o ideal em 10+ pontos
-                fatores_positivos.append(
-                    f"{nome_dimensao}: score {valor_funcionario} supera o ideal ({valor_ideal})"
-                )
+                fatores_positivos.append(f"{nome_dimensao}: score {valor_funcionario} supera o ideal ({valor_ideal})")
             elif diferenca >= -5:
                 # Funcionario dentro da margem aceitavel (-5 a +10)
                 if valor_ideal >= 70:  # Dimensao importante para o posto
@@ -296,20 +279,13 @@ class ProfileMatcher:
 
         # Adiciona fator do perfil predominante se compativel
         predominante = profile.perfil_predominante
-        dimensoes_importantes = [
-            d for d, v in perfil_ideal.items() if v >= 80
-        ]
+        dimensoes_importantes = [d for d, v in perfil_ideal.items() if v >= 80]
         if predominante in dimensoes_importantes:
-            fatores_positivos.insert(
-                0,
-                f"Perfil predominante ({predominante}) alinhado com requisitos do posto"
-            )
+            fatores_positivos.insert(0, f"Perfil predominante ({predominante}) alinhado com requisitos do posto")
 
         return fatores_positivos, fatores_negativos
 
-    def _calcular_scores_detalhados(
-        self, profile: OperationalProfile, posto_tipo: str
-    ) -> Dict[str, Any]:
+    def _calcular_scores_detalhados(self, profile: OperationalProfile, posto_tipo: str) -> dict[str, Any]:
         """
         Calcula scores detalhados por dimensao.
 
@@ -353,9 +329,7 @@ class ProfileMatcher:
         else:
             return "critico"
 
-    def _calcular_gap(
-        self, profile: OperationalProfile, posto_tipo: str
-    ) -> Dict[str, int]:
+    def _calcular_gap(self, profile: OperationalProfile, posto_tipo: str) -> dict[str, int]:
         """
         Calcula gap entre perfil e ideal.
 
@@ -374,9 +348,7 @@ class ProfileMatcher:
             for dimensao, valor_ideal in perfil_ideal.items()
         }
 
-    def _gerar_sugestoes_desenvolvimento(
-        self, profile: OperationalProfile, posto_tipo: str
-    ) -> List[str]:
+    def _gerar_sugestoes_desenvolvimento(self, profile: OperationalProfile, posto_tipo: str) -> list[str]:
         """
         Gera sugestoes de desenvolvimento para melhorar o match.
 
@@ -429,20 +401,14 @@ class ProfileMatcher:
         for dimensao, gap in gaps[:2]:  # Top 2 gaps
             sugestoes_dimensao = sugestoes_por_dimensao.get(dimensao, [])
             if sugestoes_dimensao:
-                sugestoes.append(
-                    f"{dimensao.capitalize()} (gap de {gap} pontos): {sugestoes_dimensao[0]}"
-                )
+                sugestoes.append(f"{dimensao.capitalize()} (gap de {gap} pontos): {sugestoes_dimensao[0]}")
 
         if not sugestoes:
-            sugestoes.append(
-                "Perfil bem alinhado com requisitos do posto - manter desenvolvimento continuo"
-            )
+            sugestoes.append("Perfil bem alinhado com requisitos do posto - manter desenvolvimento continuo")
 
         return sugestoes
 
-    def _calcular_probabilidade_sucesso(
-        self, score: float, n_positivos: int, n_negativos: int
-    ) -> float:
+    def _calcular_probabilidade_sucesso(self, score: float, n_positivos: int, n_negativos: int) -> float:
         """
         Calcula probabilidade estimada de sucesso no posto.
 
@@ -463,9 +429,7 @@ class ProfileMatcher:
 
         return max(0, min(100, round(prob, 1)))
 
-    def _build_analise_dimensoes(
-        self, profile: OperationalProfile, posto_tipo: str
-    ) -> List[Dict[str, Any]]:
+    def _build_analise_dimensoes(self, profile: OperationalProfile, posto_tipo: str) -> list[dict[str, Any]]:
         """
         Constroi analise detalhada por dimensao.
 
@@ -487,14 +451,16 @@ class ProfileMatcher:
 
             importancia = "alta" if valor_ideal >= 80 else "media" if valor_ideal >= 60 else "baixa"
 
-            analises.append({
-                "dimensao": dimensao,
-                "score_funcionario": valor_funcionario,
-                "score_ideal": valor_ideal,
-                "diferenca": diferenca,
-                "importancia_para_posto": importancia,
-                "avaliacao": self._get_status_dimensao(diferenca, valor_ideal),
-            })
+            analises.append(
+                {
+                    "dimensao": dimensao,
+                    "score_funcionario": valor_funcionario,
+                    "score_ideal": valor_ideal,
+                    "diferenca": diferenca,
+                    "importancia_para_posto": importancia,
+                    "avaliacao": self._get_status_dimensao(diferenca, valor_ideal),
+                }
+            )
 
         return analises
 
@@ -506,7 +472,7 @@ class ProfileMatcher:
         self,
         funcionario_id: str,
         limit: int = 10,
-        condominium_id: Optional[str] = None,
+        condominium_id: str | None = None,
     ) -> BestMatchesResponse:
         """
         Encontra melhores postos para um funcionario.
@@ -524,37 +490,33 @@ class ProfileMatcher:
         # Busca perfil
         profile = await self.repository.get_latest_profile(funcionario_id)
         if not profile:
-            raise ValueError(
-                f"Funcionario {funcionario_id} nao possui perfil operacional"
-            )
+            raise ValueError(f"Funcionario {funcionario_id} nao possui perfil operacional")
 
         # Calcula match para cada tipo de posto
         matches_calculados = []
         for posto_tipo in PERFIL_IDEAL_POR_TIPO.keys():
             score = self._calcular_score_match(profile, posto_tipo)
-            fatores_positivos, fatores_negativos = self._analisar_fatores(
-                profile, posto_tipo
-            )
+            fatores_positivos, fatores_negativos = self._analisar_fatores(profile, posto_tipo)
 
             nivel = "excelente" if score >= 85 else "alto" if score >= 70 else "medio" if score >= 50 else "baixo"
             recomendado = score >= 70
 
-            matches_calculados.append({
-                "posto_tipo": posto_tipo,
-                "score": score,
-                "nivel": nivel,
-                "recomendado": recomendado,
-                "fatores_positivos": fatores_positivos,
-                "fatores_negativos": fatores_negativos,
-            })
+            matches_calculados.append(
+                {
+                    "posto_tipo": posto_tipo,
+                    "score": score,
+                    "nivel": nivel,
+                    "recomendado": recomendado,
+                    "fatores_positivos": fatores_positivos,
+                    "fatores_negativos": fatores_negativos,
+                }
+            )
 
         # Ordena por score
         matches_calculados.sort(key=lambda x: x["score"], reverse=True)
 
         # Busca matches salvos do repositorio
-        matches_salvos = await self.repository.get_matches_by_funcionario(
-            funcionario_id, limit
-        )
+        matches_salvos = await self.repository.get_matches_by_funcionario(funcionario_id, limit)
 
         # Converte para response
         matches_response = []
@@ -650,9 +612,7 @@ class ProfileMatcher:
             media_match=round(media_match, 2),
         )
 
-    async def get_match(
-        self, funcionario_id: str, posto_id: str
-    ) -> Optional[PostMatchResponse]:
+    async def get_match(self, funcionario_id: str, posto_id: str) -> PostMatchResponse | None:
         """
         Busca match especifico entre funcionario e posto.
 
@@ -712,9 +672,7 @@ class ProfileMatcher:
             total=len(tipos),
         )
 
-    async def recalcular_matches(
-        self, funcionario_id: str, condominium_id: Optional[str] = None
-    ) -> int:
+    async def recalcular_matches(self, funcionario_id: str, condominium_id: str | None = None) -> int:
         """
         Recalcula todos os matches de um funcionario.
 
@@ -733,17 +691,13 @@ class ProfileMatcher:
             return 0
 
         # Busca matches existentes
-        matches = await self.repository.get_matches_by_funcionario(
-            funcionario_id, limit=100
-        )
+        matches = await self.repository.get_matches_by_funcionario(funcionario_id, limit=100)
 
         count = 0
         for match in matches:
             # Recalcula score
             score = self._calcular_score_match(profile, match.posto_tipo)
-            fatores_pos, fatores_neg = self._analisar_fatores(
-                profile, match.posto_tipo
-            )
+            fatores_pos, fatores_neg = self._analisar_fatores(profile, match.posto_tipo)
 
             # Atualiza match
             await self.repository.create_match(
@@ -754,9 +708,7 @@ class ProfileMatcher:
                 profile_id=profile.id,
                 fatores_positivos=fatores_pos,
                 fatores_negativos=fatores_neg,
-                scores_detalhados=self._calcular_scores_detalhados(
-                    profile, match.posto_tipo
-                ),
+                scores_detalhados=self._calcular_scores_detalhados(profile, match.posto_tipo),
                 condominium_id=condominium_id,
             )
             count += 1

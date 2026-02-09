@@ -1,10 +1,9 @@
 """Repository para OfflineQueue."""
 
 from datetime import datetime, timedelta
-from typing import Optional, List, Tuple
 from uuid import UUID
 
-from sqlalchemy import select, func, update, delete
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.hr.mobile_time_clock.models import (
@@ -12,8 +11,8 @@ from modules.hr.mobile_time_clock.models import (
     QueueStatus,
 )
 from modules.hr.mobile_time_clock.schemas import (
-    OfflineQueueItemCreate,
     OfflineQueueFilter,
+    OfflineQueueItemCreate,
 )
 
 
@@ -60,11 +59,11 @@ class OfflineQueueRepository:
 
     async def create_batch(
         self,
-        items: List[OfflineQueueItemCreate],
+        items: list[OfflineQueueItemCreate],
         device_id: UUID,
         employee_id: UUID,
         condominio_id: UUID,
-    ) -> List[OfflineQueue]:
+    ) -> list[OfflineQueue]:
         """Cria múltiplos itens na fila."""
         created = []
         for data in items:
@@ -78,25 +77,21 @@ class OfflineQueueRepository:
 
         return created
 
-    async def get_by_id(self, item_id: UUID) -> Optional[OfflineQueue]:
+    async def get_by_id(self, item_id: UUID) -> OfflineQueue | None:
         """Busca item por ID."""
-        result = await self.db.execute(
-            select(OfflineQueue).where(OfflineQueue.id == item_id)
-        )
+        result = await self.db.execute(select(OfflineQueue).where(OfflineQueue.id == item_id))
         return result.scalar_one_or_none()
 
-    async def get_by_offline_id(self, offline_id: str) -> Optional[OfflineQueue]:
+    async def get_by_offline_id(self, offline_id: str) -> OfflineQueue | None:
         """Busca item por offline_id."""
-        result = await self.db.execute(
-            select(OfflineQueue).where(OfflineQueue.offline_id == offline_id)
-        )
+        result = await self.db.execute(select(OfflineQueue).where(OfflineQueue.offline_id == offline_id))
         return result.scalar_one_or_none()
 
     async def get_pending(
         self,
         device_id: UUID = None,
         limit: int = 50,
-    ) -> List[OfflineQueue]:
+    ) -> list[OfflineQueue]:
         """Busca itens pendentes para processamento."""
         query = select(OfflineQueue).where(
             OfflineQueue.status == QueueStatus.PENDING.value,
@@ -107,10 +102,7 @@ class OfflineQueueRepository:
             query = query.where(OfflineQueue.device_id == device_id)
 
         # Verificar retry
-        query = query.where(
-            (OfflineQueue.next_retry_at.is_(None)) |
-            (OfflineQueue.next_retry_at <= datetime.utcnow())
-        )
+        query = query.where((OfflineQueue.next_retry_at.is_(None)) | (OfflineQueue.next_retry_at <= datetime.utcnow()))
 
         result = await self.db.execute(
             query.order_by(
@@ -123,7 +115,7 @@ class OfflineQueueRepository:
     async def get_failed_for_retry(
         self,
         limit: int = 20,
-    ) -> List[OfflineQueue]:
+    ) -> list[OfflineQueue]:
         """Busca itens falhos elegíveis para retry."""
         now = datetime.utcnow()
         result = await self.db.execute(
@@ -137,7 +129,7 @@ class OfflineQueueRepository:
         )
         return list(result.scalars().all())
 
-    async def mark_processing(self, item_id: UUID) -> Optional[OfflineQueue]:
+    async def mark_processing(self, item_id: UUID) -> OfflineQueue | None:
         """Marca item como em processamento."""
         item = await self.get_by_id(item_id)
         if not item:
@@ -152,7 +144,7 @@ class OfflineQueueRepository:
         self,
         item_id: UUID,
         checkin_id: UUID,
-    ) -> Optional[OfflineQueue]:
+    ) -> OfflineQueue | None:
         """Marca item como sincronizado."""
         item = await self.get_by_id(item_id)
         if not item:
@@ -168,7 +160,7 @@ class OfflineQueueRepository:
         item_id: UUID,
         error_message: str,
         error_code: str = None,
-    ) -> Optional[OfflineQueue]:
+    ) -> OfflineQueue | None:
         """Marca item como falho."""
         item = await self.get_by_id(item_id)
         if not item:
@@ -179,7 +171,7 @@ class OfflineQueueRepository:
         await self.db.refresh(item)
         return item
 
-    async def mark_duplicate(self, item_id: UUID) -> Optional[OfflineQueue]:
+    async def mark_duplicate(self, item_id: UUID) -> OfflineQueue | None:
         """Marca item como duplicado."""
         item = await self.get_by_id(item_id)
         if not item:
@@ -195,7 +187,7 @@ class OfflineQueueRepository:
         self,
         item_id: UUID,
         reason: str,
-    ) -> Optional[OfflineQueue]:
+    ) -> OfflineQueue | None:
         """Marca item como inválido."""
         item = await self.get_by_id(item_id)
         if not item:
@@ -214,10 +206,14 @@ class OfflineQueueRepository:
         result = await self.db.execute(
             update(OfflineQueue)
             .where(OfflineQueue.expires_at < now)
-            .where(OfflineQueue.status.in_([
-                QueueStatus.PENDING.value,
-                QueueStatus.FAILED.value,
-            ]))
+            .where(
+                OfflineQueue.status.in_(
+                    [
+                        QueueStatus.PENDING.value,
+                        QueueStatus.FAILED.value,
+                    ]
+                )
+            )
             .values(
                 status=QueueStatus.EXPIRED.value,
                 is_expired=True,
@@ -229,7 +225,7 @@ class OfflineQueueRepository:
 
     async def reset_for_retry(
         self,
-        item_ids: List[UUID],
+        item_ids: list[UUID],
         force: bool = False,
     ) -> int:
         """Reseta itens para retry."""
@@ -237,10 +233,12 @@ class OfflineQueueRepository:
 
         if not force:
             query = query.where(
-                OfflineQueue.status.in_([
-                    QueueStatus.FAILED.value,
-                    QueueStatus.INVALID.value,
-                ])
+                OfflineQueue.status.in_(
+                    [
+                        QueueStatus.FAILED.value,
+                        QueueStatus.INVALID.value,
+                    ]
+                )
             )
 
         result = await self.db.execute(
@@ -260,7 +258,7 @@ class OfflineQueueRepository:
         filters: OfflineQueueFilter,
         page: int = 1,
         page_size: int = 50,
-    ) -> Tuple[List[OfflineQueue], int]:
+    ) -> tuple[list[OfflineQueue], int]:
         """Lista itens com filtros."""
         query = select(OfflineQueue)
 
@@ -343,7 +341,7 @@ class OfflineQueueRepository:
     async def cleanup(
         self,
         older_than_hours: int = 72,
-        statuses: List[str] = None,
+        statuses: list[str] = None,
         dry_run: bool = True,
     ) -> dict:
         """Limpa itens antigos da fila."""
@@ -372,9 +370,7 @@ class OfflineQueueRepository:
 
         if not dry_run and total_to_delete > 0:
             await self.db.execute(
-                delete(OfflineQueue)
-                .where(OfflineQueue.status.in_(statuses))
-                .where(OfflineQueue.queued_at < cutoff)
+                delete(OfflineQueue).where(OfflineQueue.status.in_(statuses)).where(OfflineQueue.queued_at < cutoff)
             )
             await self.db.commit()
 
@@ -391,11 +387,15 @@ class OfflineQueueRepository:
             select(func.count())
             .select_from(OfflineQueue)
             .where(OfflineQueue.device_id == device_id)
-            .where(OfflineQueue.status.in_([
-                QueueStatus.PENDING.value,
-                QueueStatus.PROCESSING.value,
-                QueueStatus.FAILED.value,
-            ]))
+            .where(
+                OfflineQueue.status.in_(
+                    [
+                        QueueStatus.PENDING.value,
+                        QueueStatus.PROCESSING.value,
+                        QueueStatus.FAILED.value,
+                    ]
+                )
+            )
         )
         return result.scalar() or 0
 

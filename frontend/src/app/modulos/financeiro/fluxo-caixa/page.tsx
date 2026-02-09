@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-;
 import { useCashflowEntries, useCashflowDashboard, useCreateCashflowEntry } from '@/hooks/financial/useFinancial';
 import { CashflowFormModal } from '@/components/financeiro/cashflow-form-modal';
 import { cn, formatCurrency, formatDate } from '@/lib/utils';
@@ -26,16 +25,16 @@ export default function FluxoCaixaPage() {
     error,
     refetch,
   } = useCashflowEntries({
+    condominio_id: '',
     skip: (page - 1) * pageSize,
     limit: pageSize,
-    ...(entryType && { entry_type: entryType }),
   });
 
-  const { data: dashboard, refetch: refetchDashboard } = useCashflowDashboard();
+  const { data: dashboard, refetch: refetchDashboard } = useCashflowDashboard({ condominio_id: '' });
   const createEntry = useCreateCashflowEntry();
 
-  const entries = entriesData?.data || entriesData?.items || [];
-  const total = entriesData?.total || entries.length;
+  const entries = entriesData ?? [];
+  const total = entries.length;
   const totalPages = Math.ceil(total / pageSize);
 
   // Debounce search
@@ -143,7 +142,7 @@ export default function FluxoCaixaPage() {
             </div>
             <div>
               <p className="text-2xl font-bold text-[hsl(var(--foreground))]">
-                {isLoading ? '...' : formatCurrency(dashboard?.total_income || 0)}
+                {isLoading ? '...' : formatCurrency(Number(dashboard?.summary?.total_inflows ?? 0))}
               </p>
               <p className="text-xs text-[hsl(var(--muted-foreground))]">Entradas</p>
             </div>
@@ -157,7 +156,7 @@ export default function FluxoCaixaPage() {
             </div>
             <div>
               <p className="text-2xl font-bold text-[hsl(var(--foreground))]">
-                {isLoading ? '...' : formatCurrency(dashboard?.total_expense || 0)}
+                {isLoading ? '...' : formatCurrency(Number(dashboard?.summary?.total_outflows ?? 0))}
               </p>
               <p className="text-xs text-[hsl(var(--muted-foreground))]">Saidas</p>
             </div>
@@ -171,7 +170,7 @@ export default function FluxoCaixaPage() {
             </div>
             <div>
               <p className="text-2xl font-bold text-[hsl(var(--foreground))]">
-                {isLoading ? '...' : formatCurrency(dashboard?.balance || 0)}
+                {isLoading ? '...' : formatCurrency(Number(dashboard?.summary?.closing_balance ?? 0))}
               </p>
               <p className="text-xs text-[hsl(var(--muted-foreground))]">Saldo Atual</p>
             </div>
@@ -185,7 +184,7 @@ export default function FluxoCaixaPage() {
             </div>
             <div>
               <p className="text-2xl font-bold text-[hsl(var(--foreground))]">
-                {isLoading ? '...' : formatCurrency(dashboard?.forecast_30d || 0)}
+                {isLoading ? '...' : formatCurrency(Number(dashboard?.upcoming_receivables ?? 0) - Number(dashboard?.upcoming_payables ?? 0))}
               </p>
               <p className="text-xs text-[hsl(var(--muted-foreground))]">Projecao 30d</p>
             </div>

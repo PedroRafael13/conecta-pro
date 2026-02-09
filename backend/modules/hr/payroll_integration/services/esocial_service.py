@@ -2,7 +2,7 @@
 
 import logging
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -92,14 +92,14 @@ class ESocialService:
     async def get_integration(
         self,
         condominio_id: UUID,
-    ) -> Optional[PayrollIntegration]:
+    ) -> PayrollIntegration | None:
         """Obtém integração eSocial configurada."""
         return await self.integration_repo.get_esocial_integration(condominio_id)
 
     async def validate_integration(
         self,
         condominio_id: UUID,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Valida configuração do eSocial."""
         integration = await self.get_integration(condominio_id)
 
@@ -132,8 +132,7 @@ class ESocialService:
         rubrica_mapping = integration.rubrica_mapping or {}
         if len(rubrica_mapping) < 5:
             result["warnings"].append(
-                f"Apenas {len(rubrica_mapping)} rubricas mapeadas. "
-                "Recomenda-se mapear todas as rubricas utilizadas."
+                f"Apenas {len(rubrica_mapping)} rubricas mapeadas. Recomenda-se mapear todas as rubricas utilizadas."
             )
 
         return result
@@ -282,12 +281,12 @@ class ESocialService:
         events: list,
         config: dict,
         ambiente: str,
-    ) -> List[str]:
+    ) -> list[str]:
         """Gera eventos S-1200."""
         lines = []
 
         # Agrupar por funcionário
-        by_employee: Dict[str, list] = {}
+        by_employee: dict[str, list] = {}
         for event in events:
             emp_id = str(event.employee_id)
             if emp_id not in by_employee:
@@ -311,7 +310,7 @@ class ESocialService:
 
                 lines.append("            <ideEstabLot>")
                 lines.append("              <tpInsc>1</tpInsc>")
-                lines.append(f'              <nrInsc>{config.get("nr_inscricao", "")}</nrInsc>')
+                lines.append(f"              <nrInsc>{config.get('nr_inscricao', '')}</nrInsc>")
                 lines.append("              <remunPerApur>")
                 lines.append("                <itensRemun>")
                 lines.append(f"                  <codRubr>{esocial_code}</codRubr>")
@@ -331,7 +330,7 @@ class ESocialService:
         events: list,  # pylint: disable=unused-argument
         config: dict,  # pylint: disable=unused-argument
         ambiente: str,
-    ) -> List[str]:
+    ) -> list[str]:
         """Gera eventos S-1210."""
         lines = []
         # Implementacao simplificada
@@ -352,7 +351,7 @@ class ESocialService:
         events: list,  # pylint: disable=unused-argument
         config: dict,  # pylint: disable=unused-argument
         ambiente: str,
-    ) -> List[str]:
+    ) -> list[str]:
         """Gera evento S-1299 (fechamento)."""
         lines = []
         lines.append('      <evento Id="ID_S1299">')
@@ -433,7 +432,7 @@ class ESocialService:
         self,
         export_id: UUID,
         condominio_id: UUID,  # pylint: disable=unused-argument
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Consulta recibo de transmissão."""
         export = await self.export_repo.get_by_id(export_id)
         if not export:
@@ -455,6 +454,6 @@ class ESocialService:
             },
         }
 
-    def get_supported_events(self) -> Dict[str, Dict[str, Any]]:
+    def get_supported_events(self) -> dict[str, dict[str, Any]]:
         """Retorna eventos suportados."""
         return ESOCIAL_EVENTS.copy()

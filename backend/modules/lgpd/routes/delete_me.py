@@ -11,7 +11,7 @@ Implementa endpoints para exercício de direitos do titular:
 
 import hashlib
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 from uuid import UUID
 
@@ -30,7 +30,7 @@ from core.logging import logger
 router = APIRouter(prefix="/api/v1/me", tags=["LGPD - Direitos do Titular"])
 
 
-class DataCategory(str, Enum):
+class DataCategory(StrEnum):
     """Categorias de dados para exportação LGPD."""
 
     PROFILE = "profile"

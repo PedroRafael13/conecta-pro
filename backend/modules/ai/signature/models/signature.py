@@ -1,9 +1,8 @@
 """Signature model for storing extracted signatures."""
 
-import enum
 import uuid
 from datetime import datetime
-from typing import Optional
+from enum import StrEnum
 
 from sqlalchemy import (
     Boolean,
@@ -22,7 +21,7 @@ from sqlalchemy.orm import relationship
 from core.models.base import Base
 
 
-class SignatureType(str, enum.Enum):
+class SignatureType(StrEnum):
     """Type of signature."""
 
     HANDWRITTEN = "handwritten"
@@ -33,7 +32,7 @@ class SignatureType(str, enum.Enum):
     DRAWN = "drawn"
 
 
-class SignatureFormat(str, enum.Enum):
+class SignatureFormat(StrEnum):
     """Format of signature image/data."""
 
     PNG = "png"
@@ -45,7 +44,7 @@ class SignatureFormat(str, enum.Enum):
     BIOMETRIC_DATA = "biometric_data"
 
 
-class SignatureStatus(str, enum.Enum):
+class SignatureStatus(StrEnum):
     """Status of signature."""
 
     PENDING = "pending"
@@ -57,7 +56,7 @@ class SignatureStatus(str, enum.Enum):
     ARCHIVED = "archived"
 
 
-class SignatureSource(str, enum.Enum):
+class SignatureSource(StrEnum):
     """Source of signature capture."""
 
     DOCUMENT_SCAN = "document_scan"
@@ -232,9 +231,7 @@ class Signature(Base):
     @property
     def has_biometric_data(self) -> bool:
         """Check if signature has biometric data."""
-        return bool(
-            self.pressure_data or self.velocity_data or self.timing_data
-        )
+        return bool(self.pressure_data or self.velocity_data or self.timing_data)
 
     def to_dict(self) -> dict:
         """Convert to dictionary."""

@@ -128,17 +128,17 @@ class TestReceivableService:
         condominio_id = uuid.uuid4()
         filters = ReceivableAccountFilter()
 
-        with patch.object(service.account_repo, "list") as mock_list:
-            with patch.object(service.account_repo, "count") as mock_count:
-                mock_list.return_value = [sample_account]
-                mock_count.return_value = 1
+        with (
+            patch.object(service.account_repo, "list") as mock_list,
+            patch.object(service.account_repo, "count") as mock_count,
+        ):
+            mock_list.return_value = [sample_account]
+            mock_count.return_value = 1
 
-                accounts, total = await service.list_accounts(
-                    condominio_id, filters, 0, 100
-                )
+            accounts, total = await service.list_accounts(condominio_id, filters, 0, 100)
 
-                assert len(accounts) == 1
-                assert total == 1
+            assert len(accounts) == 1
+            assert total == 1
 
     @pytest.mark.asyncio
     async def test_update_account(self, service, mock_session, sample_account):
@@ -146,23 +146,21 @@ class TestReceivableService:
         user_id = uuid.uuid4()
         data = ReceivableAccountUpdate(description="Taxa Atualizada")
 
-        with patch.object(service.account_repo, "get_by_id") as mock_get:
-            with patch.object(service.account_repo, "update") as mock_update:
-                mock_get.return_value = sample_account
-                sample_account.description = data.description
-                mock_update.return_value = sample_account
+        with (
+            patch.object(service.account_repo, "get_by_id") as mock_get,
+            patch.object(service.account_repo, "update") as mock_update,
+        ):
+            mock_get.return_value = sample_account
+            sample_account.description = data.description
+            mock_update.return_value = sample_account
 
-                account = await service.update_account(
-                    sample_account.id, data, user_id
-                )
+            account = await service.update_account(sample_account.id, data, user_id)
 
-                assert account is not None
-                assert account.description == "Taxa Atualizada"
+            assert account is not None
+            assert account.description == "Taxa Atualizada"
 
     @pytest.mark.asyncio
-    async def test_update_account_paid_raises_error(
-        self, service, mock_session, sample_account
-    ):
+    async def test_update_account_paid_raises_error(self, service, mock_session, sample_account):
         """Testa que conta paga nao pode ser atualizada."""
         sample_account.status = ReceivableStatus.PAGA.value
         user_id = uuid.uuid4()
@@ -179,20 +177,20 @@ class TestReceivableService:
         """Testa exclusao de conta."""
         user_id = uuid.uuid4()
 
-        with patch.object(service.account_repo, "get_by_id") as mock_get:
-            with patch.object(service.account_repo, "delete") as mock_delete:
-                mock_get.return_value = sample_account
-                mock_delete.return_value = True
+        with (
+            patch.object(service.account_repo, "get_by_id") as mock_get,
+            patch.object(service.account_repo, "delete") as mock_delete,
+        ):
+            mock_get.return_value = sample_account
+            mock_delete.return_value = True
 
-                result = await service.delete_account(sample_account.id, user_id)
+            result = await service.delete_account(sample_account.id, user_id)
 
-                assert result is True
-                mock_delete.assert_called_once()
+            assert result is True
+            mock_delete.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_delete_account_paid_raises_error(
-        self, service, mock_session, sample_account
-    ):
+    async def test_delete_account_paid_raises_error(self, service, mock_session, sample_account):
         """Testa que conta paga nao pode ser excluida."""
         sample_account.status = ReceivableStatus.PAGA.value
         user_id = uuid.uuid4()
@@ -211,9 +209,7 @@ class TestReceivableService:
         with patch.object(service.account_repo, "get_by_id") as mock_get:
             mock_get.return_value = sample_account
 
-            account = await service.cancel_account(
-                sample_account.id, user_id, "Cobranca indevida"
-            )
+            account = await service.cancel_account(sample_account.id, user_id, "Cobranca indevida")
 
             assert account.status == ReceivableStatus.CANCELADA.value
 
@@ -225,9 +221,7 @@ class TestReceivableService:
         with patch.object(service.account_repo, "get_by_id") as mock_get:
             mock_get.return_value = sample_account
 
-            account = await service.suspend_account(
-                sample_account.id, user_id, "Em analise"
-            )
+            account = await service.suspend_account(sample_account.id, user_id, "Em analise")
 
             assert account.status == ReceivableStatus.SUSPENSA.value
 
@@ -240,9 +234,7 @@ class TestReceivableService:
         with patch.object(service.account_repo, "get_by_id") as mock_get:
             mock_get.return_value = sample_account
 
-            account = await service.protest_account(
-                sample_account.id, user_id, "PROT-001"
-            )
+            account = await service.protest_account(sample_account.id, user_id, "PROT-001")
 
             assert account.status == ReceivableStatus.PROTESTADA.value
             assert account.protest_number == "PROT-001"
@@ -256,16 +248,12 @@ class TestReceivableService:
         with patch.object(service.account_repo, "get_by_id") as mock_get:
             mock_get.return_value = sample_account
 
-            account = await service.write_off_account(
-                sample_account.id, user_id, "Prescricao"
-            )
+            account = await service.write_off_account(sample_account.id, user_id, "Prescricao")
 
             assert account.status == ReceivableStatus.BAIXADA.value
 
     @pytest.mark.asyncio
-    async def test_register_payment(
-        self, service, mock_session, sample_installment
-    ):
+    async def test_register_payment(self, service, mock_session, sample_installment):
         """Testa registro de recebimento."""
         user_id = uuid.uuid4()
         data = ReceivablePaymentCreate(
@@ -275,30 +263,28 @@ class TestReceivableService:
             payment_method_id=uuid.uuid4(),
         )
 
-        with patch.object(service.installment_repo, "get_by_id") as mock_get_inst:
-            with patch.object(service.payment_repo, "create") as mock_create:
-                mock_get_inst.return_value = sample_installment
-                mock_payment = ReceivablePayment(
-                    id=uuid.uuid4(),
-                    installment_id=sample_installment.id,
-                    paid_value=data.paid_value,
-                    payment_date=data.payment_date,
-                    status=PaymentStatus.CONFIRMADO.value,
-                    payment_origin=PaymentOrigin.MANUAL.value,
-                )
-                mock_create.return_value = mock_payment
+        with (
+            patch.object(service.installment_repo, "get_by_id") as mock_get_inst,
+            patch.object(service.payment_repo, "create") as mock_create,
+        ):
+            mock_get_inst.return_value = sample_installment
+            mock_payment = ReceivablePayment(
+                id=uuid.uuid4(),
+                installment_id=sample_installment.id,
+                paid_value=data.paid_value,
+                payment_date=data.payment_date,
+                status=PaymentStatus.CONFIRMADO.value,
+                payment_origin=PaymentOrigin.MANUAL.value,
+            )
+            mock_create.return_value = mock_payment
 
-                payment = await service.register_payment(
-                    sample_installment.id, data, user_id
-                )
+            payment = await service.register_payment(sample_installment.id, data, user_id)
 
-                assert payment is not None
-                assert payment.paid_value == Decimal("850.00")
+            assert payment is not None
+            assert payment.paid_value == Decimal("850.00")
 
     @pytest.mark.asyncio
-    async def test_register_payment_installment_paid_raises_error(
-        self, service, mock_session, sample_installment
-    ):
+    async def test_register_payment_installment_paid_raises_error(self, service, mock_session, sample_installment):
         """Testa que parcela paga nao pode receber pagamento."""
         sample_installment.status = InstallmentStatus.PAGA.value
         user_id = uuid.uuid4()
@@ -344,21 +330,21 @@ class TestReceivableService:
 
         data = ReceivablePaymentReverseRequest(reason="Pagamento duplicado")
 
-        with patch.object(service.payment_repo, "get_by_id") as mock_get_pay:
-            with patch.object(service.installment_repo, "get_by_id") as mock_get_inst:
-                with patch.object(service.account_repo, "get_by_id") as mock_get_acc:
-                    mock_get_pay.return_value = payment
-                    mock_get_inst.return_value = sample_installment
-                    mock_get_acc.return_value = account
+        with (
+            patch.object(service.payment_repo, "get_by_id") as mock_get_pay,
+            patch.object(service.installment_repo, "get_by_id") as mock_get_inst,
+            patch.object(service.account_repo, "get_by_id") as mock_get_acc,
+        ):
+            mock_get_pay.return_value = payment
+            mock_get_inst.return_value = sample_installment
+            mock_get_acc.return_value = account
 
-                    result = await service.reverse_payment(payment.id, data, user_id)
+            result = await service.reverse_payment(payment.id, data, user_id)
 
-                    assert result.status == PaymentStatus.ESTORNADO.value
+            assert result.status == PaymentStatus.ESTORNADO.value
 
     @pytest.mark.asyncio
-    async def test_renegotiate_installment(
-        self, service, mock_session, sample_installment
-    ):
+    async def test_renegotiate_installment(self, service, mock_session, sample_installment):
         """Testa renegociacao de parcela."""
         sample_installment.status = InstallmentStatus.VENCIDA.value
         user_id = uuid.uuid4()
@@ -372,9 +358,7 @@ class TestReceivableService:
         with patch.object(service.installment_repo, "get_by_id") as mock_get:
             mock_get.return_value = sample_installment
 
-            installment = await service.renegotiate_installment(
-                sample_installment.id, data, user_id
-            )
+            installment = await service.renegotiate_installment(sample_installment.id, data, user_id)
 
             assert installment.due_date == new_due
             assert installment.current_value == Decimal("800.00")

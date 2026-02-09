@@ -4,9 +4,10 @@ domains/financial/value_objects/accounting_amount.py - ACCOUNTING AMOUNT
 Enterprise-grade accounting amount with debit/credit semantics
 """
 
-from decimal import Decimal, ROUND_HALF_UP
-from typing import Union, Literal
-from pydantic import BaseModel, Field, ConfigDict, model_validator
+from decimal import ROUND_HALF_UP, Decimal
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class AccountingAmount(BaseModel):
@@ -25,20 +26,17 @@ class AccountingAmount(BaseModel):
 
     def __init__(
         self,
-        amount: Union[Decimal, float, str, int],
+        amount: Decimal | float | str | int,
         entry_type: Literal["debit", "credit"],
         currency: str = "BRL",
-        **kwargs
+        **kwargs,
     ):
         if isinstance(amount, (float, str, int)):
-            amount = Decimal(str(amount)).quantize(
-                Decimal('0.01'),
-                rounding=ROUND_HALF_UP
-            )
+            amount = Decimal(str(amount)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         super().__init__(amount=amount, entry_type=entry_type, currency=currency, **kwargs)
 
-    @model_validator(mode='after')
-    def validate_positive(self) -> 'AccountingAmount':
+    @model_validator(mode="after")
+    def validate_positive(self) -> "AccountingAmount":
         """Valida que valor contabil e positivo."""
         if self.amount < 0:
             raise ValueError("Valor contabil deve ser positivo")
@@ -66,7 +64,7 @@ class AccountingAmount(BaseModel):
         """Retorna valor com sinal (debito positivo, credito negativo)."""
         return self.amount if self.is_debit else -self.amount
 
-    def opposite(self) -> 'AccountingAmount':
+    def opposite(self) -> "AccountingAmount":
         """Retorna contrapartida (inverte debito/credito)."""
         new_type: Literal["debit", "credit"] = "credit" if self.is_debit else "debit"
         return AccountingAmount(self.amount, new_type, self.currency)
@@ -79,22 +77,22 @@ class AccountingAmount(BaseModel):
         return f"{prefix} R$ {formatted}"
 
     @classmethod
-    def debit(cls, amount: Union[Decimal, float, str, int], currency: str = "BRL") -> 'AccountingAmount':
+    def debit(cls, amount: Decimal | float | str | int, currency: str = "BRL") -> "AccountingAmount":
         """Cria lancamento a debito."""
         return cls(amount, "debit", currency)
 
     @classmethod
-    def credit(cls, amount: Union[Decimal, float, str, int], currency: str = "BRL") -> 'AccountingAmount':
+    def credit(cls, amount: Decimal | float | str | int, currency: str = "BRL") -> "AccountingAmount":
         """Cria lancamento a credito."""
         return cls(amount, "credit", currency)
 
     @classmethod
-    def zero_debit(cls, currency: str = "BRL") -> 'AccountingAmount':
+    def zero_debit(cls, currency: str = "BRL") -> "AccountingAmount":
         """Cria debito zerado."""
         return cls(Decimal("0"), "debit", currency)
 
     @classmethod
-    def zero_credit(cls, currency: str = "BRL") -> 'AccountingAmount':
+    def zero_credit(cls, currency: str = "BRL") -> "AccountingAmount":
         """Cria credito zerado."""
         return cls(Decimal("0"), "credit", currency)
 
@@ -111,13 +109,11 @@ class DebitCreditPair(BaseModel):
     debit: AccountingAmount
     credit: AccountingAmount
 
-    @model_validator(mode='after')
-    def validate_balance(self) -> 'DebitCreditPair':
+    @model_validator(mode="after")
+    def validate_balance(self) -> "DebitCreditPair":
         """Valida balanceamento debito = credito."""
         if self.debit.amount != self.credit.amount:
-            raise ValueError(
-                f"Debito ({self.debit.amount}) deve ser igual ao Credito ({self.credit.amount})"
-            )
+            raise ValueError(f"Debito ({self.debit.amount}) deve ser igual ao Credito ({self.credit.amount})")
         if self.debit.currency != self.credit.currency:
             raise ValueError("Debito e Credito devem ter mesma moeda")
         if self.debit.entry_type != "debit":
@@ -137,13 +133,6 @@ class DebitCreditPair(BaseModel):
         return self.debit.currency
 
     @classmethod
-    def create(
-        cls,
-        amount: Union[Decimal, float, str, int],
-        currency: str = "BRL"
-    ) -> 'DebitCreditPair':
+    def create(cls, amount: Decimal | float | str | int, currency: str = "BRL") -> "DebitCreditPair":
         """Cria par debito/credito balanceado."""
-        return cls(
-            debit=AccountingAmount.debit(amount, currency),
-            credit=AccountingAmount.credit(amount, currency)
-        )
+        return cls(debit=AccountingAmount.debit(amount, currency), credit=AccountingAmount.credit(amount, currency))

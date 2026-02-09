@@ -3,11 +3,20 @@
 import uuid
 from datetime import datetime
 from decimal import Decimal
-from enum import Enum
-from typing import TYPE_CHECKING, List, Optional
+from enum import StrEnum
+from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import (
-    Boolean, Column, Date, DateTime, ForeignKey, Index, Integer, Numeric, String, Text,
+    Boolean,
+    Column,
+    Date,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    Numeric,
+    String,
+    Text,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
@@ -19,7 +28,7 @@ if TYPE_CHECKING:
     from modules.financial.models.purchase_quotation import PurchaseQuotation
 
 
-class OrderStatus(str, Enum):
+class OrderStatus(StrEnum):
     """Status da ordem de compra."""
 
     RASCUNHO = "rascunho"
@@ -38,7 +47,7 @@ class OrderStatus(str, Enum):
     DEVOLVIDA = "devolvida"
 
 
-class OrderPriority(str, Enum):
+class OrderPriority(StrEnum):
     """Prioridade da ordem."""
 
     BAIXA = "baixa"
@@ -159,9 +168,7 @@ class PurchaseOrder(Base):
     # [{status, timestamp, user_id, notes}]
 
     # Vinculo com Contas a Pagar
-    payable_account_id = Column(
-        UUID(as_uuid=True), ForeignKey("payable_accounts.id"), nullable=True
-    )
+    payable_account_id = Column(UUID(as_uuid=True), ForeignKey("payable_accounts.id"), nullable=True)
 
     # Controle
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
@@ -170,17 +177,13 @@ class PurchaseOrder(Base):
     ativo = Column(Boolean, default=True, nullable=False)
 
     # Relacionamentos
-    quotation: Optional["PurchaseQuotation"] = relationship(
-        "PurchaseQuotation", back_populates="orders"
-    )
-    items: List["PurchaseOrderItem"] = relationship(
+    quotation: Optional["PurchaseQuotation"] = relationship("PurchaseQuotation", back_populates="orders")
+    items: list["PurchaseOrderItem"] = relationship(
         "PurchaseOrderItem",
         back_populates="order",
         cascade="all, delete-orphan",
     )
-    receipts: List["GoodsReceipt"] = relationship(
-        "GoodsReceipt", back_populates="order"
-    )
+    receipts: list["GoodsReceipt"] = relationship("GoodsReceipt", back_populates="order")
 
     __table_args__ = (
         Index("ix_purchase_orders_number", "number"),
@@ -285,7 +288,7 @@ class PurchaseOrder(Base):
             raise ValueError("Ordem deve ter pelo menos um item")
         self._change_status(OrderStatus.PENDENTE_APROVACAO.value)
 
-    def approve(self, approver_id: uuid.UUID, notes: Optional[str] = None) -> None:
+    def approve(self, approver_id: uuid.UUID, notes: str | None = None) -> None:
         """Aprova a ordem."""
         if self.status != OrderStatus.PENDENTE_APROVACAO.value:
             raise ValueError("Apenas ordens pendentes podem ser aprovadas")
@@ -374,7 +377,7 @@ class PurchaseOrder(Base):
         )
         return self.total
 
-    def _change_status(self, new_status: str, notes: Optional[str] = None) -> None:
+    def _change_status(self, new_status: str, notes: str | None = None) -> None:
         """Muda status e registra no histórico."""
         old_status = self.status
         self.status = new_status
@@ -399,9 +402,7 @@ class PurchaseOrder(Base):
             "supplier_id": str(self.supplier_id),
             "order_date": self.order_date.isoformat() if self.order_date else None,
             "expected_delivery_date": (
-                self.expected_delivery_date.isoformat()
-                if self.expected_delivery_date
-                else None
+                self.expected_delivery_date.isoformat() if self.expected_delivery_date else None
             ),
             "subtotal": float(self.subtotal) if self.subtotal else 0,
             "total": float(self.total) if self.total else 0,
@@ -439,9 +440,7 @@ class PurchaseOrderItem(Base):
     )
 
     # Produto
-    product_id = Column(
-        UUID(as_uuid=True), ForeignKey("products.id"), nullable=True, index=True
-    )
+    product_id = Column(UUID(as_uuid=True), ForeignKey("products.id"), nullable=True, index=True)
 
     # Identificação
     item_number = Column(Integer, nullable=False)
@@ -514,9 +513,7 @@ class PurchaseOrderItem(Base):
     def return_items(self, quantity: Decimal) -> None:
         """Registra devolução."""
         self.quantity_returned = (self.quantity_returned or Decimal("0")) + quantity
-        self.quantity_received = max(
-            Decimal("0"), (self.quantity_received or Decimal("0")) - quantity
-        )
+        self.quantity_received = max(Decimal("0"), (self.quantity_received or Decimal("0")) - quantity)
 
     def calculate_total(self) -> None:
         """Calcula total do item."""

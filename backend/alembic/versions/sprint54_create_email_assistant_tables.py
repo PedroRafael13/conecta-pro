@@ -5,16 +5,15 @@ Revises: sprint53_knowledge_base
 Create Date: 2025-01-06
 """
 
-from alembic import op
-from sqlalchemy.dialects import postgresql
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY, ENUM
+from sqlalchemy.dialects.postgresql import ARRAY, ENUM, JSONB, UUID
+
+from alembic import op
 
 revision = "sprint54_email_assistant"
 down_revision = "sprint53_kb"
 branch_labels = None
 depends_on = None
-
 
 
 def create_enum_safe(name: str, values: list):
@@ -28,15 +27,34 @@ def create_enum_safe(name: str, values: list):
         END $$;
     """)
 
+
 def upgrade() -> None:
     # Criar ENUMs
-    create_enum_safe("email_status_enum", ['received', 'processing', 'classified', 'responded', 'archived', 'spam', 'deleted'])
+    create_enum_safe(
+        "email_status_enum", ["received", "processing", "classified", "responded", "archived", "spam", "deleted"]
+    )
 
-    create_enum_safe("email_category_enum", ['support', 'sales', 'billing', 'complaint', 'information', 'scheduling', 'feedback', 'newsletter', 'spam', 'phishing', 'internal', 'other'])
+    create_enum_safe(
+        "email_category_enum",
+        [
+            "support",
+            "sales",
+            "billing",
+            "complaint",
+            "information",
+            "scheduling",
+            "feedback",
+            "newsletter",
+            "spam",
+            "phishing",
+            "internal",
+            "other",
+        ],
+    )
 
-    create_enum_safe("email_priority_enum", ['critical', 'high', 'medium', 'low', 'none'])
+    create_enum_safe("email_priority_enum", ["critical", "high", "medium", "low", "none"])
 
-    create_enum_safe("email_sentiment_enum", ['very_negative', 'negative', 'neutral', 'positive', 'very_positive'])
+    create_enum_safe("email_sentiment_enum", ["very_negative", "negative", "neutral", "positive", "very_positive"])
 
     # Tabela ai_emails
     op.create_table(
@@ -65,11 +83,40 @@ def upgrade() -> None:
         # Classificacao
         sa.Column(
             "status",
-            ENUM("received", "processing", "classified", "responded", "archived", "spam", "deleted", name="email_status_enum", create_type=False),
+            ENUM(
+                "received",
+                "processing",
+                "classified",
+                "responded",
+                "archived",
+                "spam",
+                "deleted",
+                name="email_status_enum",
+                create_type=False,
+            ),
             server_default="received",
             nullable=False,
         ),
-        sa.Column("category", ENUM("support", "sales", "billing", "complaint", "information", "scheduling", "feedback", "newsletter", "spam", "phishing", "internal", "other", name="email_category_enum", create_type=False), nullable=True),
+        sa.Column(
+            "category",
+            ENUM(
+                "support",
+                "sales",
+                "billing",
+                "complaint",
+                "information",
+                "scheduling",
+                "feedback",
+                "newsletter",
+                "spam",
+                "phishing",
+                "internal",
+                "other",
+                name="email_category_enum",
+                create_type=False,
+            ),
+            nullable=True,
+        ),
         sa.Column("category_confidence", sa.Float, server_default="0.0"),
         sa.Column("subcategory", sa.String(100), nullable=True),
         # Prioridade
@@ -81,7 +128,19 @@ def upgrade() -> None:
         sa.Column("priority_score", sa.Float, server_default="0.5"),
         sa.Column("priority_factors", JSONB, server_default="{}"),
         # Sentimento
-        sa.Column("sentiment", ENUM("very_negative", "negative", "neutral", "positive", "very_positive", name="email_sentiment_enum", create_type=False), nullable=True),
+        sa.Column(
+            "sentiment",
+            ENUM(
+                "very_negative",
+                "negative",
+                "neutral",
+                "positive",
+                "very_positive",
+                name="email_sentiment_enum",
+                create_type=False,
+            ),
+            nullable=True,
+        ),
         sa.Column("sentiment_score", sa.Float, server_default="0.0"),
         sa.Column("emotions", JSONB, server_default="{}"),
         # Analise
@@ -177,12 +236,26 @@ def upgrade() -> None:
         sa.Column("updated_at", sa.DateTime, server_default=sa.func.now()),
     )
 
-    op.create_index(
-        "ix_ai_email_responses_email_id", "ai_email_responses", ["email_id"]
-    )
+    op.create_index("ix_ai_email_responses_email_id", "ai_email_responses", ["email_id"])
 
     # ENUM para categoria de template (diferente para evitar conflito)
-    create_enum_safe("email_category_enum_template", ['support', 'sales', 'billing', 'complaint', 'information', 'scheduling', 'feedback', 'newsletter', 'spam', 'phishing', 'internal', 'other'])
+    create_enum_safe(
+        "email_category_enum_template",
+        [
+            "support",
+            "sales",
+            "billing",
+            "complaint",
+            "information",
+            "scheduling",
+            "feedback",
+            "newsletter",
+            "spam",
+            "phishing",
+            "internal",
+            "other",
+        ],
+    )
 
     # Tabela ai_email_templates
     op.create_table(
@@ -197,7 +270,26 @@ def upgrade() -> None:
         sa.Column("body_template", sa.Text, nullable=False),
         sa.Column("body_html_template", sa.Text, nullable=True),
         # Classificacao
-        sa.Column("category", ENUM("support", "sales", "billing", "complaint", "information", "scheduling", "feedback", "newsletter", "spam", "phishing", "internal", "other", name="email_category_enum_template", create_type=False), nullable=True),
+        sa.Column(
+            "category",
+            ENUM(
+                "support",
+                "sales",
+                "billing",
+                "complaint",
+                "information",
+                "scheduling",
+                "feedback",
+                "newsletter",
+                "spam",
+                "phishing",
+                "internal",
+                "other",
+                name="email_category_enum_template",
+                create_type=False,
+            ),
+            nullable=True,
+        ),
         sa.Column("language", sa.String(10), server_default="'pt-BR'"),
         sa.Column("tags", ARRAY(sa.String), server_default="{}"),
         # Condicoes
@@ -221,12 +313,8 @@ def upgrade() -> None:
     )
 
     op.create_index("ix_ai_email_templates_code", "ai_email_templates", ["code"])
-    op.create_index(
-        "ix_ai_email_templates_category", "ai_email_templates", ["category"]
-    )
-    op.create_index(
-        "ix_ai_email_templates_is_active", "ai_email_templates", ["is_active"]
-    )
+    op.create_index("ix_ai_email_templates_category", "ai_email_templates", ["category"])
+    op.create_index("ix_ai_email_templates_is_active", "ai_email_templates", ["is_active"])
 
     # Tabela ai_email_rules
     op.create_table(
@@ -257,9 +345,7 @@ def upgrade() -> None:
 
     op.create_index("ix_ai_email_rules_priority", "ai_email_rules", ["priority"])
     op.create_index("ix_ai_email_rules_is_active", "ai_email_rules", ["is_active"])
-    op.create_index(
-        "ix_ai_email_rules_condominio_id", "ai_email_rules", ["condominio_id"]
-    )
+    op.create_index("ix_ai_email_rules_condominio_id", "ai_email_rules", ["condominio_id"])
 
 
 def downgrade() -> None:

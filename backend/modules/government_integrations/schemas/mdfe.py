@@ -4,31 +4,32 @@ Schemas para MDF-e (Manifesto Eletronico de Documentos Fiscais).
 Pydantic models para validacao de entrada/saida da API.
 """
 
-from datetime import datetime
 from decimal import Decimal
-from typing import Optional, List, Dict, Any
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import BaseModel, Field
 
 
-class ModalTransporteEnum(str, Enum):
+class ModalTransporteEnum(StrEnum):
     """Modal de transporte."""
+
     RODOVIARIO = "1"
     AEREO = "2"
     AQUAVIARIO = "3"
     FERROVIARIO = "4"
 
 
-class TipoEmitenteEnum(str, Enum):
+class TipoEmitenteEnum(StrEnum):
     """Tipo de emitente do MDF-e."""
+
     TRANSPORTADORA = "1"  # Prestador de servico de transporte
-    CARGA_PROPRIA = "2"   # Transportador de carga propria
-    CTC = "3"             # Correios
+    CARGA_PROPRIA = "2"  # Transportador de carga propria
+    CTC = "3"  # Correios
 
 
-class TipoCarroceriaEnum(str, Enum):
+class TipoCarroceriaEnum(StrEnum):
     """Tipo de carroceria."""
+
     NAO_APLICAVEL = "00"
     ABERTA = "01"
     FECHADA_BAU = "02"
@@ -37,8 +38,9 @@ class TipoCarroceriaEnum(str, Enum):
     SIDER = "05"
 
 
-class TipoRodadoEnum(str, Enum):
+class TipoRodadoEnum(StrEnum):
     """Tipo de rodado do veiculo."""
+
     TRUCK = "01"
     TOCO = "02"
     CAVALO_MECANICO = "03"
@@ -47,8 +49,9 @@ class TipoRodadoEnum(str, Enum):
     OUTROS = "06"
 
 
-class SituacaoMDFeEnum(str, Enum):
+class SituacaoMDFeEnum(StrEnum):
     """Situacao do MDF-e."""
+
     EM_DIGITACAO = "em_digitacao"
     ASSINADO = "assinado"
     AUTORIZADO = "autorizado"
@@ -59,34 +62,32 @@ class SituacaoMDFeEnum(str, Enum):
 
 # ============== Schemas de Entrada ==============
 
+
 class CondutorRequest(BaseModel):
     """Dados do condutor."""
+
     cpf: str = Field(..., min_length=11, max_length=11)
     nome: str = Field(..., min_length=1, max_length=60)
 
     class Config:
-        json_schema_extra = {
-            "example": {
-                "cpf": "12345678901",
-                "nome": "Joao Silva"
-            }
-        }
+        json_schema_extra = {"example": {"cpf": "12345678901", "nome": "Joao Silva"}}
 
 
 class VeiculoRequest(BaseModel):
     """Dados do veiculo de tracao."""
+
     placa: str = Field(..., min_length=7, max_length=7)
-    renavam: Optional[str] = Field(None, max_length=11)
+    renavam: str | None = Field(None, max_length=11)
     uf: str = Field(..., min_length=2, max_length=2)
     tara: Decimal = Field(default=Decimal("0"), ge=0, description="Peso do veiculo vazio (kg)")
     capacidade_kg: Decimal = Field(default=Decimal("0"), ge=0)
     capacidade_m3: Decimal = Field(default=Decimal("0"), ge=0)
     tipo_rodado: TipoRodadoEnum = Field(default=TipoRodadoEnum.TRUCK)
     tipo_carroceria: TipoCarroceriaEnum = Field(default=TipoCarroceriaEnum.FECHADA_BAU)
-    proprietario_cnpj_cpf: Optional[str] = Field(None, max_length=14)
-    proprietario_nome: Optional[str] = Field(None, max_length=60)
-    proprietario_ie: Optional[str] = Field(None, max_length=14)
-    proprietario_uf: Optional[str] = Field(None, max_length=2)
+    proprietario_cnpj_cpf: str | None = Field(None, max_length=14)
+    proprietario_nome: str | None = Field(None, max_length=60)
+    proprietario_ie: str | None = Field(None, max_length=14)
+    proprietario_uf: str | None = Field(None, max_length=2)
 
     class Config:
         json_schema_extra = {
@@ -96,15 +97,16 @@ class VeiculoRequest(BaseModel):
                 "tara": "8000",
                 "capacidade_kg": "30000",
                 "tipo_rodado": "03",
-                "tipo_carroceria": "02"
+                "tipo_carroceria": "02",
             }
         }
 
 
 class ReboqueRequest(BaseModel):
     """Dados do reboque/semi-reboque."""
+
     placa: str = Field(..., min_length=7, max_length=7)
-    renavam: Optional[str] = Field(None, max_length=11)
+    renavam: str | None = Field(None, max_length=11)
     uf: str = Field(default="", max_length=2)
     tara: Decimal = Field(default=Decimal("0"), ge=0)
     capacidade_kg: Decimal = Field(default=Decimal("0"), ge=0)
@@ -112,85 +114,71 @@ class ReboqueRequest(BaseModel):
     tipo_carroceria: TipoCarroceriaEnum = Field(default=TipoCarroceriaEnum.FECHADA_BAU)
 
     class Config:
-        json_schema_extra = {
-            "example": {
-                "placa": "XYZ9876",
-                "uf": "AM",
-                "tara": "5000",
-                "capacidade_kg": "25000"
-            }
-        }
+        json_schema_extra = {"example": {"placa": "XYZ9876", "uf": "AM", "tara": "5000", "capacidade_kg": "25000"}}
 
 
 class DocumentoVinculadoRequest(BaseModel):
     """Documento fiscal vinculado ao MDF-e."""
+
     tipo: str = Field(..., pattern="^(NFe|CTe)$", description="Tipo: NFe ou CTe")
     chave: str = Field(..., min_length=44, max_length=44)
-    segundo_codigo_barras: Optional[str] = Field(None, max_length=44)
+    segundo_codigo_barras: str | None = Field(None, max_length=44)
 
     class Config:
-        json_schema_extra = {
-            "example": {
-                "tipo": "NFe",
-                "chave": "35260100000000000000550010000000011000000011"
-            }
-        }
+        json_schema_extra = {"example": {"tipo": "NFe", "chave": "35260100000000000000550010000000011000000011"}}
 
 
 class MunicipioRequest(BaseModel):
     """Municipio de carregamento/descarregamento."""
+
     codigo_ibge: str = Field(..., min_length=7, max_length=7)
     nome: str = Field(..., max_length=60)
-    documentos: Optional[List[DocumentoVinculadoRequest]] = None
+    documentos: list[DocumentoVinculadoRequest] | None = None
 
     class Config:
-        json_schema_extra = {
-            "example": {
-                "codigo_ibge": "1302603",
-                "nome": "MANAUS",
-                "documentos": []
-            }
-        }
+        json_schema_extra = {"example": {"codigo_ibge": "1302603", "nome": "MANAUS", "documentos": []}}
 
 
 class PercursoRequest(BaseModel):
     """UF de percurso."""
+
     uf: str = Field(..., min_length=2, max_length=2)
 
 
 class CriarMDFeRequest(BaseModel):
     """Request para criar MDF-e."""
+
     numero: int = Field(..., gt=0)
     serie: int = Field(default=1, ge=1)
     modal: ModalTransporteEnum = Field(default=ModalTransporteEnum.RODOVIARIO)
     tipo_emitente: TipoEmitenteEnum = Field(default=TipoEmitenteEnum.TRANSPORTADORA)
     uf_inicio: str = Field(..., min_length=2, max_length=2)
     uf_fim: str = Field(..., min_length=2, max_length=2)
-    percurso: Optional[List[PercursoRequest]] = None
-    data_inicio_viagem: Optional[str] = Field(None, pattern=r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$")
+    percurso: list[PercursoRequest] | None = None
+    data_inicio_viagem: str | None = Field(None, pattern=r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$")
 
     # Municipios
-    municipios_carregamento: Optional[List[MunicipioRequest]] = None
-    municipios_descarregamento: Optional[List[MunicipioRequest]] = None
+    municipios_carregamento: list[MunicipioRequest] | None = None
+    municipios_descarregamento: list[MunicipioRequest] | None = None
 
     # Totais
     valor_total_carga: Decimal = Field(default=Decimal("0"), ge=0)
     peso_bruto_total: Decimal = Field(default=Decimal("0"), ge=0)
 
     # Veiculo e condutores
-    veiculo_tracao: Optional[VeiculoRequest] = None
-    reboques: Optional[List[ReboqueRequest]] = None
-    condutores: Optional[List[CondutorRequest]] = None
+    veiculo_tracao: VeiculoRequest | None = None
+    reboques: list[ReboqueRequest] | None = None
+    condutores: list[CondutorRequest] | None = None
 
     # CIOT
-    ciot: Optional[str] = Field(None, max_length=12)
-    ciot_cnpj_cpf: Optional[str] = Field(None, max_length=14)
+    ciot: str | None = Field(None, max_length=12)
+    ciot_cnpj_cpf: str | None = Field(None, max_length=14)
 
     # Seguro
-    seguradora_cnpj: Optional[str] = Field(None, max_length=14)
-    seguradora_nome: Optional[str] = Field(None, max_length=60)
-    numero_apolice: Optional[str] = Field(None, max_length=20)
-    numero_averbacao: Optional[str] = Field(None, max_length=40)
+    seguradora_cnpj: str | None = Field(None, max_length=14)
+    seguradora_nome: str | None = Field(None, max_length=60)
+    numero_apolice: str | None = Field(None, max_length=20)
+    numero_averbacao: str | None = Field(None, max_length=40)
 
     class Config:
         json_schema_extra = {
@@ -202,28 +190,26 @@ class CriarMDFeRequest(BaseModel):
                 "uf_inicio": "AM",
                 "uf_fim": "SP",
                 "valor_total_carga": "50000.00",
-                "peso_bruto_total": "15000.0000"
+                "peso_bruto_total": "15000.0000",
             }
         }
 
 
 class GerarXMLRequest(BaseModel):
     """Request para gerar XML do MDF-e."""
+
     mdfe_id: str = Field(..., description="ID do MDF-e")
 
     class Config:
-        json_schema_extra = {
-            "example": {
-                "mdfe_id": "mdfe_001"
-            }
-        }
+        json_schema_extra = {"example": {"mdfe_id": "mdfe_001"}}
 
 
 class EncerrarMDFeRequest(BaseModel):
     """Request para encerrar MDF-e."""
+
     chave: str = Field(..., min_length=44, max_length=44)
     protocolo_autorizacao: str = Field(..., min_length=1)
-    data_encerramento: Optional[str] = Field(None, pattern=r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$")
+    data_encerramento: str | None = Field(None, pattern=r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$")
     uf_encerramento: str = Field(..., min_length=2, max_length=2)
     codigo_municipio: str = Field(..., min_length=7, max_length=7)
 
@@ -233,13 +219,14 @@ class EncerrarMDFeRequest(BaseModel):
                 "chave": "35260100000000000000580010000000011000000011",
                 "protocolo_autorizacao": "135260000000001",
                 "uf_encerramento": "SP",
-                "codigo_municipio": "3550308"
+                "codigo_municipio": "3550308",
             }
         }
 
 
 class IncluirCondutorRequest(BaseModel):
     """Request para incluir condutor em MDF-e autorizado."""
+
     chave: str = Field(..., min_length=44, max_length=44)
     condutor: CondutorRequest
 
@@ -247,24 +234,24 @@ class IncluirCondutorRequest(BaseModel):
         json_schema_extra = {
             "example": {
                 "chave": "35260100000000000000580010000000011000000011",
-                "condutor": {
-                    "cpf": "12345678901",
-                    "nome": "Joao Silva"
-                }
+                "condutor": {"cpf": "12345678901", "nome": "Joao Silva"},
             }
         }
 
 
 # ============== Schemas de Resposta ==============
 
+
 class CondutorResponse(BaseModel):
     """Condutor cadastrado."""
+
     cpf: str
     nome: str
 
 
 class VeiculoResponse(BaseModel):
     """Veiculo cadastrado."""
+
     placa: str
     uf: str
     tara: str
@@ -275,9 +262,10 @@ class VeiculoResponse(BaseModel):
 
 class MDFeResponse(BaseModel):
     """MDF-e criado."""
+
     numero: int
     serie: int
-    chave: Optional[str]
+    chave: str | None
     modal: str
     tipo_emitente: str
     uf_inicio: str
@@ -292,23 +280,26 @@ class MDFeResponse(BaseModel):
 
 class XMLResponse(BaseModel):
     """XML gerado."""
+
     numero: int
     xml: str
-    hash_md5: Optional[str] = None
+    hash_md5: str | None = None
 
 
 class EncerrarMDFeResponse(BaseModel):
     """Resultado do encerramento."""
+
     chave: str
     tipo_evento: str
     descricao: str
     status: str
-    protocolo: Optional[str]
+    protocolo: str | None
     data_encerramento: str
 
 
 class IncluirCondutorResponse(BaseModel):
     """Resultado da inclusao de condutor."""
+
     chave: str
     tipo_evento: str
     descricao: str
@@ -319,6 +310,7 @@ class IncluirCondutorResponse(BaseModel):
 
 class StatusServicoResponse(BaseModel):
     """Status do servico SEFAZ."""
+
     servico: str
     url: str
     ambiente: str
@@ -328,6 +320,7 @@ class StatusServicoResponse(BaseModel):
 
 class MDFeNaoEncerradoResponse(BaseModel):
     """MDF-e nao encerrado."""
+
     chave: str
     numero: int
     serie: int
@@ -337,28 +330,32 @@ class MDFeNaoEncerradoResponse(BaseModel):
 
 class ModalResponse(BaseModel):
     """Modal de transporte."""
+
     codigo: str
     descricao: str
 
 
 class TipoEmitenteResponse(BaseModel):
     """Tipo de emitente."""
+
     codigo: str
     descricao: str
 
 
 class TipoCarroceriaResponse(BaseModel):
     """Tipo de carroceria."""
+
     codigo: str
     descricao: str
 
 
 class StatusMDFeResponse(BaseModel):
     """Status do modulo MDF-e."""
+
     cnpj: str
     razao_social: str
     inscricao_estadual: str
     uf: str
     ambiente: str
     versao_layout: str
-    operacoes_disponiveis: List[str]
+    operacoes_disponiveis: list[str]

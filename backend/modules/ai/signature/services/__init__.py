@@ -1,16 +1,16 @@
 """Signature Recognition Services."""
 
-from modules.ai.signature.services.extraction_service import (
-    BoundingBox,
-    ExtractedSignature,
-    ExtractionResult,
-    SignatureExtractionService,
-)
 from modules.ai.signature.services.comparison_service import (
     BiometricComparisonResult,
     ComparisonResult,
     FeatureScore,
     SignatureComparisonService,
+)
+from modules.ai.signature.services.extraction_service import (
+    BoundingBox,
+    ExtractedSignature,
+    ExtractionResult,
+    SignatureExtractionService,
 )
 from modules.ai.signature.services.validation_service import (
     FraudAnalysisResult,

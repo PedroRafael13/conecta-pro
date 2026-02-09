@@ -2,6 +2,8 @@
 Controller (endpoints) para Scale.
 """
 
+from typing import Any
+
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -52,14 +54,14 @@ async def create_scale(
     repo = ScaleRepository(db)
 
     # Verificar se já existe escala para o período
-    existing = await repo.get_by_post_and_period(data.post_id, data.month, data.year)
+    existing: Any = await repo.get_by_post_and_period(data.post_id, data.month, data.year)
     if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Já existe escala para este posto/período",
         )
 
-    scale = await repo.create(data, created_by=current_user.id)
+    scale: Any = await repo.create(data, created_by=current_user.id)
 
     # Invalidar cache
     await invalidate_on_create("scale", [("post", data.post_id)])
@@ -100,7 +102,7 @@ async def generate_scale(
     shift_repo = ShiftRepository(db)
 
     # Verificar se já existe escala para o período
-    existing = await scale_repo.get_by_post_and_period(data.post_id, data.month, data.year)
+    existing: Any = await scale_repo.get_by_post_and_period(data.post_id, data.month, data.year)
     if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -115,10 +117,10 @@ async def generate_scale(
         year=data.year,
         config=data.config,
     )
-    scale = await scale_repo.create(scale_data, created_by=current_user.id)
+    scale: Any = await scale_repo.create(scale_data, created_by=current_user.id)
 
     # Gerar turnos com IA
-    shifts_data = scale_generator.generate(
+    shifts_data: list[dict[str, Any]] = scale_generator.generate(
         scale_id=scale.id,
         post_id=data.post_id,
         scale_type=data.scale_type,
@@ -172,6 +174,8 @@ async def list_scales(
         created_by=created_by,
     )
 
+    scales: list[Any]
+    total: int
     scales, total = await repo.list(filters=filters, page=page, page_size=page_size)
     total_pages = (total + page_size - 1) // page_size
 
@@ -217,7 +221,7 @@ async def get_scale(
     Busca escala por ID.
     """
     repo = ScaleRepository(db)
-    scale = await repo.get_by_id(scale_id)
+    scale: Any = await repo.get_by_id(scale_id)
 
     if not scale:
         raise HTTPException(
@@ -245,7 +249,7 @@ async def update_scale(
     Só é possível editar escalas em rascunho ou pendentes de aprovação.
     """
     repo = ScaleRepository(db)
-    scale = await repo.update(scale_id, data)
+    scale: Any = await repo.update(scale_id, data)
 
     if not scale:
         raise HTTPException(
@@ -280,7 +284,7 @@ async def submit_scale_for_approval(
     Envia escala para aprovação.
     """
     repo = ScaleRepository(db)
-    scale = await repo.get_by_id(scale_id)
+    scale: Any = await repo.get_by_id(scale_id)
 
     if not scale:
         raise HTTPException(
@@ -322,7 +326,7 @@ async def approve_scale(
     Aprova uma escala.
     """
     repo = ScaleRepository(db)
-    scale = await repo.approve(scale_id, current_user.id, data.notes)
+    scale: Any = await repo.approve(scale_id, current_user.id, data.notes)
 
     if not scale:
         raise HTTPException(
@@ -357,7 +361,7 @@ async def reject_scale(
     A escala volta para status DRAFT para correções.
     """
     repo = ScaleRepository(db)
-    scale = await repo.reject(scale_id, current_user.id, data.reason, data.notes)
+    scale: Any = await repo.reject(scale_id, current_user.id, data.reason, data.notes)
 
     if not scale:
         raise HTTPException(
@@ -393,7 +397,7 @@ async def publish_scale(
     Após publicação, os funcionários são notificados.
     """
     repo = ScaleRepository(db)
-    scale = await repo.publish(scale_id, current_user.id)
+    scale: Any = await repo.publish(scale_id, current_user.id)
 
     if not scale:
         raise HTTPException(
@@ -438,15 +442,15 @@ async def delete_scale(
     repo = ScaleRepository(db)
 
     # Buscar scale antes de deletar para invalidar cache do post
-    scale = await repo.get_by_id(scale_id)
+    scale: Any = await repo.get_by_id(scale_id)
     if not scale:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Escala não encontrada",
         )
 
-    post_id = scale.post_id
-    deleted = await repo.delete(scale_id)
+    post_id: str = scale.post_id
+    deleted: bool = await repo.delete(scale_id)
 
     if not deleted:
         raise HTTPException(
@@ -478,7 +482,7 @@ async def auto_generate_scales(
     db: AsyncSession = Depends(get_db),
     month: int | None = Query(None, ge=1, le=12, description="Mês (se não especificado, usa mês atual)"),
     year: int | None = Query(None, ge=2020, le=2100, description="Ano (se não especificado, usa ano atual)"),
-) -> dict:
+) -> dict[str, Any]:
     """
     Gera escalas automaticamente para todos os postos com alocações ativas.
 
@@ -487,6 +491,7 @@ async def auto_generate_scales(
     """
     service = AutoScaleService(db)
 
+    result: dict[str, Any]
     if month and year:
         result = await service.generate_scales_for_month(month, year, created_by=current_user.id)
     else:

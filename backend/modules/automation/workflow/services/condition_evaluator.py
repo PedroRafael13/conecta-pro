@@ -6,17 +6,15 @@ Processa expressoes condicionais, operadores logicos e funcoes.
 
 import logging
 import re
+from collections.abc import Callable
 from datetime import datetime
 from decimal import Decimal
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 
 from modules._deprecated_workflows_dataclass.models.condition import (
-    BUILTIN_CONDITIONS,
     Condition,
-    ConditionGroup,
     ConditionOperator,
     ConditionType,
-    LogicalOperator,
     SimpleCondition,
 )
 
@@ -47,7 +45,7 @@ class ExpressionParser:
         "is not empty": ConditionOperator.IS_NOT_EMPTY,
     }
 
-    def parse(self, expression: str) -> Optional[SimpleCondition]:
+    def parse(self, expression: str) -> SimpleCondition | None:
         """
         Parseia expressao para SimpleCondition.
 
@@ -91,8 +89,9 @@ class ExpressionParser:
             return None
 
         # String entre aspas
-        if (value_str.startswith('"') and value_str.endswith('"')) or \
-           (value_str.startswith("'") and value_str.endswith("'")):
+        if (value_str.startswith('"') and value_str.endswith('"')) or (
+            value_str.startswith("'") and value_str.endswith("'")
+        ):
             return value_str[1:-1]
 
         # Booleanos
@@ -132,7 +131,7 @@ class ConditionEvaluator:
 
     def __init__(self):
         self._parser = ExpressionParser()
-        self._custom_functions: Dict[str, Callable] = {}
+        self._custom_functions: dict[str, Callable] = {}
         self._register_builtin_functions()
 
     def _register_builtin_functions(self) -> None:
@@ -152,7 +151,7 @@ class ConditionEvaluator:
     def register_function(
         self,
         name: str,
-        func: Callable[[Dict[str, Any], Dict[str, Any]], bool],
+        func: Callable[[dict[str, Any], dict[str, Any]], bool],
     ) -> None:
         """Registra funcao customizada."""
         self._custom_functions[name] = func
@@ -160,7 +159,7 @@ class ConditionEvaluator:
     def evaluate(
         self,
         condition: Condition,
-        context: Dict[str, Any],
+        context: dict[str, Any],
     ) -> bool:
         """
         Avalia condicao no contexto.
@@ -197,7 +196,7 @@ class ConditionEvaluator:
     def _evaluate_simple(
         self,
         condition: Condition,
-        context: Dict[str, Any],
+        context: dict[str, Any],
     ) -> bool:
         """Avalia condicao simples."""
         if not condition.simple_condition:
@@ -208,7 +207,7 @@ class ConditionEvaluator:
     def _evaluate_compound(
         self,
         condition: Condition,
-        context: Dict[str, Any],
+        context: dict[str, Any],
     ) -> bool:
         """Avalia grupo de condicoes."""
         if not condition.condition_group:
@@ -219,7 +218,7 @@ class ConditionEvaluator:
     def _evaluate_expression(
         self,
         condition: Condition,
-        context: Dict[str, Any],
+        context: dict[str, Any],
     ) -> bool:
         """Avalia expressao string."""
         if not condition.expression:
@@ -240,7 +239,7 @@ class ConditionEvaluator:
     def _evaluate_complex_expression(
         self,
         expression: str,
-        context: Dict[str, Any],
+        context: dict[str, Any],
     ) -> bool:
         """Avalia expressao complexa."""
         try:
@@ -273,7 +272,7 @@ class ConditionEvaluator:
                 "output": context.get("output", {}),
             }
 
-            result = eval(resolved, safe_globals, safe_locals)
+            result = eval(resolved, safe_globals, safe_locals)  # noqa: S307
             return bool(result)
 
         except Exception as e:
@@ -283,7 +282,7 @@ class ConditionEvaluator:
     def _evaluate_function(
         self,
         condition: Condition,
-        context: Dict[str, Any],
+        context: dict[str, Any],
     ) -> bool:
         """Avalia funcao predefinida."""
         func = self._custom_functions.get(condition.function_name)
@@ -296,7 +295,7 @@ class ConditionEvaluator:
     def _evaluate_script(
         self,
         condition: Condition,
-        context: Dict[str, Any],
+        context: dict[str, Any],
     ) -> bool:
         """Avalia script Python."""
         if not condition.script:
@@ -334,14 +333,14 @@ class ConditionEvaluator:
 
             safe_locals = {"context": context, "result": True}
 
-            exec(condition.script, safe_globals, safe_locals)
+            exec(condition.script, safe_globals, safe_locals)  # noqa: S102
             return bool(safe_locals.get("result", True))
 
         except Exception as e:
             logger.error(f"Erro ao executar script: {e}")
             return False
 
-    def _resolve_path(self, path: str, context: Dict[str, Any]) -> Any:
+    def _resolve_path(self, path: str, context: dict[str, Any]) -> Any:
         """Resolve path de variavel."""
         if not path or not path.startswith("$"):
             return path
@@ -370,9 +369,9 @@ class ConditionEvaluator:
 
         return value
 
-    def _resolve_references(self, expression: str, context: Dict[str, Any]) -> str:
+    def _resolve_references(self, expression: str, context: dict[str, Any]) -> str:
         """Substitui referencias no formato $field.path."""
-        pattern = r'\$([a-zA-Z_][a-zA-Z0-9_.]*)'
+        pattern = r"\$([a-zA-Z_][a-zA-Z0-9_.]*)"
 
         def replacer(match):
             path = match.group(1)
@@ -387,8 +386,8 @@ class ConditionEvaluator:
 
     def _fn_is_business_hours(
         self,
-        context: Dict[str, Any],
-        params: Dict[str, Any],
+        context: dict[str, Any],
+        params: dict[str, Any],
     ) -> bool:
         """Verifica horario comercial."""
         now = datetime.now()
@@ -398,16 +397,16 @@ class ConditionEvaluator:
 
     def _fn_is_weekend(
         self,
-        context: Dict[str, Any],
-        params: Dict[str, Any],
+        context: dict[str, Any],
+        params: dict[str, Any],
     ) -> bool:
         """Verifica final de semana."""
         return datetime.now().weekday() >= 5
 
     def _fn_is_holiday(
         self,
-        context: Dict[str, Any],
-        params: Dict[str, Any],
+        context: dict[str, Any],
+        params: dict[str, Any],
     ) -> bool:
         """Verifica feriado (simplificado)."""
         # Em producao, consultar API de feriados
@@ -417,8 +416,8 @@ class ConditionEvaluator:
 
     def _fn_has_role(
         self,
-        context: Dict[str, Any],
-        params: Dict[str, Any],
+        context: dict[str, Any],
+        params: dict[str, Any],
     ) -> bool:
         """Verifica role do usuario."""
         user = context.get("user", {})
@@ -428,8 +427,8 @@ class ConditionEvaluator:
 
     def _fn_has_permission(
         self,
-        context: Dict[str, Any],
-        params: Dict[str, Any],
+        context: dict[str, Any],
+        params: dict[str, Any],
     ) -> bool:
         """Verifica permissao do usuario."""
         user = context.get("user", {})
@@ -439,8 +438,8 @@ class ConditionEvaluator:
 
     def _fn_date_diff_days(
         self,
-        context: Dict[str, Any],
-        params: Dict[str, Any],
+        context: dict[str, Any],
+        params: dict[str, Any],
     ) -> bool:
         """Verifica diferenca de dias."""
         date_field = params.get("field", "")
@@ -459,23 +458,22 @@ class ConditionEvaluator:
 
         diff = (datetime.now() - date_value).days
 
-        if operator == "<=":
-            return diff <= max_days
-        elif operator == ">=":
-            return diff >= max_days
-        elif operator == "==":
-            return diff == max_days
-        elif operator == "<":
-            return diff < max_days
-        elif operator == ">":
-            return diff > max_days
+        op_map = {
+            "<=": lambda d, m: d <= m,
+            ">=": lambda d, m: d >= m,
+            "==": lambda d, m: d == m,
+            "<": lambda d, m: d < m,
+            ">": lambda d, m: d > m,
+        }
+        if operator in op_map:
+            return op_map[operator](diff, max_days)
 
         return False
 
     def _fn_list_contains(
         self,
-        context: Dict[str, Any],
-        params: Dict[str, Any],
+        context: dict[str, Any],
+        params: dict[str, Any],
     ) -> bool:
         """Verifica se lista contem valor."""
         list_field = params.get("list_field", "")
@@ -493,8 +491,8 @@ class ConditionEvaluator:
 
     def _fn_regex_match(
         self,
-        context: Dict[str, Any],
-        params: Dict[str, Any],
+        context: dict[str, Any],
+        params: dict[str, Any],
     ) -> bool:
         """Verifica match de regex."""
         field = params.get("field", "")
@@ -508,8 +506,8 @@ class ConditionEvaluator:
 
     def _fn_between(
         self,
-        context: Dict[str, Any],
-        params: Dict[str, Any],
+        context: dict[str, Any],
+        params: dict[str, Any],
     ) -> bool:
         """Verifica se valor esta entre limites."""
         field = params.get("field", "")
@@ -528,7 +526,7 @@ class ConditionEvaluator:
     def get_next_step(
         self,
         condition: Condition,
-        context: Dict[str, Any],
+        context: dict[str, Any],
     ) -> str:
         """
         Determina proximo step baseado na avaliacao.
@@ -550,7 +548,7 @@ class ConditionEvaluator:
         # Binary branch
         return condition.true_step_id if result else condition.false_step_id
 
-    def validate_condition(self, condition: Condition) -> List[str]:
+    def validate_condition(self, condition: Condition) -> list[str]:
         """Valida condicao."""
         errors = []
 

@@ -9,25 +9,22 @@ import logging
 import re
 import time
 from dataclasses import dataclass, field
-from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional, Pattern, Tuple
+from re import Pattern
+from typing import Any
 
 from ..models.extracted_field import (
     ExtractedField,
     ExtractionMethod,
-    FieldConfidence,
     FieldLocation,
     FieldType,
-    FieldValidation,
 )
 from ..models.extraction_template import (
     ExtractionTemplate,
-    PostProcessor,
     RuleType,
     TemplateField,
     TemplateRule,
 )
-from ..models.ocr_result import OCRLine, OCRResult, OCRWord
+from ..models.ocr_result import OCRResult
 
 logger = logging.getLogger(__name__)
 
@@ -59,10 +56,10 @@ class ExtractionContext:
     """Contexto para extracao."""
 
     ocr_result: OCRResult
-    template: Optional[ExtractionTemplate] = None
-    document_type: Optional[str] = None
-    extracted_fields: Dict[str, ExtractedField] = field(default_factory=dict)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    template: ExtractionTemplate | None = None
+    document_type: str | None = None
+    extracted_fields: dict[str, ExtractedField] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class DataExtractor:
@@ -106,7 +103,7 @@ class DataExtractor:
         FieldType.RG: ["rg"],
     }
 
-    def __init__(self, config: Optional[ExtractionConfig] = None):
+    def __init__(self, config: ExtractionConfig | None = None):
         """
         Inicializa extrator.
 
@@ -114,7 +111,7 @@ class DataExtractor:
             config: Configuracao do extrator
         """
         self.config = config or ExtractionConfig()
-        self._compiled_patterns: Dict[str, Pattern] = {}
+        self._compiled_patterns: dict[str, Pattern] = {}
         self._compile_patterns()
 
     def _compile_patterns(self) -> None:
@@ -126,9 +123,9 @@ class DataExtractor:
     async def extract(
         self,
         ocr_result: OCRResult,
-        template: Optional[ExtractionTemplate] = None,
-        field_types: Optional[List[FieldType]] = None,
-    ) -> List[ExtractedField]:
+        template: ExtractionTemplate | None = None,
+        field_types: list[FieldType] | None = None,
+    ) -> list[ExtractedField]:
         """
         Extrai dados do resultado OCR.
 
@@ -161,8 +158,8 @@ class DataExtractor:
             extracted_fields.extend(generic_fields)
 
         # Pos-processamento
-        for field in extracted_fields:
-            field.normalize()
+        for ext_field in extracted_fields:
+            ext_field.normalize()
 
         # Deduplicar
         extracted_fields = self._deduplicate_fields(extracted_fields)
@@ -172,9 +169,7 @@ class DataExtractor:
 
         return extracted_fields
 
-    async def _extract_by_template(
-        self, context: ExtractionContext
-    ) -> List[ExtractedField]:
+    async def _extract_by_template(self, context: ExtractionContext) -> list[ExtractedField]:
         """Extrai campos usando template."""
         fields = []
         template = context.template
@@ -190,7 +185,7 @@ class DataExtractor:
         self,
         context: ExtractionContext,
         template_field: TemplateField,
-    ) -> Optional[ExtractedField]:
+    ) -> ExtractedField | None:
         """Extrai um campo especifico."""
         best_match = None
         best_confidence = 0
@@ -246,7 +241,7 @@ class DataExtractor:
         self,
         context: ExtractionContext,
         rule: TemplateRule,
-    ) -> Optional[Tuple[str, float, ExtractionMethod, Optional[FieldLocation]]]:
+    ) -> tuple[str, float, ExtractionMethod, FieldLocation | None] | None:
         """Aplica uma regra de extracao."""
         full_text = context.ocr_result.get_full_text()
 
@@ -278,7 +273,7 @@ class DataExtractor:
         context: ExtractionContext,
         rule: TemplateRule,
         text: str,
-    ) -> Optional[Tuple[str, float, ExtractionMethod, Optional[FieldLocation]]]:
+    ) -> tuple[str, float, ExtractionMethod, FieldLocation | None] | None:
         """Aplica regra regex."""
         if not rule.pattern:
             return None
@@ -313,7 +308,7 @@ class DataExtractor:
         context: ExtractionContext,
         rule: TemplateRule,
         text: str,
-    ) -> Optional[Tuple[str, float, ExtractionMethod, Optional[FieldLocation]]]:
+    ) -> tuple[str, float, ExtractionMethod, FieldLocation | None] | None:
         """Aplica regra de ancora."""
         if not rule.anchor:
             return None
@@ -360,7 +355,7 @@ class DataExtractor:
         self,
         context: ExtractionContext,
         rule: TemplateRule,
-    ) -> Optional[Tuple[str, float, ExtractionMethod, Optional[FieldLocation]]]:
+    ) -> tuple[str, float, ExtractionMethod, FieldLocation | None] | None:
         """Extrai valor apos um label."""
         if not rule.anchor:
             return None
@@ -413,7 +408,7 @@ class DataExtractor:
         context: ExtractionContext,
         rule: TemplateRule,
         text: str,
-    ) -> Optional[Tuple[str, float, ExtractionMethod, Optional[FieldLocation]]]:
+    ) -> tuple[str, float, ExtractionMethod, FieldLocation | None] | None:
         """Extrai valor entre dois labels."""
         # Usar params para start/end labels
         start_label = rule.anchor
@@ -450,7 +445,7 @@ class DataExtractor:
         self,
         context: ExtractionContext,
         rule: TemplateRule,
-    ) -> Optional[Tuple[str, float, ExtractionMethod, Optional[FieldLocation]]]:
+    ) -> tuple[str, float, ExtractionMethod, FieldLocation | None] | None:
         """Extrai linha que corresponde a um padrao."""
         if not rule.pattern:
             return None
@@ -482,7 +477,7 @@ class DataExtractor:
         self,
         context: ExtractionContext,
         rule: TemplateRule,
-    ) -> Optional[Tuple[str, float, ExtractionMethod, Optional[FieldLocation]]]:
+    ) -> tuple[str, float, ExtractionMethod, FieldLocation | None] | None:
         """Extrai por posicao na pagina."""
         page_num = rule.page or 1
 
@@ -528,7 +523,7 @@ class DataExtractor:
         self,
         context: ExtractionContext,
         rule: TemplateRule,
-    ) -> Optional[Tuple[str, float, ExtractionMethod, Optional[FieldLocation]]]:
+    ) -> tuple[str, float, ExtractionMethod, FieldLocation | None] | None:
         """Extrai de celula de tabela."""
         tables = context.ocr_result.get_all_tables()
 
@@ -561,8 +556,8 @@ class DataExtractor:
     async def _extract_by_types(
         self,
         context: ExtractionContext,
-        field_types: List[FieldType],
-    ) -> List[ExtractedField]:
+        field_types: list[FieldType],
+    ) -> list[ExtractedField]:
         """Extrai campos por tipo automaticamente."""
         fields = []
         full_text = context.ocr_result.get_full_text()
@@ -579,7 +574,7 @@ class DataExtractor:
                 for i, match in enumerate(matches[: self.config.max_alternatives]):
                     field = ExtractedField(
                         document_id=context.ocr_result.document_id,
-                        field_name=f"{field_type.value}_{i+1}",
+                        field_name=f"{field_type.value}_{i + 1}",
                         field_type=field_type,
                         raw_value=match if isinstance(match, str) else match[0],
                         confidence=0.80,
@@ -592,7 +587,7 @@ class DataExtractor:
     async def _extract_generic(
         self,
         context: ExtractionContext,
-    ) -> List[ExtractedField]:
+    ) -> list[ExtractedField]:
         """Extracao generica de campos comuns."""
         fields = []
         full_text = context.ocr_result.get_full_text()
@@ -628,7 +623,7 @@ class DataExtractor:
 
                 field = ExtractedField(
                     document_id=context.ocr_result.document_id,
-                    field_name=f"{pattern_name}_{i+1}",
+                    field_name=f"{pattern_name}_{i + 1}",
                     field_type=field_type,
                     raw_value=value,
                     confidence=0.75,
@@ -645,21 +640,17 @@ class DataExtractor:
         except ValueError:
             return FieldType.TEXT
 
-    def _deduplicate_fields(
-        self, fields: List[ExtractedField]
-    ) -> List[ExtractedField]:
+    def _deduplicate_fields(self, fields: list[ExtractedField]) -> list[ExtractedField]:
         """Remove campos duplicados mantendo maior confianca."""
         seen = {}
-        for field in fields:
-            key = (field.field_name, field.raw_value)
-            if key not in seen or field.confidence > seen[key].confidence:
-                seen[key] = field
+        for dup_field in fields:
+            key = (dup_field.field_name, dup_field.raw_value)
+            if key not in seen or dup_field.confidence > seen[key].confidence:
+                seen[key] = dup_field
 
         return list(seen.values())
 
-    def extract_key_value_pairs(
-        self, ocr_result: OCRResult
-    ) -> List[Tuple[str, str, float]]:
+    def extract_key_value_pairs(self, ocr_result: OCRResult) -> list[tuple[str, str, float]]:
         """
         Extrai pares chave-valor do documento.
 
@@ -690,9 +681,7 @@ class DataExtractor:
 
         return pairs
 
-    def find_field_location(
-        self, ocr_result: OCRResult, value: str
-    ) -> Optional[FieldLocation]:
+    def find_field_location(self, ocr_result: OCRResult, value: str) -> FieldLocation | None:
         """Encontra localizacao de um valor no documento."""
         value_lower = value.lower()
 

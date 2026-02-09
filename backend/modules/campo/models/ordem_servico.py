@@ -6,28 +6,24 @@ Gestao de Ordens de Servico para equipes externas.
 Estilo Auvo: Instalacoes, Manutencoes, Visitas Tecnicas, Suporte.
 """
 
-from datetime import date, time, datetime
+from datetime import date, datetime, time
 from decimal import Decimal
-from enum import Enum as PyEnum
-from typing import Optional, List
+from enum import StrEnum
 from uuid import uuid4
 
-from sqlalchemy import (
-    Column, String, Text, Boolean, Integer, Date, Time, DateTime,
-    ForeignKey, Enum, Numeric, Index
-)
-from sqlalchemy.dialects.postgresql import UUID, JSONB
-from sqlalchemy.orm import relationship
+from sqlalchemy import Boolean, Column, Date, DateTime, Enum, ForeignKey, Index, Integer, Numeric, String, Text, Time
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 from core.models.base import Base
-
 
 # =============================================================================
 # ENUMS
 # =============================================================================
 
-class TipoOS(str, PyEnum):
+
+class TipoOS(StrEnum):
     """Tipo de Ordem de Servico."""
+
     INSTALACAO = "instalacao"
     MANUTENCAO_PREVENTIVA = "manutencao_preventiva"
     MANUTENCAO_CORRETIVA = "manutencao_corretiva"
@@ -42,8 +38,9 @@ class TipoOS(str, PyEnum):
     OUTRO = "outro"
 
 
-class StatusOS(str, PyEnum):
+class StatusOS(StrEnum):
     """Status da Ordem de Servico."""
+
     RASCUNHO = "rascunho"
     ABERTA = "aberta"
     AGENDADA = "agendada"
@@ -57,8 +54,9 @@ class StatusOS(str, PyEnum):
     REAGENDADA = "reagendada"
 
 
-class PrioridadeOS(str, PyEnum):
+class PrioridadeOS(StrEnum):
     """Prioridade da OS."""
+
     BAIXA = "baixa"
     NORMAL = "normal"
     ALTA = "alta"
@@ -66,8 +64,9 @@ class PrioridadeOS(str, PyEnum):
     EMERGENCIA = "emergencia"
 
 
-class OrigemOS(str, PyEnum):
+class OrigemOS(StrEnum):
     """Origem da solicitacao."""
+
     CLIENTE = "cliente"
     CONTRATO = "contrato"
     PREVENTIVA = "preventiva"
@@ -80,6 +79,7 @@ class OrigemOS(str, PyEnum):
 # MODEL
 # =============================================================================
 
+
 class OrdemServico(Base):
     """
     Ordem de Servico para equipes de campo.
@@ -91,13 +91,14 @@ class OrdemServico(Base):
     - Materiais e custos
     - Avaliacao do cliente
     """
+
     __tablename__ = "ordens_servico"
     __table_args__ = (
         Index("ix_os_cliente_status", "cliente_id", "status"),
         Index("ix_os_tecnico_data", "tecnico_id", "data_agendada"),
         Index("ix_os_contrato", "contrato_id"),
         Index("ix_os_numero", "numero"),
-        {}
+        {},
     )
 
     # =========================================================================
@@ -320,7 +321,12 @@ class OrdemServico(Base):
     @property
     def is_aberta(self) -> bool:
         """Verifica se OS esta aberta."""
-        return self.status in [StatusOS.ABERTA, StatusOS.AGENDADA, StatusOS.AGUARDANDO_PECA, StatusOS.AGUARDANDO_CLIENTE]
+        return self.status in [
+            StatusOS.ABERTA,
+            StatusOS.AGENDADA,
+            StatusOS.AGUARDANDO_PECA,
+            StatusOS.AGUARDANDO_CLIENTE,
+        ]
 
     @property
     def is_em_execucao(self) -> bool:
@@ -345,7 +351,7 @@ class OrdemServico(Base):
         return self.status == StatusOS.AGENDADA and self.tecnico_id is not None
 
     @property
-    def tempo_em_campo_minutos(self) -> Optional[int]:
+    def tempo_em_campo_minutos(self) -> int | None:
         """Calcula tempo em campo (checkin ate checkout)."""
         if self.checkin_at and self.checkout_at:
             delta = self.checkout_at - self.checkin_at
@@ -444,11 +450,11 @@ class OrdemServico(Base):
     def calcular_valores(self):
         """Calcula valor total da OS."""
         self.valor_total = (
-            (self.valor_mao_obra or Decimal("0.00")) +
-            (self.valor_materiais or Decimal("0.00")) +
-            (self.valor_deslocamento or Decimal("0.00")) +
-            (self.valor_adicional or Decimal("0.00")) -
-            (self.valor_desconto or Decimal("0.00"))
+            (self.valor_mao_obra or Decimal("0.00"))
+            + (self.valor_materiais or Decimal("0.00"))
+            + (self.valor_deslocamento or Decimal("0.00"))
+            + (self.valor_adicional or Decimal("0.00"))
+            - (self.valor_desconto or Decimal("0.00"))
         )
         return self.valor_total
 
@@ -467,11 +473,7 @@ class OrdemServico(Base):
 
     def adicionar_foto(self, tipo: str, url: str, descricao: str = None):
         """Adiciona foto a OS (antes, durante, depois)."""
-        foto = {
-            "url": url,
-            "descricao": descricao,
-            "timestamp": datetime.utcnow().isoformat()
-        }
+        foto = {"url": url, "descricao": descricao, "timestamp": datetime.utcnow().isoformat()}
         if tipo == "antes":
             if not self.fotos_antes:
                 self.fotos_antes = []
@@ -495,4 +497,4 @@ class OrdemServico(Base):
 
 
 # Importar timedelta para o metodo definir_sla
-from datetime import timedelta
+from datetime import timedelta  # noqa: E402

@@ -22,13 +22,15 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import Link from 'next/link';
 import {
-  type DocumentKit,
-  type DocumentKitItem,
-  KIT_TYPES,
   KIT_TYPE_LABELS,
 } from '@/types/generated/ged/conectaPROMóduloGED.schemas';
+import type {
+  DocumentKitResponse,
+  DocumentKitCreate,
+  DocumentKitUpdate,
+  KitType,
+} from '@/types/generated/document-kits';
 import { useToast } from '@/components/ui/use-toast';
 import {
   useListKits as useListDocumentKits,
@@ -37,7 +39,10 @@ import {
   useDeleteKit as useDeleteDocumentKit,
 } from '@/hooks/document-kits/useDocumentKits';
 
-// Categorias baseadas nos tipos válidos do backend
+// Condominio padrao para desenvolvimento
+const DEFAULT_CONDOMINIO_ID = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
+
+// Categorias baseadas nos tipos validos do backend
 const CATEGORIES = Object.entries(KIT_TYPE_LABELS).map(([value, label]) => ({
   value,
   label,
@@ -47,158 +52,129 @@ export default function KitsPage() {
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [selectedKit, setSelectedKit] = useState<DocumentKit | null>(null);
-  const [editingKit, setEditingKit] = useState<DocumentKit | null>(null);
+  const [selectedKit, setSelectedKit] = useState<DocumentKitResponse | null>(null);
+  const [editingKit, setEditingKit] = useState<DocumentKitResponse | null>(null);
   const { toast } = useToast();
 
-  // Form state - usando tipo válido do backend
+  // Form state - usando nomes do backend
   const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    category: 'ADMISSAO',
+    nome: '',
+    descricao: '',
+    tipo: 'ADMISSAO' as KitType,
   });
 
-  // Hooks React Query
-  const { data: kitsData, isLoading: loading, error: queryError } = useListDocumentKits(
-    1,
-    100,
-    categoryFilter !== 'all' ? categoryFilter : undefined
-  );
+  // Hooks React Query - useListKits espera ListKitsParams (objeto)
+  const { data: kitsData, isLoading: loading, error: queryError } = useListDocumentKits({
+    condominio_id: DEFAULT_CONDOMINIO_ID,
+    tipo: categoryFilter !== 'all' ? (categoryFilter as KitType) : undefined,
+  });
 
   const createMutation = useCreateDocumentKit();
   const updateMutation = useUpdateDocumentKit();
   const deleteMutation = useDeleteDocumentKit();
 
-  const kits = kitsData?.items || [];
+  const kits = kitsData?.items ?? [];
   const error = queryError ? 'Erro ao carregar kits. Tente novamente.' : null;
 
-  // Filtrar kits por busca (categoria já filtrada na API)
+  // Filtrar kits por busca (categoria ja filtrada na API)
   const filteredKits = useMemo(() => {
-    return kits.filter(kit => {
+    return kits.filter((kit) => {
       if (!search) return true;
-      const matchesSearch = kit.name.toLowerCase().includes(search.toLowerCase()) ||
-        (kit.description || '').toLowerCase().includes(search.toLowerCase());
+      const matchesSearch = kit.nome.toLowerCase().includes(search.toLowerCase()) ||
+        (kit.descricao ?? '').toLowerCase().includes(search.toLowerCase());
       return matchesSearch;
     });
   }, [kits, search]);
 
   // Criar novo kit
-  const handleCreateKit = async () => {
-    if (!formData.name.trim()) {
+  const handleCreateKit = () => {
+    if (!formData.nome.trim()) {
       toast({
         title: 'Erro',
-        description: 'Nome do kit é obrigatório',
+        description: 'Nome do kit e obrigatorio',
         variant: 'destructive',
       });
       return;
     }
 
-    createMutation.mutate(
-      {
-        name: formData.name.trim(),
-        description: formData.description.trim() || undefined,
-        category: formData.category,
+    const payload: DocumentKitCreate = {
+      codigo: `KIT-${new Date().getFullYear()}-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
+      nome: formData.nome.trim(),
+      descricao: formData.descricao.trim() || undefined,
+      tipo: formData.tipo,
+      condominio_id: DEFAULT_CONDOMINIO_ID,
+    };
+
+    createMutation.mutate(payload, {
+      onSuccess: () => {
+        setDialogOpen(false);
+        setFormData({ nome: '', descricao: '', tipo: 'ADMISSAO' as KitType });
       },
-      {
-        onSuccess: () => {
-          toast({
-            title: 'Sucesso',
-            description: 'Kit criado com sucesso!',
-          });
-          setDialogOpen(false);
-          setFormData({ name: '', description: '', category: 'ADMISSAO' });
-        },
-        onError: (err: any) => {
-          console.error('Erro ao criar kit:', err);
-          toast({
-            title: 'Erro ao criar kit',
-            description: err.response?.data?.detail || 'Erro desconhecido. Tente novamente.',
-            variant: 'destructive',
-          });
-        },
-      }
-    );
+    });
   };
 
   // Ver detalhes do kit
-  const handleViewKit = (kit: DocumentKit) => {
+  const handleViewKit = (kit: DocumentKitResponse) => {
     setSelectedKit(kit);
   };
 
-  // Abrir modal de edição
-  const handleEditKit = (kit: DocumentKit) => {
+  // Abrir modal de edicao
+  const handleEditKit = (kit: DocumentKitResponse) => {
     setEditingKit(kit);
     setFormData({
-      name: kit.name,
-      description: kit.description || '',
-      category: kit.category || 'administrativo',
+      nome: kit.nome,
+      descricao: kit.descricao ?? '',
+      tipo: kit.tipo,
     });
     setSelectedKit(null);
   };
 
-  // Salvar edição do kit
-  const handleSaveKit = async () => {
-    if (!editingKit || !formData.name.trim()) {
+  // Salvar edicao do kit
+  const handleSaveKit = () => {
+    if (!editingKit || !formData.nome.trim()) {
       toast({
         title: 'Erro',
-        description: 'Nome do kit é obrigatório',
+        description: 'Nome do kit e obrigatorio',
         variant: 'destructive',
       });
       return;
     }
 
+    const updateData: DocumentKitUpdate = {
+      nome: formData.nome.trim(),
+      descricao: formData.descricao.trim() || undefined,
+      tipo: formData.tipo,
+    };
+
     updateMutation.mutate(
       {
-        id: editingKit.id,
-        data: {
-          name: formData.name.trim(),
-          description: formData.description.trim() || undefined,
-        },
+        kit_id: editingKit.id,
+        data: updateData,
+        condominio_id: editingKit.condominio_id,
       },
       {
         onSuccess: () => {
-          toast({
-            title: 'Sucesso',
-            description: 'Kit atualizado com sucesso!',
-          });
           setEditingKit(null);
-          setFormData({ name: '', description: '', category: 'ADMISSAO' });
-        },
-        onError: (err: any) => {
-          console.error('Erro ao atualizar kit:', err);
-          toast({
-            title: 'Erro ao atualizar kit',
-            description: err.response?.data?.detail || 'Erro desconhecido. Tente novamente.',
-            variant: 'destructive',
-          });
+          setFormData({ nome: '', descricao: '', tipo: 'ADMISSAO' as KitType });
         },
       }
     );
   };
 
   // Excluir kit
-  const handleDeleteKit = async (kit: DocumentKit) => {
-    if (!confirm(`Tem certeza que deseja excluir o kit "${kit.name}"?`)) {
+  const handleDeleteKit = (kit: DocumentKitResponse) => {
+    if (!confirm(`Tem certeza que deseja excluir o kit "${kit.nome}"?`)) {
       return;
     }
 
-    deleteMutation.mutate(kit.id, {
-      onSuccess: () => {
-        toast({
-          title: 'Sucesso',
-          description: 'Kit excluído com sucesso!',
-        });
-        setSelectedKit(null);
-      },
-      onError: (err: any) => {
-        console.error('Erro ao excluir kit:', err);
-        toast({
-          title: 'Erro ao excluir kit',
-          description: err.response?.data?.detail || 'Erro desconhecido. Tente novamente.',
-          variant: 'destructive',
-        });
-      },
-    });
+    deleteMutation.mutate(
+      { kit_id: kit.id, condominio_id: kit.condominio_id },
+      {
+        onSuccess: () => {
+          setSelectedKit(null);
+        },
+      }
+    );
   };
 
   return (
@@ -208,7 +184,7 @@ export default function KitsPage() {
         <div>
           <h1 className="text-2xl font-bold">Kits de Documentos</h1>
           <p className="text-muted-foreground">
-            Conjuntos padronizados de documentos para processos específicos
+            Conjuntos padronizados de documentos para processos especificos
           </p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -227,31 +203,31 @@ export default function KitsPage() {
                 <Label htmlFor="name">Nome do Kit</Label>
                 <Input
                   id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Ex: Kit Admissão de Funcionário"
+                  value={formData.nome}
+                  onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                  placeholder="Ex: Kit Admissao de Funcionario"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="description">Descrição</Label>
+                <Label htmlFor="description">Descricao</Label>
                 <Textarea
                   id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Descreva o propósito deste kit"
+                  value={formData.descricao}
+                  onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
+                  placeholder="Descreva o proposito deste kit"
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="category">Categoria</Label>
                 <Select
-                  value={formData.category}
-                  onValueChange={(value) => setFormData({ ...formData, category: value })}
+                  value={formData.tipo}
+                  onValueChange={(value) => setFormData({ ...formData, tipo: value as KitType })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione a categoria" />
                   </SelectTrigger>
                   <SelectContent>
-                    {KIT_CATEGORIES.map((cat) => (
+                    {CATEGORIES.map((cat) => (
                       <SelectItem key={cat.value} value={cat.value}>
                         {cat.label}
                       </SelectItem>
@@ -264,7 +240,7 @@ export default function KitsPage() {
               <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={createMutation.isPending}>
                 Cancelar
               </Button>
-              <Button onClick={handleCreateKit} disabled={!formData.name || createMutation.isPending}>
+              <Button onClick={handleCreateKit} disabled={!formData.nome || createMutation.isPending}>
                 {createMutation.isPending ? 'Criando...' : 'Criar Kit'}
               </Button>
             </div>
@@ -289,7 +265,7 @@ export default function KitsPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todas as categorias</SelectItem>
-            {KIT_CATEGORIES.map((cat) => (
+            {CATEGORIES.map((cat) => (
               <SelectItem key={cat.value} value={cat.value}>
                 {cat.label}
               </SelectItem>
@@ -342,8 +318,8 @@ export default function KitsPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <h3 className="font-semibold truncate">{kit.name}</h3>
-                      {kit.is_active && (
+                      <h3 className="font-semibold truncate">{kit.nome}</h3>
+                      {kit.status === 'ATIVO' && (
                         <Badge variant="secondary" className="text-xs bg-green-100 text-green-800">
                           Ativo
                         </Badge>
@@ -353,21 +329,21 @@ export default function KitsPage() {
                       <code className="text-xs text-muted-foreground">{kit.codigo}</code>
                     )}
                     <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
-                      {kit.description || 'Sem descrição'}
+                      {kit.descricao ?? 'Sem descricao'}
                     </p>
                     <div className="flex items-center gap-3 mt-3 text-xs text-muted-foreground">
                       <span className="flex items-center gap-1">
                         <FileText className="h-3 w-3" />
-                        {kit.total_items || (kit.items || []).length || 0} documentos
+                        {kit.total_itens ?? 0} documentos
                       </span>
                       <span className="flex items-center gap-1">
                         <Copy className="h-3 w-3" />
-                        {kit.usage_count || 0} usos
+                        {kit.uso_count ?? 0} usos
                       </span>
                     </div>
                     <div className="mt-2">
                       <Badge variant="outline" className="text-xs">
-                        {KIT_CATEGORIES.find(c => c.value === kit.category)?.label || kit.category}
+                        {CATEGORIES.find((c) => c.value === kit.tipo)?.label ?? kit.tipo}
                       </Badge>
                     </div>
                   </div>
@@ -385,21 +361,21 @@ export default function KitsPage() {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Package className="h-5 w-5" />
-                {selectedKit.name}
+                {selectedKit.nome}
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-4">
-              <p className="text-muted-foreground">{selectedKit.description}</p>
+              <p className="text-muted-foreground">{selectedKit.descricao}</p>
 
               <div className="flex gap-4 text-sm">
                 <Badge variant="outline">
-                  {KIT_CATEGORIES.find(c => c.value === selectedKit.category)?.label}
+                  {CATEGORIES.find((c) => c.value === selectedKit.tipo)?.label}
                 </Badge>
                 <span className="text-muted-foreground">
-                  {(selectedKit.items || []).length} documentos
+                  {selectedKit.total_itens ?? 0} documentos
                 </span>
                 <span className="text-muted-foreground">
-                  {selectedKit.usage_count || 0} usos
+                  {selectedKit.uso_count ?? 0} usos
                 </span>
               </div>
 
@@ -407,30 +383,13 @@ export default function KitsPage() {
                 <div className="p-3 bg-muted font-medium text-sm">
                   Documentos do Kit
                 </div>
-                {(selectedKit.items || []).length === 0 ? (
+                {selectedKit.total_itens === 0 ? (
                   <div className="p-4 text-center text-muted-foreground text-sm">
                     Nenhum documento adicionado ao kit ainda.
                   </div>
                 ) : (
-                  <div className="divide-y">
-                    {(selectedKit.items || []).map((doc, index) => (
-                      <div key={doc.id} className="p-3 flex items-center gap-3">
-                        <span className="text-muted-foreground text-sm w-6">
-                          {index + 1}.
-                        </span>
-                        <FileText className="h-4 w-4 text-muted-foreground" />
-                        <span className="flex-1">{doc.name}</span>
-                        {doc.required ? (
-                          <Badge variant="destructive" className="text-xs">
-                            Obrigatório
-                          </Badge>
-                        ) : (
-                          <Badge variant="secondary" className="text-xs">
-                            Opcional
-                          </Badge>
-                        )}
-                      </div>
-                    ))}
+                  <div className="p-4 text-center text-muted-foreground text-sm">
+                    {selectedKit.total_itens} documento(s) configurado(s).
                   </div>
                 )}
               </div>
@@ -465,35 +424,35 @@ export default function KitsPage() {
         </Dialog>
       )}
 
-      {/* Modal de Edição */}
+      {/* Modal de Edicao */}
       {editingKit && (
         <Dialog open={!!editingKit} onOpenChange={() => setEditingKit(null)}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Editar Kit: {editingKit.name}</DialogTitle>
+              <DialogTitle>Editar Kit: {editingKit.nome}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label htmlFor="edit-name">Nome do Kit</Label>
                 <Input
                   id="edit-name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Ex: Kit Admissão de Funcionário"
+                  value={formData.nome}
+                  onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                  placeholder="Ex: Kit Admissao de Funcionario"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit-description">Descrição</Label>
+                <Label htmlFor="edit-description">Descricao</Label>
                 <Textarea
                   id="edit-description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Descreva o propósito deste kit"
+                  value={formData.descricao}
+                  onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
+                  placeholder="Descreva o proposito deste kit"
                 />
               </div>
               {editingKit.codigo && (
                 <div className="text-sm text-muted-foreground">
-                  Código: <code className="bg-muted px-1.5 py-0.5 rounded">{editingKit.codigo}</code>
+                  Codigo: <code className="bg-muted px-1.5 py-0.5 rounded">{editingKit.codigo}</code>
                 </div>
               )}
             </div>
@@ -501,8 +460,8 @@ export default function KitsPage() {
               <Button variant="outline" onClick={() => setEditingKit(null)} disabled={updateMutation.isPending}>
                 Cancelar
               </Button>
-              <Button onClick={handleSaveKit} disabled={!formData.name || updateMutation.isPending}>
-                {updateMutation.isPending ? 'Salvando...' : 'Salvar Alterações'}
+              <Button onClick={handleSaveKit} disabled={!formData.nome || updateMutation.isPending}>
+                {updateMutation.isPending ? 'Salvando...' : 'Salvar Alteracoes'}
               </Button>
             </div>
           </DialogContent>
@@ -519,14 +478,14 @@ export default function KitsPage() {
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground space-y-2">
           <p>
-            Kits de documentos são conjuntos padronizados que facilitam a organização
-            e coleta de documentos para processos específicos.
+            Kits de documentos sao conjuntos padronizados que facilitam a organizacao
+            e coleta de documentos para processos especificos.
           </p>
           <ul className="list-disc list-inside space-y-1">
             <li>Crie kits personalizados para cada tipo de processo</li>
-            <li>Defina documentos obrigatórios e opcionais</li>
+            <li>Defina documentos obrigatorios e opcionais</li>
             <li>Acompanhe o progresso de coleta de documentos</li>
-            <li>Reutilize kits em múltiplos processos</li>
+            <li>Reutilize kits em multiplos processos</li>
           </ul>
         </CardContent>
       </Card>

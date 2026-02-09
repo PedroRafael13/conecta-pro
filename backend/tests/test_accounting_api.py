@@ -126,14 +126,10 @@ class TestChartOfAccountsEndpoints:
     @pytest.mark.asyncio
     async def test_list_charts(self, mock_user: dict[str, Any]) -> None:
         """Test listing charts of accounts."""
-        with patch(
-            "modules.financial.controllers.accounting_controller.get_current_user"
-        ) as mock_get_user:
+        with patch("modules.financial.controllers.accounting_controller.get_current_user") as mock_get_user:
             mock_get_user.return_value = mock_user
 
-            with patch(
-                "modules.financial.controllers.accounting_controller.ChartOfAccountsRepository"
-            ) as mock_repo:
+            with patch("modules.financial.controllers.accounting_controller.ChartOfAccountsRepository") as mock_repo:
                 mock_instance = MagicMock()
                 mock_instance.list_with_filter = AsyncMock(return_value=[])
                 mock_instance.count_with_filter = AsyncMock(return_value=0)
@@ -151,13 +147,9 @@ class TestChartOfAccountsEndpoints:
                 assert response_data["items"] == []
 
     @pytest.mark.asyncio
-    async def test_create_chart(
-        self, mock_user: dict[str, Any], sample_chart_data: dict[str, Any]
-    ) -> None:
+    async def test_create_chart(self, mock_user: dict[str, Any], sample_chart_data: dict[str, Any]) -> None:
         """Test creating a chart of accounts."""
-        with patch(
-            "modules.financial.controllers.accounting_controller.get_current_user"
-        ) as mock_get_user:
+        with patch("modules.financial.controllers.accounting_controller.get_current_user") as mock_get_user:
             mock_get_user.return_value = mock_user
 
             chart_id = uuid4()
@@ -168,9 +160,7 @@ class TestChartOfAccountsEndpoints:
             mock_chart.chart_type = ChartType.ANALYTICAL
             mock_chart.status = ChartStatus.ACTIVE
 
-            with patch(
-                "modules.financial.controllers.accounting_controller.ChartOfAccountsRepository"
-            ) as mock_repo:
+            with patch("modules.financial.controllers.accounting_controller.ChartOfAccountsRepository") as mock_repo:
                 mock_instance = MagicMock()
                 mock_instance.create = AsyncMock(return_value=mock_chart)
                 mock_instance.generate_code = AsyncMock(return_value="PC-001")
@@ -220,9 +210,7 @@ class TestAccountingAccountEndpoints:
         assert response_data["total"] == 0
 
     @pytest.mark.asyncio
-    async def test_create_account(
-        self, mock_user: dict[str, Any], sample_account_data: dict[str, Any]
-    ) -> None:
+    async def test_create_account(self, mock_user: dict[str, Any], sample_account_data: dict[str, Any]) -> None:
         """Test creating an accounting account."""
         account_id = uuid4()
         mock_account = {
@@ -309,9 +297,7 @@ class TestCostCenterEndpoints:
         assert response_data["total"] == 0
 
     @pytest.mark.asyncio
-    async def test_create_cost_center(
-        self, mock_user: dict[str, Any], sample_cost_center_data: dict[str, Any]
-    ) -> None:
+    async def test_create_cost_center(self, mock_user: dict[str, Any], sample_cost_center_data: dict[str, Any]) -> None:
         """Test creating a cost center."""
         cost_center_id = uuid4()
         mock_cost_center = {
@@ -396,9 +382,7 @@ class TestAccountingPeriodEndpoints:
         assert response_data["total"] == 0
 
     @pytest.mark.asyncio
-    async def test_create_period(
-        self, mock_user: dict[str, Any], sample_period_data: dict[str, Any]
-    ) -> None:
+    async def test_create_period(self, mock_user: dict[str, Any], sample_period_data: dict[str, Any]) -> None:
         """Test creating an accounting period."""
         period_id = uuid4()
         mock_period = {
@@ -478,9 +462,7 @@ class TestJournalEntryEndpoints:
         assert response_data["total"] == 0
 
     @pytest.mark.asyncio
-    async def test_create_entry(
-        self, mock_user: dict[str, Any], sample_entry_data: dict[str, Any]
-    ) -> None:
+    async def test_create_entry(self, mock_user: dict[str, Any], sample_entry_data: dict[str, Any]) -> None:
         """Test creating a journal entry."""
         entry_id = uuid4()
         mock_entry = {
@@ -599,9 +581,7 @@ class TestTrialBalanceEndpoints:
         assert response_data["total"] == 0
 
     @pytest.mark.asyncio
-    async def test_generate_balance(
-        self, mock_user: dict[str, Any], sample_balance_data: dict[str, Any]
-    ) -> None:
+    async def test_generate_balance(self, mock_user: dict[str, Any], sample_balance_data: dict[str, Any]) -> None:
         """Test generating a trial balance."""
         balance_id = uuid4()
         mock_balance = {

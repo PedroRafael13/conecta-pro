@@ -1,27 +1,28 @@
 """Testes para models do Portal do Funcionário."""
 
-import pytest
 from datetime import date, datetime, timedelta
 from decimal import Decimal
 from uuid import uuid4
 
+import pytest
+
 from modules.hr.employee_portal.models import (
+    DocumentStatus,
+    DocumentType,
+    EmployeeDocument,
+    EmployeeNotification,
+    EmployeePreferences,
+    LanguagePreference,
+    NotificationChannel,
+    NotificationPriority,
+    NotificationType,
     PaySlip,
     PaySlipStatus,
     PaySlipType,
+    ThemePreference,
     VacationPeriod,
     VacationRequest,
     VacationStatus,
-    EmployeeDocument,
-    DocumentType,
-    DocumentStatus,
-    EmployeeNotification,
-    NotificationType,
-    NotificationPriority,
-    NotificationChannel,
-    EmployeePreferences,
-    ThemePreference,
-    LanguagePreference,
 )
 
 

@@ -4,10 +4,9 @@ Contract Alert Model - AI Contract Analysis
 Model para alertas de contratos (vencimento, renovacao, riscos).
 """
 
-import enum
 import uuid
 from datetime import date, datetime
-from typing import Optional
+from enum import StrEnum
 
 from sqlalchemy import (
     Boolean,
@@ -26,7 +25,7 @@ from sqlalchemy.orm import relationship
 from core.database import Base
 
 
-class AlertType(str, enum.Enum):
+class AlertType(StrEnum):
     """Tipo de alerta."""
 
     EXPIRY = "expiry"  # Vencimento
@@ -43,7 +42,7 @@ class AlertType(str, enum.Enum):
     ANOMALY = "anomaly"  # Anomalia detectada
 
 
-class AlertStatus(str, enum.Enum):
+class AlertStatus(StrEnum):
     """Status do alerta."""
 
     PENDING = "pending"  # Pendente
@@ -54,7 +53,7 @@ class AlertStatus(str, enum.Enum):
     ESCALATED = "escalated"  # Escalado
 
 
-class AlertPriority(str, enum.Enum):
+class AlertPriority(StrEnum):
     """Prioridade do alerta."""
 
     LOW = "low"
@@ -77,10 +76,7 @@ class ContractAlert(Base):
 
     # Relacionamento com analise
     analysis_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("contract_analyses.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True
+        UUID(as_uuid=True), ForeignKey("contract_analyses.id", ondelete="CASCADE"), nullable=False, index=True
     )
 
     # Referencia ao contrato
@@ -88,23 +84,9 @@ class ContractAlert(Base):
     contract_number = Column(String(50))
 
     # Tipo e status
-    alert_type = Column(
-        Enum(AlertType),
-        nullable=False,
-        index=True
-    )
-    status = Column(
-        Enum(AlertStatus),
-        default=AlertStatus.PENDING,
-        nullable=False,
-        index=True
-    )
-    priority = Column(
-        Enum(AlertPriority),
-        default=AlertPriority.MEDIUM,
-        nullable=False,
-        index=True
-    )
+    alert_type = Column(Enum(AlertType), nullable=False, index=True)
+    status = Column(Enum(AlertStatus), default=AlertStatus.PENDING, nullable=False, index=True)
+    priority = Column(Enum(AlertPriority), default=AlertPriority.MEDIUM, nullable=False, index=True)
 
     # Descricao
     title = Column(String(300), nullable=False)
@@ -189,21 +171,20 @@ class ContractAlert(Base):
     @property
     def requires_action(self) -> bool:
         """Verifica se requer acao."""
-        return (
-            self.status in (AlertStatus.PENDING, AlertStatus.ACKNOWLEDGED)
-            and self.is_active
-        )
+        return self.status in (AlertStatus.PENDING, AlertStatus.ACKNOWLEDGED) and self.is_active
 
     def acknowledge(self, user_id: uuid.UUID) -> None:
         """Marca alerta como reconhecido."""
         self.status = AlertStatus.ACKNOWLEDGED
         self.is_read = True
         self.actions_taken = self.actions_taken or []
-        self.actions_taken.append({
-            "action": "acknowledged",
-            "by": str(user_id),
-            "at": datetime.utcnow().isoformat(),
-        })
+        self.actions_taken.append(
+            {
+                "action": "acknowledged",
+                "by": str(user_id),
+                "at": datetime.utcnow().isoformat(),
+            }
+        )
 
     def resolve(self, user_id: uuid.UUID, notes: str = None) -> None:
         """Resolve o alerta."""
@@ -212,9 +193,11 @@ class ContractAlert(Base):
         self.resolved_at = datetime.utcnow()
         self.resolution_notes = notes
         self.actions_taken = self.actions_taken or []
-        self.actions_taken.append({
-            "action": "resolved",
-            "by": str(user_id),
-            "at": datetime.utcnow().isoformat(),
-            "notes": notes,
-        })
+        self.actions_taken.append(
+            {
+                "action": "resolved",
+                "by": str(user_id),
+                "at": datetime.utcnow().isoformat(),
+                "notes": notes,
+            }
+        )

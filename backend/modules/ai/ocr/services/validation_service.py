@@ -13,10 +13,10 @@ import logging
 import re
 import uuid
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from modules.ai.ocr.models.extracted_field import FieldType, FieldValidationStatus
-from modules.ai.ocr.models.validation_result import ValidationStatus, ValidationAction
+from modules.ai.ocr.models.validation_result import ValidationStatus
 
 logger = logging.getLogger(__name__)
 
@@ -43,9 +43,9 @@ class ValidationService:
 
     def validate_fields(
         self,
-        fields: List[Dict[str, Any]],
-        document_type: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        fields: list[dict[str, Any]],
+        document_type: str | None = None,
+    ) -> dict[str, Any]:
         """Valida lista de campos extraidos.
 
         Args:
@@ -105,7 +105,7 @@ class ValidationService:
 
         return result
 
-    def _validate_field(self, field: Dict[str, Any]) -> Dict[str, Any]:
+    def _validate_field(self, field: dict[str, Any]) -> dict[str, Any]:
         """Valida um campo individual.
 
         Args:
@@ -171,7 +171,7 @@ class ValidationService:
     def _validate_cpf(
         self,
         value: str,
-        result: Dict[str, Any],
+        result: dict[str, Any],
     ) -> None:
         """Valida CPF.
 
@@ -188,11 +188,13 @@ class ValidationService:
         # Formato
         if len(cpf) != 11:
             result["rules_failed"].append("cpf_format")
-            result["errors"].append({
-                "field": result["field_name"],
-                "code": "INVALID_CPF_FORMAT",
-                "message": f"CPF deve ter 11 digitos, encontrado: {len(cpf)}",
-            })
+            result["errors"].append(
+                {
+                    "field": result["field_name"],
+                    "code": "INVALID_CPF_FORMAT",
+                    "message": f"CPF deve ter 11 digitos, encontrado: {len(cpf)}",
+                }
+            )
             return
 
         result["rules_passed"].append("cpf_format")
@@ -200,21 +202,25 @@ class ValidationService:
         # Verifica digitos repetidos
         if cpf == cpf[0] * 11:
             result["rules_failed"].append("cpf_checksum")
-            result["errors"].append({
-                "field": result["field_name"],
-                "code": "INVALID_CPF",
-                "message": "CPF invalido (digitos repetidos)",
-            })
+            result["errors"].append(
+                {
+                    "field": result["field_name"],
+                    "code": "INVALID_CPF",
+                    "message": "CPF invalido (digitos repetidos)",
+                }
+            )
             return
 
         # Calcula digito verificador
         if not self._cpf_checksum(cpf):
             result["rules_failed"].append("cpf_checksum")
-            result["errors"].append({
-                "field": result["field_name"],
-                "code": "INVALID_CPF_CHECKSUM",
-                "message": "Digito verificador do CPF invalido",
-            })
+            result["errors"].append(
+                {
+                    "field": result["field_name"],
+                    "code": "INVALID_CPF_CHECKSUM",
+                    "message": "Digito verificador do CPF invalido",
+                }
+            )
             return
 
         result["rules_passed"].append("cpf_checksum")
@@ -246,7 +252,7 @@ class ValidationService:
     def _validate_cnpj(
         self,
         value: str,
-        result: Dict[str, Any],
+        result: dict[str, Any],
     ) -> None:
         """Valida CNPJ.
 
@@ -263,11 +269,13 @@ class ValidationService:
         # Formato
         if len(cnpj) != 14:
             result["rules_failed"].append("cnpj_format")
-            result["errors"].append({
-                "field": result["field_name"],
-                "code": "INVALID_CNPJ_FORMAT",
-                "message": f"CNPJ deve ter 14 digitos, encontrado: {len(cnpj)}",
-            })
+            result["errors"].append(
+                {
+                    "field": result["field_name"],
+                    "code": "INVALID_CNPJ_FORMAT",
+                    "message": f"CNPJ deve ter 14 digitos, encontrado: {len(cnpj)}",
+                }
+            )
             return
 
         result["rules_passed"].append("cnpj_format")
@@ -275,21 +283,25 @@ class ValidationService:
         # Verifica digitos repetidos
         if cnpj == cnpj[0] * 14:
             result["rules_failed"].append("cnpj_checksum")
-            result["errors"].append({
-                "field": result["field_name"],
-                "code": "INVALID_CNPJ",
-                "message": "CNPJ invalido (digitos repetidos)",
-            })
+            result["errors"].append(
+                {
+                    "field": result["field_name"],
+                    "code": "INVALID_CNPJ",
+                    "message": "CNPJ invalido (digitos repetidos)",
+                }
+            )
             return
 
         # Calcula digito verificador
         if not self._cnpj_checksum(cnpj):
             result["rules_failed"].append("cnpj_checksum")
-            result["errors"].append({
-                "field": result["field_name"],
-                "code": "INVALID_CNPJ_CHECKSUM",
-                "message": "Digito verificador do CNPJ invalido",
-            })
+            result["errors"].append(
+                {
+                    "field": result["field_name"],
+                    "code": "INVALID_CNPJ_CHECKSUM",
+                    "message": "Digito verificador do CNPJ invalido",
+                }
+            )
             return
 
         result["rules_passed"].append("cnpj_checksum")
@@ -323,7 +335,7 @@ class ValidationService:
     def _validate_email(
         self,
         value: str,
-        result: Dict[str, Any],
+        result: dict[str, Any],
     ) -> None:
         """Valida email.
 
@@ -337,11 +349,13 @@ class ValidationService:
 
         if not re.match(pattern, value):
             result["rules_failed"].append("email_format")
-            result["errors"].append({
-                "field": result["field_name"],
-                "code": "INVALID_EMAIL_FORMAT",
-                "message": "Formato de email invalido",
-            })
+            result["errors"].append(
+                {
+                    "field": result["field_name"],
+                    "code": "INVALID_EMAIL_FORMAT",
+                    "message": "Formato de email invalido",
+                }
+            )
             return
 
         result["rules_passed"].append("email_format")
@@ -349,7 +363,7 @@ class ValidationService:
     def _validate_phone(
         self,
         value: str,
-        result: Dict[str, Any],
+        result: dict[str, Any],
     ) -> None:
         """Valida telefone.
 
@@ -364,11 +378,13 @@ class ValidationService:
 
         if len(phone) < 10 or len(phone) > 13:
             result["rules_failed"].append("phone_format")
-            result["errors"].append({
-                "field": result["field_name"],
-                "code": "INVALID_PHONE_FORMAT",
-                "message": f"Telefone deve ter 10-13 digitos, encontrado: {len(phone)}",
-            })
+            result["errors"].append(
+                {
+                    "field": result["field_name"],
+                    "code": "INVALID_PHONE_FORMAT",
+                    "message": f"Telefone deve ter 10-13 digitos, encontrado: {len(phone)}",
+                }
+            )
             return
 
         result["rules_passed"].append("phone_format")
@@ -376,7 +392,7 @@ class ValidationService:
     def _validate_cep(
         self,
         value: str,
-        result: Dict[str, Any],
+        result: dict[str, Any],
     ) -> None:
         """Valida CEP.
 
@@ -391,11 +407,13 @@ class ValidationService:
 
         if len(cep) != 8:
             result["rules_failed"].append("cep_format")
-            result["errors"].append({
-                "field": result["field_name"],
-                "code": "INVALID_CEP_FORMAT",
-                "message": f"CEP deve ter 8 digitos, encontrado: {len(cep)}",
-            })
+            result["errors"].append(
+                {
+                    "field": result["field_name"],
+                    "code": "INVALID_CEP_FORMAT",
+                    "message": f"CEP deve ter 8 digitos, encontrado: {len(cep)}",
+                }
+            )
             return
 
         result["rules_passed"].append("cep_format")
@@ -403,7 +421,7 @@ class ValidationService:
     def _validate_date(
         self,
         value: str,
-        result: Dict[str, Any],
+        result: dict[str, Any],
     ) -> None:
         """Valida data.
 
@@ -432,11 +450,13 @@ class ValidationService:
 
         if not parsed_date:
             result["rules_failed"].append("date_format")
-            result["errors"].append({
-                "field": result["field_name"],
-                "code": "INVALID_DATE_FORMAT",
-                "message": f"Formato de data invalido: {value}",
-            })
+            result["errors"].append(
+                {
+                    "field": result["field_name"],
+                    "code": "INVALID_DATE_FORMAT",
+                    "message": f"Formato de data invalido: {value}",
+                }
+            )
             return
 
         result["rules_passed"].append("date_format")
@@ -447,18 +467,20 @@ class ValidationService:
         max_date = datetime(today.year + 50, 12, 31)
 
         if parsed_date < min_date or parsed_date > max_date:
-            result["warnings"].append({
-                "field": result["field_name"],
-                "code": "DATE_OUT_OF_RANGE",
-                "message": f"Data fora do intervalo esperado: {value}",
-            })
+            result["warnings"].append(
+                {
+                    "field": result["field_name"],
+                    "code": "DATE_OUT_OF_RANGE",
+                    "message": f"Data fora do intervalo esperado: {value}",
+                }
+            )
         else:
             result["rules_passed"].append("date_valid")
 
     def _validate_currency(
         self,
         value: str,
-        result: Dict[str, Any],
+        result: dict[str, Any],
     ) -> None:
         """Valida valor monetario.
 
@@ -473,26 +495,30 @@ class ValidationService:
             amount = float(value.replace(",", ".").replace(" ", ""))
 
             if amount < 0:
-                result["warnings"].append({
-                    "field": result["field_name"],
-                    "code": "NEGATIVE_CURRENCY",
-                    "message": "Valor monetario negativo",
-                })
+                result["warnings"].append(
+                    {
+                        "field": result["field_name"],
+                        "code": "NEGATIVE_CURRENCY",
+                        "message": "Valor monetario negativo",
+                    }
+                )
 
             result["rules_passed"].append("currency_format")
 
         except ValueError:
             result["rules_failed"].append("currency_format")
-            result["errors"].append({
-                "field": result["field_name"],
-                "code": "INVALID_CURRENCY_FORMAT",
-                "message": f"Formato de valor invalido: {value}",
-            })
+            result["errors"].append(
+                {
+                    "field": result["field_name"],
+                    "code": "INVALID_CURRENCY_FORMAT",
+                    "message": f"Formato de valor invalido: {value}",
+                }
+            )
 
     def _validate_nf_key(
         self,
         value: str,
-        result: Dict[str, Any],
+        result: dict[str, Any],
     ) -> None:
         """Valida chave de acesso NFe.
 
@@ -508,11 +534,13 @@ class ValidationService:
 
         if len(key) != 44:
             result["rules_failed"].append("nf_key_format")
-            result["errors"].append({
-                "field": result["field_name"],
-                "code": "INVALID_NF_KEY_FORMAT",
-                "message": f"Chave NFe deve ter 44 digitos, encontrado: {len(key)}",
-            })
+            result["errors"].append(
+                {
+                    "field": result["field_name"],
+                    "code": "INVALID_NF_KEY_FORMAT",
+                    "message": f"Chave NFe deve ter 44 digitos, encontrado: {len(key)}",
+                }
+            )
             return
 
         result["rules_passed"].append("nf_key_format")
@@ -520,11 +548,13 @@ class ValidationService:
         # Verifica digito verificador (modulo 11)
         if not self._nf_key_checksum(key):
             result["rules_failed"].append("nf_key_checksum")
-            result["errors"].append({
-                "field": result["field_name"],
-                "code": "INVALID_NF_KEY_CHECKSUM",
-                "message": "Digito verificador da chave NFe invalido",
-            })
+            result["errors"].append(
+                {
+                    "field": result["field_name"],
+                    "code": "INVALID_NF_KEY_CHECKSUM",
+                    "message": "Digito verificador da chave NFe invalido",
+                }
+            )
             return
 
         result["rules_passed"].append("nf_key_checksum")
@@ -554,7 +584,7 @@ class ValidationService:
     def _validate_generic(
         self,
         value: str,
-        result: Dict[str, Any],
+        result: dict[str, Any],
     ) -> None:
         """Validacao generica.
 
@@ -565,19 +595,21 @@ class ValidationService:
         result["rules_applied"].append("not_empty")
 
         if not value or not value.strip():
-            result["warnings"].append({
-                "field": result["field_name"],
-                "code": "EMPTY_VALUE",
-                "message": "Campo vazio",
-            })
+            result["warnings"].append(
+                {
+                    "field": result["field_name"],
+                    "code": "EMPTY_VALUE",
+                    "message": "Campo vazio",
+                }
+            )
         else:
             result["rules_passed"].append("not_empty")
 
     def _cross_validate(
         self,
-        fields: List[Dict[str, Any]],
-        document_type: Optional[str],
-    ) -> List[Dict[str, Any]]:
+        fields: list[dict[str, Any]],
+        document_type: str | None,
+    ) -> list[dict[str, Any]]:
         """Cross-validation entre campos.
 
         Args:
@@ -617,27 +649,31 @@ class ValidationService:
 
                 # Tolerancia de 0.01 para erros de arredondamento
                 if abs(total_value - calculated_sum) > 0.01:
-                    results.append({
-                        "type": "sum_check",
-                        "status": "failed",
-                        "expected": total_value,
-                        "calculated": calculated_sum,
-                        "difference": abs(total_value - calculated_sum),
-                        "message": f"Soma dos itens ({calculated_sum:.2f}) difere do total ({total_value:.2f})",
-                    })
+                    results.append(
+                        {
+                            "type": "sum_check",
+                            "status": "failed",
+                            "expected": total_value,
+                            "calculated": calculated_sum,
+                            "difference": abs(total_value - calculated_sum),
+                            "message": f"Soma dos itens ({calculated_sum:.2f}) difere do total ({total_value:.2f})",
+                        }
+                    )
                 else:
-                    results.append({
-                        "type": "sum_check",
-                        "status": "passed",
-                        "expected": total_value,
-                        "calculated": calculated_sum,
-                    })
+                    results.append(
+                        {
+                            "type": "sum_check",
+                            "status": "passed",
+                            "expected": total_value,
+                            "calculated": calculated_sum,
+                        }
+                    )
             except ValueError:
                 pass
 
         return results
 
-    def _calculate_score(self, result: Dict[str, Any]) -> float:
+    def _calculate_score(self, result: dict[str, Any]) -> float:
         """Calcula score de validacao.
 
         Args:
@@ -657,7 +693,7 @@ class ValidationService:
         score = (valid + warnings * 0.5) / total
         return round(score, 2)
 
-    def _needs_review(self, result: Dict[str, Any]) -> bool:
+    def _needs_review(self, result: dict[str, Any]) -> bool:
         """Determina se precisa revisao.
 
         Args:

@@ -3,7 +3,6 @@
 import logging
 from datetime import date, timedelta
 from decimal import Decimal
-from typing import Optional, List, Tuple
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,11 +16,11 @@ from modules.hr.employee_portal.repositories import (
     VacationRequestRepository,
 )
 from modules.hr.employee_portal.schemas import (
-    VacationRequestCreate,
+    VacationBalanceResponse,
     VacationCalculationRequest,
     VacationCalculationResponse,
-    VacationBalanceResponse,
     VacationPeriodSummary,
+    VacationRequestCreate,
 )
 
 logger = logging.getLogger(__name__)
@@ -111,9 +110,7 @@ class VacationService:
         available = await self.period_repo.get_available_days(employee_id)
 
         if total_days > available:
-            raise ValueError(
-                f"Dias solicitados ({total_days}) excedem saldo ({available})"
-            )
+            raise ValueError(f"Dias solicitados ({total_days}) excedem saldo ({available})")
 
         # Verificar prazo mínimo (30 dias antes)
         days_until = (data.start_date - date.today()).days
@@ -244,8 +241,8 @@ class VacationService:
         *,
         level: str = "manager",
         approved: bool = True,
-        notes: Optional[str] = None,
-        rejection_reason: Optional[str] = None,
+        notes: str | None = None,
+        rejection_reason: str | None = None,
     ) -> VacationRequest:
         """Aprova ou rejeita férias."""
         if level == "manager":
@@ -288,7 +285,7 @@ class VacationService:
         manager_level: bool = True,
         page: int = 1,
         page_size: int = 50,
-    ) -> Tuple[List[VacationRequest], int]:
+    ) -> tuple[list[VacationRequest], int]:
         """Lista solicitações pendentes de aprovação."""
         return await self.request_repo.list_pending_approval(
             condominio_id,
@@ -301,6 +298,6 @@ class VacationService:
         self,
         condominio_id: UUID,
         days_ahead: int = 30,
-    ) -> List[VacationRequest]:
+    ) -> list[VacationRequest]:
         """Retorna férias programadas."""
         return await self.request_repo.get_upcoming(condominio_id, days_ahead)

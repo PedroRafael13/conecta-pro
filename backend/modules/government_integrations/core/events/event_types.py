@@ -4,17 +4,17 @@ Tipos de Eventos do Sistema de Integrações.
 Define eventos específicos para comunicação entre módulos.
 """
 
+from dataclasses import dataclass
 from datetime import datetime
-from typing import Dict, Optional, Any, List
-from dataclasses import dataclass, field
-from enum import Enum
-from uuid import UUID, uuid4
+from enum import StrEnum
+from uuid import UUID
 
 from .event_bus import Event
 
 
-class TipoEvento(str, Enum):
+class TipoEvento(StrEnum):
     """Tipos de evento do sistema."""
+
     # Documentos Fiscais
     NFE_EMITIDA = "nfe.emitida"
     NFE_AUTORIZADA = "nfe.autorizada"
@@ -77,16 +77,16 @@ class EventoDocumentoFiscal(Event):
         tenant_id: UUID,
         tipo_documento: str,  # nfe, cte, mdfe, nfse
         documento_id: UUID,
-        chave_acesso: Optional[str] = None,
-        numero: Optional[int] = None,
-        serie: Optional[str] = None,
-        valor_total: Optional[float] = None,
-        destinatario_cnpj_cpf: Optional[str] = None,
-        protocolo: Optional[str] = None,
-        status_sefaz: Optional[str] = None,
-        motivo: Optional[str] = None,
-        xml_proc: Optional[str] = None,
-        **kwargs
+        chave_acesso: str | None = None,
+        numero: int | None = None,
+        serie: str | None = None,
+        valor_total: float | None = None,
+        destinatario_cnpj_cpf: str | None = None,
+        protocolo: str | None = None,
+        status_sefaz: str | None = None,
+        motivo: str | None = None,
+        xml_proc: str | None = None,
+        **kwargs,
     ):
         dados = {
             "tipo_documento": tipo_documento,
@@ -112,7 +112,7 @@ class EventoDocumentoFiscal(Event):
             origem="government_integrations",
             dados=dados,
             metadata=metadata,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -130,7 +130,7 @@ class EventoFolhaPagamento(Event):
         total_descontos: float = 0,
         total_liquido: float = 0,
         total_encargos: float = 0,
-        **kwargs
+        **kwargs,
     ):
         dados = {
             "competencia": competencia,
@@ -141,13 +141,7 @@ class EventoFolhaPagamento(Event):
             "total_encargos": total_encargos,
         }
 
-        super().__init__(
-            tipo=tipo_evento.value,
-            tenant_id=tenant_id,
-            origem="folha_pagamento",
-            dados=dados,
-            **kwargs
-        )
+        super().__init__(tipo=tipo_evento.value, tenant_id=tenant_id, origem="folha_pagamento", dados=dados, **kwargs)
 
 
 @dataclass
@@ -160,13 +154,13 @@ class EventoeSocial(Event):
         tenant_id: UUID,
         evento_esocial: str,  # S-1000, S-2200, etc
         id_evento: str,
-        numero_recibo: Optional[str] = None,
-        funcionario_id: Optional[UUID] = None,
-        cpf_funcionario: Optional[str] = None,
-        competencia: Optional[str] = None,
+        numero_recibo: str | None = None,
+        funcionario_id: UUID | None = None,
+        cpf_funcionario: str | None = None,
+        competencia: str | None = None,
         status: str = "enviado",
-        erros: Optional[List[str]] = None,
-        **kwargs
+        erros: list[str] | None = None,
+        **kwargs,
     ):
         dados = {
             "evento_esocial": evento_esocial,
@@ -179,13 +173,7 @@ class EventoeSocial(Event):
             "erros": erros or [],
         }
 
-        super().__init__(
-            tipo=tipo_evento.value,
-            tenant_id=tenant_id,
-            origem="esocial",
-            dados=dados,
-            **kwargs
-        )
+        super().__init__(tipo=tipo_evento.value, tenant_id=tenant_id, origem="esocial", dados=dados, **kwargs)
 
 
 @dataclass
@@ -199,10 +187,10 @@ class EventoFGTS(Event):
         competencia: str,
         tipo_guia: str = "mensal",  # mensal, rescisorio
         valor_total: float = 0,
-        codigo_barras: Optional[str] = None,
-        data_vencimento: Optional[datetime] = None,
-        data_pagamento: Optional[datetime] = None,
-        **kwargs
+        codigo_barras: str | None = None,
+        data_vencimento: datetime | None = None,
+        data_pagamento: datetime | None = None,
+        **kwargs,
     ):
         dados = {
             "competencia": competencia,
@@ -213,13 +201,7 @@ class EventoFGTS(Event):
             "data_pagamento": data_pagamento.isoformat() if data_pagamento else None,
         }
 
-        super().__init__(
-            tipo=tipo_evento.value,
-            tenant_id=tenant_id,
-            origem="fgts_digital",
-            dados=dados,
-            **kwargs
-        )
+        super().__init__(tipo=tipo_evento.value, tenant_id=tenant_id, origem="fgts_digital", dados=dados, **kwargs)
 
 
 @dataclass
@@ -237,10 +219,10 @@ class EventoSincronizacao(Event):
         registros_atualizados: int = 0,
         registros_erro: int = 0,
         duracao_segundos: float = 0,
-        periodo_inicio: Optional[datetime] = None,
-        periodo_fim: Optional[datetime] = None,
-        erro: Optional[str] = None,
-        **kwargs
+        periodo_inicio: datetime | None = None,
+        periodo_fim: datetime | None = None,
+        erro: str | None = None,
+        **kwargs,
     ):
         dados = {
             "servico": servico,
@@ -255,13 +237,7 @@ class EventoSincronizacao(Event):
             "erro": erro,
         }
 
-        super().__init__(
-            tipo=tipo_evento.value,
-            tenant_id=tenant_id,
-            origem="sync_service",
-            dados=dados,
-            **kwargs
-        )
+        super().__init__(tipo=tipo_evento.value, tenant_id=tenant_id, origem="sync_service", dados=dados, **kwargs)
 
 
 @dataclass
@@ -271,13 +247,13 @@ class EventoSistema(Event):
     def __init__(
         self,
         tipo_evento: TipoEvento,
-        tenant_id: Optional[UUID] = None,
+        tenant_id: UUID | None = None,
         servico: str = "",
-        uf: Optional[str] = None,
+        uf: str | None = None,
         descricao: str = "",
-        detalhes: Optional[Dict] = None,
+        detalhes: dict | None = None,
         severidade: str = "info",  # info, warning, error, critical
-        **kwargs
+        **kwargs,
     ):
         dados = {
             "servico": servico,
@@ -287,13 +263,7 @@ class EventoSistema(Event):
             "severidade": severidade,
         }
 
-        super().__init__(
-            tipo=tipo_evento.value,
-            tenant_id=tenant_id,
-            origem="sistema",
-            dados=dados,
-            **kwargs
-        )
+        super().__init__(tipo=tipo_evento.value, tenant_id=tenant_id, origem="sistema", dados=dados, **kwargs)
 
 
 @dataclass
@@ -308,12 +278,12 @@ class EventoErro(Event):
         operacao: str,
         erro_tipo: str,  # timeout, validacao, autenticacao, etc
         erro_mensagem: str,
-        erro_codigo: Optional[str] = None,
-        stack_trace: Optional[str] = None,
-        documento_id: Optional[UUID] = None,
+        erro_codigo: str | None = None,
+        stack_trace: str | None = None,
+        documento_id: UUID | None = None,
         recuperavel: bool = True,
         tentativas: int = 0,
-        **kwargs
+        **kwargs,
     ):
         dados = {
             "servico": servico,
@@ -336,11 +306,12 @@ class EventoErro(Event):
             origem="error_handler",
             dados=dados,
             metadata=metadata,
-            **kwargs
+            **kwargs,
         )
 
 
 # Funções auxiliares para criar eventos comuns
+
 
 def criar_evento_nfe_autorizada(
     tenant_id: UUID,
@@ -350,7 +321,7 @@ def criar_evento_nfe_autorizada(
     serie: str,
     valor_total: float,
     protocolo: str,
-    **kwargs
+    **kwargs,
 ) -> EventoDocumentoFiscal:
     """Cria evento de NF-e autorizada."""
     return EventoDocumentoFiscal(
@@ -364,16 +335,12 @@ def criar_evento_nfe_autorizada(
         valor_total=valor_total,
         protocolo=protocolo,
         status_sefaz="100",
-        **kwargs
+        **kwargs,
     )
 
 
 def criar_evento_folha_fechada(
-    tenant_id: UUID,
-    competencia: str,
-    total_funcionarios: int,
-    total_liquido: float,
-    **kwargs
+    tenant_id: UUID, competencia: str, total_funcionarios: int, total_liquido: float, **kwargs
 ) -> EventoFolhaPagamento:
     """Cria evento de folha de pagamento fechada."""
     return EventoFolhaPagamento(
@@ -382,16 +349,12 @@ def criar_evento_folha_fechada(
         competencia=competencia,
         total_funcionarios=total_funcionarios,
         total_liquido=total_liquido,
-        **kwargs
+        **kwargs,
     )
 
 
 def criar_evento_sync_concluida(
-    tenant_id: UUID,
-    servico: str,
-    registros_processados: int,
-    duracao_segundos: float,
-    **kwargs
+    tenant_id: UUID, servico: str, registros_processados: int, duracao_segundos: float, **kwargs
 ) -> EventoSincronizacao:
     """Cria evento de sincronização concluída."""
     return EventoSincronizacao(
@@ -400,17 +363,12 @@ def criar_evento_sync_concluida(
         servico=servico,
         registros_processados=registros_processados,
         duracao_segundos=duracao_segundos,
-        **kwargs
+        **kwargs,
     )
 
 
 def criar_evento_erro_integracao(
-    tenant_id: UUID,
-    servico: str,
-    operacao: str,
-    erro_tipo: str,
-    erro_mensagem: str,
-    **kwargs
+    tenant_id: UUID, servico: str, operacao: str, erro_tipo: str, erro_mensagem: str, **kwargs
 ) -> EventoErro:
     """Cria evento de erro de integração."""
     return EventoErro(
@@ -420,5 +378,5 @@ def criar_evento_erro_integracao(
         operacao=operacao,
         erro_tipo=erro_tipo,
         erro_mensagem=erro_mensagem,
-        **kwargs
+        **kwargs,
     )

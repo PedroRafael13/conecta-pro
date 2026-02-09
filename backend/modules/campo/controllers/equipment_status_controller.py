@@ -3,7 +3,6 @@ Controller FastAPI para EquipmentStatus.
 """
 
 from datetime import datetime
-from typing import Optional, List
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -62,15 +61,15 @@ async def create_equipment_status(
 
 @router.get("/", response_model=EquipmentStatusListResponse)
 async def list_equipment_status(  # pylint: disable=too-many-locals
-    search: Optional[str] = Query(None),
-    equipment_type: Optional[str] = Query(None),
-    equipment_status: Optional[EquipmentStatusType] = Query(None, alias="status"),
-    client_id: Optional[str] = Query(None),
-    post_id: Optional[str] = Query(None),
-    is_online: Optional[bool] = Query(None),
-    has_alerts: Optional[bool] = Query(None),
-    has_issues: Optional[bool] = Query(None),
-    needs_maintenance: Optional[bool] = Query(None),
+    search: str | None = Query(None),
+    equipment_type: str | None = Query(None),
+    equipment_status: EquipmentStatusType | None = Query(None, alias="status"),
+    client_id: str | None = Query(None),
+    post_id: str | None = Query(None),
+    is_online: bool | None = Query(None),
+    has_alerts: bool | None = Query(None),
+    has_issues: bool | None = Query(None),
+    needs_maintenance: bool | None = Query(None),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
@@ -102,7 +101,7 @@ async def list_equipment_status(  # pylint: disable=too-many-locals
 
 @router.get("/stats", response_model=EquipmentStatusStats)
 async def get_equipment_stats(
-    client_id: Optional[str] = Query(None),
+    client_id: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
 ) -> EquipmentStatusStats:
     """Obtém estatísticas de equipamentos."""
@@ -112,10 +111,10 @@ async def get_equipment_stats(
 
 @router.get("/offline")
 async def get_offline_equipment(
-    client_id: Optional[str] = Query(None),
+    client_id: str | None = Query(None),
     limit: int = Query(100, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
-) -> List[EquipmentStatusResponse]:
+) -> list[EquipmentStatusResponse]:
     """Obtém equipamentos offline."""
     repo = EquipmentStatusRepository(db)
     equipments = await repo.get_offline(client_id, limit)
@@ -124,10 +123,10 @@ async def get_offline_equipment(
 
 @router.get("/with-alerts")
 async def get_equipment_with_alerts(
-    client_id: Optional[str] = Query(None),
+    client_id: str | None = Query(None),
     limit: int = Query(100, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
-) -> List[EquipmentStatusResponse]:
+) -> list[EquipmentStatusResponse]:
     """Obtém equipamentos com alertas ativos."""
     repo = EquipmentStatusRepository(db)
     equipments = await repo.get_with_alerts(client_id, limit)
@@ -137,9 +136,9 @@ async def get_equipment_with_alerts(
 @router.get("/needs-maintenance")
 async def get_equipment_needs_maintenance(
     days_ahead: int = Query(7, ge=1, le=90),
-    client_id: Optional[str] = Query(None),
+    client_id: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
-) -> List[EquipmentStatusResponse]:
+) -> list[EquipmentStatusResponse]:
     """Obtém equipamentos que precisam de manutenção."""
     repo = EquipmentStatusRepository(db)
     equipments = await repo.get_needs_maintenance(days_ahead, client_id)
@@ -183,7 +182,7 @@ async def update_equipment_status(
 @router.post("/{equipment_id}/set-online", response_model=EquipmentStatusResponse)
 async def set_equipment_online(
     equipment_id: str,
-    latency_ms: Optional[int] = Query(None, ge=0),
+    latency_ms: int | None = Query(None, ge=0),
     db: AsyncSession = Depends(get_db),
 ) -> EquipmentStatusResponse:
     """Marca equipamento como online."""
@@ -206,7 +205,7 @@ async def set_equipment_online(
 @router.post("/{equipment_id}/set-offline", response_model=EquipmentStatusResponse)
 async def set_equipment_offline(
     equipment_id: str,
-    reason: Optional[str] = Query(None, max_length=255),
+    reason: str | None = Query(None, max_length=255),
     db: AsyncSession = Depends(get_db),
 ) -> EquipmentStatusResponse:
     """Marca equipamento como offline."""
@@ -242,11 +241,13 @@ async def add_equipment_alert(
             detail="Equipamento não encontrado",
         )
 
-    equipment.add_alert({
-        "type": alert_type,
-        "message": alert_message,
-        "created_at": datetime.utcnow().isoformat(),
-    })
+    equipment.add_alert(
+        {
+            "type": alert_type,
+            "message": alert_message,
+            "created_at": datetime.utcnow().isoformat(),
+        }
+    )
     await repo.db.commit()
     await repo.db.refresh(equipment)
 

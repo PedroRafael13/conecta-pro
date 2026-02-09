@@ -7,7 +7,6 @@ para formacao de preco de venda em contratos de servicos.
 
 from dataclasses import dataclass
 from decimal import ROUND_HALF_UP, Decimal
-from typing import Optional
 
 from core.logging import logger
 
@@ -222,17 +221,13 @@ class PricingEngine:
 
     def _calculate_costs(self, pricing_input: PricingInput) -> dict[str, Decimal]:
         """Calcula custos base, CCT, mao de obra e adicionais."""
-        base_cost = (
-            pricing_input.base_salary * pricing_input.headcount * pricing_input.contract_months
-        )
+        base_cost = pricing_input.base_salary * pricing_input.headcount * pricing_input.contract_months
 
         cct_percent = self._calculate_cct_percent()
         cct_value = base_cost * cct_percent
         labor_cost = base_cost + cct_value
 
-        benefits_cost = (
-            pricing_input.benefits_value * pricing_input.headcount * pricing_input.contract_months
-        )
+        benefits_cost = pricing_input.benefits_value * pricing_input.headcount * pricing_input.contract_months
         equipment_cost = pricing_input.equipment_value
         total_cost = labor_cost + benefits_cost + equipment_cost
 
@@ -246,9 +241,7 @@ class PricingEngine:
             "total_cost": self._round(total_cost),
         }
 
-    def _calculate_final_price(
-        self, pricing_input: PricingInput, costs: dict[str, Decimal]
-    ) -> dict[str, Decimal]:
+    def _calculate_final_price(self, pricing_input: PricingInput, costs: dict[str, Decimal]) -> dict[str, Decimal]:
         """Calcula preco final com impostos e margem."""
         total_cost = costs["total_cost"]
         margin_value = total_cost * (pricing_input.margin_target / Decimal("100"))
@@ -264,9 +257,7 @@ class PricingEngine:
 
         total_monthly = total_contract / pricing_input.contract_months
         unit_price = total_monthly / pricing_input.headcount
-        effective_margin = (
-            (total_contract - total_cost - tax_amount) / total_contract * Decimal("100")
-        )
+        effective_margin = (total_contract - total_cost - tax_amount) / total_contract * Decimal("100")
 
         return {
             "margin_value": self._round(margin_value),
@@ -278,9 +269,7 @@ class PricingEngine:
             "total_contract": self._round(total_contract),
         }
 
-    def calculate_cct_breakdown(
-        self, base_salary: Decimal, headcount: int, months: int
-    ) -> dict[str, Decimal]:
+    def calculate_cct_breakdown(self, base_salary: Decimal, headcount: int, months: int) -> dict[str, Decimal]:
         """
         Calcula detalhamento de cada componente do CCT.
 
@@ -295,9 +284,7 @@ class PricingEngine:
         base = base_salary * headcount * months
         return {name: self._round(base * rate) for name, rate in self.CCT_COMPONENTS.items()}
 
-    def estimate_margin(
-        self, selling_price: Decimal, total_cost: Decimal, tax_amount: Decimal
-    ) -> Decimal:
+    def estimate_margin(self, selling_price: Decimal, total_cost: Decimal, tax_amount: Decimal) -> Decimal:
         """
         Estima margem dado um preco de venda.
 
@@ -318,8 +305,8 @@ class PricingEngine:
     def simulate_price(
         self,
         pricing_input: PricingInput,
-        target_price: Optional[Decimal] = None,
-        custom_margins: Optional[list[Decimal]] = None,
+        target_price: Decimal | None = None,
+        custom_margins: list[Decimal] | None = None,
     ) -> list[PricingResult]:
         """
         Simula diferentes cenarios de precificacao.
@@ -378,9 +365,7 @@ class PricingEngine:
 
         return results
 
-    def _reverse_margin_from_price(
-        self, pricing_input: PricingInput, target_price: Decimal
-    ) -> Optional[Decimal]:
+    def _reverse_margin_from_price(self, pricing_input: PricingInput, target_price: Decimal) -> Decimal | None:
         """Calcula margem necessaria para atingir preco alvo."""
         costs = self._calculate_costs(pricing_input)
         total_cost = costs["total_cost"]

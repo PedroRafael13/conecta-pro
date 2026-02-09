@@ -1,18 +1,17 @@
 """Tests for Mobile API endpoints."""
 
-import pytest
-from unittest.mock import MagicMock, AsyncMock, patch
 from datetime import datetime
+from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
-from fastapi.testclient import TestClient
+import pytest
 from fastapi import FastAPI
+from fastapi.testclient import TestClient
 
 from modules.mobile.controllers.mobile_controller import router
-from modules.mobile.schemas.sync_schemas import MobileSyncRequest, MobileSyncOperation
-from modules.mobile.schemas.batch_schemas import BatchRequest, BatchOperation
+from modules.mobile.schemas.batch_schemas import BatchOperation, BatchRequest
 from modules.mobile.schemas.device_schemas import DeviceTokenCreate
-
+from modules.mobile.schemas.sync_schemas import MobileSyncOperation, MobileSyncRequest
 
 # Create test app
 app = FastAPI()
@@ -303,21 +302,13 @@ class TestSchemaValidation:
         """Test BatchRequest limits."""
         # Valid request
         request = BatchRequest(
-            operations=[
-                BatchOperation(id="1", method="GET", endpoint="/api/test")
-                for _ in range(50)
-            ]
+            operations=[BatchOperation(id="1", method="GET", endpoint="/api/test") for _ in range(50)]
         )
         assert len(request.operations) == 50
 
         # Invalid - too many operations
         with pytest.raises(ValueError):
-            BatchRequest(
-                operations=[
-                    BatchOperation(id=str(i), method="GET", endpoint="/api/test")
-                    for i in range(51)
-                ]
-            )
+            BatchRequest(operations=[BatchOperation(id=str(i), method="GET", endpoint="/api/test") for i in range(51)])
 
     def test_device_token_create_schema(self):
         """Test DeviceTokenCreate schema."""

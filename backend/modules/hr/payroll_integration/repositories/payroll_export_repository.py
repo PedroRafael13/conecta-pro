@@ -2,7 +2,6 @@
 
 import logging
 from datetime import datetime
-from typing import List, Optional, Tuple
 from uuid import UUID, uuid4
 
 from sqlalchemy import and_, func, select
@@ -55,7 +54,7 @@ class PayrollExportRepository:
     async def get_by_id(
         self,
         export_id: UUID,
-    ) -> Optional[PayrollExport]:
+    ) -> PayrollExport | None:
         """Busca exportação por ID."""
         query = select(PayrollExport).where(
             and_(
@@ -71,7 +70,7 @@ class PayrollExportRepository:
         self,
         export_code: str,
         condominio_id: UUID,
-    ) -> Optional[PayrollExport]:
+    ) -> PayrollExport | None:
         """Busca exportação por código."""
         query = select(PayrollExport).where(
             and_(
@@ -93,7 +92,7 @@ class PayrollExportRepository:
         status: ExportStatus = None,
         page: int = 1,
         page_size: int = 20,
-    ) -> Tuple[List[PayrollExport], int]:
+    ) -> tuple[list[PayrollExport], int]:
         """Lista exportações com filtros."""
         conditions = [
             PayrollExport.condominio_id == condominio_id,
@@ -130,7 +129,7 @@ class PayrollExportRepository:
         self,
         export_id: UUID,
         data: PayrollExportUpdate,
-    ) -> Optional[PayrollExport]:
+    ) -> PayrollExport | None:
         """Atualiza exportação."""
         export = await self.get_by_id(export_id)
         if not export:
@@ -156,7 +155,7 @@ class PayrollExportRepository:
     async def start_processing(
         self,
         export_id: UUID,
-    ) -> Optional[PayrollExport]:
+    ) -> PayrollExport | None:
         """Inicia processamento."""
         export = await self.get_by_id(export_id)
         if not export:
@@ -178,7 +177,7 @@ class PayrollExportRepository:
         file_hash: str = None,
         total_records: int = 0,
         success_records: int = 0,
-    ) -> Optional[PayrollExport]:
+    ) -> PayrollExport | None:
         """Marca exportação como concluída."""
         export = await self.get_by_id(export_id)
         if not export:
@@ -198,7 +197,7 @@ class PayrollExportRepository:
         self,
         export_id: UUID,
         error: str,
-    ) -> Optional[PayrollExport]:
+    ) -> PayrollExport | None:
         """Marca exportação como falha."""
         export = await self.get_by_id(export_id)
         if not export:
@@ -219,7 +218,7 @@ class PayrollExportRepository:
         code: str,
         message: str,
         employee_id: str = None,
-    ) -> Optional[PayrollExport]:
+    ) -> PayrollExport | None:
         """Adiciona erro à exportação."""
         export = await self.get_by_id(export_id)
         if not export:
@@ -237,7 +236,7 @@ class PayrollExportRepository:
         *,
         transmission_id: str,
         receipt_number: str = None,
-    ) -> Optional[PayrollExport]:
+    ) -> PayrollExport | None:
         """Registra transmissão."""
         export = await self.get_by_id(export_id)
         if not export:
@@ -256,7 +255,7 @@ class PayrollExportRepository:
         processed_records: int,
         success_records: int = None,
         error_records: int = None,
-    ) -> Optional[PayrollExport]:
+    ) -> PayrollExport | None:
         """Atualiza progresso da exportação."""
         export = await self.get_by_id(export_id)
         if not export:
@@ -277,7 +276,7 @@ class PayrollExportRepository:
     async def increment_download(
         self,
         export_id: UUID,
-    ) -> Optional[PayrollExport]:
+    ) -> PayrollExport | None:
         """Incrementa contador de downloads."""
         export = await self.get_by_id(export_id)
         if not export:
@@ -305,7 +304,7 @@ class PayrollExportRepository:
         self,
         condominio_id: UUID,
         limit: int = 10,
-    ) -> List[PayrollExport]:
+    ) -> list[PayrollExport]:
         """Retorna exportações pendentes."""
         query = (
             select(PayrollExport)
@@ -327,7 +326,7 @@ class PayrollExportRepository:
         self,
         condominio_id: UUID,
         limit: int = 10,
-    ) -> List[PayrollExport]:
+    ) -> list[PayrollExport]:
         """Retorna exportações que podem ser retentadas."""
         query = (
             select(PayrollExport)

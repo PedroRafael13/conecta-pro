@@ -3,7 +3,6 @@
 import logging
 from datetime import date
 from decimal import Decimal
-from typing import List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -18,9 +17,13 @@ from modules.financial.models import (
     ForecastConfidence,
     ForecastPeriodType,
     ForecastStatus,
+    TransactionCategory,
+    TransactionStatus,
+    TransactionType,
 )
 from modules.financial.repositories import (
     BankAccountRepository,
+    BankTransactionRepository,
     CashFlowEntryRepository,
     CashFlowForecastRepository,
 )
@@ -47,8 +50,6 @@ from modules.financial.schemas import (
     ForecastRisk,
     OptimizationSuggestion,
 )
-from modules.financial.models import TransactionCategory, TransactionStatus, TransactionType
-from modules.financial.repositories import BankTransactionRepository
 from modules.financial.services.cashflow_ai_service import CashFlowAIService
 from modules.financial.services.cashflow_service import CashFlowService
 from modules.financial.services.payable_ai_service import PayableAIService
@@ -98,19 +99,19 @@ def get_account_repository(session: AsyncSession = Depends(get_session)) -> Bank
 
 @router.get(
     "/projection",
-    response_model=List[CashFlowProjection],
+    response_model=list[CashFlowProjection],
     summary="Projeção de fluxo de caixa",
 )
 async def get_projection(
     condominio_id: UUID,
-    start_date: Optional[date] = Query(None, description="Data inicial"),
-    end_date: Optional[date] = Query(None, description="Data final"),
+    start_date: date | None = Query(None, description="Data inicial"),
+    end_date: date | None = Query(None, description="Data final"),
     include_pending: bool = Query(True, description="Incluir pendentes"),
     include_scheduled: bool = Query(True, description="Incluir agendados"),
     group_by: str = Query("day", description="Agrupar por: day, week, month"),
     service: CashFlowService = Depends(get_cashflow_service),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> List[CashFlowProjection]:
+) -> list[CashFlowProjection]:
     """Gera projeção de fluxo de caixa."""
     projections = await service.get_projection(
         condominio_id=condominio_id,
@@ -140,7 +141,7 @@ async def get_summary(
 
 @router.get(
     "/trends",
-    response_model=List[CashFlowTrend],
+    response_model=list[CashFlowTrend],
     summary="Tendências de fluxo de caixa",
 )
 async def get_trends(
@@ -148,7 +149,7 @@ async def get_trends(
     months: int = Query(12, ge=3, le=24, description="Meses de histórico"),
     service: CashFlowService = Depends(get_cashflow_service),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> List[CashFlowTrend]:
+) -> list[CashFlowTrend]:
     """Retorna tendências mensais de fluxo de caixa."""
     data = await service.get_monthly_trend(condominio_id, months)
     return [CashFlowTrend(**item) for item in data]
@@ -160,8 +161,8 @@ async def get_trends(
 )
 async def get_category_breakdown(
     condominio_id: UUID,
-    start_date: Optional[date] = Query(None, description="Data inicial"),
-    end_date: Optional[date] = Query(None, description="Data final"),
+    start_date: date | None = Query(None, description="Data inicial"),
+    end_date: date | None = Query(None, description="Data final"),
     service: CashFlowService = Depends(get_cashflow_service),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict:
@@ -175,8 +176,8 @@ async def get_category_breakdown(
 )
 async def get_supplier_breakdown(
     condominio_id: UUID,
-    start_date: Optional[date] = Query(None, description="Data inicial"),
-    end_date: Optional[date] = Query(None, description="Data final"),
+    start_date: date | None = Query(None, description="Data inicial"),
+    end_date: date | None = Query(None, description="Data final"),
     limit: int = Query(10, ge=1, le=50, description="Quantidade de fornecedores"),
     service: CashFlowService = Depends(get_cashflow_service),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
@@ -217,19 +218,13 @@ async def get_dashboard(
     return CashFlowDashboard(
         current_balance=total_balance,
         projected_balance_30d=(
-            ai_forecast.projections[29].projected_balance
-            if len(ai_forecast.projections) >= 30
-            else total_balance
+            ai_forecast.projections[29].projected_balance if len(ai_forecast.projections) >= 30 else total_balance
         ),
         projected_balance_60d=(
-            ai_forecast.projections[59].projected_balance
-            if len(ai_forecast.projections) >= 60
-            else total_balance
+            ai_forecast.projections[59].projected_balance if len(ai_forecast.projections) >= 60 else total_balance
         ),
         projected_balance_90d=(
-            ai_forecast.projections[-1].projected_balance
-            if ai_forecast.projections
-            else total_balance
+            ai_forecast.projections[-1].projected_balance if ai_forecast.projections else total_balance
         ),
         total_inflows_30d=summary.get("total_receivables", Decimal("0")),
         total_outflows_30d=summary.get("total_payables", Decimal("0")),
@@ -273,22 +268,22 @@ async def create_entry(
 
 @router.get(
     "/entries",
-    response_model=List[CashFlowEntryResponse],
+    response_model=list[CashFlowEntryResponse],
     summary="Listar entradas",
 )
 async def list_entries(
     condominio_id: UUID,
-    entry_type: Optional[CashFlowEntryType] = Query(None),
-    source_type: Optional[CashFlowSourceType] = Query(None),
-    entry_status: Optional[CashFlowEntryStatus] = Query(None),
-    start_date: Optional[date] = Query(None),
-    end_date: Optional[date] = Query(None),
-    is_recurring: Optional[bool] = Query(None),
+    entry_type: CashFlowEntryType | None = Query(None),
+    source_type: CashFlowSourceType | None = Query(None),
+    entry_status: CashFlowEntryStatus | None = Query(None),
+    start_date: date | None = Query(None),
+    end_date: date | None = Query(None),
+    is_recurring: bool | None = Query(None),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     repo: CashFlowEntryRepository = Depends(get_entry_repository),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> List[CashFlowEntryResponse]:
+) -> list[CashFlowEntryResponse]:
     """Lista entradas de fluxo de caixa com filtros."""
     filters = CashFlowEntryFilter(
         condominio_id=condominio_id,
@@ -305,7 +300,7 @@ async def list_entries(
 
 @router.get(
     "/entries/pending",
-    response_model=List[CashFlowEntryResponse],
+    response_model=list[CashFlowEntryResponse],
     summary="Entradas pendentes",
 )
 async def get_pending_entries(
@@ -313,7 +308,7 @@ async def get_pending_entries(
     days_ahead: int = Query(30, ge=1, le=90),
     repo: CashFlowEntryRepository = Depends(get_entry_repository),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> List[CashFlowEntryResponse]:
+) -> list[CashFlowEntryResponse]:
     """Retorna entradas pendentes nos próximos dias."""
     entries = await repo.get_pending(condominio_id, days_ahead)
     return [CashFlowEntryResponse.model_validate(e) for e in entries]
@@ -443,8 +438,7 @@ async def realize_entry(
     # Se valor diferente, registra diferença
     if data.realized_amount != entry.expected_amount:
         update_data["notes"] = (
-            f"{entry.notes or ''}\n"
-            f"Diferença: {data.realized_amount - entry.expected_amount:.2f}"
+            f"{entry.notes or ''}\nDiferença: {data.realized_amount - entry.expected_amount:.2f}"
         ).strip()
 
     updated = await repo.update(entry_id, update_data)
@@ -456,9 +450,7 @@ async def realize_entry(
             {
                 "bank_account_id": data.bank_account_id,
                 "transaction_type": (
-                    TransactionType.CREDITO
-                    if entry.entry_type == CashFlowEntryType.ENTRADA
-                    else TransactionType.DEBITO
+                    TransactionType.CREDITO if entry.entry_type == CashFlowEntryType.ENTRADA else TransactionType.DEBITO
                 ),
                 "category": TransactionCategory.OUTROS,
                 "amount": data.realized_amount,
@@ -503,21 +495,21 @@ async def create_forecast(
 
 @router.get(
     "/forecasts",
-    response_model=List[CashFlowForecastResponse],
+    response_model=list[CashFlowForecastResponse],
     summary="Listar previsões",
 )
 async def list_forecasts(
     condominio_id: UUID,
-    period_type: Optional[ForecastPeriodType] = Query(None),
-    forecast_status: Optional[ForecastStatus] = Query(None),
-    confidence: Optional[ForecastConfidence] = Query(None),
-    start_date: Optional[date] = Query(None),
-    end_date: Optional[date] = Query(None),
+    period_type: ForecastPeriodType | None = Query(None),
+    forecast_status: ForecastStatus | None = Query(None),
+    confidence: ForecastConfidence | None = Query(None),
+    start_date: date | None = Query(None),
+    end_date: date | None = Query(None),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     repo: CashFlowForecastRepository = Depends(get_forecast_repository),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> List[CashFlowForecastResponse]:
+) -> list[CashFlowForecastResponse]:
     """Lista previsões com filtros."""
     filters = CashFlowForecastFilter(
         condominio_id=condominio_id,
@@ -533,14 +525,14 @@ async def list_forecasts(
 
 @router.get(
     "/forecasts/active",
-    response_model=List[CashFlowForecastResponse],
+    response_model=list[CashFlowForecastResponse],
     summary="Previsões ativas",
 )
 async def get_active_forecasts(
     condominio_id: UUID,
     repo: CashFlowForecastRepository = Depends(get_forecast_repository),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> List[CashFlowForecastResponse]:
+) -> list[CashFlowForecastResponse]:
     """Retorna previsões ativas do condomínio."""
     forecasts = await repo.get_active(condominio_id)
     return [CashFlowForecastResponse.model_validate(f) for f in forecasts]
@@ -672,10 +664,7 @@ async def generate_ai_forecast(
     """Gera previsão de fluxo de caixa usando IA."""
     try:
         forecast = await service.generate_forecast(data)
-        logger.info(
-            f"Previsão IA gerada para condomínio {data.condominio_id} "
-            f"por {current_user.get('email')}"
-        )
+        logger.info(f"Previsão IA gerada para condomínio {data.condominio_id} por {current_user.get('email')}")
         return forecast
     except Exception as e:
         logger.error(f"Erro ao gerar previsão IA: {e}")
@@ -713,14 +702,14 @@ async def detect_anomalies(
 
 @router.get(
     "/ai/suggestions",
-    response_model=List[OptimizationSuggestion],
+    response_model=list[OptimizationSuggestion],
     summary="Sugestões de otimização",
 )
 async def get_optimization_suggestions(
     condominio_id: UUID,
     service: CashFlowAIService = Depends(get_ai_service),
     current_user: dict = Depends(get_current_user),
-) -> List[OptimizationSuggestion]:
+) -> list[OptimizationSuggestion]:
     """Retorna sugestões de otimização baseadas em IA."""
     try:
         suggestions = await service.suggest_optimizations(condominio_id)
@@ -739,7 +728,7 @@ async def get_optimization_suggestions(
 
 @router.get(
     "/ai/risks",
-    response_model=List[ForecastRisk],
+    response_model=list[ForecastRisk],
     summary="Riscos identificados",
 )
 async def get_risks(
@@ -747,7 +736,7 @@ async def get_risks(
     period_days: int = Query(90, ge=30, le=365),
     service: CashFlowAIService = Depends(get_ai_service),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> List[ForecastRisk]:
+) -> list[ForecastRisk]:
     """Retorna riscos identificados pela IA."""
     try:
         forecast_request = AIForecastRequest(
@@ -766,7 +755,7 @@ async def get_risks(
 
 @router.get(
     "/ai/opportunities",
-    response_model=List[ForecastOpportunity],
+    response_model=list[ForecastOpportunity],
     summary="Oportunidades identificadas",
 )
 async def get_opportunities(
@@ -774,7 +763,7 @@ async def get_opportunities(
     period_days: int = Query(90, ge=30, le=365),
     service: CashFlowAIService = Depends(get_ai_service),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> List[ForecastOpportunity]:
+) -> list[ForecastOpportunity]:
     """Retorna oportunidades identificadas pela IA."""
     try:
         forecast_request = AIForecastRequest(

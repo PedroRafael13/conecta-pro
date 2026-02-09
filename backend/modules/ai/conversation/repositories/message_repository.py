@@ -1,8 +1,8 @@
 """Repository para ChatMessage."""
 
 import logging
-from datetime import datetime, UTC
-from typing import Any, Optional
+from datetime import UTC, datetime
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import and_, desc, func
@@ -36,17 +36,17 @@ class ChatMessageRepository:
         session_id: UUID,
         message_type: MessageType,
         content: str,
-        intent: Optional[IntentCategory] = None,
-        intent_confidence: Optional[float] = None,
-        sentiment: Optional[str] = None,
-        entities: Optional[list[dict]] = None,
-        suggestions: Optional[list[dict]] = None,
-        actions: Optional[list[dict]] = None,
-        related_links: Optional[list[dict]] = None,
-        processing_time_ms: Optional[int] = None,
-        model_used: Optional[str] = None,
-        tokens_used: Optional[int] = None,
-        context_snapshot: Optional[dict] = None,
+        intent: IntentCategory | None = None,
+        intent_confidence: float | None = None,
+        sentiment: str | None = None,
+        entities: list[dict] | None = None,
+        suggestions: list[dict] | None = None,
+        actions: list[dict] | None = None,
+        related_links: list[dict] | None = None,
+        processing_time_ms: int | None = None,
+        model_used: str | None = None,
+        tokens_used: int | None = None,
+        context_snapshot: dict | None = None,
     ) -> ChatMessage:
         """
         Cria nova mensagem.
@@ -98,9 +98,9 @@ class ChatMessageRepository:
         self,
         session_id: UUID,
         content: str,
-        intent: Optional[IntentCategory] = None,
-        intent_confidence: Optional[float] = None,
-        entities: Optional[list[dict]] = None,
+        intent: IntentCategory | None = None,
+        intent_confidence: float | None = None,
+        entities: list[dict] | None = None,
     ) -> ChatMessage:
         """
         Cria mensagem do usuario.
@@ -128,12 +128,12 @@ class ChatMessageRepository:
         self,
         session_id: UUID,
         content: str,
-        suggestions: Optional[list[dict]] = None,
-        actions: Optional[list[dict]] = None,
-        related_links: Optional[list[dict]] = None,
-        processing_time_ms: Optional[int] = None,
-        model_used: Optional[str] = None,
-        tokens_used: Optional[int] = None,
+        suggestions: list[dict] | None = None,
+        actions: list[dict] | None = None,
+        related_links: list[dict] | None = None,
+        processing_time_ms: int | None = None,
+        model_used: str | None = None,
+        tokens_used: int | None = None,
     ) -> ChatMessage:
         """
         Cria mensagem do assistente.
@@ -163,7 +163,7 @@ class ChatMessageRepository:
             tokens_used=tokens_used,
         )
 
-    async def get_by_id(self, message_id: UUID) -> Optional[ChatMessage]:
+    async def get_by_id(self, message_id: UUID) -> ChatMessage | None:
         """
         Busca mensagem por ID.
 
@@ -173,9 +173,7 @@ class ChatMessageRepository:
         Returns:
             ChatMessage ou None
         """
-        result = await self.db.execute(
-            select(ChatMessage).where(ChatMessage.id == message_id)
-        )
+        result = await self.db.execute(select(ChatMessage).where(ChatMessage.id == message_id))
         return result.scalar_one_or_none()
 
     async def get_by_session(
@@ -219,11 +217,7 @@ class ChatMessageRepository:
         Returns:
             Total de mensagens
         """
-        result = await self.db.execute(
-            select(func.count(ChatMessage.id)).where(
-                ChatMessage.session_id == session_id
-            )
-        )
+        result = await self.db.execute(select(func.count(ChatMessage.id)).where(ChatMessage.session_id == session_id))
         return result.scalar() or 0
 
     async def get_last_messages(
@@ -257,10 +251,10 @@ class ChatMessageRepository:
     async def update_feedback(
         self,
         message_id: UUID,
-        user_rating: Optional[int] = None,
-        was_helpful: Optional[bool] = None,
-        user_feedback: Optional[str] = None,
-    ) -> Optional[ChatMessage]:
+        user_rating: int | None = None,
+        was_helpful: bool | None = None,
+        user_feedback: str | None = None,
+    ) -> ChatMessage | None:
         """
         Atualiza feedback de uma mensagem.
 
@@ -295,8 +289,8 @@ class ChatMessageRepository:
         self,
         message_id: UUID,
         status: MessageStatus,
-        error_message: Optional[str] = None,
-    ) -> Optional[ChatMessage]:
+        error_message: str | None = None,
+    ) -> ChatMessage | None:
         """
         Atualiza status de uma mensagem.
 
@@ -351,9 +345,7 @@ class ChatMessageRepository:
         Returns:
             Quantidade removida
         """
-        result = await self.db.execute(
-            select(ChatMessage).where(ChatMessage.session_id == session_id)
-        )
+        result = await self.db.execute(select(ChatMessage).where(ChatMessage.session_id == session_id))
         messages = list(result.scalars().all())
 
         count = len(messages)
@@ -414,14 +406,8 @@ class ChatMessageRepository:
         user_count = sum(1 for m in messages if m.message_type == MessageType.USER)
         assistant_count = len(messages) - user_count
 
-        response_times = [
-            m.processing_time_ms
-            for m in messages
-            if m.processing_time_ms
-        ]
-        avg_response_time = (
-            sum(response_times) / len(response_times) if response_times else 0
-        )
+        response_times = [m.processing_time_ms for m in messages if m.processing_time_ms]
+        avg_response_time = sum(response_times) / len(response_times) if response_times else 0
 
         total_tokens = sum(m.tokens_used or 0 for m in messages)
 
@@ -440,8 +426,8 @@ class ChatMessageRepository:
 
     async def get_intent_distribution(
         self,
-        session_id: Optional[UUID] = None,
-        user_id: Optional[int] = None,
+        session_id: UUID | None = None,
+        user_id: int | None = None,
     ) -> dict[str, int]:
         """
         Retorna distribuicao de intencoes.
@@ -456,9 +442,7 @@ class ChatMessageRepository:
         query = select(
             ChatMessage.intent,
             func.count(ChatMessage.id).label("count"),
-        ).where(
-            ChatMessage.intent.isnot(None)
-        )
+        ).where(ChatMessage.intent.isnot(None))
 
         if session_id:
             query = query.where(ChatMessage.session_id == session_id)
@@ -468,10 +452,7 @@ class ChatMessageRepository:
         result = await self.db.execute(query)
         rows = result.all()
 
-        return {
-            row.intent.value if row.intent else "unknown": row.count
-            for row in rows
-        }
+        return {row.intent.value if row.intent else "unknown": row.count for row in rows}
 
     async def search_messages(
         self,
@@ -497,9 +478,7 @@ class ChatMessageRepository:
             )
         )
 
-        search_query = search_query.order_by(desc(ChatMessage.created_at)).limit(
-            limit
-        )
+        search_query = search_query.order_by(desc(ChatMessage.created_at)).limit(limit)
 
         result = await self.db.execute(search_query)
         return list(result.scalars().all())

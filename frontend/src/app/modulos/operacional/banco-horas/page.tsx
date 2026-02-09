@@ -4,7 +4,6 @@ import { Clock, Search, Plus, Eye, Check, X, ArrowLeft, ChevronLeft, ChevronRigh
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-;
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Modal, ModalFooter } from '@/components/ui/modal';
@@ -40,20 +39,24 @@ export default function BancoHorasPage() {
   const [selectedType, setSelectedType] = useState<TimeBankEntryType | ''>('');
   const [selectedDate, setSelectedDate] = useState('');
 
+  // Cast needed: local types use PT values, generated hook expects EN values
   const { data: entriesData, isLoading, error: entriesError, refetch } = useTimeBankEntries({
     page,
     page_size: pageSize,
-    status: selectedStatus || undefined,
-    entry_type: selectedType || undefined,
-    start_date: selectedDate || undefined,
-  });
-  const entries: TimeBankEntry[] = (entriesData as any)?.items ?? (Array.isArray(entriesData) ? entriesData : []);
-  const total = (entriesData as any)?.total ?? entries.length;
-  const totalPages = (entriesData as any)?.total_pages ?? Math.ceil(total / pageSize);
+    ...(selectedStatus ? { status: selectedStatus as unknown as string } : {}),
+    ...(selectedType ? { entry_type: selectedType as unknown as string } : {}),
+  } as Parameters<typeof useTimeBankEntries>[0]);
+  const entriesAny = entriesData as unknown as Record<string, unknown> | undefined;
+  const entriesRaw = entriesAny?.items;
+  const entries = (Array.isArray(entriesRaw) ? entriesRaw : Array.isArray(entriesData) ? entriesData : []) as TimeBankEntry[];
+  const total = (entriesAny?.total as number) ?? entries.length;
+  const totalPages = (entriesAny?.total_pages as number) ?? Math.ceil(total / pageSize);
   const error = entriesError ? 'Erro ao carregar banco de horas' : null;
 
-  const { data: pendingEntries = [] } = usePendingEntries();
-  const { data: alerts = [] } = useExpirationAlerts();
+  const { data: pendingData = [] } = usePendingEntries();
+  const pendingEntries = pendingData as TimeBankEntry[];
+  const { data: alertsRaw = [] } = useExpirationAlerts();
+  const alerts = alertsRaw as unknown as TimeBankAlert[];
   const { data: stats = null } = useTimeBankStats();
   const approveMutation = useApproveTimeBankEntry();
   const rejectMutation = useRejectTimeBankEntry();
@@ -167,7 +170,7 @@ export default function BancoHorasPage() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={refetch} disabled={isLoading}>
+              <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isLoading}>
                 <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
                 Atualizar
               </Button>
@@ -188,15 +191,15 @@ export default function BancoHorasPage() {
             {alerts.slice(0, 3).map((alert, index) => (
               <div
                 key={index}
-                className={`flex items-center gap-3 p-3 rounded-lg border ${ALERT_SEVERITY_COLORS[alert.severity]}`}
+                className={`flex items-center gap-3 p-3 rounded-lg border ${ALERT_SEVERITY_COLORS[alert.severity] ?? ''}`}
               >
                 <Bell className="w-5 h-5 flex-shrink-0" />
                 <div className="flex-1">
-                  <p className="font-medium">{alert.employee_name}</p>
-                  <p className="text-sm opacity-80">{alert.message}</p>
+                  <p className="font-medium">{String(alert.employee_name ?? '')}</p>
+                  <p className="text-sm opacity-80">{String(alert.message ?? '')}</p>
                 </div>
-                {alert.hours && (
-                  <span className="font-semibold">{formatHours(alert.hours)}</span>
+                {alert.hours != null && (
+                  <span className="font-semibold">{formatHours(Number(alert.hours))}</span>
                 )}
               </div>
             ))}
@@ -308,13 +311,13 @@ export default function BancoHorasPage() {
                   className="flex items-center justify-between bg-[hsl(var(--background))]/50 p-3 rounded-lg"
                 >
                   <div className="flex items-center gap-3">
-                    {getEntryIcon(entry.entry_type)}
+                    {getEntryIcon(entry.entry_type as TimeBankEntryType)}
                     <div>
                       <p className="text-sm font-medium text-[hsl(var(--foreground))]">
-                        {entry.employee_name || 'Funcionario'}
+                        {(entry as TimeBankEntry).employee_name || 'Funcionario'}
                       </p>
                       <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                        {formatDate(entry.reference_date)} • {entry.description || TIME_BANK_ENTRY_TYPE_LABELS[entry.entry_type]}
+                        {formatDate(entry.reference_date)} • {entry.description || (TIME_BANK_ENTRY_TYPE_LABELS[entry.entry_type as TimeBankEntryType] ?? '')}
                       </p>
                     </div>
                   </div>
@@ -327,7 +330,7 @@ export default function BancoHorasPage() {
                         variant="ghost"
                         size="sm"
                         onClick={() => {
-                          setSelectedEntry(entry);
+                          setSelectedEntry(entry as TimeBankEntry);
                           setShowApproveModal(true);
                         }}
                         className="text-green-500 hover:text-green-600"
@@ -337,7 +340,7 @@ export default function BancoHorasPage() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleReject(entry)}
+                        onClick={() => handleReject(entry as TimeBankEntry)}
                         className="text-red-500 hover:text-red-600"
                       >
                         <X className="w-4 h-4" />
@@ -389,7 +392,7 @@ export default function BancoHorasPage() {
           <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-6 flex items-center gap-3">
             <XCircle className="w-5 h-5 text-red-500" />
             <p className="text-red-500">{error}</p>
-            <Button variant="outline" size="sm" onClick={refetch} className="ml-auto">
+            <Button variant="outline" size="sm" onClick={() => refetch()} className="ml-auto">
               Tentar novamente
             </Button>
           </div>

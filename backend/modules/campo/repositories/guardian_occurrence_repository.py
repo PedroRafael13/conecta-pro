@@ -2,8 +2,8 @@
 Repository para GuardianOccurrence.
 """
 
+import builtins
 from datetime import datetime, timedelta
-from typing import Optional, List
 from uuid import uuid4
 
 from sqlalchemy import func, or_, select
@@ -31,10 +31,7 @@ class GuardianOccurrenceRepository:
 
     async def create(self, data: GuardianOccurrenceCreate) -> GuardianOccurrence:
         """Cria uma nova ocorrência."""
-        occurrence_code = (
-            f"OC-{datetime.utcnow().strftime('%Y%m%d')}-"
-            f"{str(uuid4())[:8].upper()}"
-        )
+        occurrence_code = f"OC-{datetime.utcnow().strftime('%Y%m%d')}-{str(uuid4())[:8].upper()}"
 
         occurrence = GuardianOccurrence(
             guardian_id=data.guardian_id,
@@ -73,7 +70,7 @@ class GuardianOccurrenceRepository:
         await self.db.refresh(occurrence)
         return occurrence
 
-    async def get_by_id(self, occurrence_id: str) -> Optional[GuardianOccurrence]:
+    async def get_by_id(self, occurrence_id: str) -> GuardianOccurrence | None:
         """Busca ocorrência por ID."""
         result = await self.db.execute(
             select(GuardianOccurrence).where(
@@ -83,7 +80,7 @@ class GuardianOccurrenceRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_by_code(self, occurrence_code: str) -> Optional[GuardianOccurrence]:
+    async def get_by_code(self, occurrence_code: str) -> GuardianOccurrence | None:
         """Busca ocorrência por código."""
         result = await self.db.execute(
             select(GuardianOccurrence).where(
@@ -96,7 +93,7 @@ class GuardianOccurrenceRepository:
     async def get_by_guardian_id(
         self,
         guardian_id: str,
-    ) -> Optional[GuardianOccurrence]:
+    ) -> GuardianOccurrence | None:
         """Busca ocorrência por ID do Guardian."""
         result = await self.db.execute(
             select(GuardianOccurrence).where(
@@ -132,19 +129,13 @@ class GuardianOccurrenceRepository:
                 query = query.where(column == value)
 
         if filters.is_critical is True:
-            query = query.where(
-                GuardianOccurrence.severity == OccurrenceSeverity.CRITICAL.value
-            )
+            query = query.where(GuardianOccurrence.severity == OccurrenceSeverity.CRITICAL.value)
 
         if filters.is_false_alarm is not None:
-            query = query.where(
-                GuardianOccurrence.is_false_alarm == filters.is_false_alarm
-            )
+            query = query.where(GuardianOccurrence.is_false_alarm == filters.is_false_alarm)
 
         if filters.requires_followup is not None:
-            query = query.where(
-                GuardianOccurrence.requires_followup == filters.requires_followup
-            )
+            query = query.where(GuardianOccurrence.requires_followup == filters.requires_followup)
 
         return query
 
@@ -166,9 +157,7 @@ class GuardianOccurrenceRepository:
             query = query.where(GuardianOccurrence.status.in_(closed_statuses))
 
         if filters.date_from:
-            query = query.where(
-                GuardianOccurrence.event_timestamp >= filters.date_from
-            )
+            query = query.where(GuardianOccurrence.event_timestamp >= filters.date_from)
 
         if filters.date_to:
             query = query.where(GuardianOccurrence.event_timestamp <= filters.date_to)
@@ -180,7 +169,7 @@ class GuardianOccurrenceRepository:
         filters: GuardianOccurrenceFilter,
         page: int = 1,
         page_size: int = 20,
-    ) -> tuple[List[GuardianOccurrence], int]:
+    ) -> tuple[list[GuardianOccurrence], int]:
         """Lista ocorrências com filtros e paginação."""
         query = select(GuardianOccurrence).where(GuardianOccurrence.is_active.is_(True))
 
@@ -207,7 +196,7 @@ class GuardianOccurrenceRepository:
         self,
         client_id: str | None = None,
         limit: int = 100,
-    ) -> List[GuardianOccurrence]:
+    ) -> builtins.list[GuardianOccurrence]:
         """Busca ocorrências abertas."""
         open_statuses = [
             OccurrenceStatus.OPEN.value,
@@ -232,7 +221,7 @@ class GuardianOccurrenceRepository:
         result = await self.db.execute(query)
         return list(result.scalars().all())
 
-    async def get_critical_open(self, limit: int = 50) -> List[GuardianOccurrence]:
+    async def get_critical_open(self, limit: int = 50) -> builtins.list[GuardianOccurrence]:
         """Busca ocorrências críticas abertas."""
         open_statuses = [
             OccurrenceStatus.OPEN.value,
@@ -258,7 +247,7 @@ class GuardianOccurrenceRepository:
         operator_id: str,
         operator_name: str,
         notes: str | None = None,
-    ) -> Optional[GuardianOccurrence]:
+    ) -> GuardianOccurrence | None:
         """Reconhece uma ocorrência."""
         occurrence = await self.get_by_id(occurrence_id)
         if occurrence:
@@ -272,7 +261,7 @@ class GuardianOccurrenceRepository:
     async def start_progress(
         self,
         occurrence_id: str,
-    ) -> Optional[GuardianOccurrence]:
+    ) -> GuardianOccurrence | None:
         """Inicia atendimento da ocorrência."""
         occurrence = await self.get_by_id(occurrence_id)
         if occurrence:
@@ -288,7 +277,7 @@ class GuardianOccurrenceRepository:
         is_false_alarm: bool = False,
         requires_followup: bool = False,
         followup_notes: str | None = None,
-    ) -> Optional[GuardianOccurrence]:
+    ) -> GuardianOccurrence | None:
         """Resolve uma ocorrência."""
         occurrence = await self.get_by_id(occurrence_id)
         if occurrence:
@@ -308,7 +297,7 @@ class GuardianOccurrenceRepository:
         occurrence_id: str,
         escalated_to: str,
         reason: str,
-    ) -> Optional[GuardianOccurrence]:
+    ) -> GuardianOccurrence | None:
         """Escala uma ocorrência."""
         occurrence = await self.get_by_id(occurrence_id)
         if occurrence:
@@ -317,7 +306,7 @@ class GuardianOccurrenceRepository:
             await self.db.refresh(occurrence)
         return occurrence
 
-    async def close(self, occurrence_id: str) -> Optional[GuardianOccurrence]:
+    async def close(self, occurrence_id: str) -> GuardianOccurrence | None:
         """Fecha uma ocorrência."""
         occurrence = await self.get_by_id(occurrence_id)
         if occurrence:
@@ -348,47 +337,33 @@ class GuardianOccurrenceRepository:
             base_query = base_query.where(GuardianOccurrence.client_id == client_id)
 
         # Contagem total
-        total_result = await self.db.execute(
-            select(func.count()).select_from(base_query.subquery())
-        )
+        total_result = await self.db.execute(select(func.count()).select_from(base_query.subquery()))
         total = total_result.scalar() or 0
 
         # Contagem por status
         status_counts = {}
         for status in OccurrenceStatus:
             status_query = base_query.where(GuardianOccurrence.status == status.value)
-            count_result = await self.db.execute(
-                select(func.count()).select_from(status_query.subquery())
-            )
+            count_result = await self.db.execute(select(func.count()).select_from(status_query.subquery()))
             status_counts[status.value] = count_result.scalar() or 0
 
         # Contagem por tipo
         type_counts = {}
         for occ_type in OccurrenceType:
-            type_query = base_query.where(
-                GuardianOccurrence.occurrence_type == occ_type.value
-            )
-            count_result = await self.db.execute(
-                select(func.count()).select_from(type_query.subquery())
-            )
+            type_query = base_query.where(GuardianOccurrence.occurrence_type == occ_type.value)
+            count_result = await self.db.execute(select(func.count()).select_from(type_query.subquery()))
             type_counts[occ_type.value] = count_result.scalar() or 0
 
         # Contagem por gravidade
         severity_counts = {}
         for severity in OccurrenceSeverity:
             sev_query = base_query.where(GuardianOccurrence.severity == severity.value)
-            count_result = await self.db.execute(
-                select(func.count()).select_from(sev_query.subquery())
-            )
+            count_result = await self.db.execute(select(func.count()).select_from(sev_query.subquery()))
             severity_counts[severity.value] = count_result.scalar() or 0
 
         # Falsos alarmes
         false_alarm_result = await self.db.execute(
-            select(func.count()).select_from(
-                base_query.where(
-                    GuardianOccurrence.is_false_alarm.is_(True)
-                ).subquery()
-            )
+            select(func.count()).select_from(base_query.where(GuardianOccurrence.is_false_alarm.is_(True)).subquery())
         )
         false_alarms = false_alarm_result.scalar() or 0
 
@@ -397,11 +372,13 @@ class GuardianOccurrenceRepository:
             select(func.count()).select_from(
                 base_query.where(
                     GuardianOccurrence.severity == OccurrenceSeverity.CRITICAL.value,
-                    GuardianOccurrence.status.in_([
-                        OccurrenceStatus.OPEN.value,
-                        OccurrenceStatus.ACKNOWLEDGED.value,
-                        OccurrenceStatus.IN_PROGRESS.value,
-                    ]),
+                    GuardianOccurrence.status.in_(
+                        [
+                            OccurrenceStatus.OPEN.value,
+                            OccurrenceStatus.ACKNOWLEDGED.value,
+                            OccurrenceStatus.IN_PROGRESS.value,
+                        ]
+                    ),
                 ).subquery()
             )
         )
@@ -410,9 +387,7 @@ class GuardianOccurrenceRepository:
         # Aguardando follow-up
         followup_result = await self.db.execute(
             select(func.count()).select_from(
-                base_query.where(
-                    GuardianOccurrence.requires_followup.is_(True)
-                ).subquery()
+                base_query.where(GuardianOccurrence.requires_followup.is_(True)).subquery()
             )
         )
         requires_followup_count = followup_result.scalar() or 0

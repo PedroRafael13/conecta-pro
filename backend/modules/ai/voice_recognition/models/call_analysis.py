@@ -5,19 +5,19 @@ Model for analyzing phone calls and voice interactions.
 """
 
 from datetime import datetime
-from enum import Enum
-from typing import Optional, List, Dict, Any
+from enum import StrEnum
+from typing import Any
 from uuid import uuid4
 
-from sqlalchemy import Column, String, Boolean, DateTime, Float, Integer, Text, ForeignKey
-from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY
-from sqlalchemy.orm import relationship
+from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 
 from core.models.base import Base
 
 
-class CallAnalysisStatusEnum(str, Enum):
+class CallAnalysisStatusEnum(StrEnum):
     """Call analysis status."""
+
     PENDING = "pending"
     ANALYZING = "analyzing"
     COMPLETED = "completed"
@@ -26,8 +26,9 @@ class CallAnalysisStatusEnum(str, Enum):
     REVIEWED = "reviewed"
 
 
-class CallTypeEnum(str, Enum):
+class CallTypeEnum(StrEnum):
     """Type of call."""
+
     SUPPORT = "support"
     SALES = "sales"
     COMPLAINT = "complaint"
@@ -42,8 +43,9 @@ class CallTypeEnum(str, Enum):
     OTHER = "other"
 
 
-class CallSentimentEnum(str, Enum):
+class CallSentimentEnum(StrEnum):
     """Overall call sentiment."""
+
     VERY_POSITIVE = "very_positive"
     POSITIVE = "positive"
     NEUTRAL = "neutral"
@@ -190,24 +192,28 @@ class CallAnalysis(Base):
         """Add an identified issue."""
         if not self.issues_identified:
             self.issues_identified = []
-        self.issues_identified.append({
-            "issue": issue,
-            "severity": severity,
-            "resolved": resolved,
-            "identified_at": datetime.utcnow().isoformat(),
-        })
+        self.issues_identified.append(
+            {
+                "issue": issue,
+                "severity": severity,
+                "resolved": resolved,
+                "identified_at": datetime.utcnow().isoformat(),
+            }
+        )
         self.updated_at = datetime.utcnow()
 
-    def add_action_item(self, action: str, assignee: Optional[str] = None, due: Optional[datetime] = None) -> None:
+    def add_action_item(self, action: str, assignee: str | None = None, due: datetime | None = None) -> None:
         """Add an action item."""
         if not self.action_items:
             self.action_items = []
-        self.action_items.append({
-            "action": action,
-            "assignee": assignee,
-            "due": due.isoformat() if due else None,
-            "status": "pending",
-        })
+        self.action_items.append(
+            {
+                "action": action,
+                "assignee": assignee,
+                "due": due.isoformat() if due else None,
+                "status": "pending",
+            }
+        )
         self.follow_up_required = True
         self.updated_at = datetime.utcnow()
 
@@ -215,12 +221,14 @@ class CallAnalysis(Base):
         """Add an alert."""
         if not self.alerts:
             self.alerts = []
-        self.alerts.append({
-            "type": alert_type,
-            "severity": severity,
-            "message": message,
-            "timestamp": datetime.utcnow().isoformat(),
-        })
+        self.alerts.append(
+            {
+                "type": alert_type,
+                "severity": severity,
+                "message": message,
+                "timestamp": datetime.utcnow().isoformat(),
+            }
+        )
         self.updated_at = datetime.utcnow()
 
     def calculate_talk_ratio(self) -> None:
@@ -229,7 +237,7 @@ class CallAnalysis(Base):
             if self.customer_talk_time > 0:
                 self.talk_ratio = self.agent_talk_time / self.customer_talk_time
             else:
-                self.talk_ratio = float('inf')
+                self.talk_ratio = float("inf")
         self.updated_at = datetime.utcnow()
 
     def needs_escalation(self) -> bool:
@@ -244,7 +252,7 @@ class CallAnalysis(Base):
             return True
         return False
 
-    def get_quality_summary(self) -> Dict[str, Any]:
+    def get_quality_summary(self) -> dict[str, Any]:
         """Get quality metrics summary."""
         return {
             "quality_score": self.quality_score,
@@ -256,7 +264,7 @@ class CallAnalysis(Base):
             "alerts_count": len(self.alerts or []),
         }
 
-    def get_sentiment_summary(self) -> Dict[str, Any]:
+    def get_sentiment_summary(self) -> dict[str, Any]:
         """Get sentiment analysis summary."""
         return {
             "overall": self.overall_sentiment,

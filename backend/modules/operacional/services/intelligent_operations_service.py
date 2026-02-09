@@ -12,27 +12,26 @@ ROI Target: R$ 150K
 Sprint: FASE 3 - Excelência Operacional
 """
 
-import json
 import logging
 import statistics
-from dataclasses import dataclass, asdict
-from datetime import datetime, timedelta, time
-from decimal import Decimal
-from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple
-from uuid import UUID
+from dataclasses import asdict, dataclass
+from datetime import datetime, time, timedelta
+from enum import StrEnum
+from typing import Any
 
 from sqlalchemy.orm import Session
 
-from core.cache.redis import cache_get, cache_set, cache_delete
+from core.cache.redis import cache_get, cache_set
 from modules.operacional.models.employee import Employee as EmployeeModel
-from modules.operacional.models.post import Post as PostModel, PostStatus
+from modules.operacional.models.post import Post as PostModel
+from modules.operacional.models.post import PostStatus
 
 logger = logging.getLogger(__name__)
 
 
-class OptimizationType(str, Enum):
+class OptimizationType(StrEnum):
     """Tipos de otimização operacional."""
+
     SCALE_OPTIMIZATION = "scale_optimization"
     RESOURCE_ALLOCATION = "resource_allocation"
     DEMAND_PREDICTION = "demand_prediction"
@@ -40,17 +39,19 @@ class OptimizationType(str, Enum):
     EFFICIENCY_BOOST = "efficiency_boost"
 
 
-class ShiftType(str, Enum):
+class ShiftType(StrEnum):
     """Tipos de turno."""
-    MORNING = "morning"      # 06:00-14:00
+
+    MORNING = "morning"  # 06:00-14:00
     AFTERNOON = "afternoon"  # 14:00-22:00
-    NIGHT = "night"          # 22:00-06:00
-    FULL_DAY = "full_day"    # 08:00-18:00
+    NIGHT = "night"  # 22:00-06:00
+    FULL_DAY = "full_day"  # 08:00-18:00
     FLEXIBLE = "flexible"
 
 
-class SkillLevel(str, Enum):
+class SkillLevel(StrEnum):
     """Níveis de habilidade."""
+
     TRAINEE = "trainee"
     JUNIOR = "junior"
     PLENO = "pleno"
@@ -58,8 +59,9 @@ class SkillLevel(str, Enum):
     SPECIALIST = "specialist"
 
 
-class OptimizationStatus(str, Enum):
+class OptimizationStatus(StrEnum):
     """Status da otimização."""
+
     PENDING = "pending"
     PROCESSING = "processing"
     COMPLETED = "completed"
@@ -70,12 +72,13 @@ class OptimizationStatus(str, Enum):
 @dataclass
 class EmployeeData:
     """Funcionário com skills e disponibilidade para otimização."""
+
     id: str
     name: str
-    skills: List[str]
+    skills: list[str]
     skill_level: SkillLevel
-    availability: Dict[str, List[str]]
-    preferred_shifts: List[ShiftType]
+    availability: dict[str, list[str]]
+    preferred_shifts: list[ShiftType]
     overtime_capacity: float
     performance_score: float
     cost_per_hour: float
@@ -84,39 +87,42 @@ class EmployeeData:
 @dataclass
 class WorkStationData:
     """Posto de trabalho/estação para otimização."""
+
     id: str
     name: str
     location: str
-    required_skills: List[str]
+    required_skills: list[str]
     required_skill_level: SkillLevel
     capacity: int
     priority: int
     equipment_available: bool
-    operational_hours: Dict[str, Tuple[time, time]]
+    operational_hours: dict[str, tuple[time, time]]
 
 
 @dataclass
 class DemandForecast:
     """Previsão de demanda operacional."""
+
     date: datetime
     shift: ShiftType
     workstation: str
     predicted_demand: int
     confidence: float
-    factors: List[str]
-    historical_pattern: List[float]
+    factors: list[str]
+    historical_pattern: list[float]
 
 
 @dataclass
 class ScheduleAssignment:
     """Alocação de escala."""
+
     employee_id: str
     workstation_id: str
     date: datetime
     shift: ShiftType
     start_time: time
     end_time: time
-    break_times: List[Tuple[time, time]]
+    break_times: list[tuple[time, time]]
     overtime: bool
     estimated_productivity: float
 
@@ -124,12 +130,13 @@ class ScheduleAssignment:
 @dataclass
 class OptimizedSchedule:
     """Escala otimizada completa."""
+
     id: str
     period_start: datetime
     period_end: datetime
-    assignments: List[ScheduleAssignment]
-    optimization_metrics: Dict[str, float]
-    cost_analysis: Dict[str, float]
+    assignments: list[ScheduleAssignment]
+    optimization_metrics: dict[str, float]
+    cost_analysis: dict[str, float]
     efficiency_score: float
     coverage_score: float
     created_at: datetime
@@ -139,6 +146,7 @@ class OptimizedSchedule:
 @dataclass
 class OperationalInsight:
     """Insight operacional."""
+
     type: str
     description: str
     impact: str
@@ -149,7 +157,7 @@ class OperationalInsight:
 
 
 # Mapeamento cargo -> SkillLevel
-_CARGO_SKILL_MAP: Dict[str, SkillLevel] = {
+_CARGO_SKILL_MAP: dict[str, SkillLevel] = {
     "estagiario": SkillLevel.TRAINEE,
     "auxiliar": SkillLevel.JUNIOR,
     "vigilante": SkillLevel.PLENO,
@@ -163,7 +171,7 @@ _CARGO_SKILL_MAP: Dict[str, SkillLevel] = {
 }
 
 # Mapeamento turno_padrao -> ShiftType
-_TURNO_SHIFT_MAP: Dict[str, ShiftType] = {
+_TURNO_SHIFT_MAP: dict[str, ShiftType] = {
     "diurno": ShiftType.MORNING,
     "manha": ShiftType.MORNING,
     "tarde": ShiftType.AFTERNOON,
@@ -182,7 +190,7 @@ _CACHE_PREFIX = "intelligent_ops"
 _SCHEDULE_CACHE_TTL = 86400
 
 
-def _infer_skill_level(cargo: Optional[str]) -> SkillLevel:
+def _infer_skill_level(cargo: str | None) -> SkillLevel:
     """Infere o nível de habilidade com base no cargo."""
     if not cargo:
         return SkillLevel.PLENO
@@ -193,7 +201,7 @@ def _infer_skill_level(cargo: Optional[str]) -> SkillLevel:
     return SkillLevel.PLENO
 
 
-def _infer_preferred_shift(turno_padrao: Optional[str]) -> List[ShiftType]:
+def _infer_preferred_shift(turno_padrao: str | None) -> list[ShiftType]:
     """Infere turnos preferidos com base no turno_padrao."""
     if not turno_padrao:
         return [ShiftType.MORNING, ShiftType.AFTERNOON]
@@ -203,9 +211,9 @@ def _infer_preferred_shift(turno_padrao: Optional[str]) -> List[ShiftType]:
     return [ShiftType.MORNING, ShiftType.AFTERNOON]
 
 
-def _extract_skills(employee: EmployeeModel) -> List[str]:
+def _extract_skills(employee: EmployeeModel) -> list[str]:
     """Extrai skills do employee a partir de competências, certificações e cargo."""
-    skills: List[str] = []
+    skills: list[str] = []
 
     # De competencias (JSONB)
     if employee.competencias and isinstance(employee.competencias, list):
@@ -248,7 +256,7 @@ def _calculate_cost_per_hour(employee: EmployeeModel) -> float:
     return salario / (carga * 4.33)
 
 
-def _build_default_availability(employee: EmployeeModel) -> Dict[str, List[str]]:
+def _build_default_availability(employee: EmployeeModel) -> dict[str, list[str]]:
     """Constrói disponibilidade padrão baseada no turno e escala."""
     turno = (employee.turno_padrao or "diurno").lower()
     escala = (employee.escala_padrao or "5x2").lower()
@@ -273,7 +281,7 @@ def _build_default_availability(employee: EmployeeModel) -> Dict[str, List[str]]
     else:
         work_days = _WEEKDAYS[:5]
 
-    return {day: periods for day in work_days}
+    return dict.fromkeys(work_days, periods)
 
 
 class IntelligentOperationsService:
@@ -290,8 +298,8 @@ class IntelligentOperationsService:
     def __init__(self, db: Session, tenant_id: str):
         self.db = db
         self.tenant_id = tenant_id
-        self.employees: Dict[str, EmployeeData] = {}
-        self.workstations: Dict[str, WorkStationData] = {}
+        self.employees: dict[str, EmployeeData] = {}
+        self.workstations: dict[str, WorkStationData] = {}
 
         self.optimization_weights = {
             "cost": 0.3,
@@ -328,9 +336,7 @@ class IntelligentOperationsService:
             )
             self.employees[emp_data.id] = emp_data
 
-        logger.info(
-            f"Carregados {len(self.employees)} employees para tenant {self.tenant_id}"
-        )
+        logger.info(f"Carregados {len(self.employees)} employees para tenant {self.tenant_id}")
 
     def _load_workstations(self) -> None:
         """Carrega postos ativos do banco e mapeia para dataclass."""
@@ -347,7 +353,7 @@ class IntelligentOperationsService:
             # Construir operational_hours a partir de shift_start/end
             start = post.shift_start_time or time(8, 0)
             end = post.shift_end_time or time(18, 0)
-            op_hours = {day: (start, end) for day in _WEEKDAYS[:5]}
+            op_hours = dict.fromkeys(_WEEKDAYS[:5], (start, end))
 
             # Extrair required_skills do post_type e required_certifications
             req_skills = []
@@ -355,8 +361,7 @@ class IntelligentOperationsService:
                 req_skills.append(post.post_type.lower())
             if post.required_certifications and isinstance(post.required_certifications, list):
                 req_skills.extend(
-                    c.lower() if isinstance(c, str) else c.get("nome", "").lower()
-                    for c in post.required_certifications
+                    c.lower() if isinstance(c, str) else c.get("nome", "").lower() for c in post.required_certifications
                 )
             if not req_skills:
                 req_skills = ["operacional"]
@@ -379,9 +384,7 @@ class IntelligentOperationsService:
             )
             self.workstations[ws.id] = ws
 
-        logger.info(
-            f"Carregados {len(self.workstations)} postos para tenant {self.tenant_id}"
-        )
+        logger.info(f"Carregados {len(self.workstations)} postos para tenant {self.tenant_id}")
 
     def _cache_key(self, suffix: str) -> str:
         """Gera chave de cache com prefixo do tenant."""
@@ -452,9 +455,7 @@ class IntelligentOperationsService:
 
         return optimized_schedule
 
-    async def _generate_demand_forecasts(
-        self, start_date: datetime, end_date: datetime
-    ) -> List[DemandForecast]:
+    async def _generate_demand_forecasts(self, start_date: datetime, end_date: datetime) -> list[DemandForecast]:
         """Gera previsões de demanda usando algoritmos de ML."""
         forecasts = []
 
@@ -489,23 +490,25 @@ class IntelligentOperationsService:
 
                     predicted_demand = int(base_demand * day_factor * shift_factor * priority_factor)
 
-                    forecasts.append(DemandForecast(
-                        date=current_date,
-                        shift=shift,
-                        workstation=ws_id,
-                        predicted_demand=max(1, predicted_demand),
-                        confidence=0.85,
-                        factors=[
-                            f"weekday_{weekday}",
-                            f"shift_{shift.value}",
-                            f"priority_{workstation.priority}",
-                        ],
-                        historical_pattern=[
-                            base_demand * 0.9,
-                            base_demand,
-                            base_demand * 1.1,
-                        ],
-                    ))
+                    forecasts.append(
+                        DemandForecast(
+                            date=current_date,
+                            shift=shift,
+                            workstation=ws_id,
+                            predicted_demand=max(1, predicted_demand),
+                            confidence=0.85,
+                            factors=[
+                                f"weekday_{weekday}",
+                                f"shift_{shift.value}",
+                                f"priority_{workstation.priority}",
+                            ],
+                            historical_pattern=[
+                                base_demand * 0.9,
+                                base_demand,
+                                base_demand * 1.1,
+                            ],
+                        )
+                    )
 
             current_date += timedelta(days=1)
 
@@ -513,14 +516,14 @@ class IntelligentOperationsService:
 
     async def _run_optimization_algorithm(
         self,
-        forecasts: List[DemandForecast],
+        forecasts: list[DemandForecast],
         start_date: datetime,
         end_date: datetime,
-    ) -> List[ScheduleAssignment]:
+    ) -> list[ScheduleAssignment]:
         """Executa algoritmo de otimização de escala (greedy heuristic)."""
         assignments = []
 
-        forecast_dict: Dict[Tuple, List[DemandForecast]] = {}
+        forecast_dict: dict[tuple, list[DemandForecast]] = {}
         for forecast in forecasts:
             key = (forecast.date, forecast.shift)
             forecast_dict.setdefault(key, []).append(forecast)
@@ -536,8 +539,7 @@ class IntelligentOperationsService:
                 needed_people = forecast.predicted_demand
 
                 suitable_employees = [
-                    emp for emp in available_employees
-                    if self._is_employee_suitable(emp, workstation)
+                    emp for emp in available_employees if self._is_employee_suitable(emp, workstation)
                 ]
 
                 suitable_employees.sort(
@@ -545,8 +547,7 @@ class IntelligentOperationsService:
                     reverse=True,
                 )
 
-                allocated = 0
-                for emp in suitable_employees[:needed_people]:
+                for allocated, emp in enumerate(suitable_employees[:needed_people]):
                     if allocated >= workstation.capacity:
                         break
 
@@ -565,12 +566,11 @@ class IntelligentOperationsService:
                     )
 
                     assignments.append(assignment)
-                    allocated += 1
                     available_employees.remove(emp)
 
         return assignments
 
-    def _get_available_employees(self, date_val: datetime, shift: ShiftType) -> List[EmployeeData]:
+    def _get_available_employees(self, date_val: datetime, shift: ShiftType) -> list[EmployeeData]:
         """Retorna funcionários disponíveis para data/turno específico."""
         weekday = _WEEKDAYS[date_val.weekday()]
 
@@ -591,9 +591,7 @@ class IntelligentOperationsService:
 
     def _is_employee_suitable(self, employee: EmployeeData, workstation: WorkStationData) -> bool:
         """Verifica se funcionário é adequado para estação."""
-        has_required_skills = any(
-            skill in employee.skills for skill in workstation.required_skills
-        )
+        has_required_skills = any(skill in employee.skills for skill in workstation.required_skills)
 
         skill_levels = list(SkillLevel)
         emp_level_idx = skill_levels.index(employee.skill_level)
@@ -628,9 +626,7 @@ class IntelligentOperationsService:
 
         return score
 
-    def _get_shift_times(
-        self, shift: ShiftType, workstation: WorkStationData
-    ) -> Tuple[time, time]:
+    def _get_shift_times(self, shift: ShiftType, workstation: WorkStationData) -> tuple[time, time]:
         """Retorna horários de início e fim do turno."""
         shift_times = {
             ShiftType.MORNING: (time(6, 0), time(14, 0)),
@@ -640,35 +636,29 @@ class IntelligentOperationsService:
         }
         return shift_times.get(shift, (time(8, 0), time(17, 0)))
 
-    async def _calculate_optimization_metrics(
-        self, assignments: List[ScheduleAssignment]
-    ) -> Dict[str, float]:
+    async def _calculate_optimization_metrics(self, assignments: list[ScheduleAssignment]) -> dict[str, float]:
         """Calcula métricas de otimização."""
         if not assignments:
             return {}
 
         total_employees = len(self.employees)
-        used_employees = len(set(a.employee_id for a in assignments))
+        used_employees = len({a.employee_id for a in assignments})
         employee_utilization = used_employees / total_employees if total_employees > 0 else 0
 
         total_ws = len(self.workstations)
-        used_ws = len(set(a.workstation_id for a in assignments))
+        used_ws = len({a.workstation_id for a in assignments})
         ws_utilization = used_ws / total_ws if total_ws > 0 else 0
 
-        avg_productivity = statistics.mean(
-            a.estimated_productivity for a in assignments
-        )
+        avg_productivity = statistics.mean(a.estimated_productivity for a in assignments)
 
-        shift_distribution: Dict[str, int] = {}
+        shift_distribution: dict[str, int] = {}
         for assignment in assignments:
             shift = assignment.shift.value
             shift_distribution[shift] = shift_distribution.get(shift, 0) + 1
 
         total_assignments = len(assignments)
         if len(shift_distribution) > 1:
-            balance = 1.0 - (
-                max(shift_distribution.values()) - min(shift_distribution.values())
-            ) / total_assignments
+            balance = 1.0 - (max(shift_distribution.values()) - min(shift_distribution.values())) / total_assignments
         else:
             balance = 1.0
 
@@ -682,9 +672,7 @@ class IntelligentOperationsService:
             "unique_workstations": used_ws,
         }
 
-    async def _analyze_costs(
-        self, assignments: List[ScheduleAssignment]
-    ) -> Dict[str, float]:
+    async def _analyze_costs(self, assignments: list[ScheduleAssignment]) -> dict[str, float]:
         """Analisa custos da escala otimizada."""
         total_cost = 0.0
         regular_hours_cost = 0.0
@@ -705,7 +693,8 @@ class IntelligentOperationsService:
             hours_worked = (end_dt - start_dt).total_seconds() / 3600
 
             break_hours = sum(
-                (datetime.combine(assignment.date, end) - datetime.combine(assignment.date, start)).total_seconds() / 3600
+                (datetime.combine(assignment.date, end) - datetime.combine(assignment.date, start)).total_seconds()
+                / 3600
                 for start, end in assignment.break_times
             )
             net_hours = hours_worked - break_hours
@@ -726,9 +715,7 @@ class IntelligentOperationsService:
             "cost_efficiency_score": 1.0 - (overtime_cost / total_cost) if total_cost > 0 else 0,
         }
 
-    async def _calculate_efficiency_score(
-        self, assignments: List[ScheduleAssignment]
-    ) -> float:
+    async def _calculate_efficiency_score(self, assignments: list[ScheduleAssignment]) -> float:
         """Calcula score de eficiência da escala."""
         if not assignments:
             return 0.0
@@ -736,21 +723,17 @@ class IntelligentOperationsService:
         total_productivity = sum(a.estimated_productivity for a in assignments)
         avg_productivity = total_productivity / len(assignments)
 
-        low_penalty = sum(
-            1 for a in assignments if a.estimated_productivity < 0.7
-        ) / len(assignments)
+        low_penalty = sum(1 for a in assignments if a.estimated_productivity < 0.7) / len(assignments)
 
-        high_bonus = sum(
-            1 for a in assignments if a.estimated_productivity > 0.9
-        ) / len(assignments)
+        high_bonus = sum(1 for a in assignments if a.estimated_productivity > 0.9) / len(assignments)
 
         efficiency = avg_productivity + high_bonus * 0.1 - low_penalty * 0.2
         return max(0.0, min(1.0, efficiency))
 
     async def _calculate_coverage_score(
         self,
-        assignments: List[ScheduleAssignment],
-        forecasts: List[DemandForecast],
+        assignments: list[ScheduleAssignment],
+        forecasts: list[DemandForecast],
     ) -> float:
         """Calcula score de cobertura da demanda."""
         if not forecasts:
@@ -758,7 +741,7 @@ class IntelligentOperationsService:
 
         coverage_scores = []
 
-        assignment_dict: Dict[Tuple, int] = {}
+        assignment_dict: dict[tuple, int] = {}
         for assignment in assignments:
             key = (assignment.workstation_id, assignment.date, assignment.shift)
             assignment_dict[key] = assignment_dict.get(key, 0) + 1
@@ -773,48 +756,52 @@ class IntelligentOperationsService:
 
         return statistics.mean(coverage_scores) if coverage_scores else 0.0
 
-    async def generate_operational_insights(
-        self, schedule: OptimizedSchedule
-    ) -> List[OperationalInsight]:
+    async def generate_operational_insights(self, schedule: OptimizedSchedule) -> list[OperationalInsight]:
         """Gera insights operacionais com IA."""
         insights = []
 
         if schedule.efficiency_score < 0.8:
-            insights.append(OperationalInsight(
-                type="efficiency_warning",
-                description="Eficiência da escala abaixo do ideal",
-                impact="medium",
-                recommendation="Revisar alocação de funcionários para maximizar skills matching",
-                estimated_savings=schedule.cost_analysis.get("total_cost", 0) * 0.1,
-                implementation_effort="low",
-                confidence=0.85,
-            ))
+            insights.append(
+                OperationalInsight(
+                    type="efficiency_warning",
+                    description="Eficiência da escala abaixo do ideal",
+                    impact="medium",
+                    recommendation="Revisar alocação de funcionários para maximizar skills matching",
+                    estimated_savings=schedule.cost_analysis.get("total_cost", 0) * 0.1,
+                    implementation_effort="low",
+                    confidence=0.85,
+                )
+            )
 
         overtime_cost = schedule.cost_analysis.get("overtime_cost", 0)
         total_cost = schedule.cost_analysis.get("total_cost", 0)
         if total_cost > 0 and overtime_cost > total_cost * 0.2:
-            insights.append(OperationalInsight(
-                type="cost_optimization",
-                description="Alto uso de horas extras detectado",
-                impact="high",
-                recommendation="Contratar funcionários adicionais ou redistribuir carga",
-                estimated_savings=overtime_cost * 0.5,
-                implementation_effort="medium",
-                confidence=0.92,
-            ))
+            insights.append(
+                OperationalInsight(
+                    type="cost_optimization",
+                    description="Alto uso de horas extras detectado",
+                    impact="high",
+                    recommendation="Contratar funcionários adicionais ou redistribuir carga",
+                    estimated_savings=overtime_cost * 0.5,
+                    implementation_effort="medium",
+                    confidence=0.92,
+                )
+            )
 
         if schedule.coverage_score < 0.9:
-            insights.append(OperationalInsight(
-                type="coverage_gap",
-                description="Cobertura de demanda insuficiente em alguns períodos",
-                impact="high",
-                recommendation="Identificar gargalos e realocar recursos críticos",
-                estimated_savings=0.0,
-                implementation_effort="low",
-                confidence=0.88,
-            ))
+            insights.append(
+                OperationalInsight(
+                    type="coverage_gap",
+                    description="Cobertura de demanda insuficiente em alguns períodos",
+                    impact="high",
+                    recommendation="Identificar gargalos e realocar recursos críticos",
+                    estimated_savings=0.0,
+                    implementation_effort="low",
+                    confidence=0.88,
+                )
+            )
 
-        shift_assignments: Dict[str, int] = {}
+        shift_assignments: dict[str, int] = {}
         for assignment in schedule.assignments:
             shift = assignment.shift.value
             shift_assignments[shift] = shift_assignments.get(shift, 0) + 1
@@ -823,19 +810,21 @@ class IntelligentOperationsService:
             min_s = min(shift_assignments.values())
             max_s = max(shift_assignments.values())
             if max_s > min_s * 2:
-                insights.append(OperationalInsight(
-                    type="workload_imbalance",
-                    description="Distribuição desigual entre turnos detectada",
-                    impact="medium",
-                    recommendation="Rebalancear distribuição para melhorar satisfação dos funcionários",
-                    estimated_savings=0.0,
-                    implementation_effort="medium",
-                    confidence=0.76,
-                ))
+                insights.append(
+                    OperationalInsight(
+                        type="workload_imbalance",
+                        description="Distribuição desigual entre turnos detectada",
+                        impact="medium",
+                        recommendation="Rebalancear distribuição para melhorar satisfação dos funcionários",
+                        estimated_savings=0.0,
+                        implementation_effort="medium",
+                        confidence=0.76,
+                    )
+                )
 
         return insights
 
-    async def get_optimization_summary(self, schedule_id: str) -> Dict[str, Any]:
+    async def get_optimization_summary(self, schedule_id: str) -> dict[str, Any]:
         """Retorna resumo da otimização (busca no Redis)."""
         cached = await cache_get(self._cache_key(f"schedule:{schedule_id}"))
         if not cached:
@@ -857,9 +846,7 @@ class IntelligentOperationsService:
         }
 
 
-def get_intelligent_operations_service(
-    db: Session, tenant_id: str
-) -> IntelligentOperationsService:
+def get_intelligent_operations_service(db: Session, tenant_id: str) -> IntelligentOperationsService:
     """Factory para criar instância do IntelligentOperationsService.
 
     Args:

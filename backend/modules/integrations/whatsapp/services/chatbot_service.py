@@ -8,11 +8,11 @@ Responsavel por:
 - Intencoes e acoes
 """
 
-import enum
 import re
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Callable, Optional
+from enum import StrEnum
 from uuid import UUID
 
 from sqlalchemy import and_, select
@@ -21,7 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from modules.integrations.whatsapp.models.message_log import MessageLog
 
 
-class Intent(str, enum.Enum):
+class Intent(StrEnum):
     """Intencoes reconhecidas pelo chatbot."""
 
     GREETING = "GREETING"  # Saudacao
@@ -38,7 +38,7 @@ class Intent(str, enum.Enum):
     UNKNOWN = "UNKNOWN"  # Nao reconhecido
 
 
-class ConversationState(str, enum.Enum):
+class ConversationState(StrEnum):
     """Estado da conversa."""
 
     NEW = "NEW"  # Nova conversa
@@ -57,7 +57,7 @@ class ConversationContext:
     tenant_id: UUID
     phone: str
     state: ConversationState = ConversationState.NEW
-    intent: Optional[Intent] = None
+    intent: Intent | None = None
     data: dict = field(default_factory=dict)
     last_message_at: datetime = field(default_factory=datetime.utcnow)
     message_count: int = 0
@@ -90,7 +90,7 @@ class ChatbotResponse:
     quick_replies: list = field(default_factory=list)
     transfer_to_human: bool = False
     end_conversation: bool = False
-    context: Optional[ConversationContext] = None
+    context: ConversationContext | None = None
 
 
 class ChatbotService:
@@ -137,11 +137,7 @@ class ChatbotService:
             "Como posso ajudar voce hoje?\n\n"
             "Digite *MENU* para ver as opcoes disponiveis."
         ),
-        Intent.GOODBYE: (
-            "Obrigado pelo contato! "
-            "Se precisar de mais alguma coisa, e so chamar. "
-            "Ate logo!"
-        ),
+        Intent.GOODBYE: ("Obrigado pelo contato! Se precisar de mais alguma coisa, e so chamar. Ate logo!"),
         Intent.UNKNOWN: (
             "Desculpe, nao entendi sua mensagem. "
             "Digite *MENU* para ver as opcoes disponiveis ou "
@@ -184,7 +180,7 @@ class ChatbotService:
         tenant_id: UUID,
         phone: str,
         message: str,
-        contact_name: Optional[str] = None,
+        contact_name: str | None = None,
     ) -> ChatbotResponse:
         """Processa mensagem recebida.
 
@@ -263,7 +259,7 @@ class ChatbotService:
         self,
         tenant_id: UUID,
         phone: str,
-        reason: Optional[str] = None,
+        reason: str | None = None,
     ) -> ChatbotResponse:
         """Transfere conversa para atendente humano.
 
@@ -326,10 +322,16 @@ class ChatbotService:
         normalized = normalized.lower()
         # Remove acentos comuns
         replacements = {
-            "á": "a", "à": "a", "ã": "a", "â": "a",
-            "é": "e", "ê": "e",
+            "á": "a",
+            "à": "a",
+            "ã": "a",
+            "â": "a",
+            "é": "e",
+            "ê": "e",
             "í": "i",
-            "ó": "o", "ô": "o", "õ": "o",
+            "ó": "o",
+            "ô": "o",
+            "õ": "o",
             "ú": "u",
             "ç": "c",
         }
@@ -352,7 +354,7 @@ class ChatbotService:
         context: ConversationContext,
         intent: Intent,
         message: str,
-        contact_name: Optional[str] = None,
+        contact_name: str | None = None,
     ) -> ChatbotResponse:
         """Processa intencao detectada."""
         # Handlers customizados
@@ -365,8 +367,8 @@ class ChatbotService:
             name_part = f", {contact_name}" if contact_name else ""
             return ChatbotResponse(
                 message=f"Ola{name_part}! Bem-vindo ao atendimento automatico.\n\n"
-                        "Como posso ajudar voce hoje?\n"
-                        "Digite *MENU* para ver as opcoes disponiveis.",
+                "Como posso ajudar voce hoje?\n"
+                "Digite *MENU* para ver as opcoes disponiveis.",
                 context=context,
             )
 
@@ -396,8 +398,7 @@ class ChatbotService:
             context.update_state(ConversationState.AWAITING_CPF)
             return ChatbotResponse(
                 message=(
-                    "Para consultar seus boletos, preciso do seu CPF.\n"
-                    "Por favor, digite apenas os numeros do CPF:"
+                    "Para consultar seus boletos, preciso do seu CPF.\nPor favor, digite apenas os numeros do CPF:"
                 ),
                 context=context,
             )
@@ -454,8 +455,7 @@ class ChatbotService:
 
         # Opcao invalida
         return ChatbotResponse(
-            message="Opcao invalida. Por favor, digite um numero de 1 a 6:\n\n"
-                    + self.MENU_MESSAGE,
+            message="Opcao invalida. Por favor, digite um numero de 1 a 6:\n\n" + self.MENU_MESSAGE,
             context=context,
         )
 
@@ -481,7 +481,7 @@ class ChatbotService:
 
         # Calcula digitos verificadores
         def calc_digit(partial: str, weights: list) -> int:
-            total = sum(int(d) * w for d, w in zip(partial, weights))
+            total = sum(int(d) * w for d, w in zip(partial, weights, strict=False))
             remainder = total % 11
             return 0 if remainder < 2 else 11 - remainder
 

@@ -3,8 +3,7 @@
 import uuid
 from datetime import date, datetime
 from decimal import Decimal
-from enum import Enum
-from typing import Optional
+from enum import StrEnum
 
 from sqlalchemy import (
     Boolean,
@@ -23,7 +22,7 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from core.models import Base
 
 
-class CashFlowEntryType(str, Enum):
+class CashFlowEntryType(StrEnum):
     """Tipo de lancamento."""
 
     ENTRADA = "entrada"  # Receita
@@ -33,7 +32,7 @@ class CashFlowEntryType(str, Enum):
     AJUSTE = "ajuste"  # Ajuste contabil
 
 
-class CashFlowSourceType(str, Enum):
+class CashFlowSourceType(StrEnum):
     """Origem do lancamento."""
 
     MANUAL = "manual"
@@ -45,7 +44,7 @@ class CashFlowSourceType(str, Enum):
     RECORRENTE = "recorrente"
 
 
-class CashFlowEntryStatus(str, Enum):
+class CashFlowEntryStatus(StrEnum):
     """Status do lancamento."""
 
     PREVISTO = "previsto"
@@ -55,7 +54,7 @@ class CashFlowEntryStatus(str, Enum):
     ESTORNADO = "estornado"
 
 
-class RecurrenceFrequency(str, Enum):
+class RecurrenceFrequency(StrEnum):
     """Frequencia de recorrencia."""
 
     DIARIA = "diaria"
@@ -250,14 +249,14 @@ class CashFlowEntry(Base):
         return amount
 
     @property
-    def variance(self) -> Optional[Decimal]:
+    def variance(self) -> Decimal | None:
         """Calcula variacao entre previsto e realizado."""
         if self.realized_amount is None:
             return None
         return self.realized_amount - self.expected_amount
 
     @property
-    def variance_percentage(self) -> Optional[float]:
+    def variance_percentage(self) -> float | None:
         """Calcula variacao percentual."""
         if self.variance is None or self.expected_amount == 0:
             return None
@@ -269,8 +268,8 @@ class CashFlowEntry(Base):
 
     def realize(
         self,
-        amount: Optional[Decimal] = None,
-        realized_date: Optional[date] = None,
+        amount: Decimal | None = None,
+        realized_date: date | None = None,
     ) -> None:
         """Realiza o lancamento."""
         self.status = CashFlowEntryStatus.REALIZADO.value
@@ -311,9 +310,9 @@ class CashFlowEntry(Base):
         self,
         frequency: str,
         start_date: date,
-        end_date: Optional[date] = None,
-        count: Optional[int] = None,
-        day: Optional[int] = None,
+        end_date: date | None = None,
+        count: int | None = None,
+        day: int | None = None,
     ) -> None:
         """Configura recorrencia."""
         self.is_recurring = True

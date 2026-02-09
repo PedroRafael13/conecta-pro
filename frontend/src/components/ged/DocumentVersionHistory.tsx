@@ -12,8 +12,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-;
 import { toast } from 'sonner';
+import { documentVersionService } from '@/services/ged/documentVersionService';
+import { formatFileSize } from '@/utils/file-helpers';
+import type { DocumentVersionResponse } from '@/types/generated/ged/schemas/documentVersionResponse';
 
 interface DocumentVersionHistoryProps {
   documentId: string;
@@ -26,7 +28,7 @@ export function DocumentVersionHistory({
   open,
   onClose,
 }: DocumentVersionHistoryProps) {
-  const [versions, setVersions] = useState<DocumentVersion[]>([]);
+  const [versions, setVersions] = useState<DocumentVersionResponse[]>([]);
   const [loading, setLoading] = useState(false);
   const [comparing, setComparing] = useState<{ versionA: number; versionB: number } | null>(null);
   const [compareResult, setCompareResult] = useState<any>(null);
@@ -114,7 +116,7 @@ export function DocumentVersionHistory({
     });
   };
 
-  const getVersionBadgeColor = (version: DocumentVersion) => {
+  const getVersionBadgeColor = (version: DocumentVersionResponse) => {
     if (version.is_current) return 'bg-green-500';
     if (version.status === 'arquivada') return 'bg-gray-400';
     if (version.status === 'obsoleta') return 'bg-yellow-500';
@@ -240,7 +242,7 @@ export function DocumentVersionHistory({
                           variant="outline"
                           size="sm"
                           onClick={() =>
-                            handleCompare(version.version_number, versions[index + 1].version_number)
+                            handleCompare(version.version_number, versions[index + 1]!.version_number)
                           }
                         >
                           <ArrowUpDown className="h-4 w-4 mr-1" />

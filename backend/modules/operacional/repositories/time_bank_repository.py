@@ -3,7 +3,6 @@ Repository para operações de banco de dados com TimeBank.
 """
 
 from datetime import date, datetime
-from typing import Optional
 from uuid import uuid4
 
 from sqlalchemy import and_, func, select
@@ -42,7 +41,7 @@ class TimeBankRepository:
 
         return balance
 
-    async def create(self, data: TimeBankCreate, created_by: Optional[str] = None) -> TimeBank:
+    async def create(self, data: TimeBankCreate, created_by: str | None = None) -> TimeBank:
         """
         Cria uma nova entrada no banco de horas.
 
@@ -80,7 +79,7 @@ class TimeBankRepository:
         logger.info(f"TimeBank criado: {time_bank.id}")
         return time_bank
 
-    async def get_by_id(self, time_bank_id: str) -> Optional[TimeBank]:
+    async def get_by_id(self, time_bank_id: str) -> TimeBank | None:
         """
         Busca entrada por ID.
 
@@ -100,7 +99,7 @@ class TimeBankRepository:
 
     async def list(
         self,
-        filters: Optional[TimeBankFilter] = None,
+        filters: TimeBankFilter | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[TimeBank], int]:
@@ -170,16 +169,14 @@ class TimeBankRepository:
                     )
                 )
             else:
-                query = query.where(
-                    TimeBank.expiration_date.is_(None) | (TimeBank.expiration_date >= today)
-                )
+                query = query.where(TimeBank.expiration_date.is_(None) | (TimeBank.expiration_date >= today))
 
         if filters.is_pending:
             query = query.where(TimeBank.status == TimeBankStatus.PENDING.value)
 
         return query
 
-    async def update(self, time_bank_id: str, data: TimeBankUpdate) -> Optional[TimeBank]:
+    async def update(self, time_bank_id: str, data: TimeBankUpdate) -> TimeBank | None:
         """
         Atualiza uma entrada.
 
@@ -214,8 +211,8 @@ class TimeBankRepository:
         self,
         time_bank_id: str,
         approved_by: str,
-        notes: Optional[str] = None,
-    ) -> Optional[TimeBank]:
+        notes: str | None = None,
+    ) -> TimeBank | None:
         """
         Aprova uma entrada.
 
@@ -259,7 +256,7 @@ class TimeBankRepository:
         time_bank_id: str,
         rejection_reason: str,
         approved_by: str,
-    ) -> Optional[TimeBank]:
+    ) -> TimeBank | None:
         """
         Rejeita uma entrada.
 
@@ -292,9 +289,9 @@ class TimeBankRepository:
         time_bank_id: str,
         hours: float = 0,  # pylint: disable=unused-argument
         compensation_date=None,  # pylint: disable=unused-argument
-        compensation_shift_id: Optional[str] = None,
-        notes: Optional[str] = None,  # pylint: disable=unused-argument
-    ) -> Optional[TimeBank]:
+        compensation_shift_id: str | None = None,
+        notes: str | None = None,  # pylint: disable=unused-argument
+    ) -> TimeBank | None:
         """
         Marca entrada como compensada.
 

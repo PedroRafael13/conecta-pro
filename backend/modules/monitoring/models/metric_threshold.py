@@ -2,19 +2,17 @@
 Modelo de Thresholds para metricas.
 """
 
-import enum
-import uuid
 from datetime import datetime
-from typing import Optional
+from enum import StrEnum
 
-from sqlalchemy import Boolean, DateTime, Enum, Float, Integer, String, Text, func
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy import Boolean, DateTime, Enum, Float, Integer, String, Text
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from core.models.base import BaseModel
 
 
-class ThresholdType(str, enum.Enum):
+class ThresholdType(StrEnum):
     """Tipo de threshold."""
 
     UPPER = "upper"  # Valor maximo permitido
@@ -43,7 +41,7 @@ class MetricThreshold(BaseModel):
         String(200),
         nullable=False,
     )
-    description: Mapped[Optional[str]] = mapped_column(
+    description: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
     )
@@ -80,15 +78,15 @@ class MetricThreshold(BaseModel):
     )
 
     # Para RANGE type: limites inferiores
-    yellow_lower: Mapped[Optional[float]] = mapped_column(
+    yellow_lower: Mapped[float | None] = mapped_column(
         Float,
         nullable=True,
     )
-    orange_lower: Mapped[Optional[float]] = mapped_column(
+    orange_lower: Mapped[float | None] = mapped_column(
         Float,
         nullable=True,
     )
-    red_lower: Mapped[Optional[float]] = mapped_column(
+    red_lower: Mapped[float | None] = mapped_column(
         Float,
         nullable=True,
     )
@@ -132,11 +130,11 @@ class MetricThreshold(BaseModel):
     )
 
     # Ultimo alerta gerado
-    last_alert_at: Mapped[Optional[datetime]] = mapped_column(
+    last_alert_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
     )
-    last_value: Mapped[Optional[float]] = mapped_column(
+    last_value: Mapped[float | None] = mapped_column(
         Float,
         nullable=True,
     )
@@ -188,7 +186,7 @@ class MetricThreshold(BaseModel):
 
             return "green"
 
-    def should_alert(self, value: float, last_alert_time: Optional[datetime] = None) -> bool:
+    def should_alert(self, value: float, last_alert_time: datetime | None = None) -> bool:
         """
         Verifica se deve gerar alerta.
 

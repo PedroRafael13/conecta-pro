@@ -14,7 +14,7 @@ import type {
   ExpenseCategory,
 } from '@/types/reimbursement';
 import { EXPENSE_CATEGORY_LABELS } from '@/types/reimbursement';
-;
+import { reimbursementService } from '@/services/reembolso/reimbursementService';
 
 interface ReimbursementFormModalProps {
   request?: ReimbursementRequest | null;
@@ -38,7 +38,7 @@ const EMPTY_ITEM: ItemFormData = {
   category_type: 'outros',
   description: '',
   merchant: '',
-  expense_date: new Date().toISOString().split('T')[0],
+  expense_date: new Date().toISOString().split('T')[0] ?? '',
   amount: 0,
   document_number: '',
   notes: '',
@@ -59,8 +59,8 @@ export function ReimbursementFormModal({
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    expense_date_start: new Date().toISOString().split('T')[0],
-    expense_date_end: new Date().toISOString().split('T')[0],
+    expense_date_start: new Date().toISOString().split('T')[0] ?? '',
+    expense_date_end: new Date().toISOString().split('T')[0] ?? '',
     cost_center: '',
     project: '',
     notes: '',
@@ -108,8 +108,8 @@ export function ReimbursementFormModal({
       setFormData({
         title: '',
         description: '',
-        expense_date_start: new Date().toISOString().split('T')[0],
-        expense_date_end: new Date().toISOString().split('T')[0],
+        expense_date_start: new Date().toISOString().split('T')[0] ?? '',
+        expense_date_end: new Date().toISOString().split('T')[0] ?? '',
         cost_center: '',
         project: '',
         notes: '',
@@ -137,7 +137,10 @@ export function ReimbursementFormModal({
   ) => {
     setItems((prev) => {
       const updated = [...prev];
-      updated[index] = { ...updated[index], [field]: value };
+      const current = updated[index];
+      if (current) {
+        updated[index] = { ...current, [field]: value };
+      }
       return updated;
     });
   };

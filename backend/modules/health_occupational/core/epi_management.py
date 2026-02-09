@@ -8,17 +8,17 @@ Quality Score Target: 99+/100
 Compliance: NR-6 (Portaria MTb 3.214/78) - Equipamentos de Protecao Individual
 """
 
-from typing import Dict, List, Optional, Any
-from dataclasses import dataclass, field
-from enum import Enum
-from datetime import datetime, date, timedelta
-from uuid import UUID, uuid4
 import logging
+from dataclasses import dataclass, field
+from datetime import date, datetime, timedelta
+from enum import StrEnum
+from typing import Any
+from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
-from sqlalchemy import Column, String, Boolean, DateTime, Date, Text, Integer, Float, ForeignKey
-from sqlalchemy.dialects.postgresql import UUID as PGUUID, JSONB
-from sqlalchemy.orm import relationship
+from sqlalchemy import Boolean, Column, Date, DateTime, Float, Integer, String, Text
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.ext.declarative import declarative_base
 
 logger = logging.getLogger(__name__)
@@ -26,21 +26,23 @@ logger = logging.getLogger(__name__)
 Base = declarative_base()
 
 
-class EPICategory(str, Enum):
+class EPICategory(StrEnum):
     """Categorias de EPI conforme NR-6 Anexo I."""
-    PROTECAO_CABECA = "protecao_cabeca"           # A
-    PROTECAO_OLHOS_FACE = "protecao_olhos_face"   # B
-    PROTECAO_AUDITIVA = "protecao_auditiva"       # C
+
+    PROTECAO_CABECA = "protecao_cabeca"  # A
+    PROTECAO_OLHOS_FACE = "protecao_olhos_face"  # B
+    PROTECAO_AUDITIVA = "protecao_auditiva"  # C
     PROTECAO_RESPIRATORIA = "protecao_respiratoria"  # D
-    PROTECAO_TRONCO = "protecao_tronco"           # E
-    PROTECAO_MEMBROS_SUP = "protecao_membros_sup" # F
-    PROTECAO_MEMBROS_INF = "protecao_membros_inf" # G
+    PROTECAO_TRONCO = "protecao_tronco"  # E
+    PROTECAO_MEMBROS_SUP = "protecao_membros_sup"  # F
+    PROTECAO_MEMBROS_INF = "protecao_membros_inf"  # G
     PROTECAO_CORPO_INTEIRO = "protecao_corpo_inteiro"  # H
-    PROTECAO_QUEDAS = "protecao_quedas"           # I
+    PROTECAO_QUEDAS = "protecao_quedas"  # I
 
 
-class EPIStatus(str, Enum):
+class EPIStatus(StrEnum):
     """Status de um EPI em estoque ou entregue."""
+
     DISPONIVEL = "disponivel"
     EM_USO = "em_uso"
     DANIFICADO = "danificado"
@@ -49,8 +51,9 @@ class EPIStatus(str, Enum):
     MANUTENCAO = "manutencao"
 
 
-class DeliveryStatus(str, Enum):
+class DeliveryStatus(StrEnum):
     """Status de entrega de EPI."""
+
     ENTREGUE = "entregue"
     DEVOLVIDO = "devolvido"
     EXTRAVIADO = "extraviado"
@@ -59,24 +62,26 @@ class DeliveryStatus(str, Enum):
 
 class EPIManagementError(Exception):
     """Erro em operacao de gestao de EPI."""
+
     pass
 
 
 @dataclass
 class CACertificate:
     """Certificado de Aprovacao (CA) do Ministerio do Trabalho."""
-    number: str                          # Numero do CA
-    issuer: str                          # Orgao emissor
+
+    number: str  # Numero do CA
+    issuer: str  # Orgao emissor
     issue_date: date
     expiry_date: date
     description: str
-    approved_for: List[str] = field(default_factory=list)
+    approved_for: list[str] = field(default_factory=list)
 
     def is_valid(self) -> bool:
         """Verifica se CA esta valido."""
         return date.today() <= self.expiry_date
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "number": self.number,
             "issuer": self.issuer,
@@ -91,20 +96,21 @@ class CACertificate:
 @dataclass
 class EPIModel:
     """Modelo/tipo de EPI cadastrado."""
+
     id: UUID
     name: str
     category: EPICategory
     manufacturer: str
     model: str
     ca_certificate: CACertificate
-    description: Optional[str] = None
-    shelf_life_days: Optional[int] = None   # Vida util em dias
-    replacement_frequency_days: Optional[int] = None  # Frequencia de troca
-    unit_cost: Optional[float] = None
+    description: str | None = None
+    shelf_life_days: int | None = None  # Vida util em dias
+    replacement_frequency_days: int | None = None  # Frequencia de troca
+    unit_cost: float | None = None
     minimum_stock: int = 0
     active: bool = True
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "id": str(self.id),
             "name": self.name,
@@ -123,18 +129,19 @@ class EPIModel:
 @dataclass
 class EPIInventoryItem:
     """Item de EPI no inventario."""
+
     id: UUID
     epi_model_id: UUID
     epi_model_name: str
-    batch_number: Optional[str] = None
-    serial_number: Optional[str] = None
-    purchase_date: Optional[date] = None
-    manufacture_date: Optional[date] = None
-    expiry_date: Optional[date] = None
+    batch_number: str | None = None
+    serial_number: str | None = None
+    purchase_date: date | None = None
+    manufacture_date: date | None = None
+    expiry_date: date | None = None
     status: EPIStatus = EPIStatus.DISPONIVEL
-    location: Optional[str] = None
-    current_holder_id: Optional[str] = None
-    notes: Optional[str] = None
+    location: str | None = None
+    current_holder_id: str | None = None
+    notes: str | None = None
 
     def is_expired(self) -> bool:
         """Verifica se EPI expirou."""
@@ -142,7 +149,7 @@ class EPIInventoryItem:
             return date.today() > self.expiry_date
         return False
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "id": str(self.id),
             "epi_model_id": str(self.epi_model_id),
@@ -159,6 +166,7 @@ class EPIInventoryItem:
 @dataclass
 class EPIDelivery:
     """Registro de entrega de EPI a funcionario."""
+
     id: UUID
     employee_id: str
     employee_name: str
@@ -169,15 +177,15 @@ class EPIDelivery:
     delivery_date: datetime
     delivered_by: str
     status: DeliveryStatus = DeliveryStatus.ENTREGUE
-    return_date: Optional[datetime] = None
-    return_reason: Optional[str] = None
-    replacement_id: Optional[UUID] = None  # Se foi substituido
+    return_date: datetime | None = None
+    return_reason: str | None = None
+    replacement_id: UUID | None = None  # Se foi substituido
     training_provided: bool = False
     signature_collected: bool = False
-    observations: Optional[str] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    observations: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "id": str(self.id),
             "employee_id": self.employee_id,
@@ -195,17 +203,19 @@ class EPIDelivery:
 @dataclass
 class EPIRequirement:
     """Requisito de EPI por funcao/risco."""
+
     function_id: str
     function_name: str
     risk_factor: str
-    required_epis: List[UUID]            # IDs dos modelos de EPI
+    required_epis: list[UUID]  # IDs dos modelos de EPI
     mandatory: bool = True
-    replacement_frequency_days: Optional[int] = None
+    replacement_frequency_days: int | None = None
 
 
 # SQLAlchemy Models
 class EPIModelDBModel(Base):
     """Modelo de banco para tipos de EPI."""
+
     __tablename__ = "health_epi_models"
 
     id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
@@ -228,6 +238,7 @@ class EPIModelDBModel(Base):
 
 class EPIInventoryDBModel(Base):
     """Modelo de banco para inventario de EPI."""
+
     __tablename__ = "health_epi_inventory"
 
     id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
@@ -248,6 +259,7 @@ class EPIInventoryDBModel(Base):
 
 class EPIDeliveryDBModel(Base):
     """Modelo de banco para entregas de EPI."""
+
     __tablename__ = "health_epi_deliveries"
 
     id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
@@ -272,6 +284,7 @@ class EPIDeliveryDBModel(Base):
 
 class EPIConfig(BaseModel):
     """Configuracao do sistema de EPI."""
+
     alert_days_before_expiry: int = Field(default=30, ge=7)
     alert_days_before_replacement: int = Field(default=7, ge=1)
     require_training_confirmation: bool = True
@@ -295,7 +308,7 @@ class EPIManager:
         ... )
     """
 
-    def __init__(self, config: Optional[EPIConfig] = None):
+    def __init__(self, config: EPIConfig | None = None):
         """
         Inicializa o gerenciador de EPI.
 
@@ -303,10 +316,10 @@ class EPIManager:
             config: Configuracao do sistema.
         """
         self.config = config or EPIConfig()
-        self._models: Dict[UUID, EPIModel] = {}
-        self._inventory: Dict[UUID, EPIInventoryItem] = {}
-        self._deliveries: Dict[UUID, EPIDelivery] = {}
-        self._requirements: List[EPIRequirement] = []
+        self._models: dict[UUID, EPIModel] = {}
+        self._inventory: dict[UUID, EPIInventoryItem] = {}
+        self._deliveries: dict[UUID, EPIDelivery] = {}
+        self._requirements: list[EPIRequirement] = []
         logger.info("EPIManager inicializado")
 
     async def register_epi_model(
@@ -318,11 +331,11 @@ class EPIManager:
         ca_number: str,
         ca_issue_date: date,
         ca_expiry_date: date,
-        description: Optional[str] = None,
-        shelf_life_days: Optional[int] = None,
-        replacement_frequency_days: Optional[int] = None,
-        unit_cost: Optional[float] = None,
-        minimum_stock: int = 0
+        description: str | None = None,
+        shelf_life_days: int | None = None,
+        replacement_frequency_days: int | None = None,
+        unit_cost: float | None = None,
+        minimum_stock: int = 0,
     ) -> EPIModel:
         """
         Cadastra modelo de EPI.
@@ -368,10 +381,7 @@ class EPIManager:
 
         self._models[epi_model.id] = epi_model
 
-        logger.info(
-            "Modelo EPI cadastrado: %s (CA: %s)",
-            name, ca_number
-        )
+        logger.info("Modelo EPI cadastrado: %s (CA: %s)", name, ca_number)
 
         return epi_model
 
@@ -379,12 +389,12 @@ class EPIManager:
         self,
         epi_model_id: UUID,
         quantity: int = 1,
-        batch_number: Optional[str] = None,
-        manufacture_date: Optional[date] = None,
-        expiry_date: Optional[date] = None,
-        purchase_date: Optional[date] = None,
-        location: Optional[str] = None
-    ) -> List[EPIInventoryItem]:
+        batch_number: str | None = None,
+        manufacture_date: date | None = None,
+        expiry_date: date | None = None,
+        purchase_date: date | None = None,
+        location: str | None = None,
+    ) -> list[EPIInventoryItem]:
         """
         Adiciona itens ao inventario.
 
@@ -405,7 +415,7 @@ class EPIManager:
             raise EPIManagementError(f"Modelo EPI nao encontrado: {epi_model_id}")
 
         items = []
-        for i in range(quantity):
+        for _i in range(quantity):
             item = EPIInventoryItem(
                 id=uuid4(),
                 epi_model_id=epi_model_id,
@@ -421,10 +431,7 @@ class EPIManager:
             self._inventory[item.id] = item
             items.append(item)
 
-        logger.info(
-            "Adicionados %d itens ao inventario: %s",
-            quantity, model.name
-        )
+        logger.info("Adicionados %d itens ao inventario: %s", quantity, model.name)
 
         return items
 
@@ -437,7 +444,7 @@ class EPIManager:
         delivered_by: str,
         training_provided: bool = False,
         signature_collected: bool = False,
-        observations: Optional[str] = None
+        observations: str | None = None,
     ) -> EPIDelivery:
         """
         Registra entrega de EPI a funcionario.
@@ -495,18 +502,12 @@ class EPIManager:
 
         self._deliveries[delivery.id] = delivery
 
-        logger.info(
-            "EPI entregue: employee=%s, item=%s (%s)",
-            employee_id, model.name, item.serial_number
-        )
+        logger.info("EPI entregue: employee=%s, item=%s (%s)", employee_id, model.name, item.serial_number)
 
         return delivery
 
     async def return_epi(
-        self,
-        delivery_id: UUID,
-        return_reason: str,
-        item_status: EPIStatus = EPIStatus.DISPONIVEL
+        self, delivery_id: UUID, return_reason: str, item_status: EPIStatus = EPIStatus.DISPONIVEL
     ) -> EPIDelivery:
         """
         Registra devolucao de EPI.
@@ -535,19 +536,12 @@ class EPIManager:
         delivery.return_date = datetime.utcnow()
         delivery.return_reason = return_reason
 
-        logger.info(
-            "EPI devolvido: delivery=%s, reason=%s",
-            delivery_id, return_reason
-        )
+        logger.info("EPI devolvido: delivery=%s, reason=%s", delivery_id, return_reason)
 
         return delivery
 
     async def replace_epi(
-        self,
-        delivery_id: UUID,
-        new_inventory_item_id: UUID,
-        replacement_reason: str,
-        delivered_by: str
+        self, delivery_id: UUID, new_inventory_item_id: UUID, replacement_reason: str, delivered_by: str
     ) -> EPIDelivery:
         """
         Substitui EPI de funcionario.
@@ -585,11 +579,7 @@ class EPIManager:
 
         return new_delivery
 
-    async def get_employee_epis(
-        self,
-        employee_id: str,
-        only_active: bool = True
-    ) -> List[EPIDelivery]:
+    async def get_employee_epis(self, employee_id: str, only_active: bool = True) -> list[EPIDelivery]:
         """
         Lista EPIs de um funcionario.
 
@@ -600,55 +590,50 @@ class EPIManager:
         Returns:
             List[EPIDelivery]: Entregas do funcionario.
         """
-        deliveries = [
-            d for d in self._deliveries.values()
-            if d.employee_id == employee_id
-        ]
+        deliveries = [d for d in self._deliveries.values() if d.employee_id == employee_id]
 
         if only_active:
             deliveries = [d for d in deliveries if d.status == DeliveryStatus.ENTREGUE]
 
         return sorted(deliveries, key=lambda x: x.delivery_date, reverse=True)
 
-    async def get_expiring_items(self, days: Optional[int] = None) -> List[EPIInventoryItem]:
+    async def get_expiring_items(self, days: int | None = None) -> list[EPIInventoryItem]:
         """Lista itens proximos de vencer."""
         days = days or self.config.alert_days_before_expiry
         cutoff = date.today() + timedelta(days=days)
 
         return [
-            item for item in self._inventory.values()
-            if item.expiry_date and date.today() <= item.expiry_date <= cutoff
+            item for item in self._inventory.values() if item.expiry_date and date.today() <= item.expiry_date <= cutoff
         ]
 
-    async def get_expired_items(self) -> List[EPIInventoryItem]:
+    async def get_expired_items(self) -> list[EPIInventoryItem]:
         """Lista itens vencidos."""
         return [item for item in self._inventory.values() if item.is_expired()]
 
-    async def get_low_stock_models(self) -> List[Dict[str, Any]]:
+    async def get_low_stock_models(self) -> list[dict[str, Any]]:
         """Lista modelos com estoque baixo."""
         low_stock = []
 
         for model in self._models.values():
             available = sum(
-                1 for item in self._inventory.values()
+                1
+                for item in self._inventory.values()
                 if item.epi_model_id == model.id and item.status == EPIStatus.DISPONIVEL
             )
             if available <= model.minimum_stock:
-                low_stock.append({
-                    "model_id": str(model.id),
-                    "model_name": model.name,
-                    "minimum_stock": model.minimum_stock,
-                    "current_stock": available,
-                    "shortage": model.minimum_stock - available,
-                })
+                low_stock.append(
+                    {
+                        "model_id": str(model.id),
+                        "model_name": model.name,
+                        "minimum_stock": model.minimum_stock,
+                        "current_stock": available,
+                        "shortage": model.minimum_stock - available,
+                    }
+                )
 
         return low_stock
 
-    async def check_employee_compliance(
-        self,
-        employee_id: str,
-        function_id: str
-    ) -> Dict[str, Any]:
+    async def check_employee_compliance(self, employee_id: str, function_id: str) -> dict[str, Any]:
         """
         Verifica compliance de EPI de funcionario.
 
@@ -680,11 +665,13 @@ class EPIManager:
                 model = self._models.get(model_id)
                 if model and model.category not in delivered_categories:
                     compliance["is_compliant"] = False
-                    compliance["missing_epis"].append({
-                        "model_name": model.name,
-                        "category": model.category.value,
-                        "risk_factor": req.risk_factor,
-                    })
+                    compliance["missing_epis"].append(
+                        {
+                            "model_name": model.name,
+                            "category": model.category.value,
+                            "risk_factor": req.risk_factor,
+                        }
+                    )
 
         # Verifica vencimentos
         for delivery in deliveries:
@@ -692,15 +679,17 @@ class EPIManager:
             if item and item.expiry_date:
                 days_left = (item.expiry_date - date.today()).days
                 if days_left <= self.config.alert_days_before_expiry:
-                    compliance["expiring_soon"].append({
-                        "epi_name": delivery.epi_model_name,
-                        "expiry_date": item.expiry_date.isoformat(),
-                        "days_remaining": days_left,
-                    })
+                    compliance["expiring_soon"].append(
+                        {
+                            "epi_name": delivery.epi_model_name,
+                            "expiry_date": item.expiry_date.isoformat(),
+                            "days_remaining": days_left,
+                        }
+                    )
 
         return compliance
 
-    async def generate_delivery_receipt(self, delivery_id: UUID) -> Dict[str, Any]:
+    async def generate_delivery_receipt(self, delivery_id: UUID) -> dict[str, Any]:
         """
         Gera ficha de entrega de EPI.
 
@@ -750,7 +739,7 @@ class EPIManager:
 
         return receipt
 
-    async def get_inventory_summary(self) -> Dict[str, Any]:
+    async def get_inventory_summary(self) -> dict[str, Any]:
         """Gera resumo do inventario."""
         summary = {
             "generated_at": datetime.utcnow().isoformat(),
@@ -770,17 +759,14 @@ class EPIManager:
         for model in self._models.values():
             # Por categoria
             cat = model.category.value
-            count = sum(
-                1 for item in self._inventory.values()
-                if item.epi_model_id == model.id
-            )
+            count = sum(1 for item in self._inventory.values() if item.epi_model_id == model.id)
             summary["by_category"][cat] = summary["by_category"].get(cat, 0) + count
 
         return summary
 
 
 # Singleton
-_epi_manager: Optional[EPIManager] = None
+_epi_manager: EPIManager | None = None
 
 
 def get_epi_manager() -> EPIManager:
@@ -791,7 +777,7 @@ def get_epi_manager() -> EPIManager:
     return _epi_manager
 
 
-def init_epi_manager(config: Optional[EPIConfig] = None) -> EPIManager:
+def init_epi_manager(config: EPIConfig | None = None) -> EPIManager:
     """Inicializa o EPIManager singleton."""
     global _epi_manager
     _epi_manager = EPIManager(config)

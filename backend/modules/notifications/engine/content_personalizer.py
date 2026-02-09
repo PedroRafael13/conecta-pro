@@ -4,7 +4,7 @@ import logging
 import re
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,10 +17,10 @@ class PersonalizedContent:
 
     title: str
     body: str
-    summary: Optional[str]
-    cta_text: Optional[str]
-    cta_url: Optional[str]
-    image_url: Optional[str]
+    summary: str | None
+    cta_text: str | None
+    cta_url: str | None
+    image_url: str | None
     metadata: dict[str, Any]
     personalization_score: float
     variables_used: list[str]
@@ -32,7 +32,7 @@ class ContentVariant:
 
     variant_id: str
     content: PersonalizedContent
-    target_segment: Optional[str]
+    target_segment: str | None
     weight: float = 1.0
 
 
@@ -97,9 +97,9 @@ class ContentPersonalizer:
         template_title: str,
         template_body: str,
         user_id: int,
-        context: Optional[dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
         tone: str = "friendly",
-        locale: Optional[str] = None,
+        locale: str | None = None,
     ) -> PersonalizedContent:
         """
         Personaliza conteúdo do template.
@@ -325,7 +325,7 @@ class ContentPersonalizer:
         if len(text) <= max_length:
             return text
 
-        truncated = text[:max_length - 3]
+        truncated = text[: max_length - 3]
         # Encontrar última palavra completa
         last_space = truncated.rfind(" ")
         if last_space > max_length // 2:
@@ -345,7 +345,7 @@ class ContentPersonalizer:
         self,
         context: dict[str, Any],
         user_data: dict[str, Any],
-    ) -> tuple[Optional[str], Optional[str]]:
+    ) -> tuple[str | None, str | None]:
         """Personaliza call-to-action."""
         cta_text = context.get("cta_text")
         cta_url = context.get("cta_url")

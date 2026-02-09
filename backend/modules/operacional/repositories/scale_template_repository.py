@@ -2,8 +2,8 @@
 Repository para operações de banco de dados com ScaleTemplate.
 """
 
+import builtins
 from datetime import datetime
-from typing import List, Optional
 from uuid import uuid4
 
 from sqlalchemy import func, select
@@ -59,8 +59,8 @@ class ScaleTemplateRepository:
     async def get_by_id(
         self,
         template_id: str,
-        tenant_id: Optional[str] = None,
-    ) -> Optional[ScaleTemplate]:
+        tenant_id: str | None = None,
+    ) -> ScaleTemplate | None:
         """
         Busca template por ID.
 
@@ -88,7 +88,7 @@ class ScaleTemplateRepository:
         skip: int = 0,
         limit: int = 20,
         include_inactive: bool = False,
-    ) -> tuple[List[ScaleTemplate], int]:
+    ) -> tuple[list[ScaleTemplate], int]:
         """
         Lista templates com paginação.
 
@@ -107,9 +107,7 @@ class ScaleTemplateRepository:
             query = query.where(ScaleTemplate.is_active.is_(True))
 
         # Count total
-        count_query = select(func.count(ScaleTemplate.id)).where(
-            ScaleTemplate.tenant_id == tenant_id
-        )
+        count_query = select(func.count(ScaleTemplate.id)).where(ScaleTemplate.tenant_id == tenant_id)
         if not include_inactive:
             count_query = count_query.where(ScaleTemplate.is_active.is_(True))
 
@@ -130,7 +128,7 @@ class ScaleTemplateRepository:
         template_id: str,
         data: ScaleTemplateUpdate,
         tenant_id: str,
-    ) -> Optional[ScaleTemplate]:
+    ) -> ScaleTemplate | None:
         """
         Atualiza um template.
 
@@ -185,7 +183,7 @@ class ScaleTemplateRepository:
         logger.info(f"ScaleTemplate deletado (soft): {template.id}")
         return True
 
-    async def increment_usage(self, template_id: str) -> Optional[ScaleTemplate]:
+    async def increment_usage(self, template_id: str) -> ScaleTemplate | None:
         """
         Incrementa contador de uso do template.
 
@@ -213,7 +211,7 @@ class ScaleTemplateRepository:
         self,
         tenant_id: str,
         limit: int = 5,
-    ) -> List[ScaleTemplate]:
+    ) -> builtins.list[ScaleTemplate]:
         """
         Retorna templates mais usados.
 
@@ -242,7 +240,7 @@ class ScaleTemplateRepository:
         self,
         tenant_id: str,
         limit: int = 5,
-    ) -> List[ScaleTemplate]:
+    ) -> builtins.list[ScaleTemplate]:
         """
         Retorna templates criados recentemente.
 

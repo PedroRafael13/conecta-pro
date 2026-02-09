@@ -1,12 +1,11 @@
 """Schemas para documentos do funcionário."""
 
-from datetime import datetime, date
-from typing import Optional, List
+from datetime import date, datetime
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from modules.hr.employee_portal.models import DocumentType, DocumentStatus
+from modules.hr.employee_portal.models import DocumentStatus, DocumentType
 
 
 class DocumentCreate(BaseModel):
@@ -15,22 +14,22 @@ class DocumentCreate(BaseModel):
     employee_id: UUID
     document_type: DocumentType
     title: str = Field(..., min_length=1, max_length=200)
-    description: Optional[str] = Field(None, max_length=1000)
-    category: Optional[str] = Field(None, max_length=50)
-    tags: List[str] = Field(default_factory=list)
+    description: str | None = Field(None, max_length=1000)
+    category: str | None = Field(None, max_length=50)
+    tags: list[str] = Field(default_factory=list)
 
     file_name: str = Field(..., min_length=1, max_length=255)
     file_path: str = Field(..., min_length=1, max_length=500)
-    file_size: Optional[int] = Field(None, ge=0)
-    file_type: Optional[str] = Field(None, max_length=50)
-    file_hash: Optional[str] = Field(None, max_length=64)
+    file_size: int | None = Field(None, ge=0)
+    file_type: str | None = Field(None, max_length=50)
+    file_hash: str | None = Field(None, max_length=64)
 
-    reference_date: Optional[date] = None
-    reference_month: Optional[int] = Field(None, ge=1, le=12)
-    reference_year: Optional[int] = Field(None, ge=2000, le=2100)
+    reference_date: date | None = None
+    reference_month: int | None = Field(None, ge=1, le=12)
+    reference_year: int | None = Field(None, ge=2000, le=2100)
 
-    valid_from: Optional[date] = None
-    valid_until: Optional[date] = None
+    valid_from: date | None = None
+    valid_until: date | None = None
     is_perpetual: bool = False
 
     is_visible: bool = True
@@ -39,31 +38,31 @@ class DocumentCreate(BaseModel):
     is_mandatory: bool = False
     requires_signature: bool = False
 
-    parent_document_id: Optional[UUID] = None
-    related_documents: List[UUID] = Field(default_factory=list)
+    parent_document_id: UUID | None = None
+    related_documents: list[UUID] = Field(default_factory=list)
     metadata: dict = Field(default_factory=dict)
 
 
 class DocumentUpdate(BaseModel):
     """Schema para atualização de documento."""
 
-    title: Optional[str] = Field(None, min_length=1, max_length=200)
-    description: Optional[str] = Field(None, max_length=1000)
-    category: Optional[str] = Field(None, max_length=50)
-    tags: Optional[List[str]] = None
+    title: str | None = Field(None, min_length=1, max_length=200)
+    description: str | None = Field(None, max_length=1000)
+    category: str | None = Field(None, max_length=50)
+    tags: list[str] | None = None
 
-    valid_from: Optional[date] = None
-    valid_until: Optional[date] = None
-    is_perpetual: Optional[bool] = None
+    valid_from: date | None = None
+    valid_until: date | None = None
+    is_perpetual: bool | None = None
 
-    is_visible: Optional[bool] = None
-    requires_acknowledgement: Optional[bool] = None
-    is_confidential: Optional[bool] = None
-    is_mandatory: Optional[bool] = None
-    requires_signature: Optional[bool] = None
+    is_visible: bool | None = None
+    requires_acknowledgement: bool | None = None
+    is_confidential: bool | None = None
+    is_mandatory: bool | None = None
+    requires_signature: bool | None = None
 
-    related_documents: Optional[List[UUID]] = None
-    metadata: Optional[dict] = None
+    related_documents: list[UUID] | None = None
+    metadata: dict | None = None
 
 
 class DocumentResponse(BaseModel):
@@ -77,22 +76,22 @@ class DocumentResponse(BaseModel):
     status: str
 
     title: str
-    description: Optional[str]
-    category: Optional[str]
-    tags: List[str]
+    description: str | None
+    category: str | None
+    tags: list[str]
 
     file_name: str
     file_path: str
-    file_size: Optional[int]
-    file_type: Optional[str]
-    file_hash: Optional[str]
+    file_size: int | None
+    file_type: str | None
+    file_hash: str | None
 
-    reference_date: Optional[date]
-    reference_month: Optional[int]
-    reference_year: Optional[int]
+    reference_date: date | None
+    reference_month: int | None
+    reference_year: int | None
 
-    valid_from: Optional[date]
-    valid_until: Optional[date]
+    valid_from: date | None
+    valid_until: date | None
     is_perpetual: bool
     is_expired: bool
     days_until_expiry: int
@@ -103,24 +102,24 @@ class DocumentResponse(BaseModel):
     is_mandatory: bool
     requires_signature: bool
 
-    first_viewed_at: Optional[datetime]
+    first_viewed_at: datetime | None
     view_count: int
-    last_viewed_at: Optional[datetime]
-    downloaded_at: Optional[datetime]
+    last_viewed_at: datetime | None
+    downloaded_at: datetime | None
     download_count: int
 
-    acknowledged_at: Optional[datetime]
-    acknowledgement_ip: Optional[str]
-    acknowledgement_device: Optional[str]
+    acknowledged_at: datetime | None
+    acknowledgement_ip: str | None
+    acknowledgement_device: str | None
 
-    signed_at: Optional[datetime]
-    signed_by: Optional[UUID]
+    signed_at: datetime | None
+    signed_by: UUID | None
 
     notification_sent: bool
-    notification_sent_at: Optional[datetime]
+    notification_sent_at: datetime | None
 
-    parent_document_id: Optional[UUID]
-    related_documents: List[UUID]
+    parent_document_id: UUID | None
+    related_documents: list[UUID]
     metadata: dict
 
     is_published: bool
@@ -128,8 +127,8 @@ class DocumentResponse(BaseModel):
     needs_signature: bool
 
     created_at: datetime
-    updated_at: Optional[datetime]
-    published_at: Optional[datetime]
+    updated_at: datetime | None
+    published_at: datetime | None
 
     model_config = {"from_attributes": True}
 
@@ -142,9 +141,9 @@ class DocumentSummary(BaseModel):
     document_type: str
     title: str
     status: str
-    file_type: Optional[str]
-    file_size: Optional[int]
-    reference_date: Optional[date]
+    file_type: str | None
+    file_size: int | None
+    reference_date: date | None
     is_visible: bool
     requires_acknowledgement: bool
     acknowledged: bool
@@ -157,7 +156,7 @@ class DocumentSummary(BaseModel):
 class DocumentListResponse(BaseModel):
     """Lista paginada de documentos."""
 
-    items: List[DocumentSummary]
+    items: list[DocumentSummary]
     total: int
     page: int
     page_size: int
@@ -167,8 +166,8 @@ class DocumentListResponse(BaseModel):
 class DocumentAcknowledgeRequest(BaseModel):
     """Request para dar ciência no documento."""
 
-    ip_address: Optional[str] = None
-    device_info: Optional[str] = None
+    ip_address: str | None = None
+    device_info: str | None = None
 
 
 class DocumentSignRequest(BaseModel):
@@ -176,31 +175,31 @@ class DocumentSignRequest(BaseModel):
 
     signature_data: str = Field(..., min_length=1)
     signature_type: str = Field(default="digital")  # digital, biometric
-    certificate_data: Optional[str] = None
-    ip_address: Optional[str] = None
-    device_info: Optional[str] = None
+    certificate_data: str | None = None
+    ip_address: str | None = None
+    device_info: str | None = None
 
 
 class DocumentFilterRequest(BaseModel):
     """Filtros para busca de documentos."""
 
-    employee_id: Optional[UUID] = None
-    document_type: Optional[DocumentType] = None
-    status: Optional[DocumentStatus] = None
-    category: Optional[str] = None
-    reference_year: Optional[int] = Field(None, ge=2000, le=2100)
-    reference_month: Optional[int] = Field(None, ge=1, le=12)
-    valid_from: Optional[date] = None
-    valid_until: Optional[date] = None
-    is_visible: Optional[bool] = None
-    requires_acknowledgement: Optional[bool] = None
-    requires_signature: Optional[bool] = None
+    employee_id: UUID | None = None
+    document_type: DocumentType | None = None
+    status: DocumentStatus | None = None
+    category: str | None = None
+    reference_year: int | None = Field(None, ge=2000, le=2100)
+    reference_month: int | None = Field(None, ge=1, le=12)
+    valid_from: date | None = None
+    valid_until: date | None = None
+    is_visible: bool | None = None
+    requires_acknowledgement: bool | None = None
+    requires_signature: bool | None = None
     only_unread: bool = False
     only_pending_ack: bool = False
     only_pending_signature: bool = False
     only_expired: bool = False
-    tags: Optional[List[str]] = None
-    search: Optional[str] = Field(None, max_length=100)
+    tags: list[str] | None = None
+    search: str | None = Field(None, max_length=100)
 
 
 class DocumentUploadResponse(BaseModel):
@@ -230,7 +229,7 @@ class DocumentDownloadResponse(BaseModel):
 class DocumentBulkActionRequest(BaseModel):
     """Request para ação em lote de documentos."""
 
-    document_ids: List[UUID] = Field(..., min_length=1, max_length=100)
+    document_ids: list[UUID] = Field(..., min_length=1, max_length=100)
     action: str = Field(..., pattern="^(archive|delete|publish|acknowledge)$")
 
 
@@ -240,4 +239,4 @@ class DocumentBulkActionResponse(BaseModel):
     total: int
     success: int
     failed: int
-    errors: List[dict]
+    errors: list[dict]

@@ -1,18 +1,18 @@
 """Testes de API para BI Dashboard - Sprint 30."""
 
-import pytest
-from decimal import Decimal
-from uuid import uuid4
-from unittest.mock import MagicMock, patch, AsyncMock
 from datetime import datetime
+from decimal import Decimal
+from unittest.mock import AsyncMock, MagicMock, patch
+from uuid import uuid4
 
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from modules.financial.bi_dashboard.models.dashboard_config import (
-    FinancialDashboard,
-    DashboardType,
     DashboardStatus,
+    DashboardType,
+    FinancialDashboard,
 )
 from modules.financial.bi_dashboard.models.dashboard_widget import (
     FinancialWidget,
@@ -23,11 +23,11 @@ from modules.financial.bi_dashboard.models.kpi_definition import (
     KPICategory,
 )
 from modules.financial.bi_dashboard.models.scheduled_report import (
-    ScheduledReport,
-    ReportType,
+    DeliveryMethod,
     ReportFormat,
     ReportFrequency,
-    DeliveryMethod,
+    ReportType,
+    ScheduledReport,
 )
 from modules.financial.bi_dashboard.services.analytics_service import AnalyticsService
 from modules.financial.bi_dashboard.services.forecast_service import ForecastService
@@ -103,8 +103,12 @@ class TestAnalyticsServiceUnit:
         """Testa deteccao de anomalias com outliers."""
         service = AnalyticsService(mock_db)
         values = [
-            Decimal("100"), Decimal("102"), Decimal("98"),
-            Decimal("101"), Decimal("500"), Decimal("99"),
+            Decimal("100"),
+            Decimal("102"),
+            Decimal("98"),
+            Decimal("101"),
+            Decimal("500"),
+            Decimal("99"),
         ]
         anomalies = service.detect_anomalies(values, threshold=2.0)
         assert len(anomalies) > 0
@@ -114,8 +118,12 @@ class TestAnalyticsServiceUnit:
         """Testa deteccao de anomalias sem outliers."""
         service = AnalyticsService(mock_db)
         values = [
-            Decimal("100"), Decimal("101"), Decimal("99"),
-            Decimal("100"), Decimal("102"), Decimal("98"),
+            Decimal("100"),
+            Decimal("101"),
+            Decimal("99"),
+            Decimal("100"),
+            Decimal("102"),
+            Decimal("98"),
         ]
         anomalies = service.detect_anomalies(values, threshold=2.0)
         assert len(anomalies) == 0
@@ -131,8 +139,12 @@ class TestAnalyticsServiceUnit:
         """Testa calculo de tendencia de alta."""
         service = AnalyticsService(mock_db)
         values = [
-            Decimal("100"), Decimal("110"), Decimal("120"),
-            Decimal("130"), Decimal("140"), Decimal("150"),
+            Decimal("100"),
+            Decimal("110"),
+            Decimal("120"),
+            Decimal("130"),
+            Decimal("140"),
+            Decimal("150"),
         ]
         trend = service.calculate_trend(values)
         assert trend["direction"] == "up"
@@ -142,8 +154,12 @@ class TestAnalyticsServiceUnit:
         """Testa calculo de tendencia de baixa."""
         service = AnalyticsService(mock_db)
         values = [
-            Decimal("150"), Decimal("140"), Decimal("130"),
-            Decimal("120"), Decimal("110"), Decimal("100"),
+            Decimal("150"),
+            Decimal("140"),
+            Decimal("130"),
+            Decimal("120"),
+            Decimal("110"),
+            Decimal("100"),
         ]
         trend = service.calculate_trend(values)
         assert trend["direction"] == "down"
@@ -153,8 +169,12 @@ class TestAnalyticsServiceUnit:
         """Testa calculo de tendencia estavel."""
         service = AnalyticsService(mock_db)
         values = [
-            Decimal("100"), Decimal("101"), Decimal("99"),
-            Decimal("100"), Decimal("101"), Decimal("99"),
+            Decimal("100"),
+            Decimal("101"),
+            Decimal("99"),
+            Decimal("100"),
+            Decimal("101"),
+            Decimal("99"),
         ]
         trend = service.calculate_trend(values)
         assert trend["direction"] == "stable"
@@ -163,10 +183,18 @@ class TestAnalyticsServiceUnit:
         """Testa calculo de sazonalidade com padrao."""
         service = AnalyticsService(mock_db)
         monthly_values = {
-            1: Decimal("80"), 2: Decimal("85"), 3: Decimal("90"),
-            4: Decimal("100"), 5: Decimal("110"), 6: Decimal("120"),
-            7: Decimal("130"), 8: Decimal("125"), 9: Decimal("115"),
-            10: Decimal("105"), 11: Decimal("95"), 12: Decimal("150"),
+            1: Decimal("80"),
+            2: Decimal("85"),
+            3: Decimal("90"),
+            4: Decimal("100"),
+            5: Decimal("110"),
+            6: Decimal("120"),
+            7: Decimal("130"),
+            8: Decimal("125"),
+            9: Decimal("115"),
+            10: Decimal("105"),
+            11: Decimal("95"),
+            12: Decimal("150"),
         }
         result = service.calculate_seasonality(monthly_values)
         assert result["has_seasonality"] is True
@@ -176,8 +204,11 @@ class TestAnalyticsServiceUnit:
         """Testa analise de distribuicao."""
         service = AnalyticsService(mock_db)
         values = [
-            Decimal("100"), Decimal("200"), Decimal("150"),
-            Decimal("175"), Decimal("125"),
+            Decimal("100"),
+            Decimal("200"),
+            Decimal("150"),
+            Decimal("175"),
+            Decimal("125"),
         ]
         result = service.analyze_distribution(values)
         assert result["count"] == 5
@@ -189,8 +220,11 @@ class TestAnalyticsServiceUnit:
         """Testa calculo de taxa de crescimento."""
         service = AnalyticsService(mock_db)
         values = [
-            Decimal("100"), Decimal("110"), Decimal("121"),
-            Decimal("133.1"), Decimal("146.41"),
+            Decimal("100"),
+            Decimal("110"),
+            Decimal("121"),
+            Decimal("133.1"),
+            Decimal("146.41"),
         ]
         result = service.calculate_growth_rate(values)
         assert result["periods"] == 5
@@ -200,8 +234,11 @@ class TestAnalyticsServiceUnit:
         """Testa sugestao de metas."""
         service = AnalyticsService(mock_db)
         historical = [
-            Decimal("100"), Decimal("110"), Decimal("120"),
-            Decimal("130"), Decimal("140"),
+            Decimal("100"),
+            Decimal("110"),
+            Decimal("120"),
+            Decimal("130"),
+            Decimal("140"),
         ]
         result = service.suggest_targets(historical)
         assert result["conservative"] > Decimal("140")
@@ -250,8 +287,12 @@ class TestForecastServiceUnit:
         """Testa geracao de previsao."""
         service = ForecastService(mock_db)
         historical = [
-            Decimal("100"), Decimal("110"), Decimal("120"),
-            Decimal("130"), Decimal("140"), Decimal("150"),
+            Decimal("100"),
+            Decimal("110"),
+            Decimal("120"),
+            Decimal("130"),
+            Decimal("140"),
+            Decimal("150"),
         ]
         result = service.generate_forecast(historical, periods=3)
         assert len(result["forecasts"]) == 3
@@ -272,8 +313,12 @@ class TestForecastServiceUnit:
         """Testa previsao por media movel."""
         service = ForecastService(mock_db)
         values = [
-            Decimal("100"), Decimal("110"), Decimal("120"),
-            Decimal("115"), Decimal("125"), Decimal("130"),
+            Decimal("100"),
+            Decimal("110"),
+            Decimal("120"),
+            Decimal("115"),
+            Decimal("125"),
+            Decimal("130"),
         ]
         result = service.moving_average_forecast(values, window=3, periods=3)
         assert len(result) == 3
@@ -282,8 +327,11 @@ class TestForecastServiceUnit:
         """Testa suavizacao exponencial."""
         service = ForecastService(mock_db)
         values = [
-            Decimal("100"), Decimal("110"), Decimal("105"),
-            Decimal("115"), Decimal("120"),
+            Decimal("100"),
+            Decimal("110"),
+            Decimal("105"),
+            Decimal("115"),
+            Decimal("120"),
         ]
         result = service.exponential_smoothing(values, alpha=0.3, periods=3)
         assert len(result) == 3
@@ -352,7 +400,10 @@ class TestForecastServiceUnit:
         result = service.calculate_npv(
             initial_investment=Decimal("10000"),
             cash_flows=[
-                Decimal("3000"), Decimal("4000"), Decimal("5000"), Decimal("6000"),
+                Decimal("3000"),
+                Decimal("4000"),
+                Decimal("5000"),
+                Decimal("6000"),
             ],
             discount_rate=Decimal("0.1"),
         )
@@ -376,7 +427,10 @@ class TestForecastServiceUnit:
         result = service.calculate_payback(
             initial_investment=Decimal("10000"),
             cash_flows=[
-                Decimal("3000"), Decimal("4000"), Decimal("5000"), Decimal("3000"),
+                Decimal("3000"),
+                Decimal("4000"),
+                Decimal("5000"),
+                Decimal("3000"),
             ],
         )
         assert result["recovered"] is True
@@ -413,9 +467,7 @@ class TestDashboardEndpoints:
         """Fixture para mock do repositorio."""
         return MagicMock()
 
-    def test_list_dashboards_returns_list(
-        self, mock_db, mock_dashboard_repo, sample_dashboard
-    ):
+    def test_list_dashboards_returns_list(self, mock_db, mock_dashboard_repo, sample_dashboard):
         """Testa listagem de dashboards."""
         mock_dashboard_repo.list_by_condominio.return_value = [sample_dashboard]
         # Simula chamada ao endpoint
@@ -423,9 +475,7 @@ class TestDashboardEndpoints:
         assert len(result) == 1
         assert result[0].nome == "Dashboard Teste"
 
-    def test_get_dashboard_by_id(
-        self, mock_db, mock_dashboard_repo, sample_dashboard
-    ):
+    def test_get_dashboard_by_id(self, mock_db, mock_dashboard_repo, sample_dashboard):
         """Testa obtencao de dashboard por ID."""
         mock_dashboard_repo.get_by_id.return_value = sample_dashboard
         result = mock_dashboard_repo.get_by_id(sample_dashboard.id)
@@ -459,9 +509,7 @@ class TestWidgetEndpoints:
         """Fixture para mock do repositorio."""
         return MagicMock()
 
-    def test_list_widgets_by_dashboard(
-        self, mock_db, mock_widget_repo, sample_widget
-    ):
+    def test_list_widgets_by_dashboard(self, mock_db, mock_widget_repo, sample_widget):
         """Testa listagem de widgets por dashboard."""
         mock_widget_repo.list_by_dashboard.return_value = [sample_widget]
         result = mock_widget_repo.list_by_dashboard(sample_widget.dashboard_id)
@@ -493,9 +541,7 @@ class TestKPIEndpoints:
     def test_list_kpis_by_category(self, mock_db, mock_kpi_repo, sample_kpi):
         """Testa listagem de KPIs por categoria."""
         mock_kpi_repo.list_by_category.return_value = [sample_kpi]
-        result = mock_kpi_repo.list_by_category(
-            sample_kpi.condominio_id, KPICategory.LIQUIDITY
-        )
+        result = mock_kpi_repo.list_by_category(sample_kpi.condominio_id, KPICategory.LIQUIDITY)
         assert len(result) == 1
         assert result[0].categoria == KPICategory.LIQUIDITY
 

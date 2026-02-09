@@ -4,19 +4,24 @@ Versão 2 - Extração via HTTP request para evitar problemas de imports.
 """
 
 import json
-import subprocess
-import time
-import requests
+import logging
+import subprocess  # noqa: S404
 import sys
+import time
+
+import requests
+
+logger = logging.getLogger(__name__)
+
 
 def start_server():
     """Inicia servidor FastAPI em background."""
     print("🚀 Iniciando servidor FastAPI...")
     proc = subprocess.Popen(
-        ["python3", "-m", "uvicorn", "main:app", "--host", "127.0.0.1", "--port", "8888"],
+        ["/usr/bin/python3", "-m", "uvicorn", "main:app", "--host", "127.0.0.1", "--port", "8888"],  # noqa: S607
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        cwd="/opt/conecta-pro/backend"
+        cwd="/opt/conecta-pro/backend",
     )
 
     # Aguarda servidor iniciar
@@ -27,8 +32,8 @@ def start_server():
             if response.status_code == 200:
                 print("✅ Servidor iniciado com sucesso")
                 return proc
-        except:
-            pass
+        except Exception:
+            logger.debug("Servidor ainda nao iniciado, tentando novamente...")
         time.sleep(1)
         if i % 5 == 0:
             print(f"⏳ Aguardando servidor... ({i}/{max_attempts})")
@@ -36,6 +41,7 @@ def start_server():
     print("❌ Falha ao iniciar servidor")
     proc.kill()
     return None
+
 
 def extract_reports_openapi():
     """Extrai OpenAPI spec filtrado para módulo REPORTS."""
@@ -60,9 +66,9 @@ def extract_reports_openapi():
 
         # Prefixos que queremos incluir
         prefixes_to_include = [
-            "/api/v1/reports",           # Módulo reports principal
-            "/api/v1/ai/reports",         # AI Report Generator
-            "/api/v1/operacional/reports" # Operational Reports (se existir)
+            "/api/v1/reports",  # Módulo reports principal
+            "/api/v1/ai/reports",  # AI Report Generator
+            "/api/v1/operacional/reports",  # Operational Reports (se existir)
         ]
 
         for path, path_item in openapi_schema.get("paths", {}).items():
@@ -96,11 +102,7 @@ def extract_reports_openapi():
         extract_schema_refs(reports_paths)
 
         # Filtra apenas schemas usados
-        filtered_schemas = {
-            name: schema
-            for name, schema in all_schemas.items()
-            if name in used_schemas
-        }
+        filtered_schemas = {name: schema for name, schema in all_schemas.items() if name in used_schemas}
 
         # Monta OpenAPI filtrado
         reports_openapi = {
@@ -108,23 +110,17 @@ def extract_reports_openapi():
             "info": {
                 "title": "Conecta PRO - Reports API",
                 "version": "2.0.0",
-                "description": "API completa do módulo de Relatórios incluindo Reports, Intelligent Reports, AI Reports e Operational Reports"
+                "description": "API completa do módulo de Relatórios incluindo Reports, Intelligent Reports, AI Reports e Operational Reports",
             },
             "servers": [
-                {
-                    "url": "http://localhost:8000",
-                    "description": "Servidor de desenvolvimento"
-                },
-                {
-                    "url": "https://api.conectapro.com.br",
-                    "description": "Servidor de produção"
-                }
+                {"url": "http://localhost:8000", "description": "Servidor de desenvolvimento"},
+                {"url": "https://api.conectapro.com.br", "description": "Servidor de produção"},
             ],
             "paths": reports_paths,
             "components": {
                 "schemas": filtered_schemas,
-                "securitySchemes": openapi_schema.get("components", {}).get("securitySchemes", {})
-            }
+                "securitySchemes": openapi_schema.get("components", {}).get("securitySchemes", {}),
+            },
         }
 
         # Salva arquivo
@@ -136,7 +132,7 @@ def extract_reports_openapi():
         num_paths = len(reports_paths)
         num_schemas = len(filtered_schemas)
 
-        print(f"\n✅ OpenAPI spec REPORTS extraído com sucesso!")
+        print("\n✅ OpenAPI spec REPORTS extraído com sucesso!")
         print(f"📁 Arquivo: {output_file}")
         print(f"🔗 Endpoints: {num_paths}")
         print(f"📦 Schemas: {num_schemas}")
@@ -152,7 +148,7 @@ def extract_reports_openapi():
         # Lista alguns endpoints
         print("\nExemplos de endpoints:")
         for i, path in enumerate(sorted(reports_paths.keys())[:10]):
-            print(f"  {i+1}. {path}")
+            print(f"  {i + 1}. {path}")
 
         if num_paths > 10:
             print(f"  ... e mais {num_paths - 10} endpoints")
@@ -161,6 +157,7 @@ def extract_reports_openapi():
         print("\n🛑 Encerrando servidor...")
         server_proc.terminate()
         server_proc.wait(timeout=5)
+
 
 if __name__ == "__main__":
     extract_reports_openapi()

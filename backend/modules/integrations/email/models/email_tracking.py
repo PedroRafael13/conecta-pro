@@ -3,8 +3,8 @@
 Sprint 32 - Automacoes Email.
 """
 
-import enum
 from datetime import datetime
+from enum import StrEnum
 
 from sqlalchemy import (
     Column,
@@ -20,7 +20,7 @@ from sqlalchemy.orm import relationship
 from core.models import Base
 
 
-class TrackingEventType(str, enum.Enum):
+class TrackingEventType(StrEnum):
     """Tipo de evento de tracking."""
 
     SENT = "SENT"  # Email enviado

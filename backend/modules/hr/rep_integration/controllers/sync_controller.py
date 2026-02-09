@@ -1,23 +1,22 @@
 """Controller para sincronização REP."""
 
 import logging
-from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query, BackgroundTasks
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.database import get_db
 from core.auth.dependencies import get_current_user
-from modules.hr.rep_integration.services import SyncService
+from core.database import get_db
 from modules.hr.rep_integration.repositories import REPSyncRepository
 from modules.hr.rep_integration.schemas import (
-    REPSyncStart,
-    REPSyncResponse,
-    REPSyncList,
     REPSyncFilter,
+    REPSyncList,
     REPSyncProgress,
+    REPSyncResponse,
+    REPSyncStart,
 )
+from modules.hr.rep_integration.services import SyncService
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/sync", tags=["REP Sync"])
@@ -53,7 +52,7 @@ async def start_sync(
 
 @router.post("/all")
 async def sync_all_devices(
-    condominio_id: Optional[UUID] = None,
+    condominio_id: UUID | None = None,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict:
@@ -64,11 +63,11 @@ async def sync_all_devices(
 
 @router.get("/", response_model=REPSyncList)
 async def list_syncs(
-    device_id: Optional[UUID] = None,
-    condominio_id: Optional[UUID] = None,
-    sync_type: Optional[str] = None,
-    status_filter: Optional[str] = Query(None, alias="status"),
-    has_errors: Optional[bool] = None,
+    device_id: UUID | None = None,
+    condominio_id: UUID | None = None,
+    sync_type: str | None = None,
+    status_filter: str | None = Query(None, alias="status"),
+    has_errors: bool | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
@@ -155,8 +154,8 @@ async def retry_sync(
 
 @router.get("/statistics/summary")
 async def get_sync_statistics(
-    device_id: Optional[UUID] = None,
-    condominio_id: Optional[UUID] = None,
+    device_id: UUID | None = None,
+    condominio_id: UUID | None = None,
     days: int = Query(30, ge=1, le=365),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument

@@ -5,7 +5,7 @@ Implementa rate limiting usando slowapi + Redis para limitar
 requisições por IP, usuário ou endpoint.
 """
 
-from typing import Callable, Optional
+from collections.abc import Callable
 
 from fastapi import Request, Response
 from slowapi import Limiter

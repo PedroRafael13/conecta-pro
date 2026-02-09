@@ -2,15 +2,19 @@
 """
 Diagnóstico detalhado - importa cada módulo do api/v1 com timeout individual.
 """
+
+import signal
 import sys
 import time
-import signal
 
-class TimeoutError(Exception):
+
+class DiagnosticTimeoutError(Exception):
     pass
 
+
 def timeout_handler(signum, frame):
-    raise TimeoutError("Timeout!")
+    raise DiagnosticTimeoutError("Timeout!")
+
 
 def test_import_with_timeout(name, import_func, timeout_sec=60):
     """Testa um import com timeout."""
@@ -34,8 +38,10 @@ def test_import_with_timeout(name, import_func, timeout_sec=60):
         signal.alarm(0)
         print(f"    FAILED: {e}", flush=True)
         import traceback
+
         traceback.print_exc()
         return False, 0
+
 
 print("=" * 70)
 print("DIAGNÓSTICO DE MÓDULOS - Timeout de 60s por módulo")
@@ -46,9 +52,9 @@ basic_imports = [
     ("fastapi", lambda: __import__("fastapi")),
     ("sqlalchemy", lambda: __import__("sqlalchemy")),
     ("pydantic", lambda: __import__("pydantic")),
-    ("core.config", lambda: exec("from core.config import settings")),
-    ("core.logging", lambda: exec("from core.logging import logger")),
-    ("core.database", lambda: exec("from core.database import get_db")),
+    ("core.config", lambda: exec("from core.config import settings")),  # noqa: S102,
+    ("core.logging", lambda: exec("from core.logging import logger")),  # noqa: S102,
+    ("core.database", lambda: exec("from core.database import get_db")),  # noqa: S102,
 ]
 
 print("\n--- IMPORTS BÁSICOS ---")
@@ -60,16 +66,22 @@ for name, func in basic_imports:
 
 # Testar módulos individuais
 module_imports = [
-    ("api.v1.endpoints.auth", lambda: exec("from api.v1.endpoints.auth import router")),
-    ("modules.crm.controllers", lambda: exec("from modules.crm.controllers import lead_router")),
-    ("modules.operations.controllers", lambda: exec("from modules.operacional.controllers import post_router")),
-    ("modules.financial.controllers", lambda: exec("from modules.financial.controllers import accounting_router")),
-    ("modules.hr.analytics_dashboard", lambda: exec("from modules.hr.analytics_dashboard import router")),
-    ("modules.monitoring", lambda: exec("from modules.monitoring import router")),
-    ("modules.automation.workflow.controllers", lambda: exec("from modules.automation.workflow.controllers import router")),
-    ("modules.fase5.controllers", lambda: exec("from modules.fase5.controllers import fase5_router")),
-    ("modules.bidding", lambda: exec("from modules.bidding import tender_router")),
-    ("modules.ai.intelligence_hub.controllers", lambda: exec("from modules.ai.intelligence_hub.controllers import intelligence_hub_router")),
+    ("api.v1.endpoints.auth", lambda: exec("from api.v1.endpoints.auth import router")),  # noqa: S102,
+    ("modules.crm.controllers", lambda: exec("from modules.crm.controllers import lead_router")),  # noqa: S102,
+    ("modules.operations.controllers", lambda: exec("from modules.operacional.controllers import post_router")),  # noqa: S102,
+    ("modules.financial.controllers", lambda: exec("from modules.financial.controllers import accounting_router")),  # noqa: S102,
+    ("modules.hr.analytics_dashboard", lambda: exec("from modules.hr.analytics_dashboard import router")),  # noqa: S102,
+    ("modules.monitoring", lambda: exec("from modules.monitoring import router")),  # noqa: S102,
+    (
+        "modules.automation.workflow.controllers",
+        lambda: exec("from modules.automation.workflow.controllers import router"),  # noqa: S102
+    ),
+    ("modules.fase5.controllers", lambda: exec("from modules.fase5.controllers import fase5_router")),  # noqa: S102,
+    ("modules.bidding", lambda: exec("from modules.bidding import tender_router")),  # noqa: S102,
+    (
+        "modules.ai.intelligence_hub.controllers",
+        lambda: exec("from modules.ai.intelligence_hub.controllers import intelligence_hub_router"),  # noqa: S102
+    ),
 ]
 
 print("\n--- IMPORTS DE MÓDULOS ---")

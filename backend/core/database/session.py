@@ -2,9 +2,12 @@
 Gerenciamento de sessões do banco de dados.
 """
 
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
+from contextlib import contextmanager
 
+from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.orm import sessionmaker
 
 from core.config import settings
 
@@ -65,10 +68,6 @@ async def close_db() -> None:
 # ============================================================================
 # Sessão Síncrona para Celery Tasks
 # ============================================================================
-
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, sessionmaker
-from contextlib import contextmanager
 
 # Engine síncrono para Celery
 sync_engine = create_engine(

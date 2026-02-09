@@ -3,16 +3,13 @@ Condominium Model - Cadastro de Condomínios
 Sprint 30: Cadastro de Clientes/Condomínios
 """
 
-import enum
-from datetime import datetime, date
-from typing import Optional, List, TYPE_CHECKING
+from datetime import date, datetime
+from enum import StrEnum
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
-from sqlalchemy import (
-    Column, String, Text, Boolean, DateTime, Date,
-    Numeric, Integer, Enum, ForeignKey, Index
-)
-from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY
+from sqlalchemy import Boolean, Column, Date, DateTime, Enum, ForeignKey, Index, Integer, Numeric, String, Text
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import relationship
 
 from core.database import Base
@@ -22,8 +19,9 @@ if TYPE_CHECKING:
     from modules.clients.models.unit import Unit
 
 
-class CondominiumType(str, enum.Enum):
+class CondominiumType(StrEnum):
     """Tipo de condominio - valores sincronizados com banco."""
+
     RESIDENTIAL = "residential"
     COMMERCIAL = "commercial"
     MIXED = "mixed"
@@ -33,8 +31,9 @@ class CondominiumType(str, enum.Enum):
     SUBDIVISION = "subdivision"
 
 
-class CondominiumStatus(str, enum.Enum):
+class CondominiumStatus(StrEnum):
     """Status do condominio - valores sincronizados com banco."""
+
     ACTIVE = "active"
     INACTIVE = "inactive"
     IMPLEMENTING = "implementing"
@@ -42,8 +41,9 @@ class CondominiumStatus(str, enum.Enum):
     CLOSED = "closed"
 
 
-class AdministrationType(str, enum.Enum):
+class AdministrationType(StrEnum):
     """Tipo de administração."""
+
     PROPRIA = "propria"
     ADMINISTRADORA = "administradora"
     SINDICO_PROFISSIONAL = "sindico_profissional"
@@ -63,25 +63,14 @@ class Condominium(Base):
     # Identificação
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     code = Column(String(20), unique=True, nullable=False, index=True)
-    client_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("clients.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True
-    )
+    client_id = Column(UUID(as_uuid=True), ForeignKey("clients.id", ondelete="CASCADE"), nullable=False, index=True)
 
     # Dados básicos
     name = Column(String(200), nullable=False)
     # REMOVED: type field (não existe no banco de dados)
     # type = Column(Enum(CondominiumType), nullable=False, default=CondominiumType.RESIDENCIAL)
-    status = Column(
-        Enum(CondominiumStatus), nullable=False, default=CondominiumStatus.IMPLEMENTING
-    )
-    administration_type = Column(
-        Enum(AdministrationType),
-        nullable=True,
-        default=AdministrationType.ADMINISTRADORA
-    )
+    status = Column(Enum(CondominiumStatus), nullable=False, default=CondominiumStatus.IMPLEMENTING)
+    administration_type = Column(Enum(AdministrationType), nullable=True, default=AdministrationType.ADMINISTRADORA)
 
     # CNPJ do condomínio
     cnpj = Column(String(20), nullable=True, index=True)
@@ -177,11 +166,7 @@ class Condominium(Base):
 
     # Relacionamentos
     client: "Client" = relationship("Client", back_populates="condominiums")
-    units: List["Unit"] = relationship(
-        "Unit",
-        back_populates="condominium",
-        cascade="all, delete-orphan"
-    )
+    units: list["Unit"] = relationship("Unit", back_populates="condominium", cascade="all, delete-orphan")
 
     # Índices
     __table_args__ = (
@@ -291,7 +276,7 @@ class Condominium(Base):
         return today >= self.syndic_start_date
 
     @property
-    def days_until_syndic_end(self) -> Optional[int]:
+    def days_until_syndic_end(self) -> int | None:
         """Dias até o fim do mandato do síndico."""
         if not self.syndic_end_date:
             return None
@@ -311,7 +296,7 @@ class Condominium(Base):
         self.is_active = False
         self.updated_at = datetime.utcnow()
 
-    def suspend(self, reason: Optional[str] = None) -> None:
+    def suspend(self, reason: str | None = None) -> None:
         """Suspende o condominio."""
         self.status = CondominiumStatus.SUSPENDED
         if reason:
@@ -334,11 +319,11 @@ class Condominium(Base):
     def update_syndic(
         self,
         name: str,
-        phone: Optional[str] = None,
-        email: Optional[str] = None,
-        cpf: Optional[str] = None,
-        start_date: Optional[date] = None,
-        end_date: Optional[date] = None
+        phone: str | None = None,
+        email: str | None = None,
+        cpf: str | None = None,
+        start_date: date | None = None,
+        end_date: date | None = None,
     ) -> None:
         """Atualiza dados do síndico."""
         self.syndic_name = name

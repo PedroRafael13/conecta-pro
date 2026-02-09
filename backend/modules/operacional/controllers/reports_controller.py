@@ -3,9 +3,9 @@ Controller (endpoints) para Relatorios Operacionais.
 """
 
 from datetime import date
-from typing import Optional
+from typing import Any
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.dependencies import CurrentActiveUser
@@ -14,8 +14,8 @@ from core.logging import logger
 from modules.operacional.permissions import Permission, require_operacional_permission
 from modules.operacional.repositories.reports_repository import ReportsRepository
 from modules.operacional.schemas.reports import (
-    CoverageReportResponse,
     CostsReportResponse,
+    CoverageReportResponse,
     HoursReportResponse,
 )
 
@@ -36,9 +36,9 @@ def _default_dates() -> tuple[date, date]:
 async def coverage_report(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
-    start_date: Optional[date] = Query(None),
-    end_date: Optional[date] = Query(None),
-    post_id: Optional[str] = Query(None),
+    start_date: date | None = Query(None),
+    end_date: date | None = Query(None),
+    post_id: str | None = Query(None),
 ) -> CoverageReportResponse:
     """Relatorio de cobertura (postos x alocacoes)."""
     default_start, default_end = _default_dates()
@@ -46,7 +46,7 @@ async def coverage_report(
     end = end_date or default_end
 
     repo = ReportsRepository(db)
-    items = await repo.get_coverage(start, end, post_id=post_id)
+    items: list[dict[str, Any]] = await repo.get_coverage(start, end, post_id=post_id)
 
     total_allocations = sum(item["total_allocations"] for item in items)
     active_allocations = sum(item["active_allocations"] for item in items)
@@ -78,9 +78,9 @@ async def coverage_report(
 async def hours_report(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
-    start_date: Optional[date] = Query(None),
-    end_date: Optional[date] = Query(None),
-    employee_id: Optional[str] = Query(None),
+    start_date: date | None = Query(None),
+    end_date: date | None = Query(None),
+    employee_id: str | None = Query(None),
 ) -> HoursReportResponse:
     """Relatorio de horas trabalhadas."""
     default_start, default_end = _default_dates()
@@ -88,7 +88,7 @@ async def hours_report(
     end = end_date or default_end
 
     repo = ReportsRepository(db)
-    items = await repo.get_hours(start, end, employee_id=employee_id)
+    items: list[dict[str, Any]] = await repo.get_hours(start, end, employee_id=employee_id)
 
     total_hours = sum(item["total_hours"] for item in items)
     total_overtime = sum(item["overtime_hours"] for item in items)
@@ -118,9 +118,9 @@ async def hours_report(
 async def costs_report(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
-    start_date: Optional[date] = Query(None),
-    end_date: Optional[date] = Query(None),
-    post_id: Optional[str] = Query(None),
+    start_date: date | None = Query(None),
+    end_date: date | None = Query(None),
+    post_id: str | None = Query(None),
 ) -> CostsReportResponse:
     """Relatorio de custos estimados por posto."""
     default_start, default_end = _default_dates()
@@ -128,7 +128,7 @@ async def costs_report(
     end = end_date or default_end
 
     repo = ReportsRepository(db)
-    items = await repo.get_costs(start, end, post_id=post_id)
+    items: list[dict[str, Any]] = await repo.get_costs(start, end, post_id=post_id)
 
     total_cost = sum(item["total_cost"] for item in items)
 

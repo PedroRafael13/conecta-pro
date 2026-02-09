@@ -6,25 +6,27 @@ Define regras para validação, padronização e qualidade de dados.
 
 import uuid
 from datetime import datetime
-from enum import Enum
-from typing import Any, Dict, List, Optional
+from enum import StrEnum
+from typing import Any
 
 from sqlalchemy import (
     Boolean,
     Column,
     DateTime,
-    Enum as SQLEnum,
     Float,
     Integer,
     String,
     Text,
+)
+from sqlalchemy import (
+    Enum as SQLEnum,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 from core.database import Base
 
 
-class RuleTypeEnum(str, Enum):
+class RuleTypeEnum(StrEnum):
     """Tipos de regra de qualidade."""
 
     # Validação
@@ -68,7 +70,7 @@ class RuleTypeEnum(str, Enum):
     CUSTOM = "custom"
 
 
-class RuleSeverityEnum(str, Enum):
+class RuleSeverityEnum(StrEnum):
     """Severidade da violação."""
 
     CRITICAL = "critical"
@@ -78,7 +80,7 @@ class RuleSeverityEnum(str, Enum):
     INFO = "info"
 
 
-class RuleStatusEnum(str, Enum):
+class RuleStatusEnum(StrEnum):
     """Status da regra."""
 
     ACTIVE = "active"
@@ -87,7 +89,7 @@ class RuleStatusEnum(str, Enum):
     DEPRECATED = "deprecated"
 
 
-class RuleCategoryEnum(str, Enum):
+class RuleCategoryEnum(StrEnum):
     """Categoria da regra."""
 
     COMPLETENESS = "completeness"
@@ -111,25 +113,14 @@ class DataQualityRule(Base):
     description = Column(Text, nullable=True)
 
     # Tipo e categoria
-    rule_type = Column(
-        SQLEnum(RuleTypeEnum, name="dq_rule_type_enum"),
-        nullable=False
-    )
+    rule_type = Column(SQLEnum(RuleTypeEnum, name="dq_rule_type_enum"), nullable=False)
     category = Column(
-        SQLEnum(RuleCategoryEnum, name="dq_rule_category_enum"),
-        nullable=False,
-        default=RuleCategoryEnum.VALIDITY
+        SQLEnum(RuleCategoryEnum, name="dq_rule_category_enum"), nullable=False, default=RuleCategoryEnum.VALIDITY
     )
     severity = Column(
-        SQLEnum(RuleSeverityEnum, name="dq_rule_severity_enum"),
-        nullable=False,
-        default=RuleSeverityEnum.MEDIUM
+        SQLEnum(RuleSeverityEnum, name="dq_rule_severity_enum"), nullable=False, default=RuleSeverityEnum.MEDIUM
     )
-    status = Column(
-        SQLEnum(RuleStatusEnum, name="dq_rule_status_enum"),
-        nullable=False,
-        default=RuleStatusEnum.ACTIVE
-    )
+    status = Column(SQLEnum(RuleStatusEnum, name="dq_rule_status_enum"), nullable=False, default=RuleStatusEnum.ACTIVE)
 
     # Escopo
     entity_type = Column(String(100), nullable=False)  # Ex: "lead", "client", "contact"
@@ -213,10 +204,17 @@ class DataQualityRule(Base):
     def is_validation_rule(self) -> bool:
         """Verifica se é regra de validação."""
         validation_types = [
-            RuleTypeEnum.NOT_NULL, RuleTypeEnum.UNIQUE, RuleTypeEnum.FORMAT,
-            RuleTypeEnum.RANGE, RuleTypeEnum.LENGTH, RuleTypeEnum.ENUM,
-            RuleTypeEnum.REGEX, RuleTypeEnum.CPF_VALID, RuleTypeEnum.CNPJ_VALID,
-            RuleTypeEnum.EMAIL_VALID, RuleTypeEnum.PHONE_VALID
+            RuleTypeEnum.NOT_NULL,
+            RuleTypeEnum.UNIQUE,
+            RuleTypeEnum.FORMAT,
+            RuleTypeEnum.RANGE,
+            RuleTypeEnum.LENGTH,
+            RuleTypeEnum.ENUM,
+            RuleTypeEnum.REGEX,
+            RuleTypeEnum.CPF_VALID,
+            RuleTypeEnum.CNPJ_VALID,
+            RuleTypeEnum.EMAIL_VALID,
+            RuleTypeEnum.PHONE_VALID,
         ]
         return self.rule_type in validation_types
 
@@ -224,10 +222,16 @@ class DataQualityRule(Base):
     def is_standardization_rule(self) -> bool:
         """Verifica se é regra de padronização."""
         std_types = [
-            RuleTypeEnum.UPPERCASE, RuleTypeEnum.LOWERCASE, RuleTypeEnum.TRIM,
-            RuleTypeEnum.NORMALIZE, RuleTypeEnum.PHONE_FORMAT, RuleTypeEnum.CPF_FORMAT,
-            RuleTypeEnum.CNPJ_FORMAT, RuleTypeEnum.CEP_FORMAT, RuleTypeEnum.EMAIL_FORMAT,
-            RuleTypeEnum.DATE_FORMAT
+            RuleTypeEnum.UPPERCASE,
+            RuleTypeEnum.LOWERCASE,
+            RuleTypeEnum.TRIM,
+            RuleTypeEnum.NORMALIZE,
+            RuleTypeEnum.PHONE_FORMAT,
+            RuleTypeEnum.CPF_FORMAT,
+            RuleTypeEnum.CNPJ_FORMAT,
+            RuleTypeEnum.CEP_FORMAT,
+            RuleTypeEnum.EMAIL_FORMAT,
+            RuleTypeEnum.DATE_FORMAT,
         ]
         return self.rule_type in std_types
 
@@ -244,7 +248,7 @@ class DataQualityRule(Base):
         if self.total_checks > 0:
             self.violation_rate = (self.total_violations / self.total_checks) * 100
 
-    def get_error_message(self, context: Dict[str, Any] = None) -> str:
+    def get_error_message(self, context: dict[str, Any] = None) -> str:
         """Retorna mensagem de erro formatada."""
         if self.error_message_template and context:
             try:
@@ -253,7 +257,7 @@ class DataQualityRule(Base):
                 pass
         return self.error_message or f"Violação da regra {self.code}"
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Converte para dicionário."""
         return {
             "id": str(self.id),

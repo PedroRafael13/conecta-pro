@@ -3,24 +3,21 @@ ComplianceCheck Model - Verificações de Compliance
 Sprint 33: Auditoria e Compliance
 """
 
-import enum
 import secrets
 from datetime import datetime
-from typing import Optional
+from enum import StrEnum
 from uuid import uuid4
 
-from sqlalchemy import (
-    Column, String, Text, Boolean, DateTime,
-    Integer, Enum, Index, ForeignKey
-)
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, Index, Integer, String, Text
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 
 from core.database import Base
 
 
-class CheckType(str, enum.Enum):
+class CheckType(StrEnum):
     """Tipo de verificação."""
+
     AUTOMATED = "automated"
     MANUAL = "manual"
     SCHEDULED = "scheduled"
@@ -29,8 +26,9 @@ class CheckType(str, enum.Enum):
     SAMPLE = "sample"
 
 
-class CheckStatus(str, enum.Enum):
+class CheckStatus(StrEnum):
     """Status da verificação."""
+
     PENDING = "pending"
     RUNNING = "running"
     COMPLETED = "completed"
@@ -39,8 +37,9 @@ class CheckStatus(str, enum.Enum):
     SKIPPED = "skipped"
 
 
-class CheckResult(str, enum.Enum):
+class CheckResult(StrEnum):
     """Resultado da verificação."""
+
     COMPLIANT = "compliant"
     NON_COMPLIANT = "non_compliant"
     PARTIAL = "partial"
@@ -54,17 +53,14 @@ class ComplianceCheck(Base):
     Model para verificações de compliance.
     Registra cada execução de verificação de uma regra.
     """
+
     __tablename__ = "compliance_checks"
 
     # Primary key
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
 
     # Regra
-    rule_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("compliance_rules.id"),
-        nullable=False
-    )
+    rule_id = Column(UUID(as_uuid=True), ForeignKey("compliance_rules.id"), nullable=False)
 
     # Identificação
     check_number = Column(String(50), nullable=False, unique=True)
@@ -156,9 +152,7 @@ class ComplianceCheck(Base):
     # Auditoria
     ativo = Column(Boolean, nullable=False, default=True)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(
-        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
     created_by = Column(UUID(as_uuid=True), nullable=True)
     updated_by = Column(UUID(as_uuid=True), nullable=True)
 
@@ -177,11 +171,7 @@ class ComplianceCheck(Base):
         Index("ix_compliance_checks_requires_review", "requires_review"),
         Index("ix_compliance_checks_remediation_required", "remediation_required"),
         Index("ix_compliance_checks_ativo", "ativo"),
-        Index(
-            "ix_compliance_checks_rule_result",
-            "rule_id",
-            "result"
-        ),
+        Index("ix_compliance_checks_rule_result", "rule_id", "result"),
     )
 
     def __repr__(self) -> str:
@@ -190,13 +180,10 @@ class ComplianceCheck(Base):
 
     @classmethod
     def create_check(
-        cls,
-        rule_id: str,
-        check_type: CheckType = CheckType.AUTOMATED,
-        executed_by: Optional[str] = None
+        cls, rule_id: str, check_type: CheckType = CheckType.AUTOMATED, executed_by: str | None = None
     ) -> "ComplianceCheck":
         """Cria uma nova verificação."""
-        timestamp = datetime.utcnow().strftime('%Y%m%d%H%M%S')
+        timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
         token = secrets.token_hex(4).upper()
         check_number = f"CHK-{timestamp}-{token}"
 
@@ -205,10 +192,10 @@ class ComplianceCheck(Base):
             check_number=check_number,
             check_type=check_type,
             status=CheckStatus.PENDING,
-            executed_by=executed_by
+            executed_by=executed_by,
         )
 
-    def start(self, executor_id: Optional[str] = None) -> None:
+    def start(self, executor_id: str | None = None) -> None:
         """Inicia a verificação."""
         self.status = CheckStatus.RUNNING
         self.started_at = datetime.utcnow()
@@ -216,11 +203,7 @@ class ComplianceCheck(Base):
             self.executed_by = executor_id
         self.updated_at = datetime.utcnow()
 
-    def complete_compliant(
-        self,
-        evidence: Optional[dict] = None,
-        notes: Optional[str] = None
-    ) -> None:
+    def complete_compliant(self, evidence: dict | None = None, notes: str | None = None) -> None:
         """Marca como conforme."""
         self.status = CheckStatus.COMPLETED
         self.result = CheckResult.COMPLIANT
@@ -235,10 +218,7 @@ class ComplianceCheck(Base):
         self.updated_at = datetime.utcnow()
 
     def complete_non_compliant(
-        self,
-        violations: list,
-        remediation_required: bool = True,
-        remediation_deadline: Optional[datetime] = None
+        self, violations: list, remediation_required: bool = True, remediation_deadline: datetime | None = None
     ) -> None:
         """Marca como não conforme."""
         self.status = CheckStatus.COMPLETED
@@ -249,16 +229,13 @@ class ComplianceCheck(Base):
             self.duration_seconds = int(delta.total_seconds())
         self.violations = violations
         self.violations_count = len(violations)
-        self.critical_violations = sum(
-            1 for v in violations
-            if v.get("severity") == "critical"
-        )
+        self.critical_violations = sum(1 for v in violations if v.get("severity") == "critical")
         self.remediation_required = remediation_required
         if remediation_deadline:
             self.remediation_deadline = remediation_deadline
         self.updated_at = datetime.utcnow()
 
-    def complete_error(self, error_message: str, details: Optional[dict] = None) -> None:
+    def complete_error(self, error_message: str, details: dict | None = None) -> None:
         """Marca como erro."""
         self.status = CheckStatus.FAILED
         self.result = CheckResult.ERROR
@@ -271,12 +248,7 @@ class ComplianceCheck(Base):
             self.error_details = details
         self.updated_at = datetime.utcnow()
 
-    def grant_exception(
-        self,
-        reason: str,
-        approver_id: str,
-        expires_at: Optional[datetime] = None
-    ) -> None:
+    def grant_exception(self, reason: str, approver_id: str, expires_at: datetime | None = None) -> None:
         """Concede exceção."""
         self.exception_granted = True
         self.exception_reason = reason
@@ -291,12 +263,7 @@ class ComplianceCheck(Base):
         self.result = CheckResult.PENDING_REVIEW
         self.updated_at = datetime.utcnow()
 
-    def complete_review(
-        self,
-        reviewer_id: str,
-        decision: str,
-        notes: Optional[str] = None
-    ) -> None:
+    def complete_review(self, reviewer_id: str, decision: str, notes: str | None = None) -> None:
         """Completa a revisão."""
         self.requires_review = False
         self.reviewed_by = reviewer_id
@@ -314,7 +281,7 @@ class ComplianceCheck(Base):
         self.updated_at = datetime.utcnow()
 
     @property
-    def compliance_percentage(self) -> Optional[float]:
+    def compliance_percentage(self) -> float | None:
         """Percentual de conformidade."""
         if not self.entities_checked or self.entities_checked == 0:
             return None

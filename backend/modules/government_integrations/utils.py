@@ -3,18 +3,20 @@ Utilitários para validação e formatação de documentos e integração com se
 """
 
 import re
-from typing import Optional, Dict, Any
 from decimal import Decimal
 from enum import Enum
+from typing import Any
 
 
 class CalculoError(Exception):
     """Exceção para erros em cálculos trabalhistas."""
+
     pass
 
 
 class ESocialEnvironment(Enum):
     """Ambientes do eSocial."""
+
     PRODUCAO = "1"
     PRODUCAO_RESTRITA = "2"
     HOMOLOGACAO = "2"  # Alias para PRODUCAO_RESTRITA
@@ -22,6 +24,7 @@ class ESocialEnvironment(Enum):
 
 class DocumentType(Enum):
     """Tipos de documentos fiscais."""
+
     NFE = "nfe"
     NFCE = "nfce"
     CTE = "cte"
@@ -38,7 +41,7 @@ def validar_cpf(cpf: str) -> bool:
         True se CPF válido, False caso contrário
     """
     # Remove formatação
-    cpf = re.sub(r'[^0-9]', '', cpf)
+    cpf = re.sub(r"[^0-9]", "", cpf)
 
     # Verifica se tem 11 dígitos
     if len(cpf) != 11:
@@ -77,7 +80,7 @@ def validar_cnpj(cnpj: str) -> bool:
         True se CNPJ válido, False caso contrário
     """
     # Remove formatação
-    cnpj = re.sub(r'[^0-9]', '', cnpj)
+    cnpj = re.sub(r"[^0-9]", "", cnpj)
 
     # Verifica se tem 14 dígitos
     if len(cnpj) != 14:
@@ -119,7 +122,7 @@ def formatar_cpf(cpf: str) -> str:
     Returns:
         CPF formatado (000.000.000-00)
     """
-    cpf = re.sub(r'[^0-9]', '', cpf)
+    cpf = re.sub(r"[^0-9]", "", cpf)
     if len(cpf) != 11:
         return cpf
 
@@ -136,14 +139,14 @@ def formatar_cnpj(cnpj: str) -> str:
     Returns:
         CNPJ formatado (00.000.000/0000-00)
     """
-    cnpj = re.sub(r'[^0-9]', '', cnpj)
+    cnpj = re.sub(r"[^0-9]", "", cnpj)
     if len(cnpj) != 14:
         return cnpj
 
     return f"{cnpj[:2]}.{cnpj[2:5]}.{cnpj[5:8]}/{cnpj[8:12]}-{cnpj[12:]}"
 
 
-def get_receita_service() -> Optional[Dict[str, Any]]:
+def get_receita_service() -> dict[str, Any] | None:
     """
     Configura e retorna cliente para serviços da Receita Federal.
 
@@ -152,14 +155,10 @@ def get_receita_service() -> Optional[Dict[str, Any]]:
     """
     # Por enquanto retorna uma configuração básica
     # Em produção, seria configurado com APIs reais da Receita Federal
-    return {
-        "base_url": "https://www.receitaws.com.br/v1",
-        "timeout": 30,
-        "available": True
-    }
+    return {"base_url": "https://www.receitaws.com.br/v1", "timeout": 30, "available": True}
 
 
-def get_fgts_inss_manager() -> Optional[Dict[str, Any]]:
+def get_fgts_inss_manager() -> dict[str, Any] | None:
     """
     Configura e retorna gerenciador para cálculos de FGTS e INSS.
 
@@ -175,11 +174,11 @@ def get_fgts_inss_manager() -> Optional[Dict[str, Any]]:
             {"min": Decimal("2666.69"), "max": Decimal("4000.03"), "rate": Decimal("0.12")},
             {"min": Decimal("4000.04"), "max": Decimal("7786.02"), "rate": Decimal("0.14")},
         ],
-        "available": True
+        "available": True,
     }
 
 
-def get_esocial_transmitter() -> Optional[Dict[str, Any]]:
+def get_esocial_transmitter() -> dict[str, Any] | None:
     """
     Configura e retorna transmissor do eSocial.
 
@@ -191,11 +190,11 @@ def get_esocial_transmitter() -> Optional[Dict[str, Any]]:
         "ambiente": ESocialEnvironment.PRODUCAO_RESTRITA,
         "url_webservice": "https://webservices.producaorestrita.esocial.gov.br",
         "versao": "2.5.0",
-        "available": True
+        "available": True,
     }
 
 
-def get_sefaz_manager() -> Optional[Dict[str, Any]]:
+def get_sefaz_manager() -> dict[str, Any] | None:
     """
     Configura e retorna gerenciador da SEFAZ.
 
@@ -208,5 +207,5 @@ def get_sefaz_manager() -> Optional[Dict[str, Any]]:
         "uf": "SP",  # Estado padrão
         "certificado_path": None,
         "timeout": 30,
-        "available": True
+        "available": True,
     }

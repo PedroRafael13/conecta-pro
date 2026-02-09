@@ -15,11 +15,11 @@ import json
 import logging
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Optional
+from enum import StrEnum
+from typing import Any
 from uuid import UUID, uuid4
-from enum import Enum
 
-from sqlalchemy import select, update, func
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger(__name__)
@@ -29,8 +29,9 @@ REDIS_PATTERNS_TTL = 3600
 REDIS_PREFIX = "bartolo:learning"
 
 
-class FeedbackType(str, Enum):
+class FeedbackType(StrEnum):
     """Tipo de feedback."""
+
     HELPFUL = "helpful"
     NOT_HELPFUL = "not_helpful"
     INCORRECT = "incorrect"
@@ -40,8 +41,9 @@ class FeedbackType(str, Enum):
     OFF_TOPIC = "off_topic"
 
 
-class LearningEventType(str, Enum):
+class LearningEventType(StrEnum):
     """Tipo de evento de aprendizado."""
+
     POSITIVE_FEEDBACK = "positive_feedback"
     NEGATIVE_FEEDBACK = "negative_feedback"
     SUCCESSFUL_WIZARD = "successful_wizard"
@@ -53,17 +55,18 @@ class LearningEventType(str, Enum):
 @dataclass
 class Interaction:
     """Registro de interacao."""
+
     id: UUID
     user_id: int
     session_id: str
     message: str
     response: str
-    intent: Optional[str] = None
-    module: Optional[str] = None
-    wizard_type: Optional[str] = None
-    feedback: Optional[FeedbackType] = None
-    rating: Optional[int] = None
-    feedback_text: Optional[str] = None
+    intent: str | None = None
+    module: str | None = None
+    wizard_type: str | None = None
+    feedback: FeedbackType | None = None
+    rating: int | None = None
+    feedback_text: str | None = None
     processing_time_ms: int = 0
     created_at: datetime = None
     metadata: dict = field(default_factory=dict)
@@ -72,10 +75,11 @@ class Interaction:
 @dataclass
 class LearningEvent:
     """Evento de aprendizado."""
+
     id: UUID
     event_type: LearningEventType
-    interaction_id: Optional[UUID] = None
-    user_id: Optional[int] = None
+    interaction_id: UUID | None = None
+    user_id: int | None = None
     data: dict = field(default_factory=dict)
     created_at: datetime = None
 
@@ -83,11 +87,12 @@ class LearningEvent:
 @dataclass
 class LearnedPattern:
     """Padrao aprendido."""
+
     id: UUID
     pattern_type: str
     trigger: str
-    response_template: Optional[str] = None
-    action: Optional[str] = None
+    response_template: str | None = None
+    action: str | None = None
     confidence: float = 0.0
     usage_count: int = 0
     success_rate: float = 0.0
@@ -113,7 +118,7 @@ class LearningService:
 
     def __init__(
         self,
-        db: Optional[AsyncSession] = None,
+        db: AsyncSession | None = None,
         redis_client: Any = None,
     ):
         """
@@ -148,6 +153,7 @@ class LearningService:
             return self._redis
         try:
             from core.cache import get_redis
+
             self._redis = await get_redis()
             return self._redis
         except Exception as e:
@@ -197,8 +203,8 @@ class LearningService:
         self,
         interaction_id: UUID,
         feedback_type: FeedbackType,
-        rating: Optional[int],
-        feedback_text: Optional[str],
+        rating: int | None,
+        feedback_text: str | None,
     ) -> None:
         """Persiste feedback no PostgreSQL."""
         if not self.db:
@@ -309,7 +315,7 @@ class LearningService:
     async def _get_pattern_from_redis(
         self,
         pattern_key: str,
-    ) -> Optional[dict]:
+    ) -> dict | None:
         """Busca padrao no Redis."""
         redis_client = await self._get_redis()
         if not redis_client:
@@ -376,11 +382,11 @@ class LearningService:
         session_id: str,
         message: str,
         response: str,
-        intent: Optional[str] = None,
-        module: Optional[str] = None,
-        wizard_type: Optional[str] = None,
+        intent: str | None = None,
+        module: str | None = None,
+        wizard_type: str | None = None,
         processing_time_ms: int = 0,
-        metadata: Optional[dict] = None,
+        metadata: dict | None = None,
     ) -> UUID:
         """
         Registra uma interacao.
@@ -431,8 +437,8 @@ class LearningService:
         self,
         interaction_id: UUID,
         feedback_type: FeedbackType,
-        rating: Optional[int] = None,
-        feedback_text: Optional[str] = None,
+        rating: int | None = None,
+        feedback_text: str | None = None,
     ) -> bool:
         """
         Registra feedback de uma interacao.
@@ -447,10 +453,7 @@ class LearningService:
             True se registrado com sucesso
         """
         # Busca interacao em memoria
-        interaction = next(
-            (i for i in self._interactions if i.id == interaction_id),
-            None
-        )
+        interaction = next((i for i in self._interactions if i.id == interaction_id), None)
 
         if not interaction:
             # Tenta buscar no banco se nao esta em memoria
@@ -460,18 +463,13 @@ class LearningService:
                     logger.warning(f"Interacao nao encontrada: {interaction_id}")
                     return False
                 # Persiste feedback direto no banco
-                await self._persist_feedback(
-                    interaction_id, feedback_type, rating, feedback_text
-                )
+                await self._persist_feedback(interaction_id, feedback_type, rating, feedback_text)
                 # Atualiza metricas
                 if feedback_type == FeedbackType.HELPFUL:
                     self._positive_feedback_count += 1
                 else:
                     self._negative_feedback_count += 1
-                logger.info(
-                    f"Feedback registrado (banco): {interaction_id}, "
-                    f"tipo={feedback_type.value}"
-                )
+                logger.info(f"Feedback registrado (banco): {interaction_id}, tipo={feedback_type.value}")
                 return True
             else:
                 logger.warning(f"Interacao nao encontrada: {interaction_id}")
@@ -489,9 +487,7 @@ class LearningService:
             self._negative_feedback_count += 1
 
         # Persiste feedback no banco
-        await self._persist_feedback(
-            interaction_id, feedback_type, rating, feedback_text
-        )
+        await self._persist_feedback(interaction_id, feedback_type, rating, feedback_text)
 
         # Registra evento de aprendizado
         event_type = (
@@ -527,9 +523,7 @@ class LearningService:
         try:
             from modules.ai.bartolo.models.bartolo_models import BartoloInteraction
 
-            stmt = select(BartoloInteraction.id).where(
-                BartoloInteraction.id == interaction_id
-            )
+            stmt = select(BartoloInteraction.id).where(BartoloInteraction.id == interaction_id)
             result = await self.db.execute(stmt)
             return result.scalar_one_or_none() is not None
 
@@ -540,9 +534,9 @@ class LearningService:
     async def _record_learning_event(
         self,
         event_type: LearningEventType,
-        interaction_id: Optional[UUID] = None,
-        user_id: Optional[int] = None,
-        data: Optional[dict] = None,
+        interaction_id: UUID | None = None,
+        user_id: int | None = None,
+        data: dict | None = None,
     ) -> UUID:
         """Registra evento de aprendizado."""
         event = LearningEvent(
@@ -597,7 +591,7 @@ class LearningService:
         pattern_type: str,
         trigger: str,
         was_successful: bool,
-        extra_data: Optional[dict] = None,
+        extra_data: dict | None = None,
     ) -> None:
         """Atualiza ou cria padrao."""
         pattern_key = f"{pattern_type}:{trigger[:50]}"
@@ -667,9 +661,7 @@ class LearningService:
         # 2. Se nao tem resultados suficientes, tenta no banco
         if len(results) < limit and self.db:
             try:
-                db_results = await self._search_interactions_in_db(
-                    message, limit - len(results)
-                )
+                db_results = await self._search_interactions_in_db(message, limit - len(results))
                 results.extend(db_results)
             except Exception as e:
                 logger.error(f"Erro ao buscar interacoes similares no banco: {e}")
@@ -690,7 +682,7 @@ class LearningService:
 
             # Busca por feedback positivo, ordenado por data recente
             # (busca semantica mais avancada requer embeddings)
-            words = message.lower().split()[:3]  # primeiras 3 palavras
+            message.lower().split()[:3]  # primeiras 3 palavras
 
             stmt = (
                 select(BartoloInteraction)
@@ -735,7 +727,7 @@ class LearningService:
 
     async def get_successful_patterns(
         self,
-        pattern_type: Optional[str] = None,
+        pattern_type: str | None = None,
         min_usage: int = 3,
         min_success_rate: float = 0.7,
     ) -> list[LearnedPattern]:
@@ -763,9 +755,7 @@ class LearningService:
         # 2. Se memoria vazia e banco disponivel, carrega do banco
         if not patterns and self.db:
             try:
-                patterns = await self._get_patterns_from_db(
-                    pattern_type, min_usage, min_success_rate
-                )
+                patterns = await self._get_patterns_from_db(pattern_type, min_usage, min_success_rate)
             except Exception as e:
                 logger.error(f"Erro ao buscar padroes no banco: {e}")
 
@@ -773,7 +763,7 @@ class LearningService:
 
     async def _get_patterns_from_db(
         self,
-        pattern_type: Optional[str],
+        pattern_type: str | None,
         min_usage: int,
         min_success_rate: float,
     ) -> list[LearnedPattern]:
@@ -784,13 +774,10 @@ class LearningService:
         try:
             from modules.ai.bartolo.models.bartolo_models import BartoloLearning
 
-            stmt = (
-                select(BartoloLearning)
-                .where(
-                    BartoloLearning.is_active.is_(True),
-                    BartoloLearning.frequency >= min_usage,
-                    BartoloLearning.success_rate >= min_success_rate,
-                )
+            stmt = select(BartoloLearning).where(
+                BartoloLearning.is_active.is_(True),
+                BartoloLearning.frequency >= min_usage,
+                BartoloLearning.success_rate >= min_success_rate,
             )
 
             if pattern_type:
@@ -829,10 +816,7 @@ class LearningService:
     def get_stats(self) -> dict:
         """Retorna estatisticas de aprendizado."""
         total_feedback = self._positive_feedback_count + self._negative_feedback_count
-        satisfaction_rate = (
-            self._positive_feedback_count / total_feedback
-            if total_feedback > 0 else 0
-        )
+        satisfaction_rate = self._positive_feedback_count / total_feedback if total_feedback > 0 else 0
 
         return {
             "total_interactions": self._total_interactions,

@@ -4,19 +4,20 @@ Testes do Model Proposal.
 Testes para Proposal, ProposalItem, ProposalTemplate e ProposalApproval.
 """
 
-import pytest
 from datetime import date, datetime, timedelta
 from decimal import Decimal
 
+import pytest
+
 from modules.crm.models.proposal import (
-    Proposal,
-    ProposalItem,
-    ProposalTemplate,
-    ProposalApproval,
-    ProposalStatus,
-    ProposalType,
-    DiscountType,
     ApprovalAction,
+    DiscountType,
+    Proposal,
+    ProposalApproval,
+    ProposalItem,
+    ProposalStatus,
+    ProposalTemplate,
+    ProposalType,
 )
 
 

@@ -22,6 +22,9 @@ from modules.financial.controllers.billing_rule_controller import router as bill
 from modules.financial.controllers.cashflow_controller import router as cashflow_router
 from modules.financial.controllers.customer_controller import router as customer_router
 
+# Fiscal
+from modules.financial.controllers.fiscal_controller import router as fiscal_router
+
 # Estoque
 from modules.financial.controllers.inventory_controller import router as inventory_router
 from modules.financial.controllers.payable_controller import router as payable_router
@@ -33,9 +36,6 @@ from modules.financial.controllers.receivable_category_controller import (
 )
 from modules.financial.controllers.receivable_controller import router as receivable_router
 from modules.financial.controllers.supplier_controller import router as supplier_router
-
-# Fiscal
-from modules.financial.controllers.fiscal_controller import router as fiscal_router
 
 __all__ = [
     # Contas a Pagar

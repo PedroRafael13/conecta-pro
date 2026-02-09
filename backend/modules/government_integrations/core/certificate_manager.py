@@ -8,35 +8,38 @@ Suporte a certificados A1 (.pfx/.p12) para:
 - Receita Federal
 """
 
-import os
-import logging
-import hashlib
 import base64
-from datetime import datetime
-from typing import Optional, Dict, Any, Tuple
+import hashlib
+import logging
+import os
 from dataclasses import dataclass, field
+from datetime import datetime
+from enum import StrEnum
 from pathlib import Path
-from enum import Enum
+from typing import Any, Optional
 
 from cryptography import x509
-from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.asymmetric import rsa, padding
-from cryptography.hazmat.primitives.serialization import pkcs12
 from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import padding, rsa
+from cryptography.hazmat.primitives.serialization import pkcs12
 from cryptography.x509.oid import NameOID
+
 # OpenSSL.crypto está depreciado para PKCS12, usamos cryptography diretamente
 
 logger = logging.getLogger(__name__)
 
 
-class CertificateType(str, Enum):
+class CertificateType(StrEnum):
     """Tipos de certificado digital."""
+
     A1 = "A1"  # Arquivo .pfx/.p12
     A3 = "A3"  # Token/Smartcard (não implementado ainda)
 
 
-class CertificateStatus(str, Enum):
+class CertificateStatus(StrEnum):
     """Status do certificado."""
+
     VALID = "valid"
     EXPIRED = "expired"
     EXPIRING_SOON = "expiring_soon"  # < 30 dias
@@ -47,19 +50,20 @@ class CertificateStatus(str, Enum):
 @dataclass
 class CertificateInfo:
     """Informações do certificado digital."""
+
     # Identificação
     serial_number: str
     thumbprint: str  # SHA-1 fingerprint
 
     # Subject (titular)
     subject_cn: str  # Common Name
-    subject_cpf_cnpj: Optional[str] = None
-    subject_organization: Optional[str] = None
-    subject_ou: Optional[str] = None
+    subject_cpf_cnpj: str | None = None
+    subject_organization: str | None = None
+    subject_ou: str | None = None
 
     # Issuer (emissor)
     issuer_cn: str = ""
-    issuer_organization: Optional[str] = None
+    issuer_organization: str | None = None
 
     # Validade
     valid_from: datetime = field(default_factory=datetime.utcnow)
@@ -91,11 +95,11 @@ class CertificateInfo:
         return self.days_until_expiry < 30
 
     @property
-    def cpf_cnpj(self) -> Optional[str]:
+    def cpf_cnpj(self) -> str | None:
         """Alias para subject_cpf_cnpj (compatibilidade)."""
         return self.subject_cpf_cnpj
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Converte para dicionário."""
         return {
             "serial_number": self.serial_number,
@@ -125,12 +129,7 @@ class CertificateManager:
     - Validar certificados
     """
 
-    def __init__(
-        self,
-        pfx_path: Optional[str] = None,
-        pfx_data: Optional[bytes] = None,
-        password: Optional[str] = None
-    ):
+    def __init__(self, pfx_path: str | None = None, pfx_data: bytes | None = None, password: str | None = None):
         """
         Inicializa o gerenciador.
 
@@ -144,12 +143,12 @@ class CertificateManager:
         self._password = password.encode() if password else None
 
         # Cryptography objects (API moderna)
-        self._x509_cert: Optional[x509.Certificate] = None
-        self._private_key_crypto: Optional[rsa.RSAPrivateKey] = None
+        self._x509_cert: x509.Certificate | None = None
+        self._private_key_crypto: rsa.RSAPrivateKey | None = None
         self._additional_certs: list = []
 
         # Info cache
-        self._info: Optional[CertificateInfo] = None
+        self._info: CertificateInfo | None = None
         self._loaded = False
 
     def load(self) -> bool:
@@ -170,7 +169,7 @@ class CertificateManager:
             if self._pfx_data:
                 pfx_bytes = self._pfx_data
             elif self._pfx_path:
-                with open(self._pfx_path, 'rb') as f:
+                with open(self._pfx_path, "rb") as f:
                     pfx_bytes = f.read()
             else:
                 raise ValueError("Certificado não especificado (pfx_path ou pfx_data)")
@@ -179,9 +178,7 @@ class CertificateManager:
             # self._password já é bytes (convertido no __init__)
             password_bytes = self._password
             self._private_key_crypto, self._x509_cert, additional_certs = pkcs12.load_key_and_certificates(
-                pfx_bytes,
-                password_bytes,
-                default_backend()
+                pfx_bytes, password_bytes, default_backend()
             )
 
             if not self._x509_cert or not self._private_key_crypto:
@@ -227,23 +224,23 @@ class CertificateManager:
         issuer_org = self._get_name_attribute(issuer, NameOID.ORGANIZATION_NAME)
 
         # Thumbprint (SHA-1)
-        thumbprint = cert.fingerprint(hashes.SHA1()).hex().upper()
+        thumbprint = cert.fingerprint(hashes.SHA1()).hex().upper()  # noqa: S303
 
         # Serial number
-        serial = format(cert.serial_number, 'X')
+        serial = format(cert.serial_number, "X")
 
         # Validade
-        valid_from = cert.not_valid_before_utc if hasattr(cert, 'not_valid_before_utc') else cert.not_valid_before
-        valid_until = cert.not_valid_after_utc if hasattr(cert, 'not_valid_after_utc') else cert.not_valid_after
+        valid_from = cert.not_valid_before_utc if hasattr(cert, "not_valid_before_utc") else cert.not_valid_before
+        valid_until = cert.not_valid_after_utc if hasattr(cert, "not_valid_after_utc") else cert.not_valid_after
 
         # Converter para datetime naive se necessário
-        if hasattr(valid_from, 'replace'):
+        if hasattr(valid_from, "replace"):
             valid_from = valid_from.replace(tzinfo=None)
             valid_until = valid_until.replace(tzinfo=None)
 
         # Key size
         public_key = cert.public_key()
-        key_size = public_key.key_size if hasattr(public_key, 'key_size') else 2048
+        key_size = public_key.key_size if hasattr(public_key, "key_size") else 2048
 
         # Status
         now = datetime.utcnow()
@@ -272,7 +269,7 @@ class CertificateManager:
             key_size=key_size,
         )
 
-    def _get_name_attribute(self, name: x509.Name, oid) -> Optional[str]:
+    def _get_name_attribute(self, name: x509.Name, oid) -> str | None:
         """Extrai atributo do nome X.509."""
         try:
             attrs = name.get_attributes_for_oid(oid)
@@ -280,13 +277,13 @@ class CertificateManager:
         except Exception:
             return None
 
-    def _extract_cpf_cnpj(self, cn: Optional[str], ou: Optional[str]) -> Optional[str]:
+    def _extract_cpf_cnpj(self, cn: str | None, ou: str | None) -> str | None:
         """Extrai CPF ou CNPJ do certificado."""
         import re
 
         # Padrões para CPF e CNPJ
-        cpf_pattern = r'\d{11}'
-        cnpj_pattern = r'\d{14}'
+        cpf_pattern = r"\d{11}"
+        cnpj_pattern = r"\d{14}"
 
         # Tentar extrair do CN
         if cn:
@@ -359,7 +356,7 @@ class CertificateManager:
     def get_certificate_base64(self) -> str:
         """Retorna certificado em base64 (para XML)."""
         der = self.get_certificate_der()
-        return base64.b64encode(der).decode('ascii')
+        return base64.b64encode(der).decode("ascii")
 
     def get_private_key_pem(self) -> bytes:
         """Retorna chave privada em formato PEM."""
@@ -368,7 +365,7 @@ class CertificateManager:
         return self._private_key_crypto.private_bytes(
             encoding=serialization.Encoding.PEM,
             format=serialization.PrivateFormat.TraditionalOpenSSL,
-            encryption_algorithm=serialization.NoEncryption()
+            encryption_algorithm=serialization.NoEncryption(),
         )
 
     def sign_data(self, data: bytes, algorithm: str = "sha256") -> bytes:
@@ -387,7 +384,7 @@ class CertificateManager:
 
         # Mapear algoritmo
         hash_algs = {
-            "sha1": hashes.SHA1(),
+            "sha1": hashes.SHA1(),  # noqa: S303
             "sha256": hashes.SHA256(),
             "sha384": hashes.SHA384(),
             "sha512": hashes.SHA512(),
@@ -396,18 +393,14 @@ class CertificateManager:
         hash_alg = hash_algs.get(algorithm.lower(), hashes.SHA256())
 
         # Assinar com RSA PKCS1v15
-        signature = self._private_key_crypto.sign(
-            data,
-            padding.PKCS1v15(),
-            hash_alg
-        )
+        signature = self._private_key_crypto.sign(data, padding.PKCS1v15(), hash_alg)
 
         return signature
 
     def sign_data_base64(self, data: bytes, algorithm: str = "sha256") -> str:
         """Assina dados e retorna em base64."""
         signature = self.sign_data(data, algorithm)
-        return base64.b64encode(signature).decode('ascii')
+        return base64.b64encode(signature).decode("ascii")
 
     def verify_signature(self, data: bytes, signature: bytes, algorithm: str = "sha256") -> bool:
         """
@@ -425,7 +418,7 @@ class CertificateManager:
             self.load()
 
         hash_algs = {
-            "sha1": hashes.SHA1(),
+            "sha1": hashes.SHA1(),  # noqa: S303
             "sha256": hashes.SHA256(),
             "sha384": hashes.SHA384(),
             "sha512": hashes.SHA512(),
@@ -435,17 +428,12 @@ class CertificateManager:
 
         try:
             public_key = self._x509_cert.public_key()
-            public_key.verify(
-                signature,
-                data,
-                padding.PKCS1v15(),
-                hash_alg
-            )
+            public_key.verify(signature, data, padding.PKCS1v15(), hash_alg)
             return True
         except Exception:
             return False
 
-    def validate(self) -> Tuple[bool, str]:
+    def validate(self) -> tuple[bool, str]:
         """
         Valida o certificado.
 
@@ -471,7 +459,7 @@ class CertificateManager:
 
         return True, "Certificado válido"
 
-    def get_certificate_for_request(self) -> Tuple[str, str]:
+    def get_certificate_for_request(self) -> tuple[str, str]:
         """
         Retorna tupla (cert_path, key_path) para uso em requisições HTTP.
 
@@ -511,7 +499,7 @@ class CertificateStore:
     Útil para empresas com múltiplos certificados (filiais, etc.)
     """
 
-    def __init__(self, storage_path: Optional[str] = None):
+    def __init__(self, storage_path: str | None = None):
         """
         Inicializa o store.
 
@@ -519,14 +507,9 @@ class CertificateStore:
             storage_path: Diretório para armazenar certificados
         """
         self._storage_path = storage_path or "/opt/conecta-pro/certificates"
-        self._certificates: Dict[str, CertificateManager] = {}
+        self._certificates: dict[str, CertificateManager] = {}
 
-    def add_certificate(
-        self,
-        identifier: str,
-        pfx_data: bytes,
-        password: str
-    ) -> CertificateInfo:
+    def add_certificate(self, identifier: str, pfx_data: bytes, password: str) -> CertificateInfo:
         """
         Adiciona certificado ao store.
 
@@ -587,12 +570,9 @@ class CertificateStore:
         """Alias para remove_certificate."""
         return self.remove_certificate(identifier)
 
-    def list_certificates(self) -> Dict[str, CertificateInfo]:
+    def list_certificates(self) -> dict[str, CertificateInfo]:
         """Lista todos os certificados."""
-        return {
-            identifier: manager.info
-            for identifier, manager in self._certificates.items()
-        }
+        return {identifier: manager.info for identifier, manager in self._certificates.items()}
 
     def list_all(self):
         """Alias para listar certificados como items."""
@@ -605,13 +585,13 @@ class CertificateStore:
         path.mkdir(parents=True, exist_ok=True)
 
         cert_path = path / f"{identifier}.pfx"
-        with open(cert_path, 'wb') as f:
+        with open(cert_path, "wb") as f:
             f.write(pfx_data)
 
         # Salvar hash da senha (não a senha em si)
         meta_path = path / f"{identifier}.meta"
         password_hash = hashlib.sha256(password.encode()).hexdigest()
-        with open(meta_path, 'w') as f:
+        with open(meta_path, "w") as f:
             f.write(password_hash)
 
     def _delete_certificate_file(self, identifier: str):

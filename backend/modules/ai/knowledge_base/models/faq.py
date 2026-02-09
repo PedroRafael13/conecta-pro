@@ -4,27 +4,30 @@ FAQ Model - Sprint 53.
 Modelo para perguntas frequentes da base de conhecimento.
 """
 
+import uuid
+from datetime import datetime
+from enum import StrEnum
+
 from sqlalchemy import (
-    Column,
-    String,
-    Text,
     Boolean,
+    Column,
     DateTime,
-    Integer,
     Float,
     ForeignKey,
+    Integer,
+    String,
+    Text,
+)
+from sqlalchemy import (
     Enum as SQLEnum,
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY, TSVECTOR
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, TSVECTOR, UUID
 from sqlalchemy.orm import relationship
-from datetime import datetime
-import uuid
-import enum
 
 from core.models.base import Base
 
 
-class FAQStatusEnum(str, enum.Enum):
+class FAQStatusEnum(StrEnum):
     """Status da FAQ."""
 
     DRAFT = "draft"
@@ -33,7 +36,7 @@ class FAQStatusEnum(str, enum.Enum):
     NEEDS_UPDATE = "needs_update"
 
 
-class FAQSourceEnum(str, enum.Enum):
+class FAQSourceEnum(StrEnum):
     """Origem da FAQ."""
 
     MANUAL = "manual"
@@ -145,9 +148,7 @@ class FAQ(Base):
 
     # Auditoria
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     published_at = Column(DateTime, nullable=True)
     created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     updated_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)

@@ -4,8 +4,9 @@ Cliente Redis para cache.
 
 import hashlib
 import json
+from collections.abc import Callable
 from functools import wraps
-from typing import Any, Callable, Optional
+from typing import Any
 
 import redis.asyncio as redis
 
@@ -40,7 +41,7 @@ async def close_redis() -> None:
         _state["client"] = None
 
 
-async def cache_get(key: str) -> Optional[Any]:
+async def cache_get(key: str) -> Any | None:
     """
     Obtém valor do cache.
 
@@ -65,7 +66,7 @@ async def cache_get(key: str) -> Optional[Any]:
 async def cache_set(
     key: str,
     value: Any,
-    ttl: Optional[int] = None,
+    ttl: int | None = None,
 ) -> bool:
     """
     Define valor no cache.
@@ -145,9 +146,7 @@ def cache_response(ttl: int = 300, prefix: str = "api"):
         async def wrapper(*args, **kwargs):
             # Gerar chave unica baseada em funcao + parametros
             params_str = json.dumps(kwargs, sort_keys=True, default=str)
-            params_hash = hashlib.md5(
-                params_str.encode(), usedforsecurity=False
-            ).hexdigest()
+            params_hash = hashlib.md5(params_str.encode(), usedforsecurity=False).hexdigest()
             cache_key = f"{prefix}:{func.__name__}:{params_hash}"
 
             try:

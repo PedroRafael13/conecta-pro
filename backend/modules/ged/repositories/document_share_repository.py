@@ -4,16 +4,15 @@ import hashlib
 import logging
 import secrets
 from datetime import datetime
-from typing import Optional, List, Tuple
 
-from sqlalchemy import select, func, and_
+from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.ged.models.document_share import DocumentShare, ShareStatus, ShareType
 from modules.ged.schemas.document_share import (
     DocumentShareCreate,
-    DocumentShareUpdate,
     DocumentShareFilter,
+    DocumentShareUpdate,
 )
 
 logger = logging.getLogger(__name__)
@@ -37,32 +36,24 @@ class DocumentShareRepository:
 
         # Hash da senha se fornecida
         if data.password:
-            share_data["password_hash"] = hashlib.sha256(
-                data.password.encode()
-            ).hexdigest()
+            share_data["password_hash"] = hashlib.sha256(data.password.encode()).hexdigest()
 
         share = DocumentShare(**share_data)
         self.session.add(share)
         await self.session.flush()
         return share
 
-    async def get_by_id(self, share_id: str) -> Optional[DocumentShare]:
+    async def get_by_id(self, share_id: str) -> DocumentShare | None:
         """Busca compartilhamento por ID."""
-        result = await self.session.execute(
-            select(DocumentShare).where(DocumentShare.id == share_id)
-        )
+        result = await self.session.execute(select(DocumentShare).where(DocumentShare.id == share_id))
         return result.scalar_one_or_none()
 
-    async def get_by_token(self, token: str) -> Optional[DocumentShare]:
+    async def get_by_token(self, token: str) -> DocumentShare | None:
         """Busca compartilhamento por token."""
-        result = await self.session.execute(
-            select(DocumentShare).where(DocumentShare.share_token == token)
-        )
+        result = await self.session.execute(select(DocumentShare).where(DocumentShare.share_token == token))
         return result.scalar_one_or_none()
 
-    async def update(
-        self, share_id: str, data: DocumentShareUpdate
-    ) -> Optional[DocumentShare]:
+    async def update(self, share_id: str, data: DocumentShareUpdate) -> DocumentShare | None:
         """Atualiza um compartilhamento."""
         share = await self.get_by_id(share_id)
         if not share:
@@ -87,12 +78,12 @@ class DocumentShareRepository:
 
     async def list_with_filters(
         self,
-        filters: Optional[DocumentShareFilter] = None,
+        filters: DocumentShareFilter | None = None,
         skip: int = 0,
         limit: int = 20,
         order_by: str = "created_at",
         order_desc: bool = True,
-    ) -> Tuple[List[DocumentShare], int]:
+    ) -> tuple[list[DocumentShare], int]:
         """Lista compartilhamentos com filtros e paginação."""
         query = select(DocumentShare)
 
@@ -104,9 +95,7 @@ class DocumentShareRepository:
             if filters.status:
                 query = query.where(DocumentShare.status == filters.status)
             if filters.shared_with_id:
-                query = query.where(
-                    DocumentShare.shared_with_id == filters.shared_with_id
-                )
+                query = query.where(DocumentShare.shared_with_id == filters.shared_with_id)
             if filters.shared_by:
                 query = query.where(DocumentShare.shared_by == filters.shared_by)
 
@@ -130,24 +119,16 @@ class DocumentShareRepository:
 
         return list(shares), total
 
-    async def get_by_document(
-        self, document_id: str, active_only: bool = True
-    ) -> List[DocumentShare]:
+    async def get_by_document(self, document_id: str, active_only: bool = True) -> list[DocumentShare]:
         """Retorna compartilhamentos de um documento."""
-        query = select(DocumentShare).where(
-            DocumentShare.document_id == document_id
-        )
+        query = select(DocumentShare).where(DocumentShare.document_id == document_id)
         if active_only:
             query = query.where(DocumentShare.status == ShareStatus.ATIVO)
 
-        result = await self.session.execute(
-            query.order_by(DocumentShare.created_at.desc())
-        )
+        result = await self.session.execute(query.order_by(DocumentShare.created_at.desc()))
         return list(result.scalars().all())
 
-    async def get_by_user(
-        self, user_id: str, skip: int = 0, limit: int = 20
-    ) -> List[DocumentShare]:
+    async def get_by_user(self, user_id: str, skip: int = 0, limit: int = 20) -> list[DocumentShare]:
         """Retorna documentos compartilhados com usuário."""
         query = (
             select(DocumentShare)
@@ -164,9 +145,7 @@ class DocumentShareRepository:
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    async def get_shared_by_user(
-        self, user_id: str, skip: int = 0, limit: int = 20
-    ) -> List[DocumentShare]:
+    async def get_shared_by_user(self, user_id: str, skip: int = 0, limit: int = 20) -> list[DocumentShare]:
         """Retorna documentos que o usuário compartilhou."""
         query = (
             select(DocumentShare)
@@ -178,9 +157,7 @@ class DocumentShareRepository:
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    async def revoke(
-        self, share_id: str, revoked_by: str
-    ) -> Optional[DocumentShare]:
+    async def revoke(self, share_id: str, revoked_by: str) -> DocumentShare | None:
         """Revoga compartilhamento."""
         share = await self.get_by_id(share_id)
         if not share:
@@ -189,9 +166,7 @@ class DocumentShareRepository:
         await self.session.flush()
         return share
 
-    async def extend_expiry(
-        self, share_id: str, new_expiry: datetime
-    ) -> Optional[DocumentShare]:
+    async def extend_expiry(self, share_id: str, new_expiry: datetime) -> DocumentShare | None:
         """Estende validade do compartilhamento."""
         share = await self.get_by_id(share_id)
         if not share:
@@ -200,7 +175,7 @@ class DocumentShareRepository:
         await self.session.flush()
         return share
 
-    async def record_access(self, share_id: str) -> Optional[DocumentShare]:
+    async def record_access(self, share_id: str) -> DocumentShare | None:
         """Registra acesso ao compartilhamento."""
         share = await self.get_by_id(share_id)
         if not share:
@@ -257,7 +232,7 @@ class DocumentShareRepository:
         await self.session.flush()
         return count
 
-    async def send_notification(self, share_id: str) -> Optional[DocumentShare]:
+    async def send_notification(self, share_id: str) -> DocumentShare | None:
         """Marca notificação como enviada."""
         share = await self.get_by_id(share_id)
         if not share:

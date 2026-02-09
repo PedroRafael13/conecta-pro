@@ -5,34 +5,35 @@ Fiscais, Previdenciarias e Trabalhistas.
 Testes unitarios e de integracao para o modulo eSocial.
 """
 
-import pytest
+from datetime import date, datetime
 from decimal import Decimal
-from datetime import datetime, date
-from uuid import uuid4, UUID
-from unittest.mock import Mock, patch, MagicMock, AsyncMock
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
+from uuid import UUID, uuid4
 
-from modules.government_integrations.schemas.esocial import (
-    ESocialEventRequest,
+import pytest
+
+from modules.government_integrations.core.esocial_transmitter import (
+    CertificateInfo,
+    Environment,
+    ESocialError,
+    ESocialEvent,
+    ESocialTransmitter,
+    EventType,
+    TransmissionError,
+    TransmissionStatus,
+    ValidationError,
+    XMLBuilder,
+    get_esocial_transmitter,
+    init_esocial_transmitter,
 )
 from modules.government_integrations.schemas.common import (
     StandardResponse,
 )
+from modules.government_integrations.schemas.esocial import (
+    ESocialEventRequest,
+)
 from modules.government_integrations.services.esocial_service import (
     ESocialService,
-)
-from modules.government_integrations.core.esocial_transmitter import (
-    ESocialTransmitter,
-    ESocialEvent,
-    ESocialError,
-    ValidationError,
-    TransmissionError,
-    EventType,
-    TransmissionStatus,
-    Environment,
-    XMLBuilder,
-    CertificateInfo,
-    get_esocial_transmitter,
-    init_esocial_transmitter,
 )
 
 
@@ -918,8 +919,8 @@ class TestESocialEndpoints:
     @pytest.fixture
     def client(self):
         """Cliente de teste HTTP."""
-        from fastapi.testclient import TestClient
         from fastapi import FastAPI
+        from fastapi.testclient import TestClient
 
         app = FastAPI()
 
@@ -1197,7 +1198,7 @@ class TestESocialIntegration:
         cnpj = "12345678000199"
 
         # Evento 1: Admissao
-        evt1 = await transmitter.create_event(
+        await transmitter.create_event(
             event_type=EventType.S2200_ADMISSAO,
             employer_cnpj=cnpj,
             data={
@@ -1213,7 +1214,7 @@ class TestESocialIntegration:
         )
 
         # Evento 2: Monitoramento saude
-        evt2 = await transmitter.create_event(
+        await transmitter.create_event(
             event_type=EventType.S2220_MONITORAMENTO_SAUDE,
             employer_cnpj=cnpj,
             data={

@@ -4,49 +4,48 @@ Contract Controller - AI Contract Analysis
 Endpoints REST para analise de contratos.
 """
 
+import contextlib
 import logging
 import time
 from datetime import date, datetime
-from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
-from core.auth.dependencies import get_current_active_user, CurrentActiveUser
-
+from modules.ai.contract_analysis.models.contract_alert import (
+    AlertPriority,
+    AlertStatus,
+    AlertType,
+)
 from modules.ai.contract_analysis.models.contract_analysis import (
-    ContractAnalysis,
     AnalysisStatus,
+    ContractAnalysis,
     ContractType,
     RiskLevel,
 )
-from modules.ai.contract_analysis.models.contract_alert import (
-    AlertType,
-    AlertStatus,
-    AlertPriority,
-)
-from modules.ai.contract_analysis.schemas.contract_schemas import (
-    ContractAnalysisRequest,
-    ContractAnalysisResponse,
-    ContractAnalysisListResponse,
-    ExtractedClauseResponse,
-    ContractAlertResponse,
-    ContractAlertCreate,
-    ContractAlertUpdate,
-    AlertListResponse,
-    RiskAssessment,
-    ComplianceReport,
-    ContractsDashboard,
-)
-from modules.ai.contract_analysis.services.clause_extractor import ClauseExtractor
-from modules.ai.contract_analysis.services.risk_analyzer import RiskAnalyzer
-from modules.ai.contract_analysis.services.compliance_checker import ComplianceChecker
-from modules.ai.contract_analysis.services.alert_service import AlertService
 from modules.ai.contract_analysis.repositories.contract_repository import (
     ContractAnalysisRepository,
 )
+from modules.ai.contract_analysis.schemas.contract_schemas import (
+    AlertListResponse,
+    ComplianceReport,
+    ContractAlertCreate,
+    ContractAlertResponse,
+    ContractAlertUpdate,
+    ContractAnalysisListResponse,
+    ContractAnalysisRequest,
+    ContractAnalysisResponse,
+    ContractsDashboard,
+    ExtractedClauseResponse,
+    RiskAssessment,
+)
+from modules.ai.contract_analysis.services.alert_service import AlertService
+from modules.ai.contract_analysis.services.clause_extractor import ClauseExtractor
+from modules.ai.contract_analysis.services.compliance_checker import ComplianceChecker
+from modules.ai.contract_analysis.services.risk_analyzer import RiskAnalyzer
 
 logger = logging.getLogger(__name__)
 
@@ -134,9 +133,7 @@ async def analyze_contract(
 
         # 6. Verificar conformidade
         if request.check_compliance:
-            compliance_result = compliance_checker.check_compliance(
-                analysis, analysis.clauses
-            )
+            compliance_result = compliance_checker.check_compliance(analysis, analysis.clauses)
             analysis.compliance_score = compliance_result["compliance_score"]
             analysis.compliance_issues = compliance_result["issues"]
             analysis.missing_clauses = compliance_result["missing_clauses"]
@@ -163,11 +160,7 @@ async def analyze_contract(
         db.refresh(analysis)
 
         # Recarregar com todos os relacionamentos
-        analysis = repository.get_analysis(
-            analysis.id,
-            include_clauses=True,
-            include_alerts=True
-        )
+        analysis = repository.get_analysis(analysis.id, include_clauses=True, include_alerts=True)
 
         return ContractAnalysisResponse.model_validate(analysis)
 
@@ -215,10 +208,10 @@ async def get_analysis(
     summary="Listar analises",
 )
 async def list_analyses(
-    status_filter: Optional[AnalysisStatus] = Query(None, alias="status"),
-    contract_type: Optional[ContractType] = None,
-    risk_level: Optional[RiskLevel] = None,
-    expiring_in_days: Optional[int] = Query(None, ge=1, le=365),
+    status_filter: AnalysisStatus | None = Query(None, alias="status"),
+    contract_type: ContractType | None = None,
+    risk_level: RiskLevel | None = None,
+    expiring_in_days: int | None = Query(None, ge=1, le=365),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
@@ -281,8 +274,8 @@ async def get_analysis_by_contract(
 )
 async def list_clauses(
     analysis_id: UUID,
-    clause_type: Optional[str] = None,
-    is_risky: Optional[bool] = None,
+    clause_type: str | None = None,
+    is_risky: bool | None = None,
     db: Session = Depends(get_db),
     current_user: CurrentActiveUser = ...,  # Required
 ) -> list[ExtractedClauseResponse]:
@@ -293,10 +286,8 @@ async def list_clauses(
 
     clause_type_enum = None
     if clause_type:
-        try:
+        with contextlib.suppress(ValueError):
             clause_type_enum = ClauseType(clause_type)
-        except ValueError:
-            pass
 
     clauses = repository.get_clauses(
         analysis_id,
@@ -384,11 +375,11 @@ async def get_compliance_report(
     summary="Listar alertas",
 )
 async def list_alerts(
-    contract_id: Optional[UUID] = None,
-    alert_type: Optional[AlertType] = None,
-    status_filter: Optional[AlertStatus] = Query(None, alias="status"),
-    priority: Optional[AlertPriority] = None,
-    is_overdue: Optional[bool] = None,
+    contract_id: UUID | None = None,
+    alert_type: AlertType | None = None,
+    status_filter: AlertStatus | None = Query(None, alias="status"),
+    priority: AlertPriority | None = None,
+    is_overdue: bool | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
@@ -476,10 +467,7 @@ async def update_alert(
 ) -> ContractAlertResponse:
     """Atualiza um alerta."""
     repository = ContractAnalysisRepository(db)
-    alert = repository.update_alert(
-        alert_id,
-        update.model_dump(exclude_unset=True)
-    )
+    alert = repository.update_alert(alert_id, update.model_dump(exclude_unset=True))
 
     if not alert:
         raise HTTPException(
@@ -497,7 +485,7 @@ async def update_alert(
 )
 async def resolve_alert(
     alert_id: UUID,
-    notes: Optional[str] = None,
+    notes: str | None = None,
     db: Session = Depends(get_db),
     current_user: CurrentActiveUser = ...,  # Required
 ) -> ContractAlertResponse:

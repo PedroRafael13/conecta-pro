@@ -3,7 +3,7 @@ Schemas comuns para integrações governamentais.
 """
 
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -13,7 +13,7 @@ class StandardResponse(BaseModel):
 
     success: bool = Field(..., description="Sucesso da operacao")
     message: str = Field(..., description="Mensagem descritiva")
-    data: Optional[Dict[str, Any]] = Field(default=None, description="Dados")
+    data: dict[str, Any] | None = Field(default=None, description="Dados")
     timestamp: datetime = Field(
         default_factory=datetime.utcnow,
         description="Timestamp",

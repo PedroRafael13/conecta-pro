@@ -4,10 +4,10 @@ Sprint 36 - Notification Hub.
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr, Field, validator
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from modules.notifications.models.notification_channel import (
     ChannelProvider,
@@ -29,7 +29,7 @@ class ChannelConfigBase(BaseModel):
 
     name: str = Field(..., min_length=1, max_length=100)
     slug: str = Field(..., min_length=1, max_length=100)
-    description: Optional[str] = Field(None, max_length=500)
+    description: str | None = Field(None, max_length=500)
     channel_type: ChannelType
     provider: ChannelProvider
     status: ChannelStatus = ChannelStatus.ACTIVE
@@ -38,8 +38,8 @@ class ChannelConfigBase(BaseModel):
 class ChannelConfigCreate(ChannelConfigBase):
     """Schema para criação de canal."""
 
-    provider_config: Dict[str, Any] = Field(default_factory=dict)
-    sender_config: Dict[str, Any] = Field(default_factory=dict)
+    provider_config: dict[str, Any] = Field(default_factory=dict)
+    sender_config: dict[str, Any] = Field(default_factory=dict)
     rate_limit_per_second: int = Field(default=10, ge=1)
     rate_limit_per_minute: int = Field(default=100, ge=1)
     rate_limit_per_hour: int = Field(default=1000, ge=1)
@@ -49,24 +49,24 @@ class ChannelConfigCreate(ChannelConfigBase):
     is_default: bool = False
     business_hours_only: bool = False
     cost_per_message: float = Field(default=0.0, ge=0)
-    supported_categories: List[str] = Field(default_factory=list)
+    supported_categories: list[str] = Field(default_factory=list)
 
 
 class ChannelConfigUpdate(BaseModel):
     """Schema para atualização de canal."""
 
-    name: Optional[str] = Field(None, min_length=1, max_length=100)
-    description: Optional[str] = Field(None, max_length=500)
-    status: Optional[ChannelStatus] = None
-    provider_config: Optional[Dict[str, Any]] = None
-    sender_config: Optional[Dict[str, Any]] = None
-    rate_limit_per_second: Optional[int] = Field(None, ge=1)
-    rate_limit_per_minute: Optional[int] = Field(None, ge=1)
-    rate_limit_per_hour: Optional[int] = Field(None, ge=1)
-    rate_limit_per_day: Optional[int] = Field(None, ge=1)
-    max_retries: Optional[int] = Field(None, ge=0, le=10)
-    is_default: Optional[bool] = None
-    active: Optional[bool] = None
+    name: str | None = Field(None, min_length=1, max_length=100)
+    description: str | None = Field(None, max_length=500)
+    status: ChannelStatus | None = None
+    provider_config: dict[str, Any] | None = None
+    sender_config: dict[str, Any] | None = None
+    rate_limit_per_second: int | None = Field(None, ge=1)
+    rate_limit_per_minute: int | None = Field(None, ge=1)
+    rate_limit_per_hour: int | None = Field(None, ge=1)
+    rate_limit_per_day: int | None = Field(None, ge=1)
+    max_retries: int | None = Field(None, ge=0, le=10)
+    is_default: bool | None = None
+    active: bool | None = None
 
 
 class ChannelConfigResponse(ChannelConfigBase):
@@ -77,10 +77,10 @@ class ChannelConfigResponse(ChannelConfigBase):
     total_sent: int = 0
     total_delivered: int = 0
     total_failed: int = 0
-    delivery_rate: Optional[float] = None
+    delivery_rate: float | None = None
     active: bool = True
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
 
     class Config:
         from_attributes = True
@@ -97,8 +97,8 @@ class TemplateVariableSchema(BaseModel):
     name: str = Field(..., min_length=1, max_length=50)
     type: str = Field(default="string")  # string, number, date, boolean, object
     required: bool = False
-    default: Optional[Any] = None
-    description: Optional[str] = None
+    default: Any | None = None
+    description: str | None = None
 
 
 class TemplateBase(BaseModel):
@@ -106,7 +106,7 @@ class TemplateBase(BaseModel):
 
     name: str = Field(..., min_length=1, max_length=200)
     slug: str = Field(..., min_length=1, max_length=200)
-    description: Optional[str] = Field(None, max_length=1000)
+    description: str | None = Field(None, max_length=1000)
     category: TemplateCategory = TemplateCategory.NOTIFICATION
     status: TemplateStatus = TemplateStatus.DRAFT
 
@@ -114,71 +114,71 @@ class TemplateBase(BaseModel):
 class TemplateCreate(TemplateBase):
     """Schema para criação de template."""
 
-    channel_id: Optional[UUID] = None
+    channel_id: UUID | None = None
 
     # Email
-    email_subject: Optional[str] = Field(None, max_length=500)
-    email_body_html: Optional[str] = None
-    email_body_text: Optional[str] = None
-    email_from_name: Optional[str] = Field(None, max_length=100)
-    email_from_address: Optional[EmailStr] = None
-    email_reply_to: Optional[EmailStr] = None
+    email_subject: str | None = Field(None, max_length=500)
+    email_body_html: str | None = None
+    email_body_text: str | None = None
+    email_from_name: str | None = Field(None, max_length=100)
+    email_from_address: EmailStr | None = None
+    email_reply_to: EmailStr | None = None
 
     # WhatsApp
-    whatsapp_template_name: Optional[str] = Field(None, max_length=200)
-    whatsapp_body: Optional[str] = None
-    whatsapp_footer: Optional[str] = Field(None, max_length=60)
-    whatsapp_buttons: List[Dict[str, Any]] = Field(default_factory=list)
+    whatsapp_template_name: str | None = Field(None, max_length=200)
+    whatsapp_body: str | None = None
+    whatsapp_footer: str | None = Field(None, max_length=60)
+    whatsapp_buttons: list[dict[str, Any]] = Field(default_factory=list)
 
     # SMS
-    sms_body: Optional[str] = Field(None, max_length=160)
+    sms_body: str | None = Field(None, max_length=160)
 
     # Push
-    push_title: Optional[str] = Field(None, max_length=100)
-    push_body: Optional[str] = Field(None, max_length=500)
-    push_image_url: Optional[str] = None
-    push_action_url: Optional[str] = None
+    push_title: str | None = Field(None, max_length=100)
+    push_body: str | None = Field(None, max_length=500)
+    push_image_url: str | None = None
+    push_action_url: str | None = None
 
     # In-App
-    in_app_title: Optional[str] = Field(None, max_length=200)
-    in_app_body: Optional[str] = None
-    in_app_icon: Optional[str] = Field(None, max_length=50)
-    in_app_action_url: Optional[str] = None
+    in_app_title: str | None = Field(None, max_length=200)
+    in_app_body: str | None = None
+    in_app_icon: str | None = Field(None, max_length=50)
+    in_app_action_url: str | None = None
 
     # Variables
-    variables: List[TemplateVariableSchema] = Field(default_factory=list)
-    sample_data: Dict[str, Any] = Field(default_factory=dict)
+    variables: list[TemplateVariableSchema] = Field(default_factory=list)
+    sample_data: dict[str, Any] = Field(default_factory=dict)
 
     # Config
     locale: str = Field(default="pt_BR", max_length=10)
     requires_approval: bool = False
-    tags: List[str] = Field(default_factory=list)
+    tags: list[str] = Field(default_factory=list)
 
 
 class TemplateUpdate(BaseModel):
     """Schema para atualização de template."""
 
-    name: Optional[str] = Field(None, min_length=1, max_length=200)
-    description: Optional[str] = Field(None, max_length=1000)
-    category: Optional[TemplateCategory] = None
-    status: Optional[TemplateStatus] = None
+    name: str | None = Field(None, min_length=1, max_length=200)
+    description: str | None = Field(None, max_length=1000)
+    category: TemplateCategory | None = None
+    status: TemplateStatus | None = None
 
-    email_subject: Optional[str] = Field(None, max_length=500)
-    email_body_html: Optional[str] = None
-    email_body_text: Optional[str] = None
+    email_subject: str | None = Field(None, max_length=500)
+    email_body_html: str | None = None
+    email_body_text: str | None = None
 
-    whatsapp_body: Optional[str] = None
-    sms_body: Optional[str] = Field(None, max_length=160)
+    whatsapp_body: str | None = None
+    sms_body: str | None = Field(None, max_length=160)
 
-    push_title: Optional[str] = Field(None, max_length=100)
-    push_body: Optional[str] = Field(None, max_length=500)
+    push_title: str | None = Field(None, max_length=100)
+    push_body: str | None = Field(None, max_length=500)
 
-    in_app_title: Optional[str] = Field(None, max_length=200)
-    in_app_body: Optional[str] = None
+    in_app_title: str | None = Field(None, max_length=200)
+    in_app_body: str | None = None
 
-    variables: Optional[List[TemplateVariableSchema]] = None
-    sample_data: Optional[Dict[str, Any]] = None
-    active: Optional[bool] = None
+    variables: list[TemplateVariableSchema] | None = None
+    sample_data: dict[str, Any] | None = None
+    active: bool | None = None
 
 
 class TemplateResponse(TemplateBase):
@@ -186,26 +186,26 @@ class TemplateResponse(TemplateBase):
 
     id: UUID
     tenant_id: UUID
-    channel_id: Optional[UUID] = None
+    channel_id: UUID | None = None
 
-    email_subject: Optional[str] = None
-    whatsapp_template_name: Optional[str] = None
-    sms_body: Optional[str] = None
-    push_title: Optional[str] = None
-    in_app_title: Optional[str] = None
+    email_subject: str | None = None
+    whatsapp_template_name: str | None = None
+    sms_body: str | None = None
+    push_title: str | None = None
+    in_app_title: str | None = None
 
-    variables: List[Dict[str, Any]] = Field(default_factory=list)
+    variables: list[dict[str, Any]] = Field(default_factory=list)
     version: int = 1
 
     total_sent: int = 0
     total_opened: int = 0
     total_clicked: int = 0
-    open_rate: Optional[float] = None
-    click_rate: Optional[float] = None
+    open_rate: float | None = None
+    click_rate: float | None = None
 
     active: bool = True
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
 
     class Config:
         from_attributes = True
@@ -220,7 +220,7 @@ class CategoryPreferenceSchema(BaseModel):
     """Schema para preferência de categoria."""
 
     enabled: bool = True
-    channels: List[str] = Field(default_factory=list)
+    channels: list[str] = Field(default_factory=list)
 
 
 class PreferenceBase(BaseModel):
@@ -228,8 +228,8 @@ class PreferenceBase(BaseModel):
 
     notifications_enabled: bool = True
     quiet_hours_enabled: bool = False
-    quiet_hours_start: Optional[str] = Field(None, pattern=r"^\d{2}:\d{2}$")
-    quiet_hours_end: Optional[str] = Field(None, pattern=r"^\d{2}:\d{2}$")
+    quiet_hours_start: str | None = Field(None, pattern=r"^\d{2}:\d{2}$")
+    quiet_hours_end: str | None = Field(None, pattern=r"^\d{2}:\d{2}$")
     timezone: str = Field(default="America/Sao_Paulo", max_length=50)
 
 
@@ -237,8 +237,8 @@ class PreferenceCreate(PreferenceBase):
     """Schema para criação de preferências."""
 
     user_id: UUID
-    user_email: Optional[EmailStr] = None
-    user_phone: Optional[str] = Field(None, max_length=20)
+    user_email: EmailStr | None = None
+    user_phone: str | None = Field(None, max_length=20)
 
     email_enabled: bool = True
     email_frequency: FrequencyType = FrequencyType.INSTANT
@@ -256,8 +256,8 @@ class PreferenceCreate(PreferenceBase):
 
     in_app_enabled: bool = True
 
-    preferred_channels: List[str] = Field(default=["email", "push", "in_app"])
-    category_preferences: Dict[str, CategoryPreferenceSchema] = Field(default_factory=dict)
+    preferred_channels: list[str] = Field(default=["email", "push", "in_app"])
+    category_preferences: dict[str, CategoryPreferenceSchema] = Field(default_factory=dict)
 
     marketing_consent: bool = False
     transactional_consent: bool = True
@@ -266,22 +266,22 @@ class PreferenceCreate(PreferenceBase):
 class PreferenceUpdate(BaseModel):
     """Schema para atualização de preferências."""
 
-    notifications_enabled: Optional[bool] = None
-    quiet_hours_enabled: Optional[bool] = None
-    quiet_hours_start: Optional[str] = Field(None, pattern=r"^\d{2}:\d{2}$")
-    quiet_hours_end: Optional[str] = Field(None, pattern=r"^\d{2}:\d{2}$")
+    notifications_enabled: bool | None = None
+    quiet_hours_enabled: bool | None = None
+    quiet_hours_start: str | None = Field(None, pattern=r"^\d{2}:\d{2}$")
+    quiet_hours_end: str | None = Field(None, pattern=r"^\d{2}:\d{2}$")
 
-    email_enabled: Optional[bool] = None
-    email_frequency: Optional[FrequencyType] = None
-    whatsapp_enabled: Optional[bool] = None
-    sms_enabled: Optional[bool] = None
-    push_enabled: Optional[bool] = None
-    in_app_enabled: Optional[bool] = None
+    email_enabled: bool | None = None
+    email_frequency: FrequencyType | None = None
+    whatsapp_enabled: bool | None = None
+    sms_enabled: bool | None = None
+    push_enabled: bool | None = None
+    in_app_enabled: bool | None = None
 
-    preferred_channels: Optional[List[str]] = None
-    category_preferences: Optional[Dict[str, CategoryPreferenceSchema]] = None
+    preferred_channels: list[str] | None = None
+    category_preferences: dict[str, CategoryPreferenceSchema] | None = None
 
-    marketing_consent: Optional[bool] = None
+    marketing_consent: bool | None = None
 
 
 class PreferenceResponse(PreferenceBase):
@@ -290,8 +290,8 @@ class PreferenceResponse(PreferenceBase):
     id: UUID
     tenant_id: UUID
     user_id: UUID
-    user_email: Optional[str] = None
-    user_phone: Optional[str] = None
+    user_email: str | None = None
+    user_phone: str | None = None
 
     email_enabled: bool = True
     whatsapp_enabled: bool = True
@@ -299,7 +299,7 @@ class PreferenceResponse(PreferenceBase):
     push_enabled: bool = True
     in_app_enabled: bool = True
 
-    preferred_channels: List[str] = Field(default_factory=list)
+    preferred_channels: list[str] = Field(default_factory=list)
     global_unsubscribe: bool = False
 
     email_verified: bool = False
@@ -310,11 +310,11 @@ class PreferenceResponse(PreferenceBase):
 
     total_received: int = 0
     total_opened: int = 0
-    engagement_score: Optional[float] = None
+    engagement_score: float | None = None
 
     active: bool = True
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
 
     class Config:
         from_attributes = True
@@ -328,14 +328,15 @@ class PreferenceResponse(PreferenceBase):
 class RecipientSchema(BaseModel):
     """Schema para destinatário de notificação."""
 
-    user_id: Optional[UUID] = None
-    email: Optional[EmailStr] = None
-    phone: Optional[str] = Field(None, max_length=20)
-    device_token: Optional[str] = None
-    name: Optional[str] = Field(None, max_length=200)
+    user_id: UUID | None = None
+    email: EmailStr | None = None
+    phone: str | None = Field(None, max_length=20)
+    device_token: str | None = None
+    name: str | None = Field(None, max_length=200)
 
-    @validator("email", "phone", "device_token", pre=True, always=True)
-    def at_least_one_address(cls, v, values):  # pylint: disable=no-self-argument
+    @field_validator("email", "phone", "device_token", mode="before")
+    @classmethod
+    def at_least_one_address(cls, v: Any) -> Any:
         """Garante que pelo menos um endereço seja fornecido."""
         return v
 
@@ -344,42 +345,43 @@ class SendNotificationRequest(BaseModel):
     """Schema para envio de notificação."""
 
     # Destinatários
-    recipients: List[RecipientSchema] = Field(..., min_items=1, max_items=1000)
+    recipients: list[RecipientSchema] = Field(..., min_items=1, max_items=1000)
 
     # Template ou conteúdo direto
-    template_id: Optional[UUID] = None
-    template_slug: Optional[str] = None
-    template_variables: Dict[str, Any] = Field(default_factory=dict)
+    template_id: UUID | None = None
+    template_slug: str | None = None
+    template_variables: dict[str, Any] = Field(default_factory=dict)
 
     # Conteúdo direto (se não usar template)
-    subject: Optional[str] = Field(None, max_length=500)
-    body: Optional[str] = None
-    body_html: Optional[str] = None
+    subject: str | None = Field(None, max_length=500)
+    body: str | None = None
+    body_html: str | None = None
 
     # Canais
-    channels: List[ChannelType] = Field(default_factory=list)  # Se vazio, usa preferências
-    channel_id: Optional[UUID] = None  # Canal específico
+    channels: list[ChannelType] = Field(default_factory=list)  # Se vazio, usa preferências
+    channel_id: UUID | None = None  # Canal específico
 
     # Agendamento
-    scheduled_at: Optional[datetime] = None
-    not_after: Optional[datetime] = None  # Expiração
+    scheduled_at: datetime | None = None
+    not_after: datetime | None = None  # Expiração
 
     # Prioridade
     priority: QueuePriority = QueuePriority.NORMAL
 
     # Contexto
-    category: Optional[str] = Field(None, max_length=50)
-    tags: List[str] = Field(default_factory=list)
-    source_entity_type: Optional[str] = None
-    source_entity_id: Optional[UUID] = None
+    category: str | None = Field(None, max_length=50)
+    tags: list[str] = Field(default_factory=list)
+    source_entity_type: str | None = None
+    source_entity_id: UUID | None = None
 
     # Config
     respect_preferences: bool = True  # Respeitar opt-out do usuário
-    batch_id: Optional[UUID] = None  # Agrupar envios
-    idempotency_key: Optional[str] = Field(None, max_length=100)
+    batch_id: UUID | None = None  # Agrupar envios
+    idempotency_key: str | None = Field(None, max_length=100)
 
-    @validator("template_id", "subject", pre=True, always=True)
-    def template_or_content(cls, v, values):  # pylint: disable=no-self-argument
+    @field_validator("template_id", "subject", mode="before")
+    @classmethod
+    def template_or_content(cls, v: Any) -> Any:
         """Garante que template ou conteúdo direto seja fornecido."""
         return v
 
@@ -389,11 +391,11 @@ class SendNotificationResponse(BaseModel):
 
     success: bool
     message: str
-    notification_ids: List[str] = Field(default_factory=list)
-    batch_id: Optional[UUID] = None
+    notification_ids: list[str] = Field(default_factory=list)
+    batch_id: UUID | None = None
     queued_count: int = 0
     skipped_count: int = 0
-    skipped_reasons: Dict[str, int] = Field(default_factory=dict)
+    skipped_reasons: dict[str, int] = Field(default_factory=dict)
 
 
 # ============================================================================
@@ -407,20 +409,20 @@ class QueueItemResponse(BaseModel):
     id: UUID
     notification_id: str
     tenant_id: UUID
-    user_id: Optional[UUID] = None
+    user_id: UUID | None = None
     recipient_address: str
     channel_type: str
     status: QueueStatus
     priority: QueuePriority
-    subject: Optional[str] = None
+    subject: str | None = None
 
-    scheduled_at: Optional[datetime] = None
-    sent_at: Optional[datetime] = None
-    delivered_at: Optional[datetime] = None
+    scheduled_at: datetime | None = None
+    sent_at: datetime | None = None
+    delivered_at: datetime | None = None
 
     attempt: int = 0
     max_attempts: int = 3
-    last_error: Optional[str] = None
+    last_error: str | None = None
 
     opened: bool = False
     clicked: bool = False
@@ -442,11 +444,11 @@ class QueueStatsResponse(BaseModel):
     total_failed: int = 0
     total_retry: int = 0
 
-    by_channel: Dict[str, int] = Field(default_factory=dict)
-    by_priority: Dict[str, int] = Field(default_factory=dict)
+    by_channel: dict[str, int] = Field(default_factory=dict)
+    by_priority: dict[str, int] = Field(default_factory=dict)
 
-    oldest_pending_at: Optional[datetime] = None
-    avg_processing_time_ms: Optional[float] = None
+    oldest_pending_at: datetime | None = None
+    avg_processing_time_ms: float | None = None
 
 
 # ============================================================================
@@ -458,20 +460,20 @@ class LogEntryResponse(BaseModel):
     """Schema de resposta para entrada de log."""
 
     id: UUID
-    notification_id: Optional[str] = None
-    channel_type: Optional[str] = None
+    notification_id: str | None = None
+    channel_type: str | None = None
     event_type: LogEventType
     level: LogLevel
-    message: Optional[str] = None
+    message: str | None = None
 
-    provider: Optional[str] = None
-    provider_status: Optional[str] = None
+    provider: str | None = None
+    provider_status: str | None = None
 
-    previous_status: Optional[str] = None
-    new_status: Optional[str] = None
+    previous_status: str | None = None
+    new_status: str | None = None
 
-    processing_time_ms: Optional[int] = None
-    attempt_number: Optional[int] = None
+    processing_time_ms: int | None = None
+    attempt_number: int | None = None
 
     created_at: datetime
 
@@ -483,7 +485,7 @@ class MetricsSummaryResponse(BaseModel):
     """Schema de resumo de métricas."""
 
     period: str
-    channel_type: Optional[str] = None
+    channel_type: str | None = None
 
     total_sent: int = 0
     total_delivered: int = 0
@@ -496,5 +498,5 @@ class MetricsSummaryResponse(BaseModel):
     click_rate: float = 0.0
     bounce_rate: float = 0.0
 
-    avg_delivery_time_ms: Optional[float] = None
+    avg_delivery_time_ms: float | None = None
     total_cost: float = 0.0

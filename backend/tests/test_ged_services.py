@@ -1,13 +1,14 @@
 """Testes para os services do módulo GED."""
 
-import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
 from datetime import datetime, timedelta
+from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
+import pytest
+
+from modules.ged.models.document import DocumentCategory, DocumentType
 from modules.ged.services.document_ai_service import DocumentAIService
 from modules.ged.services.document_tag_service import DocumentTagService
-from modules.ged.models.document import DocumentType, DocumentCategory
 
 
 class TestDocumentAIService:
@@ -146,14 +147,13 @@ class TestDocumentAIService:
     @pytest.mark.asyncio
     async def test_analyze_ocr_text(self, service):
         """Testa análise de texto OCR."""
-        with patch.object(service, 'document_repository') as mock_repo:
+        with patch.object(service, "document_repository") as mock_repo:
             mock_doc = MagicMock()
             mock_doc.id = str(uuid4())
             mock_repo.get_by_id = AsyncMock(return_value=mock_doc)
 
             result = await service.analyze_ocr_text(
-                mock_doc.id,
-                "Contrato de locação residencial no valor de R$ 2.000,00"
+                mock_doc.id, "Contrato de locação residencial no valor de R$ 2.000,00"
             )
 
             assert "classification" in result
@@ -220,14 +220,16 @@ class TestDocumentAIServiceInsights:
     @pytest.mark.asyncio
     async def test_calculate_health_score(self, service):
         """Testa cálculo de score de saúde."""
-        with patch.object(service, 'document_repository') as mock_repo:
+        with patch.object(service, "document_repository") as mock_repo:
             # Mock stats
-            mock_repo.get_stats = AsyncMock(return_value={
-                "total_documents": 100,
-                "pending_approval": 5,
-                "pending_signature": 3,
-                "expired": 2,
-            })
+            mock_repo.get_stats = AsyncMock(
+                return_value={
+                    "total_documents": 100,
+                    "pending_approval": 5,
+                    "pending_signature": 3,
+                    "expired": 2,
+                }
+            )
 
             # Mock expiring soon
             mock_repo.get_expiring_soon = AsyncMock(return_value=[])
@@ -237,23 +239,27 @@ class TestDocumentAIServiceInsights:
             assert "health_score" in insights
             assert 0 <= insights["health_score"] <= 100
             assert "health_level" in insights
-            assert insights["health_level"] in [
-                "excellent", "good", "attention", "critical"
-            ]
+            assert insights["health_level"] in ["excellent", "good", "attention", "critical"]
 
     @pytest.mark.asyncio
     async def test_get_recommendations(self, service):
         """Testa geração de recomendações."""
-        with patch.object(service, 'document_repository') as mock_repo:
-            mock_repo.get_stats = AsyncMock(return_value={
-                "total_documents": 100,
-                "pending_approval": 15,  # > 10
-                "pending_signature": 5,
-                "expired": 3,
-            })
-            mock_repo.get_expiring_soon = AsyncMock(return_value=[
-                MagicMock(), MagicMock(), MagicMock()  # 3 expirando
-            ])
+        with patch.object(service, "document_repository") as mock_repo:
+            mock_repo.get_stats = AsyncMock(
+                return_value={
+                    "total_documents": 100,
+                    "pending_approval": 15,  # > 10
+                    "pending_signature": 5,
+                    "expired": 3,
+                }
+            )
+            mock_repo.get_expiring_soon = AsyncMock(
+                return_value=[
+                    MagicMock(),
+                    MagicMock(),
+                    MagicMock(),  # 3 expirando
+                ]
+            )
 
             insights = await service.get_insights()
 
@@ -263,13 +269,15 @@ class TestDocumentAIServiceInsights:
     @pytest.mark.asyncio
     async def test_get_trends(self, service):
         """Testa obtenção de tendências."""
-        with patch.object(service, 'document_repository') as mock_repo:
-            mock_repo.get_stats = AsyncMock(return_value={
-                "total_documents": 100,
-                "by_type": {"contrato": 30, "ata": 20},
-                "by_category": {"administrativo": 50},
-                "by_status": {"publicado": 80, "rascunho": 20},
-            })
+        with patch.object(service, "document_repository") as mock_repo:
+            mock_repo.get_stats = AsyncMock(
+                return_value={
+                    "total_documents": 100,
+                    "by_type": {"contrato": 30, "ata": 20},
+                    "by_category": {"administrativo": 50},
+                    "by_status": {"publicado": 80, "rascunho": 20},
+                }
+            )
 
             trends = await service.get_trends(days=30)
 

@@ -11,20 +11,19 @@ Classes:
     Dashboard: Schemas para métricas e alertas
 """
 
-from datetime import datetime, date
-from typing import Optional, List, Dict, Any
+from datetime import date, datetime
+from typing import Any
 from uuid import UUID
 
 from pydantic import (
     BaseModel,
-    Field,
     ConfigDict,
+    Field,
     field_validator,
     model_validator,
 )
 
-from modules.retention.onboarding.models import StepType, ProgressStatus
-
+from modules.retention.onboarding.models import ProgressStatus, StepType
 
 # =============================================================================
 # Schemas Base
@@ -42,9 +41,7 @@ class PaginationParams(BaseModel):
     """Schema para parâmetros de paginação."""
 
     skip: int = Field(default=0, ge=0, description="Número de registros para pular")
-    limit: int = Field(
-        default=20, ge=1, le=100, description="Limite de registros por página"
-    )
+    limit: int = Field(default=20, ge=1, le=100, description="Limite de registros por página")
 
 
 class PaginatedResponse(BaseModel):
@@ -70,7 +67,7 @@ class StepBase(BaseModel):
         max_length=200,
         description="Nome da etapa do onboarding",
     )
-    descricao: Optional[str] = Field(
+    descricao: str | None = Field(
         None,
         max_length=2000,
         description="Descrição detalhada da etapa",
@@ -109,20 +106,20 @@ class StepCreate(StepBase):
         ...,
         description="ID do checklist pai",
     )
-    responsavel_padrao_id: Optional[UUID] = Field(
+    responsavel_padrao_id: UUID | None = Field(
         None,
         description="ID do responsável padrão",
     )
-    recursos: Optional[List[str]] = Field(
+    recursos: list[str] | None = Field(
         default_factory=list,
         description="Lista de recursos necessários",
     )
-    instrucoes: Optional[str] = Field(
+    instrucoes: str | None = Field(
         None,
         max_length=5000,
         description="Instruções detalhadas",
     )
-    link_material: Optional[str] = Field(
+    link_material: str | None = Field(
         None,
         max_length=500,
         description="Link para material de apoio",
@@ -139,14 +136,14 @@ class StepCreate(StepBase):
         default=False,
         description="Notificar RH",
     )
-    dependencia_step_id: Optional[UUID] = Field(
+    dependencia_step_id: UUID | None = Field(
         None,
         description="ID da etapa de dependência",
     )
 
     @field_validator("link_material")
     @classmethod
-    def validate_url(cls, v: Optional[str]) -> Optional[str]:
+    def validate_url(cls, v: str | None) -> str | None:
         """Valida se o link é uma URL válida."""
         if v and not v.startswith(("http://", "https://")):
             raise ValueError("Link deve ser uma URL válida (http:// ou https://)")
@@ -156,32 +153,32 @@ class StepCreate(StepBase):
 class StepUpdate(BaseModel):
     """Schema para atualização de etapa."""
 
-    nome: Optional[str] = Field(
+    nome: str | None = Field(
         None,
         min_length=3,
         max_length=200,
     )
-    descricao: Optional[str] = Field(
+    descricao: str | None = Field(
         None,
         max_length=2000,
     )
-    dias_apos_admissao: Optional[int] = Field(
+    dias_apos_admissao: int | None = Field(
         None,
         ge=0,
         le=365,
     )
-    tipo: Optional[StepType] = None
-    obrigatorio: Optional[bool] = None
-    ordem: Optional[int] = Field(None, ge=1)
-    tempo_estimado_minutos: Optional[int] = Field(None, ge=0, le=9999)
-    responsavel_padrao_id: Optional[UUID] = None
-    recursos: Optional[List[str]] = None
-    instrucoes: Optional[str] = Field(None, max_length=5000)
-    link_material: Optional[str] = Field(None, max_length=500)
-    permite_pular: Optional[bool] = None
-    notificar_supervisor: Optional[bool] = None
-    notificar_rh: Optional[bool] = None
-    dependencia_step_id: Optional[UUID] = None
+    tipo: StepType | None = None
+    obrigatorio: bool | None = None
+    ordem: int | None = Field(None, ge=1)
+    tempo_estimado_minutos: int | None = Field(None, ge=0, le=9999)
+    responsavel_padrao_id: UUID | None = None
+    recursos: list[str] | None = None
+    instrucoes: str | None = Field(None, max_length=5000)
+    link_material: str | None = Field(None, max_length=500)
+    permite_pular: bool | None = None
+    notificar_supervisor: bool | None = None
+    notificar_rh: bool | None = None
+    dependencia_step_id: UUID | None = None
 
 
 class StepResponse(StepBase):
@@ -191,15 +188,15 @@ class StepResponse(StepBase):
 
     id: UUID
     checklist_id: UUID
-    responsavel_padrao_id: Optional[UUID] = None
-    recursos: Optional[List[str]] = None
-    instrucoes: Optional[str] = None
-    link_material: Optional[str] = None
+    responsavel_padrao_id: UUID | None = None
+    recursos: list[str] | None = None
+    instrucoes: str | None = None
+    link_material: str | None = None
     permite_pular: bool = False
     notificar_supervisor: bool = True
     notificar_rh: bool = False
-    dependencia_step_id: Optional[UUID] = None
-    metadata_info: Optional[Dict[str, Any]] = None
+    dependencia_step_id: UUID | None = None
+    metadata_info: dict[str, Any] | None = None
     created_at: datetime
     updated_at: datetime
     tem_dependencia: bool = False
@@ -219,7 +216,7 @@ class ChecklistBase(BaseModel):
         max_length=200,
         description="Nome do checklist",
     )
-    descricao: Optional[str] = Field(
+    descricao: str | None = Field(
         None,
         max_length=2000,
         description="Descrição do checklist",
@@ -239,11 +236,11 @@ class ChecklistCreate(ChecklistBase):
         ...,
         description="ID do condomínio/empresa",
     )
-    cargo_id: Optional[UUID] = Field(
+    cargo_id: UUID | None = Field(
         None,
         description="ID do cargo associado",
     )
-    departamento: Optional[str] = Field(
+    departamento: str | None = Field(
         None,
         max_length=100,
         description="Departamento associado",
@@ -252,7 +249,7 @@ class ChecklistCreate(ChecklistBase):
         default=False,
         description="Se é o checklist padrão",
     )
-    etapas: Optional[List[StepCreate]] = Field(
+    etapas: list[StepCreate] | None = Field(
         default=None,
         description="Etapas do checklist (criação em lote)",
     )
@@ -261,27 +258,27 @@ class ChecklistCreate(ChecklistBase):
 class ChecklistUpdate(BaseModel):
     """Schema para atualização de checklist."""
 
-    nome: Optional[str] = Field(
+    nome: str | None = Field(
         None,
         min_length=3,
         max_length=200,
     )
-    descricao: Optional[str] = Field(
+    descricao: str | None = Field(
         None,
         max_length=2000,
     )
-    cargo_id: Optional[UUID] = None
-    departamento: Optional[str] = Field(
+    cargo_id: UUID | None = None
+    departamento: str | None = Field(
         None,
         max_length=100,
     )
-    dias_duracao_total: Optional[int] = Field(
+    dias_duracao_total: int | None = Field(
         None,
         ge=1,
         le=365,
     )
-    is_active: Optional[bool] = None
-    is_default: Optional[bool] = None
+    is_active: bool | None = None
+    is_default: bool | None = None
 
 
 class ChecklistResponse(ChecklistBase):
@@ -290,15 +287,15 @@ class ChecklistResponse(ChecklistBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
-    cargo_id: Optional[UUID] = None
-    departamento: Optional[str] = None
+    cargo_id: UUID | None = None
+    departamento: str | None = None
     condominium_id: UUID
     is_active: bool = True
     is_default: bool = False
-    metadata_info: Optional[Dict[str, Any]] = None
+    metadata_info: dict[str, Any] | None = None
     created_at: datetime
     updated_at: datetime
-    deleted_at: Optional[datetime] = None
+    deleted_at: datetime | None = None
     total_etapas: int = 0
     etapas_obrigatorias: int = 0
 
@@ -306,7 +303,7 @@ class ChecklistResponse(ChecklistBase):
 class ChecklistDetailResponse(ChecklistResponse):
     """Schema de resposta detalhada para checklist com etapas."""
 
-    etapas: List[StepResponse] = Field(
+    etapas: list[StepResponse] = Field(
         default_factory=list,
         description="Lista de etapas do checklist",
     )
@@ -315,7 +312,7 @@ class ChecklistDetailResponse(ChecklistResponse):
 class ChecklistListResponse(PaginatedResponse):
     """Schema de lista de checklists."""
 
-    items: List[ChecklistResponse]
+    items: list[ChecklistResponse]
 
 
 # =============================================================================
@@ -330,7 +327,7 @@ class ProgressBase(BaseModel):
         default=ProgressStatus.PENDENTE,
         description="Status atual do progresso",
     )
-    observacoes: Optional[str] = Field(
+    observacoes: str | None = Field(
         None,
         max_length=2000,
         description="Observações sobre o progresso",
@@ -356,11 +353,11 @@ class ProgressCreate(BaseModel):
         ...,
         description="Data prevista para conclusão",
     )
-    supervisor_id: Optional[UUID] = Field(
+    supervisor_id: UUID | None = Field(
         None,
         description="ID do supervisor responsável",
     )
-    responsavel_id: Optional[UUID] = Field(
+    responsavel_id: UUID | None = Field(
         None,
         description="ID do responsável pela execução",
     )
@@ -369,15 +366,15 @@ class ProgressCreate(BaseModel):
 class ProgressUpdate(BaseModel):
     """Schema para atualização de progresso."""
 
-    status: Optional[ProgressStatus] = None
-    observacoes: Optional[str] = Field(
+    status: ProgressStatus | None = None
+    observacoes: str | None = Field(
         None,
         max_length=2000,
     )
-    data_prevista: Optional[date] = None
-    supervisor_id: Optional[UUID] = None
-    responsavel_id: Optional[UUID] = None
-    evidencia_url: Optional[str] = Field(
+    data_prevista: date | None = None
+    supervisor_id: UUID | None = None
+    responsavel_id: UUID | None = None
+    evidencia_url: str | None = Field(
         None,
         max_length=500,
     )
@@ -386,23 +383,23 @@ class ProgressUpdate(BaseModel):
 class ProgressComplete(BaseModel):
     """Schema para completar uma etapa."""
 
-    observacoes: Optional[str] = Field(
+    observacoes: str | None = Field(
         None,
         max_length=2000,
         description="Observações sobre a conclusão",
     )
-    evidencia_url: Optional[str] = Field(
+    evidencia_url: str | None = Field(
         None,
         max_length=500,
         description="URL da evidência de conclusão",
     )
-    avaliacao_nota: Optional[float] = Field(
+    avaliacao_nota: float | None = Field(
         None,
         ge=0,
         le=10,
         description="Nota de avaliação (0-10)",
     )
-    avaliacao_comentario: Optional[str] = Field(
+    avaliacao_comentario: str | None = Field(
         None,
         max_length=1000,
         description="Comentário da avaliação",
@@ -420,34 +417,34 @@ class ProgressResponse(BaseModel):
     step_id: UUID
     status: ProgressStatus
     data_prevista: date
-    data_inicio: Optional[datetime] = None
-    data_conclusao: Optional[datetime] = None
-    observacoes: Optional[str] = None
-    supervisor_id: Optional[UUID] = None
-    responsavel_id: Optional[UUID] = None
+    data_inicio: datetime | None = None
+    data_conclusao: datetime | None = None
+    observacoes: str | None = None
+    supervisor_id: UUID | None = None
+    responsavel_id: UUID | None = None
     notificacoes_enviadas: int = 0
-    ultima_notificacao_at: Optional[datetime] = None
-    evidencia_url: Optional[str] = None
-    avaliacao_nota: Optional[float] = None
-    avaliacao_comentario: Optional[str] = None
-    metadata_info: Optional[Dict[str, Any]] = None
+    ultima_notificacao_at: datetime | None = None
+    evidencia_url: str | None = None
+    avaliacao_nota: float | None = None
+    avaliacao_comentario: str | None = None
+    metadata_info: dict[str, Any] | None = None
     created_at: datetime
     updated_at: datetime
     dias_restantes: int = 0
     esta_atrasado: bool = False
-    tempo_execucao_dias: Optional[int] = None
+    tempo_execucao_dias: int | None = None
 
 
 class ProgressDetailResponse(ProgressResponse):
     """Schema de resposta detalhada para progresso com etapa."""
 
-    step: Optional[StepResponse] = None
+    step: StepResponse | None = None
 
 
 class ProgressListResponse(PaginatedResponse):
     """Schema de lista de progressos."""
 
-    items: List[ProgressResponse]
+    items: list[ProgressResponse]
 
 
 # =============================================================================
@@ -462,7 +459,7 @@ class FuncionarioOnboardingCreate(BaseModel):
         ...,
         description="ID do funcionário",
     )
-    checklist_id: Optional[UUID] = Field(
+    checklist_id: UUID | None = Field(
         None,
         description="ID do checklist (opcional, usa padrão se não informado)",
     )
@@ -470,7 +467,7 @@ class FuncionarioOnboardingCreate(BaseModel):
         ...,
         description="Data de admissão do funcionário",
     )
-    supervisor_id: Optional[UUID] = Field(
+    supervisor_id: UUID | None = Field(
         None,
         description="ID do supervisor responsável",
     )
@@ -485,14 +482,14 @@ class FuncionarioOnboardingResponse(BaseModel):
     checklist_id: UUID
     checklist_nome: str
     data_admissao: date
-    supervisor_id: Optional[UUID] = None
+    supervisor_id: UUID | None = None
     total_etapas: int = 0
     etapas_concluidas: int = 0
     etapas_pendentes: int = 0
     etapas_atrasadas: int = 0
     progresso_percentual: float = 0.0
-    proxima_etapa: Optional[ProgressDetailResponse] = None
-    progressos: List[ProgressDetailResponse] = Field(default_factory=list)
+    proxima_etapa: ProgressDetailResponse | None = None
+    progressos: list[ProgressDetailResponse] = Field(default_factory=list)
 
 
 # =============================================================================
@@ -507,13 +504,13 @@ class OnboardingAlert(BaseModel):
     tipo: str = Field(..., description="Tipo do alerta (atrasado, proximo_vencer)")
     nivel: str = Field(..., description="Nível (critico, alto, medio, baixo)")
     funcionario_id: UUID
-    funcionario_nome: Optional[str] = None
+    funcionario_nome: str | None = None
     step_id: UUID
-    step_nome: Optional[str] = None
-    checklist_nome: Optional[str] = None
+    step_nome: str | None = None
+    checklist_nome: str | None = None
     dias_atraso: int = 0
-    supervisor_id: Optional[UUID] = None
-    supervisor_nome: Optional[str] = None
+    supervisor_id: UUID | None = None
+    supervisor_nome: str | None = None
     mensagem: str
     created_at: datetime
 
@@ -531,38 +528,38 @@ class OnboardingStats(BaseModel):
     taxa_conclusao_no_prazo: float = 0.0
     taxa_aprovacao_avaliacoes: float = 0.0
     nota_media_avaliacoes: float = 0.0
-    por_departamento: Dict[str, Dict[str, int]] = Field(default_factory=dict)
-    por_tipo_etapa: Dict[str, int] = Field(default_factory=dict)
-    por_status: Dict[str, int] = Field(default_factory=dict)
+    por_departamento: dict[str, dict[str, int]] = Field(default_factory=dict)
+    por_tipo_etapa: dict[str, int] = Field(default_factory=dict)
+    por_status: dict[str, int] = Field(default_factory=dict)
 
 
 class OnboardingDashboard(BaseModel):
     """Schema para dashboard de onboarding."""
 
     stats: OnboardingStats
-    alerts: List[OnboardingAlert] = Field(default_factory=list)
+    alerts: list[OnboardingAlert] = Field(default_factory=list)
     funcionarios_ativos: int = 0
     funcionarios_atrasados: int = 0
     checklists_ativos: int = 0
-    tendencia_conclusao: List[Dict[str, Any]] = Field(default_factory=list)
-    ultimas_conclusoes: List[Dict[str, Any]] = Field(default_factory=list)
+    tendencia_conclusao: list[dict[str, Any]] = Field(default_factory=list)
+    ultimas_conclusoes: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class OnboardingFilter(BaseModel):
     """Schema para filtros de listagem."""
 
-    condominium_id: Optional[UUID] = None
-    funcionario_id: Optional[UUID] = None
-    checklist_id: Optional[UUID] = None
-    supervisor_id: Optional[UUID] = None
-    departamento: Optional[str] = None
-    status: Optional[ProgressStatus] = None
-    tipo: Optional[StepType] = None
-    data_inicio: Optional[date] = None
-    data_fim: Optional[date] = None
+    condominium_id: UUID | None = None
+    funcionario_id: UUID | None = None
+    checklist_id: UUID | None = None
+    supervisor_id: UUID | None = None
+    departamento: str | None = None
+    status: ProgressStatus | None = None
+    tipo: StepType | None = None
+    data_inicio: date | None = None
+    data_fim: date | None = None
     apenas_atrasados: bool = False
     apenas_obrigatorios: bool = False
-    search: Optional[str] = Field(
+    search: str | None = Field(
         None,
         max_length=100,
         description="Termo de busca",
@@ -580,14 +577,14 @@ class OnboardingFilter(BaseModel):
 class BulkProgressUpdate(BaseModel):
     """Schema para atualização em lote de progressos."""
 
-    progress_ids: List[UUID] = Field(
+    progress_ids: list[UUID] = Field(
         ...,
         min_length=1,
         max_length=100,
         description="IDs dos progressos a atualizar",
     )
-    status: Optional[ProgressStatus] = None
-    observacoes: Optional[str] = Field(
+    status: ProgressStatus | None = None
+    observacoes: str | None = Field(
         None,
         max_length=2000,
     )
@@ -606,9 +603,9 @@ class OnboardingReport(BaseModel):
     tempo_medio_dias: float = 0.0
     taxa_conclusao: float = 0.0
     taxa_atraso: float = 0.0
-    por_cargo: Dict[str, Dict[str, Any]] = Field(default_factory=dict)
-    por_departamento: Dict[str, Dict[str, Any]] = Field(default_factory=dict)
-    evolucao_diaria: List[Dict[str, Any]] = Field(default_factory=list)
-    etapas_mais_demoradas: List[Dict[str, Any]] = Field(default_factory=list)
-    etapas_mais_atrasadas: List[Dict[str, Any]] = Field(default_factory=list)
+    por_cargo: dict[str, dict[str, Any]] = Field(default_factory=dict)
+    por_departamento: dict[str, dict[str, Any]] = Field(default_factory=dict)
+    evolucao_diaria: list[dict[str, Any]] = Field(default_factory=list)
+    etapas_mais_demoradas: list[dict[str, Any]] = Field(default_factory=list)
+    etapas_mais_atrasadas: list[dict[str, Any]] = Field(default_factory=list)
     gerado_em: datetime = Field(default_factory=datetime.utcnow)

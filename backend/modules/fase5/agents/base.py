@@ -6,18 +6,20 @@ Classe base para agentes do sistema multi-agente
 
 import asyncio
 import logging
-from typing import Dict, List, Optional, Any, Callable
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from enum import Enum
+from datetime import UTC, datetime
+from enum import StrEnum
+from typing import Any
 from uuid import UUID, uuid4
 
 logger = logging.getLogger(__name__)
 
 
-class AgentType(str, Enum):
+class AgentType(StrEnum):
     """Tipos de agentes disponíveis."""
+
     EMAIL_INTELLIGENCE = "email_intelligence"
     CCT_COMPLIANCE = "cct_compliance"
     INTEGRATION_HUB = "integration_hub"
@@ -25,8 +27,9 @@ class AgentType(str, Enum):
     SECURITY_MANAGER = "security_manager"
 
 
-class AgentStatus(str, Enum):
+class AgentStatus(StrEnum):
     """Status do agente."""
+
     IDLE = "idle"
     RUNNING = "running"
     PROCESSING = "processing"
@@ -37,28 +40,30 @@ class AgentStatus(str, Enum):
 @dataclass
 class AgentMessage:
     """Mensagem entre agentes."""
+
     from_agent: AgentType
     to_agent: AgentType
     message_type: str
     message_id: UUID = field(default_factory=uuid4)
-    payload: Dict[str, Any] = field(default_factory=dict)
-    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    correlation_id: Optional[str] = None
-    reply_to: Optional[UUID] = None
+    payload: dict[str, Any] = field(default_factory=dict)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
+    correlation_id: str | None = None
+    reply_to: UUID | None = None
 
 
 @dataclass
 class AgentTask:
     """Tarefa a ser processada pelo agente."""
+
     task_type: str
     task_id: UUID = field(default_factory=uuid4)
-    data: Dict[str, Any] = field(default_factory=dict)
+    data: dict[str, Any] = field(default_factory=dict)
     priority: int = 5  # 1-10, menor = mais prioritario
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
-    result: Optional[Dict[str, Any]] = None
-    error: Optional[str] = None
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
+    result: dict[str, Any] | None = None
+    error: str | None = None
 
 
 class BaseAgent(ABC):
@@ -70,7 +75,7 @@ class BaseAgent(ABC):
     - handle_message: Lidar com mensagens de outros agentes
     """
 
-    def __init__(self, agent_type: AgentType, config: Dict[str, Any] = None):
+    def __init__(self, agent_type: AgentType, config: dict[str, Any] = None):
         self.agent_id = uuid4()
         self.agent_type = agent_type
         self.config = config or {}
@@ -84,22 +89,19 @@ class BaseAgent(ABC):
             "messages_received": 0,
             "messages_sent": 0,
             "started_at": None,
-            "last_activity": None
+            "last_activity": None,
         }
-        self._message_handlers: Dict[str, Callable] = {}
+        self._message_handlers: dict[str, Callable] = {}
 
     async def start(self) -> None:
         """Inicia o agente."""
         logger.info(f"Starting agent {self.agent_type.value} ({self.agent_id})")
         self.running = True
         self.status = AgentStatus.RUNNING
-        self.stats["started_at"] = datetime.now(timezone.utc)
+        self.stats["started_at"] = datetime.now(UTC)
 
         # Iniciar processadores
-        await asyncio.gather(
-            self._task_processor(),
-            self._message_processor()
-        )
+        await asyncio.gather(self._task_processor(), self._message_processor())
 
     async def stop(self) -> None:
         """Para o agente."""
@@ -127,52 +129,46 @@ class BaseAgent(ABC):
         """Processador de tarefas."""
         while self.running:
             try:
-                task = await asyncio.wait_for(
-                    self.task_queue.get(),
-                    timeout=1.0
-                )
+                task = await asyncio.wait_for(self.task_queue.get(), timeout=1.0)
 
                 self.status = AgentStatus.PROCESSING
-                task.started_at = datetime.now(timezone.utc)
+                task.started_at = datetime.now(UTC)
 
                 try:
                     result = await self.process_task(task)
                     task.result = result
-                    task.completed_at = datetime.now(timezone.utc)
+                    task.completed_at = datetime.now(UTC)
                     self.stats["tasks_processed"] += 1
 
                 except Exception as e:
                     task.error = str(e)
-                    task.completed_at = datetime.now(timezone.utc)
+                    task.completed_at = datetime.now(UTC)
                     self.stats["tasks_failed"] += 1
                     logger.error(f"Task {task.task_id} failed: {e}")
 
                 finally:
                     self.status = AgentStatus.RUNNING
-                    self.stats["last_activity"] = datetime.now(timezone.utc)
+                    self.stats["last_activity"] = datetime.now(UTC)
 
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 continue
 
     async def _message_processor(self) -> None:
         """Processador de mensagens."""
         while self.running:
             try:
-                message = await asyncio.wait_for(
-                    self.message_queue.get(),
-                    timeout=1.0
-                )
+                message = await asyncio.wait_for(self.message_queue.get(), timeout=1.0)
 
                 await self.handle_message(message)
-                self.stats["last_activity"] = datetime.now(timezone.utc)
+                self.stats["last_activity"] = datetime.now(UTC)
 
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 continue
             except Exception as e:
                 logger.error(f"Message processing error: {e}")
 
     @abstractmethod
-    async def process_task(self, task: AgentTask) -> Dict[str, Any]:
+    async def process_task(self, task: AgentTask) -> dict[str, Any]:
         """Processa uma tarefa. Deve ser implementado por subclasses."""
         pass
 
@@ -181,7 +177,7 @@ class BaseAgent(ABC):
         """Lida com mensagem recebida. Deve ser implementado por subclasses."""
         pass
 
-    def get_status(self) -> Dict[str, Any]:
+    def get_status(self) -> dict[str, Any]:
         """Retorna status do agente."""
         return {
             "agent_id": str(self.agent_id),
@@ -190,10 +186,7 @@ class BaseAgent(ABC):
             "stats": {
                 **self.stats,
                 "started_at": self.stats["started_at"].isoformat() if self.stats["started_at"] else None,
-                "last_activity": self.stats["last_activity"].isoformat() if self.stats["last_activity"] else None
+                "last_activity": self.stats["last_activity"].isoformat() if self.stats["last_activity"] else None,
             },
-            "queue_sizes": {
-                "tasks": self.task_queue.qsize(),
-                "messages": self.message_queue.qsize()
-            }
+            "queue_sizes": {"tasks": self.task_queue.qsize(), "messages": self.message_queue.qsize()},
         }

@@ -9,13 +9,12 @@ import pytest
 from modules.notifications.testing.ab_testing_engine import (
     ABTestingEngine,
     Experiment,
+    ExperimentResult,
     ExperimentStatus,
     ExperimentVariant,
-    ExperimentResult,
-    StatisticalSignificance,
     MetricType,
+    StatisticalSignificance,
 )
-
 
 # ============================================================================
 # Fixtures
@@ -497,7 +496,7 @@ class TestExperimentManagement:
     ):
         """Testa listagem por status."""
         # Criar experimentos com status diferentes
-        draft = await ab_engine.create_experiment(
+        await ab_engine.create_experiment(
             db=mock_db,
             name="Draft",
             description="Descrição",
@@ -590,10 +589,7 @@ class TestEdgeCases:
         ab_engine,
     ):
         """Testa experimento com muitas variantes."""
-        variants = [
-            {"id": f"variant_{i}", "name": f"Variante {i}"}
-            for i in range(5)
-        ]
+        variants = [{"id": f"variant_{i}", "name": f"Variante {i}"} for i in range(5)]
         variants[0]["is_control"] = True
 
         experiment = await ab_engine.create_experiment(

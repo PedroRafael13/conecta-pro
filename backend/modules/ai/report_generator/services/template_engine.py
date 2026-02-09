@@ -7,21 +7,18 @@ Gerencia templates, validação e renderização de relatórios.
 import logging
 import re
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy.orm import Session
 
 from modules.ai.report_generator.models import (
     AIReportTemplate,
-    ReportSection,
-    ReportWidget,
 )
 from modules.ai.report_generator.models.report_template import (
-    TemplateStatusEnum,
     TemplateCategoryEnum,
+    TemplateStatusEnum,
 )
-from modules.ai.report_generator.models.report_section import SectionTypeEnum
 from modules.ai.report_generator.repositories import ReportRepository
 
 logger = logging.getLogger(__name__)
@@ -252,7 +249,7 @@ class TemplateEngine:
         self.db = db
         self.repository = ReportRepository(db)
 
-    def initialize_default_templates(self) -> List[AIReportTemplate]:
+    def initialize_default_templates(self) -> list[AIReportTemplate]:
         """Inicializa templates padrão do sistema."""
         created_templates = []
 
@@ -287,17 +284,17 @@ class TemplateEngine:
         self,
         code: str,
         name: str,
-        description: Optional[str] = None,
+        description: str | None = None,
         category: TemplateCategoryEnum = TemplateCategoryEnum.GENERAL,
-        data_sources: Optional[List[str]] = None,
-        parameters: Optional[List[Dict[str, Any]]] = None,
-        sections_config: Optional[List[Dict[str, Any]]] = None,
-        widgets_config: Optional[List[Dict[str, Any]]] = None,
-        metrics_config: Optional[List[Dict[str, Any]]] = None,
-        supported_formats: Optional[List[str]] = None,
+        data_sources: list[str] | None = None,
+        parameters: list[dict[str, Any]] | None = None,
+        sections_config: list[dict[str, Any]] | None = None,
+        widgets_config: list[dict[str, Any]] | None = None,
+        metrics_config: list[dict[str, Any]] | None = None,
+        supported_formats: list[str] | None = None,
         ai_insights_enabled: bool = True,
-        created_by: Optional[UUID] = None,
-        organization_id: Optional[UUID] = None,
+        created_by: UUID | None = None,
+        organization_id: UUID | None = None,
     ) -> AIReportTemplate:
         """Cria novo template."""
         # Verifica código único
@@ -329,11 +326,7 @@ class TemplateEngine:
 
         return self.repository.create_template(template)
 
-    def update_template(
-        self,
-        template_id: UUID,
-        **kwargs
-    ) -> Optional[AIReportTemplate]:
+    def update_template(self, template_id: UUID, **kwargs) -> AIReportTemplate | None:
         """Atualiza template."""
         template = self.repository.get_template(template_id)
         if not template:
@@ -361,7 +354,7 @@ class TemplateEngine:
         template_id: UUID,
         new_code: str,
         new_name: str,
-        organization_id: Optional[UUID] = None,
+        organization_id: UUID | None = None,
     ) -> AIReportTemplate:
         """Clona um template existente."""
         template = self.repository.get_template(template_id)
@@ -380,7 +373,7 @@ class TemplateEngine:
 
         return self.repository.create_template(cloned)
 
-    def publish_template(self, template_id: UUID) -> Optional[AIReportTemplate]:
+    def publish_template(self, template_id: UUID) -> AIReportTemplate | None:
         """Publica um template (ativa)."""
         template = self.repository.get_template(template_id)
         if not template:
@@ -396,7 +389,7 @@ class TemplateEngine:
 
         return self.repository.update_template(template)
 
-    def deprecate_template(self, template_id: UUID) -> Optional[AIReportTemplate]:
+    def deprecate_template(self, template_id: UUID) -> AIReportTemplate | None:
         """Marca template como obsoleto."""
         template = self.repository.get_template(template_id)
         if not template:
@@ -406,7 +399,7 @@ class TemplateEngine:
 
         return self.repository.update_template(template)
 
-    def validate_template(self, template_id: UUID) -> Dict[str, Any]:
+    def validate_template(self, template_id: UUID) -> dict[str, Any]:
         """Valida um template e retorna resultado."""
         template = self.repository.get_template(template_id)
         if not template:
@@ -419,8 +412,7 @@ class TemplateEngine:
 
         # Verifica se tem pelo menos uma seção visual
         visual_sections = [
-            s for s in template.sections_config or []
-            if s.get("section_type") in ["chart", "table", "kpi"]
+            s for s in template.sections_config or [] if s.get("section_type") in ["chart", "table", "kpi"]
         ]
         if not visual_sections:
             warnings.append("Template não possui seções visuais (gráficos, tabelas ou KPIs)")
@@ -444,7 +436,7 @@ class TemplateEngine:
     def render_content(
         self,
         content_template: str,
-        context: Dict[str, Any],
+        context: dict[str, Any],
     ) -> str:
         """Renderiza template de conteúdo com variáveis."""
         if not content_template:
@@ -453,7 +445,7 @@ class TemplateEngine:
         rendered = content_template
 
         # Substitui variáveis simples: {{variavel}}
-        pattern = r'\{\{(\w+(?:\.\w+)*)\}\}'
+        pattern = r"\{\{(\w+(?:\.\w+)*)\}\}"
         matches = re.findall(pattern, rendered)
 
         for match in matches:
@@ -462,7 +454,7 @@ class TemplateEngine:
             rendered = rendered.replace(placeholder, str(value) if value is not None else "")
 
         # Substitui formatadores: {{variavel|format}}
-        pattern_format = r'\{\{(\w+(?:\.\w+)*)\|(\w+)\}\}'
+        pattern_format = r"\{\{(\w+(?:\.\w+)*)\|(\w+)\}\}"
         matches_format = re.findall(pattern_format, rendered)
 
         for var_name, format_type in matches_format:
@@ -473,7 +465,7 @@ class TemplateEngine:
 
         return rendered
 
-    def _get_nested_value(self, obj: Dict[str, Any], path: str) -> Any:
+    def _get_nested_value(self, obj: dict[str, Any], path: str) -> Any:
         """Obtém valor aninhado de um dicionário."""
         keys = path.split(".")
         value = obj
@@ -530,7 +522,7 @@ class TemplateEngine:
 
         return str(value)
 
-    def get_available_data_sources(self) -> List[Dict[str, Any]]:
+    def get_available_data_sources(self) -> list[dict[str, Any]]:
         """Retorna lista de fontes de dados disponíveis."""
         return [
             {"code": "leads", "name": "Leads", "category": "crm"},
@@ -554,7 +546,7 @@ class TemplateEngine:
             {"code": "fraud", "name": "Fraude", "category": "ai"},
         ]
 
-    def get_available_section_types(self) -> List[Dict[str, Any]]:
+    def get_available_section_types(self) -> list[dict[str, Any]]:
         """Retorna tipos de seção disponíveis."""
         return [
             {"code": "header", "name": "Cabeçalho", "category": "structure"},
@@ -571,7 +563,7 @@ class TemplateEngine:
             {"code": "anomaly", "name": "Anomalia", "category": "ai"},
         ]
 
-    def get_available_chart_types(self) -> List[Dict[str, Any]]:
+    def get_available_chart_types(self) -> list[dict[str, Any]]:
         """Retorna tipos de gráfico disponíveis."""
         return [
             {"code": "bar", "name": "Barras", "category": "comparison"},

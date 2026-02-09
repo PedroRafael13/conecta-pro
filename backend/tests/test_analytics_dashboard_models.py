@@ -1,31 +1,32 @@
 """Testes unitários para models do módulo Analytics Dashboard."""
 
-import pytest
 from datetime import datetime, timedelta
 from decimal import Decimal
 from uuid import uuid4
 
+import pytest
+
 from modules.hr.analytics_dashboard.models import (
-    DashboardConfig,
-    DashboardWidget,
-    KPIDefinition,
+    AggregationType,
     AnalyticsCache,
-    ScheduledReport,
+    CacheStatus,
+    CacheType,
+    DashboardConfig,
     DashboardType,
     DashboardVisibility,
-    WidgetType,
+    DashboardWidget,
     DataSource,
-    AggregationType,
-    KPICategory,
-    KPIUnit,
-    KPIDirection,
-    ReportType,
-    ReportFormat,
-    ScheduleFrequency,
     DeliveryMethod,
+    KPICategory,
+    KPIDefinition,
+    KPIDirection,
+    KPIUnit,
+    ReportFormat,
     ReportStatus,
-    CacheType,
-    CacheStatus,
+    ReportType,
+    ScheduledReport,
+    ScheduleFrequency,
+    WidgetType,
 )
 
 

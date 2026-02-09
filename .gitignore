@@ -61,3 +61,14 @@ frontend/.next/
 frontend/e2e/.auth/
 frontend/test-results/
 frontend/playwright-report/
+
+# Backups e arquivos temporários
+backups/
+*.backup*
+*.pre-patch
+coverage.json
+htmlcov/
+backend/coverage.json
+backend/htmlcov/
+backend/.env.*
+backend/fix_strenum_imports.py

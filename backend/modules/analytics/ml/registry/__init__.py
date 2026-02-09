@@ -1,11 +1,11 @@
 """Model Registry - Sprint 04."""
 
 from modules.analytics.ml.registry.model_registry import (
-    ModelRegistry,
-    ModelVersion,
     ModelMetadata,
+    ModelRegistry,
     ModelStage,
     ModelType,
+    ModelVersion,
 )
 
 __all__ = [

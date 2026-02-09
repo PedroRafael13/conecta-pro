@@ -7,11 +7,11 @@ predicao de turnover, incluindo predicoes, fatores de risco e alertas.
 Seguranca: Score NUNCA visivel para o funcionario.
 """
 
-import enum
 import uuid
 from datetime import datetime
 from decimal import Decimal
-from typing import TYPE_CHECKING, List, Optional
+from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     Boolean,
@@ -28,31 +28,31 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from core.models import Base, TimestampMixin, SoftDeleteMixin
+from core.models import Base, SoftDeleteMixin, TimestampMixin
 
 if TYPE_CHECKING:
     pass
 
 
-class NivelRisco(str, enum.Enum):
+class NivelRisco(StrEnum):
     """Niveis de risco de turnover."""
 
-    BAIXO = "baixo"      # Score < 40
-    MEDIO = "medio"      # Score 40-60
-    ALTO = "alto"        # Score 60-80
+    BAIXO = "baixo"  # Score < 40
+    MEDIO = "medio"  # Score 40-60
+    ALTO = "alto"  # Score 60-80
     CRITICO = "critico"  # Score >= 80
 
 
-class TipoAlerta(str, enum.Enum):
+class TipoAlerta(StrEnum):
     """Tipos de alerta de risco."""
 
-    NOVO_RISCO = "novo_risco"           # Primeiro score >= 70
-    AUMENTO_RISCO = "aumento_risco"     # Aumento significativo no score
-    RISCO_CRITICO = "risco_critico"     # Score >= 80
-    MUDANCA_NIVEL = "mudanca_nivel"     # Transicao de nivel
+    NOVO_RISCO = "novo_risco"  # Primeiro score >= 70
+    AUMENTO_RISCO = "aumento_risco"  # Aumento significativo no score
+    RISCO_CRITICO = "risco_critico"  # Score >= 80
+    MUDANCA_NIVEL = "mudanca_nivel"  # Transicao de nivel
 
 
-class CategoriaFator(str, enum.Enum):
+class CategoriaFator(StrEnum):
     """Categorias dos fatores de risco."""
 
     COMPORTAMENTAL = "comportamental"
@@ -90,10 +90,7 @@ class TurnoverPrediction(Base, TimestampMixin, SoftDeleteMixin):
         Index("idx_turnover_pred_score", "score_risco"),
         Index("idx_turnover_pred_data", "data_calculo"),
         Index("idx_turnover_pred_condominium", "condominium_id"),
-        UniqueConstraint(
-            "funcionario_id", "data_calculo",
-            name="uq_turnover_pred_funcionario_data"
-        ),
+        UniqueConstraint("funcionario_id", "data_calculo", name="uq_turnover_pred_funcionario_data"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -141,14 +138,14 @@ class TurnoverPrediction(Base, TimestampMixin, SoftDeleteMixin):
         nullable=False,
         default=dict,
     )
-    metricas_modelo: Mapped[Optional[dict]] = mapped_column(
+    metricas_modelo: Mapped[dict | None] = mapped_column(
         JSONB,
         nullable=True,
         comment="Metricas de confianca: accuracy, precision, recall",
     )
 
     # Validade e status
-    valido_ate: Mapped[Optional[datetime]] = mapped_column(
+    valido_ate: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
     )
@@ -159,21 +156,21 @@ class TurnoverPrediction(Base, TimestampMixin, SoftDeleteMixin):
     )
 
     # Auditoria
-    calculado_por: Mapped[Optional[uuid.UUID]] = mapped_column(
+    calculado_por: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         nullable=True,
         comment="Usuario que solicitou calculo (None = sistema automatico)",
     )
 
     # Relationships
-    fatores: Mapped[List["RiskFactor"]] = relationship(
+    fatores: Mapped[list["RiskFactor"]] = relationship(
         "RiskFactor",
         back_populates="prediction",
         cascade="all, delete-orphan",
         lazy="selectin",
         order_by="RiskFactor.contribuicao_score.desc()",
     )
-    alertas: Mapped[List["RiskAlert"]] = relationship(
+    alertas: Mapped[list["RiskAlert"]] = relationship(
         "RiskAlert",
         back_populates="prediction",
         cascade="all, delete-orphan",
@@ -209,13 +206,9 @@ class TurnoverPrediction(Base, TimestampMixin, SoftDeleteMixin):
         return self.nivel == NivelRisco.CRITICO
 
     @property
-    def principais_fatores(self) -> List["RiskFactor"]:
+    def principais_fatores(self) -> list["RiskFactor"]:
         """Retorna os 3 principais fatores de risco."""
-        return sorted(
-            self.fatores,
-            key=lambda f: f.contribuicao_score,
-            reverse=True
-        )[:3]
+        return sorted(self.fatores, key=lambda f: f.contribuicao_score, reverse=True)[:3]
 
     def marcar_recalculado(self) -> None:
         """Marca a predicao como substituida por nova."""
@@ -309,13 +302,13 @@ class RiskFactor(Base, TimestampMixin):
         Text,
         nullable=False,
     )
-    recomendacao_acao: Mapped[Optional[str]] = mapped_column(
+    recomendacao_acao: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
     )
 
     # Dados extras
-    dados_brutos: Mapped[Optional[dict]] = mapped_column(
+    dados_brutos: Mapped[dict | None] = mapped_column(
         JSONB,
         nullable=True,
         comment="Dados brutos usados no calculo do fator",
@@ -328,10 +321,7 @@ class RiskFactor(Base, TimestampMixin):
     )
 
     def __repr__(self) -> str:
-        return (
-            f"<RiskFactor(nome={self.nome}, "
-            f"contribuicao={self.contribuicao_score})>"
-        )
+        return f"<RiskFactor(nome={self.nome}, contribuicao={self.contribuicao_score})>"
 
     @property
     def is_critico(self) -> bool:
@@ -382,11 +372,7 @@ class RiskAlert(Base, TimestampMixin):
         Index("idx_risk_alert_visualizado", "visualizado"),
         Index("idx_risk_alert_condominium", "condominium_id"),
         Index("idx_risk_alert_created", "created_at"),
-        Index(
-            "idx_risk_alert_pendentes",
-            "condominium_id", "visualizado",
-            postgresql_where="visualizado = false"
-        ),
+        Index("idx_risk_alert_pendentes", "condominium_id", "visualizado", postgresql_where="visualizado = false"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -421,11 +407,11 @@ class RiskAlert(Base, TimestampMixin):
         Numeric(5, 2),
         nullable=False,
     )
-    score_anterior: Mapped[Optional[Decimal]] = mapped_column(
+    score_anterior: Mapped[Decimal | None] = mapped_column(
         Numeric(5, 2),
         nullable=True,
     )
-    variacao_score: Mapped[Optional[Decimal]] = mapped_column(
+    variacao_score: Mapped[Decimal | None] = mapped_column(
         Numeric(5, 2),
         nullable=True,
     )
@@ -433,7 +419,7 @@ class RiskAlert(Base, TimestampMixin):
         Enum(NivelRisco),
         nullable=False,
     )
-    nivel_anterior: Mapped[Optional[NivelRisco]] = mapped_column(
+    nivel_anterior: Mapped[NivelRisco | None] = mapped_column(
         Enum(NivelRisco),
         nullable=True,
     )
@@ -449,7 +435,7 @@ class RiskAlert(Base, TimestampMixin):
     )
 
     # Destinatarios
-    enviado_para: Mapped[List[str]] = mapped_column(
+    enviado_para: Mapped[list[str]] = mapped_column(
         JSONB,
         nullable=False,
         default=list,
@@ -462,25 +448,25 @@ class RiskAlert(Base, TimestampMixin):
         default=False,
         nullable=False,
     )
-    data_visualizacao: Mapped[Optional[datetime]] = mapped_column(
+    data_visualizacao: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
     )
-    visualizado_por: Mapped[Optional[uuid.UUID]] = mapped_column(
+    visualizado_por: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         nullable=True,
     )
 
     # Acao tomada
-    acao_tomada: Mapped[Optional[str]] = mapped_column(
+    acao_tomada: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
     )
-    acao_por: Mapped[Optional[uuid.UUID]] = mapped_column(
+    acao_por: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         nullable=True,
     )
-    data_acao: Mapped[Optional[datetime]] = mapped_column(
+    data_acao: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
     )
@@ -491,11 +477,11 @@ class RiskAlert(Base, TimestampMixin):
         nullable=False,
         comment="Prioridade de 1 (maxima) a 5 (minima)",
     )
-    expira_em: Mapped[Optional[datetime]] = mapped_column(
+    expira_em: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
     )
-    dados_extras: Mapped[Optional[dict]] = mapped_column(
+    dados_extras: Mapped[dict | None] = mapped_column(
         JSONB,
         nullable=True,
     )
@@ -507,11 +493,7 @@ class RiskAlert(Base, TimestampMixin):
     )
 
     def __repr__(self) -> str:
-        return (
-            f"<RiskAlert(id={self.id}, "
-            f"tipo={self.tipo.value}, "
-            f"visualizado={self.visualizado})>"
-        )
+        return f"<RiskAlert(id={self.id}, tipo={self.tipo.value}, visualizado={self.visualizado})>"
 
     def marcar_visualizado(self, usuario_id: uuid.UUID) -> None:
         """Marca o alerta como visualizado."""
@@ -613,34 +595,30 @@ class AuditLogTurnover(Base, TimestampMixin):
         nullable=False,
         comment="prediction, alert, dashboard, relatorio",
     )
-    recurso_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    recurso_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         nullable=True,
     )
-    funcionario_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    funcionario_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         nullable=True,
     )
 
     # Detalhes
-    detalhes: Mapped[Optional[dict]] = mapped_column(
+    detalhes: Mapped[dict | None] = mapped_column(
         JSONB,
         nullable=True,
     )
 
     # Contexto tecnico
-    ip_address: Mapped[Optional[str]] = mapped_column(
+    ip_address: Mapped[str | None] = mapped_column(
         String(45),
         nullable=True,
     )
-    user_agent: Mapped[Optional[str]] = mapped_column(
+    user_agent: Mapped[str | None] = mapped_column(
         String(500),
         nullable=True,
     )
 
     def __repr__(self) -> str:
-        return (
-            f"<AuditLogTurnover(acao={self.acao}, "
-            f"recurso={self.recurso}, "
-            f"usuario={self.usuario_id})>"
-        )
+        return f"<AuditLogTurnover(acao={self.acao}, recurso={self.recurso}, usuario={self.usuario_id})>"

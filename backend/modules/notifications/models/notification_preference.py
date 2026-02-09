@@ -3,21 +3,17 @@
 Sprint 36 - Notification Hub.
 """
 
-import enum
 import uuid
 from datetime import datetime
-from typing import Optional
+from enum import StrEnum
 
 from sqlalchemy import Boolean, Column, DateTime, Enum, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
-from sqlalchemy.orm import relationship
 
 from core.models.base import Base
-from modules.notifications.models.notification_channel import ChannelType
-from modules.notifications.models.notification_template import TemplateCategory
 
 
-class FrequencyType(str, enum.Enum):
+class FrequencyType(StrEnum):
     """Frequência de notificações."""
 
     INSTANT = "instant"
@@ -28,7 +24,7 @@ class FrequencyType(str, enum.Enum):
     NEVER = "never"
 
 
-class DigestType(str, enum.Enum):
+class DigestType(StrEnum):
     """Tipo de digest."""
 
     NONE = "none"

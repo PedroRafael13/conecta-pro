@@ -3,8 +3,8 @@ Modelo Allocation (Alocação Funcionário-Posto) para Operações.
 """
 
 from datetime import date, datetime
-from enum import Enum
-from typing import TYPE_CHECKING, Optional
+from enum import StrEnum
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, String, Text, func
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from .post import Post
 
 
-class AllocationStatus(str, Enum):
+class AllocationStatus(StrEnum):
     """Status da alocação."""
 
     ACTIVE = "active"  # Alocação ativa
@@ -79,7 +79,7 @@ class Allocation(Base):
 
     # Período
     start_date: Mapped[date] = mapped_column(Date, nullable=False)
-    end_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    end_date: Mapped[date | None] = mapped_column(Date, nullable=True)
 
     # Configurações
     is_primary: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
@@ -91,8 +91,8 @@ class Allocation(Base):
     additional_benefits: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
 
     # Função
-    role: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    qualifications: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    role: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    qualifications: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     """
     Exemplo de qualifications:
     {
@@ -104,11 +104,11 @@ class Allocation(Base):
     """
 
     # Observações
-    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    termination_reason: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    termination_reason: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     # Auditoria
-    created_by: Mapped[Optional[str]] = mapped_column(UUID(as_uuid=False), nullable=True)
+    created_by: Mapped[str | None] = mapped_column(UUID(as_uuid=False), nullable=True)
 
     # Campos de controle
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)

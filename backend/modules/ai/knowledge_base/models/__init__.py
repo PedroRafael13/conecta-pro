@@ -2,37 +2,34 @@
 AI Knowledge Base Models - Sprint 53.
 """
 
+from modules.ai.knowledge_base.models.article import (
+    Article,
+    ArticleFeedback,
+    ArticlePriorityEnum,
+    ArticleStatusEnum,
+    ArticleTypeEnum,
+    ArticleVersion,
+)
+from modules.ai.knowledge_base.models.faq import (
+    FAQ,
+    FAQFeedback,
+    FAQSourceEnum,
+    FAQStatusEnum,
+)
 from modules.ai.knowledge_base.models.knowledge_base import (
+    KBCategory,
     KnowledgeBase,
     KnowledgeBaseStatusEnum,
     KnowledgeBaseTypeEnum,
     KnowledgeBaseVisibilityEnum,
-    KBCategory,
 )
-
-from modules.ai.knowledge_base.models.article import (
-    Article,
-    ArticleStatusEnum,
-    ArticleTypeEnum,
-    ArticlePriorityEnum,
-    ArticleVersion,
-    ArticleFeedback,
-)
-
-from modules.ai.knowledge_base.models.faq import (
-    FAQ,
-    FAQStatusEnum,
-    FAQSourceEnum,
-    FAQFeedback,
-)
-
 from modules.ai.knowledge_base.models.qa_session import (
-    QASession,
-    QASessionStatusEnum,
-    QASourceEnum,
     QAInteraction,
     QAInteractionTypeEnum,
     QAResponseTypeEnum,
+    QASession,
+    QASessionStatusEnum,
+    QASourceEnum,
     QASuggestion,
 )
 

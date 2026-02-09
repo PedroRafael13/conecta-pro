@@ -10,7 +10,6 @@ Quality Score Target: 99+/100
 """
 
 from datetime import datetime
-from typing import Optional
 from uuid import uuid4
 
 from sqlalchemy import Boolean, DateTime, String, Text, func
@@ -91,7 +90,7 @@ class DisciplinaryTemplate(Base):
         nullable=False,
         comment="Nome do template",
     )
-    description: Mapped[Optional[str]] = mapped_column(
+    description: Mapped[str | None] = mapped_column(
         String(500),
         nullable=True,
         comment="Descricao do template",
@@ -131,7 +130,7 @@ class DisciplinaryTemplate(Base):
         nullable=False,
         comment="Data ultima atualizacao",
     )
-    created_by: Mapped[Optional[str]] = mapped_column(
+    created_by: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
         comment="ID do usuario que criou",

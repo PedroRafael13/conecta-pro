@@ -1,21 +1,21 @@
 """Service para DocumentTag."""
 
+import builtins
 import logging
 import re
-from typing import Optional, List
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from modules.ged.repositories.document_tag_repository import DocumentTagRepository
+from modules.ged.models.document_tag import TagColor, TagType
 from modules.ged.repositories.document_repository import DocumentRepository
-from modules.ged.models.document_tag import TagType, TagColor
+from modules.ged.repositories.document_tag_repository import DocumentTagRepository
 from modules.ged.schemas.document_tag import (
     DocumentTagCreate,
-    DocumentTagUpdate,
     DocumentTagFilter,
-    DocumentTagResponse,
     DocumentTagListResponse,
+    DocumentTagResponse,
     DocumentTagTreeNode,
+    DocumentTagUpdate,
 )
 
 logger = logging.getLogger(__name__)
@@ -45,34 +45,28 @@ class DocumentTagService:
         logger.info("Tag criada: %s - %s", tag.id, tag.name)
         return DocumentTagResponse.model_validate(tag)
 
-    async def get_by_id(self, tag_id: str) -> Optional[DocumentTagResponse]:
+    async def get_by_id(self, tag_id: str) -> DocumentTagResponse | None:
         """Busca tag por ID."""
         tag = await self.repository.get_by_id(tag_id)
         if not tag:
             return None
         return DocumentTagResponse.model_validate(tag)
 
-    async def get_by_name(
-        self, name: str, condominium_id: str = None
-    ) -> Optional[DocumentTagResponse]:
+    async def get_by_name(self, name: str, condominium_id: str = None) -> DocumentTagResponse | None:
         """Busca tag por nome."""
         tag = await self.repository.get_by_name(name, condominium_id)
         if not tag:
             return None
         return DocumentTagResponse.model_validate(tag)
 
-    async def get_by_slug(
-        self, slug: str, condominium_id: str = None
-    ) -> Optional[DocumentTagResponse]:
+    async def get_by_slug(self, slug: str, condominium_id: str = None) -> DocumentTagResponse | None:
         """Busca tag por slug."""
         tag = await self.repository.get_by_slug(slug, condominium_id)
         if not tag:
             return None
         return DocumentTagResponse.model_validate(tag)
 
-    async def update(
-        self, tag_id: str, data: DocumentTagUpdate
-    ) -> Optional[DocumentTagResponse]:
+    async def update(self, tag_id: str, data: DocumentTagUpdate) -> DocumentTagResponse | None:
         """Atualiza tag."""
         tag = await self.repository.update(tag_id, data)
         if not tag:
@@ -96,7 +90,7 @@ class DocumentTagService:
 
     async def list(
         self,
-        filters: Optional[DocumentTagFilter] = None,
+        filters: DocumentTagFilter | None = None,
         page: int = 1,
         page_size: int = 50,
         order_by: str = "name",
@@ -122,16 +116,12 @@ class DocumentTagService:
             pages=pages,
         )
 
-    async def get_by_type(
-        self, tag_type: TagType, condominium_id: str = None
-    ) -> List[DocumentTagResponse]:
+    async def get_by_type(self, tag_type: TagType, condominium_id: str = None) -> builtins.list[DocumentTagResponse]:
         """Retorna tags por tipo."""
         tags = await self.repository.get_by_type(tag_type, condominium_id)
         return [DocumentTagResponse.model_validate(t) for t in tags]
 
-    async def get_tree(
-        self, condominium_id: str = None
-    ) -> List[DocumentTagTreeNode]:
+    async def get_tree(self, condominium_id: str = None) -> builtins.list[DocumentTagTreeNode]:
         """Retorna árvore de tags."""
         tags = await self.repository.get_tree(condominium_id)
 
@@ -159,9 +149,7 @@ class DocumentTagService:
 
         return root_nodes
 
-    async def add_to_document(
-        self, tag_id: str, document_id: str
-    ) -> bool:
+    async def add_to_document(self, tag_id: str, document_id: str) -> bool:
         """Adiciona tag a documento."""
         # Verifica se tag existe
         tag = await self.repository.get_by_id(tag_id)
@@ -184,35 +172,27 @@ class DocumentTagService:
             logger.info("Tag %s adicionada ao documento %s", tag_id, document_id)
         return result
 
-    async def remove_from_document(
-        self, tag_id: str, document_id: str
-    ) -> bool:
+    async def remove_from_document(self, tag_id: str, document_id: str) -> bool:
         """Remove tag de documento."""
-        result = await self.repository.remove_from_document(
-            document_id=document_id, tag_id=tag_id
-        )
+        result = await self.repository.remove_from_document(document_id=document_id, tag_id=tag_id)
         if result:
             await self.session.commit()
             logger.info("Tag %s removida do documento %s", tag_id, document_id)
         return result
 
-    async def get_by_document(
-        self, document_id: str
-    ) -> List[DocumentTagResponse]:
+    async def get_by_document(self, document_id: str) -> builtins.list[DocumentTagResponse]:
         """Retorna tags de um documento."""
         tags = await self.repository.get_by_document(document_id)
         return [DocumentTagResponse.model_validate(t) for t in tags]
 
-    async def get_documents_by_tag(
-        self, tag_id: str, page: int = 1, page_size: int = 20
-    ) -> List[str]:
+    async def get_documents_by_tag(self, tag_id: str, page: int = 1, page_size: int = 20) -> builtins.list[str]:
         """Retorna IDs de documentos com a tag."""
         skip = (page - 1) * page_size
         return await self.repository.get_documents_by_tag(tag_id, skip, page_size)
 
     async def set_document_tags(
-        self, document_id: str, tag_ids: List[str]
-    ) -> List[DocumentTagResponse]:
+        self, document_id: str, tag_ids: builtins.list[str]
+    ) -> builtins.list[DocumentTagResponse]:
         """Define tags de um documento."""
         # Verifica documento
         document = await self.document_repository.get_by_id(document_id)
@@ -231,23 +211,19 @@ class DocumentTagService:
 
         return await self.get_by_document(document_id)
 
-    async def get_most_used(
-        self, condominium_id: str = None, limit: int = 10
-    ) -> List[DocumentTagResponse]:
+    async def get_most_used(self, condominium_id: str = None, limit: int = 10) -> builtins.list[DocumentTagResponse]:
         """Retorna tags mais usadas."""
         tags = await self.repository.get_most_used(condominium_id, limit)
         return [DocumentTagResponse.model_validate(t) for t in tags]
 
     async def search(
         self, query: str, condominium_id: str = None, limit: int = 10
-    ) -> List[DocumentTagResponse]:
+    ) -> builtins.list[DocumentTagResponse]:
         """Busca tags por texto."""
         tags = await self.repository.search(query, condominium_id, limit)
         return [DocumentTagResponse.model_validate(t) for t in tags]
 
-    async def merge_tags(
-        self, source_tag_id: str, target_tag_id: str
-    ) -> DocumentTagResponse:
+    async def merge_tags(self, source_tag_id: str, target_tag_id: str) -> DocumentTagResponse:
         """Mescla duas tags."""
         source = await self.repository.get_by_id(source_tag_id)
         if not source:
@@ -273,7 +249,7 @@ class DocumentTagService:
 
     async def get_suggested_tags(
         self, text: str, condominium_id: str = None, limit: int = 5
-    ) -> List[DocumentTagResponse]:
+    ) -> builtins.list[DocumentTagResponse]:
         """Sugere tags baseado no texto."""
         # Extrai palavras-chave do texto
         keywords = self._extract_keywords(text)
@@ -292,18 +268,53 @@ class DocumentTagService:
 
         return [DocumentTagResponse.model_validate(t) for t in suggested]
 
-    def _extract_keywords(self, text: str) -> List[str]:
+    def _extract_keywords(self, text: str) -> builtins.list[str]:
         """Extrai palavras-chave do texto."""
         # Remove caracteres especiais
         text = re.sub(r"[^\w\s]", " ", text.lower())
 
         # Remove stopwords básicas (PT e EN)
         stopwords = {
-            "de", "da", "do", "das", "dos", "a", "o", "as", "os",
-            "um", "uma", "uns", "umas", "e", "ou", "para", "por",
-            "em", "no", "na", "nos", "nas", "com", "sem", "que",
-            "se", "ao", "aos", "este", "esta", "esse", "essa",
-            "the", "an", "and", "or", "for", "in", "on", "at",
+            "de",
+            "da",
+            "do",
+            "das",
+            "dos",
+            "a",
+            "o",
+            "as",
+            "os",
+            "um",
+            "uma",
+            "uns",
+            "umas",
+            "e",
+            "ou",
+            "para",
+            "por",
+            "em",
+            "no",
+            "na",
+            "nos",
+            "nas",
+            "com",
+            "sem",
+            "que",
+            "se",
+            "ao",
+            "aos",
+            "este",
+            "esta",
+            "esse",
+            "essa",
+            "the",
+            "an",
+            "and",
+            "or",
+            "for",
+            "in",
+            "on",
+            "at",
         }
 
         # Extrai palavras únicas
@@ -317,9 +328,7 @@ class DocumentTagService:
 
         return keywords
 
-    async def create_default_tags(
-        self, condominium_id: str, created_by: str
-    ) -> List[DocumentTagResponse]:
+    async def create_default_tags(self, condominium_id: str, created_by: str) -> builtins.list[DocumentTagResponse]:
         """Cria tags padrão."""
         default_tags = [
             {"name": "Importante", "type": TagType.PRIORIDADE, "color": TagColor.VERMELHO},
@@ -337,9 +346,7 @@ class DocumentTagService:
         created = []
         for tag_data in default_tags:
             # Verifica se já existe
-            existing = await self.repository.get_by_name(
-                tag_data["name"], condominium_id
-            )
+            existing = await self.repository.get_by_name(tag_data["name"], condominium_id)
             if existing:
                 continue
 

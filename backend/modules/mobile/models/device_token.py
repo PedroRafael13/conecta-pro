@@ -1,18 +1,16 @@
 """Model de Device Token para push notifications."""
 
-from datetime import datetime, UTC
-from enum import Enum
-from typing import Optional
+from datetime import UTC, datetime
+from enum import StrEnum
 from uuid import uuid4
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import JSONB, UUID
-from sqlalchemy.orm import relationship
 
 from core.models.base import Base
 
 
-class DevicePlatform(str, Enum):
+class DevicePlatform(StrEnum):
     """Plataformas de dispositivo suportadas."""
 
     ANDROID = "android"

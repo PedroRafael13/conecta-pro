@@ -2,27 +2,30 @@
 
 from datetime import datetime
 from decimal import Decimal
-from enum import Enum
+from enum import StrEnum
 from uuid import uuid4
 
 from sqlalchemy import (
     Boolean,
     Column,
     DateTime,
-    Enum as SQLEnum,
     ForeignKey,
     Integer,
     Numeric,
     String,
     Text,
 )
-from sqlalchemy.dialects.postgresql import JSONB, UUID as PGUUID
+from sqlalchemy import (
+    Enum as SQLEnum,
+)
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import relationship
 
 from core.models.base import Base
 
 
-class WidgetType(str, Enum):
+class WidgetType(StrEnum):
     """Tipo de widget."""
 
     KPI_CARD = "KPI_CARD"
@@ -40,7 +43,7 @@ class WidgetType(str, Enum):
     CUSTOM = "CUSTOM"
 
 
-class WidgetSize(str, Enum):
+class WidgetSize(StrEnum):
     """Tamanho do widget."""
 
     SMALL = "SMALL"
@@ -50,7 +53,7 @@ class WidgetSize(str, Enum):
     FULL_WIDTH = "FULL_WIDTH"
 
 
-class ChartType(str, Enum):
+class ChartType(StrEnum):
     """Tipo de grafico."""
 
     LINE = "LINE"
@@ -69,7 +72,7 @@ class ChartType(str, Enum):
     STACKED_AREA = "STACKED_AREA"
 
 
-class DataSource(str, Enum):
+class DataSource(StrEnum):
     """Fonte de dados do widget."""
 
     ACCOUNTS_PAYABLE = "ACCOUNTS_PAYABLE"

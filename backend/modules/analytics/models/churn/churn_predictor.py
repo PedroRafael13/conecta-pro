@@ -4,26 +4,23 @@ import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID, uuid4
 
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
-from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.analytics.ml.features.feature_store import FeatureStore
 from modules.analytics.ml.registry.model_registry import (
     ModelFramework,
-    ModelMetrics,
     ModelRegistry,
     ModelStage,
     ModelType,
 )
 from modules.analytics.ml.training.training_pipeline import (
-    DataSplit,
     TrainingConfig,
     TrainingPipeline,
 )
@@ -78,7 +75,7 @@ class ChurnPrediction:
     confidence: float
     contributing_factors: list[dict[str, Any]]
     retention_actions: list[RetentionAction]
-    predicted_churn_date: Optional[datetime] = None
+    predicted_churn_date: datetime | None = None
     lifetime_value_at_risk: float = 0.0
     model_version: str = "1.0.0"
     created_at: datetime = field(default_factory=datetime.utcnow)
@@ -140,8 +137,8 @@ class ChurnPredictor:
 
     def __init__(
         self,
-        feature_store: Optional[FeatureStore] = None,
-        model_registry: Optional[ModelRegistry] = None,
+        feature_store: FeatureStore | None = None,
+        model_registry: ModelRegistry | None = None,
     ) -> None:
         """
         Inicializa o preditor de churn.
@@ -181,9 +178,9 @@ class ChurnPredictor:
 
         # Fazer predição
         if model:
-            X = pd.DataFrame([features])
-            churn_prob = model.predict_proba(X)[0][1]
-            confidence = self._calculate_confidence(model, X)
+            x_features = pd.DataFrame([features])
+            churn_prob = model.predict_proba(x_features)[0][1]
+            confidence = self._calculate_confidence(model, x_features)
         else:
             # Modelo baseado em regras se ML não disponível
             churn_prob = self._rule_based_prediction(features)
@@ -193,24 +190,16 @@ class ChurnPredictor:
         risk_level = self._classify_risk(churn_prob)
 
         # Identificar fatores contribuintes
-        contributing_factors = self._identify_contributing_factors(
-            features, model
-        )
+        contributing_factors = self._identify_contributing_factors(features, model)
 
         # Gerar ações de retenção
-        retention_actions = self._generate_retention_actions(
-            risk_level, contributing_factors, features
-        )
+        retention_actions = self._generate_retention_actions(risk_level, contributing_factors, features)
 
         # Estimar data de churn
-        predicted_churn_date = self._estimate_churn_date(
-            churn_prob, features.get("last_activity_days", 0)
-        )
+        predicted_churn_date = self._estimate_churn_date(churn_prob, features.get("last_activity_days", 0))
 
         # Calcular LTV em risco
-        ltv_at_risk = self._calculate_ltv_at_risk(
-            churn_prob, features.get("total_spent", 0)
-        )
+        ltv_at_risk = self._calculate_ltv_at_risk(churn_prob, features.get("total_spent", 0))
 
         return ChurnPrediction(
             id=uuid4(),
@@ -276,10 +265,7 @@ class ChurnPredictor:
         risk_order = list(ChurnRiskLevel)
         min_index = risk_order.index(min_risk_level)
 
-        high_risk = [
-            p for p in predictions
-            if risk_order.index(p.risk_level) >= min_index
-        ]
+        high_risk = [p for p in predictions if risk_order.index(p.risk_level) >= min_index]
 
         # Ordenar por probabilidade
         high_risk.sort(key=lambda x: x.churn_probability, reverse=True)
@@ -289,8 +275,8 @@ class ChurnPredictor:
     async def get_churn_analytics(
         self,
         db: AsyncSession,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
     ) -> ChurnAnalytics:
         """
         Obtém analytics agregadas de churn.
@@ -315,8 +301,7 @@ class ChurnPredictor:
         for pred in predictions:
             risk_distribution[pred.risk_level.value] += 1
 
-        at_risk = risk_distribution[ChurnRiskLevel.HIGH.value] + \
-                  risk_distribution[ChurnRiskLevel.CRITICAL.value]
+        at_risk = risk_distribution[ChurnRiskLevel.HIGH.value] + risk_distribution[ChurnRiskLevel.CRITICAL.value]
 
         avg_prob = np.mean([p.churn_probability for p in predictions])
         ltv_at_risk = sum(p.lifetime_value_at_risk for p in predictions)
@@ -333,11 +318,7 @@ class ChurnPredictor:
 
         top_factors = [
             {"factor": k, "count": v, "percentage": v / len(predictions) * 100}
-            for k, v in sorted(
-                factor_counts.items(),
-                key=lambda x: x[1],
-                reverse=True
-            )[:5]
+            for k, v in sorted(factor_counts.items(), key=lambda x: x[1], reverse=True)[:5]
         ]
 
         return ChurnAnalytics(
@@ -357,7 +338,7 @@ class ChurnPredictor:
     async def train_model(
         self,
         db: AsyncSession,
-        training_data: Optional[pd.DataFrame] = None,
+        training_data: pd.DataFrame | None = None,
         version: str = "1.0.0",
     ) -> dict[str, Any]:
         """
@@ -391,7 +372,7 @@ class ChurnPredictor:
         )
 
         # Preparar dados
-        data = self.training_pipeline.prepare_data(training_data, config)
+        self.training_pipeline.prepare_data(training_data, config)
 
         # Treinar múltiplos modelos
         models = [
@@ -400,13 +381,11 @@ class ChurnPredictor:
             ("gradient_boosting", GradientBoostingClassifier(n_estimators=100)),
         ]
 
-        results = self.training_pipeline.train_with_automl(
-            training_data, config, models, version
-        )
+        results = self.training_pipeline.train_with_automl(training_data, config, models, version)
 
         # Promover melhor modelo para produção
         if results and results[0].status == "success":
-            best = results[0]
+            results[0]
             self.model_registry.promote_model(
                 name="churn_predictor",
                 version=version,
@@ -431,9 +410,7 @@ class ChurnPredictor:
     ) -> dict[str, Any]:
         """Obtém features de um usuário."""
         # Usar Feature Store
-        user_features = await self.feature_store.get_user_features(
-            db, user_id, include=self.CHURN_FEATURES[:6]
-        )
+        user_features = await self.feature_store.get_user_features(db, user_id, include=self.CHURN_FEATURES[:6])
 
         engagement_features = await self.feature_store.get_engagement_features(
             db, user_id, include=self.CHURN_FEATURES[6:9]
@@ -457,15 +434,12 @@ class ChurnPredictor:
 
         return features
 
-    def _load_model(self) -> Optional[Any]:
+    def _load_model(self) -> Any | None:
         """Carrega modelo de produção."""
         if self._model is None:
             self._model = self.model_registry.get_production_model("churn_predictor")
             if self._model:
-                version = self.model_registry.get_model_version(
-                    "churn_predictor",
-                    stage=ModelStage.PRODUCTION
-                )
+                version = self.model_registry.get_model_version("churn_predictor", stage=ModelStage.PRODUCTION)
                 self._model_version = version.version if version else None
 
         return self._model
@@ -507,10 +481,10 @@ class ChurnPredictor:
 
         return min(score, 0.95)
 
-    def _calculate_confidence(self, model: Any, X: pd.DataFrame) -> float:
+    def _calculate_confidence(self, model: Any, x: pd.DataFrame) -> float:
         """Calcula confiança da predição."""
         if hasattr(model, "predict_proba"):
-            proba = model.predict_proba(X)[0]
+            proba = model.predict_proba(x)[0]
             # Confiança é quão longe de 0.5 está
             return abs(proba[1] - 0.5) * 2
         return 0.7
@@ -532,52 +506,53 @@ class ChurnPredictor:
 
         # Feature importance do modelo
         if model and hasattr(model, "feature_importances_"):
-            importances = dict(zip(
-                self.CHURN_FEATURES,
-                model.feature_importances_
-            ))
-            sorted_features = sorted(
-                importances.items(),
-                key=lambda x: x[1],
-                reverse=True
-            )[:5]
+            importances = dict(zip(self.CHURN_FEATURES, model.feature_importances_, strict=False))
+            sorted_features = sorted(importances.items(), key=lambda x: x[1], reverse=True)[:5]
 
             for feature, importance in sorted_features:
                 value = features.get(feature, 0)
-                factors.append({
-                    "factor": feature,
-                    "value": value,
-                    "importance": round(importance, 4),
-                    "direction": self._get_factor_direction(feature, value),
-                })
+                factors.append(
+                    {
+                        "factor": feature,
+                        "value": value,
+                        "importance": round(importance, 4),
+                        "direction": self._get_factor_direction(feature, value),
+                    }
+                )
         else:
             # Análise baseada em regras
             if features.get("last_activity_days", 0) > 14:
-                factors.append({
-                    "factor": "last_activity_days",
-                    "value": features["last_activity_days"],
-                    "importance": 0.25,
-                    "direction": "negative",
-                    "insight": "Inatividade prolongada",
-                })
+                factors.append(
+                    {
+                        "factor": "last_activity_days",
+                        "value": features["last_activity_days"],
+                        "importance": 0.25,
+                        "direction": "negative",
+                        "insight": "Inatividade prolongada",
+                    }
+                )
 
             if features.get("login_frequency", 0) < 5:
-                factors.append({
-                    "factor": "login_frequency",
-                    "value": features["login_frequency"],
-                    "importance": 0.2,
-                    "direction": "negative",
-                    "insight": "Baixa frequência de acesso",
-                })
+                factors.append(
+                    {
+                        "factor": "login_frequency",
+                        "value": features["login_frequency"],
+                        "importance": 0.2,
+                        "direction": "negative",
+                        "insight": "Baixa frequência de acesso",
+                    }
+                )
 
             if features.get("transaction_count_30d", 0) < 2:
-                factors.append({
-                    "factor": "transaction_count_30d",
-                    "value": features["transaction_count_30d"],
-                    "importance": 0.2,
-                    "direction": "negative",
-                    "insight": "Poucas transações recentes",
-                })
+                factors.append(
+                    {
+                        "factor": "transaction_count_30d",
+                        "value": features["transaction_count_30d"],
+                        "importance": 0.2,
+                        "direction": "negative",
+                        "insight": "Poucas transações recentes",
+                    }
+                )
 
         return factors
 
@@ -606,72 +581,84 @@ class ChurnPredictor:
 
         # Ações baseadas no nível de risco
         if risk_level in [ChurnRiskLevel.CRITICAL, ChurnRiskLevel.HIGH]:
-            actions.append(RetentionAction(
-                action_type=RetentionActionType.PERSONALIZED_OFFER,
-                priority=1,
-                description="Oferta personalizada com desconto de 30%",
-                expected_impact=0.35,
-                cost_estimate=50.0,
-                target_segment="high_risk",
-                recommended_timing="imediato",
-            ))
+            actions.append(
+                RetentionAction(
+                    action_type=RetentionActionType.PERSONALIZED_OFFER,
+                    priority=1,
+                    description="Oferta personalizada com desconto de 30%",
+                    expected_impact=0.35,
+                    cost_estimate=50.0,
+                    target_segment="high_risk",
+                    recommended_timing="imediato",
+                )
+            )
 
-            actions.append(RetentionAction(
-                action_type=RetentionActionType.SUPPORT_OUTREACH,
-                priority=2,
-                description="Contato proativo do suporte",
-                expected_impact=0.25,
-                cost_estimate=20.0,
-                target_segment="high_risk",
-                recommended_timing="dentro de 24h",
-            ))
+            actions.append(
+                RetentionAction(
+                    action_type=RetentionActionType.SUPPORT_OUTREACH,
+                    priority=2,
+                    description="Contato proativo do suporte",
+                    expected_impact=0.25,
+                    cost_estimate=20.0,
+                    target_segment="high_risk",
+                    recommended_timing="dentro de 24h",
+                )
+            )
 
         if risk_level == ChurnRiskLevel.MEDIUM:
-            actions.append(RetentionAction(
-                action_type=RetentionActionType.ENGAGEMENT_CAMPAIGN,
-                priority=1,
-                description="Campanha de re-engajamento por email",
-                expected_impact=0.2,
-                cost_estimate=5.0,
-                target_segment="medium_risk",
-                recommended_timing="próximos 3 dias",
-            ))
+            actions.append(
+                RetentionAction(
+                    action_type=RetentionActionType.ENGAGEMENT_CAMPAIGN,
+                    priority=1,
+                    description="Campanha de re-engajamento por email",
+                    expected_impact=0.2,
+                    cost_estimate=5.0,
+                    target_segment="medium_risk",
+                    recommended_timing="próximos 3 dias",
+                )
+            )
 
         # Ações baseadas em fatores específicos
         for factor in factors:
             if factor["factor"] == "last_activity_days" and factor.get("direction") == "negative":
-                actions.append(RetentionAction(
-                    action_type=RetentionActionType.FEATURE_EDUCATION,
-                    priority=3,
-                    description="Email destacando novos recursos",
-                    expected_impact=0.15,
-                    cost_estimate=2.0,
-                    target_segment="inactive",
-                    recommended_timing="próxima semana",
-                ))
+                actions.append(
+                    RetentionAction(
+                        action_type=RetentionActionType.FEATURE_EDUCATION,
+                        priority=3,
+                        description="Email destacando novos recursos",
+                        expected_impact=0.15,
+                        cost_estimate=2.0,
+                        target_segment="inactive",
+                        recommended_timing="próxima semana",
+                    )
+                )
 
             if factor["factor"] == "notification_response_rate" and factor.get("direction") == "negative":
-                actions.append(RetentionAction(
-                    action_type=RetentionActionType.SURVEY,
-                    priority=4,
-                    description="Pesquisa de preferências de comunicação",
-                    expected_impact=0.1,
-                    cost_estimate=1.0,
-                    target_segment="low_engagement",
-                    recommended_timing="próximos 7 dias",
-                ))
+                actions.append(
+                    RetentionAction(
+                        action_type=RetentionActionType.SURVEY,
+                        priority=4,
+                        description="Pesquisa de preferências de comunicação",
+                        expected_impact=0.1,
+                        cost_estimate=1.0,
+                        target_segment="low_engagement",
+                        recommended_timing="próximos 7 dias",
+                    )
+                )
 
         # LTV alto merece ação premium
         if features.get("total_spent", 0) > 5000:
-            actions.append(RetentionAction(
-                action_type=RetentionActionType.VIP_UPGRADE,
-                priority=1,
-                description="Upgrade para programa VIP",
-                expected_impact=0.4,
-                cost_estimate=100.0,
-                target_segment="high_value",
-                recommended_timing="imediato",
-            ))
+            actions.append(
+                RetentionAction(
+                    action_type=RetentionActionType.VIP_UPGRADE,
+                    priority=1,
+                    description="Upgrade para programa VIP",
+                    expected_impact=0.4,
+                    cost_estimate=100.0,
+                    target_segment="high_value",
+                    recommended_timing="imediato",
+                )
+            )
 
         # Ordenar por prioridade
         actions.sort(key=lambda x: x.priority)
@@ -682,7 +669,7 @@ class ChurnPredictor:
         self,
         probability: float,
         last_activity_days: int,
-    ) -> Optional[datetime]:
+    ) -> datetime | None:
         """Estima data provável de churn."""
         if probability < 0.3:
             return None
@@ -764,11 +751,7 @@ class ChurnPredictor:
         df = pd.DataFrame(data)
 
         # Ajustar churn baseado em features (correlação)
-        mask = (
-            (df["last_activity_days"] > 30) &
-            (df["login_frequency"] < 5) &
-            (df["transaction_count_30d"] < 2)
-        )
+        mask = (df["last_activity_days"] > 30) & (df["login_frequency"] < 5) & (df["transaction_count_30d"] < 2)
         df.loc[mask, "churned"] = np.random.binomial(1, 0.7, mask.sum())
 
         return df

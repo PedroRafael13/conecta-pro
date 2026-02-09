@@ -7,15 +7,14 @@ e coordenação de técnicos para instalações e suporte.
 """
 
 import logging
-from typing import Optional
 from datetime import datetime
 from uuid import uuid4
 
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
 from modules.campo.models.campo_tecnico import CampoTecnico
@@ -29,44 +28,48 @@ router = APIRouter(prefix="/campo", tags=["Guardian - CAMPO Service"])
 
 class TechnicianInfo(BaseModel):
     """Informações do técnico."""
-    id: Optional[str] = None
+
+    id: str | None = None
     name: str
     document: str
     phone: str
     email: str
     specialty: str
     status: str = "active"
-    current_location: Optional[dict] = None
+    current_location: dict | None = None
 
 
 class TicketRequest(BaseModel):
     """Request para criar ticket."""
+
     client_name: str
     client_address: str
     client_phone: str
     service_type: str
     priority: str = "normal"
     description: str
-    scheduled_time: Optional[datetime] = None
+    scheduled_time: datetime | None = None
 
 
 class TicketResponse(BaseModel):
     """Response de ticket."""
+
     ticket_id: str
     client_name: str
     service_type: str
     priority: str
     status: str
     created_at: datetime
-    technician_assigned: Optional[str] = None
+    technician_assigned: str | None = None
 
 
 class TicketUpdate(BaseModel):
     """Atualização de ticket."""
-    status: Optional[str] = None
-    technician_id: Optional[str] = None
-    resolution: Optional[str] = None
-    observations: Optional[str] = None
+
+    status: str | None = None
+    technician_id: str | None = None
+    resolution: str | None = None
+    observations: str | None = None
 
 
 @router.post("/tickets", response_model=TicketResponse)
@@ -94,15 +97,12 @@ async def create_ticket(request: TicketRequest):
             priority=request.priority,
             status="open",
             created_at=datetime.utcnow(),
-            technician_assigned=None
+            technician_assigned=None,
         )
 
     except Exception as e:
         logger.error(f"Erro ao criar ticket: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao criar ticket: {str(e)}"
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao criar ticket: {str(e)}")
 
 
 @router.get("/tickets/{ticket_id}", response_model=TicketResponse)
@@ -124,15 +124,12 @@ async def get_ticket(ticket_id: str):
             service_type="Instalação",
             priority="normal",
             status="open",
-            created_at=datetime.utcnow()
+            created_at=datetime.utcnow(),
         )
 
     except Exception as e:
         logger.error(f"Erro ao consultar ticket {ticket_id}: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Ticket não encontrado: {ticket_id}"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Ticket não encontrado: {ticket_id}")
 
 
 @router.put("/tickets/{ticket_id}")
@@ -155,25 +152,17 @@ async def update_ticket(
 
         # TODO: Implementar modelo de tickets e atualizar no banco de dados
 
-        return {
-            "ticket_id": ticket_id,
-            "updated_at": datetime.utcnow(),
-            "message": "Ticket atualizado com sucesso"
-        }
+        return {"ticket_id": ticket_id, "updated_at": datetime.utcnow(), "message": "Ticket atualizado com sucesso"}
 
     except Exception as e:
         logger.error(f"Erro ao atualizar ticket {ticket_id}: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao atualizar ticket: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao atualizar ticket: {str(e)}"
         )
 
 
 @router.post("/technicians", response_model=TechnicianInfo)
-async def create_technician(
-    technician: TechnicianInfo,
-    session: AsyncSession = Depends(get_db)
-):
+async def create_technician(technician: TechnicianInfo, session: AsyncSession = Depends(get_db)):
     """
     Cadastra novo técnico.
 
@@ -195,7 +184,7 @@ async def create_technician(
             email=technician.email,
             especialidade=technician.specialty,
             status=technician.status,
-            localizacao_atual=technician.current_location
+            localizacao_atual=technician.current_location,
         )
 
         session.add(new_tecnico)
@@ -212,7 +201,7 @@ async def create_technician(
             email=new_tecnico.email or "",
             specialty=new_tecnico.especialidade or "",
             status=new_tecnico.status,
-            current_location=new_tecnico.localizacao_atual
+            current_location=new_tecnico.localizacao_atual,
         )
 
     except IntegrityError as e:
@@ -220,21 +209,20 @@ async def create_technician(
         logger.error(f"Erro de integridade ao cadastrar técnico: {e}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Técnico já existe com este documento: {technician.document}"
+            detail=f"Técnico já existe com este documento: {technician.document}",
         )
     except Exception as e:
         await session.rollback()
         logger.error(f"Erro ao cadastrar técnico: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao cadastrar técnico: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao cadastrar técnico: {str(e)}"
         )
 
 
 @router.get("/technicians")
 async def list_technicians(
-    tech_status: Optional[str] = None,
-    specialty: Optional[str] = None,
+    tech_status: str | None = None,
+    specialty: str | None = None,
     session: AsyncSession = Depends(get_db),
 ):
     """
@@ -283,25 +271,17 @@ async def list_technicians(
                 "specialty": tech.especialidade,
                 "status": tech.status,
                 "current_location": tech.localizacao_atual,
-                "created_at": tech.created_at.isoformat() if tech.created_at else None
+                "created_at": tech.created_at.isoformat() if tech.created_at else None,
             }
             for tech in tecnicos
         ]
 
-        return {
-            "technicians": technicians_list,
-            "total": total,
-            "filters": {
-                "status": status,
-                "specialty": specialty
-            }
-        }
+        return {"technicians": technicians_list, "total": total, "filters": {"status": status, "specialty": specialty}}
 
     except Exception as e:
         logger.error(f"Erro ao listar técnicos: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao listar técnicos: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao listar técnicos: {str(e)}"
         )
 
 
@@ -326,14 +306,13 @@ async def assign_technician(ticket_id: str, technician_id: str):
             "ticket_id": ticket_id,
             "technician_id": technician_id,
             "assigned_at": datetime.utcnow(),
-            "message": "Técnico atribuído com sucesso"
+            "message": "Técnico atribuído com sucesso",
         }
 
     except Exception as e:
         logger.error(f"Erro ao atribuir técnico: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao atribuir técnico: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao atribuir técnico: {str(e)}"
         )
 
 
@@ -354,15 +333,11 @@ async def campo_dashboard(session: AsyncSession = Depends(get_db)):
         total_techs = total_result.scalar() or 0
 
         # Contar técnicos ativos
-        active_result = await session.execute(
-            select(func.count(CampoTecnico.id)).where(CampoTecnico.status == 'ativo')
-        )
+        active_result = await session.execute(select(func.count(CampoTecnico.id)).where(CampoTecnico.status == "ativo"))
         active_techs = active_result.scalar() or 0
 
         # Contar técnicos ocupados
-        busy_result = await session.execute(
-            select(func.count(CampoTecnico.id)).where(CampoTecnico.status == 'ocupado')
-        )
+        busy_result = await session.execute(select(func.count(CampoTecnico.id)).where(CampoTecnico.status == "ocupado"))
         busy_techs = busy_result.scalar() or 0
 
         available_techs = max(0, active_techs - busy_techs)
@@ -372,24 +347,23 @@ async def campo_dashboard(session: AsyncSession = Depends(get_db)):
                 "open": 0,  # TODO: implementar quando tiver modelo de tickets
                 "in_progress": 0,
                 "closed": 0,
-                "total": 0
+                "total": 0,
             },
             "technicians": {
                 "active": active_techs,
                 "busy": busy_techs,
                 "available": available_techs,
-                "total": total_techs
+                "total": total_techs,
             },
             "performance": {
                 "avg_resolution_time": "0h",  # TODO: calcular quando tiver tickets
                 "customer_satisfaction": 0.0,  # TODO: calcular quando tiver tickets
-                "tickets_today": 0  # TODO: calcular quando tiver tickets
-            }
+                "tickets_today": 0,  # TODO: calcular quando tiver tickets
+            },
         }
 
     except Exception as e:
         logger.error(f"Erro ao gerar dashboard CAMPO: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao gerar dashboard: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao gerar dashboard: {str(e)}"
         )

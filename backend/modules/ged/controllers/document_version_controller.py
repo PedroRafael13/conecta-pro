@@ -1,19 +1,19 @@
 """Controller para DocumentVersion."""
 
 import logging
-from typing import List
+from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.database import get_db
 from core.auth.dependencies import get_current_user
+from core.database import get_db
 from modules.ged.repositories.document_version_repository import (
     DocumentVersionRepository,
 )
 from modules.ged.schemas.document_version import (
-    DocumentVersionResponse,
     DocumentVersionCompare,
+    DocumentVersionResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -31,18 +31,16 @@ async def get_version(
     repository = DocumentVersionRepository(db)
     version = await repository.get_by_id(version_id)
     if not version:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Versão não encontrada"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Versão não encontrada")
     return DocumentVersionResponse.model_validate(version)
 
 
-@router.get("/document/{document_id}", response_model=List[DocumentVersionResponse])
+@router.get("/document/{document_id}", response_model=list[DocumentVersionResponse])
 async def get_by_document(
     document_id: str,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> List[DocumentVersionResponse]:
+) -> list[DocumentVersionResponse]:
     """Retorna versões de um documento."""
     repository = DocumentVersionRepository(db)
     versions = await repository.get_by_document(document_id)
@@ -59,9 +57,7 @@ async def get_current_version(
     repository = DocumentVersionRepository(db)
     version = await repository.get_current(document_id)
     if not version:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Versão não encontrada"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Versão não encontrada")
     return DocumentVersionResponse.model_validate(version)
 
 
@@ -79,9 +75,7 @@ async def get_by_version_number(
     repository = DocumentVersionRepository(db)
     version = await repository.get_by_version_number(document_id, version_number)
     if not version:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Versão não encontrada"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Versão não encontrada")
     return DocumentVersionResponse.model_validate(version)
 
 
@@ -95,9 +89,7 @@ async def set_as_current(
     repository = DocumentVersionRepository(db)
     version = await repository.set_as_current(version_id)
     if not version:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Versão não encontrada"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Versão não encontrada")
     await db.commit()
     return DocumentVersionResponse.model_validate(version)
 
@@ -112,9 +104,7 @@ async def archive_version(
     repository = DocumentVersionRepository(db)
     version = await repository.archive(version_id)
     if not version:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Versão não encontrada"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Versão não encontrada")
     await db.commit()
     return DocumentVersionResponse.model_validate(version)
 
@@ -137,9 +127,7 @@ async def delete_version(
         )
 
     if not await repository.delete(version_id):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Versão não encontrada"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Versão não encontrada")
     await db.commit()
 
 
@@ -175,16 +163,14 @@ async def get_version_count(
     document_id: str,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> dict:
+) -> dict[str, Any]:
     """Retorna contagem de versões."""
     repository = DocumentVersionRepository(db)
     versions = await repository.get_by_document(document_id)
     return {
         "document_id": document_id,
         "total_versions": len(versions),
-        "current_version": max(
-            (v.version_number for v in versions if v.is_current), default=0
-        ),
+        "current_version": max((v.version_number for v in versions if v.is_current), default=0),
     }
 
 
@@ -193,7 +179,7 @@ async def get_version_stats(
     document_id: str,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> dict:
+) -> dict[str, Any]:
     """Retorna estatísticas de versões."""
     repository = DocumentVersionRepository(db)
     stats = await repository.get_stats(document_id)

@@ -3,7 +3,7 @@
 import uuid
 from datetime import datetime
 from decimal import Decimal
-from enum import Enum
+from enum import StrEnum
 from typing import TYPE_CHECKING
 
 from sqlalchemy import (
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from modules.hr.payroll_integration.models.payroll_period import PayrollPeriod
 
 
-class EventType(str, Enum):
+class EventType(StrEnum):
     """Tipo de evento."""
 
     EARNING = "earning"  # Provento
@@ -35,7 +35,7 @@ class EventType(str, Enum):
     EMPLOYER = "employer"  # Encargo patronal
 
 
-class EventCategory(str, Enum):
+class EventCategory(StrEnum):
     """Categoria do evento."""
 
     # Proventos
@@ -81,7 +81,7 @@ class EventCategory(str, Enum):
     TERCEIROS = "terceiros"  # Terceiros (Sistema S)
 
 
-class EventStatus(str, Enum):
+class EventStatus(StrEnum):
     """Status do evento."""
 
     PENDING = "pending"  # Pendente de cálculo

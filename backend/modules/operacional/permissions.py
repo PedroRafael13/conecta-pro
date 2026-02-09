@@ -4,16 +4,14 @@ Sistema de permissoes para o modulo operacional.
 Define roles, permissoes e decorators para controle de acesso.
 """
 
-from enum import Enum
-from functools import wraps
-from typing import Callable, List, Union
+from enum import StrEnum
 
 from fastapi import Depends, HTTPException, status
 
 from core.auth.dependencies import CurrentActiveUser
 
 
-class OperacionalRole(str, Enum):
+class OperacionalRole(StrEnum):
     """Roles do modulo operacional."""
 
     ADMINISTRADOR = "administrador"
@@ -35,7 +33,7 @@ ROLE_POWER = {
 }
 
 
-class Permission(str, Enum):
+class Permission(StrEnum):
     """Permissoes do modulo operacional."""
 
     # Postos

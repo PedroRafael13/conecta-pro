@@ -1,24 +1,24 @@
 """Model para preferências do funcionário no portal."""
 
-from datetime import datetime
-from enum import Enum
 import uuid
+from datetime import datetime
+from enum import StrEnum
 
 from sqlalchemy import (
-    Column,
-    String,
     Boolean,
+    Column,
     DateTime,
     ForeignKey,
     Index,
+    String,
     UniqueConstraint,
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 from core.database import Base
 
 
-class ThemePreference(str, Enum):
+class ThemePreference(StrEnum):
     """Preferência de tema."""
 
     LIGHT = "light"  # Claro
@@ -27,7 +27,7 @@ class ThemePreference(str, Enum):
     HIGH_CONTRAST = "high_contrast"  # Alto contraste
 
 
-class LanguagePreference(str, Enum):
+class LanguagePreference(StrEnum):
     """Preferência de idioma."""
 
     PT_BR = "pt_BR"  # Português (Brasil)

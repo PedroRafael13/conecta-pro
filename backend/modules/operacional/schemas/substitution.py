@@ -3,7 +3,6 @@ Schemas Pydantic para Substitution (Substituição de Funcionário).
 """
 
 from datetime import date, datetime
-from typing import List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -18,26 +17,26 @@ class SubstitutionBase(BaseModel):
     original_employee_id: str = Field(..., description="ID do funcionário original")
     reason: SubstitutionReason = Field(..., description="Motivo da substituição")
     substitution_date: date = Field(..., description="Data da substituição")
-    reason_details: Optional[str] = Field(None, max_length=500, description="Detalhes")
-    notes: Optional[str] = Field(None, description="Observações")
+    reason_details: str | None = Field(None, max_length=500, description="Detalhes")
+    notes: str | None = Field(None, description="Observações")
 
 
 class SubstitutionCreate(SubstitutionBase):
     """Schema para criação de Substitution."""
 
-    substitute_employee_id: Optional[str] = Field(None, description="ID do substituto")
+    substitute_employee_id: str | None = Field(None, description="ID do substituto")
 
 
 class SubstitutionUpdate(BaseModel):
     """Schema para atualização parcial de Substitution."""
 
-    substitute_employee_id: Optional[str] = None
-    status: Optional[SubstitutionStatus] = None
-    reason: Optional[SubstitutionReason] = None
-    reason_details: Optional[str] = Field(None, max_length=500)
-    notes: Optional[str] = None
-    rejection_reason: Optional[str] = Field(None, max_length=255)
-    is_active: Optional[bool] = None
+    substitute_employee_id: str | None = None
+    status: SubstitutionStatus | None = None
+    reason: SubstitutionReason | None = None
+    reason_details: str | None = Field(None, max_length=500)
+    notes: str | None = None
+    rejection_reason: str | None = Field(None, max_length=255)
+    is_active: bool | None = None
 
 
 class SubstitutionResponse(BaseModel):
@@ -49,23 +48,23 @@ class SubstitutionResponse(BaseModel):
     shift_id: str
     post_id: str
     original_employee_id: str
-    substitute_employee_id: Optional[str]
+    substitute_employee_id: str | None
     reason: str
     status: str
     substitution_date: date
     requested_at: datetime
-    confirmed_at: Optional[datetime]
-    completed_at: Optional[datetime]
+    confirmed_at: datetime | None
+    completed_at: datetime | None
     additional_cost: float
     overtime_hours: float
     is_overtime: bool
-    notes: Optional[str]
-    reason_details: Optional[str]
-    rejection_reason: Optional[str]
+    notes: str | None
+    reason_details: str | None
+    rejection_reason: str | None
     notification_sent: bool
-    notification_sent_at: Optional[datetime]
-    requested_by: Optional[str]
-    approved_by: Optional[str]
+    notification_sent_at: datetime | None
+    requested_by: str | None
+    approved_by: str | None
     is_active: bool
     created_at: datetime
     updated_at: datetime
@@ -74,13 +73,13 @@ class SubstitutionResponse(BaseModel):
     is_pending: bool
     is_confirmed: bool
     has_substitute: bool
-    response_time_hours: Optional[float]
+    response_time_hours: float | None
 
 
 class SubstitutionListResponse(BaseModel):
     """Schema para listagem paginada de Substitutions."""
 
-    items: List[SubstitutionResponse]
+    items: list[SubstitutionResponse]
     total: int
     page: int
     page_size: int
@@ -90,23 +89,23 @@ class SubstitutionListResponse(BaseModel):
 class SubstitutionFilter(BaseModel):
     """Schema para filtros de busca de Substitutions."""
 
-    shift_id: Optional[str] = None
-    post_id: Optional[str] = None
-    original_employee_id: Optional[str] = None
-    substitute_employee_id: Optional[str] = None
-    status: Optional[SubstitutionStatus] = None
-    reason: Optional[SubstitutionReason] = None
-    start_date: Optional[date] = None
-    end_date: Optional[date] = None
-    is_pending: Optional[bool] = None
-    has_substitute: Optional[bool] = None
+    shift_id: str | None = None
+    post_id: str | None = None
+    original_employee_id: str | None = None
+    substitute_employee_id: str | None = None
+    status: SubstitutionStatus | None = None
+    reason: SubstitutionReason | None = None
+    start_date: date | None = None
+    end_date: date | None = None
+    is_pending: bool | None = None
+    has_substitute: bool | None = None
 
 
 class SubstitutionConfirm(BaseModel):
     """Schema para confirmação de substituição."""
 
     substitute_employee_id: str = Field(..., description="ID do substituto")
-    notes: Optional[str] = Field(None, description="Observações")
+    notes: str | None = Field(None, description="Observações")
 
 
 class SubstitutionReject(BaseModel):
@@ -121,10 +120,10 @@ class SubstituteSuggestion(BaseModel):
     employee_id: str
     employee_name: str
     score: float = Field(..., ge=0, le=100, description="Score de adequação (0-100)")
-    reasons: List[str] = Field(..., description="Motivos da sugestão")
+    reasons: list[str] = Field(..., description="Motivos da sugestão")
     is_overtime: bool = Field(..., description="Será hora extra")
     estimated_cost: float = Field(..., ge=0, description="Custo estimado")
-    distance_km: Optional[float] = Field(None, ge=0, description="Distância em km")
+    distance_km: float | None = Field(None, ge=0, description="Distância em km")
     availability: str = Field(..., description="Disponibilidade")
 
 
@@ -135,4 +134,4 @@ class SubstitutionSuggestRequest(BaseModel):
     max_suggestions: int = Field(default=5, ge=1, le=10, description="Máximo de sugestões")
     prefer_same_post: bool = Field(default=True, description="Preferir mesmo posto")
     consider_distance: bool = Field(default=True, description="Considerar distância")
-    max_distance_km: Optional[float] = Field(None, ge=0, description="Distância máxima")
+    max_distance_km: float | None = Field(None, ge=0, description="Distância máxima")

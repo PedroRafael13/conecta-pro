@@ -2,7 +2,6 @@
 
 import logging
 from datetime import datetime, timedelta
-from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import and_, func, or_, select
@@ -64,9 +63,7 @@ class MaintenanceRepository:
         logger.info(f"Manutenção criada: {maintenance.maintenance_code}")
         return maintenance
 
-    async def get_by_id(
-        self, maintenance_id: str | UUID
-    ) -> Optional[EquipmentMaintenance]:
+    async def get_by_id(self, maintenance_id: str | UUID) -> EquipmentMaintenance | None:
         """Busca manutenção por ID."""
         if isinstance(maintenance_id, str):
             maintenance_id = UUID(maintenance_id)
@@ -80,7 +77,7 @@ class MaintenanceRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_by_code(self, code: str) -> Optional[EquipmentMaintenance]:
+    async def get_by_code(self, code: str) -> EquipmentMaintenance | None:
         """Busca manutenção por código."""
         result = await self.session.execute(
             select(EquipmentMaintenance).where(
@@ -92,9 +89,7 @@ class MaintenanceRepository:
         )
         return result.scalar_one_or_none()
 
-    async def update(
-        self, maintenance_id: str | UUID, data: MaintenanceUpdate
-    ) -> Optional[EquipmentMaintenance]:
+    async def update(self, maintenance_id: str | UUID, data: MaintenanceUpdate) -> EquipmentMaintenance | None:
         """Atualiza uma manutenção."""
         maintenance = await self.get_by_id(maintenance_id)
         if not maintenance:
@@ -124,14 +119,12 @@ class MaintenanceRepository:
 
     async def list_with_filters(  # pylint: disable=too-many-branches,too-many-statements
         self,
-        filters: Optional[MaintenanceFilter] = None,
+        filters: MaintenanceFilter | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[EquipmentMaintenance], int]:
         """Lista manutenções com filtros e paginação."""
-        query = select(EquipmentMaintenance).where(
-            EquipmentMaintenance.is_active.is_(True)
-        )
+        query = select(EquipmentMaintenance).where(EquipmentMaintenance.is_active.is_(True))
 
         if filters:
             conditions = []
@@ -149,9 +142,7 @@ class MaintenanceRepository:
                 )
 
             if filters.maintenance_type:
-                conditions.append(
-                    EquipmentMaintenance.maintenance_type == filters.maintenance_type
-                )
+                conditions.append(EquipmentMaintenance.maintenance_type == filters.maintenance_type)
 
             if filters.status:
                 conditions.append(EquipmentMaintenance.status == filters.status)
@@ -160,17 +151,13 @@ class MaintenanceRepository:
                 conditions.append(EquipmentMaintenance.priority == filters.priority)
 
             if filters.equipment_id:
-                conditions.append(
-                    EquipmentMaintenance.equipment_id == filters.equipment_id
-                )
+                conditions.append(EquipmentMaintenance.equipment_id == filters.equipment_id)
 
             if filters.client_id:
                 conditions.append(EquipmentMaintenance.client_id == filters.client_id)
 
             if filters.technician_id:
-                conditions.append(
-                    EquipmentMaintenance.technician_id == filters.technician_id
-                )
+                conditions.append(EquipmentMaintenance.technician_id == filters.technician_id)
 
             if filters.is_overdue is not None:
                 now = datetime.utcnow()
@@ -203,29 +190,19 @@ class MaintenanceRepository:
                     )
 
             if filters.is_warranty is not None:
-                conditions.append(
-                    EquipmentMaintenance.is_warranty_repair == filters.is_warranty
-                )
+                conditions.append(EquipmentMaintenance.is_warranty_repair == filters.is_warranty)
 
             if filters.problem_resolved is not None:
-                conditions.append(
-                    EquipmentMaintenance.problem_resolved == filters.problem_resolved
-                )
+                conditions.append(EquipmentMaintenance.problem_resolved == filters.problem_resolved)
 
             if filters.needs_followup is not None:
-                conditions.append(
-                    EquipmentMaintenance.needs_followup == filters.needs_followup
-                )
+                conditions.append(EquipmentMaintenance.needs_followup == filters.needs_followup)
 
             if filters.date_from:
-                conditions.append(
-                    EquipmentMaintenance.scheduled_date >= filters.date_from
-                )
+                conditions.append(EquipmentMaintenance.scheduled_date >= filters.date_from)
 
             if filters.date_to:
-                conditions.append(
-                    EquipmentMaintenance.scheduled_date <= filters.date_to
-                )
+                conditions.append(EquipmentMaintenance.scheduled_date <= filters.date_to)
 
             if conditions:
                 query = query.where(and_(*conditions))
@@ -307,9 +284,7 @@ class MaintenanceRepository:
         )
         return list(result.scalars().all())
 
-    async def get_scheduled_for_date(
-        self, date: datetime
-    ) -> list[EquipmentMaintenance]:
+    async def get_scheduled_for_date(self, date: datetime) -> list[EquipmentMaintenance]:
         """Lista manutenções agendadas para uma data."""
         start = date.replace(hour=0, minute=0, second=0, microsecond=0)
         end = start + timedelta(days=1)
@@ -407,9 +382,7 @@ class MaintenanceRepository:
         )
         return list(result.scalars().all())
 
-    async def start(
-        self, maintenance_id: str | UUID
-    ) -> Optional[EquipmentMaintenance]:
+    async def start(self, maintenance_id: str | UUID) -> EquipmentMaintenance | None:
         """Inicia uma manutenção."""
         maintenance = await self.get_by_id(maintenance_id)
         if not maintenance:
@@ -425,8 +398,8 @@ class MaintenanceRepository:
         self,
         maintenance_id: str | UUID,
         problem_resolved: bool = True,
-        equipment_status_after: Optional[str] = None,
-    ) -> Optional[EquipmentMaintenance]:
+        equipment_status_after: str | None = None,
+    ) -> EquipmentMaintenance | None:
         """Conclui uma manutenção."""
         maintenance = await self.get_by_id(maintenance_id)
         if not maintenance:
@@ -441,9 +414,7 @@ class MaintenanceRepository:
         logger.info(f"Manutenção concluída: {maintenance.maintenance_code}")
         return maintenance
 
-    async def cancel(
-        self, maintenance_id: str | UUID
-    ) -> Optional[EquipmentMaintenance]:
+    async def cancel(self, maintenance_id: str | UUID) -> EquipmentMaintenance | None:
         """Cancela uma manutenção."""
         maintenance = await self.get_by_id(maintenance_id)
         if not maintenance:
@@ -457,7 +428,7 @@ class MaintenanceRepository:
 
     async def mark_waiting_parts(
         self, maintenance_id: str | UUID, parts_requested: list
-    ) -> Optional[EquipmentMaintenance]:
+    ) -> EquipmentMaintenance | None:
         """Marca como aguardando peças."""
         maintenance = await self.get_by_id(maintenance_id)
         if not maintenance:
@@ -473,10 +444,10 @@ class MaintenanceRepository:
         self,
         maintenance_id: str | UUID,
         part_name: str,
-        part_code: Optional[str] = None,
+        part_code: str | None = None,
         quantity: int = 1,
         unit_cost: float = 0.0,
-    ) -> Optional[EquipmentMaintenance]:
+    ) -> EquipmentMaintenance | None:
         """Adiciona peça substituída."""
         maintenance = await self.get_by_id(maintenance_id)
         if not maintenance:
@@ -494,7 +465,7 @@ class MaintenanceRepository:
 
     async def sign_by_client(
         self, maintenance_id: str | UUID, signed_by: str, signature: str
-    ) -> Optional[EquipmentMaintenance]:
+    ) -> EquipmentMaintenance | None:
         """Registra assinatura do cliente."""
         maintenance = await self.get_by_id(maintenance_id)
         if not maintenance:
@@ -508,9 +479,9 @@ class MaintenanceRepository:
 
     async def get_stats(  # pylint: disable=too-many-locals,too-many-branches,too-many-statements,E1137
         self,
-        client_id: Optional[str] = None,
-        date_from: Optional[datetime] = None,
-        date_to: Optional[datetime] = None,
+        client_id: str | None = None,
+        date_from: datetime | None = None,
+        date_to: datetime | None = None,
     ) -> MaintenanceStats:
         """Calcula estatísticas de manutenções."""
         conditions = [EquipmentMaintenance.is_active.is_(True)]
@@ -524,9 +495,7 @@ class MaintenanceRepository:
         if date_to:
             conditions.append(EquipmentMaintenance.created_at <= date_to)
 
-        result = await self.session.execute(
-            select(EquipmentMaintenance).where(and_(*conditions))
-        )
+        result = await self.session.execute(select(EquipmentMaintenance).where(and_(*conditions)))
         maintenances = list(result.scalars().all())
 
         stats = MaintenanceStats(
@@ -554,9 +523,7 @@ class MaintenanceRepository:
 
             # Por prioridade
             priority_key = m.priority.value if m.priority else "unknown"
-            stats.by_priority[priority_key] = (
-                stats.by_priority.get(priority_key, 0) + 1
-            )
+            stats.by_priority[priority_key] = stats.by_priority.get(priority_key, 0) + 1
 
             # Contadores
             if m.status == MaintenanceStatus.SCHEDULED:
@@ -568,10 +535,15 @@ class MaintenanceRepository:
             elif m.status == MaintenanceStatus.WAITING_PARTS:
                 stats.waiting_parts += 1
 
-            if m.sla_deadline and m.sla_deadline < now and m.status not in [
-                MaintenanceStatus.COMPLETED,
-                MaintenanceStatus.CANCELLED,
-            ]:
+            if (
+                m.sla_deadline
+                and m.sla_deadline < now
+                and m.status
+                not in [
+                    MaintenanceStatus.COMPLETED,
+                    MaintenanceStatus.CANCELLED,
+                ]
+            ):
                 stats.overdue += 1
 
             if m.maintenance_type == MaintenanceType.PREVENTIVA:
@@ -600,9 +572,7 @@ class MaintenanceRepository:
             stats.avg_response_time_hours = sum(response_times) / len(response_times)
 
         if resolution_times:
-            stats.avg_resolution_time_hours = sum(resolution_times) / len(
-                resolution_times
-            )
+            stats.avg_resolution_time_hours = sum(resolution_times) / len(resolution_times)
 
         if stats.completed > 0:
             stats.sla_compliance_rate = (sla_met_count / stats.completed) * 100
@@ -614,9 +584,7 @@ class MaintenanceRepository:
 
         return stats
 
-    async def create_recurring(
-        self, parent_id: str | UUID
-    ) -> Optional[EquipmentMaintenance]:
+    async def create_recurring(self, parent_id: str | UUID) -> EquipmentMaintenance | None:
         """Cria próxima manutenção recorrente."""
         parent = await self.get_by_id(parent_id)
         if not parent or not parent.is_recurring:
@@ -651,7 +619,5 @@ class MaintenanceRepository:
         self.session.add(new_maintenance)
         await self.session.flush()
         await self.session.refresh(new_maintenance)
-        logger.info(
-            f"Manutenção recorrente criada: {new_maintenance.maintenance_code}"
-        )
+        logger.info(f"Manutenção recorrente criada: {new_maintenance.maintenance_code}")
         return new_maintenance

@@ -4,7 +4,6 @@ import logging
 import re
 from datetime import date, datetime
 from decimal import Decimal
-from typing import List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
@@ -90,24 +89,24 @@ async def create_transaction(
 
 @router.get(
     "/",
-    response_model=List[BankTransactionResponse],
+    response_model=list[BankTransactionResponse],
     summary="Listar transações",
 )
 async def list_transactions(
     bank_account_id: UUID,
-    transaction_type: Optional[TransactionType] = Query(None),
-    category: Optional[TransactionCategory] = Query(None),
-    transaction_status: Optional[TransactionStatus] = Query(None),
-    reconciliation_status: Optional[ReconciliationStatus] = Query(None),
-    start_date: Optional[date] = Query(None),
-    end_date: Optional[date] = Query(None),
-    min_amount: Optional[Decimal] = Query(None),
-    max_amount: Optional[Decimal] = Query(None),
+    transaction_type: TransactionType | None = Query(None),
+    category: TransactionCategory | None = Query(None),
+    transaction_status: TransactionStatus | None = Query(None),
+    reconciliation_status: ReconciliationStatus | None = Query(None),
+    start_date: date | None = Query(None),
+    end_date: date | None = Query(None),
+    min_amount: Decimal | None = Query(None),
+    max_amount: Decimal | None = Query(None),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     repo: BankTransactionRepository = Depends(get_repository),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> List[BankTransactionResponse]:
+) -> list[BankTransactionResponse]:
     """Lista transações bancárias com filtros."""
     filters = BankTransactionFilter(
         bank_account_id=bank_account_id,
@@ -126,7 +125,7 @@ async def list_transactions(
 
 @router.get(
     "/pending-reconciliation",
-    response_model=List[BankTransactionResponse],
+    response_model=list[BankTransactionResponse],
     summary="Transações pendentes de conciliação",
 )
 async def get_pending_reconciliation(
@@ -134,7 +133,7 @@ async def get_pending_reconciliation(
     limit: int = Query(100, ge=1, le=500),
     repo: BankTransactionRepository = Depends(get_repository),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> List[BankTransactionResponse]:
+) -> list[BankTransactionResponse]:
     """Retorna transações pendentes de conciliação bancária."""
     transactions = await repo.get_pending_reconciliation(bank_account_id, limit)
     return [BankTransactionResponse.model_validate(t) for t in transactions]
@@ -142,7 +141,7 @@ async def get_pending_reconciliation(
 
 @router.get(
     "/by-period",
-    response_model=List[BankTransactionResponse],
+    response_model=list[BankTransactionResponse],
     summary="Transações por período",
 )
 async def get_by_period(
@@ -151,7 +150,7 @@ async def get_by_period(
     end_date: date = Query(..., description="Data final"),
     repo: BankTransactionRepository = Depends(get_repository),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> List[BankTransactionResponse]:
+) -> list[BankTransactionResponse]:
     """Retorna transações em um período específico."""
     transactions = await repo.get_by_period(bank_account_id, start_date, end_date)
     return [BankTransactionResponse.model_validate(t) for t in transactions]
@@ -163,8 +162,8 @@ async def get_by_period(
 )
 async def get_summary(
     bank_account_id: UUID,
-    start_date: Optional[date] = Query(None),
-    end_date: Optional[date] = Query(None),
+    start_date: date | None = Query(None),
+    end_date: date | None = Query(None),
     repo: BankTransactionRepository = Depends(get_repository),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict:
@@ -384,10 +383,7 @@ async def cancel_transaction(
     )
 
     await session.commit()
-    logger.info(
-        f"Transação cancelada: {transaction_id} por {current_user.get('email')}, "
-        f"motivo: {reason}"
-    )
+    logger.info(f"Transação cancelada: {transaction_id} por {current_user.get('email')}, motivo: {reason}")
     return BankTransactionResponse.model_validate(updated)
 
 
@@ -398,7 +394,7 @@ async def cancel_transaction(
 )
 async def reconcile_transaction(
     transaction_id: UUID,
-    statement_reference: Optional[str] = Query(None, max_length=100),
+    statement_reference: str | None = Query(None, max_length=100),
     repo: BankTransactionRepository = Depends(get_repository),
     current_user: dict = Depends(get_current_user),
 ) -> BankTransactionResponse:
@@ -555,9 +551,7 @@ async def import_ofx_file(
 
         await session.commit()
 
-        logger.info(
-            f"Arquivo OFX importado: {created} transações, " f"por {current_user.get('email')}"
-        )
+        logger.info(f"Arquivo OFX importado: {created} transações, por {current_user.get('email')}")
 
         return {
             "success": True,
@@ -573,7 +567,7 @@ async def import_ofx_file(
         )
 
 
-def _parse_ofx(content: str) -> List[dict]:
+def _parse_ofx(content: str) -> list[dict]:
     """Parse simplificado de arquivo OFX."""
     transactions = []
 
@@ -588,9 +582,7 @@ def _parse_ofx(content: str) -> List[dict]:
         trntype = re.search(r"<TRNTYPE>(.*?)[\n<]", match)
         if trntype:
             tx["type"] = (
-                TransactionType.CREDITO
-                if trntype.group(1).strip() in ["CREDIT", "DEP"]
-                else TransactionType.DEBITO
+                TransactionType.CREDITO if trntype.group(1).strip() in ["CREDIT", "DEP"] else TransactionType.DEBITO
             )
 
         # Data
@@ -611,11 +603,7 @@ def _parse_ofx(content: str) -> List[dict]:
         # Descrição
         memo = re.search(r"<MEMO>(.*?)[\n<]", match)
         name = re.search(r"<NAME>(.*?)[\n<]", match)
-        tx["description"] = (
-            (memo or name or type("", (), {"group": lambda s, x: "Transação OFX"})())
-            .group(1)
-            .strip()
-        )
+        tx["description"] = (memo or name or type("", (), {"group": lambda s, x: "Transação OFX"})()).group(1).strip()
 
         if all(k in tx for k in ["type", "date", "amount", "fitid"]):
             transactions.append(tx)

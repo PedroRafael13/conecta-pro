@@ -5,21 +5,20 @@ DTOs para entrada e saida da API de previsao de estoque.
 """
 
 from datetime import date, datetime
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
-from modules.ai.inventory_forecast.models.forecast import (
-    ForecastStatus,
-    ForecastType,
-)
 from modules.ai.inventory_forecast.models.demand_pattern import (
     PatternType,
     SeasonalityType,
     TrendDirection,
 )
-
+from modules.ai.inventory_forecast.models.forecast import (
+    ForecastStatus,
+    ForecastType,
+)
 
 # ============================================================
 # Forecast Schemas
@@ -30,32 +29,11 @@ class ForecastRequest(BaseModel):
     """Request para gerar previsao de demanda."""
 
     product_id: UUID = Field(..., description="ID do produto")
-    horizon_days: int = Field(
-        default=30,
-        ge=7,
-        le=365,
-        description="Dias de previsao (7-365)"
-    )
-    historical_days: int = Field(
-        default=365,
-        ge=30,
-        le=1095,
-        description="Dias de historico a usar (30-1095)"
-    )
-    forecast_type: ForecastType = Field(
-        default=ForecastType.DEMAND,
-        description="Tipo de previsao"
-    )
-    model_type: str = Field(
-        default="auto",
-        description="Modelo ML: auto, prophet, arima, exp_smoothing"
-    )
-    confidence_level: float = Field(
-        default=0.95,
-        ge=0.80,
-        le=0.99,
-        description="Nivel de confianca (0.80-0.99)"
-    )
+    horizon_days: int = Field(default=30, ge=7, le=365, description="Dias de previsao (7-365)")
+    historical_days: int = Field(default=365, ge=30, le=1095, description="Dias de historico a usar (30-1095)")
+    forecast_type: ForecastType = Field(default=ForecastType.DEMAND, description="Tipo de previsao")
+    model_type: str = Field(default="auto", description="Modelo ML: auto, prophet, arima, exp_smoothing")
+    confidence_level: float = Field(default=0.95, ge=0.80, le=0.99, description="Nivel de confianca (0.80-0.99)")
 
     @field_validator("model_type")
     @classmethod
@@ -70,12 +48,7 @@ class ForecastRequest(BaseModel):
 class BulkForecastRequest(BaseModel):
     """Request para previsao em lote."""
 
-    product_ids: list[UUID] = Field(
-        ...,
-        min_length=1,
-        max_length=100,
-        description="Lista de IDs de produtos (max 100)"
-    )
+    product_ids: list[UUID] = Field(..., min_length=1, max_length=100, description="Lista de IDs de produtos (max 100)")
     horizon_days: int = Field(default=30, ge=7, le=365)
     historical_days: int = Field(default=365, ge=30, le=1095)
     forecast_type: ForecastType = Field(default=ForecastType.DEMAND)
@@ -95,28 +68,28 @@ class ForecastCreate(BaseModel):
     model_type: str = Field(default="prophet", max_length=50)
     model_params: dict[str, Any] = Field(default_factory=dict)
     is_automated: bool = False
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class ForecastUpdate(BaseModel):
     """Schema para atualizar previsao."""
 
-    status: Optional[ForecastStatus] = None
-    mae: Optional[float] = None
-    mape: Optional[float] = None
-    rmse: Optional[float] = None
-    confidence_score: Optional[float] = Field(default=None, ge=0, le=100)
-    total_predicted_demand: Optional[float] = None
-    avg_daily_demand: Optional[float] = None
-    peak_demand: Optional[float] = None
-    peak_demand_date: Optional[date] = None
-    min_demand: Optional[float] = None
-    min_demand_date: Optional[date] = None
-    suggested_reorder_point: Optional[float] = None
-    suggested_reorder_quantity: Optional[float] = None
-    suggested_safety_stock: Optional[float] = None
-    notes: Optional[str] = None
-    error_message: Optional[str] = None
+    status: ForecastStatus | None = None
+    mae: float | None = None
+    mape: float | None = None
+    rmse: float | None = None
+    confidence_score: float | None = Field(default=None, ge=0, le=100)
+    total_predicted_demand: float | None = None
+    avg_daily_demand: float | None = None
+    peak_demand: float | None = None
+    peak_demand_date: date | None = None
+    min_demand: float | None = None
+    min_demand_date: date | None = None
+    suggested_reorder_point: float | None = None
+    suggested_reorder_quantity: float | None = None
+    suggested_safety_stock: float | None = None
+    notes: str | None = None
+    error_message: str | None = None
 
 
 class ForecastResultResponse(BaseModel):
@@ -127,16 +100,16 @@ class ForecastResultResponse(BaseModel):
     date: date
     period_type: str
     predicted_demand: float
-    lower_bound: Optional[float] = None
-    upper_bound: Optional[float] = None
+    lower_bound: float | None = None
+    upper_bound: float | None = None
     confidence_level: float = 0.95
-    actual_demand: Optional[float] = None
-    variance: Optional[float] = None
-    variance_pct: Optional[float] = None
-    trend_component: Optional[float] = None
-    seasonal_component: Optional[float] = None
+    actual_demand: float | None = None
+    variance: float | None = None
+    variance_pct: float | None = None
+    trend_component: float | None = None
+    seasonal_component: float | None = None
     is_anomaly: bool = False
-    anomaly_type: Optional[str] = None
+    anomaly_type: str | None = None
 
     class Config:
         """Pydantic config."""
@@ -162,36 +135,36 @@ class ForecastResponse(BaseModel):
     model_params: dict[str, Any]
 
     # Metricas
-    mae: Optional[float] = None
-    mape: Optional[float] = None
-    rmse: Optional[float] = None
-    confidence_score: Optional[float] = None
+    mae: float | None = None
+    mape: float | None = None
+    rmse: float | None = None
+    confidence_score: float | None = None
 
     # Resultados
     total_predicted_demand: float
     avg_daily_demand: float
     peak_demand: float
-    peak_demand_date: Optional[date] = None
+    peak_demand_date: date | None = None
     min_demand: float
-    min_demand_date: Optional[date] = None
+    min_demand_date: date | None = None
 
     # Recomendacoes
-    suggested_reorder_point: Optional[float] = None
-    suggested_reorder_quantity: Optional[float] = None
-    suggested_safety_stock: Optional[float] = None
+    suggested_reorder_point: float | None = None
+    suggested_reorder_quantity: float | None = None
+    suggested_safety_stock: float | None = None
 
     # Metadados
-    created_by: Optional[UUID] = None
+    created_by: UUID | None = None
     created_at: datetime
-    updated_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
+    updated_at: datetime | None = None
+    completed_at: datetime | None = None
     is_active: bool
     is_automated: bool
-    notes: Optional[str] = None
-    error_message: Optional[str] = None
+    notes: str | None = None
+    error_message: str | None = None
 
     # Resultados detalhados (opcional)
-    results: Optional[list[ForecastResultResponse]] = None
+    results: list[ForecastResultResponse] | None = None
 
     class Config:
         """Pydantic config."""
@@ -218,7 +191,7 @@ class ForecastSummary(BaseModel):
     avg_daily_demand: float
     trend_direction: str
     confidence_score: float
-    days_until_reorder: Optional[int] = None
+    days_until_reorder: int | None = None
     suggested_action: str  # "OK", "REORDER_SOON", "REORDER_NOW", "REVIEW"
 
 
@@ -253,8 +226,8 @@ class DemandPatternResponse(BaseModel):
     pattern_confidence: float
     seasonality_type: SeasonalityType
     seasonality_strength: float
-    seasonal_periods: Optional[list[int]] = None
-    peak_periods: Optional[list[dict]] = None
+    seasonal_periods: list[int] | None = None
+    peak_periods: list[dict] | None = None
 
     # Tendencia
     trend_direction: TrendDirection
@@ -275,19 +248,19 @@ class DemandPatternResponse(BaseModel):
     anomalies_detected: int
 
     # Distribuicoes
-    weekday_distribution: Optional[dict[str, float]] = None
-    monthly_distribution: Optional[dict[str, float]] = None
+    weekday_distribution: dict[str, float] | None = None
+    monthly_distribution: dict[str, float] | None = None
 
     # Recomendacoes
-    recommended_model: Optional[str] = None
-    recommended_safety_stock_days: Optional[int] = None
-    recommended_review_period_days: Optional[int] = None
+    recommended_model: str | None = None
+    recommended_safety_stock_days: int | None = None
+    recommended_review_period_days: int | None = None
 
     # Metadados
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
     is_active: bool
-    insights: Optional[list[dict]] = None
+    insights: list[dict] | None = None
 
     class Config:
         """Pydantic config."""
@@ -314,9 +287,9 @@ class ReorderSuggestion(BaseModel):
     days_of_stock_remaining: int
     lead_time_days: int
     urgency: str  # "LOW", "MEDIUM", "HIGH", "CRITICAL"
-    estimated_stockout_date: Optional[date] = None
+    estimated_stockout_date: date | None = None
     confidence_score: float
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class ReorderListResponse(BaseModel):

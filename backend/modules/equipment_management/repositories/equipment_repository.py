@@ -2,7 +2,6 @@
 
 import logging
 from datetime import datetime, timedelta
-from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import and_, func, or_, select
@@ -66,38 +65,30 @@ class EquipmentRepository:
         logger.info(f"Equipamento criado: {equipment.equipment_code}")
         return equipment
 
-    async def get_by_id(self, equipment_id: str | UUID) -> Optional[Equipment]:
+    async def get_by_id(self, equipment_id: str | UUID) -> Equipment | None:
         """Busca equipamento por ID."""
         if isinstance(equipment_id, str):
             equipment_id = UUID(equipment_id)
         result = await self.session.execute(
-            select(Equipment).where(
-                and_(Equipment.id == equipment_id, Equipment.is_active.is_(True))
-            )
+            select(Equipment).where(and_(Equipment.id == equipment_id, Equipment.is_active.is_(True)))
         )
         return result.scalar_one_or_none()
 
-    async def get_by_code(self, code: str) -> Optional[Equipment]:
+    async def get_by_code(self, code: str) -> Equipment | None:
         """Busca equipamento por código."""
         result = await self.session.execute(
-            select(Equipment).where(
-                and_(Equipment.equipment_code == code, Equipment.is_active.is_(True))
-            )
+            select(Equipment).where(and_(Equipment.equipment_code == code, Equipment.is_active.is_(True)))
         )
         return result.scalar_one_or_none()
 
-    async def get_by_serial_number(self, serial: str) -> Optional[Equipment]:
+    async def get_by_serial_number(self, serial: str) -> Equipment | None:
         """Busca equipamento por número de série."""
         result = await self.session.execute(
-            select(Equipment).where(
-                and_(Equipment.serial_number == serial, Equipment.is_active.is_(True))
-            )
+            select(Equipment).where(and_(Equipment.serial_number == serial, Equipment.is_active.is_(True)))
         )
         return result.scalar_one_or_none()
 
-    async def update(
-        self, equipment_id: str | UUID, data: EquipmentUpdate
-    ) -> Optional[Equipment]:
+    async def update(self, equipment_id: str | UUID, data: EquipmentUpdate) -> Equipment | None:
         """Atualiza um equipamento."""
         equipment = await self.get_by_id(equipment_id)
         if not equipment:
@@ -127,7 +118,7 @@ class EquipmentRepository:
 
     async def list_with_filters(  # pylint: disable=too-many-branches
         self,
-        filters: Optional[EquipmentFilter] = None,
+        filters: EquipmentFilter | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[Equipment], int]:
@@ -306,7 +297,7 @@ class EquipmentRepository:
         return list(result.scalars().all())
 
     async def get_stats(  # pylint: disable=too-many-branches,E1137
-        self, client_id: Optional[str] = None
+        self, client_id: str | None = None
     ) -> EquipmentStats:
         """Calcula estatísticas de equipamentos."""
         base_query = select(Equipment).where(Equipment.is_active.is_(True))
@@ -382,12 +373,12 @@ class EquipmentRepository:
         equipment_id: str | UUID,
         client_id: str,
         client_name: str,
-        contract_id: Optional[str] = None,
-        installation_id: Optional[str] = None,
-        location: Optional[str] = None,
-        latitude: Optional[float] = None,
-        longitude: Optional[float] = None,
-    ) -> Optional[Equipment]:
+        contract_id: str | None = None,
+        installation_id: str | None = None,
+        location: str | None = None,
+        latitude: float | None = None,
+        longitude: float | None = None,
+    ) -> Equipment | None:
         """Registra instalação de equipamento."""
         equipment = await self.get_by_id(equipment_id)
         if not equipment:
@@ -407,7 +398,7 @@ class EquipmentRepository:
         logger.info(f"Equipamento instalado: {equipment.equipment_code}")
         return equipment
 
-    async def uninstall(self, equipment_id: str | UUID) -> Optional[Equipment]:
+    async def uninstall(self, equipment_id: str | UUID) -> Equipment | None:
         """Desinstala equipamento."""
         equipment = await self.get_by_id(equipment_id)
         if not equipment:
@@ -419,9 +410,7 @@ class EquipmentRepository:
         logger.info(f"Equipamento desinstalado: {equipment.equipment_code}")
         return equipment
 
-    async def update_online_status(
-        self, equipment_id: str | UUID, is_online: bool
-    ) -> Optional[Equipment]:
+    async def update_online_status(self, equipment_id: str | UUID, is_online: bool) -> Equipment | None:
         """Atualiza status online/offline."""
         equipment = await self.get_by_id(equipment_id)
         if not equipment:
@@ -436,9 +425,7 @@ class EquipmentRepository:
         await self.session.refresh(equipment)
         return equipment
 
-    async def bulk_update_online_status(
-        self, equipment_ids: list[str], is_online: bool
-    ) -> int:
+    async def bulk_update_online_status(self, equipment_ids: list[str], is_online: bool) -> int:
         """Atualiza status online/offline em massa."""
         count = 0
         for eq_id in equipment_ids:

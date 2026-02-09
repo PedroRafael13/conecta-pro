@@ -3,8 +3,8 @@
 Sprint 31 - Automacoes WhatsApp.
 """
 
-import enum
 from datetime import datetime
+from enum import StrEnum
 
 from sqlalchemy import (
     Boolean,
@@ -22,7 +22,7 @@ from sqlalchemy.orm import relationship
 from core.models import Base
 
 
-class TemplateCategory(str, enum.Enum):
+class TemplateCategory(StrEnum):
     """Categoria do template."""
 
     MARKETING = "MARKETING"  # Marketing e promocoes
@@ -32,7 +32,7 @@ class TemplateCategory(str, enum.Enum):
     TRANSACTIONAL = "TRANSACTIONAL"  # Transacional (boletos, notas)
 
 
-class TemplateStatus(str, enum.Enum):
+class TemplateStatus(StrEnum):
     """Status do template."""
 
     DRAFT = "DRAFT"  # Rascunho
@@ -42,7 +42,7 @@ class TemplateStatus(str, enum.Enum):
     DISABLED = "DISABLED"  # Desabilitado
 
 
-class TemplateType(str, enum.Enum):
+class TemplateType(StrEnum):
     """Tipo de conteudo do template."""
 
     TEXT = "TEXT"  # Apenas texto

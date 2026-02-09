@@ -1,23 +1,21 @@
 """Repository de Dashboard Financeiro."""
 
 from datetime import datetime
-from decimal import Decimal
-from typing import Optional
 from uuid import UUID
 
-from sqlalchemy import and_, or_, func, desc
+from sqlalchemy import desc, func, or_
 from sqlalchemy.orm import Session, joinedload
 
 from modules.financial.bi_dashboard.models.dashboard_config import (
-    FinancialDashboard,
-    DashboardType,
     DashboardStatus,
+    DashboardType,
+    FinancialDashboard,
 )
 from modules.financial.bi_dashboard.schemas.dashboard_schemas import (
     DashboardCreate,
-    DashboardUpdate,
     DashboardFilters,
     DashboardStats,
+    DashboardUpdate,
 )
 
 
@@ -68,7 +66,7 @@ class DashboardRepository:
         dashboard_id: UUID,
         condominio_id: UUID = None,
         include_widgets: bool = False,
-    ) -> Optional[FinancialDashboard]:
+    ) -> FinancialDashboard | None:
         """Busca dashboard por ID."""
         query = self.db.query(FinancialDashboard).filter(
             FinancialDashboard.id == dashboard_id,
@@ -84,13 +82,17 @@ class DashboardRepository:
         self,
         codigo: str,
         condominio_id: UUID,
-    ) -> Optional[FinancialDashboard]:
+    ) -> FinancialDashboard | None:
         """Busca dashboard por codigo."""
-        return self.db.query(FinancialDashboard).filter(
-            FinancialDashboard.codigo == codigo,
-            FinancialDashboard.condominio_id == condominio_id,
-            FinancialDashboard.deleted_at.is_(None),
-        ).first()
+        return (
+            self.db.query(FinancialDashboard)
+            .filter(
+                FinancialDashboard.codigo == codigo,
+                FinancialDashboard.condominio_id == condominio_id,
+                FinancialDashboard.deleted_at.is_(None),
+            )
+            .first()
+        )
 
     def list_all(
         self,
@@ -113,9 +115,7 @@ class DashboardRepository:
             if filters.is_public is not None:
                 query = query.filter(FinancialDashboard.is_public == filters.is_public)
             if filters.is_favorite is not None:
-                query = query.filter(
-                    FinancialDashboard.is_favorite == filters.is_favorite
-                )
+                query = query.filter(FinancialDashboard.is_favorite == filters.is_favorite)
             if filters.owner_id:
                 query = query.filter(FinancialDashboard.owner_id == filters.owner_id)
             if filters.search:
@@ -128,13 +128,9 @@ class DashboardRepository:
                     )
                 )
             if filters.created_after:
-                query = query.filter(
-                    FinancialDashboard.created_at >= filters.created_after
-                )
+                query = query.filter(FinancialDashboard.created_at >= filters.created_after)
             if filters.created_before:
-                query = query.filter(
-                    FinancialDashboard.created_at <= filters.created_before
-                )
+                query = query.filter(FinancialDashboard.created_at <= filters.created_before)
 
         total = query.count()
         items = (
@@ -178,14 +174,18 @@ class DashboardRepository:
         self.db.commit()
         return True
 
-    def get_default(self, condominio_id: UUID) -> Optional[FinancialDashboard]:
+    def get_default(self, condominio_id: UUID) -> FinancialDashboard | None:
         """Busca dashboard padrao."""
-        return self.db.query(FinancialDashboard).filter(
-            FinancialDashboard.condominio_id == condominio_id,
-            FinancialDashboard.is_default == True,
-            FinancialDashboard.status == DashboardStatus.ACTIVE,
-            FinancialDashboard.deleted_at.is_(None),
-        ).first()
+        return (
+            self.db.query(FinancialDashboard)
+            .filter(
+                FinancialDashboard.condominio_id == condominio_id,
+                FinancialDashboard.is_default,
+                FinancialDashboard.status == DashboardStatus.ACTIVE,
+                FinancialDashboard.deleted_at.is_(None),
+            )
+            .first()
+        )
 
     def set_default(
         self,
@@ -196,7 +196,7 @@ class DashboardRepository:
         # Remove padrao anterior
         self.db.query(FinancialDashboard).filter(
             FinancialDashboard.condominio_id == condominio_id,
-            FinancialDashboard.is_default == True,
+            FinancialDashboard.is_default,
         ).update({"is_default": False})
 
         dashboard.is_default = True
@@ -229,25 +229,15 @@ class DashboardRepository:
         )
 
         total = base_query.count()
-        active = base_query.filter(
-            FinancialDashboard.status == DashboardStatus.ACTIVE
-        ).count()
-        draft = base_query.filter(
-            FinancialDashboard.status == DashboardStatus.DRAFT
-        ).count()
-        archived = base_query.filter(
-            FinancialDashboard.status == DashboardStatus.ARCHIVED
-        ).count()
-        public = base_query.filter(FinancialDashboard.is_public == True).count()
-        private = base_query.filter(FinancialDashboard.is_public == False).count()
+        active = base_query.filter(FinancialDashboard.status == DashboardStatus.ACTIVE).count()
+        draft = base_query.filter(FinancialDashboard.status == DashboardStatus.DRAFT).count()
+        archived = base_query.filter(FinancialDashboard.status == DashboardStatus.ARCHIVED).count()
+        public = base_query.filter(FinancialDashboard.is_public).count()
+        private = base_query.filter(not FinancialDashboard.is_public).count()
 
-        total_views = base_query.with_entities(
-            func.sum(FinancialDashboard.view_count)
-        ).scalar() or 0
+        total_views = base_query.with_entities(func.sum(FinancialDashboard.view_count)).scalar() or 0
 
-        most_viewed = base_query.order_by(
-            desc(FinancialDashboard.view_count)
-        ).first()
+        most_viewed = base_query.order_by(desc(FinancialDashboard.view_count)).first()
 
         by_type = {}
         for tipo in DashboardType:
@@ -267,7 +257,9 @@ class DashboardRepository:
                 "id": str(most_viewed.id),
                 "nome": most_viewed.nome,
                 "views": most_viewed.view_count,
-            } if most_viewed else None,
+            }
+            if most_viewed
+            else None,
             by_type=by_type,
         )
 
@@ -278,20 +270,25 @@ class DashboardRepository:
         user_role: str,
     ) -> list[FinancialDashboard]:
         """Lista dashboards acessiveis pelo usuario."""
-        return self.db.query(FinancialDashboard).filter(
-            FinancialDashboard.condominio_id == condominio_id,
-            FinancialDashboard.status == DashboardStatus.ACTIVE,
-            FinancialDashboard.deleted_at.is_(None),
-            or_(
-                FinancialDashboard.is_public == True,
-                FinancialDashboard.owner_id == user_id,
-                FinancialDashboard.allowed_users.contains([str(user_id)]),
-                FinancialDashboard.allowed_roles.contains([user_role]),
-            ),
-        ).order_by(
-            desc(FinancialDashboard.is_favorite),
-            desc(FinancialDashboard.last_viewed_at),
-        ).all()
+        return (
+            self.db.query(FinancialDashboard)
+            .filter(
+                FinancialDashboard.condominio_id == condominio_id,
+                FinancialDashboard.status == DashboardStatus.ACTIVE,
+                FinancialDashboard.deleted_at.is_(None),
+                or_(
+                    FinancialDashboard.is_public,
+                    FinancialDashboard.owner_id == user_id,
+                    FinancialDashboard.allowed_users.contains([str(user_id)]),
+                    FinancialDashboard.allowed_roles.contains([user_role]),
+                ),
+            )
+            .order_by(
+                desc(FinancialDashboard.is_favorite),
+                desc(FinancialDashboard.last_viewed_at),
+            )
+            .all()
+        )
 
     def duplicate(
         self,

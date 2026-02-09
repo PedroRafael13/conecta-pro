@@ -3,17 +3,14 @@ ClientContract Model - Vínculo Cliente-Contrato
 Sprint 30: Cadastro de Clientes/Condomínios
 """
 
-import enum
-from datetime import datetime, date
+from datetime import date, datetime
 from decimal import Decimal
-from typing import Optional, TYPE_CHECKING
+from enum import StrEnum
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
-from sqlalchemy import (
-    Column, String, Text, Boolean, DateTime, Date,
-    Numeric, Integer, Enum, ForeignKey, Index
-)
-from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY
+from sqlalchemy import Boolean, Column, Date, DateTime, Enum, ForeignKey, Index, Integer, Numeric, String, Text
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import relationship
 
 from core.database import Base
@@ -22,8 +19,9 @@ if TYPE_CHECKING:
     from modules.clients.models.client import Client
 
 
-class ContractServiceType(str, enum.Enum):
+class ContractServiceType(StrEnum):
     """Tipo de serviço contratado."""
+
     PORTARIA_REMOTA = "portaria_remota"
     CONTROLE_ACESSO = "controle_acesso"
     CFTV = "cftv"
@@ -41,8 +39,9 @@ class ContractServiceType(str, enum.Enum):
     OUTRO = "outro"
 
 
-class ServiceStatus(str, enum.Enum):
+class ServiceStatus(StrEnum):
     """Status do serviço."""
+
     PENDENTE = "pendente"
     EM_IMPLANTACAO = "em_implantacao"
     ATIVO = "ativo"
@@ -63,21 +62,12 @@ class ClientContract(Base):
 
     # Identificação
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    client_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("clients.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True
-    )
+    client_id = Column(UUID(as_uuid=True), ForeignKey("clients.id", ondelete="CASCADE"), nullable=False, index=True)
     contract_id = Column(UUID(as_uuid=True), nullable=True, index=True)
     condominium_id = Column(UUID(as_uuid=True), nullable=True, index=True)
 
     # Tipo de serviço
-    service_type = Column(
-        Enum(ContractServiceType),
-        nullable=False,
-        default=ContractServiceType.PORTARIA_REMOTA
-    )
+    service_type = Column(Enum(ContractServiceType), nullable=False, default=ContractServiceType.PORTARIA_REMOTA)
     status = Column(Enum(ServiceStatus), nullable=False, default=ServiceStatus.PENDENTE)
 
     # Descrição
@@ -181,7 +171,7 @@ class ClientContract(Base):
         return self.service_type == ContractServiceType.GESTAO_CONDOMINIAL
 
     @property
-    def contract_duration_days(self) -> Optional[int]:
+    def contract_duration_days(self) -> int | None:
         """Duração do contrato em dias."""
         if not self.start_date:
             return None
@@ -189,14 +179,14 @@ class ClientContract(Base):
         return (end - self.start_date).days
 
     @property
-    def days_active(self) -> Optional[int]:
+    def days_active(self) -> int | None:
         """Dias desde a ativação."""
         if not self.activation_date:
             return None
         return (date.today() - self.activation_date).days
 
     @property
-    def days_until_end(self) -> Optional[int]:
+    def days_until_end(self) -> int | None:
         """Dias até o fim do contrato."""
         if not self.end_date:
             return None
@@ -229,7 +219,7 @@ class ClientContract(Base):
         self.activation_date = date.today()
         self.updated_at = datetime.utcnow()
 
-    def suspend(self, reason: Optional[str] = None) -> None:
+    def suspend(self, reason: str | None = None) -> None:
         """Suspende o serviço."""
         self.status = ServiceStatus.SUSPENSO
         self.suspension_date = date.today()
@@ -243,7 +233,7 @@ class ClientContract(Base):
         self.suspension_reason = None
         self.updated_at = datetime.utcnow()
 
-    def cancel(self, reason: Optional[str] = None) -> None:
+    def cancel(self, reason: str | None = None) -> None:
         """Cancela o serviço."""
         self.status = ServiceStatus.CANCELADO
         self.is_active = False
@@ -259,10 +249,7 @@ class ClientContract(Base):
         self.updated_at = datetime.utcnow()
 
     def update_sla(
-        self,
-        response_time: Optional[int] = None,
-        resolution_time: Optional[int] = None,
-        availability: Optional[Decimal] = None
+        self, response_time: int | None = None, resolution_time: int | None = None, availability: Decimal | None = None
     ) -> None:
         """Atualiza configurações de SLA."""
         if response_time is not None:
@@ -275,11 +262,11 @@ class ClientContract(Base):
 
     def update_resources(
         self,
-        cameras: Optional[int] = None,
-        access_points: Optional[int] = None,
-        alarm_zones: Optional[int] = None,
-        intercoms: Optional[int] = None,
-        employees: Optional[int] = None
+        cameras: int | None = None,
+        access_points: int | None = None,
+        alarm_zones: int | None = None,
+        intercoms: int | None = None,
+        employees: int | None = None,
     ) -> None:
         """Atualiza recursos do serviço."""
         if cameras is not None:
@@ -294,12 +281,7 @@ class ClientContract(Base):
             self.total_employees = employees
         self.updated_at = datetime.utcnow()
 
-    def set_technical_contact(
-        self,
-        name: str,
-        phone: Optional[str] = None,
-        email: Optional[str] = None
-    ) -> None:
+    def set_technical_contact(self, name: str, phone: str | None = None, email: str | None = None) -> None:
         """Define contato técnico."""
         self.technical_contact_name = name
         self.technical_contact_phone = phone

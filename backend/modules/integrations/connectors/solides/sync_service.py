@@ -5,49 +5,33 @@ Sprint 33: Integration Framework
 Sincronização bidirecional completa entre Sólides e Conecta PRO.
 """
 
-import asyncio
 import logging
-from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Tuple, AsyncGenerator
-from uuid import UUID
 from dataclasses import dataclass, field
-from enum import Enum
+from datetime import datetime
+from typing import Any
+from uuid import UUID
 
 from sqlalchemy.orm import Session
 
+from modules.integrations.connectors.solides.conflict_resolver import (
+    get_resolver_for_entity,
+)
 from modules.integrations.connectors.solides.connector import SolidesConnector
 from modules.integrations.connectors.solides.mappers import (
-    solides_colaborador_to_employee,
-    employee_to_solides_colaborador,
-    solides_departamento_to_department,
-    solides_cargo_to_position,
-    solides_ocorrencia_to_occurrence,
-    occurrence_to_solides_ocorrencia,
-    solides_absenteismo_to_absence,
-    solides_passaporte_to_behavioral_profile,
     compute_solides_entity_hash,
-    detect_changes,
 )
 from modules.integrations.connectors.solides.models import (
-    SolidesSyncState,
-    SolidesSyncLog,
-    SolidesSyncConflict,
-    SolidesEntityMapping,
-    SolidesIntegrationConfig,
-    SyncDirection,
-    SyncStatus,
-    SyncSource,
     ConflictStatus,
-    ConflictStrategy,
-    get_or_create_sync_state,
-    get_entity_mapping,
+    SolidesIntegrationConfig,
+    SolidesSyncConflict,
+    SolidesSyncState,
+    SyncDirection,
+    SyncSource,
+    SyncStatus,
     create_or_update_mapping,
+    get_entity_mapping,
+    get_or_create_sync_state,
     log_sync_operation,
-    create_conflict,
-)
-from modules.integrations.connectors.solides.conflict_resolver import (
-    ConflictResolver,
-    get_resolver_for_entity,
 )
 
 logger = logging.getLogger(__name__)
@@ -56,23 +40,25 @@ logger = logging.getLogger(__name__)
 @dataclass
 class SyncStats:
     """Estatísticas de sincronização."""
+
     total_processed: int = 0
     created: int = 0
     updated: int = 0
     skipped: int = 0
     conflicts: int = 0
     errors: int = 0
-    error_details: List[Dict[str, Any]] = field(default_factory=list)
+    error_details: list[dict[str, Any]] = field(default_factory=list)
 
 
 @dataclass
 class SyncResult:
     """Resultado de operação de sincronização."""
+
     success: bool
     stats: SyncStats
-    sync_log_id: Optional[UUID] = None
+    sync_log_id: UUID | None = None
     duration_seconds: int = 0
-    error: Optional[str] = None
+    error: str | None = None
 
 
 class SolidesSyncService:
@@ -101,8 +87,8 @@ class SolidesSyncService:
         self,
         db: Session,
         condominio_id: UUID,
-        connector: Optional[SolidesConnector] = None,
-        config: Optional[SolidesIntegrationConfig] = None
+        connector: SolidesConnector | None = None,
+        config: SolidesIntegrationConfig | None = None,
     ):
         """
         Inicializa o serviço de sincronização.
@@ -136,9 +122,7 @@ class SolidesSyncService:
         """Cria conector com credenciais do banco."""
         from modules.integrations.connectors.solides.models import SolidesCredential
 
-        cred = self.db.query(SolidesCredential).filter(
-            SolidesCredential.condominio_id == self.condominio_id
-        ).first()
+        cred = self.db.query(SolidesCredential).filter(SolidesCredential.condominio_id == self.condominio_id).first()
 
         if not cred:
             raise ValueError(f"Credenciais Sólides não configuradas para condomínio {self.condominio_id}")
@@ -148,21 +132,20 @@ class SolidesSyncService:
 
         return SolidesConnector(
             credentials={"api_token": token},
-            config={"rate_limit_per_minute": self.config.rate_limit_per_minute if self._config else 60}
+            config={"rate_limit_per_minute": self.config.rate_limit_per_minute if self._config else 60},
         )
 
     def _load_config(self) -> SolidesIntegrationConfig:
         """Carrega configuração do banco."""
-        config = self.db.query(SolidesIntegrationConfig).filter(
-            SolidesIntegrationConfig.condominio_id == self.condominio_id
-        ).first()
+        config = (
+            self.db.query(SolidesIntegrationConfig)
+            .filter(SolidesIntegrationConfig.condominio_id == self.condominio_id)
+            .first()
+        )
 
         if not config:
             # Criar configuração padrão
-            config = SolidesIntegrationConfig(
-                condominio_id=self.condominio_id,
-                is_enabled=True
-            )
+            config = SolidesIntegrationConfig(condominio_id=self.condominio_id, is_enabled=True)
             self.db.add(config)
             self.db.commit()
             self.db.refresh(config)
@@ -172,8 +155,8 @@ class SolidesSyncService:
     async def full_sync(
         self,
         direction: SyncDirection = SyncDirection.SOLIDES_TO_CONECTA,
-        entity_types: Optional[List[str]] = None,
-        triggered_by: str = "system"
+        entity_types: list[str] | None = None,
+        triggered_by: str = "system",
     ) -> SyncResult:
         """
         Executa sincronização completa.
@@ -206,7 +189,7 @@ class SolidesSyncService:
             entity_type="all",
             status=SyncStatus.IN_PROGRESS,
             direction=direction,
-            triggered_by=triggered_by
+            triggered_by=triggered_by,
         )
 
         try:
@@ -238,10 +221,7 @@ class SolidesSyncService:
                     except Exception as e:
                         logger.error(f"[Solides] Erro sincronizando {entity_type}: {e}")
                         total_stats.errors += 1
-                        total_stats.error_details.append({
-                            "entity_type": entity_type,
-                            "error": str(e)
-                        })
+                        total_stats.error_details.append({"entity_type": entity_type, "error": str(e)})
 
             # Finalizar log
             duration = int((datetime.utcnow() - start_time).total_seconds())
@@ -266,10 +246,7 @@ class SolidesSyncService:
             )
 
             return SyncResult(
-                success=total_stats.errors == 0,
-                stats=total_stats,
-                sync_log_id=sync_log.id,
-                duration_seconds=duration
+                success=total_stats.errors == 0, stats=total_stats, sync_log_id=sync_log.id, duration_seconds=duration
             )
 
         except Exception as e:
@@ -279,17 +256,10 @@ class SolidesSyncService:
             sync_log.errors = [{"error": str(e)}]
             self.db.commit()
 
-            return SyncResult(
-                success=False,
-                stats=total_stats,
-                sync_log_id=sync_log.id,
-                error=str(e)
-            )
+            return SyncResult(success=False, stats=total_stats, sync_log_id=sync_log.id, error=str(e))
 
     async def incremental_sync(
-        self,
-        entity_types: Optional[List[str]] = None,
-        triggered_by: str = "scheduler"
+        self, entity_types: list[str] | None = None, triggered_by: str = "scheduler"
     ) -> SyncResult:
         """
         Executa sincronização incremental (apenas alterações).
@@ -316,7 +286,7 @@ class SolidesSyncService:
             entity_type="all",
             status=SyncStatus.IN_PROGRESS,
             direction=SyncDirection.SOLIDES_TO_CONECTA,
-            triggered_by=triggered_by
+            triggered_by=triggered_by,
         )
 
         try:
@@ -356,12 +326,7 @@ class SolidesSyncService:
             sync_log.error_count = total_stats.errors
             self.db.commit()
 
-            return SyncResult(
-                success=True,
-                stats=total_stats,
-                sync_log_id=sync_log.id,
-                duration_seconds=duration
-            )
+            return SyncResult(success=True, stats=total_stats, sync_log_id=sync_log.id, duration_seconds=duration)
 
         except Exception as e:
             logger.error(f"[Solides] Erro no incremental sync: {e}")
@@ -369,17 +334,10 @@ class SolidesSyncService:
             sync_log.completed_at = datetime.utcnow()
             self.db.commit()
 
-            return SyncResult(
-                success=False,
-                stats=total_stats,
-                error=str(e)
-            )
+            return SyncResult(success=False, stats=total_stats, error=str(e))
 
     async def sync_single_entity(
-        self,
-        entity_type: str,
-        solides_id: str,
-        direction: SyncDirection = SyncDirection.SOLIDES_TO_CONECTA
+        self, entity_type: str, solides_id: str, direction: SyncDirection = SyncDirection.SOLIDES_TO_CONECTA
     ) -> SyncResult:
         """
         Sincroniza uma entidade específica.
@@ -404,7 +362,7 @@ class SolidesSyncService:
                         return SyncResult(
                             success=False,
                             stats=stats,
-                            error=f"Entidade {entity_type}/{solides_id} não encontrada no Sólides"
+                            error=f"Entidade {entity_type}/{solides_id} não encontrada no Sólides",
                         )
 
                     # Processar
@@ -427,11 +385,7 @@ class SolidesSyncService:
             logger.error(f"[Solides] Erro sync single entity: {e}")
             return SyncResult(success=False, stats=stats, error=str(e))
 
-    async def _sync_from_solides(
-        self,
-        entity_type: str,
-        incremental: bool = True
-    ) -> SyncStats:
+    async def _sync_from_solides(self, entity_type: str, incremental: bool = True) -> SyncStats:
         """
         Sincroniza entidade do Sólides para Conecta.
 
@@ -455,10 +409,7 @@ class SolidesSyncService:
         cursor = None
         while True:
             result = await self.connector.fetch_entities(
-                entity_type=entity_type,
-                cursor=cursor,
-                updated_since=updated_since,
-                page_size=100
+                entity_type=entity_type, cursor=cursor, updated_since=updated_since, page_size=100
             )
 
             if not result.success:
@@ -482,10 +433,7 @@ class SolidesSyncService:
 
                 except Exception as e:
                     stats.errors += 1
-                    stats.error_details.append({
-                        "entity_id": item.get("id"),
-                        "error": str(e)
-                    })
+                    stats.error_details.append({"entity_id": item.get("id"), "error": str(e)})
                     logger.error(f"[Solides] Erro processando {entity_type}/{item.get('id')}: {e}")
 
             # Próxima página
@@ -496,11 +444,7 @@ class SolidesSyncService:
 
         return stats
 
-    async def _process_solides_entity(
-        self,
-        entity_type: str,
-        solides_data: Dict[str, Any]
-    ) -> str:
+    async def _process_solides_entity(self, entity_type: str, solides_data: dict[str, Any]) -> str:
         """
         Processa uma entidade do Sólides.
 
@@ -514,9 +458,7 @@ class SolidesSyncService:
         solides_id = str(solides_data.get("id"))
 
         # Verificar se já existe mapeamento
-        mapping = get_entity_mapping(
-            self.db, self.condominio_id, entity_type, solides_id=solides_id
-        )
+        mapping = get_entity_mapping(self.db, self.condominio_id, entity_type, solides_id=solides_id)
 
         # Calcular hash dos dados
         data_hash = compute_solides_entity_hash(entity_type, solides_data)
@@ -527,7 +469,7 @@ class SolidesSyncService:
                 return "skipped"  # Sem alterações
 
             # Verificar conflito
-            resolver = get_resolver_for_entity(entity_type)
+            get_resolver_for_entity(entity_type)
             # TODO: Carregar dados atuais do Conecta para comparação
 
             # Por enquanto, atualiza direto
@@ -552,17 +494,13 @@ class SolidesSyncService:
                     solides_id,
                     conecta_id,
                     sync_source=SyncSource.SOLIDES,
-                    data_hash=data_hash
+                    data_hash=data_hash,
                 )
                 return "created"
 
         return "skipped"
 
-    async def _create_conecta_entity(
-        self,
-        entity_type: str,
-        solides_data: Dict[str, Any]
-    ) -> Optional[UUID]:
+    async def _create_conecta_entity(self, entity_type: str, solides_data: dict[str, Any]) -> UUID | None:
         """
         Cria entidade no Conecta PRO (tabelas de staging solides_*).
 
@@ -573,16 +511,6 @@ class SolidesSyncService:
         Returns:
             ID da entidade criada ou None
         """
-        from modules.integrations.connectors.solides.models import (
-            SolidesEmployee,
-            SolidesDepartment,
-            SolidesPosition,
-            SolidesOccurrence,
-            SolidesAbsence,
-            SolidesWorkplace,
-            SolidesWorkSchedule,
-            SolidesCostCenter,
-        )
         from modules.integrations.connectors.solides.mappers import compute_solides_entity_hash
 
         solides_id = str(solides_data.get("id", ""))
@@ -622,7 +550,7 @@ class SolidesSyncService:
 
         return None
 
-    def _create_employee(self, data: Dict[str, Any], data_hash: str):
+    def _create_employee(self, data: dict[str, Any], data_hash: str):
         """Cria registro de colaborador."""
         from modules.integrations.connectors.solides.models import SolidesEmployee
 
@@ -665,7 +593,9 @@ class SolidesSyncService:
             unidade_nome=unidade_nome or data.get("workplaceName"),
             gestor_id=str(data.get("gestor_id") or data.get("managerId") or ""),
             gestor_nome=data.get("gestor_nome") or data.get("managerName"),
-            data_admissao=self._parse_datetime(data.get("data_admissao") or data.get("admissionDate") or data.get("hireDate")),
+            data_admissao=self._parse_datetime(
+                data.get("data_admissao") or data.get("admissionDate") or data.get("hireDate")
+            ),
             data_demissao=self._parse_datetime(data.get("data_demissao") or data.get("terminationDate")),
             tipo_contrato=data.get("tipo_contrato") or data.get("contractType"),
             regime_trabalho=data.get("regime_trabalho") or data.get("workRegime"),
@@ -687,7 +617,7 @@ class SolidesSyncService:
             data_hash=data_hash,
         )
 
-    def _create_department(self, data: Dict[str, Any], data_hash: str):
+    def _create_department(self, data: dict[str, Any], data_hash: str):
         """Cria registro de departamento."""
         from modules.integrations.connectors.solides.models import SolidesDepartment
 
@@ -703,7 +633,7 @@ class SolidesSyncService:
             data_hash=data_hash,
         )
 
-    def _create_position(self, data: Dict[str, Any], data_hash: str):
+    def _create_position(self, data: dict[str, Any], data_hash: str):
         """Cria registro de cargo."""
         from modules.integrations.connectors.solides.models import SolidesPosition
 
@@ -723,7 +653,7 @@ class SolidesSyncService:
             data_hash=data_hash,
         )
 
-    def _create_occurrence(self, data: Dict[str, Any], data_hash: str):
+    def _create_occurrence(self, data: dict[str, Any], data_hash: str):
         """Cria registro de ocorrência."""
         from modules.integrations.connectors.solides.models import SolidesOccurrence
 
@@ -749,7 +679,7 @@ class SolidesSyncService:
             data_hash=data_hash,
         )
 
-    def _create_absence(self, data: Dict[str, Any], data_hash: str):
+    def _create_absence(self, data: dict[str, Any], data_hash: str):
         """Cria registro de absenteísmo."""
         from modules.integrations.connectors.solides.models import SolidesAbsence
 
@@ -779,7 +709,7 @@ class SolidesSyncService:
             data_hash=data_hash,
         )
 
-    def _create_workplace(self, data: Dict[str, Any], data_hash: str):
+    def _create_workplace(self, data: dict[str, Any], data_hash: str):
         """Cria registro de local de trabalho/unidade."""
         from modules.integrations.connectors.solides.models import SolidesWorkplace
 
@@ -796,7 +726,7 @@ class SolidesSyncService:
             data_hash=data_hash,
         )
 
-    def _create_work_schedule(self, data: Dict[str, Any], data_hash: str):
+    def _create_work_schedule(self, data: dict[str, Any], data_hash: str):
         """Cria registro de escala de trabalho."""
         from modules.integrations.connectors.solides.models import SolidesWorkSchedule
 
@@ -812,7 +742,7 @@ class SolidesSyncService:
             data_hash=data_hash,
         )
 
-    def _create_cost_center(self, data: Dict[str, Any], data_hash: str):
+    def _create_cost_center(self, data: dict[str, Any], data_hash: str):
         """Cria registro de centro de custo."""
         from modules.integrations.connectors.solides.models import SolidesCostCenter
 
@@ -826,7 +756,7 @@ class SolidesSyncService:
             data_hash=data_hash,
         )
 
-    def _parse_datetime(self, value) -> Optional[datetime]:
+    def _parse_datetime(self, value) -> datetime | None:
         """Converte valor para datetime."""
         if not value:
             return None
@@ -840,12 +770,7 @@ class SolidesSyncService:
                     continue
         return None
 
-    async def _update_conecta_entity(
-        self,
-        entity_type: str,
-        conecta_id: UUID,
-        solides_data: Dict[str, Any]
-    ) -> bool:
+    async def _update_conecta_entity(self, entity_type: str, conecta_id: UUID, solides_data: dict[str, Any]) -> bool:
         """
         Atualiza entidade no Conecta PRO (tabelas de staging solides_*).
 
@@ -857,17 +782,17 @@ class SolidesSyncService:
         Returns:
             True se atualizado
         """
+        from modules.integrations.connectors.solides.mappers import compute_solides_entity_hash
         from modules.integrations.connectors.solides.models import (
-            SolidesEmployee,
-            SolidesDepartment,
-            SolidesPosition,
-            SolidesOccurrence,
             SolidesAbsence,
+            SolidesCostCenter,
+            SolidesDepartment,
+            SolidesEmployee,
+            SolidesOccurrence,
+            SolidesPosition,
             SolidesWorkplace,
             SolidesWorkSchedule,
-            SolidesCostCenter,
         )
-        from modules.integrations.connectors.solides.mappers import compute_solides_entity_hash
 
         # Mapear tipo para modelo
         model_map = {
@@ -916,7 +841,7 @@ class SolidesSyncService:
             self.db.rollback()
             return False
 
-    def _update_entity_fields(self, entity, entity_type: str, data: Dict[str, Any], data_hash: str):
+    def _update_entity_fields(self, entity, entity_type: str, data: dict[str, Any], data_hash: str):
         """Atualiza campos da entidade com novos dados."""
         if entity_type in ["colaboradores", "employees"]:
             # Extrair dados de cargo/departamento se forem objetos
@@ -939,10 +864,14 @@ class SolidesSyncService:
             entity.celular = data.get("celular") or data.get("mobile") or entity.celular
             entity.cargo_id = str(data.get("cargo_id") or data.get("jobRoleId") or entity.cargo_id)
             entity.cargo_nome = cargo_nome or data.get("jobRoleName") or entity.cargo_nome
-            entity.departamento_id = str(data.get("departamento_id") or data.get("departmentId") or entity.departamento_id)
+            entity.departamento_id = str(
+                data.get("departamento_id") or data.get("departmentId") or entity.departamento_id
+            )
             entity.departamento_nome = departamento_nome or data.get("departmentName") or entity.departamento_nome
             entity.situacao = data.get("situacao") or data.get("status") or entity.situacao
-            entity.data_demissao = self._parse_datetime(data.get("data_demissao") or data.get("terminationDate")) or entity.data_demissao
+            entity.data_demissao = (
+                self._parse_datetime(data.get("data_demissao") or data.get("terminationDate")) or entity.data_demissao
+            )
             entity.salario = str(data.get("salario") or data.get("salary") or entity.salario)
 
         elif entity_type in ["departamentos", "departments"]:
@@ -967,7 +896,7 @@ class SolidesSyncService:
             entity.justificado = data.get("justificado", data.get("justified", entity.justificado))
             entity.data_fim = self._parse_datetime(data.get("data_fim") or data.get("endDate")) or entity.data_fim
 
-    async def get_sync_status(self) -> Dict[str, Any]:
+    async def get_sync_status(self) -> dict[str, Any]:
         """
         Retorna status geral da sincronização.
 
@@ -980,10 +909,13 @@ class SolidesSyncService:
         # Status por entidade
         entity_status = {}
         for entity_type in self.SYNC_ORDER:
-            state = self.db.query(SolidesSyncState).filter(
-                SolidesSyncState.condominio_id == self.condominio_id,
-                SolidesSyncState.entity_type == entity_type
-            ).first()
+            state = (
+                self.db.query(SolidesSyncState)
+                .filter(
+                    SolidesSyncState.condominio_id == self.condominio_id, SolidesSyncState.entity_type == entity_type
+                )
+                .first()
+            )
 
             if state:
                 entity_status[entity_type] = {
@@ -997,10 +929,14 @@ class SolidesSyncService:
                 entity_status[entity_type] = {"status": "never_synced"}
 
         # Conflitos pendentes
-        pending_conflicts = self.db.query(SolidesSyncConflict).filter(
-            SolidesSyncConflict.condominio_id == self.condominio_id,
-            SolidesSyncConflict.status == ConflictStatus.PENDING
-        ).count()
+        pending_conflicts = (
+            self.db.query(SolidesSyncConflict)
+            .filter(
+                SolidesSyncConflict.condominio_id == self.condominio_id,
+                SolidesSyncConflict.status == ConflictStatus.PENDING,
+            )
+            .count()
+        )
 
         return {
             "connected": health.healthy,
@@ -1019,10 +955,8 @@ class SolidesSyncService:
 
 # ==================== FACTORY ====================
 
-def get_sync_service(
-    db: Session,
-    condominio_id: UUID
-) -> SolidesSyncService:
+
+def get_sync_service(db: Session, condominio_id: UUID) -> SolidesSyncService:
     """
     Factory para criar serviço de sincronização.
 

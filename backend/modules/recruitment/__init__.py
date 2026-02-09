@@ -22,10 +22,10 @@ Features:
 from fastapi import APIRouter
 
 from .controllers import (
-    job_position_router,
-    candidate_router,
     application_router,
+    candidate_router,
     interview_router,
+    job_position_router,
 )
 
 # Router principal do módulo

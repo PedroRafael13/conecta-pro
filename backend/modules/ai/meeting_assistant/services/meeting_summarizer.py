@@ -5,15 +5,13 @@ Serviço de geração de resumos automáticos de reuniões.
 """
 
 import re
-from datetime import datetime
-from typing import List, Dict, Any, Optional
 import uuid
+from datetime import datetime
+from typing import Any
 
 from modules.ai.meeting_assistant.models import (
     Meeting,
     MeetingNote,
-    MeetingSummary,
-    MeetingParticipant,
 )
 
 
@@ -36,11 +34,7 @@ class MeetingSummarizer:
 
         self.topic_stopwords = {"a", "o", "e", "de", "da", "do", "em", "para", "com", "the", "and", "or", "to"}
 
-    def generate_summary(
-        self,
-        meeting: Meeting,
-        notes: List[MeetingNote] = None
-    ) -> Dict[str, Any]:
+    def generate_summary(self, meeting: Meeting, notes: list[MeetingNote] = None) -> dict[str, Any]:
         """
         Gera resumo da reunião.
 
@@ -66,10 +60,7 @@ class MeetingSummarizer:
 
         # Gera resumo textual
         summary_text = self._generate_summary_text(
-            meeting=meeting,
-            key_points=key_points,
-            decisions=decisions,
-            action_items=action_items
+            meeting=meeting, key_points=key_points, decisions=decisions, action_items=action_items
         )
 
         # Análise de sentimento simplificada
@@ -92,10 +83,10 @@ class MeetingSummarizer:
             "participant_contributions": contributions,
             "ai_model": "rule_based_v1",
             "ai_confidence": 0.75,
-            "generation_time_seconds": generation_time
+            "generation_time_seconds": generation_time,
         }
 
-    def _gather_text_sources(self, meeting: Meeting, notes: List[MeetingNote] = None) -> List[str]:
+    def _gather_text_sources(self, meeting: Meeting, notes: list[MeetingNote] = None) -> list[str]:
         """Coleta todas as fontes de texto."""
         sources = []
 
@@ -139,7 +130,7 @@ class MeetingSummarizer:
 
         return sources
 
-    def _extract_key_points(self, sources: List[str], meeting: Meeting) -> List[str]:
+    def _extract_key_points(self, sources: list[str], meeting: Meeting) -> list[str]:
         """Extrai pontos-chave."""
         key_points = []
 
@@ -157,22 +148,29 @@ class MeetingSummarizer:
         # Extrai pontos das notas (frases importantes)
         for source in sources:
             # Procura frases que parecem conclusões
-            sentences = re.split(r'[.!?]\s+', source)
+            sentences = re.split(r"[.!?]\s+", source)
             for sentence in sentences:
                 sentence = sentence.strip()
                 if len(sentence) > 20 and len(sentence) < 200:
                     # Indicadores de importância
                     importance_indicators = [
-                        "importante", "principal", "key", "main",
-                        "conclusão", "conclusion", "resultado", "result",
-                        "destaque", "highlight"
+                        "importante",
+                        "principal",
+                        "key",
+                        "main",
+                        "conclusão",
+                        "conclusion",
+                        "resultado",
+                        "result",
+                        "destaque",
+                        "highlight",
                     ]
                     if any(ind in sentence.lower() for ind in importance_indicators):
                         key_points.append(sentence)
 
         return list(dict.fromkeys(key_points))[:10]  # Remove duplicatas, max 10
 
-    def _extract_action_items(self, sources: List[str], meeting: Meeting) -> List[Dict[str, Any]]:
+    def _extract_action_items(self, sources: list[str], meeting: Meeting) -> list[dict[str, Any]]:
         """Extrai itens de ação."""
         actions = []
 
@@ -198,14 +196,14 @@ class MeetingSummarizer:
                         "description": description.strip(),
                         "assignee": assignee,
                         "status": "pending",
-                        "source": "extracted"
+                        "source": "extracted",
                     }
                     if action not in actions:
                         actions.append(action)
 
         return actions[:15]  # Max 15 actions
 
-    def _extract_decisions(self, sources: List[str]) -> List[str]:
+    def _extract_decisions(self, sources: list[str]) -> list[str]:
         """Extrai decisões."""
         decisions = []
         full_text = " ".join(sources)
@@ -219,11 +217,11 @@ class MeetingSummarizer:
 
         return list(dict.fromkeys(decisions))[:10]
 
-    def _extract_topics(self, sources: List[str]) -> List[str]:
+    def _extract_topics(self, sources: list[str]) -> list[str]:
         """Extrai tópicos discutidos."""
         # Extrai palavras significativas
         full_text = " ".join(sources).lower()
-        words = re.findall(r'\b[a-záéíóúãõâêîôû]{4,}\b', full_text)
+        words = re.findall(r"\b[a-záéíóúãõâêîôû]{4,}\b", full_text)
 
         # Conta frequência
         word_freq = {}
@@ -237,7 +235,7 @@ class MeetingSummarizer:
 
         return topics
 
-    def _extract_keywords(self, sources: List[str]) -> List[str]:
+    def _extract_keywords(self, sources: list[str]) -> list[str]:
         """Extrai palavras-chave."""
         full_text = " ".join(sources).lower()
 
@@ -245,13 +243,13 @@ class MeetingSummarizer:
         keywords = set()
 
         # Siglas
-        siglas = re.findall(r'\b[A-Z]{2,6}\b', " ".join(sources))
+        siglas = re.findall(r"\b[A-Z]{2,6}\b", " ".join(sources))
         keywords.update(siglas)
 
         # Termos compostos comuns
         compound_patterns = [
-            r'[a-z]+ de [a-z]+',
-            r'[a-z]+ para [a-z]+',
+            r"[a-z]+ de [a-z]+",
+            r"[a-z]+ para [a-z]+",
         ]
         for pattern in compound_patterns:
             matches = re.findall(pattern, full_text)
@@ -259,7 +257,7 @@ class MeetingSummarizer:
 
         return list(keywords)[:15]
 
-    def _generate_next_steps(self, actions: List[Dict], decisions: List[str]) -> List[str]:
+    def _generate_next_steps(self, actions: list[dict], decisions: list[str]) -> list[str]:
         """Gera próximos passos."""
         next_steps = []
 
@@ -277,11 +275,7 @@ class MeetingSummarizer:
         return next_steps[:10]
 
     def _generate_summary_text(
-        self,
-        meeting: Meeting,
-        key_points: List[str],
-        decisions: List[str],
-        action_items: List[Dict]
+        self, meeting: Meeting, key_points: list[str], decisions: list[str], action_items: list[dict]
     ) -> str:
         """Gera texto de resumo."""
         lines = []
@@ -323,7 +317,7 @@ class MeetingSummarizer:
 
         return "\n".join(lines)
 
-    def _analyze_sentiment(self, sources: List[str]) -> Dict[str, Any]:
+    def _analyze_sentiment(self, sources: list[str]) -> dict[str, Any]:
         """Análise de sentimento simplificada."""
         full_text = " ".join(sources).lower()
 
@@ -338,41 +332,42 @@ class MeetingSummarizer:
         total = positive_count + negative_count + neutral_count + 1  # +1 para evitar divisão por zero
 
         return {
-            "overall": "positive" if positive_count > negative_count else ("negative" if negative_count > positive_count else "neutral"),
+            "overall": "positive"
+            if positive_count > negative_count
+            else ("negative" if negative_count > positive_count else "neutral"),
             "positive_score": round(positive_count / total, 2),
             "negative_score": round(negative_count / total, 2),
-            "neutral_score": round(neutral_count / total, 2)
+            "neutral_score": round(neutral_count / total, 2),
         }
 
-    def _analyze_contributions(self, notes: List[MeetingNote]) -> Dict[str, Any]:
+    def _analyze_contributions(self, notes: list[MeetingNote]) -> dict[str, Any]:
         """Analisa contribuições por participante."""
         contributions = {}
 
         for note in notes:
             author_id = str(note.author_id)
             if author_id not in contributions:
-                contributions[author_id] = {
-                    "author_name": note.author_name,
-                    "note_count": 0,
-                    "total_words": 0
-                }
+                contributions[author_id] = {"author_name": note.author_name, "note_count": 0, "total_words": 0}
 
             contributions[author_id]["note_count"] += 1
             contributions[author_id]["total_words"] += len(note.content.split())
 
         return contributions
 
-    def extract_action_items_from_text(self, text: str) -> List[Dict[str, Any]]:
+    def extract_action_items_from_text(self, text: str) -> list[dict[str, Any]]:
         """
         Extrai action items de um texto.
 
         Útil para processar notas ou transcrições.
         """
-        return self._extract_action_items([text], Meeting(
-            meeting_code="temp",
-            title="temp",
-            scheduled_start=datetime.utcnow(),
-            scheduled_end=datetime.utcnow(),
-            duration_minutes=0,
-            organizer_id=uuid.uuid4()
-        ))
+        return self._extract_action_items(
+            [text],
+            Meeting(
+                meeting_code="temp",
+                title="temp",
+                scheduled_start=datetime.utcnow(),
+                scheduled_end=datetime.utcnow(),
+                duration_minutes=0,
+                organizer_id=uuid.uuid4(),
+            ),
+        )

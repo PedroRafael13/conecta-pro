@@ -1,7 +1,6 @@
 """Controller para períodos de folha de pagamento."""
 
 import logging
-from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -62,9 +61,9 @@ async def create_period(
     summary="Listar períodos",
 )
 async def list_periods(
-    year: Optional[int] = Query(None, description="Filtrar por ano"),
-    period_type: Optional[PeriodType] = Query(None, description="Tipo de período"),
-    period_status: Optional[PeriodStatus] = Query(None, description="Status"),
+    year: int | None = Query(None, description="Filtrar por ano"),
+    period_type: PeriodType | None = Query(None, description="Tipo de período"),
+    period_status: PeriodStatus | None = Query(None, description="Status"),
     page: int = Query(1, ge=1, description="Página"),
     page_size: int = Query(20, ge=1, le=100, description="Itens por página"),
     db: AsyncSession = Depends(get_db),

@@ -5,14 +5,14 @@ Implementa transactional outbox para garantir consistência
 entre operações de banco e publicação de eventos.
 """
 
-from datetime import datetime, timedelta
-from typing import Dict, Optional, Any, List
-from dataclasses import dataclass, field
-from uuid import UUID, uuid4
-from enum import Enum
-import json
 import asyncio
+import contextlib
 import logging
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
+from uuid import UUID, uuid4
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 class OutboxStatus(Enum):
     """Status de entrada no outbox."""
+
     PENDENTE = "pendente"
     PROCESSANDO = "processando"
     ENVIADO = "enviado"
@@ -33,16 +34,17 @@ class OutboxStatus(Enum):
 @dataclass
 class OutboxEntry:
     """Entrada no outbox."""
+
     id: UUID = field(default_factory=uuid4)
-    tenant_id: Optional[UUID] = None
+    tenant_id: UUID | None = None
     evento_tipo: str = ""
-    evento_payload: Dict[str, Any] = field(default_factory=dict)
+    evento_payload: dict[str, Any] = field(default_factory=dict)
     status: OutboxStatus = OutboxStatus.PENDENTE
     tentativas: int = 0
     max_tentativas: int = 5
-    erro: Optional[str] = None
+    erro: str | None = None
     agendado_para: datetime = field(default_factory=datetime.utcnow)
-    processado_em: Optional[datetime] = None
+    processado_em: datetime | None = None
     created_at: datetime = field(default_factory=datetime.utcnow)
 
     def to_event(self) -> Event:
@@ -61,21 +63,13 @@ class OutboxManager:
     - Processamento em batch
     """
 
-    def __init__(
-        self,
-        db_session: Optional[AsyncSession] = None,
-        event_bus: Optional[EventBus] = None
-    ):
+    def __init__(self, db_session: AsyncSession | None = None, event_bus: EventBus | None = None):
         self.db = db_session
         self.event_bus = event_bus or get_event_bus()
         self._running = False
-        self._task: Optional[asyncio.Task] = None
+        self._task: asyncio.Task | None = None
 
-    async def adicionar(
-        self,
-        evento: Event,
-        db_session: Optional[AsyncSession] = None
-    ) -> UUID:
+    async def adicionar(self, evento: Event, db_session: AsyncSession | None = None) -> UUID:
         """
         Adiciona evento ao outbox (dentro de transação).
 
@@ -112,17 +106,13 @@ class OutboxManager:
                 "evento_payload": evento.to_json(),
                 "status": OutboxStatus.PENDENTE.value,
                 "max_tentativas": 5,
-            }
+            },
         )
 
         logger.debug(f"Evento adicionado ao outbox: {entry_id}")
         return entry_id
 
-    async def adicionar_muitos(
-        self,
-        eventos: List[Event],
-        db_session: Optional[AsyncSession] = None
-    ) -> List[UUID]:
+    async def adicionar_muitos(self, eventos: list[Event], db_session: AsyncSession | None = None) -> list[UUID]:
         """Adiciona múltiplos eventos ao outbox."""
         ids = []
         for evento in eventos:
@@ -130,10 +120,7 @@ class OutboxManager:
             ids.append(entry_id)
         return ids
 
-    async def processar_pendentes(
-        self,
-        batch_size: int = 100
-    ) -> int:
+    async def processar_pendentes(self, batch_size: int = 100) -> int:
         """
         Processa eventos pendentes no outbox.
 
@@ -160,7 +147,7 @@ class OutboxManager:
             {
                 "status": OutboxStatus.PENDENTE.value,
                 "limite": batch_size,
-            }
+            },
         )
 
         rows = result.fetchall()
@@ -183,7 +170,7 @@ class OutboxManager:
                         "id": entry_id,
                         "status": OutboxStatus.PROCESSANDO.value,
                         "tentativas": tentativas,
-                    }
+                    },
                 )
 
                 # Publicar evento
@@ -201,7 +188,7 @@ class OutboxManager:
                         {
                             "id": entry_id,
                             "status": OutboxStatus.ENVIADO.value,
-                        }
+                        },
                     )
                     processados += 1
 
@@ -218,7 +205,7 @@ class OutboxManager:
                     novo_status = OutboxStatus.PENDENTE
 
                 # Calcular próxima tentativa (backoff exponencial)
-                delay_segundos = min(60 * (2 ** tentativas), 3600)  # Max 1 hora
+                delay_segundos = min(60 * (2**tentativas), 3600)  # Max 1 hora
 
                 await self.db.execute(
                     text("""
@@ -233,7 +220,7 @@ class OutboxManager:
                         "status": novo_status.value,
                         "erro": str(e)[:500],
                         "delay": delay_segundos,
-                    }
+                    },
                 )
 
         await self.db.commit()
@@ -243,11 +230,7 @@ class OutboxManager:
 
         return processados
 
-    async def reprocessar_falhas(
-        self,
-        tenant_id: Optional[UUID] = None,
-        max_age_hours: int = 24
-    ) -> int:
+    async def reprocessar_falhas(self, tenant_id: UUID | None = None, max_age_hours: int = 24) -> int:
         """
         Reprocessa eventos com falha.
 
@@ -261,10 +244,7 @@ class OutboxManager:
         if not self.db:
             return 0
 
-        conditions = [
-            "status = :status",
-            f"created_at > NOW() - INTERVAL '{max_age_hours} hours'"
-        ]
+        conditions = ["status = :status", f"created_at > NOW() - INTERVAL '{max_age_hours} hours'"]
         params = {"status": OutboxStatus.FALHA.value}
 
         if tenant_id:
@@ -278,9 +258,9 @@ class OutboxManager:
                 tentativas = 0,
                 erro = NULL,
                 agendado_para = NOW()
-            WHERE {' AND '.join(conditions)}
+            WHERE {" AND ".join(conditions)}
             """),
-            {**params, "novo_status": OutboxStatus.PENDENTE.value}
+            {**params, "novo_status": OutboxStatus.PENDENTE.value},
         )
 
         await self.db.commit()
@@ -291,10 +271,7 @@ class OutboxManager:
 
         return count
 
-    async def limpar_processados(
-        self,
-        dias_retencao: int = 7
-    ) -> int:
+    async def limpar_processados(self, dias_retencao: int = 7) -> int:
         """
         Remove eventos processados antigos.
 
@@ -316,7 +293,7 @@ class OutboxManager:
             {
                 "status": OutboxStatus.ENVIADO.value,
                 "dias": dias_retencao,
-            }
+            },
         )
 
         await self.db.commit()
@@ -327,10 +304,7 @@ class OutboxManager:
 
         return count
 
-    async def obter_estatisticas(
-        self,
-        tenant_id: Optional[UUID] = None
-    ) -> Dict[str, Any]:
+    async def obter_estatisticas(self, tenant_id: UUID | None = None) -> dict[str, Any]:
         """Obtém estatísticas do outbox."""
         if not self.db:
             return {}
@@ -354,7 +328,7 @@ class OutboxManager:
             {where_clause}
             GROUP BY status
             """),
-            params
+            params,
         )
 
         stats = {"por_status": {}}
@@ -366,28 +340,19 @@ class OutboxManager:
 
         # Totais
         stats["total"] = sum(s["total"] for s in stats["por_status"].values())
-        stats["pendentes"] = stats["por_status"].get(
-            OutboxStatus.PENDENTE.value, {}
-        ).get("total", 0)
-        stats["falhas"] = stats["por_status"].get(
-            OutboxStatus.FALHA.value, {}
-        ).get("total", 0)
+        stats["pendentes"] = stats["por_status"].get(OutboxStatus.PENDENTE.value, {}).get("total", 0)
+        stats["falhas"] = stats["por_status"].get(OutboxStatus.FALHA.value, {}).get("total", 0)
 
         return stats
 
-    async def iniciar_processamento_continuo(
-        self,
-        intervalo_segundos: int = 5
-    ):
+    async def iniciar_processamento_continuo(self, intervalo_segundos: int = 5):
         """Inicia processamento contínuo do outbox em background."""
         if self._running:
             logger.warning("Processamento contínuo já está rodando")
             return
 
         self._running = True
-        self._task = asyncio.create_task(
-            self._loop_processamento(intervalo_segundos)
-        )
+        self._task = asyncio.create_task(self._loop_processamento(intervalo_segundos))
 
         logger.info(f"Processamento contínuo do outbox iniciado (intervalo: {intervalo_segundos}s)")
 
@@ -397,10 +362,8 @@ class OutboxManager:
 
         if self._task:
             self._task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._task
-            except asyncio.CancelledError:
-                pass
             self._task = None
 
         logger.info("Processamento contínuo do outbox parado")
@@ -417,7 +380,7 @@ class OutboxManager:
 
 
 # Instância singleton
-_outbox_manager_instance: Optional[OutboxManager] = None
+_outbox_manager_instance: OutboxManager | None = None
 
 
 def get_outbox_manager() -> OutboxManager:

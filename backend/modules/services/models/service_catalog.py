@@ -3,17 +3,14 @@ ServiceCatalog Model - Catálogo de Serviços
 Sprint 31: Gestão de Serviços
 """
 
-import enum
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional, List, TYPE_CHECKING
+from enum import StrEnum
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
-from sqlalchemy import (
-    Column, String, Text, Boolean, DateTime,
-    Numeric, Integer, Enum, Index
-)
-from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY
+from sqlalchemy import Boolean, Column, DateTime, Enum, Index, Integer, Numeric, String, Text
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import relationship
 
 from core.database import Base
@@ -23,8 +20,9 @@ if TYPE_CHECKING:
     from modules.services.models.sla_config import SLAConfig
 
 
-class ServiceCategory(str, enum.Enum):
+class ServiceCategory(StrEnum):
     """Categoria do serviço."""
+
     SEGURANCA = "seguranca"
     PORTARIA = "portaria"
     MONITORAMENTO = "monitoramento"
@@ -39,8 +37,9 @@ class ServiceCategory(str, enum.Enum):
     OUTROS = "outros"
 
 
-class ServiceType(str, enum.Enum):
+class ServiceType(StrEnum):
     """Tipo do serviço."""
+
     RECORRENTE = "recorrente"
     AVULSO = "avulso"
     PROJETO = "projeto"
@@ -50,8 +49,9 @@ class ServiceType(str, enum.Enum):
     CORRETIVO = "corretivo"
 
 
-class ServiceStatus(str, enum.Enum):
+class ServiceStatus(StrEnum):
     """Status do serviço no catálogo."""
+
     RASCUNHO = "rascunho"
     ATIVO = "ativo"
     INATIVO = "inativo"
@@ -63,6 +63,7 @@ class ServiceCatalog(Base):
     Model para catálogo de serviços.
     Representa os serviços oferecidos pela empresa.
     """
+
     __tablename__ = "service_catalog"
 
     # Primary key
@@ -75,15 +76,9 @@ class ServiceCatalog(Base):
     short_description = Column(String(500), nullable=True)
 
     # Classificação
-    category = Column(
-        Enum(ServiceCategory), nullable=False, default=ServiceCategory.OUTROS
-    )
-    service_type = Column(
-        Enum(ServiceType), nullable=False, default=ServiceType.RECORRENTE
-    )
-    status = Column(
-        Enum(ServiceStatus), nullable=False, default=ServiceStatus.RASCUNHO
-    )
+    category = Column(Enum(ServiceCategory), nullable=False, default=ServiceCategory.OUTROS)
+    service_type = Column(Enum(ServiceType), nullable=False, default=ServiceType.RECORRENTE)
+    status = Column(Enum(ServiceStatus), nullable=False, default=ServiceStatus.RASCUNHO)
 
     # Precificação
     base_price = Column(Numeric(15, 2), nullable=True)
@@ -141,19 +136,13 @@ class ServiceCatalog(Base):
     # Auditoria
     ativo = Column(Boolean, nullable=False, default=True)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(
-        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
     created_by = Column(UUID(as_uuid=True), nullable=True)
     updated_by = Column(UUID(as_uuid=True), nullable=True)
 
     # Relacionamentos
-    orders: List["ServiceOrder"] = relationship(
-        "ServiceOrder", back_populates="service", lazy="dynamic"
-    )
-    sla_configs: List["SLAConfig"] = relationship(
-        "SLAConfig", back_populates="service", lazy="dynamic"
-    )
+    orders: list["ServiceOrder"] = relationship("ServiceOrder", back_populates="service", lazy="dynamic")
+    sla_configs: list["SLAConfig"] = relationship("SLAConfig", back_populates="service", lazy="dynamic")
 
     # Índices
     __table_args__ = (
@@ -188,7 +177,7 @@ class ServiceCatalog(Base):
         orders_delta: int = 0,
         completed_delta: int = 0,
         cancelled_delta: int = 0,
-        revenue_delta: Decimal = Decimal("0")
+        revenue_delta: Decimal = Decimal("0"),
     ) -> None:
         """Atualiza métricas do serviço."""
         self.total_orders += orders_delta
@@ -208,10 +197,7 @@ class ServiceCatalog(Base):
         self.updated_at = datetime.utcnow()
 
     def calculate_price(
-        self,
-        quantity: float = 1,
-        duration_hours: Optional[float] = None,
-        is_emergency: bool = False
+        self, quantity: float = 1, duration_hours: float | None = None, is_emergency: bool = False
     ) -> Decimal:
         """Calcula preço do serviço."""
         if self.unit_price:

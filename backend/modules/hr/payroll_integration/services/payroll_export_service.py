@@ -6,7 +6,7 @@ import io
 import json
 import logging
 from datetime import datetime, timedelta
-from typing import Any, Dict, Optional
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -54,7 +54,7 @@ class PayrollExportService:
 
         return await self.export_repo.create(data, condominio_id, created_by=user_id)
 
-    async def get_export(self, export_id: UUID) -> Optional[PayrollExport]:
+    async def get_export(self, export_id: UUID) -> PayrollExport | None:
         """Busca exportação por ID."""
         return await self.export_repo.get_by_id(export_id)
 
@@ -373,9 +373,7 @@ class PayrollExportService:
             ExportFormat.CSV.value: "text/csv",
             ExportFormat.JSON.value: "application/json",
             ExportFormat.TXT.value: "text/plain",
-            ExportFormat.XLSX.value: (
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            ),
+            ExportFormat.XLSX.value: ("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
             ExportFormat.XML.value: "application/xml",
             ExportFormat.CNAB240.value: "text/plain",
             ExportFormat.CNAB400.value: "text/plain",
@@ -430,7 +428,7 @@ class PayrollExportService:
         self,
         condominio_id: UUID,
         limit: int = 10,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Processa exportações pendentes."""
         pending = await self.export_repo.get_pending_exports(condominio_id, limit)
 

@@ -10,8 +10,9 @@ from pathlib import Path
 # Adicionar root ao path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
+
 from core.config import settings
 from modules.operacional.services.auto_scale_service import AutoScaleService
 
@@ -25,21 +26,22 @@ async def main():
         print("Gerando escalas para o mês atual...")
         result = await service.generate_scales_for_current_month()
 
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("RESULTADO DA GERAÇÃO")
-        print("="*60)
+        print("=" * 60)
         print(f"Status: {'SUCESSO' if result['success'] else 'ERRO'}")
         print(f"Mensagem: {result['message']}")
         print(f"Escalas criadas: {result['scales_created']}")
         print(f"Turnos criados: {result['shifts_created']}")
 
-        if result['errors']:
+        if result["errors"]:
             print("\nErros:")
-            for error in result['errors']:
+            for error in result["errors"]:
                 print(f"  - {error}")
-        print("="*60)
+        print("=" * 60)
 
     await engine.dispose()
+
 
 if __name__ == "__main__":
     asyncio.run(main())

@@ -3,10 +3,9 @@
 Sprint 37 - Push Notifications Mobile.
 """
 
-import enum
 import uuid
 from datetime import datetime
-from typing import Optional
+from enum import StrEnum
 
 from sqlalchemy import Boolean, Column, DateTime, Enum, Float, Integer, String, Text
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
@@ -15,7 +14,7 @@ from sqlalchemy.orm import relationship
 from core.models.base import Base
 
 
-class DevicePlatform(str, enum.Enum):
+class DevicePlatform(StrEnum):
     """Plataforma do dispositivo."""
 
     IOS = "ios"
@@ -26,7 +25,7 @@ class DevicePlatform(str, enum.Enum):
     MACOS = "macos"
 
 
-class DeviceStatus(str, enum.Enum):
+class DeviceStatus(StrEnum):
     """Status do dispositivo."""
 
     ACTIVE = "active"
@@ -176,14 +175,11 @@ class PushDevice(Base):
     def is_deliverable(self) -> bool:
         """Verifica se pode receber notificacoes."""
         return bool(
-            self.active
-            and self.status == DeviceStatus.ACTIVE
-            and self.notifications_enabled
-            and self.device_token
+            self.active and self.status == DeviceStatus.ACTIVE and self.notifications_enabled and self.device_token
         )
 
     @property
-    def open_rate(self) -> Optional[float]:
+    def open_rate(self) -> float | None:
         """Calcula taxa de abertura."""
         if self.total_notifications_delivered > 0:
             return (self.total_notifications_opened / self.total_notifications_delivered) * 100

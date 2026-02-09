@@ -3,8 +3,8 @@ Modelo Shift (Turno de Trabalho) para Operações.
 """
 
 from datetime import date, datetime, time
-from enum import Enum
-from typing import TYPE_CHECKING, Optional
+from enum import StrEnum
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, Integer, String, Text, Time, func
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from .scale import Scale
 
 
-class ShiftStatus(str, Enum):
+class ShiftStatus(StrEnum):
     """Status do turno."""
 
     SCHEDULED = "scheduled"  # Agendado
@@ -70,7 +70,7 @@ class Shift(Base):
         nullable=False,
         index=True,
     )
-    employee_id: Mapped[Optional[str]] = mapped_column(
+    employee_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
         index=True,
@@ -89,9 +89,9 @@ class Shift(Base):
     planned_break_minutes: Mapped[int] = mapped_column(Integer, default=60, nullable=False)
 
     # Horários reais (preenchido via ponto - DateTime no banco)
-    actual_start_time: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    actual_end_time: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    actual_break_minutes: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    actual_start_time: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    actual_end_time: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    actual_break_minutes: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     # Status
     status: Mapped[str] = mapped_column(
@@ -122,7 +122,7 @@ class Shift(Base):
     total_pay: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
 
     # Observações
-    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Campos de controle
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)

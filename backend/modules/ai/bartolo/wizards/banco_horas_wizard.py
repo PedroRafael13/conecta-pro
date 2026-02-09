@@ -6,10 +6,8 @@ do banco de horas, coletando funcionario, horas, data e motivo.
 """
 
 from datetime import datetime
-from typing import Any
-from modules.ai.bartolo.wizards.base_wizard import (
-    BaseWizard, WizardStep, StepType
-)
+
+from modules.ai.bartolo.wizards.base_wizard import BaseWizard, StepType, WizardStep
 
 
 class BancoHorasWizard(BaseWizard):
@@ -44,7 +42,6 @@ class BancoHorasWizard(BaseWizard):
                     "Ex: 'Jose Silva' ou o UUID do funcionario."
                 ),
             ),
-
             # 2. Verificar saldo disponivel (exibicao)
             WizardStep(
                 id="verificacao_saldo",
@@ -60,7 +57,6 @@ class BancoHorasWizard(BaseWizard):
                 required=False,
                 help_text="O sistema ira consultar o saldo em tempo real ao processar a solicitacao.",
             ),
-
             # 3. Definir horas a compensar
             WizardStep(
                 id="horas_compensar",
@@ -79,7 +75,6 @@ class BancoHorasWizard(BaseWizard):
                     "Use ponto ou virgula para decimais (ex: 4.5 ou 4,5)."
                 ),
             ),
-
             # 4. Definir data da compensacao
             WizardStep(
                 id="data_compensacao",
@@ -95,7 +90,6 @@ class BancoHorasWizard(BaseWizard):
                     "A data deve ser futura ou igual a hoje."
                 ),
             ),
-
             # 5. Motivo da compensacao
             WizardStep(
                 id="motivo",
@@ -119,7 +113,6 @@ class BancoHorasWizard(BaseWizard):
                     "e sera solicitada uma descricao."
                 ),
             ),
-
             # 5b. Descricao do motivo (condicional - apenas se "Outro motivo")
             WizardStep(
                 id="motivo_descricao",
@@ -133,7 +126,6 @@ class BancoHorasWizard(BaseWizard):
                 depends_on="motivo",
                 skip_condition=lambda data: data.get("motivo") != "Outro motivo",
             ),
-
             # 6. Confirmacao
             WizardStep(
                 id="confirmacao",
@@ -212,19 +204,23 @@ class BancoHorasWizard(BaseWizard):
         validations = []
 
         if horas > 0:
-            validations.append({
-                "tipo": "info",
-                "mensagem": f"Compensacao de {horas:.1f}h solicitada.",
-            })
+            validations.append(
+                {
+                    "tipo": "info",
+                    "mensagem": f"Compensacao de {horas:.1f}h solicitada.",
+                }
+            )
 
         if horas > 8:
-            validations.append({
-                "tipo": "warning",
-                "mensagem": (
-                    f"Compensacao superior a 8h ({horas:.1f}h). "
-                    "Verificar se o funcionario nao excede jornada diaria."
-                ),
-            })
+            validations.append(
+                {
+                    "tipo": "warning",
+                    "mensagem": (
+                        f"Compensacao superior a 8h ({horas:.1f}h). "
+                        "Verificar se o funcionario nao excede jornada diaria."
+                    ),
+                }
+            )
 
         return validations
 
@@ -237,10 +233,12 @@ class BancoHorasWizard(BaseWizard):
         ]
 
         if horas >= 8:
-            steps.extend([
-                "Verificar cobertura do posto no dia da compensacao",
-                "Providenciar substituto se necessario",
-            ])
+            steps.extend(
+                [
+                    "Verificar cobertura do posto no dia da compensacao",
+                    "Providenciar substituto se necessario",
+                ]
+            )
 
         steps.append("Atualizar saldo do banco de horas apos aprovacao")
         return steps
@@ -250,24 +248,25 @@ class BancoHorasWizard(BaseWizard):
         alerts = []
 
         if horas > 12:
-            alerts.append({
-                "tipo": "warning",
-                "mensagem": (
-                    f"Compensacao de {horas:.1f}h e significativa. "
-                    "Considerar dividir em mais de um dia."
-                ),
-            })
+            alerts.append(
+                {
+                    "tipo": "warning",
+                    "mensagem": (f"Compensacao de {horas:.1f}h e significativa. Considerar dividir em mais de um dia."),
+                }
+            )
 
         # Verificar se motivo exige documentacao
         motivos_com_doc = ["Consulta medica"]
         motivo = data.get("motivo", "")
         if motivo in motivos_com_doc:
-            alerts.append({
-                "tipo": "info",
-                "mensagem": (
-                    f"Motivo '{motivo}' pode exigir documentacao comprobatoria. "
-                    "Solicitar ao funcionario o documento pertinente."
-                ),
-            })
+            alerts.append(
+                {
+                    "tipo": "info",
+                    "mensagem": (
+                        f"Motivo '{motivo}' pode exigir documentacao comprobatoria. "
+                        "Solicitar ao funcionario o documento pertinente."
+                    ),
+                }
+            )
 
         return alerts

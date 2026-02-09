@@ -1,10 +1,9 @@
 """Schemas Pydantic para REPEvent."""
 
-from datetime import datetime, date, time
-from typing import Optional, List
+from datetime import date, datetime, time
 from uuid import UUID
 
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class REPEventBase(BaseModel):
@@ -20,24 +19,24 @@ class REPEventBase(BaseModel):
         default="entry",
         description="Tipo do evento",
     )
-    pis_number: Optional[str] = Field(
+    pis_number: str | None = Field(
         default=None,
         min_length=11,
         max_length=11,
         description="Número PIS/PASEP",
     )
-    employee_code: Optional[str] = Field(
+    employee_code: str | None = Field(
         default=None,
         max_length=50,
     )
-    employee_name: Optional[str] = Field(
+    employee_name: str | None = Field(
         default=None,
         max_length=200,
     )
     identification_method: str = Field(
         default="biometric",
     )
-    identification_score: Optional[int] = Field(
+    identification_score: int | None = Field(
         default=None,
         ge=0,
         le=100,
@@ -49,29 +48,29 @@ class REPEventCreate(REPEventBase):
 
     device_id: UUID
     condominio_id: UUID
-    employee_id: Optional[UUID] = None
-    biometric_hash: Optional[str] = None
-    finger_index: Optional[int] = Field(default=None, ge=1, le=10)
-    card_number: Optional[str] = None
-    card_facility_code: Optional[str] = None
+    employee_id: UUID | None = None
+    biometric_hash: str | None = None
+    finger_index: int | None = Field(default=None, ge=1, le=10)
+    card_number: str | None = None
+    card_facility_code: str | None = None
     photo_captured: bool = False
-    photo_path: Optional[str] = None
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
-    location_accuracy: Optional[float] = None
-    raw_data: Optional[dict] = None
-    sync_id: Optional[UUID] = None
+    photo_path: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
+    location_accuracy: float | None = None
+    raw_data: dict | None = None
+    sync_id: UUID | None = None
 
 
 class REPEventUpdate(BaseModel):
     """Schema para atualizar REPEvent."""
 
-    employee_id: Optional[UUID] = None
-    status: Optional[str] = None
-    time_entry_id: Optional[UUID] = None
-    error_message: Optional[str] = None
-    is_valid: Optional[bool] = None
-    validation_errors: Optional[list] = None
+    employee_id: UUID | None = None
+    status: str | None = None
+    time_entry_id: UUID | None = None
+    error_message: str | None = None
+    is_valid: bool | None = None
+    validation_errors: list | None = None
 
 
 class REPEventResponse(REPEventBase):
@@ -84,21 +83,21 @@ class REPEventResponse(REPEventBase):
     condominio_id: UUID
     event_date: date
     event_time: time
-    employee_id: Optional[UUID] = None
-    card_number: Optional[str] = None
+    employee_id: UUID | None = None
+    card_number: str | None = None
     photo_captured: bool
     status: str
-    processed_at: Optional[datetime] = None
-    time_entry_id: Optional[UUID] = None
+    processed_at: datetime | None = None
+    time_entry_id: UUID | None = None
     is_valid: bool
-    afd_line: Optional[str] = None
+    afd_line: str | None = None
     created_at: datetime
 
 
 class REPEventList(BaseModel):
     """Schema para lista de eventos."""
 
-    items: List[REPEventResponse]
+    items: list[REPEventResponse]
     total: int
     page: int
     page_size: int
@@ -108,29 +107,29 @@ class REPEventList(BaseModel):
 class REPEventFilter(BaseModel):
     """Filtros para busca de eventos."""
 
-    device_id: Optional[UUID] = None
-    condominio_id: Optional[UUID] = None
-    employee_id: Optional[UUID] = None
-    pis_number: Optional[str] = None
-    event_type: Optional[str] = None
-    status: Optional[str] = None
-    identification_method: Optional[str] = None
-    date_from: Optional[date] = None
-    date_to: Optional[date] = None
-    is_valid: Optional[bool] = None
-    has_employee: Optional[bool] = Field(
+    device_id: UUID | None = None
+    condominio_id: UUID | None = None
+    employee_id: UUID | None = None
+    pis_number: str | None = None
+    event_type: str | None = None
+    status: str | None = None
+    identification_method: str | None = None
+    date_from: date | None = None
+    date_to: date | None = None
+    is_valid: bool | None = None
+    has_employee: bool | None = Field(
         default=None,
         description="Filtrar por eventos com/sem funcionário identificado",
     )
-    nsr_from: Optional[int] = None
-    nsr_to: Optional[int] = None
+    nsr_from: int | None = None
+    nsr_to: int | None = None
 
 
 class REPEventBulkCreate(BaseModel):
     """Schema para criação em lote de eventos."""
 
     device_id: UUID
-    events: List[REPEventCreate]
+    events: list[REPEventCreate]
 
 
 class REPEventProcess(BaseModel):
@@ -146,17 +145,17 @@ class REPEventProcessResult(BaseModel):
 
     event_id: UUID
     success: bool
-    time_entry_id: Optional[UUID] = None
-    error_message: Optional[str] = None
+    time_entry_id: UUID | None = None
+    error_message: str | None = None
 
 
 class REPEventWebhook(BaseModel):
     """Schema para receber eventos via webhook."""
 
     device_serial: str
-    events: List[dict]
+    events: list[dict]
     timestamp: datetime
-    signature: Optional[str] = None
+    signature: str | None = None
 
 
 class REPEventStats(BaseModel):
@@ -169,5 +168,5 @@ class REPEventStats(BaseModel):
     pending_processing: int
     errors_count: int
     duplicates_count: int
-    date_range_start: Optional[date] = None
-    date_range_end: Optional[date] = None
+    date_range_start: date | None = None
+    date_range_end: date | None = None

@@ -1,8 +1,8 @@
 """Repository para contas a receber."""
 
+import builtins
 from datetime import date, datetime, timedelta
 from decimal import Decimal
-from typing import List, Optional
 from uuid import UUID
 
 from sqlalchemy import and_, func, or_, select
@@ -49,7 +49,7 @@ class CustomerRepository:
     async def create(
         self,
         data: CustomerCreate,
-        user_id: Optional[UUID] = None,
+        user_id: UUID | None = None,
     ) -> Customer:
         """Cria um novo cliente."""
         customer = Customer(
@@ -61,7 +61,7 @@ class CustomerRepository:
         await self.session.refresh(customer)
         return customer
 
-    async def get_by_id(self, customer_id: UUID) -> Optional[Customer]:
+    async def get_by_id(self, customer_id: UUID) -> Customer | None:
         """Busca cliente por ID."""
         result = await self.session.execute(
             select(Customer).where(
@@ -77,7 +77,7 @@ class CustomerRepository:
         self,
         condominio_id: UUID,
         cpf_cnpj: str,
-    ) -> Optional[Customer]:
+    ) -> Customer | None:
         """Busca cliente por CPF/CNPJ."""
         result = await self.session.execute(
             select(Customer).where(
@@ -93,7 +93,7 @@ class CustomerRepository:
     async def get_by_unidade(
         self,
         unidade_id: UUID,
-    ) -> Optional[Customer]:
+    ) -> Customer | None:
         """Busca cliente por unidade."""
         result = await self.session.execute(
             select(Customer).where(
@@ -108,10 +108,10 @@ class CustomerRepository:
     async def list(
         self,
         condominio_id: UUID,
-        filters: Optional[CustomerFilter] = None,
+        filters: CustomerFilter | None = None,
         skip: int = 0,
         limit: int = 100,
-    ) -> List[Customer]:
+    ) -> list[Customer]:
         """Lista clientes com filtros."""
         query = select(Customer).where(
             and_(
@@ -162,7 +162,7 @@ class CustomerRepository:
     async def count(
         self,
         condominio_id: UUID,
-        filters: Optional[CustomerFilter] = None,
+        filters: CustomerFilter | None = None,
     ) -> int:
         """Conta clientes com filtros."""
         query = select(func.count(Customer.id)).where(
@@ -212,7 +212,7 @@ class ReceivableCategoryRepository:
     async def create(
         self,
         data: ReceivableCategoryCreate,
-        user_id: Optional[UUID] = None,
+        user_id: UUID | None = None,
     ) -> ReceivableCategory:
         """Cria uma nova categoria."""
         category = ReceivableCategory(
@@ -224,7 +224,7 @@ class ReceivableCategoryRepository:
         await self.session.refresh(category)
         return category
 
-    async def get_by_id(self, category_id: UUID) -> Optional[ReceivableCategory]:
+    async def get_by_id(self, category_id: UUID) -> ReceivableCategory | None:
         """Busca categoria por ID."""
         result = await self.session.execute(
             select(ReceivableCategory).where(
@@ -241,7 +241,7 @@ class ReceivableCategoryRepository:
         condominio_id: UUID,
         skip: int = 0,
         limit: int = 100,
-    ) -> List[ReceivableCategory]:
+    ) -> list[ReceivableCategory]:
         """Lista categorias."""
         result = await self.session.execute(
             select(ReceivableCategory)
@@ -290,7 +290,7 @@ class ReceivableAccountRepository:
     async def create(
         self,
         data: ReceivableAccountCreate,
-        user_id: Optional[UUID] = None,
+        user_id: UUID | None = None,
     ) -> ReceivableAccount:
         """Cria uma nova conta a receber."""
         # Calcula valor liquido
@@ -376,7 +376,7 @@ class ReceivableAccountRepository:
         self,
         receivable_id: UUID,
         with_relations: bool = False,
-    ) -> Optional[ReceivableAccount]:
+    ) -> ReceivableAccount | None:
         """Busca conta a receber por ID."""
         query = select(ReceivableAccount).where(
             and_(
@@ -398,10 +398,10 @@ class ReceivableAccountRepository:
     async def list(
         self,
         condominio_id: UUID,
-        filters: Optional[ReceivableAccountFilter] = None,
+        filters: ReceivableAccountFilter | None = None,
         skip: int = 0,
         limit: int = 100,
-    ) -> List[ReceivableAccount]:
+    ) -> list[ReceivableAccount]:
         """Lista contas a receber com filtros."""
         query = select(ReceivableAccount).where(
             and_(
@@ -451,9 +451,7 @@ class ReceivableAccountRepository:
             query = query.where(ReceivableAccount.status == filters.status.value)
 
         if filters.receivable_type:
-            query = query.where(
-                ReceivableAccount.receivable_type == filters.receivable_type.value
-            )
+            query = query.where(ReceivableAccount.receivable_type == filters.receivable_type.value)
 
         if filters.priority:
             query = query.where(ReceivableAccount.priority == filters.priority.value)
@@ -508,7 +506,7 @@ class ReceivableAccountRepository:
     async def count(
         self,
         condominio_id: UUID,
-        filters: Optional[ReceivableAccountFilter] = None,
+        filters: ReceivableAccountFilter | None = None,
     ) -> int:
         """Conta contas a receber com filtros."""
         query = select(func.count(ReceivableAccount.id)).where(
@@ -562,7 +560,7 @@ class ReceivableAccountRepository:
         self,
         condominio_id: UUID,
         limit: int = 100,
-    ) -> List[ReceivableAccount]:
+    ) -> builtins.list[ReceivableAccount]:
         """Busca contas vencidas."""
         today = date.today()
         result = await self.session.execute(
@@ -591,7 +589,7 @@ class ReceivableAccountRepository:
         condominio_id: UUID,
         days: int = 7,
         limit: int = 100,
-    ) -> List[ReceivableAccount]:
+    ) -> builtins.list[ReceivableAccount]:
         """Busca contas a vencer em X dias."""
         today = date.today()
         end_date = today + timedelta(days=days)
@@ -621,9 +619,9 @@ class ReceivableAccountRepository:
     async def get_by_customer(
         self,
         customer_id: UUID,
-        status: Optional[ReceivableStatus] = None,
+        status: ReceivableStatus | None = None,
         limit: int = 100,
-    ) -> List[ReceivableAccount]:
+    ) -> builtins.list[ReceivableAccount]:
         """Busca contas por cliente."""
         query = select(ReceivableAccount).where(
             and_(
@@ -642,9 +640,9 @@ class ReceivableAccountRepository:
     async def get_by_unidade(
         self,
         unidade_id: UUID,
-        status: Optional[ReceivableStatus] = None,
+        status: ReceivableStatus | None = None,
         limit: int = 100,
-    ) -> List[ReceivableAccount]:
+    ) -> builtins.list[ReceivableAccount]:
         """Busca contas por unidade."""
         query = select(ReceivableAccount).where(
             and_(
@@ -741,10 +739,7 @@ class ReceivableAccountRepository:
         )
 
         category_result = await self.session.execute(category_query)
-        category_data = {
-            row.name: {"count": row.count, "value": float(row.total or 0)}
-            for row in category_result
-        }
+        category_data = {row.name: {"count": row.count, "value": float(row.total or 0)} for row in category_result}
 
         # Por prioridade
         priority_query = (
@@ -784,7 +779,7 @@ class ReceivableInstallmentRepository:
         """Inicializa o repository."""
         self.session = session
 
-    async def get_by_id(self, installment_id: UUID) -> Optional[ReceivableInstallment]:
+    async def get_by_id(self, installment_id: UUID) -> ReceivableInstallment | None:
         """Busca parcela por ID."""
         result = await self.session.execute(
             select(ReceivableInstallment)
@@ -801,7 +796,7 @@ class ReceivableInstallmentRepository:
     async def list_by_account(
         self,
         receivable_account_id: UUID,
-    ) -> List[ReceivableInstallment]:
+    ) -> list[ReceivableInstallment]:
         """Lista parcelas de uma conta."""
         result = await self.session.execute(
             select(ReceivableInstallment)
@@ -818,10 +813,10 @@ class ReceivableInstallmentRepository:
     async def get_pending(
         self,
         condominio_id: UUID,
-        due_date_start: Optional[date] = None,
-        due_date_end: Optional[date] = None,
+        due_date_start: date | None = None,
+        due_date_end: date | None = None,
         limit: int = 100,
-    ) -> List[ReceivableInstallment]:
+    ) -> list[ReceivableInstallment]:
         """Busca parcelas pendentes."""
         query = select(ReceivableInstallment).where(
             and_(
@@ -851,7 +846,7 @@ class ReceivableInstallmentRepository:
         self,
         condominio_id: UUID,
         days_before: int = 5,
-    ) -> List[ReceivableInstallment]:
+    ) -> list[ReceivableInstallment]:
         """Busca parcelas para geracao de boleto."""
         today = date.today()
         target_date = today + timedelta(days=days_before)
@@ -899,27 +894,19 @@ class ReceivablePaymentRepository:
     async def create(
         self,
         data: ReceivablePaymentCreate,
-        user_id: Optional[UUID] = None,
+        user_id: UUID | None = None,
     ) -> ReceivablePayment:
         """Cria um novo recebimento."""
         # Busca a parcela
         installment_result = await self.session.execute(
-            select(ReceivableInstallment).where(
-                ReceivableInstallment.id == data.installment_id
-            )
+            select(ReceivableInstallment).where(ReceivableInstallment.id == data.installment_id)
         )
         installment = installment_result.scalar_one_or_none()
         if not installment:
             raise ValueError("Parcela nao encontrada")
 
         # Calcula valor liquido
-        net_value = (
-            data.paid_value
-            - data.discount_value
-            - data.fee_value
-            + data.interest_value
-            + data.penalty_value
-        )
+        net_value = data.paid_value - data.discount_value - data.fee_value + data.interest_value + data.penalty_value
 
         payment = ReceivablePayment(
             installment_id=data.installment_id,
@@ -948,18 +935,14 @@ class ReceivablePaymentRepository:
 
         # Atualiza conta principal
         receivable_result = await self.session.execute(
-            select(ReceivableAccount).where(
-                ReceivableAccount.id == installment.receivable_account_id
-            )
+            select(ReceivableAccount).where(ReceivableAccount.id == installment.receivable_account_id)
         )
         receivable = receivable_result.scalar_one()
         receivable.register_payment(data.paid_value, data.payment_date)
 
         # Atualiza divida do cliente
         if receivable.customer_id:
-            customer_result = await self.session.execute(
-                select(Customer).where(Customer.id == receivable.customer_id)
-            )
+            customer_result = await self.session.execute(select(Customer).where(Customer.id == receivable.customer_id))
             customer = customer_result.scalar_one_or_none()
             if customer:
                 customer.total_debt -= data.paid_value
@@ -970,7 +953,7 @@ class ReceivablePaymentRepository:
         await self.session.refresh(payment)
         return payment
 
-    async def get_by_id(self, payment_id: UUID) -> Optional[ReceivablePayment]:
+    async def get_by_id(self, payment_id: UUID) -> ReceivablePayment | None:
         """Busca recebimento por ID."""
         result = await self.session.execute(
             select(ReceivablePayment).where(
@@ -985,7 +968,7 @@ class ReceivablePaymentRepository:
     async def list_by_installment(
         self,
         installment_id: UUID,
-    ) -> List[ReceivablePayment]:
+    ) -> list[ReceivablePayment]:
         """Lista recebimentos de uma parcela."""
         result = await self.session.execute(
             select(ReceivablePayment)
@@ -1005,7 +988,7 @@ class ReceivablePaymentRepository:
         start_date: date,
         end_date: date,
         limit: int = 500,
-    ) -> List[ReceivablePayment]:
+    ) -> list[ReceivablePayment]:
         """Busca recebimentos por periodo."""
         result = await self.session.execute(
             select(ReceivablePayment)
@@ -1026,7 +1009,7 @@ class ReceivablePaymentRepository:
         self,
         condominio_id: UUID,
         limit: int = 100,
-    ) -> List[ReceivablePayment]:
+    ) -> list[ReceivablePayment]:
         """Busca recebimentos pendentes de conciliacao."""
         result = await self.session.execute(
             select(ReceivablePayment)
@@ -1054,7 +1037,7 @@ class BillingRuleRepository:
     async def create(
         self,
         data: BillingRuleCreate,
-        user_id: Optional[UUID] = None,
+        user_id: UUID | None = None,
     ) -> BillingRule:
         """Cria uma nova regra de cobranca."""
         rule = BillingRule(
@@ -1066,7 +1049,7 @@ class BillingRuleRepository:
         await self.session.refresh(rule)
         return rule
 
-    async def get_by_id(self, rule_id: UUID) -> Optional[BillingRule]:
+    async def get_by_id(self, rule_id: UUID) -> BillingRule | None:
         """Busca regra por ID."""
         result = await self.session.execute(
             select(BillingRule).where(
@@ -1081,10 +1064,10 @@ class BillingRuleRepository:
     async def list(
         self,
         condominio_id: UUID,
-        filters: Optional[BillingRuleFilter] = None,
+        filters: BillingRuleFilter | None = None,
         skip: int = 0,
         limit: int = 100,
-    ) -> List[BillingRule]:
+    ) -> list[BillingRule]:
         """Lista regras de cobranca com filtros."""
         query = select(BillingRule).where(
             and_(
@@ -1133,7 +1116,7 @@ class BillingRuleRepository:
     async def get_active_for_today(
         self,
         condominio_id: UUID,
-    ) -> List[BillingRule]:
+    ) -> builtins.list[BillingRule]:
         """Busca regras ativas para execucao hoje."""
         today = date.today()
 

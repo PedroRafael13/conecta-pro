@@ -6,18 +6,19 @@ Permite criar templates reutilizáveis para geração de relatórios.
 
 import uuid
 from datetime import datetime
-from enum import Enum
-from typing import Any, Dict, List, Optional
+from enum import StrEnum
+from typing import Any
 
 from sqlalchemy import (
     Boolean,
     Column,
     DateTime,
-    Enum as SQLEnum,
-    Float,
     Integer,
     String,
     Text,
+)
+from sqlalchemy import (
+    Enum as SQLEnum,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
@@ -25,7 +26,7 @@ from sqlalchemy.orm import relationship
 from core.database import Base
 
 
-class TemplateCategoryEnum(str, Enum):
+class TemplateCategoryEnum(StrEnum):
     """Categorias de template."""
 
     # Por área
@@ -49,7 +50,7 @@ class TemplateCategoryEnum(str, Enum):
     CUSTOM = "custom"
 
 
-class TemplateStatusEnum(str, Enum):
+class TemplateStatusEnum(StrEnum):
     """Status do template."""
 
     DRAFT = "draft"
@@ -59,7 +60,7 @@ class TemplateStatusEnum(str, Enum):
     ARCHIVED = "archived"
 
 
-class DataSourceEnum(str, Enum):
+class DataSourceEnum(StrEnum):
     """Fontes de dados disponíveis."""
 
     # CRM
@@ -112,16 +113,14 @@ class AIReportTemplate(Base):
     category = Column(
         SQLEnum(TemplateCategoryEnum, name="template_category_enum"),
         nullable=False,
-        default=TemplateCategoryEnum.GENERAL
+        default=TemplateCategoryEnum.GENERAL,
     )
     subcategory = Column(String(100), nullable=True)
     tags = Column(JSONB, default=list)
 
     # Status
     status = Column(
-        SQLEnum(TemplateStatusEnum, name="template_status_enum"),
-        nullable=False,
-        default=TemplateStatusEnum.DRAFT
+        SQLEnum(TemplateStatusEnum, name="template_status_enum"), nullable=False, default=TemplateStatusEnum.DRAFT
     )
 
     # Configuração de dados
@@ -232,14 +231,10 @@ class AIReportTemplate(Base):
     @property
     def is_ready(self) -> bool:
         """Verifica se o template está pronto para uso."""
-        return (
-            self.status == TemplateStatusEnum.ACTIVE
-            and self.is_validated
-            and not self.validation_errors
-        )
+        return self.status == TemplateStatusEnum.ACTIVE and self.is_validated and not self.validation_errors
 
     @property
-    def data_sources_list(self) -> List[str]:
+    def data_sources_list(self) -> list[str]:
         """Lista de fontes de dados."""
         return self.data_sources if self.data_sources else []
 
@@ -258,20 +253,20 @@ class AIReportTemplate(Base):
         """Número de widgets configurados."""
         return len(self.widgets_config) if self.widgets_config else 0
 
-    def add_parameter(self, parameter: Dict[str, Any]) -> None:
+    def add_parameter(self, parameter: dict[str, Any]) -> None:
         """Adiciona um parâmetro configurável."""
         if not self.parameters:
             self.parameters = []
         self.parameters.append(parameter)
 
-    def add_section(self, section_config: Dict[str, Any]) -> None:
+    def add_section(self, section_config: dict[str, Any]) -> None:
         """Adiciona uma seção ao template."""
         if not self.sections_config:
             self.sections_config = []
         section_config["order"] = len(self.sections_config)
         self.sections_config.append(section_config)
 
-    def add_widget(self, widget_config: Dict[str, Any]) -> None:
+    def add_widget(self, widget_config: dict[str, Any]) -> None:
         """Adiciona um widget ao template."""
         if not self.widgets_config:
             self.widgets_config = []
@@ -295,11 +290,9 @@ class AIReportTemplate(Base):
             self.average_generation_time_ms = generation_time_ms
         else:
             # Média móvel
-            self.average_generation_time_ms = int(
-                (self.average_generation_time_ms + generation_time_ms) / 2
-            )
+            self.average_generation_time_ms = int((self.average_generation_time_ms + generation_time_ms) / 2)
 
-    def validate(self) -> List[str]:
+    def validate(self) -> list[str]:
         """Valida o template e retorna lista de erros."""
         errors = []
 
@@ -345,7 +338,7 @@ class AIReportTemplate(Base):
             status=TemplateStatusEnum.DRAFT,
         )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Converte para dicionário."""
         return {
             "id": str(self.id),

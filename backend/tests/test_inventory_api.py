@@ -134,14 +134,10 @@ class TestWarehouseEndpoints:
     @pytest.mark.asyncio
     async def test_list_warehouses(self, mock_user: dict[str, Any]) -> None:
         """Test listing warehouses."""
-        with patch(
-            "modules.financial.controllers.inventory_controller.get_current_user"
-        ) as mock_get_user:
+        with patch("modules.financial.controllers.inventory_controller.get_current_user") as mock_get_user:
             mock_get_user.return_value = mock_user
 
-            with patch(
-                "modules.financial.controllers.inventory_controller.WarehouseRepository"
-            ) as mock_repo:
+            with patch("modules.financial.controllers.inventory_controller.WarehouseRepository") as mock_repo:
                 mock_instance = MagicMock()
                 mock_instance.list_with_filter = AsyncMock(return_value=[])
                 mock_instance.count_with_filter = AsyncMock(return_value=0)
@@ -160,13 +156,9 @@ class TestWarehouseEndpoints:
                 assert response_data["items"] == []
 
     @pytest.mark.asyncio
-    async def test_create_warehouse(
-        self, mock_user: dict[str, Any], sample_warehouse_data: dict[str, Any]
-    ) -> None:
+    async def test_create_warehouse(self, mock_user: dict[str, Any], sample_warehouse_data: dict[str, Any]) -> None:
         """Test creating a warehouse."""
-        with patch(
-            "modules.financial.controllers.inventory_controller.get_current_user"
-        ) as mock_get_user:
+        with patch("modules.financial.controllers.inventory_controller.get_current_user") as mock_get_user:
             mock_get_user.return_value = mock_user
 
             warehouse_id = uuid4()
@@ -177,9 +169,7 @@ class TestWarehouseEndpoints:
             mock_warehouse.warehouse_type = WarehouseType.CENTRAL
             mock_warehouse.status = WarehouseStatus.ACTIVE
 
-            with patch(
-                "modules.financial.controllers.inventory_controller.WarehouseRepository"
-            ) as mock_repo:
+            with patch("modules.financial.controllers.inventory_controller.WarehouseRepository") as mock_repo:
                 mock_instance = MagicMock()
                 mock_instance.create = AsyncMock(return_value=mock_warehouse)
                 mock_instance.generate_code = AsyncMock(return_value="DEP-001")
@@ -243,9 +233,7 @@ class TestStockItemEndpoints:
         ]
 
         assert len(low_stock_items) == 1
-        assert Decimal(low_stock_items[0]["quantity_on_hand"]) < Decimal(
-            low_stock_items[0]["minimum_stock"]
-        )
+        assert Decimal(low_stock_items[0]["quantity_on_hand"]) < Decimal(low_stock_items[0]["minimum_stock"])
 
     @pytest.mark.asyncio
     async def test_get_expiring_items(self, mock_user: dict[str, Any]) -> None:
@@ -304,9 +292,7 @@ class TestStockMovementEndpoints:
         assert response_data["total"] == 0
 
     @pytest.mark.asyncio
-    async def test_create_entry_movement(
-        self, mock_user: dict[str, Any], sample_movement_data: dict[str, Any]
-    ) -> None:
+    async def test_create_entry_movement(self, mock_user: dict[str, Any], sample_movement_data: dict[str, Any]) -> None:
         """Test creating an entry movement."""
         movement_id = uuid4()
         mock_movement = {
@@ -364,13 +350,7 @@ class TestStockMovementEndpoints:
         }
 
         assert stats_data["total_movements"] == 500
-        assert (
-            stats_data["entries"]
-            + stats_data["exits"]
-            + stats_data["transfers"]
-            + stats_data["adjustments"]
-            == 500
-        )
+        assert stats_data["entries"] + stats_data["exits"] + stats_data["transfers"] + stats_data["adjustments"] == 500
 
 
 class TestStockInventoryEndpoints:
@@ -390,9 +370,7 @@ class TestStockInventoryEndpoints:
         assert response_data["total"] == 0
 
     @pytest.mark.asyncio
-    async def test_create_inventory(
-        self, mock_user: dict[str, Any], sample_inventory_data: dict[str, Any]
-    ) -> None:
+    async def test_create_inventory(self, mock_user: dict[str, Any], sample_inventory_data: dict[str, Any]) -> None:
         """Test creating an inventory."""
         inventory_id = uuid4()
         mock_inventory = {
@@ -476,9 +454,7 @@ class TestStockReservationEndpoints:
         assert response_data["total"] == 0
 
     @pytest.mark.asyncio
-    async def test_create_reservation(
-        self, mock_user: dict[str, Any], sample_reservation_data: dict[str, Any]
-    ) -> None:
+    async def test_create_reservation(self, mock_user: dict[str, Any], sample_reservation_data: dict[str, Any]) -> None:
         """Test creating a reservation."""
         reservation_id = uuid4()
         mock_reservation = {

@@ -4,16 +4,16 @@ DataProfiler Service - Sprint 48.
 Serviço de profiling estatístico de dados.
 """
 
+import contextlib
 import re
 import statistics
 import uuid
 from collections import Counter
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from modules.ai.data_quality.models import (
     DataProfile,
-    ProfileStatusEnum,
     DataTypeEnum,
 )
 
@@ -23,21 +23,16 @@ class DataProfiler:
 
     def __init__(self):
         self.type_patterns = {
-            DataTypeEnum.EMAIL: r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
-            DataTypeEnum.CPF: r'^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$',
-            DataTypeEnum.CNPJ: r'^\d{2}\.?\d{3}\.?\d{3}/?\d{4}-?\d{2}$',
-            DataTypeEnum.CEP: r'^\d{5}-?\d{3}$',
-            DataTypeEnum.PHONE: r'^(\(?\d{2}\)?\s?)?\d{4,5}-?\d{4}$',
-            DataTypeEnum.URL: r'^https?://[^\s]+$',
-            DataTypeEnum.UUID: r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+            DataTypeEnum.EMAIL: r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$",
+            DataTypeEnum.CPF: r"^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$",
+            DataTypeEnum.CNPJ: r"^\d{2}\.?\d{3}\.?\d{3}/?\d{4}-?\d{2}$",
+            DataTypeEnum.CEP: r"^\d{5}-?\d{3}$",
+            DataTypeEnum.PHONE: r"^(\(?\d{2}\)?\s?)?\d{4,5}-?\d{4}$",
+            DataTypeEnum.URL: r"^https?://[^\s]+$",
+            DataTypeEnum.UUID: r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
         }
 
-    def profile_field(
-        self,
-        values: List[Any],
-        entity_type: str,
-        field_name: str
-    ) -> DataProfile:
+    def profile_field(self, values: list[Any], entity_type: str, field_name: str) -> DataProfile:
         """
         Gera perfil para campo específico.
 
@@ -56,7 +51,7 @@ class DataProfiler:
             entity_type=entity_type,
             field_name=field_name,
             is_entity_profile=False,
-            total_records=len(values)
+            total_records=len(values),
         )
 
         profile.start_profiling()
@@ -92,19 +87,12 @@ class DataProfiler:
 
         return profile
 
-    def profile_entity(
-        self,
-        records: List[Dict[str, Any]],
-        entity_type: str
-    ) -> DataProfile:
+    def profile_entity(self, records: list[dict[str, Any]], entity_type: str) -> DataProfile:
         """Gera perfil para entidade inteira."""
         profile_code = f"PROF-{entity_type}-ENTITY-{uuid.uuid4().hex[:8]}"
 
         profile = DataProfile(
-            profile_code=profile_code,
-            entity_type=entity_type,
-            is_entity_profile=True,
-            total_records=len(records)
+            profile_code=profile_code, entity_type=entity_type, is_entity_profile=True, total_records=len(records)
         )
 
         profile.start_profiling()
@@ -120,10 +108,7 @@ class DataProfiler:
             profile.completeness_score = statistics.mean(completeness_scores) if completeness_scores else 0
 
             # Conta campos nulos por registro
-            null_counts = [
-                sum(1 for v in record.values() if v is None)
-                for record in records
-            ]
+            null_counts = [sum(1 for v in record.values() if v is None) for record in records]
             profile.null_count = sum(null_counts)
 
             # Detecta duplicatas potenciais
@@ -139,7 +124,7 @@ class DataProfiler:
 
         return profile
 
-    def _analyze_basic_stats(self, profile: DataProfile, values: List[Any]) -> None:
+    def _analyze_basic_stats(self, profile: DataProfile, values: list[Any]) -> None:
         """Analisa estatísticas básicas."""
         total = len(values)
         null_values = [v for v in values if v is None or v == ""]
@@ -151,7 +136,7 @@ class DataProfiler:
         profile.empty_percentage = (profile.empty_count / total * 100) if total > 0 else 0
 
         # Distinct values
-        distinct_values = set(str(v) for v in non_null_values)
+        distinct_values = {str(v) for v in non_null_values}
         profile.distinct_count = len(distinct_values)
         profile.distinct_percentage = (profile.distinct_count / len(non_null_values) * 100) if non_null_values else 0
 
@@ -162,7 +147,7 @@ class DataProfiler:
         # Completeness
         profile.completeness_score = 100 - profile.null_percentage
 
-    def _detect_type(self, values: List[Any]) -> DataTypeEnum:
+    def _detect_type(self, values: list[Any]) -> DataTypeEnum:
         """Detecta tipo de dado predominante."""
         non_null = [v for v in values if v is not None and v != ""]
         if not non_null:
@@ -209,15 +194,13 @@ class DataProfiler:
 
         return DataTypeEnum.STRING
 
-    def _analyze_numeric_stats(self, profile: DataProfile, values: List[Any]) -> None:
+    def _analyze_numeric_stats(self, profile: DataProfile, values: list[Any]) -> None:
         """Analisa estatísticas numéricas."""
         numeric_values = []
         for v in values:
             if v is not None:
-                try:
+                with contextlib.suppress(ValueError, TypeError):
                     numeric_values.append(float(v))
-                except (ValueError, TypeError):
-                    pass
 
         if not numeric_values:
             return
@@ -244,7 +227,7 @@ class DataProfiler:
             "p99": sorted_values[min(int(n * 0.99), n - 1)],
         }
 
-    def _analyze_string_stats(self, profile: DataProfile, values: List[Any]) -> None:
+    def _analyze_string_stats(self, profile: DataProfile, values: list[Any]) -> None:
         """Analisa estatísticas de string."""
         string_values = [str(v) for v in values if v is not None and v != ""]
 
@@ -260,7 +243,7 @@ class DataProfiler:
         patterns = self._detect_patterns(string_values[:100])
         profile.common_patterns = patterns[:5]
 
-    def _analyze_date_stats(self, profile: DataProfile, values: List[Any]) -> None:
+    def _analyze_date_stats(self, profile: DataProfile, values: list[Any]) -> None:
         """Analisa estatísticas de data."""
         dates = []
         for v in values:
@@ -268,10 +251,8 @@ class DataProfiler:
                 if isinstance(v, datetime):
                     dates.append(v)
                 elif isinstance(v, str):
-                    try:
-                        dates.append(datetime.fromisoformat(v.replace('Z', '+00:00')))
-                    except ValueError:
-                        pass
+                    with contextlib.suppress(ValueError):
+                        dates.append(datetime.fromisoformat(v.replace("Z", "+00:00")))
 
         if not dates:
             return
@@ -282,7 +263,7 @@ class DataProfiler:
         now = datetime.utcnow()
         profile.future_dates_count = sum(1 for d in dates if d > now)
 
-    def _analyze_distribution(self, profile: DataProfile, values: List[Any]) -> None:
+    def _analyze_distribution(self, profile: DataProfile, values: list[Any]) -> None:
         """Analisa distribuição de valores."""
         non_null = [v for v in values if v is not None and v != ""]
         if not non_null:
@@ -291,17 +272,15 @@ class DataProfiler:
         # Top 10 valores mais frequentes
         counter = Counter(str(v) for v in non_null)
         top_values = counter.most_common(10)
-        profile.value_distribution = {v: c for v, c in top_values}
+        profile.value_distribution = dict(top_values)
 
-    def _detect_outliers(self, profile: DataProfile, values: List[Any]) -> None:
+    def _detect_outliers(self, profile: DataProfile, values: list[Any]) -> None:
         """Detecta outliers usando IQR."""
         numeric_values = []
         for v in values:
             if v is not None:
-                try:
+                with contextlib.suppress(ValueError, TypeError):
                     numeric_values.append(float(v))
-                except (ValueError, TypeError):
-                    pass
 
         if len(numeric_values) < 4:
             return
@@ -320,17 +299,17 @@ class DataProfiler:
         profile.outlier_percentage = (len(outliers) / len(numeric_values) * 100) if numeric_values else 0
         profile.outliers = outliers[:10]  # Sample
 
-    def _detect_patterns(self, values: List[str]) -> List[str]:
+    def _detect_patterns(self, values: list[str]) -> list[str]:
         """Detecta padrões comuns nos valores."""
         patterns = []
 
         # Padrão numérico
-        numeric_pattern = sum(1 for v in values if re.match(r'^\d+$', v))
+        numeric_pattern = sum(1 for v in values if re.match(r"^\d+$", v))
         if numeric_pattern / len(values) > 0.5:
             patterns.append("numeric_only")
 
         # Padrão alfanumérico
-        alphanum_pattern = sum(1 for v in values if re.match(r'^[a-zA-Z0-9]+$', v))
+        alphanum_pattern = sum(1 for v in values if re.match(r"^[a-zA-Z0-9]+$", v))
         if alphanum_pattern / len(values) > 0.5:
             patterns.append("alphanumeric")
 
@@ -349,19 +328,19 @@ class DataProfiler:
             profile.add_recommendation(
                 f"Alto índice de valores nulos ({profile.null_percentage:.1f}%). "
                 "Considere tornar campo obrigatório ou revisar processo de coleta.",
-                "high"
+                "high",
             )
 
         if profile.duplicate_count > 0 and profile.distinct_percentage < 50:
             profile.add_recommendation(
                 f"Baixa diversidade de valores ({profile.distinct_percentage:.1f}% únicos). "
                 "Considere usar enum ou validar entrada.",
-                "medium"
+                "medium",
             )
 
         if profile.outlier_percentage > 5:
             profile.add_recommendation(
                 f"Detectados {profile.outlier_count} outliers ({profile.outlier_percentage:.1f}%). "
                 "Revise valores extremos.",
-                "medium"
+                "medium",
             )

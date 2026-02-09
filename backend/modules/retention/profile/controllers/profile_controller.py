@@ -5,48 +5,43 @@ Endpoints REST para gestao de perfis operacionais e matches.
 """
 
 import logging
-from typing import Optional, List
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.database import get_db
 from core.auth.dependencies import get_current_user
+from core.database import get_db
 from modules.retention.profile.schemas.profile_schemas import (
-    # Questionario
-    QuestionnaireResponse,
-    ProfileQuestionCreate,
-    ProfileQuestionUpdate,
-    ProfileQuestionResponse,
-    # Respostas
-    SubmitRespostasRequest,
-    SaveProgressRequest,
-    ProgressResponse,
-    # Perfil
-    OperationalProfileResponse,
-    OperationalProfileDetail,
-    OperationalProfileHistory,
-    ProfileListResponse,
-    ProfileFilter,
-    ProfileDimensionEnum,
-    # Match
-    PostMatchResponse,
-    PostMatchDetail,
-    CalculateMatchRequest,
-    BestMatchesResponse,
     BestFuncionariosResponse,
-    MatchListResponse,
-    MatchFilter,
-    PostTypeEnum,
-    MatchNivelEnum,
-    # Tipos de posto
-    PostTypesResponse,
-    IdealProfileByType,
+    BestMatchesResponse,
+    CalculateMatchRequest,
     # Dashboard
     DashboardResponse,
+    IdealProfileByType,
+    OperationalProfileDetail,
+    OperationalProfileHistory,
+    # Perfil
+    PostMatchDetail,
+    # Match
+    PostMatchResponse,
+    PostTypeEnum,
+    # Tipos de posto
+    PostTypesResponse,
+    ProfileDimensionEnum,
+    ProfileFilter,
+    ProfileListResponse,
+    ProfileQuestionCreate,
+    ProfileQuestionResponse,
+    ProfileQuestionUpdate,
+    ProgressResponse,
+    # Questionario
+    QuestionnaireResponse,
+    SaveProgressRequest,
+    # Respostas
+    SubmitRespostasRequest,
 )
-from modules.retention.profile.services.profile_service import ProfileService
 from modules.retention.profile.services.profile_matcher import ProfileMatcher
+from modules.retention.profile.services.profile_service import ProfileService
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +64,7 @@ router = APIRouter(
 )
 async def get_questionnaire(
     versao: str = Query("1.0.0", description="Versao do questionario"),
-    condominium_id: Optional[str] = Query(None, description="ID do condominio para customizacoes"),
+    condominium_id: str | None = Query(None, description="ID do condominio para customizacoes"),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> QuestionnaireResponse:
@@ -232,11 +227,11 @@ async def get_profile_by_id(
 async def list_profiles(
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
-    funcionario_id: Optional[str] = None,
-    perfil_predominante: Optional[ProfileDimensionEnum] = None,
-    score_minimo: Optional[int] = Query(None, ge=0, le=100),
-    score_maximo: Optional[int] = Query(None, ge=0, le=100),
-    condominium_id: Optional[str] = None,
+    funcionario_id: str | None = None,
+    perfil_predominante: ProfileDimensionEnum | None = None,
+    score_minimo: int | None = Query(None, ge=0, le=100),
+    score_maximo: int | None = Query(None, ge=0, le=100),
+    condominium_id: str | None = None,
     apenas_validos: bool = True,
     order_by: str = "created_at",
     order_desc: bool = True,
@@ -255,9 +250,7 @@ async def list_profiles(
         apenas_validos=apenas_validos,
     )
 
-    profiles, total = await service.list_profiles(
-        filters, skip, limit, order_by, order_desc
-    )
+    profiles, total = await service.list_profiles(filters, skip, limit, order_by, order_desc)
 
     pages = (total + limit - 1) // limit if limit > 0 else 0
 
@@ -284,7 +277,7 @@ async def list_profiles(
 async def get_best_posts_for_funcionario(
     funcionario_id: str,
     limit: int = Query(10, ge=1, le=50),
-    condominium_id: Optional[str] = None,
+    condominium_id: str | None = None,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> BestMatchesResponse:
@@ -292,9 +285,7 @@ async def get_best_posts_for_funcionario(
     matcher = ProfileMatcher(db)
 
     try:
-        return await matcher.encontrar_melhores_postos(
-            funcionario_id, limit, condominium_id
-        )
+        return await matcher.encontrar_melhores_postos(funcionario_id, limit, condominium_id)
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -319,9 +310,7 @@ async def get_best_funcionarios_for_post(
     matcher = ProfileMatcher(db)
 
     try:
-        return await matcher.encontrar_melhores_funcionarios(
-            posto_id, posto_tipo.value, limit
-        )
+        return await matcher.encontrar_melhores_funcionarios(posto_id, posto_tipo.value, limit)
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -397,7 +386,7 @@ async def calculate_match(
 )
 async def recalculate_funcionario_matches(
     funcionario_id: str,
-    condominium_id: Optional[str] = None,
+    condominium_id: str | None = None,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict:
@@ -476,7 +465,7 @@ async def get_ideal_profile_by_type(
     description="Retorna estatisticas e metricas do sistema de perfis operacionais.",
 )
 async def get_dashboard(
-    condominium_id: Optional[str] = Query(None, description="Filtrar por condominio"),
+    condominium_id: str | None = Query(None, description="Filtrar por condominio"),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> DashboardResponse:

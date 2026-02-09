@@ -5,9 +5,9 @@ Ponto de entrada para os workers Celery de integrações governamentais.
 """
 
 import os
-import sys
+
 from celery import Celery
-from kombu import Queue, Exchange
+from kombu import Exchange, Queue
 
 # Broker e Backend (Redis)
 REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
@@ -26,7 +26,7 @@ app = Celery(
         "modules.government_integrations.jobs.monitoring_tasks",
         "modules.integrations.connectors.solides.tasks",
         "modules.operacional.tasks",
-    ]
+    ],
 )
 
 # Exchanges
@@ -38,38 +38,22 @@ operacional_exchange = Exchange("operacional", type="direct")
 # Filas
 app.conf.task_queues = [
     # Alta prioridade
-    Queue("gov.esocial", government_priority_exchange, routing_key="esocial",
-          queue_arguments={"x-max-priority": 10}),
-    Queue("gov.fgts", government_priority_exchange, routing_key="fgts",
-          queue_arguments={"x-max-priority": 10}),
-
+    Queue("gov.esocial", government_priority_exchange, routing_key="esocial", queue_arguments={"x-max-priority": 10}),
+    Queue("gov.fgts", government_priority_exchange, routing_key="fgts", queue_arguments={"x-max-priority": 10}),
     # Serviços SEFAZ
-    Queue("gov.sefaz.nfe", government_exchange, routing_key="sefaz.nfe",
-          queue_arguments={"x-max-priority": 10}),
-    Queue("gov.sefaz.cte", government_exchange, routing_key="sefaz.cte",
-          queue_arguments={"x-max-priority": 10}),
-    Queue("gov.sefaz.mdfe", government_exchange, routing_key="sefaz.mdfe",
-          queue_arguments={"x-max-priority": 10}),
-
+    Queue("gov.sefaz.nfe", government_exchange, routing_key="sefaz.nfe", queue_arguments={"x-max-priority": 10}),
+    Queue("gov.sefaz.cte", government_exchange, routing_key="sefaz.cte", queue_arguments={"x-max-priority": 10}),
+    Queue("gov.sefaz.mdfe", government_exchange, routing_key="sefaz.mdfe", queue_arguments={"x-max-priority": 10}),
     # NFS-e
-    Queue("gov.nfse", government_exchange, routing_key="nfse",
-          queue_arguments={"x-max-priority": 10}),
-
+    Queue("gov.nfse", government_exchange, routing_key="nfse", queue_arguments={"x-max-priority": 10}),
     # Batch/Sync/Monitoramento
-    Queue("gov.batch", government_exchange, routing_key="batch",
-          queue_arguments={"x-max-priority": 5}),
-
+    Queue("gov.batch", government_exchange, routing_key="batch", queue_arguments={"x-max-priority": 5}),
     # Integrações - Sólides
-    Queue("integrations", integrations_exchange, routing_key="integrations",
-          queue_arguments={"x-max-priority": 5}),
-    Queue("webhooks", integrations_exchange, routing_key="webhooks",
-          queue_arguments={"x-max-priority": 8}),
-    Queue("maintenance", integrations_exchange, routing_key="maintenance",
-          queue_arguments={"x-max-priority": 3}),
-
+    Queue("integrations", integrations_exchange, routing_key="integrations", queue_arguments={"x-max-priority": 5}),
+    Queue("webhooks", integrations_exchange, routing_key="webhooks", queue_arguments={"x-max-priority": 8}),
+    Queue("maintenance", integrations_exchange, routing_key="maintenance", queue_arguments={"x-max-priority": 3}),
     # Operacional - Notificações Push
-    Queue("operacional", operacional_exchange, routing_key="operacional",
-          queue_arguments={"x-max-priority": 7}),
+    Queue("operacional", operacional_exchange, routing_key="operacional", queue_arguments={"x-max-priority": 7}),
 ]
 
 # Roteamento de tasks
@@ -80,12 +64,10 @@ app.conf.task_routes = {
     "government_integrations.tasks.sync.sincronizar_esocial": {"queue": "gov.esocial"},
     "government_integrations.tasks.sync.sincronizar_fgts": {"queue": "gov.fgts"},
     "government_integrations.tasks.sync.sincronizar_nfse": {"queue": "gov.nfse"},
-
     # Monitoring tasks
     "government_integrations.tasks.monitoring.*": {"queue": "gov.batch"},
     "government_integrations.tasks.reprocess.*": {"queue": "gov.batch"},
     "government_integrations.tasks.maintenance.*": {"queue": "gov.batch"},
-
     # Sólides Integration tasks
     "solides.full_sync": {"queue": "integrations"},
     "solides.incremental_sync": {"queue": "integrations"},
@@ -97,7 +79,6 @@ app.conf.task_routes = {
     "solides.retry_failed_webhooks": {"queue": "integrations"},
     "solides.cleanup_old_logs": {"queue": "maintenance"},
     "solides.cleanup_old_webhooks": {"queue": "maintenance"},
-
     # Operacional - Notificações Push
     "operacional.check_late_employees": {"queue": "operacional"},
     "operacional.check_pending_approvals": {"queue": "operacional"},
@@ -108,28 +89,22 @@ app.conf.update(
     # Timezone
     timezone="America/Sao_Paulo",
     enable_utc=True,
-
     # Serialização
     task_serializer="json",
     result_serializer="json",
     accept_content=["json"],
-
     # Comportamento
     task_acks_late=True,
     task_reject_on_worker_lost=True,
     task_track_started=True,
-
     # Limites
     worker_prefetch_multiplier=1,
     task_soft_time_limit=300,  # 5 min
-    task_time_limit=600,       # 10 min
-
+    task_time_limit=600,  # 10 min
     # Retry
     task_default_retry_delay=60,
-
     # Resultados
     result_expires=86400,  # 24h
-
     # Default queue
     task_default_queue="gov.batch",
 )
@@ -166,7 +141,6 @@ app.conf.beat_schedule = {
         "schedule": 86400.0,  # 24 horas
         "options": {"queue": "gov.batch"},
     },
-
     # =========================================================================
     # SÓLIDES - INTEGRAÇÃO RH/DP
     # =========================================================================
@@ -208,7 +182,6 @@ app.conf.beat_schedule = {
         "args": (7,),  # manter 7 dias
         "options": {"queue": "maintenance"},
     },
-
     # =========================================================================
     # OPERACIONAL - NOTIFICAÇÕES PUSH
     # =========================================================================

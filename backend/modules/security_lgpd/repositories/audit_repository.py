@@ -4,14 +4,13 @@ Repository de Auditoria LGPD.
 
 import logging
 from datetime import datetime
-from typing import List, Optional
 from uuid import UUID
 
 from sqlalchemy.orm import Session
 
 from modules.security_lgpd.models.audit_log import (
-    AuditLog,
     AuditAction,
+    AuditLog,
     AuditSeverity,
     ResourceType,
 )
@@ -47,7 +46,7 @@ class AuditRepository:
         self.db.refresh(log)
         return log
 
-    def get_by_id(self, log_id: UUID) -> Optional[AuditLog]:
+    def get_by_id(self, log_id: UUID) -> AuditLog | None:
         """Busca log por ID.
 
         Args:
@@ -60,16 +59,16 @@ class AuditRepository:
 
     def query(
         self,
-        action: Optional[AuditAction] = None,
-        resource_type: Optional[ResourceType] = None,
-        resource_id: Optional[str] = None,
-        user_id: Optional[str] = None,
-        severity: Optional[AuditSeverity] = None,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
+        action: AuditAction | None = None,
+        resource_type: ResourceType | None = None,
+        resource_id: str | None = None,
+        user_id: str | None = None,
+        severity: AuditSeverity | None = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
         limit: int = 100,
         offset: int = 0,
-    ) -> List[AuditLog]:
+    ) -> list[AuditLog]:
         """Consulta logs de auditoria com filtros.
 
         Args:
@@ -103,19 +102,14 @@ class AuditRepository:
         if end_date:
             query = query.filter(AuditLog.created_at <= end_date)
 
-        return (
-            query.order_by(AuditLog.created_at.desc())
-            .offset(offset)
-            .limit(limit)
-            .all()
-        )
+        return query.order_by(AuditLog.created_at.desc()).offset(offset).limit(limit).all()
 
     def get_by_resource(
         self,
         resource_type: ResourceType,
         resource_id: str,
         limit: int = 50,
-    ) -> List[AuditLog]:
+    ) -> list[AuditLog]:
         """Busca logs de um recurso especifico.
 
         Args:
@@ -138,9 +132,9 @@ class AuditRepository:
     def get_by_user(
         self,
         user_id: str,
-        start_date: Optional[datetime] = None,
+        start_date: datetime | None = None,
         limit: int = 100,
-    ) -> List[AuditLog]:
+    ) -> list[AuditLog]:
         """Busca logs de um usuario especifico.
 
         Args:
@@ -158,23 +152,19 @@ class AuditRepository:
 
         return query.order_by(AuditLog.created_at.desc()).limit(limit).all()
 
-    def get_last_hash(self) -> Optional[str]:
+    def get_last_hash(self) -> str | None:
         """Retorna o hash do ultimo log para hash chain.
 
         Returns:
             Hash do ultimo log ou None.
         """
-        last_log = (
-            self.db.query(AuditLog)
-            .order_by(AuditLog.created_at.desc())
-            .first()
-        )
+        last_log = self.db.query(AuditLog).order_by(AuditLog.created_at.desc()).first()
         return last_log.event_hash if last_log else None
 
     def count_by_action(
         self,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
     ) -> dict:
         """Conta logs por acao.
 

@@ -11,24 +11,24 @@ Date: 2026-01-29
 """
 
 import logging
-from datetime import datetime, date
+from datetime import date, datetime
 from uuid import uuid4
-from typing import Optional
 
-from modules.operacional.disciplinary.repositories.disciplinary_repository import DisciplinaryRepository
-from modules.operacional.disciplinary.services.disciplinary_service import DisciplinaryService
 from modules.operacional.disciplinary.models.disciplinary_action import (
     DisciplinaryActionStatus,
     DisciplinaryActionType,
 )
+from modules.operacional.disciplinary.repositories.disciplinary_repository import DisciplinaryRepository
 from modules.operacional.disciplinary.schemas import (
-    DisciplinaryActionCreate,
     ApproveRequest,
-    RejectRequest,
+    DisciplinaryActionCreate,
     ReasonCategory,
+    RejectRequest,
 )
-from ..action_schemas import ActionRequest, ActionPreview, ActionResult
-from ..action_types import ActionType, ActionStatus
+from modules.operacional.disciplinary.services.disciplinary_service import DisciplinaryService
+
+from ..action_schemas import ActionPreview, ActionRequest, ActionResult
+from ..action_types import ActionStatus
 from .base_executor import BaseActionExecutor
 
 logger = logging.getLogger(__name__)
@@ -54,7 +54,9 @@ class DisciplinaryActionExecutor(BaseActionExecutor):
 
     async def create_preview(self, request: ActionRequest) -> ActionPreview:
         """Cria preview para acao disciplinar."""
-        action_type_str = request.action_type.value if hasattr(request.action_type, 'value') else str(request.action_type)
+        action_type_str = (
+            request.action_type.value if hasattr(request.action_type, "value") else str(request.action_type)
+        )
 
         try:
             if action_type_str == self.ACTION_CREATE:
@@ -84,7 +86,9 @@ class DisciplinaryActionExecutor(BaseActionExecutor):
 
     async def execute(self, request: ActionRequest, action_id: str) -> ActionResult:
         """Executa acao disciplinar."""
-        action_type_str = request.action_type.value if hasattr(request.action_type, 'value') else str(request.action_type)
+        action_type_str = (
+            request.action_type.value if hasattr(request.action_type, "value") else str(request.action_type)
+        )
         started_at = datetime.utcnow()
 
         try:
@@ -148,11 +152,13 @@ class DisciplinaryActionExecutor(BaseActionExecutor):
 
         # Validacoes de preview
         if employee_id:
-            affected_entities.append({
-                "type": "employee",
-                "id": employee_id,
-                "name": employee_name,
-            })
+            affected_entities.append(
+                {
+                    "type": "employee",
+                    "id": employee_id,
+                    "name": employee_name,
+                }
+            )
 
             # Buscar historico do funcionario
             try:
@@ -162,16 +168,15 @@ class DisciplinaryActionExecutor(BaseActionExecutor):
                     history = await repo.get_by_employee(employee_id, tenant_id)
                     applied = [h for h in history if h.status == DisciplinaryActionStatus.APLICADA.value]
                     adv_count = sum(
-                        1 for h in applied
-                        if h.action_type in [
+                        1
+                        for h in applied
+                        if h.action_type
+                        in [
                             DisciplinaryActionType.ADVERTENCIA_VERBAL.value,
                             DisciplinaryActionType.ADVERTENCIA_ESCRITA.value,
                         ]
                     )
-                    sus_count = sum(
-                        1 for h in applied
-                        if h.action_type == DisciplinaryActionType.SUSPENSAO.value
-                    )
+                    sus_count = sum(1 for h in applied if h.action_type == DisciplinaryActionType.SUSPENSAO.value)
 
                     changes_summary.append(f"Advertencias anteriores: {adv_count}")
                     changes_summary.append(f"Suspensoes anteriores: {sus_count}")
@@ -187,7 +192,9 @@ class DisciplinaryActionExecutor(BaseActionExecutor):
         # Validar imediaticidade
         if incident_date_str:
             try:
-                incident_date = date.fromisoformat(incident_date_str) if isinstance(incident_date_str, str) else incident_date_str
+                incident_date = (
+                    date.fromisoformat(incident_date_str) if isinstance(incident_date_str, str) else incident_date_str
+                )
                 days_since = (date.today() - incident_date).days
                 if days_since > 30:
                     warnings.append(f"Imediaticidade: {days_since} dias desde o incidente (recomendado max 30)")
@@ -236,7 +243,9 @@ class DisciplinaryActionExecutor(BaseActionExecutor):
         incident_date_str = params.get("incident_date", date.today().isoformat())
 
         try:
-            incident_date = date.fromisoformat(incident_date_str) if isinstance(incident_date_str, str) else incident_date_str
+            incident_date = (
+                date.fromisoformat(incident_date_str) if isinstance(incident_date_str, str) else incident_date_str
+            )
         except (ValueError, TypeError):
             incident_date = date.today()
 
@@ -321,17 +330,19 @@ class DisciplinaryActionExecutor(BaseActionExecutor):
             description = "Medida nao encontrada"
         else:
             tipo_display = self.TIPO_DISPLAY.get(action.action_type, action.action_type)
-            affected_entities.append({
-                "type": "disciplinary_action",
-                "id": action.id,
-                "code": action.code,
-            })
+            affected_entities.append(
+                {
+                    "type": "disciplinary_action",
+                    "id": action.id,
+                    "code": action.code,
+                }
+            )
 
             changes_summary.append(f"Medida: {action.code}")
             changes_summary.append(f"Tipo: {tipo_display}")
             changes_summary.append(f"Funcionario: {action.employee_name}")
             changes_summary.append(f"Status atual: {action.status_display_name}")
-            changes_summary.append(f"Novo status: Pendente Assinatura")
+            changes_summary.append("Novo status: Pendente Assinatura")
 
             if not action.can_be_approved:
                 warnings.append(f"Medida nao pode ser aprovada no status atual ({action.status_display_name})")
@@ -386,9 +397,7 @@ class DisciplinaryActionExecutor(BaseActionExecutor):
             notes=notes,
             application_date=date.today(),
         )
-        approved = await service.approve(
-            disc_action.id, tenant_id, user_uuid or "", approve_request
-        )
+        approved = await service.approve(disc_action.id, tenant_id, user_uuid or "", approve_request)
 
         logger.info(f"Medida disciplinar aprovada via Bartolo: {approved.code}")
 
@@ -446,17 +455,19 @@ class DisciplinaryActionExecutor(BaseActionExecutor):
             description = "Medida nao encontrada"
         else:
             tipo_display = self.TIPO_DISPLAY.get(action.action_type, action.action_type)
-            affected_entities.append({
-                "type": "disciplinary_action",
-                "id": action.id,
-                "code": action.code,
-            })
+            affected_entities.append(
+                {
+                    "type": "disciplinary_action",
+                    "id": action.id,
+                    "code": action.code,
+                }
+            )
 
             changes_summary.append(f"Medida: {action.code}")
             changes_summary.append(f"Tipo: {tipo_display}")
             changes_summary.append(f"Funcionario: {action.employee_name}")
             changes_summary.append(f"Status atual: {action.status_display_name}")
-            changes_summary.append(f"Novo status: Rejeitada")
+            changes_summary.append("Novo status: Rejeitada")
 
             if rejection_reason:
                 changes_summary.append(f"Motivo rejeicao: {rejection_reason}")
@@ -514,9 +525,7 @@ class DisciplinaryActionExecutor(BaseActionExecutor):
 
         # Rejeitar
         reject_request = RejectRequest(reason=reason)
-        rejected = await service.reject(
-            disc_action.id, tenant_id, user_uuid or "", reject_request
-        )
+        rejected = await service.reject(disc_action.id, tenant_id, user_uuid or "", reject_request)
 
         logger.info(f"Medida disciplinar rejeitada via Bartolo: {rejected.code}")
 

@@ -5,61 +5,60 @@ Gestao de certidoes para habilitacao em licitacoes.
 """
 
 import uuid
-from datetime import datetime, date
-from enum import Enum
-from typing import Optional
+from datetime import datetime
+from enum import StrEnum
 
-from sqlalchemy import (
-    Column, String, Text, Boolean, DateTime, Date,
-    Integer, Index
-)
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy import Boolean, Column, DateTime, Index, Integer, String, Text
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 from core.models import Base
 
 
-class CertificateType(str, Enum):
+class CertificateType(StrEnum):
     """Tipo de certidao."""
+
     # Certidoes Federais
-    CND_FEDERAL = "cnd_federal"                        # Certidao Unificada Federal (RFB + PGFN)
-    CND_TRABALHISTA = "cnd_trabalhista"                # CNDT - Certidao Negativa Debitos Trabalhistas
-    CRF_FGTS = "crf_fgts"                              # CRF - Certificado Regularidade FGTS
+    CND_FEDERAL = "cnd_federal"  # Certidao Unificada Federal (RFB + PGFN)
+    CND_TRABALHISTA = "cnd_trabalhista"  # CNDT - Certidao Negativa Debitos Trabalhistas
+    CRF_FGTS = "crf_fgts"  # CRF - Certificado Regularidade FGTS
 
     # Certidoes Estaduais
-    CND_ESTADUAL = "cnd_estadual"                      # Certidao Negativa Debitos Estaduais (ICMS)
+    CND_ESTADUAL = "cnd_estadual"  # Certidao Negativa Debitos Estaduais (ICMS)
     CND_DIVIDA_ATIVA_ESTADUAL = "cnd_divida_ativa_estadual"  # Divida Ativa Estadual
 
     # Certidoes Municipais
-    CND_MUNICIPAL = "cnd_municipal"                    # Certidao Negativa Debitos Municipais (ISS/IPTU)
+    CND_MUNICIPAL = "cnd_municipal"  # Certidao Negativa Debitos Municipais (ISS/IPTU)
     CND_DIVIDA_ATIVA_MUNICIPAL = "cnd_divida_ativa_municipal"  # Divida Ativa Municipal
 
     # Outras Certidoes
-    CERTIDAO_FALENCIA = "certidao_falencia"            # Certidao Negativa Falencia/Recuperacao
-    CERTIDAO_CIVEL = "certidao_civel"                  # Certidao Distribuicao Civel
-    CERTIDAO_CRIMINAL = "certidao_criminal"            # Certidao Antecedentes Criminais
-    CERTIDAO_PROTESTO = "certidao_protesto"            # Certidao Negativa Protestos
+    CERTIDAO_FALENCIA = "certidao_falencia"  # Certidao Negativa Falencia/Recuperacao
+    CERTIDAO_CIVEL = "certidao_civel"  # Certidao Distribuicao Civel
+    CERTIDAO_CRIMINAL = "certidao_criminal"  # Certidao Antecedentes Criminais
+    CERTIDAO_PROTESTO = "certidao_protesto"  # Certidao Negativa Protestos
 
 
-class CertificateStatus(str, Enum):
+class CertificateStatus(StrEnum):
     """Status da certidao."""
-    VALID = "valid"                    # Valida (emitida e dentro da validade)
-    EXPIRING = "expiring"              # Vencendo em breve (< 15 dias)
-    EXPIRED = "expired"                # Vencida
-    PENDING = "pending"                # Pendente (nao obtida)
-    POSITIVE = "positive"              # Positiva (com debitos)
+
+    VALID = "valid"  # Valida (emitida e dentro da validade)
+    EXPIRING = "expiring"  # Vencendo em breve (< 15 dias)
+    EXPIRED = "expired"  # Vencida
+    PENDING = "pending"  # Pendente (nao obtida)
+    POSITIVE = "positive"  # Positiva (com debitos)
     POSITIVE_EFFECT_NEGATIVE = "positive_effect_negative"  # Positiva com efeito de negativa
-    RENEWING = "renewing"              # Em renovacao automatica
-    ERROR = "error"                    # Erro na obtencao
+    RENEWING = "renewing"  # Em renovacao automatica
+    ERROR = "error"  # Erro na obtencao
 
 
-class CertificateSource(str, Enum):
+class CertificateSource(StrEnum):
     """Fonte de obtencao da certidao."""
-    MANUAL = "manual"                  # Upload manual
-    API_RECEITA = "api_receita"        # API Receita Federal
-    API_FGTS = "api_fgts"              # API Caixa FGTS
-    API_TST = "api_tst"                # API TST (CNDT)
-    WEB_SCRAPING = "web_scraping"      # Web scraping
-    SISTEMA = "sistema"                # Gerado pelo sistema
+
+    MANUAL = "manual"  # Upload manual
+    API_RECEITA = "api_receita"  # API Receita Federal
+    API_FGTS = "api_fgts"  # API Caixa FGTS
+    API_TST = "api_tst"  # API TST (CNDT)
+    WEB_SCRAPING = "web_scraping"  # Web scraping
+    SISTEMA = "sistema"  # Gerado pelo sistema
 
 
 class Certificate(Base):
@@ -69,6 +68,7 @@ class Certificate(Base):
     Gerencia certidoes necessarias para comprovacao de regularidade
     fiscal, trabalhista e juridica em processos licitatorios.
     """
+
     __tablename__ = "bidding_certificates"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -89,7 +89,7 @@ class Certificate(Base):
 
     # Conteudo
     situacao = Column(String(100), nullable=True)  # Texto da situacao (NEGATIVA, POSITIVA, etc)
-    texto_certidao = Column(Text, nullable=True)   # Conteudo textual da certidao
+    texto_certidao = Column(Text, nullable=True)  # Conteudo textual da certidao
     observacoes_orgao = Column(Text, nullable=True)  # Observacoes do orgao emissor
 
     # Arquivo
@@ -133,10 +133,10 @@ class Certificate(Base):
 
     # Indices compostos
     __table_args__ = (
-        Index('idx_certificate_cnpj_tipo', 'cnpj', 'tipo'),
-        Index('idx_certificate_validade', 'data_validade'),
-        Index('idx_certificate_status', 'status'),
-        Index('idx_certificate_obtencao', 'obtencao_automatica', 'proxima_tentativa'),
+        Index("idx_certificate_cnpj_tipo", "cnpj", "tipo"),
+        Index("idx_certificate_validade", "data_validade"),
+        Index("idx_certificate_status", "status"),
+        Index("idx_certificate_obtencao", "obtencao_automatica", "proxima_tentativa"),
     )
 
     def __repr__(self) -> str:
@@ -152,7 +152,7 @@ class Certificate(Base):
         return datetime.utcnow() <= self.data_validade
 
     @property
-    def dias_para_vencer(self) -> Optional[int]:
+    def dias_para_vencer(self) -> int | None:
         """Dias restantes ate o vencimento."""
         if not self.data_validade:
             return None
@@ -160,7 +160,7 @@ class Certificate(Base):
         return max(0, delta.days)
 
     @property
-    def horas_para_vencer(self) -> Optional[int]:
+    def horas_para_vencer(self) -> int | None:
         """Horas restantes ate o vencimento (util para certidoes de curta validade)."""
         if not self.data_validade:
             return None
@@ -185,10 +185,7 @@ class Certificate(Base):
     @property
     def pode_usar_licitacao(self) -> bool:
         """Verifica se pode ser usada em licitacao."""
-        return self.status in [
-            CertificateStatus.VALID.value,
-            CertificateStatus.POSITIVE_EFFECT_NEGATIVE.value
-        ]
+        return self.status in [CertificateStatus.VALID.value, CertificateStatus.POSITIVE_EFFECT_NEGATIVE.value]
 
     def atualizar_status(self) -> None:
         """Atualiza o status baseado na validade."""
@@ -218,7 +215,8 @@ class Certificate(Base):
 
         # Proxima tentativa com backoff exponencial (max 24h)
         from datetime import timedelta
-        minutos_espera = min(2 ** self.tentativas_falha * 5, 1440)
+
+        minutos_espera = min(2**self.tentativas_falha * 5, 1440)
         self.proxima_tentativa = datetime.utcnow() + timedelta(minutes=minutos_espera)
 
         if self.tentativas_falha >= 5:
@@ -230,7 +228,7 @@ class Certificate(Base):
         data_validade: datetime,
         situacao: str,
         arquivo_url: str = None,
-        codigo_verificacao: str = None
+        codigo_verificacao: str = None,
     ) -> None:
         """Registra sucesso na obtencao automatica."""
         self.data_emissao = data_emissao
@@ -244,6 +242,7 @@ class Certificate(Base):
 
         # Proxima verificacao em 80% da validade
         from datetime import timedelta
+
         validade_dias = (data_validade - datetime.utcnow()).days
         dias_proxima = max(1, int(validade_dias * 0.8))
         self.proxima_tentativa = datetime.utcnow() + timedelta(days=dias_proxima)

@@ -1,34 +1,33 @@
 """Serviço de processamento de folha de ponto."""
 
+import logging
+from calendar import monthrange
 from datetime import date, datetime, timedelta
 from decimal import Decimal
-from typing import List, Dict
-from calendar import monthrange
-import logging
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.hr.time_tracking.models import (
-    TimeSheet,
-    TimeEntry,
-    WorkSchedule,
-    TimeJustification,
-    TimeSheetStatus,
-    OvertimeStatus,
     JustificationStatus,
+    OvertimeStatus,
+    TimeEntry,
+    TimeJustification,
+    TimeSheet,
+    TimeSheetStatus,
+    WorkSchedule,
 )
 from modules.hr.time_tracking.repositories import (
-    TimeSheetRepository,
-    TimeEntryRepository,
-    WorkScheduleRepository,
     OvertimeRepository,
+    TimeEntryRepository,
     TimeJustificationRepository,
-)
-from modules.hr.time_tracking.services.time_calculation_service import (
-    TimeCalculationService,
+    TimeSheetRepository,
+    WorkScheduleRepository,
 )
 from modules.hr.time_tracking.services.anomaly_detection_service import (
     AnomalyDetectionService,
+)
+from modules.hr.time_tracking.services.time_calculation_service import (
+    TimeCalculationService,
 )
 
 logger = logging.getLogger(__name__)
@@ -71,9 +70,7 @@ class TimeSheetService:
             TimeSheet gerado/atualizado
         """
         # Verifica se já existe
-        existing = await self.sheet_repo.get_by_employee_month(
-            employee_id, reference_month, reference_year
-        )
+        existing = await self.sheet_repo.get_by_employee_month(employee_id, reference_month, reference_year)
 
         if existing:
             # Recalcula
@@ -85,9 +82,7 @@ class TimeSheetService:
         # Calcula período (variáveis usadas para referência futura)
         _ = date(reference_year, reference_month, 1)  # first_day
         _ = date(  # last_day
-            reference_year,
-            reference_month,
-            monthrange(reference_year, reference_month)[1]
+            reference_year, reference_month, monthrange(reference_year, reference_month)[1]
         )
 
         # Cria a folha
@@ -138,9 +133,8 @@ class TimeSheetService:
         schedule = None
         if sheet.work_schedule_id:
             from uuid import UUID  # pylint: disable=import-outside-toplevel
-            schedule = await self.schedule_repo.get_by_id(
-                UUID(sheet.work_schedule_id)
-            )
+
+            schedule = await self.schedule_repo.get_by_id(UUID(sheet.work_schedule_id))
 
         # Busca horas extras
         overtimes = await self.overtime_repo.get_by_employee_period(
@@ -176,10 +170,7 @@ class TimeSheetService:
 
         current_date = sheet.period_start
         while current_date <= sheet.period_end:
-            day_entries = [
-                e for e in entries
-                if e.entry_date == current_date
-            ]
+            day_entries = [e for e in entries if e.entry_date == current_date]
 
             day_summary = await self._process_day(
                 current_date,
@@ -233,9 +224,7 @@ class TimeSheetService:
         night_value = self.calc_service.calculate_night_bonus(total_night, hourly_rate)
 
         # DSR
-        work_days_expected = self._count_work_days(
-            sheet.period_start, sheet.period_end, schedule
-        )
+        work_days_expected = self._count_work_days(sheet.period_start, sheet.period_end, schedule)
         dsr_entitled, dsr_reason = self.calc_service.calculate_dsr(
             work_days_worked,
             work_days_expected,
@@ -254,43 +243,42 @@ class TimeSheetService:
         pending_issues = []
 
         # Anomalias não resolvidas
-        unresolved_entries = [
-            e for e in entries
-            if e.anomaly_type and not e.anomaly_resolved
-        ]
+        unresolved_entries = [e for e in entries if e.anomaly_type and not e.anomaly_resolved]
         if unresolved_entries:
-            pending_issues.append({
-                "type": "anomaly",
-                "date": unresolved_entries[0].entry_date.isoformat(),
-                "description": f"{len(unresolved_entries)} registros com anomalias não resolvidas",
-                "severity": "high",
-            })
+            pending_issues.append(
+                {
+                    "type": "anomaly",
+                    "date": unresolved_entries[0].entry_date.isoformat(),
+                    "description": f"{len(unresolved_entries)} registros com anomalias não resolvidas",
+                    "severity": "high",
+                }
+            )
 
         # Justificativas pendentes
         pending_just = [
-            j for j in justifications
-            if j.status in [JustificationStatus.SUBMETIDO, JustificationStatus.EM_ANALISE]
+            j for j in justifications if j.status in [JustificationStatus.SUBMETIDO, JustificationStatus.EM_ANALISE]
         ]
         if pending_just:
-            pending_issues.append({
-                "type": "justification",
-                "date": pending_just[0].start_date.isoformat(),
-                "description": f"{len(pending_just)} justificativas pendentes de aprovação",
-                "severity": "medium",
-            })
+            pending_issues.append(
+                {
+                    "type": "justification",
+                    "date": pending_just[0].start_date.isoformat(),
+                    "description": f"{len(pending_just)} justificativas pendentes de aprovação",
+                    "severity": "medium",
+                }
+            )
 
         # HE pendentes
-        pending_ot = [
-            ot for ot in overtimes
-            if ot.status in [OvertimeStatus.PENDENTE, OvertimeStatus.PRE_APROVADO]
-        ]
+        pending_ot = [ot for ot in overtimes if ot.status in [OvertimeStatus.PENDENTE, OvertimeStatus.PRE_APROVADO]]
         if pending_ot:
-            pending_issues.append({
-                "type": "overtime",
-                "date": pending_ot[0].overtime_date.isoformat(),
-                "description": f"{len(pending_ot)} horas extras pendentes de aprovação",
-                "severity": "medium",
-            })
+            pending_issues.append(
+                {
+                    "type": "overtime",
+                    "date": pending_ot[0].overtime_date.isoformat(),
+                    "description": f"{len(pending_ot)} horas extras pendentes de aprovação",
+                    "severity": "medium",
+                }
+            )
 
         # Atualiza folha
         sheet.hours_worked_minutes = total_worked
@@ -327,18 +315,14 @@ class TimeSheetService:
             sheet.dsr_lost_reason = dsr_reason
 
         sheet.time_bank_credits = time_bank_credits
-        sheet.time_bank_current_balance = (
-            sheet.time_bank_previous_balance +
-            time_bank_credits -
-            sheet.time_bank_debits
-        )
+        sheet.time_bank_current_balance = sheet.time_bank_previous_balance + time_bank_credits - sheet.time_bank_debits
 
         sheet.total_entries = len(entries)
         sheet.anomaly_count = anomaly_count
         sheet.justification_count = len(justifications)
-        sheet.justification_approved_count = len([
-            j for j in justifications if j.status == JustificationStatus.APROVADO
-        ])
+        sheet.justification_approved_count = len(
+            [j for j in justifications if j.status == JustificationStatus.APROVADO]
+        )
         sheet.justification_pending_count = len(pending_just)
 
         sheet.daily_summary = daily_summary
@@ -355,10 +339,10 @@ class TimeSheetService:
     async def _process_day(  # pylint: disable=too-many-branches
         self,
         work_date: date,
-        entries: List[TimeEntry],
+        entries: list[TimeEntry],
         schedule: WorkSchedule = None,
-        justifications: List[TimeJustification] = None,
-    ) -> Dict:
+        justifications: list[TimeJustification] = None,
+    ) -> dict:
         """Processa um dia de trabalho."""
         result = {
             "date": work_date.isoformat(),
@@ -396,9 +380,9 @@ class TimeSheetService:
         # Verifica justificativas
         if justifications:
             day_justifications = [
-                j for j in justifications
-                if j.start_date <= work_date <= j.end_date
-                and j.status == JustificationStatus.APROVADO
+                j
+                for j in justifications
+                if j.start_date <= work_date <= j.end_date and j.status == JustificationStatus.APROVADO
             ]
             if day_justifications:
                 result["is_justified"] = True
@@ -457,8 +441,14 @@ class TimeSheetService:
     def _is_holiday(self, check_date: date) -> bool:
         """Verifica se é feriado."""
         fixed_holidays = [
-            (1, 1), (4, 21), (5, 1), (9, 7),
-            (10, 12), (11, 2), (11, 15), (12, 25),
+            (1, 1),
+            (4, 21),
+            (5, 1),
+            (9, 7),
+            (10, 12),
+            (11, 2),
+            (11, 15),
+            (12, 25),
         ]
         return (check_date.month, check_date.day) in fixed_holidays
 
@@ -587,9 +577,8 @@ class TimeSheetService:
         sheet.approved_by_hr = False
         sheet.closed_at = None
         sheet.internal_notes = (
-            (sheet.internal_notes or "") +
-            f"\n[Reaberta em {datetime.utcnow().isoformat()}] Motivo: {reason}"
-        )
+            sheet.internal_notes or ""
+        ) + f"\n[Reaberta em {datetime.utcnow().isoformat()}] Motivo: {reason}"
 
         await self.db.flush()
         await self.db.refresh(sheet)

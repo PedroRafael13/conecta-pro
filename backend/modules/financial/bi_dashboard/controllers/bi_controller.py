@@ -1,69 +1,69 @@
 """Controller de BI e Dashboards Financeiros."""
 
+import logging
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status as http_status
+from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import status as http_status
 from sqlalchemy.orm import Session
 
-from core.database.session import get_db
 from core.auth.dependencies import get_current_user
-
+from core.database.session import get_db
 from modules.financial.bi_dashboard.models import (
-    DashboardType,
+    AlertLevel,
     DashboardStatus,
-    WidgetType,
+    DashboardType,
     DataSource,
     KPICategory,
     KPIStatus,
-    AlertLevel,
-    ReportType,
     ReportFormat,
     ReportFrequency,
     ReportStatus,
-    CacheType,
-)
-from modules.financial.bi_dashboard.schemas import (
-    DashboardCreate,
-    DashboardUpdate,
-    DashboardResponse,
-    DashboardListResponse,
-    DashboardFilters,
-    DashboardStats,
-    WidgetCreate,
-    WidgetUpdate,
-    WidgetResponse,
-    WidgetData,
-    WidgetFilters,
-    KPICreate,
-    KPIUpdate,
-    KPIResponse,
-    KPIValue,
-    KPIHistory,
-    KPIFilters,
-    KPISummary,
-    ReportCreate,
-    ReportUpdate,
-    ReportResponse,
-    ReportFilters,
-    CacheStats,
-    CacheInvalidate,
+    ReportType,
+    WidgetType,
 )
 from modules.financial.bi_dashboard.repositories import (
+    CacheRepository,
     DashboardRepository,
-    WidgetRepository,
     KPIRepository,
     ReportRepository,
-    CacheRepository,
+    WidgetRepository,
+)
+from modules.financial.bi_dashboard.schemas import (
+    CacheInvalidate,
+    CacheStats,
+    DashboardCreate,
+    DashboardFilters,
+    DashboardListResponse,
+    DashboardResponse,
+    DashboardStats,
+    DashboardUpdate,
+    KPICreate,
+    KPIFilters,
+    KPIHistory,
+    KPIResponse,
+    KPISummary,
+    KPIUpdate,
+    KPIValue,
+    ReportCreate,
+    ReportFilters,
+    ReportResponse,
+    ReportUpdate,
+    WidgetCreate,
+    WidgetData,
+    WidgetFilters,
+    WidgetResponse,
+    WidgetUpdate,
 )
 from modules.financial.bi_dashboard.services import (
-    BIService,
     AnalyticsService,
+    BIService,
     ForecastService,
 )
 
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/bi", tags=["BI Financeiro"])
 
@@ -95,11 +95,11 @@ async def create_dashboard(
 @router.get("/dashboards", response_model=DashboardListResponse)
 async def list_dashboards(
     condominio_id: UUID = Query(...),
-    tipo: Optional[DashboardType] = None,
-    status: Optional[DashboardStatus] = None,
-    is_public: Optional[bool] = None,
-    is_favorite: Optional[bool] = None,
-    search: Optional[str] = None,
+    tipo: DashboardType | None = None,
+    status: DashboardStatus | None = None,
+    is_public: bool | None = None,
+    is_favorite: bool | None = None,
+    search: str | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
@@ -317,9 +317,9 @@ async def create_widget(
 @router.get("/widgets", response_model=list[WidgetResponse])
 async def list_widgets(
     condominio_id: UUID = Query(...),
-    dashboard_id: Optional[UUID] = None,
-    tipo: Optional[WidgetType] = None,
-    data_source: Optional[DataSource] = None,
+    dashboard_id: UUID | None = None,
+    tipo: WidgetType | None = None,
+    data_source: DataSource | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
@@ -442,8 +442,8 @@ async def update_widget_position(
     widget_id: UUID,
     x: int = Query(..., ge=0),
     y: int = Query(..., ge=0),
-    w: Optional[int] = Query(None, ge=1),
-    h: Optional[int] = Query(None, ge=1),
+    w: int | None = Query(None, ge=1),
+    h: int | None = Query(None, ge=1),
     condominio_id: UUID = Query(...),
     db: Session = Depends(get_db),
 ):
@@ -533,11 +533,11 @@ async def create_kpi(
 @router.get("/kpis", response_model=list[KPIResponse])
 async def list_kpis(
     condominio_id: UUID = Query(...),
-    categoria: Optional[KPICategory] = None,
-    status: Optional[KPIStatus] = None,
-    alert_level: Optional[AlertLevel] = None,
-    show_in_summary: Optional[bool] = None,
-    search: Optional[str] = None,
+    categoria: KPICategory | None = None,
+    status: KPIStatus | None = None,
+    alert_level: AlertLevel | None = None,
+    show_in_summary: bool | None = None,
+    search: str | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
@@ -640,7 +640,7 @@ async def calculate_kpi(
         meta_atingida=kpi.meta_atingida,
         alert_level=kpi.alert_level.value,
         formatted_value=kpi.format_value(),
-        color=kpi.get_color_for_value(kpi.valor_atual) if hasattr(kpi, 'get_color_for_value') else kpi.color,
+        color=kpi.get_color_for_value(kpi.valor_atual) if hasattr(kpi, "get_color_for_value") else kpi.color,
         calculated_at=datetime.utcnow(),
     )
 
@@ -669,10 +669,7 @@ async def get_kpi_history(
         kpi_id=kpi_id,
         codigo=kpi.codigo,
         nome=kpi.nome,
-        entries=[
-            {"date": datetime.fromisoformat(h["date"]), "value": Decimal(str(h["value"]))}
-            for h in history
-        ],
+        entries=[{"date": datetime.fromisoformat(h["date"]), "value": Decimal(str(h["value"]))} for h in history],
         min_value=min(values) if values else None,
         max_value=max(values) if values else None,
         avg_value=sum(values) / len(values) if values else None,
@@ -729,8 +726,8 @@ async def calculate_all_kpis(
             new_value = bi_service.calculate_kpi(kpi, condominio_id)
             repo.update_value(kpi, new_value, save_history=True)
             calculated += 1
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"Erro ao calcular KPI {kpi}: {e}")
 
     return {"calculated": calculated, "total": len(kpis)}
 
@@ -762,11 +759,11 @@ async def create_report(
 @router.get("/reports", response_model=list[ReportResponse])
 async def list_reports(
     condominio_id: UUID = Query(...),
-    tipo: Optional[ReportType] = None,
-    formato: Optional[ReportFormat] = None,
-    status: Optional[ReportStatus] = None,
-    frequencia: Optional[ReportFrequency] = None,
-    search: Optional[str] = None,
+    tipo: ReportType | None = None,
+    formato: ReportFormat | None = None,
+    status: ReportStatus | None = None,
+    frequencia: ReportFrequency | None = None,
+    search: str | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
@@ -1011,7 +1008,7 @@ async def calculate_growth_rate(
 @router.post("/analytics/suggest-targets")
 async def suggest_targets(
     historical_values: list[Decimal],
-    growth_target: Optional[Decimal] = None,
+    growth_target: Decimal | None = None,
     db: Session = Depends(get_db),
 ):
     """Sugere metas baseado em historico."""

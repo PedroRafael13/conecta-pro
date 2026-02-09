@@ -9,30 +9,31 @@ Fornece funcionalidades para:
 - Histórico de movimentações
 """
 
+import logging
 from datetime import date, datetime
 from decimal import Decimal
-from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple
+from enum import StrEnum
+from typing import Any
 from uuid import UUID, uuid4
-import logging
 
-from sqlalchemy import and_, func, or_
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
 
-class TipoMovimentacao(str, Enum):
+class TipoMovimentacao(StrEnum):
     """Tipos de movimentação de estoque."""
+
     REQUISICAO = "requisicao"  # Solicitação de material para OS
     BAIXA = "baixa"  # Baixa efetiva após uso
     DEVOLUCAO = "devolucao"  # Devolução de material não usado
     TRANSFERENCIA = "transferencia"  # Transferência entre técnicos
 
 
-class StatusRequisicao(str, Enum):
+class StatusRequisicao(StrEnum):
     """Status da requisição de material."""
+
     PENDENTE = "pendente"
     APROVADA = "aprovada"
     SEPARADA = "separada"
@@ -43,28 +44,30 @@ class StatusRequisicao(str, Enum):
 
 class ItemRequisicao(BaseModel):
     """Item de requisição de material."""
+
     produto_id: UUID
     produto_codigo: str
     produto_nome: str
     quantidade_solicitada: Decimal
-    quantidade_aprovada: Optional[Decimal] = None
-    quantidade_entregue: Optional[Decimal] = None
+    quantidade_aprovada: Decimal | None = None
+    quantidade_entregue: Decimal | None = None
     unidade: str = "UN"
-    observacao: Optional[str] = None
+    observacao: str | None = None
 
 
 class RequisicaoMaterial(BaseModel):
     """Requisição de materiais para OS."""
+
     id: UUID
     ordem_servico_id: UUID
     tecnico_id: UUID
     status: StatusRequisicao
-    itens: List[ItemRequisicao]
+    itens: list[ItemRequisicao]
     data_solicitacao: datetime
-    data_aprovacao: Optional[datetime] = None
-    data_entrega: Optional[datetime] = None
-    aprovador_id: Optional[UUID] = None
-    observacoes: Optional[str] = None
+    data_aprovacao: datetime | None = None
+    data_entrega: datetime | None = None
+    aprovador_id: UUID | None = None
+    observacoes: str | None = None
 
 
 class EstoqueIntegrationService:
@@ -73,9 +76,9 @@ class EstoqueIntegrationService:
     def __init__(self, db: Session):
         self.db = db
         # Cache em memória para requisições (em produção, usar banco)
-        self._requisicoes: Dict[UUID, RequisicaoMaterial] = {}
-        self._movimentacoes: List[Dict] = []
-        self._estoque_cache: Dict[UUID, Dict] = {}
+        self._requisicoes: dict[UUID, RequisicaoMaterial] = {}
+        self._movimentacoes: list[dict] = []
+        self._estoque_cache: dict[UUID, dict] = {}
 
     # =========================================================================
     # REQUISIÇÃO DE MATERIAIS
@@ -85,8 +88,8 @@ class EstoqueIntegrationService:
         self,
         ordem_servico_id: UUID,
         tecnico_id: UUID,
-        itens: List[Dict[str, Any]],
-        observacoes: Optional[str] = None,
+        itens: list[dict[str, Any]],
+        observacoes: str | None = None,
     ) -> RequisicaoMaterial:
         """
         Cria requisição de materiais para uma OS.
@@ -103,9 +106,7 @@ class EstoqueIntegrationService:
         # Verificar se OS existe
         from modules.campo.models.ordem_servico import OrdemServico, StatusOS
 
-        os = self.db.query(OrdemServico).filter(
-            OrdemServico.id == ordem_servico_id
-        ).first()
+        os = self.db.query(OrdemServico).filter(OrdemServico.id == ordem_servico_id).first()
 
         if not os:
             raise ValueError(f"Ordem de Serviço {ordem_servico_id} não encontrada")
@@ -144,24 +145,23 @@ class EstoqueIntegrationService:
         self._requisicoes[requisicao.id] = requisicao
 
         # Atualizar materiais previstos na OS
-        if hasattr(os, 'materiais_previstos'):
+        if hasattr(os, "materiais_previstos"):
             materiais = os.materiais_previstos or []
             for item in itens_req:
-                materiais.append({
-                    "produto_id": str(item.produto_id),
-                    "codigo": item.produto_codigo,
-                    "nome": item.produto_nome,
-                    "quantidade": float(item.quantidade_solicitada),
-                    "unidade": item.unidade,
-                    "requisicao_id": str(requisicao.id),
-                })
+                materiais.append(
+                    {
+                        "produto_id": str(item.produto_id),
+                        "codigo": item.produto_codigo,
+                        "nome": item.produto_nome,
+                        "quantidade": float(item.quantidade_solicitada),
+                        "unidade": item.unidade,
+                        "requisicao_id": str(requisicao.id),
+                    }
+                )
             os.materiais_previstos = materiais
             self.db.commit()
 
-        logger.info(
-            f"Requisição {requisicao.id} criada para OS {ordem_servico_id} "
-            f"com {len(itens_req)} itens"
-        )
+        logger.info(f"Requisição {requisicao.id} criada para OS {ordem_servico_id} com {len(itens_req)} itens")
 
         return requisicao
 
@@ -169,8 +169,8 @@ class EstoqueIntegrationService:
         self,
         requisicao_id: UUID,
         aprovador_id: UUID,
-        itens_aprovados: Optional[List[Dict]] = None,
-        observacoes: Optional[str] = None,
+        itens_aprovados: list[dict] | None = None,
+        observacoes: str | None = None,
     ) -> RequisicaoMaterial:
         """
         Aprova uma requisição de materiais.
@@ -189,7 +189,7 @@ class EstoqueIntegrationService:
             raise ValueError(f"Requisição {requisicao_id} não encontrada")
 
         if requisicao.status != StatusRequisicao.PENDENTE:
-            raise ValueError(f"Requisição não está pendente")
+            raise ValueError("Requisição não está pendente")
 
         # Atualizar quantidades aprovadas
         if itens_aprovados:
@@ -205,13 +205,10 @@ class EstoqueIntegrationService:
                 item.quantidade_aprovada = item.quantidade_solicitada
 
         # Verificar disponibilidade
-        todos_disponiveis = True
         for item in requisicao.itens:
-            disponivel = self.verificar_disponibilidade(
-                item.produto_id, item.quantidade_aprovada
-            )
+            disponivel = self.verificar_disponibilidade(item.produto_id, item.quantidade_aprovada)
             if not disponivel["disponivel"]:
-                todos_disponiveis = False
+                pass
 
         requisicao.status = StatusRequisicao.APROVADA
         requisicao.data_aprovacao = datetime.now()
@@ -227,7 +224,7 @@ class EstoqueIntegrationService:
     def registrar_entrega(
         self,
         requisicao_id: UUID,
-        itens_entregues: Optional[List[Dict]] = None,
+        itens_entregues: list[dict] | None = None,
     ) -> RequisicaoMaterial:
         """
         Registra entrega de materiais para uma requisição.
@@ -244,7 +241,7 @@ class EstoqueIntegrationService:
             raise ValueError(f"Requisição {requisicao_id} não encontrada")
 
         if requisicao.status not in [StatusRequisicao.APROVADA, StatusRequisicao.SEPARADA]:
-            raise ValueError(f"Requisição não está aprovada/separada")
+            raise ValueError("Requisição não está aprovada/separada")
 
         # Registrar quantidades entregues
         entrega_parcial = False
@@ -287,9 +284,9 @@ class EstoqueIntegrationService:
     def registrar_baixa_os(
         self,
         ordem_servico_id: UUID,
-        itens_utilizados: List[Dict[str, Any]],
-        tecnico_id: Optional[UUID] = None,
-    ) -> Dict[str, Any]:
+        itens_utilizados: list[dict[str, Any]],
+        tecnico_id: UUID | None = None,
+    ) -> dict[str, Any]:
         """
         Registra baixa de materiais utilizados em uma OS.
 
@@ -303,9 +300,7 @@ class EstoqueIntegrationService:
         """
         from modules.campo.models.ordem_servico import OrdemServico
 
-        os = self.db.query(OrdemServico).filter(
-            OrdemServico.id == ordem_servico_id
-        ).first()
+        os = self.db.query(OrdemServico).filter(OrdemServico.id == ordem_servico_id).first()
 
         if not os:
             raise ValueError(f"OS {ordem_servico_id} não encontrada")
@@ -327,10 +322,12 @@ class EstoqueIntegrationService:
                     ordem_servico_id=ordem_servico_id,
                     tecnico_id=tecnico_id,
                 )
-                baixas.append({
-                    "produto_id": produto_id,
-                    "quantidade": float(qtd_utilizada),
-                })
+                baixas.append(
+                    {
+                        "produto_id": produto_id,
+                        "quantidade": float(qtd_utilizada),
+                    }
+                )
 
             # Registrar devolução do excedente
             qtd_devolver = qtd_requisitada - qtd_utilizada
@@ -342,19 +339,20 @@ class EstoqueIntegrationService:
                     ordem_servico_id=ordem_servico_id,
                     tecnico_id=tecnico_id,
                 )
-                devolvidos.append({
-                    "produto_id": produto_id,
-                    "quantidade": float(qtd_devolver),
-                })
+                devolvidos.append(
+                    {
+                        "produto_id": produto_id,
+                        "quantidade": float(qtd_devolver),
+                    }
+                )
 
         # Atualizar materiais utilizados na OS
-        if hasattr(os, 'materiais_utilizados'):
+        if hasattr(os, "materiais_utilizados"):
             os.materiais_utilizados = baixas
             self.db.commit()
 
         logger.info(
-            f"Baixa registrada para OS {ordem_servico_id}: "
-            f"{len(baixas)} itens utilizados, {len(devolvidos)} devolvidos"
+            f"Baixa registrada para OS {ordem_servico_id}: {len(baixas)} itens utilizados, {len(devolvidos)} devolvidos"
         )
 
         return {
@@ -367,7 +365,7 @@ class EstoqueIntegrationService:
     def baixa_automatica_conclusao(
         self,
         ordem_servico_id: UUID,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Realiza baixa automática quando OS é concluída.
 
@@ -375,7 +373,8 @@ class EstoqueIntegrationService:
         """
         # Buscar requisições da OS
         requisicoes = [
-            r for r in self._requisicoes.values()
+            r
+            for r in self._requisicoes.values()
             if r.ordem_servico_id == ordem_servico_id and r.status == StatusRequisicao.ENTREGUE
         ]
 
@@ -389,11 +388,13 @@ class EstoqueIntegrationService:
         for req in requisicoes:
             for item in req.itens:
                 if item.quantidade_entregue and item.quantidade_entregue > 0:
-                    itens_baixar.append({
-                        "produto_id": str(item.produto_id),
-                        "quantidade_utilizada": float(item.quantidade_entregue),
-                        "quantidade_requisitada": float(item.quantidade_entregue),
-                    })
+                    itens_baixar.append(
+                        {
+                            "produto_id": str(item.produto_id),
+                            "quantidade_utilizada": float(item.quantidade_entregue),
+                            "quantidade_requisitada": float(item.quantidade_entregue),
+                        }
+                    )
 
         if itens_baixar:
             return self.registrar_baixa_os(
@@ -414,7 +415,7 @@ class EstoqueIntegrationService:
         self,
         produto_id: UUID,
         quantidade: Decimal,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Verifica disponibilidade de um produto no estoque.
 
@@ -448,7 +449,7 @@ class EstoqueIntegrationService:
     def verificar_estoque_tecnico(
         self,
         tecnico_id: UUID,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Verifica estoque em posse de um técnico.
 
@@ -494,8 +495,8 @@ class EstoqueIntegrationService:
 
     def alertas_estoque_baixo(
         self,
-        threshold_percentual: float = 20,
-    ) -> List[Dict[str, Any]]:
+        _threshold_percentual: float = 20,
+    ) -> list[dict[str, Any]]:
         """
         Retorna alertas de produtos com estoque baixo.
 
@@ -537,14 +538,11 @@ class EstoqueIntegrationService:
     def relatorio_consumo_os(
         self,
         ordem_servico_id: UUID,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Relatório de consumo de materiais de uma OS.
         """
-        movimentacoes = [
-            m for m in self._movimentacoes
-            if m.get("ordem_servico_id") == str(ordem_servico_id)
-        ]
+        movimentacoes = [m for m in self._movimentacoes if m.get("ordem_servico_id") == str(ordem_servico_id)]
 
         requisitado = sum(
             Decimal(str(m.get("quantidade", 0)))
@@ -553,9 +551,7 @@ class EstoqueIntegrationService:
         )
 
         utilizado = sum(
-            Decimal(str(m.get("quantidade", 0)))
-            for m in movimentacoes
-            if m.get("tipo") == TipoMovimentacao.BAIXA.value
+            Decimal(str(m.get("quantidade", 0))) for m in movimentacoes if m.get("tipo") == TipoMovimentacao.BAIXA.value
         )
 
         devolvido = sum(
@@ -579,21 +575,17 @@ class EstoqueIntegrationService:
         self,
         data_inicio: date,
         data_fim: date,
-        tecnico_id: Optional[UUID] = None,
-    ) -> Dict[str, Any]:
+        tecnico_id: UUID | None = None,
+    ) -> dict[str, Any]:
         """
         Relatório de consumo de materiais por período.
         """
         movimentacoes = [
-            m for m in self._movimentacoes
-            if data_inicio <= datetime.fromisoformat(m["data"]).date() <= data_fim
+            m for m in self._movimentacoes if data_inicio <= datetime.fromisoformat(m["data"]).date() <= data_fim
         ]
 
         if tecnico_id:
-            movimentacoes = [
-                m for m in movimentacoes
-                if m.get("tecnico_id") == str(tecnico_id)
-            ]
+            movimentacoes = [m for m in movimentacoes if m.get("tecnico_id") == str(tecnico_id)]
 
         # Agrupar por produto
         por_produto = {}
@@ -635,7 +627,7 @@ class EstoqueIntegrationService:
     # HELPERS
     # =========================================================================
 
-    def _get_produto(self, produto_id: UUID) -> Dict[str, Any]:
+    def _get_produto(self, produto_id: UUID) -> dict[str, Any]:
         """Obtém dados de um produto do estoque."""
         # TODO: Integrar com módulo real de estoque
         # Cache simulado
@@ -660,9 +652,9 @@ class EstoqueIntegrationService:
         tipo: TipoMovimentacao,
         produto_id: UUID,
         quantidade: Decimal,
-        ordem_servico_id: Optional[UUID] = None,
-        tecnico_id: Optional[UUID] = None,
-        requisicao_id: Optional[UUID] = None,
+        ordem_servico_id: UUID | None = None,
+        tecnico_id: UUID | None = None,
+        requisicao_id: UUID | None = None,
     ):
         """Registra movimentação de estoque."""
         movimentacao = {
@@ -678,9 +670,7 @@ class EstoqueIntegrationService:
 
         self._movimentacoes.append(movimentacao)
 
-        logger.debug(
-            f"Movimentação {tipo.value}: produto {produto_id}, qtd {quantidade}"
-        )
+        logger.debug(f"Movimentação {tipo.value}: produto {produto_id}, qtd {quantidade}")
 
 
 # Singleton

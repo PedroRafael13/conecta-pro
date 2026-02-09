@@ -9,32 +9,31 @@ Fornece funcionalidades para:
 - Reotimização em tempo real
 """
 
-from datetime import date, datetime, time, timedelta
-from decimal import Decimal
-from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple
-from uuid import UUID
 import logging
 import math
-import json
+from datetime import date, time
+from enum import StrEnum
+from typing import Any
+from uuid import UUID
 
-from sqlalchemy import and_, func, or_
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
 
-class TipoOtimizacao(str, Enum):
+class TipoOtimizacao(StrEnum):
     """Tipos de otimização de rota."""
+
     MENOR_DISTANCIA = "menor_distancia"
     MENOR_TEMPO = "menor_tempo"
     BALANCEADA = "balanceada"
     PRIORIDADE = "prioridade"
 
 
-class StatusRoteiro(str, Enum):
+class StatusRoteiro(StrEnum):
     """Status do roteiro."""
+
     PLANEJADO = "planejado"
     EM_EXECUCAO = "em_execucao"
     CONCLUIDO = "concluido"
@@ -43,50 +42,53 @@ class StatusRoteiro(str, Enum):
 
 class PontoRota(BaseModel):
     """Ponto de uma rota."""
-    ordem_servico_id: Optional[UUID] = None
-    visita_id: Optional[UUID] = None
+
+    ordem_servico_id: UUID | None = None
+    visita_id: UUID | None = None
     endereco: str
     latitude: float
     longitude: float
     tipo: str  # 'os', 'visita', 'base'
-    nome_cliente: Optional[str] = None
-    janela_inicio: Optional[time] = None
-    janela_fim: Optional[time] = None
+    nome_cliente: str | None = None
+    janela_inicio: time | None = None
+    janela_fim: time | None = None
     duracao_estimada_minutos: int = 60
     prioridade: int = 1  # 1=baixa, 5=urgente
 
 
 class TrechoRota(BaseModel):
     """Trecho entre dois pontos."""
+
     origem: PontoRota
     destino: PontoRota
     distancia_km: float
     duracao_minutos: int
-    instrucoes: Optional[str] = None
+    instrucoes: str | None = None
 
 
 class RoteiroOtimizado(BaseModel):
     """Roteiro otimizado completo."""
+
     tecnico_id: UUID
     tecnico_nome: str
     data: date
-    pontos: List[PontoRota]
-    trechos: List[TrechoRota]
+    pontos: list[PontoRota]
+    trechos: list[TrechoRota]
     distancia_total_km: float
     duracao_total_minutos: int
     hora_inicio_sugerida: time
     hora_fim_estimada: time
-    economia_km: Optional[float] = None  # Comparado com ordem original
-    economia_tempo_minutos: Optional[int] = None
+    economia_km: float | None = None  # Comparado com ordem original
+    economia_tempo_minutos: int | None = None
 
 
 class RoteirizacaoService:
     """Serviço de roteirização inteligente."""
 
-    def __init__(self, db: Session, google_maps_api_key: Optional[str] = None):
+    def __init__(self, db: Session, google_maps_api_key: str | None = None):
         self.db = db
         self.google_maps_api_key = google_maps_api_key
-        self._cache_distancias: Dict[str, Dict] = {}
+        self._cache_distancias: dict[str, dict] = {}
 
     # =========================================================================
     # OTIMIZAÇÃO DE ROTAS
@@ -97,8 +99,8 @@ class RoteirizacaoService:
         tecnico_id: UUID,
         data: date,
         tipo_otimizacao: TipoOtimizacao = TipoOtimizacao.BALANCEADA,
-        ponto_partida: Optional[Dict[str, Any]] = None,
-        ponto_retorno: Optional[Dict[str, Any]] = None,
+        ponto_partida: dict[str, Any] | None = None,
+        ponto_retorno: dict[str, Any] | None = None,
     ) -> RoteiroOtimizado:
         """
         Otimiza a rota de um técnico para um dia específico.
@@ -113,15 +115,12 @@ class RoteirizacaoService:
         Returns:
             RoteiroOtimizado com a melhor rota
         """
-        from modules.campo.models.ordem_servico import OrdemServico, StatusOS
-        from modules.campo.models.visita import Visita, StatusVisita
-
         # Buscar dados do técnico
         from modules.campo.models.campo_tecnico import CampoTecnico
+        from modules.campo.models.ordem_servico import OrdemServico, StatusOS
+        from modules.campo.models.visita import StatusVisita, Visita
 
-        tecnico = self.db.query(CampoTecnico).filter(
-            CampoTecnico.id == tecnico_id
-        ).first()
+        tecnico = self.db.query(CampoTecnico).filter(CampoTecnico.id == tecnico_id).first()
 
         if not tecnico:
             raise ValueError(f"Técnico {tecnico_id} não encontrado")
@@ -129,24 +128,36 @@ class RoteirizacaoService:
         # Definir ponto de partida
         if not ponto_partida:
             ponto_partida = {
-                "endereco": tecnico.base_address if hasattr(tecnico, 'base_address') else "Base",
-                "latitude": float(tecnico.base_latitude) if hasattr(tecnico, 'base_latitude') and tecnico.base_latitude else -23.5505,
-                "longitude": float(tecnico.base_longitude) if hasattr(tecnico, 'base_longitude') and tecnico.base_longitude else -46.6333,
+                "endereco": tecnico.base_address if hasattr(tecnico, "base_address") else "Base",
+                "latitude": float(tecnico.base_latitude)
+                if hasattr(tecnico, "base_latitude") and tecnico.base_latitude
+                else -23.5505,
+                "longitude": float(tecnico.base_longitude)
+                if hasattr(tecnico, "base_longitude") and tecnico.base_longitude
+                else -46.6333,
             }
 
         # Buscar OS agendadas para o dia
-        ordens_servico = self.db.query(OrdemServico).filter(
-            OrdemServico.tecnico_id == tecnico_id,
-            OrdemServico.data_agendada == data,
-            OrdemServico.status.in_([StatusOS.AGENDADA, StatusOS.EM_ANDAMENTO]),
-        ).all()
+        ordens_servico = (
+            self.db.query(OrdemServico)
+            .filter(
+                OrdemServico.tecnico_id == tecnico_id,
+                OrdemServico.data_agendada == data,
+                OrdemServico.status.in_([StatusOS.AGENDADA, StatusOS.EM_ANDAMENTO]),
+            )
+            .all()
+        )
 
         # Buscar visitas agendadas para o dia
-        visitas = self.db.query(Visita).filter(
-            Visita.responsavel_id == tecnico_id,
-            Visita.data_visita == data,
-            Visita.status.in_([StatusVisita.AGENDADA, StatusVisita.CONFIRMADA]),
-        ).all()
+        visitas = (
+            self.db.query(Visita)
+            .filter(
+                Visita.responsavel_id == tecnico_id,
+                Visita.data_visita == data,
+                Visita.status.in_([StatusVisita.AGENDADA, StatusVisita.CONFIRMADA]),
+            )
+            .all()
+        )
 
         # Converter para pontos de rota
         pontos = []
@@ -171,7 +182,7 @@ class RoteirizacaoService:
                 latitude=float(os_item.latitude) if os_item.latitude else -23.5505,
                 longitude=float(os_item.longitude) if os_item.longitude else -46.6333,
                 tipo="os",
-                nome_cliente=os_item.cliente_nome if hasattr(os_item, 'cliente_nome') else "Cliente",
+                nome_cliente=os_item.cliente_nome if hasattr(os_item, "cliente_nome") else "Cliente",
                 janela_inicio=os_item.horario_inicio_previsto,
                 janela_fim=os_item.horario_fim_previsto,
                 duracao_estimada_minutos=os_item.duracao_estimada_minutos or 60,
@@ -187,7 +198,9 @@ class RoteirizacaoService:
                 latitude=float(visita.latitude) if visita.latitude else -23.5505,
                 longitude=float(visita.longitude) if visita.longitude else -46.6333,
                 tipo="visita",
-                nome_cliente=visita.cliente_nome if hasattr(visita, 'cliente_nome') else visita.prospect_nome or "Cliente",
+                nome_cliente=visita.cliente_nome
+                if hasattr(visita, "cliente_nome")
+                else visita.prospect_nome or "Cliente",
                 janela_inicio=visita.horario_inicio,
                 janela_fim=visita.horario_fim,
                 duracao_estimada_minutos=30,  # Visitas geralmente são mais curtas
@@ -199,7 +212,7 @@ class RoteirizacaoService:
             # Nenhum serviço agendado
             return RoteiroOtimizado(
                 tecnico_id=tecnico_id,
-                tecnico_nome=tecnico.full_name if hasattr(tecnico, 'full_name') else str(tecnico_id),
+                tecnico_nome=tecnico.full_name if hasattr(tecnico, "full_name") else str(tecnico_id),
                 data=data,
                 pontos=[ponto_base],
                 trechos=[],
@@ -210,9 +223,7 @@ class RoteirizacaoService:
             )
 
         # Otimizar ordem dos pontos
-        pontos_otimizados = self._otimizar_ordem_pontos(
-            pontos, tipo_otimizacao
-        )
+        pontos_otimizados = self._otimizar_ordem_pontos(pontos, tipo_otimizacao)
 
         # Adicionar ponto de retorno se especificado
         if ponto_retorno:
@@ -245,13 +256,11 @@ class RoteirizacaoService:
         hora_fim = time(minutos_fim // 60, minutos_fim % 60)
 
         # Calcular economia (comparar com ordem original)
-        economia_km, economia_tempo = self._calcular_economia(
-            pontos, pontos_otimizados
-        )
+        economia_km, economia_tempo = self._calcular_economia(pontos, pontos_otimizados)
 
         return RoteiroOtimizado(
             tecnico_id=tecnico_id,
-            tecnico_nome=tecnico.full_name if hasattr(tecnico, 'full_name') else str(tecnico_id),
+            tecnico_nome=tecnico.full_name if hasattr(tecnico, "full_name") else str(tecnico_id),
             data=data,
             pontos=pontos_otimizados,
             trechos=trechos,
@@ -265,9 +274,9 @@ class RoteirizacaoService:
 
     def _otimizar_ordem_pontos(
         self,
-        pontos: List[PontoRota],
+        pontos: list[PontoRota],
         tipo_otimizacao: TipoOtimizacao,
-    ) -> List[PontoRota]:
+    ) -> list[PontoRota]:
         """
         Otimiza a ordem dos pontos usando algoritmo adequado.
 
@@ -285,7 +294,9 @@ class RoteirizacaoService:
         pontos_sem_janela = [p for p in pontos_servico if not p.janela_inicio]
 
         # Ordenar por janela de início
-        pontos_com_janela.sort(key=lambda p: (p.janela_inicio.hour * 60 + p.janela_inicio.minute) if p.janela_inicio else 999)
+        pontos_com_janela.sort(
+            key=lambda p: (p.janela_inicio.hour * 60 + p.janela_inicio.minute) if p.janela_inicio else 999
+        )
 
         # Se otimização por prioridade, colocar urgentes primeiro
         if tipo_otimizacao == TipoOtimizacao.PRIORIDADE:
@@ -307,7 +318,11 @@ class RoteirizacaoService:
 
             if idx_com_janela < len(pontos_com_janela):
                 ponto_janela = pontos_com_janela[idx_com_janela]
-                janela_minutos = ponto_janela.janela_inicio.hour * 60 + ponto_janela.janela_inicio.minute if ponto_janela.janela_inicio else 999
+                janela_minutos = (
+                    ponto_janela.janela_inicio.hour * 60 + ponto_janela.janela_inicio.minute
+                    if ponto_janela.janela_inicio
+                    else 999
+                )
 
                 # Se já está na hora da janela ou passou
                 if hora_atual >= janela_minutos - 30:  # 30 min de margem
@@ -331,8 +346,8 @@ class RoteirizacaoService:
     def _nearest_neighbor(
         self,
         origem: PontoRota,
-        pontos: List[PontoRota],
-    ) -> List[PontoRota]:
+        pontos: list[PontoRota],
+    ) -> list[PontoRota]:
         """
         Algoritmo do vizinho mais próximo para ordenar pontos.
         """
@@ -345,10 +360,7 @@ class RoteirizacaoService:
 
         while restantes:
             # Encontrar ponto mais próximo
-            mais_proximo = min(
-                restantes,
-                key=lambda p: self._calcular_distancia(atual, p)
-            )
+            mais_proximo = min(restantes, key=lambda p: self._calcular_distancia(atual, p))
             resultado.append(mais_proximo)
             restantes.remove(mais_proximo)
             atual = mais_proximo
@@ -364,7 +376,7 @@ class RoteirizacaoService:
         Calcula distância entre dois pontos usando fórmula de Haversine.
         """
         # Fórmula de Haversine para distância em km
-        R = 6371  # Raio da Terra em km
+        earth_radius = 6371  # Raio da Terra em km
 
         lat1 = math.radians(p1.latitude)
         lat2 = math.radians(p2.latitude)
@@ -374,12 +386,12 @@ class RoteirizacaoService:
         a = math.sin(dlat / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2) ** 2
         c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
-        return R * c
+        return earth_radius * c
 
     def _calcular_trechos(
         self,
-        pontos: List[PontoRota],
-    ) -> List[TrechoRota]:
+        pontos: list[PontoRota],
+    ) -> list[TrechoRota]:
         """Calcula os trechos entre pontos consecutivos."""
         trechos = []
 
@@ -411,9 +423,9 @@ class RoteirizacaoService:
 
     def _calcular_economia(
         self,
-        ordem_original: List[PontoRota],
-        ordem_otimizada: List[PontoRota],
-    ) -> Tuple[Optional[float], Optional[int]]:
+        ordem_original: list[PontoRota],
+        ordem_otimizada: list[PontoRota],
+    ) -> tuple[float | None, int | None]:
         """Calcula economia comparando ordem original com otimizada."""
         if len(ordem_original) <= 2:
             return None, None
@@ -421,16 +433,12 @@ class RoteirizacaoService:
         # Calcular distância total da ordem original
         distancia_original = 0
         for i in range(len(ordem_original) - 1):
-            distancia_original += self._calcular_distancia(
-                ordem_original[i], ordem_original[i + 1]
-            )
+            distancia_original += self._calcular_distancia(ordem_original[i], ordem_original[i + 1])
 
         # Calcular distância total da ordem otimizada
         distancia_otimizada = 0
         for i in range(len(ordem_otimizada) - 1):
-            distancia_otimizada += self._calcular_distancia(
-                ordem_otimizada[i], ordem_otimizada[i + 1]
-            )
+            distancia_otimizada += self._calcular_distancia(ordem_otimizada[i], ordem_otimizada[i + 1])
 
         economia_km = distancia_original - distancia_otimizada
 
@@ -441,18 +449,18 @@ class RoteirizacaoService:
 
     def _prioridade_para_int(self, prioridade: Any) -> int:
         """Converte enum de prioridade para inteiro."""
-        if hasattr(prioridade, 'value'):
+        if hasattr(prioridade, "value"):
             prioridade = prioridade.value
 
         mapa = {
-            'BAIXA': 1,
-            'NORMAL': 2,
-            'ALTA': 3,
-            'URGENTE': 5,
-            'baixa': 1,
-            'normal': 2,
-            'alta': 3,
-            'urgente': 5,
+            "BAIXA": 1,
+            "NORMAL": 2,
+            "ALTA": 3,
+            "URGENTE": 5,
+            "baixa": 1,
+            "normal": 2,
+            "alta": 3,
+            "urgente": 5,
         }
         return mapa.get(str(prioridade), 2)
 
@@ -464,7 +472,7 @@ class RoteirizacaoService:
         self,
         origem: PontoRota,
         destino: PontoRota,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """
         Consulta a API do Google Maps para obter distância e tempo reais.
         """
@@ -500,7 +508,7 @@ class RoteirizacaoService:
             #     self._cache_distancias[cache_key] = resultado
             #     return resultado
 
-            logger.debug(f"Google Maps API não configurada, usando cálculo local")
+            logger.debug("Google Maps API não configurada, usando cálculo local")
             return None
 
         except Exception as e:
@@ -517,7 +525,7 @@ class RoteirizacaoService:
         data: date,
         ponto_atual_latitude: float,
         ponto_atual_longitude: float,
-        os_concluidas: Optional[List[UUID]] = None,
+        os_concluidas: list[UUID] | None = None,
     ) -> RoteiroOtimizado:
         """
         Reotimiza a rota considerando posição atual e OS já concluídas.
@@ -549,10 +557,7 @@ class RoteirizacaoService:
         )
 
         # Filtrar OS já concluídas
-        roteiro.pontos = [
-            p for p in roteiro.pontos
-            if p.ordem_servico_id not in os_concluidas
-        ]
+        roteiro.pontos = [p for p in roteiro.pontos if p.ordem_servico_id not in os_concluidas]
 
         # Recalcular trechos
         roteiro.trechos = self._calcular_trechos(roteiro.pontos)
@@ -572,8 +577,8 @@ class RoteirizacaoService:
     def analisar_rotas_equipe(
         self,
         data: date,
-        tecnico_ids: Optional[List[UUID]] = None,
-    ) -> Dict[str, Any]:
+        tecnico_ids: list[UUID] | None = None,
+    ) -> dict[str, Any]:
         """
         Analisa rotas de toda a equipe para um dia.
 
@@ -587,7 +592,7 @@ class RoteirizacaoService:
         from modules.campo.models.campo_tecnico import CampoTecnico
 
         # Buscar técnicos
-        query = self.db.query(CampoTecnico).filter(CampoTecnico.is_active == True)
+        query = self.db.query(CampoTecnico).filter(CampoTecnico.is_active)
         if tecnico_ids:
             query = query.filter(CampoTecnico.id.in_(tecnico_ids))
 
@@ -616,17 +621,19 @@ class RoteirizacaoService:
                 qtd_os = len([p for p in roteiro.pontos if p.tipo == "os"])
                 qtd_visitas = len([p for p in roteiro.pontos if p.tipo == "visita"])
 
-                resultados["rotas"].append({
-                    "tecnico_id": str(tecnico.id),
-                    "tecnico_nome": roteiro.tecnico_nome,
-                    "qtd_os": qtd_os,
-                    "qtd_visitas": qtd_visitas,
-                    "distancia_km": roteiro.distancia_total_km,
-                    "duracao_minutos": roteiro.duracao_total_minutos,
-                    "hora_inicio": roteiro.hora_inicio_sugerida.isoformat(),
-                    "hora_fim": roteiro.hora_fim_estimada.isoformat(),
-                    "economia_km": roteiro.economia_km,
-                })
+                resultados["rotas"].append(
+                    {
+                        "tecnico_id": str(tecnico.id),
+                        "tecnico_nome": roteiro.tecnico_nome,
+                        "qtd_os": qtd_os,
+                        "qtd_visitas": qtd_visitas,
+                        "distancia_km": roteiro.distancia_total_km,
+                        "duracao_minutos": roteiro.duracao_total_minutos,
+                        "hora_inicio": roteiro.hora_inicio_sugerida.isoformat(),
+                        "hora_fim": roteiro.hora_fim_estimada.isoformat(),
+                        "economia_km": roteiro.economia_km,
+                    }
+                )
 
                 resultados["totais"]["total_os"] += qtd_os
                 resultados["totais"]["total_visitas"] += qtd_visitas
@@ -637,18 +644,20 @@ class RoteirizacaoService:
 
             except Exception as e:
                 logger.error(f"Erro ao analisar rota do técnico {tecnico.id}: {e}")
-                resultados["rotas"].append({
-                    "tecnico_id": str(tecnico.id),
-                    "erro": str(e),
-                })
+                resultados["rotas"].append(
+                    {
+                        "tecnico_id": str(tecnico.id),
+                        "erro": str(e),
+                    }
+                )
 
         return resultados
 
     def sugerir_redistribuicao(
         self,
         data: date,
-        tecnico_ids: Optional[List[UUID]] = None,
-    ) -> Dict[str, Any]:
+        tecnico_ids: list[UUID] | None = None,
+    ) -> dict[str, Any]:
         """
         Sugere redistribuição de OS entre técnicos para balancear carga.
 
@@ -675,13 +684,11 @@ class RoteirizacaoService:
 
         # Identificar técnicos sobrecarregados e subutilizados
         sobrecarregados = [
-            r for r in rotas_validas
-            if r["qtd_os"] > media_os * 1.3 or r["distancia_km"] > media_distancia * 1.3
+            r for r in rotas_validas if r["qtd_os"] > media_os * 1.3 or r["distancia_km"] > media_distancia * 1.3
         ]
 
         subutilizados = [
-            r for r in rotas_validas
-            if r["qtd_os"] < media_os * 0.7 and r["distancia_km"] < media_distancia * 0.7
+            r for r in rotas_validas if r["qtd_os"] < media_os * 0.7 and r["distancia_km"] < media_distancia * 0.7
         ]
 
         sugestoes = []
@@ -689,14 +696,14 @@ class RoteirizacaoService:
         for sobre in sobrecarregados:
             for sub in subutilizados:
                 if sobre["qtd_os"] > sub["qtd_os"] + 2:
-                    sugestoes.append({
-                        "de_tecnico": sobre["tecnico_nome"],
-                        "para_tecnico": sub["tecnico_nome"],
-                        "motivo": f"Balancear carga ({sobre['qtd_os']} OS vs {sub['qtd_os']} OS)",
-                        "economia_potencial_km": round(
-                            (sobre["distancia_km"] - media_distancia) * 0.3, 2
-                        ),
-                    })
+                    sugestoes.append(
+                        {
+                            "de_tecnico": sobre["tecnico_nome"],
+                            "para_tecnico": sub["tecnico_nome"],
+                            "motivo": f"Balancear carga ({sobre['qtd_os']} OS vs {sub['qtd_os']} OS)",
+                            "economia_potencial_km": round((sobre["distancia_km"] - media_distancia) * 0.3, 2),
+                        }
+                    )
 
         return {
             "redistribuicao_necessaria": len(sugestoes) > 0,
@@ -709,6 +716,6 @@ class RoteirizacaoService:
 
 
 # Singleton
-def get_roteirizacao_service(db: Session, google_maps_api_key: Optional[str] = None) -> RoteirizacaoService:
+def get_roteirizacao_service(db: Session, google_maps_api_key: str | None = None) -> RoteirizacaoService:
     """Factory function para obter instância do serviço."""
     return RoteirizacaoService(db, google_maps_api_key)

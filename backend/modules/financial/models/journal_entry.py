@@ -1,8 +1,8 @@
 """Journal Entry model - Lançamento Contábil."""
 
-import enum
 from datetime import datetime
 from decimal import Decimal
+from enum import StrEnum
 from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import (
@@ -29,7 +29,7 @@ if TYPE_CHECKING:
     from modules.financial.models.cost_center import CostCenter
 
 
-class EntryType(str, enum.Enum):
+class EntryType(StrEnum):
     """Tipo do lançamento contábil."""
 
     MANUAL = "MANUAL"  # Manual
@@ -44,7 +44,7 @@ class EntryType(str, enum.Enum):
     RECLASSIFICATION = "RECLASSIFICATION"  # Reclassificação
 
 
-class EntryStatus(str, enum.Enum):
+class EntryStatus(StrEnum):
     """Status do lançamento contábil."""
 
     DRAFT = "DRAFT"  # Rascunho
@@ -55,7 +55,7 @@ class EntryStatus(str, enum.Enum):
     CANCELLED = "CANCELLED"  # Cancelado
 
 
-class EntryOrigin(str, enum.Enum):
+class EntryOrigin(StrEnum):
     """Origem do lançamento."""
 
     ACCOUNTS_PAYABLE = "ACCOUNTS_PAYABLE"  # Contas a Pagar
@@ -75,9 +75,7 @@ class JournalEntry(Base):
     """Lançamento Contábil - cabeçalho do lançamento no diário."""
 
     __tablename__ = "fin_journal_entries"
-    __table_args__ = (
-        UniqueConstraint("condominio_id", "entry_number", name="uq_journal_entry_number"),
-    )
+    __table_args__ = (UniqueConstraint("condominio_id", "entry_number", name="uq_journal_entry_number"),)
 
     # Primary Key
     id = Column(
@@ -180,9 +178,7 @@ class JournalEntry(Base):
 
     # Timestamps
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
-    updated_at = Column(
-        DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
-    )
+    updated_at = Column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     deleted_at = Column(DateTime(timezone=True), nullable=True)
 
     # Audit
@@ -219,11 +215,7 @@ class JournalEntry(Base):
     @property
     def can_post(self) -> bool:
         """Verifica se pode ser contabilizado."""
-        return (
-            self.status in [EntryStatus.DRAFT, EntryStatus.APPROVED]
-            and self.is_balanced
-            and self.line_count > 0
-        )
+        return self.status in [EntryStatus.DRAFT, EntryStatus.APPROVED] and self.is_balanced and self.line_count > 0
 
     @property
     def can_reverse(self) -> bool:
@@ -315,9 +307,7 @@ class JournalEntryLine(Base):
 
     # Timestamps
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
-    updated_at = Column(
-        DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
-    )
+    updated_at = Column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     # Relationships
     journal_entry: "JournalEntry" = relationship(

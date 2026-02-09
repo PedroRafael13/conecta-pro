@@ -1,24 +1,23 @@
 """Controller para dispositivos REP."""
 
 import logging
-from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.database import get_db
 from core.auth.dependencies import get_current_user
+from core.database import get_db
 from modules.hr.rep_integration.repositories import REPDeviceRepository
-from modules.hr.rep_integration.services import REPCommunicationService
 from modules.hr.rep_integration.schemas import (
     REPDeviceCreate,
-    REPDeviceUpdate,
-    REPDeviceResponse,
-    REPDeviceList,
     REPDeviceFilter,
+    REPDeviceList,
+    REPDeviceResponse,
     REPDeviceTestConnection,
+    REPDeviceUpdate,
 )
+from modules.hr.rep_integration.services import REPCommunicationService
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/devices", tags=["REP Devices"])
@@ -47,11 +46,11 @@ async def create_device(
 
 @router.get("/", response_model=REPDeviceList)
 async def list_devices(
-    condominio_id: Optional[UUID] = None,
-    manufacturer: Optional[str] = None,
-    status_filter: Optional[str] = Query(None, alias="status"),
-    is_active: Optional[bool] = None,
-    search: Optional[str] = None,
+    condominio_id: UUID | None = None,
+    manufacturer: str | None = None,
+    status_filter: str | None = Query(None, alias="status"),
+    is_active: bool | None = None,
+    search: str | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
@@ -224,7 +223,7 @@ async def get_device_users(
 
 @router.get("/statistics/summary")
 async def get_devices_statistics(
-    condominio_id: Optional[UUID] = None,
+    condominio_id: UUID | None = None,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict:

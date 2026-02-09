@@ -1,31 +1,30 @@
 """Controller para TimeSheet (Folha de Ponto)."""
 # pylint: disable=unused-argument
 
-from typing import Optional, List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.database import get_db
 from core.auth.dependencies import get_current_user, require_roles
-from modules.hr.time_tracking.repositories import TimeSheetRepository
-from modules.hr.time_tracking.services import TimeSheetService, ReportService
-from modules.hr.time_tracking.schemas import (
-    TimeSheetCreate,
-    TimeSheetResponse,
-    TimeSheetListResponse,
-    TimeSheetFilter,
-    TimeSheetStats,
-    TimeSheetRecalculate,
-    TimeSheetEmployeeApproval,
-    TimeSheetManagerApproval,
-    TimeSheetHRApproval,
-    TimeSheetPayroll,
-    TimeSheetReopen,
-    TimeSheetBatchAction,
-)
+from core.database import get_db
 from modules.hr.time_tracking.models import TimeSheetStatus
+from modules.hr.time_tracking.repositories import TimeSheetRepository
+from modules.hr.time_tracking.schemas import (
+    TimeSheetBatchAction,
+    TimeSheetCreate,
+    TimeSheetEmployeeApproval,
+    TimeSheetFilter,
+    TimeSheetHRApproval,
+    TimeSheetListResponse,
+    TimeSheetManagerApproval,
+    TimeSheetPayroll,
+    TimeSheetRecalculate,
+    TimeSheetReopen,
+    TimeSheetResponse,
+    TimeSheetStats,
+)
+from modules.hr.time_tracking.services import ReportService, TimeSheetService
 
 router = APIRouter(
     prefix="/time-sheets",
@@ -79,7 +78,7 @@ async def generate_time_sheet(
     employee_name: str,
     reference_month: int = Query(..., ge=1, le=12),
     reference_year: int = Query(..., ge=2000, le=2100),
-    condominium_id: Optional[str] = None,
+    condominium_id: str | None = None,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(require_roles(["admin", "rh"])),
 ):
@@ -110,11 +109,11 @@ async def generate_time_sheet(
     summary="Gerar folhas em lote",
 )
 async def generate_time_sheets_batch(
-    employee_ids: List[str],
+    employee_ids: list[str],
     employee_data: dict,
     reference_month: int = Query(..., ge=1, le=12),
     reference_year: int = Query(..., ge=2000, le=2100),
-    condominium_id: Optional[str] = None,
+    condominium_id: str | None = None,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(require_roles(["admin", "rh"])),
 ):
@@ -141,14 +140,14 @@ async def generate_time_sheets_batch(
     summary="Listar folhas de ponto",
 )
 async def list_time_sheets(  # pylint: disable=too-many-locals
-    employee_id: Optional[str] = None,
-    reference_month: Optional[int] = Query(None, ge=1, le=12),
-    reference_year: Optional[int] = Query(None, ge=2000, le=2100),
-    sheet_status: Optional[TimeSheetStatus] = Query(None, alias="status"),
-    condominium_id: Optional[str] = None,
-    department_id: Optional[str] = None,
-    has_pending_issues: Optional[bool] = None,
-    is_fully_approved: Optional[bool] = None,
+    employee_id: str | None = None,
+    reference_month: int | None = Query(None, ge=1, le=12),
+    reference_year: int | None = Query(None, ge=2000, le=2100),
+    sheet_status: TimeSheetStatus | None = Query(None, alias="status"),
+    condominium_id: str | None = None,
+    department_id: str | None = None,
+    has_pending_issues: bool | None = None,
+    is_fully_approved: bool | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
@@ -179,9 +178,9 @@ async def list_time_sheets(  # pylint: disable=too-many-locals
     summary="Estatísticas de folhas",
 )
 async def get_time_sheet_stats(
-    condominium_id: Optional[str] = None,
-    reference_month: Optional[int] = Query(None, ge=1, le=12),
-    reference_year: Optional[int] = Query(None, ge=2000, le=2100),
+    condominium_id: str | None = None,
+    reference_month: int | None = Query(None, ge=1, le=12),
+    reference_year: int | None = Query(None, ge=2000, le=2100),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(require_roles(["admin", "rh"])),
 ):
@@ -203,8 +202,8 @@ async def get_time_sheet_stats(
     summary="Pendentes aprovação funcionário",
 )
 async def get_pending_employee_approval(
-    employee_id: Optional[str] = None,
-    condominium_id: Optional[str] = None,
+    employee_id: str | None = None,
+    condominium_id: str | None = None,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
@@ -227,8 +226,8 @@ async def get_pending_employee_approval(
     summary="Pendentes aprovação gestor",
 )
 async def get_pending_manager_approval(
-    condominium_id: Optional[str] = None,
-    department_id: Optional[str] = None,
+    condominium_id: str | None = None,
+    department_id: str | None = None,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(require_roles(["admin", "rh", "gestor"])),
 ):
@@ -246,7 +245,7 @@ async def get_pending_manager_approval(
     summary="Pendentes aprovação RH",
 )
 async def get_pending_hr_approval(
-    condominium_id: Optional[str] = None,
+    condominium_id: str | None = None,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(require_roles(["admin", "rh"])),
 ):
@@ -264,7 +263,7 @@ async def get_pending_hr_approval(
     summary="Prontas para fechamento",
 )
 async def get_ready_to_close(
-    condominium_id: Optional[str] = None,
+    condominium_id: str | None = None,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(require_roles(["admin", "rh"])),
 ):
@@ -578,10 +577,12 @@ async def batch_action(
         try:
             sheet = await repo.get_by_id(UUID(sheet_id))
             if not sheet:
-                results["errors"].append({
-                    "id": sheet_id,
-                    "error": "Folha não encontrada",
-                })
+                results["errors"].append(
+                    {
+                        "id": sheet_id,
+                        "error": "Folha não encontrada",
+                    }
+                )
                 continue
 
             if data.action == "close":
@@ -605,10 +606,12 @@ async def batch_action(
             results["success"].append(sheet_id)
 
         except Exception as e:  # pylint: disable=broad-exception-caught
-            results["errors"].append({
-                "id": sheet_id,
-                "error": str(e),
-            })
+            results["errors"].append(
+                {
+                    "id": sheet_id,
+                    "error": str(e),
+                }
+            )
 
     await db.commit()
 

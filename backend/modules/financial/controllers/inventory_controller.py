@@ -4,7 +4,6 @@ import logging
 import uuid
 from datetime import date
 from decimal import Decimal
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
@@ -69,8 +68,8 @@ router = APIRouter(prefix="/inventory", tags=["Estoque"])
 
 @router.get("/warehouses", response_model=list[WarehouseListResponse])
 async def list_warehouses(
-    item_status: Optional[WarehouseStatus] = Query(None, alias="status"),
-    warehouse_type: Optional[str] = None,
+    item_status: WarehouseStatus | None = Query(None, alias="status"),
+    warehouse_type: str | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
@@ -284,11 +283,11 @@ async def unblock_warehouse(
 
 @router.get("/stock-items", response_model=list[StockItemListResponse])
 async def list_stock_items(
-    warehouse_id: Optional[uuid.UUID] = None,
-    product_id: Optional[uuid.UUID] = None,
-    item_status: Optional[StockItemStatus] = Query(None, alias="status"),
-    is_low_stock: Optional[bool] = None,
-    is_expired: Optional[bool] = None,
+    warehouse_id: uuid.UUID | None = None,
+    product_id: uuid.UUID | None = None,
+    item_status: StockItemStatus | None = Query(None, alias="status"),
+    is_low_stock: bool | None = None,
+    is_expired: bool | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
@@ -301,9 +300,7 @@ async def list_stock_items(
         if warehouse_id:
             items = repo.list_by_warehouse(warehouse_id, item_status, skip, limit)
         elif product_id:
-            items = repo.list_by_product(
-                product_id, _current_user["condominio_id"], include_zero=True
-            )
+            items = repo.list_by_product(product_id, _current_user["condominio_id"], include_zero=True)
         elif is_low_stock:
             items = repo.list_low_stock(_current_user["condominio_id"])
         elif is_expired:
@@ -474,12 +471,12 @@ async def unblock_stock_item(
 
 @router.get("/movements", response_model=list[StockMovementListResponse])
 async def list_movements(
-    warehouse_id: Optional[uuid.UUID] = None,
-    product_id: Optional[uuid.UUID] = None,
-    movement_type: Optional[MovementType] = None,
-    mov_status: Optional[MovementStatus] = None,
-    date_from: Optional[date] = None,
-    date_to: Optional[date] = None,
+    warehouse_id: uuid.UUID | None = None,
+    product_id: uuid.UUID | None = None,
+    movement_type: MovementType | None = None,
+    mov_status: MovementStatus | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
@@ -510,8 +507,8 @@ async def list_movements(
 
 @router.get("/movements/stats", response_model=MovementStats)
 async def get_movement_stats(
-    date_from: Optional[date] = None,
-    date_to: Optional[date] = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
     db: Session = Depends(get_db),
     _current_user: dict = Depends(get_current_user),
 ) -> MovementStats:
@@ -731,8 +728,8 @@ async def cancel_movement(
 
 @router.get("/inventories", response_model=list[StockInventoryListResponse])
 async def list_inventories(
-    warehouse_id: Optional[uuid.UUID] = None,
-    inv_status: Optional[InventoryStatus] = None,
+    warehouse_id: uuid.UUID | None = None,
+    inv_status: InventoryStatus | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
@@ -913,9 +910,9 @@ async def finalize_inventory(
 
 @router.get("/reservations", response_model=list[StockReservationListResponse])
 async def list_reservations(
-    product_id: Optional[uuid.UUID] = None,
-    warehouse_id: Optional[uuid.UUID] = None,
-    res_status: Optional[ReservationStatus] = None,
+    product_id: uuid.UUID | None = None,
+    warehouse_id: uuid.UUID | None = None,
+    res_status: ReservationStatus | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),

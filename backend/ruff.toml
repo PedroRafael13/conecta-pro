@@ -1,6 +1,7 @@
 # Ruff configuration for Conecta PRO Backend
 target-version = "py312"
 line-length = 120
+exclude = ["backups"]
 
 [lint]
 select = [
@@ -29,6 +30,7 @@ ignore = [
     "SIM110", # reimplemented-builtin - for+return vs any() e preferencia
     "S608",   # SQL injection - protegido por validate_table_name() whitelist
     "SIM118", # key in dict vs key in dict.keys() - menor prioridade
+    "UP038",  # isinstance(x, (A, B)) → isinstance(x, A | B) - removido em ruff 0.15+
 ]
 
 [lint.per-file-ignores]

@@ -1,21 +1,23 @@
 """Model de Compartilhamento de Documento para GED."""
 
 from datetime import datetime
-from enum import Enum
-from typing import Optional, TYPE_CHECKING
+from enum import StrEnum
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from sqlalchemy import (
-    String,
     Boolean,
     DateTime,
-    Text,
     ForeignKey,
     Integer,
+    String,
+    Text,
+)
+from sqlalchemy import (
     Enum as SQLEnum,
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB
-from sqlalchemy.orm import relationship, Mapped, mapped_column
+from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from core.database import Base
 
@@ -23,7 +25,7 @@ if TYPE_CHECKING:
     from modules.ged.models.document import Document
 
 
-class ShareType(str, Enum):
+class ShareType(StrEnum):
     """Tipos de compartilhamento."""
 
     USUARIO = "usuario"  # Compartilhado com usuário específico
@@ -34,7 +36,7 @@ class ShareType(str, Enum):
     EMAIL = "email"  # Compartilhado por email
 
 
-class SharePermission(str, Enum):
+class SharePermission(StrEnum):
     """Permissões de compartilhamento."""
 
     VISUALIZAR = "visualizar"
@@ -44,7 +46,7 @@ class SharePermission(str, Enum):
     COMPARTILHAR = "compartilhar"
 
 
-class ShareStatus(str, Enum):
+class ShareStatus(StrEnum):
     """Status do compartilhamento."""
 
     ATIVO = "ativo"
@@ -59,87 +61,65 @@ class DocumentShare(Base):
     __tablename__ = "ged_document_shares"
 
     # Identificação
-    id: Mapped[str] = mapped_column(
-        UUID(as_uuid=False), primary_key=True, default=lambda: str(uuid4())
-    )
+    id: Mapped[str] = mapped_column(UUID(as_uuid=False), primary_key=True, default=lambda: str(uuid4()))
     document_id: Mapped[str] = mapped_column(
         UUID(as_uuid=False), ForeignKey("ged_documents.id"), nullable=False, index=True
     )
 
     # Tipo e destinatário
     share_type: Mapped[ShareType] = mapped_column(
-        SQLEnum(ShareType, native_enum=False, create_constraint=False),
-        default=ShareType.USUARIO
+        SQLEnum(ShareType, native_enum=False, create_constraint=False), default=ShareType.USUARIO
     )
-    shared_with_id: Mapped[Optional[str]] = mapped_column(
-        UUID(as_uuid=False), nullable=True
-    )  # user_id, group_id, etc.
-    shared_with_email: Mapped[Optional[str]] = mapped_column(
-        String(255), nullable=True
-    )
-    shared_with_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    shared_with_id: Mapped[str | None] = mapped_column(UUID(as_uuid=False), nullable=True)  # user_id, group_id, etc.
+    shared_with_email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    shared_with_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     # Permissões
-    permissions: Mapped[list] = mapped_column(
-        JSONB, default=["visualizar"]
-    )  # Lista de SharePermission
+    permissions: Mapped[list] = mapped_column(JSONB, default=["visualizar"])  # Lista de SharePermission
     can_reshare: Mapped[bool] = mapped_column(Boolean, default=False)
 
     # Status
     status: Mapped[ShareStatus] = mapped_column(
-        SQLEnum(ShareStatus, native_enum=False, create_constraint=False),
-        default=ShareStatus.ATIVO
+        SQLEnum(ShareStatus, native_enum=False, create_constraint=False), default=ShareStatus.ATIVO
     )
 
     # Link externo
-    share_link: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
-    share_token: Mapped[Optional[str]] = mapped_column(
-        String(100), unique=True, nullable=True
-    )
+    share_link: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    share_token: Mapped[str | None] = mapped_column(String(100), unique=True, nullable=True)
     password_protected: Mapped[bool] = mapped_column(Boolean, default=False)
-    password_hash: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     # Limites
-    max_downloads: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    max_downloads: Mapped[int | None] = mapped_column(Integer, nullable=True)
     download_count: Mapped[int] = mapped_column(Integer, default=0)
-    max_views: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    max_views: Mapped[int | None] = mapped_column(Integer, nullable=True)
     view_count: Mapped[int] = mapped_column(Integer, default=0)
 
     # Validade
-    expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     is_perpetual: Mapped[bool] = mapped_column(Boolean, default=False)
 
     # Mensagem
-    message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    message: Mapped[str | None] = mapped_column(Text, nullable=True)
     notification_sent: Mapped[bool] = mapped_column(Boolean, default=False)
-    notification_sent_at: Mapped[Optional[datetime]] = mapped_column(
-        DateTime, nullable=True
-    )
+    notification_sent_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     # Acesso
-    first_accessed_at: Mapped[Optional[datetime]] = mapped_column(
-        DateTime, nullable=True
-    )
-    last_accessed_at: Mapped[Optional[datetime]] = mapped_column(
-        DateTime, nullable=True
-    )
+    first_accessed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    last_accessed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     access_count: Mapped[int] = mapped_column(Integer, default=0)
 
     # Metadados
-    extra_metadata: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    extra_metadata: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
-    revoked_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     # Auditoria
     shared_by: Mapped[str] = mapped_column(UUID(as_uuid=False), nullable=False)
-    revoked_by: Mapped[Optional[str]] = mapped_column(
-        UUID(as_uuid=False), nullable=True
-    )
+    revoked_by: Mapped[str | None] = mapped_column(UUID(as_uuid=False), nullable=True)
 
     # Relacionamentos
     document: Mapped["Document"] = relationship("Document", back_populates="shares")
@@ -175,14 +155,14 @@ class DocumentShare(Base):
         return self.view_count >= self.max_views
 
     @property
-    def remaining_downloads(self) -> Optional[int]:
+    def remaining_downloads(self) -> int | None:
         """Retorna downloads restantes."""
         if not self.max_downloads:
             return None
         return max(0, self.max_downloads - self.download_count)
 
     @property
-    def remaining_views(self) -> Optional[int]:
+    def remaining_views(self) -> int | None:
         """Retorna visualizações restantes."""
         if not self.max_views:
             return None

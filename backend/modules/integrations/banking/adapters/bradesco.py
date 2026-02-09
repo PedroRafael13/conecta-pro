@@ -10,7 +10,7 @@ import hashlib
 import hmac
 from datetime import date, datetime, timedelta
 from decimal import Decimal
-from typing import Any, Optional
+from typing import Any
 
 import httpx
 
@@ -73,7 +73,7 @@ class BradescoAdapter(BaseBankingAdapter):
     def __init__(self, credentials: BankCredentials) -> None:
         """Inicializa adapter Bradesco."""
         super().__init__(credentials)
-        self._client: Optional[httpx.AsyncClient] = None
+        self._client: httpx.AsyncClient | None = None
 
     async def _get_client(self) -> httpx.AsyncClient:
         """Retorna cliente HTTP configurado."""
@@ -178,8 +178,8 @@ class BradescoAdapter(BaseBankingAdapter):
         self,
         method: str,
         endpoint: str,
-        data: Optional[dict] = None,
-        params: Optional[dict] = None,
+        data: dict | None = None,
+        params: dict | None = None,
     ) -> dict[str, Any]:
         """Faz requisicao autenticada."""
         await self.ensure_authenticated()
@@ -265,9 +265,7 @@ class BradescoAdapter(BaseBankingAdapter):
             blocked=self._parse_amount(data.get("saldoBloqueado", 0)),
             total=self._parse_amount(data.get("saldoTotal", 0)),
             currency="BRL",
-            updated_at=datetime.fromisoformat(
-                data.get("dataHoraConsulta", datetime.now().isoformat())
-            ),
+            updated_at=datetime.fromisoformat(data.get("dataHoraConsulta", datetime.now().isoformat())),
         )
 
     async def get_statement(
@@ -431,7 +429,7 @@ class BradescoAdapter(BaseBankingAdapter):
     async def validate_pix_key(
         self,
         key: str,
-    ) -> Optional[PixKey]:
+    ) -> PixKey | None:
         """Valida chave PIX."""
         endpoint = f"{self.PIX_ENDPOINT}/chaves/{key}"
 
@@ -457,7 +455,7 @@ class BradescoAdapter(BaseBankingAdapter):
         self,
         pix_key: str,
         amount: Decimal,
-        description: Optional[str] = None,
+        description: str | None = None,
     ) -> PaymentResponse:
         """Inicia transferencia PIX."""
         # Valida a chave antes

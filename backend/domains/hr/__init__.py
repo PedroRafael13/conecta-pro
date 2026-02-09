@@ -5,26 +5,26 @@ Enterprise HR domain with Brazilian labor law compliance
 """
 
 from .entities import (
-    # Enums
-    EmploymentType,
-    EmployeeStatus,
-    DepartmentType,
-    WorkScheduleType,
-    PayrollEventType,
-    TimeClockEventType,
-    LeaveType,
-    TerminationType,
-    # Employee
-    EmployeeEntity,
     Address,
     BankAccount,
-    EmergencyContact,
+    DepartmentId,
+    DepartmentType,
     Dependent,
-    LeaveRecord,
+    EmergencyContact,
+    # Employee
+    EmployeeEntity,
     # Type aliases
     EmployeeId,
-    DepartmentId,
-    PositionId
+    EmployeeStatus,
+    # Enums
+    EmploymentType,
+    LeaveRecord,
+    LeaveType,
+    PayrollEventType,
+    PositionId,
+    TerminationType,
+    TimeClockEventType,
+    WorkScheduleType,
 )
 
 __all__ = [
@@ -47,5 +47,5 @@ __all__ = [
     # Type aliases
     "EmployeeId",
     "DepartmentId",
-    "PositionId"
+    "PositionId",
 ]

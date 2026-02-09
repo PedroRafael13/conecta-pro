@@ -41,4 +41,31 @@ export const documentVersionService = {
     });
     return response.data;
   },
+
+  async setCurrent(versionId: string) {
+    const response = await api.post(`/api/v1/ged/document-versions/${versionId}/set-current`);
+    return response.data;
+  },
+
+  async archive(versionId: string) {
+    const response = await api.post(`/api/v1/ged/document-versions/${versionId}/archive`);
+    return response.data;
+  },
+
+  async delete(versionId: string) {
+    const response = await api.delete(`/api/v1/ged/document-versions/${versionId}`);
+    return response.data;
+  },
+
+  async listByDocument(documentId: string) {
+    const response = await api.get(`/api/v1/ged/documents/${documentId}/versions`);
+    return response.data;
+  },
+
+  async compare(documentId: string, versionA: number, versionB: number) {
+    const response = await api.get(`/api/v1/ged/document-versions/document/${documentId}/compare`, {
+      params: { version_a: versionA, version_b: versionB },
+    });
+    return response.data;
+  },
 };

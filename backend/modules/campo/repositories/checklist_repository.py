@@ -3,28 +3,26 @@ Repository para Checklist.
 """
 
 from datetime import datetime
-from typing import Optional, List, Tuple
 from uuid import UUID
 
-from sqlalchemy import func, or_, and_, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from modules.campo.models.checklist import (
-    ChecklistTemplate,
     ChecklistItem,
-    ChecklistResposta,
     ChecklistPreenchido,
+    ChecklistResposta,
+    ChecklistTemplate,
     TipoServico,
-    TipoResposta,
 )
 from modules.campo.schemas.checklist import (
-    ChecklistTemplateCreate,
-    ChecklistTemplateUpdate,
     ChecklistItemCreate,
     ChecklistItemUpdate,
-    ChecklistRespostaCreate,
     ChecklistPreenchidoCreate,
+    ChecklistRespostaCreate,
+    ChecklistTemplateCreate,
+    ChecklistTemplateUpdate,
     TemplateFiltro,
 )
 
@@ -64,7 +62,7 @@ class ChecklistRepository:
         await self.db.refresh(template)
         return template
 
-    async def get_template_by_id(self, template_id: UUID) -> Optional[ChecklistTemplate]:
+    async def get_template_by_id(self, template_id: UUID) -> ChecklistTemplate | None:
         """Busca template por ID."""
         result = await self.db.execute(
             select(ChecklistTemplate)
@@ -73,7 +71,7 @@ class ChecklistRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_template_by_codigo(self, codigo: str) -> Optional[ChecklistTemplate]:
+    async def get_template_by_codigo(self, codigo: str) -> ChecklistTemplate | None:
         """Busca template por codigo."""
         result = await self.db.execute(
             select(ChecklistTemplate)
@@ -82,7 +80,9 @@ class ChecklistRepository:
         )
         return result.scalar_one_or_none()
 
-    async def update_template(self, template: ChecklistTemplate, data: ChecklistTemplateUpdate, updated_by: UUID = None) -> ChecklistTemplate:
+    async def update_template(
+        self, template: ChecklistTemplate, data: ChecklistTemplateUpdate, updated_by: UUID = None
+    ) -> ChecklistTemplate:
         """Atualiza um template."""
         update_data = data.model_dump(exclude_unset=True)
 
@@ -117,10 +117,10 @@ class ChecklistRepository:
 
     async def list_templates(
         self,
-        filtro: Optional[TemplateFiltro] = None,
+        filtro: TemplateFiltro | None = None,
         skip: int = 0,
         limit: int = 50,
-    ) -> Tuple[List[ChecklistTemplate], int]:
+    ) -> tuple[list[ChecklistTemplate], int]:
         """Lista templates com filtros."""
         query = select(ChecklistTemplate)
 
@@ -154,16 +154,11 @@ class ChecklistRepository:
         result = await self.db.execute(query)
         return result.scalars().all(), total
 
-    async def get_templates_por_tipo_servico(self, tipo_servico: TipoServico) -> List[ChecklistTemplate]:
+    async def get_templates_por_tipo_servico(self, tipo_servico: TipoServico) -> list[ChecklistTemplate]:
         """Lista templates ativos para um tipo de servico."""
         result = await self.db.execute(
             select(ChecklistTemplate)
-            .where(
-                and_(
-                    ChecklistTemplate.tipo_servico == tipo_servico,
-                    ChecklistTemplate.is_ativo == True
-                )
-            )
+            .where(and_(ChecklistTemplate.tipo_servico == tipo_servico, ChecklistTemplate.is_ativo))
             .order_by(ChecklistTemplate.nome.asc())
         )
         return result.scalars().all()
@@ -177,8 +172,7 @@ class ChecklistRepository:
         # Determinar ordem se nao informada
         if not data.ordem:
             result = await self.db.execute(
-                select(func.max(ChecklistItem.ordem))
-                .where(ChecklistItem.template_id == data.template_id)
+                select(func.max(ChecklistItem.ordem)).where(ChecklistItem.template_id == data.template_id)
             )
             max_ordem = result.scalar() or 0
             ordem = max_ordem + 1
@@ -215,11 +209,9 @@ class ChecklistRepository:
         await self.db.refresh(item)
         return item
 
-    async def get_item_by_id(self, item_id: UUID) -> Optional[ChecklistItem]:
+    async def get_item_by_id(self, item_id: UUID) -> ChecklistItem | None:
         """Busca item por ID."""
-        result = await self.db.execute(
-            select(ChecklistItem).where(ChecklistItem.id == item_id)
-        )
+        result = await self.db.execute(select(ChecklistItem).where(ChecklistItem.id == item_id))
         return result.scalar_one_or_none()
 
     async def update_item(self, item: ChecklistItem, data: ChecklistItemUpdate) -> ChecklistItem:
@@ -228,7 +220,7 @@ class ChecklistRepository:
 
         for field, value in update_data.items():
             if field == "opcoes" and value:
-                value = [o.model_dump() if hasattr(o, 'model_dump') else o for o in value]
+                value = [o.model_dump() if hasattr(o, "model_dump") else o for o in value]
             setattr(item, field, value)
 
         item.updated_at = datetime.utcnow()
@@ -248,36 +240,23 @@ class ChecklistRepository:
             await self.db.commit()
         return True
 
-    async def list_itens_template(self, template_id: UUID) -> List[ChecklistItem]:
+    async def list_itens_template(self, template_id: UUID) -> list[ChecklistItem]:
         """Lista itens de um template."""
         result = await self.db.execute(
             select(ChecklistItem)
-            .where(
-                and_(
-                    ChecklistItem.template_id == template_id,
-                    ChecklistItem.is_active == True
-                )
-            )
+            .where(and_(ChecklistItem.template_id == template_id, ChecklistItem.is_active))
             .order_by(ChecklistItem.secao_ordem.asc(), ChecklistItem.ordem.asc())
         )
         return result.scalars().all()
 
-    async def reordenar_itens(self, template_id: UUID, nova_ordem: List[UUID]) -> bool:
+    async def reordenar_itens(self, template_id: UUID, nova_ordem: list[UUID]) -> bool:
         """Reordena itens de um template."""
         for idx, item_id in enumerate(nova_ordem, 1):
             await self.db.execute(
-                select(ChecklistItem)
-                .where(
-                    and_(
-                        ChecklistItem.id == item_id,
-                        ChecklistItem.template_id == template_id
-                    )
-                )
+                select(ChecklistItem).where(and_(ChecklistItem.id == item_id, ChecklistItem.template_id == template_id))
             )
             # Atualizar ordem
-            result = await self.db.execute(
-                select(ChecklistItem).where(ChecklistItem.id == item_id)
-            )
+            result = await self.db.execute(select(ChecklistItem).where(ChecklistItem.id == item_id))
             item = result.scalar_one_or_none()
             if item:
                 item.ordem = idx
@@ -330,27 +309,21 @@ class ChecklistRepository:
         await self.db.refresh(resposta)
         return resposta
 
-    async def get_resposta_by_id(self, resposta_id: UUID) -> Optional[ChecklistResposta]:
+    async def get_resposta_by_id(self, resposta_id: UUID) -> ChecklistResposta | None:
         """Busca resposta por ID."""
-        result = await self.db.execute(
-            select(ChecklistResposta).where(ChecklistResposta.id == resposta_id)
-        )
+        result = await self.db.execute(select(ChecklistResposta).where(ChecklistResposta.id == resposta_id))
         return result.scalar_one_or_none()
 
-    async def get_resposta_item_os(self, ordem_servico_id: UUID, item_id: UUID) -> Optional[ChecklistResposta]:
+    async def get_resposta_item_os(self, ordem_servico_id: UUID, item_id: UUID) -> ChecklistResposta | None:
         """Busca resposta de um item especifico em uma OS."""
         result = await self.db.execute(
-            select(ChecklistResposta)
-            .where(
-                and_(
-                    ChecklistResposta.ordem_servico_id == ordem_servico_id,
-                    ChecklistResposta.item_id == item_id
-                )
+            select(ChecklistResposta).where(
+                and_(ChecklistResposta.ordem_servico_id == ordem_servico_id, ChecklistResposta.item_id == item_id)
             )
         )
         return result.scalar_one_or_none()
 
-    async def list_respostas_os(self, ordem_servico_id: UUID) -> List[ChecklistResposta]:
+    async def list_respostas_os(self, ordem_servico_id: UUID) -> list[ChecklistResposta]:
         """Lista todas respostas de uma OS."""
         result = await self.db.execute(
             select(ChecklistResposta)
@@ -363,7 +336,9 @@ class ChecklistRepository:
     # PREENCHIDO - CRUD
     # =========================================================================
 
-    async def create_preenchido(self, data: ChecklistPreenchidoCreate, preenchido_por: UUID = None) -> ChecklistPreenchido:
+    async def create_preenchido(
+        self, data: ChecklistPreenchidoCreate, preenchido_por: UUID = None
+    ) -> ChecklistPreenchido:
         """Inicia preenchimento de checklist para uma OS."""
         # Buscar template para obter totais
         template = await self.get_template_by_id(data.template_id)
@@ -387,11 +362,10 @@ class ChecklistRepository:
         await self.db.refresh(preenchido)
         return preenchido
 
-    async def get_preenchido_by_os(self, ordem_servico_id: UUID) -> Optional[ChecklistPreenchido]:
+    async def get_preenchido_by_os(self, ordem_servico_id: UUID) -> ChecklistPreenchido | None:
         """Busca checklist preenchido de uma OS."""
         result = await self.db.execute(
-            select(ChecklistPreenchido)
-            .where(ChecklistPreenchido.ordem_servico_id == ordem_servico_id)
+            select(ChecklistPreenchido).where(ChecklistPreenchido.ordem_servico_id == ordem_servico_id)
         )
         return result.scalar_one_or_none()
 
@@ -415,7 +389,7 @@ class ChecklistRepository:
             .where(
                 and_(
                     ChecklistResposta.ordem_servico_id == preenchido.ordem_servico_id,
-                    ChecklistResposta.item_id.in_(itens_obrigatorios_ids)
+                    ChecklistResposta.item_id.in_(itens_obrigatorios_ids),
                 )
             )
         )
@@ -436,7 +410,9 @@ class ChecklistRepository:
 
         preenchido.itens_respondidos = total_respondidos
         preenchido.itens_obrigatorios_respondidos = obrigatorios_respondidos
-        preenchido.percentual_conclusao = (total_respondidos / preenchido.total_itens * 100) if preenchido.total_itens > 0 else 0
+        preenchido.percentual_conclusao = (
+            (total_respondidos / preenchido.total_itens * 100) if preenchido.total_itens > 0 else 0
+        )
         preenchido.pontuacao_obtida = pontuacao
         preenchido.alertas = alertas
         preenchido.total_alertas = len(alertas)
@@ -445,7 +421,9 @@ class ChecklistRepository:
         await self.db.refresh(preenchido)
         return preenchido
 
-    async def concluir_preenchido(self, preenchido: ChecklistPreenchido, observacoes: str = None) -> ChecklistPreenchido:
+    async def concluir_preenchido(
+        self, preenchido: ChecklistPreenchido, observacoes: str = None
+    ) -> ChecklistPreenchido:
         """Conclui preenchimento do checklist."""
         if preenchido.itens_obrigatorios_respondidos < preenchido.itens_obrigatorios:
             raise ValueError("Itens obrigatorios pendentes")
@@ -456,7 +434,7 @@ class ChecklistRepository:
 
         # Calcular conformidade
         if preenchido.pontuacao_maxima > 0:
-            preenchido.percentual_conformidade = (preenchido.pontuacao_obtida / preenchido.pontuacao_maxima * 100)
+            preenchido.percentual_conformidade = preenchido.pontuacao_obtida / preenchido.pontuacao_maxima * 100
 
         await self.db.commit()
         await self.db.refresh(preenchido)
@@ -484,8 +462,7 @@ class ChecklistRepository:
 
         # Buscar ultimo codigo
         result = await self.db.execute(
-            select(func.max(ChecklistTemplate.codigo))
-            .where(ChecklistTemplate.codigo.like(f"CHK-{abrev}-%"))
+            select(func.max(ChecklistTemplate.codigo)).where(ChecklistTemplate.codigo.like(f"CHK-{abrev}-%"))
         )
         ultimo = result.scalar()
 

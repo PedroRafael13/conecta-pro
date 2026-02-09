@@ -1,28 +1,27 @@
 """Controller para Application."""
 
 import logging
-from typing import Optional
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.database import get_db
 from core.auth.dependencies import get_current_user
-from modules.recruitment.schemas.application import (
-    ApplicationCreate,
-    ApplicationUpdate,
-    ApplicationResponse,
-    ApplicationListResponse,
-    ApplicationFilter,
-    ApplicationStats,
-    ApplicationAdvance,
-    ApplicationReject,
-    ApplicationProposal,
-    ApplicationHire,
-    ApplicationBulkAction,
-)
+from core.database import get_db
 from modules.recruitment.models.application import ApplicationStatus
+from modules.recruitment.schemas.application import (
+    ApplicationAdvance,
+    ApplicationBulkAction,
+    ApplicationCreate,
+    ApplicationFilter,
+    ApplicationHire,
+    ApplicationListResponse,
+    ApplicationProposal,
+    ApplicationReject,
+    ApplicationResponse,
+    ApplicationStats,
+    ApplicationUpdate,
+)
 from modules.recruitment.services.application_service import ApplicationService
 
 logger = logging.getLogger(__name__)
@@ -65,14 +64,14 @@ async def create_application(
 async def list_applications(  # pylint: disable=too-many-locals
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
-    job_position_id: Optional[str] = None,
-    candidate_id: Optional[str] = None,
-    status_filter: Optional[ApplicationStatus] = Query(None, alias="status"),
-    is_favorite: Optional[bool] = None,
-    is_shortlisted: Optional[bool] = None,
-    min_score: Optional[float] = None,
-    max_score: Optional[float] = None,
-    assigned_recruiter_id: Optional[str] = None,
+    job_position_id: str | None = None,
+    candidate_id: str | None = None,
+    status_filter: ApplicationStatus | None = Query(None, alias="status"),
+    is_favorite: bool | None = None,
+    is_shortlisted: bool | None = None,
+    min_score: float | None = None,
+    max_score: float | None = None,
+    assigned_recruiter_id: str | None = None,
     order_by: str = "applied_at",
     order_desc: bool = True,
     db: AsyncSession = Depends(get_db),
@@ -92,9 +91,7 @@ async def list_applications(  # pylint: disable=too-many-locals
         assigned_recruiter_id=assigned_recruiter_id,
     )
 
-    applications, total = await service.list_with_filters(
-        filters, skip, limit, order_by, order_desc
-    )
+    applications, total = await service.list_with_filters(filters, skip, limit, order_by, order_desc)
 
     return ApplicationListResponse(
         items=[ApplicationResponse.model_validate(a) for a in applications],
@@ -111,7 +108,7 @@ async def list_applications(  # pylint: disable=too-many-locals
 )
 async def list_by_position(
     position_id: str,
-    status_filter: Optional[ApplicationStatus] = Query(None, alias="status"),
+    status_filter: ApplicationStatus | None = Query(None, alias="status"),
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
@@ -159,7 +156,7 @@ async def list_by_candidate(
     summary="Candidaturas ativas",
 )
 async def list_active(
-    position_id: Optional[str] = None,
+    position_id: str | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
@@ -207,7 +204,7 @@ async def list_shortlisted(
     summary="Candidaturas favoritas",
 )
 async def list_favorites(
-    position_id: Optional[str] = None,
+    position_id: str | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
@@ -231,7 +228,7 @@ async def list_favorites(
     summary="Estatísticas de candidaturas",
 )
 async def get_application_stats(
-    position_id: Optional[str] = None,
+    position_id: str | None = None,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> ApplicationStats:
@@ -394,7 +391,7 @@ async def send_proposal(
 )
 async def accept_proposal(
     application_id: str,
-    start_date: Optional[datetime] = None,
+    start_date: datetime | None = None,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> ApplicationResponse:
@@ -420,7 +417,7 @@ async def accept_proposal(
 )
 async def reject_proposal(
     application_id: str,
-    reason: Optional[str] = None,
+    reason: str | None = None,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> ApplicationResponse:
@@ -516,18 +513,16 @@ async def toggle_shortlist(
 )
 async def update_scores(
     application_id: str,
-    interview_score: Optional[float] = None,
-    test_score: Optional[float] = None,
-    reference_score: Optional[float] = None,
+    interview_score: float | None = None,
+    test_score: float | None = None,
+    reference_score: float | None = None,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> ApplicationResponse:
     """Atualiza scores da candidatura."""
     service = ApplicationService(db)
 
-    application = await service.update_score(
-        application_id, interview_score, test_score, reference_score
-    )
+    application = await service.update_score(application_id, interview_score, test_score, reference_score)
     if not application:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

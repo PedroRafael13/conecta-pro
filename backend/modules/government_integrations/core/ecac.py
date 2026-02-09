@@ -18,32 +18,35 @@ Serviços disponíveis:
 """
 
 import logging
-from datetime import datetime, date
-from decimal import Decimal
-from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, field
-from enum import Enum
+from datetime import date, datetime
+from decimal import Decimal
+from enum import StrEnum
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
-class TipoCertidao(str, Enum):
+class TipoCertidao(StrEnum):
     """Tipo de certidão fiscal."""
+
     CND = "cnd"  # Certidão Negativa de Débitos
     CPEN = "cpen"  # Certidão Positiva com Efeitos de Negativa
     CPD = "cpd"  # Certidão Positiva de Débitos
 
 
-class SituacaoFiscal(str, Enum):
+class SituacaoFiscal(StrEnum):
     """Situação fiscal do contribuinte."""
+
     REGULAR = "regular"
     PENDENTE = "pendente"
     IRREGULAR = "irregular"
     OMISSO = "omisso"
 
 
-class TipoPendencia(str, Enum):
+class TipoPendencia(StrEnum):
     """Tipo de pendência fiscal."""
+
     DEBITO = "debito"
     DECLARACAO_OMISSA = "declaracao_omissa"
     MALHA_FISCAL = "malha_fiscal"
@@ -51,8 +54,9 @@ class TipoPendencia(str, Enum):
     PARCELAMENTO = "parcelamento"
 
 
-class TipoDeclaracaoConsulta(str, Enum):
+class TipoDeclaracaoConsulta(StrEnum):
     """Tipo de declaração para consulta."""
+
     IRPF = "irpf"
     IRPJ = "irpj"
     DCTF = "dctf"
@@ -68,18 +72,20 @@ class TipoDeclaracaoConsulta(str, Enum):
 @dataclass
 class PendenciaFiscal:
     """Pendência fiscal do contribuinte."""
+
     tipo: TipoPendencia
     descricao: str
-    valor: Optional[Decimal] = None
-    data_vencimento: Optional[date] = None
-    numero_processo: Optional[str] = None
-    exercicio: Optional[int] = None
-    periodo_apuracao: Optional[str] = None
+    valor: Decimal | None = None
+    data_vencimento: date | None = None
+    numero_processo: str | None = None
+    exercicio: int | None = None
+    periodo_apuracao: str | None = None
 
 
 @dataclass
 class DebitoFiscal:
     """Débito fiscal."""
+
     codigo_receita: str
     descricao: str
     competencia: str
@@ -87,9 +93,9 @@ class DebitoFiscal:
     valor_multa: Decimal = Decimal("0")
     valor_juros: Decimal = Decimal("0")
     valor_total: Decimal = Decimal("0")
-    data_vencimento: Optional[date] = None
+    data_vencimento: date | None = None
     situacao: str = "aberto"
-    numero_processo: Optional[str] = None
+    numero_processo: str | None = None
 
     def __post_init__(self):
         if self.valor_total == Decimal("0"):
@@ -99,6 +105,7 @@ class DebitoFiscal:
 @dataclass
 class Certidao:
     """Certidão fiscal."""
+
     tipo: TipoCertidao
     numero: str
     data_emissao: datetime
@@ -106,34 +113,36 @@ class Certidao:
     codigo_controle: str
     contribuinte_cpf_cnpj: str
     contribuinte_nome: str
-    finalidade: Optional[str] = None
-    observacoes: Optional[str] = None
+    finalidade: str | None = None
+    observacoes: str | None = None
 
 
 @dataclass
 class DeclaracaoConsultada:
     """Declaração consultada no e-CAC."""
+
     tipo: TipoDeclaracaoConsulta
     exercicio: int
     numero_recibo: str
     data_transmissao: datetime
     situacao: str = "transmitida"
     retificadora: bool = False
-    numero_recibo_anterior: Optional[str] = None
+    numero_recibo_anterior: str | None = None
 
 
 @dataclass
 class ResultadoSituacaoFiscal:
     """Resultado da consulta de situação fiscal."""
+
     cpf_cnpj: str
     nome: str
     situacao: SituacaoFiscal
     data_consulta: datetime
-    pendencias: List[PendenciaFiscal] = field(default_factory=list)
-    debitos: List[DebitoFiscal] = field(default_factory=list)
-    declaracoes_omissas: List[str] = field(default_factory=list)
+    pendencias: list[PendenciaFiscal] = field(default_factory=list)
+    debitos: list[DebitoFiscal] = field(default_factory=list)
+    declaracoes_omissas: list[str] = field(default_factory=list)
     certidao_disponivel: bool = False
-    tipo_certidao_disponivel: Optional[TipoCertidao] = None
+    tipo_certidao_disponivel: TipoCertidao | None = None
 
 
 class EcacManager:
@@ -196,8 +205,8 @@ class EcacManager:
 
     def consultar_debitos(
         self,
-        situacao: Optional[str] = None,
-    ) -> List[DebitoFiscal]:
+        situacao: str | None = None,
+    ) -> list[DebitoFiscal]:
         """
         Consulta débitos do contribuinte.
 
@@ -213,7 +222,7 @@ class EcacManager:
 
     def emitir_certidao(
         self,
-        finalidade: Optional[str] = None,
+        finalidade: str | None = None,
     ) -> Certidao:
         """
         Emite certidão fiscal (CND/CPEN).
@@ -244,7 +253,7 @@ class EcacManager:
         self,
         numero: str,
         codigo_controle: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Valida autenticidade de uma certidão.
 
@@ -262,15 +271,15 @@ class EcacManager:
             "codigo_controle": codigo_controle,
             "valida": True,
             "data_validacao": datetime.now().isoformat(),
-            "mensagem": "Implementar validação via e-CAC"
+            "mensagem": "Implementar validação via e-CAC",
         }
 
     def consultar_declaracoes(
         self,
         tipo: TipoDeclaracaoConsulta,
         exercicio_inicio: int,
-        exercicio_fim: Optional[int] = None,
-    ) -> List[DeclaracaoConsultada]:
+        exercicio_fim: int | None = None,
+    ) -> list[DeclaracaoConsultada]:
         """
         Consulta declarações transmitidas.
 
@@ -293,7 +302,7 @@ class EcacManager:
         tipo: TipoDeclaracaoConsulta,
         exercicio: int,
         numero_recibo: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Obtém cópia de declaração transmitida.
 
@@ -312,10 +321,10 @@ class EcacManager:
             "exercicio": exercicio,
             "numero_recibo": numero_recibo,
             "status": "pendente",
-            "mensagem": "Implementar obtenção via e-CAC"
+            "mensagem": "Implementar obtenção via e-CAC",
         }
 
-    def consultar_parcelamentos(self) -> List[Dict[str, Any]]:
+    def consultar_parcelamentos(self) -> list[dict[str, Any]]:
         """
         Consulta parcelamentos ativos.
 
@@ -328,9 +337,9 @@ class EcacManager:
 
     def simular_parcelamento(
         self,
-        debitos: List[str],
+        debitos: list[str],
         quantidade_parcelas: int,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Simula parcelamento de débitos.
 
@@ -347,13 +356,13 @@ class EcacManager:
             "debitos": debitos,
             "quantidade_parcelas": quantidade_parcelas,
             "status": "simulacao",
-            "mensagem": "Implementar simulação via e-CAC"
+            "mensagem": "Implementar simulação via e-CAC",
         }
 
     def consultar_processos(
         self,
-        situacao: Optional[str] = None,
-    ) -> List[Dict[str, Any]]:
+        situacao: str | None = None,
+    ) -> list[dict[str, Any]]:
         """
         Consulta processos digitais (e-Processo).
 
@@ -372,8 +381,8 @@ class EcacManager:
         tipo_processo: str,
         assunto: str,
         descricao: str,
-        anexos: Optional[List[str]] = None,
-    ) -> Dict[str, Any]:
+        anexos: list[str] | None = None,
+    ) -> dict[str, Any]:
         """
         Abre novo processo digital.
 
@@ -392,10 +401,10 @@ class EcacManager:
             "tipo_processo": tipo_processo,
             "assunto": assunto,
             "status": "pendente",
-            "mensagem": "Implementar abertura via e-CAC"
+            "mensagem": "Implementar abertura via e-CAC",
         }
 
-    def consultar_malha_fiscal(self, exercicio: int) -> Dict[str, Any]:
+    def consultar_malha_fiscal(self, exercicio: int) -> dict[str, Any]:
         """
         Consulta situação na malha fiscal (IRPF).
 
@@ -412,10 +421,10 @@ class EcacManager:
             "em_malha": False,
             "motivos": [],
             "status": "pendente",
-            "mensagem": "Implementar consulta via e-CAC"
+            "mensagem": "Implementar consulta via e-CAC",
         }
 
-    def consultar_restituicao(self, exercicio: int) -> Dict[str, Any]:
+    def consultar_restituicao(self, exercicio: int) -> dict[str, Any]:
         """
         Consulta situação da restituição do IRPF.
 
@@ -434,10 +443,10 @@ class EcacManager:
             "lote": None,
             "data_pagamento": None,
             "status": "pendente",
-            "mensagem": "Implementar consulta via e-CAC"
+            "mensagem": "Implementar consulta via e-CAC",
         }
 
-    def regularizar_cpf(self, dados: Dict[str, Any]) -> Dict[str, Any]:
+    def regularizar_cpf(self, dados: dict[str, Any]) -> dict[str, Any]:
         """
         Solicita regularização de CPF.
 
@@ -447,14 +456,11 @@ class EcacManager:
         Returns:
             Resultado da solicitação
         """
-        logger.info(f"Solicitando regularização de CPF")
+        logger.info("Solicitando regularização de CPF")
 
-        return {
-            "status": "pendente",
-            "mensagem": "Implementar regularização via e-CAC"
-        }
+        return {"status": "pendente", "mensagem": "Implementar regularização via e-CAC"}
 
-    def consultar_cadastro_cnpj(self, cnpj: str) -> Dict[str, Any]:
+    def consultar_cadastro_cnpj(self, cnpj: str) -> dict[str, Any]:
         """
         Consulta dados cadastrais do CNPJ.
 
@@ -467,16 +473,12 @@ class EcacManager:
         cnpj_limpo = cnpj.replace(".", "").replace("/", "").replace("-", "")
         logger.info(f"Consultando cadastro CNPJ: {cnpj_limpo}")
 
-        return {
-            "cnpj": cnpj_limpo,
-            "status": "pendente",
-            "mensagem": "Implementar consulta via e-CAC"
-        }
+        return {"cnpj": cnpj_limpo, "status": "pendente", "mensagem": "Implementar consulta via e-CAC"}
 
     def alterar_dados_cadastrais(
         self,
-        alteracoes: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        alteracoes: dict[str, Any],
+    ) -> dict[str, Any]:
         """
         Solicita alteração de dados cadastrais.
 
@@ -486,10 +488,10 @@ class EcacManager:
         Returns:
             Resultado da solicitação
         """
-        logger.info(f"Solicitando alteração cadastral")
+        logger.info("Solicitando alteração cadastral")
 
         return {
             "alteracoes": list(alteracoes.keys()),
             "status": "pendente",
-            "mensagem": "Implementar alteração via e-CAC"
+            "mensagem": "Implementar alteração via e-CAC",
         }

@@ -4,21 +4,23 @@ Verificador de Disponibilidade de Endpoints.
 Testa periodicamente endpoints para detectar indisponibilidade e recuperação.
 """
 
-from datetime import datetime
-from typing import Dict, List, Optional, Any
-from dataclasses import dataclass
+from __future__ import annotations
+
 import asyncio
-import ssl
 import logging
+import ssl
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Any
 
 import aiohttp
 
+from .endpoint_switcher import ComutadorEndpoints
 from .uf_matrix import (
-    MatrizContingencia,
-    MATRIZ_CONTINGENCIA_NFE,
     ENDPOINTS_CENTRALIZADOS,
+    MATRIZ_CONTINGENCIA_NFE,
+    MatrizContingencia,
 )
-from .endpoint_switcher import ComutadorEndpoints, StatusEndpoint
 
 logger = logging.getLogger(__name__)
 
@@ -26,13 +28,14 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ResultadoVerificacao:
     """Resultado de verificação de endpoint."""
+
     uf: str
     tipo_documento: str
     endpoint: str
     disponivel: bool
     tempo_resposta_ms: float
-    http_status: Optional[int] = None
-    erro: Optional[str] = None
+    http_status: int | None = None
+    erro: str | None = None
     timestamp: datetime = None
 
     def __post_init__(self):
@@ -53,7 +56,7 @@ class VerificadorDisponibilidade:
         "mdfe": "MDFeStatusServico",
     }
 
-    def __init__(self, comutador: Optional[ComutadorEndpoints] = None):
+    def __init__(self, comutador: ComutadorEndpoints | None = None):
         self.comutador = comutador or ComutadorEndpoints()
         self._ssl_context = self._criar_ssl_context()
 
@@ -65,10 +68,7 @@ class VerificadorDisponibilidade:
         return ctx
 
     async def verificar_endpoint(
-        self,
-        uf: str,
-        tipo_documento: str,
-        usar_principal: bool = True
+        self, uf: str, tipo_documento: str, usar_principal: bool = True
     ) -> ResultadoVerificacao:
         """
         Verifica disponibilidade de um endpoint.
@@ -120,38 +120,35 @@ class VerificadorDisponibilidade:
         # Fazer verificação
         return await self._testar_url(uf, tipo_documento, url)
 
-    async def _testar_url(
-        self,
-        uf: str,
-        tipo_documento: str,
-        url: str
-    ) -> ResultadoVerificacao:
+    async def _testar_url(self, uf: str, tipo_documento: str, url: str) -> ResultadoVerificacao:
         """Testa uma URL específica."""
         inicio = datetime.utcnow()
 
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(
+            async with (
+                aiohttp.ClientSession() as session,
+                session.get(
                     url,
                     timeout=aiohttp.ClientTimeout(total=self.TIMEOUT),
                     ssl=self._ssl_context,
-                ) as response:
-                    tempo_ms = (datetime.utcnow() - inicio).total_seconds() * 1000
+                ) as response,
+            ):
+                tempo_ms = (datetime.utcnow() - inicio).total_seconds() * 1000
 
-                    # 200, 403, 405, 500 indicam servidor online
-                    # (403/405 = requer certificado, 500 = erro mas online)
-                    disponivel = response.status < 502
+                # 200, 403, 405, 500 indicam servidor online
+                # (403/405 = requer certificado, 500 = erro mas online)
+                disponivel = response.status < 502
 
-                    return ResultadoVerificacao(
-                        uf=uf,
-                        tipo_documento=tipo_documento,
-                        endpoint=url,
-                        disponivel=disponivel,
-                        tempo_resposta_ms=tempo_ms,
-                        http_status=response.status,
-                    )
+                return ResultadoVerificacao(
+                    uf=uf,
+                    tipo_documento=tipo_documento,
+                    endpoint=url,
+                    disponivel=disponivel,
+                    tempo_resposta_ms=tempo_ms,
+                    http_status=response.status,
+                )
 
-        except aiohttp.ClientSSLError as e:
+        except aiohttp.ClientSSLError:
             tempo_ms = (datetime.utcnow() - inicio).total_seconds() * 1000
             # Erro SSL geralmente significa servidor online mas requer cert
             return ResultadoVerificacao(
@@ -163,7 +160,7 @@ class VerificadorDisponibilidade:
                 erro="Requer certificado",
             )
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             tempo_ms = (datetime.utcnow() - inicio).total_seconds() * 1000
             return ResultadoVerificacao(
                 uf=uf,
@@ -186,10 +183,8 @@ class VerificadorDisponibilidade:
             )
 
     async def verificar_todas_ufs(
-        self,
-        tipo_documento: str = "nfe",
-        concorrencia: int = 10
-    ) -> List[ResultadoVerificacao]:
+        self, tipo_documento: str = "nfe", concorrencia: int = 10
+    ) -> list[ResultadoVerificacao]:
         """
         Verifica todas as UFs para um tipo de documento.
 
@@ -221,20 +216,22 @@ class VerificadorDisponibilidade:
         verificacoes = []
         for i, resultado in enumerate(resultados):
             if isinstance(resultado, Exception):
-                verificacoes.append(ResultadoVerificacao(
-                    uf=ufs[i],
-                    tipo_documento=tipo_documento,
-                    endpoint="",
-                    disponivel=False,
-                    tempo_resposta_ms=0,
-                    erro=str(resultado),
-                ))
+                verificacoes.append(
+                    ResultadoVerificacao(
+                        uf=ufs[i],
+                        tipo_documento=tipo_documento,
+                        endpoint="",
+                        disponivel=False,
+                        tempo_resposta_ms=0,
+                        erro=str(resultado),
+                    )
+                )
             else:
                 verificacoes.append(resultado)
 
         return verificacoes
 
-    async def verificar_endpoints_centralizados(self) -> Dict[str, List[ResultadoVerificacao]]:
+    async def verificar_endpoints_centralizados(self) -> dict[str, list[ResultadoVerificacao]]:
         """Verifica todos os endpoints centralizados."""
         resultados = {}
 
@@ -248,11 +245,7 @@ class VerificadorDisponibilidade:
 
         return resultados
 
-    async def executar_verificacao_periodica(
-        self,
-        intervalo_segundos: int = 60,
-        callback: Optional[callable] = None
-    ):
+    async def executar_verificacao_periodica(self, intervalo_segundos: int = 60, callback: callable | None = None):
         """
         Executa verificação periódica de endpoints.
 
@@ -260,9 +253,7 @@ class VerificadorDisponibilidade:
             intervalo_segundos: Intervalo entre verificações
             callback: Função chamada com resultados de cada verificação
         """
-        logger.info(
-            f"Iniciando verificação periódica (intervalo: {intervalo_segundos}s)"
-        )
+        logger.info(f"Iniciando verificação periódica (intervalo: {intervalo_segundos}s)")
 
         while True:
             try:
@@ -290,20 +281,14 @@ class VerificadorDisponibilidade:
 
                 # Estatísticas
                 disponiveis = sum(1 for r in resultados_nfe if r.disponivel)
-                logger.info(
-                    f"Verificação concluída: {disponiveis}/{len(resultados_nfe)} "
-                    f"endpoints disponíveis"
-                )
+                logger.info(f"Verificação concluída: {disponiveis}/{len(resultados_nfe)} endpoints disponíveis")
 
             except Exception as e:
                 logger.error(f"Erro na verificação periódica: {e}")
 
             await asyncio.sleep(intervalo_segundos)
 
-    def gerar_relatorio(
-        self,
-        resultados: List[ResultadoVerificacao]
-    ) -> Dict[str, Any]:
+    def gerar_relatorio(self, resultados: list[ResultadoVerificacao]) -> dict[str, Any]:
         """
         Gera relatório de verificação.
 

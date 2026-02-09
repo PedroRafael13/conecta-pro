@@ -2,8 +2,6 @@
 Controller (endpoints) para Proposal.
 """
 
-from typing import Optional
-
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -76,10 +74,7 @@ async def create_proposal_from_opportunity(
             detail="Opportunity nao encontrada ou inativa",
         )
 
-    logger.info(
-        f"Proposal criada de opportunity {data.opportunity_id} "
-        f"por {current_user.email}: {proposal.number}"
-    )
+    logger.info(f"Proposal criada de opportunity {data.opportunity_id} por {current_user.email}: {proposal.number}")
     return ProposalDetailResponse.model_validate(proposal)
 
 
@@ -89,14 +84,14 @@ async def list_proposals(  # pylint: disable=too-many-locals
     db: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1, description="Pagina atual"),
     page_size: int = Query(20, ge=1, le=100, description="Itens por pagina"),
-    status_filter: Optional[ProposalStatus] = Query(None, alias="status"),
-    proposal_type: Optional[ProposalType] = None,
-    opportunity_id: Optional[str] = None,
-    is_expired: Optional[bool] = None,
-    min_value: Optional[float] = Query(None, ge=0),
-    max_value: Optional[float] = Query(None, ge=0),
-    client_name: Optional[str] = None,
-    search: Optional[str] = None,
+    status_filter: ProposalStatus | None = Query(None, alias="status"),
+    proposal_type: ProposalType | None = None,
+    opportunity_id: str | None = None,
+    is_expired: bool | None = None,
+    min_value: float | None = Query(None, ge=0),
+    max_value: float | None = Query(None, ge=0),
+    client_name: str | None = None,
+    search: str | None = None,
 ) -> ProposalListResponse:
     """
     Lista propostas com filtros e paginacao.
@@ -133,7 +128,7 @@ async def list_proposals(  # pylint: disable=too-many-locals
 async def get_proposal_stats(
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
-    created_by_id: Optional[str] = None,
+    created_by_id: str | None = None,
 ) -> ProposalStats:
     """
     Obtem estatisticas de propostas.
@@ -235,9 +230,7 @@ async def process_proposal_approval(
             detail="Proposta nao encontrada ou nao esta pendente",
         )
 
-    logger.info(
-        f"Proposal {proposal.number} {data.action.value} por {current_user.email}"
-    )
+    logger.info(f"Proposal {proposal.number} {data.action.value} por {current_user.email}")
     return ProposalResponse.model_validate(proposal)
 
 
@@ -253,9 +246,7 @@ async def send_proposal(
     Muda status para SENT e registra data de envio.
     """
     repo = ProposalRepository(db)
-    proposal = await repo.update_status(
-        proposal_id, ProposalStatus.SENT, user_id=str(current_user.id)
-    )
+    proposal = await repo.update_status(proposal_id, ProposalStatus.SENT, user_id=str(current_user.id))
 
     if not proposal:
         raise HTTPException(
@@ -294,7 +285,7 @@ async def reject_proposal(
     proposal_id: str,
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
-    reason: Optional[str] = None,
+    reason: str | None = None,
 ) -> ProposalResponse:
     """
     Marca proposta como rejeitada pelo cliente.
@@ -332,10 +323,7 @@ async def create_new_version(
             detail="Proposta nao encontrada",
         )
 
-    logger.info(
-        f"Nova versao criada por {current_user.email}: "
-        f"{proposal.number} v{proposal.version}"
-    )
+    logger.info(f"Nova versao criada por {current_user.email}: {proposal.number} v{proposal.version}")
     return ProposalDetailResponse.model_validate(proposal)
 
 

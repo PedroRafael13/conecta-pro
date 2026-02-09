@@ -1,5 +1,8 @@
 """Módulo de banco de dados."""
 
+# Importar Base do core.models para re-exportar
+from core.models.base import Base, BaseModel
+
 from .circuit_breaker import (
     CircuitBreaker,
     CircuitOpenError,
@@ -9,9 +12,6 @@ from .circuit_breaker import (
     redis_circuit,
 )
 from .session import async_session_factory, close_db, engine, get_db, init_db
-
-# Importar Base do core.models para re-exportar
-from core.models.base import Base, BaseModel
 
 # Alias para compatibilidade
 get_session = get_db

@@ -9,11 +9,12 @@ Extrai e sincroniza:
 """
 
 import logging
-from datetime import datetime, date
-from typing import Optional, Dict, Any, AsyncGenerator
+from collections.abc import AsyncGenerator
+from datetime import date, datetime
 from decimal import Decimal
+from typing import Any
 
-from ..base_sync import BaseSynchronizer, SyncConfig, SyncResult
+from ..base_sync import BaseSynchronizer, SyncConfig
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +40,7 @@ class SPEDFiscalSynchronizer(BaseSynchronizer):
     async def _extrair_dados(
         self,
         config: SyncConfig,
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+    ) -> AsyncGenerator[dict[str, Any], None]:
         """
         Extrai dados do SPED Fiscal.
 
@@ -52,8 +53,7 @@ class SPEDFiscalSynchronizer(BaseSynchronizer):
         cnpj = self._normalizar_cnpj(config.cnpj_empresa)
 
         logger.info(
-            f"[SPED Fiscal] Extraindo dados - CNPJ: {cnpj}, "
-            f"Periodo: {config.data_inicial} a {config.data_final}"
+            f"[SPED Fiscal] Extraindo dados - CNPJ: {cnpj}, Periodo: {config.data_inicial} a {config.data_final}"
         )
 
         # 1. Escrituracoes transmitidas
@@ -76,7 +76,7 @@ class SPEDFiscalSynchronizer(BaseSynchronizer):
         self,
         cnpj: str,
         config: SyncConfig,
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+    ) -> AsyncGenerator[dict[str, Any], None]:
         """Consulta escrituracoes SPED Fiscal transmitidas."""
         try:
             if not self.sped_service:
@@ -115,7 +115,7 @@ class SPEDFiscalSynchronizer(BaseSynchronizer):
         self,
         cnpj: str,
         config: SyncConfig,
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+    ) -> AsyncGenerator[dict[str, Any], None]:
         """Consulta apuracao do ICMS."""
         try:
             if not self.sped_service:
@@ -160,7 +160,7 @@ class SPEDFiscalSynchronizer(BaseSynchronizer):
         self,
         cnpj: str,
         config: SyncConfig,
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+    ) -> AsyncGenerator[dict[str, Any], None]:
         """Consulta apuracao do IPI."""
         try:
             if not self.sped_service:
@@ -199,7 +199,7 @@ class SPEDFiscalSynchronizer(BaseSynchronizer):
         self,
         cnpj: str,
         config: SyncConfig,
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+    ) -> AsyncGenerator[dict[str, Any], None]:
         """Consulta resumo de documentos fiscais."""
         try:
             if not self.sped_service:
@@ -232,7 +232,7 @@ class SPEDFiscalSynchronizer(BaseSynchronizer):
 
     async def _processar_registro(
         self,
-        registro: Dict[str, Any],
+        registro: dict[str, Any],
         config: SyncConfig,
     ) -> bool:
         """Processa registro extraido."""
@@ -256,7 +256,7 @@ class SPEDFiscalSynchronizer(BaseSynchronizer):
 
     async def _salvar_escrituracao(
         self,
-        registro: Dict[str, Any],
+        registro: dict[str, Any],
         config: SyncConfig,
     ) -> bool:
         """Salva escrituracao SPED Fiscal."""
@@ -264,9 +264,7 @@ class SPEDFiscalSynchronizer(BaseSynchronizer):
 
         recibo = registro.get("numero_recibo")
 
-        existente = self.db.query(EscrituracaoSPED).filter(
-            EscrituracaoSPED.numero_recibo == recibo
-        ).first()
+        existente = self.db.query(EscrituracaoSPED).filter(EscrituracaoSPED.numero_recibo == recibo).first()
 
         if existente:
             existente.situacao = registro.get("situacao")
@@ -295,7 +293,7 @@ class SPEDFiscalSynchronizer(BaseSynchronizer):
 
     async def _salvar_apuracao_icms(
         self,
-        registro: Dict[str, Any],
+        registro: dict[str, Any],
         config: SyncConfig,
     ) -> bool:
         """Salva apuracao ICMS."""
@@ -303,10 +301,14 @@ class SPEDFiscalSynchronizer(BaseSynchronizer):
 
         periodo = registro.get("periodo_apuracao")
 
-        existente = self.db.query(ApuracaoICMS).filter(
-            ApuracaoICMS.cnpj_empresa == config.cnpj_empresa,
-            ApuracaoICMS.periodo_apuracao == periodo,
-        ).first()
+        existente = (
+            self.db.query(ApuracaoICMS)
+            .filter(
+                ApuracaoICMS.cnpj_empresa == config.cnpj_empresa,
+                ApuracaoICMS.periodo_apuracao == periodo,
+            )
+            .first()
+        )
 
         if existente:
             existente.icms_recolher = Decimal(str(registro.get("icms_recolher") or 0))
@@ -335,7 +337,7 @@ class SPEDFiscalSynchronizer(BaseSynchronizer):
 
     async def _salvar_apuracao_ipi(
         self,
-        registro: Dict[str, Any],
+        registro: dict[str, Any],
         config: SyncConfig,
     ) -> bool:
         """Salva apuracao IPI."""
@@ -343,10 +345,14 @@ class SPEDFiscalSynchronizer(BaseSynchronizer):
 
         periodo = registro.get("periodo_apuracao")
 
-        existente = self.db.query(ApuracaoIPI).filter(
-            ApuracaoIPI.cnpj_empresa == config.cnpj_empresa,
-            ApuracaoIPI.periodo_apuracao == periodo,
-        ).first()
+        existente = (
+            self.db.query(ApuracaoIPI)
+            .filter(
+                ApuracaoIPI.cnpj_empresa == config.cnpj_empresa,
+                ApuracaoIPI.periodo_apuracao == periodo,
+            )
+            .first()
+        )
 
         if existente:
             existente.ipi_recolher = Decimal(str(registro.get("ipi_recolher") or 0))
@@ -367,31 +373,45 @@ class SPEDFiscalSynchronizer(BaseSynchronizer):
         self.db.add(nova)
         return True
 
-    def _obter_ultima_sincronizacao(self, cnpj: str) -> Optional[datetime]:
+    def _obter_ultima_sincronizacao(self, cnpj: str) -> datetime | None:
         """Obtem ultima sincronizacao do SPED Fiscal."""
-        from ..models.sync_models import SyncLog, StatusSincronizacao
+        from ..models.sync_models import StatusSincronizacao, SyncLog
 
-        ultimo = self.db.query(SyncLog).filter(
-            SyncLog.cnpj_empresa == cnpj,
-            SyncLog.servico == self.SERVICO_NOME,
-            SyncLog.status == StatusSincronizacao.SUCESSO,
-        ).order_by(SyncLog.fim_execucao.desc()).first()
+        ultimo = (
+            self.db.query(SyncLog)
+            .filter(
+                SyncLog.cnpj_empresa == cnpj,
+                SyncLog.servico == self.SERVICO_NOME,
+                SyncLog.status == StatusSincronizacao.SUCESSO,
+            )
+            .order_by(SyncLog.fim_execucao.desc())
+            .first()
+        )
 
         return ultimo.fim_execucao if ultimo else None
 
-    async def obter_resumo(self, cnpj: str) -> Dict[str, Any]:
+    async def obter_resumo(self, cnpj: str) -> dict[str, Any]:
         """Obtem resumo dos dados SPED Fiscal."""
-        from ..models.sync_models import EscrituracaoSPED, ApuracaoICMS
-        from sqlalchemy import func
 
-        escrituracoes = self.db.query(EscrituracaoSPED).filter(
-            EscrituracaoSPED.cnpj_empresa == cnpj,
-            EscrituracaoSPED.tipo_sped == "EFD",
-        ).count()
+        from ..models.sync_models import ApuracaoICMS, EscrituracaoSPED
 
-        ultima_apuracao = self.db.query(ApuracaoICMS).filter(
-            ApuracaoICMS.cnpj_empresa == cnpj,
-        ).order_by(ApuracaoICMS.periodo_apuracao.desc()).first()
+        escrituracoes = (
+            self.db.query(EscrituracaoSPED)
+            .filter(
+                EscrituracaoSPED.cnpj_empresa == cnpj,
+                EscrituracaoSPED.tipo_sped == "EFD",
+            )
+            .count()
+        )
+
+        ultima_apuracao = (
+            self.db.query(ApuracaoICMS)
+            .filter(
+                ApuracaoICMS.cnpj_empresa == cnpj,
+            )
+            .order_by(ApuracaoICMS.periodo_apuracao.desc())
+            .first()
+        )
 
         return {
             "total_escrituracoes": escrituracoes,

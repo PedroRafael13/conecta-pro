@@ -36,73 +36,73 @@ clients_router.include_router(client_router)
 router = clients_router
 
 # Re-export dos models principais
-from modules.clients.models import (
+from modules.clients.models import (  # noqa: E402
+    AdministrationType,
     # Client
     Client,
-    ClientType,
-    ClientStatus,
-    ClientSegment,
-    DocumentType,
-    # Condominium
-    Condominium,
-    CondominiumType,
-    CondominiumStatus,
-    AdministrationType,
-    # Unit
-    Unit,
-    UnitType,
-    UnitStatus,
     # ClientContract
     ClientContract,
+    ClientSegment,
+    ClientStatus,
+    ClientType,
+    # Condominium
+    Condominium,
+    CondominiumStatus,
+    CondominiumType,
     ContractServiceType,
-    ServiceStatus,
+    DocumentType,
     # IntegrationSettings
     IntegrationSettings,
     IntegrationType,
-    SyncStatus,
+    ServiceStatus,
     SyncDirection,
-)
-
-# Re-export dos schemas principais
-from modules.clients.schemas import (
-    # Client
-    ClientCreate,
-    ClientUpdate,
-    ClientResponse,
-    ClientListResponse,
-    ClientStats,
-    ClientFilter,
-    # Condominium
-    CondominiumCreate,
-    CondominiumUpdate,
-    CondominiumResponse,
-    CondominiumListResponse,
-    CondominiumStats,
+    SyncStatus,
     # Unit
-    UnitCreate,
-    UnitUpdate,
-    UnitResponse,
-    UnitListResponse,
-    UnitStats,
-    # ClientContract
-    ClientContractCreate,
-    ClientContractUpdate,
-    ClientContractResponse,
-    # IntegrationSettings
-    IntegrationSettingsCreate,
-    IntegrationSettingsUpdate,
-    IntegrationSettingsResponse,
-)
-
-# Re-export dos services principais
-from modules.clients.services import (
-    ClientService,
-    ClientAIService,
+    Unit,
+    UnitStatus,
+    UnitType,
 )
 
 # Re-export do repository
-from modules.clients.repositories import (
+from modules.clients.repositories import (  # noqa: E402
     ClientRepository,
+)
+
+# Re-export dos schemas principais
+from modules.clients.schemas import (  # noqa: E402
+    # ClientContract
+    ClientContractCreate,
+    ClientContractResponse,
+    ClientContractUpdate,
+    # Client
+    ClientCreate,
+    ClientFilter,
+    ClientListResponse,
+    ClientResponse,
+    ClientStats,
+    ClientUpdate,
+    # Condominium
+    CondominiumCreate,
+    CondominiumListResponse,
+    CondominiumResponse,
+    CondominiumStats,
+    CondominiumUpdate,
+    # IntegrationSettings
+    IntegrationSettingsCreate,
+    IntegrationSettingsResponse,
+    IntegrationSettingsUpdate,
+    # Unit
+    UnitCreate,
+    UnitListResponse,
+    UnitResponse,
+    UnitStats,
+    UnitUpdate,
+)
+
+# Re-export dos services principais
+from modules.clients.services import (  # noqa: E402
+    ClientAIService,
+    ClientService,
 )
 
 __all__ = [

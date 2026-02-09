@@ -13,7 +13,6 @@ from datetime import datetime
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import async_session_factory
 from modules.document_kits.services.kit_monthly_generator_service import KitMonthlyGeneratorService
@@ -140,12 +139,14 @@ def get_scheduler_status() -> dict:
     jobs = []
     for job in scheduler.get_jobs():
         next_run = job.next_run_time.isoformat() if job.next_run_time else None
-        jobs.append({
-            "id": job.id,
-            "name": job.name,
-            "next_run": next_run,
-            "trigger": str(job.trigger),
-        })
+        jobs.append(
+            {
+                "id": job.id,
+                "name": job.name,
+                "next_run": next_run,
+                "trigger": str(job.trigger),
+            }
+        )
 
     return {
         "running": True,

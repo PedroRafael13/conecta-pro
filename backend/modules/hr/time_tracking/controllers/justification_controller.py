@@ -2,32 +2,31 @@
 # pylint: disable=unused-argument
 
 from datetime import date
-from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.database import get_db
 from core.auth.dependencies import get_current_user, require_roles
+from core.database import get_db
+from modules.hr.time_tracking.models import (
+    JustificationCategory,
+    JustificationStatus,
+    JustificationType,
+)
 from modules.hr.time_tracking.repositories import TimeJustificationRepository
 from modules.hr.time_tracking.schemas import (
-    TimeJustificationCreate,
-    TimeJustificationUpdate,
-    TimeJustificationResponse,
-    TimeJustificationListResponse,
-    TimeJustificationFilter,
-    TimeJustificationStats,
     TimeJustificationAnalysis,
     TimeJustificationApproval,
+    TimeJustificationCreate,
+    TimeJustificationFilter,
+    TimeJustificationListResponse,
     TimeJustificationPartialApproval,
     TimeJustificationRejection,
+    TimeJustificationResponse,
+    TimeJustificationStats,
+    TimeJustificationUpdate,
     TimeJustificationVerification,
-)
-from modules.hr.time_tracking.models import (
-    JustificationType,
-    JustificationStatus,
-    JustificationCategory,
 )
 
 router = APIRouter(
@@ -77,18 +76,18 @@ async def create_justification(
     summary="Listar justificativas",
 )
 async def list_justifications(  # pylint: disable=too-many-locals,unused-argument
-    employee_id: Optional[str] = None,
-    justification_type: Optional[JustificationType] = None,
-    category: Optional[JustificationCategory] = None,
-    justification_status: Optional[JustificationStatus] = Query(None, alias="status"),
-    condominium_id: Optional[str] = None,
-    department_id: Optional[str] = None,
-    date_from: Optional[date] = None,
-    date_to: Optional[date] = None,
-    is_pending: Optional[bool] = None,
-    is_verified: Optional[bool] = None,
-    has_attachments: Optional[bool] = None,
-    is_late_submission: Optional[bool] = None,
+    employee_id: str | None = None,
+    justification_type: JustificationType | None = None,
+    category: JustificationCategory | None = None,
+    justification_status: JustificationStatus | None = Query(None, alias="status"),
+    condominium_id: str | None = None,
+    department_id: str | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
+    is_pending: bool | None = None,
+    is_verified: bool | None = None,
+    has_attachments: bool | None = None,
+    is_late_submission: bool | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
@@ -123,10 +122,10 @@ async def list_justifications(  # pylint: disable=too-many-locals,unused-argumen
     summary="Estatísticas de justificativas",
 )
 async def get_justification_stats(  # pylint: disable=unused-argument
-    condominium_id: Optional[str] = None,
-    employee_id: Optional[str] = None,
-    date_from: Optional[date] = None,
-    date_to: Optional[date] = None,
+    condominium_id: str | None = None,
+    employee_id: str | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(require_roles(["admin", "rh", "gestor"])),
 ):
@@ -149,7 +148,7 @@ async def get_justification_stats(  # pylint: disable=unused-argument
     summary="Justificativas pendentes de aprovação",
 )
 async def get_pending_approval(  # pylint: disable=unused-argument
-    condominium_id: Optional[str] = None,
+    condominium_id: str | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
@@ -169,7 +168,7 @@ async def get_pending_approval(  # pylint: disable=unused-argument
     summary="Justificativas pendentes de verificação RH",
 )
 async def get_pending_verification(  # pylint: disable=unused-argument
-    condominium_id: Optional[str] = None,
+    condominium_id: str | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
@@ -189,10 +188,10 @@ async def get_pending_verification(  # pylint: disable=unused-argument
     summary="Atestados médicos",
 )
 async def get_medical_leaves(
-    employee_id: Optional[str] = None,
-    condominium_id: Optional[str] = None,
-    date_from: Optional[date] = None,
-    date_to: Optional[date] = None,
+    employee_id: str | None = None,
+    condominium_id: str | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(require_roles(["admin", "rh"])),
 ):
@@ -461,10 +460,7 @@ async def reject_justification(
     ]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=(
-            f"Justificativa com status '{justification.status.value}' "
-            "não pode ser rejeitada"
-        ),
+            detail=(f"Justificativa com status '{justification.status.value}' não pode ser rejeitada"),
         )
 
     justification.reject(

@@ -4,17 +4,17 @@ Sprint 30: Cadastro de Clientes/Condomínios
 """
 
 import logging
-from datetime import datetime, date, timedelta
-from typing import List, Dict, Any
+from datetime import date, datetime, timedelta
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from modules.clients.models.client import Client, ClientType, ClientStatus, ClientSegment
+from modules.clients.models.client import Client, ClientSegment, ClientStatus, ClientType
+from modules.clients.models.client_contract import ClientContract, ServiceStatus
 from modules.clients.models.condominium import Condominium, CondominiumStatus
 from modules.clients.models.unit import Unit
-from modules.clients.models.client_contract import ClientContract, ServiceStatus
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +35,7 @@ class ClientAIService:
     def __init__(self, db: Session):
         self.db = db
 
-    def analyze_client_profile(self, client_id: UUID) -> Dict[str, Any]:
+    def analyze_client_profile(self, client_id: UUID) -> dict[str, Any]:
         """
         Analisa o perfil completo de um cliente.
 
@@ -66,19 +66,19 @@ class ClientAIService:
                 "health_score": health_score,
                 "engagement_score": engagement_score,
                 "value_score": value_score,
-                "overall_score": round((health_score + engagement_score + value_score) / 3, 1)
+                "overall_score": round((health_score + engagement_score + value_score) / 3, 1),
             },
             "risk_assessment": {
                 "level": risk_level,
                 "factors": self._get_risk_factors(client),
-                "probability": self._calculate_churn_probability(client)
+                "probability": self._calculate_churn_probability(client),
             },
             "patterns": patterns,
             "recommendations": recommendations,
-            "analysis_date": datetime.utcnow().isoformat()
+            "analysis_date": datetime.utcnow().isoformat(),
         }
 
-    def suggest_segmentation(self, client_id: UUID) -> Dict[str, Any]:
+    def suggest_segmentation(self, client_id: UUID) -> dict[str, Any]:
         """
         Sugere segmentação automática para o cliente.
 
@@ -108,11 +108,11 @@ class ClientAIService:
                 "revenue": float(client.total_revenue or 0),
                 "contracts": client.active_contracts,
                 "relationship_days": self._get_relationship_days(client),
-                "is_vip": client.is_vip
-            }
+                "is_vip": client.is_vip,
+            },
         }
 
-    def predict_churn_risk(self, client_id: UUID) -> Dict[str, Any]:
+    def predict_churn_risk(self, client_id: UUID) -> dict[str, Any]:
         """
         Prediz risco de churn (perda do cliente).
 
@@ -135,21 +135,17 @@ class ClientAIService:
             "positive_factors": self._get_positive_factors(client),
             "retention_actions": retention_actions,
             "estimated_revenue_at_risk": float(client.total_revenue or 0) * (probability / 100),
-            "prediction_date": datetime.utcnow().isoformat()
+            "prediction_date": datetime.utcnow().isoformat(),
         }
 
-    def recommend_services(self, client_id: UUID) -> Dict[str, Any]:
+    def recommend_services(self, client_id: UUID) -> dict[str, Any]:
         """
         Recomenda serviços para upsell/cross-sell.
 
         Returns:
             Dict com serviços recomendados e justificativa.
         """
-        client = (
-            self.db.query(Client)
-            .filter(Client.id == client_id)
-            .first()
-        )
+        client = self.db.query(Client).filter(Client.id == client_id).first()
         if not client:
             return {"error": "Cliente não encontrado"}
 
@@ -171,30 +167,22 @@ class ClientAIService:
             "current_services": [s.service_type.value for s in current_services],
             "recommendations": recommendations,
             "potential_revenue_increase": sum(r["estimated_value"] for r in recommendations),
-            "recommendation_date": datetime.utcnow().isoformat()
+            "recommendation_date": datetime.utcnow().isoformat(),
         }
 
-    def analyze_condominium_health(self, condominium_id: UUID) -> Dict[str, Any]:
+    def analyze_condominium_health(self, condominium_id: UUID) -> dict[str, Any]:
         """
         Analisa a saúde de um condomínio.
 
         Returns:
             Dict com métricas de saúde do condomínio.
         """
-        condominium = (
-            self.db.query(Condominium)
-            .filter(Condominium.id == condominium_id)
-            .first()
-        )
+        condominium = self.db.query(Condominium).filter(Condominium.id == condominium_id).first()
         if not condominium:
             return {"error": "Condomínio não encontrado"}
 
         # Obter unidades
-        units = (
-            self.db.query(Unit)
-            .filter(Unit.condominium_id == condominium_id)
-            .all()
-        )
+        units = self.db.query(Unit).filter(Unit.condominium_id == condominium_id).all()
 
         # Calcular métricas
         occupancy_rate = condominium.occupancy_rate
@@ -209,9 +197,7 @@ class ClientAIService:
 
         # Alertas e recomendações
         alerts = self._get_condominium_alerts(condominium, units, defaulter_rate)
-        recommendations = self._get_condominium_recommendations(
-            condominium, health_score, defaulter_rate
-        )
+        recommendations = self._get_condominium_recommendations(condominium, health_score, defaulter_rate)
 
         return {
             "condominium_id": str(condominium.id),
@@ -221,19 +207,19 @@ class ClientAIService:
                 "occupancy_rate": occupancy_rate,
                 "defaulter_rate": defaulter_rate,
                 "security_score": security_score,
-                "infrastructure_score": infrastructure_score
+                "infrastructure_score": infrastructure_score,
             },
             "unit_stats": {
                 "total": condominium.total_units,
                 "occupied": len([u for u in units if u.is_occupied]),
-                "defaulters": len([u for u in units if u.is_defaulter])
+                "defaulters": len([u for u in units if u.is_defaulter]),
             },
             "alerts": alerts,
             "recommendations": recommendations,
-            "analysis_date": datetime.utcnow().isoformat()
+            "analysis_date": datetime.utcnow().isoformat(),
         }
 
-    def get_dashboard_insights(self) -> Dict[str, Any]:
+    def get_dashboard_insights(self) -> dict[str, Any]:
         """
         Gera insights para o dashboard gerencial.
 
@@ -242,16 +228,8 @@ class ClientAIService:
         """
         # Métricas gerais
         total_clients = self.db.query(func.count(Client.id)).scalar() or 0
-        active_clients = (
-            self.db.query(func.count(Client.id))
-            .filter(Client.status == ClientStatus.ATIVO)
-            .scalar() or 0
-        )
-        defaulter_clients = (
-            self.db.query(func.count(Client.id))
-            .filter(Client.is_defaulter.is_(True))
-            .scalar() or 0
-        )
+        active_clients = self.db.query(func.count(Client.id)).filter(Client.status == ClientStatus.ATIVO).scalar() or 0
+        defaulter_clients = self.db.query(func.count(Client.id)).filter(Client.is_defaulter.is_(True)).scalar() or 0
 
         # Clientes em risco
         at_risk_clients = self._get_clients_at_risk()
@@ -270,15 +248,13 @@ class ClientAIService:
                 "total_clients": total_clients,
                 "active_clients": active_clients,
                 "defaulter_clients": defaulter_clients,
-                "defaulter_rate": (
-                    (defaulter_clients / total_clients * 100) if total_clients > 0 else 0
-                )
+                "defaulter_rate": ((defaulter_clients / total_clients * 100) if total_clients > 0 else 0),
             },
             "clients_at_risk": at_risk_clients,
             "expiring_contracts": expiring_contracts,
             "trends": trends,
             "critical_alerts": critical_alerts,
-            "generated_at": datetime.utcnow().isoformat()
+            "generated_at": datetime.utcnow().isoformat(),
         }
 
     # =========================================================================
@@ -489,9 +465,7 @@ class ClientAIService:
             return ClientSegment.MEDIO
         return ClientSegment.PEQUENO
 
-    def _calculate_segment_confidence(
-        self, client: Client, _segment: ClientSegment
-    ) -> float:
+    def _calculate_segment_confidence(self, client: Client, _segment: ClientSegment) -> float:
         """Calcula confiança na segmentação."""
         confidence = 70.0
 
@@ -507,7 +481,7 @@ class ClientAIService:
 
         return min(100.0, confidence)
 
-    def _calculate_defaulter_rate(self, units: List[Unit]) -> float:
+    def _calculate_defaulter_rate(self, units: list[Unit]) -> float:
         """Calcula taxa de inadimplência das unidades."""
         if not units:
             return 0.0
@@ -547,11 +521,7 @@ class ClientAIService:
         return min(100, score)
 
     def _calculate_condominium_health_score(
-        self,
-        occupancy_rate: float,
-        defaulter_rate: float,
-        security_score: int,
-        infrastructure_score: int
+        self, occupancy_rate: float, defaulter_rate: float, security_score: int, infrastructure_score: int
     ) -> int:
         """Calcula score de saúde do condomínio."""
         # Pesos: ocupação 30%, inadimplência 30%, segurança 25%, infraestrutura 15%
@@ -566,7 +536,7 @@ class ClientAIService:
     # MÉTODOS PRIVADOS - INSIGHTS E RECOMENDAÇÕES
     # =========================================================================
 
-    def _get_risk_factors(self, client: Client) -> List[str]:
+    def _get_risk_factors(self, client: Client) -> list[str]:
         """Identifica fatores de risco."""
         factors = []
 
@@ -586,7 +556,7 @@ class ClientAIService:
 
         return factors
 
-    def _get_positive_factors(self, client: Client) -> List[str]:
+    def _get_positive_factors(self, client: Client) -> list[str]:
         """Identifica fatores positivos."""
         factors = []
 
@@ -607,7 +577,7 @@ class ClientAIService:
 
         return factors
 
-    def _identify_patterns(self, client: Client) -> List[str]:
+    def _identify_patterns(self, client: Client) -> list[str]:
         """Identifica padrões de comportamento."""
         patterns = []
 
@@ -622,95 +592,68 @@ class ClientAIService:
 
         return patterns
 
-    def _generate_recommendations(
-        self,
-        client: Client,
-        health_score: int,
-        risk_level: str
-    ) -> List[Dict[str, str]]:
+    def _generate_recommendations(self, client: Client, health_score: int, risk_level: str) -> list[dict[str, str]]:
         """Gera recomendações para o cliente."""
         recommendations = []
 
         if risk_level in ("critico", "alto"):
-            recommendations.append({
-                "type": "urgent",
-                "action": "Agendar reunião de retenção",
-                "reason": f"Cliente com risco {risk_level} de churn"
-            })
+            recommendations.append(
+                {
+                    "type": "urgent",
+                    "action": "Agendar reunião de retenção",
+                    "reason": f"Cliente com risco {risk_level} de churn",
+                }
+            )
 
         if client.is_defaulter:
-            recommendations.append({
-                "type": "financial",
-                "action": "Propor acordo de renegociação",
-                "reason": "Cliente inadimplente"
-            })
+            recommendations.append(
+                {"type": "financial", "action": "Propor acordo de renegociação", "reason": "Cliente inadimplente"}
+            )
 
         if health_score < 50:
-            recommendations.append({
-                "type": "relationship",
-                "action": "Plano de recuperação de relacionamento",
-                "reason": "Score de saúde baixo"
-            })
+            recommendations.append(
+                {
+                    "type": "relationship",
+                    "action": "Plano de recuperação de relacionamento",
+                    "reason": "Score de saúde baixo",
+                }
+            )
 
         if not client.guardian_enabled and client.type == ClientType.CONDOMINIO:
-            recommendations.append({
-                "type": "upsell",
-                "action": "Apresentar Conecta Guardian",
-                "reason": "Condomínio sem integração de segurança"
-            })
+            recommendations.append(
+                {
+                    "type": "upsell",
+                    "action": "Apresentar Conecta Guardian",
+                    "reason": "Condomínio sem integração de segurança",
+                }
+            )
 
         if not client.plus_enabled and client.type == ClientType.CONDOMINIO:
-            recommendations.append({
-                "type": "upsell",
-                "action": "Apresentar Conecta Plus",
-                "reason": "Condomínio sem gestão condominial"
-            })
+            recommendations.append(
+                {"type": "upsell", "action": "Apresentar Conecta Plus", "reason": "Condomínio sem gestão condominial"}
+            )
 
         return recommendations
 
-    def _suggest_retention_actions(
-        self,
-        client: Client,
-        probability: float
-    ) -> List[Dict[str, Any]]:
+    def _suggest_retention_actions(self, client: Client, probability: float) -> list[dict[str, Any]]:
         """Sugere ações de retenção."""
         actions = []
 
         if probability >= 50:
-            actions.append({
-                "action": "Contato urgente do gerente de contas",
-                "priority": "alta",
-                "deadline_days": 3
-            })
+            actions.append({"action": "Contato urgente do gerente de contas", "priority": "alta", "deadline_days": 3})
 
         if client.is_defaulter:
-            actions.append({
-                "action": "Proposta de renegociação de débito",
-                "priority": "alta",
-                "deadline_days": 7
-            })
+            actions.append({"action": "Proposta de renegociação de débito", "priority": "alta", "deadline_days": 7})
 
         if client.satisfaction_score and client.satisfaction_score < 3:
-            actions.append({
-                "action": "Pesquisa de satisfação detalhada",
-                "priority": "media",
-                "deadline_days": 14
-            })
+            actions.append({"action": "Pesquisa de satisfação detalhada", "priority": "media", "deadline_days": 14})
 
         if probability >= 30:
-            actions.append({
-                "action": "Oferta de benefícios de fidelidade",
-                "priority": "media",
-                "deadline_days": 30
-            })
+            actions.append({"action": "Oferta de benefícios de fidelidade", "priority": "media", "deadline_days": 30})
 
         return actions
 
-    def _generate_service_recommendations(
-        self,
-        _client: Client,
-        current_types: set
-    ) -> List[Dict[str, Any]]:
+    def _generate_service_recommendations(self, _client: Client, current_types: set) -> list[dict[str, Any]]:
         """Gera recomendações de serviços."""
         recommendations = []
 
@@ -719,7 +662,7 @@ class ClientAIService:
             "portaria_remota": ["cftv", "controle_acesso", "alarme"],
             "cftv": ["portaria_remota", "monitoramento_24h"],
             "controle_acesso": ["portaria_remota", "cftv"],
-            "alarme": ["monitoramento_24h", "cerca_eletrica"]
+            "alarme": ["monitoramento_24h", "cerca_eletrica"],
         }
 
         current_values = {t.value for t in current_types}
@@ -728,20 +671,18 @@ class ClientAIService:
             if current in service_map:
                 for suggested in service_map[current]:
                     if suggested not in current_values:
-                        recommendations.append({
-                            "service": suggested,
-                            "reason": f"Complementar ao serviço de {current}",
-                            "estimated_value": 500.0,
-                            "confidence": 0.75
-                        })
+                        recommendations.append(
+                            {
+                                "service": suggested,
+                                "reason": f"Complementar ao serviço de {current}",
+                                "estimated_value": 500.0,
+                                "confidence": 0.75,
+                            }
+                        )
 
         return recommendations[:5]  # Limitar a 5 recomendações
 
-    def _get_segmentation_justification(
-        self,
-        client: Client,
-        segment: ClientSegment
-    ) -> str:
+    def _get_segmentation_justification(self, client: Client, segment: ClientSegment) -> str:
         """Gera justificativa para segmentação."""
         revenue = float(client.total_revenue or 0)
         contracts = client.active_contracts
@@ -755,42 +696,27 @@ class ClientAIService:
         return "Perfil de cliente pequeno baseado em volume de negócios"
 
     def _get_condominium_alerts(
-        self,
-        condominium: Condominium,
-        _units: List[Unit],
-        defaulter_rate: float
-    ) -> List[Dict[str, str]]:
+        self, condominium: Condominium, _units: list[Unit], defaulter_rate: float
+    ) -> list[dict[str, str]]:
         """Gera alertas para o condomínio."""
         alerts = []
 
         if defaulter_rate > 20:
-            alerts.append({
-                "type": "critical",
-                "message": f"Taxa de inadimplência alta: {defaulter_rate:.1f}%"
-            })
+            alerts.append({"type": "critical", "message": f"Taxa de inadimplência alta: {defaulter_rate:.1f}%"})
 
         if condominium.syndic_end_date:
             days = condominium.days_until_syndic_end
             if days and days <= 30:
-                alerts.append({
-                    "type": "warning",
-                    "message": f"Mandato do síndico expira em {days} dias"
-                })
+                alerts.append({"type": "warning", "message": f"Mandato do síndico expira em {days} dias"})
 
         if condominium.status == CondominiumStatus.EM_IMPLANTACAO:
-            alerts.append({
-                "type": "info",
-                "message": "Condomínio em implantação"
-            })
+            alerts.append({"type": "info", "message": "Condomínio em implantação"})
 
         return alerts
 
     def _get_condominium_recommendations(
-        self,
-        condominium: Condominium,
-        health_score: int,
-        defaulter_rate: float
-    ) -> List[str]:
+        self, condominium: Condominium, health_score: int, defaulter_rate: float
+    ) -> list[str]:
         """Gera recomendações para o condomínio."""
         recommendations = []
 
@@ -811,14 +737,11 @@ class ClientAIService:
 
         return recommendations
 
-    def _get_clients_at_risk(self) -> List[Dict[str, Any]]:
+    def _get_clients_at_risk(self) -> list[dict[str, Any]]:
         """Retorna clientes em risco."""
         clients = (
             self.db.query(Client)
-            .filter(Client.status.in_([
-                ClientStatus.INADIMPLENTE,
-                ClientStatus.SUSPENSO
-            ]))
+            .filter(Client.status.in_([ClientStatus.INADIMPLENTE, ClientStatus.SUSPENSO]))
             .limit(10)
             .all()
         )
@@ -829,12 +752,12 @@ class ClientAIService:
                 "code": c.code,
                 "name": c.display_name,
                 "status": c.status.value,
-                "risk_level": self._assess_risk_level(c)
+                "risk_level": self._assess_risk_level(c),
             }
             for c in clients
         ]
 
-    def _get_expiring_contracts(self) -> List[Dict[str, Any]]:
+    def _get_expiring_contracts(self) -> list[dict[str, Any]]:
         """Retorna contratos expirando em 30 dias."""
         threshold = date.today() + timedelta(days=30)
         contracts = (
@@ -852,21 +775,17 @@ class ClientAIService:
                 "service_type": c.service_type.value,
                 "client_id": str(c.client_id),
                 "end_date": c.end_date.isoformat() if c.end_date else None,
-                "days_until_end": c.days_until_end
+                "days_until_end": c.days_until_end,
             }
             for c in contracts
         ]
 
-    def _calculate_trends(self) -> Dict[str, Any]:
+    def _calculate_trends(self) -> dict[str, Any]:
         """Calcula tendências."""
         # Simplificado para demonstração
-        return {
-            "new_clients_trend": "stable",
-            "churn_trend": "decreasing",
-            "revenue_trend": "increasing"
-        }
+        return {"new_clients_trend": "stable", "churn_trend": "decreasing", "revenue_trend": "increasing"}
 
-    def _get_critical_alerts(self) -> List[Dict[str, str]]:
+    def _get_critical_alerts(self) -> list[dict[str, str]]:
         """Retorna alertas críticos."""
         alerts = []
 
@@ -875,13 +794,13 @@ class ClientAIService:
             self.db.query(func.count(Client.id))
             .filter(Client.status == ClientStatus.INADIMPLENTE)
             .filter(Client.is_defaulter.is_(True))
-            .scalar() or 0
+            .scalar()
+            or 0
         )
 
         if critical_count > 0:
-            alerts.append({
-                "type": "critical",
-                "message": f"{critical_count} clientes em situação crítica de inadimplência"
-            })
+            alerts.append(
+                {"type": "critical", "message": f"{critical_count} clientes em situação crítica de inadimplência"}
+            )
 
         return alerts

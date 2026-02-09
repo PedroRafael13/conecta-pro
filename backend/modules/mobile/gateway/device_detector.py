@@ -1,9 +1,9 @@
 """Detector de dispositivos mobile."""
 
-import re
+import contextlib
 import logging
+import re
 from dataclasses import dataclass
-from typing import Optional
 
 from fastapi import Request
 
@@ -20,9 +20,9 @@ class DeviceCapabilities:
     supports_brotli: bool = False
     supports_push: bool = True
     supports_websocket: bool = True
-    max_memory_mb: Optional[int] = None
-    screen_width: Optional[int] = None
-    screen_height: Optional[int] = None
+    max_memory_mb: int | None = None
+    screen_width: int | None = None
+    screen_height: int | None = None
     pixel_ratio: float = 1.0
 
 
@@ -31,28 +31,28 @@ class DetectedDevice:
     """Informações completas do dispositivo detectado."""
 
     # Identificação
-    device_id: Optional[str] = None
+    device_id: str | None = None
     device_type: str = "unknown"  # mobile, tablet, desktop
     platform: str = "unknown"  # android, ios, web
-    browser: Optional[str] = None
-    browser_version: Optional[str] = None
+    browser: str | None = None
+    browser_version: str | None = None
 
     # Sistema
     os_name: str = "unknown"
-    os_version: Optional[str] = None
+    os_version: str | None = None
 
     # App
-    app_name: Optional[str] = None
-    app_version: Optional[str] = None
-    app_build: Optional[int] = None
+    app_name: str | None = None
+    app_version: str | None = None
+    app_build: int | None = None
 
     # Rede
     connection_type: str = "unknown"  # wifi, 4g, 3g, 2g, slow
-    effective_bandwidth_mbps: Optional[float] = None
-    rtt_ms: Optional[int] = None
+    effective_bandwidth_mbps: float | None = None
+    rtt_ms: int | None = None
 
     # Bateria
-    battery_level: Optional[int] = None
+    battery_level: int | None = None
     is_charging: bool = False
     is_low_power_mode: bool = False
 
@@ -134,12 +134,8 @@ class DeviceDetector:
         self._mobile_re = [re.compile(p, re.IGNORECASE) for p in self.MOBILE_PATTERNS]
         self._tablet_re = [re.compile(p, re.IGNORECASE) for p in self.TABLET_PATTERNS]
         self._bot_re = [re.compile(p, re.IGNORECASE) for p in self.BOT_PATTERNS]
-        self._browser_re = {
-            k: re.compile(v, re.IGNORECASE) for k, v in self.BROWSER_PATTERNS.items()
-        }
-        self._os_re = {
-            k: re.compile(v, re.IGNORECASE) for k, v in self.OS_PATTERNS.items()
-        }
+        self._browser_re = {k: re.compile(v, re.IGNORECASE) for k, v in self.BROWSER_PATTERNS.items()}
+        self._os_re = {k: re.compile(v, re.IGNORECASE) for k, v in self.OS_PATTERNS.items()}
 
         # Pattern para app nativo ConectaPRO
         self._native_app_re = re.compile(
@@ -246,7 +242,7 @@ class DeviceDetector:
 
         return "unknown"
 
-    def _detect_os(self, user_agent: str) -> tuple[str, Optional[str]]:
+    def _detect_os(self, user_agent: str) -> tuple[str, str | None]:
         """Detecta sistema operacional e versão."""
         for os_name, pattern in self._os_re.items():
             match = pattern.search(user_agent)
@@ -259,7 +255,7 @@ class DeviceDetector:
 
         return "unknown", None
 
-    def _detect_browser(self, user_agent: str) -> tuple[Optional[str], Optional[str]]:
+    def _detect_browser(self, user_agent: str) -> tuple[str | None, str | None]:
         """Detecta browser e versão."""
         for browser_name, pattern in self._browser_re.items():
             match = pattern.search(user_agent)
@@ -290,24 +286,18 @@ class DeviceDetector:
 
         # Bandwidth e RTT
         if headers.get("downlink"):
-            try:
+            with contextlib.suppress(ValueError):
                 device.effective_bandwidth_mbps = float(headers["downlink"])
-            except ValueError:
-                pass
 
         if headers.get("rtt"):
-            try:
+            with contextlib.suppress(ValueError):
                 device.rtt_ms = int(headers["rtt"])
-            except ValueError:
-                pass
 
         # Bateria
         battery = headers.get("x-battery-level")
         if battery:
-            try:
+            with contextlib.suppress(ValueError):
                 device.battery_level = int(battery)
-            except ValueError:
-                pass
 
         device.is_charging = headers.get("x-charging") == "true"
         device.is_low_power_mode = headers.get("x-low-power-mode") == "true"
@@ -321,10 +311,8 @@ class DeviceDetector:
             device.app_version = headers["x-app-version"]
 
         if headers.get("x-app-build"):
-            try:
+            with contextlib.suppress(ValueError):
                 device.app_build = int(headers["x-app-build"])
-            except ValueError:
-                pass
 
     def _detect_capabilities(self, headers: dict) -> DeviceCapabilities:
         """Detecta capacidades do dispositivo."""
@@ -342,29 +330,21 @@ class DeviceDetector:
 
         # Headers customizados de capacidade
         if headers.get("x-max-memory-mb"):
-            try:
+            with contextlib.suppress(ValueError):
                 caps.max_memory_mb = int(headers["x-max-memory-mb"])
-            except ValueError:
-                pass
 
         # Viewport
         if headers.get("x-screen-width"):
-            try:
+            with contextlib.suppress(ValueError):
                 caps.screen_width = int(headers["x-screen-width"])
-            except ValueError:
-                pass
 
         if headers.get("x-screen-height"):
-            try:
+            with contextlib.suppress(ValueError):
                 caps.screen_height = int(headers["x-screen-height"])
-            except ValueError:
-                pass
 
         if headers.get("x-pixel-ratio"):
-            try:
+            with contextlib.suppress(ValueError):
                 caps.pixel_ratio = float(headers["x-pixel-ratio"])
-            except ValueError:
-                pass
 
         return caps
 

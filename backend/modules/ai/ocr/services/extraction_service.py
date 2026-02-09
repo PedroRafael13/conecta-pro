@@ -12,11 +12,10 @@ Extrai dados estruturados de documentos:
 import logging
 import re
 import uuid
-from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
-from modules.ai.ocr.models.extracted_field import FieldType, FieldValidationStatus
 from modules.ai.ocr.models.document_template import RuleType
+from modules.ai.ocr.models.extracted_field import FieldType
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +56,6 @@ class ExtractionService:
             FieldType.RG: [
                 r"\b(\d{1,2}[.\s]?\d{3}[.\s]?\d{3}[-.\s]?[0-9X])\b",
             ],
-
             # Contato
             FieldType.EMAIL: [
                 r"\b([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})\b",
@@ -68,7 +66,6 @@ class ExtractionService:
             FieldType.CEP: [
                 r"\b(\d{5}[-.\s]?\d{3})\b",
             ],
-
             # Financeiro
             FieldType.CURRENCY: [
                 r"R\$\s*([\d.,]+)",
@@ -78,7 +75,6 @@ class ExtractionService:
                 r"\b(\d{5}\.\d{5}\s?\d{5}\.\d{6}\s?\d{5}\.\d{6}\s?\d\s?\d{14})\b",
                 r"\b(\d{47})\b",
             ],
-
             # Notas Fiscais
             FieldType.NF_NUMBER: [
                 r"(?:N[ºo°]?|Numero)\s*:?\s*(\d{6,9})",
@@ -90,7 +86,6 @@ class ExtractionService:
             FieldType.NF_KEY: [
                 r"\b(\d{44})\b",  # Chave de acesso NFe
             ],
-
             # Datas
             FieldType.DATE: [
                 r"\b(\d{2}[/.-]\d{2}[/.-]\d{2,4})\b",
@@ -102,7 +97,6 @@ class ExtractionService:
             FieldType.TIME: [
                 r"\b(\d{2}:\d{2}(?::\d{2})?)\b",
             ],
-
             # Numeros
             FieldType.PERCENTAGE: [
                 r"(\d+[,.]?\d*)\s*%",
@@ -131,9 +125,9 @@ class ExtractionService:
 
     def extract_fields(
         self,
-        ocr_result: Dict[str, Any],
-        template: Optional[Dict[str, Any]] = None,
-    ) -> List[Dict[str, Any]]:
+        ocr_result: dict[str, Any],
+        template: dict[str, Any] | None = None,
+    ) -> list[dict[str, Any]]:
         """Extrai campos do resultado OCR.
 
         Args:
@@ -172,8 +166,8 @@ class ExtractionService:
     def _extract_automatic(
         self,
         text: str,
-        lines: List[Dict[str, Any]],
-    ) -> List[Dict[str, Any]]:
+        lines: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
         """Extracao automatica de campos.
 
         Args:
@@ -198,7 +192,7 @@ class ExtractionService:
                     # Encontra contexto
                     start = max(0, match.start() - 30)
                     end = min(len(text), match.end() + 30)
-                    context = text[start:end]
+                    text[start:end]
 
                     field = {
                         "field_id": str(uuid.uuid4()),
@@ -209,8 +203,8 @@ class ExtractionService:
                         "normalized_value": normalized,
                         "confidence": 0.8,
                         "source_text": match.group(0),
-                        "context_before": text[start:match.start()],
-                        "context_after": text[match.end():end],
+                        "context_before": text[start : match.start()],
+                        "context_after": text[match.end() : end],
                         "extraction_method": "regex",
                     }
 
@@ -220,9 +214,9 @@ class ExtractionService:
 
     def _extract_with_template(
         self,
-        ocr_result: Dict[str, Any],
-        template: Dict[str, Any],
-    ) -> List[Dict[str, Any]]:
+        ocr_result: dict[str, Any],
+        template: dict[str, Any],
+    ) -> list[dict[str, Any]]:
         """Extrai campos usando template.
 
         Args:
@@ -302,7 +296,7 @@ class ExtractionService:
         text: str,
         pattern: str,
         group: int = 0,
-    ) -> Tuple[Optional[str], float]:
+    ) -> tuple[str | None, float]:
         """Extrai por expressao regular.
 
         Args:
@@ -327,9 +321,9 @@ class ExtractionService:
         self,
         text: str,
         keyword: str,
-        offset_x: int,
+        _offset_x: int,
         width: int,
-    ) -> Tuple[Optional[str], float]:
+    ) -> tuple[str | None, float]:
         """Extrai valor proximo a keyword.
 
         Args:
@@ -356,7 +350,7 @@ class ExtractionService:
         text: str,
         label: str,
         max_distance: int,
-    ) -> Tuple[Optional[str], float]:
+    ) -> tuple[str | None, float]:
         """Extrai valor apos um label.
 
         Args:
@@ -378,8 +372,8 @@ class ExtractionService:
 
     def _extract_from_key_value(
         self,
-        pairs: List[Dict[str, Any]],
-    ) -> List[Dict[str, Any]]:
+        pairs: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
         """Extrai campos de pares chave-valor.
 
         Args:
@@ -416,8 +410,8 @@ class ExtractionService:
 
     def _extract_from_tables(
         self,
-        tables: List[Dict[str, Any]],
-    ) -> List[Dict[str, Any]]:
+        tables: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
         """Extrai campos de tabelas.
 
         Args:
@@ -430,8 +424,8 @@ class ExtractionService:
 
         for table_idx, table in enumerate(tables):
             cells = table.get("cells", [])
-            rows = table.get("rows", 1)
-            cols = table.get("columns", 1)
+            table.get("rows", 1)
+            table.get("columns", 1)
 
             # Primeira linha como header
             headers = []
@@ -592,8 +586,8 @@ class ExtractionService:
 
     def _deduplicate_fields(
         self,
-        fields: List[Dict[str, Any]],
-    ) -> List[Dict[str, Any]]:
+        fields: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
         """Remove campos duplicados.
 
         Args:

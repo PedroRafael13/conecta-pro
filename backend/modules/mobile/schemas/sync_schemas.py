@@ -1,8 +1,7 @@
 """Schemas de sincronização mobile."""
 
 from datetime import datetime
-from typing import Any, Optional
-from uuid import UUID
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -14,12 +13,12 @@ class MobileSyncOperation(BaseModel):
     table: str = Field(..., description="Tabela afetada")
     operation: str = Field(..., description="Tipo: create, update, delete")
     record_id: str = Field(..., description="ID do registro")
-    data: Optional[dict[str, Any]] = Field(default=None, description="Dados da operação")
+    data: dict[str, Any] | None = Field(default=None, description="Dados da operação")
     changed_fields: list[str] = Field(default=[], description="Campos alterados")
     timestamp: datetime = Field(..., description="Timestamp do cliente")
     can_parallelize: bool = Field(default=True, description="Pode executar em paralelo")
-    depends_on: Optional[str] = Field(default=None, description="Operação dependente")
-    version: Optional[int] = Field(default=None, description="Versão do registro")
+    depends_on: str | None = Field(default=None, description="Operação dependente")
+    version: int | None = Field(default=None, description="Versão do registro")
 
     model_config = {"from_attributes": True}
 
@@ -40,7 +39,7 @@ class SyncConflict(BaseModel):
         description="Estratégia de resolução",
     )
     resolved: bool = Field(default=False, description="Se foi resolvido")
-    resolved_data: Optional[dict[str, Any]] = Field(
+    resolved_data: dict[str, Any] | None = Field(
         default=None,
         description="Dados após resolução",
     )
@@ -51,16 +50,16 @@ class SyncConflict(BaseModel):
 class DeviceInfo(BaseModel):
     """Informações do dispositivo."""
 
-    device_id: Optional[str] = None
+    device_id: str | None = None
     platform: str = Field(..., description="ios, android, web")
-    os_version: Optional[str] = None
-    app_version: Optional[str] = None
-    connection_type: Optional[str] = Field(
+    os_version: str | None = None
+    app_version: str | None = None
+    connection_type: str | None = Field(
         default="unknown",
         description="wifi, 4g, 3g, slow, unknown",
     )
-    battery_level: Optional[int] = Field(default=None, ge=0, le=100)
-    storage_available_mb: Optional[int] = None
+    battery_level: int | None = Field(default=None, ge=0, le=100)
+    storage_available_mb: int | None = None
 
     model_config = {"from_attributes": True}
 
@@ -72,11 +71,11 @@ class MobileSyncRequest(BaseModel):
         default=[],
         description="Lista de operações a sincronizar",
     )
-    last_sync_token: Optional[str] = Field(
+    last_sync_token: str | None = Field(
         default=None,
         description="Token da última sincronização",
     )
-    device_info: Optional[DeviceInfo] = Field(
+    device_info: DeviceInfo | None = Field(
         default=None,
         description="Informações do dispositivo",
     )
@@ -97,9 +96,9 @@ class SyncOperationResult(BaseModel):
 
     id: str = Field(..., description="ID da operação")
     status: str = Field(..., description="success, error, conflict")
-    data: Optional[dict[str, Any]] = Field(default=None)
-    error: Optional[str] = Field(default=None)
-    server_version: Optional[int] = Field(default=None)
+    data: dict[str, Any] | None = Field(default=None)
+    error: str | None = Field(default=None)
+    server_version: int | None = Field(default=None)
 
     model_config = {"from_attributes": True}
 
@@ -110,7 +109,7 @@ class ServerChange(BaseModel):
     table: str
     record_id: str
     operation: str = Field(..., description="create, update, delete")
-    data: Optional[dict[str, Any]] = None
+    data: dict[str, Any] | None = None
     timestamp: datetime
     version: int
 
@@ -136,7 +135,7 @@ class MobileSyncResponse(BaseModel):
     )
     new_sync_token: str = Field(..., description="Novo token de sync")
     sync_complete: bool = Field(default=True)
-    next_sync_token: Optional[str] = Field(
+    next_sync_token: str | None = Field(
         default=None,
         description="Token para continuar sync paginada",
     )
@@ -152,7 +151,7 @@ class SyncStatusResponse(BaseModel):
     """Status da sincronização."""
 
     user_id: int
-    last_sync_at: Optional[datetime] = None
+    last_sync_at: datetime | None = None
     pending_operations: int = 0
     sync_token: str
     cached_modules: list[str] = []

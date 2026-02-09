@@ -1,25 +1,26 @@
 """Testes de API para módulo Analytics Dashboard."""
 
-import pytest
 from datetime import datetime, timedelta
+from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
-from unittest.mock import AsyncMock, patch, MagicMock
+
+import pytest
 from httpx import AsyncClient
 
 from modules.hr.analytics_dashboard.models import (
     DashboardType,
     DashboardVisibility,
-    WidgetType,
+    DeliveryMethod,
     KPICategory,
     KPIUnit,
-    ReportType,
     ReportFormat,
+    ReportType,
     ScheduleFrequency,
-    DeliveryMethod,
+    WidgetType,
 )
 
-
 # ==================== Dashboard API Tests ====================
+
 
 class TestDashboardAPI:
     """Testes para endpoints de Dashboard."""
@@ -54,9 +55,7 @@ class TestDashboardAPI:
         """Testa listagem de dashboards."""
         with patch("modules.hr.analytics_dashboard.services.DashboardService") as mock_service:
             mock_instance = mock_service.return_value
-            mock_instance.list_user_dashboards = AsyncMock(
-                return_value=([sample_dashboard], 1)
-            )
+            mock_instance.list_user_dashboards = AsyncMock(return_value=([sample_dashboard], 1))
 
             # Simular resposta esperada
             result = await mock_instance.list_user_dashboards(
@@ -118,9 +117,7 @@ class TestDashboardAPI:
 
         with patch("modules.hr.analytics_dashboard.services.DashboardService") as mock_service:
             mock_instance = mock_service.return_value
-            mock_instance.update_dashboard = AsyncMock(
-                return_value={**sample_dashboard, **update_data}
-            )
+            mock_instance.update_dashboard = AsyncMock(return_value={**sample_dashboard, **update_data})
 
             result = await mock_instance.update_dashboard(
                 dashboard_id=sample_dashboard["id"],
@@ -234,9 +231,7 @@ class TestWidgetAPI:
 
         with patch("modules.hr.analytics_dashboard.services.DashboardService") as mock_service:
             mock_instance = mock_service.return_value
-            mock_instance.update_widget = AsyncMock(
-                return_value={**sample_widget, **update_data}
-            )
+            mock_instance.update_widget = AsyncMock(return_value={**sample_widget, **update_data})
 
             result = await mock_instance.update_widget(
                 widget_id=sample_widget["id"],
@@ -285,6 +280,7 @@ class TestWidgetAPI:
 
 
 # ==================== KPI API Tests ====================
+
 
 class TestKPIAPI:
     """Testes para endpoints de KPI."""
@@ -431,6 +427,7 @@ class TestKPIAPI:
 
 # ==================== Report API Tests ====================
 
+
 class TestReportAPI:
     """Testes para endpoints de Relatórios."""
 
@@ -543,9 +540,7 @@ class TestReportAPI:
         """Testa retomada de relatório."""
         with patch("modules.hr.analytics_dashboard.repositories.ReportRepository") as mock_repo:
             mock_instance = mock_repo.return_value
-            mock_instance.resume_report = AsyncMock(
-                return_value={**sample_report, "status": "active"}
-            )
+            mock_instance.resume_report = AsyncMock(return_value={**sample_report, "status": "active"})
 
             result = await mock_instance.resume_report(report_id=sample_report["id"])
 

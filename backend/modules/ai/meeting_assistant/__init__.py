@@ -11,22 +11,21 @@ Módulo de assistente inteligente para reuniões e tarefas:
 
 from .models import (
     Meeting,
+    MeetingNote,
     MeetingParticipant,
+    MeetingSummary,
     Task,
     TaskDependency,
-    MeetingNote,
-    MeetingSummary,
 )
-
 from .schemas import (
     MeetingCreate,
-    MeetingUpdate,
     MeetingResponse,
-    TaskCreate,
-    TaskUpdate,
-    TaskResponse,
+    MeetingUpdate,
     ScheduleSuggestionRequest,
     ScheduleSuggestionResponse,
+    TaskCreate,
+    TaskResponse,
+    TaskUpdate,
 )
 
 __all__ = [

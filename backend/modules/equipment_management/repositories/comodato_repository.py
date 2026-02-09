@@ -2,7 +2,6 @@
 
 import logging
 from datetime import datetime, timedelta
-from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import and_, func, or_, select
@@ -71,7 +70,7 @@ class ComodatoRepository:
         logger.info(f"Comodato criado: {comodato.comodato_code}")
         return comodato
 
-    async def get_by_id(self, comodato_id: str | UUID) -> Optional[EquipmentComodato]:
+    async def get_by_id(self, comodato_id: str | UUID) -> EquipmentComodato | None:
         """Busca comodato por ID."""
         if isinstance(comodato_id, str):
             comodato_id = UUID(comodato_id)
@@ -85,7 +84,7 @@ class ComodatoRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_by_code(self, code: str) -> Optional[EquipmentComodato]:
+    async def get_by_code(self, code: str) -> EquipmentComodato | None:
         """Busca comodato por código."""
         result = await self.session.execute(
             select(EquipmentComodato).where(
@@ -97,7 +96,7 @@ class ComodatoRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_by_equipment(self, equipment_id: str) -> Optional[EquipmentComodato]:
+    async def get_by_equipment(self, equipment_id: str) -> EquipmentComodato | None:
         """Busca comodato ativo de um equipamento."""
         result = await self.session.execute(
             select(EquipmentComodato).where(
@@ -110,9 +109,7 @@ class ComodatoRepository:
         )
         return result.scalar_one_or_none()
 
-    async def update(
-        self, comodato_id: str | UUID, data: ComodatoUpdate
-    ) -> Optional[EquipmentComodato]:
+    async def update(self, comodato_id: str | UUID, data: ComodatoUpdate) -> EquipmentComodato | None:
         """Atualiza um comodato."""
         comodato = await self.get_by_id(comodato_id)
         if not comodato:
@@ -142,7 +139,7 @@ class ComodatoRepository:
 
     async def list_with_filters(  # pylint: disable=too-many-branches
         self,
-        filters: Optional[ComodatoFilter] = None,
+        filters: ComodatoFilter | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[EquipmentComodato], int]:
@@ -243,7 +240,7 @@ class ComodatoRepository:
         )
         return list(result.scalars().all())
 
-    async def get_active(self, client_id: Optional[str] = None) -> list[EquipmentComodato]:
+    async def get_active(self, client_id: str | None = None) -> list[EquipmentComodato]:
         """Lista comodatos ativos."""
         conditions = [
             EquipmentComodato.status == ComodatoStatus.ACTIVE,
@@ -254,9 +251,7 @@ class ComodatoRepository:
             conditions.append(EquipmentComodato.client_id == client_id)
 
         result = await self.session.execute(
-            select(EquipmentComodato)
-            .where(and_(*conditions))
-            .order_by(EquipmentComodato.end_date)
+            select(EquipmentComodato).where(and_(*conditions)).order_by(EquipmentComodato.end_date)
         )
         return list(result.scalars().all())
 
@@ -360,7 +355,7 @@ class ComodatoRepository:
         comodato_id: str | UUID,
         signed_by_client: str,
         signed_by_company: str,
-    ) -> Optional[EquipmentComodato]:
+    ) -> EquipmentComodato | None:
         """Registra assinatura do contrato."""
         comodato = await self.get_by_id(comodato_id)
         if not comodato:
@@ -380,9 +375,9 @@ class ComodatoRepository:
         comodato_id: str | UUID,
         delivered_by: str,
         received_by: str,
-        notes: Optional[str] = None,
-        photos: Optional[list] = None,
-    ) -> Optional[EquipmentComodato]:
+        notes: str | None = None,
+        photos: list | None = None,
+    ) -> EquipmentComodato | None:
         """Registra entrega do equipamento."""
         comodato = await self.get_by_id(comodato_id)
         if not comodato:
@@ -399,9 +394,7 @@ class ComodatoRepository:
         logger.info(f"Comodato entregue: {comodato.comodato_code}")
         return comodato
 
-    async def request_return(
-        self, comodato_id: str | UUID
-    ) -> Optional[EquipmentComodato]:
+    async def request_return(self, comodato_id: str | UUID) -> EquipmentComodato | None:
         """Solicita devolução."""
         comodato = await self.get_by_id(comodato_id)
         if not comodato:
@@ -413,9 +406,7 @@ class ComodatoRepository:
         logger.info(f"Devolução solicitada: {comodato.comodato_code}")
         return comodato
 
-    async def schedule_return(
-        self, comodato_id: str | UUID, scheduled_date: datetime
-    ) -> Optional[EquipmentComodato]:
+    async def schedule_return(self, comodato_id: str | UUID, scheduled_date: datetime) -> EquipmentComodato | None:
         """Agenda devolução."""
         comodato = await self.get_by_id(comodato_id)
         if not comodato:
@@ -432,9 +423,9 @@ class ComodatoRepository:
         comodato_id: str | UUID,
         returned_by: str,
         condition: str,
-        notes: Optional[str] = None,
-        photos: Optional[list] = None,
-    ) -> Optional[EquipmentComodato]:
+        notes: str | None = None,
+        photos: list | None = None,
+    ) -> EquipmentComodato | None:
         """Registra devolução."""
         comodato = await self.get_by_id(comodato_id)
         if not comodato:
@@ -456,7 +447,7 @@ class ComodatoRepository:
         comodato_id: str | UUID,
         description: str,
         cost: float,
-    ) -> Optional[EquipmentComodato]:
+    ) -> EquipmentComodato | None:
         """Registra dano no equipamento."""
         comodato = await self.get_by_id(comodato_id)
         if not comodato:
@@ -468,7 +459,7 @@ class ComodatoRepository:
         logger.info(f"Dano registrado: {comodato.comodato_code}")
         return comodato
 
-    async def mark_as_lost(self, comodato_id: str | UUID) -> Optional[EquipmentComodato]:
+    async def mark_as_lost(self, comodato_id: str | UUID) -> EquipmentComodato | None:
         """Marca equipamento como perdido."""
         comodato = await self.get_by_id(comodato_id)
         if not comodato:
@@ -480,9 +471,7 @@ class ComodatoRepository:
         logger.info(f"Equipamento perdido: {comodato.comodato_code}")
         return comodato
 
-    async def terminate(
-        self, comodato_id: str | UUID, reason: str
-    ) -> Optional[EquipmentComodato]:
+    async def terminate(self, comodato_id: str | UUID, reason: str) -> EquipmentComodato | None:
         """Encerra contrato."""
         comodato = await self.get_by_id(comodato_id)
         if not comodato:
@@ -499,7 +488,7 @@ class ComodatoRepository:
         comodato_id: str | UUID,
         new_client_id: str,
         reason: str,
-    ) -> Optional[EquipmentComodato]:
+    ) -> EquipmentComodato | None:
         """Transfere comodato para outro cliente."""
         comodato = await self.get_by_id(comodato_id)
         if not comodato:
@@ -512,7 +501,7 @@ class ComodatoRepository:
         return comodato
 
     async def get_stats(  # pylint: disable=too-many-branches
-        self, client_id: Optional[str] = None
+        self, client_id: str | None = None
     ) -> dict:
         """Estatísticas de comodatos."""
         conditions = [EquipmentComodato.is_active.is_(True)]
@@ -520,9 +509,7 @@ class ComodatoRepository:
         if client_id:
             conditions.append(EquipmentComodato.client_id == client_id)
 
-        result = await self.session.execute(
-            select(EquipmentComodato).where(and_(*conditions))
-        )
+        result = await self.session.execute(select(EquipmentComodato).where(and_(*conditions)))
         comodatos = list(result.scalars().all())
 
         now = datetime.utcnow()

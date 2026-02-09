@@ -5,11 +5,9 @@ Guia o usuario no processo de agendamento de uma diarista,
 coletando diarista, data, horario, local e observacoes.
 """
 
-from datetime import datetime, date
-from typing import Any
-from modules.ai.bartolo.wizards.base_wizard import (
-    BaseWizard, WizardStep, StepType
-)
+from datetime import datetime
+
+from modules.ai.bartolo.wizards.base_wizard import BaseWizard, StepType, WizardStep
 
 
 class DiaristaWizard(BaseWizard):
@@ -41,11 +39,9 @@ class DiaristaWizard(BaseWizard):
                 required=True,
                 validation_rules={"min_length": 2, "max_length": 200},
                 help_text=(
-                    "Informe o nome ou ID da diarista.\n"
-                    "Ou digite 'disponivel' para listar diaristas com agenda livre."
+                    "Informe o nome ou ID da diarista.\nOu digite 'disponivel' para listar diaristas com agenda livre."
                 ),
             ),
-
             # 2. Data
             WizardStep(
                 id="data",
@@ -57,7 +53,6 @@ class DiaristaWizard(BaseWizard):
                 validation_rules={"min_length": 2, "max_length": 30},
                 help_text="Informe a data no formato DD/MM/AAAA ou use termos como 'amanha', 'segunda'.",
             ),
-
             # 3. Horario
             WizardStep(
                 id="horario",
@@ -75,7 +70,6 @@ class DiaristaWizard(BaseWizard):
                 ],
                 help_text="Selecione o horario de trabalho da diarista.",
             ),
-
             # 4. Horario personalizado (condicional)
             WizardStep(
                 id="horario_personalizado",
@@ -88,7 +82,6 @@ class DiaristaWizard(BaseWizard):
                 help_text="Formato: HH:MM - HH:MM",
                 skip_condition=lambda data: data.get("horario") != "Personalizado",
             ),
-
             # 5. Local
             WizardStep(
                 id="local",
@@ -100,7 +93,6 @@ class DiaristaWizard(BaseWizard):
                 validation_rules={"min_length": 3, "max_length": 300},
                 help_text="Informe o posto, condominio ou endereco completo.",
             ),
-
             # 6. Tipo de servico
             WizardStep(
                 id="tipo_servico",
@@ -121,7 +113,6 @@ class DiaristaWizard(BaseWizard):
                 ],
                 help_text="Tipo de servico que a diarista realizara.",
             ),
-
             # 7. Valor (opcional)
             WizardStep(
                 id="valor",
@@ -133,7 +124,6 @@ class DiaristaWizard(BaseWizard):
                 validation_rules={"min_value": 50, "max_value": 10000},
                 help_text="Informe o valor bruto da diaria. Se nao informado, sera usado o valor padrao.",
             ),
-
             # 8. Observacoes
             WizardStep(
                 id="observacoes",
@@ -144,7 +134,6 @@ class DiaristaWizard(BaseWizard):
                 required=False,
                 help_text="Materiais necessarios, instrucoes especiais, contato no local, etc.",
             ),
-
             # 9. Confirmacao
             WizardStep(
                 id="confirmacao",
@@ -208,7 +197,7 @@ class DiaristaWizard(BaseWizard):
         descontos = {}
         if valor:
             inss = valor * 0.11  # 11% INSS
-            iss = valor * 0.05   # 5% ISS
+            iss = valor * 0.05  # 5% ISS
             irrf = 0.0
             if valor > 250:
                 irrf = valor * 0.075  # 7.5% IRRF simplificado
@@ -252,29 +241,35 @@ class DiaristaWizard(BaseWizard):
 
         # Turno noturno
         if horario_info.get("horas", 0) >= 12:
-            alerts.append({
-                "tipo": "warning",
-                "mensagem": (
-                    "Jornada de 12+ horas: Verificar conformidade CLT. "
-                    "Intervalo intrajornada obrigatorio de no minimo 1h."
-                ),
-            })
+            alerts.append(
+                {
+                    "tipo": "warning",
+                    "mensagem": (
+                        "Jornada de 12+ horas: Verificar conformidade CLT. "
+                        "Intervalo intrajornada obrigatorio de no minimo 1h."
+                    ),
+                }
+            )
 
         horario_str = data.get("horario", "")
         if "Noturno" in horario_str:
-            alerts.append({
-                "tipo": "info",
-                "mensagem": (
-                    "Turno noturno: Adicional noturno de 20% sobre hora normal. "
-                    "Hora noturna = 52min30s (CLT art. 73)."
-                ),
-            })
+            alerts.append(
+                {
+                    "tipo": "info",
+                    "mensagem": (
+                        "Turno noturno: Adicional noturno de 20% sobre hora normal. "
+                        "Hora noturna = 52min30s (CLT art. 73)."
+                    ),
+                }
+            )
 
         # Valor baixo
         if valor and valor < 100:
-            alerts.append({
-                "tipo": "warning",
-                "mensagem": "Valor da diaria abaixo de R$ 100,00. Verifique se esta correto.",
-            })
+            alerts.append(
+                {
+                    "tipo": "warning",
+                    "mensagem": "Valor da diaria abaixo de R$ 100,00. Verifique se esta correto.",
+                }
+            )
 
         return alerts

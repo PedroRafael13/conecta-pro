@@ -8,98 +8,98 @@ Quality Score Target: 99+/100
 Compliance: Decreto 8.373/2014 - eSocial
 """
 
-from typing import Dict, List, Optional, Any, Union, Tuple
-from dataclasses import dataclass, field
-from enum import Enum
-from abc import ABC, abstractmethod
-from datetime import datetime, date
-from uuid import UUID, uuid4
-import xml.etree.ElementTree as ET
-from xml.dom import minidom
-import hashlib
-import base64
 import logging
-import asyncio
+from dataclasses import dataclass, field
+from datetime import date, datetime
+from enum import StrEnum
+from typing import Any
+from uuid import UUID, uuid4
+from xml.dom import minidom  # noqa: S408
+from xml.etree.ElementTree import Element, SubElement  # noqa: S405
 
-from pydantic import BaseModel, Field
-from sqlalchemy import Column, String, Boolean, DateTime, Date, Text, Integer
-from sqlalchemy.dialects.postgresql import UUID as PGUUID, JSONB
+import defusedxml.ElementTree as ET  # noqa: N817
+from sqlalchemy import Column, Date, DateTime, String, Text
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.ext.declarative import declarative_base
 
 # Importa gerenciador de certificados e assinador XML
-from .certificate_manager import CertificateManager, CertificateStore, CertificateStatus
-from .xml_signer import ESocialXMLSigner, SignatureType
+from .certificate_manager import CertificateManager
+from .xml_signer import ESocialXMLSigner
 
 logger = logging.getLogger(__name__)
 
 Base = declarative_base()
 
 
-class EventType(str, Enum):
+class EventType(StrEnum):
     """Tipos de eventos eSocial."""
+
     # Eventos de Tabelas (S-1000 a S-1080)
-    S1000_EMPREGADOR = "S-1000"           # Informacoes do Empregador
-    S1005_ESTABELECIMENTOS = "S-1005"     # Tabela de Estabelecimentos
-    S1010_RUBRICAS = "S-1010"             # Tabela de Rubricas
-    S1020_LOTACOES = "S-1020"             # Tabela de Lotacoes Tributarias
-    S1030_CARGOS = "S-1030"               # Tabela de Cargos/Empregos
-    S1035_CARREIRAS = "S-1035"            # Tabela de Carreiras Publicas
-    S1040_FUNCOES = "S-1040"              # Tabela de Funcoes
-    S1050_HORARIOS = "S-1050"             # Tabela de Horarios
-    S1060_AMBIENTES = "S-1060"            # Tabela de Ambientes de Trabalho
-    S1070_PROCESSOS = "S-1070"            # Tabela de Processos Administrativos
+    S1000_EMPREGADOR = "S-1000"  # Informacoes do Empregador
+    S1005_ESTABELECIMENTOS = "S-1005"  # Tabela de Estabelecimentos
+    S1010_RUBRICAS = "S-1010"  # Tabela de Rubricas
+    S1020_LOTACOES = "S-1020"  # Tabela de Lotacoes Tributarias
+    S1030_CARGOS = "S-1030"  # Tabela de Cargos/Empregos
+    S1035_CARREIRAS = "S-1035"  # Tabela de Carreiras Publicas
+    S1040_FUNCOES = "S-1040"  # Tabela de Funcoes
+    S1050_HORARIOS = "S-1050"  # Tabela de Horarios
+    S1060_AMBIENTES = "S-1060"  # Tabela de Ambientes de Trabalho
+    S1070_PROCESSOS = "S-1070"  # Tabela de Processos Administrativos
 
     # Eventos Nao Periodicos (S-2190 a S-2420)
     S2190_ADMISSAO_PRELIMINAR = "S-2190"  # Registro Preliminar de Admissao
-    S2200_ADMISSAO = "S-2200"             # Cadastramento Inicial/Admissao
-    S2205_ALTERACAO_DADOS = "S-2205"      # Alteracao de Dados Cadastrais
-    S2206_ALTERACAO_CONTRATO = "S-2206"   # Alteracao de Contrato de Trabalho
-    S2210_CAT = "S-2210"                  # Comunicacao de Acidente de Trabalho
+    S2200_ADMISSAO = "S-2200"  # Cadastramento Inicial/Admissao
+    S2205_ALTERACAO_DADOS = "S-2205"  # Alteracao de Dados Cadastrais
+    S2206_ALTERACAO_CONTRATO = "S-2206"  # Alteracao de Contrato de Trabalho
+    S2210_CAT = "S-2210"  # Comunicacao de Acidente de Trabalho
     S2220_MONITORAMENTO_SAUDE = "S-2220"  # Monitoramento da Saude do Trabalhador
-    S2230_AFASTAMENTO = "S-2230"          # Afastamento Temporario
-    S2240_EXPOSICAO_RISCOS = "S-2240"     # Condicoes Ambientais do Trabalho
-    S2299_DESLIGAMENTO = "S-2299"         # Desligamento
-    S2300_TSV_INICIO = "S-2300"           # Trabalhador Sem Vinculo - Inicio
-    S2306_TSV_ALTERACAO = "S-2306"        # TSV - Alteracao Contratual
-    S2399_TSV_TERMINO = "S-2399"          # TSV - Termino
+    S2230_AFASTAMENTO = "S-2230"  # Afastamento Temporario
+    S2240_EXPOSICAO_RISCOS = "S-2240"  # Condicoes Ambientais do Trabalho
+    S2299_DESLIGAMENTO = "S-2299"  # Desligamento
+    S2300_TSV_INICIO = "S-2300"  # Trabalhador Sem Vinculo - Inicio
+    S2306_TSV_ALTERACAO = "S-2306"  # TSV - Alteracao Contratual
+    S2399_TSV_TERMINO = "S-2399"  # TSV - Termino
 
     # Eventos Periodicos (S-1200 a S-1299)
-    S1200_REMUNERACAO = "S-1200"          # Remuneracao do Trabalhador
-    S1202_REMUNERACAO_RPPS = "S-1202"     # Remuneracao Servidor RPPS
+    S1200_REMUNERACAO = "S-1200"  # Remuneracao do Trabalhador
+    S1202_REMUNERACAO_RPPS = "S-1202"  # Remuneracao Servidor RPPS
     S1207_BENEFICIOS_PREVIDENCIARIOS = "S-1207"  # Beneficios Previdenciarios
-    S1210_PAGAMENTOS = "S-1210"           # Pagamentos de Rendimentos
-    S1260_COMERCIALIZACAO = "S-1260"      # Comercializacao Producao Rural
-    S1270_AQUISICAO = "S-1270"            # Contratacao de Trabalhadores Avulsos
-    S1280_INFO_DESONERADA = "S-1280"      # Informacoes Complementares Desonerada
-    S1298_REABERTURA = "S-1298"           # Reabertura dos Eventos Periodicos
-    S1299_FECHAMENTO = "S-1299"           # Fechamento dos Eventos Periodicos
+    S1210_PAGAMENTOS = "S-1210"  # Pagamentos de Rendimentos
+    S1260_COMERCIALIZACAO = "S-1260"  # Comercializacao Producao Rural
+    S1270_AQUISICAO = "S-1270"  # Contratacao de Trabalhadores Avulsos
+    S1280_INFO_DESONERADA = "S-1280"  # Informacoes Complementares Desonerada
+    S1298_REABERTURA = "S-1298"  # Reabertura dos Eventos Periodicos
+    S1299_FECHAMENTO = "S-1299"  # Fechamento dos Eventos Periodicos
 
     # Eventos de SST (S-2210 a S-2240 - ja listados acima)
     # Eventos Totalizadores
-    S5001_BASES_IRRF = "S-5001"           # Bases de Calculo IRRF
-    S5002_BASES_CS = "S-5002"             # Imposto de Renda Retido na Fonte
-    S5003_BASES_FGTS = "S-5003"           # Bases de Calculo FGTS
-    S5011_TOTAL_CONTRIB = "S-5011"        # Consolidacao de Contribuicoes
-    S5012_TOTAL_IRRF = "S-5012"           # Consolidacao IRRF
+    S5001_BASES_IRRF = "S-5001"  # Bases de Calculo IRRF
+    S5002_BASES_CS = "S-5002"  # Imposto de Renda Retido na Fonte
+    S5003_BASES_FGTS = "S-5003"  # Bases de Calculo FGTS
+    S5011_TOTAL_CONTRIB = "S-5011"  # Consolidacao de Contribuicoes
+    S5012_TOTAL_IRRF = "S-5012"  # Consolidacao IRRF
 
     # Exclusao
-    S3000_EXCLUSAO = "S-3000"             # Exclusao de Eventos
+    S3000_EXCLUSAO = "S-3000"  # Exclusao de Eventos
 
 
-class TransmissionStatus(str, Enum):
+class TransmissionStatus(StrEnum):
     """Status de transmissao de evento."""
-    PENDING = "pending"               # Aguardando envio
-    VALIDATING = "validating"         # Em validacao
-    TRANSMITTED = "transmitted"       # Transmitido
-    PROCESSING = "processing"         # Em processamento no governo
-    ACCEPTED = "accepted"             # Aceito
-    REJECTED = "rejected"             # Rejeitado
-    ERROR = "error"                   # Erro na transmissao
-    CANCELLED = "cancelled"           # Cancelado
+
+    PENDING = "pending"  # Aguardando envio
+    VALIDATING = "validating"  # Em validacao
+    TRANSMITTED = "transmitted"  # Transmitido
+    PROCESSING = "processing"  # Em processamento no governo
+    ACCEPTED = "accepted"  # Aceito
+    REJECTED = "rejected"  # Rejeitado
+    ERROR = "error"  # Erro na transmissao
+    CANCELLED = "cancelled"  # Cancelado
 
 
-class Environment(str, Enum):
+class Environment(StrEnum):
     """Ambiente de transmissao."""
+
     PRODUCAO = "1"
     PRODUCAO_RESTRITA = "2"  # Homologacao
 
@@ -107,7 +107,7 @@ class Environment(str, Enum):
 class ESocialError(Exception):
     """Erro em operacao eSocial."""
 
-    def __init__(self, message: str, event_id: Optional[str] = None, code: Optional[str] = None):
+    def __init__(self, message: str, event_id: str | None = None, code: str | None = None):
         self.message = message
         self.event_id = event_id
         self.code = code
@@ -116,17 +116,20 @@ class ESocialError(Exception):
 
 class ValidationError(ESocialError):
     """Erro de validacao de evento."""
+
     pass
 
 
 class TransmissionError(ESocialError):
     """Erro de transmissao."""
+
     pass
 
 
 @dataclass
 class CertificateInfo:
     """Informacoes do certificado digital."""
+
     serial_number: str
     subject_cn: str
     issuer_cn: str
@@ -147,25 +150,26 @@ class CertificateInfo:
 @dataclass
 class ESocialEvent:
     """Evento eSocial."""
+
     id: UUID
     event_type: EventType
     status: TransmissionStatus
     employer_cnpj: str
-    employee_cpf: Optional[str] = None
-    xml_content: Optional[str] = None
-    xml_signed: Optional[str] = None
-    protocol: Optional[str] = None
-    receipt_number: Optional[str] = None
+    employee_cpf: str | None = None
+    xml_content: str | None = None
+    xml_signed: str | None = None
+    protocol: str | None = None
+    receipt_number: str | None = None
     created_at: datetime = field(default_factory=datetime.utcnow)
-    transmitted_at: Optional[datetime] = None
-    processed_at: Optional[datetime] = None
-    errors: List[Dict[str, Any]] = field(default_factory=list)
-    warnings: List[Dict[str, Any]] = field(default_factory=list)
-    reference_id: Optional[str] = None     # ID de referencia no sistema
-    reference_date: Optional[date] = None  # Data de referencia do evento
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    transmitted_at: datetime | None = None
+    processed_at: datetime | None = None
+    errors: list[dict[str, Any]] = field(default_factory=list)
+    warnings: list[dict[str, Any]] = field(default_factory=list)
+    reference_id: str | None = None  # ID de referencia no sistema
+    reference_date: date | None = None  # Data de referencia do evento
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "id": str(self.id),
             "event_type": self.event_type.value,
@@ -185,6 +189,7 @@ class ESocialEvent:
 # SQLAlchemy Model
 class ESocialEventModel(Base):
     """Modelo de banco para eventos eSocial."""
+
     __tablename__ = "gov_esocial_events"
 
     id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
@@ -225,159 +230,159 @@ class XMLBuilder:
         type_code = event_type.replace("-", "").replace("S", "")
         return f"ID{cnpj_clean}{type_code}{timestamp}{seq}"
 
-    def build_s2200_admissao(self, data: Dict[str, Any]) -> str:
+    def build_s2200_admissao(self, data: dict[str, Any]) -> str:
         """Constroi XML do evento S-2200 (Admissao)."""
         event_id = self.build_event_id("S-2200", data["employer_cnpj"])
 
-        root = ET.Element("eSocial", xmlns=self.NAMESPACE)
-        evt = ET.SubElement(root, "evtAdmissao", Id=event_id)
+        root = Element("eSocial", xmlns=self.NAMESPACE)
+        evt = SubElement(root, "evtAdmissao", Id=event_id)
 
         # ideEvento
-        ide = ET.SubElement(evt, "ideEvento")
-        ET.SubElement(ide, "indRetif").text = str(data.get("indRetif", 1))
-        ET.SubElement(ide, "tpAmb").text = self.environment.value
-        ET.SubElement(ide, "procEmi").text = "1"
-        ET.SubElement(ide, "verProc").text = "CONECTA_PRO_1.0"
+        ide = SubElement(evt, "ideEvento")
+        SubElement(ide, "indRetif").text = str(data.get("indRetif", 1))
+        SubElement(ide, "tpAmb").text = self.environment.value
+        SubElement(ide, "procEmi").text = "1"
+        SubElement(ide, "verProc").text = "CONECTA_PRO_1.0"
 
         # ideEmpregador
-        emp = ET.SubElement(evt, "ideEmpregador")
-        ET.SubElement(emp, "tpInsc").text = "1"
-        ET.SubElement(emp, "nrInsc").text = data["employer_cnpj"][:8]
+        emp = SubElement(evt, "ideEmpregador")
+        SubElement(emp, "tpInsc").text = "1"
+        SubElement(emp, "nrInsc").text = data["employer_cnpj"][:8]
 
         # trabalhador
-        trab = ET.SubElement(evt, "trabalhador")
-        ET.SubElement(trab, "cpfTrab").text = data["cpf"]
-        ET.SubElement(trab, "nmTrab").text = data["nome"]
-        ET.SubElement(trab, "sexo").text = data["sexo"]
-        ET.SubElement(trab, "racaCor").text = str(data.get("racaCor", 6))
-        ET.SubElement(trab, "estCiv").text = str(data.get("estCiv", 1))
-        ET.SubElement(trab, "grauInstr").text = str(data.get("grauInstr", "07"))
+        trab = SubElement(evt, "trabalhador")
+        SubElement(trab, "cpfTrab").text = data["cpf"]
+        SubElement(trab, "nmTrab").text = data["nome"]
+        SubElement(trab, "sexo").text = data["sexo"]
+        SubElement(trab, "racaCor").text = str(data.get("racaCor", 6))
+        SubElement(trab, "estCiv").text = str(data.get("estCiv", 1))
+        SubElement(trab, "grauInstr").text = str(data.get("grauInstr", "07"))
 
         # nascimento
-        nasc = ET.SubElement(trab, "nascimento")
-        ET.SubElement(nasc, "dtNascto").text = data["dtNascimento"]
-        ET.SubElement(nasc, "paisNascto").text = data.get("paisNascto", "105")
+        nasc = SubElement(trab, "nascimento")
+        SubElement(nasc, "dtNascto").text = data["dtNascimento"]
+        SubElement(nasc, "paisNascto").text = data.get("paisNascto", "105")
         if data.get("paisNascto", "105") == "105":
-            ET.SubElement(nasc, "paisNac").text = "105"
+            SubElement(nasc, "paisNac").text = "105"
 
         # vinculo
-        vinc = ET.SubElement(evt, "vinculo")
-        ET.SubElement(vinc, "matricula").text = data["matricula"]
-        ET.SubElement(vinc, "tpRegTrab").text = str(data.get("tpRegTrab", 1))
-        ET.SubElement(vinc, "tpRegPrev").text = str(data.get("tpRegPrev", 1))
-        ET.SubElement(vinc, "cadIni").text = "S" if data.get("cadIni", True) else "N"
+        vinc = SubElement(evt, "vinculo")
+        SubElement(vinc, "matricula").text = data["matricula"]
+        SubElement(vinc, "tpRegTrab").text = str(data.get("tpRegTrab", 1))
+        SubElement(vinc, "tpRegPrev").text = str(data.get("tpRegPrev", 1))
+        SubElement(vinc, "cadIni").text = "S" if data.get("cadIni", True) else "N"
 
         # infoRegimeTrab
-        reg = ET.SubElement(vinc, "infoRegimeTrab")
-        clt = ET.SubElement(reg, "infoCeletista")
-        ET.SubElement(clt, "dtAdm").text = data["dtAdmissao"]
-        ET.SubElement(clt, "tpAdmissao").text = str(data.get("tpAdmissao", 1))
-        ET.SubElement(clt, "indAdmissao").text = str(data.get("indAdmissao", 1))
-        ET.SubElement(clt, "tpRegJor").text = str(data.get("tpRegJor", 1))
-        ET.SubElement(clt, "natAtividade").text = str(data.get("natAtividade", 1))
-        ET.SubElement(clt, "dtBase").text = str(data.get("dtBase", 1))
-        ET.SubElement(clt, "cnpjSindCategProf").text = data.get("cnpjSindicato", "")
+        reg = SubElement(vinc, "infoRegimeTrab")
+        clt = SubElement(reg, "infoCeletista")
+        SubElement(clt, "dtAdm").text = data["dtAdmissao"]
+        SubElement(clt, "tpAdmissao").text = str(data.get("tpAdmissao", 1))
+        SubElement(clt, "indAdmissao").text = str(data.get("indAdmissao", 1))
+        SubElement(clt, "tpRegJor").text = str(data.get("tpRegJor", 1))
+        SubElement(clt, "natAtividade").text = str(data.get("natAtividade", 1))
+        SubElement(clt, "dtBase").text = str(data.get("dtBase", 1))
+        SubElement(clt, "cnpjSindCategProf").text = data.get("cnpjSindicato", "")
 
         # infoContrato
-        cont = ET.SubElement(vinc, "infoContrato")
-        ET.SubElement(cont, "nmCargo").text = data.get("cargo", "")
-        ET.SubElement(cont, "CBOCargo").text = data.get("cbo", "")
+        cont = SubElement(vinc, "infoContrato")
+        SubElement(cont, "nmCargo").text = data.get("cargo", "")
+        SubElement(cont, "CBOCargo").text = data.get("cbo", "")
 
         # remuneracao
-        rem = ET.SubElement(cont, "remuneracao")
-        ET.SubElement(rem, "vrSalFx").text = str(data["salario"])
-        ET.SubElement(rem, "undSalFixo").text = str(data.get("undSalFixo", 5))
+        rem = SubElement(cont, "remuneracao")
+        SubElement(rem, "vrSalFx").text = str(data["salario"])
+        SubElement(rem, "undSalFixo").text = str(data.get("undSalFixo", 5))
 
         return self._prettify(root)
 
-    def build_s2299_desligamento(self, data: Dict[str, Any]) -> str:
+    def build_s2299_desligamento(self, data: dict[str, Any]) -> str:
         """Constroi XML do evento S-2299 (Desligamento)."""
         event_id = self.build_event_id("S-2299", data["employer_cnpj"])
 
-        root = ET.Element("eSocial", xmlns=self.NAMESPACE)
-        evt = ET.SubElement(root, "evtDeslig", Id=event_id)
+        root = Element("eSocial", xmlns=self.NAMESPACE)
+        evt = SubElement(root, "evtDeslig", Id=event_id)
 
         # ideEvento
-        ide = ET.SubElement(evt, "ideEvento")
-        ET.SubElement(ide, "indRetif").text = str(data.get("indRetif", 1))
-        ET.SubElement(ide, "tpAmb").text = self.environment.value
-        ET.SubElement(ide, "procEmi").text = "1"
-        ET.SubElement(ide, "verProc").text = "CONECTA_PRO_1.0"
+        ide = SubElement(evt, "ideEvento")
+        SubElement(ide, "indRetif").text = str(data.get("indRetif", 1))
+        SubElement(ide, "tpAmb").text = self.environment.value
+        SubElement(ide, "procEmi").text = "1"
+        SubElement(ide, "verProc").text = "CONECTA_PRO_1.0"
 
         # ideEmpregador
-        emp = ET.SubElement(evt, "ideEmpregador")
-        ET.SubElement(emp, "tpInsc").text = "1"
-        ET.SubElement(emp, "nrInsc").text = data["employer_cnpj"][:8]
+        emp = SubElement(evt, "ideEmpregador")
+        SubElement(emp, "tpInsc").text = "1"
+        SubElement(emp, "nrInsc").text = data["employer_cnpj"][:8]
 
         # ideVinculo
-        vinc = ET.SubElement(evt, "ideVinculo")
-        ET.SubElement(vinc, "cpfTrab").text = data["cpf"]
-        ET.SubElement(vinc, "matricula").text = data["matricula"]
+        vinc = SubElement(evt, "ideVinculo")
+        SubElement(vinc, "cpfTrab").text = data["cpf"]
+        SubElement(vinc, "matricula").text = data["matricula"]
 
         # infoDeslig
-        desl = ET.SubElement(evt, "infoDeslig")
-        ET.SubElement(desl, "mtvDeslig").text = data["mtvDeslig"]
-        ET.SubElement(desl, "dtDeslig").text = data["dtDesligamento"]
-        ET.SubElement(desl, "indPagtoAPI").text = "S" if data.get("indPagtoAPI", True) else "N"
-        ET.SubElement(desl, "dtProjFimAPI").text = data.get("dtProjFimAPI", data["dtDesligamento"])
-        ET.SubElement(desl, "pensAlim").text = str(data.get("pensAlim", 0))
-        ET.SubElement(desl, "percAliment").text = str(data.get("percAliment", 0))
-        ET.SubElement(desl, "vrAlim").text = str(data.get("vrAlim", 0))
+        desl = SubElement(evt, "infoDeslig")
+        SubElement(desl, "mtvDeslig").text = data["mtvDeslig"]
+        SubElement(desl, "dtDeslig").text = data["dtDesligamento"]
+        SubElement(desl, "indPagtoAPI").text = "S" if data.get("indPagtoAPI", True) else "N"
+        SubElement(desl, "dtProjFimAPI").text = data.get("dtProjFimAPI", data["dtDesligamento"])
+        SubElement(desl, "pensAlim").text = str(data.get("pensAlim", 0))
+        SubElement(desl, "percAliment").text = str(data.get("percAliment", 0))
+        SubElement(desl, "vrAlim").text = str(data.get("vrAlim", 0))
 
         return self._prettify(root)
 
-    def build_s2220_monitoramento_saude(self, data: Dict[str, Any]) -> str:
+    def build_s2220_monitoramento_saude(self, data: dict[str, Any]) -> str:
         """Constroi XML do evento S-2220 (Monitoramento da Saude)."""
         event_id = self.build_event_id("S-2220", data["employer_cnpj"])
 
-        root = ET.Element("eSocial", xmlns=self.NAMESPACE)
-        evt = ET.SubElement(root, "evtMonit", Id=event_id)
+        root = Element("eSocial", xmlns=self.NAMESPACE)
+        evt = SubElement(root, "evtMonit", Id=event_id)
 
         # ideEvento
-        ide = ET.SubElement(evt, "ideEvento")
-        ET.SubElement(ide, "indRetif").text = str(data.get("indRetif", 1))
-        ET.SubElement(ide, "tpAmb").text = self.environment.value
-        ET.SubElement(ide, "procEmi").text = "1"
-        ET.SubElement(ide, "verProc").text = "CONECTA_PRO_1.0"
+        ide = SubElement(evt, "ideEvento")
+        SubElement(ide, "indRetif").text = str(data.get("indRetif", 1))
+        SubElement(ide, "tpAmb").text = self.environment.value
+        SubElement(ide, "procEmi").text = "1"
+        SubElement(ide, "verProc").text = "CONECTA_PRO_1.0"
 
         # ideEmpregador
-        emp = ET.SubElement(evt, "ideEmpregador")
-        ET.SubElement(emp, "tpInsc").text = "1"
-        ET.SubElement(emp, "nrInsc").text = data["employer_cnpj"][:8]
+        emp = SubElement(evt, "ideEmpregador")
+        SubElement(emp, "tpInsc").text = "1"
+        SubElement(emp, "nrInsc").text = data["employer_cnpj"][:8]
 
         # ideVinculo
-        vinc = ET.SubElement(evt, "ideVinculo")
-        ET.SubElement(vinc, "cpfTrab").text = data["cpf"]
-        ET.SubElement(vinc, "matricula").text = data["matricula"]
+        vinc = SubElement(evt, "ideVinculo")
+        SubElement(vinc, "cpfTrab").text = data["cpf"]
+        SubElement(vinc, "matricula").text = data["matricula"]
 
         # exMedOcup
-        exmed = ET.SubElement(evt, "exMedOcup")
-        ET.SubElement(exmed, "tpExameOcup").text = str(data["tpExameOcup"])
+        exmed = SubElement(evt, "exMedOcup")
+        SubElement(exmed, "tpExameOcup").text = str(data["tpExameOcup"])
 
         # aso
-        aso = ET.SubElement(exmed, "aso")
-        ET.SubElement(aso, "dtAso").text = data["dtAso"]
-        ET.SubElement(aso, "resAso").text = str(data["resAso"])
+        aso = SubElement(exmed, "aso")
+        SubElement(aso, "dtAso").text = data["dtAso"]
+        SubElement(aso, "resAso").text = str(data["resAso"])
 
         # exame
         for exame in data.get("exames", []):
-            exam = ET.SubElement(aso, "exame")
-            ET.SubElement(exam, "dtExm").text = exame["dtExm"]
-            ET.SubElement(exam, "procRealizado").text = exame["procRealizado"]
-            ET.SubElement(exam, "obsProc").text = exame.get("obsProc", "")
+            exam = SubElement(aso, "exame")
+            SubElement(exam, "dtExm").text = exame["dtExm"]
+            SubElement(exam, "procRealizado").text = exame["procRealizado"]
+            SubElement(exam, "obsProc").text = exame.get("obsProc", "")
 
         # medico
-        med = ET.SubElement(aso, "medico")
-        ET.SubElement(med, "nmMed").text = data["nmMed"]
-        ET.SubElement(med, "nrCRM").text = data["nrCRM"]
-        ET.SubElement(med, "ufCRM").text = data["ufCRM"]
+        med = SubElement(aso, "medico")
+        SubElement(med, "nmMed").text = data["nmMed"]
+        SubElement(med, "nrCRM").text = data["nrCRM"]
+        SubElement(med, "ufCRM").text = data["ufCRM"]
 
         return self._prettify(root)
 
-    def _prettify(self, elem: ET.Element) -> str:
+    def _prettify(self, elem: Element) -> str:
         """Formata XML com identacao."""
-        rough_string = ET.tostring(elem, encoding='unicode')
-        reparsed = minidom.parseString(rough_string)
+        rough_string = ET.tostring(elem, encoding="unicode")
+        reparsed = minidom.parseString(rough_string)  # noqa: S318 - Apenas formata XML gerado internamente
         return reparsed.toprettyxml(indent="  ")
 
 
@@ -406,9 +411,9 @@ class ESocialTransmitter:
     def __init__(
         self,
         environment: Environment = Environment.PRODUCAO_RESTRITA,
-        certificate_path: Optional[str] = None,
-        certificate_password: Optional[str] = None,
-        certificate_data: Optional[bytes] = None
+        certificate_path: str | None = None,
+        certificate_password: str | None = None,
+        certificate_data: bytes | None = None,
     ):
         """
         Inicializa o transmissor.
@@ -423,11 +428,11 @@ class ESocialTransmitter:
         self.certificate_path = certificate_path
         self.certificate_password = certificate_password
         self.certificate_data = certificate_data
-        self._events: Dict[UUID, ESocialEvent] = {}
+        self._events: dict[UUID, ESocialEvent] = {}
         self._xml_builder = XMLBuilder(environment)
-        self._certificate_info: Optional[CertificateInfo] = None
-        self._certificate_manager: Optional[CertificateManager] = None
-        self._xml_signer: Optional[ESocialXMLSigner] = None
+        self._certificate_info: CertificateInfo | None = None
+        self._certificate_manager: CertificateManager | None = None
+        self._xml_signer: ESocialXMLSigner | None = None
         logger.info("ESocialTransmitter inicializado (ambiente: %s)", environment.value)
 
     async def load_certificate(self) -> CertificateInfo:
@@ -446,9 +451,7 @@ class ESocialTransmitter:
         try:
             # Carrega certificado usando CertificateManager
             self._certificate_manager = CertificateManager(
-                pfx_path=self.certificate_path,
-                pfx_data=self.certificate_data,
-                password=self.certificate_password
+                pfx_path=self.certificate_path, pfx_data=self.certificate_data, password=self.certificate_password
             )
 
             if not self._certificate_manager.load():
@@ -468,7 +471,7 @@ class ESocialTransmitter:
                 issuer_cn=cert_info.issuer_cn,
                 valid_from=cert_info.valid_from,
                 valid_until=cert_info.valid_until,
-                type="A1"
+                type="A1",
             )
 
             # Inicializa assinador XML com certificado
@@ -478,7 +481,7 @@ class ESocialTransmitter:
                 "Certificado A1 carregado: %s (CPF/CNPJ: %s, valido ate %s)",
                 self._certificate_info.subject_cn,
                 cert_info.cpf_cnpj or "N/A",
-                self._certificate_info.valid_until.date()
+                self._certificate_info.valid_until.date(),
             )
 
             return self._certificate_info
@@ -493,10 +496,10 @@ class ESocialTransmitter:
         self,
         event_type: EventType,
         employer_cnpj: str,
-        data: Dict[str, Any],
-        employee_cpf: Optional[str] = None,
-        reference_id: Optional[str] = None,
-        reference_date: Optional[date] = None
+        data: dict[str, Any],
+        employee_cpf: str | None = None,
+        reference_id: str | None = None,
+        reference_date: date | None = None,
     ) -> ESocialEvent:
         """
         Cria evento eSocial.
@@ -529,19 +532,11 @@ class ESocialTransmitter:
 
         self._events[event.id] = event
 
-        logger.info(
-            "Evento criado: id=%s, type=%s, cnpj=%s",
-            event.id, event_type.value, employer_cnpj
-        )
+        logger.info("Evento criado: id=%s, type=%s, cnpj=%s", event.id, event_type.value, employer_cnpj)
 
         return event
 
-    async def _build_xml(
-        self,
-        event_type: EventType,
-        employer_cnpj: str,
-        data: Dict[str, Any]
-    ) -> str:
+    async def _build_xml(self, event_type: EventType, employer_cnpj: str, data: dict[str, Any]) -> str:
         """Constroi XML do evento."""
         data["employer_cnpj"] = employer_cnpj
 
@@ -554,7 +549,7 @@ class ESocialTransmitter:
         else:
             raise ESocialError(f"Tipo de evento nao implementado: {event_type.value}")
 
-    async def validate_event(self, event_id: UUID) -> Dict[str, Any]:
+    async def validate_event(self, event_id: UUID) -> dict[str, Any]:
         """
         Valida evento antes da transmissao.
 
@@ -586,10 +581,7 @@ class ESocialTransmitter:
         if self._certificate_info:
             days_until = self._certificate_info.days_until_expiry()
             if days_until < 30:
-                warnings.append({
-                    "code": "CERTIFICATE_EXPIRING",
-                    "message": f"Certificado vence em {days_until} dias"
-                })
+                warnings.append({"code": "CERTIFICATE_EXPIRING", "message": f"Certificado vence em {days_until} dias"})
 
         event.errors = errors
         event.warnings = warnings
@@ -633,6 +625,7 @@ class ESocialTransmitter:
         try:
             # Extrai ID do evento do XML para referencia
             import re
+
             id_match = re.search(r'Id="([^"]+)"', event.xml_content)
             if not id_match:
                 raise ESocialError("ID do evento nao encontrado no XML")
@@ -640,17 +633,11 @@ class ESocialTransmitter:
             event_xml_id = id_match.group(1)
 
             # Assina XML usando assinatura digital real
-            signed_xml = self._xml_signer.sign_event(
-                xml_content=event.xml_content,
-                event_id=event_xml_id
-            )
+            signed_xml = self._xml_signer.sign_event(xml_content=event.xml_content, event_id=event_xml_id)
 
             event.xml_signed = signed_xml
 
-            logger.info(
-                "Evento assinado com certificado A1: id=%s, event_xml_id=%s",
-                event_id, event_xml_id
-            )
+            logger.info("Evento assinado com certificado A1: id=%s, event_xml_id=%s", event_id, event_xml_id)
 
             return signed_xml
 
@@ -686,10 +673,7 @@ class ESocialTransmitter:
         protocol = f"PROT{datetime.utcnow().strftime('%Y%m%d%H%M%S')}{uuid4().hex[:6].upper()}"
         event.protocol = protocol
 
-        logger.info(
-            "Evento transmitido: id=%s, protocol=%s",
-            event_id, protocol
-        )
+        logger.info("Evento transmitido: id=%s, protocol=%s", event_id, protocol)
 
         # Simula processamento
         event.status = TransmissionStatus.PROCESSING
@@ -718,23 +702,20 @@ class ESocialTransmitter:
         event.processed_at = datetime.utcnow()
         event.receipt_number = f"REC{uuid4().hex[:12].upper()}"
 
-        logger.info(
-            "Evento aceito: id=%s, receipt=%s",
-            event_id, event.receipt_number
-        )
+        logger.info("Evento aceito: id=%s, receipt=%s", event_id, event.receipt_number)
 
         return event
 
-    async def get_event(self, event_id: UUID) -> Optional[ESocialEvent]:
+    async def get_event(self, event_id: UUID) -> ESocialEvent | None:
         """Recupera evento por ID."""
         return self._events.get(event_id)
 
     async def list_events(
         self,
-        status: Optional[TransmissionStatus] = None,
-        event_type: Optional[EventType] = None,
-        employer_cnpj: Optional[str] = None
-    ) -> List[ESocialEvent]:
+        status: TransmissionStatus | None = None,
+        event_type: EventType | None = None,
+        employer_cnpj: str | None = None,
+    ) -> list[ESocialEvent]:
         """Lista eventos com filtros."""
         events = list(self._events.values())
 
@@ -747,11 +728,11 @@ class ESocialTransmitter:
 
         return sorted(events, key=lambda x: x.created_at, reverse=True)
 
-    async def get_pending_events(self) -> List[ESocialEvent]:
+    async def get_pending_events(self) -> list[ESocialEvent]:
         """Lista eventos pendentes de transmissao."""
         return await self.list_events(status=TransmissionStatus.PENDING)
 
-    async def batch_transmit(self, event_ids: List[UUID]) -> Dict[str, Any]:
+    async def batch_transmit(self, event_ids: list[UUID]) -> dict[str, Any]:
         """
         Transmite lote de eventos.
 
@@ -772,44 +753,42 @@ class ESocialTransmitter:
             try:
                 event = await self.transmit(event_id)
                 results["success"] += 1
-                results["events"].append({
-                    "id": str(event_id),
-                    "status": event.status.value,
-                    "protocol": event.protocol,
-                })
+                results["events"].append(
+                    {
+                        "id": str(event_id),
+                        "status": event.status.value,
+                        "protocol": event.protocol,
+                    }
+                )
             except ESocialError as e:
                 results["failed"] += 1
-                results["events"].append({
-                    "id": str(event_id),
-                    "status": "error",
-                    "error": str(e),
-                })
+                results["events"].append(
+                    {
+                        "id": str(event_id),
+                        "status": "error",
+                        "error": str(e),
+                    }
+                )
 
-        logger.info(
-            "Lote transmitido: %d/%d sucesso",
-            results["success"], results["total"]
-        )
+        logger.info("Lote transmitido: %d/%d sucesso", results["success"], results["total"])
 
         return results
 
-    async def get_transmission_summary(self) -> Dict[str, Any]:
+    async def get_transmission_summary(self) -> dict[str, Any]:
         """Gera resumo de transmissoes."""
         events = list(self._events.values())
 
         return {
             "generated_at": datetime.utcnow().isoformat(),
             "total_events": len(events),
-            "by_status": {
-                status.value: sum(1 for e in events if e.status == status)
-                for status in TransmissionStatus
-            },
+            "by_status": {status.value: sum(1 for e in events if e.status == status) for status in TransmissionStatus},
             "by_type": {},
             "pending_count": len(await self.get_pending_events()),
         }
 
 
 # Singleton
-_esocial_transmitter: Optional[ESocialTransmitter] = None
+_esocial_transmitter: ESocialTransmitter | None = None
 
 
 def get_esocial_transmitter() -> ESocialTransmitter:
@@ -822,9 +801,9 @@ def get_esocial_transmitter() -> ESocialTransmitter:
 
 def init_esocial_transmitter(
     environment: Environment = Environment.PRODUCAO_RESTRITA,
-    certificate_path: Optional[str] = None,
-    certificate_password: Optional[str] = None,
-    certificate_data: Optional[bytes] = None
+    certificate_path: str | None = None,
+    certificate_password: str | None = None,
+    certificate_data: bytes | None = None,
 ) -> ESocialTransmitter:
     """
     Inicializa o ESocialTransmitter singleton.
@@ -843,6 +822,6 @@ def init_esocial_transmitter(
         environment=environment,
         certificate_path=certificate_path,
         certificate_password=certificate_password,
-        certificate_data=certificate_data
+        certificate_data=certificate_data,
     )
     return _esocial_transmitter

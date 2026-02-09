@@ -12,39 +12,39 @@ Funcionalidades:
 - Compliance Lei 14.133/2021
 """
 
+from modules.bidding.controllers import (
+    certificate_router,
+    contract_router,
+    document_router,
+    proposal_router,
+    tender_router,
+)
 from modules.bidding.models import (
+    BiddingProposal,
+    BiddingProposalItem,
+    Certificate,
+    CertificateStatus,
+    CertificateType,
+    CompanyDocument,
+    ContractStatus,
+    DocumentStatus,
+    DocumentType,
+    Measurement,
+    MeasurementStatus,
+    ProposalStatus,
+    PublicContract,
     Tender,
     TenderDocument,
     TenderStatus,
-    CompanyDocument,
-    DocumentType,
-    DocumentStatus,
-    BiddingProposal,
-    ProposalStatus,
-    BiddingProposalItem,
-    PublicContract,
-    ContractStatus,
-    Measurement,
-    MeasurementStatus,
-    Certificate,
-    CertificateType,
-    CertificateStatus,
-)
-from modules.bidding.controllers import (
-    tender_router,
-    document_router,
-    proposal_router,
-    contract_router,
-    certificate_router,
 )
 from modules.bidding.services import (
-    TenderService,
-    DocumentService,
-    ProposalService,
-    ContractService,
     CertificateService,
+    ContractService,
+    DocumentService,
     PNCPService,
     # BiddingAIService,  # Removido temporariamente (deps: spacy, selenium)
+    ProposalService,
+    TenderService,
 )
 
 __all__ = [

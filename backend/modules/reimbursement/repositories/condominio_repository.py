@@ -4,12 +4,10 @@ Repository para operações de condomínios/tenants.
 Usado para buscar condomínio ativo quando necessário.
 """
 
-from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import DeclarativeBase
 
 from core.logging import logger
 
@@ -30,7 +28,7 @@ class CondominioRepository:
         """
         self.db = db
 
-    async def get_first_active_condominio(self) -> Optional[UUID]:
+    async def get_first_active_condominio(self) -> UUID | None:
         """
         Busca primeiro condomínio ativo disponível.
 
@@ -54,8 +52,8 @@ class CondominioRepository:
 
             # Verificar se tabela existe
             result = await self.db.execute(
-                select(Base.metadata.tables.get('condominios').c.id)
-                .where(Base.metadata.tables.get('condominios').c.ativo == True)  # noqa: E712
+                select(Base.metadata.tables.get("condominios").c.id)
+                .where(Base.metadata.tables.get("condominios").c.ativo == True)  # noqa: E712
                 .limit(1)
             )
             row = result.first()
@@ -67,10 +65,7 @@ class CondominioRepository:
 
         # Se não encontrou, tenta tabela tenants
         try:
-            result = await self.db.execute(
-                select(Base.metadata.tables.get('tenants').c.id)
-                .limit(1)
-            )
+            result = await self.db.execute(select(Base.metadata.tables.get("tenants").c.id).limit(1))
             row = result.first()
             if row:
                 logger.info("Condomínio encontrado na tabela tenants")
@@ -81,7 +76,7 @@ class CondominioRepository:
         logger.warning("Nenhum condomínio ativo encontrado no sistema")
         return None
 
-    async def get_condominio_by_id(self, condominio_id: UUID) -> Optional[dict]:
+    async def get_condominio_by_id(self, condominio_id: UUID) -> dict | None:
         """
         Busca condomínio por ID.
 
@@ -94,15 +89,14 @@ class CondominioRepository:
         from core.database import Base
 
         try:
-            table = Base.metadata.tables.get('condominios')
+            table = Base.metadata.tables.get("condominios")
             if table is not None:
                 result = await self.db.execute(
                     select(
                         table.c.id,
                         table.c.nome,
                         table.c.ativo,
-                    )
-                    .where(table.c.id == str(condominio_id))
+                    ).where(table.c.id == str(condominio_id))
                 )
                 row = result.first()
                 if row:

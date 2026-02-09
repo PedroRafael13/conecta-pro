@@ -1,36 +1,38 @@
 """Model de Documento para GED."""
 
-from datetime import datetime, date
-from enum import Enum
-from typing import Optional, List, TYPE_CHECKING
-from uuid import uuid4
 import hashlib
+from datetime import date, datetime
+from enum import StrEnum
+from typing import TYPE_CHECKING
+from uuid import uuid4
 
 from sqlalchemy import (
-    String,
     Boolean,
-    DateTime,
     Date,
-    Text,
+    DateTime,
+    Float,
     ForeignKey,
     Integer,
-    Float,
+    String,
+    Text,
+)
+from sqlalchemy import (
     Enum as SQLEnum,
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY
-from sqlalchemy.orm import relationship, Mapped, mapped_column
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from core.database import Base
 
 if TYPE_CHECKING:
-    from modules.ged.models.folder import Folder
-    from modules.ged.models.document_version import DocumentVersion
     from modules.ged.models.document_share import DocumentShare
-    from modules.ged.models.document_tag import DocumentTag
     from modules.ged.models.document_signature import DocumentSignature
+    from modules.ged.models.document_tag import DocumentTag
+    from modules.ged.models.document_version import DocumentVersion
+    from modules.ged.models.folder import Folder
 
 
-class DocumentType(str, Enum):
+class DocumentType(StrEnum):
     """Tipos de documento."""
 
     CONTRATO = "contrato"
@@ -55,7 +57,7 @@ class DocumentType(str, Enum):
     OUTRO = "outro"
 
 
-class DocumentStatus(str, Enum):
+class DocumentStatus(StrEnum):
     """Status do documento."""
 
     RASCUNHO = "rascunho"
@@ -68,7 +70,7 @@ class DocumentStatus(str, Enum):
     EXCLUIDO = "excluido"
 
 
-class DocumentCategory(str, Enum):
+class DocumentCategory(StrEnum):
     """Categorias de documento."""
 
     ADMINISTRATIVO = "administrativo"
@@ -83,7 +85,7 @@ class DocumentCategory(str, Enum):
     OUTRO = "outro"
 
 
-class DocumentConfidentiality(str, Enum):
+class DocumentConfidentiality(StrEnum):
     """Níveis de confidencialidade."""
 
     PUBLICO = "publico"
@@ -93,7 +95,7 @@ class DocumentConfidentiality(str, Enum):
     SECRETO = "secreto"
 
 
-class FileType(str, Enum):
+class FileType(StrEnum):
     """Tipos de arquivo."""
 
     PDF = "pdf"
@@ -128,12 +130,10 @@ class Document(Base):
     __tablename__ = "ged_documents"
 
     # Identificação
-    id: Mapped[str] = mapped_column(
-        UUID(as_uuid=False), primary_key=True, default=lambda: str(uuid4())
-    )
+    id: Mapped[str] = mapped_column(UUID(as_uuid=False), primary_key=True, default=lambda: str(uuid4()))
     code: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
-    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Pasta
     folder_id: Mapped[str] = mapped_column(
@@ -142,28 +142,24 @@ class Document(Base):
 
     # Classificação
     document_type: Mapped[DocumentType] = mapped_column(
-        SQLEnum(DocumentType, native_enum=False, create_constraint=False),
-        default=DocumentType.OUTRO
+        SQLEnum(DocumentType, native_enum=False, create_constraint=False), default=DocumentType.OUTRO
     )
     category: Mapped[DocumentCategory] = mapped_column(
-        SQLEnum(DocumentCategory, native_enum=False, create_constraint=False),
-        default=DocumentCategory.OUTRO
+        SQLEnum(DocumentCategory, native_enum=False, create_constraint=False), default=DocumentCategory.OUTRO
     )
     status: Mapped[DocumentStatus] = mapped_column(
-        SQLEnum(DocumentStatus, native_enum=False, create_constraint=False),
-        default=DocumentStatus.RASCUNHO
+        SQLEnum(DocumentStatus, native_enum=False, create_constraint=False), default=DocumentStatus.RASCUNHO
     )
     confidentiality: Mapped[DocumentConfidentiality] = mapped_column(
         SQLEnum(DocumentConfidentiality, native_enum=False, create_constraint=False),
-        default=DocumentConfidentiality.INTERNO
+        default=DocumentConfidentiality.INTERNO,
     )
 
     # Arquivo
     file_name: Mapped[str] = mapped_column(String(255), nullable=False)
     file_extension: Mapped[str] = mapped_column(String(20), nullable=False)
     file_type: Mapped[FileType] = mapped_column(
-        SQLEnum(FileType, native_enum=False, create_constraint=False),
-        default=FileType.OUTRO
+        SQLEnum(FileType, native_enum=False, create_constraint=False), default=FileType.OUTRO
     )
     file_path: Mapped[str] = mapped_column(String(1000), nullable=False)
     file_size_bytes: Mapped[int] = mapped_column(Integer, nullable=False)
@@ -171,8 +167,8 @@ class Document(Base):
     checksum: Mapped[str] = mapped_column(String(64), nullable=False)  # SHA-256
 
     # Thumbnail (para imagens e PDFs)
-    thumbnail_path: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)
-    preview_path: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)
+    thumbnail_path: Mapped[str | None] = mapped_column(String(1000), nullable=True)
+    preview_path: Mapped[str | None] = mapped_column(String(1000), nullable=True)
 
     # Versionamento
     current_version: Mapped[int] = mapped_column(Integer, default=1)
@@ -180,107 +176,83 @@ class Document(Base):
     is_latest: Mapped[bool] = mapped_column(Boolean, default=True)
 
     # Vínculo com entidades
-    condominium_id: Mapped[Optional[str]] = mapped_column(
-        UUID(as_uuid=False), nullable=True, index=True
-    )
-    contract_id: Mapped[Optional[str]] = mapped_column(
-        UUID(as_uuid=False), nullable=True
-    )
-    employee_id: Mapped[Optional[str]] = mapped_column(
-        UUID(as_uuid=False), nullable=True
-    )
-    client_id: Mapped[Optional[str]] = mapped_column(UUID(as_uuid=False), nullable=True)
-    resident_id: Mapped[Optional[str]] = mapped_column(
-        UUID(as_uuid=False), nullable=True
-    )
-    occurrence_id: Mapped[Optional[str]] = mapped_column(
-        UUID(as_uuid=False), nullable=True
-    )
+    condominium_id: Mapped[str | None] = mapped_column(UUID(as_uuid=False), nullable=True, index=True)
+    contract_id: Mapped[str | None] = mapped_column(UUID(as_uuid=False), nullable=True)
+    employee_id: Mapped[str | None] = mapped_column(UUID(as_uuid=False), nullable=True)
+    client_id: Mapped[str | None] = mapped_column(UUID(as_uuid=False), nullable=True)
+    resident_id: Mapped[str | None] = mapped_column(UUID(as_uuid=False), nullable=True)
+    occurrence_id: Mapped[str | None] = mapped_column(UUID(as_uuid=False), nullable=True)
 
     # Proprietário e permissões
     owner_id: Mapped[str] = mapped_column(UUID(as_uuid=False), nullable=False)
     is_public: Mapped[bool] = mapped_column(Boolean, default=False)
     inherit_folder_permissions: Mapped[bool] = mapped_column(Boolean, default=True)
-    permissions: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    permissions: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 
     # Validade
-    valid_from: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
-    valid_until: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    valid_from: Mapped[date | None] = mapped_column(Date, nullable=True)
+    valid_until: Mapped[date | None] = mapped_column(Date, nullable=True)
     is_perpetual: Mapped[bool] = mapped_column(Boolean, default=False)
 
     # Aprovação
     requires_approval: Mapped[bool] = mapped_column(Boolean, default=False)
-    approved_by: Mapped[Optional[str]] = mapped_column(
-        UUID(as_uuid=False), nullable=True
-    )
-    approved_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    rejection_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    approved_by: Mapped[str | None] = mapped_column(UUID(as_uuid=False), nullable=True)
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    rejection_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Assinatura digital
     is_signed: Mapped[bool] = mapped_column(Boolean, default=False)
     signature_count: Mapped[int] = mapped_column(Integer, default=0)
     requires_signature: Mapped[bool] = mapped_column(Boolean, default=False)
-    signature_deadline: Mapped[Optional[datetime]] = mapped_column(
-        DateTime, nullable=True
-    )
+    signature_deadline: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     # OCR e Indexação
     is_ocr_processed: Mapped[bool] = mapped_column(Boolean, default=False)
-    ocr_text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    ocr_confidence: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    ocr_processed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    ocr_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    ocr_confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
+    ocr_processed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     is_indexed: Mapped[bool] = mapped_column(Boolean, default=False)
-    indexed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    search_keywords: Mapped[Optional[List[str]]] = mapped_column(
-        ARRAY(String), nullable=True
-    )
+    indexed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    search_keywords: Mapped[list[str] | None] = mapped_column(ARRAY(String), nullable=True)
 
     # Metadados
-    extra_metadata: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
-    custom_fields: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
-    external_reference: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    extra_metadata: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    custom_fields: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    external_reference: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
     # Estatísticas
     view_count: Mapped[int] = mapped_column(Integer, default=0)
     download_count: Mapped[int] = mapped_column(Integer, default=0)
     share_count: Mapped[int] = mapped_column(Integer, default=0)
-    last_viewed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    last_downloaded_at: Mapped[Optional[datetime]] = mapped_column(
-        DateTime, nullable=True
-    )
+    last_viewed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    last_downloaded_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
-    published_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    archived_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    published_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     # Auditoria
     created_by: Mapped[str] = mapped_column(UUID(as_uuid=False), nullable=False)
-    updated_by: Mapped[Optional[str]] = mapped_column(
-        UUID(as_uuid=False), nullable=True
-    )
-    archived_by: Mapped[Optional[str]] = mapped_column(
-        UUID(as_uuid=False), nullable=True
-    )
+    updated_by: Mapped[str | None] = mapped_column(UUID(as_uuid=False), nullable=True)
+    archived_by: Mapped[str | None] = mapped_column(UUID(as_uuid=False), nullable=True)
 
     # Relacionamentos
     folder: Mapped["Folder"] = relationship("Folder", back_populates="documents")
-    versions: Mapped[List["DocumentVersion"]] = relationship(
+    versions: Mapped[list["DocumentVersion"]] = relationship(
         "DocumentVersion", back_populates="document", cascade="all, delete-orphan"
     )
-    shares: Mapped[List["DocumentShare"]] = relationship(
+    shares: Mapped[list["DocumentShare"]] = relationship(
         "DocumentShare", back_populates="document", cascade="all, delete-orphan"
     )
-    tags: Mapped[List["DocumentTag"]] = relationship(
+    tags: Mapped[list["DocumentTag"]] = relationship(
         "DocumentTag",
         secondary="ged_document_tag_associations",
         back_populates="documents",
     )
-    signatures: Mapped[List["DocumentSignature"]] = relationship(
+    signatures: Mapped[list["DocumentSignature"]] = relationship(
         "DocumentSignature", back_populates="document", cascade="all, delete-orphan"
     )
 
@@ -337,7 +309,7 @@ class Document(Base):
         return round(self.file_size_bytes / 1024, 2)
 
     @property
-    def days_until_expiry(self) -> Optional[int]:
+    def days_until_expiry(self) -> int | None:
         """Retorna dias até expiração."""
         if self.is_perpetual or not self.valid_until:
             return None
@@ -414,7 +386,7 @@ class Document(Base):
         self.is_ocr_processed = True
         self.ocr_processed_at = datetime.utcnow()
 
-    def mark_as_indexed(self, keywords: List[str] = None) -> None:
+    def mark_as_indexed(self, keywords: list[str] = None) -> None:
         """Marca como indexado."""
         self.is_indexed = True
         self.indexed_at = datetime.utcnow()

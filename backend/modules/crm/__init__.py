@@ -25,79 +25,79 @@ from fastapi import APIRouter
 
 # Importa routers dos controllers
 from .controllers import (
+    commission_router,
+    contract_router,
+    dashboard_router,
     lead_router,
     opportunity_router,
     proposal_router,
-    contract_router,
-    commission_router,
-    dashboard_router,
 )
 
 # Importa models principais
 from .models import (
-    # Lead
-    Lead,
-    LeadStatus,
-    LeadSource,
-    # Opportunity
-    Opportunity,
-    OpportunityStage,
-    OpportunityPriority,
-    LossReason,
-    # Proposal
-    Proposal,
-    ProposalItem,
-    ProposalTemplate,
-    ProposalApproval,
-    ProposalStatus,
-    ProposalType,
-    DiscountType,
+    AddendumType,
+    AdjustmentIndex,
     ApprovalAction,
     # Commission
     Commission,
-    CommissionRule,
     CommissionPayment,
-    CommissionSummary,
-    SellerCommissionRule,
-    CommissionType,
-    CommissionTrigger,
+    CommissionRule,
     CommissionStatus,
-    PaymentMethod,
+    CommissionSummary,
+    CommissionTrigger,
+    CommissionType,
     # Contract
     Contract,
-    ContractItem,
-    ContractTemplate,
     ContractAddendum,
+    ContractItem,
     ContractSLAReport,
-    ContractType,
     ContractStatus,
-    AdjustmentIndex,
-    AddendumType,
+    ContractTemplate,
+    ContractType,
+    DiscountType,
+    # Lead
+    Lead,
+    LeadSource,
+    LeadStatus,
+    LossReason,
+    # Opportunity
+    Opportunity,
+    OpportunityPriority,
+    OpportunityStage,
+    PaymentMethod,
+    # Proposal
+    Proposal,
+    ProposalApproval,
+    ProposalItem,
+    ProposalStatus,
+    ProposalTemplate,
+    ProposalType,
+    SellerCommissionRule,
     ServiceType,
-)
-
-# Importa services principais
-from .services import (
-    LeadService,
-    LeadScoringEngine,
-    lead_service,
-    PipelineService,
-    pipeline_service,
-    CommissionService,
-    commission_service,
-    DashboardService,
-    dashboard_service,
-    ContractService,
-    contract_service,
 )
 
 # Importa repositories
 from .repositories import (
+    CommissionRepository,
+    ContractRepository,
     LeadRepository,
     OpportunityRepository,
     ProposalRepository,
-    CommissionRepository,
-    ContractRepository,
+)
+
+# Importa services principais
+from .services import (
+    CommissionService,
+    ContractService,
+    DashboardService,
+    LeadScoringEngine,
+    LeadService,
+    PipelineService,
+    commission_service,
+    contract_service,
+    dashboard_service,
+    lead_service,
+    pipeline_service,
 )
 
 # Cria router principal que agrega todos os sub-routers

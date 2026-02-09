@@ -12,24 +12,24 @@ Nota: Os ActionTypes CREATE_DIARIST e SCHEDULE_DIARIST devem ser adicionados
 ao enum ActionType em action_types.py para integracao completa.
 Enquanto isso, este executor usa comparacao por string value.
 """
+
 import logging
 import re
-from datetime import datetime, date, time
+from datetime import date, datetime, time, timedelta
 from decimal import Decimal
-from uuid import uuid4, UUID
-from typing import Optional
+from uuid import UUID, uuid4
 
-from modules.operacional.diaristas.repositories.diarist_repository import DiaristRepository
 from modules.operacional.diaristas.models.diarist import (
     Diarist,
-    DiaristSchedule,
     DiaristEvaluation,
     DiaristPayment,
+    DiaristSchedule,
     DiaristStatus,
-    ScheduleStatus,
     PaymentStatus,
 )
-from ..action_schemas import ActionRequest, ActionPreview, ActionResult
+from modules.operacional.diaristas.repositories.diarist_repository import DiaristRepository
+
+from ..action_schemas import ActionPreview, ActionRequest, ActionResult
 from ..action_types import ActionStatus
 from .base_executor import BaseActionExecutor
 
@@ -179,10 +179,11 @@ class DiaristActionExecutor(BaseActionExecutor):
         user_has_perm = False
         if user_role:
             try:
-                from modules.operacional.permissions import has_permission, Permission
+                from modules.operacional.permissions import Permission, has_permission
+
                 user_has_perm = has_permission(user_role, Permission.ALLOCATIONS_CREATE)
             except Exception:
-                pass
+                logger.debug(f"Erro ao verificar permissao {required_perm} para role {user_role}")
         logger.info(f"Permissao {required_perm}: role={user_role}, has_perm={user_has_perm}")
 
         return ActionPreview(
@@ -226,11 +227,13 @@ class DiaristActionExecutor(BaseActionExecutor):
             title = "Escalar Diarista"
             description = "Diarista nao encontrada"
         else:
-            affected_entities.append({
-                "type": "diarist",
-                "id": str(diarista.id),
-                "name": diarista.nome,
-            })
+            affected_entities.append(
+                {
+                    "type": "diarist",
+                    "id": str(diarista.id),
+                    "name": diarista.nome,
+                }
+            )
             changes_summary.append(f"Diarista: {diarista.nome}")
             changes_summary.append(f"CPF: {diarista.cpf}")
             changes_summary.append(f"Valor diaria: R$ {float(diarista.valor_diaria or 0):,.2f}")
@@ -253,7 +256,9 @@ class DiaristActionExecutor(BaseActionExecutor):
                     data_obj = date.fromisoformat(data_trabalho) if isinstance(data_trabalho, str) else data_trabalho
                     disponivel = await repo.check_availability(UUID(diarist_id), data_obj)
                     if not disponivel:
-                        warnings.append("Diarista nao disponivel nesta data (ja possui agendamento ou dia indisponivel)")
+                        warnings.append(
+                            "Diarista nao disponivel nesta data (ja possui agendamento ou dia indisponivel)"
+                        )
                 except Exception as e:
                     logger.warning(f"Erro ao verificar disponibilidade: {e}")
 
@@ -272,10 +277,11 @@ class DiaristActionExecutor(BaseActionExecutor):
         user_has_perm = False
         if user_role:
             try:
-                from modules.operacional.permissions import has_permission, Permission
+                from modules.operacional.permissions import Permission, has_permission
+
                 user_has_perm = has_permission(user_role, Permission.ALLOCATIONS_CREATE)
             except Exception:
-                pass
+                logger.debug(f"Erro ao verificar permissao {required_perm} para role {user_role}")
         logger.info(f"Permissao {required_perm}: role={user_role}, has_perm={user_has_perm}")
 
         return ActionPreview(
@@ -434,9 +440,7 @@ class DiaristActionExecutor(BaseActionExecutor):
         )
 
         created = await repo.create_schedule(schedule)
-        logger.info(
-            f"Diarista escalada via Bartolo: {diarista.nome} em {data_trabalho} - schedule {created.id}"
-        )
+        logger.info(f"Diarista escalada via Bartolo: {diarista.nome} em {data_trabalho} - schedule {created.id}")
 
         return ActionResult(
             action_id=action_id,
@@ -490,11 +494,13 @@ class DiaristActionExecutor(BaseActionExecutor):
             title = "Avaliar Diarista"
             description = "Diarista nao encontrada"
         else:
-            affected_entities.append({
-                "type": "diarist",
-                "id": str(diarista.id),
-                "name": diarista.nome,
-            })
+            affected_entities.append(
+                {
+                    "type": "diarist",
+                    "id": str(diarista.id),
+                    "name": diarista.nome,
+                }
+            )
             changes_summary.append(f"Diarista: {diarista.nome}")
             title = f"Avaliar Diarista - {diarista.nome}"
             description = f"Registrar avaliacao para {diarista.nome}"
@@ -506,7 +512,7 @@ class DiaristActionExecutor(BaseActionExecutor):
                 if existente:
                     warnings.append(f"Ja existe avaliacao para este agendamento (nota: {existente.nota_geral}/5)")
             except Exception:
-                pass
+                logger.debug(f"Erro ao verificar avaliacao duplicada para agendamento {schedule_id}")
             changes_summary.append(f"Agendamento: {schedule_id}")
 
         # Notas
@@ -541,10 +547,11 @@ class DiaristActionExecutor(BaseActionExecutor):
         user_has_perm = False
         if user_role:
             try:
-                from modules.operacional.permissions import has_permission, Permission
+                from modules.operacional.permissions import Permission, has_permission
+
                 user_has_perm = has_permission(user_role, Permission.ALLOCATIONS_CREATE)
             except Exception:
-                pass
+                logger.debug(f"Erro ao verificar permissao {required_perm} para role {user_role}")
 
         return ActionPreview(
             action_id=str(uuid4()),
@@ -599,7 +606,7 @@ class DiaristActionExecutor(BaseActionExecutor):
             except ValueError:
                 raise
             except Exception:
-                pass
+                logger.debug(f"Erro ao verificar avaliacao duplicada para agendamento {schedule_id}")
 
         # Validar notas opcionais
         def _parse_nota(valor):
@@ -682,20 +689,28 @@ class DiaristActionExecutor(BaseActionExecutor):
             description = "Pagamento nao encontrado"
         else:
             nome = pagamento.diarist.nome if pagamento.diarist else "N/A"
-            status_str = pagamento.status if isinstance(pagamento.status, str) else (pagamento.status.value if hasattr(pagamento.status, 'value') else str(pagamento.status))
+            status_str = (
+                pagamento.status
+                if isinstance(pagamento.status, str)
+                else (pagamento.status.value if hasattr(pagamento.status, "value") else str(pagamento.status))
+            )
 
             if status_str != "PENDENTE":
                 warnings.append(f"Pagamento nao esta PENDENTE (status: {status_str})")
 
-            affected_entities.append({
-                "type": "diarist_payment",
-                "id": str(pagamento.id),
-                "name": f"Pagamento {nome}",
-            })
+            affected_entities.append(
+                {
+                    "type": "diarist_payment",
+                    "id": str(pagamento.id),
+                    "name": f"Pagamento {nome}",
+                }
+            )
             changes_summary.append(f"Diarista: {nome}")
             changes_summary.append(f"Valor bruto: R$ {float(pagamento.valor_bruto or 0):,.2f}")
             changes_summary.append(f"Valor liquido: R$ {float(pagamento.valor_liquido or 0):,.2f}")
-            changes_summary.append(f"Referencia: {pagamento.data_referencia.strftime('%m/%Y') if pagamento.data_referencia else 'N/A'}")
+            changes_summary.append(
+                f"Referencia: {pagamento.data_referencia.strftime('%m/%Y') if pagamento.data_referencia else 'N/A'}"
+            )
             changes_summary.append(f"Status atual: {status_str} -> APROVADO")
 
             if pagamento.data_vencimento:
@@ -710,10 +725,11 @@ class DiaristActionExecutor(BaseActionExecutor):
         user_has_perm = False
         if user_role:
             try:
-                from modules.operacional.permissions import has_permission, Permission
+                from modules.operacional.permissions import Permission, has_permission
+
                 user_has_perm = has_permission(user_role, Permission.ALLOCATIONS_CREATE)
             except Exception:
-                pass
+                logger.debug(f"Erro ao verificar permissao {required_perm} para role {user_role}")
 
         return ActionPreview(
             action_id=str(uuid4()),
@@ -749,7 +765,11 @@ class DiaristActionExecutor(BaseActionExecutor):
         if not pagamento:
             raise ValueError(f"Pagamento {pagamento_id} nao encontrado")
 
-        status_str = pagamento.status if isinstance(pagamento.status, str) else (pagamento.status.value if hasattr(pagamento.status, 'value') else str(pagamento.status))
+        status_str = (
+            pagamento.status
+            if isinstance(pagamento.status, str)
+            else (pagamento.status.value if hasattr(pagamento.status, "value") else str(pagamento.status))
+        )
         if status_str != "PENDENTE":
             raise ValueError(f"Pagamento nao esta PENDENTE (status: {status_str})")
 
@@ -776,7 +796,7 @@ class DiaristActionExecutor(BaseActionExecutor):
                 "valor_bruto": float(pagamento.valor_bruto or 0),
                 "valor_liquido": float(pagamento.valor_liquido or 0),
                 "status": "APROVADO",
-                "referencia": pagamento.data_referencia.strftime('%m/%Y') if pagamento.data_referencia else None,
+                "referencia": pagamento.data_referencia.strftime("%m/%Y") if pagamento.data_referencia else None,
             },
             affected_entities=[
                 {"type": "diarist_payment", "id": str(pagamento.id)},
@@ -815,11 +835,13 @@ class DiaristActionExecutor(BaseActionExecutor):
             title = "Gerar Pagamento"
             description = "Diarista nao encontrada"
         else:
-            affected_entities.append({
-                "type": "diarist",
-                "id": str(diarista.id),
-                "name": diarista.nome,
-            })
+            affected_entities.append(
+                {
+                    "type": "diarist",
+                    "id": str(diarista.id),
+                    "name": diarista.nome,
+                }
+            )
             changes_summary.append(f"Diarista: {diarista.nome}")
             changes_summary.append(f"CPF: {diarista.cpf}")
             title = f"Gerar Pagamento - {diarista.nome}"
@@ -849,8 +871,9 @@ class DiaristActionExecutor(BaseActionExecutor):
                     data_fim=data_fim,
                 )
                 concluidos = [
-                    s for s in schedules
-                    if (s.status.value if hasattr(s.status, 'value') else str(s.status)) == "CONCLUIDO"
+                    s
+                    for s in schedules
+                    if (s.status.value if hasattr(s.status, "value") else str(s.status)) == "CONCLUIDO"
                 ]
 
                 qtd = len(concluidos)
@@ -884,10 +907,11 @@ class DiaristActionExecutor(BaseActionExecutor):
         user_has_perm = False
         if user_role:
             try:
-                from modules.operacional.permissions import has_permission, Permission
+                from modules.operacional.permissions import Permission, has_permission
+
                 user_has_perm = has_permission(user_role, Permission.ALLOCATIONS_CREATE)
             except Exception:
-                pass
+                logger.debug(f"Erro ao verificar permissao {required_perm} para role {user_role}")
 
         return ActionPreview(
             action_id=str(uuid4()),
@@ -946,8 +970,7 @@ class DiaristActionExecutor(BaseActionExecutor):
             data_fim=data_fim,
         )
         concluidos = [
-            s for s in schedules
-            if (s.status.value if hasattr(s.status, 'value') else str(s.status)) == "CONCLUIDO"
+            s for s in schedules if (s.status.value if hasattr(s.status, "value") else str(s.status)) == "CONCLUIDO"
         ]
 
         qtd = len(concluidos)

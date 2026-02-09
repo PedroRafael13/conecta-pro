@@ -12,15 +12,12 @@ from fastapi import APIRouter, HTTPException, Path, Query, status
 
 from ..schemas.common import StandardResponse
 from ..schemas.nfse_manaus import (
-    EmitirNFSeRequest,
-    EmitirNFSeResponse,
-    ConsultarNFSeRpsRequest,
-    ConsultarNFSeResponse,
     CancelarNFSeRequest,
     CancelarNFSeResponse,
+    EmitirNFSeRequest,
+    EmitirNFSeResponse,
     SubstituirNFSeRequest,
     ValidarConexaoResponse,
-    LoteNFSeResponse,
 )
 from ..services.nfse_manaus_service import get_nfse_manaus_service
 

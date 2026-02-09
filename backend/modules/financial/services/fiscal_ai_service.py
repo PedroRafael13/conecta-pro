@@ -5,7 +5,7 @@
 import logging
 from datetime import date
 from decimal import Decimal
-from typing import Any, Dict, List
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -37,7 +37,7 @@ class FiscalAIService:
         condominio_id: UUID,
         data_inicio: date,
         data_fim: date,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Analisa periodo fiscal e retorna insights.
 
         Args:
@@ -68,9 +68,7 @@ class FiscalAIService:
 
         mes_atual = data_inicio
         while mes_atual <= data_fim:
-            nfses = await self.repo.get_nfses_competencia(
-                condominio_id, mes_atual.month, mes_atual.year
-            )
+            nfses = await self.repo.get_nfses_competencia(condominio_id, mes_atual.month, mes_atual.year)
             for nfse in nfses:
                 total_nfse += nfse.valor_servicos or Decimal("0")
                 total_retencoes += (
@@ -98,10 +96,7 @@ class FiscalAIService:
                 {
                     "tipo": "obrigacao_atrasada",
                     "severidade": "alta",
-                    "mensagem": (
-                        f"{obr.tipo} competencia "
-                        f"{obr.competencia_mes}/{obr.competencia_ano} atrasada"
-                    ),
+                    "mensagem": (f"{obr.tipo} competencia {obr.competencia_mes}/{obr.competencia_ano} atrasada"),
                     "dias_atraso": (date.today() - obr.data_vencimento).days,
                     "valor": float(obr.valor_devido or 0),
                 }
@@ -127,10 +122,7 @@ class FiscalAIService:
                 oportunidades.append(
                     {
                         "tipo": "liminar_inss",
-                        "mensagem": (
-                            f"Economia com liminar INSS no periodo: "
-                            f"R$ {float(economia_liminar):,.2f}"
-                        ),
+                        "mensagem": (f"Economia com liminar INSS no periodo: R$ {float(economia_liminar):,.2f}"),
                         "economia": float(economia_liminar),
                         "observacao": (
                             "A liminar reconhece que retencao de 11% de INSS "
@@ -148,17 +140,12 @@ class FiscalAIService:
         # Analisa SUFRAMA
         suframa_config = await self.repo.get_suframa_config(condominio_id)
         if suframa_config:
-            economia_zfm = await self.repo.get_economia_suframa_periodo(
-                condominio_id, data_inicio, data_fim
-            )
+            economia_zfm = await self.repo.get_economia_suframa_periodo(condominio_id, data_inicio, data_fim)
             if economia_zfm["total"] > 0:
                 oportunidades.append(
                     {
                         "tipo": "suframa",
-                        "mensagem": (
-                            f"Economia com beneficios SUFRAMA: "
-                            f"R$ {float(economia_zfm['total']):,.2f}"
-                        ),
+                        "mensagem": (f"Economia com beneficios SUFRAMA: R$ {float(economia_zfm['total']):,.2f}"),
                         "detalhes": {
                             "ipi": float(economia_zfm["ipi"]),
                             "icms": float(economia_zfm["icms"]),
@@ -201,8 +188,7 @@ class FiscalAIService:
         # Recomendacoes gerais
         if not suframa_config:
             recomendacoes.append(
-                "Empresa em Manaus sem SUFRAMA configurado. "
-                "Verificar se ha beneficios fiscais aplicaveis."
+                "Empresa em Manaus sem SUFRAMA configurado. Verificar se ha beneficios fiscais aplicaveis."
             )
 
         # Score de compliance
@@ -239,8 +225,8 @@ class FiscalAIService:
         condominio_id: UUID,
         receita_mensal_media: Decimal,
         tipo_servico: str = "vigilancia",
-        uf_operacao: str = "AM",
-    ) -> Dict[str, Any]:
+        _uf_operacao: str = "AM",
+    ) -> dict[str, Any]:
         """Sugere otimizacoes tributarias.
 
         Para servicos de vigilancia em Manaus (Simples Anexo III):
@@ -335,29 +321,21 @@ class FiscalAIService:
             )
         else:
             acoes.append(
-                "Avaliar obtencao de liminar para nao retencao de INSS. "
-                "Economia potencial de 11% sobre servicos."
+                "Avaliar obtencao de liminar para nao retencao de INSS. Economia potencial de 11% sobre servicos."
             )
 
         # SUFRAMA
         suframa = await self.repo.get_suframa_config(condominio_id)
         if suframa and suframa.is_vigente:
-            acoes.append(
-                "Aproveitar beneficios SUFRAMA em compras: "
-                "isencao IPI, reducao ICMS, suspensao PIS/COFINS."
-            )
+            acoes.append("Aproveitar beneficios SUFRAMA em compras: isencao IPI, reducao ICMS, suspensao PIS/COFINS.")
         else:
             acoes.append(
-                "Verificar elegibilidade para inscricao no SUFRAMA "
-                "e aproveitamento de beneficios da Zona Franca."
+                "Verificar elegibilidade para inscricao no SUFRAMA e aproveitamento de beneficios da Zona Franca."
             )
 
         # Fator R
         if receita_12_meses <= Decimal("4800000"):
-            acoes.append(
-                "Monitorar Fator R (folha/receita). "
-                "Se >= 28%, pode migrar para Anexo III com ISS incluso."
-            )
+            acoes.append("Monitorar Fator R (folha/receita). Se >= 28%, pode migrar para Anexo III com ISS incluso.")
 
         return {
             "regime_atual": "Simples Nacional - Anexo III",
@@ -372,7 +350,7 @@ class FiscalAIService:
         self,
         condominio_id: UUID,
         meses_projecao: int = 6,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Preve obrigacoes fiscais futuras.
 
         Args:
@@ -406,9 +384,7 @@ class FiscalAIService:
         receita_media = receita_media / 3
 
         # Busca receita 12 meses para calculo do DAS
-        receita_12_meses = await self.repo.get_receita_12_meses(
-            condominio_id, hoje.month, hoje.year
-        )
+        receita_12_meses = await self.repo.get_receita_12_meses(condominio_id, hoje.month, hoje.year)
 
         # Projeta cada mes
         for i in range(1, meses_projecao + 1):
@@ -514,7 +490,7 @@ class FiscalAIService:
         self,
         condominio_id: UUID,
         meses_analise: int = 6,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Detecta anomalias em dados fiscais.
 
         Verifica:
@@ -572,8 +548,7 @@ class FiscalAIService:
                             "tipo": "iss_divergente",
                             "severidade": "media",
                             "descricao": (
-                                f"ISS calculado ({float(nfse.iss_valor)}) diverge do "
-                                f"esperado ({float(iss_esperado)})"
+                                f"ISS calculado ({float(nfse.iss_valor)}) diverge do esperado ({float(iss_esperado)})"
                             ),
                             "competencia": f"{mes:02d}/{ano}",
                             "nfse_id": str(nfse.id),
@@ -606,7 +581,7 @@ class FiscalAIService:
     async def sugerir_economia(
         self,
         condominio_id: UUID,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Sugere acoes para economia tributaria.
 
         Baseado no contexto:
@@ -623,9 +598,7 @@ class FiscalAIService:
             if retencao.inss_liminar_ativa:
                 # Calcula economia potencial
                 hoje = date.today()
-                receita_12 = await self.repo.get_receita_12_meses(
-                    condominio_id, hoje.month, hoje.year
-                )
+                receita_12 = await self.repo.get_receita_12_meses(condominio_id, hoje.month, hoje.year)
                 economia_anual = receita_12 * Decimal("0.11")
 
                 sugestoes.append(
@@ -699,8 +672,7 @@ class FiscalAIService:
                     "tipo": "suframa",
                     "titulo": "Avaliar Inscricao no SUFRAMA",
                     "descricao": (
-                        "Empresas em Manaus podem se beneficiar da Zona Franca. "
-                        "Verificar elegibilidade para inscricao."
+                        "Empresas em Manaus podem se beneficiar da Zona Franca. Verificar elegibilidade para inscricao."
                     ),
                     "economia_potencial": None,
                     "acao": "Consultar contador sobre processo de inscricao.",
@@ -718,10 +690,7 @@ class FiscalAIService:
                     "Monitorar para evitar saltos de faixa."
                 ),
                 "economia_potencial": None,
-                "acao": (
-                    "Acompanhar RBT12 mensalmente. "
-                    "Considerar distribuicao de faturamento se proximo do limite."
-                ),
+                "acao": ("Acompanhar RBT12 mensalmente. Considerar distribuicao de faturamento se proximo do limite."),
                 "impacto": "medio",
             }
         )
@@ -732,7 +701,7 @@ class FiscalAIService:
         self,
         condominio_id: UUID,
         ano: int,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Calcula economia total obtida no ano.
 
         Soma:

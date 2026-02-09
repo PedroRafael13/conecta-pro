@@ -1,7 +1,6 @@
 """Schemas para MobileDevice."""
 
 from datetime import datetime
-from typing import Optional, List
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
@@ -9,21 +8,23 @@ from pydantic import BaseModel, Field, field_validator
 
 class MobileDeviceBase(BaseModel):
     """Schema base para dispositivo móvel."""
+
     device_name: str = Field(..., min_length=1, max_length=100)
     platform: str = Field(default="android")
-    os_version: Optional[str] = Field(None, max_length=50)
-    app_version: Optional[str] = Field(None, max_length=20)
-    model: Optional[str] = Field(None, max_length=100)
-    manufacturer: Optional[str] = Field(None, max_length=100)
+    os_version: str | None = Field(None, max_length=50)
+    app_version: str | None = Field(None, max_length=20)
+    model: str | None = Field(None, max_length=100)
+    manufacturer: str | None = Field(None, max_length=100)
 
 
 class MobileDeviceRegister(MobileDeviceBase):
     """Schema para registrar novo dispositivo."""
+
     device_uuid: str = Field(..., min_length=10, max_length=100)
-    push_token: Optional[str] = None
-    push_provider: Optional[str] = Field(None, pattern="^(fcm|apns)$")
+    push_token: str | None = None
+    push_provider: str | None = Field(None, pattern="^(fcm|apns)$")
     biometric_capability: str = Field(default="none")
-    device_info: Optional[dict] = Field(default_factory=dict)
+    device_info: dict | None = Field(default_factory=dict)
 
     @field_validator("platform")
     @classmethod
@@ -37,19 +38,21 @@ class MobileDeviceRegister(MobileDeviceBase):
 
 class MobileDeviceUpdate(BaseModel):
     """Schema para atualizar dispositivo."""
-    device_name: Optional[str] = Field(None, min_length=1, max_length=100)
-    push_token: Optional[str] = None
-    push_provider: Optional[str] = Field(None, pattern="^(fcm|apns)$")
-    os_version: Optional[str] = Field(None, max_length=50)
-    app_version: Optional[str] = Field(None, max_length=20)
-    biometric_enabled: Optional[bool] = None
-    location_permission: Optional[bool] = None
-    background_location: Optional[bool] = None
-    settings: Optional[dict] = None
+
+    device_name: str | None = Field(None, min_length=1, max_length=100)
+    push_token: str | None = None
+    push_provider: str | None = Field(None, pattern="^(fcm|apns)$")
+    os_version: str | None = Field(None, max_length=50)
+    app_version: str | None = Field(None, max_length=20)
+    biometric_enabled: bool | None = None
+    location_permission: bool | None = None
+    background_location: bool | None = None
+    settings: dict | None = None
 
 
 class MobileDeviceApprove(BaseModel):
     """Schema para aprovar dispositivo."""
+
     is_trusted: bool = Field(default=False)
     require_photo: bool = Field(default=False)
     require_biometric: bool = Field(default=False)
@@ -59,21 +62,23 @@ class MobileDeviceApprove(BaseModel):
 
 class MobileDeviceBlock(BaseModel):
     """Schema para bloquear dispositivo."""
+
     reason: str = Field(..., min_length=5, max_length=500)
 
 
 class MobileDeviceResponse(BaseModel):
     """Schema de resposta para dispositivo."""
+
     id: UUID
     employee_id: UUID
     condominio_id: UUID
     device_name: str
     device_uuid: str
     platform: str
-    os_version: Optional[str]
-    app_version: Optional[str]
-    model: Optional[str]
-    manufacturer: Optional[str]
+    os_version: str | None
+    app_version: str | None
+    model: str | None
+    manufacturer: str | None
     biometric_capability: str
     biometric_enabled: bool
     location_permission: bool
@@ -85,7 +90,7 @@ class MobileDeviceResponse(BaseModel):
     require_biometric: bool
     allow_offline_checkin: bool
     first_seen_at: datetime
-    last_seen_at: Optional[datetime]
+    last_seen_at: datetime | None
     is_active: bool
     created_at: datetime
 
@@ -97,7 +102,8 @@ class MobileDeviceResponse(BaseModel):
 
 class MobileDeviceList(BaseModel):
     """Schema de lista de dispositivos."""
-    items: List[MobileDeviceResponse]
+
+    items: list[MobileDeviceResponse]
     total: int
     page: int
     page_size: int
@@ -106,16 +112,18 @@ class MobileDeviceList(BaseModel):
 
 class MobileDeviceFilter(BaseModel):
     """Filtros para busca de dispositivos."""
-    employee_id: Optional[UUID] = None
-    condominio_id: Optional[UUID] = None
-    platform: Optional[str] = None
-    status: Optional[str] = None
-    is_trusted: Optional[bool] = None
-    is_active: Optional[bool] = None
+
+    employee_id: UUID | None = None
+    condominio_id: UUID | None = None
+    platform: str | None = None
+    status: str | None = None
+    is_trusted: bool | None = None
+    is_active: bool | None = None
 
 
 class MobileDeviceStats(BaseModel):
     """Estatísticas de dispositivos."""
+
     total_devices: int
     active_devices: int
     pending_approval: int
@@ -129,19 +137,21 @@ class MobileDeviceStats(BaseModel):
 
 class DeviceHeartbeat(BaseModel):
     """Schema para heartbeat do dispositivo."""
+
     app_version: str
-    battery_level: Optional[int] = Field(None, ge=0, le=100)
-    network_type: Optional[str] = None
-    latitude: Optional[float] = Field(None, ge=-90, le=90)
-    longitude: Optional[float] = Field(None, ge=-180, le=180)
-    accuracy_meters: Optional[float] = None
+    battery_level: int | None = Field(None, ge=0, le=100)
+    network_type: str | None = None
+    latitude: float | None = Field(None, ge=-90, le=90)
+    longitude: float | None = Field(None, ge=-180, le=180)
+    accuracy_meters: float | None = None
 
 
 class DeviceLocationUpdate(BaseModel):
     """Schema para atualização de localização."""
+
     latitude: float = Field(..., ge=-90, le=90)
     longitude: float = Field(..., ge=-180, le=180)
-    accuracy_meters: Optional[float] = Field(None, ge=0)
-    altitude: Optional[float] = None
-    speed: Optional[float] = None
-    heading: Optional[float] = None
+    accuracy_meters: float | None = Field(None, ge=0)
+    altitude: float | None = None
+    speed: float | None = None
+    heading: float | None = None

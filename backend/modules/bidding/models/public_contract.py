@@ -5,48 +5,47 @@ Gestao de contratos firmados a partir de licitacoes.
 """
 
 import uuid
-from datetime import datetime, date
+from datetime import date, datetime
 from decimal import Decimal
-from enum import Enum
-from typing import Optional, List
+from enum import StrEnum
 
-from sqlalchemy import (
-    Column, String, Text, Boolean, DateTime, Date,
-    Numeric, Integer, ForeignKey, Index
-)
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy import Boolean, Column, Date, DateTime, ForeignKey, Index, Integer, Numeric, String, Text
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 
 from core.models import Base
 
 
-class ContractStatus(str, Enum):
+class ContractStatus(StrEnum):
     """Status do contrato publico."""
-    DRAFT = "draft"                      # Rascunho/minuta
+
+    DRAFT = "draft"  # Rascunho/minuta
     PENDING_SIGNATURE = "pending_signature"  # Aguardando assinatura
-    ACTIVE = "active"                    # Vigente
-    SUSPENDED = "suspended"              # Suspenso
-    TERMINATED = "terminated"            # Rescindido
-    COMPLETED = "completed"              # Concluido
-    EXPIRED = "expired"                  # Expirado
+    ACTIVE = "active"  # Vigente
+    SUSPENDED = "suspended"  # Suspenso
+    TERMINATED = "terminated"  # Rescindido
+    COMPLETED = "completed"  # Concluido
+    EXPIRED = "expired"  # Expirado
 
 
-class AdjustmentIndex(str, Enum):
+class AdjustmentIndex(StrEnum):
     """Indice de reajuste contratual."""
-    IGPM = "igpm"          # Indice Geral de Precos de Mercado
-    IPCA = "ipca"          # Indice de Precos ao Consumidor Amplo
-    INPC = "inpc"          # Indice Nacional de Precos ao Consumidor
-    INCC = "incc"          # Indice Nacional de Custo da Construcao
-    CCT = "cct"            # Convencao Coletiva de Trabalho
-    CUSTOM = "custom"      # Indice customizado
+
+    IGPM = "igpm"  # Indice Geral de Precos de Mercado
+    IPCA = "ipca"  # Indice de Precos ao Consumidor Amplo
+    INPC = "inpc"  # Indice Nacional de Precos ao Consumidor
+    INCC = "incc"  # Indice Nacional de Custo da Construcao
+    CCT = "cct"  # Convencao Coletiva de Trabalho
+    CUSTOM = "custom"  # Indice customizado
 
 
-class GuaranteeType(str, Enum):
+class GuaranteeType(StrEnum):
     """Tipo de garantia contratual."""
-    CAUCAO_DINHEIRO = "caucao_dinheiro"        # Caucao em dinheiro
-    CAUCAO_TITULO = "caucao_titulo"            # Caucao em titulos da divida publica
-    SEGURO_GARANTIA = "seguro_garantia"        # Seguro-garantia
-    FIANCA_BANCARIA = "fianca_bancaria"        # Fianca bancaria
+
+    CAUCAO_DINHEIRO = "caucao_dinheiro"  # Caucao em dinheiro
+    CAUCAO_TITULO = "caucao_titulo"  # Caucao em titulos da divida publica
+    SEGURO_GARANTIA = "seguro_garantia"  # Seguro-garantia
+    FIANCA_BANCARIA = "fianca_bancaria"  # Fianca bancaria
 
 
 class PublicContract(Base):
@@ -56,6 +55,7 @@ class PublicContract(Base):
     Representa um contrato com orgao publico, com controle de
     empenhos, medicoes, aditivos e reajustes.
     """
+
     __tablename__ = "bidding_public_contracts"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -138,9 +138,9 @@ class PublicContract(Base):
 
     # Indices compostos
     __table_args__ = (
-        Index('idx_contract_orgao_ano', 'orgao_cnpj', 'ano_contrato'),
-        Index('idx_contract_status_vigencia', 'status', 'data_vigencia_fim'),
-        Index('idx_contract_tender', 'tender_id'),
+        Index("idx_contract_orgao_ano", "orgao_cnpj", "ano_contrato"),
+        Index("idx_contract_status_vigencia", "status", "data_vigencia_fim"),
+        Index("idx_contract_tender", "tender_id"),
     )
 
     def __repr__(self) -> str:
@@ -155,7 +155,7 @@ class PublicContract(Base):
         return self.data_vigencia_inicio <= hoje <= self.data_vigencia_fim
 
     @property
-    def dias_para_vencer(self) -> Optional[int]:
+    def dias_para_vencer(self) -> int | None:
         """Dias restantes de vigencia."""
         if not self.data_vigencia_fim:
             return None
@@ -181,7 +181,7 @@ class PublicContract(Base):
         objeto: str,
         valor: Decimal = None,
         prazo_dias: int = None,
-        data_assinatura: date = None
+        data_assinatura: date = None,
     ) -> None:
         """Adiciona um aditivo ao contrato."""
         aditivo = {
@@ -191,7 +191,7 @@ class PublicContract(Base):
             "valor": str(valor) if valor else None,
             "prazo_dias": prazo_dias,
             "data_assinatura": data_assinatura.isoformat() if data_assinatura else None,
-            "data_registro": datetime.utcnow().isoformat()
+            "data_registro": datetime.utcnow().isoformat(),
         }
 
         if not self.aditivos:
@@ -206,6 +206,7 @@ class PublicContract(Base):
 
         if prazo_dias and tipo in ["prazo", "valor_prazo"]:
             from datetime import timedelta
+
             self.data_vigencia_fim += timedelta(days=prazo_dias)
 
     def calcular_reajuste(self, percentual: Decimal, data_aplicacao: date = None) -> Decimal:

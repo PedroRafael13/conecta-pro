@@ -7,17 +7,17 @@ Suporta: Control iD, Intelbras, Henry, Dimep, Madis, etc.
 import uuid
 from datetime import datetime
 from decimal import Decimal
-from enum import Enum
-from typing import Optional, TYPE_CHECKING
+from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     Boolean,
     DateTime,
+    Index,
     Integer,
+    Numeric,
     String,
     Text,
-    Numeric,
-    Index,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -25,12 +25,12 @@ from sqlalchemy.orm import Mapped, mapped_column
 from core.database import Base
 
 if TYPE_CHECKING:
-    from .rep_event import REPEvent
-    from .rep_sync import REPSync
+    pass
 
 
-class DeviceManufacturer(str, Enum):
+class DeviceManufacturer(StrEnum):
     """Fabricantes de REP homologados."""
+
     CONTROL_ID = "control_id"
     INTELBRAS = "intelbras"
     HENRY = "henry"
@@ -42,8 +42,9 @@ class DeviceManufacturer(str, Enum):
     OUTROS = "outros"
 
 
-class DeviceModel(str, Enum):
+class DeviceModel(StrEnum):
     """Modelos de REP."""
+
     # Control iD
     IDCLASS = "idclass"
     IDFLEX = "idflex"
@@ -64,8 +65,9 @@ class DeviceModel(str, Enum):
     GENERIC = "generic"
 
 
-class DeviceStatus(str, Enum):
+class DeviceStatus(StrEnum):
     """Status do dispositivo."""
+
     ONLINE = "online"
     OFFLINE = "offline"
     SYNCING = "syncing"
@@ -74,8 +76,9 @@ class DeviceStatus(str, Enum):
     DISABLED = "disabled"
 
 
-class CommunicationProtocol(str, Enum):
+class CommunicationProtocol(StrEnum):
     """Protocolos de comunicação."""
+
     HTTP_REST = "http_rest"
     TCP_SOCKET = "tcp_socket"
     SOAP = "soap"
@@ -83,11 +86,12 @@ class CommunicationProtocol(str, Enum):
     USB = "usb"
 
 
-class AuthMethod(str, Enum):
+class AuthMethod(StrEnum):
     """Métodos de autenticação."""
+
     NONE = "none"
     BASIC = "basic"
-    TOKEN = "token"
+    TOKEN = "token"  # noqa: S105
     API_KEY = "api_key"
     OAUTH2 = "oauth2"
     CERTIFICATE = "certificate"
@@ -121,13 +125,13 @@ class REPDevice(Base):
         nullable=False,
         default=DeviceModel.GENERIC.value,
     )
-    firmware_version: Mapped[Optional[str]] = mapped_column(
+    firmware_version: Mapped[str | None] = mapped_column(
         String(50),
         nullable=True,
     )
 
     # Número de registro MTE
-    mte_registration: Mapped[Optional[str]] = mapped_column(
+    mte_registration: Mapped[str | None] = mapped_column(
         String(20),
         nullable=True,
         comment="Número de registro no MTE",
@@ -143,22 +147,22 @@ class REPDevice(Base):
         String(100),
         nullable=False,
     )
-    description: Mapped[Optional[str]] = mapped_column(
+    description: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
     )
 
     # Localização
-    location: Mapped[Optional[str]] = mapped_column(
+    location: Mapped[str | None] = mapped_column(
         String(200),
         nullable=True,
         comment="Local de instalação (ex: Portaria Principal)",
     )
-    latitude: Mapped[Optional[Decimal]] = mapped_column(
+    latitude: Mapped[Decimal | None] = mapped_column(
         Numeric(10, 8),
         nullable=True,
     )
-    longitude: Mapped[Optional[Decimal]] = mapped_column(
+    longitude: Mapped[Decimal | None] = mapped_column(
         Numeric(11, 8),
         nullable=True,
     )
@@ -169,7 +173,7 @@ class REPDevice(Base):
     )
 
     # Conexão
-    ip_address: Mapped[Optional[str]] = mapped_column(
+    ip_address: Mapped[str | None] = mapped_column(
         String(45),
         nullable=True,
     )
@@ -177,7 +181,7 @@ class REPDevice(Base):
         Integer,
         default=80,
     )
-    mac_address: Mapped[Optional[str]] = mapped_column(
+    mac_address: Mapped[str | None] = mapped_column(
         String(17),
         nullable=True,
     )
@@ -191,27 +195,27 @@ class REPDevice(Base):
         String(20),
         default=AuthMethod.TOKEN.value,
     )
-    auth_username: Mapped[Optional[str]] = mapped_column(
+    auth_username: Mapped[str | None] = mapped_column(
         String(100),
         nullable=True,
     )
-    auth_password_encrypted: Mapped[Optional[str]] = mapped_column(
+    auth_password_encrypted: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
         comment="Senha criptografada AES-256",
     )
-    api_key_encrypted: Mapped[Optional[str]] = mapped_column(
+    api_key_encrypted: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
         comment="API Key criptografada",
     )
-    certificate_path: Mapped[Optional[str]] = mapped_column(
+    certificate_path: Mapped[str | None] = mapped_column(
         String(500),
         nullable=True,
     )
 
     # Endpoints customizados
-    endpoints_config: Mapped[Optional[dict]] = mapped_column(
+    endpoints_config: Mapped[dict | None] = mapped_column(
         JSONB,
         nullable=True,
         default=dict,
@@ -224,19 +228,19 @@ class REPDevice(Base):
         default=DeviceStatus.OFFLINE.value,
         index=True,
     )
-    last_online: Mapped[Optional[datetime]] = mapped_column(
+    last_online: Mapped[datetime | None] = mapped_column(
         DateTime,
         nullable=True,
     )
-    last_sync: Mapped[Optional[datetime]] = mapped_column(
+    last_sync: Mapped[datetime | None] = mapped_column(
         DateTime,
         nullable=True,
     )
-    last_error: Mapped[Optional[str]] = mapped_column(
+    last_error: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
     )
-    last_error_at: Mapped[Optional[datetime]] = mapped_column(
+    last_error_at: Mapped[datetime | None] = mapped_column(
         DateTime,
         nullable=True,
     )
@@ -260,12 +264,12 @@ class REPDevice(Base):
         default="pull",
         comment="pull (busca no REP) ou push (REP envia)",
     )
-    webhook_url: Mapped[Optional[str]] = mapped_column(
+    webhook_url: Mapped[str | None] = mapped_column(
         String(500),
         nullable=True,
         comment="URL de webhook para modo push",
     )
-    webhook_secret: Mapped[Optional[str]] = mapped_column(
+    webhook_secret: Mapped[str | None] = mapped_column(
         String(100),
         nullable=True,
     )
@@ -335,7 +339,7 @@ class REPDevice(Base):
         String(50),
         default="America/Sao_Paulo",
     )
-    ntp_server: Mapped[Optional[str]] = mapped_column(
+    ntp_server: Mapped[str | None] = mapped_column(
         String(100),
         nullable=True,
     )
@@ -350,7 +354,7 @@ class REPDevice(Base):
     )
 
     # Configurações específicas do fabricante
-    vendor_config: Mapped[Optional[dict]] = mapped_column(
+    vendor_config: Mapped[dict | None] = mapped_column(
         JSONB,
         nullable=True,
         default=dict,
@@ -372,11 +376,11 @@ class REPDevice(Base):
         default=datetime.utcnow,
         onupdate=datetime.utcnow,
     )
-    created_by: Mapped[Optional[uuid.UUID]] = mapped_column(
+    created_by: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         nullable=True,
     )
-    updated_by: Mapped[Optional[uuid.UUID]] = mapped_column(
+    updated_by: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         nullable=True,
     )

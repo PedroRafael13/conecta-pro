@@ -12,7 +12,6 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from decimal import Decimal
 from pathlib import Path
-from typing import Optional
 
 from core.logging import logger
 
@@ -30,7 +29,7 @@ class CompanyInfo:
     phone: str
     email: str
     website: str
-    logo_path: Optional[str] = None
+    logo_path: str | None = None
 
 
 @dataclass
@@ -41,8 +40,8 @@ class ClientInfo:
     document: str  # CNPJ ou CPF
     contact_name: str
     email: str
-    phone: Optional[str] = None
-    address: Optional[str] = None
+    phone: str | None = None
+    address: str | None = None
 
 
 @dataclass
@@ -55,7 +54,7 @@ class ProposalItem:
     unit_price: Decimal
     discount_percent: Decimal
     total: Decimal
-    details: Optional[str] = None
+    details: str | None = None
 
 
 @dataclass
@@ -73,14 +72,14 @@ class ProposalData:
     discount_value: Decimal
     taxes: Decimal
     total: Decimal
-    cct_value: Optional[Decimal] = None
-    margin_percent: Optional[Decimal] = None
-    introduction: Optional[str] = None
-    terms: Optional[str] = None
-    payment_terms: Optional[str] = None
-    notes: Optional[str] = None
-    salesperson_name: Optional[str] = None
-    salesperson_email: Optional[str] = None
+    cct_value: Decimal | None = None
+    margin_percent: Decimal | None = None
+    introduction: str | None = None
+    terms: str | None = None
+    payment_terms: str | None = None
+    notes: str | None = None
+    salesperson_name: str | None = None
+    salesperson_email: str | None = None
 
 
 class PDFGenerator:
@@ -286,8 +285,8 @@ class PDFGenerator:
 
     def __init__(
         self,
-        template_dir: Optional[Path] = None,
-        output_dir: Optional[Path] = None,
+        template_dir: Path | None = None,
+        output_dir: Path | None = None,
     ) -> None:
         """
         Inicializa o gerador de PDF.
@@ -390,7 +389,7 @@ class PDFGenerator:
             <p class="proposal-number">
                 Número: <strong>{data.number}</strong> |
                 Versão: {data.version} |
-                Emissão: {data.issue_date.strftime('%d/%m/%Y')}
+                Emissão: {data.issue_date.strftime("%d/%m/%Y")}
             </p>
 
             <!-- Dados do Cliente -->
@@ -413,8 +412,8 @@ class PDFGenerator:
                         <span class="info-label">E-mail:</span>
                         <span>{data.client.email}</span>
                     </div>
-                    {self._render_optional_row('Telefone:', data.client.phone)}
-                    {self._render_optional_row('Endereço:', data.client.address)}
+                    {self._render_optional_row("Telefone:", data.client.phone)}
+                    {self._render_optional_row("Endereço:", data.client.address)}
                 </div>
             </div>
 
@@ -459,7 +458,7 @@ class PDFGenerator:
             <!-- Validade -->
             <div class="validity">
                 <strong>Validade da Proposta:</strong>
-                {data.valid_until.strftime('%d/%m/%Y')}
+                {data.valid_until.strftime("%d/%m/%Y")}
                 ({self._days_until(data.valid_until)} dias)
             </div>
 
@@ -477,7 +476,7 @@ class PDFGenerator:
                 <div class="signature-box">
                     <div class="signature-line">
                         {data.company.name}<br>
-                        <small>{data.salesperson_name or 'Responsável'}</small>
+                        <small>{data.salesperson_name or "Responsável"}</small>
                     </div>
                 </div>
                 <div class="signature-box">
@@ -490,7 +489,7 @@ class PDFGenerator:
 
             <!-- Rodape -->
             <div class="footer">
-                Documento gerado em {datetime.now().strftime('%d/%m/%Y às %H:%M')}<br>
+                Documento gerado em {datetime.now().strftime("%d/%m/%Y às %H:%M")}<br>
                 {data.company.website}
             </div>
         </body>
@@ -525,7 +524,7 @@ class PDFGenerator:
 
         return "\n".join(rows)
 
-    def _render_logo(self, logo_path: Optional[str]) -> str:
+    def _render_logo(self, logo_path: str | None) -> str:
         """Renderiza logo em base64 ou placeholder."""
         if logo_path and os.path.exists(logo_path):
             with open(logo_path, "rb") as img_file:
@@ -536,7 +535,7 @@ class PDFGenerator:
 
         return '<div class="logo" style="font-size:20pt;color:#1e40af;">LOGO</div>'
 
-    def _render_optional_row(self, label: str, value: Optional[str]) -> str:
+    def _render_optional_row(self, label: str, value: str | None) -> str:
         """Renderiza linha opcional se valor existir."""
         if not value:
             return ""
@@ -547,7 +546,7 @@ class PDFGenerator:
         </div>
         """
 
-    def _render_introduction(self, introduction: Optional[str]) -> str:
+    def _render_introduction(self, introduction: str | None) -> str:
         """Renderiza secao de introducao."""
         if not introduction:
             return ""
@@ -580,7 +579,7 @@ class PDFGenerator:
         </div>
         """
 
-    def _render_cct_row(self, value: Optional[Decimal]) -> str:
+    def _render_cct_row(self, value: Decimal | None) -> str:
         """Renderiza linha de CCT se existir."""
         if not value or value <= 0:
             return ""
@@ -592,7 +591,7 @@ class PDFGenerator:
         </div>
         """
 
-    def _render_payment_terms(self, terms: Optional[str]) -> str:
+    def _render_payment_terms(self, terms: str | None) -> str:
         """Renderiza condicoes de pagamento."""
         if not terms:
             return ""
@@ -603,7 +602,7 @@ class PDFGenerator:
         </div>
         """
 
-    def _render_terms(self, terms: Optional[str]) -> str:
+    def _render_terms(self, terms: str | None) -> str:
         """Renderiza termos e condicoes."""
         if not terms:
             return ""
@@ -614,7 +613,7 @@ class PDFGenerator:
         </div>
         """
 
-    def _render_notes(self, notes: Optional[str]) -> str:
+    def _render_notes(self, notes: str | None) -> str:
         """Renderiza observacoes."""
         if not notes:
             return ""

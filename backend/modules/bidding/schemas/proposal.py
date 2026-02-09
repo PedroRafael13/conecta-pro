@@ -5,18 +5,16 @@ Schemas de Proposta - Licitacoes
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional, List
 from uuid import UUID
 
-from pydantic import BaseModel, Field, ConfigDict, field_validator
-
-from modules.bidding.models.proposal import ProposalStatus
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class ProposalItemBase(BaseModel):
     """Schema base para item da proposta."""
+
     numero_item: int = Field(..., ge=1)
-    codigo: Optional[str] = Field(None, max_length=50)
+    codigo: str | None = Field(None, max_length=50)
     descricao: str = Field(..., min_length=1)
     unidade: str = Field(..., max_length=20)
     quantidade: Decimal = Field(..., gt=0)
@@ -25,89 +23,95 @@ class ProposalItemBase(BaseModel):
 
 class ProposalItemCreate(ProposalItemBase):
     """Schema para criacao de item da proposta."""
-    custo_direto: Optional[Decimal] = None
-    custo_indireto: Optional[Decimal] = None
-    margem: Optional[Decimal] = None
+
+    custo_direto: Decimal | None = None
+    custo_indireto: Decimal | None = None
+    margem: Decimal | None = None
     composicao: dict = Field(default_factory=dict)
 
-    @field_validator('valor_unitario')
+    @field_validator("valor_unitario")
     @classmethod
     def valor_unitario_positivo(cls, v):
         if v < 0:
-            raise ValueError('Valor unitario deve ser positivo')
+            raise ValueError("Valor unitario deve ser positivo")
         return v
 
 
 class ProposalItemResponse(ProposalItemBase):
     """Schema de resposta para item da proposta."""
+
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
     proposal_id: UUID
     valor_total: Decimal
-    custo_direto: Optional[Decimal] = None
-    custo_indireto: Optional[Decimal] = None
-    margem: Optional[Decimal] = None
+    custo_direto: Decimal | None = None
+    custo_indireto: Decimal | None = None
+    margem: Decimal | None = None
     composicao: dict = {}
     created_at: datetime
 
 
 class ProposalBase(BaseModel):
     """Schema base para proposta."""
+
     tender_id: UUID
     numero: str = Field(..., min_length=1, max_length=50)
 
 
 class ProposalCreate(ProposalBase):
     """Schema para criacao de proposta."""
+
     valor_total: Decimal = Field(..., gt=0)
-    valor_unitario: Optional[Decimal] = None
-    desconto_percentual: Optional[Decimal] = Field(None, ge=0, le=100)
+    valor_unitario: Decimal | None = None
+    desconto_percentual: Decimal | None = Field(None, ge=0, le=100)
 
     # BDI
-    bdi_percentual: Optional[Decimal] = Field(None, ge=0, le=100)
+    bdi_percentual: Decimal | None = Field(None, ge=0, le=100)
     bdi_detalhamento: dict = Field(default_factory=dict)
 
     # Encargos
-    encargos_sociais: Optional[Decimal] = Field(None, ge=0, le=200)
+    encargos_sociais: Decimal | None = Field(None, ge=0, le=200)
     encargos_detalhamento: dict = Field(default_factory=dict)
 
     # Itens
-    itens: List[ProposalItemCreate] = Field(default_factory=list)
+    itens: list[ProposalItemCreate] = Field(default_factory=list)
 
     # Outros
-    justificativa_preco: Optional[str] = None
-    observacoes: Optional[str] = None
+    justificativa_preco: str | None = None
+    observacoes: str | None = None
 
 
 class ProposalUpdate(BaseModel):
     """Schema para atualizacao de proposta."""
-    numero: Optional[str] = None
-    valor_total: Optional[Decimal] = None
-    valor_unitario: Optional[Decimal] = None
-    desconto_percentual: Optional[Decimal] = None
+
+    numero: str | None = None
+    valor_total: Decimal | None = None
+    valor_unitario: Decimal | None = None
+    desconto_percentual: Decimal | None = None
 
     # BDI
-    bdi_percentual: Optional[Decimal] = None
-    bdi_detalhamento: Optional[dict] = None
+    bdi_percentual: Decimal | None = None
+    bdi_detalhamento: dict | None = None
 
     # Encargos
-    encargos_sociais: Optional[Decimal] = None
-    encargos_detalhamento: Optional[dict] = None
+    encargos_sociais: Decimal | None = None
+    encargos_detalhamento: dict | None = None
 
     # Status
-    status: Optional[str] = None
+    status: str | None = None
 
     # Itens (substituicao completa)
-    itens: Optional[List[ProposalItemCreate]] = None
+    itens: list[ProposalItemCreate] | None = None
 
     # Outros
-    justificativa_preco: Optional[str] = None
-    observacoes: Optional[str] = None
+    justificativa_preco: str | None = None
+    observacoes: str | None = None
 
 
 class ProposalResponse(ProposalBase):
     """Schema de resposta para proposta."""
+
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
@@ -117,47 +121,48 @@ class ProposalResponse(ProposalBase):
 
     # Valores
     valor_total: Decimal
-    valor_unitario: Optional[Decimal] = None
-    desconto_percentual: Optional[Decimal] = None
+    valor_unitario: Decimal | None = None
+    desconto_percentual: Decimal | None = None
 
     # BDI
-    bdi_percentual: Optional[Decimal] = None
+    bdi_percentual: Decimal | None = None
     bdi_detalhamento: dict = {}
 
     # Encargos
-    encargos_sociais: Optional[Decimal] = None
+    encargos_sociais: Decimal | None = None
     encargos_detalhamento: dict = {}
 
     # Itens (como JSONB)
-    itens: List[dict] = []
+    itens: list[dict] = []
 
     # Classificacao
-    posicao_classificacao: Optional[int] = None
-    valor_lance_final: Optional[Decimal] = None
-    historico_lances: List[dict] = []
+    posicao_classificacao: int | None = None
+    valor_lance_final: Decimal | None = None
+    historico_lances: list[dict] = []
 
     # Arquivos
-    arquivo_pdf_url: Optional[str] = None
-    arquivo_planilha_url: Optional[str] = None
+    arquivo_pdf_url: str | None = None
+    arquivo_planilha_url: str | None = None
 
     # Datas
-    data_envio: Optional[datetime] = None
-    data_resultado: Optional[datetime] = None
+    data_envio: datetime | None = None
+    data_resultado: datetime | None = None
 
     # Propriedade calculada
-    valor_com_bdi: Optional[Decimal] = None
+    valor_com_bdi: Decimal | None = None
 
     # Outros
-    justificativa_preco: Optional[str] = None
-    observacoes: Optional[str] = None
+    justificativa_preco: str | None = None
+    observacoes: str | None = None
 
     # Auditoria
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
 
 
 class ProposalCalculateBDI(BaseModel):
     """Schema para calculo de BDI."""
+
     valor_base: Decimal = Field(..., gt=0)
 
     # Componentes do BDI (percentuais)
@@ -176,6 +181,7 @@ class ProposalCalculateBDI(BaseModel):
 
 class ProposalBDIResponse(BaseModel):
     """Resposta do calculo de BDI."""
+
     valor_base: Decimal
     bdi_percentual: Decimal
     valor_bdi: Decimal
@@ -185,13 +191,15 @@ class ProposalBDIResponse(BaseModel):
 
 class ProposalLanceCreate(BaseModel):
     """Schema para registro de lance em pregao."""
+
     valor: Decimal = Field(..., gt=0)
-    data: Optional[datetime] = None
+    data: datetime | None = None
 
 
 class ProposalListResponse(BaseModel):
     """Schema de lista de propostas com paginacao."""
-    items: List[ProposalResponse]
+
+    items: list[ProposalResponse]
     total: int
     page: int
     size: int

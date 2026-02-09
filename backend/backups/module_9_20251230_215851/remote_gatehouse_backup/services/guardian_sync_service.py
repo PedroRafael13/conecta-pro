@@ -292,7 +292,7 @@ class GuardianSyncService:
         base_delay = 60  # 1 minuto
         max_delay = 3600  # 1 hora
 
-        delay_seconds = min(base_delay * (2 ** retry_count), max_delay)
+        delay_seconds = min(base_delay * (2**retry_count), max_delay)
         return timedelta(seconds=delay_seconds)
 
     def get_sync_priority(
@@ -394,9 +394,7 @@ class GuardianSyncService:
             "pending": pending,
             "in_progress": total - completed - failed - pending,
             "success_rate": round(success_rate, 2),
-            "health": "healthy" if success_rate >= 95 else (
-                "warning" if success_rate >= 80 else "critical"
-            ),
+            "health": "healthy" if success_rate >= 95 else ("warning" if success_rate >= 80 else "critical"),
             "generated_at": datetime.utcnow().isoformat(),
         }
 

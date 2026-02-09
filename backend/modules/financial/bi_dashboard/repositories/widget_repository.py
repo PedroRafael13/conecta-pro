@@ -1,21 +1,19 @@
 """Repository de Widget de Dashboard Financeiro."""
 
 from datetime import datetime
-from typing import Optional
 from uuid import UUID
 
-from sqlalchemy import and_, func, desc
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from modules.financial.bi_dashboard.models.dashboard_widget import (
-    FinancialWidget,
-    WidgetType,
     DataSource,
+    FinancialWidget,
 )
 from modules.financial.bi_dashboard.schemas.widget_schemas import (
     WidgetCreate,
-    WidgetUpdate,
     WidgetFilters,
+    WidgetUpdate,
 )
 
 
@@ -93,11 +91,9 @@ class WidgetRepository:
         self,
         widget_id: UUID,
         condominio_id: UUID = None,
-    ) -> Optional[FinancialWidget]:
+    ) -> FinancialWidget | None:
         """Busca widget por ID."""
-        query = self.db.query(FinancialWidget).filter(
-            FinancialWidget.id == widget_id
-        )
+        query = self.db.query(FinancialWidget).filter(FinancialWidget.id == widget_id)
         if condominio_id:
             query = query.filter(FinancialWidget.condominio_id == condominio_id)
         return query.first()
@@ -108,9 +104,7 @@ class WidgetRepository:
         condominio_id: UUID = None,
     ) -> list[FinancialWidget]:
         """Lista widgets de um dashboard."""
-        query = self.db.query(FinancialWidget).filter(
-            FinancialWidget.dashboard_id == dashboard_id
-        )
+        query = self.db.query(FinancialWidget).filter(FinancialWidget.dashboard_id == dashboard_id)
         if condominio_id:
             query = query.filter(FinancialWidget.condominio_id == condominio_id)
         return query.order_by(
@@ -126,15 +120,11 @@ class WidgetRepository:
         limit: int = 100,
     ) -> tuple[list[FinancialWidget], int]:
         """Lista widgets com filtros."""
-        query = self.db.query(FinancialWidget).filter(
-            FinancialWidget.condominio_id == condominio_id
-        )
+        query = self.db.query(FinancialWidget).filter(FinancialWidget.condominio_id == condominio_id)
 
         if filters:
             if filters.dashboard_id:
-                query = query.filter(
-                    FinancialWidget.dashboard_id == filters.dashboard_id
-                )
+                query = query.filter(FinancialWidget.dashboard_id == filters.dashboard_id)
             if filters.tipo:
                 query = query.filter(FinancialWidget.tipo == filters.tipo)
             if filters.data_source:
@@ -327,21 +317,28 @@ class WidgetRepository:
         data_source: DataSource,
     ) -> list[FinancialWidget]:
         """Lista widgets por fonte de dados."""
-        return self.db.query(FinancialWidget).filter(
-            FinancialWidget.condominio_id == condominio_id,
-            FinancialWidget.data_source == data_source,
-        ).all()
+        return (
+            self.db.query(FinancialWidget)
+            .filter(
+                FinancialWidget.condominio_id == condominio_id,
+                FinancialWidget.data_source == data_source,
+            )
+            .all()
+        )
 
     def get_needing_refresh(
         self,
         condominio_id: UUID,
     ) -> list[FinancialWidget]:
         """Lista widgets que precisam refresh."""
-        now = datetime.utcnow()
-        return self.db.query(FinancialWidget).filter(
-            FinancialWidget.condominio_id == condominio_id,
-            FinancialWidget.is_visible == True,
-            FinancialWidget.last_updated_at < func.now() - func.cast(
-                FinancialWidget.cache_ttl_seconds, type_=func.Integer
-            ),
-        ).all()
+        datetime.utcnow()
+        return (
+            self.db.query(FinancialWidget)
+            .filter(
+                FinancialWidget.condominio_id == condominio_id,
+                FinancialWidget.is_visible,
+                FinancialWidget.last_updated_at
+                < func.now() - func.cast(FinancialWidget.cache_ttl_seconds, type_=func.Integer),
+            )
+            .all()
+        )

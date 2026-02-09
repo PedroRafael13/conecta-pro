@@ -11,11 +11,11 @@ Tables:
 - mobile_sessions: Sessões mobile com tokens de sync
 """
 
-from alembic import op
 import sqlalchemy as sa
 from sqlalchemy import inspect
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "sprint02_mobile_api"
@@ -61,7 +61,9 @@ def upgrade() -> None:
         op.create_index("ix_device_tokens_token", "device_tokens", ["token"])
         op.create_index("ix_device_tokens_platform", "device_tokens", ["platform"])
         op.create_index("ix_device_tokens_device_id", "device_tokens", ["device_id"])
-        op.create_index("ix_device_tokens_active", "device_tokens", ["is_active"], postgresql_where=sa.text("is_active = true"))
+        op.create_index(
+            "ix_device_tokens_active", "device_tokens", ["is_active"], postgresql_where=sa.text("is_active = true")
+        )
         op.create_unique_constraint("uq_device_tokens_token_platform", "device_tokens", ["token", "platform"])
 
     # ==========================================================================
@@ -72,7 +74,12 @@ def upgrade() -> None:
             "push_notifications",
             sa.Column("id", UUID(as_uuid=True), primary_key=True, server_default=sa.text("gen_random_uuid()")),
             sa.Column("user_id", UUID(as_uuid=True), sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False),
-            sa.Column("device_token_id", UUID(as_uuid=True), sa.ForeignKey("device_tokens.id", ondelete="SET NULL"), nullable=True),
+            sa.Column(
+                "device_token_id",
+                UUID(as_uuid=True),
+                sa.ForeignKey("device_tokens.id", ondelete="SET NULL"),
+                nullable=True,
+            ),
             sa.Column("title", sa.String(200), nullable=False),
             sa.Column("body", sa.Text(), nullable=False),
             sa.Column("notification_type", sa.String(20), nullable=False, server_default="info"),
@@ -161,14 +168,25 @@ def upgrade() -> None:
         op.create_table(
             "notification_preferences",
             sa.Column("id", UUID(as_uuid=True), primary_key=True, server_default=sa.text("gen_random_uuid()")),
-            sa.Column("user_id", UUID(as_uuid=True), sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True),
+            sa.Column(
+                "user_id",
+                UUID(as_uuid=True),
+                sa.ForeignKey("users.id", ondelete="CASCADE"),
+                nullable=False,
+                unique=True,
+            ),
             sa.Column("push_enabled", sa.Boolean(), server_default="true", nullable=False),
             sa.Column("email_enabled", sa.Boolean(), server_default="true", nullable=False),
             sa.Column("sms_enabled", sa.Boolean(), server_default="false", nullable=False),
             sa.Column("quiet_hours_enabled", sa.Boolean(), server_default="false", nullable=False),
             sa.Column("quiet_hours_start", sa.String(5), server_default="22:00", nullable=True),
             sa.Column("quiet_hours_end", sa.String(5), server_default="07:00", nullable=True),
-            sa.Column("categories", JSONB, server_default='{"system": true, "alert": true, "info": true, "marketing": false}', nullable=False),
+            sa.Column(
+                "categories",
+                JSONB,
+                server_default='{"system": true, "alert": true, "info": true, "marketing": false}',
+                nullable=False,
+            ),
             sa.Column("sound_enabled", sa.Boolean(), server_default="true", nullable=False),
             sa.Column("vibration_enabled", sa.Boolean(), server_default="true", nullable=False),
             sa.Column("badge_enabled", sa.Boolean(), server_default="true", nullable=False),

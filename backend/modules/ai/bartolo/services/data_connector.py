@@ -10,7 +10,7 @@ import re
 import unicodedata
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from sqlalchemy import func, select
@@ -43,7 +43,7 @@ from modules.operacional.repositories import (
 logger = logging.getLogger(__name__)
 
 
-class QueryType(str, Enum):
+class QueryType(StrEnum):
     """Tipos de consulta."""
 
     COUNT = "count"

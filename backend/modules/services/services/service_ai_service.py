@@ -5,20 +5,27 @@ Sprint 31: Gestão de Serviços
 
 import logging
 from datetime import datetime, timedelta
-from typing import Optional, List, Dict, Any
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy.orm import Session
 
 from modules.services.models import (
-    ServiceCatalog, ServiceOrder, SLAConfig,
-    ServiceCategory, ServiceStatus,
-    OrderStatus, OrderPriority
+    OrderPriority,
+    OrderStatus,
+    ServiceCatalog,
+    ServiceCategory,
+    ServiceOrder,
+    ServiceStatus,
+    SLAConfig,
 )
 from modules.services.repositories import ServiceRepository
 from modules.services.schemas import (
-    ServiceAnalysis, ServiceRecommendation, SLAAnalysis,
-    ServiceCatalogStats, ServiceOrderStats
+    ServiceAnalysis,
+    ServiceCatalogStats,
+    ServiceOrderStats,
+    ServiceRecommendation,
+    SLAAnalysis,
 )
 
 logger = logging.getLogger(__name__)
@@ -44,7 +51,7 @@ class ServiceAIService:
     # SERVICE ANALYSIS
     # ============================================================
 
-    def analyze_service(self, service_id: UUID) -> Optional[ServiceAnalysis]:
+    def analyze_service(self, service_id: UUID) -> ServiceAnalysis | None:
         """
         Analisa performance de um serviço.
 
@@ -58,10 +65,7 @@ class ServiceAIService:
         if not service:
             return None
 
-        orders = self.repository.list_service_orders(
-            service_id=service_id,
-            limit=1000
-        )
+        orders = self.repository.list_service_orders(service_id=service_id, limit=1000)
 
         performance_score = self._calculate_performance_score(service, orders)
         revenue_score = self._calculate_revenue_score(service)
@@ -69,9 +73,7 @@ class ServiceAIService:
         efficiency_score = self._calculate_efficiency_score(orders)
 
         trends = self._analyze_trends(orders)
-        insights = self._generate_insights(
-            service, orders, performance_score, demand_score
-        )
+        insights = self._generate_insights(service, orders, performance_score, demand_score)
         recommendations = self._generate_service_recommendations(
             service, performance_score, revenue_score, demand_score
         )
@@ -85,15 +87,12 @@ class ServiceAIService:
             efficiency_score=efficiency_score,
             trends=trends,
             insights=insights,
-            recommendations=recommendations
+            recommendations=recommendations,
         )
 
-    def analyze_all_services(self) -> List[ServiceAnalysis]:
+    def analyze_all_services(self) -> list[ServiceAnalysis]:
         """Analisa todos os serviços ativos."""
-        services = self.repository.list_service_catalogs(
-            status=ServiceStatus.ATIVO,
-            limit=500
-        )
+        services = self.repository.list_service_catalogs(status=ServiceStatus.ATIVO, limit=500)
 
         analyses = []
         for service in services:
@@ -101,16 +100,11 @@ class ServiceAIService:
             if analysis:
                 analyses.append(analysis)
 
-        return sorted(
-            analyses, key=lambda x: x.performance_score, reverse=True
-        )
+        return sorted(analyses, key=lambda x: x.performance_score, reverse=True)
 
     def get_service_recommendations(
-        self,
-        client_id: Optional[UUID] = None,
-        category: Optional[ServiceCategory] = None,
-        limit: int = 10
-    ) -> List[ServiceRecommendation]:
+        self, client_id: UUID | None = None, category: ServiceCategory | None = None, limit: int = 10
+    ) -> list[ServiceRecommendation]:
         """
         Gera recomendações de serviços.
 
@@ -122,11 +116,7 @@ class ServiceAIService:
         Returns:
             Lista de recomendações
         """
-        filters = {
-            "status": ServiceStatus.ATIVO,
-            "is_available": True,
-            "limit": 100
-        }
+        filters = {"status": ServiceStatus.ATIVO, "is_available": True, "limit": 100}
 
         if category:
             filters["category"] = category
@@ -135,23 +125,15 @@ class ServiceAIService:
 
         if client_id:
             client_orders = self.repository.list_service_orders(
-                client_id=client_id,
-                status=OrderStatus.CONCLUIDA,
-                limit=50
+                client_id=client_id, status=OrderStatus.CONCLUIDA, limit=50
             )
-            recommendations = self._personalize_recommendations(
-                services, client_orders
-            )
+            recommendations = self._personalize_recommendations(services, client_orders)
         else:
             recommendations = self._rank_services(services)
 
         return recommendations[:limit]
 
-    def predict_service_demand(
-        self,
-        service_id: UUID,
-        days_ahead: int = 30
-    ) -> Dict[str, Any]:
+    def predict_service_demand(self, service_id: UUID, days_ahead: int = 30) -> dict[str, Any]:
         """
         Prevê demanda para um serviço.
 
@@ -166,10 +148,7 @@ class ServiceAIService:
         if not service:
             return {}
 
-        orders = self.repository.list_service_orders(
-            service_id=service_id,
-            limit=500
-        )
+        orders = self.repository.list_service_orders(service_id=service_id, limit=500)
 
         historical = self._analyze_historical_demand(orders)
         prediction = self._project_demand(historical, days_ahead)
@@ -183,14 +162,14 @@ class ServiceAIService:
             "predicted_demand": prediction,
             "confidence_score": confidence,
             "factors": self._identify_demand_factors(orders),
-            "generated_at": datetime.utcnow().isoformat()
+            "generated_at": datetime.utcnow().isoformat(),
         }
 
     # ============================================================
     # SLA ANALYSIS
     # ============================================================
 
-    def analyze_sla(self, sla_id: UUID) -> Optional[SLAAnalysis]:
+    def analyze_sla(self, sla_id: UUID) -> SLAAnalysis | None:
         """
         Analisa compliance de um SLA.
 
@@ -217,20 +196,17 @@ class ServiceAIService:
             trend=trend,
             at_risk_orders=at_risk,
             breach_forecast=forecast,
-            recommendations=recommendations
+            recommendations=recommendations,
         )
 
-    def get_sla_dashboard(self) -> Dict[str, Any]:
+    def get_sla_dashboard(self) -> dict[str, Any]:
         """
         Retorna dashboard de SLAs.
 
         Returns:
             Dict com visão geral de SLAs
         """
-        slas = self.repository.list_sla_configs(
-            is_active=True,
-            limit=100
-        )
+        slas = self.repository.list_sla_configs(is_active=True, limit=100)
 
         total_compliance = 0.0
         critical_count = 0
@@ -253,18 +229,18 @@ class ServiceAIService:
             if sla.total_orders > 0:
                 total_compliance += compliance
 
-            sla_summaries.append({
-                "id": str(sla.id),
-                "name": sla.name,
-                "compliance": compliance,
-                "status": status,
-                "total_orders": sla.total_orders,
-                "breached": sla.orders_breached
-            })
+            sla_summaries.append(
+                {
+                    "id": str(sla.id),
+                    "name": sla.name,
+                    "compliance": compliance,
+                    "status": status,
+                    "total_orders": sla.total_orders,
+                    "breached": sla.orders_breached,
+                }
+            )
 
-        avg_compliance = (
-            total_compliance / len(slas) if slas else 0.0
-        )
+        avg_compliance = total_compliance / len(slas) if slas else 0.0
 
         return {
             "summary": {
@@ -272,23 +248,17 @@ class ServiceAIService:
                 "average_compliance": round(avg_compliance, 2),
                 "critical": critical_count,
                 "warning": warning_count,
-                "healthy": healthy_count
+                "healthy": healthy_count,
             },
-            "slas": sorted(
-                sla_summaries,
-                key=lambda x: x["compliance"]
-            ),
-            "generated_at": datetime.utcnow().isoformat()
+            "slas": sorted(sla_summaries, key=lambda x: x["compliance"]),
+            "generated_at": datetime.utcnow().isoformat(),
         }
 
     # ============================================================
     # ORDER ANALYSIS
     # ============================================================
 
-    def analyze_order_patterns(
-        self,
-        days: int = 30
-    ) -> Dict[str, Any]:
+    def analyze_order_patterns(self, days: int = 30) -> dict[str, Any]:
         """
         Analisa padrões de ordens de serviço.
 
@@ -301,10 +271,7 @@ class ServiceAIService:
         start_date = datetime.utcnow() - timedelta(days=days)
 
         orders = self.repository.list_service_orders(limit=1000)
-        recent_orders = [
-            o for o in orders
-            if o.created_at >= start_date
-        ]
+        recent_orders = [o for o in orders if o.created_at >= start_date]
 
         by_day = self._group_by_day(recent_orders)
         by_category = self._group_by_category(recent_orders)
@@ -323,19 +290,17 @@ class ServiceAIService:
                 "by_category": by_category,
                 "by_priority": by_priority,
                 "by_status": by_status,
-                "peak_hours": peak_hours
+                "peak_hours": peak_hours,
             },
             "metrics": {
                 "avg_duration_hours": avg_duration,
                 "completion_rate": completion_rate,
-                "orders_per_day": (
-                    len(recent_orders) / days if days > 0 else 0
-                )
+                "orders_per_day": (len(recent_orders) / days if days > 0 else 0),
             },
-            "generated_at": datetime.utcnow().isoformat()
+            "generated_at": datetime.utcnow().isoformat(),
         }
 
-    def identify_bottlenecks(self) -> List[Dict[str, Any]]:
+    def identify_bottlenecks(self) -> list[dict[str, Any]]:
         """
         Identifica gargalos no processo.
 
@@ -344,59 +309,53 @@ class ServiceAIService:
         """
         bottlenecks = []
 
-        pending_orders = self.repository.list_service_orders(
-            status=OrderStatus.PENDENTE,
-            limit=500
-        )
+        pending_orders = self.repository.list_service_orders(status=OrderStatus.PENDENTE, limit=500)
         if len(pending_orders) > 20:
-            bottlenecks.append({
-                "type": "queue",
-                "severity": "high" if len(pending_orders) > 50 else "medium",
-                "description": f"{len(pending_orders)} ordens pendentes",
-                "recommendation": "Aumentar capacidade de atendimento"
-            })
+            bottlenecks.append(
+                {
+                    "type": "queue",
+                    "severity": "high" if len(pending_orders) > 50 else "medium",
+                    "description": f"{len(pending_orders)} ordens pendentes",
+                    "recommendation": "Aumentar capacidade de atendimento",
+                }
+            )
 
-        in_progress = self.repository.list_service_orders(
-            status=OrderStatus.EM_ANDAMENTO,
-            limit=500
-        )
+        in_progress = self.repository.list_service_orders(status=OrderStatus.EM_ANDAMENTO, limit=500)
         overdue = [o for o in in_progress if o.is_overdue]
         if overdue:
-            bottlenecks.append({
-                "type": "overdue",
-                "severity": "critical",
-                "description": f"{len(overdue)} ordens em atraso",
-                "recommendation": "Priorizar resolução de atrasos"
-            })
+            bottlenecks.append(
+                {
+                    "type": "overdue",
+                    "severity": "critical",
+                    "description": f"{len(overdue)} ordens em atraso",
+                    "recommendation": "Priorizar resolução de atrasos",
+                }
+            )
 
-        paused = self.repository.list_service_orders(
-            status=OrderStatus.PAUSADA,
-            limit=100
-        )
+        paused = self.repository.list_service_orders(status=OrderStatus.PAUSADA, limit=100)
         if len(paused) > 5:
-            bottlenecks.append({
-                "type": "blocked",
-                "severity": "medium",
-                "description": f"{len(paused)} ordens pausadas",
-                "recommendation": "Investigar motivos de bloqueio"
-            })
+            bottlenecks.append(
+                {
+                    "type": "blocked",
+                    "severity": "medium",
+                    "description": f"{len(paused)} ordens pausadas",
+                    "recommendation": "Investigar motivos de bloqueio",
+                }
+            )
 
         slas = self.repository.list_sla_configs(is_active=True, limit=100)
         critical_slas = [s for s in slas if s.compliance_status == "critico"]
         if critical_slas:
-            bottlenecks.append({
-                "type": "sla",
-                "severity": "critical",
-                "description": f"{len(critical_slas)} SLAs em estado crítico",
-                "recommendation": "Revisar processos e capacidade"
-            })
-
-        return sorted(
-            bottlenecks,
-            key=lambda x: {"critical": 0, "high": 1, "medium": 2}.get(
-                x["severity"], 3
+            bottlenecks.append(
+                {
+                    "type": "sla",
+                    "severity": "critical",
+                    "description": f"{len(critical_slas)} SLAs em estado crítico",
+                    "recommendation": "Revisar processos e capacidade",
+                }
             )
-        )
+
+        return sorted(bottlenecks, key=lambda x: {"critical": 0, "high": 1, "medium": 2}.get(x["severity"], 3))
 
     # ============================================================
     # STATISTICS
@@ -406,11 +365,7 @@ class ServiceAIService:
         """Retorna estatísticas do catálogo."""
         return self.repository.get_service_catalog_stats()
 
-    def get_order_stats(
-        self,
-        client_id: Optional[UUID] = None,
-        service_id: Optional[UUID] = None
-    ) -> ServiceOrderStats:
+    def get_order_stats(self, client_id: UUID | None = None, service_id: UUID | None = None) -> ServiceOrderStats:
         """
         Retorna estatísticas de ordens.
 
@@ -421,12 +376,9 @@ class ServiceAIService:
         Returns:
             ServiceOrderStats
         """
-        return self.repository.get_service_order_stats(
-            client_id=client_id,
-            service_id=service_id
-        )
+        return self.repository.get_service_order_stats(client_id=client_id, service_id=service_id)
 
-    def get_executive_dashboard(self) -> Dict[str, Any]:
+    def get_executive_dashboard(self) -> dict[str, Any]:
         """
         Retorna dashboard executivo.
 
@@ -443,7 +395,7 @@ class ServiceAIService:
                 "total": catalog_stats.total_services,
                 "active": catalog_stats.active_services,
                 "total_revenue": float(catalog_stats.total_revenue),
-                "avg_rating": catalog_stats.avg_rating
+                "avg_rating": catalog_stats.avg_rating,
             },
             "orders": {
                 "total": order_stats.total_orders,
@@ -451,22 +403,18 @@ class ServiceAIService:
                 "overdue": order_stats.overdue_count,
                 "avg_completion_hours": order_stats.avg_completion_time_hours,
                 "avg_rating": order_stats.avg_rating,
-                "sla_compliance": order_stats.sla_compliance_percent
+                "sla_compliance": order_stats.sla_compliance_percent,
             },
             "sla": sla_dashboard["summary"],
             "bottlenecks": bottlenecks[:5],
-            "generated_at": datetime.utcnow().isoformat()
+            "generated_at": datetime.utcnow().isoformat(),
         }
 
     # ============================================================
     # PRIVATE HELPER METHODS
     # ============================================================
 
-    def _calculate_performance_score(
-        self,
-        service: ServiceCatalog,
-        orders: List[ServiceOrder]
-    ) -> float:
+    def _calculate_performance_score(self, service: ServiceCatalog, orders: list[ServiceOrder]) -> float:
         """Calcula score de performance."""
         # Use service completion rate as baseline if no orders
         if not orders:
@@ -483,11 +431,7 @@ class ServiceAIService:
         ratings = [o.rating for o in completed if o.rating]
         avg_rating = sum(ratings) / len(ratings) if ratings else 3.0
 
-        score = (
-            completion_rate * 30 +
-            sla_rate * 40 +
-            (avg_rating / 5) * 30
-        )
+        score = completion_rate * 30 + sla_rate * 40 + (avg_rating / 5) * 30
 
         return min(100.0, max(0.0, score))
 
@@ -508,7 +452,7 @@ class ServiceAIService:
             return 40.0
         return 20.0
 
-    def _calculate_demand_score(self, orders: List[ServiceOrder]) -> float:
+    def _calculate_demand_score(self, orders: list[ServiceOrder]) -> float:
         """Calcula score de demanda."""
         if not orders:
             return 0.0
@@ -526,15 +470,9 @@ class ServiceAIService:
             return 40.0
         return 20.0
 
-    def _calculate_efficiency_score(
-        self,
-        orders: List[ServiceOrder]
-    ) -> float:
+    def _calculate_efficiency_score(self, orders: list[ServiceOrder]) -> float:
         """Calcula score de eficiência."""
-        completed = [
-            o for o in orders
-            if o.status == OrderStatus.CONCLUIDA and o.actual_duration_hours
-        ]
+        completed = [o for o in orders if o.status == OrderStatus.CONCLUIDA and o.actual_duration_hours]
 
         if not completed:
             return 50.0
@@ -552,23 +490,14 @@ class ServiceAIService:
             return 40.0
         return 20.0
 
-    def _analyze_trends(
-        self,
-        orders: List[ServiceOrder]
-    ) -> Dict[str, Any]:
+    def _analyze_trends(self, orders: list[ServiceOrder]) -> dict[str, Any]:
         """Analisa tendências."""
         if not orders:
             return {"trend": "stable", "growth": 0}
 
         now = datetime.utcnow()
-        last_30 = [
-            o for o in orders
-            if o.created_at >= now - timedelta(days=30)
-        ]
-        prev_30 = [
-            o for o in orders
-            if now - timedelta(days=60) <= o.created_at < now - timedelta(days=30)
-        ]
+        last_30 = [o for o in orders if o.created_at >= now - timedelta(days=30)]
+        prev_30 = [o for o in orders if now - timedelta(days=60) <= o.created_at < now - timedelta(days=30)]
 
         if not prev_30:
             growth = 100 if last_30 else 0
@@ -586,27 +515,19 @@ class ServiceAIService:
             "trend": trend,
             "growth_percent": round(growth, 2),
             "last_30_days": len(last_30),
-            "previous_30_days": len(prev_30)
+            "previous_30_days": len(prev_30),
         }
 
     def _generate_insights(
-        self,
-        service: ServiceCatalog,
-        orders: List[ServiceOrder],
-        performance: float,
-        demand: float
-    ) -> List[str]:
+        self, service: ServiceCatalog, orders: list[ServiceOrder], performance: float, demand: float
+    ) -> list[str]:
         """Gera insights sobre o serviço."""
         insights = []
 
         if performance >= 80:
-            insights.append(
-                f"Serviço '{service.name}' tem excelente performance"
-            )
+            insights.append(f"Serviço '{service.name}' tem excelente performance")
         elif performance < 50:
-            insights.append(
-                f"Serviço '{service.name}' precisa de atenção na performance"
-            )
+            insights.append(f"Serviço '{service.name}' precisa de atenção na performance")
 
         if demand >= 80:
             insights.append("Alta demanda nos últimos 30 dias")
@@ -627,50 +548,34 @@ class ServiceAIService:
         return insights
 
     def _generate_service_recommendations(
-        self,
-        service: ServiceCatalog,
-        performance: float,
-        revenue: float,
-        demand: float
-    ) -> List[str]:
+        self, service: ServiceCatalog, performance: float, revenue: float, demand: float
+    ) -> list[str]:
         """Gera recomendações para o serviço."""
         recommendations = []
 
         if performance < 50:
-            recommendations.append(
-                "Revisar processos de execução do serviço"
-            )
+            recommendations.append("Revisar processos de execução do serviço")
 
         if demand < 30:
-            recommendations.append(
-                "Considerar campanhas de marketing ou promoções"
-            )
+            recommendations.append("Considerar campanhas de marketing ou promoções")
 
         if revenue < 30 and demand >= 50:
-            recommendations.append(
-                "Avaliar precificação - demanda alta mas receita baixa"
-            )
+            recommendations.append("Avaliar precificação - demanda alta mas receita baixa")
 
         if service.completion_rate and service.completion_rate < 80:
-            recommendations.append(
-                "Investigar causas de cancelamento de ordens"
-            )
+            recommendations.append("Investigar causas de cancelamento de ordens")
 
         return recommendations
 
     def _personalize_recommendations(
-        self,
-        services: List[ServiceCatalog],
-        client_orders: List[ServiceOrder]
-    ) -> List[ServiceRecommendation]:
+        self, services: list[ServiceCatalog], client_orders: list[ServiceOrder]
+    ) -> list[ServiceRecommendation]:
         """Personaliza recomendações para cliente."""
         used_services = {o.service_id for o in client_orders}
         categories_used = set()
 
         for order in client_orders:
-            service = self.repository.get_service_catalog_by_id(
-                order.service_id
-            )
+            service = self.repository.get_service_catalog_by_id(order.service_id)
             if service:
                 categories_used.add(service.category)
 
@@ -691,30 +596,23 @@ class ServiceAIService:
             if service.total_orders >= 10:
                 confidence += 0.1
 
-            reason = self._determine_recommendation_reason(
-                service, categories_used, used_services
+            reason = self._determine_recommendation_reason(service, categories_used, used_services)
+
+            recommendations.append(
+                ServiceRecommendation(
+                    service_id=service.id,
+                    service_name=service.name,
+                    recommendation_type="personalized",
+                    confidence=min(1.0, confidence),
+                    reason=reason,
+                    potential_impact="Baseado no histórico do cliente",
+                    priority="normal",
+                )
             )
 
-            recommendations.append(ServiceRecommendation(
-                service_id=service.id,
-                service_name=service.name,
-                recommendation_type="personalized",
-                confidence=min(1.0, confidence),
-                reason=reason,
-                potential_impact="Baseado no histórico do cliente",
-                priority="normal"
-            ))
+        return sorted(recommendations, key=lambda x: x.confidence, reverse=True)
 
-        return sorted(
-            recommendations,
-            key=lambda x: x.confidence,
-            reverse=True
-        )
-
-    def _rank_services(
-        self,
-        services: List[ServiceCatalog]
-    ) -> List[ServiceRecommendation]:
+    def _rank_services(self, services: list[ServiceCatalog]) -> list[ServiceRecommendation]:
         """Rankeia serviços para recomendação geral."""
         recommendations = []
 
@@ -729,27 +627,22 @@ class ServiceAIService:
             elif service.total_orders >= 10:
                 confidence += 0.1
 
-            recommendations.append(ServiceRecommendation(
-                service_id=service.id,
-                service_name=service.name,
-                recommendation_type="popular",
-                confidence=min(1.0, confidence),
-                reason=f"Serviço bem avaliado com {service.total_orders} ordens",
-                potential_impact=None,
-                priority="normal"
-            ))
+            recommendations.append(
+                ServiceRecommendation(
+                    service_id=service.id,
+                    service_name=service.name,
+                    recommendation_type="popular",
+                    confidence=min(1.0, confidence),
+                    reason=f"Serviço bem avaliado com {service.total_orders} ordens",
+                    potential_impact=None,
+                    priority="normal",
+                )
+            )
 
-        return sorted(
-            recommendations,
-            key=lambda x: x.confidence,
-            reverse=True
-        )
+        return sorted(recommendations, key=lambda x: x.confidence, reverse=True)
 
     def _determine_recommendation_reason(
-        self,
-        service: ServiceCatalog,
-        categories_used: set,
-        used_services: set
+        self, service: ServiceCatalog, categories_used: set, used_services: set
     ) -> str:
         """Determina razão da recomendação."""
         if service.category in categories_used:
@@ -760,43 +653,28 @@ class ServiceAIService:
             return "Altamente recomendado por outros clientes"
         return "Serviço popular em sua região"
 
-    def _analyze_historical_demand(
-        self,
-        orders: List[ServiceOrder]
-    ) -> Dict[str, Any]:
+    def _analyze_historical_demand(self, orders: list[ServiceOrder]) -> dict[str, Any]:
         """Analisa demanda histórica."""
         if not orders:
             return {"monthly_avg": 0, "trend": "unknown"}
 
-        by_month: Dict[str, int] = {}
+        by_month: dict[str, int] = {}
         for order in orders:
             key = order.created_at.strftime("%Y-%m")
             by_month[key] = by_month.get(key, 0) + 1
 
         monthly_avg = sum(by_month.values()) / len(by_month) if by_month else 0
 
-        return {
-            "monthly_avg": round(monthly_avg, 2),
-            "monthly_data": by_month,
-            "total_orders": len(orders)
-        }
+        return {"monthly_avg": round(monthly_avg, 2), "monthly_data": by_month, "total_orders": len(orders)}
 
-    def _project_demand(
-        self,
-        historical: Dict[str, Any],
-        days: int
-    ) -> Dict[str, Any]:
+    def _project_demand(self, historical: dict[str, Any], days: int) -> dict[str, Any]:
         """Projeta demanda futura."""
         monthly_avg = historical.get("monthly_avg", 0)
         daily_avg = monthly_avg / 30
 
-        return {
-            "expected_orders": round(daily_avg * days),
-            "daily_average": round(daily_avg, 2),
-            "period_days": days
-        }
+        return {"expected_orders": round(daily_avg * days), "daily_average": round(daily_avg, 2), "period_days": days}
 
-    def _calculate_confidence(self, historical: Dict[str, Any]) -> float:
+    def _calculate_confidence(self, historical: dict[str, Any]) -> float:
         """Calcula confiança da previsão."""
         total = historical.get("total_orders", 0)
 
@@ -808,10 +686,7 @@ class ServiceAIService:
             return 0.5
         return 0.3
 
-    def _identify_demand_factors(
-        self,
-        orders: List[ServiceOrder]
-    ) -> List[str]:
+    def _identify_demand_factors(self, orders: list[ServiceOrder]) -> list[str]:
         """Identifica fatores de demanda."""
         factors = []
 
@@ -819,9 +694,7 @@ class ServiceAIService:
             return factors
 
         priorities = [o.priority for o in orders if o.priority]
-        urgents = [p for p in priorities if p in [
-            OrderPriority.URGENTE, OrderPriority.CRITICA
-        ]]
+        urgents = [p for p in priorities if p in [OrderPriority.URGENTE, OrderPriority.CRITICA]]
         if len(urgents) > len(priorities) * 0.3:
             factors.append("Alta taxa de urgência")
 
@@ -847,9 +720,7 @@ class ServiceAIService:
             return 0
 
         orders = self.repository.list_service_orders(
-            service_id=sla.service_id,
-            status=OrderStatus.EM_ANDAMENTO,
-            limit=100
+            service_id=sla.service_id, status=OrderStatus.EM_ANDAMENTO, limit=100
         )
 
         at_risk = 0
@@ -864,21 +735,17 @@ class ServiceAIService:
 
         return at_risk
 
-    def _forecast_breaches(self, sla: SLAConfig) -> Dict[str, Any]:
+    def _forecast_breaches(self, sla: SLAConfig) -> dict[str, Any]:
         """Prevê descumprimentos futuros."""
         breach_rate = sla.breach_rate / 100 if sla.breach_rate else 0
 
         return {
             "next_week_expected": round(breach_rate * 7, 1),
             "next_month_expected": round(breach_rate * 30, 1),
-            "risk_level": (
-                "high" if breach_rate > 0.1 else
-                "medium" if breach_rate > 0.05 else
-                "low"
-            )
+            "risk_level": ("high" if breach_rate > 0.1 else "medium" if breach_rate > 0.05 else "low"),
         }
 
-    def _generate_sla_recommendations(self, sla: SLAConfig) -> List[str]:
+    def _generate_sla_recommendations(self, sla: SLAConfig) -> list[str]:
         """Gera recomendações para SLA."""
         recommendations = []
 
@@ -886,27 +753,17 @@ class ServiceAIService:
             recommendations.append("Ação imediata necessária para compliance")
 
         if sla.breach_rate > 10:
-            recommendations.append(
-                "Revisar tempos de resolução ou aumentar capacidade"
-            )
+            recommendations.append("Revisar tempos de resolução ou aumentar capacidade")
 
         if not sla.escalation_enabled:
-            recommendations.append(
-                "Considerar habilitar escalonamento automático"
-            )
+            recommendations.append("Considerar habilitar escalonamento automático")
 
         return recommendations
 
-    def _group_by_day(
-        self,
-        orders: List[ServiceOrder]
-    ) -> Dict[str, int]:
+    def _group_by_day(self, orders: list[ServiceOrder]) -> dict[str, int]:
         """Agrupa ordens por dia da semana."""
-        days = {
-            0: "Segunda", 1: "Terça", 2: "Quarta",
-            3: "Quinta", 4: "Sexta", 5: "Sábado", 6: "Domingo"
-        }
-        result = {name: 0 for name in days.values()}
+        days = {0: "Segunda", 1: "Terça", 2: "Quarta", 3: "Quinta", 4: "Sexta", 5: "Sábado", 6: "Domingo"}
+        result = dict.fromkeys(days.values(), 0)
 
         for order in orders:
             day_name = days[order.created_at.weekday()]
@@ -914,29 +771,21 @@ class ServiceAIService:
 
         return result
 
-    def _group_by_category(
-        self,
-        orders: List[ServiceOrder]
-    ) -> Dict[str, int]:
+    def _group_by_category(self, orders: list[ServiceOrder]) -> dict[str, int]:
         """Agrupa ordens por categoria."""
-        result: Dict[str, int] = {}
+        result: dict[str, int] = {}
 
         for order in orders:
-            service = self.repository.get_service_catalog_by_id(
-                order.service_id
-            )
+            service = self.repository.get_service_catalog_by_id(order.service_id)
             if service:
                 cat = service.category.value
                 result[cat] = result.get(cat, 0) + 1
 
         return result
 
-    def _group_by_priority(
-        self,
-        orders: List[ServiceOrder]
-    ) -> Dict[str, int]:
+    def _group_by_priority(self, orders: list[ServiceOrder]) -> dict[str, int]:
         """Agrupa ordens por prioridade."""
-        result: Dict[str, int] = {}
+        result: dict[str, int] = {}
 
         for order in orders:
             priority = order.priority.value if order.priority else "normal"
@@ -944,12 +793,9 @@ class ServiceAIService:
 
         return result
 
-    def _group_by_status(
-        self,
-        orders: List[ServiceOrder]
-    ) -> Dict[str, int]:
+    def _group_by_status(self, orders: list[ServiceOrder]) -> dict[str, int]:
         """Agrupa ordens por status."""
-        result: Dict[str, int] = {}
+        result: dict[str, int] = {}
 
         for order in orders:
             status = order.status.value if order.status else "unknown"
@@ -957,12 +803,9 @@ class ServiceAIService:
 
         return result
 
-    def _identify_peak_hours(
-        self,
-        orders: List[ServiceOrder]
-    ) -> List[int]:
+    def _identify_peak_hours(self, orders: list[ServiceOrder]) -> list[int]:
         """Identifica horários de pico."""
-        hour_counts: Dict[int, int] = {}
+        hour_counts: dict[int, int] = {}
 
         for order in orders:
             hour = order.created_at.hour
@@ -976,15 +819,9 @@ class ServiceAIService:
 
         return sorted(peaks)
 
-    def _calculate_avg_duration(
-        self,
-        orders: List[ServiceOrder]
-    ) -> float:
+    def _calculate_avg_duration(self, orders: list[ServiceOrder]) -> float:
         """Calcula duração média."""
-        completed = [
-            o for o in orders
-            if o.status == OrderStatus.CONCLUIDA and o.actual_duration_hours
-        ]
+        completed = [o for o in orders if o.status == OrderStatus.CONCLUIDA and o.actual_duration_hours]
 
         if not completed:
             return 0.0
@@ -992,10 +829,7 @@ class ServiceAIService:
         total = sum(float(o.actual_duration_hours) for o in completed)
         return round(total / len(completed), 2)
 
-    def _calculate_completion_rate(
-        self,
-        orders: List[ServiceOrder]
-    ) -> float:
+    def _calculate_completion_rate(self, orders: list[ServiceOrder]) -> float:
         """Calcula taxa de conclusão."""
         if not orders:
             return 0.0

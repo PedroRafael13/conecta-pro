@@ -3,11 +3,10 @@
  * Análise operacional inteligente: diaristas, equipamentos, manutenções
  */
 
-import { getOperacionalDiaristas } from '@/types/generated/ai/operacional-diaristas/operacional-diaristas';
-import { getEquipmentManutencao } from '@/types/generated/ai/equipment-manutencao/equipment-manutencao';
+import { customInstance } from '@/lib/axios-instance';
 
-const diaristasApi = getOperacionalDiaristas();
-const maintenanceApi = getEquipmentManutencao();
+const DIARISTAS_BASE = '/api/v1/operacional/diaristas/ai';
+const MAINTENANCE_BASE = '/api/v1/maintenances/ai';
 
 /**
  * Service para análise operacional com IA
@@ -22,11 +21,9 @@ export class OperationalAIService {
     dataInicio: string,
     dataFim: string,
     tipo?: string
-  ): Promise<any> {
-    return diaristasApi.analyzeAvailabilityApiV1OperacionalDiaristasAiAvailabilityGet({
-      data_inicio: dataInicio,
-      data_fim: dataFim,
-      tipo: tipo as any,
+  ): Promise<unknown> {
+    return customInstance.get(`${DIARISTAS_BASE}/availability`, {
+      params: { data_inicio: dataInicio, data_fim: dataFim, tipo },
     });
   }
 
@@ -37,20 +34,18 @@ export class OperationalAIService {
     dataInicio: string,
     dataFim: string,
     budget?: number | string
-  ): Promise<any> {
-    return diaristasApi.optimizeScheduleApiV1OperacionalDiaristasAiOptimizeGet({
-      data_inicio: dataInicio,
-      data_fim: dataFim,
-      budget: budget as any,
+  ): Promise<unknown> {
+    return customInstance.get(`${DIARISTAS_BASE}/optimize`, {
+      params: { data_inicio: dataInicio, data_fim: dataFim, budget },
     });
   }
 
   /**
    * Analisa desempenho de diarista
    */
-  static async analyzeDiaristPerformance(diaristId: string): Promise<any> {
-    return diaristasApi.analyzePerformanceApiV1OperacionalDiaristasAiPerformanceDiaristIdGet(
-      diaristId
+  static async analyzeDiaristPerformance(diaristId: string): Promise<unknown> {
+    return customInstance.get(
+      `${DIARISTAS_BASE}/performance/${diaristId}`
     );
   }
 
@@ -61,11 +56,9 @@ export class OperationalAIService {
     data: string,
     tipo?: string,
     hours?: number
-  ): Promise<any> {
-    return diaristasApi.suggestDiaristsApiV1OperacionalDiaristasAiSuggestGet({
-      data,
-      tipo: tipo as any,
-      // hours removido - parâmetro não existe no schema gerado
+  ): Promise<unknown> {
+    return customInstance.get(`${DIARISTAS_BASE}/suggest`, {
+      params: { data, tipo, hours },
     });
   }
 
@@ -74,27 +67,27 @@ export class OperationalAIService {
   /**
    * Estima custo de manutenção
    */
-  static async estimateMaintenanceCost(equipmentId: string): Promise<any> {
-    return maintenanceApi.estimateCostApiV1MaintenancesAiEstimateCostEquipmentIdGet(
-      equipmentId
+  static async estimateMaintenanceCost(equipmentId: string): Promise<unknown> {
+    return customInstance.get(
+      `${MAINTENANCE_BASE}/estimate-cost/${equipmentId}`
     );
   }
 
   /**
    * Prevê falhas de equipamento
    */
-  static async predictFailure(equipmentId: string): Promise<any> {
-    return maintenanceApi.predictFailureApiV1MaintenancesAiPredictFailureEquipmentIdGet(
-      equipmentId
+  static async predictFailure(equipmentId: string): Promise<unknown> {
+    return customInstance.get(
+      `${MAINTENANCE_BASE}/predict-failure/${equipmentId}`
     );
   }
 
   /**
    * Analisa saúde do equipamento
    */
-  static async analyzeEquipmentHealth(equipmentId: string): Promise<any> {
-    return maintenanceApi.analyzeHealthApiV1MaintenancesAiHealthEquipmentIdGet(
-      equipmentId
+  static async analyzeEquipmentHealth(equipmentId: string): Promise<unknown> {
+    return customInstance.get(
+      `${MAINTENANCE_BASE}/health/${equipmentId}`
     );
   }
 
@@ -103,18 +96,18 @@ export class OperationalAIService {
    */
   static async analyzeMaintenancePatterns(
     clientId?: string
-  ): Promise<any> {
-    return maintenanceApi.analyzePatternsApiV1MaintenancesAiPatternsGet({
-      client_id: clientId,
+  ): Promise<unknown> {
+    return customInstance.get(`${MAINTENANCE_BASE}/patterns`, {
+      params: { client_id: clientId },
     });
   }
 
   /**
    * Recomenda agendamento de manutenção
    */
-  static async recommendSchedule(clientId?: string): Promise<any> {
-    return maintenanceApi.recommendScheduleApiV1MaintenancesAiRecommendScheduleGet({
-      client_id: clientId,
+  static async recommendSchedule(clientId?: string): Promise<unknown> {
+    return customInstance.get(`${MAINTENANCE_BASE}/recommend-schedule`, {
+      params: { client_id: clientId },
     });
   }
 
@@ -124,10 +117,10 @@ export class OperationalAIService {
   static async optimizeRoute(
     technicianId: string,
     date: string
-  ): Promise<any> {
-    return maintenanceApi.optimizeRouteApiV1MaintenancesAiOptimizeRouteTechnicianIdGet(
-      technicianId,
-      { date }
+  ): Promise<unknown> {
+    return customInstance.get(
+      `${MAINTENANCE_BASE}/optimize-route/${technicianId}`,
+      { params: { date } }
     );
   }
 }

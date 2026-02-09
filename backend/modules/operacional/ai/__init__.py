@@ -15,29 +15,29 @@ Este modulo fornece:
 """
 
 from .agents import (
+    AbsencePrediction,
+    ActionSuggestion,
+    AnomalyPattern,
+    EmployeeAvailability,
+    EmployeePreference,
+    OccurrenceAnalysis,
+    # Occurrence Analyzer
+    OccurrenceAnalyzer,
+    OccurrenceClassification,
+    OptimizationConstraints,
+    OptimizationResult,
+    OvertimeForecast,
+    # Predictive Analyzer
+    PredictiveAnalyzer,
     # Scale Optimizer
     ScaleOptimizer,
     ShiftSlot,
-    EmployeeAvailability,
-    EmployeePreference,
-    OptimizationConstraints,
-    OptimizationResult,
+    SimilarOccurrence,
+    SubstituteSuggestion,
     # Substitution Optimizer
     SubstitutionOptimizer,
-    SubstituteSuggestion,
     SubstitutionRequest,
-    # Predictive Analyzer
-    PredictiveAnalyzer,
-    AbsencePrediction,
     TurnoverRisk,
-    OvertimeForecast,
-    AnomalyPattern,
-    # Occurrence Analyzer
-    OccurrenceAnalyzer,
-    OccurrenceAnalysis,
-    OccurrenceClassification,
-    ActionSuggestion,
-    SimilarOccurrence,
 )
 
 __all__ = [

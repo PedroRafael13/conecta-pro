@@ -2,10 +2,10 @@
 
 from .occurrence import (
     Occurrence,
-    OccurrenceType,
-    OccurrenceSeverity,
     OccurrenceCategory,
+    OccurrenceSeverity,
     OccurrenceStatus,
+    OccurrenceType,
 )
 
 __all__ = [

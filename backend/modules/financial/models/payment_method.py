@@ -2,7 +2,7 @@
 
 import uuid
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -10,7 +10,7 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from core.models import Base
 
 
-class PaymentMethodType(str, Enum):
+class PaymentMethodType(StrEnum):
     """Tipo de forma de pagamento."""
 
     DINHEIRO = "dinheiro"
@@ -28,7 +28,7 @@ class PaymentMethodType(str, Enum):
     OUTRO = "outro"
 
 
-class PaymentMethodStatus(str, Enum):
+class PaymentMethodStatus(StrEnum):
     """Status da forma de pagamento."""
 
     ATIVO = "ativo"

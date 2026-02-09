@@ -7,13 +7,13 @@ incluindo emissao, consulta, cancelamento e informacoes de migracao.
 
 from datetime import datetime
 from decimal import Decimal
+from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
 import pytest
-from httpx import AsyncClient
-from unittest.mock import patch, MagicMock
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from httpx import AsyncClient
 
 # Cria app isolado para testes (evita carregar todo o main.py)
 from modules.government_integrations.controllers.nfse_nacional_controller import router as nfse_router
@@ -103,9 +103,7 @@ class TestEmitirDPS:
             assert data["data"]["status"] == "preparacao"
 
     @pytest.mark.asyncio
-    async def test_emitir_dps_com_prestador(
-        self, auth_headers, tomador_valido, servico_valido, prestador_valido
-    ):
+    async def test_emitir_dps_com_prestador(self, auth_headers, tomador_valido, servico_valido, prestador_valido):
         """Testa emissao de DPS com dados de prestador customizado."""
         async with AsyncClient(app=app, base_url="http://test") as client:
             response = await client.post(
@@ -612,8 +610,8 @@ class TestNFSeNacionalSchemas:
         """Testa schema completo de emissao de DPS."""
         from modules.government_integrations.schemas.nfse_nacional import (
             EmitirDPSRequest,
-            TomadorNacionalRequest,
             ServicoNacionalRequest,
+            TomadorNacionalRequest,
         )
 
         request = EmitirDPSRequest(

@@ -1,27 +1,28 @@
 """Service para agregação de métricas."""
 
 import logging
-import random
+import random  # noqa: S311
 from datetime import datetime, timedelta
-from typing import List, Dict, Any
+from enum import StrEnum
+from typing import Any
 from uuid import UUID
-from enum import Enum
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.hr.analytics_dashboard.models import (
+    AggregationType,
     AnalyticsCache,
     CacheType,
     DataSource,
-    AggregationType,
 )
 from modules.hr.analytics_dashboard.repositories import CacheRepository
 
 logger = logging.getLogger(__name__)
 
 
-class TimeGranularity(str, Enum):
+class TimeGranularity(StrEnum):
     """Granularidade temporal."""
+
     HOUR = "hour"
     DAY = "day"
     WEEK = "week"
@@ -48,7 +49,7 @@ class MetricsAggregatorService:
         filters: dict = None,
         limit: int = None,
         use_cache: bool = True,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Agrega dados de uma fonte."""
         # Período padrão
         if not period_end:
@@ -112,7 +113,7 @@ class MetricsAggregatorService:
         group_by: str = None,
         filters: dict = None,
         limit: int = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Executa agregação."""
         aggregators = {
             DataSource.TIME_ENTRIES: self._aggregate_time_entries,
@@ -146,7 +147,7 @@ class MetricsAggregatorService:
         group_by: str = None,
         filters: dict = None,
         limit: int = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Agrega registros de ponto."""
 
         # Simular dados para demonstração
@@ -154,28 +155,23 @@ class MetricsAggregatorService:
             data = []
             current = period_start.date()
             while current <= period_end.date():
-                data.append({
-                    "date": current.isoformat(),
-                    "value": random.randint(50, 200),
-                })
+                data.append(
+                    {
+                        "date": current.isoformat(),
+                        "value": random.randint(50, 200),  # noqa: S311
+                    }
+                )
                 current += timedelta(days=1)
         elif group_by == "department":
             departments = ["TI", "RH", "Financeiro", "Operações", "Comercial"]
-            data = [
-                {"department": dept, "value": random.randint(20, 100)}
-                for dept in departments
-            ]
+            data = [{"department": dept, "value": random.randint(20, 100)} for dept in departments]  # noqa: S311
         elif group_by == "employee":
             data = [
-                {
-                    "employee_id": f"emp_{i}",
-                    "employee_name": f"Funcionário {i}",
-                    "value": random.randint(160, 200)
-                }
+                {"employee_id": f"emp_{i}", "employee_name": f"Funcionário {i}", "value": random.randint(160, 200)}  # noqa: S311
                 for i in range(1, min((limit or 10) + 1, 11))
             ]
         else:
-            data = {"total": random.randint(5000, 10000)}
+            data = {"total": random.randint(5000, 10000)}  # noqa: S311
 
         return {
             "data_source": "time_entries",
@@ -196,23 +192,20 @@ class MetricsAggregatorService:
         group_by: str = None,
         filters: dict = None,
         limit: int = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Agrega check-ins."""
 
         if group_by == "type":
             data = [
-                {"type": "entry", "count": random.randint(500, 1000)},
-                {"type": "exit", "count": random.randint(500, 1000)},
-                {"type": "break_start", "count": random.randint(200, 500)},
-                {"type": "break_end", "count": random.randint(200, 500)},
+                {"type": "entry", "count": random.randint(500, 1000)},  # noqa: S311
+                {"type": "exit", "count": random.randint(500, 1000)},  # noqa: S311
+                {"type": "break_start", "count": random.randint(200, 500)},  # noqa: S311
+                {"type": "break_end", "count": random.randint(200, 500)},  # noqa: S311
             ]
         elif group_by == "hour":
-            data = [
-                {"hour": h, "count": random.randint(10, 100)}
-                for h in range(6, 23)
-            ]
+            data = [{"hour": h, "count": random.randint(10, 100)} for h in range(6, 23)]  # noqa: S311
         else:
-            data = {"total": random.randint(2000, 5000)}
+            data = {"total": random.randint(2000, 5000)}  # noqa: S311
 
         return {
             "data_source": "checkins",
@@ -231,25 +224,25 @@ class MetricsAggregatorService:
         group_by: str = None,
         filters: dict = None,
         limit: int = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Agrega funcionários."""
 
         if group_by == "department":
             data = [
-                {"department": "TI", "count": random.randint(10, 30)},
-                {"department": "RH", "count": random.randint(5, 15)},
-                {"department": "Financeiro", "count": random.randint(5, 20)},
-                {"department": "Operações", "count": random.randint(20, 50)},
-                {"department": "Comercial", "count": random.randint(10, 25)},
+                {"department": "TI", "count": random.randint(10, 30)},  # noqa: S311
+                {"department": "RH", "count": random.randint(5, 15)},  # noqa: S311
+                {"department": "Financeiro", "count": random.randint(5, 20)},  # noqa: S311
+                {"department": "Operações", "count": random.randint(20, 50)},  # noqa: S311
+                {"department": "Comercial", "count": random.randint(10, 25)},  # noqa: S311
             ]
         elif group_by == "status":
             data = [
-                {"status": "active", "count": random.randint(80, 120)},
-                {"status": "inactive", "count": random.randint(5, 15)},
-                {"status": "vacation", "count": random.randint(3, 10)},
+                {"status": "active", "count": random.randint(80, 120)},  # noqa: S311
+                {"status": "inactive", "count": random.randint(5, 15)},  # noqa: S311
+                {"status": "vacation", "count": random.randint(3, 10)},  # noqa: S311
             ]
         else:
-            data = {"total": random.randint(80, 150)}
+            data = {"total": random.randint(80, 150)}  # noqa: S311
 
         return {
             "data_source": "employees",
@@ -268,27 +261,27 @@ class MetricsAggregatorService:
         group_by: str = None,
         filters: dict = None,
         limit: int = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Agrega departamentos."""
 
         data = [
             {
                 "name": "TI",
-                "employee_count": random.randint(10, 30),
-                "avg_hours": round(random.uniform(7.5, 9.0), 1),
-                "overtime_hours": round(random.uniform(10, 50), 1),
+                "employee_count": random.randint(10, 30),  # noqa: S311
+                "avg_hours": round(random.uniform(7.5, 9.0), 1),  # noqa: S311
+                "overtime_hours": round(random.uniform(10, 50), 1),  # noqa: S311
             },
             {
                 "name": "RH",
-                "employee_count": random.randint(5, 15),
-                "avg_hours": round(random.uniform(7.8, 8.5), 1),
-                "overtime_hours": round(random.uniform(5, 20), 1),
+                "employee_count": random.randint(5, 15),  # noqa: S311
+                "avg_hours": round(random.uniform(7.8, 8.5), 1),  # noqa: S311
+                "overtime_hours": round(random.uniform(5, 20), 1),  # noqa: S311
             },
             {
                 "name": "Financeiro",
-                "employee_count": random.randint(5, 20),
-                "avg_hours": round(random.uniform(8.0, 9.0), 1),
-                "overtime_hours": round(random.uniform(15, 40), 1),
+                "employee_count": random.randint(5, 20),  # noqa: S311
+                "avg_hours": round(random.uniform(8.0, 9.0), 1),  # noqa: S311
+                "overtime_hours": round(random.uniform(15, 40), 1),  # noqa: S311
             },
         ]
 
@@ -308,30 +301,32 @@ class MetricsAggregatorService:
         group_by: str = None,
         filters: dict = None,
         limit: int = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Agrega horas extras."""
 
         if group_by == "date":
             data = []
             current = period_start.date()
             while current <= period_end.date():
-                data.append({
-                    "date": current.isoformat(),
-                    "hours": round(random.uniform(5, 30), 1),
-                    "cost": round(random.uniform(500, 3000), 2),
-                })
+                data.append(
+                    {
+                        "date": current.isoformat(),
+                        "hours": round(random.uniform(5, 30), 1),  # noqa: S311
+                        "cost": round(random.uniform(500, 3000), 2),  # noqa: S311
+                    }
+                )
                 current += timedelta(days=1)
         elif group_by == "department":
             data = [
-                {"department": "TI", "hours": round(random.uniform(50, 150), 1)},
-                {"department": "Operações", "hours": round(random.uniform(100, 200), 1)},
-                {"department": "Comercial", "hours": round(random.uniform(30, 80), 1)},
+                {"department": "TI", "hours": round(random.uniform(50, 150), 1)},  # noqa: S311
+                {"department": "Operações", "hours": round(random.uniform(100, 200), 1)},  # noqa: S311
+                {"department": "Comercial", "hours": round(random.uniform(30, 80), 1)},  # noqa: S311
             ]
         else:
             data = {
-                "total_hours": round(random.uniform(200, 500), 1),
-                "total_cost": round(random.uniform(10000, 30000), 2),
-                "avg_per_employee": round(random.uniform(5, 15), 1),
+                "total_hours": round(random.uniform(200, 500), 1),  # noqa: S311
+                "total_cost": round(random.uniform(10000, 30000), 2),  # noqa: S311
+                "avg_per_employee": round(random.uniform(5, 15), 1),  # noqa: S311
             }
 
         return {
@@ -351,27 +346,27 @@ class MetricsAggregatorService:
         group_by: str = None,
         filters: dict = None,
         limit: int = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Agrega faltas."""
 
         if group_by == "reason":
             data = [
-                {"reason": "medical", "count": random.randint(10, 30)},
-                {"reason": "personal", "count": random.randint(5, 15)},
-                {"reason": "vacation", "count": random.randint(20, 40)},
-                {"reason": "unjustified", "count": random.randint(2, 8)},
+                {"reason": "medical", "count": random.randint(10, 30)},  # noqa: S311
+                {"reason": "personal", "count": random.randint(5, 15)},  # noqa: S311
+                {"reason": "vacation", "count": random.randint(20, 40)},  # noqa: S311
+                {"reason": "unjustified", "count": random.randint(2, 8)},  # noqa: S311
             ]
         elif group_by == "department":
             data = [
-                {"department": "TI", "days": random.randint(5, 20)},
-                {"department": "RH", "days": random.randint(3, 10)},
-                {"department": "Operações", "days": random.randint(10, 30)},
+                {"department": "TI", "days": random.randint(5, 20)},  # noqa: S311
+                {"department": "RH", "days": random.randint(3, 10)},  # noqa: S311
+                {"department": "Operações", "days": random.randint(10, 30)},  # noqa: S311
             ]
         else:
             data = {
-                "total_days": random.randint(30, 80),
-                "justified": random.randint(20, 60),
-                "unjustified": random.randint(5, 15),
+                "total_days": random.randint(30, 80),  # noqa: S311
+                "justified": random.randint(20, 60),  # noqa: S311
+                "unjustified": random.randint(5, 15),  # noqa: S311
             }
 
         return {
@@ -391,7 +386,7 @@ class MetricsAggregatorService:
         period_end: datetime,
         granularity: TimeGranularity = TimeGranularity.DAY,
         metric: str = "count",
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Retorna série temporal de uma métrica."""
 
         result = []
@@ -407,10 +402,12 @@ class MetricsAggregatorService:
 
         current = period_start
         while current < period_end:
-            result.append({
-                "timestamp": current.isoformat(),
-                "value": random.randint(50, 200),
-            })
+            result.append(
+                {
+                    "timestamp": current.isoformat(),
+                    "value": random.randint(50, 200),  # noqa: S311
+                }
+            )
             current += delta
 
         return result
@@ -425,7 +422,7 @@ class MetricsAggregatorService:
         current_end: datetime,
         previous_start: datetime,
         previous_end: datetime,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Compara métricas entre dois períodos."""
         current = await self.aggregate_data(
             data_source=data_source,
@@ -459,9 +456,7 @@ class MetricsAggregatorService:
             "previous": previous,
             "change_absolute": current_value - previous_value,
             "change_percentage": round(change_percentage, 2),
-            "trend": (
-                "up" if change_percentage > 0 else "down" if change_percentage < 0 else "stable"
-            ),
+            "trend": ("up" if change_percentage > 0 else "down" if change_percentage < 0 else "stable"),
         }
 
     def _extract_total(self, data) -> float:

@@ -6,11 +6,8 @@ calculando custos baseados na CCT SINDCOND 2026.
 """
 
 from dataclasses import dataclass
-from typing import Any, Optional
-from modules.ai.bartolo.wizards.base_wizard import (
-    BaseWizard, WizardStep, StepType, WizardResponse
-)
 
+from modules.ai.bartolo.wizards.base_wizard import BaseWizard, StepType, WizardResponse, WizardStep
 
 # Tabela CCT SINDCOND 2026 - Pisos Salariais
 CCT_PISOS_2026 = {
@@ -55,6 +52,7 @@ ENCARGOS_SOCIAIS = 0.72  # 72% sobre o salario
 @dataclass
 class PostoTrabalho:
     """Posto de trabalho para proposta."""
+
     cargo: str
     quantidade: int
     escala: str
@@ -117,7 +115,6 @@ class PropostaComercialWizard(BaseWizard):
                 help_text="Informe o nome ou razao social do cliente.",
                 validation_rules={"min_length": 3, "max_length": 200},
             ),
-
             # Passo 2: Tipo de Servico
             WizardStep(
                 id="tipo_servico",
@@ -135,7 +132,6 @@ class PropostaComercialWizard(BaseWizard):
                 ],
                 help_text="Escolha o tipo de servico que melhor descreve a proposta.",
             ),
-
             # Passo 3: Cargo
             WizardStep(
                 id="cargo",
@@ -147,7 +143,6 @@ class PropostaComercialWizard(BaseWizard):
                 options=list(CCT_PISOS_2026.keys())[:10],  # Primeiros 10 cargos
                 help_text="Escolha o cargo. O salario sera baseado na CCT SINDCOND 2026.",
             ),
-
             # Passo 4: Quantidade
             WizardStep(
                 id="quantidade",
@@ -159,7 +154,6 @@ class PropostaComercialWizard(BaseWizard):
                 help_text="Informe a quantidade de funcionarios para este posto.",
                 validation_rules={"min_value": 1, "max_value": 100},
             ),
-
             # Passo 5: Escala
             WizardStep(
                 id="escala",
@@ -171,7 +165,6 @@ class PropostaComercialWizard(BaseWizard):
                 options=list(ESCALAS.keys()),
                 help_text="Escolha o regime de trabalho. Escalas noturnas incluem adicional de 20%.",
             ),
-
             # Passo 6: Periculosidade
             WizardStep(
                 id="periculosidade",
@@ -183,7 +176,6 @@ class PropostaComercialWizard(BaseWizard):
                 options=["Sim", "Nao"],
                 help_text="Vigilantes geralmente tem direito a periculosidade.",
             ),
-
             # Passo 7: Mais postos
             WizardStep(
                 id="mais_postos",
@@ -195,7 +187,6 @@ class PropostaComercialWizard(BaseWizard):
                 options=["Sim, adicionar mais", "Nao, continuar"],
                 help_text="Voce pode adicionar quantos postos precisar.",
             ),
-
             # Passo 8: Custos Operacionais
             WizardStep(
                 id="custos_operacionais",
@@ -207,7 +198,6 @@ class PropostaComercialWizard(BaseWizard):
                 default_value=0,
                 help_text="Informe o valor em reais. Se nao houver, digite 0.",
             ),
-
             # Passo 9: Margem de Lucro
             WizardStep(
                 id="margem_lucro",
@@ -285,18 +275,20 @@ class PropostaComercialWizard(BaseWizard):
         # Detalhamento dos postos
         postos_detalhamento = []
         for i, posto in enumerate(self.postos, 1):
-            postos_detalhamento.append({
-                "numero": i,
-                "cargo": posto.cargo,
-                "quantidade": posto.quantidade,
-                "escala": posto.escala,
-                "salario_base": posto.salario_base,
-                "salario_total": posto.salario_total,
-                "custo_unitario": posto.custo_mensal_unitario,
-                "custo_total": posto.custo_mensal_total,
-                "periculosidade": posto.adicional_periculosidade,
-                "adicional_noturno": posto.adicional_noturno,
-            })
+            postos_detalhamento.append(
+                {
+                    "numero": i,
+                    "cargo": posto.cargo,
+                    "quantidade": posto.quantidade,
+                    "escala": posto.escala,
+                    "salario_base": posto.salario_base,
+                    "salario_total": posto.salario_total,
+                    "custo_unitario": posto.custo_mensal_unitario,
+                    "custo_total": posto.custo_mensal_total,
+                    "periculosidade": posto.adicional_periculosidade,
+                    "adicional_noturno": posto.adicional_noturno,
+                }
+            )
 
         return {
             "cliente": data.get("cliente"),
@@ -337,8 +329,14 @@ class PropostaComercialWizard(BaseWizard):
 
         for i, posto in enumerate(self.postos, 1):
             lines.append(f"  {i}. {posto.cargo} ({posto.quantidade}x) - {posto.escala}")
-            lines.append(f"     Salario: R$ {posto.salario_total:,.2f}/mes".replace(",", "X").replace(".", ",").replace("X", "."))
-            lines.append(f"     Custo total: R$ {posto.custo_mensal_total:,.2f}/mes".replace(",", "X").replace(".", ",").replace("X", "."))
+            lines.append(
+                f"     Salario: R$ {posto.salario_total:,.2f}/mes".replace(",", "X").replace(".", ",").replace("X", ".")
+            )
+            lines.append(
+                f"     Custo total: R$ {posto.custo_mensal_total:,.2f}/mes".replace(",", "X")
+                .replace(".", ",")
+                .replace("X", ".")
+            )
             custo_total_mao_obra += posto.custo_mensal_total
             total_funcionarios += posto.quantidade
 
@@ -349,14 +347,20 @@ class PropostaComercialWizard(BaseWizard):
         custo_total = custo_total_mao_obra + custos_op
         valor_proposta = custo_total * (1 + margem)
 
-        lines.extend([
-            "",
-            f"**Total de Funcionarios:** {total_funcionarios}",
-            f"**Custo Mao de Obra:** R$ {custo_total_mao_obra:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
-            f"**Custos Operacionais:** R$ {custos_op:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
-            f"**Margem de Lucro:** {margem_str}",
-            "",
-            f"**VALOR MENSAL DA PROPOSTA: R$ {valor_proposta:,.2f}**".replace(",", "X").replace(".", ",").replace("X", "."),
-        ])
+        lines.extend(
+            [
+                "",
+                f"**Total de Funcionarios:** {total_funcionarios}",
+                f"**Custo Mao de Obra:** R$ {custo_total_mao_obra:,.2f}".replace(",", "X")
+                .replace(".", ",")
+                .replace("X", "."),
+                f"**Custos Operacionais:** R$ {custos_op:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
+                f"**Margem de Lucro:** {margem_str}",
+                "",
+                f"**VALOR MENSAL DA PROPOSTA: R$ {valor_proposta:,.2f}**".replace(",", "X")
+                .replace(".", ",")
+                .replace("X", "."),
+            ]
+        )
 
         return "\n".join(lines)

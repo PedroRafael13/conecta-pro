@@ -6,17 +6,14 @@ Extrai clausulas de contratos usando NLP.
 
 import logging
 import re
-from datetime import date, datetime
-from typing import Optional
-from uuid import UUID
 
 from sqlalchemy.orm import Session
 
-from modules.ai.contract_analysis.models.extracted_clause import (
-    ClauseType,
-    ClauseImportance,
-)
 from modules.ai.contract_analysis.models.contract_analysis import ContractType
+from modules.ai.contract_analysis.models.extracted_clause import (
+    ClauseImportance,
+    ClauseType,
+)
 from modules.ai.contract_analysis.repositories.contract_repository import (
     ContractAnalysisRepository,
 )
@@ -40,66 +37,51 @@ class ClauseExtractor:
 
     # Mapeamento de palavras-chave para tipos de clausula
     CLAUSE_KEYWORDS = {
-        ClauseType.OBJECT: [
-            "objeto", "finalidade", "escopo", "propósito", "serviços prestados"
-        ],
+        ClauseType.OBJECT: ["objeto", "finalidade", "escopo", "propósito", "serviços prestados"],
         ClauseType.PAYMENT: [
-            "pagamento", "remuneração", "preço", "valor", "honorários",
-            "faturamento", "cobrança", "vencimento"
+            "pagamento",
+            "remuneração",
+            "preço",
+            "valor",
+            "honorários",
+            "faturamento",
+            "cobrança",
+            "vencimento",
         ],
         ClauseType.PENALTY: [
-            "multa", "penalidade", "sanção", "inadimplemento", "mora",
-            "indenização", "perdas e danos"
+            "multa",
+            "penalidade",
+            "sanção",
+            "inadimplemento",
+            "mora",
+            "indenização",
+            "perdas e danos",
         ],
-        ClauseType.TERMINATION: [
-            "rescisão", "resolução", "resilição", "término", "extinção",
-            "denúncia", "distrato"
-        ],
-        ClauseType.RENEWAL: [
-            "renovação", "prorrogação", "vigência", "prazo", "duração"
-        ],
+        ClauseType.TERMINATION: ["rescisão", "resolução", "resilição", "término", "extinção", "denúncia", "distrato"],
+        ClauseType.RENEWAL: ["renovação", "prorrogação", "vigência", "prazo", "duração"],
         ClauseType.CONFIDENTIALITY: [
-            "confidencialidade", "sigilo", "segredo", "não divulgação",
-            "informações confidenciais"
+            "confidencialidade",
+            "sigilo",
+            "segredo",
+            "não divulgação",
+            "informações confidenciais",
         ],
-        ClauseType.NON_COMPETE: [
-            "não concorrência", "exclusividade", "não competição",
-            "restrição", "vedação"
-        ],
-        ClauseType.WARRANTY: [
-            "garantia", "responsabilidade", "qualidade", "defeito",
-            "vício"
-        ],
-        ClauseType.LIABILITY: [
-            "responsabilidade civil", "limitação de responsabilidade",
-            "danos", "indenizar"
-        ],
-        ClauseType.FORCE_MAJEURE: [
-            "força maior", "caso fortuito", "eventos extraordinários",
-            "imprevisível"
-        ],
-        ClauseType.DISPUTE: [
-            "resolução de conflitos", "mediação", "arbitragem",
-            "litígio", "controvérsia"
-        ],
-        ClauseType.JURISDICTION: [
-            "foro", "jurisdição", "comarca", "competência"
-        ],
+        ClauseType.NON_COMPETE: ["não concorrência", "exclusividade", "não competição", "restrição", "vedação"],
+        ClauseType.WARRANTY: ["garantia", "responsabilidade", "qualidade", "defeito", "vício"],
+        ClauseType.LIABILITY: ["responsabilidade civil", "limitação de responsabilidade", "danos", "indenizar"],
+        ClauseType.FORCE_MAJEURE: ["força maior", "caso fortuito", "eventos extraordinários", "imprevisível"],
+        ClauseType.DISPUTE: ["resolução de conflitos", "mediação", "arbitragem", "litígio", "controvérsia"],
+        ClauseType.JURISDICTION: ["foro", "jurisdição", "comarca", "competência"],
         ClauseType.DATA_PROTECTION: [
-            "lgpd", "proteção de dados", "dados pessoais", "privacidade",
-            "tratamento de dados"
+            "lgpd",
+            "proteção de dados",
+            "dados pessoais",
+            "privacidade",
+            "tratamento de dados",
         ],
-        ClauseType.SLA: [
-            "nível de serviço", "sla", "disponibilidade", "uptime",
-            "tempo de resposta"
-        ],
-        ClauseType.PRICE_ADJUSTMENT: [
-            "reajuste", "correção monetária", "índice", "igpm", "ipca",
-            "atualização"
-        ],
-        ClauseType.OBLIGATION: [
-            "obrigação", "dever", "compromisso", "responsável por"
-        ],
+        ClauseType.SLA: ["nível de serviço", "sla", "disponibilidade", "uptime", "tempo de resposta"],
+        ClauseType.PRICE_ADJUSTMENT: ["reajuste", "correção monetária", "índice", "igpm", "ipca", "atualização"],
+        ClauseType.OBLIGATION: ["obrigação", "dever", "compromisso", "responsável por"],
     }
 
     # Padroes para extrair entidades
@@ -165,10 +147,12 @@ class ClauseExtractor:
             if matches:
                 for match in matches:
                     if isinstance(match, tuple) and len(match) >= 2:
-                        sections.append({
-                            "number": match[0].strip(),
-                            "content": match[1].strip(),
-                        })
+                        sections.append(
+                            {
+                                "number": match[0].strip(),
+                                "content": match[1].strip(),
+                            }
+                        )
                 break
 
         # Se nao encontrou padroes, dividir por paragrafos
@@ -176,14 +160,16 @@ class ClauseExtractor:
             paragraphs = text.split("\n\n")
             for i, para in enumerate(paragraphs):
                 if len(para.strip()) > 50:  # Ignorar paragrafos muito curtos
-                    sections.append({
-                        "number": str(i + 1),
-                        "content": para.strip(),
-                    })
+                    sections.append(
+                        {
+                            "number": str(i + 1),
+                            "content": para.strip(),
+                        }
+                    )
 
         return sections
 
-    def _analyze_section(self, section: dict, index: int) -> Optional[dict]:
+    def _analyze_section(self, section: dict, index: int) -> dict | None:
         """Analisa uma secao e extrai informacoes."""
         content = section.get("content", "")
         if not content or len(content) < 20:
@@ -397,16 +383,18 @@ class ClauseExtractor:
             matches = re.findall(pattern, content, re.I)
             for match in matches:
                 if isinstance(match, tuple):
-                    obligations.append({
-                        "party": match[0] if len(match) > 1 else "parte",
-                        "action": match[-1].strip(),
-                    })
+                    obligations.append(
+                        {
+                            "party": match[0] if len(match) > 1 else "parte",
+                            "action": match[-1].strip(),
+                        }
+                    )
                 else:
                     obligations.append({"action": match.strip()})
 
         return obligations[:5]  # Limitar a 5
 
-    def _extract_title(self, content: str) -> Optional[str]:
+    def _extract_title(self, content: str) -> str | None:
         """Extrai titulo da clausula."""
         # Primeira linha ate 100 caracteres
         first_line = content.split("\n")[0].strip()

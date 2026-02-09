@@ -16,20 +16,20 @@ Autor: Conecta PRO Team + Central AI
 Data: 2026-01-11
 """
 
-from .intelligent_task_predictor import IntelligentTaskPredictor
-from .ai_enhanced_escalation import AIEnhancedEscalation  
+from .ai_anti_procrastination_engine import AIAntiProcrastinationEngine
+from .ai_enhanced_escalation import AIEnhancedEscalation
 from .cross_module_task_analytics import CrossModuleTaskAnalytics
+from .intelligent_task_predictor import IntelligentTaskPredictor
 from .predictive_alerts import PredictiveAlerts
 from .smart_insights_distributor import SmartInsightsDistributor
-from .ai_anti_procrastination_engine import AIAntiProcrastinationEngine
 
 __all__ = [
     "IntelligentTaskPredictor",
-    "AIEnhancedEscalation", 
+    "AIEnhancedEscalation",
     "CrossModuleTaskAnalytics",
     "PredictiveAlerts",
     "SmartInsightsDistributor",
-    "AIAntiProcrastinationEngine"
+    "AIAntiProcrastinationEngine",
 ]
 
 # Versão da integração AI

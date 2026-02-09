@@ -9,21 +9,19 @@ Quality Score Target: 99+/100
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import json
 import logging
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional, Set
+from typing import Any
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect, status
+from fastapi import APIRouter, HTTPException, Query, WebSocket, WebSocketDisconnect, status
 from fastapi.websockets import WebSocketState
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.database import get_db
 from modules.operacional.communication.models.alert import Alert
 from modules.operacional.communication.schemas.communication_schemas import (
     WebSocketConnectionInfo,
-    WebSocketMessage,
 )
 
 logger = logging.getLogger(__name__)
@@ -53,16 +51,16 @@ class ConnectionManager:
     def __init__(self) -> None:
         """Inicializa o gerenciador."""
         # connection_id -> (websocket, info)
-        self.active_connections: Dict[str, tuple[WebSocket, WebSocketConnectionInfo]] = {}
+        self.active_connections: dict[str, tuple[WebSocket, WebSocketConnectionInfo]] = {}
 
         # user_id -> set of connection_ids
-        self.user_connections: Dict[str, Set[str]] = {}
+        self.user_connections: dict[str, set[str]] = {}
 
         # role -> set of connection_ids
-        self.role_connections: Dict[str, Set[str]] = {}
+        self.role_connections: dict[str, set[str]] = {}
 
         # tenant_id -> set of connection_ids
-        self.tenant_connections: Dict[str, Set[str]] = {}
+        self.tenant_connections: dict[str, set[str]] = {}
 
         # Lock para operacoes thread-safe
         self._lock = asyncio.Lock()
@@ -75,7 +73,7 @@ class ConnectionManager:
         websocket: WebSocket,
         user_id: str,
         tenant_id: str,
-        roles: List[str],
+        roles: list[str],
     ) -> str:
         """
         Registra uma nova conexao WebSocket.
@@ -119,9 +117,7 @@ class ConnectionManager:
                 self.tenant_connections[tenant_id] = set()
             self.tenant_connections[tenant_id].add(connection_id)
 
-        logger.info(
-            f"WebSocket conectado: {connection_id} (user={user_id}, tenant={tenant_id})"
-        )
+        logger.info(f"WebSocket conectado: {connection_id} (user={user_id}, tenant={tenant_id})")
 
         # Envia mensagem de boas-vindas
         await self._send_to_connection(
@@ -180,7 +176,7 @@ class ConnectionManager:
     async def _send_to_connection(
         self,
         connection_id: str,
-        message: Dict[str, Any],
+        message: dict[str, Any],
     ) -> bool:
         """
         Envia mensagem para uma conexao especifica.
@@ -211,7 +207,7 @@ class ConnectionManager:
     async def broadcast_to_user(
         self,
         user_id: str,
-        message: Dict[str, Any],
+        message: dict[str, Any],
     ) -> int:
         """
         Envia mensagem para todas conexoes de um usuario.
@@ -235,8 +231,8 @@ class ConnectionManager:
     async def broadcast_to_role(
         self,
         role: str,
-        message: Dict[str, Any],
-        tenant_id: Optional[str] = None,
+        message: dict[str, Any],
+        tenant_id: str | None = None,
     ) -> int:
         """
         Envia mensagem para todas conexoes de uma role.
@@ -270,7 +266,7 @@ class ConnectionManager:
     async def broadcast_to_tenant(
         self,
         tenant_id: str,
-        message: Dict[str, Any],
+        message: dict[str, Any],
     ) -> int:
         """
         Envia mensagem para todas conexoes de um tenant.
@@ -293,7 +289,7 @@ class ConnectionManager:
 
     async def broadcast_all(
         self,
-        message: Dict[str, Any],
+        message: dict[str, Any],
     ) -> int:
         """
         Envia mensagem para todas conexoes ativas.
@@ -334,20 +330,18 @@ class ConnectionManager:
         count = 0
 
         # Envia para usuarios especificos
-        for user_id in (alert.target_users or []):
+        for user_id in alert.target_users or []:
             count += await self.broadcast_to_user(user_id, message)
 
         # Envia para roles
-        for role in (alert.target_roles or []):
+        for role in alert.target_roles or []:
             count += await self.broadcast_to_role(role, message, tenant_id)
 
         # Se nao tiver destinatarios especificos, envia para todo o tenant
         if not alert.target_users and not alert.target_roles:
             count = await self.broadcast_to_tenant(tenant_id, message)
 
-        logger.info(
-            f"Alerta {alert.id} transmitido para {count} conexoes"
-        )
+        logger.info(f"Alerta {alert.id} transmitido para {count} conexoes")
 
         return count
 
@@ -375,8 +369,8 @@ def get_connection_manager() -> ConnectionManager:
 
 async def _authenticate_websocket(
     websocket: WebSocket,
-    token: Optional[str],
-) -> Dict[str, Any]:
+    token: str | None,
+) -> dict[str, Any]:
     """
     Autentica conexao WebSocket.
 
@@ -463,28 +457,30 @@ async def websocket_alerts(
                 try:
                     message = json.loads(data)
                     if message.get("type") == "ping":
-                        await websocket.send_json({
-                            "type": "pong",
-                            "timestamp": datetime.utcnow().isoformat(),
-                        })
+                        await websocket.send_json(
+                            {
+                                "type": "pong",
+                                "timestamp": datetime.utcnow().isoformat(),
+                            }
+                        )
                     elif message.get("type") == "acknowledge":
                         # Processa confirmacao de alerta
                         alert_id = message.get("alert_id")
                         if alert_id:
-                            logger.debug(
-                                f"Alerta {alert_id} confirmado via WebSocket"
-                            )
+                            logger.debug(f"Alerta {alert_id} confirmado via WebSocket")
 
                 except json.JSONDecodeError:
                     pass
 
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 # Envia ping para manter conexao
                 try:
-                    await websocket.send_json({
-                        "type": "ping",
-                        "timestamp": datetime.utcnow().isoformat(),
-                    })
+                    await websocket.send_json(
+                        {
+                            "type": "ping",
+                            "timestamp": datetime.utcnow().isoformat(),
+                        }
+                    )
                 except Exception:
                     break
 
@@ -493,10 +489,8 @@ async def websocket_alerts(
 
     except HTTPException as e:
         logger.warning(f"Erro de autenticacao WebSocket: {e.detail}")
-        try:
+        with contextlib.suppress(Exception):
             await websocket.close(code=4001, reason=e.detail)
-        except Exception:
-            pass
 
     except Exception as e:
         logger.error(f"Erro no WebSocket: {e}")
@@ -545,27 +539,29 @@ async def websocket_notifications(
                 try:
                     message = json.loads(data)
                     if message.get("type") == "ping":
-                        await websocket.send_json({
-                            "type": "pong",
-                            "timestamp": datetime.utcnow().isoformat(),
-                        })
+                        await websocket.send_json(
+                            {
+                                "type": "pong",
+                                "timestamp": datetime.utcnow().isoformat(),
+                            }
+                        )
                     elif message.get("type") == "mark_read":
                         # Marca notificacao como lida
                         notification_id = message.get("notification_id")
                         if notification_id:
-                            logger.debug(
-                                f"Notificacao {notification_id} lida via WebSocket"
-                            )
+                            logger.debug(f"Notificacao {notification_id} lida via WebSocket")
 
                 except json.JSONDecodeError:
                     pass
 
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 try:
-                    await websocket.send_json({
-                        "type": "ping",
-                        "timestamp": datetime.utcnow().isoformat(),
-                    })
+                    await websocket.send_json(
+                        {
+                            "type": "ping",
+                            "timestamp": datetime.utcnow().isoformat(),
+                        }
+                    )
                 except Exception:
                     break
 
@@ -574,10 +570,8 @@ async def websocket_notifications(
 
     except HTTPException as e:
         logger.warning(f"Erro de autenticacao WebSocket: {e.detail}")
-        try:
+        with contextlib.suppress(Exception):
             await websocket.close(code=4001, reason=e.detail)
-        except Exception:
-            pass
 
     except Exception as e:
         logger.error(f"Erro no WebSocket: {e}")
@@ -592,7 +586,7 @@ async def websocket_notifications(
     summary="Status das conexoes WebSocket",
     description="Retorna estatisticas das conexoes WebSocket ativas",
 )
-async def get_websocket_status() -> Dict[str, Any]:
+async def get_websocket_status() -> dict[str, Any]:
     """
     Retorna status das conexoes WebSocket.
 

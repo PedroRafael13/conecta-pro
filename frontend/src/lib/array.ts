@@ -276,14 +276,21 @@ export const removeAt = <T>(array: T[], index: number): T[] => {
 };
 
 /**
- * Remove um elemento específico do array
+ * Remove um elemento específico do array (apenas a primeira ocorrência)
  */
 export const removeItem = <T>(array: T[], item: T): T[] => {
   if (!array || !Array.isArray(array)) {
     return [];
   }
 
-  return array.filter((i) => i !== item);
+  const index = array.indexOf(item);
+  if (index === -1) {
+    return [...array];
+  }
+
+  const result = [...array];
+  result.splice(index, 1);
+  return result;
 };
 
 /**

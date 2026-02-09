@@ -4,12 +4,10 @@ Speech Recognizer Service - Sprint 52.
 Service for speech-to-text transcription.
 """
 
+import hashlib
 import re
 import time
-import hashlib
-from datetime import datetime
-from typing import Optional, List, Dict, Any, Tuple
-from uuid import UUID, uuid4
+from typing import Any
 
 
 class SpeechRecognizer:
@@ -29,10 +27,45 @@ class SpeechRecognizer:
 
     # Portuguese stopwords for analysis
     STOPWORDS_PT = {
-        "a", "o", "e", "de", "da", "do", "em", "um", "uma", "para", "com",
-        "que", "por", "na", "no", "se", "os", "as", "dos", "das", "ao",
-        "mais", "muito", "foi", "ser", "tem", "seu", "sua", "ou", "quando",
-        "isso", "este", "esta", "esse", "essa", "ele", "ela", "nos", "me",
+        "a",
+        "o",
+        "e",
+        "de",
+        "da",
+        "do",
+        "em",
+        "um",
+        "uma",
+        "para",
+        "com",
+        "que",
+        "por",
+        "na",
+        "no",
+        "se",
+        "os",
+        "as",
+        "dos",
+        "das",
+        "ao",
+        "mais",
+        "muito",
+        "foi",
+        "ser",
+        "tem",
+        "seu",
+        "sua",
+        "ou",
+        "quando",
+        "isso",
+        "este",
+        "esta",
+        "esse",
+        "essa",
+        "ele",
+        "ela",
+        "nos",
+        "me",
     }
 
     def __init__(self, default_provider: str = "whisper"):
@@ -44,11 +77,11 @@ class SpeechRecognizer:
         self,
         audio_data: bytes,
         language: str = "pt-BR",
-        provider: Optional[str] = None,
+        provider: str | None = None,
         enable_speaker_labels: bool = True,
         enable_punctuation: bool = True,
-        options: Optional[Dict] = None,
-    ) -> Dict[str, Any]:
+        options: dict | None = None,
+    ) -> dict[str, Any]:
         """
         Transcribe audio to text.
 
@@ -68,9 +101,7 @@ class SpeechRecognizer:
         options = options or {}
 
         # Simulate transcription (in production, call actual provider)
-        result = self._simulate_transcription(
-            audio_data, language, enable_speaker_labels, enable_punctuation
-        )
+        result = self._simulate_transcription(audio_data, language, enable_speaker_labels, enable_punctuation)
 
         processing_time_ms = int((time.time() - start_time) * 1000)
 
@@ -101,10 +132,10 @@ class SpeechRecognizer:
         language: str,
         enable_speaker_labels: bool,
         enable_punctuation: bool,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Simulate transcription for testing."""
         # Generate deterministic "transcription" based on audio hash
-        audio_hash = hashlib.md5(audio_data).hexdigest()[:8]
+        audio_hash = hashlib.sha256(audio_data).hexdigest()[:8]
 
         # Sample transcriptions based on hash
         sample_texts = [
@@ -122,26 +153,30 @@ class SpeechRecognizer:
         # Generate word-level data
         word_data = []
         current_time = 0.0
-        for i, word in enumerate(words):
+        for _i, word in enumerate(words):
             duration = len(word) * 0.08 + 0.1
-            word_data.append({
-                "word": word,
-                "start": round(current_time, 2),
-                "end": round(current_time + duration, 2),
-                "confidence": 0.85 + (hash(word) % 15) / 100,
-            })
+            word_data.append(
+                {
+                    "word": word,
+                    "start": round(current_time, 2),
+                    "end": round(current_time + duration, 2),
+                    "confidence": 0.85 + (hash(word) % 15) / 100,
+                }
+            )
             current_time += duration + 0.05
 
         # Generate segments
         segments = []
         if enable_speaker_labels:
-            segments = [{
-                "start": 0.0,
-                "end": current_time,
-                "text": text,
-                "speaker": "SPEAKER_00",
-                "confidence": 0.9,
-            }]
+            segments = [
+                {
+                    "start": 0.0,
+                    "end": current_time,
+                    "text": text,
+                    "speaker": "SPEAKER_00",
+                    "confidence": 0.9,
+                }
+            ]
 
         return {
             "text": text.replace(".", "").replace(",", "").replace("?", ""),
@@ -158,7 +193,7 @@ class SpeechRecognizer:
             "duration_seconds": current_time,
         }
 
-    def detect_language(self, audio_data: bytes) -> Dict[str, Any]:
+    def detect_language(self, audio_data: bytes) -> dict[str, Any]:
         """Detect language from audio."""
         # Simulate language detection
         return {
@@ -171,7 +206,7 @@ class SpeechRecognizer:
             ],
         }
 
-    def analyze_audio_quality(self, audio_data: bytes) -> Dict[str, Any]:
+    def analyze_audio_quality(self, audio_data: bytes) -> dict[str, Any]:
         """Analyze audio quality for transcription."""
         # Simulate quality analysis
         return {
@@ -185,9 +220,9 @@ class SpeechRecognizer:
             "suitable_for_transcription": True,
         }
 
-    def extract_keywords(self, text: str, max_keywords: int = 10) -> List[Dict[str, Any]]:
+    def extract_keywords(self, text: str, max_keywords: int = 10) -> list[dict[str, Any]]:
         """Extract keywords from text."""
-        words = re.findall(r'\b\w+\b', text.lower())
+        words = re.findall(r"\b\w+\b", text.lower())
         word_freq = {}
 
         for word in words:
@@ -202,17 +237,17 @@ class SpeechRecognizer:
             for word, freq in sorted_words[:max_keywords]
         ]
 
-    def split_into_sentences(self, text: str) -> List[str]:
+    def split_into_sentences(self, text: str) -> list[str]:
         """Split text into sentences."""
         # Portuguese sentence splitting
-        sentences = re.split(r'[.!?]+', text)
+        sentences = re.split(r"[.!?]+", text)
         return [s.strip() for s in sentences if s.strip()]
 
     def calculate_speaking_rate(
         self,
         word_count: int,
         duration_seconds: float,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Calculate speaking rate metrics."""
         if duration_seconds <= 0:
             return {"words_per_minute": 0, "rate_category": "unknown"}
@@ -234,13 +269,13 @@ class SpeechRecognizer:
             "words_per_second": round(word_count / duration_seconds, 2),
         }
 
-    def identify_questions(self, segments: List[Dict]) -> List[Dict]:
+    def identify_questions(self, segments: list[dict]) -> list[dict]:
         """Identify questions in transcription segments."""
         questions = []
         question_patterns = [
-            r'\?$',
-            r'^(qual|quais|quando|onde|como|por que|porque|quem|o que|quanto|quantos)\b',
-            r'\b(pode|poderia|consegue|seria possível)\b.*\?',
+            r"\?$",
+            r"^(qual|quais|quando|onde|como|por que|porque|quem|o que|quanto|quantos)\b",
+            r"\b(pode|poderia|consegue|seria possível)\b.*\?",
         ]
 
         for segment in segments:
@@ -253,22 +288,21 @@ class SpeechRecognizer:
                     break
 
             if is_question:
-                questions.append({
-                    "text": segment.get("text"),
-                    "start": segment.get("start"),
-                    "end": segment.get("end"),
-                    "speaker": segment.get("speaker"),
-                })
+                questions.append(
+                    {
+                        "text": segment.get("text"),
+                        "start": segment.get("start"),
+                        "end": segment.get("end"),
+                        "speaker": segment.get("speaker"),
+                    }
+                )
 
         return questions
 
-    def get_provider_info(self, provider: str) -> Optional[Dict]:
+    def get_provider_info(self, provider: str) -> dict | None:
         """Get provider information."""
         return self.PROVIDERS.get(provider)
 
-    def list_providers(self) -> List[Dict]:
+    def list_providers(self) -> list[dict]:
         """List available transcription providers."""
-        return [
-            {"code": code, **info}
-            for code, info in self.PROVIDERS.items()
-        ]
+        return [{"code": code, **info} for code, info in self.PROVIDERS.items()]

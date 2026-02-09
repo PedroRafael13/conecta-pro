@@ -4,10 +4,9 @@ Extracted Clause Model - AI Contract Analysis
 Model para clausulas extraidas de contratos.
 """
 
-import enum
 import uuid
 from datetime import datetime
-from typing import Optional
+from enum import StrEnum
 
 from sqlalchemy import (
     Boolean,
@@ -26,7 +25,7 @@ from sqlalchemy.orm import relationship
 from core.database import Base
 
 
-class ClauseType(str, enum.Enum):
+class ClauseType(StrEnum):
     """Tipo de clausula."""
 
     OBJECT = "object"  # Objeto do contrato
@@ -55,7 +54,7 @@ class ClauseType(str, enum.Enum):
     OTHER = "other"
 
 
-class ClauseImportance(str, enum.Enum):
+class ClauseImportance(StrEnum):
     """Importancia da clausula."""
 
     LOW = "low"
@@ -77,21 +76,13 @@ class ExtractedClause(Base):
 
     # Relacionamento com analise
     analysis_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("contract_analyses.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True
+        UUID(as_uuid=True), ForeignKey("contract_analyses.id", ondelete="CASCADE"), nullable=False, index=True
     )
 
     # Identificacao da clausula
     clause_number = Column(String(20))  # Ex: "5.1", "CLAUSULA QUINTA"
     clause_title = Column(String(300))
-    clause_type = Column(
-        Enum(ClauseType),
-        default=ClauseType.OTHER,
-        nullable=False,
-        index=True
-    )
+    clause_type = Column(Enum(ClauseType), default=ClauseType.OTHER, nullable=False, index=True)
     clause_type_confidence = Column(Float, default=0)  # 0-100
 
     # Conteudo
@@ -105,11 +96,7 @@ class ExtractedClause(Base):
     end_position = Column(Integer)  # Posicao final
 
     # Classificacao
-    importance = Column(
-        Enum(ClauseImportance),
-        default=ClauseImportance.MEDIUM,
-        nullable=False
-    )
+    importance = Column(Enum(ClauseImportance), default=ClauseImportance.MEDIUM, nullable=False)
     is_standard = Column(Boolean, default=True)  # Clausula padrao
     is_custom = Column(Boolean, default=False)  # Customizada
     is_risky = Column(Boolean, default=False)  # Apresenta risco
@@ -165,11 +152,7 @@ class ExtractedClause(Base):
     @property
     def is_critical(self) -> bool:
         """Verifica se e clausula critica."""
-        return (
-            self.importance == ClauseImportance.CRITICAL
-            or self.is_risky
-            or self.risk_score >= 70
-        )
+        return self.importance == ClauseImportance.CRITICAL or self.is_risky or self.risk_score >= 70
 
     @property
     def word_count(self) -> int:

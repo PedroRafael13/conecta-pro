@@ -3,6 +3,7 @@ Controller (endpoints) para Shift.
 """
 
 from datetime import date
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -44,7 +45,7 @@ async def create_shift(
     Cria um novo turno.
     """
     repo = ShiftRepository(db)
-    shift = await repo.create(data)
+    shift: Any = await repo.create(data)
 
     logger.info(
         "Shift criado com sucesso",
@@ -99,6 +100,8 @@ async def list_shifts(  # pylint: disable=too-many-locals
         needs_substitution=needs_substitution,
     )
 
+    shifts: list[Any]
+    total: int
     shifts, total = await repo.list(filters=filters, page=page, page_size=page_size)
     total_pages = (total + page_size - 1) // page_size
 
@@ -132,6 +135,8 @@ async def get_today_shifts(
         post_id=post_id,
     )
 
+    shifts: list[Any]
+    total: int
     shifts, total = await repo.list(filters=filters, page=1, page_size=100)
 
     return ShiftListResponse(
@@ -157,7 +162,7 @@ async def get_shifts_by_scale(
     Lista todos os turnos de uma escala.
     """
     repo = ShiftRepository(db)
-    shifts = await repo.get_by_scale(scale_id)
+    shifts: list[Any] = await repo.get_by_scale(scale_id)
 
     return [ShiftResponse.model_validate(shift) for shift in shifts]
 
@@ -176,7 +181,7 @@ async def get_shift(
     Busca turno por ID.
     """
     repo = ShiftRepository(db)
-    shift = await repo.get_by_id(shift_id)
+    shift: Any = await repo.get_by_id(shift_id)
 
     if not shift:
         raise HTTPException(
@@ -202,7 +207,7 @@ async def update_shift(
     Atualiza um turno.
     """
     repo = ShiftRepository(db)
-    shift = await repo.update(shift_id, data)
+    shift: Any = await repo.update(shift_id, data)
 
     if not shift:
         raise HTTPException(
@@ -235,7 +240,7 @@ async def check_in(
     Registra entrada no turno.
     """
     repo = ShiftRepository(db)
-    shift = await repo.check_in(shift_id, data.actual_start_time, data.notes)
+    shift: Any = await repo.check_in(shift_id, data.actual_start_time, data.notes)
 
     if not shift:
         raise HTTPException(
@@ -268,7 +273,7 @@ async def check_out(
     Registra saída do turno.
     """
     repo = ShiftRepository(db)
-    shift = await repo.check_out(
+    shift: Any = await repo.check_out(
         shift_id,
         data.actual_end_time,
         data.actual_break_minutes,
@@ -306,7 +311,7 @@ async def mark_as_missed(
     Marca turno como falta.
     """
     repo = ShiftRepository(db)
-    shift = await repo.mark_as_missed(shift_id, reason)
+    shift: Any = await repo.mark_as_missed(shift_id, reason)
 
     if not shift:
         raise HTTPException(
@@ -338,7 +343,7 @@ async def delete_shift(
     Remove um turno (soft delete).
     """
     repo = ShiftRepository(db)
-    deleted = await repo.delete(shift_id)
+    deleted: bool = await repo.delete(shift_id)
 
     if not deleted:
         raise HTTPException(
@@ -376,7 +381,7 @@ async def bulk_update_shifts(
     Retorna contagem de sucessos e erros.
     """
     repo = ShiftRepository(db)
-    result = await repo.bulk_update(data.items)
+    result: dict[str, int] = await repo.bulk_update(data.items)
 
     logger.info(
         "Bulk update de turnos",

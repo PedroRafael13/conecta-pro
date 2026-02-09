@@ -9,21 +9,21 @@ Implementa:
 """
 
 from .audit_logger import (
-    AuditLogger,
     AuditEvent,
+    AuditLogger,
     TipoEvento,
     get_audit_logger,
 )
 from .data_masking import (
     MascaradorDados,
     TipoDadoSensivel,
-    mascarar_cpf,
     mascarar_cnpj,
+    mascarar_cpf,
     mascarar_email,
 )
 from .lgpd_compliance import (
-    ControleLGPD,
     ConsentimentoStatus,
+    ControleLGPD,
     SolicitacaoTitular,
     get_lgpd_control,
 )

@@ -4,7 +4,7 @@ Controller para KPI Trends - Tendências de indicadores
 
 import logging
 from datetime import datetime, timedelta
-from typing import List, Literal
+from typing import Literal, cast
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
@@ -24,15 +24,17 @@ router = APIRouter(prefix="/kpi-trends", tags=["Operacional - KPI Trends"])
 
 class KPITrendsData(BaseModel):
     """Dados de tendências dos KPIs."""
-    postos_ativos: List[int] = Field(default_factory=list)
-    colaboradores_ativos: List[int] = Field(default_factory=list)
-    escalas_em_andamento: List[int] = Field(default_factory=list)
-    ocorrencias_mes: List[int] = Field(default_factory=list)
-    cobertura_percentual: List[float] = Field(default_factory=list)
+
+    postos_ativos: list[int] = Field(default_factory=list)
+    colaboradores_ativos: list[int] = Field(default_factory=list)
+    escalas_em_andamento: list[int] = Field(default_factory=list)
+    ocorrencias_mes: list[int] = Field(default_factory=list)
+    cobertura_percentual: list[float] = Field(default_factory=list)
 
 
 class KPITrendsResponse(BaseModel):
     """Resposta do endpoint de tendências."""
+
     period: str
     days: int
     data: KPITrendsData
@@ -52,7 +54,7 @@ async def get_kpi_trends(
     - 90d: últimos 90 dias
     """
     # Mapear período para dias
-    period_days = {
+    period_days: dict[str, int] = {
         "7d": 7,
         "30d": 30,
         "90d": 90,
@@ -66,49 +68,65 @@ async def get_kpi_trends(
         start_date = end_date - timedelta(days=days)
 
         # Inicializar listas de dados
-        postos_ativos = []
-        colaboradores_ativos = []
-        escalas_em_andamento = []
-        ocorrencias_mes = []
-        cobertura_percentual = []
+        postos_ativos: list[int] = []
+        colaboradores_ativos: list[int] = []
+        escalas_em_andamento: list[int] = []
+        ocorrencias_mes: list[int] = []
+        cobertura_percentual: list[float] = []
 
         # Gerar dados por dia
         for i in range(days):
             current_date = start_date + timedelta(days=i)
 
             # Postos ativos
-            postos_count = (
-                db.query(func.count(Post.id))
-                .filter(Post.status == "active")
-                .filter(Post.created_at <= current_date)
-                .scalar()
-            ) or 0
+            postos_count = cast(
+                int,
+                (
+                    db.query(func.count(Post.id))
+                    .filter(Post.status == "active")
+                    .filter(Post.created_at <= current_date)
+                    .scalar()
+                )
+                or 0,
+            )
             postos_ativos.append(postos_count)
 
             # Colaboradores ativos
-            colab_count = (
-                db.query(func.count(Employee.id))
-                .filter(Employee.is_active == True)
-                .filter(Employee.created_at <= current_date)
-                .scalar()
-            ) or 0
+            colab_count = cast(
+                int,
+                (
+                    db.query(func.count(Employee.id))
+                    .filter(Employee.is_active)
+                    .filter(Employee.created_at <= current_date)
+                    .scalar()
+                )
+                or 0,
+            )
             colaboradores_ativos.append(colab_count)
 
             # Escalas em andamento
-            escalas_count = (
-                db.query(func.count(Scale.id))
-                .filter(Scale.status == "active")
-                .filter(Scale.created_at <= current_date)
-                .scalar()
-            ) or 0
+            escalas_count = cast(
+                int,
+                (
+                    db.query(func.count(Scale.id))
+                    .filter(Scale.status == "active")
+                    .filter(Scale.created_at <= current_date)
+                    .scalar()
+                )
+                or 0,
+            )
             escalas_em_andamento.append(escalas_count)
 
             # Ocorrências no dia
-            occ_count = (
-                db.query(func.count(Occurrence.id))
-                .filter(func.date(Occurrence.created_at) == current_date.date())
-                .scalar()
-            ) or 0
+            occ_count = cast(
+                int,
+                (
+                    db.query(func.count(Occurrence.id))
+                    .filter(func.date(Occurrence.created_at) == current_date.date())
+                    .scalar()
+                )
+                or 0,
+            )
             ocorrencias_mes.append(occ_count)
 
             # Cobertura percentual (simples: colaboradores / postos * 100)
@@ -118,7 +136,7 @@ async def get_kpi_trends(
             else:
                 cobertura_percentual.append(0.0)
 
-        logger.info(f"KPI trends calculados para período {period}")
+        logger.info("KPI trends calculados para período %s", period)
 
         return KPITrendsResponse(
             period=period,
@@ -133,7 +151,7 @@ async def get_kpi_trends(
         )
 
     except Exception as e:
-        logger.error(f"Erro ao calcular KPI trends: {e}")
+        logger.error("Erro ao calcular KPI trends: %s", e)
         # Retornar dados vazios em caso de erro
         return KPITrendsResponse(
             period=period,

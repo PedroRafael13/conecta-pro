@@ -10,7 +10,7 @@ Validação e serialização de dados para:
 
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -22,7 +22,6 @@ from modules.crm.models.contract import (
     ServiceType,
 )
 
-
 # ============== Contract Schemas ==============
 
 
@@ -30,13 +29,13 @@ class ContractBase(BaseModel):
     """Campos base do contrato."""
 
     name: str = Field(..., min_length=3, max_length=200)
-    description: Optional[str] = None
+    description: str | None = None
     contract_type: ContractType = ContractType.RECURRING
     monthly_value: Decimal = Field(..., ge=0)
-    total_value: Optional[Decimal] = Field(None, ge=0)
+    total_value: Decimal | None = Field(None, ge=0)
     setup_fee: Decimal = Field(default=Decimal("0"), ge=0)
     start_date: date
-    end_date: Optional[date] = None
+    end_date: date | None = None
     grace_period_days: int = Field(default=0, ge=0)
     notice_period_days: int = Field(default=30, ge=0)
 
@@ -47,21 +46,21 @@ class ContractBase(BaseModel):
 
     # Reajuste
     adjustment_enabled: bool = True
-    adjustment_index: Optional[AdjustmentIndex] = None
-    adjustment_fixed_percent: Optional[Decimal] = Field(None, ge=0, le=100)
-    adjustment_base_date: Optional[date] = None
+    adjustment_index: AdjustmentIndex | None = None
+    adjustment_fixed_percent: Decimal | None = Field(None, ge=0, le=100)
+    adjustment_base_date: date | None = None
 
     # SLA
     has_sla: bool = False
-    sla_config: Optional[dict[str, Any]] = None
+    sla_config: dict[str, Any] | None = None
 
     # Assinatura
     signature_required: bool = True
-    signature_provider: Optional[str] = Field(None, max_length=50)
+    signature_provider: str | None = Field(None, max_length=50)
 
     @field_validator("end_date")
     @classmethod
-    def validate_end_date(cls, v: Optional[date], info) -> Optional[date]:
+    def validate_end_date(cls, v: date | None, info) -> date | None:
         """Valida que data fim é posterior à data início."""
         if v is not None and "start_date" in info.data:
             if v <= info.data["start_date"]:
@@ -70,12 +69,10 @@ class ContractBase(BaseModel):
 
     @field_validator("adjustment_fixed_percent")
     @classmethod
-    def validate_fixed_percent(cls, v: Optional[Decimal], info) -> Optional[Decimal]:
+    def validate_fixed_percent(cls, v: Decimal | None, info) -> Decimal | None:
         """Valida percentual fixo quando índice é FIXED."""
         if info.data.get("adjustment_index") == AdjustmentIndex.FIXED and v is None:
-            raise ValueError(
-                "Percentual fixo é obrigatório quando índice é FIXED"
-            )
+            raise ValueError("Percentual fixo é obrigatório quando índice é FIXED")
         return v
 
 
@@ -83,79 +80,79 @@ class ContractCreate(ContractBase):
     """Schema para criar contrato."""
 
     client_id: str = Field(..., min_length=36, max_length=36)
-    opportunity_id: Optional[str] = Field(None, min_length=36, max_length=36)
-    proposal_id: Optional[str] = Field(None, min_length=36, max_length=36)
-    template_id: Optional[str] = Field(None, min_length=36, max_length=36)
-    content: Optional[str] = None
-    clauses: Optional[list[dict[str, Any]]] = None
-    commercial_manager_id: Optional[str] = Field(None, min_length=36, max_length=36)
-    account_manager_id: Optional[str] = Field(None, min_length=36, max_length=36)
+    opportunity_id: str | None = Field(None, min_length=36, max_length=36)
+    proposal_id: str | None = Field(None, min_length=36, max_length=36)
+    template_id: str | None = Field(None, min_length=36, max_length=36)
+    content: str | None = None
+    clauses: list[dict[str, Any]] | None = None
+    commercial_manager_id: str | None = Field(None, min_length=36, max_length=36)
+    account_manager_id: str | None = Field(None, min_length=36, max_length=36)
 
 
 class ContractCreateFromOpportunity(BaseModel):
     """Schema para criar contrato a partir de opportunity."""
 
     opportunity_id: str = Field(..., min_length=36, max_length=36)
-    template_id: Optional[str] = Field(None, min_length=36, max_length=36)
+    template_id: str | None = Field(None, min_length=36, max_length=36)
     start_date: date
-    end_date: Optional[date] = None
-    monthly_value: Optional[Decimal] = Field(None, ge=0)
-    adjustment_index: Optional[AdjustmentIndex] = None
+    end_date: date | None = None
+    monthly_value: Decimal | None = Field(None, ge=0)
+    adjustment_index: AdjustmentIndex | None = None
 
 
 class ContractCreateFromProposal(BaseModel):
     """Schema para criar contrato a partir de proposta aceita."""
 
     proposal_id: str = Field(..., min_length=36, max_length=36)
-    template_id: Optional[str] = Field(None, min_length=36, max_length=36)
+    template_id: str | None = Field(None, min_length=36, max_length=36)
     start_date: date
-    end_date: Optional[date] = None
+    end_date: date | None = None
 
 
 class ContractUpdate(BaseModel):
     """Schema para atualizar contrato."""
 
-    name: Optional[str] = Field(None, min_length=3, max_length=200)
-    description: Optional[str] = None
-    monthly_value: Optional[Decimal] = Field(None, ge=0)
-    total_value: Optional[Decimal] = Field(None, ge=0)
-    setup_fee: Optional[Decimal] = Field(None, ge=0)
-    end_date: Optional[date] = None
-    grace_period_days: Optional[int] = Field(None, ge=0)
-    notice_period_days: Optional[int] = Field(None, ge=0)
+    name: str | None = Field(None, min_length=3, max_length=200)
+    description: str | None = None
+    monthly_value: Decimal | None = Field(None, ge=0)
+    total_value: Decimal | None = Field(None, ge=0)
+    setup_fee: Decimal | None = Field(None, ge=0)
+    end_date: date | None = None
+    grace_period_days: int | None = Field(None, ge=0)
+    notice_period_days: int | None = Field(None, ge=0)
 
     # Renovação
-    auto_renewal: Optional[bool] = None
-    renewal_period_months: Optional[int] = Field(None, ge=1, le=60)
-    renewal_notification_days: Optional[int] = Field(None, ge=0)
+    auto_renewal: bool | None = None
+    renewal_period_months: int | None = Field(None, ge=1, le=60)
+    renewal_notification_days: int | None = Field(None, ge=0)
 
     # Reajuste
-    adjustment_enabled: Optional[bool] = None
-    adjustment_index: Optional[AdjustmentIndex] = None
-    adjustment_fixed_percent: Optional[Decimal] = Field(None, ge=0, le=100)
+    adjustment_enabled: bool | None = None
+    adjustment_index: AdjustmentIndex | None = None
+    adjustment_fixed_percent: Decimal | None = Field(None, ge=0, le=100)
 
     # SLA
-    has_sla: Optional[bool] = None
-    sla_config: Optional[dict[str, Any]] = None
+    has_sla: bool | None = None
+    sla_config: dict[str, Any] | None = None
 
     # Responsáveis
-    commercial_manager_id: Optional[str] = Field(None, min_length=36, max_length=36)
-    account_manager_id: Optional[str] = Field(None, min_length=36, max_length=36)
+    commercial_manager_id: str | None = Field(None, min_length=36, max_length=36)
+    account_manager_id: str | None = Field(None, min_length=36, max_length=36)
 
 
 class ContractStatusUpdate(BaseModel):
     """Schema para atualizar status do contrato."""
 
     status: ContractStatus
-    reason: Optional[str] = None
+    reason: str | None = None
 
 
 class ContractRenewal(BaseModel):
     """Schema para renovação de contrato."""
 
     new_end_date: date
-    adjustment_percent: Optional[Decimal] = Field(None, ge=0, le=100)
-    new_monthly_value: Optional[Decimal] = Field(None, ge=0)
+    adjustment_percent: Decimal | None = Field(None, ge=0, le=100)
+    new_monthly_value: Decimal | None = Field(None, ge=0)
 
 
 class ContractItemResponse(BaseModel):
@@ -164,11 +161,11 @@ class ContractItemResponse(BaseModel):
     id: str
     service_type: ServiceType
     service_name: str
-    description: Optional[str] = None
+    description: str | None = None
     quantity: int
     unit_price: Decimal
     total_price: Decimal
-    notes: Optional[str] = None
+    notes: str | None = None
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -186,17 +183,17 @@ class ContractResponse(BaseModel):
     monthly_value: Decimal
     total_value: Decimal
     start_date: date
-    end_date: Optional[date] = None
+    end_date: date | None = None
     auto_renewal: bool
     adjustment_enabled: bool
     has_sla: bool
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
 
     # Propriedades calculadas
     is_active_contract: bool
     is_expiring_soon: bool
-    days_until_end: Optional[int] = None
+    days_until_end: int | None = None
     needs_adjustment: bool
 
     model_config = ConfigDict(from_attributes=True)
@@ -205,32 +202,32 @@ class ContractResponse(BaseModel):
 class ContractDetailResponse(ContractResponse):
     """Resposta detalhada do contrato."""
 
-    description: Optional[str] = None
-    opportunity_id: Optional[str] = None
-    proposal_id: Optional[str] = None
-    template_id: Optional[str] = None
+    description: str | None = None
+    opportunity_id: str | None = None
+    proposal_id: str | None = None
+    template_id: str | None = None
     setup_fee: Decimal
     grace_period_days: int
     notice_period_days: int
     renewal_period_months: int
     renewal_notification_days: int
-    adjustment_index: Optional[AdjustmentIndex] = None
-    adjustment_fixed_percent: Optional[Decimal] = None
-    adjustment_base_date: Optional[date] = None
-    last_adjustment_date: Optional[date] = None
-    next_adjustment_date: Optional[date] = None
-    sla_config: Optional[dict[str, Any]] = None
-    content: Optional[str] = None
-    clauses: Optional[list[dict[str, Any]]] = None
+    adjustment_index: AdjustmentIndex | None = None
+    adjustment_fixed_percent: Decimal | None = None
+    adjustment_base_date: date | None = None
+    last_adjustment_date: date | None = None
+    next_adjustment_date: date | None = None
+    sla_config: dict[str, Any] | None = None
+    content: str | None = None
+    clauses: list[dict[str, Any]] | None = None
     signature_required: bool
-    signature_provider: Optional[str] = None
-    signed_at: Optional[datetime] = None
-    signed_by_client: Optional[str] = None
-    signed_by_company: Optional[str] = None
-    pdf_file_path: Optional[str] = None
-    commercial_manager_id: Optional[str] = None
-    account_manager_id: Optional[str] = None
-    created_by: Optional[str] = None
+    signature_provider: str | None = None
+    signed_at: datetime | None = None
+    signed_by_client: str | None = None
+    signed_by_company: str | None = None
+    pdf_file_path: str | None = None
+    commercial_manager_id: str | None = None
+    account_manager_id: str | None = None
+    created_by: str | None = None
 
     # Itens do contrato
     items: list[ContractItemResponse] = []
@@ -239,21 +236,21 @@ class ContractDetailResponse(ContractResponse):
 class ContractFilter(BaseModel):
     """Filtros para listagem de contratos."""
 
-    status: Optional[ContractStatus] = None
-    contract_type: Optional[ContractType] = None
-    client_id: Optional[str] = None
-    commercial_manager_id: Optional[str] = None
-    account_manager_id: Optional[str] = None
-    is_expiring_soon: Optional[bool] = None
-    needs_adjustment: Optional[bool] = None
-    has_sla: Optional[bool] = None
-    min_value: Optional[Decimal] = Field(None, ge=0)
-    max_value: Optional[Decimal] = Field(None, ge=0)
-    start_date_from: Optional[date] = None
-    start_date_to: Optional[date] = None
-    end_date_from: Optional[date] = None
-    end_date_to: Optional[date] = None
-    search: Optional[str] = None
+    status: ContractStatus | None = None
+    contract_type: ContractType | None = None
+    client_id: str | None = None
+    commercial_manager_id: str | None = None
+    account_manager_id: str | None = None
+    is_expiring_soon: bool | None = None
+    needs_adjustment: bool | None = None
+    has_sla: bool | None = None
+    min_value: Decimal | None = Field(None, ge=0)
+    max_value: Decimal | None = Field(None, ge=0)
+    start_date_from: date | None = None
+    start_date_to: date | None = None
+    end_date_from: date | None = None
+    end_date_to: date | None = None
+    search: str | None = None
 
 
 class ContractListResponse(BaseModel):
@@ -287,21 +284,21 @@ class ContractItemCreate(BaseModel):
 
     service_type: ServiceType
     service_name: str = Field(..., min_length=3, max_length=200)
-    description: Optional[str] = None
+    description: str | None = None
     quantity: int = Field(default=1, ge=1)
     unit_price: Decimal = Field(..., ge=0)
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class ContractItemUpdate(BaseModel):
     """Schema para atualizar item do contrato."""
 
-    service_type: Optional[ServiceType] = None
-    service_name: Optional[str] = Field(None, min_length=3, max_length=200)
-    description: Optional[str] = None
-    quantity: Optional[int] = Field(None, ge=1)
-    unit_price: Optional[Decimal] = Field(None, ge=0)
-    notes: Optional[str] = None
+    service_type: ServiceType | None = None
+    service_name: str | None = Field(None, min_length=3, max_length=200)
+    description: str | None = None
+    quantity: int | None = Field(None, ge=1)
+    unit_price: Decimal | None = Field(None, ge=0)
+    notes: str | None = None
 
 
 # ============== Contract Addendum Schemas ==============
@@ -313,12 +310,12 @@ class ContractAddendumCreate(BaseModel):
     addendum_type: AddendumType
     effective_date: date
     description: str = Field(..., min_length=10)
-    reason: Optional[str] = None
+    reason: str | None = None
 
     # Valores (para reajuste)
-    new_value: Optional[Decimal] = Field(None, ge=0)
-    adjustment_percent: Optional[Decimal] = Field(None, ge=-100, le=100)
-    adjustment_index: Optional[AdjustmentIndex] = None
+    new_value: Decimal | None = Field(None, ge=0)
+    adjustment_percent: Decimal | None = Field(None, ge=-100, le=100)
+    adjustment_index: AdjustmentIndex | None = None
 
     @field_validator("new_value", "adjustment_percent")
     @classmethod
@@ -327,9 +324,7 @@ class ContractAddendumCreate(BaseModel):
         if info.data.get("addendum_type") == AddendumType.ADJUSTMENT:
             if info.field_name == "new_value" and v is None:
                 if info.data.get("adjustment_percent") is None:
-                    raise ValueError(
-                        "Reajuste requer novo_valor ou percentual_reajuste"
-                    )
+                    raise ValueError("Reajuste requer novo_valor ou percentual_reajuste")
         return v
 
 
@@ -340,18 +335,18 @@ class ContractAddendumResponse(BaseModel):
     contract_id: str
     addendum_number: str
     addendum_type: AddendumType
-    previous_value: Optional[Decimal] = None
-    new_value: Optional[Decimal] = None
-    adjustment_percent: Optional[Decimal] = None
-    adjustment_index: Optional[AdjustmentIndex] = None
+    previous_value: Decimal | None = None
+    new_value: Decimal | None = None
+    adjustment_percent: Decimal | None = None
+    adjustment_index: AdjustmentIndex | None = None
     effective_date: date
     description: str
-    reason: Optional[str] = None
+    reason: str | None = None
     signed: bool
-    signed_at: Optional[datetime] = None
-    pdf_file_path: Optional[str] = None
+    signed_at: datetime | None = None
+    pdf_file_path: str | None = None
     created_at: datetime
-    created_by: Optional[str] = None
+    created_by: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -369,28 +364,28 @@ class ContractTemplateCreate(BaseModel):
     """Schema para criar template."""
 
     name: str = Field(..., min_length=3, max_length=100)
-    description: Optional[str] = None
-    service_type: Optional[ServiceType] = None
+    description: str | None = None
+    service_type: ServiceType | None = None
     content_template: str = Field(..., min_length=100)
-    clauses: Optional[list[dict[str, Any]]] = None
-    variables: Optional[list[str]] = None
+    clauses: list[dict[str, Any]] | None = None
+    variables: list[str] | None = None
 
 
 class ContractTemplateUpdate(BaseModel):
     """Schema para atualizar template."""
 
-    name: Optional[str] = Field(None, min_length=3, max_length=100)
-    description: Optional[str] = None
-    service_type: Optional[ServiceType] = None
-    content_template: Optional[str] = Field(None, min_length=100)
-    clauses: Optional[list[dict[str, Any]]] = None
-    variables: Optional[list[str]] = None
+    name: str | None = Field(None, min_length=3, max_length=100)
+    description: str | None = None
+    service_type: ServiceType | None = None
+    content_template: str | None = Field(None, min_length=100)
+    clauses: list[dict[str, Any]] | None = None
+    variables: list[str] | None = None
 
 
 class ContractTemplateApprove(BaseModel):
     """Schema para aprovar template."""
 
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class ContractTemplateResponse(BaseModel):
@@ -398,16 +393,16 @@ class ContractTemplateResponse(BaseModel):
 
     id: str
     name: str
-    description: Optional[str] = None
-    service_type: Optional[ServiceType] = None
+    description: str | None = None
+    service_type: ServiceType | None = None
     content_template: str
-    clauses: Optional[list[dict[str, Any]]] = None
-    variables: Optional[list[str]] = None
+    clauses: list[dict[str, Any]] | None = None
+    variables: list[str] | None = None
     version: int
     approved_by_legal: bool
-    approved_at: Optional[datetime] = None
+    approved_at: datetime | None = None
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -440,8 +435,8 @@ class ContractSLAReportCreate(BaseModel):
     indicators: list[SLAIndicatorResult]
     overall_score: Decimal = Field(..., ge=0, le=150)
     penalty_applied: bool = False
-    penalty_percent: Optional[Decimal] = Field(None, ge=0, le=100)
-    penalty_amount: Optional[Decimal] = Field(None, ge=0)
+    penalty_percent: Decimal | None = Field(None, ge=0, le=100)
+    penalty_amount: Decimal | None = Field(None, ge=0)
 
 
 class ContractSLAReportResponse(BaseModel):
@@ -460,9 +455,9 @@ class ContractSLAReportResponse(BaseModel):
     period_label: str
     is_target_met: bool
     generated_at: datetime
-    generated_by: Optional[str] = None
-    approved_at: Optional[datetime] = None
-    approved_by: Optional[str] = None
+    generated_by: str | None = None
+    approved_at: datetime | None = None
+    approved_by: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -471,4 +466,4 @@ class ContractSLAReportApprove(BaseModel):
     """Schema para aprovar relatório de SLA."""
 
     disputed: bool = False
-    dispute_reason: Optional[str] = None
+    dispute_reason: str | None = None

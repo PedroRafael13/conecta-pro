@@ -1,13 +1,13 @@
 """Testes para endpoints de autenticacao."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
 import pytest
 from fastapi import HTTPException
 
-from api.v1.endpoints.auth import login, refresh_token, register, get_current_user_info
+from api.v1.endpoints.auth import get_current_user_info, login, refresh_token, register
 from core.models import User
 from core.schemas.auth import Token, TokenRefresh
 from core.schemas.user import UserCreate, UserResponse
@@ -88,14 +88,16 @@ class TestLoginEndpoint:
         mock_result.scalar_one_or_none.return_value = mock_user
         mock_db.execute.return_value = mock_result
 
-        with patch("api.v1.endpoints.auth.verify_password", return_value=True):
-            with patch("api.v1.endpoints.auth.create_access_token", return_value="access"):
-                with patch("api.v1.endpoints.auth.create_refresh_token", return_value="refresh"):
-                    result = await login(mock_form, mock_db)
+        with (
+            patch("api.v1.endpoints.auth.verify_password", return_value=True),
+            patch("api.v1.endpoints.auth.create_access_token", return_value="access"),
+            patch("api.v1.endpoints.auth.create_refresh_token", return_value="refresh"),
+        ):
+            result = await login(mock_form, mock_db)
 
-                    assert result.access_token == "access"
-                    assert result.refresh_token == "refresh"
-                    assert result.token_type == "bearer"
+            assert result.access_token == "access"
+            assert result.refresh_token == "refresh"
+            assert result.token_type == "bearer"
 
     @pytest.mark.asyncio
     async def test_login_invalid_credentials(self):
@@ -182,12 +184,14 @@ class TestRefreshTokenEndpoint:
         with patch("api.v1.endpoints.auth.verify_refresh_token") as mock_verify:
             mock_verify.return_value = {"sub": str(mock_user.id)}
 
-            with patch("api.v1.endpoints.auth.create_access_token", return_value="new_access"):
-                with patch("api.v1.endpoints.auth.create_refresh_token", return_value="new_refresh"):
-                    result = await refresh_token(token_data, mock_db)
+            with (
+                patch("api.v1.endpoints.auth.create_access_token", return_value="new_access"),
+                patch("api.v1.endpoints.auth.create_refresh_token", return_value="new_refresh"),
+            ):
+                result = await refresh_token(token_data, mock_db)
 
-                    assert result.access_token == "new_access"
-                    assert result.refresh_token == "new_refresh"
+                assert result.access_token == "new_access"
+                assert result.refresh_token == "new_refresh"
 
     @pytest.mark.asyncio
     async def test_refresh_invalid_token(self):
@@ -249,17 +253,17 @@ class TestGetCurrentUserEndpoint:
         mock_user.phone = None
         mock_user.role = "user"
         mock_user.is_active = True
-        mock_user.created_at = datetime.now(timezone.utc)
-        mock_user.updated_at = datetime.now(timezone.utc)
+        mock_user.created_at = datetime.now(UTC)
+        mock_user.updated_at = datetime.now(UTC)
         mock_user.last_login = None
 
-        with patch("api.v1.endpoints.auth.UserResponse") as MockResponse:
+        with patch("api.v1.endpoints.auth.UserResponse") as mock_response_cls:
             mock_response = MagicMock()
-            MockResponse.model_validate.return_value = mock_response
+            mock_response_cls.model_validate.return_value = mock_response
 
             result = await get_current_user_info(mock_user)
 
-            MockResponse.model_validate.assert_called_once_with(mock_user)
+            mock_response_cls.model_validate.assert_called_once_with(mock_user)
             assert result == mock_response
 
 

@@ -3,10 +3,10 @@
 Sprint 39 - Document OCR.
 """
 
-import enum
 import uuid
 from datetime import datetime
-from typing import Optional, List, Dict, Any
+from enum import StrEnum
+from typing import Any
 
 from sqlalchemy import (
     Boolean,
@@ -19,12 +19,11 @@ from sqlalchemy import (
     Text,
 )
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
-from sqlalchemy.orm import relationship
 
 from core.models.base import Base
 
 
-class OCRProvider(str, enum.Enum):
+class OCRProvider(StrEnum):
     """Provedor de OCR."""
 
     TESSERACT = "tesseract"  # Tesseract OCR (local)
@@ -156,19 +155,19 @@ class OCRResult(Base):
         """Representacao string."""
         return f"<OCRResult {self.result_id} ({self.provider.value})>"
 
-    def get_text_blocks(self) -> List[Dict[str, Any]]:
+    def get_text_blocks(self) -> list[dict[str, Any]]:
         """Retorna blocos de texto."""
         return [b for b in (self.blocks or []) if b.get("type") == "text"]
 
-    def get_tables(self) -> List[Dict[str, Any]]:
+    def get_tables(self) -> list[dict[str, Any]]:
         """Retorna tabelas detectadas."""
         return self.tables or []
 
-    def get_key_value_pairs(self) -> List[Dict[str, Any]]:
+    def get_key_value_pairs(self) -> list[dict[str, Any]]:
         """Retorna pares chave-valor."""
         return self.key_value_pairs or []
 
-    def get_low_confidence_regions(self, threshold: float = 0.7) -> List[Dict[str, Any]]:
+    def get_low_confidence_regions(self, threshold: float = 0.7) -> list[dict[str, Any]]:
         """Retorna regioes com baixa confianca."""
         regions = []
         for line in self.lines or []:

@@ -10,26 +10,19 @@ Documentacao: https://www.gov.br/nfse/pt-br/acesso-a-informacao/manuais
 
 import logging
 from datetime import datetime
-from typing import List
 
-from fastapi import APIRouter, HTTPException, Path, Query, status
+from fastapi import APIRouter, HTTPException, Path, status
 
 from ..schemas.common import StandardResponse
 from ..schemas.nfse_nacional import (
-    EmitirDPSRequest,
-    EmitirDPSResponse,
-    ConsultarDPSRequest,
-    ConsultarNFSeNacionalRequest,
-    ConsultarNFSeNacionalResponse,
     CancelarNFSeNacionalRequest,
     CancelarNFSeNacionalResponse,
-    SubstituirNFSeNacionalRequest,
-    StatusMigracaoResponse,
-    ComparacaoPadroesResponse,
-    MapeamentoServicoResponse,
-    StatusConexaoNacionalResponse,
-    EventoNFSeResponse,
     DPSStatusEnum,
+    EmitirDPSRequest,
+    EmitirDPSResponse,
+    StatusConexaoNacionalResponse,
+    StatusMigracaoResponse,
+    SubstituirNFSeNacionalRequest,
 )
 from ..services.nfse_nacional_service import get_nfse_nacional_service
 

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Script para corrigir migrations com CREATE TYPE sem verificação."""
 
+import glob
 import os
 import re
-import glob
 
 MIGRATIONS_DIR = os.path.dirname(os.path.abspath(__file__)) + "/versions"
 
@@ -22,16 +22,17 @@ def create_enum_safe(name: str, values: list):
 
 '''
 
+
 def fix_migration(filepath):
     """Corrige uma migration individual."""
-    with open(filepath, 'r') as f:
+    with open(filepath) as f:
         content = f.read()
 
     # Verifica se tem CREATE TYPE sem DO $$ BEGIN
-    if 'CREATE TYPE' not in content:
+    if "CREATE TYPE" not in content:
         return False
 
-    if 'DO $$ BEGIN' in content and 'create_enum_safe' in content:
+    if "DO $$ BEGIN" in content and "create_enum_safe" in content:
         print(f"  Já corrigido: {os.path.basename(filepath)}")
         return False
 
@@ -46,9 +47,9 @@ def fix_migration(filepath):
     print(f"  Corrigindo: {os.path.basename(filepath)} ({len(matches)} ENUMs)")
 
     # Adiciona a função helper se não existir
-    if 'def create_enum_safe' not in content:
+    if "def create_enum_safe" not in content:
         # Encontra onde adicionar (após os imports, antes de upgrade())
-        upgrade_match = re.search(r'\ndef upgrade\(\)', content)
+        upgrade_match = re.search(r"\ndef upgrade\(\)", content)
         if upgrade_match:
             insert_pos = upgrade_match.start()
             content = content[:insert_pos] + HELPER_FUNCTION + content[insert_pos:]
@@ -56,16 +57,18 @@ def fix_migration(filepath):
     # Substitui cada CREATE TYPE
     for enum_name, enum_values in matches:
         # Limpa os valores
-        values_clean = [v.strip().strip("'\"") for v in enum_values.replace('\n', ' ').split(',')]
+        values_clean = [v.strip().strip("'\"") for v in enum_values.replace("\n", " ").split(",")]
         values_list = str(values_clean)
 
         # Padrão específico para este enum
-        specific_pattern = rf'op\.execute\s*\(\s*["\'][\s\S]*?CREATE\s+TYPE\s+{enum_name}\s+AS\s+ENUM\s*\([^)]+\)[\s\S]*?["\']\s*\)'
+        specific_pattern = (
+            rf'op\.execute\s*\(\s*["\'][\s\S]*?CREATE\s+TYPE\s+{enum_name}\s+AS\s+ENUM\s*\([^)]+\)[\s\S]*?["\']\s*\)'
+        )
 
         replacement = f'create_enum_safe("{enum_name}", {values_list})'
         content = re.sub(specific_pattern, replacement, content)
 
-    with open(filepath, 'w') as f:
+    with open(filepath, "w") as f:
         f.write(content)
 
     return True

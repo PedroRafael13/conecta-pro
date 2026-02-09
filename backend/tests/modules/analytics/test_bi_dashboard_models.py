@@ -4,34 +4,34 @@ Testes unitarios para models do BI Dashboard Financeiro.
 Sprint 30 - Business Intelligence Dashboard
 """
 
-from datetime import datetime, date, timedelta, UTC
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from uuid import uuid4
 
 import pytest
 
+from modules.financial.bi_dashboard.models.dashboard_config import (
+    DashboardLayout,
+    DashboardStatus,
+    DashboardType,
+    FinancialDashboard,
+    RefreshInterval,
+)
 from modules.financial.bi_dashboard.models.kpi_definition import (
+    AlertLevel,
     FinancialKPI,
     KPICategory,
     KPIFrequency,
     KPIStatus,
     KPITrend,
-    AlertLevel,
-)
-from modules.financial.bi_dashboard.models.dashboard_config import (
-    FinancialDashboard,
-    DashboardType,
-    DashboardStatus,
-    DashboardLayout,
-    RefreshInterval,
 )
 from modules.financial.bi_dashboard.models.scheduled_report import (
-    ScheduledReport,
-    ReportType,
+    DeliveryMethod,
     ReportFormat,
     ReportFrequency,
     ReportStatus,
-    DeliveryMethod,
+    ReportType,
+    ScheduledReport,
 )
 
 

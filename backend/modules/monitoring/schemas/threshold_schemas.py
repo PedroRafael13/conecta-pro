@@ -3,7 +3,7 @@ Schemas para thresholds de metricas.
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
@@ -16,21 +16,21 @@ class ThresholdBase(BaseModel):
 
     metric_name: str = Field(..., max_length=100)
     display_name: str = Field(..., max_length=200)
-    description: Optional[str] = None
+    description: str | None = None
     category: str = Field(default="general", max_length=50)
     threshold_type: ThresholdType = Field(default=ThresholdType.UPPER)
     yellow_threshold: float
     orange_threshold: float
     red_threshold: float
-    yellow_lower: Optional[float] = None
-    orange_lower: Optional[float] = None
-    red_lower: Optional[float] = None
+    yellow_lower: float | None = None
+    orange_lower: float | None = None
+    red_lower: float | None = None
     unit: str = Field(default="", max_length=20)
     enabled: bool = True
     cooldown_seconds: int = Field(default=300, ge=0, le=86400)
     consecutive_breaches: int = Field(default=1, ge=1, le=100)
-    notify_channels: Optional[Dict[str, bool]] = None
-    tags: Optional[Dict[str, Any]] = None
+    notify_channels: dict[str, bool] | None = None
+    tags: dict[str, Any] | None = None
 
     @field_validator("orange_threshold")
     @classmethod
@@ -62,21 +62,21 @@ class ThresholdCreate(ThresholdBase):
 class ThresholdUpdate(BaseModel):
     """Schema para atualizacao de threshold."""
 
-    display_name: Optional[str] = Field(None, max_length=200)
-    description: Optional[str] = None
-    category: Optional[str] = Field(None, max_length=50)
-    yellow_threshold: Optional[float] = None
-    orange_threshold: Optional[float] = None
-    red_threshold: Optional[float] = None
-    yellow_lower: Optional[float] = None
-    orange_lower: Optional[float] = None
-    red_lower: Optional[float] = None
-    unit: Optional[str] = Field(None, max_length=20)
-    enabled: Optional[bool] = None
-    cooldown_seconds: Optional[int] = Field(None, ge=0, le=86400)
-    consecutive_breaches: Optional[int] = Field(None, ge=1, le=100)
-    notify_channels: Optional[Dict[str, bool]] = None
-    tags: Optional[Dict[str, Any]] = None
+    display_name: str | None = Field(None, max_length=200)
+    description: str | None = None
+    category: str | None = Field(None, max_length=50)
+    yellow_threshold: float | None = None
+    orange_threshold: float | None = None
+    red_threshold: float | None = None
+    yellow_lower: float | None = None
+    orange_lower: float | None = None
+    red_lower: float | None = None
+    unit: str | None = Field(None, max_length=20)
+    enabled: bool | None = None
+    cooldown_seconds: int | None = Field(None, ge=0, le=86400)
+    consecutive_breaches: int | None = Field(None, ge=1, le=100)
+    notify_channels: dict[str, bool] | None = None
+    tags: dict[str, Any] | None = None
 
 
 class ThresholdResponse(ThresholdBase):
@@ -84,8 +84,8 @@ class ThresholdResponse(ThresholdBase):
 
     id: UUID
     is_active: bool
-    last_alert_at: Optional[datetime] = None
-    last_value: Optional[float] = None
+    last_alert_at: datetime | None = None
+    last_value: float | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -98,4 +98,4 @@ class ThresholdListResponse(BaseModel):
 
     total: int
     enabled: int
-    thresholds: List[ThresholdResponse]
+    thresholds: list[ThresholdResponse]

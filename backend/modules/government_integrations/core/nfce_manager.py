@@ -7,19 +7,22 @@ Date: 2026-01-17
 """
 
 import hashlib
-import re
-from datetime import datetime, timedelta, timezone
-from decimal import Decimal
-from typing import Dict, Optional, Any
-from urllib.parse import quote
-import xml.etree.ElementTree as ET
-from xml.dom import minidom
 import logging
+import re
+from datetime import timedelta, timezone
+from decimal import Decimal
+from urllib.parse import quote
+from xml.etree.ElementTree import Element, SubElement  # noqa: S405
+
+import defusedxml.ElementTree as ET  # noqa: N817
 
 from .sefaz_manager import (
-    NotaFiscal, DocumentType, DocumentStatus, OperationType,
-    Emitente, Destinatario, Produto, Pagamento, PaymentType,
-    ContingencyType, NFEXMLBuilder, UF_CONFIGS
+    UF_CONFIGS,
+    DocumentType,
+    NFEXMLBuilder,
+    NotaFiscal,
+    PaymentType,
+    Produto,
 )
 
 logger = logging.getLogger(__name__)
@@ -40,7 +43,6 @@ NFCE_QRCODE_URL = {
     "PE_HOM": "http://nfcehomolog.sefaz.pe.gov.br/nfce/consulta",
     "RJ_HOM": "http://www4.fazenda.rj.gov.br/consultaNFCe/QRCode",
     "CE_HOM": "http://nfceh.sefaz.ce.gov.br/pages/ShowNFCe.html",
-
     # Produção
     "AM_PROD": "https://sistemas.sefaz.am.gov.br/nfceweb/consultarNFCe.jsp",
     "SP_PROD": "https://www.nfce.fazenda.sp.gov.br/NFCeConsultaPublica/Paginas/ConsultaQRCode.aspx",
@@ -115,7 +117,7 @@ class NFCEQRCodeGenerator:
         valor_total: Decimal,
         valor_icms: Decimal,
         dig_val: str,
-        cpf_cnpj_dest: Optional[str] = None
+        cpf_cnpj_dest: str | None = None,
     ) -> str:
         """
         Gera a URL do QR Code da NFC-e.
@@ -143,19 +145,21 @@ class NFCEQRCodeGenerator:
         # Destino (CPF se houver)
         c_dest = ""
         if cpf_cnpj_dest:
-            c_dest = re.sub(r'[^\d]', '', cpf_cnpj_dest)
+            c_dest = re.sub(r"[^\d]", "", cpf_cnpj_dest)
 
         # dhEmi em hexadecimal (sem timezone para QR)
         # Formato: AAAA-MM-DDTHH:MM:SS-03:00 -> hex
-        dh_emi_hex = dh_emi.encode('utf-8').hex().upper()
+        dh_emi_hex = dh_emi.encode("utf-8").hex().upper()
 
         # Montar string para hash
         # chNFe|nVersao|tpAmb|cDest|dhEmi|vNF|vICMS|digVal|cIdToken
-        params = f"{chave_acesso}|{n_versao}|{self.ambiente}|{c_dest}|{dh_emi_hex}|{v_nf}|{v_icms}|{dig_val}|{self.csc_id}"
+        params = (
+            f"{chave_acesso}|{n_versao}|{self.ambiente}|{c_dest}|{dh_emi_hex}|{v_nf}|{v_icms}|{dig_val}|{self.csc_id}"
+        )
 
         # Gerar hash SHA1 com CSC
         hash_input = params + self.csc_token
-        c_hash_qrcode = hashlib.sha1(hash_input.encode('utf-8')).hexdigest().upper()
+        c_hash_qrcode = hashlib.sha1(hash_input.encode("utf-8")).hexdigest().upper()  # noqa: S324
 
         # URL final
         qrcode_data = f"{params}|{c_hash_qrcode}"
@@ -201,23 +205,29 @@ class NFCEXMLBuilder(NFEXMLBuilder):
         if not nf.chave_acesso:
             nf.generate_chave_acesso()
 
-        root = ET.Element("NFe", xmlns=self.NAMESPACE)
-        inf = ET.SubElement(root, "infNFe", Id=f"NFe{nf.chave_acesso}", versao=self.VERSION)
+        root = Element("NFe", xmlns=self.NAMESPACE)
+        inf = SubElement(root, "infNFe", Id=f"NFe{nf.chave_acesso}", versao=self.VERSION)
 
         # ide - Identificação (específico NFC-e)
-        ide = ET.SubElement(inf, "ide")
+        ide = SubElement(inf, "ide")
         uf_config = UF_CONFIGS.get(nf.emitente.endereco.uf)
-        ET.SubElement(ide, "cUF").text = uf_config.code if uf_config else "13"
-        ET.SubElement(ide, "cNF").text = nf.chave_acesso[35:43]
-        ET.SubElement(ide, "natOp").text = nf.natureza_operacao or "VENDA"
-        ET.SubElement(ide, "mod").text = "65"  # Modelo NFC-e
-        ET.SubElement(ide, "serie").text = str(nf.serie)
-        ET.SubElement(ide, "nNF").text = str(nf.numero)
+        SubElement(ide, "cUF").text = uf_config.code if uf_config else "13"
+        SubElement(ide, "cNF").text = nf.chave_acesso[35:43]
+        SubElement(ide, "natOp").text = nf.natureza_operacao or "VENDA"
+        SubElement(ide, "mod").text = "65"  # Modelo NFC-e
+        SubElement(ide, "serie").text = str(nf.serie)
+        SubElement(ide, "nNF").text = str(nf.numero)
 
         # Timezone
         uf_timezone_offset = {
-            "AC": -5, "AM": -4, "AP": -3, "PA": -3,
-            "RO": -4, "RR": -4, "TO": -3, "MT": -4,
+            "AC": -5,
+            "AM": -4,
+            "AP": -3,
+            "PA": -3,
+            "RO": -4,
+            "RR": -4,
+            "TO": -3,
+            "MT": -4,
         }.get(nf.emitente.endereco.uf, -3)
         uf_timezone_str = f"{uf_timezone_offset:+03d}:00"
 
@@ -229,76 +239,76 @@ class NFCEXMLBuilder(NFEXMLBuilder):
             data_emissao = data_emissao.astimezone(uf_tz)
 
         dh_emi = data_emissao.strftime(f"%Y-%m-%dT%H:%M:%S{uf_timezone_str}")
-        ET.SubElement(ide, "dhEmi").text = dh_emi
-        ET.SubElement(ide, "tpNF").text = "1"  # Saída
-        ET.SubElement(ide, "idDest").text = "1"  # Operação interna
-        ET.SubElement(ide, "cMunFG").text = nf.emitente.endereco.codigo_municipio
-        ET.SubElement(ide, "tpImp").text = "4"  # DANFE NFC-e
-        ET.SubElement(ide, "tpEmis").text = nf.contingency_type.value if nf.contingency_type else "1"
-        ET.SubElement(ide, "cDV").text = nf.chave_acesso[-1]
-        ET.SubElement(ide, "tpAmb").text = ambiente
-        ET.SubElement(ide, "finNFe").text = "1"  # Normal
-        ET.SubElement(ide, "indFinal").text = "1"  # Consumidor final (obrigatório NFC-e)
-        ET.SubElement(ide, "indPres").text = "1"  # Presencial (obrigatório NFC-e)
-        ET.SubElement(ide, "procEmi").text = "0"
-        ET.SubElement(ide, "verProc").text = "CONECTA_PRO_1.0"
+        SubElement(ide, "dhEmi").text = dh_emi
+        SubElement(ide, "tpNF").text = "1"  # Saída
+        SubElement(ide, "idDest").text = "1"  # Operação interna
+        SubElement(ide, "cMunFG").text = nf.emitente.endereco.codigo_municipio
+        SubElement(ide, "tpImp").text = "4"  # DANFE NFC-e
+        SubElement(ide, "tpEmis").text = nf.contingency_type.value if nf.contingency_type else "1"
+        SubElement(ide, "cDV").text = nf.chave_acesso[-1]
+        SubElement(ide, "tpAmb").text = ambiente
+        SubElement(ide, "finNFe").text = "1"  # Normal
+        SubElement(ide, "indFinal").text = "1"  # Consumidor final (obrigatório NFC-e)
+        SubElement(ide, "indPres").text = "1"  # Presencial (obrigatório NFC-e)
+        SubElement(ide, "procEmi").text = "0"
+        SubElement(ide, "verProc").text = "CONECTA_PRO_1.0"
 
         # emit - Emitente
-        emit = ET.SubElement(inf, "emit")
-        ET.SubElement(emit, "CNPJ").text = re.sub(r'[^\d]', '', nf.emitente.cnpj)
-        ET.SubElement(emit, "xNome").text = nf.emitente.razao_social
+        emit = SubElement(inf, "emit")
+        SubElement(emit, "CNPJ").text = re.sub(r"[^\d]", "", nf.emitente.cnpj)
+        SubElement(emit, "xNome").text = nf.emitente.razao_social
         if nf.emitente.nome_fantasia:
-            ET.SubElement(emit, "xFant").text = nf.emitente.nome_fantasia
+            SubElement(emit, "xFant").text = nf.emitente.nome_fantasia
         self._add_endereco(emit, "enderEmit", nf.emitente.endereco)
-        ET.SubElement(emit, "IE").text = nf.emitente.inscricao_estadual
-        ET.SubElement(emit, "CRT").text = nf.emitente.regime_tributario
+        SubElement(emit, "IE").text = nf.emitente.inscricao_estadual
+        SubElement(emit, "CRT").text = nf.emitente.regime_tributario
 
         # dest - Destinatário (opcional na NFC-e)
         if nf.destinatario and nf.destinatario.cpf_cnpj:
-            dest = ET.SubElement(inf, "dest")
-            doc = re.sub(r'[^\d]', '', nf.destinatario.cpf_cnpj)
+            dest = SubElement(inf, "dest")
+            doc = re.sub(r"[^\d]", "", nf.destinatario.cpf_cnpj)
             if len(doc) == 11:
-                ET.SubElement(dest, "CPF").text = doc
+                SubElement(dest, "CPF").text = doc
             else:
-                ET.SubElement(dest, "CNPJ").text = doc
+                SubElement(dest, "CNPJ").text = doc
 
             # Nome opcional, mas se identificado usar nome de homologação
             if ambiente == "2":
-                ET.SubElement(dest, "xNome").text = "NF-E EMITIDA EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL"
+                SubElement(dest, "xNome").text = "NF-E EMITIDA EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL"
             elif nf.destinatario.nome:
-                ET.SubElement(dest, "xNome").text = nf.destinatario.nome
+                SubElement(dest, "xNome").text = nf.destinatario.nome
 
-            ET.SubElement(dest, "indIEDest").text = "9"  # Não contribuinte
+            SubElement(dest, "indIEDest").text = "9"  # Não contribuinte
 
         # det - Produtos
         for i, produto in enumerate(nf.produtos, 1):
-            det = ET.SubElement(inf, "det", nItem=str(i))
-            prod = ET.SubElement(det, "prod")
-            ET.SubElement(prod, "cProd").text = produto.codigo
-            ET.SubElement(prod, "cEAN").text = produto.ean or "SEM GTIN"
+            det = SubElement(inf, "det", nItem=str(i))
+            prod = SubElement(det, "prod")
+            SubElement(prod, "cProd").text = produto.codigo
+            SubElement(prod, "cEAN").text = produto.ean or "SEM GTIN"
 
             # Descrição em homologação
             if ambiente == "2":
-                ET.SubElement(prod, "xProd").text = "NOTA FISCAL EMITIDA EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL"
+                SubElement(prod, "xProd").text = "NOTA FISCAL EMITIDA EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL"
             else:
-                ET.SubElement(prod, "xProd").text = produto.descricao
+                SubElement(prod, "xProd").text = produto.descricao
 
-            ET.SubElement(prod, "NCM").text = produto.ncm
+            SubElement(prod, "NCM").text = produto.ncm
             if produto.cest:
-                ET.SubElement(prod, "CEST").text = produto.cest
-            ET.SubElement(prod, "CFOP").text = produto.cfop or "5102"
-            ET.SubElement(prod, "uCom").text = produto.unidade
-            ET.SubElement(prod, "qCom").text = f"{produto.quantidade:.4f}"
-            ET.SubElement(prod, "vUnCom").text = f"{produto.valor_unitario:.10f}"
-            ET.SubElement(prod, "vProd").text = f"{produto.valor_total:.2f}"
-            ET.SubElement(prod, "cEANTrib").text = produto.ean or "SEM GTIN"
-            ET.SubElement(prod, "uTrib").text = produto.unidade
-            ET.SubElement(prod, "qTrib").text = f"{produto.quantidade:.4f}"
-            ET.SubElement(prod, "vUnTrib").text = f"{produto.valor_unitario:.10f}"
-            ET.SubElement(prod, "indTot").text = "1"
+                SubElement(prod, "CEST").text = produto.cest
+            SubElement(prod, "CFOP").text = produto.cfop or "5102"
+            SubElement(prod, "uCom").text = produto.unidade
+            SubElement(prod, "qCom").text = f"{produto.quantidade:.4f}"
+            SubElement(prod, "vUnCom").text = f"{produto.valor_unitario:.10f}"
+            SubElement(prod, "vProd").text = f"{produto.valor_total:.2f}"
+            SubElement(prod, "cEANTrib").text = produto.ean or "SEM GTIN"
+            SubElement(prod, "uTrib").text = produto.unidade
+            SubElement(prod, "qTrib").text = f"{produto.quantidade:.4f}"
+            SubElement(prod, "vUnTrib").text = f"{produto.valor_unitario:.10f}"
+            SubElement(prod, "indTot").text = "1"
 
             # Impostos
-            imposto = ET.SubElement(det, "imposto")
+            imposto = SubElement(det, "imposto")
 
             # ICMS
             self._add_icms_nfce(imposto, produto, nf.emitente.regime_tributario)
@@ -310,55 +320,55 @@ class NFCEXMLBuilder(NFEXMLBuilder):
             self._add_cofins(imposto, produto)
 
         # total
-        total = ET.SubElement(inf, "total")
-        icms_tot = ET.SubElement(total, "ICMSTot")
+        total = SubElement(inf, "total")
+        icms_tot = SubElement(total, "ICMSTot")
         is_simples = nf.emitente.regime_tributario in ["1", "2"]
-        ET.SubElement(icms_tot, "vBC").text = "0.00" if is_simples else f"{nf.valor_total_produtos:.2f}"
-        ET.SubElement(icms_tot, "vICMS").text = "0.00" if is_simples else f"{nf.valor_icms:.2f}"
-        ET.SubElement(icms_tot, "vICMSDeson").text = "0.00"
-        ET.SubElement(icms_tot, "vFCP").text = "0.00"
-        ET.SubElement(icms_tot, "vBCST").text = "0.00"
-        ET.SubElement(icms_tot, "vST").text = "0.00"
-        ET.SubElement(icms_tot, "vFCPST").text = "0.00"
-        ET.SubElement(icms_tot, "vFCPSTRet").text = "0.00"
-        ET.SubElement(icms_tot, "vProd").text = f"{nf.valor_total_produtos:.2f}"
-        ET.SubElement(icms_tot, "vFrete").text = "0.00"
-        ET.SubElement(icms_tot, "vSeg").text = "0.00"
-        ET.SubElement(icms_tot, "vDesc").text = f"{nf.valor_desconto:.2f}"
-        ET.SubElement(icms_tot, "vII").text = "0.00"
-        ET.SubElement(icms_tot, "vIPI").text = "0.00"
-        ET.SubElement(icms_tot, "vIPIDevol").text = "0.00"
-        ET.SubElement(icms_tot, "vPIS").text = "0.00"
-        ET.SubElement(icms_tot, "vCOFINS").text = "0.00"
-        ET.SubElement(icms_tot, "vOutro").text = "0.00"
-        ET.SubElement(icms_tot, "vNF").text = f"{nf.valor_total:.2f}"
+        SubElement(icms_tot, "vBC").text = "0.00" if is_simples else f"{nf.valor_total_produtos:.2f}"
+        SubElement(icms_tot, "vICMS").text = "0.00" if is_simples else f"{nf.valor_icms:.2f}"
+        SubElement(icms_tot, "vICMSDeson").text = "0.00"
+        SubElement(icms_tot, "vFCP").text = "0.00"
+        SubElement(icms_tot, "vBCST").text = "0.00"
+        SubElement(icms_tot, "vST").text = "0.00"
+        SubElement(icms_tot, "vFCPST").text = "0.00"
+        SubElement(icms_tot, "vFCPSTRet").text = "0.00"
+        SubElement(icms_tot, "vProd").text = f"{nf.valor_total_produtos:.2f}"
+        SubElement(icms_tot, "vFrete").text = "0.00"
+        SubElement(icms_tot, "vSeg").text = "0.00"
+        SubElement(icms_tot, "vDesc").text = f"{nf.valor_desconto:.2f}"
+        SubElement(icms_tot, "vII").text = "0.00"
+        SubElement(icms_tot, "vIPI").text = "0.00"
+        SubElement(icms_tot, "vIPIDevol").text = "0.00"
+        SubElement(icms_tot, "vPIS").text = "0.00"
+        SubElement(icms_tot, "vCOFINS").text = "0.00"
+        SubElement(icms_tot, "vOutro").text = "0.00"
+        SubElement(icms_tot, "vNF").text = f"{nf.valor_total:.2f}"
 
         # transp - Transporte (sem frete para NFC-e)
-        transp = ET.SubElement(inf, "transp")
-        ET.SubElement(transp, "modFrete").text = "9"  # Sem frete
+        transp = SubElement(inf, "transp")
+        SubElement(transp, "modFrete").text = "9"  # Sem frete
 
         # pag - Pagamentos
-        pag = ET.SubElement(inf, "pag")
+        pag = SubElement(inf, "pag")
         for pagamento in nf.pagamentos:
-            det_pag = ET.SubElement(pag, "detPag")
-            ET.SubElement(det_pag, "tPag").text = pagamento.tipo.value
-            ET.SubElement(det_pag, "vPag").text = f"{pagamento.valor:.2f}"
+            det_pag = SubElement(pag, "detPag")
+            SubElement(det_pag, "tPag").text = pagamento.tipo.value
+            SubElement(det_pag, "vPag").text = f"{pagamento.valor:.2f}"
 
             # Dados do cartão se for crédito/débito
             if pagamento.tipo in [PaymentType.CARTAO_CREDITO, PaymentType.CARTAO_DEBITO]:
-                card = ET.SubElement(det_pag, "card")
-                ET.SubElement(card, "tpIntegra").text = "2"  # Não integrado
+                card = SubElement(det_pag, "card")
+                SubElement(card, "tpIntegra").text = "2"  # Não integrado
 
         # Troco se houver
         if nf.valor_troco and nf.valor_troco > 0:
-            ET.SubElement(pag, "vTroco").text = f"{nf.valor_troco:.2f}"
+            SubElement(pag, "vTroco").text = f"{nf.valor_troco:.2f}"
 
         # infRespTec - Responsável Técnico
-        inf_resp = ET.SubElement(inf, "infRespTec")
-        ET.SubElement(inf_resp, "CNPJ").text = re.sub(r'[^\d]', '', nf.emitente.cnpj)
-        ET.SubElement(inf_resp, "xContato").text = "Suporte Tecnico"
-        ET.SubElement(inf_resp, "email").text = "suporte@conectapro.com.br"
-        ET.SubElement(inf_resp, "fone").text = "92999999999"
+        inf_resp = SubElement(inf, "infRespTec")
+        SubElement(inf_resp, "CNPJ").text = re.sub(r"[^\d]", "", nf.emitente.cnpj)
+        SubElement(inf_resp, "xContato").text = "Suporte Tecnico"
+        SubElement(inf_resp, "email").text = "suporte@conectapro.com.br"
+        SubElement(inf_resp, "fone").text = "92999999999"
 
         # Gerar XML sem infNFeSupl (será adicionado após assinatura)
         return self._prettify(root)
@@ -379,7 +389,7 @@ class NFCEXMLBuilder(NFEXMLBuilder):
             XML com infNFeSupl
         """
         # Parse XML
-        root = ET.fromstring(xml_assinado.encode('utf-8'))
+        root = ET.fromstring(xml_assinado.encode("utf-8"))
 
         # Encontrar NFe
         ns = {"nfe": self.NAMESPACE}
@@ -391,14 +401,14 @@ class NFCEXMLBuilder(NFEXMLBuilder):
             raise ValueError("Elemento NFe não encontrado")
 
         # Criar infNFeSupl
-        inf_supl = ET.Element("infNFeSupl")
+        inf_supl = Element("infNFeSupl")
 
         # QR Code com CDATA
-        qr_code = ET.SubElement(inf_supl, "qrCode")
+        qr_code = SubElement(inf_supl, "qrCode")
         qr_code.text = qrcode_url
 
         # URL consulta chave
-        url_chave_elem = ET.SubElement(inf_supl, "urlChave")
+        url_chave_elem = SubElement(inf_supl, "urlChave")
         url_chave_elem.text = url_chave
 
         # Inserir após Signature (ou no final do NFe)
@@ -411,47 +421,41 @@ class NFCEXMLBuilder(NFEXMLBuilder):
         else:
             nfe.append(inf_supl)
 
-        return ET.tostring(root, encoding='unicode')
+        return ET.tostring(root, encoding="unicode")
 
-    def _add_icms_nfce(self, parent: ET.Element, produto: Produto, regime_tributario: str) -> None:
+    def _add_icms_nfce(self, parent: Element, produto: Produto, regime_tributario: str) -> None:
         """Adiciona ICMS específico para NFC-e."""
-        icms = ET.SubElement(parent, "ICMS")
+        icms = SubElement(parent, "ICMS")
         cst = produto.cst_icms or "102"
 
         # Simples Nacional
         if regime_tributario in ["1", "2"]:
             if cst in ["101", "102", "103", "201", "202", "203", "300", "400", "500", "900"]:
-                icms_elem = ET.SubElement(icms, f"ICMSSN{cst}")
-                ET.SubElement(icms_elem, "orig").text = produto.origem or "0"
-                ET.SubElement(icms_elem, "CSOSN").text = cst
+                icms_elem = SubElement(icms, f"ICMSSN{cst}")
+                SubElement(icms_elem, "orig").text = produto.origem or "0"
+                SubElement(icms_elem, "CSOSN").text = cst
             else:
                 # Fallback para ICMSSN102
-                icms_elem = ET.SubElement(icms, "ICMSSN102")
-                ET.SubElement(icms_elem, "orig").text = produto.origem or "0"
-                ET.SubElement(icms_elem, "CSOSN").text = "102"
+                icms_elem = SubElement(icms, "ICMSSN102")
+                SubElement(icms_elem, "orig").text = produto.origem or "0"
+                SubElement(icms_elem, "CSOSN").text = "102"
         else:
             # Regime Normal
-            icms_elem = ET.SubElement(icms, f"ICMS{cst}")
-            ET.SubElement(icms_elem, "orig").text = produto.origem or "0"
-            ET.SubElement(icms_elem, "CST").text = cst
+            icms_elem = SubElement(icms, f"ICMS{cst}")
+            SubElement(icms_elem, "orig").text = produto.origem or "0"
+            SubElement(icms_elem, "CST").text = cst
 
             if cst in ["00", "10", "20", "70"]:
-                ET.SubElement(icms_elem, "modBC").text = "3"
-                ET.SubElement(icms_elem, "vBC").text = f"{produto.valor_total:.2f}"
-                ET.SubElement(icms_elem, "pICMS").text = f"{produto.aliquota_icms:.2f}"
-                ET.SubElement(icms_elem, "vICMS").text = f"{produto.valor_icms:.2f}"
+                SubElement(icms_elem, "modBC").text = "3"
+                SubElement(icms_elem, "vBC").text = f"{produto.valor_total:.2f}"
+                SubElement(icms_elem, "pICMS").text = f"{produto.aliquota_icms:.2f}"
+                SubElement(icms_elem, "vICMS").text = f"{produto.valor_icms:.2f}"
 
 
 class NFCETransmitter:
     """Transmissor de NFC-e para SEFAZ."""
 
-    def __init__(
-        self,
-        uf: str,
-        ambiente: str = "2",
-        csc_id: str = "",
-        csc_token: str = ""
-    ):
+    def __init__(self, uf: str, ambiente: str = "2", csc_id: str = "", csc_token: str = ""):
         """
         Inicializa o transmissor de NFC-e.
 
@@ -472,7 +476,9 @@ class NFCETransmitter:
         self.qrcode_generator = NFCEQRCodeGenerator(uf, ambiente, csc_id, csc_token)
         self.xml_builder = NFCEXMLBuilder(csc_id, csc_token)
 
-        logger.info(f"NFCETransmitter inicializado: UF={uf}, Ambiente={'Produção' if ambiente == '1' else 'Homologação'}")
+        logger.info(
+            f"NFCETransmitter inicializado: UF={uf}, Ambiente={'Produção' if ambiente == '1' else 'Homologação'}"
+        )
 
     def get_endpoint(self, service: str) -> str:
         """Retorna endpoint do serviço."""
@@ -485,7 +491,7 @@ class NFCETransmitter:
         valor_total: Decimal,
         valor_icms: Decimal,
         dig_val: str,
-        cpf_cnpj_dest: Optional[str] = None
+        cpf_cnpj_dest: str | None = None,
     ) -> str:
         """Gera URL do QR Code."""
         return self.qrcode_generator.generate_qrcode_url(

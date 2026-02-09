@@ -7,14 +7,13 @@ Implementa:
 - Verificação de pagamentos
 """
 
-from datetime import datetime, timedelta
-from typing import Dict, Optional, Any, List
-from uuid import UUID
 import asyncio
 import logging
+from datetime import datetime, timedelta
+from uuid import UUID
 
-from ..base_extractor import ExtratorBase, DocumentoExtraido, ResultadoExtracao
-from ...core.credentials import ProvedorCredenciais, TipoCredencial
+from ...core.credentials import TipoCredencial
+from ..base_extractor import DocumentoExtraido, ExtratorBase, ResultadoExtracao
 
 logger = logging.getLogger(__name__)
 
@@ -45,10 +44,10 @@ class ExtratorFGTS(ExtratorBase):
     async def extrair(
         self,
         tenant_id: UUID,
-        data_inicio: Optional[datetime] = None,
-        data_fim: Optional[datetime] = None,
-        cnpjs: Optional[List[str]] = None,
-        ufs: Optional[List[str]] = None,
+        data_inicio: datetime | None = None,
+        data_fim: datetime | None = None,
+        cnpjs: list[str] | None = None,
+        ufs: list[str] | None = None,
         incremental: bool = True,
     ) -> ResultadoExtracao:
         """Extrai dados do FGTS Digital."""
@@ -65,9 +64,7 @@ class ExtratorFGTS(ExtratorBase):
         logger.info(f"Iniciando extração FGTS: {tenant_id}")
 
         try:
-            credencial = await self.credentials.obter_credencial(
-                tenant_id, self.tipo_credencial
-            )
+            credencial = await self.credentials.obter_credencial(tenant_id, self.tipo_credencial)
 
             if not credencial.valida:
                 resultado.status = "falha"
@@ -78,9 +75,7 @@ class ExtratorFGTS(ExtratorBase):
 
             for cnpj in cnpjs:
                 # Consultar guias mensais
-                guias_mensais = await self._consultar_guias_mensais(
-                    tenant_id, cnpj, data_inicio, data_fim
-                )
+                guias_mensais = await self._consultar_guias_mensais(tenant_id, cnpj, data_inicio, data_fim)
 
                 for guia in guias_mensais:
                     resultado.documentos.append(guia)
@@ -91,9 +86,7 @@ class ExtratorFGTS(ExtratorBase):
                         resultado.documentos_novos += 1
 
                 # Consultar guias rescisórias
-                guias_rescissorias = await self._consultar_guias_rescissorias(
-                    tenant_id, cnpj, data_inicio, data_fim
-                )
+                guias_rescissorias = await self._consultar_guias_rescissorias(tenant_id, cnpj, data_inicio, data_fim)
 
                 for guia in guias_rescissorias:
                     resultado.documentos.append(guia)
@@ -117,7 +110,7 @@ class ExtratorFGTS(ExtratorBase):
         cnpj: str,
         data_inicio: datetime,
         data_fim: datetime,
-    ) -> List[DocumentoExtraido]:
+    ) -> list[DocumentoExtraido]:
         """Consulta guias mensais do FGTS."""
         documentos = []
 
@@ -139,9 +132,7 @@ class ExtratorFGTS(ExtratorBase):
             if competencia_atual.month == 12:
                 competencia_atual = datetime(competencia_atual.year + 1, 1, 1)
             else:
-                competencia_atual = datetime(
-                    competencia_atual.year, competencia_atual.month + 1, 1
-                )
+                competencia_atual = datetime(competencia_atual.year, competencia_atual.month + 1, 1)
 
             await asyncio.sleep(0.5)
 
@@ -153,7 +144,7 @@ class ExtratorFGTS(ExtratorBase):
         cnpj: str,
         data_inicio: datetime,
         data_fim: datetime,
-    ) -> List[DocumentoExtraido]:
+    ) -> list[DocumentoExtraido]:
         """Consulta guias rescisórias."""
         documentos = []
 
@@ -164,12 +155,8 @@ class ExtratorFGTS(ExtratorBase):
         return documentos
 
     async def _consultar_guia(
-        self,
-        tenant_id: UUID,
-        cnpj: str,
-        competencia: str,
-        tipo: str
-    ) -> Optional[DocumentoExtraido]:
+        self, tenant_id: UUID, cnpj: str, competencia: str, tipo: str
+    ) -> DocumentoExtraido | None:
         """Consulta uma guia específica."""
         # Montar requisição
         url = f"{self.URLS['producao']}/guias/{cnpj}/{competencia}"
@@ -227,7 +214,7 @@ class ExtratorFGTS(ExtratorBase):
         tenant_id: UUID,
         cnpj: str,
         competencia: str,
-    ) -> Optional[bytes]:
+    ) -> bytes | None:
         """Download do DARF em PDF."""
         url = f"{self.URLS['producao']}/guias/{cnpj}/{competencia}/pdf"
 

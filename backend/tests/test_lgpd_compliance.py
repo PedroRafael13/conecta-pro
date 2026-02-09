@@ -19,7 +19,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from fastapi import FastAPI
 
-from modules.notifications.compliance.lgpd_manager import LGPDManager
+from modules.notifications.compliance.lgpd_manager import LGPDComplianceManager
 from modules.notifications.controllers.compliance_controller import router
 
 # Mock app para teste
@@ -33,7 +33,7 @@ class TestLGPDCompliance:
 
     def setup_method(self):
         """Setup para cada teste."""
-        self.lgpd_manager = LGPDManager()
+        self.lgpd_manager = LGPDComplianceManager()
         self.user_id = 12345
 
     @pytest.mark.asyncio

@@ -239,7 +239,7 @@ router = APIRouter(prefix="/api/v1")
 # ===================================================================
 # HEALTH CHECK - Monitoramento
 # ===================================================================
-from core.controllers.health_controller import router as health_router
+from core.controllers.health_controller import router as health_router  # noqa: E402
 
 router.include_router(health_router)
 
@@ -464,59 +464,59 @@ router.include_router(openclaw_router, prefix="/ai", tags=["AI - OpenClaw Code Q
 # ===================================================================
 # MONITORING - EARLY WARNING SYSTEM (Fase 0)
 # ===================================================================
-from modules.monitoring import router as monitoring_router
+from modules.monitoring import router as monitoring_router  # noqa: E402
 
 router.include_router(monitoring_router, tags=["Monitoring - Early Warning System"])
 
 # ===================================================================
 # AUTOMATION - WORKFLOW ENGINE (Sprint 33)
 # ===================================================================
-from modules.automation.workflow.controllers import router as workflow_router
+from modules.automation.workflow.controllers import router as workflow_router  # noqa: E402
 
 router.include_router(workflow_router, prefix="/workflows", tags=["Automation - Workflows"])
 
 # ===================================================================
 # FASE 5 - GRAND FINALE (CCT + Email Intelligence + MCP)
 # ===================================================================
-from modules.fase5.controllers import fase5_router
+from modules.fase5.controllers import fase5_router  # noqa: E402
 
 router.include_router(fase5_router, tags=["Fase 5 - Grand Finale"])
 
 # ===================================================================
 # FASE 3 - SECURITY LGPD (Seguranca e Compliance LGPD)
 # ===================================================================
-from modules.security_lgpd import security_lgpd_router
+from modules.security_lgpd import security_lgpd_router  # noqa: E402
 
 router.include_router(security_lgpd_router, prefix="/security")
 
 # ===================================================================
 # FASE 3 - HEALTH OCCUPATIONAL (Saude Ocupacional NR-4/6/7/9)
 # ===================================================================
-from modules.health_occupational import health_occupational_router
+from modules.health_occupational import health_occupational_router  # noqa: E402
 
 router.include_router(health_occupational_router, tags=["Health - Saude Ocupacional"])
 
 # ===================================================================
 # FASE 3 - GOVERNMENT INTEGRATIONS (eSocial, SEFAZ, FGTS/INSS)
 # ===================================================================
-from modules.government_integrations import government_integrations_router
+from modules.government_integrations import government_integrations_router  # noqa: E402
 
 router.include_router(government_integrations_router, tags=["Government - Integracoes Governamentais"])
 
 # ===================================================================
 # BIDDING - MÓDULO DE LICITAÇÕES PÚBLICAS
 # ===================================================================
-from modules.bidding import (
+from modules.bidding import (  # noqa: E402
     certificate_router,
     tender_router,
 )
-from modules.bidding import (
+from modules.bidding import (  # noqa: E402
     contract_router as bidding_contract_router,
 )
-from modules.bidding import (
+from modules.bidding import (  # noqa: E402
     document_router as bidding_document_router,
 )
-from modules.bidding import (
+from modules.bidding import (  # noqa: E402
     proposal_router as bidding_proposal_router,
 )
 
@@ -529,10 +529,10 @@ router.include_router(certificate_router, prefix="/bidding", tags=["Bidding - Ce
 # ===================================================================
 # CAMPO - SERVIÇO DE CAMPO (Equipes Externas, Visitas, OS)
 # ===================================================================
-from modules.campo import (
+from modules.campo import (  # noqa: E402
     access_log_router as campo_access_router,
 )
-from modules.campo import (
+from modules.campo import (  # noqa: E402
     campo_service_router,
     checklist_router,
     estoque_router,
@@ -541,10 +541,10 @@ from modules.campo import (
     roteirizacao_router,
     visita_router,
 )
-from modules.campo import (
+from modules.campo import (  # noqa: E402
     equipment_status_router as campo_equipment_router,
 )
-from modules.campo import (
+from modules.campo import (  # noqa: E402
     occurrence_router as campo_occurrence_router,
 )
 
@@ -563,38 +563,38 @@ router.include_router(estoque_router, prefix="/campo/estoque", tags=["Campo - Es
 # ===================================================================
 # CENTRAL DE IA - INTELLIGENCE HUB (Nova Funcionalidade)
 # ===================================================================
-from modules.ai.intelligence_hub.controllers import intelligence_hub_router
+from modules.ai.intelligence_hub.controllers import intelligence_hub_router  # noqa: E402
 
 router.include_router(intelligence_hub_router, prefix="/ai", tags=["Intelligence Hub - Central IA"])
 
 # ===================================================================
 # REIMBURSEMENT - MÓDULO DE REEMBOLSO DE DESPESAS
 # ===================================================================
-from modules.reimbursement import reimbursement_router
+from modules.reimbursement import reimbursement_router  # noqa: E402
 
 router.include_router(reimbursement_router, prefix="/reimbursements", tags=["Reimbursement - Reembolsos"])
 
 # ===================================================================
 # SEARCH - BUSCA GLOBAL
 # ===================================================================
-from modules.search import search_router
+from modules.search import search_router  # noqa: E402
 
 router.include_router(search_router, tags=["Search - Busca Global"])
 
 # ===================================================================
 # SCHEDULER - AGENDAMENTO DE TAREFAS (Sprint 35)
 # ===================================================================
-from modules.scheduler.controllers import router as scheduler_router
+from modules.scheduler.controllers import router as scheduler_router  # noqa: E402
 
 router.include_router(scheduler_router, prefix="/scheduler", tags=["Scheduler - Agendamento de Tarefas"])
 
 # ===================================================================
 # NOTIFICATIONS - NOTIFICATION HUB (Sprint 36, 37, 03)
 # ===================================================================
-from modules.notifications.controllers import compliance_router as notification_compliance_router
-from modules.notifications.controllers import intelligent_router as intelligent_notification_router
-from modules.notifications.controllers import router as notification_router
-from modules.notifications.push.controllers import router as push_notification_router
+from modules.notifications.controllers import compliance_router as notification_compliance_router  # noqa: E402
+from modules.notifications.controllers import intelligent_router as intelligent_notification_router  # noqa: E402
+from modules.notifications.controllers import router as notification_router  # noqa: E402
+from modules.notifications.push.controllers import router as push_notification_router  # noqa: E402
 
 router.include_router(notification_router, prefix="/notifications", tags=["Notifications - Hub"])
 router.include_router(
@@ -608,14 +608,14 @@ router.include_router(push_notification_router, prefix="/notifications/push", ta
 # ===================================================================
 # MOBILE - API MOBILE (Sprint 38)
 # ===================================================================
-from modules.mobile import mobile_router
+from modules.mobile import mobile_router  # noqa: E402
 
 router.include_router(mobile_router, prefix="/mobile", tags=["Mobile API"])
 
 # ===================================================================
 # RETENTION - RETENÇÃO DE TALENTOS (Sprint 39)
 # ===================================================================
-from modules.retention import (
+from modules.retention import (  # noqa: E402
     climate_router,
     onboarding_router,
     profile_router,

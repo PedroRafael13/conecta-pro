@@ -6,6 +6,7 @@ datas e regras customizadas.
 """
 
 import pytest
+
 from modules.documents.models.validation_result import (
     BUILTIN_VALIDATORS,
     ValidationRule,

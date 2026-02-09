@@ -5,14 +5,12 @@ Fornece dados agregados para o dashboard de monitoramento.
 """
 
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.logging import logger
-
-from ..models.alert import Alert, AlertLevel, AlertStatus
+from ..models.alert import Alert, AlertStatus
 from ..models.metric_threshold import MetricThreshold
 from .metric_collector import get_metric_collector
 
@@ -32,7 +30,7 @@ class DashboardService:
         self.db = db
         self._startup_time = datetime.utcnow()
 
-    async def get_full_dashboard(self) -> Dict[str, Any]:
+    async def get_full_dashboard(self) -> dict[str, Any]:
         """
         Retorna dados completos do dashboard.
 
@@ -47,12 +45,12 @@ class DashboardService:
             "thresholds": await self.get_threshold_status(),
         }
 
-    async def get_system_health(self) -> Dict[str, Any]:
+    async def get_system_health(self) -> dict[str, Any]:
         """Retorna saude geral do sistema."""
         # Alertas ativos
         stmt = select(Alert).where(
             Alert.status == AlertStatus.ACTIVE,
-            Alert.is_active == True,
+            Alert.is_active,
         )
         result = await self.db.execute(stmt)
         active_alerts = result.scalars().all()
@@ -102,15 +100,15 @@ class DashboardService:
             "critical_alerts": sum(1 for a in active_alerts if a.is_critical),
         }
 
-    async def get_current_metrics(self) -> List[Dict[str, Any]]:
+    async def get_current_metrics(self) -> list[dict[str, Any]]:
         """Retorna metricas atuais com status."""
         collector = get_metric_collector()
         raw_metrics = collector.get_latest_metrics()
 
         # Buscar thresholds para determinar status
         stmt = select(MetricThreshold).where(
-            MetricThreshold.enabled == True,
-            MetricThreshold.is_active == True,
+            MetricThreshold.enabled,
+            MetricThreshold.is_active,
         )
         result = await self.db.execute(stmt)
         thresholds = {t.metric_name: t for t in result.scalars().all()}
@@ -123,46 +121,45 @@ class DashboardService:
             threshold = thresholds.get(name)
             if threshold:
                 level = threshold.get_level_for_value(value)
-                metrics.append({
-                    "name": name,
-                    "display_name": threshold.display_name,
-                    "category": threshold.category,
-                    "current_value": value,
-                    "unit": threshold.unit,
-                    "level": level,
-                    "threshold_yellow": threshold.yellow_threshold,
-                    "threshold_orange": threshold.orange_threshold,
-                    "threshold_red": threshold.red_threshold,
-                    "last_updated": raw_metrics.get("last_collection"),
-                })
+                metrics.append(
+                    {
+                        "name": name,
+                        "display_name": threshold.display_name,
+                        "category": threshold.category,
+                        "current_value": value,
+                        "unit": threshold.unit,
+                        "level": level,
+                        "threshold_yellow": threshold.yellow_threshold,
+                        "threshold_orange": threshold.orange_threshold,
+                        "threshold_red": threshold.red_threshold,
+                        "last_updated": raw_metrics.get("last_collection"),
+                    }
+                )
             else:
                 # Metrica sem threshold definido
-                metrics.append({
-                    "name": name,
-                    "display_name": name.replace("_", " ").title(),
-                    "category": "other",
-                    "current_value": value,
-                    "unit": "",
-                    "level": "green",
-                    "threshold_yellow": None,
-                    "threshold_orange": None,
-                    "threshold_red": None,
-                    "last_updated": raw_metrics.get("last_collection"),
-                })
+                metrics.append(
+                    {
+                        "name": name,
+                        "display_name": name.replace("_", " ").title(),
+                        "category": "other",
+                        "current_value": value,
+                        "unit": "",
+                        "level": "green",
+                        "threshold_yellow": None,
+                        "threshold_orange": None,
+                        "threshold_red": None,
+                        "last_updated": raw_metrics.get("last_collection"),
+                    }
+                )
 
         return metrics
 
     async def get_recent_alerts(
         self,
         limit: int = 20,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Retorna alertas recentes."""
-        stmt = (
-            select(Alert)
-            .where(Alert.is_active == True)
-            .order_by(Alert.triggered_at.desc())
-            .limit(limit)
-        )
+        stmt = select(Alert).where(Alert.is_active).order_by(Alert.triggered_at.desc()).limit(limit)
 
         result = await self.db.execute(stmt)
         alerts = result.scalars().all()
@@ -184,7 +181,7 @@ class DashboardService:
             for alert in alerts
         ]
 
-    async def get_statistics(self) -> Dict[str, Any]:
+    async def get_statistics(self) -> dict[str, Any]:
         """Retorna estatisticas gerais."""
         now = datetime.utcnow()
 
@@ -192,7 +189,7 @@ class DashboardService:
         threshold_24h = now - timedelta(hours=24)
         stmt = select(func.count(Alert.id)).where(
             Alert.triggered_at >= threshold_24h,
-            Alert.is_active == True,
+            Alert.is_active,
         )
         result = await self.db.execute(stmt)
         alerts_24h = result.scalar() or 0
@@ -201,7 +198,7 @@ class DashboardService:
         threshold_7d = now - timedelta(days=7)
         stmt = select(func.count(Alert.id)).where(
             Alert.triggered_at >= threshold_7d,
-            Alert.is_active == True,
+            Alert.is_active,
         )
         result = await self.db.execute(stmt)
         alerts_7d = result.scalar() or 0
@@ -210,7 +207,7 @@ class DashboardService:
         stmt = select(func.count(Alert.id)).where(
             Alert.triggered_at >= threshold_24h,
             Alert.status == AlertStatus.RESOLVED,
-            Alert.is_active == True,
+            Alert.is_active,
         )
         result = await self.db.execute(stmt)
         resolved_24h = result.scalar() or 0
@@ -219,18 +216,14 @@ class DashboardService:
         stmt = select(Alert).where(
             Alert.triggered_at >= threshold_7d,
             Alert.status == AlertStatus.RESOLVED,
-            Alert.is_active == True,
+            Alert.is_active,
         )
         result = await self.db.execute(stmt)
         resolved_alerts = result.scalars().all()
 
         mttr = 0.0
         if resolved_alerts:
-            total_time = sum(
-                (a.resolved_at - a.triggered_at).total_seconds()
-                for a in resolved_alerts
-                if a.resolved_at
-            )
+            total_time = sum((a.resolved_at - a.triggered_at).total_seconds() for a in resolved_alerts if a.resolved_at)
             mttr = total_time / len(resolved_alerts)
 
         return {
@@ -242,11 +235,15 @@ class DashboardService:
             "mttr_formatted": self._format_uptime(mttr),
         }
 
-    async def get_threshold_status(self) -> List[Dict[str, Any]]:
+    async def get_threshold_status(self) -> list[dict[str, Any]]:
         """Retorna status de todos os thresholds."""
-        stmt = select(MetricThreshold).where(
-            MetricThreshold.is_active == True,
-        ).order_by(MetricThreshold.category, MetricThreshold.metric_name)
+        stmt = (
+            select(MetricThreshold)
+            .where(
+                MetricThreshold.is_active,
+            )
+            .order_by(MetricThreshold.category, MetricThreshold.metric_name)
+        )
 
         result = await self.db.execute(stmt)
         thresholds = result.scalars().all()

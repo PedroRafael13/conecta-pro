@@ -7,14 +7,14 @@ Implementa:
 - Consulta de escriturações transmitidas
 """
 
-from datetime import datetime, timedelta
-from typing import Dict, Optional, Any, List
-from uuid import UUID
 import asyncio
 import logging
+from datetime import datetime
+from typing import Any
+from uuid import UUID
 
-from ..base_extractor import ExtratorBase, DocumentoExtraido, ResultadoExtracao
-from ...core.credentials import ProvedorCredenciais, TipoCredencial
+from ...core.credentials import TipoCredencial
+from ..base_extractor import DocumentoExtraido, ExtratorBase, ResultadoExtracao
 
 logger = logging.getLogger(__name__)
 
@@ -57,10 +57,10 @@ class ExtratorSPEDContabil(ExtratorBase):
     async def extrair(
         self,
         tenant_id: UUID,
-        data_inicio: Optional[datetime] = None,
-        data_fim: Optional[datetime] = None,
-        cnpjs: Optional[List[str]] = None,
-        ufs: Optional[List[str]] = None,
+        data_inicio: datetime | None = None,
+        data_fim: datetime | None = None,
+        cnpjs: list[str] | None = None,
+        ufs: list[str] | None = None,
         incremental: bool = True,
     ) -> ResultadoExtracao:
         """
@@ -86,15 +86,10 @@ class ExtratorSPEDContabil(ExtratorBase):
         if data_inicio is None:
             data_inicio = datetime(data_fim.year - 1, 1, 1)
 
-        logger.info(
-            f"Iniciando extração SPED Contábil: {tenant_id} - "
-            f"Período: {data_inicio.year} a {data_fim.year}"
-        )
+        logger.info(f"Iniciando extração SPED Contábil: {tenant_id} - Período: {data_inicio.year} a {data_fim.year}")
 
         try:
-            credencial = await self.credentials.obter_credencial(
-                tenant_id, self.tipo_credencial
-            )
+            credencial = await self.credentials.obter_credencial(tenant_id, self.tipo_credencial)
 
             if not credencial.valida:
                 resultado.status = "falha"
@@ -107,9 +102,7 @@ class ExtratorSPEDContabil(ExtratorBase):
                 logger.info(f"Extraindo SPED Contábil para CNPJ: {cnpj}")
 
                 # Consultar escriturações por ano
-                docs = await self._consultar_escrituracoes(
-                    tenant_id, cnpj, data_inicio, data_fim
-                )
+                docs = await self._consultar_escrituracoes(tenant_id, cnpj, data_inicio, data_fim)
 
                 for doc in docs:
                     resultado.documentos.append(doc)
@@ -140,12 +133,12 @@ class ExtratorSPEDContabil(ExtratorBase):
         cnpj: str,
         data_inicio: datetime,
         data_fim: datetime,
-    ) -> List[DocumentoExtraido]:
+    ) -> list[DocumentoExtraido]:
         """Consulta escriturações SPED Contábil transmitidas."""
         documentos = []
 
         try:
-            session = await self._get_session(tenant_id, with_cert=True)
+            await self._get_session(tenant_id, with_cert=True)
 
             # ECD é anual
             ano_inicio = data_inicio.year
@@ -179,7 +172,6 @@ class ExtratorSPEDContabil(ExtratorBase):
             "cnpj": cnpj,
             "ano_calendario": ano,
             "tipo": "sped_contabil",
-
             "escrituracao": {
                 "transmitida": None,
                 "data_transmissao": None,
@@ -188,7 +180,6 @@ class ExtratorSPEDContabil(ExtratorBase):
                 "versao_layout": "10.0",
                 "tipo_ecd": "G",  # G=Livro Diário Geral
             },
-
             # Informações do contribuinte (Bloco 0)
             "contribuinte": {
                 "razao_social": None,
@@ -200,7 +191,6 @@ class ExtratorSPEDContabil(ExtratorBase):
                     "crc": None,
                 },
             },
-
             # Resumo do Bloco I (Lançamentos)
             "lancamentos": {
                 "quantidade_lancamentos": 0,
@@ -209,7 +199,6 @@ class ExtratorSPEDContabil(ExtratorBase):
                 "periodo_inicio": f"{ano}-01-01",
                 "periodo_fim": f"{ano}-12-31",
             },
-
             # Resumo do Bloco J (Demonstrações)
             "demonstracoes": {
                 "balanco_patrimonial": {
@@ -230,13 +219,11 @@ class ExtratorSPEDContabil(ExtratorBase):
                     "saldo_final": 0.0,
                 },
             },
-
             # Plano de contas
             "plano_contas": {
                 "quantidade_contas": 0,
                 "conta_maior_movimento": None,
             },
-
             "consultado_em": datetime.utcnow().isoformat(),
             "status": "consulta_manual_necessaria",
         }
@@ -252,7 +239,7 @@ class ExtratorSPEDContabil(ExtratorBase):
     def parsear_arquivo_sped(
         self,
         conteudo: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Parseia um arquivo SPED Contábil.
 
@@ -306,17 +293,17 @@ class ExtratorSPEDContabil(ExtratorBase):
 
     def extrair_registro_0000(
         self,
-        campos: List[str],
-    ) -> Dict[str, Any]:
+        campos: list[str],
+    ) -> dict[str, Any]:
         """Extrai dados do registro 0000 (Abertura)."""
         if len(campos) < 17:
             return {}
 
         return {
-            "lecd": campos[2],        # LECD
-            "dt_ini": campos[3],      # Data inicial
-            "dt_fin": campos[4],      # Data final
-            "nome": campos[5],        # Nome empresarial
+            "lecd": campos[2],  # LECD
+            "dt_ini": campos[3],  # Data inicial
+            "dt_fin": campos[4],  # Data final
+            "nome": campos[5],  # Nome empresarial
             "cnpj": campos[6],
             "uf": campos[7],
             "ie": campos[8],
@@ -332,74 +319,74 @@ class ExtratorSPEDContabil(ExtratorBase):
 
     def extrair_registro_i050(
         self,
-        campos: List[str],
-    ) -> Dict[str, Any]:
+        campos: list[str],
+    ) -> dict[str, Any]:
         """Extrai dados do registro I050 (Plano de Contas)."""
         if len(campos) < 9:
             return {}
 
         return {
-            "dt_alt": campos[2],      # Data da inclusão/alteração
-            "cod_nat": campos[3],     # Código natureza da conta
-            "ind_cta": campos[4],     # Indicador tipo de conta
-            "nivel": campos[5],       # Nível da conta
-            "cod_cta": campos[6],     # Código da conta analítica
-            "cod_cta_sup": campos[7], # Código da conta sintética
-            "cta": campos[8],         # Nome da conta
+            "dt_alt": campos[2],  # Data da inclusão/alteração
+            "cod_nat": campos[3],  # Código natureza da conta
+            "ind_cta": campos[4],  # Indicador tipo de conta
+            "nivel": campos[5],  # Nível da conta
+            "cod_cta": campos[6],  # Código da conta analítica
+            "cod_cta_sup": campos[7],  # Código da conta sintética
+            "cta": campos[8],  # Nome da conta
         }
 
     def extrair_registro_i200(
         self,
-        campos: List[str],
-    ) -> Dict[str, Any]:
+        campos: list[str],
+    ) -> dict[str, Any]:
         """Extrai dados do registro I200 (Lançamento Contábil)."""
         if len(campos) < 7:
             return {}
 
         return {
-            "num_lcto": campos[2],    # Número do lançamento
-            "dt_lcto": campos[3],     # Data do lançamento
-            "vl_lcto": campos[4],     # Valor do lançamento
-            "ind_lcto": campos[5],    # Indicador tipo de lançamento
+            "num_lcto": campos[2],  # Número do lançamento
+            "dt_lcto": campos[3],  # Data do lançamento
+            "vl_lcto": campos[4],  # Valor do lançamento
+            "ind_lcto": campos[5],  # Indicador tipo de lançamento
         }
 
     def extrair_registro_j100(
         self,
-        campos: List[str],
-    ) -> Dict[str, Any]:
+        campos: list[str],
+    ) -> dict[str, Any]:
         """Extrai dados do registro J100 (Balanço Patrimonial)."""
         if len(campos) < 9:
             return {}
 
         return {
-            "cod_agl": campos[2],     # Código de aglutinação
-            "nivel_agl": campos[3],   # Nível de aglutinação
-            "ind_grp_bal": campos[4], # Indicador grupo do balanço
-            "descr_cta": campos[5],   # Descrição da linha
-            "vl_cta": campos[6],      # Valor total da linha
+            "cod_agl": campos[2],  # Código de aglutinação
+            "nivel_agl": campos[3],  # Nível de aglutinação
+            "ind_grp_bal": campos[4],  # Indicador grupo do balanço
+            "descr_cta": campos[5],  # Descrição da linha
+            "vl_cta": campos[6],  # Valor total da linha
             "ind_dc_cta": campos[7],  # Indicador D/C
         }
 
     def extrair_registro_j150(
         self,
-        campos: List[str],
-    ) -> Dict[str, Any]:
+        campos: list[str],
+    ) -> dict[str, Any]:
         """Extrai dados do registro J150 (DRE)."""
         if len(campos) < 9:
             return {}
 
         return {
-            "cod_agl": campos[2],     # Código de aglutinação
-            "nivel_agl": campos[3],   # Nível de aglutinação
-            "descr_cta": campos[4],   # Descrição da linha
-            "vl_cta": campos[5],      # Valor da linha
-            "ind_vl": campos[6],      # Indicador (D/C)
+            "cod_agl": campos[2],  # Código de aglutinação
+            "nivel_agl": campos[3],  # Nível de aglutinação
+            "descr_cta": campos[4],  # Descrição da linha
+            "vl_cta": campos[5],  # Valor da linha
+            "ind_vl": campos[6],  # Indicador (D/C)
         }
 
     async def validar_arquivo_sped(
         self,
         conteudo: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Valida estrutura de um arquivo SPED Contábil.
 
@@ -446,16 +433,14 @@ class ExtratorSPEDContabil(ExtratorBase):
 
         if blocos_faltantes:
             resultado["valido"] = False
-            resultado["erros"].append(
-                f"Blocos obrigatórios faltantes: {', '.join(sorted(blocos_faltantes))}"
-            )
+            resultado["erros"].append(f"Blocos obrigatórios faltantes: {', '.join(sorted(blocos_faltantes))}")
 
         return resultado
 
     async def extrair_demonstracoes(
         self,
         conteudo: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Extrai demonstrações contábeis do arquivo.
 

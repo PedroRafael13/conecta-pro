@@ -3,38 +3,36 @@ AccessHistory Model - Histórico de Acessos
 Sprint 33: Auditoria e Compliance
 """
 
-import enum
 from datetime import datetime
-from typing import Optional
+from enum import StrEnum
 from uuid import uuid4
 
-from sqlalchemy import (
-    Column, String, Text, Boolean, DateTime,
-    Integer, Enum, Index
-)
-from sqlalchemy.dialects.postgresql import UUID, JSONB, INET
+from sqlalchemy import Boolean, Column, DateTime, Enum, Index, Integer, String, Text
+from sqlalchemy.dialects.postgresql import INET, JSONB, UUID
 
 from core.database import Base
 
 
-class AccessType(str, enum.Enum):
+class AccessType(StrEnum):
     """Tipo de acesso."""
+
     LOGIN = "login"
     LOGOUT = "logout"
     SESSION_START = "session_start"
     SESSION_END = "session_end"
-    TOKEN_REFRESH = "token_refresh"
+    TOKEN_REFRESH = "token_refresh"  # noqa: S105
     API_ACCESS = "api_access"
     RESOURCE_ACCESS = "resource_access"
     FILE_ACCESS = "file_access"
     ADMIN_ACCESS = "admin_access"
     SUDO = "sudo"
     MFA_CHALLENGE = "mfa_challenge"
-    PASSWORD_RESET = "password_reset"
+    PASSWORD_RESET = "password_reset"  # noqa: S105
 
 
-class AccessResult(str, enum.Enum):
+class AccessResult(StrEnum):
     """Resultado do acesso."""
+
     SUCCESS = "success"
     FAILURE = "failure"
     DENIED = "denied"
@@ -45,8 +43,9 @@ class AccessResult(str, enum.Enum):
     SUSPICIOUS = "suspicious"
 
 
-class DeviceType(str, enum.Enum):
+class DeviceType(StrEnum):
     """Tipo de dispositivo."""
+
     DESKTOP = "desktop"
     LAPTOP = "laptop"
     MOBILE = "mobile"
@@ -56,8 +55,9 @@ class DeviceType(str, enum.Enum):
     UNKNOWN = "unknown"
 
 
-class RiskLevel(str, enum.Enum):
+class RiskLevel(StrEnum):
     """Nível de risco."""
+
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
@@ -69,6 +69,7 @@ class AccessHistory(Base):
     Model para histórico de acessos.
     Registra todos os acessos ao sistema para segurança e auditoria.
     """
+
     __tablename__ = "access_history"
 
     # Primary key
@@ -180,17 +181,8 @@ class AccessHistory(Base):
         Index("ix_access_history_accessed_at", "accessed_at"),
         Index("ix_access_history_requires_review", "requires_review"),
         Index("ix_access_history_anomaly_detected", "anomaly_detected"),
-        Index(
-            "ix_access_history_user_type_date",
-            "user_id",
-            "access_type",
-            "accessed_at"
-        ),
-        Index(
-            "ix_access_history_ip_date",
-            "ip_address",
-            "accessed_at"
-        ),
+        Index("ix_access_history_user_type_date", "user_id", "access_type", "accessed_at"),
+        Index("ix_access_history_ip_date", "ip_address", "accessed_at"),
     )
 
     def __repr__(self) -> str:
@@ -198,12 +190,7 @@ class AccessHistory(Base):
 
     @classmethod
     def create_login(
-        cls,
-        user_id: str,
-        user_email: str,
-        ip_address: str,
-        result: AccessResult,
-        **kwargs
+        cls, user_id: str, user_email: str, ip_address: str, result: AccessResult, **kwargs
     ) -> "AccessHistory":
         """Cria registro de login."""
         return cls(
@@ -212,19 +199,19 @@ class AccessHistory(Base):
             user_email=user_email,
             ip_address=ip_address,
             result=result,
-            **kwargs
+            **kwargs,
         )
 
     @classmethod
     def create_api_access(
         cls,
-        user_id: Optional[str],
+        user_id: str | None,
         resource_path: str,
         http_method: str,
         ip_address: str,
         result: AccessResult,
-        response_time_ms: Optional[int] = None,
-        **kwargs
+        response_time_ms: int | None = None,
+        **kwargs,
     ) -> "AccessHistory":
         """Cria registro de acesso API."""
         return cls(
@@ -235,7 +222,7 @@ class AccessHistory(Base):
             ip_address=ip_address,
             result=result,
             response_time_ms=response_time_ms,
-            **kwargs
+            **kwargs,
         )
 
     def calculate_risk(self) -> None:
@@ -300,11 +287,7 @@ class AccessHistory(Base):
         self.alert_ids = alert_ids
         self.requires_review = True
 
-    def complete_review(
-        self,
-        reviewer_id: str,
-        notes: Optional[str] = None
-    ) -> None:
+    def complete_review(self, reviewer_id: str, notes: str | None = None) -> None:
         """Completa revisão."""
         self.requires_review = False
         self.reviewed_by = reviewer_id
@@ -326,9 +309,9 @@ class AccessHistory(Base):
     def is_suspicious(self) -> bool:
         """Verifica se é acesso suspeito."""
         return (
-            self.result == AccessResult.SUSPICIOUS or
-            self.anomaly_detected or
-            self.risk_level in [RiskLevel.HIGH, RiskLevel.CRITICAL]
+            self.result == AccessResult.SUSPICIOUS
+            or self.anomaly_detected
+            or self.risk_level in [RiskLevel.HIGH, RiskLevel.CRITICAL]
         )
 
     @property
@@ -348,8 +331,4 @@ class AccessHistory(Base):
     @property
     def needs_attention(self) -> bool:
         """Verifica se precisa atenção."""
-        return (
-            self.requires_review or
-            self.alert_triggered or
-            self.risk_level == RiskLevel.CRITICAL
-        )
+        return self.requires_review or self.alert_triggered or self.risk_level == RiskLevel.CRITICAL

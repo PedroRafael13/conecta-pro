@@ -18,22 +18,23 @@ from fastapi.openapi.utils import get_openapi
 from modules.campo.controllers import (
     # Legacy/Guardian controllers
     access_log_router,
+    campo_service_router,
+    checklist_router,
     equipment_status_router,
+    estoque_router,
+    # Monitoring
+    monitoring_router,
     occurrence_router,
-    sync_router,
+    # Novos CAMPO controllers
+    ordem_servico_router,
+    roteirizacao_router,
     # Cyber Security
     security_audit_router,
     ssh_gateway_router,
-    campo_service_router,
-    # Monitoring
-    monitoring_router,
-    # Novos CAMPO controllers
-    ordem_servico_router,
+    sync_router,
     visita_router,
-    checklist_router,
-    roteirizacao_router,
-    estoque_router,
 )
+
 
 def create_campo_app() -> FastAPI:
     """Cria app FastAPI temporário apenas para extração OpenAPI."""
@@ -99,7 +100,7 @@ Sistema de Serviço de Campo - Gestão de Equipes Externas, Visitas, OS e Checkl
             {"name": "Campo - Checklists", "description": "Checklists dinâmicos"},
             {"name": "Campo - Roteirizacao", "description": "Roteirização inteligente"},
             {"name": "Campo - Estoque", "description": "Gestão de estoque campo"},
-        ]
+        ],
     )
 
     # ===================================================================
@@ -151,22 +152,17 @@ def extract_openapi_spec(output_path: Path) -> dict:
     )
 
     # Adicionar servidor
-    openapi_spec["servers"] = [
-        {
-            "url": "http://localhost:8000",
-            "description": "Backend Conecta PRO - Desenvolvimento"
-        }
-    ]
+    openapi_spec["servers"] = [{"url": "http://localhost:8000", "description": "Backend Conecta PRO - Desenvolvimento"}]
 
     # Salvar spec
     print(f"💾 Salvando em: {output_path}")
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    with open(output_path, 'w', encoding='utf-8') as f:
+    with open(output_path, "w", encoding="utf-8") as f:
         json.dump(openapi_spec, f, indent=2, ensure_ascii=False)
 
     # Estatísticas
-    endpoints = [route for route in app.routes if hasattr(route, 'methods')]
+    endpoints = [route for route in app.routes if hasattr(route, "methods")]
     total_endpoints = sum(len(route.methods) for route in endpoints)
 
     stats = {
@@ -176,15 +172,15 @@ def extract_openapi_spec(output_path: Path) -> dict:
         "tags": len(openapi_spec.get("tags", [])),
     }
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("✅ EXTRAÇÃO OPENAPI CONCLUÍDA")
-    print("="*60)
+    print("=" * 60)
     print(f"📊 Total de endpoints: {stats['endpoints_total']}")
     print(f"🛣️  Total de rotas: {stats['routes']}")
     print(f"📦 Schemas gerados: {stats['schemas']}")
     print(f"🏷️  Tags: {stats['tags']}")
     print(f"📄 Arquivo: {output_path}")
-    print("="*60)
+    print("=" * 60)
 
     return stats
 
@@ -210,6 +206,7 @@ def main():
     except Exception as e:
         print(f"\n❌ ERRO na extração: {e}")
         import traceback
+
         traceback.print_exc()
         return 1
 

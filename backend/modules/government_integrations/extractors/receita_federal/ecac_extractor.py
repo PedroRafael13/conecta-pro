@@ -8,14 +8,14 @@ Implementa:
 - Download de certidões
 """
 
-from datetime import datetime, timedelta
-from typing import Dict, Optional, Any, List
-from uuid import UUID
 import asyncio
 import logging
+from datetime import datetime
+from typing import Any
+from uuid import UUID
 
-from ..base_extractor import ExtratorBase, DocumentoExtraido, ResultadoExtracao
-from ...core.credentials import ProvedorCredenciais, TipoCredencial
+from ...core.credentials import TipoCredencial
+from ..base_extractor import DocumentoExtraido, ExtratorBase, ResultadoExtracao
 
 logger = logging.getLogger(__name__)
 
@@ -59,10 +59,10 @@ class ExtratorECAC(ExtratorBase):
     async def extrair(
         self,
         tenant_id: UUID,
-        data_inicio: Optional[datetime] = None,
-        data_fim: Optional[datetime] = None,
-        cnpjs: Optional[List[str]] = None,
-        ufs: Optional[List[str]] = None,
+        data_inicio: datetime | None = None,
+        data_fim: datetime | None = None,
+        cnpjs: list[str] | None = None,
+        ufs: list[str] | None = None,
         incremental: bool = True,
     ) -> ResultadoExtracao:
         """
@@ -86,9 +86,7 @@ class ExtratorECAC(ExtratorBase):
         logger.info(f"Iniciando extração e-CAC: {tenant_id}")
 
         try:
-            credencial = await self.credentials.obter_credencial(
-                tenant_id, self.tipo_credencial
-            )
+            credencial = await self.credentials.obter_credencial(tenant_id, self.tipo_credencial)
 
             if not credencial.valida:
                 resultado.status = "falha"
@@ -145,42 +143,37 @@ class ExtratorECAC(ExtratorBase):
         self,
         tenant_id: UUID,
         cnpj: str,
-    ) -> Optional[DocumentoExtraido]:
+    ) -> DocumentoExtraido | None:
         """Consulta situação fiscal no e-CAC."""
         try:
-            session = await self._get_session(tenant_id, with_cert=True)
+            await self._get_session(tenant_id, with_cert=True)
 
             # Em produção, autenticar no e-CAC e consultar
             dados = {
                 "cnpj": cnpj,
                 "tipo": "situacao_fiscal",
-
                 "situacao_geral": {
                     "regular": None,  # True/False após consulta
                     "mensagem": "Consulta requer acesso ao e-CAC",
                     "data_consulta": datetime.utcnow().isoformat(),
                 },
-
                 "cadastro": {
                     "situacao_cnpj": "verificar",
                     "data_abertura": None,
                     "natureza_juridica": None,
                     "porte": None,
                 },
-
                 "pendencias": {
                     "existem": None,
                     "quantidade": 0,
                     "tipos": [],
                 },
-
                 "obrigacoes": {
                     "dctf_pendente": None,
                     "dirf_pendente": None,
                     "ecf_pendente": None,
                     "efd_pendente": None,
                 },
-
                 "consultado_em": datetime.utcnow().isoformat(),
                 "status": "consulta_manual_necessaria",
             }
@@ -205,20 +198,18 @@ class ExtratorECAC(ExtratorBase):
         self,
         tenant_id: UUID,
         cnpj: str,
-    ) -> Optional[DocumentoExtraido]:
+    ) -> DocumentoExtraido | None:
         """Consulta débitos no e-CAC."""
         try:
             dados = {
                 "cnpj": cnpj,
                 "tipo": "debitos",
-
                 "resumo": {
                     "total_debitos": 0.0,
                     "quantidade_debitos": 0,
                     "debitos_vencidos": 0.0,
                     "debitos_a_vencer": 0.0,
                 },
-
                 "debitos": [
                     # Estrutura de exemplo
                     # {
@@ -231,9 +222,7 @@ class ExtratorECAC(ExtratorBase):
                     #     "situacao": "em_aberto",
                     # }
                 ],
-
                 "inscricoes_divida_ativa": [],
-
                 "consultado_em": datetime.utcnow().isoformat(),
                 "status": "consulta_manual_necessaria",
             }
@@ -253,22 +242,19 @@ class ExtratorECAC(ExtratorBase):
         self,
         tenant_id: UUID,
         cnpj: str,
-    ) -> Optional[DocumentoExtraido]:
+    ) -> DocumentoExtraido | None:
         """Consulta parcelamentos no e-CAC."""
         try:
             dados = {
                 "cnpj": cnpj,
                 "tipo": "parcelamentos",
-
                 "parcelamentos_ativos": [],
                 "parcelamentos_encerrados": [],
-
                 "resumo": {
                     "quantidade_ativos": 0,
                     "saldo_total": 0.0,
                     "proxima_parcela": None,
                 },
-
                 # Exemplo de estrutura de parcelamento
                 # {
                 #     "numero_processo": "12345.123456/2024-00",
@@ -285,7 +271,6 @@ class ExtratorECAC(ExtratorBase):
                 #         "valor": 1000.00,
                 #     },
                 # }
-
                 "consultado_em": datetime.utcnow().isoformat(),
                 "status": "consulta_manual_necessaria",
             }
@@ -305,13 +290,12 @@ class ExtratorECAC(ExtratorBase):
         self,
         tenant_id: UUID,
         cnpj: str,
-    ) -> Optional[DocumentoExtraido]:
+    ) -> DocumentoExtraido | None:
         """Consulta/emite certidão de regularidade fiscal."""
         try:
             dados = {
                 "cnpj": cnpj,
                 "tipo": "certidao",
-
                 "certidao": {
                     "tipo": None,  # CND, CPEND, CPEN
                     "codigo_controle": None,
@@ -319,7 +303,6 @@ class ExtratorECAC(ExtratorBase):
                     "data_validade": None,
                     "situacao": "verificar",
                 },
-
                 "impedimentos": [],
                 # Lista de impedimentos que podem existir:
                 # {
@@ -327,7 +310,6 @@ class ExtratorECAC(ExtratorBase):
                 #     "descricao": "Débito em aberto",
                 #     "valor": 1000.00,
                 # }
-
                 "consultado_em": datetime.utcnow().isoformat(),
                 "status": "consulta_manual_necessaria",
             }
@@ -347,7 +329,7 @@ class ExtratorECAC(ExtratorBase):
         self,
         tenant_id: UUID,
         cnpj: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Tenta emitir Certidão Negativa de Débitos.
 
@@ -359,7 +341,7 @@ class ExtratorECAC(ExtratorBase):
             Dicionário com resultado da emissão
         """
         try:
-            session = await self._get_session(tenant_id, with_cert=True)
+            await self._get_session(tenant_id, with_cert=True)
 
             # Em produção, acessar o serviço de emissão
             return {
@@ -384,7 +366,7 @@ class ExtratorECAC(ExtratorBase):
         cnpj: str,
         data_inicio: datetime,
         data_fim: datetime,
-    ) -> List[DocumentoExtraido]:
+    ) -> list[DocumentoExtraido]:
         """
         Consulta pagamentos DARF.
 
@@ -400,7 +382,7 @@ class ExtratorECAC(ExtratorBase):
         documentos = []
 
         try:
-            session = await self._get_session(tenant_id, with_cert=True)
+            await self._get_session(tenant_id, with_cert=True)
 
             # Em produção, consultar extrato de pagamentos
             dados = {
@@ -408,7 +390,6 @@ class ExtratorECAC(ExtratorBase):
                 "periodo_inicio": data_inicio.isoformat(),
                 "periodo_fim": data_fim.isoformat(),
                 "tipo": "extrato_darf",
-
                 "pagamentos": [],
                 # Exemplo de estrutura:
                 # {
@@ -423,12 +404,10 @@ class ExtratorECAC(ExtratorBase):
                 #     "banco": "001",
                 #     "agencia": "1234",
                 # }
-
                 "totais": {
                     "quantidade": 0,
                     "valor_total": 0.0,
                 },
-
                 "consultado_em": datetime.utcnow().isoformat(),
                 "status": "consulta_manual_necessaria",
             }

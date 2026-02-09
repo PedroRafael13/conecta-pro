@@ -6,12 +6,12 @@ departamento e nivel de acesso do usuario.
 """
 
 from dataclasses import dataclass, field
-from typing import Optional
-from enum import Enum
+from enum import StrEnum
 
 
-class UserRole(str, Enum):
+class UserRole(StrEnum):
     """Cargos/funcoes dos usuarios."""
+
     # Diretoria
     DIRETOR = "diretor"
     SOCIO = "socio"
@@ -59,8 +59,9 @@ class UserRole(str, Enum):
     SUPORTE = "suporte"
 
 
-class Department(str, Enum):
+class Department(StrEnum):
     """Departamentos."""
+
     DIRETORIA = "diretoria"
     COMERCIAL = "comercial"
     OPERACOES = "operacoes"
@@ -74,6 +75,7 @@ class Department(str, Enum):
 @dataclass
 class UserProfile:
     """Perfil de usuario para contextualizacao."""
+
     user_id: int
     name: str
     role: UserRole
@@ -106,7 +108,6 @@ Este usuario e um diretor da empresa.
 - Oferecer insights e recomendacoes
 """,
     },
-
     UserRole.SOCIO: {
         "department": Department.DIRETORIA,
         "is_manager": True,
@@ -122,7 +123,6 @@ Este usuario e socio da empresa.
 - Comparativos e benchmarks
 """,
     },
-
     # ==========================================
     # GERENCIA
     # ==========================================
@@ -141,7 +141,6 @@ Este usuario e gerente geral.
 - Acompanhamento de indicadores
 """,
     },
-
     UserRole.GERENTE_OPERACOES: {
         "department": Department.OPERACOES,
         "is_manager": True,
@@ -157,7 +156,6 @@ Este usuario e gerente de operacoes.
 - Qualidade do servico ao cliente
 """,
     },
-
     UserRole.GERENTE_RH: {
         "department": Department.RH,
         "is_manager": True,
@@ -173,7 +171,6 @@ Este usuario e gerente de RH.
 - Recrutamento e retencao
 """,
     },
-
     UserRole.GERENTE_FINANCEIRO: {
         "department": Department.FINANCEIRO,
         "is_manager": True,
@@ -189,7 +186,6 @@ Este usuario e gerente financeiro.
 - Contabilidade e fiscal
 """,
     },
-
     UserRole.GERENTE_COMERCIAL: {
         "department": Department.COMERCIAL,
         "is_manager": True,
@@ -205,7 +201,6 @@ Este usuario e gerente comercial.
 - Relacionamento com clientes
 """,
     },
-
     # ==========================================
     # ANALISTAS
     # ==========================================
@@ -225,7 +220,6 @@ Este usuario e analista de RH.
 Pode precisar de orientacao em calculos complexos.
 """,
     },
-
     UserRole.ANALISTA_FINANCEIRO: {
         "department": Department.FINANCEIRO,
         "is_manager": False,
@@ -241,7 +235,6 @@ Este usuario e analista financeiro.
 - Relatorios financeiros
 """,
     },
-
     UserRole.ANALISTA_COMERCIAL: {
         "department": Department.COMERCIAL,
         "is_manager": False,
@@ -258,7 +251,6 @@ Este usuario e analista comercial.
 Pode precisar de ajuda para montar propostas e calcular custos.
 """,
     },
-
     UserRole.ANALISTA_LICITACOES: {
         "department": Department.LICITACOES,
         "is_manager": False,
@@ -275,7 +267,6 @@ Este usuario e analista de licitacoes.
 Conhece bem a Lei 14.133/2021 e processos licitatorios.
 """,
     },
-
     # ==========================================
     # ASSISTENTES
     # ==========================================
@@ -294,7 +285,6 @@ Este usuario e assistente administrativo.
 Pode precisar de orientacao passo a passo.
 """,
     },
-
     UserRole.ASSISTENTE_RH: {
         "department": Department.RH,
         "is_manager": False,
@@ -310,7 +300,6 @@ Este usuario e assistente de RH.
 Pode precisar de orientacao detalhada.
 """,
     },
-
     # ==========================================
     # OPERACIONAL - GESTAO
     # ==========================================
@@ -353,7 +342,6 @@ COMUNICACAO:
 - Oriente sobre processos e CLT
 """,
     },
-
     UserRole.ENCARREGADO: {
         "department": Department.OPERACOES,
         "is_manager": True,
@@ -394,7 +382,6 @@ COMUNICACAO:
 - Destaque impactos no cliente
 """,
     },
-
     UserRole.INSPETOR: {
         "department": Department.OPERACOES,
         "is_manager": False,
@@ -434,7 +421,6 @@ COMUNICACAO:
 - Sugira solucoes rapidas
 """,
     },
-
     # ==========================================
     # OPERACIONAL - CAMPO
     # ==========================================
@@ -476,7 +462,6 @@ COMUNICACAO:
 - Escale problemas complexos para o supervisor
 """,
     },
-
     UserRole.PORTEIRO: {
         "department": Department.OPERACOES,
         "is_manager": False,
@@ -501,7 +486,6 @@ COMUNICACAO:
 - Oriente passo a passo quando necessario
 """,
     },
-
     UserRole.VIGILANTE: {
         "department": Department.OPERACOES,
         "is_manager": False,
@@ -525,7 +509,6 @@ COMUNICACAO:
 - Seja objetivo
 """,
     },
-
     UserRole.AUXILIAR_LIMPEZA: {
         "department": Department.OPERACOES,
         "is_manager": False,
@@ -548,7 +531,6 @@ COMUNICACAO:
 - Oriente passo a passo
 """,
     },
-
     # ==========================================
     # DEPARTAMENTO PESSOAL
     # ==========================================
@@ -591,7 +573,6 @@ COMUNICACAO:
 - Destaque implicacoes legais
 """,
     },
-
     # ==========================================
     # SISTEMA
     # ==========================================
@@ -639,7 +620,7 @@ def get_communication_style(role: UserRole) -> str:
 
 def adapt_response_for_profile(response: str, role: UserRole) -> str:
     """Adapta resposta para o perfil do usuario."""
-    style = get_communication_style(role)
+    get_communication_style(role)
 
     # Por enquanto retorna como esta, mas pode ser expandido
     # para formatar a resposta de acordo com o estilo

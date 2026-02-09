@@ -3,7 +3,7 @@ Modelo Lead para CRM.
 """
 
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from typing import TYPE_CHECKING, Optional
 from uuid import uuid4
 
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from core.models import User
 
 
-class LeadStatus(str, Enum):
+class LeadStatus(StrEnum):
     """Status do lead no funil de vendas."""
 
     NEW = "new"  # Novo lead
@@ -38,7 +38,7 @@ class LeadStatus(str, Enum):
     LOST = "lost"  # Perdido
 
 
-class LeadSource(str, Enum):
+class LeadSource(StrEnum):
     """Origem do lead."""
 
     WEBSITE = "website"
@@ -85,13 +85,13 @@ class Lead(Base):
     # Dados do contato
     name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     email: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
-    phone: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
 
     # Dados da empresa
-    company: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, index=True)
-    position: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    company_size: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    industry: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    company: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
+    position: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    company_size: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    industry: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
     # Classificação
     source: Mapped[str] = mapped_column(
@@ -112,10 +112,10 @@ class Lead(Base):
     expected_value: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
 
     # Observações
-    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Responsável
-    assigned_to_id: Mapped[Optional[str]] = mapped_column(
+    assigned_to_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         ForeignKey("users.id", ondelete="SET NULL"),
         nullable=True,
@@ -123,8 +123,8 @@ class Lead(Base):
     )
 
     # Datas de contato
-    last_contact_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    next_contact_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    last_contact_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    next_contact_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     # Campos de controle
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)

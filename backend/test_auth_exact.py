@@ -1,21 +1,23 @@
 #!/usr/bin/env python3
 """Teste que simula exatamente os imports do auth.py"""
+
 import signal
-import sys
 import time
+
 
 def timeout_handler(signum, frame):
     raise TimeoutError("Import timeout")
 
+
 def test_step(step_name, code, timeout=30):
     print(f"Testing: {step_name}...", end=" ", flush=True)
-    
+
     signal.signal(signal.SIGALRM, timeout_handler)
     signal.alarm(timeout)
-    
+
     try:
         start_time = time.time()
-        exec(code, globals(), globals())
+        exec(code, globals(), globals())  # noqa: S102
         duration = time.time() - start_time
         print(f"OK ({duration:.2f}s)")
         return True
@@ -27,6 +29,7 @@ def test_step(step_name, code, timeout=30):
         return False
     finally:
         signal.alarm(0)
+
 
 print("=== SIMULANDO IMPORTS EXATOS DO AUTH.PY ===")
 

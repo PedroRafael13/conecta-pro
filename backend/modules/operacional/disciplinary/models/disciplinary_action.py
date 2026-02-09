@@ -13,8 +13,8 @@ Quality Score Target: 99+/100
 """
 
 from datetime import date, datetime
-from enum import Enum
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from enum import StrEnum
+from typing import TYPE_CHECKING, Any, Optional
 from uuid import uuid4
 
 from sqlalchemy import (
@@ -37,7 +37,7 @@ if TYPE_CHECKING:
     from .disciplinary_template import DisciplinaryTemplate
 
 
-class DisciplinaryActionType(str, Enum):
+class DisciplinaryActionType(StrEnum):
     """Tipo de medida disciplinar conforme CLT."""
 
     ADVERTENCIA_VERBAL = "advertencia_verbal"
@@ -46,7 +46,7 @@ class DisciplinaryActionType(str, Enum):
     DEMISSAO_JUSTA_CAUSA = "demissao_justa_causa"
 
 
-class DisciplinaryActionStatus(str, Enum):
+class DisciplinaryActionStatus(StrEnum):
     """Status do fluxo da medida disciplinar."""
 
     RASCUNHO = "rascunho"
@@ -60,7 +60,7 @@ class DisciplinaryActionStatus(str, Enum):
     CANCELADA = "cancelada"
 
 
-class ReasonCategory(str, Enum):
+class ReasonCategory(StrEnum):
     """Categoria do motivo da medida disciplinar conforme CLT Art. 482."""
 
     FALTA = "falta"
@@ -191,25 +191,25 @@ class DisciplinaryAction(Base):
         nullable=False,
         comment="CPF do funcionario (snapshot)",
     )
-    employee_position: Mapped[Optional[str]] = mapped_column(
+    employee_position: Mapped[str | None] = mapped_column(
         String(100),
         nullable=True,
         comment="Cargo do funcionario (snapshot)",
     )
-    employee_admission_date: Mapped[Optional[date]] = mapped_column(
+    employee_admission_date: Mapped[date | None] = mapped_column(
         Date,
         nullable=True,
         comment="Data de admissao (snapshot)",
     )
 
     # === Local ===
-    post_id: Mapped[Optional[str]] = mapped_column(
+    post_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
         index=True,
         comment="ID do posto onde ocorreu",
     )
-    client_id: Mapped[Optional[str]] = mapped_column(
+    client_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
         index=True,
@@ -228,7 +228,7 @@ class DisciplinaryAction(Base):
         nullable=False,
         comment="Descricao detalhada do motivo",
     )
-    occurrence_id: Mapped[Optional[str]] = mapped_column(
+    occurrence_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
         comment="ID da ocorrencia relacionada",
@@ -240,64 +240,64 @@ class DisciplinaryAction(Base):
         nullable=False,
         comment="Data do incidente que gerou a medida",
     )
-    application_date: Mapped[Optional[date]] = mapped_column(
+    application_date: Mapped[date | None] = mapped_column(
         Date,
         nullable=True,
         comment="Data de aplicacao efetiva da medida",
     )
 
     # === Suspensao (se aplicavel) ===
-    suspension_start_date: Mapped[Optional[date]] = mapped_column(
+    suspension_start_date: Mapped[date | None] = mapped_column(
         Date,
         nullable=True,
         comment="Data inicio da suspensao",
     )
-    suspension_end_date: Mapped[Optional[date]] = mapped_column(
+    suspension_end_date: Mapped[date | None] = mapped_column(
         Date,
         nullable=True,
         comment="Data fim da suspensao",
     )
-    suspension_days: Mapped[Optional[int]] = mapped_column(
+    suspension_days: Mapped[int | None] = mapped_column(
         Integer,
         nullable=True,
         comment="Quantidade de dias de suspensao (max 30 CLT)",
     )
 
     # === Documento ===
-    document_text: Mapped[Optional[str]] = mapped_column(
+    document_text: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
         comment="Texto completo do documento gerado",
     )
-    document_template_id: Mapped[Optional[str]] = mapped_column(
+    document_template_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         ForeignKey("disciplinary_templates.id"),
         nullable=True,
         comment="Template utilizado para gerar documento",
     )
-    document_hash: Mapped[Optional[str]] = mapped_column(
+    document_hash: Mapped[str | None] = mapped_column(
         String(64),
         nullable=True,
         comment="Hash SHA-256 do documento no momento da assinatura",
     )
 
     # === Testemunhas ===
-    witness_1_name: Mapped[Optional[str]] = mapped_column(
+    witness_1_name: Mapped[str | None] = mapped_column(
         String(255),
         nullable=True,
         comment="Nome da primeira testemunha",
     )
-    witness_1_cpf: Mapped[Optional[str]] = mapped_column(
+    witness_1_cpf: Mapped[str | None] = mapped_column(
         String(14),
         nullable=True,
         comment="CPF da primeira testemunha",
     )
-    witness_2_name: Mapped[Optional[str]] = mapped_column(
+    witness_2_name: Mapped[str | None] = mapped_column(
         String(255),
         nullable=True,
         comment="Nome da segunda testemunha",
     )
-    witness_2_cpf: Mapped[Optional[str]] = mapped_column(
+    witness_2_cpf: Mapped[str | None] = mapped_column(
         String(14),
         nullable=True,
         comment="CPF da segunda testemunha",
@@ -310,45 +310,45 @@ class DisciplinaryAction(Base):
         nullable=False,
         comment="Se requer aprovacao de superior",
     )
-    approved_by_id: Mapped[Optional[str]] = mapped_column(
+    approved_by_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
         comment="ID de quem aprovou",
     )
-    approved_at: Mapped[Optional[datetime]] = mapped_column(
+    approved_at: Mapped[datetime | None] = mapped_column(
         DateTime,
         nullable=True,
         comment="Data/hora da aprovacao",
     )
-    approval_notes: Mapped[Optional[str]] = mapped_column(
+    approval_notes: Mapped[str | None] = mapped_column(
         String(500),
         nullable=True,
         comment="Observacoes da aprovacao",
     )
-    rejected_by_id: Mapped[Optional[str]] = mapped_column(
+    rejected_by_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
         comment="ID de quem rejeitou",
     )
-    rejected_at: Mapped[Optional[datetime]] = mapped_column(
+    rejected_at: Mapped[datetime | None] = mapped_column(
         DateTime,
         nullable=True,
         comment="Data/hora da rejeicao",
     )
-    rejection_reason: Mapped[Optional[str]] = mapped_column(
+    rejection_reason: Mapped[str | None] = mapped_column(
         String(500),
         nullable=True,
         comment="Motivo da rejeicao",
     )
 
     # === Assinaturas do Funcionario ===
-    employee_signature_id: Mapped[Optional[str]] = mapped_column(
+    employee_signature_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         ForeignKey("digital_signatures.id"),
         nullable=True,
         comment="ID da assinatura digital do funcionario",
     )
-    employee_signed_at: Mapped[Optional[datetime]] = mapped_column(
+    employee_signed_at: Mapped[datetime | None] = mapped_column(
         DateTime,
         nullable=True,
         comment="Data/hora que funcionario assinou",
@@ -359,46 +359,46 @@ class DisciplinaryAction(Base):
         nullable=False,
         comment="Se funcionario recusou assinar",
     )
-    refusal_witness_1_name: Mapped[Optional[str]] = mapped_column(
+    refusal_witness_1_name: Mapped[str | None] = mapped_column(
         String(255),
         nullable=True,
         comment="Nome testemunha 1 da recusa de assinatura",
     )
-    refusal_witness_1_cpf: Mapped[Optional[str]] = mapped_column(
+    refusal_witness_1_cpf: Mapped[str | None] = mapped_column(
         String(14),
         nullable=True,
         comment="CPF testemunha 1 da recusa",
     )
-    refusal_witness_2_name: Mapped[Optional[str]] = mapped_column(
+    refusal_witness_2_name: Mapped[str | None] = mapped_column(
         String(255),
         nullable=True,
         comment="Nome testemunha 2 da recusa de assinatura",
     )
-    refusal_witness_2_cpf: Mapped[Optional[str]] = mapped_column(
+    refusal_witness_2_cpf: Mapped[str | None] = mapped_column(
         String(14),
         nullable=True,
         comment="CPF testemunha 2 da recusa",
     )
 
     # === Outras Assinaturas ===
-    supervisor_signature_id: Mapped[Optional[str]] = mapped_column(
+    supervisor_signature_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         ForeignKey("digital_signatures.id"),
         nullable=True,
         comment="ID da assinatura do supervisor",
     )
-    supervisor_signed_at: Mapped[Optional[datetime]] = mapped_column(
+    supervisor_signed_at: Mapped[datetime | None] = mapped_column(
         DateTime,
         nullable=True,
         comment="Data/hora que supervisor assinou",
     )
-    hr_signature_id: Mapped[Optional[str]] = mapped_column(
+    hr_signature_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         ForeignKey("digital_signatures.id"),
         nullable=True,
         comment="ID da assinatura do RH",
     )
-    hr_signed_at: Mapped[Optional[datetime]] = mapped_column(
+    hr_signed_at: Mapped[datetime | None] = mapped_column(
         DateTime,
         nullable=True,
         comment="Data/hora que RH assinou",
@@ -411,7 +411,7 @@ class DisciplinaryAction(Base):
         nullable=False,
         comment="Se funcionario tomou ciencia",
     )
-    acknowledged_at: Mapped[Optional[datetime]] = mapped_column(
+    acknowledged_at: Mapped[datetime | None] = mapped_column(
         DateTime,
         nullable=True,
         comment="Data/hora que tomou ciencia",
@@ -432,12 +432,12 @@ class DisciplinaryAction(Base):
     )
 
     # === IA e Metadados ===
-    ai_recommendation: Mapped[Optional[Dict[str, Any]]] = mapped_column(
+    ai_recommendation: Mapped[dict[str, Any] | None] = mapped_column(
         JSONB,
         nullable=True,
         comment="Recomendacao da IA para esta medida",
     )
-    extra_data: Mapped[Optional[Dict[str, Any]]] = mapped_column(
+    extra_data: Mapped[dict[str, Any] | None] = mapped_column(
         JSONB,
         nullable=True,
         default=dict,
@@ -465,7 +465,7 @@ class DisciplinaryAction(Base):
         nullable=False,
         comment="Data ultima atualizacao",
     )
-    created_by: Mapped[Optional[str]] = mapped_column(
+    created_by: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
         comment="ID do usuario que criou",

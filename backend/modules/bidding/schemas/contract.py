@@ -3,33 +3,34 @@ Schemas de Contrato Publico - Licitacoes
 ========================================
 """
 
-from datetime import datetime, date
+from datetime import date, datetime
 from decimal import Decimal
-from typing import Optional, List
 from uuid import UUID
 
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
-from modules.bidding.models.public_contract import ContractStatus, AdjustmentIndex, GuaranteeType
+from modules.bidding.models.public_contract import AdjustmentIndex
 
 
 class MeasurementSummary(BaseModel):
     """Resumo de medicao para resposta de contrato."""
+
     id: UUID
     numero_medicao: int
     competencia: str
     valor_bruto: Decimal
     valor_liquido: Decimal
     status: str
-    data_aprovacao: Optional[date] = None
+    data_aprovacao: date | None = None
 
 
 class PublicContractBase(BaseModel):
     """Schema base para contrato publico."""
+
     numero_contrato: str = Field(..., min_length=1, max_length=50)
     ano_contrato: int = Field(..., ge=2000, le=2100)
     objeto: str = Field(..., min_length=10)
-    objeto_resumido: Optional[str] = Field(None, max_length=500)
+    objeto_resumido: str | None = Field(None, max_length=500)
 
     # Orgao
     orgao_cnpj: str = Field(..., min_length=14, max_length=18)
@@ -39,185 +40,191 @@ class PublicContractBase(BaseModel):
 
 class PublicContractCreate(PublicContractBase):
     """Schema para criacao de contrato publico."""
-    tender_id: Optional[UUID] = None
+
+    tender_id: UUID | None = None
 
     # Orgao
-    unidade_gestora: Optional[str] = None
-    gestor_contrato: Optional[str] = None
-    fiscal_contrato: Optional[str] = None
+    unidade_gestora: str | None = None
+    gestor_contrato: str | None = None
+    fiscal_contrato: str | None = None
 
     # Valores
     valor_contrato: Decimal = Field(..., gt=0)
 
     # Empenho
-    numero_empenho: Optional[str] = None
-    data_empenho: Optional[date] = None
-    nota_empenho_url: Optional[str] = None
+    numero_empenho: str | None = None
+    data_empenho: date | None = None
+    nota_empenho_url: str | None = None
 
     # Vigencia
-    data_assinatura: Optional[date] = None
-    data_publicacao: Optional[date] = None
+    data_assinatura: date | None = None
+    data_publicacao: date | None = None
     data_vigencia_inicio: date
     data_vigencia_fim: date
-    prazo_meses: Optional[int] = None
+    prazo_meses: int | None = None
 
     # Reajuste
     indice_reajuste: str = Field(default=AdjustmentIndex.IGPM.value)
-    data_base_reajuste: Optional[date] = None
+    data_base_reajuste: date | None = None
 
     # Garantia
-    garantia_tipo: Optional[str] = None
-    garantia_valor: Optional[Decimal] = None
-    garantia_percentual: Optional[Decimal] = Field(None, ge=0, le=10)
-    garantia_vencimento: Optional[date] = None
-    garantia_documento_url: Optional[str] = None
+    garantia_tipo: str | None = None
+    garantia_valor: Decimal | None = None
+    garantia_percentual: Decimal | None = Field(None, ge=0, le=10)
+    garantia_vencimento: date | None = None
+    garantia_documento_url: str | None = None
 
     # PNCP
-    pncp_id: Optional[str] = None
-    pncp_link: Optional[str] = None
+    pncp_id: str | None = None
+    pncp_link: str | None = None
 
     # Arquivos
-    arquivo_contrato_url: Optional[str] = None
-    arquivo_publicacao_url: Optional[str] = None
+    arquivo_contrato_url: str | None = None
+    arquivo_publicacao_url: str | None = None
 
     # Outros
-    observacoes: Optional[str] = None
+    observacoes: str | None = None
 
 
 class PublicContractUpdate(BaseModel):
     """Schema para atualizacao de contrato publico."""
-    objeto: Optional[str] = None
-    objeto_resumido: Optional[str] = None
+
+    objeto: str | None = None
+    objeto_resumido: str | None = None
 
     # Orgao
-    gestor_contrato: Optional[str] = None
-    fiscal_contrato: Optional[str] = None
+    gestor_contrato: str | None = None
+    fiscal_contrato: str | None = None
 
     # Valores
-    valor_empenhado: Optional[Decimal] = None
-    valor_executado: Optional[Decimal] = None
-    valor_pago: Optional[Decimal] = None
+    valor_empenhado: Decimal | None = None
+    valor_executado: Decimal | None = None
+    valor_pago: Decimal | None = None
 
     # Empenho
-    numero_empenho: Optional[str] = None
-    data_empenho: Optional[date] = None
-    nota_empenho_url: Optional[str] = None
+    numero_empenho: str | None = None
+    data_empenho: date | None = None
+    nota_empenho_url: str | None = None
 
     # Vigencia
-    data_assinatura: Optional[date] = None
-    data_publicacao: Optional[date] = None
+    data_assinatura: date | None = None
+    data_publicacao: date | None = None
 
     # Status
-    status: Optional[str] = None
+    status: str | None = None
 
     # Garantia
-    garantia_tipo: Optional[str] = None
-    garantia_valor: Optional[Decimal] = None
-    garantia_vencimento: Optional[date] = None
-    garantia_documento_url: Optional[str] = None
+    garantia_tipo: str | None = None
+    garantia_valor: Decimal | None = None
+    garantia_vencimento: date | None = None
+    garantia_documento_url: str | None = None
 
     # Arquivos
-    arquivo_contrato_url: Optional[str] = None
-    arquivo_publicacao_url: Optional[str] = None
+    arquivo_contrato_url: str | None = None
+    arquivo_publicacao_url: str | None = None
 
     # Outros
-    observacoes: Optional[str] = None
+    observacoes: str | None = None
 
 
 class PublicContractResponse(PublicContractBase):
     """Schema de resposta para contrato publico."""
+
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
-    tender_id: Optional[UUID] = None
+    tender_id: UUID | None = None
     status: str
     ativo: bool
 
     # Orgao
-    unidade_gestora: Optional[str] = None
-    gestor_contrato: Optional[str] = None
-    fiscal_contrato: Optional[str] = None
+    unidade_gestora: str | None = None
+    gestor_contrato: str | None = None
+    fiscal_contrato: str | None = None
 
     # Valores
     valor_contrato: Decimal
-    valor_empenhado: Optional[Decimal] = None
-    valor_executado: Optional[Decimal] = None
-    valor_pago: Optional[Decimal] = None
-    saldo_contrato: Optional[Decimal] = None
+    valor_empenhado: Decimal | None = None
+    valor_executado: Decimal | None = None
+    valor_pago: Decimal | None = None
+    saldo_contrato: Decimal | None = None
 
     # Empenho
-    numero_empenho: Optional[str] = None
-    data_empenho: Optional[date] = None
-    nota_empenho_url: Optional[str] = None
+    numero_empenho: str | None = None
+    data_empenho: date | None = None
+    nota_empenho_url: str | None = None
 
     # Vigencia
-    data_assinatura: Optional[date] = None
-    data_publicacao: Optional[date] = None
+    data_assinatura: date | None = None
+    data_publicacao: date | None = None
     data_vigencia_inicio: date
     data_vigencia_fim: date
-    prazo_meses: Optional[int] = None
+    prazo_meses: int | None = None
 
     # Reajuste
-    indice_reajuste: Optional[str] = None
-    data_base_reajuste: Optional[date] = None
-    ultimo_reajuste: Optional[date] = None
-    percentual_ultimo_reajuste: Optional[Decimal] = None
+    indice_reajuste: str | None = None
+    data_base_reajuste: date | None = None
+    ultimo_reajuste: date | None = None
+    percentual_ultimo_reajuste: Decimal | None = None
 
     # Garantia
-    garantia_tipo: Optional[str] = None
-    garantia_valor: Optional[Decimal] = None
-    garantia_percentual: Optional[Decimal] = None
-    garantia_vencimento: Optional[date] = None
-    garantia_documento_url: Optional[str] = None
+    garantia_tipo: str | None = None
+    garantia_valor: Decimal | None = None
+    garantia_percentual: Decimal | None = None
+    garantia_vencimento: date | None = None
+    garantia_documento_url: str | None = None
 
     # Aditivos
-    aditivos: List[dict] = []
+    aditivos: list[dict] = []
     quantidade_aditivos: int = 0
 
     # PNCP
-    pncp_id: Optional[str] = None
-    pncp_link: Optional[str] = None
+    pncp_id: str | None = None
+    pncp_link: str | None = None
 
     # Arquivos
-    arquivo_contrato_url: Optional[str] = None
-    arquivo_publicacao_url: Optional[str] = None
+    arquivo_contrato_url: str | None = None
+    arquivo_publicacao_url: str | None = None
 
     # Propriedades calculadas
-    esta_vigente: Optional[bool] = None
-    dias_para_vencer: Optional[int] = None
-    percentual_executado: Optional[Decimal] = None
-    saldo_a_executar: Optional[Decimal] = None
+    esta_vigente: bool | None = None
+    dias_para_vencer: int | None = None
+    percentual_executado: Decimal | None = None
+    saldo_a_executar: Decimal | None = None
 
     # Medicoes (resumo)
-    medicoes: List[MeasurementSummary] = []
+    medicoes: list[MeasurementSummary] = []
 
     # Outros
-    observacoes: Optional[str] = None
+    observacoes: str | None = None
 
     # Auditoria
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
 
 
 class ContractAddendumCreate(BaseModel):
     """Schema para criacao de aditivo."""
+
     numero: str = Field(..., min_length=1, max_length=50)
     tipo: str = Field(..., pattern="^(valor|prazo|valor_prazo|supressao)$")
     objeto: str = Field(..., min_length=10)
-    valor: Optional[Decimal] = None
-    prazo_dias: Optional[int] = Field(None, ge=1)
-    data_assinatura: Optional[date] = None
+    valor: Decimal | None = None
+    prazo_dias: int | None = Field(None, ge=1)
+    data_assinatura: date | None = None
 
 
 class ContractReadjustRequest(BaseModel):
     """Schema para solicitacao de reajuste."""
+
     percentual: Decimal = Field(..., ge=-50, le=100)
-    data_aplicacao: Optional[date] = None
-    justificativa: Optional[str] = None
+    data_aplicacao: date | None = None
+    justificativa: str | None = None
 
 
 class ContractReadjustResponse(BaseModel):
     """Resposta do calculo de reajuste."""
+
     contrato_id: UUID
     numero_contrato: str
     valor_original: Decimal
@@ -230,7 +237,8 @@ class ContractReadjustResponse(BaseModel):
 
 class ContractListResponse(BaseModel):
     """Schema de lista de contratos com paginacao."""
-    items: List[PublicContractResponse]
+
+    items: list[PublicContractResponse]
     total: int
     page: int
     size: int

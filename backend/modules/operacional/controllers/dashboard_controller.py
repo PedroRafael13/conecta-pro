@@ -8,8 +8,8 @@ Fornece endpoints para:
 - Sugestões de alocação
 """
 
-from datetime import date, datetime
-from typing import Any, Dict, List, Optional
+from datetime import date, timedelta
+from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -18,7 +18,6 @@ from sqlalchemy.orm import Session
 
 from core.database import get_db
 from modules.operacional.services.integration_service import (
-    IntegrationService,
     get_integration_service,
 )
 
@@ -29,45 +28,51 @@ router = APIRouter()
 # SCHEMAS
 # =============================================================================
 
+
 class AlocarDiaristaPostoRequest(BaseModel):
     """Request para alocar diarista a um posto."""
+
     diarista_id: UUID
     post_id: UUID
     data_inicio: date
-    data_fim: Optional[date] = None
-    shift_id: Optional[UUID] = None
-    cliente_id: Optional[UUID] = None
-    contrato_id: Optional[UUID] = None
-    observacoes: Optional[str] = Field(None, max_length=500)
+    data_fim: date | None = None
+    shift_id: UUID | None = None
+    cliente_id: UUID | None = None
+    contrato_id: UUID | None = None
+    observacoes: str | None = Field(None, max_length=500)
 
 
 class DesalocarDiaristaRequest(BaseModel):
     """Request para desalocar diarista."""
-    motivo: Optional[str] = Field(None, max_length=500)
+
+    motivo: str | None = Field(None, max_length=500)
 
 
 class DashboardResponse(BaseModel):
     """Response do dashboard unificado."""
+
     data_referencia: str
-    postos: Dict[str, Any]
-    escalas: Dict[str, Any]
-    turnos: Dict[str, Any]
-    funcionarios: Dict[str, Any]
-    diaristas: Dict[str, Any]
-    ocupacao: Dict[str, Any]
-    alertas: List[Dict[str, Any]]
+    postos: dict[str, Any]
+    escalas: dict[str, Any]
+    turnos: dict[str, Any]
+    funcionarios: dict[str, Any]
+    diaristas: dict[str, Any]
+    ocupacao: dict[str, Any]
+    alertas: list[dict[str, Any]]
 
 
 class MetricasPeriodoResponse(BaseModel):
     """Response das métricas de período."""
-    periodo: Dict[str, Any]
-    diaristas: Dict[str, Any]
-    funcionarios: Dict[str, Any]
-    consolidado: Dict[str, Any]
+
+    periodo: dict[str, Any]
+    diaristas: dict[str, Any]
+    funcionarios: dict[str, Any]
+    consolidado: dict[str, Any]
 
 
 class OcupacaoPostoResponse(BaseModel):
     """Response da ocupação de um posto."""
+
     posto_id: str
     posto_nome: str
     posto_tipo: str
@@ -75,16 +80,17 @@ class OcupacaoPostoResponse(BaseModel):
     diaristas_alocados: int
     total_alocados: int
     status: str
-    detalhes: Dict[str, Any]
+    detalhes: dict[str, Any]
 
 
 class SugestaoDiaristaResponse(BaseModel):
     """Response de sugestão de diarista."""
+
     diarist_id: str
     nome: str
     score: int
-    motivos: List[str]
-    avaliacao: Optional[float]
+    motivos: list[str]
+    avaliacao: float | None = None
     total_servicos: int
 
 
@@ -92,17 +98,18 @@ class SugestaoDiaristaResponse(BaseModel):
 # ENDPOINTS - DASHBOARD
 # =============================================================================
 
+
 @router.get(
     "/dashboard",
     response_model=DashboardResponse,
     summary="Dashboard unificado",
-    description="Retorna métricas consolidadas de funcionários fixos e diaristas"
+    description="Retorna métricas consolidadas de funcionários fixos e diaristas",
 )
 async def get_dashboard(
-    data: Optional[date] = Query(None, description="Data de referência (default: hoje)"),
-    cliente_id: Optional[UUID] = Query(None, description="Filtrar por cliente"),
+    data: date | None = Query(None, description="Data de referência (default: hoje)"),
+    cliente_id: UUID | None = Query(None, description="Filtrar por cliente"),
     db: Session = Depends(get_db),
-):
+) -> DashboardResponse:
     """
     Retorna dashboard unificado do operacional.
 
@@ -124,8 +131,7 @@ async def get_dashboard(
         return dashboard
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao gerar dashboard: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao gerar dashboard: {str(e)}"
         )
 
 
@@ -133,14 +139,14 @@ async def get_dashboard(
     "/metricas",
     response_model=MetricasPeriodoResponse,
     summary="Métricas de período",
-    description="Retorna métricas consolidadas para um período específico"
+    description="Retorna métricas consolidadas para um período específico",
 )
 async def get_metricas_periodo(
     data_inicio: date = Query(..., description="Data inicial"),
     data_fim: date = Query(..., description="Data final"),
-    cliente_id: Optional[UUID] = Query(None, description="Filtrar por cliente"),
+    cliente_id: UUID | None = Query(None, description="Filtrar por cliente"),
     db: Session = Depends(get_db),
-):
+) -> MetricasPeriodoResponse:
     """
     Retorna métricas de um período específico.
 
@@ -152,8 +158,7 @@ async def get_metricas_periodo(
     """
     if data_fim < data_inicio:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Data fim deve ser maior ou igual a data início"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Data fim deve ser maior ou igual a data início"
         )
 
     service = get_integration_service(db)
@@ -167,8 +172,7 @@ async def get_metricas_periodo(
         return metricas
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao calcular métricas: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao calcular métricas: {str(e)}"
         )
 
 
@@ -176,16 +180,17 @@ async def get_metricas_periodo(
 # ENDPOINTS - OCUPAÇÃO DE POSTOS
 # =============================================================================
 
+
 @router.get(
     "/ocupacao",
-    response_model=List[OcupacaoPostoResponse],
+    response_model=list[OcupacaoPostoResponse],
     summary="Ocupação de postos",
-    description="Retorna status de ocupação de cada posto ativo"
+    description="Retorna status de ocupação de cada posto ativo",
 )
 async def get_ocupacao_postos(
-    data: Optional[date] = Query(None, description="Data de referência (default: hoje)"),
+    data: date | None = Query(None, description="Data de referência (default: hoje)"),
     db: Session = Depends(get_db),
-):
+) -> list[OcupacaoPostoResponse]:
     """
     Retorna ocupação detalhada de cada posto.
 
@@ -201,8 +206,7 @@ async def get_ocupacao_postos(
         return ocupacao
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao consultar ocupação: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao consultar ocupação: {str(e)}"
         )
 
 
@@ -210,15 +214,14 @@ async def get_ocupacao_postos(
 # ENDPOINTS - ALOCAÇÃO DE DIARISTAS
 # =============================================================================
 
+
 @router.post(
-    "/alocar-diarista",
-    summary="Alocar diarista a posto",
-    description="Aloca um diarista a um posto de trabalho"
+    "/alocar-diarista", summary="Alocar diarista a posto", description="Aloca um diarista a um posto de trabalho"
 )
 async def alocar_diarista_posto(
     request: AlocarDiaristaPostoRequest,
     db: Session = Depends(get_db),
-):
+) -> dict[str, Any]:
     """
     Aloca um diarista a um posto de trabalho.
 
@@ -247,27 +250,23 @@ async def alocar_diarista_posto(
             "assignment_id": str(assignment.id),
         }
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao alocar diarista: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao alocar diarista: {str(e)}"
         )
 
 
 @router.post(
     "/desalocar-diarista/{assignment_id}",
     summary="Desalocar diarista",
-    description="Remove alocação de diarista de um posto"
+    description="Remove alocação de diarista de um posto",
 )
 async def desalocar_diarista(
     assignment_id: UUID,
     request: DesalocarDiaristaRequest,
     db: Session = Depends(get_db),
-):
+) -> dict[str, Any]:
     """
     Remove alocação de diarista de um posto.
 
@@ -287,14 +286,10 @@ async def desalocar_diarista(
             "assignment_id": str(assignment.id),
         }
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao desalocar diarista: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao desalocar diarista: {str(e)}"
         )
 
 
@@ -302,21 +297,19 @@ async def desalocar_diarista(
 # ENDPOINTS - SUGESTÕES
 # =============================================================================
 
+
 @router.get(
     "/sugerir-diarista/{post_id}",
-    response_model=List[SugestaoDiaristaResponse],
+    response_model=list[SugestaoDiaristaResponse],
     summary="Sugerir diarista para posto",
-    description="Retorna diaristas sugeridos para cobrir um posto"
+    description="Retorna diaristas sugeridos para cobrir um posto",
 )
 async def sugerir_diarista_posto(
     post_id: UUID,
     data: date = Query(..., description="Data desejada para cobertura"),
-    habilidades: Optional[str] = Query(
-        None,
-        description="Habilidades requeridas (separadas por vírgula)"
-    ),
+    habilidades: str | None = Query(None, description="Habilidades requeridas (separadas por vírgula)"),
     db: Session = Depends(get_db),
-):
+) -> list[SugestaoDiaristaResponse]:
     """
     Sugere diaristas disponíveis para um posto.
 
@@ -327,7 +320,7 @@ async def sugerir_diarista_posto(
     """
     service = get_integration_service(db)
 
-    habilidades_lista = None
+    habilidades_lista: list[str] | None = None
     if habilidades:
         habilidades_lista = [h.strip() for h in habilidades.split(",")]
 
@@ -339,14 +332,10 @@ async def sugerir_diarista_posto(
         )
         return sugestoes
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao sugerir diaristas: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao sugerir diaristas: {str(e)}"
         )
 
 
@@ -354,14 +343,11 @@ async def sugerir_diarista_posto(
 # ENDPOINTS - RELATÓRIOS RÁPIDOS
 # =============================================================================
 
-@router.get(
-    "/resumo-dia",
-    summary="Resumo do dia",
-    description="Retorna resumo executivo do dia atual"
-)
+
+@router.get("/resumo-dia", summary="Resumo do dia", description="Retorna resumo executivo do dia atual")
 async def get_resumo_dia(
     db: Session = Depends(get_db),
-):
+) -> dict[str, Any]:
     """
     Retorna resumo executivo do dia atual.
 
@@ -381,27 +367,18 @@ async def get_resumo_dia(
                 "diaristas_em_servico": dashboard["diaristas"]["em_servico"],
                 "taxa_ocupacao": dashboard["ocupacao"]["taxa_ocupacao_percentual"],
             },
-            "alertas_criticos": [
-                a for a in dashboard["alertas"] if a["tipo"] == "error"
-            ],
+            "alertas_criticos": [a for a in dashboard["alertas"] if a["tipo"] == "error"],
             "total_alertas": len(dashboard["alertas"]),
         }
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao gerar resumo: {str(e)}"
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao gerar resumo: {str(e)}")
 
 
-@router.get(
-    "/kpis",
-    summary="KPIs operacionais",
-    description="Retorna KPIs principais do operacional"
-)
+@router.get("/kpis", summary="KPIs operacionais", description="Retorna KPIs principais do operacional")
 async def get_kpis(
     periodo_dias: int = Query(30, ge=7, le=365, description="Período em dias"),
     db: Session = Depends(get_db),
-):
+) -> dict[str, Any]:
     """
     Retorna KPIs operacionais.
 
@@ -410,7 +387,7 @@ async def get_kpis(
     service = get_integration_service(db)
 
     data_fim = date.today()
-    data_inicio = data_fim - __import__("datetime").timedelta(days=periodo_dias)
+    data_inicio = data_fim - timedelta(days=periodo_dias)
 
     try:
         metricas = service.get_metricas_periodo(data_inicio, data_fim)
@@ -431,23 +408,15 @@ async def get_kpis(
         }
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao calcular KPIs: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao calcular KPIs: {str(e)}"
         )
 
 
-@router.get(
-    "/kpi-trends",
-    summary="Tendências de KPIs",
-    description="Retorna dados históricos para sparklines de KPIs"
-)
+@router.get("/kpi-trends", summary="Tendências de KPIs", description="Retorna dados históricos para sparklines de KPIs")
 async def get_kpi_trends(
-    period: str = Query(
-        "7d",
-        description="Período de análise (7d, 30d, 90d)"
-    ),
+    period: str = Query("7d", description="Período de análise (7d, 30d, 90d)"),
     db: Session = Depends(get_db),
-):
+) -> dict[str, Any]:
     """
     Retorna dados históricos de KPIs para sparklines.
 
@@ -463,13 +432,12 @@ async def get_kpi_trends(
     - Ocorrências do mês
     - Taxa de cobertura (%)
     """
-    from datetime import timedelta
-    from modules.operacional.models import Post, Scale, ScaleStatus
-    from modules.operacional.repositories import PostRepository, ScaleRepository
+    from modules.operacional.models import Scale, ScaleStatus
     from modules.operacional.occurrences.models import Occurrence
+    from modules.operacional.repositories import PostRepository, ScaleRepository
 
     # Definir período
-    periods = {
+    periods: dict[str, int] = {
         "7d": 7,
         "30d": 30,
         "90d": 90,
@@ -477,8 +445,7 @@ async def get_kpi_trends(
 
     if period not in periods:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Período inválido. Use: {', '.join(periods.keys())}"
+            status_code=status.HTTP_400_BAD_REQUEST, detail=f"Período inválido. Use: {', '.join(periods.keys())}"
         )
 
     days = periods[period]
@@ -486,21 +453,21 @@ async def get_kpi_trends(
 
     try:
         post_repo = PostRepository(db)
-        scale_repo = ScaleRepository(db)
+        ScaleRepository(db)
 
         # Calcular dados diários
-        postos_ativos = []
-        colaboradores_ativos = []
-        escalas_em_andamento = []
-        ocorrencias_mes = []
-        cobertura_percentual = []
+        postos_ativos: list[int] = []
+        colaboradores_ativos: list[int] = []
+        escalas_em_andamento: list[int] = []
+        ocorrencias_mes: list[int] = []
+        cobertura_percentual: list[int] = []
 
         # Gerar dados para cada dia do período
         for i in range(days):
             data_ref = hoje - timedelta(days=days - i - 1)
 
             # Postos ativos na data
-            stats = post_repo.get_stats()
+            stats: dict[str, Any] = post_repo.get_stats()
             postos_ativos.append(stats.get("total", 0))
 
             # Colaboradores alocados (simulado - precisa de dados reais)
@@ -508,18 +475,16 @@ async def get_kpi_trends(
             colaboradores_ativos.append(stats.get("total_allocated", 0))
 
             # Escalas em andamento
-            escalas = db.query(Scale).filter(
-                Scale.status == ScaleStatus.IN_PROGRESS,
-                Scale.ativo == True
-            ).count()
+            escalas = db.query(Scale).filter(Scale.status == ScaleStatus.IN_PROGRESS, Scale.ativo).count()
             escalas_em_andamento.append(escalas)
 
             # Ocorrências do mês
             primeiro_dia_mes = data_ref.replace(day=1)
-            ocorrencias = db.query(Occurrence).filter(
-                Occurrence.data_ocorrencia >= primeiro_dia_mes,
-                Occurrence.data_ocorrencia <= data_ref
-            ).count()
+            ocorrencias = (
+                db.query(Occurrence)
+                .filter(Occurrence.data_ocorrencia >= primeiro_dia_mes, Occurrence.data_ocorrencia <= data_ref)
+                .count()
+            )
             ocorrencias_mes.append(ocorrencias)
 
             # Taxa de cobertura
@@ -537,11 +502,10 @@ async def get_kpi_trends(
                 "escalas_em_andamento": escalas_em_andamento,
                 "ocorrencias_mes": ocorrencias_mes,
                 "cobertura_percentual": cobertura_percentual,
-            }
+            },
         }
 
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao calcular tendências: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao calcular tendências: {str(e)}"
         )

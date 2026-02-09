@@ -13,16 +13,22 @@ Date: 2026-01-16
 
 from datetime import date, datetime, timedelta
 from decimal import Decimal
-from typing import Any, Dict, List
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import UUID, uuid4
 
 import pytest
+
+# Cria app isolado para testes (evita carregar todo o main.py)
+from fastapi import FastAPI
 from httpx import AsyncClient
 from pydantic import ValidationError as PydanticValidationError
 
+from modules.government_integrations.controllers.sefaz_controller import router as sefaz_router
+
 # Imports do modulo SEFAZ
 from modules.government_integrations.core.sefaz_manager import (
+    UF_CONFIGS,
     ContingencyType,
     Destinatario,
     DocumentStatus,
@@ -38,16 +44,11 @@ from modules.government_integrations.core.sefaz_manager import (
     SEFAZError,
     SEFAZManager,
     UFConfig,
-    UF_CONFIGS,
     ValidationError,
     init_sefaz_manager,
 )
 from modules.government_integrations.schemas.sefaz import NFERequest
 from modules.government_integrations.services.sefaz_service import SEFAZService
-
-# Cria app isolado para testes (evita carregar todo o main.py)
-from fastapi import FastAPI
-from modules.government_integrations.controllers.sefaz_controller import router as sefaz_router
 
 app = FastAPI()
 app.include_router(sefaz_router, prefix="/api/v1/government")
@@ -57,7 +58,7 @@ app.include_router(sefaz_router, prefix="/api/v1/government")
 # Fixtures Compartilhadas
 # ==========================================================================
 @pytest.fixture
-def auth_headers() -> Dict[str, str]:
+def auth_headers() -> dict[str, str]:
     """Headers de autenticacao para testes."""
     return {"Authorization": "Bearer test-token"}
 
@@ -174,7 +175,7 @@ def produto_com_desconto() -> Produto:
 
 
 @pytest.fixture
-def lista_produtos(produto_simples: Produto, produto_com_desconto: Produto) -> List[Produto]:
+def lista_produtos(produto_simples: Produto, produto_com_desconto: Produto) -> list[Produto]:
     """Lista de produtos para testes."""
     return [produto_simples, produto_com_desconto]
 
@@ -210,7 +211,7 @@ def pagamento_cartao() -> Pagamento:
 
 
 @pytest.fixture
-def lista_pagamentos(pagamento_dinheiro: Pagamento) -> List[Pagamento]:
+def lista_pagamentos(pagamento_dinheiro: Pagamento) -> list[Pagamento]:
     """Lista de pagamentos para testes."""
     return [pagamento_dinheiro]
 
@@ -263,9 +264,7 @@ class TestSchemas:
         request = NFERequest(
             tipo="nfce",
             destinatario={"cpf_cnpj": "12345678909", "nome": "Consumidor"},
-            produtos=[
-                {"codigo": "001", "descricao": "Produto", "quantidade": 1, "valor_unitario": 50.00}
-            ],
+            produtos=[{"codigo": "001", "descricao": "Produto", "quantidade": 1, "valor_unitario": 50.00}],
             pagamento={"tipo": "17", "valor": 50.00},  # PIX
             observacoes="Venda ao consumidor final",
         )
@@ -368,8 +367,8 @@ class TestSEFAZManager:
         self,
         sefaz_manager: SEFAZManager,
         destinatario_pj: Destinatario,
-        lista_produtos: List[Produto],
-        lista_pagamentos: List[Pagamento],
+        lista_produtos: list[Produto],
+        lista_pagamentos: list[Pagamento],
     ):
         """Testa criacao de NFe."""
         nfe = await sefaz_manager.create_nfe(
@@ -770,8 +769,8 @@ class TestNotaFiscalModel:
         self,
         emitente: Emitente,
         destinatario_pj: Destinatario,
-        lista_produtos: List[Produto],
-        lista_pagamentos: List[Pagamento],
+        lista_produtos: list[Produto],
+        lista_pagamentos: list[Pagamento],
     ):
         """Testa calculo do valor total de produtos."""
         nf = NotaFiscal(
@@ -952,7 +951,7 @@ class TestNFEXMLBuilder:
         self,
         emitente: Emitente,
         destinatario_pj: Destinatario,
-        lista_produtos: List[Produto],
+        lista_produtos: list[Produto],
         pagamento_dinheiro: Pagamento,
     ):
         """Testa geracao de XML com multiplos produtos."""
@@ -1026,9 +1025,7 @@ class TestSEFAZService:
             "modules.government_integrations.services.sefaz_service.get_sefaz_manager",
             return_value=mock_manager,
         ):
-            resultado = SEFAZService.consultar_nfe(
-                chave_acesso="35260112345678000195550010000000011234567890"
-            )
+            resultado = SEFAZService.consultar_nfe(chave_acesso="35260112345678000195550010000000011234567890")
 
         assert resultado["chave_acesso"] == "35260112345678000195550010000000011234567890"
         assert resultado["status"] == "autorizada"
@@ -1041,7 +1038,7 @@ class TestSEFAZEndpoints:
     """Testes para endpoints REST do SEFAZ."""
 
     @pytest.mark.asyncio
-    async def test_emitir_nfe_endpoint(self, auth_headers: Dict[str, str]):
+    async def test_emitir_nfe_endpoint(self, auth_headers: dict[str, str]):
         """Testa endpoint de emissao de NFe."""
         async with AsyncClient(app=app, base_url="http://test") as client:
             response = await client.post(
@@ -1085,7 +1082,7 @@ class TestSEFAZEndpoints:
             assert "data" in data
 
     @pytest.mark.asyncio
-    async def test_emitir_nfce_endpoint(self, auth_headers: Dict[str, str]):
+    async def test_emitir_nfce_endpoint(self, auth_headers: dict[str, str]):
         """Testa endpoint de emissao de NFCe."""
         async with AsyncClient(app=app, base_url="http://test") as client:
             response = await client.post(
@@ -1113,7 +1110,7 @@ class TestSEFAZEndpoints:
         assert response.status_code in [202, 400, 401, 403, 500]
 
     @pytest.mark.asyncio
-    async def test_consultar_nfe_endpoint(self, auth_headers: Dict[str, str]):
+    async def test_consultar_nfe_endpoint(self, auth_headers: dict[str, str]):
         """Testa endpoint de consulta de NFe."""
         chave_acesso = "35260112345678000195550010000000011234567890"
 
@@ -1127,7 +1124,7 @@ class TestSEFAZEndpoints:
         assert response.status_code in [200, 401, 404, 500]
 
     @pytest.mark.asyncio
-    async def test_consultar_nfe_chave_invalida(self, auth_headers: Dict[str, str]):
+    async def test_consultar_nfe_chave_invalida(self, auth_headers: dict[str, str]):
         """Testa consulta com chave de acesso invalida."""
         chave_invalida = "123"  # Chave muito curta
 
@@ -1141,7 +1138,7 @@ class TestSEFAZEndpoints:
         assert response.status_code in [401, 404, 422]
 
     @pytest.mark.asyncio
-    async def test_emitir_nfe_dados_invalidos(self, auth_headers: Dict[str, str]):
+    async def test_emitir_nfe_dados_invalidos(self, auth_headers: dict[str, str]):
         """Testa emissao com dados invalidos."""
         async with AsyncClient(app=app, base_url="http://test") as client:
             response = await client.post(
@@ -1168,9 +1165,33 @@ class TestUFConfigs:
     def test_todas_ufs_configuradas(self):
         """Verifica que todas as UFs estao configuradas."""
         ufs_brasil = [
-            "AC", "AL", "AM", "AP", "BA", "CE", "DF", "ES", "GO", "MA",
-            "MG", "MS", "MT", "PA", "PB", "PE", "PI", "PR", "RJ", "RN",
-            "RO", "RR", "RS", "SC", "SE", "SP", "TO",
+            "AC",
+            "AL",
+            "AM",
+            "AP",
+            "BA",
+            "CE",
+            "DF",
+            "ES",
+            "GO",
+            "MA",
+            "MG",
+            "MS",
+            "MT",
+            "PA",
+            "PB",
+            "PE",
+            "PI",
+            "PR",
+            "RJ",
+            "RN",
+            "RO",
+            "RR",
+            "RS",
+            "SC",
+            "SE",
+            "SP",
+            "TO",
         ]
 
         for uf in ufs_brasil:

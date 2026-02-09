@@ -1,31 +1,31 @@
 """Models do Portal do Funcionário."""
 
+from modules.hr.employee_portal.models.employee_document import (
+    DocumentStatus,
+    DocumentType,
+    EmployeeDocument,
+)
+from modules.hr.employee_portal.models.employee_notification import (
+    EmployeeNotification,
+    NotificationChannel,
+    NotificationPriority,
+    NotificationType,
+)
+from modules.hr.employee_portal.models.employee_preferences import (
+    EmployeePreferences,
+    LanguagePreference,
+    ThemePreference,
+)
 from modules.hr.employee_portal.models.payslip import (
     PaySlip,
     PaySlipStatus,
     PaySlipType,
 )
 from modules.hr.employee_portal.models.vacation_request import (
+    VacationPeriod,
     VacationRequest,
     VacationStatus,
     VacationType,
-    VacationPeriod,
-)
-from modules.hr.employee_portal.models.employee_document import (
-    EmployeeDocument,
-    DocumentType,
-    DocumentStatus,
-)
-from modules.hr.employee_portal.models.employee_notification import (
-    EmployeeNotification,
-    NotificationType,
-    NotificationPriority,
-    NotificationChannel,
-)
-from modules.hr.employee_portal.models.employee_preferences import (
-    EmployeePreferences,
-    ThemePreference,
-    LanguagePreference,
 )
 
 __all__ = [

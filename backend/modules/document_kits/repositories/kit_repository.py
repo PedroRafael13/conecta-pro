@@ -1,23 +1,22 @@
 """Repository de Kits Documentais - Versão Async."""
 
 from datetime import datetime
-from typing import List, Optional
 from uuid import UUID
 
-from sqlalchemy import and_, func, or_, select, update, delete
+from sqlalchemy import and_, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
 from modules.document_kits.models.document_kit import (
-    DocumentKit,
-    DocumentKitItem,
-    DocumentKitAssignment,
-    DocumentKitItemStatus,
-    KitType,
-    KitStatus,
     AssignmentStatus,
-    ItemStatusEnum,
+    DocumentKit,
+    DocumentKitAssignment,
+    DocumentKitItem,
+    DocumentKitItemStatus,
     EntityType,
+    ItemStatusEnum,
+    KitStatus,
+    KitType,
 )
 
 
@@ -41,14 +40,18 @@ class DocumentKitRepository:
         self,
         kit_id: UUID,
         condominio_id: UUID,
-    ) -> Optional[DocumentKit]:
+    ) -> DocumentKit | None:
         """Busca kit por ID."""
-        query = select(DocumentKit).where(
-            and_(
-                DocumentKit.id == kit_id,
-                DocumentKit.condominio_id == condominio_id,
+        query = (
+            select(DocumentKit)
+            .where(
+                and_(
+                    DocumentKit.id == kit_id,
+                    DocumentKit.condominio_id == condominio_id,
+                )
             )
-        ).options(joinedload(DocumentKit.itens))
+            .options(joinedload(DocumentKit.itens))
+        )
         result = await self.db.execute(query)
         return result.scalars().first()
 
@@ -56,7 +59,7 @@ class DocumentKitRepository:
         self,
         codigo: str,
         condominio_id: UUID,
-    ) -> Optional[DocumentKit]:
+    ) -> DocumentKit | None:
         """Busca kit por codigo."""
         query = select(DocumentKit).where(
             and_(
@@ -70,13 +73,13 @@ class DocumentKitRepository:
     async def list_kits(
         self,
         condominio_id: UUID,
-        tipo: Optional[KitType] = None,
-        status: Optional[KitStatus] = None,
-        is_template: Optional[bool] = None,
-        search: Optional[str] = None,
+        tipo: KitType | None = None,
+        status: KitStatus | None = None,
+        is_template: bool | None = None,
+        search: str | None = None,
         skip: int = 0,
         limit: int = 100,
-    ) -> List[DocumentKit]:
+    ) -> list[DocumentKit]:
         """Lista kits com filtros."""
         conditions = [DocumentKit.condominio_id == condominio_id]
 
@@ -96,21 +99,15 @@ class DocumentKitRepository:
                 )
             )
 
-        query = (
-            select(DocumentKit)
-            .where(and_(*conditions))
-            .order_by(DocumentKit.nome)
-            .offset(skip)
-            .limit(limit)
-        )
+        query = select(DocumentKit).where(and_(*conditions)).order_by(DocumentKit.nome).offset(skip).limit(limit)
         result = await self.db.execute(query)
         return list(result.scalars().all())
 
     async def count_kits(
         self,
         condominio_id: UUID,
-        tipo: Optional[KitType] = None,
-        status: Optional[KitStatus] = None,
+        tipo: KitType | None = None,
+        status: KitStatus | None = None,
     ) -> int:
         """Conta kits."""
         conditions = [DocumentKit.condominio_id == condominio_id]
@@ -148,7 +145,7 @@ class DocumentKitRepository:
         self,
         item_id: UUID,
         condominio_id: UUID,
-    ) -> Optional[DocumentKitItem]:
+    ) -> DocumentKitItem | None:
         """Busca item por ID."""
         query = select(DocumentKitItem).where(
             and_(
@@ -164,7 +161,7 @@ class DocumentKitRepository:
         kit_id: UUID,
         condominio_id: UUID,
         only_active: bool = True,
-    ) -> List[DocumentKitItem]:
+    ) -> list[DocumentKitItem]:
         """Lista itens de um kit."""
         conditions = [
             DocumentKitItem.kit_id == kit_id,
@@ -174,11 +171,7 @@ class DocumentKitRepository:
         if only_active:
             conditions.append(DocumentKitItem.is_ativo.is_(True))
 
-        query = (
-            select(DocumentKitItem)
-            .where(and_(*conditions))
-            .order_by(DocumentKitItem.ordem)
-        )
+        query = select(DocumentKitItem).where(and_(*conditions)).order_by(DocumentKitItem.ordem)
         result = await self.db.execute(query)
         return list(result.scalars().all())
 
@@ -197,7 +190,7 @@ class DocumentKitRepository:
         self,
         kit_id: UUID,
         condominio_id: UUID,
-        item_orders: List[dict],
+        item_orders: list[dict],
     ) -> None:
         """Reordena itens do kit."""
         for order_data in item_orders:
@@ -233,7 +226,7 @@ class DocumentKitRepository:
         self,
         assignment_id: UUID,
         condominio_id: UUID,
-    ) -> Optional[DocumentKitAssignment]:
+    ) -> DocumentKitAssignment | None:
         """Busca atribuicao por ID."""
         query = (
             select(DocumentKitAssignment)
@@ -254,14 +247,14 @@ class DocumentKitRepository:
     async def list_assignments(
         self,
         condominio_id: UUID,
-        kit_id: Optional[UUID] = None,
-        entity_type: Optional[EntityType] = None,
-        entity_id: Optional[UUID] = None,
-        status: Optional[AssignmentStatus] = None,
-        vencidos: Optional[bool] = None,
+        kit_id: UUID | None = None,
+        entity_type: EntityType | None = None,
+        entity_id: UUID | None = None,
+        status: AssignmentStatus | None = None,
+        vencidos: bool | None = None,
         skip: int = 0,
         limit: int = 100,
-    ) -> List[DocumentKitAssignment]:
+    ) -> list[DocumentKitAssignment]:
         """Lista atribuicoes com filtros."""
         conditions = [DocumentKitAssignment.condominio_id == condominio_id]
 
@@ -277,10 +270,12 @@ class DocumentKitRepository:
             conditions.append(
                 and_(
                     DocumentKitAssignment.data_limite < datetime.utcnow(),
-                    DocumentKitAssignment.status.notin_([
-                        AssignmentStatus.COMPLETO,
-                        AssignmentStatus.CANCELADO,
-                    ]),
+                    DocumentKitAssignment.status.notin_(
+                        [
+                            AssignmentStatus.COMPLETO,
+                            AssignmentStatus.CANCELADO,
+                        ]
+                    ),
                 )
             )
 
@@ -297,7 +292,7 @@ class DocumentKitRepository:
     async def count_assignments(
         self,
         condominio_id: UUID,
-        status: Optional[AssignmentStatus] = None,
+        status: AssignmentStatus | None = None,
     ) -> int:
         """Conta atribuicoes."""
         conditions = [DocumentKitAssignment.condominio_id == condominio_id]
@@ -315,10 +310,12 @@ class DocumentKitRepository:
             and_(
                 DocumentKitAssignment.condominio_id == condominio_id,
                 DocumentKitAssignment.data_limite < datetime.utcnow(),
-                DocumentKitAssignment.status.notin_([
-                    AssignmentStatus.COMPLETO,
-                    AssignmentStatus.CANCELADO,
-                ]),
+                DocumentKitAssignment.status.notin_(
+                    [
+                        AssignmentStatus.COMPLETO,
+                        AssignmentStatus.CANCELADO,
+                    ]
+                ),
             )
         )
         result = await self.db.execute(query)
@@ -352,8 +349,8 @@ class DocumentKitRepository:
 
     async def create_item_statuses_bulk(
         self,
-        item_statuses: List[DocumentKitItemStatus],
-    ) -> List[DocumentKitItemStatus]:
+        item_statuses: list[DocumentKitItemStatus],
+    ) -> list[DocumentKitItemStatus]:
         """Cria multiplos status de item."""
         self.db.add_all(item_statuses)
         await self.db.commit()
@@ -365,7 +362,7 @@ class DocumentKitRepository:
         self,
         status_id: UUID,
         condominio_id: UUID,
-    ) -> Optional[DocumentKitItemStatus]:
+    ) -> DocumentKitItemStatus | None:
         """Busca status por ID."""
         query = select(DocumentKitItemStatus).where(
             and_(
@@ -380,8 +377,8 @@ class DocumentKitRepository:
         self,
         assignment_id: UUID,
         condominio_id: UUID,
-        status: Optional[ItemStatusEnum] = None,
-    ) -> List[DocumentKitItemStatus]:
+        status: ItemStatusEnum | None = None,
+    ) -> list[DocumentKitItemStatus]:
         """Lista status de itens de uma atribuicao."""
         conditions = [
             DocumentKitItemStatus.assignment_id == assignment_id,
@@ -413,12 +410,8 @@ class DocumentKitRepository:
         kits_inativos = await self.count_kits(condominio_id, status=KitStatus.INATIVO)
 
         total_assignments = await self.count_assignments(condominio_id)
-        assignments_pendentes = await self.count_assignments(
-            condominio_id, status=AssignmentStatus.PENDENTE
-        )
-        assignments_completos = await self.count_assignments(
-            condominio_id, status=AssignmentStatus.COMPLETO
-        )
+        assignments_pendentes = await self.count_assignments(condominio_id, status=AssignmentStatus.PENDENTE)
+        assignments_completos = await self.count_assignments(condominio_id, status=AssignmentStatus.COMPLETO)
         assignments_vencidos = await self.count_vencidos(condominio_id)
 
         taxa_conclusao = 0.0
@@ -467,11 +460,12 @@ class DocumentKitRepository:
         )
 
         total = len(assignments)
-        completos = sum(
-            1 for a in assignments if a.status == AssignmentStatus.COMPLETO
-        )
+        completos = sum(1 for a in assignments if a.status == AssignmentStatus.COMPLETO)
         pendentes = sum(
-            1 for a in assignments if a.status in (
+            1
+            for a in assignments
+            if a.status
+            in (
                 AssignmentStatus.PENDENTE,
                 AssignmentStatus.EM_ANDAMENTO,
                 AssignmentStatus.AGUARDANDO_DOCUMENTOS,

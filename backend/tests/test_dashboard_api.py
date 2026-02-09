@@ -4,8 +4,8 @@ Sprint 5 - Dashboard CRM.
 """
 
 import uuid
+from collections.abc import AsyncGenerator
 from datetime import date, datetime, timedelta
-from typing import AsyncGenerator
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -45,7 +45,7 @@ def sample_leads():
     for i, status in enumerate(statuses):
         lead = MagicMock(spec=Lead)
         lead.id = str(uuid.uuid4())
-        lead.name = f"Lead {i+1}"
+        lead.name = f"Lead {i + 1}"
         lead.status = status
         lead.assigned_to_id = seller_id
         lead.is_active = True
@@ -71,7 +71,7 @@ def sample_opportunities():
     for i, (stage, value, prob) in enumerate(stages):
         opp = MagicMock(spec=Opportunity)
         opp.id = str(uuid.uuid4())
-        opp.name = f"Opportunity {i+1}"
+        opp.name = f"Opportunity {i + 1}"
         opp.stage = stage
         opp.value = value
         opp.probability = prob
@@ -102,7 +102,7 @@ def sample_proposals():
     for i, (status, total) in enumerate(statuses):
         prop = MagicMock(spec=Proposal)
         prop.id = str(uuid.uuid4())
-        prop.number = f"PROP-{i+1}"
+        prop.number = f"PROP-{i + 1}"
         prop.status = status
         prop.total = total
         prop.is_active = True
@@ -127,7 +127,7 @@ def sample_commissions():
     for i, (status, value) in enumerate(statuses):
         comm = MagicMock(spec=Commission)
         comm.id = str(uuid.uuid4())
-        comm.reference_number = f"COM-{i+1}"
+        comm.reference_number = f"COM-{i + 1}"
         comm.seller_id = seller_id
         comm.status = status
         comm.final_commission = value
@@ -143,33 +143,39 @@ class TestDashboardKPIsEndpoint:
 
     @pytest.mark.asyncio
     async def test_get_kpis_success(
-        self, mock_user, sample_leads, sample_opportunities,
-        sample_proposals, sample_commissions
+        self, mock_user, sample_leads, sample_opportunities, sample_proposals, sample_commissions
     ):
         """Testa busca de KPIs com sucesso."""
-        with patch(
-            "modules.crm.controllers.dashboard_controller.CurrentActiveUser",
-            return_value=mock_user,
-        ), patch(
-            "modules.crm.controllers.dashboard_controller._get_all_leads",
-            new_callable=AsyncMock,
-            return_value=sample_leads,
-        ), patch(
-            "modules.crm.controllers.dashboard_controller._get_all_opportunities",
-            new_callable=AsyncMock,
-            return_value=sample_opportunities,
-        ), patch(
-            "modules.crm.controllers.dashboard_controller._get_all_proposals",
-            new_callable=AsyncMock,
-            return_value=sample_proposals,
-        ), patch(
-            "modules.crm.controllers.dashboard_controller._get_all_commissions",
-            new_callable=AsyncMock,
-            return_value=sample_commissions,
-        ), patch(
-            "core.auth.dependencies.get_current_active_user",
-            new_callable=AsyncMock,
-            return_value=mock_user,
+        with (
+            patch(
+                "modules.crm.controllers.dashboard_controller.CurrentActiveUser",
+                return_value=mock_user,
+            ),
+            patch(
+                "modules.crm.controllers.dashboard_controller._get_all_leads",
+                new_callable=AsyncMock,
+                return_value=sample_leads,
+            ),
+            patch(
+                "modules.crm.controllers.dashboard_controller._get_all_opportunities",
+                new_callable=AsyncMock,
+                return_value=sample_opportunities,
+            ),
+            patch(
+                "modules.crm.controllers.dashboard_controller._get_all_proposals",
+                new_callable=AsyncMock,
+                return_value=sample_proposals,
+            ),
+            patch(
+                "modules.crm.controllers.dashboard_controller._get_all_commissions",
+                new_callable=AsyncMock,
+                return_value=sample_commissions,
+            ),
+            patch(
+                "core.auth.dependencies.get_current_active_user",
+                new_callable=AsyncMock,
+                return_value=mock_user,
+            ),
         ):
             transport = ASGITransport(app=app)
             async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -197,14 +203,17 @@ class TestDashboardFunnelEndpoint:
     @pytest.mark.asyncio
     async def test_get_funnel_success(self, mock_user, sample_opportunities):
         """Testa busca de funil com sucesso."""
-        with patch(
-            "modules.crm.controllers.dashboard_controller._get_all_opportunities",
-            new_callable=AsyncMock,
-            return_value=sample_opportunities,
-        ), patch(
-            "core.auth.dependencies.get_current_active_user",
-            new_callable=AsyncMock,
-            return_value=mock_user,
+        with (
+            patch(
+                "modules.crm.controllers.dashboard_controller._get_all_opportunities",
+                new_callable=AsyncMock,
+                return_value=sample_opportunities,
+            ),
+            patch(
+                "core.auth.dependencies.get_current_active_user",
+                new_callable=AsyncMock,
+                return_value=mock_user,
+            ),
         ):
             transport = ASGITransport(app=app)
             async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -231,14 +240,17 @@ class TestDashboardTrendsEndpoints:
     @pytest.mark.asyncio
     async def test_get_leads_trends_success(self, mock_user, sample_leads):
         """Testa tendências de leads."""
-        with patch(
-            "modules.crm.controllers.dashboard_controller._get_all_leads",
-            new_callable=AsyncMock,
-            return_value=sample_leads,
-        ), patch(
-            "core.auth.dependencies.get_current_active_user",
-            new_callable=AsyncMock,
-            return_value=mock_user,
+        with (
+            patch(
+                "modules.crm.controllers.dashboard_controller._get_all_leads",
+                new_callable=AsyncMock,
+                return_value=sample_leads,
+            ),
+            patch(
+                "core.auth.dependencies.get_current_active_user",
+                new_callable=AsyncMock,
+                return_value=mock_user,
+            ),
         ):
             transport = ASGITransport(app=app)
             async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -272,14 +284,17 @@ class TestDashboardTrendsEndpoints:
     @pytest.mark.asyncio
     async def test_get_sales_trends_success(self, mock_user, sample_opportunities):
         """Testa tendências de vendas."""
-        with patch(
-            "modules.crm.controllers.dashboard_controller._get_all_opportunities",
-            new_callable=AsyncMock,
-            return_value=sample_opportunities,
-        ), patch(
-            "core.auth.dependencies.get_current_active_user",
-            new_callable=AsyncMock,
-            return_value=mock_user,
+        with (
+            patch(
+                "modules.crm.controllers.dashboard_controller._get_all_opportunities",
+                new_callable=AsyncMock,
+                return_value=sample_opportunities,
+            ),
+            patch(
+                "core.auth.dependencies.get_current_active_user",
+                new_callable=AsyncMock,
+                return_value=mock_user,
+            ),
         ):
             transport = ASGITransport(app=app)
             async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -293,14 +308,17 @@ class TestDashboardTrendsEndpoints:
     @pytest.mark.asyncio
     async def test_get_commissions_trends_success(self, mock_user, sample_commissions):
         """Testa tendências de comissões."""
-        with patch(
-            "modules.crm.controllers.dashboard_controller._get_all_commissions",
-            new_callable=AsyncMock,
-            return_value=sample_commissions,
-        ), patch(
-            "core.auth.dependencies.get_current_active_user",
-            new_callable=AsyncMock,
-            return_value=mock_user,
+        with (
+            patch(
+                "modules.crm.controllers.dashboard_controller._get_all_commissions",
+                new_callable=AsyncMock,
+                return_value=sample_commissions,
+            ),
+            patch(
+                "core.auth.dependencies.get_current_active_user",
+                new_callable=AsyncMock,
+                return_value=mock_user,
+            ),
         ):
             transport = ASGITransport(app=app)
             async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -318,14 +336,17 @@ class TestDashboardConversionRatesEndpoint:
     @pytest.mark.asyncio
     async def test_get_conversion_rates_success(self, mock_user, sample_opportunities):
         """Testa busca de taxas de conversão."""
-        with patch(
-            "modules.crm.controllers.dashboard_controller._get_all_opportunities",
-            new_callable=AsyncMock,
-            return_value=sample_opportunities,
-        ), patch(
-            "core.auth.dependencies.get_current_active_user",
-            new_callable=AsyncMock,
-            return_value=mock_user,
+        with (
+            patch(
+                "modules.crm.controllers.dashboard_controller._get_all_opportunities",
+                new_callable=AsyncMock,
+                return_value=sample_opportunities,
+            ),
+            patch(
+                "core.auth.dependencies.get_current_active_user",
+                new_callable=AsyncMock,
+                return_value=mock_user,
+            ),
         ):
             transport = ASGITransport(app=app)
             async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -347,22 +368,27 @@ class TestDashboardSellerPerformanceEndpoint:
         """Testa busca de performance do vendedor."""
         seller_id = str(uuid.uuid4())
 
-        with patch(
-            "modules.crm.controllers.dashboard_controller._get_all_leads",
-            new_callable=AsyncMock,
-            return_value=sample_leads,
-        ), patch(
-            "modules.crm.controllers.dashboard_controller._get_all_opportunities",
-            new_callable=AsyncMock,
-            return_value=sample_opportunities,
-        ), patch(
-            "modules.crm.controllers.dashboard_controller._get_all_commissions",
-            new_callable=AsyncMock,
-            return_value=sample_commissions,
-        ), patch(
-            "core.auth.dependencies.get_current_active_user",
-            new_callable=AsyncMock,
-            return_value=mock_user,
+        with (
+            patch(
+                "modules.crm.controllers.dashboard_controller._get_all_leads",
+                new_callable=AsyncMock,
+                return_value=sample_leads,
+            ),
+            patch(
+                "modules.crm.controllers.dashboard_controller._get_all_opportunities",
+                new_callable=AsyncMock,
+                return_value=sample_opportunities,
+            ),
+            patch(
+                "modules.crm.controllers.dashboard_controller._get_all_commissions",
+                new_callable=AsyncMock,
+                return_value=sample_commissions,
+            ),
+            patch(
+                "core.auth.dependencies.get_current_active_user",
+                new_callable=AsyncMock,
+                return_value=mock_user,
+            ),
         ):
             transport = ASGITransport(app=app)
             async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -380,22 +406,27 @@ class TestDashboardSellerPerformanceEndpoint:
         """Testa performance com meta."""
         seller_id = str(uuid.uuid4())
 
-        with patch(
-            "modules.crm.controllers.dashboard_controller._get_all_leads",
-            new_callable=AsyncMock,
-            return_value=sample_leads,
-        ), patch(
-            "modules.crm.controllers.dashboard_controller._get_all_opportunities",
-            new_callable=AsyncMock,
-            return_value=sample_opportunities,
-        ), patch(
-            "modules.crm.controllers.dashboard_controller._get_all_commissions",
-            new_callable=AsyncMock,
-            return_value=sample_commissions,
-        ), patch(
-            "core.auth.dependencies.get_current_active_user",
-            new_callable=AsyncMock,
-            return_value=mock_user,
+        with (
+            patch(
+                "modules.crm.controllers.dashboard_controller._get_all_leads",
+                new_callable=AsyncMock,
+                return_value=sample_leads,
+            ),
+            patch(
+                "modules.crm.controllers.dashboard_controller._get_all_opportunities",
+                new_callable=AsyncMock,
+                return_value=sample_opportunities,
+            ),
+            patch(
+                "modules.crm.controllers.dashboard_controller._get_all_commissions",
+                new_callable=AsyncMock,
+                return_value=sample_commissions,
+            ),
+            patch(
+                "core.auth.dependencies.get_current_active_user",
+                new_callable=AsyncMock,
+                return_value=mock_user,
+            ),
         ):
             transport = ASGITransport(app=app)
             async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -412,26 +443,29 @@ class TestDashboardTopPerformersEndpoint:
     """Testes para GET /api/v1/dashboard/top-performers."""
 
     @pytest.mark.asyncio
-    async def test_get_top_performers_success(
-        self, mock_user, sample_leads, sample_opportunities, sample_commissions
-    ):
+    async def test_get_top_performers_success(self, mock_user, sample_leads, sample_opportunities, sample_commissions):
         """Testa busca de top performers."""
-        with patch(
-            "modules.crm.controllers.dashboard_controller._get_all_leads",
-            new_callable=AsyncMock,
-            return_value=sample_leads,
-        ), patch(
-            "modules.crm.controllers.dashboard_controller._get_all_opportunities",
-            new_callable=AsyncMock,
-            return_value=sample_opportunities,
-        ), patch(
-            "modules.crm.controllers.dashboard_controller._get_all_commissions",
-            new_callable=AsyncMock,
-            return_value=sample_commissions,
-        ), patch(
-            "core.auth.dependencies.get_current_active_user",
-            new_callable=AsyncMock,
-            return_value=mock_user,
+        with (
+            patch(
+                "modules.crm.controllers.dashboard_controller._get_all_leads",
+                new_callable=AsyncMock,
+                return_value=sample_leads,
+            ),
+            patch(
+                "modules.crm.controllers.dashboard_controller._get_all_opportunities",
+                new_callable=AsyncMock,
+                return_value=sample_opportunities,
+            ),
+            patch(
+                "modules.crm.controllers.dashboard_controller._get_all_commissions",
+                new_callable=AsyncMock,
+                return_value=sample_commissions,
+            ),
+            patch(
+                "core.auth.dependencies.get_current_active_user",
+                new_callable=AsyncMock,
+                return_value=mock_user,
+            ),
         ):
             transport = ASGITransport(app=app)
             async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -448,22 +482,27 @@ class TestDashboardTopPerformersEndpoint:
         self, mock_user, sample_leads, sample_opportunities, sample_commissions
     ):
         """Testa top performers com limite customizado."""
-        with patch(
-            "modules.crm.controllers.dashboard_controller._get_all_leads",
-            new_callable=AsyncMock,
-            return_value=sample_leads,
-        ), patch(
-            "modules.crm.controllers.dashboard_controller._get_all_opportunities",
-            new_callable=AsyncMock,
-            return_value=sample_opportunities,
-        ), patch(
-            "modules.crm.controllers.dashboard_controller._get_all_commissions",
-            new_callable=AsyncMock,
-            return_value=sample_commissions,
-        ), patch(
-            "core.auth.dependencies.get_current_active_user",
-            new_callable=AsyncMock,
-            return_value=mock_user,
+        with (
+            patch(
+                "modules.crm.controllers.dashboard_controller._get_all_leads",
+                new_callable=AsyncMock,
+                return_value=sample_leads,
+            ),
+            patch(
+                "modules.crm.controllers.dashboard_controller._get_all_opportunities",
+                new_callable=AsyncMock,
+                return_value=sample_opportunities,
+            ),
+            patch(
+                "modules.crm.controllers.dashboard_controller._get_all_commissions",
+                new_callable=AsyncMock,
+                return_value=sample_commissions,
+            ),
+            patch(
+                "core.auth.dependencies.get_current_active_user",
+                new_callable=AsyncMock,
+                return_value=mock_user,
+            ),
         ):
             transport = ASGITransport(app=app)
             async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -482,14 +521,17 @@ class TestDashboardChartsEndpoints:
     @pytest.mark.asyncio
     async def test_get_leads_by_status_chart(self, mock_user, sample_leads):
         """Testa gráfico de leads por status."""
-        with patch(
-            "modules.crm.controllers.dashboard_controller._get_all_leads",
-            new_callable=AsyncMock,
-            return_value=sample_leads,
-        ), patch(
-            "core.auth.dependencies.get_current_active_user",
-            new_callable=AsyncMock,
-            return_value=mock_user,
+        with (
+            patch(
+                "modules.crm.controllers.dashboard_controller._get_all_leads",
+                new_callable=AsyncMock,
+                return_value=sample_leads,
+            ),
+            patch(
+                "core.auth.dependencies.get_current_active_user",
+                new_callable=AsyncMock,
+                return_value=mock_user,
+            ),
         ):
             transport = ASGITransport(app=app)
             async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -503,14 +545,17 @@ class TestDashboardChartsEndpoints:
     @pytest.mark.asyncio
     async def test_get_opportunities_by_stage_chart(self, mock_user, sample_opportunities):
         """Testa gráfico de opportunities por estágio."""
-        with patch(
-            "modules.crm.controllers.dashboard_controller._get_all_opportunities",
-            new_callable=AsyncMock,
-            return_value=sample_opportunities,
-        ), patch(
-            "core.auth.dependencies.get_current_active_user",
-            new_callable=AsyncMock,
-            return_value=mock_user,
+        with (
+            patch(
+                "modules.crm.controllers.dashboard_controller._get_all_opportunities",
+                new_callable=AsyncMock,
+                return_value=sample_opportunities,
+            ),
+            patch(
+                "core.auth.dependencies.get_current_active_user",
+                new_callable=AsyncMock,
+                return_value=mock_user,
+            ),
         ):
             transport = ASGITransport(app=app)
             async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -524,14 +569,17 @@ class TestDashboardChartsEndpoints:
     @pytest.mark.asyncio
     async def test_get_proposals_by_status_chart(self, mock_user, sample_proposals):
         """Testa gráfico de propostas por status."""
-        with patch(
-            "modules.crm.controllers.dashboard_controller._get_all_proposals",
-            new_callable=AsyncMock,
-            return_value=sample_proposals,
-        ), patch(
-            "core.auth.dependencies.get_current_active_user",
-            new_callable=AsyncMock,
-            return_value=mock_user,
+        with (
+            patch(
+                "modules.crm.controllers.dashboard_controller._get_all_proposals",
+                new_callable=AsyncMock,
+                return_value=sample_proposals,
+            ),
+            patch(
+                "core.auth.dependencies.get_current_active_user",
+                new_callable=AsyncMock,
+                return_value=mock_user,
+            ),
         ):
             transport = ASGITransport(app=app)
             async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -545,14 +593,17 @@ class TestDashboardChartsEndpoints:
     @pytest.mark.asyncio
     async def test_get_commissions_by_status_chart(self, mock_user, sample_commissions):
         """Testa gráfico de comissões por status."""
-        with patch(
-            "modules.crm.controllers.dashboard_controller._get_all_commissions",
-            new_callable=AsyncMock,
-            return_value=sample_commissions,
-        ), patch(
-            "core.auth.dependencies.get_current_active_user",
-            new_callable=AsyncMock,
-            return_value=mock_user,
+        with (
+            patch(
+                "modules.crm.controllers.dashboard_controller._get_all_commissions",
+                new_callable=AsyncMock,
+                return_value=sample_commissions,
+            ),
+            patch(
+                "core.auth.dependencies.get_current_active_user",
+                new_callable=AsyncMock,
+                return_value=mock_user,
+            ),
         ):
             transport = ASGITransport(app=app)
             async with AsyncClient(transport=transport, base_url="http://test") as client:

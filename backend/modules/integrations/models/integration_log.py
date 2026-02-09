@@ -3,16 +3,13 @@ IntegrationLog Model - Logs de Integração
 Sprint 32: API Gateway / Integrações
 """
 
-import enum
 from datetime import datetime
-from typing import Optional, TYPE_CHECKING
+from enum import StrEnum
+from typing import TYPE_CHECKING, Optional
 from uuid import uuid4
 
-from sqlalchemy import (
-    Column, String, Text, Boolean, DateTime,
-    Integer, Enum, ForeignKey, Index
-)
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, Index, Integer, String, Text
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 
 from core.database import Base
@@ -23,8 +20,9 @@ if TYPE_CHECKING:
     from modules.integrations.models.webhook_config import WebhookConfig
 
 
-class LogType(str, enum.Enum):
+class LogType(StrEnum):
     """Tipo de log."""
+
     API_CALL = "api_call"
     WEBHOOK_DELIVERY = "webhook_delivery"
     SYNC_OPERATION = "sync_operation"
@@ -34,8 +32,9 @@ class LogType(str, enum.Enum):
     SYSTEM = "system"
 
 
-class LogLevel(str, enum.Enum):
+class LogLevel(StrEnum):
     """Nível do log."""
+
     DEBUG = "debug"
     INFO = "info"
     WARNING = "warning"
@@ -43,8 +42,9 @@ class LogLevel(str, enum.Enum):
     CRITICAL = "critical"
 
 
-class LogStatus(str, enum.Enum):
+class LogStatus(StrEnum):
     """Status da operação logada."""
+
     SUCCESS = "success"
     FAILURE = "failure"
     PENDING = "pending"
@@ -59,27 +59,16 @@ class IntegrationLog(Base):
     Model para logs de integração.
     Registra todas as operações de integração para auditoria.
     """
+
     __tablename__ = "integration_logs"
 
     # Primary key
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
 
     # Foreign keys
-    endpoint_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("api_endpoints.id", ondelete="SET NULL"),
-        nullable=True
-    )
-    api_key_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("api_keys.id", ondelete="SET NULL"),
-        nullable=True
-    )
-    webhook_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("webhook_configs.id", ondelete="SET NULL"),
-        nullable=True
-    )
+    endpoint_id = Column(UUID(as_uuid=True), ForeignKey("api_endpoints.id", ondelete="SET NULL"), nullable=True)
+    api_key_id = Column(UUID(as_uuid=True), ForeignKey("api_keys.id", ondelete="SET NULL"), nullable=True)
+    webhook_id = Column(UUID(as_uuid=True), ForeignKey("webhook_configs.id", ondelete="SET NULL"), nullable=True)
     sync_queue_id = Column(UUID(as_uuid=True), nullable=True)
 
     # Tipo e Nível
@@ -155,15 +144,9 @@ class IntegrationLog(Base):
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
 
     # Relacionamentos
-    endpoint: Optional["APIEndpoint"] = relationship(
-        "APIEndpoint", back_populates="logs"
-    )
-    api_key: Optional["APIKey"] = relationship(
-        "APIKey", back_populates="logs"
-    )
-    webhook: Optional["WebhookConfig"] = relationship(
-        "WebhookConfig", back_populates="logs"
-    )
+    endpoint: Optional["APIEndpoint"] = relationship("APIEndpoint", back_populates="logs")
+    api_key: Optional["APIKey"] = relationship("APIKey", back_populates="logs")
+    webhook: Optional["WebhookConfig"] = relationship("WebhookConfig", back_populates="logs")
 
     # Índices
     __table_args__ = (
@@ -178,11 +161,7 @@ class IntegrationLog(Base):
         Index("ix_integration_logs_timestamp", "timestamp"),
         Index("ix_integration_logs_client_id", "client_id"),
         Index("ix_integration_logs_user_id", "user_id"),
-        Index(
-            "ix_integration_logs_timestamp_status",
-            "timestamp",
-            "status"
-        ),
+        Index("ix_integration_logs_timestamp_status", "timestamp", "status"),
     )
 
     def __repr__(self) -> str:
@@ -191,14 +170,14 @@ class IntegrationLog(Base):
     @classmethod
     def create_api_log(
         cls,
-        endpoint_id: Optional[str],
-        api_key_id: Optional[str],
+        endpoint_id: str | None,
+        api_key_id: str | None,
         method: str,
         path: str,
         status_code: int,
         duration_ms: int,
         client_ip: str,
-        **kwargs
+        **kwargs,
     ) -> "IntegrationLog":
         """Cria log de chamada de API."""
         status = LogStatus.SUCCESS if status_code < 400 else LogStatus.FAILURE
@@ -215,7 +194,7 @@ class IntegrationLog(Base):
             response_status_code=status_code,
             duration_ms=duration_ms,
             client_ip=client_ip,
-            **kwargs
+            **kwargs,
         )
 
     @classmethod
@@ -224,9 +203,9 @@ class IntegrationLog(Base):
         webhook_id: str,
         success: bool,
         duration_ms: int,
-        status_code: Optional[int] = None,
-        error_message: Optional[str] = None,
-        **kwargs
+        status_code: int | None = None,
+        error_message: str | None = None,
+        **kwargs,
     ) -> "IntegrationLog":
         """Cria log de entrega de webhook."""
         status = LogStatus.SUCCESS if success else LogStatus.FAILURE
@@ -240,16 +219,12 @@ class IntegrationLog(Base):
             response_status_code=status_code,
             duration_ms=duration_ms,
             error_message=error_message,
-            **kwargs
+            **kwargs,
         )
 
     @classmethod
     def create_error_log(
-        cls,
-        error_code: str,
-        error_message: str,
-        level: LogLevel = LogLevel.ERROR,
-        **kwargs
+        cls, error_code: str, error_message: str, level: LogLevel = LogLevel.ERROR, **kwargs
     ) -> "IntegrationLog":
         """Cria log de erro."""
         return cls(
@@ -258,17 +233,12 @@ class IntegrationLog(Base):
             status=LogStatus.FAILURE,
             error_code=error_code,
             error_message=error_message,
-            **kwargs
+            **kwargs,
         )
 
     @classmethod
     def create_auth_log(
-        cls,
-        api_key_id: Optional[str],
-        success: bool,
-        client_ip: str,
-        reason: Optional[str] = None,
-        **kwargs
+        cls, api_key_id: str | None, success: bool, client_ip: str, reason: str | None = None, **kwargs
     ) -> "IntegrationLog":
         """Cria log de autenticação."""
         status = LogStatus.SUCCESS if success else LogStatus.UNAUTHORIZED
@@ -281,17 +251,12 @@ class IntegrationLog(Base):
             status=status,
             client_ip=client_ip,
             error_message=reason if not success else None,
-            **kwargs
+            **kwargs,
         )
 
     @classmethod
     def create_rate_limit_log(
-        cls,
-        api_key_id: str,
-        client_ip: str,
-        limit_remaining: int,
-        reset_at: datetime,
-        **kwargs
+        cls, api_key_id: str, client_ip: str, limit_remaining: int, reset_at: datetime, **kwargs
     ) -> "IntegrationLog":
         """Cria log de rate limiting."""
         return cls(
@@ -302,7 +267,7 @@ class IntegrationLog(Base):
             client_ip=client_ip,
             rate_limit_remaining=limit_remaining,
             rate_limit_reset_at=reset_at,
-            **kwargs
+            **kwargs,
         )
 
     def mark_as_retry(self, original_id: str) -> None:
@@ -314,11 +279,7 @@ class IntegrationLog(Base):
     @property
     def is_error(self) -> bool:
         """Verifica se é um log de erro."""
-        return self.status in [
-            LogStatus.FAILURE,
-            LogStatus.TIMEOUT,
-            LogStatus.VALIDATION_ERROR
-        ]
+        return self.status in [LogStatus.FAILURE, LogStatus.TIMEOUT, LogStatus.VALIDATION_ERROR]
 
     @property
     def is_success(self) -> bool:

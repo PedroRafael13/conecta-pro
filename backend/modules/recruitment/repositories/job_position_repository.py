@@ -2,20 +2,19 @@
 
 import logging
 from datetime import date
-from typing import Optional, List, Tuple
 
-from sqlalchemy import select, func, and_, or_
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.recruitment.models.job_position import (
+    Department,
     JobPosition,
     PositionStatus,
-    Department,
 )
 from modules.recruitment.schemas.job_position import (
     JobPositionCreate,
-    JobPositionUpdate,
     JobPositionFilter,
+    JobPositionUpdate,
 )
 
 logger = logging.getLogger(__name__)
@@ -42,7 +41,7 @@ class JobPositionRepository:
         await self.session.flush()
         return position
 
-    async def get_by_id(self, position_id: str) -> Optional[JobPosition]:
+    async def get_by_id(self, position_id: str) -> JobPosition | None:
         """Busca vaga por ID."""
         result = await self.session.execute(
             select(JobPosition).where(
@@ -54,7 +53,7 @@ class JobPositionRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_by_code(self, code: str) -> Optional[JobPosition]:
+    async def get_by_code(self, code: str) -> JobPosition | None:
         """Busca vaga por código."""
         result = await self.session.execute(
             select(JobPosition).where(
@@ -66,9 +65,7 @@ class JobPositionRepository:
         )
         return result.scalar_one_or_none()
 
-    async def update(
-        self, position_id: str, data: JobPositionUpdate
-    ) -> Optional[JobPosition]:
+    async def update(self, position_id: str, data: JobPositionUpdate) -> JobPosition | None:
         """Atualiza uma vaga."""
         position = await self.get_by_id(position_id)
         if not position:
@@ -93,12 +90,12 @@ class JobPositionRepository:
 
     async def list_with_filters(  # pylint: disable=too-many-branches
         self,
-        filters: Optional[JobPositionFilter] = None,
+        filters: JobPositionFilter | None = None,
         skip: int = 0,
         limit: int = 20,
         order_by: str = "created_at",
         order_desc: bool = True,
-    ) -> Tuple[List[JobPosition], int]:
+    ) -> tuple[list[JobPosition], int]:
         """Lista vagas com filtros e paginação."""
         query = select(JobPosition).where(JobPosition.deleted_at.is_(None))
 
@@ -120,9 +117,7 @@ class JobPositionRepository:
             if filters.is_urgent is not None:
                 query = query.where(JobPosition.is_urgent == filters.is_urgent)
             if filters.is_confidential is not None:
-                query = query.where(
-                    JobPosition.is_confidential == filters.is_confidential
-                )
+                query = query.where(JobPosition.is_confidential == filters.is_confidential)
             if filters.salary_min:
                 query = query.where(JobPosition.salary_min >= filters.salary_min)
             if filters.salary_max:
@@ -130,9 +125,7 @@ class JobPositionRepository:
             if filters.recruiter_id:
                 query = query.where(JobPosition.recruiter_id == filters.recruiter_id)
             if filters.condominium_id:
-                query = query.where(
-                    JobPosition.condominium_id == filters.condominium_id
-                )
+                query = query.where(JobPosition.condominium_id == filters.condominium_id)
             if filters.search:
                 search_term = f"%{filters.search}%"
                 query = query.where(
@@ -163,9 +156,7 @@ class JobPositionRepository:
 
         return list(positions), total
 
-    async def get_open_positions(
-        self, condominium_id: str = None, skip: int = 0, limit: int = 20
-    ) -> List[JobPosition]:
+    async def get_open_positions(self, condominium_id: str = None, skip: int = 0, limit: int = 20) -> list[JobPosition]:
         """Retorna vagas abertas."""
         query = select(JobPosition).where(
             and_(
@@ -182,9 +173,7 @@ class JobPositionRepository:
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    async def get_by_department(
-        self, department: Department, status: PositionStatus = None
-    ) -> List[JobPosition]:
+    async def get_by_department(self, department: Department, status: PositionStatus = None) -> list[JobPosition]:
         """Retorna vagas por departamento."""
         query = select(JobPosition).where(
             and_(
@@ -198,11 +187,12 @@ class JobPositionRepository:
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    async def get_expiring_soon(self, days: int = 7) -> List[JobPosition]:
+    async def get_expiring_soon(self, days: int = 7) -> list[JobPosition]:
         """Retorna vagas próximas da expiração."""
         deadline = date.today()
         deadline_limit = date.today()
         from datetime import timedelta  # pylint: disable=import-outside-toplevel
+
         deadline_limit = deadline + timedelta(days=days)
 
         query = select(JobPosition).where(
@@ -232,7 +222,7 @@ class JobPositionRepository:
             position.increment_application()
             await self.session.flush()
 
-    async def fill_vacancy(self, position_id: str) -> Optional[JobPosition]:
+    async def fill_vacancy(self, position_id: str) -> JobPosition | None:
         """Preenche uma vaga."""
         position = await self.get_by_id(position_id)
         if position:
@@ -295,9 +285,7 @@ class JobPositionRepository:
         prefix = f"VAG-{year}-"
 
         result = await self.session.execute(
-            select(func.count())
-            .select_from(JobPosition)
-            .where(JobPosition.code.like(f"{prefix}%"))
+            select(func.count()).select_from(JobPosition).where(JobPosition.code.like(f"{prefix}%"))
         )
         count = result.scalar() or 0
         return count + 1

@@ -4,13 +4,13 @@ Schemas Pydantic para compliance LGPD.
 Modelos para requisições e respostas dos endpoints de proteção de dados.
 """
 
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 
-class DataRequestType(str, Enum):
+class DataRequestType(StrEnum):
     """Tipos de solicitação de dados LGPD."""
 
     ACCESS = "access"
@@ -20,7 +20,7 @@ class DataRequestType(str, Enum):
     RESTRICTION = "restriction"
 
 
-class DataRequestStatus(str, Enum):
+class DataRequestStatus(StrEnum):
     """Status da solicitação de dados."""
 
     PENDING = "pending"
@@ -36,10 +36,11 @@ class DataRequestCreate(BaseModel):
     request_type: DataRequestType = Field(..., description="Tipo de solicitação")
     description: str | None = Field(None, max_length=500, description="Descrição adicional da solicitação")
 
-    @validator("description")
+    @field_validator("description")
     @classmethod
-    def validate_description(cls, v, values):
+    def validate_description(cls, v: Any, info) -> Any:
         """Valida descrição baseada no tipo de solicitação."""
+        values = info.data
         request_type = values.get("request_type")
 
         # Descrição obrigatória para exclusão
@@ -221,7 +222,7 @@ class DataDeletionConfirmation(BaseModel):
     confirmation: str = Field(..., description="Confirmação exata: 'DELETE_MY_DATA'")
     reason: str | None = Field(None, max_length=200, description="Motivo da exclusão (opcional)")
 
-    @validator("confirmation")
+    @field_validator("confirmation")
     @classmethod
     def validate_confirmation(cls, v):
         """Valida confirmação de exclusão."""

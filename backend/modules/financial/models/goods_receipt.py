@@ -3,11 +3,20 @@
 import uuid
 from datetime import datetime
 from decimal import Decimal
-from enum import Enum
-from typing import TYPE_CHECKING, List, Optional
+from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
-    Boolean, Column, Date, DateTime, ForeignKey, Index, Integer, Numeric, String, Text,
+    Boolean,
+    Column,
+    Date,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    Numeric,
+    String,
+    Text,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
@@ -18,7 +27,7 @@ if TYPE_CHECKING:
     from modules.financial.models.purchase_order import PurchaseOrder
 
 
-class ReceiptStatus(str, Enum):
+class ReceiptStatus(StrEnum):
     """Status do recebimento."""
 
     PENDENTE = "pendente"
@@ -32,7 +41,7 @@ class ReceiptStatus(str, Enum):
     FINALIZADO = "finalizado"
 
 
-class ReceiptType(str, Enum):
+class ReceiptType(StrEnum):
     """Tipo de recebimento."""
 
     NORMAL = "normal"
@@ -43,7 +52,7 @@ class ReceiptType(str, Enum):
     CONSIGNACAO = "consignacao"
 
 
-class InspectionResult(str, Enum):
+class InspectionResult(StrEnum):
     """Resultado da inspeção."""
 
     APROVADO = "aprovado"
@@ -163,7 +172,7 @@ class GoodsReceipt(Base):
 
     # Relacionamentos
     order: "PurchaseOrder" = relationship("PurchaseOrder", back_populates="receipts")
-    items: List["GoodsReceiptItem"] = relationship(
+    items: list["GoodsReceiptItem"] = relationship(
         "GoodsReceiptItem",
         back_populates="receipt",
         cascade="all, delete-orphan",
@@ -211,7 +220,7 @@ class GoodsReceipt(Base):
         return len(self.items) if self.items else 0
 
     @property
-    def acceptance_rate(self) -> Optional[Decimal]:
+    def acceptance_rate(self) -> Decimal | None:
         """Taxa de aceitação (%)."""
         if self.total_received and self.total_received > 0:
             return (self.total_accepted / self.total_received) * 100
@@ -228,15 +237,13 @@ class GoodsReceipt(Base):
         self.inspected_by = inspector_id
         self.inspection_date = datetime.utcnow()
 
-    def complete_inspection(
-        self, result: str, notes: Optional[str] = None
-    ) -> None:
+    def complete_inspection(self, result: str, notes: str | None = None) -> None:
         """Conclui conferência."""
         self.status = ReceiptStatus.CONFERIDO.value
         self.inspection_result = result
         self.inspection_notes = notes
 
-    def approve(self, approver_id: uuid.UUID, notes: Optional[str] = None) -> None:
+    def approve(self, approver_id: uuid.UUID, notes: str | None = None) -> None:
         """Aprova o recebimento."""
         self.status = ReceiptStatus.APROVADO.value
         self.approved_by = approver_id
@@ -254,7 +261,7 @@ class GoodsReceipt(Base):
         self,
         divergence_type: str,
         description: str,
-        action: Optional[str] = None,
+        action: str | None = None,
     ) -> None:
         """Marca com divergência."""
         self.status = ReceiptStatus.COM_DIVERGENCIA.value
@@ -279,7 +286,7 @@ class GoodsReceipt(Base):
         self,
         receiver_name: str,
         receiver_document: str,
-        signature: Optional[str] = None,
+        signature: str | None = None,
     ) -> None:
         """Registra assinatura do recebimento."""
         self.receiver_name = receiver_name
@@ -355,9 +362,7 @@ class GoodsReceiptItem(Base):
     )
 
     # Produto
-    product_id = Column(
-        UUID(as_uuid=True), ForeignKey("products.id"), nullable=True, index=True
-    )
+    product_id = Column(UUID(as_uuid=True), ForeignKey("products.id"), nullable=True, index=True)
 
     # Identificação
     item_number = Column(Integer, nullable=False)
@@ -431,7 +436,7 @@ class GoodsReceiptItem(Base):
         return self.quantity_rejected > 0 if self.quantity_rejected else False
 
     @property
-    def acceptance_rate(self) -> Optional[Decimal]:
+    def acceptance_rate(self) -> Decimal | None:
         """Taxa de aceitação do item (%)."""
         if self.quantity_received and self.quantity_received > 0:
             return (self.quantity_accepted / self.quantity_received) * 100
@@ -447,8 +452,8 @@ class GoodsReceiptItem(Base):
     def receive(
         self,
         quantity: Decimal,
-        accepted: Optional[Decimal] = None,
-        rejected: Optional[Decimal] = None,
+        accepted: Decimal | None = None,
+        rejected: Decimal | None = None,
     ) -> None:
         """Registra recebimento do item."""
         self.quantity_received = quantity
@@ -472,9 +477,7 @@ class GoodsReceiptItem(Base):
         self.inspection_result = InspectionResult.REPROVADO.value
         self._calculate_totals()
 
-    def partial_accept(
-        self, accepted: Decimal, rejected: Decimal, rejection_reason: Optional[str] = None
-    ) -> None:
+    def partial_accept(self, accepted: Decimal, rejected: Decimal, rejection_reason: str | None = None) -> None:
         """Aceita parcialmente."""
         self.quantity_accepted = accepted
         self.quantity_rejected = rejected

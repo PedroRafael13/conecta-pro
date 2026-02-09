@@ -3,7 +3,6 @@ Repository para operações de banco de dados com Substitution.
 """
 
 from datetime import datetime
-from typing import Optional
 from uuid import uuid4
 
 from sqlalchemy import func, select
@@ -24,9 +23,7 @@ class SubstitutionRepository:
     def __init__(self, db: AsyncSession) -> None:
         self.db = db
 
-    async def create(
-        self, data: SubstitutionCreate, requested_by: Optional[str] = None
-    ) -> Substitution:
+    async def create(self, data: SubstitutionCreate, requested_by: str | None = None) -> Substitution:
         """
         Cria uma nova substituição.
 
@@ -58,7 +55,7 @@ class SubstitutionRepository:
         logger.info(f"Substitution criada: {substitution.id}")
         return substitution
 
-    async def get_by_id(self, substitution_id: str) -> Optional[Substitution]:
+    async def get_by_id(self, substitution_id: str) -> Substitution | None:
         """
         Busca substituição por ID.
 
@@ -76,7 +73,7 @@ class SubstitutionRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_by_shift(self, shift_id: str) -> Optional[Substitution]:
+    async def get_by_shift(self, shift_id: str) -> Substitution | None:
         """
         Busca substituição por turno.
 
@@ -96,7 +93,7 @@ class SubstitutionRepository:
 
     async def list(
         self,
-        filters: Optional[SubstitutionFilter] = None,
+        filters: SubstitutionFilter | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[Substitution], int]:
@@ -145,9 +142,7 @@ class SubstitutionRepository:
             query = query.where(Substitution.original_employee_id == filters.original_employee_id)
 
         if filters.substitute_employee_id:
-            query = query.where(
-                Substitution.substitute_employee_id == filters.substitute_employee_id
-            )
+            query = query.where(Substitution.substitute_employee_id == filters.substitute_employee_id)
 
         if filters.status:
             query = query.where(Substitution.status == filters.status.value)
@@ -172,9 +167,7 @@ class SubstitutionRepository:
 
         return query
 
-    async def update(
-        self, substitution_id: str, data: SubstitutionUpdate
-    ) -> Optional[Substitution]:
+    async def update(self, substitution_id: str, data: SubstitutionUpdate) -> Substitution | None:
         """
         Atualiza uma substituição.
 
@@ -209,9 +202,9 @@ class SubstitutionRepository:
         self,
         substitution_id: str,
         substitute_employee_id: str,
-        approved_by: Optional[str] = None,
-        notes: Optional[str] = None,
-    ) -> Optional[Substitution]:
+        approved_by: str | None = None,
+        notes: str | None = None,
+    ) -> Substitution | None:
         """
         Confirma uma substituição.
 
@@ -250,7 +243,7 @@ class SubstitutionRepository:
         self,
         substitution_id: str,
         rejection_reason: str,
-    ) -> Optional[Substitution]:
+    ) -> Substitution | None:
         """
         Rejeita uma substituição.
 
@@ -280,7 +273,7 @@ class SubstitutionRepository:
         substitution_id: str,
         overtime_hours: float = 0,  # pylint: disable=unused-argument
         additional_cost: float = 0,  # pylint: disable=unused-argument
-    ) -> Optional[Substitution]:
+    ) -> Substitution | None:
         """
         Marca substituição como concluída.
 
@@ -336,7 +329,7 @@ class SubstitutionRepository:
         logger.info(f"Substitution deletada (soft): {substitution.id}")
         return True
 
-    async def get_pending_count(self, post_id: Optional[str] = None) -> int:
+    async def get_pending_count(self, post_id: str | None = None) -> int:
         """
         Conta substituições pendentes.
 

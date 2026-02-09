@@ -5,60 +5,63 @@ Schemas de Visita - Modulo Campo
 Pydantic schemas para validacao e serializacao de Visitas.
 """
 
-from datetime import date, time, datetime
+from datetime import date, datetime, time
 from decimal import Decimal
-from typing import Optional, List, Any
+from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field, ConfigDict
-
+from pydantic import BaseModel, ConfigDict, Field
 
 # =============================================================================
 # ENUMS (importados do model)
 # =============================================================================
 from modules.campo.models.visita import (
-    TipoVisita,
-    StatusVisita,
-    ResultadoVisita,
-    TipoResponsavel,
     OrigemVisita,
+    ResultadoVisita,
+    StatusVisita,
+    TipoResponsavel,
+    TipoVisita,
 )
-
 
 # =============================================================================
 # SCHEMAS AUXILIARES
 # =============================================================================
 
+
 class InteresseServico(BaseModel):
     """Schema para interesse em servico."""
-    servico_id: Optional[UUID] = None
+
+    servico_id: UUID | None = None
     nome: str
     interesse_nivel: int = Field(..., ge=1, le=5)
 
 
 class NecessidadeItem(BaseModel):
     """Schema para necessidade identificada."""
+
     categoria: str
     descricao: str
     prioridade: int = Field(3, ge=1, le=5)
-    estimativa_valor: Optional[Decimal] = None
+    estimativa_valor: Decimal | None = None
 
 
 class LevantamentoTecnico(BaseModel):
     """Schema para levantamento tecnico."""
-    area_m2: Optional[float] = None
-    pavimentos: Optional[int] = None
-    cameras_existentes: Optional[int] = None
-    pontos_acesso: Optional[int] = None
-    necessidades: Optional[List[str]] = None
-    infraestrutura_existente: Optional[str] = None
-    observacoes_tecnicas: Optional[str] = None
+
+    area_m2: float | None = None
+    pavimentos: int | None = None
+    cameras_existentes: int | None = None
+    pontos_acesso: int | None = None
+    necessidades: list[str] | None = None
+    infraestrutura_existente: str | None = None
+    observacoes_tecnicas: str | None = None
 
 
 class FotoVisita(BaseModel):
     """Schema para foto da visita."""
+
     url: str
-    descricao: Optional[str] = None
+    descricao: str | None = None
     tipo: str = "geral"
 
 
@@ -66,8 +69,10 @@ class FotoVisita(BaseModel):
 # CREATE SCHEMAS
 # =============================================================================
 
+
 class VisitaCreate(BaseModel):
     """Schema para criacao de Visita."""
+
     model_config = ConfigDict(from_attributes=True)
 
     # Classificacao
@@ -77,104 +82,107 @@ class VisitaCreate(BaseModel):
     # Responsavel
     responsavel_id: UUID
     responsavel_tipo: TipoResponsavel = TipoResponsavel.VENDEDOR
-    responsavel_nome: Optional[str] = Field(None, max_length=200)
+    responsavel_nome: str | None = Field(None, max_length=200)
 
     # Cliente existente (opcional)
-    cliente_id: Optional[UUID] = None
-    contrato_id: Optional[UUID] = None
+    cliente_id: UUID | None = None
+    contrato_id: UUID | None = None
 
     # Prospect (se nao for cliente)
     is_prospect: bool = False
-    prospect_nome: Optional[str] = Field(None, max_length=200)
-    prospect_empresa: Optional[str] = Field(None, max_length=200)
-    prospect_cargo: Optional[str] = Field(None, max_length=100)
-    prospect_telefone: Optional[str] = Field(None, max_length=20)
-    prospect_celular: Optional[str] = Field(None, max_length=20)
-    prospect_email: Optional[str] = Field(None, max_length=255)
-    prospect_cnpj: Optional[str] = Field(None, max_length=20)
-    prospect_cpf: Optional[str] = Field(None, max_length=15)
+    prospect_nome: str | None = Field(None, max_length=200)
+    prospect_empresa: str | None = Field(None, max_length=200)
+    prospect_cargo: str | None = Field(None, max_length=100)
+    prospect_telefone: str | None = Field(None, max_length=20)
+    prospect_celular: str | None = Field(None, max_length=20)
+    prospect_email: str | None = Field(None, max_length=255)
+    prospect_cnpj: str | None = Field(None, max_length=20)
+    prospect_cpf: str | None = Field(None, max_length=15)
 
     # Lead/Oportunidade
-    lead_id: Optional[UUID] = None
-    oportunidade_id: Optional[UUID] = None
+    lead_id: UUID | None = None
+    oportunidade_id: UUID | None = None
 
     # Localizacao
     endereco: str = Field(..., min_length=5, max_length=500)
-    endereco_complemento: Optional[str] = Field(None, max_length=200)
-    bairro: Optional[str] = Field(None, max_length=100)
-    cidade: Optional[str] = Field(None, max_length=100)
-    estado: Optional[str] = Field(None, max_length=2)
-    cep: Optional[str] = Field(None, max_length=10)
-    latitude: Optional[Decimal] = None
-    longitude: Optional[Decimal] = None
-    ponto_referencia: Optional[str] = Field(None, max_length=300)
+    endereco_complemento: str | None = Field(None, max_length=200)
+    bairro: str | None = Field(None, max_length=100)
+    cidade: str | None = Field(None, max_length=100)
+    estado: str | None = Field(None, max_length=2)
+    cep: str | None = Field(None, max_length=10)
+    latitude: Decimal | None = None
+    longitude: Decimal | None = None
+    ponto_referencia: str | None = Field(None, max_length=300)
 
     # Agendamento
     data_visita: date
     horario_inicio: time
-    horario_fim: Optional[time] = None
+    horario_fim: time | None = None
     duracao_prevista_minutos: int = 60
 
     # Descricao
-    objetivo: Optional[str] = None
+    objetivo: str | None = None
 
     # Metadata
-    tags: Optional[List[str]] = None
+    tags: list[str] | None = None
 
 
 class VisitaUpdate(BaseModel):
     """Schema para atualizacao de Visita."""
+
     model_config = ConfigDict(from_attributes=True)
 
-    tipo: Optional[TipoVisita] = None
+    tipo: TipoVisita | None = None
 
     # Responsavel
-    responsavel_id: Optional[UUID] = None
-    responsavel_tipo: Optional[TipoResponsavel] = None
+    responsavel_id: UUID | None = None
+    responsavel_tipo: TipoResponsavel | None = None
 
     # Prospect
-    prospect_nome: Optional[str] = Field(None, max_length=200)
-    prospect_empresa: Optional[str] = Field(None, max_length=200)
-    prospect_telefone: Optional[str] = Field(None, max_length=20)
-    prospect_celular: Optional[str] = Field(None, max_length=20)
-    prospect_email: Optional[str] = Field(None, max_length=255)
+    prospect_nome: str | None = Field(None, max_length=200)
+    prospect_empresa: str | None = Field(None, max_length=200)
+    prospect_telefone: str | None = Field(None, max_length=20)
+    prospect_celular: str | None = Field(None, max_length=20)
+    prospect_email: str | None = Field(None, max_length=255)
 
     # Localizacao
-    endereco: Optional[str] = Field(None, max_length=500)
-    endereco_complemento: Optional[str] = Field(None, max_length=200)
-    bairro: Optional[str] = Field(None, max_length=100)
-    cidade: Optional[str] = Field(None, max_length=100)
-    estado: Optional[str] = Field(None, max_length=2)
-    cep: Optional[str] = Field(None, max_length=10)
-    latitude: Optional[Decimal] = None
-    longitude: Optional[Decimal] = None
+    endereco: str | None = Field(None, max_length=500)
+    endereco_complemento: str | None = Field(None, max_length=200)
+    bairro: str | None = Field(None, max_length=100)
+    cidade: str | None = Field(None, max_length=100)
+    estado: str | None = Field(None, max_length=2)
+    cep: str | None = Field(None, max_length=10)
+    latitude: Decimal | None = None
+    longitude: Decimal | None = None
 
     # Agendamento
-    data_visita: Optional[date] = None
-    horario_inicio: Optional[time] = None
-    horario_fim: Optional[time] = None
-    duracao_prevista_minutos: Optional[int] = None
+    data_visita: date | None = None
+    horario_inicio: time | None = None
+    horario_fim: time | None = None
+    duracao_prevista_minutos: int | None = None
 
     # Descricao
-    objetivo: Optional[str] = None
-    descricao_atendimento: Optional[str] = None
-    observacoes: Optional[str] = None
-    proximos_passos: Optional[str] = None
+    objetivo: str | None = None
+    descricao_atendimento: str | None = None
+    observacoes: str | None = None
+    proximos_passos: str | None = None
 
     # Levantamento
-    levantamento: Optional[LevantamentoTecnico] = None
-    necessidades_identificadas: Optional[List[NecessidadeItem]] = None
+    levantamento: LevantamentoTecnico | None = None
+    necessidades_identificadas: list[NecessidadeItem] | None = None
 
     # Metadata
-    tags: Optional[List[str]] = None
+    tags: list[str] | None = None
 
 
 # =============================================================================
 # READ SCHEMAS
 # =============================================================================
 
+
 class VisitaRead(BaseModel):
     """Schema completo de leitura de Visita."""
+
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
@@ -186,75 +194,75 @@ class VisitaRead(BaseModel):
     # Responsavel
     responsavel_id: UUID
     responsavel_tipo: TipoResponsavel
-    responsavel_nome: Optional[str] = None
+    responsavel_nome: str | None = None
 
     # Cliente
-    cliente_id: Optional[UUID] = None
-    contrato_id: Optional[UUID] = None
+    cliente_id: UUID | None = None
+    contrato_id: UUID | None = None
 
     # Prospect
     is_prospect: bool
-    prospect_nome: Optional[str] = None
-    prospect_empresa: Optional[str] = None
-    prospect_telefone: Optional[str] = None
-    prospect_email: Optional[str] = None
+    prospect_nome: str | None = None
+    prospect_empresa: str | None = None
+    prospect_telefone: str | None = None
+    prospect_email: str | None = None
 
     # Lead/Oportunidade
-    lead_id: Optional[UUID] = None
-    oportunidade_id: Optional[UUID] = None
+    lead_id: UUID | None = None
+    oportunidade_id: UUID | None = None
 
     # Localizacao
     endereco: str
-    cidade: Optional[str] = None
-    estado: Optional[str] = None
-    latitude: Optional[Decimal] = None
-    longitude: Optional[Decimal] = None
+    cidade: str | None = None
+    estado: str | None = None
+    latitude: Decimal | None = None
+    longitude: Decimal | None = None
 
     # Agendamento
     data_visita: date
     horario_inicio: time
-    horario_fim: Optional[time] = None
-    duracao_prevista_minutos: Optional[int] = None
+    horario_fim: time | None = None
+    duracao_prevista_minutos: int | None = None
 
     # Confirmacao
     confirmada: bool = False
-    confirmada_at: Optional[datetime] = None
+    confirmada_at: datetime | None = None
 
     # Execucao
-    checkin_at: Optional[datetime] = None
-    checkout_at: Optional[datetime] = None
-    duracao_real_minutos: Optional[int] = None
+    checkin_at: datetime | None = None
+    checkout_at: datetime | None = None
+    duracao_real_minutos: int | None = None
 
     # Resultado
-    resultado: Optional[ResultadoVisita] = None
-    objetivo: Optional[str] = None
-    descricao_atendimento: Optional[str] = None
-    proximos_passos: Optional[str] = None
+    resultado: ResultadoVisita | None = None
+    objetivo: str | None = None
+    descricao_atendimento: str | None = None
+    proximos_passos: str | None = None
 
     # Conversao
-    interesse_nivel: Optional[int] = None
+    interesse_nivel: int | None = None
     proposta_gerada: bool = False
-    proposta_id: Optional[UUID] = None
-    proposta_valor: Optional[Decimal] = None
+    proposta_id: UUID | None = None
+    proposta_valor: Decimal | None = None
     contrato_fechado: bool = False
 
     # Levantamento
-    levantamento: Optional[dict] = None
-    necessidades_identificadas: Optional[List[Any]] = None
+    levantamento: dict | None = None
+    necessidades_identificadas: list[Any] | None = None
 
     # Fotos
-    fotos: Optional[List[Any]] = None
+    fotos: list[Any] | None = None
 
     # Follow-up
     followup_agendado: bool = False
-    followup_data: Optional[date] = None
-    followup_tipo: Optional[str] = None
+    followup_data: date | None = None
+    followup_tipo: str | None = None
 
     # Reagendamento
     reagendamentos: int = 0
 
     # Metadata
-    tags: Optional[List[str]] = None
+    tags: list[str] | None = None
     created_at: datetime
     updated_at: datetime
     is_active: bool
@@ -262,6 +270,7 @@ class VisitaRead(BaseModel):
 
 class VisitaListItem(BaseModel):
     """Schema resumido para listagem de Visitas."""
+
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
@@ -270,16 +279,16 @@ class VisitaListItem(BaseModel):
     status: StatusVisita
 
     responsavel_id: UUID
-    responsavel_nome: Optional[str] = None
+    responsavel_nome: str | None = None
 
     # Contato
-    cliente_id: Optional[UUID] = None
-    prospect_nome: Optional[str] = None
-    prospect_empresa: Optional[str] = None
+    cliente_id: UUID | None = None
+    prospect_nome: str | None = None
+    prospect_empresa: str | None = None
 
     # Local
     endereco: str
-    cidade: Optional[str] = None
+    cidade: str | None = None
 
     # Agendamento
     data_visita: date
@@ -287,7 +296,7 @@ class VisitaListItem(BaseModel):
     confirmada: bool = False
 
     # Resultado
-    resultado: Optional[ResultadoVisita] = None
+    resultado: ResultadoVisita | None = None
     proposta_gerada: bool = False
 
     created_at: datetime
@@ -297,37 +306,44 @@ class VisitaListItem(BaseModel):
 # ACTION SCHEMAS
 # =============================================================================
 
+
 class VisitaConfirmarRequest(BaseModel):
     """Schema para confirmar visita."""
-    confirmado_por: Optional[str] = Field(None, max_length=100)
+
+    confirmado_por: str | None = Field(None, max_length=100)
 
 
 class VisitaCheckinRequest(BaseModel):
     """Schema para check-in."""
-    latitude: Optional[Decimal] = None
-    longitude: Optional[Decimal] = None
+
+    latitude: Decimal | None = None
+    longitude: Decimal | None = None
 
 
 class VisitaCheckoutRequest(BaseModel):
     """Schema para check-out."""
-    latitude: Optional[Decimal] = None
-    longitude: Optional[Decimal] = None
+
+    latitude: Decimal | None = None
+    longitude: Decimal | None = None
 
 
 class VisitaResultadoRequest(BaseModel):
     """Schema para registrar resultado."""
+
     resultado: ResultadoVisita
-    descricao_atendimento: Optional[str] = None
-    proximos_passos: Optional[str] = None
+    descricao_atendimento: str | None = None
+    proximos_passos: str | None = None
 
 
 class VisitaCancelarRequest(BaseModel):
     """Schema para cancelar visita."""
+
     motivo: str = Field(..., min_length=5, max_length=300)
 
 
 class VisitaReagendarRequest(BaseModel):
     """Schema para reagendar visita."""
+
     nova_data: date
     novo_horario: time
     motivo: str = Field(..., min_length=5, max_length=300)
@@ -335,40 +351,46 @@ class VisitaReagendarRequest(BaseModel):
 
 class VisitaInteresseRequest(BaseModel):
     """Schema para registrar interesse."""
+
     nivel: int = Field(..., ge=1, le=5)
-    servicos: Optional[List[InteresseServico]] = None
+    servicos: list[InteresseServico] | None = None
 
 
 class VisitaPropostaRequest(BaseModel):
     """Schema para vincular proposta."""
+
     proposta_id: UUID
     valor: Decimal
 
 
 class VisitaLevantamentoRequest(BaseModel):
     """Schema para registrar levantamento tecnico."""
+
     dados: LevantamentoTecnico
 
 
 class VisitaNecessidadeRequest(BaseModel):
     """Schema para adicionar necessidade."""
+
     categoria: str
     descricao: str
     prioridade: int = Field(3, ge=1, le=5)
-    estimativa_valor: Optional[Decimal] = None
+    estimativa_valor: Decimal | None = None
 
 
 class VisitaFollowupRequest(BaseModel):
     """Schema para agendar follow-up."""
+
     data: date
     tipo: str = Field(..., max_length=50)
-    observacoes: Optional[str] = None
+    observacoes: str | None = None
 
 
 class VisitaFotoRequest(BaseModel):
     """Schema para adicionar foto."""
+
     url: str
-    descricao: Optional[str] = None
+    descricao: str | None = None
     tipo: str = "geral"
 
 
@@ -376,38 +398,42 @@ class VisitaFotoRequest(BaseModel):
 # FILTER SCHEMAS
 # =============================================================================
 
+
 class VisitaFiltro(BaseModel):
     """Schema para filtros de busca de Visitas."""
-    tipo: Optional[TipoVisita] = None
-    status: Optional[StatusVisita] = None
-    resultado: Optional[ResultadoVisita] = None
-    origem: Optional[OrigemVisita] = None
 
-    responsavel_id: Optional[UUID] = None
-    responsavel_tipo: Optional[TipoResponsavel] = None
-    cliente_id: Optional[UUID] = None
-    lead_id: Optional[UUID] = None
+    tipo: TipoVisita | None = None
+    status: StatusVisita | None = None
+    resultado: ResultadoVisita | None = None
+    origem: OrigemVisita | None = None
 
-    data_inicio: Optional[date] = None
-    data_fim: Optional[date] = None
+    responsavel_id: UUID | None = None
+    responsavel_tipo: TipoResponsavel | None = None
+    cliente_id: UUID | None = None
+    lead_id: UUID | None = None
 
-    cidade: Optional[str] = None
-    estado: Optional[str] = None
+    data_inicio: date | None = None
+    data_fim: date | None = None
 
-    confirmada: Optional[bool] = None
-    proposta_gerada: Optional[bool] = None
-    contrato_fechado: Optional[bool] = None
+    cidade: str | None = None
+    estado: str | None = None
 
-    busca: Optional[str] = None  # Busca por numero, prospect, empresa
+    confirmada: bool | None = None
+    proposta_gerada: bool | None = None
+    contrato_fechado: bool | None = None
+
+    busca: str | None = None  # Busca por numero, prospect, empresa
 
 
 # =============================================================================
 # RESPONSE SCHEMAS
 # =============================================================================
 
+
 class VisitaPaginatedResponse(BaseModel):
     """Response paginado de Visitas."""
-    items: List[VisitaListItem]
+
+    items: list[VisitaListItem]
     total: int
     page: int
     page_size: int
@@ -416,12 +442,13 @@ class VisitaPaginatedResponse(BaseModel):
 
 class VisitaDashboardStats(BaseModel):
     """Estatisticas para dashboard de Visitas."""
+
     total_agendadas: int = 0
     total_confirmadas: int = 0
     total_realizadas_hoje: int = 0
     total_realizadas_mes: int = 0
     total_canceladas_mes: int = 0
-    taxa_comparecimento: Optional[float] = None
-    taxa_conversao_proposta: Optional[float] = None
-    taxa_conversao_contrato: Optional[float] = None
-    interesse_medio: Optional[float] = None
+    taxa_comparecimento: float | None = None
+    taxa_conversao_proposta: float | None = None
+    taxa_conversao_contrato: float | None = None
+    interesse_medio: float | None = None

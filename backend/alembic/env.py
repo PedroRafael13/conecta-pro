@@ -16,60 +16,59 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from core.config import settings
 from core.models import Base
 
+# Campo models
+from modules.campo.models import (  # noqa: F401
+    AccessLog,
+    CampoTecnico,
+    EquipmentStatus,
+    GuardianOccurrence,
+    GuardianSync,
+)
+from modules.campo.models.checklist import (  # noqa: F401
+    ChecklistItem,
+    ChecklistPreenchido,
+    ChecklistResposta,
+    ChecklistTemplate,
+)
+
+# Campo - OS, Visitas, Checklists
+from modules.campo.models.ordem_servico import OrdemServico  # noqa: F401
+from modules.campo.models.visita import Visita  # noqa: F401
+
 # Import all models for autogenerate
 from modules.crm.models import (  # noqa: F401
     Lead,
     Opportunity,
     Proposal,
+    ProposalApproval,
     ProposalItem,
     ProposalTemplate,
-    ProposalApproval,
-)
-
-from modules.operacional.models import (  # noqa: F401
-    Post,
-    Scale,
-    Shift,
-    Allocation,
-    Substitution,
-    TimeBank,
 )
 
 # Diaristas models
 from modules.operacional.diaristas.models import (  # noqa: F401
     Diarist,
     DiaristAssignment,
-    DiaristSchedule,
-    DiaristPayment,
     DiaristEvaluation,
+    DiaristPayment,
+    DiaristSchedule,
 )
 
 # Diaristas fiscal models
 from modules.operacional.diaristas.models.documento_fiscal import (  # noqa: F401
     DocumentoFiscal,
-    RetencaoFiscal,
     EventoESocial,
+    RetencaoFiscal,
     TabelaINSS,
     TabelaIRRF,
 )
-
-# Campo models
-from modules.campo.models import (  # noqa: F401
-    CampoTecnico,
-    AccessLog,
-    EquipmentStatus,
-    GuardianOccurrence,
-    GuardianSync,
-)
-
-# Campo - OS, Visitas, Checklists
-from modules.campo.models.ordem_servico import OrdemServico  # noqa: F401
-from modules.campo.models.visita import Visita  # noqa: F401
-from modules.campo.models.checklist import (  # noqa: F401
-    ChecklistTemplate,
-    ChecklistItem,
-    ChecklistPreenchido,
-    ChecklistResposta,
+from modules.operacional.models import (  # noqa: F401
+    Allocation,
+    Post,
+    Scale,
+    Shift,
+    Substitution,
+    TimeBank,
 )
 
 # Alembic Config object

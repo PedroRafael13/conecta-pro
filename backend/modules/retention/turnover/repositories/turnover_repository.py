@@ -8,7 +8,7 @@ persistencia das predicoes de turnover, fatores de risco e alertas.
 import logging
 from datetime import datetime, timedelta
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import and_, delete, func, or_, select, update
@@ -21,7 +21,6 @@ from modules.retention.turnover.models.turnover_models import (
     NivelRisco,
     RiskAlert,
     RiskFactor,
-    TipoAlerta,
     TurnoverPrediction,
 )
 from modules.retention.turnover.schemas.turnover_schemas import (
@@ -73,16 +72,13 @@ class TurnoverRepository:
         self.session.add(prediction)
         await self.session.flush()
         await self.session.refresh(prediction)
-        logger.info(
-            f"Predicao criada: funcionario={data.funcionario_id}, "
-            f"score={data.score_risco}"
-        )
+        logger.info(f"Predicao criada: funcionario={data.funcionario_id}, score={data.score_risco}")
         return prediction
 
     async def get_prediction_by_id(
         self,
         prediction_id: UUID,
-    ) -> Optional[TurnoverPrediction]:
+    ) -> TurnoverPrediction | None:
         """Busca predicao por ID."""
         result = await self.session.execute(
             select(TurnoverPrediction)
@@ -99,7 +95,7 @@ class TurnoverRepository:
     async def get_latest_prediction(
         self,
         funcionario_id: UUID,
-    ) -> Optional[TurnoverPrediction]:
+    ) -> TurnoverPrediction | None:
         """Busca a predicao mais recente de um funcionario."""
         result = await self.session.execute(
             select(TurnoverPrediction)
@@ -120,7 +116,7 @@ class TurnoverRepository:
         self,
         funcionario_id: UUID,
         limit: int = 30,
-    ) -> List[TurnoverPrediction]:
+    ) -> list[TurnoverPrediction]:
         """Busca historico de predicoes de um funcionario."""
         result = await self.session.execute(
             select(TurnoverPrediction)
@@ -143,7 +139,7 @@ class TurnoverRepository:
         limit: int = 50,
         order_by: str = "score_risco",
         order_desc: bool = True,
-    ) -> Tuple[List[TurnoverPrediction], int]:
+    ) -> tuple[list[TurnoverPrediction], int]:
         """
         Lista predicoes com filtros e paginacao.
 
@@ -171,27 +167,19 @@ class TurnoverRepository:
             query = query.where(TurnoverPrediction.nivel == filters.nivel)
 
         if filters.score_minimo is not None:
-            query = query.where(
-                TurnoverPrediction.score_risco >= filters.score_minimo
-            )
+            query = query.where(TurnoverPrediction.score_risco >= filters.score_minimo)
 
         if filters.score_maximo is not None:
-            query = query.where(
-                TurnoverPrediction.score_risco <= filters.score_maximo
-            )
+            query = query.where(TurnoverPrediction.score_risco <= filters.score_maximo)
 
         if filters.apenas_alerta:
             query = query.where(TurnoverPrediction.score_risco >= 70)
 
         if filters.data_inicio:
-            query = query.where(
-                TurnoverPrediction.data_calculo >= filters.data_inicio
-            )
+            query = query.where(TurnoverPrediction.data_calculo >= filters.data_inicio)
 
         if filters.data_fim:
-            query = query.where(
-                TurnoverPrediction.data_calculo <= filters.data_fim
-            )
+            query = query.where(TurnoverPrediction.data_calculo <= filters.data_fim)
 
         # Contagem total
         count_query = select(func.count()).select_from(query.subquery())
@@ -199,9 +187,7 @@ class TurnoverRepository:
         total = total_result.scalar() or 0
 
         # Ordenacao
-        order_column = getattr(
-            TurnoverPrediction, order_by, TurnoverPrediction.score_risco
-        )
+        order_column = getattr(TurnoverPrediction, order_by, TurnoverPrediction.score_risco)
         if order_desc:
             query = query.order_by(order_column.desc())
         else:
@@ -238,7 +224,7 @@ class TurnoverRepository:
         condominium_id: UUID,
         nivel: NivelRisco,
         limit: int = 100,
-    ) -> List[TurnoverPrediction]:
+    ) -> list[TurnoverPrediction]:
         """Busca predicoes por nivel de risco."""
         result = await self.session.execute(
             select(TurnoverPrediction)
@@ -259,12 +245,11 @@ class TurnoverRepository:
     async def get_funcionarios_sem_predicao(
         self,
         condominium_id: UUID,
-        funcionario_ids: List[UUID],
-    ) -> List[UUID]:
+        funcionario_ids: list[UUID],
+    ) -> list[UUID]:
         """Retorna funcionarios que nao tem predicao ativa."""
         result = await self.session.execute(
-            select(TurnoverPrediction.funcionario_id)
-            .where(
+            select(TurnoverPrediction.funcionario_id).where(
                 and_(
                     TurnoverPrediction.condominium_id == condominium_id,
                     TurnoverPrediction.funcionario_id.in_(funcionario_ids),
@@ -282,8 +267,8 @@ class TurnoverRepository:
 
     async def create_risk_factors(
         self,
-        fatores: List[RiskFactorCreate],
-    ) -> List[RiskFactor]:
+        fatores: list[RiskFactorCreate],
+    ) -> list[RiskFactor]:
         """Cria multiplos fatores de risco."""
         risk_factors = [
             RiskFactor(
@@ -308,7 +293,7 @@ class TurnoverRepository:
     async def get_factors_by_prediction(
         self,
         prediction_id: UUID,
-    ) -> List[RiskFactor]:
+    ) -> list[RiskFactor]:
         """Busca fatores de uma predicao."""
         result = await self.session.execute(
             select(RiskFactor)
@@ -320,8 +305,8 @@ class TurnoverRepository:
     async def get_aggregated_factors(
         self,
         condominium_id: UUID,
-        categoria: Optional[CategoriaFator] = None,
-    ) -> List[Dict[str, Any]]:
+        categoria: CategoriaFator | None = None,
+    ) -> list[dict[str, Any]]:
         """
         Retorna estatisticas agregadas dos fatores de risco.
 
@@ -346,27 +331,28 @@ class TurnoverRepository:
         )
 
         # Query de agregacao
-        query = select(
-            RiskFactor.nome,
-            RiskFactor.categoria,
-            func.count(RiskFactor.id).label("total_ocorrencias"),
-            func.avg(RiskFactor.contribuicao_score).label("contribuicao_media"),
-            func.max(RiskFactor.contribuicao_score).label("contribuicao_maxima"),
-            func.avg(
-                func.cast(RiskFactor.threshold_violado, Decimal)
-            ).label("percentual_threshold"),
-            func.count(func.distinct(
-                select(TurnoverPrediction.funcionario_id)
-                .where(TurnoverPrediction.id == RiskFactor.prediction_id)
-                .scalar_subquery()
-            )).label("funcionarios_afetados"),
-        ).where(
-            RiskFactor.prediction_id.in_(pred_subquery)
-        ).group_by(
-            RiskFactor.nome,
-            RiskFactor.categoria,
-        ).order_by(
-            func.avg(RiskFactor.contribuicao_score).desc()
+        query = (
+            select(
+                RiskFactor.nome,
+                RiskFactor.categoria,
+                func.count(RiskFactor.id).label("total_ocorrencias"),
+                func.avg(RiskFactor.contribuicao_score).label("contribuicao_media"),
+                func.max(RiskFactor.contribuicao_score).label("contribuicao_maxima"),
+                func.avg(func.cast(RiskFactor.threshold_violado, Decimal)).label("percentual_threshold"),
+                func.count(
+                    func.distinct(
+                        select(TurnoverPrediction.funcionario_id)
+                        .where(TurnoverPrediction.id == RiskFactor.prediction_id)
+                        .scalar_subquery()
+                    )
+                ).label("funcionarios_afetados"),
+            )
+            .where(RiskFactor.prediction_id.in_(pred_subquery))
+            .group_by(
+                RiskFactor.nome,
+                RiskFactor.categoria,
+            )
+            .order_by(func.avg(RiskFactor.contribuicao_score).desc())
         )
 
         if categoria:
@@ -380,9 +366,7 @@ class TurnoverRepository:
                 "total_ocorrencias": row.total_ocorrencias,
                 "contribuicao_media": round(row.contribuicao_media or 0, 2),
                 "contribuicao_maxima": round(row.contribuicao_maxima or 0, 2),
-                "percentual_threshold_violado": round(
-                    (row.percentual_threshold or 0) * 100, 2
-                ),
+                "percentual_threshold_violado": round((row.percentual_threshold or 0) * 100, 2),
                 "funcionarios_afetados": row.funcionarios_afetados or 0,
             }
             for row in result.all()
@@ -417,20 +401,15 @@ class TurnoverRepository:
         self.session.add(alert)
         await self.session.flush()
         await self.session.refresh(alert)
-        logger.info(
-            f"Alerta criado: tipo={data.tipo.value}, "
-            f"funcionario={data.funcionario_id}"
-        )
+        logger.info(f"Alerta criado: tipo={data.tipo.value}, funcionario={data.funcionario_id}")
         return alert
 
     async def get_alert_by_id(
         self,
         alert_id: UUID,
-    ) -> Optional[RiskAlert]:
+    ) -> RiskAlert | None:
         """Busca alerta por ID."""
-        result = await self.session.execute(
-            select(RiskAlert).where(RiskAlert.id == alert_id)
-        )
+        result = await self.session.execute(select(RiskAlert).where(RiskAlert.id == alert_id))
         return result.scalar_one_or_none()
 
     async def list_alerts(
@@ -438,11 +417,9 @@ class TurnoverRepository:
         filters: AlertFilter,
         skip: int = 0,
         limit: int = 50,
-    ) -> Tuple[List[RiskAlert], int]:
+    ) -> tuple[list[RiskAlert], int]:
         """Lista alertas com filtros e paginacao."""
-        query = select(RiskAlert).where(
-            RiskAlert.condominium_id == filters.condominium_id
-        )
+        query = select(RiskAlert).where(RiskAlert.condominium_id == filters.condominium_id)
 
         if filters.tipo:
             query = query.where(RiskAlert.tipo == filters.tipo)
@@ -451,9 +428,7 @@ class TurnoverRepository:
             query = query.where(RiskAlert.visualizado == filters.visualizado)
 
         if filters.prioridade_maxima:
-            query = query.where(
-                RiskAlert.prioridade <= filters.prioridade_maxima
-            )
+            query = query.where(RiskAlert.prioridade <= filters.prioridade_maxima)
 
         if filters.data_inicio:
             query = query.where(RiskAlert.created_at >= filters.data_inicio)
@@ -467,12 +442,7 @@ class TurnoverRepository:
         total = total_result.scalar() or 0
 
         # Ordenacao e paginacao
-        query = (
-            query
-            .order_by(RiskAlert.prioridade.asc(), RiskAlert.created_at.desc())
-            .offset(skip)
-            .limit(limit)
-        )
+        query = query.order_by(RiskAlert.prioridade.asc(), RiskAlert.created_at.desc()).offset(skip).limit(limit)
 
         result = await self.session.execute(query)
         return list(result.scalars().all()), total
@@ -481,7 +451,7 @@ class TurnoverRepository:
         self,
         condominium_id: UUID,
         limit: int = 50,
-    ) -> List[RiskAlert]:
+    ) -> list[RiskAlert]:
         """Busca alertas pendentes (nao visualizados)."""
         result = await self.session.execute(
             select(RiskAlert)
@@ -504,7 +474,7 @@ class TurnoverRepository:
         self,
         alert_id: UUID,
         usuario_id: UUID,
-    ) -> Optional[RiskAlert]:
+    ) -> RiskAlert | None:
         """Marca alerta como visualizado."""
         alert = await self.get_alert_by_id(alert_id)
         if alert:
@@ -518,7 +488,7 @@ class TurnoverRepository:
         alert_id: UUID,
         acao: str,
         usuario_id: UUID,
-    ) -> Optional[RiskAlert]:
+    ) -> RiskAlert | None:
         """Registra acao tomada em um alerta."""
         alert = await self.get_alert_by_id(alert_id)
         if alert:
@@ -531,7 +501,7 @@ class TurnoverRepository:
         self,
         condominium_id: UUID,
         data_inicio: datetime,
-        data_fim: Optional[datetime] = None,
+        data_fim: datetime | None = None,
     ) -> int:
         """Conta alertas em um periodo."""
         query = select(func.count(RiskAlert.id)).where(
@@ -553,7 +523,7 @@ class TurnoverRepository:
     async def get_distribution_by_nivel(
         self,
         condominium_id: UUID,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Retorna distribuicao de predicoes por nivel."""
         result = await self.session.execute(
             select(
@@ -569,10 +539,7 @@ class TurnoverRepository:
             )
             .group_by(TurnoverPrediction.nivel)
         )
-        return [
-            {"nivel": row.nivel, "quantidade": row.quantidade}
-            for row in result.all()
-        ]
+        return [{"nivel": row.nivel, "quantidade": row.quantidade} for row in result.all()]
 
     async def get_average_score(
         self,
@@ -580,8 +547,7 @@ class TurnoverRepository:
     ) -> Decimal:
         """Retorna score medio do condominio."""
         result = await self.session.execute(
-            select(func.avg(TurnoverPrediction.score_risco))
-            .where(
+            select(func.avg(TurnoverPrediction.score_risco)).where(
                 and_(
                     TurnoverPrediction.condominium_id == condominium_id,
                     TurnoverPrediction.recalculado.is_(False),
@@ -595,13 +561,13 @@ class TurnoverRepository:
         self,
         condominium_id: UUID,
         dias: int = 30,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Retorna dados de tendencia dos ultimos N dias."""
         data_inicio = datetime.utcnow() - timedelta(days=dias)
 
         result = await self.session.execute(
             select(
-                func.date_trunc('day', TurnoverPrediction.data_calculo).label("data"),
+                func.date_trunc("day", TurnoverPrediction.data_calculo).label("data"),
                 func.avg(TurnoverPrediction.score_risco).label("score_medio"),
                 func.sum(
                     func.cast(
@@ -623,8 +589,8 @@ class TurnoverRepository:
                     TurnoverPrediction.deleted_at.is_(None),
                 )
             )
-            .group_by(func.date_trunc('day', TurnoverPrediction.data_calculo))
-            .order_by(func.date_trunc('day', TurnoverPrediction.data_calculo))
+            .group_by(func.date_trunc("day", TurnoverPrediction.data_calculo))
+            .order_by(func.date_trunc("day", TurnoverPrediction.data_calculo))
         )
 
         return [
@@ -643,8 +609,7 @@ class TurnoverRepository:
     ) -> int:
         """Conta predicoes ativas."""
         result = await self.session.execute(
-            select(func.count(TurnoverPrediction.id))
-            .where(
+            select(func.count(TurnoverPrediction.id)).where(
                 and_(
                     TurnoverPrediction.condominium_id == condominium_id,
                     TurnoverPrediction.recalculado.is_(False),
@@ -658,7 +623,7 @@ class TurnoverRepository:
         self,
         condominium_id: UUID,
         dias: int = 30,
-    ) -> Tuple[int, int]:
+    ) -> tuple[int, int]:
         """
         Retorna contagem de funcionarios com risco crescente/decrescente.
 
@@ -673,10 +638,12 @@ class TurnoverRepository:
                 TurnoverPrediction.funcionario_id,
                 TurnoverPrediction.score_risco,
                 TurnoverPrediction.data_calculo,
-                func.row_number().over(
+                func.row_number()
+                .over(
                     partition_by=TurnoverPrediction.funcionario_id,
                     order_by=TurnoverPrediction.data_calculo.desc(),
-                ).label("rn"),
+                )
+                .label("rn"),
             )
             .where(
                 and_(
@@ -689,38 +656,39 @@ class TurnoverRepository:
         )
 
         # Pegar 2 ultimas predicoes de cada funcionario
-        current = select(
-            subq.c.funcionario_id,
-            subq.c.score_risco.label("score_atual"),
-        ).where(subq.c.rn == 1).subquery()
+        current = (
+            select(
+                subq.c.funcionario_id,
+                subq.c.score_risco.label("score_atual"),
+            )
+            .where(subq.c.rn == 1)
+            .subquery()
+        )
 
-        previous = select(
-            subq.c.funcionario_id,
-            subq.c.score_risco.label("score_anterior"),
-        ).where(subq.c.rn == 2).subquery()
+        previous = (
+            select(
+                subq.c.funcionario_id,
+                subq.c.score_risco.label("score_anterior"),
+            )
+            .where(subq.c.rn == 2)
+            .subquery()
+        )
 
         # Join e calcular variacao
-        comparison = (
-            select(
-                current.c.funcionario_id,
-                current.c.score_atual,
-                previous.c.score_anterior,
-            )
-            .join(
-                previous,
-                current.c.funcionario_id == previous.c.funcionario_id,
-            )
+        comparison = select(
+            current.c.funcionario_id,
+            current.c.score_atual,
+            previous.c.score_anterior,
+        ).join(
+            previous,
+            current.c.funcionario_id == previous.c.funcionario_id,
         )
 
         result = await self.session.execute(comparison)
         rows = result.all()
 
-        crescente = sum(
-            1 for r in rows if r.score_atual > r.score_anterior
-        )
-        decrescente = sum(
-            1 for r in rows if r.score_atual < r.score_anterior
-        )
+        crescente = sum(1 for r in rows if r.score_atual > r.score_anterior)
+        decrescente = sum(1 for r in rows if r.score_atual < r.score_anterior)
 
         return crescente, decrescente
 
@@ -734,11 +702,11 @@ class TurnoverRepository:
         condominium_id: UUID,
         acao: str,
         recurso: str,
-        recurso_id: Optional[UUID] = None,
-        funcionario_id: Optional[UUID] = None,
-        detalhes: Optional[Dict[str, Any]] = None,
-        ip_address: Optional[str] = None,
-        user_agent: Optional[str] = None,
+        recurso_id: UUID | None = None,
+        funcionario_id: UUID | None = None,
+        detalhes: dict[str, Any] | None = None,
+        ip_address: str | None = None,
+        user_agent: str | None = None,
     ) -> AuditLogTurnover:
         """Registra log de auditoria."""
         log = AuditLogTurnover(
@@ -759,24 +727,20 @@ class TurnoverRepository:
     async def get_audit_logs(
         self,
         condominium_id: UUID,
-        usuario_id: Optional[UUID] = None,
-        funcionario_id: Optional[UUID] = None,
-        acao: Optional[str] = None,
-        data_inicio: Optional[datetime] = None,
-        data_fim: Optional[datetime] = None,
+        usuario_id: UUID | None = None,
+        funcionario_id: UUID | None = None,
+        acao: str | None = None,
+        data_inicio: datetime | None = None,
+        data_fim: datetime | None = None,
         limit: int = 100,
-    ) -> List[AuditLogTurnover]:
+    ) -> list[AuditLogTurnover]:
         """Busca logs de auditoria."""
-        query = select(AuditLogTurnover).where(
-            AuditLogTurnover.condominium_id == condominium_id
-        )
+        query = select(AuditLogTurnover).where(AuditLogTurnover.condominium_id == condominium_id)
 
         if usuario_id:
             query = query.where(AuditLogTurnover.usuario_id == usuario_id)
         if funcionario_id:
-            query = query.where(
-                AuditLogTurnover.funcionario_id == funcionario_id
-            )
+            query = query.where(AuditLogTurnover.funcionario_id == funcionario_id)
         if acao:
             query = query.where(AuditLogTurnover.acao == acao)
         if data_inicio:
@@ -802,8 +766,7 @@ class TurnoverRepository:
         data_limite = datetime.utcnow() - timedelta(days=dias_retencao)
 
         result = await self.session.execute(
-            delete(TurnoverPrediction)
-            .where(
+            delete(TurnoverPrediction).where(
                 and_(
                     TurnoverPrediction.condominium_id == condominium_id,
                     TurnoverPrediction.recalculado.is_(True),
@@ -811,10 +774,7 @@ class TurnoverRepository:
                 )
             )
         )
-        logger.info(
-            f"Cleanup: {result.rowcount} predicoes antigas removidas "
-            f"do condominio {condominium_id}"
-        )
+        logger.info(f"Cleanup: {result.rowcount} predicoes antigas removidas do condominio {condominium_id}")
         return result.rowcount
 
     async def cleanup_expired_alerts(
@@ -825,8 +785,7 @@ class TurnoverRepository:
         data_limite = datetime.utcnow() - timedelta(days=90)
 
         result = await self.session.execute(
-            delete(RiskAlert)
-            .where(
+            delete(RiskAlert).where(
                 and_(
                     RiskAlert.condominium_id == condominium_id,
                     RiskAlert.visualizado.is_(True),

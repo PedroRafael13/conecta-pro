@@ -3,30 +3,28 @@ Client Model - Cadastro de Clientes
 Sprint 30: Cadastro de Clientes/Condomínios
 """
 
-import enum
 import re
-from datetime import datetime, date
+from datetime import date, datetime
 from decimal import Decimal
-from typing import Optional, List, TYPE_CHECKING
+from enum import StrEnum
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
-from sqlalchemy import (
-    Column, String, Text, Boolean, DateTime, Date,
-    Numeric, Integer, Enum, Index, CheckConstraint
-)
-from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY
+from sqlalchemy import Boolean, CheckConstraint, Column, Date, DateTime, Enum, Index, Integer, Numeric, String, Text
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import relationship
 
 from core.database import Base
 
 if TYPE_CHECKING:
-    from modules.clients.models.condominium import Condominium
     from modules.clients.models.client_contract import ClientContract
+    from modules.clients.models.condominium import Condominium
     from modules.clients.models.integration_settings import IntegrationSettings
 
 
-class ClientType(str, enum.Enum):
+class ClientType(StrEnum):
     """Tipo de cliente."""
+
     CONDOMINIO = "condominio"
     EMPRESA = "empresa"
     RESIDENCIAL = "residencial"
@@ -36,8 +34,9 @@ class ClientType(str, enum.Enum):
     OUTRO = "outro"
 
 
-class ClientStatus(str, enum.Enum):
+class ClientStatus(StrEnum):
     """Status do cliente."""
+
     PROSPECT = "prospect"
     ATIVO = "ativo"
     INATIVO = "inativo"
@@ -47,8 +46,9 @@ class ClientStatus(str, enum.Enum):
     INADIMPLENTE = "inadimplente"
 
 
-class ClientSegment(str, enum.Enum):
+class ClientSegment(StrEnum):
     """Segmento do cliente."""
+
     PEQUENO = "pequeno"
     MEDIO = "medio"
     GRANDE = "grande"
@@ -57,8 +57,9 @@ class ClientSegment(str, enum.Enum):
     ONG = "ong"
 
 
-class DocumentType(str, enum.Enum):
+class DocumentType(StrEnum):
     """Tipo de documento."""
+
     CPF = "cpf"
     CNPJ = "cnpj"
     RG = "rg"
@@ -168,20 +169,14 @@ class Client(Base):
     updated_by = Column(UUID(as_uuid=True), nullable=True)
 
     # Relacionamentos
-    condominiums: List["Condominium"] = relationship(
-        "Condominium",
-        back_populates="client",
-        cascade="all, delete-orphan"
+    condominiums: list["Condominium"] = relationship(
+        "Condominium", back_populates="client", cascade="all, delete-orphan"
     )
-    contracts: List["ClientContract"] = relationship(
-        "ClientContract",
-        back_populates="client",
-        cascade="all, delete-orphan"
+    contracts: list["ClientContract"] = relationship(
+        "ClientContract", back_populates="client", cascade="all, delete-orphan"
     )
-    integration_settings: List["IntegrationSettings"] = relationship(
-        "IntegrationSettings",
-        back_populates="client",
-        cascade="all, delete-orphan"
+    integration_settings: list["IntegrationSettings"] = relationship(
+        "IntegrationSettings", back_populates="client", cascade="all, delete-orphan"
     )
 
     # Índices
@@ -209,7 +204,7 @@ class Client(Base):
         if not doc:
             return ""
 
-        doc = re.sub(r'\D', '', doc)
+        doc = re.sub(r"\D", "", doc)
 
         if self.document_type == DocumentType.CPF and len(doc) == 11:
             return f"{doc[:3]}.{doc[3:6]}.{doc[6:9]}-{doc[9:]}"
@@ -247,7 +242,7 @@ class Client(Base):
         return self.document_type == DocumentType.CNPJ
 
     @property
-    def days_as_defaulter(self) -> Optional[int]:
+    def days_as_defaulter(self) -> int | None:
         """Dias como inadimplente."""
         if not self.is_defaulter or not self.default_since:
             return None
@@ -301,14 +296,14 @@ class Client(Base):
         self.is_active = False
         self.updated_at = datetime.utcnow()
 
-    def suspend(self, reason: Optional[str] = None) -> None:
+    def suspend(self, reason: str | None = None) -> None:
         """Suspende o cliente."""
         self.status = ClientStatus.SUSPENSO
         if reason:
             self.notes = f"{self.notes or ''}\n[SUSPENSO] {datetime.now()}: {reason}".strip()
         self.updated_at = datetime.utcnow()
 
-    def block(self, reason: Optional[str] = None) -> None:
+    def block(self, reason: str | None = None) -> None:
         """Bloqueia o cliente."""
         self.status = ClientStatus.BLOQUEADO
         self.is_active = False
@@ -333,12 +328,7 @@ class Client(Base):
             self.status = ClientStatus.ATIVO
         self.updated_at = datetime.utcnow()
 
-    def update_metrics(
-        self,
-        total_contracts: int,
-        active_contracts: int,
-        total_revenue: Decimal
-    ) -> None:
+    def update_metrics(self, total_contracts: int, active_contracts: int, total_revenue: Decimal) -> None:
         """Atualiza métricas do cliente."""
         self.total_contracts = total_contracts
         self.active_contracts = active_contracts
@@ -368,7 +358,7 @@ class Client(Base):
     @staticmethod
     def validate_cnpj(cnpj: str) -> bool:
         """Valida CNPJ."""
-        cnpj = re.sub(r'\D', '', cnpj)
+        cnpj = re.sub(r"\D", "", cnpj)
 
         if len(cnpj) != 14:
             return False
@@ -377,8 +367,8 @@ class Client(Base):
             return False
 
         # Validação dos dígitos verificadores
-        def calc_digit(cnpj_part: str, weights: List[int]) -> int:
-            total = sum(int(d) * w for d, w in zip(cnpj_part, weights))
+        def calc_digit(cnpj_part: str, weights: list[int]) -> int:
+            total = sum(int(d) * w for d, w in zip(cnpj_part, weights, strict=False))
             remainder = total % 11
             return 0 if remainder < 2 else 11 - remainder
 
@@ -393,7 +383,7 @@ class Client(Base):
     @staticmethod
     def validate_cpf(cpf: str) -> bool:
         """Valida CPF."""
-        cpf = re.sub(r'\D', '', cpf)
+        cpf = re.sub(r"\D", "", cpf)
 
         if len(cpf) != 11:
             return False

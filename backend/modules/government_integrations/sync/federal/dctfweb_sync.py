@@ -9,11 +9,12 @@ Extrai e sincroniza:
 """
 
 import logging
-from datetime import datetime, date, timedelta
-from typing import Optional, Dict, Any, List, AsyncGenerator
+from collections.abc import AsyncGenerator
+from datetime import date, datetime
 from decimal import Decimal
+from typing import Any
 
-from ..base_sync import BaseSynchronizer, SyncConfig, SyncResult
+from ..base_sync import BaseSynchronizer, SyncConfig
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +51,7 @@ class DCTFWebSynchronizer(BaseSynchronizer):
     async def _extrair_dados(
         self,
         config: SyncConfig,
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+    ) -> AsyncGenerator[dict[str, Any], None]:
         """
         Extrai dados da DCTFWeb.
 
@@ -62,10 +63,7 @@ class DCTFWebSynchronizer(BaseSynchronizer):
         """
         cnpj = self._normalizar_cnpj(config.cnpj_empresa)
 
-        logger.info(
-            f"[DCTFWeb] Extraindo dados - CNPJ: {cnpj}, "
-            f"Periodo: {config.data_inicial} a {config.data_final}"
-        )
+        logger.info(f"[DCTFWeb] Extraindo dados - CNPJ: {cnpj}, Periodo: {config.data_inicial} a {config.data_final}")
 
         # 1. Declaracoes transmitidas
         async for declaracao in self._consultar_declaracoes(cnpj, config):
@@ -87,7 +85,7 @@ class DCTFWebSynchronizer(BaseSynchronizer):
         self,
         cnpj: str,
         config: SyncConfig,
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+    ) -> AsyncGenerator[dict[str, Any], None]:
         """Consulta declaracoes DCTFWeb transmitidas."""
         try:
             if not self.dctfweb_service:
@@ -106,9 +104,7 @@ class DCTFWebSynchronizer(BaseSynchronizer):
                     "tipo": "declaracao_dctfweb",
                     "numero_recibo": decl.get("recibo"),
                     "tipo_declaracao": decl.get("tipo"),
-                    "descricao_tipo": self.TIPOS_DCTFWEB.get(
-                        decl.get("tipo"), "Mensal"
-                    ),
+                    "descricao_tipo": self.TIPOS_DCTFWEB.get(decl.get("tipo"), "Mensal"),
                     "periodo_apuracao": decl.get("periodo"),
                     "data_transmissao": self._parse_data(decl.get("data_transmissao")),
                     "situacao": decl.get("situacao"),
@@ -127,7 +123,7 @@ class DCTFWebSynchronizer(BaseSynchronizer):
         self,
         cnpj: str,
         config: SyncConfig,
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+    ) -> AsyncGenerator[dict[str, Any], None]:
         """Consulta debitos apurados na DCTFWeb."""
         try:
             if not self.dctfweb_service:
@@ -148,9 +144,7 @@ class DCTFWebSynchronizer(BaseSynchronizer):
                         "tipo": "debito_dctfweb",
                         "periodo_apuracao": periodo,
                         "codigo_receita": deb.get("codigo"),
-                        "descricao_receita": self.CODIGOS_RECEITA.get(
-                            deb.get("codigo"), deb.get("descricao")
-                        ),
+                        "descricao_receita": self.CODIGOS_RECEITA.get(deb.get("codigo"), deb.get("descricao")),
                         "valor_principal": self._parse_decimal(deb.get("principal")),
                         "valor_multa": self._parse_decimal(deb.get("multa")),
                         "valor_juros": self._parse_decimal(deb.get("juros")),
@@ -173,7 +167,7 @@ class DCTFWebSynchronizer(BaseSynchronizer):
         self,
         cnpj: str,
         config: SyncConfig,
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+    ) -> AsyncGenerator[dict[str, Any], None]:
         """Consulta creditos vinculados."""
         try:
             if not self.dctfweb_service:
@@ -206,7 +200,7 @@ class DCTFWebSynchronizer(BaseSynchronizer):
         self,
         cnpj: str,
         config: SyncConfig,
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+    ) -> AsyncGenerator[dict[str, Any], None]:
         """Consulta DARFs gerados pela DCTFWeb."""
         try:
             if not self.dctfweb_service:
@@ -241,7 +235,7 @@ class DCTFWebSynchronizer(BaseSynchronizer):
 
     async def _processar_registro(
         self,
-        registro: Dict[str, Any],
+        registro: dict[str, Any],
         config: SyncConfig,
     ) -> bool:
         """Processa registro extraido."""
@@ -260,7 +254,7 @@ class DCTFWebSynchronizer(BaseSynchronizer):
 
     async def _salvar_declaracao(
         self,
-        registro: Dict[str, Any],
+        registro: dict[str, Any],
         config: SyncConfig,
     ) -> bool:
         """Salva declaracao DCTFWeb."""
@@ -268,9 +262,7 @@ class DCTFWebSynchronizer(BaseSynchronizer):
 
         recibo = registro.get("numero_recibo")
 
-        existente = self.db.query(DeclaracaoDCTFWeb).filter(
-            DeclaracaoDCTFWeb.numero_recibo == recibo
-        ).first()
+        existente = self.db.query(DeclaracaoDCTFWeb).filter(DeclaracaoDCTFWeb.numero_recibo == recibo).first()
 
         if existente:
             existente.situacao = registro.get("situacao")
@@ -297,7 +289,7 @@ class DCTFWebSynchronizer(BaseSynchronizer):
 
     async def _salvar_debito(
         self,
-        registro: Dict[str, Any],
+        registro: dict[str, Any],
         config: SyncConfig,
     ) -> bool:
         """Salva debito DCTFWeb."""
@@ -306,11 +298,15 @@ class DCTFWebSynchronizer(BaseSynchronizer):
         periodo = registro.get("periodo_apuracao")
         codigo = registro.get("codigo_receita")
 
-        existente = self.db.query(DebitoDCTFWeb).filter(
-            DebitoDCTFWeb.cnpj_empresa == config.cnpj_empresa,
-            DebitoDCTFWeb.periodo_apuracao == periodo,
-            DebitoDCTFWeb.codigo_receita == codigo,
-        ).first()
+        existente = (
+            self.db.query(DebitoDCTFWeb)
+            .filter(
+                DebitoDCTFWeb.cnpj_empresa == config.cnpj_empresa,
+                DebitoDCTFWeb.periodo_apuracao == periodo,
+                DebitoDCTFWeb.codigo_receita == codigo,
+            )
+            .first()
+        )
 
         if existente:
             existente.valor_total = Decimal(str(registro.get("valor_total") or 0))
@@ -338,7 +334,7 @@ class DCTFWebSynchronizer(BaseSynchronizer):
 
     async def _salvar_credito(
         self,
-        registro: Dict[str, Any],
+        registro: dict[str, Any],
         config: SyncConfig,
     ) -> bool:
         """Salva credito vinculado."""
@@ -347,11 +343,15 @@ class DCTFWebSynchronizer(BaseSynchronizer):
         tipo = registro.get("tipo_credito")
         periodo = registro.get("periodo_apuracao")
 
-        existente = self.db.query(CreditoDCTFWeb).filter(
-            CreditoDCTFWeb.cnpj_empresa == config.cnpj_empresa,
-            CreditoDCTFWeb.tipo_credito == tipo,
-            CreditoDCTFWeb.periodo_apuracao == periodo,
-        ).first()
+        existente = (
+            self.db.query(CreditoDCTFWeb)
+            .filter(
+                CreditoDCTFWeb.cnpj_empresa == config.cnpj_empresa,
+                CreditoDCTFWeb.tipo_credito == tipo,
+                CreditoDCTFWeb.periodo_apuracao == periodo,
+            )
+            .first()
+        )
 
         if existente:
             existente.valor_utilizado = Decimal(str(registro.get("valor_utilizado") or 0))
@@ -376,18 +376,22 @@ class DCTFWebSynchronizer(BaseSynchronizer):
 
     async def _salvar_darf(
         self,
-        registro: Dict[str, Any],
+        registro: dict[str, Any],
         config: SyncConfig,
     ) -> bool:
         """Salva DARF gerado pela DCTFWeb."""
-        from ..models.sync_models import GuiaRecolhimento, TipoGuia, StatusGuia
+        from ..models.sync_models import GuiaRecolhimento, StatusGuia, TipoGuia
 
         numero = registro.get("numero_documento")
 
-        existente = self.db.query(GuiaRecolhimento).filter(
-            GuiaRecolhimento.numero_guia == numero,
-            GuiaRecolhimento.cnpj_empresa == config.cnpj_empresa,
-        ).first()
+        existente = (
+            self.db.query(GuiaRecolhimento)
+            .filter(
+                GuiaRecolhimento.numero_guia == numero,
+                GuiaRecolhimento.cnpj_empresa == config.cnpj_empresa,
+            )
+            .first()
+        )
 
         if existente:
             if registro.get("situacao") == "pago" and existente.status != StatusGuia.PAGA:
@@ -416,33 +420,39 @@ class DCTFWebSynchronizer(BaseSynchronizer):
         self.db.add(nova)
         return True
 
-    def _obter_ultima_sincronizacao(self, cnpj: str) -> Optional[datetime]:
+    def _obter_ultima_sincronizacao(self, cnpj: str) -> datetime | None:
         """Obtem ultima sincronizacao da DCTFWeb."""
-        from ..models.sync_models import SyncLog, StatusSincronizacao
+        from ..models.sync_models import StatusSincronizacao, SyncLog
 
-        ultimo = self.db.query(SyncLog).filter(
-            SyncLog.cnpj_empresa == cnpj,
-            SyncLog.servico == self.SERVICO_NOME,
-            SyncLog.status == StatusSincronizacao.SUCESSO,
-        ).order_by(SyncLog.fim_execucao.desc()).first()
+        ultimo = (
+            self.db.query(SyncLog)
+            .filter(
+                SyncLog.cnpj_empresa == cnpj,
+                SyncLog.servico == self.SERVICO_NOME,
+                SyncLog.status == StatusSincronizacao.SUCESSO,
+            )
+            .order_by(SyncLog.fim_execucao.desc())
+            .first()
+        )
 
         return ultimo.fim_execucao if ultimo else None
 
-    async def obter_resumo(self, cnpj: str) -> Dict[str, Any]:
+    async def obter_resumo(self, cnpj: str) -> dict[str, Any]:
         """Obtem resumo dos dados DCTFWeb."""
-        from ..models.sync_models import DeclaracaoDCTFWeb, DebitoDCTFWeb
         from sqlalchemy import func
 
-        total_declaracoes = self.db.query(DeclaracaoDCTFWeb).filter(
-            DeclaracaoDCTFWeb.cnpj_empresa == cnpj
-        ).count()
+        from ..models.sync_models import DebitoDCTFWeb, DeclaracaoDCTFWeb
 
-        debitos_pendentes = self.db.query(
-            func.sum(DebitoDCTFWeb.valor_total)
-        ).filter(
-            DebitoDCTFWeb.cnpj_empresa == cnpj,
-            DebitoDCTFWeb.situacao != "pago",
-        ).scalar()
+        total_declaracoes = self.db.query(DeclaracaoDCTFWeb).filter(DeclaracaoDCTFWeb.cnpj_empresa == cnpj).count()
+
+        debitos_pendentes = (
+            self.db.query(func.sum(DebitoDCTFWeb.valor_total))
+            .filter(
+                DebitoDCTFWeb.cnpj_empresa == cnpj,
+                DebitoDCTFWeb.situacao != "pago",
+            )
+            .scalar()
+        )
 
         return {
             "total_declaracoes": total_declaracoes,

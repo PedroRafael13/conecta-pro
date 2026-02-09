@@ -5,32 +5,32 @@ Conformidade com CLT e acordos coletivos.
 """
 
 import uuid
-from datetime import datetime, date, time
+from datetime import date, datetime, time
 from decimal import Decimal
-from enum import Enum
-from typing import Optional, List, TYPE_CHECKING
+from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     Boolean,
-    DateTime,
     Date,
-    Time,
+    DateTime,
+    Index,
     Integer,
+    Numeric,
     String,
     Text,
-    Numeric,
-    Index,
+    Time,
 )
-from sqlalchemy.dialects.postgresql import JSONB, UUID, ARRAY
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from core.database import Base
 
 if TYPE_CHECKING:
-    from .time_entry import TimeEntry
+    pass
 
 
-class ScheduleType(str, Enum):
+class ScheduleType(StrEnum):
     """Tipo de escala/jornada."""
 
     CLT_44H = "clt_44h"  # 44h semanais padrão
@@ -48,7 +48,7 @@ class ScheduleType(str, Enum):
     PERSONALIZADO = "personalizado"  # Customizado
 
 
-class ScheduleStatus(str, Enum):
+class ScheduleStatus(StrEnum):
     """Status da jornada."""
 
     ATIVO = "ativo"
@@ -59,7 +59,7 @@ class ScheduleStatus(str, Enum):
     DESLIGADO = "desligado"
 
 
-class DayOfWeek(str, Enum):
+class DayOfWeek(StrEnum):
     """Dias da semana."""
 
     SEGUNDA = "segunda"
@@ -81,30 +81,24 @@ class WorkSchedule(Base):
     __tablename__ = "work_schedules"
 
     # Identificação
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     code: Mapped[str] = mapped_column(String(30), unique=True, nullable=False)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
-    description: Mapped[Optional[str]] = mapped_column(Text)
+    description: Mapped[str | None] = mapped_column(Text)
 
     # Tipo e status
-    schedule_type: Mapped[ScheduleType] = mapped_column(
-        String(30), default=ScheduleType.CLT_44H
-    )
-    status: Mapped[ScheduleStatus] = mapped_column(
-        String(20), default=ScheduleStatus.ATIVO
-    )
+    schedule_type: Mapped[ScheduleType] = mapped_column(String(30), default=ScheduleType.CLT_44H)
+    status: Mapped[ScheduleStatus] = mapped_column(String(20), default=ScheduleStatus.ATIVO)
 
     # Funcionário (pode ser template sem funcionário)
-    employee_id: Mapped[Optional[str]] = mapped_column(String(50), index=True)
-    employee_name: Mapped[Optional[str]] = mapped_column(String(200))
-    employee_registration: Mapped[Optional[str]] = mapped_column(String(50))
+    employee_id: Mapped[str | None] = mapped_column(String(50), index=True)
+    employee_name: Mapped[str | None] = mapped_column(String(200))
+    employee_registration: Mapped[str | None] = mapped_column(String(50))
     is_template: Mapped[bool] = mapped_column(Boolean, default=False)
 
     # Departamento
-    department_id: Mapped[Optional[str]] = mapped_column(String(50))
-    department_name: Mapped[Optional[str]] = mapped_column(String(100))
+    department_id: Mapped[str | None] = mapped_column(String(50))
+    department_name: Mapped[str | None] = mapped_column(String(100))
 
     # Carga horária semanal (em minutos)
     weekly_hours_minutes: Mapped[int] = mapped_column(Integer, default=2640)  # 44h
@@ -112,24 +106,20 @@ class WorkSchedule(Base):
     max_daily_hours_minutes: Mapped[int] = mapped_column(Integer, default=600)  # 10h
 
     # Horário padrão (segunda a sexta)
-    default_entry_time: Mapped[Optional[time]] = mapped_column(Time)
-    default_exit_time: Mapped[Optional[time]] = mapped_column(Time)
-    default_break_start: Mapped[Optional[time]] = mapped_column(Time)
-    default_break_end: Mapped[Optional[time]] = mapped_column(Time)
+    default_entry_time: Mapped[time | None] = mapped_column(Time)
+    default_exit_time: Mapped[time | None] = mapped_column(Time)
+    default_break_start: Mapped[time | None] = mapped_column(Time)
+    default_break_end: Mapped[time | None] = mapped_column(Time)
     break_duration_minutes: Mapped[int] = mapped_column(Integer, default=60)
 
     # Horários por dia da semana (JSON)
     # Formato: {"segunda": {"entry": "08:00", "exit": "17:48",
     #                       "break_start": "12:00", "break_end": "13:00"}}
-    daily_schedule: Mapped[Optional[dict]] = mapped_column(JSONB, default=dict)
+    daily_schedule: Mapped[dict | None] = mapped_column(JSONB, default=dict)
 
     # Dias trabalhados
-    work_days: Mapped[Optional[List[str]]] = mapped_column(
-        ARRAY(String), default=list
-    )
-    days_off: Mapped[Optional[List[str]]] = mapped_column(
-        ARRAY(String), default=list
-    )
+    work_days: Mapped[list[str] | None] = mapped_column(ARRAY(String), default=list)
+    days_off: Mapped[list[str] | None] = mapped_column(ARRAY(String), default=list)
 
     # Tolerâncias (em minutos)
     entry_tolerance_minutes: Mapped[int] = mapped_column(Integer, default=10)
@@ -140,20 +130,14 @@ class WorkSchedule(Base):
     overtime_requires_approval: Mapped[bool] = mapped_column(Boolean, default=True)
     max_overtime_daily_minutes: Mapped[int] = mapped_column(Integer, default=120)
     max_overtime_weekly_minutes: Mapped[int] = mapped_column(Integer, default=600)
-    overtime_multiplier_50: Mapped[Decimal] = mapped_column(
-        Numeric(4, 2), default=Decimal("1.50")
-    )
-    overtime_multiplier_100: Mapped[Decimal] = mapped_column(
-        Numeric(4, 2), default=Decimal("2.00")
-    )
+    overtime_multiplier_50: Mapped[Decimal] = mapped_column(Numeric(4, 2), default=Decimal("1.50"))
+    overtime_multiplier_100: Mapped[Decimal] = mapped_column(Numeric(4, 2), default=Decimal("2.00"))
     use_time_bank: Mapped[bool] = mapped_column(Boolean, default=False)
 
     # Adicional noturno (22h às 05h)
     night_shift_start: Mapped[time] = mapped_column(Time, default=time(22, 0))
     night_shift_end: Mapped[time] = mapped_column(Time, default=time(5, 0))
-    night_shift_multiplier: Mapped[Decimal] = mapped_column(
-        Numeric(4, 2), default=Decimal("1.20")
-    )
+    night_shift_multiplier: Mapped[Decimal] = mapped_column(Numeric(4, 2), default=Decimal("1.20"))
     night_hour_reduction: Mapped[bool] = mapped_column(Boolean, default=True)
 
     # Intervalos obrigatórios (CLT)
@@ -169,9 +153,7 @@ class WorkSchedule(Base):
 
     # Geolocalização obrigatória
     require_geolocation: Mapped[bool] = mapped_column(Boolean, default=False)
-    allowed_locations: Mapped[Optional[List[dict]]] = mapped_column(
-        JSONB, default=list
-    )
+    allowed_locations: Mapped[list[dict] | None] = mapped_column(JSONB, default=list)
     max_distance_meters: Mapped[int] = mapped_column(Integer, default=100)
 
     # Biometria
@@ -182,32 +164,30 @@ class WorkSchedule(Base):
 
     # Feriados
     consider_holidays: Mapped[bool] = mapped_column(Boolean, default=True)
-    holiday_calendar_id: Mapped[Optional[str]] = mapped_column(String(50))
+    holiday_calendar_id: Mapped[str | None] = mapped_column(String(50))
 
     # Acordo coletivo
-    collective_agreement_id: Mapped[Optional[str]] = mapped_column(String(50))
-    collective_agreement_name: Mapped[Optional[str]] = mapped_column(String(200))
+    collective_agreement_id: Mapped[str | None] = mapped_column(String(50))
+    collective_agreement_name: Mapped[str | None] = mapped_column(String(200))
 
     # Validade
-    valid_from: Mapped[Optional[date]] = mapped_column(Date)
-    valid_until: Mapped[Optional[date]] = mapped_column(Date)
+    valid_from: Mapped[date | None] = mapped_column(Date)
+    valid_until: Mapped[date | None] = mapped_column(Date)
 
     # Condomínio/Local
-    condominium_id: Mapped[Optional[str]] = mapped_column(String(50), index=True)
-    condominium_name: Mapped[Optional[str]] = mapped_column(String(200))
+    condominium_id: Mapped[str | None] = mapped_column(String(50), index=True)
+    condominium_name: Mapped[str | None] = mapped_column(String(200))
 
     # Observações e metadados
-    notes: Mapped[Optional[str]] = mapped_column(Text)
-    tags: Mapped[Optional[list]] = mapped_column(JSONB, default=list)
-    extra_metadata: Mapped[Optional[dict]] = mapped_column(JSONB, default=dict)
+    notes: Mapped[str | None] = mapped_column(Text)
+    tags: Mapped[list | None] = mapped_column(JSONB, default=list)
+    extra_metadata: Mapped[dict | None] = mapped_column(JSONB, default=dict)
 
     # Controle
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
-    created_by_id: Mapped[Optional[str]] = mapped_column(String(50))
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_by_id: Mapped[str | None] = mapped_column(String(50))
 
     # Índices
     __table_args__ = (
@@ -254,7 +234,7 @@ class WorkSchedule(Base):
             ]
             self.days_off = [DayOfWeek.DOMINGO.value]
 
-    def get_schedule_for_day(self, day: DayOfWeek) -> Optional[dict]:
+    def get_schedule_for_day(self, day: DayOfWeek) -> dict | None:
         """Retorna o horário para um dia específico.
 
         Args:
@@ -267,18 +247,10 @@ class WorkSchedule(Base):
             if day.value not in (self.work_days or []):
                 return None
             return {
-                "entry": self.default_entry_time.strftime("%H:%M")
-                if self.default_entry_time
-                else None,
-                "exit": self.default_exit_time.strftime("%H:%M")
-                if self.default_exit_time
-                else None,
-                "break_start": self.default_break_start.strftime("%H:%M")
-                if self.default_break_start
-                else None,
-                "break_end": self.default_break_end.strftime("%H:%M")
-                if self.default_break_end
-                else None,
+                "entry": self.default_entry_time.strftime("%H:%M") if self.default_entry_time else None,
+                "exit": self.default_exit_time.strftime("%H:%M") if self.default_exit_time else None,
+                "break_start": self.default_break_start.strftime("%H:%M") if self.default_break_start else None,
+                "break_end": self.default_break_end.strftime("%H:%M") if self.default_break_end else None,
             }
         return self.daily_schedule.get(day.value)
 
@@ -304,7 +276,7 @@ class WorkSchedule(Base):
         day = day_map[weekday]
         return day.value in (self.work_days or [])
 
-    def get_expected_times(self, check_date: date) -> Optional[dict]:
+    def get_expected_times(self, check_date: date) -> dict | None:
         """Retorna horários esperados para uma data.
 
         Args:
@@ -364,7 +336,7 @@ class WorkSchedule(Base):
 
         return total_minutes
 
-    def validate_clt_rules(self) -> List[str]:
+    def validate_clt_rules(self) -> list[str]:
         """Valida regras da CLT.
 
         Returns:
@@ -374,27 +346,19 @@ class WorkSchedule(Base):
 
         # Limite semanal (44h normais + até 10h extras)
         if self.weekly_hours_minutes > 3240:  # 54h
-            violations.append(
-                "Carga horária semanal excede o limite legal de 54h (44h + 10h extras)"
-            )
+            violations.append("Carga horária semanal excede o limite legal de 54h (44h + 10h extras)")
 
         # Limite diário (8h normais + até 2h extras)
         if self.max_daily_hours_minutes > 600:  # 10h
-            violations.append(
-                "Carga horária diária máxima excede o limite legal de 10h"
-            )
+            violations.append("Carga horária diária máxima excede o limite legal de 10h")
 
         # Descanso entre jornadas (11h)
         if self.min_rest_between_shifts_hours < 11:
-            violations.append(
-                "Descanso entre jornadas inferior ao mínimo de 11h"
-            )
+            violations.append("Descanso entre jornadas inferior ao mínimo de 11h")
 
         # Intervalo obrigatório (>6h = 1h de intervalo)
         if self.daily_hours_minutes > 360 and self.break_duration_minutes < 60:
-            violations.append(
-                "Jornada superior a 6h requer intervalo mínimo de 1h"
-            )
+            violations.append("Jornada superior a 6h requer intervalo mínimo de 1h")
 
         return violations
 
@@ -410,12 +374,8 @@ class WorkSchedule(Base):
         max_positive = self.time_bank_max_positive_hours * 60
         max_negative = -self.time_bank_max_negative_hours * 60
 
-        self.time_bank_balance_minutes = min(
-            self.time_bank_balance_minutes, max_positive
-        )
-        self.time_bank_balance_minutes = max(
-            self.time_bank_balance_minutes, max_negative
-        )
+        self.time_bank_balance_minutes = min(self.time_bank_balance_minutes, max_positive)
+        self.time_bank_balance_minutes = max(self.time_bank_balance_minutes, max_negative)
 
     def is_within_allowed_location(  # pylint: disable=too-many-locals
         self, latitude: float, longitude: float
@@ -436,7 +396,7 @@ class WorkSchedule(Base):
             return True
 
         # pylint: disable=import-outside-toplevel
-        from math import radians, sin, cos, sqrt, atan2
+        from math import atan2, cos, radians, sin, sqrt
 
         for location in self.allowed_locations:
             loc_lat = location.get("latitude", 0)

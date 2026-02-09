@@ -4,8 +4,8 @@ Script para extrair OpenAPI spec do módulo CAMPO
 Gera campo.openapi.json com todos os 147 endpoints
 """
 
-import sys
 import json
+import sys
 from pathlib import Path
 
 # Add backend to path
@@ -16,19 +16,20 @@ from fastapi.openapi.utils import get_openapi
 
 # Import CAMPO routers
 from modules.campo.controllers import (
-    campo_service_router,
     access_log_router,
-    occurrence_router,
-    equipment_status_router,
-    sync_router,
-    security_audit_router,
-    monitoring_router,
-    ordem_servico_router,
-    visita_router,
+    campo_service_router,
     checklist_router,
+    equipment_status_router,
+    estoque_router,
+    monitoring_router,
+    occurrence_router,
+    ordem_servico_router,
     roteirizacao_router,
-    estoque_router
+    security_audit_router,
+    sync_router,
+    visita_router,
 )
+
 
 def extract_campo_openapi():
     """Extrai OpenAPI spec completo do módulo CAMPO."""
@@ -76,7 +77,7 @@ def extract_campo_openapi():
 
     # Count endpoints
     total_endpoints = sum(len(methods) for methods in openapi_schema.get("paths", {}).values())
-    print(f"✅ OpenAPI spec gerado com sucesso!")
+    print("✅ OpenAPI spec gerado com sucesso!")
     print(f"📊 Total de paths: {len(openapi_schema.get('paths', {}))}")
     print(f"📊 Total de endpoints: {total_endpoints}")
 
@@ -143,6 +144,7 @@ def extract_campo_openapi():
 
     return openapi_schema
 
+
 if __name__ == "__main__":
     try:
         extract_campo_openapi()
@@ -150,5 +152,6 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"\n❌ Erro: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)

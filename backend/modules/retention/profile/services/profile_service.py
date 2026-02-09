@@ -6,34 +6,31 @@ Logica de negocio para processamento de questionarios e gestao de perfis.
 
 import logging
 from datetime import datetime
-from typing import Optional, List, Dict, Any, Tuple
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.retention.profile.models.profile_models import (
-    OperationalProfile,
-    ProfileQuestion,
     QUESTIONARIO_PERFIL,
-    PERFIL_IDEAL_POR_TIPO,
-)
-from modules.retention.profile.schemas.profile_schemas import (
-    SubmitRespostasRequest,
-    SaveProgressRequest,
-    ProfileFilter,
-    OperationalProfileResponse,
-    OperationalProfileDetail,
-    OperationalProfileHistory,
-    DimensionScore,
-    ProfileQuestionResponse,
-    QuestionnaireResponse,
-    ProgressResponse,
-    DashboardStats,
-    DashboardResponse,
-    ProfileDistribution,
-    PostMatchResponse,
-    ProfileDimensionEnum,
+    OperationalProfile,
 )
 from modules.retention.profile.repositories.profile_repository import ProfileRepository
+from modules.retention.profile.schemas.profile_schemas import (
+    DashboardResponse,
+    DashboardStats,
+    DimensionScore,
+    OperationalProfileDetail,
+    OperationalProfileHistory,
+    OperationalProfileResponse,
+    PostMatchResponse,
+    ProfileDimensionEnum,
+    ProfileDistribution,
+    ProfileFilter,
+    ProfileQuestionResponse,
+    ProgressResponse,
+    QuestionnaireResponse,
+    SaveProgressRequest,
+    SubmitRespostasRequest,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -78,7 +75,7 @@ class ProfileService:
     async def get_questionario(
         self,
         versao: str = "1.0.0",
-        condominium_id: Optional[str] = None,
+        condominium_id: str | None = None,
     ) -> QuestionnaireResponse:
         """
         Retorna questionario completo para avaliacao.
@@ -125,9 +122,7 @@ class ProfileService:
                     dimensoes=["vigilancia", "comunicacao", "resiliencia", "lideranca"],
                 )
 
-        perguntas_response = [
-            ProfileQuestionResponse.model_validate(p) for p in perguntas
-        ]
+        perguntas_response = [ProfileQuestionResponse.model_validate(p) for p in perguntas]
 
         return QuestionnaireResponse(
             perguntas=perguntas_response,
@@ -146,7 +141,7 @@ class ProfileService:
         Returns:
             Status do progresso
         """
-        profile = await self.repository.save_progress(
+        await self.repository.save_progress(
             funcionario_id=data.funcionario_id,
             respostas_parciais=data.respostas_parciais,
             ultima_pergunta=data.ultima_pergunta,
@@ -163,7 +158,7 @@ class ProfileService:
             em_andamento=True,
         )
 
-    async def get_progress(self, funcionario_id: str) -> Optional[ProgressResponse]:
+    async def get_progress(self, funcionario_id: str) -> ProgressResponse | None:
         """
         Busca progresso salvo do funcionario.
 
@@ -190,9 +185,7 @@ class ProfileService:
     # Processamento de Respostas
     # ============================================================
 
-    async def processar_respostas(
-        self, data: SubmitRespostasRequest
-    ) -> OperationalProfileDetail:
+    async def processar_respostas(self, data: SubmitRespostasRequest) -> OperationalProfileDetail:
         """
         Processa respostas do questionario e calcula perfil.
 
@@ -237,7 +230,7 @@ class ProfileService:
         # Retorna analise detalhada
         return await self._build_profile_detail(profile)
 
-    def _validar_respostas(self, respostas: Dict[str, int]) -> None:
+    def _validar_respostas(self, respostas: dict[str, int]) -> None:
         """
         Valida respostas do questionario.
 
@@ -259,11 +252,9 @@ class ProfileService:
         # Valida valores
         for pergunta_id, valor in respostas.items():
             if valor < 1 or valor > 4:
-                raise ValueError(
-                    f"Valor invalido para {pergunta_id}: {valor}. Deve estar entre 1 e 4"
-                )
+                raise ValueError(f"Valor invalido para {pergunta_id}: {valor}. Deve estar entre 1 e 4")
 
-    def _calcular_scores(self, respostas: Dict[str, int]) -> Dict[str, int]:
+    def _calcular_scores(self, respostas: dict[str, int]) -> dict[str, int]:
         """
         Calcula scores por dimensao.
 
@@ -276,7 +267,7 @@ class ProfileService:
             Dict {dimensao: score}
         """
         # Agrupa respostas por dimensao
-        dimensoes: Dict[str, List[int]] = {
+        dimensoes: dict[str, list[int]] = {
             "vigilancia": [],
             "comunicacao": [],
             "resiliencia": [],
@@ -307,9 +298,7 @@ class ProfileService:
     # Busca e Listagem
     # ============================================================
 
-    async def get_profile_by_id(
-        self, profile_id: str
-    ) -> Optional[OperationalProfileDetail]:
+    async def get_profile_by_id(self, profile_id: str) -> OperationalProfileDetail | None:
         """
         Busca perfil por ID com analise detalhada.
 
@@ -324,9 +313,7 @@ class ProfileService:
             return None
         return await self._build_profile_detail(profile)
 
-    async def get_latest_profile(
-        self, funcionario_id: str
-    ) -> Optional[OperationalProfileDetail]:
+    async def get_latest_profile(self, funcionario_id: str) -> OperationalProfileDetail | None:
         """
         Busca perfil mais recente do funcionario.
 
@@ -404,12 +391,12 @@ class ProfileService:
 
     async def list_profiles(
         self,
-        filters: Optional[ProfileFilter] = None,
+        filters: ProfileFilter | None = None,
         skip: int = 0,
         limit: int = 20,
         order_by: str = "created_at",
         order_desc: bool = True,
-    ) -> Tuple[List[OperationalProfileResponse], int]:
+    ) -> tuple[list[OperationalProfileResponse], int]:
         """
         Lista perfis com filtros.
 
@@ -423,9 +410,7 @@ class ProfileService:
         Returns:
             Tuple (lista, total)
         """
-        profiles, total = await self.repository.list_profiles(
-            filters, skip, limit, order_by, order_desc
-        )
+        profiles, total = await self.repository.list_profiles(filters, skip, limit, order_by, order_desc)
 
         profiles_response = [
             OperationalProfileResponse(
@@ -456,9 +441,7 @@ class ProfileService:
     # Dashboard
     # ============================================================
 
-    async def get_dashboard(
-        self, condominium_id: Optional[str] = None
-    ) -> DashboardResponse:
+    async def get_dashboard(self, condominium_id: str | None = None) -> DashboardResponse:
         """
         Retorna dados do dashboard de perfis.
 
@@ -511,7 +494,7 @@ class ProfileService:
         evolucao = await self.repository.get_evolucao_mensal(12, condominium_id)
 
         # Top matches (placeholder - seria integrado com ProfileMatcher)
-        top_matches: List[PostMatchResponse] = []
+        top_matches: list[PostMatchResponse] = []
 
         stats = DashboardStats(
             total_avaliacoes=stats_raw.get("total_avaliacoes", 0),
@@ -539,12 +522,8 @@ class ProfileService:
         # Verifica dimensoes com media baixa
         for dist in distribuicao_scores:
             if dist.media < 50:
-                alertas.append(
-                    f"Media de {dist.dimensao.value} abaixo de 50: {dist.media:.1f}"
-                )
-                recomendacoes.append(
-                    f"Considere treinamentos para desenvolver {dist.dimensao.value}"
-                )
+                alertas.append(f"Media de {dist.dimensao.value} abaixo de 50: {dist.media:.1f}")
+                recomendacoes.append(f"Considere treinamentos para desenvolver {dist.dimensao.value}")
 
         return DashboardResponse(
             stats=stats,
@@ -557,9 +536,7 @@ class ProfileService:
     # Helpers
     # ============================================================
 
-    async def _build_profile_detail(
-        self, profile: OperationalProfile
-    ) -> OperationalProfileDetail:
+    async def _build_profile_detail(self, profile: OperationalProfile) -> OperationalProfileDetail:
         """
         Constroi resposta detalhada do perfil com analise.
 
@@ -620,17 +597,13 @@ class ProfileService:
         pontos_fortes = []
         for ds in scores_detalhados:
             if ds.score >= 70:
-                pontos_fortes.append(
-                    f"{ds.dimensao.value.capitalize()}: {ds.descricao}"
-                )
+                pontos_fortes.append(f"{ds.dimensao.value.capitalize()}: {ds.descricao}")
 
         # Pontos a desenvolver (scores < 50)
         pontos_desenvolvimento = []
         for ds in scores_detalhados:
             if ds.score < 50:
-                pontos_desenvolvimento.append(
-                    f"{ds.dimensao.value.capitalize()}: {ds.descricao}"
-                )
+                pontos_desenvolvimento.append(f"{ds.dimensao.value.capitalize()}: {ds.descricao}")
 
         # Recomendacoes baseadas no perfil
         recomendacoes = self._gerar_recomendacoes(profile)
@@ -664,7 +637,7 @@ class ProfileService:
             tipos_posto_recomendados=tipos_recomendados,
         )
 
-    def _gerar_recomendacoes(self, profile: OperationalProfile) -> List[str]:
+    def _gerar_recomendacoes(self, profile: OperationalProfile) -> list[str]:
         """Gera recomendacoes baseadas no perfil."""
         recomendacoes = []
         scores = profile.scores
@@ -673,44 +646,28 @@ class ProfileService:
         for dimensao, score in scores.items():
             if score < 50:
                 if dimensao == "vigilancia":
-                    recomendacoes.append(
-                        "Treinamento em tecnicas de observacao e atencao concentrada"
-                    )
+                    recomendacoes.append("Treinamento em tecnicas de observacao e atencao concentrada")
                 elif dimensao == "comunicacao":
-                    recomendacoes.append(
-                        "Desenvolvimento de habilidades interpessoais e comunicacao assertiva"
-                    )
+                    recomendacoes.append("Desenvolvimento de habilidades interpessoais e comunicacao assertiva")
                 elif dimensao == "resiliencia":
-                    recomendacoes.append(
-                        "Treinamento em gestao de estresse e inteligencia emocional"
-                    )
+                    recomendacoes.append("Treinamento em gestao de estresse e inteligencia emocional")
                 elif dimensao == "lideranca":
-                    recomendacoes.append(
-                        "Programa de desenvolvimento de lideranca e tomada de decisao"
-                    )
+                    recomendacoes.append("Programa de desenvolvimento de lideranca e tomada de decisao")
 
         # Recomendacao geral baseada no perfil predominante
         predominante = profile.perfil_predominante
         if predominante == "vigilancia":
-            recomendacoes.append(
-                "Considerar alocacao em postos de monitoramento ou CFTV"
-            )
+            recomendacoes.append("Considerar alocacao em postos de monitoramento ou CFTV")
         elif predominante == "comunicacao":
-            recomendacoes.append(
-                "Considerar alocacao em portaria ou recepcao"
-            )
+            recomendacoes.append("Considerar alocacao em portaria ou recepcao")
         elif predominante == "resiliencia":
-            recomendacoes.append(
-                "Considerar alocacao em eventos ou situacoes de alta pressao"
-            )
+            recomendacoes.append("Considerar alocacao em eventos ou situacoes de alta pressao")
         elif predominante == "lideranca":
-            recomendacoes.append(
-                "Avaliar potencial para cargo de supervisao"
-            )
+            recomendacoes.append("Avaliar potencial para cargo de supervisao")
 
         return recomendacoes
 
-    def _identificar_tipos_posto(self, profile: OperationalProfile) -> List[str]:
+    def _identificar_tipos_posto(self, profile: OperationalProfile) -> list[str]:
         """Identifica tipos de posto mais adequados ao perfil."""
         tipos_recomendados = []
 

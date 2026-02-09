@@ -2,14 +2,14 @@
 
 from datetime import date, datetime, timedelta
 from decimal import Decimal
-from typing import Optional
 from uuid import UUID
 
-from sqlalchemy import and_, cast, func, or_, select, String
+from sqlalchemy import String, cast, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
 from modules.operacional.diaristas.models.diarist import (
+    AssignmentStatus,
     Diarist,
     DiaristAssignment,
     DiaristEvaluation,
@@ -17,10 +17,8 @@ from modules.operacional.diaristas.models.diarist import (
     DiaristSchedule,
     DiaristStatus,
     DiaristType,
-    AssignmentStatus,
-    ScheduleStatus,
     PaymentStatus,
-    Weekday,
+    ScheduleStatus,
 )
 
 
@@ -40,19 +38,17 @@ class DiaristRepository:
         await self.db.refresh(diarist)
         return diarist
 
-    async def get_by_id(self, diarist_id: UUID) -> Optional[Diarist]:
+    async def get_by_id(self, diarist_id: UUID) -> Diarist | None:
         """Busca diarista por ID."""
-        result = await self.db.execute(
-            select(Diarist).where(Diarist.id == diarist_id)
-        )
+        result = await self.db.execute(select(Diarist).where(Diarist.id == diarist_id))
         return result.scalar_one_or_none()
 
-    async def get_by_cpf(self, cpf: str) -> Optional[Diarist]:
+    async def get_by_cpf(self, cpf: str) -> Diarist | None:
         """Busca diarista por CPF."""
         result = await self.db.execute(select(Diarist).where(Diarist.cpf == cpf))
         return result.scalar_one_or_none()
 
-    async def get_by_email(self, email: str) -> Optional[Diarist]:
+    async def get_by_email(self, email: str) -> Diarist | None:
         """Busca diarista por email."""
         result = await self.db.execute(select(Diarist).where(Diarist.email == email))
         return result.scalar_one_or_none()
@@ -61,9 +57,9 @@ class DiaristRepository:
         self,
         skip: int = 0,
         limit: int = 100,
-        status: Optional[DiaristStatus] = None,
-        tipo: Optional[DiaristType] = None,
-        search: Optional[str] = None,
+        status: DiaristStatus | None = None,
+        tipo: DiaristType | None = None,
+        search: str | None = None,
     ) -> list[Diarist]:
         """Lista diaristas com filtros."""
         query = select(Diarist).where(Diarist.ativo.is_(True))
@@ -90,8 +86,8 @@ class DiaristRepository:
 
     async def count(
         self,
-        status: Optional[DiaristStatus] = None,
-        tipo: Optional[DiaristType] = None,
+        status: DiaristStatus | None = None,
+        tipo: DiaristType | None = None,
     ) -> int:
         """Conta diaristas com filtros."""
         query = select(func.count(Diarist.id))
@@ -126,35 +122,31 @@ class DiaristRepository:
     async def get_available_diarists(
         self,
         data: date,
-        tipo: Optional[DiaristType] = None,
+        tipo: DiaristType | None = None,
     ) -> list[Diarist]:
         """Busca diaristas disponíveis em uma data."""
         weekday_pt = self.WEEKDAY_MAP.get(data.weekday(), "")
 
-        query = (
-            select(Diarist)
-            .where(
-                Diarist.status == DiaristStatus.ATIVO.value,
-                Diarist.ativo.is_(True),
-            )
+        query = select(Diarist).where(
+            Diarist.status == DiaristStatus.ATIVO.value,
+            Diarist.ativo.is_(True),
         )
         if weekday_pt:
-            query = query.where(
-                Diarist.dias_disponiveis.any(weekday_pt)
-            )
+            query = query.where(Diarist.dias_disponiveis.any(weekday_pt))
 
         if tipo:
             query = query.where(Diarist.tipos_servico.contains([tipo]))
 
         # Excluir diaristas já alocadas nesta data
-        subquery = (
-            select(DiaristSchedule.diarist_id)
-            .where(
-                DiaristSchedule.data_trabalho == data,
-                cast(DiaristSchedule.status, String).in_([
-                    "AGENDADO", "CONFIRMADO", "EM_ANDAMENTO",
-                ])
-            )
+        subquery = select(DiaristSchedule.diarist_id).where(
+            DiaristSchedule.data_trabalho == data,
+            cast(DiaristSchedule.status, String).in_(
+                [
+                    "AGENDADO",
+                    "CONFIRMADO",
+                    "EM_ANDAMENTO",
+                ]
+            ),
         )
 
         query = query.where(~Diarist.id.in_(subquery))
@@ -165,8 +157,13 @@ class DiaristRepository:
 
     # Mapeamento de dias da semana (ingles -> portugues)
     WEEKDAY_MAP = {
-        0: "segunda", 1: "terca", 2: "quarta", 3: "quinta",
-        4: "sexta", 5: "sabado", 6: "domingo",
+        0: "segunda",
+        1: "terca",
+        2: "quarta",
+        3: "quinta",
+        4: "sexta",
+        5: "sabado",
+        6: "domingo",
     }
 
     async def check_availability(
@@ -185,13 +182,16 @@ class DiaristRepository:
 
         # Verificar se já tem agendamento
         existing_result = await self.db.execute(
-            select(DiaristSchedule)
-            .where(
+            select(DiaristSchedule).where(
                 DiaristSchedule.diarist_id == diarist_id,
                 DiaristSchedule.data_trabalho == data,
-                cast(DiaristSchedule.status, String).in_([
-                    "AGENDADO", "CONFIRMADO", "EM_ANDAMENTO",
-                ])
+                cast(DiaristSchedule.status, String).in_(
+                    [
+                        "AGENDADO",
+                        "CONFIRMADO",
+                        "EM_ANDAMENTO",
+                    ]
+                ),
             )
         )
         existing = existing_result.scalar_one_or_none()
@@ -207,9 +207,7 @@ class DiaristRepository:
         await self.db.refresh(assignment)
         return assignment
 
-    async def get_assignment_by_id(
-        self, assignment_id: UUID
-    ) -> Optional[DiaristAssignment]:
+    async def get_assignment_by_id(self, assignment_id: UUID) -> DiaristAssignment | None:
         """Busca alocação por ID."""
         result = await self.db.execute(
             select(DiaristAssignment)
@@ -220,16 +218,14 @@ class DiaristRepository:
 
     async def list_assignments(
         self,
-        diarist_id: Optional[UUID] = None,
-        condominio_id: Optional[UUID] = None,
-        status: Optional[AssignmentStatus] = None,
+        diarist_id: UUID | None = None,
+        condominio_id: UUID | None = None,
+        status: AssignmentStatus | None = None,
         skip: int = 0,
         limit: int = 100,
     ) -> list[DiaristAssignment]:
         """Lista alocações com filtros."""
-        query = select(DiaristAssignment).options(
-            joinedload(DiaristAssignment.diarist)
-        )
+        query = select(DiaristAssignment).options(joinedload(DiaristAssignment.diarist))
 
         if diarist_id:
             query = query.where(DiaristAssignment.diarist_id == diarist_id)
@@ -267,7 +263,7 @@ class DiaristRepository:
         await self.db.refresh(schedule)
         return schedule
 
-    async def get_schedule_by_id(self, schedule_id: UUID) -> Optional[DiaristSchedule]:
+    async def get_schedule_by_id(self, schedule_id: UUID) -> DiaristSchedule | None:
         """Busca agendamento por ID."""
         result = await self.db.execute(
             select(DiaristSchedule)
@@ -281,18 +277,16 @@ class DiaristRepository:
 
     async def list_schedules(
         self,
-        diarist_id: Optional[UUID] = None,
-        condominio_id: Optional[UUID] = None,
-        data_inicio: Optional[date] = None,
-        data_fim: Optional[date] = None,
-        status: Optional[ScheduleStatus] = None,
+        diarist_id: UUID | None = None,
+        condominio_id: UUID | None = None,
+        data_inicio: date | None = None,
+        data_fim: date | None = None,
+        status: ScheduleStatus | None = None,
         skip: int = 0,
         limit: int = 100,
     ) -> list[DiaristSchedule]:
         """Lista agendamentos com filtros."""
-        query = select(DiaristSchedule).options(
-            joinedload(DiaristSchedule.diarist)
-        )
+        query = select(DiaristSchedule).options(joinedload(DiaristSchedule.diarist))
 
         if diarist_id:
             query = query.where(DiaristSchedule.diarist_id == diarist_id)
@@ -307,7 +301,7 @@ class DiaristRepository:
             query = query.where(DiaristSchedule.data_trabalho <= data_fim)
 
         if status:
-            status_str = status.value if hasattr(status, 'value') else str(status)
+            status_str = status.value if hasattr(status, "value") else str(status)
             query = query.where(cast(DiaristSchedule.status, String) == status_str)
 
         query = query.order_by(DiaristSchedule.data_trabalho.desc()).offset(skip).limit(limit)
@@ -317,12 +311,14 @@ class DiaristRepository:
     async def get_schedules_by_date(
         self,
         data: date,
-        condominio_id: Optional[UUID] = None,
+        condominio_id: UUID | None = None,
     ) -> list[DiaristSchedule]:
         """Busca agendamentos de uma data específica."""
-        query = select(DiaristSchedule).options(
-            joinedload(DiaristSchedule.diarist)
-        ).where(DiaristSchedule.data_trabalho == data)
+        query = (
+            select(DiaristSchedule)
+            .options(joinedload(DiaristSchedule.diarist))
+            .where(DiaristSchedule.data_trabalho == data)
+        )
 
         if condominio_id:
             query = query.where(DiaristSchedule.condominio_id == condominio_id)
@@ -340,9 +336,9 @@ class DiaristRepository:
         self,
         schedule_id: UUID,
         hora_checkin: datetime,
-        latitude: Optional[Decimal] = None,
-        longitude: Optional[Decimal] = None,
-    ) -> Optional[DiaristSchedule]:
+        latitude: Decimal | None = None,
+        longitude: Decimal | None = None,
+    ) -> DiaristSchedule | None:
         """Registra check-in."""
         schedule = await self.get_schedule_by_id(schedule_id)
         if schedule and schedule.status in [
@@ -362,9 +358,9 @@ class DiaristRepository:
         self,
         schedule_id: UUID,
         hora_checkout: datetime,
-        latitude: Optional[Decimal] = None,
-        longitude: Optional[Decimal] = None,
-    ) -> Optional[DiaristSchedule]:
+        latitude: Decimal | None = None,
+        longitude: Decimal | None = None,
+    ) -> DiaristSchedule | None:
         """Registra check-out."""
         schedule = await self.get_schedule_by_id(schedule_id)
         if schedule and schedule.status == ScheduleStatus.EM_ANDAMENTO:
@@ -386,29 +382,25 @@ class DiaristRepository:
         await self.db.refresh(payment)
         return payment
 
-    async def get_payment_by_id(self, payment_id: UUID) -> Optional[DiaristPayment]:
+    async def get_payment_by_id(self, payment_id: UUID) -> DiaristPayment | None:
         """Busca pagamento por ID."""
         result = await self.db.execute(
-            select(DiaristPayment)
-            .options(joinedload(DiaristPayment.diarist))
-            .where(DiaristPayment.id == payment_id)
+            select(DiaristPayment).options(joinedload(DiaristPayment.diarist)).where(DiaristPayment.id == payment_id)
         )
         return result.scalars().first()
 
     async def list_payments(
         self,
-        diarist_id: Optional[UUID] = None,
-        condominio_id: Optional[UUID] = None,
-        status: Optional[PaymentStatus] = None,
-        data_inicio: Optional[date] = None,
-        data_fim: Optional[date] = None,
+        diarist_id: UUID | None = None,
+        condominio_id: UUID | None = None,
+        status: PaymentStatus | None = None,
+        data_inicio: date | None = None,
+        data_fim: date | None = None,
         skip: int = 0,
         limit: int = 100,
     ) -> list[DiaristPayment]:
         """Lista pagamentos com filtros."""
-        query = select(DiaristPayment).options(
-            joinedload(DiaristPayment.diarist)
-        )
+        query = select(DiaristPayment).options(joinedload(DiaristPayment.diarist))
 
         if diarist_id:
             query = query.where(DiaristPayment.diarist_id == diarist_id)
@@ -431,12 +423,14 @@ class DiaristRepository:
 
     async def get_pending_payments(
         self,
-        condominio_id: Optional[UUID] = None,
+        condominio_id: UUID | None = None,
     ) -> list[DiaristPayment]:
         """Busca pagamentos pendentes."""
-        query = select(DiaristPayment).options(
-            joinedload(DiaristPayment.diarist)
-        ).where(DiaristPayment.status == PaymentStatus.PENDENTE)
+        query = (
+            select(DiaristPayment)
+            .options(joinedload(DiaristPayment.diarist))
+            .where(DiaristPayment.status == PaymentStatus.PENDENTE)
+        )
 
         if condominio_id:
             query = query.where(DiaristPayment.condominio_id == condominio_id)
@@ -454,8 +448,8 @@ class DiaristRepository:
         self,
         payment_id: UUID,
         data_pagamento: date,
-        comprovante: Optional[str] = None,
-    ) -> Optional[DiaristPayment]:
+        comprovante: str | None = None,
+    ) -> DiaristPayment | None:
         """Marca pagamento como pago."""
         payment = await self.get_payment_by_id(payment_id)
         if payment and payment.status == PaymentStatus.PENDENTE:
@@ -480,21 +474,16 @@ class DiaristRepository:
 
         return evaluation
 
-    async def get_evaluation_by_id(
-        self, evaluation_id: UUID
-    ) -> Optional[DiaristEvaluation]:
+    async def get_evaluation_by_id(self, evaluation_id: UUID) -> DiaristEvaluation | None:
         """Busca avaliação por ID."""
-        result = await self.db.execute(
-            select(DiaristEvaluation)
-            .where(DiaristEvaluation.id == evaluation_id)
-        )
+        result = await self.db.execute(select(DiaristEvaluation).where(DiaristEvaluation.id == evaluation_id))
         return result.scalars().first()
 
     async def list_evaluations(
         self,
-        diarist_id: Optional[UUID] = None,
-        schedule_id: Optional[UUID] = None,
-        nota_minima: Optional[int] = None,
+        diarist_id: UUID | None = None,
+        schedule_id: UUID | None = None,
+        nota_minima: int | None = None,
         skip: int = 0,
         limit: int = 100,
     ) -> list[DiaristEvaluation]:
@@ -514,14 +503,9 @@ class DiaristRepository:
         result = await self.db.execute(query)
         return list(result.scalars().all())
 
-    async def get_evaluation_by_schedule(
-        self, schedule_id: UUID
-    ) -> Optional[DiaristEvaluation]:
+    async def get_evaluation_by_schedule(self, schedule_id: UUID) -> DiaristEvaluation | None:
         """Busca avaliação de um agendamento."""
-        result = await self.db.execute(
-            select(DiaristEvaluation)
-            .where(DiaristEvaluation.schedule_id == schedule_id)
-        )
+        result = await self.db.execute(select(DiaristEvaluation).where(DiaristEvaluation.schedule_id == schedule_id))
         return result.scalars().first()
 
     async def _update_diarist_rating(self, diarist_id: UUID) -> None:
@@ -530,15 +514,12 @@ class DiaristRepository:
             select(
                 func.avg(DiaristEvaluation.nota_geral).label("media"),
                 func.count(DiaristEvaluation.id).label("total"),
-            )
-            .where(DiaristEvaluation.diarist_id == diarist_id)
+            ).where(DiaristEvaluation.diarist_id == diarist_id)
         )
         row = result.first()
 
         if row and row.media:
-            diarist_result = await self.db.execute(
-                select(Diarist).where(Diarist.id == diarist_id)
-            )
+            diarist_result = await self.db.execute(select(Diarist).where(Diarist.id == diarist_id))
             diarist = diarist_result.scalars().first()
             if diarist:
                 diarist.avaliacao_media = Decimal(str(row.media))
@@ -550,8 +531,8 @@ class DiaristRepository:
     async def get_diarist_metrics(
         self,
         diarist_id: UUID,
-        data_inicio: Optional[date] = None,
-        data_fim: Optional[date] = None,
+        data_inicio: date | None = None,
+        data_fim: date | None = None,
     ) -> dict:
         """Calcula métricas da diarista."""
         if not data_inicio:
@@ -561,8 +542,7 @@ class DiaristRepository:
 
         # Agendamentos no período
         schedules_result = await self.db.execute(
-            select(DiaristSchedule)
-            .where(
+            select(DiaristSchedule).where(
                 DiaristSchedule.diarist_id == diarist_id,
                 DiaristSchedule.data_trabalho >= data_inicio,
                 DiaristSchedule.data_trabalho <= data_fim,
@@ -576,21 +556,16 @@ class DiaristRepository:
 
         # Horas trabalhadas
         horas_trabalhadas = sum(
-            s.horas_trabalhadas or Decimal("0")
-            for s in schedules
-            if s.status == ScheduleStatus.CONCLUIDO
+            s.horas_trabalhadas or Decimal("0") for s in schedules if s.status == ScheduleStatus.CONCLUIDO
         )
 
         # Taxa de pontualidade
         pontuais = sum(1 for s in schedules if s.teve_checkin)
-        taxa_pontualidade = (
-            (pontuais / concluidos * 100) if concluidos > 0 else 0
-        )
+        taxa_pontualidade = (pontuais / concluidos * 100) if concluidos > 0 else 0
 
         # Pagamentos
         pagamentos_result = await self.db.execute(
-            select(func.sum(DiaristPayment.valor_liquido))
-            .where(
+            select(func.sum(DiaristPayment.valor_liquido)).where(
                 DiaristPayment.diarist_id == diarist_id,
                 DiaristPayment.data_referencia >= data_inicio,
                 DiaristPayment.data_referencia <= data_fim,
@@ -605,11 +580,7 @@ class DiaristRepository:
                 "total": total_agendamentos,
                 "concluidos": concluidos,
                 "cancelados": cancelados,
-                "taxa_conclusao": (
-                    concluidos / total_agendamentos * 100
-                    if total_agendamentos > 0
-                    else 0
-                ),
+                "taxa_conclusao": (concluidos / total_agendamentos * 100 if total_agendamentos > 0 else 0),
             },
             "horas_trabalhadas": float(horas_trabalhadas),
             "taxa_pontualidade": round(taxa_pontualidade, 1),
@@ -618,9 +589,9 @@ class DiaristRepository:
 
     async def get_condominio_statistics(
         self,
-        condominio_id: Optional[UUID] = None,
-        data_inicio: Optional[date] = None,
-        data_fim: Optional[date] = None,
+        condominio_id: UUID | None = None,
+        data_inicio: date | None = None,
+        data_fim: date | None = None,
     ) -> dict:
         """Estatísticas de diaristas (global ou por condomínio)."""
         if not data_inicio:
@@ -629,13 +600,11 @@ class DiaristRepository:
             data_fim = date.today()
 
         # Total de diaristas ativas
-        diaristas_query = select(
-            func.count(func.distinct(DiaristAssignment.diarist_id))
-        ).where(DiaristAssignment.ativo.is_(True))
+        diaristas_query = select(func.count(func.distinct(DiaristAssignment.diarist_id))).where(
+            DiaristAssignment.ativo.is_(True)
+        )
         if condominio_id:
-            diaristas_query = diaristas_query.where(
-                DiaristAssignment.condominio_id == condominio_id
-            )
+            diaristas_query = diaristas_query.where(DiaristAssignment.condominio_id == condominio_id)
         diaristas_result = await self.db.execute(diaristas_query)
         total_diaristas = diaristas_result.scalar() or 0
 
@@ -645,16 +614,12 @@ class DiaristRepository:
             DiaristSchedule.data_trabalho <= data_fim,
         )
         if condominio_id:
-            schedules_query = schedules_query.where(
-                DiaristSchedule.condominio_id == condominio_id
-            )
+            schedules_query = schedules_query.where(DiaristSchedule.condominio_id == condominio_id)
         schedules_result = await self.db.execute(schedules_query)
         schedules = list(schedules_result.scalars().all())
 
         total_agendamentos = len(schedules)
-        concluidos = sum(
-            1 for s in schedules if s.status == ScheduleStatus.CONCLUIDO
-        )
+        concluidos = sum(1 for s in schedules if s.status == ScheduleStatus.CONCLUIDO)
 
         # Gastos
         gastos_query = select(func.sum(DiaristPayment.valor_liquido)).where(
@@ -662,9 +627,7 @@ class DiaristRepository:
             DiaristPayment.data_referencia <= data_fim,
         )
         if condominio_id:
-            gastos_query = gastos_query.where(
-                DiaristPayment.condominio_id == condominio_id
-            )
+            gastos_query = gastos_query.where(DiaristPayment.condominio_id == condominio_id)
         gastos_result = await self.db.execute(gastos_query)
         gastos = gastos_result.scalar() or Decimal("0")
 
@@ -678,9 +641,7 @@ class DiaristRepository:
             )
         )
         if condominio_id:
-            eval_query = eval_query.where(
-                DiaristSchedule.condominio_id == condominio_id
-            )
+            eval_query = eval_query.where(DiaristSchedule.condominio_id == condominio_id)
         media_result = await self.db.execute(eval_query)
         media_avaliacoes = media_result.scalar()
 
@@ -690,11 +651,7 @@ class DiaristRepository:
             "agendamentos": {
                 "total": total_agendamentos,
                 "concluidos": concluidos,
-                "taxa_conclusao": (
-                    concluidos / total_agendamentos * 100
-                    if total_agendamentos > 0
-                    else 0
-                ),
+                "taxa_conclusao": (concluidos / total_agendamentos * 100 if total_agendamentos > 0 else 0),
             },
             "gastos_total": float(gastos),
             "media_avaliacoes": round(float(media_avaliacoes or 0), 2),
@@ -702,7 +659,7 @@ class DiaristRepository:
 
     async def get_top_diarists(
         self,
-        condominio_id: Optional[UUID] = None,
+        condominio_id: UUID | None = None,
         limit: int = 10,
     ) -> list[dict]:
         """Retorna ranking das melhores diaristas."""

@@ -5,7 +5,6 @@ Repository para operações de banco de dados com Occurrence.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
 from uuid import uuid4
 
 from sqlalchemy import func, or_, select
@@ -37,9 +36,7 @@ class OccurrenceRepository:
         """
         year = datetime.now().year
         result = await self.db.execute(
-            select(func.count(Occurrence.id)).where(
-                func.extract('year', Occurrence.created_at) == year
-            )
+            select(func.count(Occurrence.id)).where(func.extract("year", Occurrence.created_at) == year)
         )
         count = result.scalar() or 0
         return f"OCO-{year}-{count + 1:05d}"
@@ -83,7 +80,7 @@ class OccurrenceRepository:
         logger.info(f"Occurrence criada: {occurrence.id} ({occurrence.code})")
         return occurrence
 
-    async def get_by_id(self, occurrence_id: str) -> Optional[Occurrence]:
+    async def get_by_id(self, occurrence_id: str) -> Occurrence | None:
         """
         Busca ocorrência por ID.
 
@@ -103,7 +100,7 @@ class OccurrenceRepository:
 
     async def list(
         self,
-        filters: Optional[OccurrenceFilter] = None,
+        filters: OccurrenceFilter | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[Occurrence], int]:
@@ -184,7 +181,7 @@ class OccurrenceRepository:
 
         return query
 
-    async def update(self, occurrence_id: str, data: OccurrenceUpdate) -> Optional[Occurrence]:
+    async def update(self, occurrence_id: str, data: OccurrenceUpdate) -> Occurrence | None:
         """
         Atualiza uma ocorrência.
 
@@ -222,7 +219,7 @@ class OccurrenceRepository:
         occurrence_id: str,
         data: OccurrenceResolve,
         resolved_by_id: str,
-    ) -> Optional[Occurrence]:
+    ) -> Occurrence | None:
         """
         Resolve uma ocorrência.
 
@@ -255,7 +252,7 @@ class OccurrenceRepository:
         self,
         occurrence_id: str,
         attachment: dict,
-    ) -> Optional[Occurrence]:
+    ) -> Occurrence | None:
         """
         Adiciona anexo a uma ocorrência.
 
@@ -318,10 +315,12 @@ class OccurrenceRepository:
             Lista de ocorrências
         """
         result = await self.db.execute(
-            select(Occurrence).where(
+            select(Occurrence)
+            .where(
                 Occurrence.post_id == post_id,
                 Occurrence.is_active.is_(True),
-            ).order_by(Occurrence.occurred_at.desc())
+            )
+            .order_by(Occurrence.occurred_at.desc())
         )
         return list(result.scalars().all())
 
@@ -332,9 +331,7 @@ class OccurrenceRepository:
         Returns:
             Estatísticas
         """
-        result = await self.db.execute(
-            select(Occurrence).where(Occurrence.is_active.is_(True))
-        )
+        result = await self.db.execute(select(Occurrence).where(Occurrence.is_active.is_(True)))
         occurrences = list(result.scalars().all())
 
         if not occurrences:

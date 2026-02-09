@@ -1,22 +1,22 @@
 """Repository para TimeEntry."""
 
+import builtins
 from datetime import date
-from typing import Optional, List, Tuple
 from uuid import UUID
 
-from sqlalchemy import select, func, or_
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.hr.time_tracking.models import (
-    TimeEntry,
-    EntryType,
-    EntryStatus,
     AnomalyType,
+    EntryStatus,
+    EntryType,
+    TimeEntry,
 )
 from modules.hr.time_tracking.schemas import (
     TimeEntryCreate,
-    TimeEntryUpdate,
     TimeEntryFilter,
+    TimeEntryUpdate,
 )
 
 
@@ -58,7 +58,7 @@ class TimeEntryRepository:
         await self.db.refresh(entry)
         return entry
 
-    async def get_by_id(self, entry_id: UUID) -> Optional[TimeEntry]:
+    async def get_by_id(self, entry_id: UUID) -> TimeEntry | None:
         """Busca registro por ID.
 
         Args:
@@ -75,7 +75,7 @@ class TimeEntryRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_by_code(self, code: str) -> Optional[TimeEntry]:
+    async def get_by_code(self, code: str) -> TimeEntry | None:
         """Busca registro por código.
 
         Args:
@@ -131,7 +131,7 @@ class TimeEntryRepository:
         filters: TimeEntryFilter = None,
         skip: int = 0,
         limit: int = 100,
-    ) -> Tuple[List[TimeEntry], int]:
+    ) -> tuple[list[TimeEntry], int]:
         """Lista registros com filtros.
 
         Args:
@@ -152,9 +152,7 @@ class TimeEntryRepository:
             if filters.status:
                 query = query.where(TimeEntry.status == filters.status)
             if filters.registration_method:
-                query = query.where(
-                    TimeEntry.registration_method == filters.registration_method
-                )
+                query = query.where(TimeEntry.registration_method == filters.registration_method)
             if filters.anomaly_type:
                 query = query.where(TimeEntry.anomaly_type == filters.anomaly_type)
             if filters.condominium_id:
@@ -179,13 +177,9 @@ class TimeEntryRepository:
                         )
                     )
             if filters.requires_approval is not None:
-                query = query.where(
-                    TimeEntry.requires_approval == filters.requires_approval
-                )
+                query = query.where(TimeEntry.requires_approval == filters.requires_approval)
             if filters.is_manual_entry is not None:
-                query = query.where(
-                    TimeEntry.is_manual_entry == filters.is_manual_entry
-                )
+                query = query.where(TimeEntry.is_manual_entry == filters.is_manual_entry)
 
         # Total
         count_query = select(func.count()).select_from(query.subquery())
@@ -193,10 +187,14 @@ class TimeEntryRepository:
         total = total_result.scalar()
 
         # Paginação
-        query = query.order_by(
-            TimeEntry.entry_date.desc(),
-            TimeEntry.entry_time.desc(),
-        ).offset(skip).limit(limit)
+        query = (
+            query.order_by(
+                TimeEntry.entry_date.desc(),
+                TimeEntry.entry_time.desc(),
+            )
+            .offset(skip)
+            .limit(limit)
+        )
 
         result = await self.db.execute(query)
         entries = result.scalars().all()
@@ -207,7 +205,7 @@ class TimeEntryRepository:
         self,
         employee_id: str,
         entry_date: date,
-    ) -> List[TimeEntry]:
+    ) -> builtins.list[TimeEntry]:
         """Busca registros de um funcionário em uma data.
 
         Args:
@@ -218,11 +216,13 @@ class TimeEntryRepository:
             Lista de registros
         """
         result = await self.db.execute(
-            select(TimeEntry).where(
+            select(TimeEntry)
+            .where(
                 TimeEntry.employee_id == employee_id,
                 TimeEntry.entry_date == entry_date,
                 TimeEntry.is_deleted.is_(False),
-            ).order_by(TimeEntry.entry_time)
+            )
+            .order_by(TimeEntry.entry_time)
         )
         return list(result.scalars().all())
 
@@ -231,7 +231,7 @@ class TimeEntryRepository:
         employee_id: str,
         start_date: date,
         end_date: date,
-    ) -> List[TimeEntry]:
+    ) -> builtins.list[TimeEntry]:
         """Busca registros de um funcionário em um período.
 
         Args:
@@ -243,12 +243,14 @@ class TimeEntryRepository:
             Lista de registros
         """
         result = await self.db.execute(
-            select(TimeEntry).where(
+            select(TimeEntry)
+            .where(
                 TimeEntry.employee_id == employee_id,
                 TimeEntry.entry_date >= start_date,
                 TimeEntry.entry_date <= end_date,
                 TimeEntry.is_deleted.is_(False),
-            ).order_by(TimeEntry.entry_date, TimeEntry.entry_time)
+            )
+            .order_by(TimeEntry.entry_date, TimeEntry.entry_time)
         )
         return list(result.scalars().all())
 
@@ -257,7 +259,7 @@ class TimeEntryRepository:
         condominium_id: str = None,
         skip: int = 0,
         limit: int = 100,
-    ) -> List[TimeEntry]:
+    ) -> builtins.list[TimeEntry]:
         """Busca registros pendentes de aprovação.
 
         Args:
@@ -289,7 +291,7 @@ class TimeEntryRepository:
         date_to: date = None,
         skip: int = 0,
         limit: int = 100,
-    ) -> List[TimeEntry]:
+    ) -> builtins.list[TimeEntry]:
         """Busca registros com anomalias não resolvidas.
 
         Args:
@@ -350,24 +352,18 @@ class TimeEntryRepository:
             base_where.append(TimeEntry.entry_date <= date_to)
 
         # Total
-        total_result = await self.db.execute(
-            select(func.count()).where(*base_where)
-        )
+        total_result = await self.db.execute(select(func.count()).where(*base_where))
         total = total_result.scalar() or 0
 
         # Por tipo
         type_result = await self.db.execute(
-            select(TimeEntry.entry_type, func.count())
-            .where(*base_where)
-            .group_by(TimeEntry.entry_type)
+            select(TimeEntry.entry_type, func.count()).where(*base_where).group_by(TimeEntry.entry_type)
         )
         by_type = {row[0].value: row[1] for row in type_result.all()}
 
         # Por status
         status_result = await self.db.execute(
-            select(TimeEntry.status, func.count())
-            .where(*base_where)
-            .group_by(TimeEntry.status)
+            select(TimeEntry.status, func.count()).where(*base_where).group_by(TimeEntry.status)
         )
         by_status = {row[0].value: row[1] for row in status_result.all()}
 
@@ -436,7 +432,7 @@ class TimeEntryRepository:
         entry_date: date,
         entry_type: EntryType,
         tolerance_minutes: int = 5,
-    ) -> Optional[TimeEntry]:
+    ) -> TimeEntry | None:
         """Verifica se existe registro duplicado.
 
         Args:

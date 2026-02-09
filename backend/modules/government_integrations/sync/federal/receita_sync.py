@@ -10,11 +10,12 @@ Extrai e sincroniza:
 """
 
 import logging
-from datetime import datetime, date, timedelta
-from typing import Optional, Dict, Any, List, AsyncGenerator
+from collections.abc import AsyncGenerator
+from datetime import date, datetime, timedelta
 from decimal import Decimal
+from typing import Any
 
-from ..base_sync import BaseSynchronizer, SyncConfig, SyncResult
+from ..base_sync import BaseSynchronizer, SyncConfig
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +41,7 @@ class ReceitaFederalSynchronizer(BaseSynchronizer):
     async def _extrair_dados(
         self,
         config: SyncConfig,
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+    ) -> AsyncGenerator[dict[str, Any], None]:
         """
         Extrai dados da Receita Federal.
 
@@ -77,7 +78,7 @@ class ReceitaFederalSynchronizer(BaseSynchronizer):
     async def _consultar_dados_cadastrais(
         self,
         cnpj: str,
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+    ) -> AsyncGenerator[dict[str, Any], None]:
         """Consulta dados cadastrais do CNPJ."""
         try:
             if not self.receita_service:
@@ -101,8 +102,12 @@ class ReceitaFederalSynchronizer(BaseSynchronizer):
                     "motivo_situacao": dados.get("motivo_situacao"),
                     "codigo_natureza_juridica": dados.get("natureza_juridica", {}).get("codigo"),
                     "natureza_juridica": dados.get("natureza_juridica", {}).get("descricao"),
-                    "cnae_principal": dados.get("atividade_principal", [{}])[0].get("codigo") if dados.get("atividade_principal") else None,
-                    "cnae_principal_descricao": dados.get("atividade_principal", [{}])[0].get("descricao") if dados.get("atividade_principal") else None,
+                    "cnae_principal": dados.get("atividade_principal", [{}])[0].get("codigo")
+                    if dados.get("atividade_principal")
+                    else None,
+                    "cnae_principal_descricao": dados.get("atividade_principal", [{}])[0].get("descricao")
+                    if dados.get("atividade_principal")
+                    else None,
                     "cnaes_secundarios": dados.get("atividades_secundarias", []),
                     "logradouro": dados.get("logradouro"),
                     "numero": dados.get("numero"),
@@ -126,7 +131,7 @@ class ReceitaFederalSynchronizer(BaseSynchronizer):
     async def _consultar_situacao_fiscal(
         self,
         cnpj: str,
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+    ) -> AsyncGenerator[dict[str, Any], None]:
         """Consulta situacao fiscal no e-CAC."""
         try:
             if not self.ecac_service:
@@ -153,7 +158,7 @@ class ReceitaFederalSynchronizer(BaseSynchronizer):
     async def _consultar_certidoes(
         self,
         cnpj: str,
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+    ) -> AsyncGenerator[dict[str, Any], None]:
         """Consulta e baixa certidoes."""
         try:
             if not self.ecac_service:
@@ -196,7 +201,7 @@ class ReceitaFederalSynchronizer(BaseSynchronizer):
     async def _consultar_simples_nacional(
         self,
         cnpj: str,
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+    ) -> AsyncGenerator[dict[str, Any], None]:
         """Consulta situacao no Simples Nacional."""
         try:
             if not self.receita_service:
@@ -224,7 +229,7 @@ class ReceitaFederalSynchronizer(BaseSynchronizer):
         self,
         cnpj: str,
         config: SyncConfig,
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+    ) -> AsyncGenerator[dict[str, Any], None]:
         """Consulta guias/DARFs no e-CAC."""
         try:
             if not self.ecac_service:
@@ -262,7 +267,7 @@ class ReceitaFederalSynchronizer(BaseSynchronizer):
 
     async def _processar_registro(
         self,
-        registro: Dict[str, Any],
+        registro: dict[str, Any],
         config: SyncConfig,
     ) -> bool:
         """Processa registro extraido."""
@@ -283,7 +288,7 @@ class ReceitaFederalSynchronizer(BaseSynchronizer):
 
         return False
 
-    async def _salvar_dados_cadastrais(self, registro: Dict[str, Any]) -> bool:
+    async def _salvar_dados_cadastrais(self, registro: dict[str, Any]) -> bool:
         """Salva dados cadastrais da empresa."""
         from ..models.sync_models import DadosCadastraisEmpresa
 
@@ -291,9 +296,7 @@ class ReceitaFederalSynchronizer(BaseSynchronizer):
         if not cnpj:
             return False
 
-        existente = self.db.query(DadosCadastraisEmpresa).filter(
-            DadosCadastraisEmpresa.cnpj == cnpj
-        ).first()
+        existente = self.db.query(DadosCadastraisEmpresa).filter(DadosCadastraisEmpresa.cnpj == cnpj).first()
 
         if existente:
             # Atualizar
@@ -336,14 +339,12 @@ class ReceitaFederalSynchronizer(BaseSynchronizer):
             self.db.add(novo)
             return True
 
-    async def _atualizar_simples(self, registro: Dict[str, Any]) -> bool:
+    async def _atualizar_simples(self, registro: dict[str, Any]) -> bool:
         """Atualiza informacoes do Simples Nacional."""
         from ..models.sync_models import DadosCadastraisEmpresa
 
         cnpj = registro.get("cnpj")
-        empresa = self.db.query(DadosCadastraisEmpresa).filter(
-            DadosCadastraisEmpresa.cnpj == cnpj
-        ).first()
+        empresa = self.db.query(DadosCadastraisEmpresa).filter(DadosCadastraisEmpresa.cnpj == cnpj).first()
 
         if empresa:
             empresa.optante_simples = registro.get("optante_simples")
@@ -355,7 +356,7 @@ class ReceitaFederalSynchronizer(BaseSynchronizer):
 
         return False
 
-    async def _salvar_certidao(self, registro: Dict[str, Any]) -> bool:
+    async def _salvar_certidao(self, registro: dict[str, Any]) -> bool:
         """Salva certidao."""
         from ..models.sync_models import Certidao
 
@@ -363,11 +364,15 @@ class ReceitaFederalSynchronizer(BaseSynchronizer):
         tipo = registro.get("tipo_certidao")
 
         # Verificar se ja existe certidao valida
-        existente = self.db.query(Certidao).filter(
-            Certidao.cnpj_empresa == cnpj,
-            Certidao.tipo_certidao == tipo,
-            Certidao.data_validade >= date.today(),
-        ).first()
+        existente = (
+            self.db.query(Certidao)
+            .filter(
+                Certidao.cnpj_empresa == cnpj,
+                Certidao.tipo_certidao == tipo,
+                Certidao.data_validade >= date.today(),
+            )
+            .first()
+        )
 
         if existente:
             return False
@@ -387,18 +392,22 @@ class ReceitaFederalSynchronizer(BaseSynchronizer):
         self.db.add(nova)
         return True
 
-    async def _salvar_guia(self, registro: Dict[str, Any]) -> bool:
+    async def _salvar_guia(self, registro: dict[str, Any]) -> bool:
         """Salva guia de recolhimento."""
-        from ..models.sync_models import GuiaRecolhimento, TipoGuia, StatusGuia
+        from ..models.sync_models import GuiaRecolhimento, StatusGuia, TipoGuia
 
         numero = registro.get("numero_guia")
         cnpj = registro.get("cnpj")
 
         if numero:
-            existente = self.db.query(GuiaRecolhimento).filter(
-                GuiaRecolhimento.numero_guia == numero,
-                GuiaRecolhimento.cnpj_empresa == cnpj,
-            ).first()
+            existente = (
+                self.db.query(GuiaRecolhimento)
+                .filter(
+                    GuiaRecolhimento.numero_guia == numero,
+                    GuiaRecolhimento.cnpj_empresa == cnpj,
+                )
+                .first()
+            )
 
             if existente:
                 # Atualizar status se foi paga
@@ -429,15 +438,20 @@ class ReceitaFederalSynchronizer(BaseSynchronizer):
         self.db.add(nova)
         return True
 
-    def _obter_ultima_sincronizacao(self, cnpj: str) -> Optional[datetime]:
+    def _obter_ultima_sincronizacao(self, cnpj: str) -> datetime | None:
         """Obtem ultima sincronizacao."""
-        from ..models.sync_models import SyncLog, StatusSincronizacao
+        from ..models.sync_models import StatusSincronizacao, SyncLog
 
-        ultimo = self.db.query(SyncLog).filter(
-            SyncLog.cnpj_empresa == cnpj,
-            SyncLog.servico == self.SERVICO_NOME,
-            SyncLog.status == StatusSincronizacao.SUCESSO,
-        ).order_by(SyncLog.fim_execucao.desc()).first()
+        ultimo = (
+            self.db.query(SyncLog)
+            .filter(
+                SyncLog.cnpj_empresa == cnpj,
+                SyncLog.servico == self.SERVICO_NOME,
+                SyncLog.status == StatusSincronizacao.SUCESSO,
+            )
+            .order_by(SyncLog.fim_execucao.desc())
+            .first()
+        )
 
         return ultimo.fim_execucao if ultimo else None
 
@@ -445,7 +459,7 @@ class ReceitaFederalSynchronizer(BaseSynchronizer):
     # METODOS ADICIONAIS
     # =========================================================================
 
-    async def consultar_cnpj(self, cnpj: str) -> Dict[str, Any]:
+    async def consultar_cnpj(self, cnpj: str) -> dict[str, Any]:
         """
         Consulta dados de um CNPJ especifico.
 
@@ -465,9 +479,8 @@ class ReceitaFederalSynchronizer(BaseSynchronizer):
 
         if result.sucesso:
             from ..models.sync_models import DadosCadastraisEmpresa
-            empresa = self.db.query(DadosCadastraisEmpresa).filter(
-                DadosCadastraisEmpresa.cnpj == cnpj
-            ).first()
+
+            empresa = self.db.query(DadosCadastraisEmpresa).filter(DadosCadastraisEmpresa.cnpj == cnpj).first()
 
             if empresa:
                 return {
@@ -488,14 +501,18 @@ class ReceitaFederalSynchronizer(BaseSynchronizer):
 
         return {}
 
-    async def obter_certidoes_validas(self, cnpj: str) -> List[Dict[str, Any]]:
+    async def obter_certidoes_validas(self, cnpj: str) -> list[dict[str, Any]]:
         """Obtem certidoes validas da empresa."""
         from ..models.sync_models import Certidao
 
-        certidoes = self.db.query(Certidao).filter(
-            Certidao.cnpj_empresa == cnpj,
-            Certidao.data_validade >= date.today(),
-        ).all()
+        certidoes = (
+            self.db.query(Certidao)
+            .filter(
+                Certidao.cnpj_empresa == cnpj,
+                Certidao.data_validade >= date.today(),
+            )
+            .all()
+        )
 
         return [
             {
@@ -508,26 +525,30 @@ class ReceitaFederalSynchronizer(BaseSynchronizer):
             for c in certidoes
         ]
 
-    async def obter_resumo(self, cnpj: str) -> Dict[str, Any]:
+    async def obter_resumo(self, cnpj: str) -> dict[str, Any]:
         """Obtem resumo dos dados da Receita."""
-        from ..models.sync_models import (
-            DadosCadastraisEmpresa, Certidao, GuiaRecolhimento
+        from ..models.sync_models import Certidao, DadosCadastraisEmpresa, GuiaRecolhimento
+
+        empresa = self.db.query(DadosCadastraisEmpresa).filter(DadosCadastraisEmpresa.cnpj == cnpj).first()
+
+        certidoes_validas = (
+            self.db.query(Certidao)
+            .filter(
+                Certidao.cnpj_empresa == cnpj,
+                Certidao.data_validade >= date.today(),
+            )
+            .count()
         )
 
-        empresa = self.db.query(DadosCadastraisEmpresa).filter(
-            DadosCadastraisEmpresa.cnpj == cnpj
-        ).first()
-
-        certidoes_validas = self.db.query(Certidao).filter(
-            Certidao.cnpj_empresa == cnpj,
-            Certidao.data_validade >= date.today(),
-        ).count()
-
-        guias_pendentes = self.db.query(GuiaRecolhimento).filter(
-            GuiaRecolhimento.cnpj_empresa == cnpj,
-            GuiaRecolhimento.status == "gerada",
-            GuiaRecolhimento.data_vencimento >= date.today(),
-        ).count()
+        guias_pendentes = (
+            self.db.query(GuiaRecolhimento)
+            .filter(
+                GuiaRecolhimento.cnpj_empresa == cnpj,
+                GuiaRecolhimento.status == "gerada",
+                GuiaRecolhimento.data_vencimento >= date.today(),
+            )
+            .count()
+        )
 
         return {
             "dados_cadastrais": empresa is not None,

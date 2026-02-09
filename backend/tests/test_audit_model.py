@@ -3,35 +3,36 @@ Testes para os Models do módulo de Auditoria
 Sprint 33: Auditoria e Compliance
 """
 
-import pytest
 from datetime import datetime, timedelta
 from uuid import uuid4
 
+import pytest
+
 from modules.audit.models import (
-    AuditLog,
-    ComplianceRule,
-    ComplianceCheck,
-    DataRetention,
     AccessHistory,
+    AccessResult,
+    AccessType,
     AuditAction,
     AuditCategory,
-    AuditSeverity,
+    AuditLog,
     AuditResult,
+    AuditSeverity,
+    CheckResult,
+    CheckStatus,
+    CheckType,
+    ComplianceCheck,
     ComplianceFramework,
+    ComplianceRule,
+    DataCategory,
+    DataRetention,
+    DeviceType,
+    RetentionAction,
+    RetentionPeriod,
+    RetentionStatus,
+    RiskLevel,
     RuleCategory,
     RuleSeverity,
     RuleStatus,
-    CheckType,
-    CheckStatus,
-    CheckResult,
-    DataCategory,
-    RetentionPeriod,
-    RetentionAction,
-    RetentionStatus,
-    AccessType,
-    AccessResult,
-    DeviceType,
-    RiskLevel,
 )
 
 
@@ -47,7 +48,7 @@ class TestAuditLog:
             severity=AuditSeverity.INFO,
             result=AuditResult.SUCCESS,
             description="Registro criado",
-            user_email="user@test.com"
+            user_email="user@test.com",
         )
 
         assert log.event_id == "EVT-001"
@@ -63,7 +64,7 @@ class TestAuditLog:
             category=AuditCategory.AUTHENTICATION,
             description="Login realizado",
             user_email="user@test.com",
-            ip_address="192.168.1.1"
+            ip_address="192.168.1.1",
         )
 
         assert log.event_id.startswith("EVT-")
@@ -78,7 +79,7 @@ class TestAuditLog:
             category=AuditCategory.DATA_MODIFICATION,
             severity=AuditSeverity.WARNING,
             result=AuditResult.SUCCESS,
-            description="Registro deletado"
+            description="Registro deletado",
         )
 
         log.mark_for_review("Ação sensível")
@@ -95,7 +96,7 @@ class TestAuditLog:
             severity=AuditSeverity.INFO,
             result=AuditResult.SUCCESS,
             description="Registro atualizado",
-            requires_review=True
+            requires_review=True,
         )
 
         reviewer_id = str(uuid4())
@@ -114,7 +115,7 @@ class TestAuditLog:
             category=AuditCategory.AUTHENTICATION,
             severity=AuditSeverity.WARNING,
             result=AuditResult.FAILURE,
-            description="Login falhou"
+            description="Login falhou",
         )
 
         data_log = AuditLog(
@@ -123,7 +124,7 @@ class TestAuditLog:
             category=AuditCategory.DATA_MODIFICATION,
             severity=AuditSeverity.INFO,
             result=AuditResult.SUCCESS,
-            description="Dado criado"
+            description="Dado criado",
         )
 
         assert security_log.is_security_event is True
@@ -137,7 +138,7 @@ class TestAuditLog:
             category=AuditCategory.DATA_MODIFICATION,
             severity=AuditSeverity.ERROR,
             result=AuditResult.FAILURE,
-            description="Erro ao deletar"
+            description="Erro ao deletar",
         )
 
         info_log = AuditLog(
@@ -146,7 +147,7 @@ class TestAuditLog:
             category=AuditCategory.DATA_ACCESS,
             severity=AuditSeverity.INFO,
             result=AuditResult.SUCCESS,
-            description="Dados lidos"
+            description="Dados lidos",
         )
 
         assert error_log.is_high_severity is True
@@ -160,7 +161,7 @@ class TestAuditLog:
             category=AuditCategory.DATA_MODIFICATION,
             severity=AuditSeverity.INFO,
             result=AuditResult.SUCCESS,
-            description="Teste"
+            description="Teste",
         )
 
         log.archive()
@@ -180,7 +181,7 @@ class TestComplianceRule:
             framework=ComplianceFramework.LGPD,
             category=RuleCategory.DATA_PRIVACY,
             severity=RuleSeverity.HIGH,
-            requirement_text="Obter consentimento explícito"
+            requirement_text="Obter consentimento explícito",
         )
 
         assert rule.code == "LGPD-001"
@@ -197,7 +198,7 @@ class TestComplianceRule:
             category=RuleCategory.DATA_PRIVACY,
             severity=RuleSeverity.CRITICAL,
             requirement_text="Permitir exclusão de dados",
-            status=RuleStatus.DRAFT
+            status=RuleStatus.DRAFT,
         )
 
         rule.activate()
@@ -214,7 +215,7 @@ class TestComplianceRule:
             category=RuleCategory.DATA_PROTECTION,
             severity=RuleSeverity.MEDIUM,
             requirement_text="Teste",
-            status=RuleStatus.ACTIVE
+            status=RuleStatus.ACTIVE,
         )
 
         rule.deprecate("LGPD-004")
@@ -230,7 +231,7 @@ class TestComplianceRule:
             framework=ComplianceFramework.LGPD,
             category=RuleCategory.DATA_PRIVACY,
             severity=RuleSeverity.MEDIUM,
-            requirement_text="Teste"
+            requirement_text="Teste",
         )
 
         rule.record_check(passed=True)
@@ -253,7 +254,7 @@ class TestComplianceRule:
             requirement_text="Teste",
             total_checks=10,
             passed_checks=8,
-            failed_checks=2
+            failed_checks=2,
         )
 
         assert rule.compliance_rate == 80.0
@@ -270,7 +271,7 @@ class TestComplianceRule:
             severity=RuleSeverity.MEDIUM,
             requirement_text="Teste",
             status=RuleStatus.ACTIVE,
-            effective_from=now - timedelta(days=30)
+            effective_from=now - timedelta(days=30),
         )
 
         future_rule = ComplianceRule(
@@ -281,7 +282,7 @@ class TestComplianceRule:
             severity=RuleSeverity.MEDIUM,
             requirement_text="Teste",
             status=RuleStatus.ACTIVE,
-            effective_from=now + timedelta(days=30)
+            effective_from=now + timedelta(days=30),
         )
 
         assert active_rule.is_effective is True
@@ -294,10 +295,7 @@ class TestComplianceCheck:
     def test_create_check_factory(self):
         """Testa factory method para criar verificação."""
         rule_id = str(uuid4())
-        check = ComplianceCheck.create_check(
-            rule_id=rule_id,
-            check_type=CheckType.AUTOMATED
-        )
+        check = ComplianceCheck.create_check(rule_id=rule_id, check_type=CheckType.AUTOMATED)
 
         assert check.check_number.startswith("CHK-")
         assert check.status == CheckStatus.PENDING
@@ -306,10 +304,7 @@ class TestComplianceCheck:
     def test_start_check(self):
         """Testa início de verificação."""
         check = ComplianceCheck(
-            rule_id=uuid4(),
-            check_number="CHK-001",
-            check_type=CheckType.MANUAL,
-            status=CheckStatus.PENDING
+            rule_id=uuid4(), check_number="CHK-001", check_type=CheckType.MANUAL, status=CheckStatus.PENDING
         )
 
         executor_id = str(uuid4())
@@ -326,13 +321,10 @@ class TestComplianceCheck:
             check_number="CHK-002",
             check_type=CheckType.AUTOMATED,
             status=CheckStatus.RUNNING,
-            started_at=datetime.utcnow()
+            started_at=datetime.utcnow(),
         )
 
-        check.complete_compliant(
-            evidence={"test": "data"},
-            notes="Tudo OK"
-        )
+        check.complete_compliant(evidence={"test": "data"}, notes="Tudo OK")
 
         assert check.status == CheckStatus.COMPLETED
         assert check.result == CheckResult.COMPLIANT
@@ -347,20 +339,13 @@ class TestComplianceCheck:
             check_number="CHK-003",
             check_type=CheckType.AUTOMATED,
             status=CheckStatus.RUNNING,
-            started_at=datetime.utcnow()
+            started_at=datetime.utcnow(),
         )
 
-        violations = [
-            {"field": "email", "severity": "critical"},
-            {"field": "phone", "severity": "medium"}
-        ]
+        violations = [{"field": "email", "severity": "critical"}, {"field": "phone", "severity": "medium"}]
 
         deadline = datetime.utcnow() + timedelta(days=7)
-        check.complete_non_compliant(
-            violations=violations,
-            remediation_required=True,
-            remediation_deadline=deadline
-        )
+        check.complete_non_compliant(violations=violations, remediation_required=True, remediation_deadline=deadline)
 
         assert check.status == CheckStatus.COMPLETED
         assert check.result == CheckResult.NON_COMPLIANT
@@ -375,7 +360,7 @@ class TestComplianceCheck:
             check_number="CHK-004",
             check_type=CheckType.MANUAL,
             status=CheckStatus.COMPLETED,
-            result=CheckResult.NON_COMPLIANT
+            result=CheckResult.NON_COMPLIANT,
         )
 
         approver_id = str(uuid4())
@@ -395,7 +380,7 @@ class TestComplianceCheck:
             status=CheckStatus.COMPLETED,
             result=CheckResult.NON_COMPLIANT,
             remediation_required=True,
-            remediation_deadline=datetime.utcnow() - timedelta(days=1)
+            remediation_deadline=datetime.utcnow() - timedelta(days=1),
         )
 
         pending_check = ComplianceCheck(
@@ -405,7 +390,7 @@ class TestComplianceCheck:
             status=CheckStatus.COMPLETED,
             result=CheckResult.NON_COMPLIANT,
             remediation_required=True,
-            remediation_deadline=datetime.utcnow() + timedelta(days=1)
+            remediation_deadline=datetime.utcnow() + timedelta(days=1),
         )
 
         assert overdue_check.is_overdue is True
@@ -422,7 +407,7 @@ class TestDataRetention:
             name="Logs de Auditoria",
             data_category=DataCategory.LOGS,
             retention_period=RetentionPeriod.YEARS_5,
-            expiration_action=RetentionAction.ARCHIVE
+            expiration_action=RetentionAction.ARCHIVE,
         )
 
         assert policy.code == "RET-001"
@@ -437,7 +422,7 @@ class TestDataRetention:
             name="5 Anos",
             data_category=DataCategory.FINANCIAL,
             retention_period=RetentionPeriod.YEARS_5,
-            expiration_action=RetentionAction.DELETE
+            expiration_action=RetentionAction.DELETE,
         )
 
         policy_custom = DataRetention(
@@ -446,7 +431,7 @@ class TestDataRetention:
             data_category=DataCategory.TEMPORARY,
             retention_period=RetentionPeriod.CUSTOM,
             retention_days=45,
-            expiration_action=RetentionAction.DELETE
+            expiration_action=RetentionAction.DELETE,
         )
 
         assert policy_5y.get_retention_days() == 1825
@@ -460,7 +445,7 @@ class TestDataRetention:
             data_category=DataCategory.PERSONAL,
             retention_period=RetentionPeriod.YEARS_2,
             expiration_action=RetentionAction.ANONYMIZE,
-            status=RetentionStatus.DRAFT
+            status=RetentionStatus.DRAFT,
         )
 
         policy.activate()
@@ -477,15 +462,10 @@ class TestDataRetention:
             retention_period=RetentionPeriod.DAYS_90,
             expiration_action=RetentionAction.DELETE,
             status=RetentionStatus.ACTIVE,
-            schedule_enabled=True
+            schedule_enabled=True,
         )
 
-        policy.record_execution(
-            records_affected=100,
-            deleted=80,
-            archived=20,
-            storage_freed=1024000
-        )
+        policy.record_execution(records_affected=100, deleted=80, archived=20, storage_freed=1024000)
 
         assert policy.total_executions == 1
         assert policy.records_processed == 100
@@ -502,7 +482,7 @@ class TestDataRetention:
             data_category=DataCategory.LEGAL,
             retention_period=RetentionPeriod.YEARS_7,
             expiration_action=RetentionAction.ARCHIVE,
-            status=RetentionStatus.ACTIVE
+            status=RetentionStatus.ACTIVE,
         )
 
         policy.enable_legal_hold("Investigação em andamento")
@@ -522,7 +502,7 @@ class TestDataRetention:
             name="Permanente",
             data_category=DataCategory.LEGAL,
             retention_period=RetentionPeriod.PERMANENT,
-            expiration_action=RetentionAction.REVIEW
+            expiration_action=RetentionAction.REVIEW,
         )
 
         temporary = DataRetention(
@@ -530,7 +510,7 @@ class TestDataRetention:
             name="Temporário",
             data_category=DataCategory.TEMPORARY,
             retention_period=RetentionPeriod.DAYS_30,
-            expiration_action=RetentionAction.DELETE
+            expiration_action=RetentionAction.DELETE,
         )
 
         assert permanent.is_permanent is True
@@ -546,7 +526,7 @@ class TestAccessHistory:
             access_type=AccessType.LOGIN,
             result=AccessResult.SUCCESS,
             user_email="user@test.com",
-            ip_address="192.168.1.1"
+            ip_address="192.168.1.1",
         )
 
         assert access.access_type == AccessType.LOGIN
@@ -556,10 +536,7 @@ class TestAccessHistory:
         """Testa factory method para login."""
         user_id = str(uuid4())
         access = AccessHistory.create_login(
-            user_id=user_id,
-            user_email="user@test.com",
-            ip_address="10.0.0.1",
-            result=AccessResult.SUCCESS
+            user_id=user_id, user_email="user@test.com", ip_address="10.0.0.1", result=AccessResult.SUCCESS
         )
 
         assert access.access_type == AccessType.LOGIN
@@ -574,7 +551,7 @@ class TestAccessHistory:
             http_method="GET",
             ip_address="192.168.1.100",
             result=AccessResult.SUCCESS,
-            response_time_ms=150
+            response_time_ms=150,
         )
 
         assert access.access_type == AccessType.API_ACCESS
@@ -584,10 +561,7 @@ class TestAccessHistory:
     def test_calculate_risk(self):
         """Testa cálculo de risco."""
         low_risk = AccessHistory(
-            access_type=AccessType.LOGIN,
-            result=AccessResult.SUCCESS,
-            ip_address="192.168.1.1",
-            device_trusted=True
+            access_type=AccessType.LOGIN, result=AccessResult.SUCCESS, ip_address="192.168.1.1", device_trusted=True
         )
 
         high_risk = AccessHistory(
@@ -597,7 +571,7 @@ class TestAccessHistory:
             tor_detected=True,
             vpn_detected=True,
             attempts_count=5,
-            anomaly_detected=True
+            anomaly_detected=True,
         )
 
         low_risk.calculate_risk()
@@ -609,11 +583,7 @@ class TestAccessHistory:
 
     def test_flag_anomaly(self):
         """Testa marcação de anomalia."""
-        access = AccessHistory(
-            access_type=AccessType.LOGIN,
-            result=AccessResult.SUCCESS,
-            ip_address="192.168.1.1"
-        )
+        access = AccessHistory(access_type=AccessType.LOGIN, result=AccessResult.SUCCESS, ip_address="192.168.1.1")
 
         access.flag_anomaly("impossible_travel")
 
@@ -624,9 +594,7 @@ class TestAccessHistory:
     def test_trigger_alert(self):
         """Testa disparo de alerta."""
         access = AccessHistory(
-            access_type=AccessType.LOGIN_FAILED,
-            result=AccessResult.FAILURE,
-            ip_address="192.168.1.1"
+            access_type=AccessType.LOGIN_FAILED, result=AccessResult.FAILURE, ip_address="192.168.1.1"
         )
 
         access.trigger_alert(["ALERT-001", "ALERT-002"])
@@ -641,13 +609,11 @@ class TestAccessHistory:
             access_type=AccessType.LOGIN,
             result=AccessResult.SUCCESS,
             ip_address="192.168.1.1",
-            risk_level=RiskLevel.LOW
+            risk_level=RiskLevel.LOW,
         )
 
         suspicious = AccessHistory(
-            access_type=AccessType.LOGIN,
-            result=AccessResult.SUSPICIOUS,
-            ip_address="192.168.1.2"
+            access_type=AccessType.LOGIN, result=AccessResult.SUSPICIOUS, ip_address="192.168.1.2"
         )
 
         assert normal.is_suspicious is False
@@ -656,17 +622,10 @@ class TestAccessHistory:
     def test_needs_attention(self):
         """Testa verificação de atenção necessária."""
         attention = AccessHistory(
-            access_type=AccessType.LOGIN,
-            result=AccessResult.FAILURE,
-            ip_address="192.168.1.1",
-            requires_review=True
+            access_type=AccessType.LOGIN, result=AccessResult.FAILURE, ip_address="192.168.1.1", requires_review=True
         )
 
-        normal = AccessHistory(
-            access_type=AccessType.LOGIN,
-            result=AccessResult.SUCCESS,
-            ip_address="192.168.1.2"
-        )
+        normal = AccessHistory(access_type=AccessType.LOGIN, result=AccessResult.SUCCESS, ip_address="192.168.1.2")
 
         assert attention.needs_attention is True
         assert normal.needs_attention is False

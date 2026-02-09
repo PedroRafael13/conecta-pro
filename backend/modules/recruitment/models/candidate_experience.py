@@ -1,21 +1,21 @@
 """Model CandidateExperience - Experiências profissionais."""
 
-import enum
-from datetime import datetime, date
-from typing import Optional, List, TYPE_CHECKING
+from datetime import date, datetime
+from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
-    String,
-    Text,
     Boolean,
-    DateTime,
     Date,
-    Integer,
+    DateTime,
     Enum,
     ForeignKey,
+    Integer,
+    String,
+    Text,
 )
-from sqlalchemy.dialects.postgresql import UUID, ARRAY
-from sqlalchemy.orm import relationship, Mapped, mapped_column
+from sqlalchemy.dialects.postgresql import ARRAY, UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from core.database import Base
 from core.models import TimestampMixin
@@ -24,7 +24,7 @@ if TYPE_CHECKING:
     from .candidate import Candidate
 
 
-class EmploymentType(str, enum.Enum):
+class EmploymentType(StrEnum):
     """Tipo de contratação."""
 
     CLT = "clt"
@@ -38,7 +38,7 @@ class EmploymentType(str, enum.Enum):
     VOLUNTARIO = "voluntario"
 
 
-class ExperienceLevel(str, enum.Enum):
+class ExperienceLevel(StrEnum):
     """Nível da experiência."""
 
     ESTAGIARIO = "estagiario"
@@ -72,66 +72,56 @@ class CandidateExperience(Base, TimestampMixin):
 
     # Empresa
     company_name: Mapped[str] = mapped_column(String(200), nullable=False)
-    company_industry: Mapped[Optional[str]] = mapped_column(String(100))
-    company_size: Mapped[Optional[str]] = mapped_column(String(50))
-    company_location: Mapped[Optional[str]] = mapped_column(String(200))
-    company_linkedin: Mapped[Optional[str]] = mapped_column(String(300))
+    company_industry: Mapped[str | None] = mapped_column(String(100))
+    company_size: Mapped[str | None] = mapped_column(String(50))
+    company_location: Mapped[str | None] = mapped_column(String(200))
+    company_linkedin: Mapped[str | None] = mapped_column(String(300))
 
     # Cargo
     job_title: Mapped[str] = mapped_column(String(200), nullable=False)
-    department: Mapped[Optional[str]] = mapped_column(String(100))
-    level: Mapped[Optional[ExperienceLevel]] = mapped_column(Enum(ExperienceLevel))
-    employment_type: Mapped[EmploymentType] = mapped_column(
-        Enum(EmploymentType), default=EmploymentType.CLT
-    )
+    department: Mapped[str | None] = mapped_column(String(100))
+    level: Mapped[ExperienceLevel | None] = mapped_column(Enum(ExperienceLevel))
+    employment_type: Mapped[EmploymentType] = mapped_column(Enum(EmploymentType), default=EmploymentType.CLT)
 
     # Período
     start_date: Mapped[date] = mapped_column(Date, nullable=False)
-    end_date: Mapped[Optional[date]] = mapped_column(Date)
+    end_date: Mapped[date | None] = mapped_column(Date)
     is_current: Mapped[bool] = mapped_column(Boolean, default=False)
 
     # Descrição
-    description: Mapped[Optional[str]] = mapped_column(Text)
-    responsibilities: Mapped[Optional[List[str]]] = mapped_column(
-        ARRAY(String), default=list
-    )
-    achievements: Mapped[Optional[List[str]]] = mapped_column(
-        ARRAY(String), default=list
-    )
-    technologies: Mapped[Optional[List[str]]] = mapped_column(
-        ARRAY(String), default=list
-    )
+    description: Mapped[str | None] = mapped_column(Text)
+    responsibilities: Mapped[list[str] | None] = mapped_column(ARRAY(String), default=list)
+    achievements: Mapped[list[str] | None] = mapped_column(ARRAY(String), default=list)
+    technologies: Mapped[list[str] | None] = mapped_column(ARRAY(String), default=list)
 
     # Métricas
-    team_size: Mapped[Optional[int]] = mapped_column(Integer)
-    direct_reports: Mapped[Optional[int]] = mapped_column(Integer)
-    budget_managed: Mapped[Optional[str]] = mapped_column(String(100))
+    team_size: Mapped[int | None] = mapped_column(Integer)
+    direct_reports: Mapped[int | None] = mapped_column(Integer)
+    budget_managed: Mapped[str | None] = mapped_column(String(100))
 
     # Motivo da saída
-    leaving_reason: Mapped[Optional[str]] = mapped_column(String(200))
-    exit_type: Mapped[Optional[str]] = mapped_column(String(50))
+    leaving_reason: Mapped[str | None] = mapped_column(String(200))
+    exit_type: Mapped[str | None] = mapped_column(String(50))
 
     # Referência
-    reference_name: Mapped[Optional[str]] = mapped_column(String(200))
-    reference_title: Mapped[Optional[str]] = mapped_column(String(200))
-    reference_phone: Mapped[Optional[str]] = mapped_column(String(20))
-    reference_email: Mapped[Optional[str]] = mapped_column(String(255))
+    reference_name: Mapped[str | None] = mapped_column(String(200))
+    reference_title: Mapped[str | None] = mapped_column(String(200))
+    reference_phone: Mapped[str | None] = mapped_column(String(20))
+    reference_email: Mapped[str | None] = mapped_column(String(255))
     can_contact_reference: Mapped[bool] = mapped_column(Boolean, default=True)
 
     # Verificação
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
-    verified_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    verified_by: Mapped[Optional[str]] = mapped_column(UUID(as_uuid=False))
-    verification_notes: Mapped[Optional[str]] = mapped_column(Text)
+    verified_at: Mapped[datetime | None] = mapped_column(DateTime)
+    verified_by: Mapped[str | None] = mapped_column(UUID(as_uuid=False))
+    verification_notes: Mapped[str | None] = mapped_column(Text)
 
     # Status
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     order: Mapped[int] = mapped_column(Integer, default=0)
 
     # Relationship
-    candidate: Mapped["Candidate"] = relationship(
-        "Candidate", back_populates="experiences"
-    )
+    candidate: Mapped["Candidate"] = relationship("Candidate", back_populates="experiences")
 
     def __repr__(self) -> str:
         return f"<CandidateExperience {self.job_title} at {self.company_name}>"
@@ -156,8 +146,8 @@ class CandidateExperience(Base, TimestampMixin):
         remaining_months = months % 12
 
         if years and remaining_months:
-            year_label = 'ano' if years == 1 else 'anos'
-            month_label = 'mês' if remaining_months == 1 else 'meses'
+            year_label = "ano" if years == 1 else "anos"
+            month_label = "mês" if remaining_months == 1 else "meses"
             return f"{years} {year_label} e {remaining_months} {month_label}"
         if years:
             return f"{years} {'ano' if years == 1 else 'anos'}"

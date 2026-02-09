@@ -1,23 +1,22 @@
 """Controller para documentos do funcionário."""
 
 import logging
-from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.database import get_async_session
 from core.auth.dependencies import get_current_user, require_roles
-from modules.hr.employee_portal.services import DocumentService
+from core.database import get_async_session
+from modules.hr.employee_portal.models import DocumentType
 from modules.hr.employee_portal.schemas import (
-    DocumentResponse,
-    DocumentListResponse,
     DocumentCreate,
+    DocumentListResponse,
+    DocumentResponse,
     DocumentSignRequest,
 )
-from modules.hr.employee_portal.models import DocumentType
+from modules.hr.employee_portal.services import DocumentService
 
 logger = logging.getLogger(__name__)
 
@@ -30,9 +29,9 @@ router = APIRouter(prefix="/documents", tags=["Portal - Documentos"])
     summary="Listar documentos",
 )
 async def list_documents(
-    document_type: Optional[DocumentType] = Query(None, alias="type"),
-    category: Optional[str] = Query(None),
-    search: Optional[str] = Query(None, max_length=100),
+    document_type: DocumentType | None = Query(None, alias="type"),
+    category: str | None = Query(None),
+    search: str | None = Query(None, max_length=100),
     pending_ack: bool = Query(False, description="Apenas pendentes de ciência"),
     pending_signature: bool = Query(False, description="Apenas pendentes de assinatura"),
     page: int = Query(1, ge=1),

@@ -16,25 +16,27 @@ Funcionalidades:
 """
 
 import logging
-from datetime import datetime, date
+from dataclasses import dataclass
+from datetime import date, datetime
 from decimal import Decimal
-from typing import Dict, List, Optional, Any
-from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
-class TipoRecolhimento(str, Enum):
+class TipoRecolhimento(StrEnum):
     """Tipo de recolhimento FGTS."""
+
     MENSAL = "1"  # Recolhimento mensal
     RESCISORIO = "2"  # Recolhimento rescisório
     RECURSAL = "3"  # Depósito recursal
     INFORME_COMPETENCIA = "4"  # Competência declarada sem movimento
 
 
-class ModalidadeSaque(str, Enum):
+class ModalidadeSaque(StrEnum):
     """Modalidade de saque FGTS."""
+
     RESCISAO = "01"
     APOSENTADORIA = "04"
     FALECIMENTO = "23"
@@ -42,8 +44,9 @@ class ModalidadeSaque(str, Enum):
     CALAMIDADE = "99"
 
 
-class SituacaoGuia(str, Enum):
+class SituacaoGuia(StrEnum):
     """Situação da guia FGTS."""
+
     GERADA = "gerada"
     PAGA = "paga"
     VENCIDA = "vencida"
@@ -53,6 +56,7 @@ class SituacaoGuia(str, Enum):
 @dataclass
 class TrabalhadorFGTS:
     """Dados do trabalhador para FGTS."""
+
     cpf: str
     nome: str
     pis_pasep: str
@@ -70,27 +74,24 @@ class TrabalhadorFGTS:
 @dataclass
 class DebitoFGTS:
     """Débito de FGTS."""
+
     competencia: str  # YYYY-MM
     tipo: TipoRecolhimento
     valor_principal: Decimal
     valor_atualizacao: Decimal = Decimal("0")
     valor_multa: Decimal = Decimal("0")
     valor_juros: Decimal = Decimal("0")
-    data_vencimento: Optional[date] = None
+    data_vencimento: date | None = None
 
     @property
     def valor_total(self) -> Decimal:
-        return (
-            self.valor_principal +
-            self.valor_atualizacao +
-            self.valor_multa +
-            self.valor_juros
-        )
+        return self.valor_principal + self.valor_atualizacao + self.valor_multa + self.valor_juros
 
 
 @dataclass
 class GRFGTS:
     """Guia de Recolhimento do FGTS."""
+
     numero: str
     competencia: str
     data_geracao: datetime
@@ -102,27 +103,23 @@ class GRFGTS:
     valor_total: Decimal = Decimal("0")
 
     # PIX
-    chave_pix: Optional[str] = None
-    codigo_pix: Optional[str] = None  # Copia e cola
-    qrcode_pix: Optional[str] = None  # QR Code base64
+    chave_pix: str | None = None
+    codigo_pix: str | None = None  # Copia e cola
+    qrcode_pix: str | None = None  # QR Code base64
 
     # Situação
     situacao: SituacaoGuia = SituacaoGuia.GERADA
-    data_pagamento: Optional[datetime] = None
+    data_pagamento: datetime | None = None
 
     def __post_init__(self):
         if self.valor_total == Decimal("0"):
-            self.valor_total = (
-                self.valor_principal +
-                self.valor_atualizacao +
-                self.valor_multa +
-                self.valor_juros
-            )
+            self.valor_total = self.valor_principal + self.valor_atualizacao + self.valor_multa + self.valor_juros
 
 
 @dataclass
 class RecolhimentoRescisorio:
     """Dados para recolhimento rescisório."""
+
     trabalhador: TrabalhadorFGTS
     data_desligamento: date
     motivo_desligamento: str
@@ -141,6 +138,7 @@ class RecolhimentoRescisorio:
 @dataclass
 class GuiaRescisoria:
     """Guia de Recolhimento Rescisório."""
+
     numero: str
     cpf_trabalhador: str
     nome_trabalhador: str
@@ -152,10 +150,10 @@ class GuiaRescisoria:
     valor_total: Decimal
 
     # PIX
-    codigo_pix: Optional[str] = None
-    qrcode_pix: Optional[str] = None
+    codigo_pix: str | None = None
+    qrcode_pix: str | None = None
 
-    data_vencimento: Optional[date] = None
+    data_vencimento: date | None = None
     situacao: SituacaoGuia = SituacaoGuia.GERADA
 
 
@@ -193,11 +191,7 @@ class FGTSDigitalManager:
         self.ambiente = ambiente
         self.base_url = self.URL_PRODUCAO if ambiente == "producao" else self.URL_HOMOLOGACAO
 
-    def calcular_fgts_folha(
-        self,
-        trabalhadores: List[TrabalhadorFGTS],
-        competencia: str
-    ) -> Dict[str, Any]:
+    def calcular_fgts_folha(self, trabalhadores: list[TrabalhadorFGTS], competencia: str) -> dict[str, Any]:
         """
         Calcula FGTS da folha de pagamento.
 
@@ -231,14 +225,10 @@ class FGTSDigitalManager:
                     "fgts": str(t.valor_fgts),
                 }
                 for t in trabalhadores
-            ]
+            ],
         }
 
-    def importar_esocial(
-        self,
-        dados_esocial: Dict[str, Any],
-        competencia: str
-    ) -> List[TrabalhadorFGTS]:
+    def importar_esocial(self, dados_esocial: dict[str, Any], competencia: str) -> list[TrabalhadorFGTS]:
         """
         Importa dados do eSocial para cálculo do FGTS.
 
@@ -257,10 +247,7 @@ class FGTSDigitalManager:
                 cpf=evento.get("cpf", ""),
                 nome=evento.get("nome", ""),
                 pis_pasep=evento.get("pis_pasep", ""),
-                data_admissao=datetime.strptime(
-                    evento.get("data_admissao", "2020-01-01"),
-                    "%Y-%m-%d"
-                ).date(),
+                data_admissao=datetime.strptime(evento.get("data_admissao", "2020-01-01"), "%Y-%m-%d").date(),
                 categoria=evento.get("categoria", "101"),
                 remuneracao=Decimal(str(evento.get("remuneracao_total", 0))),
             )
@@ -280,10 +267,7 @@ class FGTSDigitalManager:
         return trabalhadores
 
     def gerar_guia_mensal(
-        self,
-        trabalhadores: List[TrabalhadorFGTS],
-        competencia: str,
-        data_vencimento: Optional[date] = None
+        self, trabalhadores: list[TrabalhadorFGTS], competencia: str, data_vencimento: date | None = None
     ) -> GRFGTS:
         """
         Gera guia de recolhimento mensal (GRFGTS).
@@ -323,10 +307,7 @@ class FGTSDigitalManager:
 
         return guia
 
-    def gerar_guia_rescisoria(
-        self,
-        rescisao: RecolhimentoRescisorio
-    ) -> GuiaRescisoria:
+    def gerar_guia_rescisoria(self, rescisao: RecolhimentoRescisorio) -> GuiaRescisoria:
         """
         Gera guia de recolhimento rescisório (GRRF).
 
@@ -349,14 +330,13 @@ class FGTSDigitalManager:
 
         # Calcula depósito do 13º proporcional
         meses_trabalhados = rescisao.data_desligamento.month
-        deposito_13 = (
-            rescisao.trabalhador.remuneracao / 12 * meses_trabalhados
-        ) * self.ALIQUOTA_FGTS
+        deposito_13 = (rescisao.trabalhador.remuneracao / 12 * meses_trabalhados) * self.ALIQUOTA_FGTS
 
         valor_total = deposito_mes + deposito_aviso + deposito_13 + rescisao.multa_40_percent
 
         # Vencimento: 10 dias após desligamento
         from datetime import timedelta
+
         data_venc = rescisao.data_desligamento + timedelta(days=10)
 
         guia = GuiaRescisoria(
@@ -380,10 +360,8 @@ class FGTSDigitalManager:
         return guia
 
     def consultar_debitos(
-        self,
-        competencia_inicio: Optional[str] = None,
-        competencia_fim: Optional[str] = None
-    ) -> List[DebitoFGTS]:
+        self, competencia_inicio: str | None = None, competencia_fim: str | None = None
+    ) -> list[DebitoFGTS]:
         """
         Consulta débitos de FGTS.
 
@@ -399,11 +377,7 @@ class FGTSDigitalManager:
 
         return []
 
-    def consultar_extrato_trabalhador(
-        self,
-        cpf: str,
-        pis_pasep: str
-    ) -> Dict[str, Any]:
+    def consultar_extrato_trabalhador(self, cpf: str, pis_pasep: str) -> dict[str, Any]:
         """
         Consulta extrato do FGTS de um trabalhador.
 
@@ -419,15 +393,12 @@ class FGTSDigitalManager:
             "cpf": cpf,
             "pis_pasep": pis_pasep,
             "saldo_total": "0.00",
-            "mensagem": "Implementar consulta via FGTS Digital"
+            "mensagem": "Implementar consulta via FGTS Digital",
         }
 
     def simular_saque(
-        self,
-        cpf: str,
-        modalidade: ModalidadeSaque,
-        valor_solicitado: Optional[Decimal] = None
-    ) -> Dict[str, Any]:
+        self, cpf: str, modalidade: ModalidadeSaque, valor_solicitado: Decimal | None = None
+    ) -> dict[str, Any]:
         """
         Simula saque do FGTS.
 
@@ -444,7 +415,7 @@ class FGTSDigitalManager:
             "modalidade": modalidade.value,
             "valor_solicitado": str(valor_solicitado) if valor_solicitado else None,
             "status": "simulacao_pendente",
-            "mensagem": "Implementar simulação via FGTS Digital"
+            "mensagem": "Implementar simulação via FGTS Digital",
         }
 
     def _gerar_pix_copia_cola(self, guia: GRFGTS) -> str:
@@ -472,11 +443,7 @@ class FGTSDigitalManager:
         """
         return f"00020126580014br.gov.bcb.pix0136fgts@caixa.gov.br5204000053039865406{guia.valor_total:.2f}5802BR62070503***6304"
 
-    def gerar_relatorio_mensal(
-        self,
-        trabalhadores: List[TrabalhadorFGTS],
-        competencia: str
-    ) -> Dict[str, Any]:
+    def gerar_relatorio_mensal(self, trabalhadores: list[TrabalhadorFGTS], competencia: str) -> dict[str, Any]:
         """
         Gera relatório mensal de FGTS.
 
@@ -515,5 +482,5 @@ class FGTSDigitalManager:
                     "fgts_total": str(t.valor_total),
                 }
                 for t in trabalhadores
-            ]
+            ],
         }

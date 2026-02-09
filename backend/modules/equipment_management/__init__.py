@@ -45,6 +45,7 @@ def get_routers():
         installation_router,
         maintenance_router,
     )
+
     return {
         "equipment": equipment_router,
         "installation": installation_router,
@@ -63,6 +64,7 @@ def get_services():
         MaintenanceAIService,
         MaintenanceService,
     )
+
     return {
         "equipment": EquipmentService,
         "installation": InstallationService,

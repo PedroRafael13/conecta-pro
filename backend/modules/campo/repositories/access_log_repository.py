@@ -2,8 +2,8 @@
 Repository para AccessLog.
 """
 
+import builtins
 from datetime import datetime, timedelta
-from typing import Optional, List
 
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -63,7 +63,7 @@ class AccessLogRepository:
         await self.db.refresh(log)
         return log
 
-    async def create_batch(self, data_list: List[AccessLogCreate]) -> List[AccessLog]:
+    async def create_batch(self, data_list: list[AccessLogCreate]) -> list[AccessLog]:
         """Cria múltiplos logs de acesso."""
         logs = []
         for data in data_list:
@@ -107,7 +107,7 @@ class AccessLogRepository:
             await self.db.refresh(log)
         return logs
 
-    async def get_by_id(self, log_id: str) -> Optional[AccessLog]:
+    async def get_by_id(self, log_id: str) -> AccessLog | None:
         """Busca log por ID."""
         result = await self.db.execute(
             select(AccessLog).where(
@@ -117,7 +117,7 @@ class AccessLogRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_by_guardian_id(self, guardian_id: str) -> Optional[AccessLog]:
+    async def get_by_guardian_id(self, guardian_id: str) -> AccessLog | None:
         """Busca log por ID do Guardian."""
         result = await self.db.execute(
             select(AccessLog).where(
@@ -132,7 +132,7 @@ class AccessLogRepository:
         filters: AccessLogFilter,
         page: int = 1,
         page_size: int = 20,
-    ) -> tuple[List[AccessLog], int]:
+    ) -> tuple[list[AccessLog], int]:
         """Lista logs com filtros e paginação."""
         query = select(AccessLog).where(AccessLog.is_active.is_(True))
 
@@ -199,7 +199,7 @@ class AccessLogRepository:
         self,
         person_document: str,
         limit: int = 50,
-    ) -> List[AccessLog]:
+    ) -> builtins.list[AccessLog]:
         """Busca logs por documento da pessoa."""
         result = await self.db.execute(
             select(AccessLog)
@@ -216,7 +216,7 @@ class AccessLogRepository:
         self,
         vehicle_plate: str,
         limit: int = 50,
-    ) -> List[AccessLog]:
+    ) -> builtins.list[AccessLog]:
         """Busca logs por placa do veículo."""
         result = await self.db.execute(
             select(AccessLog)
@@ -251,18 +251,14 @@ class AccessLogRepository:
             base_query = base_query.where(AccessLog.client_id == client_id)
 
         # Contagem total
-        total_result = await self.db.execute(
-            select(func.count()).select_from(base_query.subquery())
-        )
+        total_result = await self.db.execute(select(func.count()).select_from(base_query.subquery()))
         total = total_result.scalar() or 0
 
         # Contagem por tipo
         type_counts = {}
         for log_type in AccessLogType:
             type_query = base_query.where(AccessLog.log_type == log_type.value)
-            count_result = await self.db.execute(
-                select(func.count()).select_from(type_query.subquery())
-            )
+            count_result = await self.db.execute(select(func.count()).select_from(type_query.subquery()))
             type_counts[log_type.value] = count_result.scalar() or 0
 
         # Calcular dias no período

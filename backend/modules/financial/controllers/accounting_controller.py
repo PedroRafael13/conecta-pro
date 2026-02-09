@@ -4,7 +4,6 @@ import logging
 import uuid
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
@@ -93,8 +92,8 @@ router = APIRouter(prefix="/accounting", tags=["Contabilidade"])
 
 @router.get("/charts", response_model=list[ChartOfAccountsListResponse])
 async def list_charts(
-    chart_type: Optional[ChartType] = None,
-    chart_status: Optional[ChartStatus] = None,
+    chart_type: ChartType | None = None,
+    chart_status: ChartStatus | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
@@ -307,12 +306,12 @@ async def activate_chart(
 @router.get("/accounts", response_model=list[AccountingAccountListResponse])
 async def list_accounts(
     chart_id: uuid.UUID,
-    account_type: Optional[AccountType] = None,
-    nature: Optional[AccountNature] = None,
-    classification: Optional[AccountClassification] = None,
-    account_status: Optional[AccountStatus] = None,
-    parent_id: Optional[uuid.UUID] = None,
-    level: Optional[int] = None,
+    account_type: AccountType | None = None,
+    nature: AccountNature | None = None,
+    classification: AccountClassification | None = None,
+    account_status: AccountStatus | None = None,
+    parent_id: uuid.UUID | None = None,
+    level: int | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
@@ -487,8 +486,8 @@ async def update_account(
 @router.get("/accounts/{account_id}/balance")
 async def get_account_balance(
     account_id: uuid.UUID,
-    date_from: Optional[date] = None,
-    date_to: Optional[date] = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
     db: Session = Depends(get_db),
     _current_user: dict = Depends(get_current_user),
 ) -> dict:
@@ -529,9 +528,9 @@ async def get_account_balance(
 
 @router.get("/cost-centers", response_model=list[CostCenterListResponse])
 async def list_cost_centers(
-    center_type: Optional[CostCenterType] = None,
-    center_status: Optional[CostCenterStatus] = None,
-    parent_id: Optional[uuid.UUID] = None,
+    center_type: CostCenterType | None = None,
+    center_status: CostCenterStatus | None = None,
+    parent_id: uuid.UUID | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
@@ -685,9 +684,9 @@ async def update_cost_center(
 
 @router.get("/periods", response_model=list[AccountingPeriodListResponse])
 async def list_periods(
-    year: Optional[int] = None,
-    period_type: Optional[PeriodType] = None,
-    period_status: Optional[PeriodStatus] = None,
+    year: int | None = None,
+    period_type: PeriodType | None = None,
+    period_status: PeriodStatus | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
@@ -733,7 +732,7 @@ async def get_current_period(
 
 @router.get("/periods/stats", response_model=PeriodStats)
 async def get_period_stats(
-    year: Optional[int] = None,
+    year: int | None = None,
     db: Session = Depends(get_db),
     _current_user: dict = Depends(get_current_user),
 ) -> PeriodStats:
@@ -948,12 +947,12 @@ async def reopen_period(
 
 @router.get("/journal-entries", response_model=list[JournalEntryListResponse])
 async def list_journal_entries(
-    period_id: Optional[uuid.UUID] = None,
-    entry_type: Optional[EntryType] = None,
-    entry_status: Optional[EntryStatus] = None,
-    origin: Optional[EntryOrigin] = None,
-    date_from: Optional[date] = None,
-    date_to: Optional[date] = None,
+    period_id: uuid.UUID | None = None,
+    entry_type: EntryType | None = None,
+    entry_status: EntryStatus | None = None,
+    origin: EntryOrigin | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
@@ -1002,7 +1001,7 @@ async def list_pending_approval(
 
 @router.get("/journal-entries/stats", response_model=JournalStats)
 async def get_journal_stats(
-    period_id: Optional[uuid.UUID] = None,
+    period_id: uuid.UUID | None = None,
     db: Session = Depends(get_db),
     _current_user: dict = Depends(get_current_user),
 ) -> JournalStats:
@@ -1333,10 +1332,10 @@ async def reverse_journal_entry(
 
 @router.get("/trial-balances", response_model=list[TrialBalanceListResponse])
 async def list_trial_balances(
-    chart_id: Optional[uuid.UUID] = None,
-    balance_type: Optional[BalanceType] = None,
-    balance_status: Optional[BalanceStatus] = None,
-    year: Optional[int] = None,
+    chart_id: uuid.UUID | None = None,
+    balance_type: BalanceType | None = None,
+    balance_status: BalanceStatus | None = None,
+    year: int | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
@@ -1383,7 +1382,7 @@ async def get_latest_balance(
 
 @router.get("/trial-balances/stats", response_model=BalanceStats)
 async def get_balance_stats(
-    year: Optional[int] = None,
+    year: int | None = None,
     db: Session = Depends(get_db),
     _current_user: dict = Depends(get_current_user),
 ) -> BalanceStats:
@@ -1479,7 +1478,7 @@ async def get_trial_balance(
 @router.get("/trial-balances/{balance_id}/items", response_model=list[TrialBalanceItemResponse])
 async def get_balance_items(
     balance_id: uuid.UUID,
-    account_type: Optional[str] = None,
+    account_type: str | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(500, ge=1, le=1000),
     db: Session = Depends(get_db),
@@ -1609,7 +1608,7 @@ async def generate_trial_balance(  # pylint: disable=too-many-locals
 @router.post("/trial-balances/{balance_id}/approve")
 async def approve_trial_balance(
     balance_id: uuid.UUID,
-    notes: Optional[str] = None,
+    notes: str | None = None,
     db: Session = Depends(get_db),
     _current_user: dict = Depends(get_current_user),
 ) -> dict:

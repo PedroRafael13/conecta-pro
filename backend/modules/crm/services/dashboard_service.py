@@ -4,9 +4,9 @@ Centraliza KPIs, métricas e análises de desempenho comercial.
 """
 
 from datetime import date, timedelta
-from typing import List, Optional
 
 from pydantic import BaseModel
+
 from modules.crm.models.commission import Commission, CommissionStatus
 from modules.crm.models.lead import Lead, LeadStatus
 from modules.crm.models.opportunity import Opportunity, OpportunityStage
@@ -58,8 +58,8 @@ class DashboardTrend(BaseModel):
 
     period: str  # "2024-01", "2024-W01", "2024-01-15"
     value: float
-    previous_value: Optional[float] = None
-    change_percent: Optional[float] = None
+    previous_value: float | None = None
+    change_percent: float | None = None
 
 
 class DashboardChart(BaseModel):
@@ -67,15 +67,15 @@ class DashboardChart(BaseModel):
 
     chart_type: str  # bar, line, pie, funnel
     title: str
-    labels: List[str]
-    datasets: List[dict]
+    labels: list[str]
+    datasets: list[dict]
 
 
 class PerformanceMetrics(BaseModel):
     """Métricas de performance de vendedor."""
 
     seller_id: str
-    seller_name: Optional[str] = None
+    seller_name: str | None = None
     leads_assigned: int = 0
     leads_converted: int = 0
     conversion_rate: float = 0.0
@@ -85,8 +85,8 @@ class PerformanceMetrics(BaseModel):
     total_sales: float = 0.0
     avg_deal_size: float = 0.0
     total_commissions: float = 0.0
-    target: Optional[float] = None
-    target_percentage: Optional[float] = None
+    target: float | None = None
+    target_percentage: float | None = None
 
 
 class DashboardService:
@@ -94,12 +94,12 @@ class DashboardService:
 
     def calculate_kpis(  # pylint: disable=too-many-locals
         self,
-        leads: List[Lead],
-        opportunities: List[Opportunity],
-        proposals: List[Proposal],
-        commissions: List[Commission],
-        date_from: Optional[date] = None,  # pylint: disable=unused-argument
-        date_to: Optional[date] = None,  # pylint: disable=unused-argument
+        leads: list[Lead],
+        opportunities: list[Opportunity],
+        proposals: list[Proposal],
+        commissions: list[Commission],
+        date_from: date | None = None,  # pylint: disable=unused-argument
+        date_to: date | None = None,  # pylint: disable=unused-argument
     ) -> DashboardKPIs:
         """
         Calcula todos os KPIs principais do CRM.
@@ -124,30 +124,15 @@ class DashboardService:
         # ========== Leads KPIs ==========
         kpis.leads_total = len(leads)
 
-        kpis.leads_new_today = sum(
-            1 for lead in leads
-            if lead.created_at.date() == today
-        )
+        kpis.leads_new_today = sum(1 for lead in leads if lead.created_at.date() == today)
 
-        kpis.leads_new_week = sum(
-            1 for lead in leads
-            if lead.created_at.date() >= week_ago
-        )
+        kpis.leads_new_week = sum(1 for lead in leads if lead.created_at.date() >= week_ago)
 
-        kpis.leads_new_month = sum(
-            1 for lead in leads
-            if lead.created_at.date() >= month_ago
-        )
+        kpis.leads_new_month = sum(1 for lead in leads if lead.created_at.date() >= month_ago)
 
-        kpis.leads_qualified = sum(
-            1 for lead in leads
-            if lead.status in (LeadStatus.QUALIFIED.value, "qualified")
-        )
+        kpis.leads_qualified = sum(1 for lead in leads if lead.status in (LeadStatus.QUALIFIED.value, "qualified"))
 
-        converted_leads = sum(
-            1 for lead in leads
-            if lead.status in (LeadStatus.WON.value, "won")
-        )
+        converted_leads = sum(1 for lead in leads if lead.status in (LeadStatus.WON.value, "won"))
         if kpis.leads_total > 0:
             kpis.leads_conversion_rate = (converted_leads / kpis.leads_total) * 100
 
@@ -155,8 +140,10 @@ class DashboardService:
         kpis.opportunities_total = len(opportunities)
 
         kpis.opportunities_open = sum(
-            1 for opp in opportunities
-            if opp.stage not in (
+            1
+            for opp in opportunities
+            if opp.stage
+            not in (
                 OpportunityStage.CLOSED_WON.value,
                 OpportunityStage.CLOSED_LOST.value,
                 "closed_won",
@@ -165,13 +152,11 @@ class DashboardService:
         )
 
         kpis.opportunities_won = sum(
-            1 for opp in opportunities
-            if opp.stage in (OpportunityStage.CLOSED_WON.value, "closed_won")
+            1 for opp in opportunities if opp.stage in (OpportunityStage.CLOSED_WON.value, "closed_won")
         )
 
         kpis.opportunities_lost = sum(
-            1 for opp in opportunities
-            if opp.stage in (OpportunityStage.CLOSED_LOST.value, "closed_lost")
+            1 for opp in opportunities if opp.stage in (OpportunityStage.CLOSED_LOST.value, "closed_lost")
         )
 
         closed_total = kpis.opportunities_won + kpis.opportunities_lost
@@ -180,41 +165,42 @@ class DashboardService:
 
         # Pipeline value (apenas opportunities abertas)
         open_opps = [
-            opp for opp in opportunities
-            if opp.stage not in (
+            opp
+            for opp in opportunities
+            if opp.stage
+            not in (
                 OpportunityStage.CLOSED_WON.value,
                 OpportunityStage.CLOSED_LOST.value,
                 "closed_won",
                 "closed_lost",
             )
         ]
-        kpis.pipeline_value = sum(opp.value for opp in open_opps if hasattr(opp, 'value'))
+        kpis.pipeline_value = sum(opp.value for opp in open_opps if hasattr(opp, "value"))
 
         # Weighted pipeline
-        kpis.weighted_pipeline = sum(
-            opp.weighted_value for opp in open_opps
-            if hasattr(opp, 'weighted_value')
-        )
+        kpis.weighted_pipeline = sum(opp.weighted_value for opp in open_opps if hasattr(opp, "weighted_value"))
 
         # Average deal size (apenas ganhos)
         won_values = [
-            opp.value for opp in opportunities
-            if opp.stage in (OpportunityStage.CLOSED_WON.value, "closed_won")
-            and hasattr(opp, 'value')
+            opp.value
+            for opp in opportunities
+            if opp.stage in (OpportunityStage.CLOSED_WON.value, "closed_won") and hasattr(opp, "value")
         ]
         if won_values:
             kpis.avg_deal_size = sum(won_values) / len(won_values)
 
         # Average sales cycle
         cycles = [
-            opp.days_in_pipeline for opp in opportunities
-            if opp.stage in (
+            opp.days_in_pipeline
+            for opp in opportunities
+            if opp.stage
+            in (
                 OpportunityStage.CLOSED_WON.value,
                 OpportunityStage.CLOSED_LOST.value,
                 "closed_won",
                 "closed_lost",
             )
-            and hasattr(opp, 'days_in_pipeline')
+            and hasattr(opp, "days_in_pipeline")
         ]
         if cycles:
             kpis.avg_sales_cycle_days = sum(cycles) / len(cycles)
@@ -223,8 +209,10 @@ class DashboardService:
         kpis.proposals_total = len(proposals)
 
         kpis.proposals_pending = sum(
-            1 for p in proposals
-            if p.status in (
+            1
+            for p in proposals
+            if p.status
+            in (
                 ProposalStatus.DRAFT.value,
                 ProposalStatus.PENDING_REVIEW.value,
                 ProposalStatus.PENDING_APPROVAL.value,
@@ -235,8 +223,10 @@ class DashboardService:
         )
 
         kpis.proposals_sent = sum(
-            1 for p in proposals
-            if p.status in (
+            1
+            for p in proposals
+            if p.status
+            in (
                 ProposalStatus.SENT.value,
                 ProposalStatus.VIEWED.value,
                 "sent",
@@ -244,14 +234,13 @@ class DashboardService:
             )
         )
 
-        kpis.proposals_accepted = sum(
-            1 for p in proposals
-            if p.status in (ProposalStatus.ACCEPTED.value, "accepted")
-        )
+        kpis.proposals_accepted = sum(1 for p in proposals if p.status in (ProposalStatus.ACCEPTED.value, "accepted"))
 
         responded = sum(
-            1 for p in proposals
-            if p.status in (
+            1
+            for p in proposals
+            if p.status
+            in (
                 ProposalStatus.ACCEPTED.value,
                 ProposalStatus.REJECTED.value,
                 "accepted",
@@ -261,48 +250,41 @@ class DashboardService:
         if responded > 0:
             kpis.proposals_acceptance_rate = (kpis.proposals_accepted / responded) * 100
 
-        kpis.proposals_total_value = sum(p.total for p in proposals if hasattr(p, 'total'))
+        kpis.proposals_total_value = sum(p.total for p in proposals if hasattr(p, "total"))
         kpis.proposals_accepted_value = sum(
-            p.total for p in proposals
-            if p.status in (ProposalStatus.ACCEPTED.value, "accepted")
-            and hasattr(p, 'total')
+            p.total
+            for p in proposals
+            if p.status in (ProposalStatus.ACCEPTED.value, "accepted") and hasattr(p, "total")
         )
 
         # ========== Commissions KPIs ==========
         kpis.commissions_total = len(commissions)
 
         kpis.commissions_pending = sum(
-            1 for c in commissions
-            if c.status in (CommissionStatus.PENDING.value, "pending")
+            1 for c in commissions if c.status in (CommissionStatus.PENDING.value, "pending")
         )
 
-        kpis.commissions_paid = sum(
-            1 for c in commissions
-            if c.status in (CommissionStatus.PAID.value, "paid")
-        )
+        kpis.commissions_paid = sum(1 for c in commissions if c.status in (CommissionStatus.PAID.value, "paid"))
 
-        kpis.commissions_total_value = sum(
-            c.final_commission for c in commissions
-            if hasattr(c, 'final_commission')
-        )
+        kpis.commissions_total_value = sum(c.final_commission for c in commissions if hasattr(c, "final_commission"))
 
         kpis.commissions_pending_value = sum(
-            c.final_commission for c in commissions
-            if c.status in (CommissionStatus.PENDING.value, "pending")
-            and hasattr(c, 'final_commission')
+            c.final_commission
+            for c in commissions
+            if c.status in (CommissionStatus.PENDING.value, "pending") and hasattr(c, "final_commission")
         )
 
         kpis.commissions_paid_value = sum(
-            c.final_commission for c in commissions
-            if c.status in (CommissionStatus.PAID.value, "paid")
-            and hasattr(c, 'final_commission')
+            c.final_commission
+            for c in commissions
+            if c.status in (CommissionStatus.PAID.value, "paid") and hasattr(c, "final_commission")
         )
 
         return kpis
 
     def generate_funnel_chart(
         self,
-        opportunities: List[Opportunity],
+        opportunities: list[Opportunity],
     ) -> DashboardChart:
         """
         Gera dados para gráfico de funil de vendas.
@@ -338,12 +320,12 @@ class DashboardService:
 
     def generate_trends(  # pylint: disable=too-many-locals
         self,
-        data: List,
+        data: list,
         date_field: str,
         value_field: str,
         period: str = "month",  # day, week, month
         periods_count: int = 6,
-    ) -> List[DashboardTrend]:
+    ) -> list[DashboardTrend]:
         """
         Gera tendências de uma métrica ao longo do tempo.
 
@@ -385,19 +367,13 @@ class DashboardService:
                 period_label = period_date.isoformat()
 
             # Filtrar dados do período
-            period_data = [
-                item for item in data
-                if period_start <= getattr(item, date_field).date() <= period_end
-            ]
+            period_data = [item for item in data if period_start <= getattr(item, date_field).date() <= period_end]
 
             # Calcular valor
             if value_field == "count":
                 value = len(period_data)
             else:
-                value = sum(
-                    getattr(item, value_field, 0)
-                    for item in period_data
-                )
+                value = sum(getattr(item, value_field, 0) for item in period_data)
 
             trend = DashboardTrend(
                 period=period_label,
@@ -418,11 +394,11 @@ class DashboardService:
     def calculate_seller_performance(
         self,
         seller_id: str,
-        leads: List[Lead],
-        opportunities: List[Opportunity],
-        commissions: List[Commission],
-        seller_name: Optional[str] = None,
-        target: Optional[float] = None,
+        leads: list[Lead],
+        opportunities: list[Opportunity],
+        commissions: list[Commission],
+        seller_name: str | None = None,
+        target: float | None = None,
     ) -> PerformanceMetrics:
         """
         Calcula métricas de performance de um vendedor.
@@ -439,7 +415,7 @@ class DashboardService:
             Métricas de performance
         """
         # Filtrar por vendedor
-        seller_leads = [l for l in leads if l.assigned_to_id == seller_id]
+        seller_leads = [lead for lead in leads if lead.assigned_to_id == seller_id]
         seller_opps = [o for o in opportunities if o.owner_id == seller_id]
         seller_comms = [c for c in commissions if c.seller_id == seller_id]
 
@@ -450,23 +426,21 @@ class DashboardService:
 
         # Leads
         metrics.leads_assigned = len(seller_leads)
-        metrics.leads_converted = sum(
-            1 for l in seller_leads
-            if l.status in (LeadStatus.WON.value, "won")
-        )
+        metrics.leads_converted = sum(1 for lead in seller_leads if lead.status in (LeadStatus.WON.value, "won"))
         if metrics.leads_assigned > 0:
             metrics.conversion_rate = (metrics.leads_converted / metrics.leads_assigned) * 100
 
         # Opportunities
         metrics.opportunities_created = len(seller_opps)
         metrics.opportunities_won = sum(
-            1 for o in seller_opps
-            if o.stage in (OpportunityStage.CLOSED_WON.value, "closed_won")
+            1 for o in seller_opps if o.stage in (OpportunityStage.CLOSED_WON.value, "closed_won")
         )
 
         closed = sum(
-            1 for o in seller_opps
-            if o.stage in (
+            1
+            for o in seller_opps
+            if o.stage
+            in (
                 OpportunityStage.CLOSED_WON.value,
                 OpportunityStage.CLOSED_LOST.value,
                 "closed_won",
@@ -478,19 +452,16 @@ class DashboardService:
 
         # Sales
         won_values = [
-            o.value for o in seller_opps
-            if o.stage in (OpportunityStage.CLOSED_WON.value, "closed_won")
-            and hasattr(o, 'value')
+            o.value
+            for o in seller_opps
+            if o.stage in (OpportunityStage.CLOSED_WON.value, "closed_won") and hasattr(o, "value")
         ]
         metrics.total_sales = sum(won_values)
         if won_values:
             metrics.avg_deal_size = metrics.total_sales / len(won_values)
 
         # Commissions
-        metrics.total_commissions = sum(
-            c.final_commission for c in seller_comms
-            if hasattr(c, 'final_commission')
-        )
+        metrics.total_commissions = sum(c.final_commission for c in seller_comms if hasattr(c, "final_commission"))
 
         # Target
         if target:
@@ -502,12 +473,12 @@ class DashboardService:
 
     def get_top_performers(
         self,
-        leads: List[Lead],
-        opportunities: List[Opportunity],
-        commissions: List[Commission],
+        leads: list[Lead],
+        opportunities: list[Opportunity],
+        commissions: list[Commission],
         sellers: dict[str, str],  # {seller_id: seller_name}
         limit: int = 5,
-    ) -> List[PerformanceMetrics]:
+    ) -> list[PerformanceMetrics]:
         """
         Retorna os top performers.
 
@@ -540,7 +511,7 @@ class DashboardService:
 
     def generate_pie_chart_by_status(
         self,
-        items: List,
+        items: list,
         status_field: str = "status",
         title: str = "Distribuição por Status",
     ) -> DashboardChart:
@@ -558,7 +529,7 @@ class DashboardService:
         status_counts = {}
         for item in items:
             status = getattr(item, status_field, "unknown")
-            if hasattr(status, 'value'):
+            if hasattr(status, "value"):
                 status = status.value
             status_counts[status] = status_counts.get(status, 0) + 1
 
@@ -574,7 +545,7 @@ class DashboardService:
 
     def calculate_conversion_rates(
         self,
-        opportunities: List[Opportunity],
+        opportunities: list[Opportunity],
     ) -> dict:
         """
         Calcula taxas de conversão entre estágios do pipeline.
@@ -601,10 +572,7 @@ class DashboardService:
         # (inclui quem já passou por ele)
         reached_stage = {}
         for i, stage in enumerate(stages_order):
-            reached = sum(
-                1 for o in opportunities
-                if stages_order.index(o.stage) >= i
-            )
+            reached = sum(1 for o in opportunities if stages_order.index(o.stage) >= i)
             reached_stage[stage] = reached
 
         rates = {}

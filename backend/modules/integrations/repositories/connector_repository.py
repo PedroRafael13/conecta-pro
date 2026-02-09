@@ -5,16 +5,15 @@ Sprint 33: Integration Framework
 
 import logging
 from datetime import datetime
-from typing import Optional, List, Tuple
 from uuid import UUID
 
-from sqlalchemy import select, func, and_, update
+from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from modules.integrations.models.id_map import IDMap
 from modules.integrations.models.integration_account import IntegrationAccount
 from modules.integrations.models.sync_run import SyncRun
 from modules.integrations.models.sync_state import SyncState
-from modules.integrations.models.id_map import IDMap
 
 logger = logging.getLogger(__name__)
 
@@ -37,11 +36,8 @@ class ConnectorRepository:
         return account
 
     async def get_account_by_id(
-        self,
-        account_id: UUID,
-        tenant_id: Optional[UUID] = None,
-        include_inactive: bool = False
-    ) -> Optional[IntegrationAccount]:
+        self, account_id: UUID, tenant_id: UUID | None = None, include_inactive: bool = False
+    ) -> IntegrationAccount | None:
         """Busca conta por ID."""
         conditions = [IntegrationAccount.id == account_id]
 
@@ -49,7 +45,7 @@ class ConnectorRepository:
             conditions.append(IntegrationAccount.tenant_id == tenant_id)
 
         if not include_inactive:
-            conditions.append(IntegrationAccount.ativo == True)
+            conditions.append(IntegrationAccount.ativo)
 
         query = select(IntegrationAccount).where(and_(*conditions))
         result = await self.db.execute(query)
@@ -58,16 +54,13 @@ class ConnectorRepository:
     async def list_accounts(
         self,
         tenant_id: UUID,
-        connector_type: Optional[str] = None,
-        status: Optional[str] = None,
+        connector_type: str | None = None,
+        status: str | None = None,
         skip: int = 0,
-        limit: int = 50
-    ) -> Tuple[List[IntegrationAccount], int]:
+        limit: int = 50,
+    ) -> tuple[list[IntegrationAccount], int]:
         """Lista contas com paginação."""
-        conditions = [
-            IntegrationAccount.tenant_id == tenant_id,
-            IntegrationAccount.ativo == True
-        ]
+        conditions = [IntegrationAccount.tenant_id == tenant_id, IntegrationAccount.ativo]
 
         if connector_type:
             conditions.append(IntegrationAccount.connector_type == connector_type)
@@ -83,9 +76,7 @@ class ConnectorRepository:
         total = total_result.scalar() or 0
 
         # Paginação
-        query = query.offset(skip).limit(limit).order_by(
-            IntegrationAccount.created_at.desc()
-        )
+        query = query.offset(skip).limit(limit).order_by(IntegrationAccount.created_at.desc())
 
         result = await self.db.execute(query)
         accounts = list(result.scalars().all())
@@ -98,12 +89,7 @@ class ConnectorRepository:
         await self.db.refresh(account)
         return account
 
-    async def delete_account(
-        self,
-        account_id: UUID,
-        tenant_id: UUID,
-        user_id: Optional[UUID] = None
-    ) -> bool:
+    async def delete_account(self, account_id: UUID, tenant_id: UUID, user_id: UUID | None = None) -> bool:
         """Soft delete de conta."""
         account = await self.get_account_by_id(account_id, tenant_id)
         if not account:
@@ -114,16 +100,13 @@ class ConnectorRepository:
         await self.db.commit()
         return True
 
-    async def get_accounts_for_sync(
-        self,
-        connector_type: Optional[str] = None
-    ) -> List[IntegrationAccount]:
+    async def get_accounts_for_sync(self, connector_type: str | None = None) -> list[IntegrationAccount]:
         """Busca contas que precisam de sync."""
         now = datetime.utcnow()
 
         conditions = [
-            IntegrationAccount.ativo == True,
-            IntegrationAccount.sync_enabled == True,
+            IntegrationAccount.ativo,
+            IntegrationAccount.sync_enabled,
             IntegrationAccount.status.in_(["active", "pending_auth"]),
         ]
 
@@ -152,11 +135,7 @@ class ConnectorRepository:
         logger.info(f"Sync run criado: {sync_run.id}")
         return sync_run
 
-    async def get_sync_run_by_id(
-        self,
-        run_id: UUID,
-        tenant_id: Optional[UUID] = None
-    ) -> Optional[SyncRun]:
+    async def get_sync_run_by_id(self, run_id: UUID, tenant_id: UUID | None = None) -> SyncRun | None:
         """Busca sync run por ID."""
         conditions = [SyncRun.id == run_id]
 
@@ -170,17 +149,14 @@ class ConnectorRepository:
     async def list_sync_runs(
         self,
         tenant_id: UUID,
-        account_id: Optional[UUID] = None,
-        connector_type: Optional[str] = None,
-        status: Optional[str] = None,
+        account_id: UUID | None = None,
+        connector_type: str | None = None,
+        status: str | None = None,
         skip: int = 0,
-        limit: int = 50
-    ) -> Tuple[List[SyncRun], int]:
+        limit: int = 50,
+    ) -> tuple[list[SyncRun], int]:
         """Lista sync runs com paginação."""
-        conditions = [
-            SyncRun.tenant_id == tenant_id,
-            SyncRun.ativo == True
-        ]
+        conditions = [SyncRun.tenant_id == tenant_id, SyncRun.ativo]
 
         if account_id:
             conditions.append(SyncRun.account_id == account_id)
@@ -197,9 +173,7 @@ class ConnectorRepository:
         total = total_result.scalar() or 0
 
         # Paginação
-        query = query.offset(skip).limit(limit).order_by(
-            SyncRun.created_at.desc()
-        )
+        query = query.offset(skip).limit(limit).order_by(SyncRun.created_at.desc())
 
         result = await self.db.execute(query)
         runs = list(result.scalars().all())
@@ -212,40 +186,21 @@ class ConnectorRepository:
         await self.db.refresh(sync_run)
         return sync_run
 
-    async def get_running_sync_for_account(
-        self,
-        account_id: UUID
-    ) -> Optional[SyncRun]:
+    async def get_running_sync_for_account(self, account_id: UUID) -> SyncRun | None:
         """Verifica se há sync em execução para a conta."""
-        query = select(SyncRun).where(
-            SyncRun.account_id == account_id,
-            SyncRun.status.in_(["pending", "running"])
-        )
+        query = select(SyncRun).where(SyncRun.account_id == account_id, SyncRun.status.in_(["pending", "running"]))
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
 
     # ==================== Sync State ====================
 
-    async def get_sync_state(
-        self,
-        account_id: UUID,
-        entity_type: str
-    ) -> Optional[SyncState]:
+    async def get_sync_state(self, account_id: UUID, entity_type: str) -> SyncState | None:
         """Busca estado de sync de uma entidade."""
-        query = select(SyncState).where(
-            SyncState.account_id == account_id,
-            SyncState.entity_type == entity_type
-        )
+        query = select(SyncState).where(SyncState.account_id == account_id, SyncState.entity_type == entity_type)
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
 
-    async def upsert_sync_state(
-        self,
-        account_id: UUID,
-        tenant_id: UUID,
-        entity_type: str,
-        **kwargs
-    ) -> SyncState:
+    async def upsert_sync_state(self, account_id: UUID, tenant_id: UUID, entity_type: str, **kwargs) -> SyncState:
         """Cria ou atualiza estado de sync."""
         state = await self.get_sync_state(account_id, entity_type)
 
@@ -254,43 +209,26 @@ class ConnectorRepository:
                 if hasattr(state, key):
                     setattr(state, key, value)
         else:
-            state = SyncState(
-                account_id=account_id,
-                tenant_id=tenant_id,
-                entity_type=entity_type,
-                **kwargs
-            )
+            state = SyncState(account_id=account_id, tenant_id=tenant_id, entity_type=entity_type, **kwargs)
             self.db.add(state)
 
         await self.db.commit()
         await self.db.refresh(state)
         return state
 
-    async def list_sync_states(
-        self,
-        account_id: UUID
-    ) -> List[SyncState]:
+    async def list_sync_states(self, account_id: UUID) -> list[SyncState]:
         """Lista estados de sync de uma conta."""
-        query = select(SyncState).where(
-            SyncState.account_id == account_id
-        )
+        query = select(SyncState).where(SyncState.account_id == account_id)
         result = await self.db.execute(query)
         return list(result.scalars().all())
 
     # ==================== ID Map ====================
 
     async def get_id_mapping(
-        self,
-        account_id: UUID,
-        entity_type: str,
-        external_id: Optional[str] = None,
-        internal_id: Optional[UUID] = None
-    ) -> Optional[IDMap]:
+        self, account_id: UUID, entity_type: str, external_id: str | None = None, internal_id: UUID | None = None
+    ) -> IDMap | None:
         """Busca mapeamento de ID."""
-        conditions = [
-            IDMap.account_id == account_id,
-            IDMap.entity_type == entity_type
-        ]
+        conditions = [IDMap.account_id == account_id, IDMap.entity_type == entity_type]
 
         if external_id:
             conditions.append(IDMap.external_id == external_id)
@@ -315,12 +253,8 @@ class ConnectorRepository:
         return id_map
 
     async def list_id_mappings(
-        self,
-        account_id: UUID,
-        entity_type: Optional[str] = None,
-        skip: int = 0,
-        limit: int = 50
-    ) -> Tuple[List[IDMap], int]:
+        self, account_id: UUID, entity_type: str | None = None, skip: int = 0, limit: int = 50
+    ) -> tuple[list[IDMap], int]:
         """Lista mapeamentos de ID."""
         conditions = [IDMap.account_id == account_id]
 
@@ -335,19 +269,14 @@ class ConnectorRepository:
         total = total_result.scalar() or 0
 
         # Paginação
-        query = query.offset(skip).limit(limit).order_by(
-            IDMap.last_synced_at.desc()
-        )
+        query = query.offset(skip).limit(limit).order_by(IDMap.last_synced_at.desc())
 
         result = await self.db.execute(query)
         mappings = list(result.scalars().all())
 
         return mappings, total
 
-    async def delete_id_mappings_for_account(
-        self,
-        account_id: UUID
-    ) -> int:
+    async def delete_id_mappings_for_account(self, account_id: UUID) -> int:
         """Remove todos os mapeamentos de uma conta."""
         query = select(IDMap).where(IDMap.account_id == account_id)
         result = await self.db.execute(query)

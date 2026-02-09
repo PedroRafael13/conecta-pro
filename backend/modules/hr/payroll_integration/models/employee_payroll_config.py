@@ -3,7 +3,7 @@
 import uuid
 from datetime import datetime, time
 from decimal import Decimal
-from enum import Enum
+from enum import StrEnum
 
 from sqlalchemy import (
     Boolean,
@@ -23,7 +23,7 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from core.models import Base
 
 
-class OvertimeRule(str, Enum):
+class OvertimeRule(StrEnum):
     """Regra de horas extras."""
 
     PAY = "pay"  # Pagar horas extras
@@ -32,7 +32,7 @@ class OvertimeRule(str, Enum):
     NO_OVERTIME = "no_overtime"  # Sem horas extras (cargo de confiança)
 
 
-class BankHoursPolicy(str, Enum):
+class BankHoursPolicy(StrEnum):
     """Política de banco de horas."""
 
     MONTHLY = "monthly"  # Compensação mensal
@@ -42,7 +42,7 @@ class BankHoursPolicy(str, Enum):
     UNLIMITED = "unlimited"  # Sem prazo (acordo individual)
 
 
-class ContractType(str, Enum):
+class ContractType(StrEnum):
     """Tipo de contrato."""
 
     CLT = "clt"  # CLT padrão
@@ -54,7 +54,7 @@ class ContractType(str, Enum):
     PJ = "pj"  # Pessoa Jurídica
 
 
-class WorkScheduleType(str, Enum):
+class WorkScheduleType(StrEnum):
     """Tipo de escala de trabalho."""
 
     STANDARD = "standard"  # Padrão (seg-sex)
@@ -427,8 +427,6 @@ class EmployeePayrollConfig(Base):
             "weekly_hours": float(self.weekly_hours) if self.weekly_hours else None,
             "overtime_rule": self.overtime_rule,
             "bank_hours_enabled": self.bank_hours_enabled,
-            "bank_hours_balance": (
-                float(self.bank_hours_balance) if self.bank_hours_balance else 0
-            ),
+            "bank_hours_balance": (float(self.bank_hours_balance) if self.bank_hours_balance else 0),
             "dependents_count": self.dependents_count,
         }

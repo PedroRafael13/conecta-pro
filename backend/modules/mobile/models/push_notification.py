@@ -1,7 +1,7 @@
 """Model de Push Notification."""
 
 from datetime import UTC, datetime
-from enum import Enum
+from enum import StrEnum
 from uuid import uuid4
 
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
@@ -11,7 +11,7 @@ from sqlalchemy.orm import relationship
 from core.models.base import Base
 
 
-class NotificationStatus(str, Enum):
+class NotificationStatus(StrEnum):
     """Status da notificação."""
 
     PENDING = "pending"
@@ -22,7 +22,7 @@ class NotificationStatus(str, Enum):
     CANCELLED = "cancelled"
 
 
-class NotificationType(str, Enum):
+class NotificationType(StrEnum):
     """Tipo de notificação."""
 
     SYSTEM = "system"
@@ -35,7 +35,7 @@ class NotificationType(str, Enum):
     ACTION_REQUIRED = "action_required"
 
 
-class NotificationPriority(str, Enum):
+class NotificationPriority(StrEnum):
     """Prioridade da notificação."""
 
     LOW = "low"

@@ -20,22 +20,16 @@ Date: 2026-01-17
 import logging
 from datetime import datetime
 from decimal import Decimal
-from typing import List, Optional
 
 from fastapi import APIRouter, HTTPException, Path, Query, status
 from fastapi.responses import Response
 
 from ..schemas.common import StandardResponse
 from ..schemas.nfce import (
-    NFCeEmissaoRequest,
-    NFCeConsultaRequest,
     NFCeCancelamentoRequest,
-    NFCeInutilizacaoRequest,
     NFCeContingenciaRequest,
-    NFCeDANFERequest,
-    NFCeResponse,
-    NFCeStatusServicoResponse,
-    NFCeResumoResponse,
+    NFCeEmissaoRequest,
+    NFCeInutilizacaoRequest,
     TipoPagamentoNFCe,
 )
 
@@ -67,26 +61,25 @@ async def emitir_nfce(request: NFCeEmissaoRequest) -> StandardResponse:
     try:
         from ..core.nfce_manager import NFCETransmitter, NFCEXMLBuilder
         from ..core.sefaz_manager import (
-            NotaFiscal, DocumentType, Emitente, Destinatario,
-            Produto, Pagamento, PaymentType, Endereco
+            Destinatario,
+            DocumentType,
+            Emitente,
+            Endereco,
+            NotaFiscal,
+            Pagamento,
+            PaymentType,
+            Produto,
         )
-        from ..core.xml_signer import XMLSigner
-        from ..core.certificate_manager import CertificateManager
 
         # Carregar configuracoes (em producao, vem do banco/config)
         # TODO: Integrar com configuracoes do tenant
         uf = "AM"
         ambiente = "2"  # Homologacao
         csc_id = "000001"
-        csc_token = "CSC-TOKEN-HOMOLOGACAO"
+        csc_token = "CSC-TOKEN-HOMOLOGACAO"  # noqa: S105
 
         # Inicializar transmissor
-        transmitter = NFCETransmitter(
-            uf=uf,
-            ambiente=ambiente,
-            csc_id=csc_id,
-            csc_token=csc_token
-        )
+        transmitter = NFCETransmitter(uf=uf, ambiente=ambiente, csc_id=csc_id, csc_token=csc_token)
 
         # Montar dados do emitente (em producao, vem do banco)
         emitente = Emitente(
@@ -103,7 +96,7 @@ async def emitir_nfce(request: NFCeEmissaoRequest) -> StandardResponse:
                 codigo_municipio="1302603",
                 uf="AM",
                 cep="69000000",
-            )
+            ),
         )
 
         # Montar destinatario (consumidor)
@@ -163,7 +156,7 @@ async def emitir_nfce(request: NFCeEmissaoRequest) -> StandardResponse:
 
         # Gerar XML
         xml_builder = NFCEXMLBuilder(csc_id, csc_token)
-        xml = xml_builder.build_nfce(nf, ambiente)
+        xml_builder.build_nfce(nf, ambiente)
 
         # Em producao, assinar e transmitir
         # Por enquanto, retornar dados simulados
@@ -182,7 +175,7 @@ async def emitir_nfce(request: NFCeEmissaoRequest) -> StandardResponse:
                 nf.valor_total,
                 Decimal("0"),
                 "DIGEST_VALUE_PLACEHOLDER",
-                request.consumidor.cpf if request.consumidor else None
+                request.consumidor.cpf if request.consumidor else None,
             ),
             "url_consulta": transmitter.qrcode_generator.get_url_chave(),
         }
@@ -523,7 +516,7 @@ async def gerar_danfe_nfce(
             return Response(
                 content=b"PDF_PLACEHOLDER",
                 media_type="application/pdf",
-                headers={"Content-Disposition": f"attachment; filename=danfe_{chave_acesso}.pdf"}
+                headers={"Content-Disposition": f"attachment; filename=danfe_{chave_acesso}.pdf"},
             )
 
     except Exception as e:
@@ -572,7 +565,7 @@ async def download_xml_nfce(
         return Response(
             content=xml,
             media_type="application/xml",
-            headers={"Content-Disposition": f"attachment; filename={chave_acesso}-nfce.xml"}
+            headers={"Content-Disposition": f"attachment; filename={chave_acesso}-nfce.xml"},
         )
 
     except Exception as e:
@@ -591,9 +584,9 @@ async def download_xml_nfce(
     description="Lista NFC-e emitidas com filtros.",
 )
 async def listar_nfce(
-    data_inicio: Optional[str] = Query(None, description="Data inicio (YYYY-MM-DD)"),
-    data_fim: Optional[str] = Query(None, description="Data fim (YYYY-MM-DD)"),
-    status_nfce: Optional[str] = Query(None, description="Status (autorizada, cancelada)"),
+    data_inicio: str | None = Query(None, description="Data inicio (YYYY-MM-DD)"),
+    data_fim: str | None = Query(None, description="Data fim (YYYY-MM-DD)"),
+    _status_nfce: str | None = Query(None, description="Status (autorizada, cancelada)"),
     page: int = Query(default=1, ge=1, description="Pagina"),
     per_page: int = Query(default=20, ge=1, le=100, description="Itens por pagina"),
 ) -> StandardResponse:

@@ -5,7 +5,6 @@ Gerencia a comunicação bidirecional entre o ERP e o sistema Guardian.
 """
 
 import logging
-from typing import List
 from datetime import datetime, timedelta
 
 from modules.campo.models.guardian_sync import (
@@ -46,11 +45,11 @@ class GuardianSyncService:
         client_id: str,
         client_name: str,
         address: str,
-        services: List[str],
+        services: list[str],
         start_date: datetime,
         end_date: datetime | None = None,
-        posts: List[dict] | None = None,
-        employees: List[dict] | None = None,
+        posts: list[dict] | None = None,
+        employees: list[dict] | None = None,
     ) -> dict:
         """
         Prepara payload de contrato para envio ao Guardian.
@@ -98,7 +97,7 @@ class GuardianSyncService:
         valid_from: datetime | None = None,
         valid_until: datetime | None = None,
         photo_url: str | None = None,
-        vehicle_plates: List[str] | None = None,
+        vehicle_plates: list[str] | None = None,
     ) -> dict:
         """
         Prepara payload de pessoa autorizada para envio ao Guardian.
@@ -143,9 +142,9 @@ class GuardianSyncService:
         self,
         client_id: str,
         post_id: str,
-        access_points: List[dict],
-        schedules: List[dict] | None = None,
-        rules: List[dict] | None = None,
+        access_points: list[dict],
+        schedules: list[dict] | None = None,
+        rules: list[dict] | None = None,
     ) -> dict:
         """
         Prepara payload de configuração de acesso para envio ao Guardian.
@@ -293,7 +292,7 @@ class GuardianSyncService:
         base_delay = 60  # 1 minuto
         max_delay = 3600  # 1 hora
 
-        delay_seconds = min(base_delay * (2 ** retry_count), max_delay)
+        delay_seconds = min(base_delay * (2**retry_count), max_delay)
         return timedelta(seconds=delay_seconds)
 
     def get_sync_priority(
@@ -395,9 +394,7 @@ class GuardianSyncService:
             "pending": pending,
             "in_progress": total - completed - failed - pending,
             "success_rate": round(success_rate, 2),
-            "health": "healthy" if success_rate >= 95 else (
-                "warning" if success_rate >= 80 else "critical"
-            ),
+            "health": "healthy" if success_rate >= 95 else ("warning" if success_rate >= 80 else "critical"),
             "generated_at": datetime.utcnow().isoformat(),
         }
 

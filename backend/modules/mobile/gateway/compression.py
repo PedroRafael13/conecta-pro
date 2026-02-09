@@ -2,7 +2,7 @@
 
 import gzip
 import logging
-from typing import Callable
+from collections.abc import Callable
 
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -111,7 +111,7 @@ class CompressionMiddleware(BaseHTTPMiddleware):
 
         logger.debug(
             f"Compressed response: {len(body)} -> {len(compressed)} bytes "
-            f"({(1 - len(compressed)/len(body)) * 100:.1f}% reduction)"
+            f"({(1 - len(compressed) / len(body)) * 100:.1f}% reduction)"
         )
 
         return Response(

@@ -3,7 +3,7 @@
 import logging
 from datetime import date
 from decimal import Decimal
-from typing import Optional
+from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -12,38 +12,38 @@ from sqlalchemy.orm import Session
 from core.auth.dependencies import get_current_user, require_roles
 from core.database import get_db
 from modules.operacional.diaristas.models.diarist import (
+    AssignmentStatus,
     DiaristStatus,
     DiaristType,
-    AssignmentStatus,
-    ScheduleStatus,
     PaymentStatus,
+    ScheduleStatus,
 )
 from modules.operacional.diaristas.schemas.diarist_schemas import (
-    DiaristCreate,
-    DiaristUpdate,
-    DiaristResponse,
-    DiaristListResponse,
-    DiaristAssignmentCreate,
-    DiaristAssignmentResponse,
-    DiaristScheduleCreate,
-    DiaristScheduleResponse,
-    DiaristPaymentCreate,
-    DiaristPaymentResponse,
-    DiaristEvaluationCreate,
-    DiaristEvaluationResponse,
-    CheckinRequest,
-    CheckoutRequest,
-    DiaristSuggestionResponse,
-    DiaristAvailabilityResponse,
-    DiaristPerformanceResponse,
-    ScheduleOptimizationResponse,
     BatchScheduleCreate,
     BatchScheduleResponse,
-    PayrollReportResponse,
+    CheckinRequest,
+    CheckoutRequest,
+    DiaristAssignmentCreate,
+    DiaristAssignmentResponse,
+    DiaristAvailabilityResponse,
+    DiaristCreate,
+    DiaristEvaluationCreate,
+    DiaristEvaluationResponse,
+    DiaristListResponse,
+    DiaristPaymentCreate,
+    DiaristPaymentResponse,
+    DiaristPerformanceResponse,
+    DiaristResponse,
+    DiaristScheduleCreate,
+    DiaristScheduleResponse,
+    DiaristSuggestionResponse,
+    DiaristUpdate,
     PayrollGenerateRequest,
+    PayrollReportResponse,
+    ScheduleOptimizationResponse,
 )
-from modules.operacional.diaristas.services.diarist_service import DiaristService
 from modules.operacional.diaristas.services.diarist_ai_service import DiaristAIService
+from modules.operacional.diaristas.services.diarist_service import DiaristService
 
 logger = logging.getLogger(__name__)
 
@@ -68,10 +68,10 @@ async def consulta_cpf(
     cpf: str,
     db: Session = Depends(get_db),
     _: dict = Depends(get_current_user),
-):
+) -> dict[str, Any]:
     """Consulta dados pelo CPF: primeiro na base interna, depois API externa."""
-    from sqlalchemy import text
     import httpx
+    from sqlalchemy import text
 
     cpf_limpo = cpf.replace(".", "").replace("-", "").replace(" ", "")
 
@@ -84,10 +84,7 @@ async def consulta_cpf(
     # 1. Buscar na base interna (employees)
     try:
         result = await db.execute(
-            text(
-                "SELECT nome, email, telefone, data_nascimento "
-                "FROM employees WHERE cpf = :cpf LIMIT 1"
-            ),
+            text("SELECT nome, email, telefone, data_nascimento FROM employees WHERE cpf = :cpf LIMIT 1"),
             {"cpf": cpf_limpo},
         )
         row = result.fetchone()
@@ -106,9 +103,7 @@ async def consulta_cpf(
     # 2. Buscar na base interna (diarists - evitar duplicata)
     try:
         result = await db.execute(
-            text(
-                "SELECT nome, email, telefone FROM diarists WHERE cpf = :cpf LIMIT 1"
-            ),
+            text("SELECT nome, email, telefone FROM diarists WHERE cpf = :cpf LIMIT 1"),
             {"cpf": cpf_limpo},
         )
         row = result.fetchone()
@@ -128,9 +123,7 @@ async def consulta_cpf(
     # 3. Tentar API externa (BrasilAPI)
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.get(
-                f"https://brasilapi.com.br/api/cpf/v1/{cpf_limpo}"
-            )
+            response = await client.get(f"https://brasilapi.com.br/api/cpf/v1/{cpf_limpo}")
             if response.status_code == 200:
                 data = response.json()
                 return {
@@ -174,10 +167,9 @@ async def create_diarist(
 async def list_diarists(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
-    status_filter: Optional[DiaristStatus] = Query(None, alias="status"),
-    tipo: Optional[DiaristType] = None,
-    search: Optional[str] = None,
-
+    status_filter: DiaristStatus | None = Query(None, alias="status"),
+    tipo: DiaristType | None = None,
+    search: str | None = None,
     service: DiaristService = Depends(get_diarist_service),
     _: dict = Depends(get_current_user),
 ) -> DiaristListResponse:
@@ -206,8 +198,7 @@ async def list_diarists(
 @router.get("/available")
 async def get_available_diarists(
     data: date,
-    tipo: Optional[DiaristType] = None,
-
+    tipo: DiaristType | None = None,
     service: DiaristService = Depends(get_diarist_service),
     _: dict = Depends(get_current_user),
 ) -> list[DiaristResponse]:
@@ -215,7 +206,6 @@ async def get_available_diarists(
     diarists = await service.get_available_diarists(
         data=data,
         tipo=tipo,
-
     )
     return [DiaristResponse.model_validate(d) for d in diarists]
 
@@ -246,9 +236,8 @@ async def create_assignment(
 
 @router.get("/assignments", response_model=list[DiaristAssignmentResponse])
 async def list_assignments(
-    diarist_id: Optional[UUID] = None,
-    
-    status_filter: Optional[AssignmentStatus] = Query(None, alias="status"),
+    diarist_id: UUID | None = None,
+    status_filter: AssignmentStatus | None = Query(None, alias="status"),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     service: DiaristService = Depends(get_diarist_service),
@@ -257,7 +246,6 @@ async def list_assignments(
     """Lista alocações."""
     assignments = await service.list_assignments(
         diarist_id=diarist_id,
-        
         status=status_filter,
         skip=skip,
         limit=limit,
@@ -291,7 +279,7 @@ async def get_assignment(
 async def cancel_assignment(
     assignment_id: UUID,
     service: DiaristService = Depends(get_diarist_service),
-) -> dict:
+) -> dict[str, str]:
     """Cancela uma alocação."""
     if not await service.cancel_assignment(assignment_id):
         raise HTTPException(
@@ -321,10 +309,7 @@ async def create_batch_schedules(
             total_criados=result["total_criados"],
             total_erros=result["total_erros"],
             erros=result["erros"],
-            schedules=[
-                DiaristScheduleResponse.model_validate(s)
-                for s in result["schedules"]
-            ],
+            schedules=[DiaristScheduleResponse.model_validate(s) for s in result["schedules"]],
         )
     except Exception as e:
         logger.error(f"Erro ao criar escala em lote: {e}")
@@ -357,11 +342,10 @@ async def create_schedule(
 
 @router.get("/schedules", response_model=list[DiaristScheduleResponse])
 async def list_schedules(
-    diarist_id: Optional[UUID] = None,
-    
-    data_inicio: Optional[date] = None,
-    data_fim: Optional[date] = None,
-    status_filter: Optional[ScheduleStatus] = Query(None, alias="status"),
+    diarist_id: UUID | None = None,
+    data_inicio: date | None = None,
+    data_fim: date | None = None,
+    status_filter: ScheduleStatus | None = Query(None, alias="status"),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     service: DiaristService = Depends(get_diarist_service),
@@ -370,7 +354,6 @@ async def list_schedules(
     """Lista agendamentos."""
     schedules = await service.list_schedules(
         diarist_id=diarist_id,
-        
         data_inicio=data_inicio,
         data_fim=data_fim,
         status=status_filter,
@@ -382,7 +365,6 @@ async def list_schedules(
 
 @router.get("/schedules/today", response_model=list[DiaristScheduleResponse])
 async def get_today_schedules(
-    
     service: DiaristService = Depends(get_diarist_service),
     _: dict = Depends(get_current_user),
 ) -> list[DiaristScheduleResponse]:
@@ -436,7 +418,7 @@ async def confirm_schedule(
 )
 async def cancel_schedule(
     schedule_id: UUID,
-    motivo: Optional[str] = None,
+    motivo: str | None = None,
     service: DiaristService = Depends(get_diarist_service),
 ) -> DiaristScheduleResponse:
     """Cancela um agendamento."""
@@ -503,7 +485,7 @@ async def register_checkout(
 )
 async def get_payroll_report(
     competencia: str = Query(..., min_length=7, max_length=7, description="YYYY-MM"),
-    condominio_id: Optional[UUID] = None,
+    condominio_id: UUID | None = None,
     service: DiaristService = Depends(get_diarist_service),
     _: dict = Depends(get_current_user),
 ) -> PayrollReportResponse:
@@ -529,7 +511,7 @@ async def get_payroll_report(
 async def generate_payroll_payments(
     data: PayrollGenerateRequest,
     service: DiaristService = Depends(get_diarist_service),
-) -> dict:
+) -> dict[str, Any]:
     """Gera pagamentos em lote a partir do fechamento de folha."""
     try:
         result = await service.generate_payroll_payments(data)
@@ -570,11 +552,10 @@ async def create_payment(
 
 @router.get("/payments", response_model=list[DiaristPaymentResponse])
 async def list_payments(
-    diarist_id: Optional[UUID] = None,
-    
-    status_filter: Optional[PaymentStatus] = Query(None, alias="status"),
-    data_inicio: Optional[date] = None,
-    data_fim: Optional[date] = None,
+    diarist_id: UUID | None = None,
+    status_filter: PaymentStatus | None = Query(None, alias="status"),
+    data_inicio: date | None = None,
+    data_fim: date | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     service: DiaristService = Depends(get_diarist_service),
@@ -583,7 +564,6 @@ async def list_payments(
     """Lista pagamentos."""
     payments = await service.list_payments(
         diarist_id=diarist_id,
-        
         status=status_filter,
         data_inicio=data_inicio,
         data_fim=data_fim,
@@ -595,7 +575,6 @@ async def list_payments(
 
 @router.get("/payments/pending", response_model=list[DiaristPaymentResponse])
 async def get_pending_payments(
-    
     service: DiaristService = Depends(get_diarist_service),
     _: dict = Depends(get_current_user),
 ) -> list[DiaristPaymentResponse]:
@@ -631,7 +610,7 @@ async def get_payment(
 async def process_payment(
     payment_id: UUID,
     data_pagamento: date,
-    comprovante: Optional[str] = None,
+    comprovante: str | None = None,
     service: DiaristService = Depends(get_diarist_service),
 ) -> DiaristPaymentResponse:
     """Processa pagamento."""
@@ -662,7 +641,6 @@ async def generate_payment(
     """Gera pagamento a partir de agendamentos concluídos."""
     payment = await service.generate_payment_from_schedules(
         diarist_id=diarist_id,
-        
         data_inicio=data_inicio,
         data_fim=data_fim,
     )
@@ -700,8 +678,8 @@ async def create_evaluation(
 
 @router.get("/evaluations", response_model=list[DiaristEvaluationResponse])
 async def list_evaluations(
-    diarist_id: Optional[UUID] = None,
-    nota_minima: Optional[int] = Query(None, ge=1, le=5),
+    diarist_id: UUID | None = None,
+    nota_minima: int | None = Query(None, ge=1, le=5),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     service: DiaristService = Depends(get_diarist_service),
@@ -742,7 +720,7 @@ async def get_evaluation(
 @router.get("/ai/suggest", response_model=DiaristSuggestionResponse)
 async def suggest_diarists(
     data: date,
-    tipo: Optional[DiaristType] = None,
+    tipo: DiaristType | None = None,
     duracao_horas: int = Query(8, ge=1, le=12),
     priorizar_conhecidas: bool = True,
     ai_service: DiaristAIService = Depends(get_ai_service),
@@ -750,7 +728,6 @@ async def suggest_diarists(
 ) -> DiaristSuggestionResponse:
     """Sugere diaristas para uma data usando IA."""
     return await ai_service.suggest_diarists(
-        
         data=data,
         tipo=tipo,
         duracao_horas=duracao_horas,
@@ -762,13 +739,12 @@ async def suggest_diarists(
 async def analyze_availability(
     data_inicio: date,
     data_fim: date,
-    tipo: Optional[DiaristType] = None,
+    tipo: DiaristType | None = None,
     ai_service: DiaristAIService = Depends(get_ai_service),
     _: dict = Depends(get_current_user),
 ) -> DiaristAvailabilityResponse:
     """Analisa disponibilidade de diaristas em um período."""
     return await ai_service.analyze_availability(
-        
         data_inicio=data_inicio,
         data_fim=data_fim,
         tipo=tipo,
@@ -781,8 +757,8 @@ async def analyze_availability(
 )
 async def analyze_performance(
     diarist_id: UUID,
-    data_inicio: Optional[date] = None,
-    data_fim: Optional[date] = None,
+    data_inicio: date | None = None,
+    data_fim: date | None = None,
     ai_service: DiaristAIService = Depends(get_ai_service),
     _: dict = Depends(get_current_user),
 ) -> DiaristPerformanceResponse:
@@ -804,13 +780,12 @@ async def analyze_performance(
 async def optimize_schedule(
     data_inicio: date,
     data_fim: date,
-    budget: Optional[Decimal] = None,
+    budget: Decimal | None = None,
     ai_service: DiaristAIService = Depends(get_ai_service),
     _: dict = Depends(get_current_user),
 ) -> ScheduleOptimizationResponse:
     """Otimiza agendamentos do condomínio usando IA."""
     return await ai_service.optimize_schedule(
-        
         data_inicio=data_inicio,
         data_fim=data_fim,
         budget=budget,
@@ -822,14 +797,13 @@ async def optimize_schedule(
 
 @router.get("/statistics/general")
 async def get_general_statistics(
-    data_inicio: Optional[date] = None,
-    data_fim: Optional[date] = None,
+    data_inicio: date | None = None,
+    data_fim: date | None = None,
     service: DiaristService = Depends(get_diarist_service),
     _: dict = Depends(get_current_user),
-) -> dict:
+) -> dict[str, Any]:
     """Retorna estatísticas de diaristas do condomínio."""
     return await service.get_condominio_statistics(
-        
         data_inicio=data_inicio,
         data_fim=data_fim,
     )
@@ -837,17 +811,14 @@ async def get_general_statistics(
 
 @router.get("/statistics/ranking")
 async def get_top_diarists(
-    
     limit: int = Query(10, ge=1, le=50),
     service: DiaristService = Depends(get_diarist_service),
     _: dict = Depends(get_current_user),
-) -> list[dict]:
+) -> list[dict[str, Any]]:
     """Retorna ranking das melhores diaristas."""
     return await service.get_top_diarists(
-        
         limit=limit,
     )
-
 
 
 # ==================== DIARIST BY ID ENDPOINTS (devem ficar por ultimo) ====================
@@ -950,11 +921,11 @@ async def delete_diarist(
 @router.get("/{diarist_id}/metrics")
 async def get_diarist_metrics(
     diarist_id: UUID,
-    data_inicio: Optional[date] = None,
-    data_fim: Optional[date] = None,
+    data_inicio: date | None = None,
+    data_fim: date | None = None,
     service: DiaristService = Depends(get_diarist_service),
     _: dict = Depends(get_current_user),
-) -> dict:
+) -> dict[str, Any]:
     """Retorna métricas da diarista."""
     return await service.get_diarist_metrics(
         diarist_id=diarist_id,

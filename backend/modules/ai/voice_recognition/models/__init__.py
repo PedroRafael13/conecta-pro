@@ -4,29 +4,29 @@ AI Voice Recognition Models - Sprint 52.
 Models for voice/speech recognition, transcription, and call analysis.
 """
 
-from modules.ai.voice_recognition.models.voice_recording import (
-    VoiceRecording,
-    VoiceRecordingStatusEnum,
-    VoiceRecordingSourceEnum,
-    AudioFormatEnum,
-)
-from modules.ai.voice_recognition.models.transcription import (
-    Transcription,
-    TranscriptionSegment,
-    TranscriptionStatusEnum,
-    TranscriptionProviderEnum,
-)
-from modules.ai.voice_recognition.models.voice_command import (
-    VoiceCommand,
-    CommandDefinition,
-    VoiceCommandStatusEnum,
-    CommandCategoryEnum,
-)
 from modules.ai.voice_recognition.models.call_analysis import (
     CallAnalysis,
     CallAnalysisStatusEnum,
-    CallTypeEnum,
     CallSentimentEnum,
+    CallTypeEnum,
+)
+from modules.ai.voice_recognition.models.transcription import (
+    Transcription,
+    TranscriptionProviderEnum,
+    TranscriptionSegment,
+    TranscriptionStatusEnum,
+)
+from modules.ai.voice_recognition.models.voice_command import (
+    CommandCategoryEnum,
+    CommandDefinition,
+    VoiceCommand,
+    VoiceCommandStatusEnum,
+)
+from modules.ai.voice_recognition.models.voice_recording import (
+    AudioFormatEnum,
+    VoiceRecording,
+    VoiceRecordingSourceEnum,
+    VoiceRecordingStatusEnum,
 )
 
 __all__ = [

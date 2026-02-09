@@ -1,18 +1,11 @@
 """Testes para RecruitmentAIService."""
 
-import pytest
 from datetime import date
 from decimal import Decimal
 from unittest.mock import MagicMock
 
-from modules.recruitment.services.recruitment_ai_service import RecruitmentAIService
-from modules.recruitment.models.job_position import (
-    JobPosition,
-    PositionType,
-    PositionLevel,
-    WorkModel,
-    Department,
-)
+import pytest
+
 from modules.recruitment.models.candidate import (
     Candidate,
     CandidateSource,
@@ -22,6 +15,14 @@ from modules.recruitment.models.candidate_skill import (
     SkillCategory,
     SkillLevel,
 )
+from modules.recruitment.models.job_position import (
+    Department,
+    JobPosition,
+    PositionLevel,
+    PositionType,
+    WorkModel,
+)
+from modules.recruitment.services.recruitment_ai_service import RecruitmentAIService
 
 
 @pytest.fixture
@@ -113,9 +114,7 @@ class TestMatchingScore:
         self, ai_service, sample_position, sample_candidate, sample_skills
     ):
         """Testa matching alto entre candidato e vaga."""
-        result = await ai_service.calculate_matching_score(
-            sample_candidate, sample_position, sample_skills
-        )
+        result = await ai_service.calculate_matching_score(sample_candidate, sample_position, sample_skills)
 
         assert "final_score" in result
         assert result["final_score"] >= 70  # Alto match
@@ -124,9 +123,7 @@ class TestMatchingScore:
         assert result["recommendation"]["level"] in ["bom", "excelente"]
 
     @pytest.mark.asyncio
-    async def test_calculate_matching_score_low_match(
-        self, ai_service, sample_position
-    ):
+    async def test_calculate_matching_score_low_match(self, ai_service, sample_position):
         """Testa matching baixo."""
         # Candidato sem skills relevantes
         candidate = Candidate(
@@ -140,21 +137,15 @@ class TestMatchingScore:
             tags=["java", "spring"],
         )
 
-        result = await ai_service.calculate_matching_score(
-            candidate, sample_position, []
-        )
+        result = await ai_service.calculate_matching_score(candidate, sample_position, [])
 
         assert result["final_score"] < 50  # Baixo match
         assert result["recommendation"]["level"] in ["baixo", "incompatível", "moderado"]
 
     @pytest.mark.asyncio
-    async def test_skills_match_calculation(
-        self, ai_service, sample_position, sample_candidate, sample_skills
-    ):
+    async def test_skills_match_calculation(self, ai_service, sample_position, sample_candidate, sample_skills):
         """Testa cálculo específico de match de skills."""
-        result = await ai_service._calculate_skills_match(
-            sample_candidate, sample_position, sample_skills
-        )
+        result = await ai_service._calculate_skills_match(sample_candidate, sample_position, sample_skills)
 
         assert "score" in result
         assert "matched_required" in result
@@ -162,21 +153,15 @@ class TestMatchingScore:
         assert result["score"] > 0.5  # Maioria das skills match
 
     @pytest.mark.asyncio
-    async def test_experience_match_meets_requirement(
-        self, ai_service, sample_position, sample_candidate
-    ):
+    async def test_experience_match_meets_requirement(self, ai_service, sample_position, sample_candidate):
         """Testa match de experiência quando atende requisito."""
-        result = await ai_service._calculate_experience_match(
-            sample_candidate, sample_position
-        )
+        result = await ai_service._calculate_experience_match(sample_candidate, sample_position)
 
         assert result["meets_requirement"] is True
         assert result["score"] >= 0.9
 
     @pytest.mark.asyncio
-    async def test_experience_match_below_requirement(
-        self, ai_service, sample_position
-    ):
+    async def test_experience_match_below_requirement(self, ai_service, sample_position):
         """Testa match de experiência abaixo do requisito."""
         candidate = Candidate(
             name="Junior",
@@ -184,9 +169,7 @@ class TestMatchingScore:
             years_experience=2,  # Requisito é 5
         )
 
-        result = await ai_service._calculate_experience_match(
-            candidate, sample_position
-        )
+        result = await ai_service._calculate_experience_match(candidate, sample_position)
 
         assert result["meets_requirement"] is False
         assert result["score"] < 0.8
@@ -378,9 +361,7 @@ class TestPositionSuggestions:
         positions[0].code = "VAG-2024-0001"
         positions[1].code = "VAG-2024-0002"
 
-        suggestions = await ai_service.suggest_positions(
-            sample_candidate, positions, sample_skills, limit=5
-        )
+        suggestions = await ai_service.suggest_positions(sample_candidate, positions, sample_skills, limit=5)
 
         assert len(suggestions) >= 1
         # Python deveria estar primeiro
@@ -392,13 +373,9 @@ class TestInterviewQuestions:
     """Testes para geração de perguntas."""
 
     @pytest.mark.asyncio
-    async def test_generate_interview_questions(
-        self, ai_service, sample_position, sample_candidate
-    ):
+    async def test_generate_interview_questions(self, ai_service, sample_position, sample_candidate):
         """Testa geração de perguntas para entrevista."""
-        questions = await ai_service.generate_interview_questions(
-            sample_candidate, sample_position
-        )
+        questions = await ai_service.generate_interview_questions(sample_candidate, sample_position)
 
         assert len(questions) > 0
 

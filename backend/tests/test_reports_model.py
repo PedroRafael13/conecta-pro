@@ -1,41 +1,42 @@
 """
 Testes dos Models do Sprint 34 - Relatórios Gerenciais
 """
+
 # pylint: disable=redefined-outer-name,unused-argument
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 from decimal import Decimal
 
 import pytest
 
 from modules.reports.models import (
-    ReportTemplate,
-    ReportSchedule,
-    ReportExport,
-    ExecutiveKPI,
-    Benchmark,
-    ReportCategory,
-    ReportFormat,
-    ReportType,
-    TemplateStatus,
-    ChartType,
-    ScheduleFrequency,
-    ScheduleStatus,
-    DeliveryMethod,
-    ExportStatus,
-    ExportTrigger,
-    ExportFormat,
-    KPICategory,
-    KPIType,
-    KPIDirection,
-    KPIStatus,
-    KPIAlertLevel,
     AggregationPeriod,
+    Benchmark,
     BenchmarkCategory,
-    BenchmarkType,
     BenchmarkSource,
     BenchmarkStatus,
+    BenchmarkType,
+    ChartType,
     ComparisonResult,
+    DeliveryMethod,
+    ExecutiveKPI,
+    ExportFormat,
+    ExportStatus,
+    ExportTrigger,
+    KPIAlertLevel,
+    KPICategory,
+    KPIDirection,
+    KPIStatus,
+    KPIType,
+    ReportCategory,
+    ReportExport,
+    ReportFormat,
+    ReportSchedule,
+    ReportTemplate,
+    ReportType,
+    ScheduleFrequency,
+    ScheduleStatus,
+    TemplateStatus,
 )
 
 
@@ -223,7 +224,7 @@ class TestReportSchedule:
             frequency=ScheduleFrequency.DIARIO,
             timezone="America/Sao_Paulo",
             status=ScheduleStatus.ATIVO,
-            start_date=datetime.now(timezone.utc),
+            start_date=datetime.now(UTC),
             output_format="pdf",
             delivery_method=DeliveryMethod.EMAIL,
         )
@@ -241,7 +242,7 @@ class TestReportSchedule:
             frequency=ScheduleFrequency.SEMANAL,
             timezone="America/Sao_Paulo",
             status=ScheduleStatus.RASCUNHO,
-            start_date=datetime.now(timezone.utc),
+            start_date=datetime.now(UTC),
             output_format="excel",
             delivery_method=DeliveryMethod.STORAGE,
         )
@@ -258,7 +259,7 @@ class TestReportSchedule:
             frequency=ScheduleFrequency.MENSAL,
             timezone="America/Sao_Paulo",
             status=ScheduleStatus.ATIVO,
-            start_date=datetime.now(timezone.utc),
+            start_date=datetime.now(UTC),
             output_format="csv",
             delivery_method=DeliveryMethod.WEBHOOK,
         )
@@ -275,7 +276,7 @@ class TestReportSchedule:
             frequency=ScheduleFrequency.TRIMESTRAL,
             timezone="America/Sao_Paulo",
             status=ScheduleStatus.PAUSADO,
-            start_date=datetime.now(timezone.utc),
+            start_date=datetime.now(UTC),
             output_format="pdf",
             delivery_method=DeliveryMethod.EMAIL,
         )
@@ -292,7 +293,7 @@ class TestReportSchedule:
             frequency=ScheduleFrequency.ANUAL,
             timezone="America/Sao_Paulo",
             status=ScheduleStatus.ATIVO,
-            start_date=datetime.now(timezone.utc),
+            start_date=datetime.now(UTC),
             output_format="pdf",
             delivery_method=DeliveryMethod.EMAIL,
         )
@@ -309,7 +310,7 @@ class TestReportSchedule:
             frequency=ScheduleFrequency.DIARIO,
             timezone="America/Sao_Paulo",
             status=ScheduleStatus.ATIVO,
-            start_date=datetime.now(timezone.utc),
+            start_date=datetime.now(UTC),
             output_format="pdf",
             delivery_method=DeliveryMethod.EMAIL,
             execution_count=0,
@@ -329,7 +330,7 @@ class TestReportSchedule:
             frequency=ScheduleFrequency.SEMANAL,
             timezone="America/Sao_Paulo",
             status=ScheduleStatus.ATIVO,
-            start_date=datetime.now(timezone.utc),
+            start_date=datetime.now(UTC),
             output_format="pdf",
             delivery_method=DeliveryMethod.EMAIL,
             recipients=[],
@@ -347,7 +348,7 @@ class TestReportSchedule:
             frequency=ScheduleFrequency.DIARIO,
             timezone="America/Sao_Paulo",
             status=ScheduleStatus.ATIVO,
-            start_date=datetime.now(timezone.utc),
+            start_date=datetime.now(UTC),
             output_format="pdf",
             delivery_method=DeliveryMethod.EMAIL,
             execution_count=10,
@@ -394,7 +395,7 @@ class TestReportExport:
             status=ExportStatus.PROCESSANDO,
             trigger=ExportTrigger.AGENDADO,
             format=ExportFormat.CSV,
-            started_at=datetime.now(timezone.utc),
+            started_at=datetime.now(UTC),
         )
         export.complete(
             file_path="/exports/report.csv",
@@ -415,7 +416,7 @@ class TestReportExport:
             status=ExportStatus.PROCESSANDO,
             trigger=ExportTrigger.API,
             format=ExportFormat.PDF,
-            started_at=datetime.now(timezone.utc),
+            started_at=datetime.now(UTC),
         )
         export.fail("Erro de conexão", {"code": "CONN_ERROR"})
         assert export.status == ExportStatus.ERRO

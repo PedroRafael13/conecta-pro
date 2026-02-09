@@ -1,6 +1,7 @@
 """Testes para o sistema de banco de dados."""
 
 import asyncio
+import contextlib
 import time
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -230,6 +231,7 @@ class TestCircuitBreakerDecorator:
     @pytest.mark.asyncio
     async def test_decorator_success(self):
         """Testa decorator com sucesso."""
+
         @circuit_breaker(name="test_decorator", failure_threshold=3)
         async def my_func():
             return "decorated_result"
@@ -241,6 +243,7 @@ class TestCircuitBreakerDecorator:
     @pytest.mark.asyncio
     async def test_decorator_exposes_circuit(self):
         """Testa que decorator expõe circuit breaker."""
+
         @circuit_breaker(name="exposed_circuit")
         async def my_func():
             return "result"
@@ -251,15 +254,14 @@ class TestCircuitBreakerDecorator:
     @pytest.mark.asyncio
     async def test_decorator_failure_tracking(self):
         """Testa que decorator rastreia falhas."""
+
         @circuit_breaker(name="track_failures", failure_threshold=3)
         async def failing_func():
             raise ValueError("error")
 
         for _ in range(2):
-            try:
+            with contextlib.suppress(ValueError):
                 await failing_func()
-            except ValueError:
-                pass
 
         assert failing_func.circuit_breaker._failure_count == 2
 
@@ -304,7 +306,7 @@ class TestDatabaseInit:
 
     def test_imports(self):
         """Testa que imports funcionam."""
-        from core.database import get_db, close_db
+        from core.database import close_db, get_db
 
         assert get_db is not None
         assert close_db is not None

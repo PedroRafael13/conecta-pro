@@ -201,9 +201,7 @@ class TestPDFGeneratorBasic:
         assert generator is not None
         assert generator.output_dir.exists()
 
-    def test_generate_preview_returns_html(
-        self, generator: PDFGenerator, sample_proposal: ProposalData
-    ) -> None:
+    def test_generate_preview_returns_html(self, generator: PDFGenerator, sample_proposal: ProposalData) -> None:
         """Testa que preview retorna HTML."""
         html = generator.generate_preview(sample_proposal)
 
@@ -211,9 +209,7 @@ class TestPDFGeneratorBasic:
         assert "<!DOCTYPE html>" in html
         assert sample_proposal.number in html
 
-    def test_html_contains_company_info(
-        self, generator: PDFGenerator, sample_proposal: ProposalData
-    ) -> None:
+    def test_html_contains_company_info(self, generator: PDFGenerator, sample_proposal: ProposalData) -> None:
         """Testa que HTML contem info da empresa."""
         html = generator.generate_preview(sample_proposal)
 
@@ -221,9 +217,7 @@ class TestPDFGeneratorBasic:
         assert sample_proposal.company.cnpj in html
         assert sample_proposal.company.phone in html
 
-    def test_html_contains_client_info(
-        self, generator: PDFGenerator, sample_proposal: ProposalData
-    ) -> None:
+    def test_html_contains_client_info(self, generator: PDFGenerator, sample_proposal: ProposalData) -> None:
         """Testa que HTML contem info do cliente."""
         html = generator.generate_preview(sample_proposal)
 
@@ -231,18 +225,14 @@ class TestPDFGeneratorBasic:
         assert sample_proposal.client.document in html
         assert sample_proposal.client.contact_name in html
 
-    def test_html_contains_items(
-        self, generator: PDFGenerator, sample_proposal: ProposalData
-    ) -> None:
+    def test_html_contains_items(self, generator: PDFGenerator, sample_proposal: ProposalData) -> None:
         """Testa que HTML contem itens."""
         html = generator.generate_preview(sample_proposal)
 
         for item in sample_proposal.items:
             assert item.description in html
 
-    def test_html_contains_totals(
-        self, generator: PDFGenerator, sample_proposal: ProposalData
-    ) -> None:
+    def test_html_contains_totals(self, generator: PDFGenerator, sample_proposal: ProposalData) -> None:
         """Testa que HTML contem totais."""
         html = generator.generate_preview(sample_proposal)
 
@@ -532,9 +522,7 @@ class TestPDFGeneratorGenerate:
             total=Decimal("100.00"),
         )
 
-    def test_generate_creates_file(
-        self, generator: PDFGenerator, sample_proposal: ProposalData
-    ) -> None:
+    def test_generate_creates_file(self, generator: PDFGenerator, sample_proposal: ProposalData) -> None:
         """Testa que generate cria arquivo."""
         # Mock para evitar dependencia de WeasyPrint
         with patch.object(generator, "_html_to_pdf") as mock_pdf:

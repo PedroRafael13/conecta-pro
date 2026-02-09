@@ -6,22 +6,19 @@ Modelos para gerenciamento de exames medicos ocupacionais e ASO.
 """
 
 import uuid
-from datetime import datetime, date
-from enum import Enum
-from typing import Optional, List
+from datetime import date, datetime
+from enum import StrEnum
 
-from sqlalchemy import (
-    Column, String, Text, Boolean, DateTime, Date,
-    Integer, ForeignKey, Index
-)
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy import Boolean, Column, Date, DateTime, ForeignKey, Index, Integer, String, Text
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 
 from core.models import Base
 
 
-class ExamType(str, Enum):
+class ExamType(StrEnum):
     """Tipos de exame medico ocupacional (NR-7)."""
+
     ADMISSIONAL = "admissional"
     PERIODICO = "periodico"
     RETORNO_TRABALHO = "retorno_trabalho"
@@ -29,8 +26,9 @@ class ExamType(str, Enum):
     DEMISSIONAL = "demissional"
 
 
-class ExamStatus(str, Enum):
+class ExamStatus(StrEnum):
     """Status do exame medico."""
+
     AGENDADO = "agendado"
     CONFIRMADO = "confirmado"
     REALIZADO = "realizado"
@@ -38,8 +36,9 @@ class ExamStatus(str, Enum):
     NAO_COMPARECEU = "nao_compareceu"
 
 
-class FitnessResult(str, Enum):
+class FitnessResult(StrEnum):
     """Resultado de aptidao do ASO."""
+
     APTO = "apto"
     INAPTO = "inapto"
     APTO_COM_RESTRICOES = "apto_com_restricoes"
@@ -52,6 +51,7 @@ class MedicalExam(Base):
     Representa um exame medico agendado ou realizado para um funcionario,
     conforme exigencias da NR-7.
     """
+
     __tablename__ = "health_medical_exams"
 
     # Identificacao
@@ -92,8 +92,8 @@ class MedicalExam(Base):
 
     # Indices
     __table_args__ = (
-        Index('idx_exam_funcionario_tipo', 'funcionario_id', 'tipo_exame'),
-        Index('idx_exam_data_status', 'data_agendamento', 'status'),
+        Index("idx_exam_funcionario_tipo", "funcionario_id", "tipo_exame"),
+        Index("idx_exam_data_status", "data_agendamento", "status"),
     )
 
     def __repr__(self) -> str:
@@ -112,6 +112,7 @@ class ASO(Base):
     Documento emitido apos realizacao do exame medico,
     atestando a aptidao ou inaptidao do trabalhador.
     """
+
     __tablename__ = "health_asos"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -154,8 +155,8 @@ class ASO(Base):
 
     # Indices
     __table_args__ = (
-        Index('idx_aso_vencimento', 'data_vencimento'),
-        Index('idx_aso_resultado', 'resultado'),
+        Index("idx_aso_vencimento", "data_vencimento"),
+        Index("idx_aso_resultado", "resultado"),
     )
 
     def __repr__(self) -> str:
@@ -179,6 +180,7 @@ class ComplementaryExam(Base):
 
     Exames adicionais solicitados (audiometria, espirometria, etc).
     """
+
     __tablename__ = "health_complementary_exams"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)

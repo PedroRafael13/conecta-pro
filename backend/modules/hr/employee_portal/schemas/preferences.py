@@ -1,12 +1,11 @@
 """Schemas para preferências do funcionário."""
 
 from datetime import datetime
-from typing import Optional, List
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from modules.hr.employee_portal.models import ThemePreference, LanguagePreference
+from modules.hr.employee_portal.models import LanguagePreference, ThemePreference
 
 
 class ThemeConfigSchema(BaseModel):
@@ -53,14 +52,14 @@ class NotificationConfigSchema(BaseModel):
 
     # WhatsApp
     whatsapp_notifications_enabled: bool = False
-    whatsapp_phone: Optional[str] = None
+    whatsapp_phone: str | None = None
 
 
 class DashboardConfigSchema(BaseModel):
     """Configuração do dashboard."""
 
     layout: str = Field(default="default", max_length=20)
-    widgets: List[str] = Field(
+    widgets: list[str] = Field(
         default_factory=lambda: [
             "payslip_summary",
             "vacation_balance",
@@ -86,7 +85,7 @@ class SecurityConfigSchema(BaseModel):
     """Configuração de segurança."""
 
     two_factor_enabled: bool = False
-    two_factor_method: Optional[str] = Field(None, pattern="^(app|sms|email)$")
+    two_factor_method: str | None = Field(None, pattern="^(app|sms|email)$")
     session_timeout_minutes: bool = True
     remember_device: bool = True
 
@@ -97,9 +96,7 @@ class AccessibilityConfigSchema(BaseModel):
     screen_reader_mode: bool = False
     keyboard_navigation: bool = True
     reduce_motion: bool = False
-    color_blind_mode: Optional[str] = Field(
-        None, pattern="^(protanopia|deuteranopia|tritanopia)$"
-    )
+    color_blind_mode: str | None = Field(None, pattern="^(protanopia|deuteranopia|tritanopia)$")
 
 
 class TrustedDeviceSchema(BaseModel):
@@ -108,11 +105,11 @@ class TrustedDeviceSchema(BaseModel):
     device_id: str
     name: str
     device_type: str  # mobile, desktop, tablet
-    browser: Optional[str] = None
-    os: Optional[str] = None
+    browser: str | None = None
+    os: str | None = None
     last_used: datetime
-    ip_address: Optional[str] = None
-    location: Optional[str] = None
+    ip_address: str | None = None
+    location: str | None = None
 
 
 class PreferencesCreate(BaseModel):
@@ -134,7 +131,7 @@ class PreferencesCreate(BaseModel):
 
     # Dashboard
     dashboard_layout: str = Field(default="default", max_length=20)
-    dashboard_widgets: List[str] = Field(default_factory=list)
+    dashboard_widgets: list[str] = Field(default_factory=list)
     default_page: str = Field(default="dashboard", max_length=50)
 
 
@@ -142,80 +139,78 @@ class PreferencesUpdate(BaseModel):
     """Schema para atualização de preferências."""
 
     # Aparência
-    theme: Optional[ThemePreference] = None
-    language: Optional[LanguagePreference] = None
-    font_size: Optional[str] = Field(None, pattern="^(small|medium|large)$")
-    compact_mode: Optional[bool] = None
-    animations_enabled: Optional[bool] = None
+    theme: ThemePreference | None = None
+    language: LanguagePreference | None = None
+    font_size: str | None = Field(None, pattern="^(small|medium|large)$")
+    compact_mode: bool | None = None
+    animations_enabled: bool | None = None
 
     # Notificações - Portal
-    notifications_enabled: Optional[bool] = None
-    notification_sound: Optional[bool] = None
-    notification_badge: Optional[bool] = None
+    notifications_enabled: bool | None = None
+    notification_sound: bool | None = None
+    notification_badge: bool | None = None
 
     # Notificações - Email
-    email_notifications_enabled: Optional[bool] = None
-    email_payslip: Optional[bool] = None
-    email_documents: Optional[bool] = None
-    email_vacation: Optional[bool] = None
-    email_announcements: Optional[bool] = None
-    email_birthday: Optional[bool] = None
-    email_digest: Optional[bool] = None
-    email_digest_time: Optional[str] = Field(None, pattern=r"^\d{2}:\d{2}$")
+    email_notifications_enabled: bool | None = None
+    email_payslip: bool | None = None
+    email_documents: bool | None = None
+    email_vacation: bool | None = None
+    email_announcements: bool | None = None
+    email_birthday: bool | None = None
+    email_digest: bool | None = None
+    email_digest_time: str | None = Field(None, pattern=r"^\d{2}:\d{2}$")
 
     # Notificações - Push
-    push_notifications_enabled: Optional[bool] = None
-    push_payslip: Optional[bool] = None
-    push_documents: Optional[bool] = None
-    push_vacation: Optional[bool] = None
-    push_announcements: Optional[bool] = None
-    push_time_entry: Optional[bool] = None
-    push_quiet_hours: Optional[bool] = None
-    push_quiet_start: Optional[str] = Field(None, pattern=r"^\d{2}:\d{2}$")
-    push_quiet_end: Optional[str] = Field(None, pattern=r"^\d{2}:\d{2}$")
+    push_notifications_enabled: bool | None = None
+    push_payslip: bool | None = None
+    push_documents: bool | None = None
+    push_vacation: bool | None = None
+    push_announcements: bool | None = None
+    push_time_entry: bool | None = None
+    push_quiet_hours: bool | None = None
+    push_quiet_start: str | None = Field(None, pattern=r"^\d{2}:\d{2}$")
+    push_quiet_end: str | None = Field(None, pattern=r"^\d{2}:\d{2}$")
 
     # Notificações - SMS
-    sms_notifications_enabled: Optional[bool] = None
-    sms_urgent_only: Optional[bool] = None
+    sms_notifications_enabled: bool | None = None
+    sms_urgent_only: bool | None = None
 
     # Notificações - WhatsApp
-    whatsapp_notifications_enabled: Optional[bool] = None
-    whatsapp_phone: Optional[str] = Field(None, max_length=20)
+    whatsapp_notifications_enabled: bool | None = None
+    whatsapp_phone: str | None = Field(None, max_length=20)
 
     # Dashboard
-    dashboard_layout: Optional[str] = Field(None, max_length=20)
-    dashboard_widgets: Optional[List[str]] = None
-    default_page: Optional[str] = Field(None, max_length=50)
+    dashboard_layout: str | None = Field(None, max_length=20)
+    dashboard_widgets: list[str] | None = None
+    default_page: str | None = Field(None, max_length=50)
 
     # Férias
-    vacation_reminder_days: Optional[List[int]] = None
-    vacation_balance_notification: Optional[bool] = None
+    vacation_reminder_days: list[int] | None = None
+    vacation_balance_notification: bool | None = None
 
     # Ponto
-    time_entry_reminder: Optional[bool] = None
-    time_entry_reminder_times: Optional[List[str]] = None
-    time_entry_geofence_reminder: Optional[bool] = None
+    time_entry_reminder: bool | None = None
+    time_entry_reminder_times: list[str] | None = None
+    time_entry_geofence_reminder: bool | None = None
 
     # Privacidade
-    show_birthday: Optional[bool] = None
-    show_photo: Optional[bool] = None
-    show_department: Optional[bool] = None
-    show_position: Optional[bool] = None
-    allow_colleague_contact: Optional[bool] = None
+    show_birthday: bool | None = None
+    show_photo: bool | None = None
+    show_department: bool | None = None
+    show_position: bool | None = None
+    allow_colleague_contact: bool | None = None
 
     # Segurança
-    two_factor_enabled: Optional[bool] = None
-    two_factor_method: Optional[str] = Field(None, pattern="^(app|sms|email)$")
-    session_timeout_minutes: Optional[bool] = None
-    remember_device: Optional[bool] = None
+    two_factor_enabled: bool | None = None
+    two_factor_method: str | None = Field(None, pattern="^(app|sms|email)$")
+    session_timeout_minutes: bool | None = None
+    remember_device: bool | None = None
 
     # Acessibilidade
-    screen_reader_mode: Optional[bool] = None
-    keyboard_navigation: Optional[bool] = None
-    reduce_motion: Optional[bool] = None
-    color_blind_mode: Optional[str] = Field(
-        None, pattern="^(protanopia|deuteranopia|tritanopia)$"
-    )
+    screen_reader_mode: bool | None = None
+    keyboard_navigation: bool | None = None
+    reduce_motion: bool | None = None
+    color_blind_mode: str | None = Field(None, pattern="^(protanopia|deuteranopia|tritanopia)$")
 
 
 class PreferencesResponse(BaseModel):
@@ -233,7 +228,7 @@ class PreferencesResponse(BaseModel):
     animations_enabled: bool
 
     # Notificações
-    notification_channels: List[str]
+    notification_channels: list[str]
     notifications_enabled: bool
     notification_sound: bool
     notification_badge: bool
@@ -265,20 +260,20 @@ class PreferencesResponse(BaseModel):
 
     # WhatsApp
     whatsapp_notifications_enabled: bool
-    whatsapp_phone: Optional[str]
+    whatsapp_phone: str | None
 
     # Dashboard
     dashboard_layout: str
-    dashboard_widgets: List[str]
+    dashboard_widgets: list[str]
     default_page: str
 
     # Férias
-    vacation_reminder_days: List[int]
+    vacation_reminder_days: list[int]
     vacation_balance_notification: bool
 
     # Ponto
     time_entry_reminder: bool
-    time_entry_reminder_times: List[str]
+    time_entry_reminder_times: list[str]
     time_entry_geofence_reminder: bool
 
     # Privacidade
@@ -290,23 +285,23 @@ class PreferencesResponse(BaseModel):
 
     # Segurança
     two_factor_enabled: bool
-    two_factor_method: Optional[str]
+    two_factor_method: str | None
     session_timeout_minutes: bool
     remember_device: bool
-    trusted_devices: List[TrustedDeviceSchema]
+    trusted_devices: list[TrustedDeviceSchema]
 
     # Acessibilidade
     screen_reader_mode: bool
     keyboard_navigation: bool
     reduce_motion: bool
-    color_blind_mode: Optional[str]
+    color_blind_mode: str | None
 
     # Metadados
-    last_login_at: Optional[datetime]
-    last_login_ip: Optional[str]
-    last_login_device: Optional[str]
+    last_login_at: datetime | None
+    last_login_ip: str | None
+    last_login_device: str | None
     created_at: datetime
-    updated_at: Optional[datetime]
+    updated_at: datetime | None
 
     model_config = {"from_attributes": True}
 
@@ -314,27 +309,27 @@ class PreferencesResponse(BaseModel):
 class PrivacySettingsUpdate(BaseModel):
     """Schema para atualização de configurações de privacidade."""
 
-    show_birthday: Optional[bool] = None
-    show_photo: Optional[bool] = None
-    show_department: Optional[bool] = None
-    show_position: Optional[bool] = None
-    allow_colleague_contact: Optional[bool] = None
+    show_birthday: bool | None = None
+    show_photo: bool | None = None
+    show_department: bool | None = None
+    show_position: bool | None = None
+    allow_colleague_contact: bool | None = None
 
 
 class DashboardSettingsUpdate(BaseModel):
     """Schema para atualização de configurações do dashboard."""
 
-    layout: Optional[str] = Field(None, max_length=20)
-    widgets: Optional[List[str]] = None
-    default_page: Optional[str] = Field(None, max_length=50)
+    layout: str | None = Field(None, max_length=20)
+    widgets: list[str] | None = None
+    default_page: str | None = Field(None, max_length=50)
 
 
 class DeviceInfo(BaseModel):
     """Informação de dispositivo para registro."""
 
     name: str = Field(..., min_length=1, max_length=100)
-    user_agent: Optional[str] = None
-    ip_address: Optional[str] = None
+    user_agent: str | None = None
+    ip_address: str | None = None
 
 
 class TwoFactorSetupResponse(BaseModel):
@@ -342,7 +337,7 @@ class TwoFactorSetupResponse(BaseModel):
 
     secret: str
     qr_code_uri: str
-    backup_codes: List[str]
+    backup_codes: list[str]
 
 
 class ClientConfigResponse(BaseModel):
@@ -356,6 +351,6 @@ class ClientConfigResponse(BaseModel):
     notifications_enabled: bool
     notification_sound: bool
     dashboard_layout: str
-    dashboard_widgets: List[str]
+    dashboard_widgets: list[str]
     default_page: str
     accessibility: AccessibilityConfigSchema

@@ -6,18 +6,18 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.database import get_async_session
 from core.auth.dependencies import get_current_user
-from modules.hr.employee_portal.services import PreferencesService
+from core.database import get_async_session
 from modules.hr.employee_portal.schemas import (
-    PreferencesResponse,
-    PreferencesUpdate,
-    NotificationPreferencesUpdate,
-    PrivacySettingsUpdate,
     DashboardSettingsUpdate,
     DeviceInfo,
+    NotificationPreferencesUpdate,
+    PreferencesResponse,
+    PreferencesUpdate,
+    PrivacySettingsUpdate,
     TwoFactorSetupResponse,
 )
+from modules.hr.employee_portal.services import PreferencesService
 
 logger = logging.getLogger(__name__)
 

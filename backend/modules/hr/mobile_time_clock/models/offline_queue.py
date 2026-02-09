@@ -5,17 +5,16 @@ Gerencia registros feitos offline que precisam ser sincronizados.
 
 import uuid
 from datetime import datetime
-from enum import Enum
-from typing import Optional
+from enum import StrEnum
 
 from sqlalchemy import (
     Boolean,
     DateTime,
+    ForeignKey,
+    Index,
     Integer,
     String,
     Text,
-    Index,
-    ForeignKey,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -23,19 +22,21 @@ from sqlalchemy.orm import Mapped, mapped_column
 from core.database import Base
 
 
-class QueueStatus(str, Enum):
+class QueueStatus(StrEnum):
     """Status do item na fila."""
-    PENDING = "pending"            # Aguardando sync
-    PROCESSING = "processing"      # Em processamento
-    SYNCED = "synced"             # Sincronizado com sucesso
-    FAILED = "failed"             # Falhou
-    EXPIRED = "expired"           # Expirou (muito antigo)
-    DUPLICATE = "duplicate"       # Duplicado detectado
-    INVALID = "invalid"           # Dados inválidos
+
+    PENDING = "pending"  # Aguardando sync
+    PROCESSING = "processing"  # Em processamento
+    SYNCED = "synced"  # Sincronizado com sucesso
+    FAILED = "failed"  # Falhou
+    EXPIRED = "expired"  # Expirou (muito antigo)
+    DUPLICATE = "duplicate"  # Duplicado detectado
+    INVALID = "invalid"  # Dados inválidos
 
 
-class QueuePriority(str, Enum):
+class QueuePriority(StrEnum):
     """Prioridade na fila."""
+
     HIGH = "high"
     NORMAL = "normal"
     LOW = "low"
@@ -78,12 +79,12 @@ class OfflineQueue(Base):
     device_timestamp: Mapped[datetime] = mapped_column(DateTime, nullable=False)
 
     # Geolocalização
-    latitude: Mapped[Optional[float]] = mapped_column()
-    longitude: Mapped[Optional[float]] = mapped_column()
-    accuracy_meters: Mapped[Optional[float]] = mapped_column()
+    latitude: Mapped[float | None] = mapped_column()
+    longitude: Mapped[float | None] = mapped_column()
+    accuracy_meters: Mapped[float | None] = mapped_column()
 
     # Validação local (feita no app)
-    local_validation: Mapped[Optional[dict]] = mapped_column(JSONB)
+    local_validation: Mapped[dict | None] = mapped_column(JSONB)
     local_geofence_check: Mapped[bool] = mapped_column(Boolean, default=False)
     local_biometric_check: Mapped[bool] = mapped_column(Boolean, default=False)
 
@@ -99,26 +100,26 @@ class OfflineQueue(Base):
     )
 
     # Resultado do sync
-    checkin_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True))
-    synced_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    sync_result: Mapped[Optional[dict]] = mapped_column(JSONB)
+    checkin_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    synced_at: Mapped[datetime | None] = mapped_column(DateTime)
+    sync_result: Mapped[dict | None] = mapped_column(JSONB)
 
     # Erros e retry
-    error_message: Mapped[Optional[str]] = mapped_column(Text)
-    error_code: Mapped[Optional[str]] = mapped_column(String(50))
+    error_message: Mapped[str | None] = mapped_column(Text)
+    error_code: Mapped[str | None] = mapped_column(String(50))
     retry_count: Mapped[int] = mapped_column(Integer, default=0)
     max_retries: Mapped[int] = mapped_column(Integer, default=5)
-    next_retry_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    last_error_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    next_retry_at: Mapped[datetime | None] = mapped_column(DateTime)
+    last_error_at: Mapped[datetime | None] = mapped_column(DateTime)
 
     # Expiração
     expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     is_expired: Mapped[bool] = mapped_column(Boolean, default=False)
 
     # Metadados
-    app_version: Mapped[Optional[str]] = mapped_column(String(20))
-    device_info: Mapped[Optional[dict]] = mapped_column(JSONB)
-    network_type: Mapped[Optional[str]] = mapped_column(String(20))  # wifi, 4g, 5g, offline
+    app_version: Mapped[str | None] = mapped_column(String(20))
+    device_info: Mapped[dict | None] = mapped_column(JSONB)
+    network_type: Mapped[str | None] = mapped_column(String(20))  # wifi, 4g, 5g, offline
 
     # Timestamps
     queued_at: Mapped[datetime] = mapped_column(
@@ -129,7 +130,7 @@ class OfflineQueue(Base):
         DateTime,
         default=datetime.utcnow,
     )
-    processed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    processed_at: Mapped[datetime | None] = mapped_column(DateTime)
 
     # Índices
     __table_args__ = (
@@ -189,7 +190,8 @@ class OfflineQueue(Base):
         # Calcular próximo retry com backoff exponencial
         if self.can_retry:
             from datetime import timedelta  # pylint: disable=import-outside-toplevel
-            backoff_minutes = min(2 ** self.retry_count, 60)  # Max 1 hora
+
+            backoff_minutes = min(2**self.retry_count, 60)  # Max 1 hora
             self.next_retry_at = datetime.utcnow() + timedelta(minutes=backoff_minutes)
         else:
             self.next_retry_at = None

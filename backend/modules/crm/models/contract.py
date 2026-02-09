@@ -12,7 +12,7 @@ Gerencia todo o ciclo de vida dos contratos:
 import enum
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Any, Optional
+from typing import Any
 
 from sqlalchemy import (
     Boolean,
@@ -241,13 +241,11 @@ class Contract(Base):
     def is_renewable(self) -> bool:
         """Verifica se pode ser renovado."""
         return (
-            self.auto_renewal
-            and self.status == ContractStatus.ACTIVE
-            and self.contract_type == ContractType.RECURRING
+            self.auto_renewal and self.status == ContractStatus.ACTIVE and self.contract_type == ContractType.RECURRING
         )
 
     @property
-    def days_until_end(self) -> Optional[int]:
+    def days_until_end(self) -> int | None:
         """Dias até o fim do contrato."""
         if not self.end_date:
             return None
@@ -275,14 +273,14 @@ class Contract(Base):
         return self.next_adjustment_date <= date.today()
 
     @property
-    def days_until_adjustment(self) -> Optional[int]:
+    def days_until_adjustment(self) -> int | None:
         """Dias até o próximo reajuste."""
         if not self.next_adjustment_date:
             return None
         delta = self.next_adjustment_date - date.today()
         return delta.days
 
-    def calculate_next_adjustment_date(self) -> Optional[date]:
+    def calculate_next_adjustment_date(self) -> date | None:
         """Calcula a próxima data de reajuste."""
         if not self.adjustment_enabled:
             return None
@@ -467,7 +465,7 @@ class ContractAddendum(Base):
         return self.addendum_type == AddendumType.ADJUSTMENT
 
     @property
-    def value_difference(self) -> Optional[Decimal]:
+    def value_difference(self) -> Decimal | None:
         """Diferença de valor no reajuste."""
         if self.previous_value and self.new_value:
             return self.new_value - self.previous_value
@@ -532,7 +530,7 @@ class ContractSLAReport(Base):
         """Verifica se atingiu a meta."""
         return self.overall_score >= 100
 
-    def get_indicator_result(self, indicator_name: str) -> Optional[dict]:
+    def get_indicator_result(self, indicator_name: str) -> dict | None:
         """Retorna resultado de um indicador específico."""
         if not self.indicators:
             return None

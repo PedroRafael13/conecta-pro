@@ -1,8 +1,8 @@
 """Cost Driver model - Direcionadores de Custo ABC."""
 
-import enum
 from datetime import datetime
 from decimal import Decimal
+from enum import StrEnum
 from typing import TYPE_CHECKING
 
 from sqlalchemy import (
@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from modules.financial.costing.models.cost_activity import CostActivity
 
 
-class DriverType(str, enum.Enum):
+class DriverType(StrEnum):
     """Tipo do direcionador de custo."""
 
     TRANSACTION = "TRANSACTION"  # Baseado em transações (qtd pedidos, entregas)
@@ -40,7 +40,7 @@ class DriverType(str, enum.Enum):
     CUSTOM = "CUSTOM"  # Personalizado
 
 
-class DriverCategory(str, enum.Enum):
+class DriverCategory(StrEnum):
     """Categoria do direcionador."""
 
     RESOURCE = "RESOURCE"  # Direcionador de recurso (1º estágio ABC)
@@ -48,7 +48,7 @@ class DriverCategory(str, enum.Enum):
     COST_OBJECT = "COST_OBJECT"  # Direcionador para objeto de custo
 
 
-class DriverStatus(str, enum.Enum):
+class DriverStatus(StrEnum):
     """Status do direcionador."""
 
     ACTIVE = "ACTIVE"
@@ -56,7 +56,7 @@ class DriverStatus(str, enum.Enum):
     DEPRECATED = "DEPRECATED"
 
 
-class DriverMeasureUnit(str, enum.Enum):
+class DriverMeasureUnit(StrEnum):
     """Unidade de medida do direcionador."""
 
     QUANTITY = "QUANTITY"  # Quantidade (unidades)
@@ -77,9 +77,7 @@ class CostDriver(Base):
     """Direcionador de Custo - base do custeio ABC."""
 
     __tablename__ = "fin_cost_drivers"
-    __table_args__ = (
-        UniqueConstraint("condominio_id", "code", name="uq_cost_driver_code"),
-    )
+    __table_args__ = (UniqueConstraint("condominio_id", "code", name="uq_cost_driver_code"),)
 
     # Primary Key
     id = Column(
@@ -222,9 +220,7 @@ class CostDriver(Base):
         """Calcula valor de alocação baseado na quantidade."""
         return quantity * self.unit_cost
 
-    def update_statistics(
-        self, allocation_count: int, allocated_amount: Decimal
-    ) -> None:
+    def update_statistics(self, allocation_count: int, allocated_amount: Decimal) -> None:
         """Atualiza estatísticas do direcionador."""
         self.total_allocations += allocation_count
         self.total_allocated_amount += allocated_amount

@@ -5,16 +5,15 @@ Revises: sprint54_email_assistant
 Create Date: 2025-01-06
 """
 
-from alembic import op
-from sqlalchemy.dialects import postgresql
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY, ENUM
+from sqlalchemy.dialects.postgresql import ARRAY, ENUM, JSONB, UUID
+
+from alembic import op
 
 revision = "sprint55_workflow_optimizer"
 down_revision = "sprint54_email_assistant"
 branch_labels = None
 depends_on = None
-
 
 
 def create_enum_safe(name: str, values: list):
@@ -28,15 +27,34 @@ def create_enum_safe(name: str, values: list):
         END $$;
     """)
 
+
 def upgrade() -> None:
     # Criar ENUMs
-    create_enum_safe("workflow_status_enum", ['draft', 'active', 'paused', 'archived', 'disabled'])
+    create_enum_safe("workflow_status_enum", ["draft", "active", "paused", "archived", "disabled"])
 
-    create_enum_safe("workflow_type_enum", ['approval', 'notification', 'data_processing', 'integration', 'maintenance', 'report', 'alert', 'scheduling', 'communication', 'financial', 'custom'])
+    create_enum_safe(
+        "workflow_type_enum",
+        [
+            "approval",
+            "notification",
+            "data_processing",
+            "integration",
+            "maintenance",
+            "report",
+            "alert",
+            "scheduling",
+            "communication",
+            "financial",
+            "custom",
+        ],
+    )
 
-    create_enum_safe("execution_status_enum", ['pending', 'running', 'completed', 'failed', 'cancelled', 'timeout', 'waiting', 'paused'])
+    create_enum_safe(
+        "execution_status_enum",
+        ["pending", "running", "completed", "failed", "cancelled", "timeout", "waiting", "paused"],
+    )
 
-    create_enum_safe("optimization_type_enum", ['performance', 'cost', 'reliability', 'efficiency', 'automation'])
+    create_enum_safe("optimization_type_enum", ["performance", "cost", "reliability", "efficiency", "automation"])
 
     # Tabela ai_workflows
     op.create_table(
@@ -50,7 +68,21 @@ def upgrade() -> None:
         # Tipo
         sa.Column(
             "workflow_type",
-            ENUM("approval", "notification", "data_processing", "integration", "maintenance", "report", "alert", "scheduling", "communication", "financial", "custom", name="workflow_type_enum", create_type=False),
+            ENUM(
+                "approval",
+                "notification",
+                "data_processing",
+                "integration",
+                "maintenance",
+                "report",
+                "alert",
+                "scheduling",
+                "communication",
+                "financial",
+                "custom",
+                name="workflow_type_enum",
+                create_type=False,
+            ),
             server_default="custom",
         ),
         sa.Column("category", sa.String(100), nullable=True),
@@ -108,7 +140,18 @@ def upgrade() -> None:
         # Status
         sa.Column(
             "status",
-            ENUM("pending", "running", "completed", "failed", "cancelled", "timeout", "waiting", "paused", name="execution_status_enum", create_type=False),
+            ENUM(
+                "pending",
+                "running",
+                "completed",
+                "failed",
+                "cancelled",
+                "timeout",
+                "waiting",
+                "paused",
+                name="execution_status_enum",
+                create_type=False,
+            ),
             server_default="pending",
         ),
         # Progresso
@@ -166,7 +209,22 @@ def upgrade() -> None:
     )
 
     # ENUM para tipo de template (evita conflito)
-    create_enum_safe("workflow_type_enum_template", ['approval', 'notification', 'data_processing', 'integration', 'maintenance', 'report', 'alert', 'scheduling', 'communication', 'financial', 'custom'])
+    create_enum_safe(
+        "workflow_type_enum_template",
+        [
+            "approval",
+            "notification",
+            "data_processing",
+            "integration",
+            "maintenance",
+            "report",
+            "alert",
+            "scheduling",
+            "communication",
+            "financial",
+            "custom",
+        ],
+    )
 
     # Tabela ai_workflow_templates
     op.create_table(
@@ -180,7 +238,21 @@ def upgrade() -> None:
         # Tipo
         sa.Column(
             "workflow_type",
-            ENUM("approval", "notification", "data_processing", "integration", "maintenance", "report", "alert", "scheduling", "communication", "financial", "custom", name="workflow_type_enum_template", create_type=False),
+            ENUM(
+                "approval",
+                "notification",
+                "data_processing",
+                "integration",
+                "maintenance",
+                "report",
+                "alert",
+                "scheduling",
+                "communication",
+                "financial",
+                "custom",
+                name="workflow_type_enum_template",
+                create_type=False,
+            ),
             server_default="custom",
         ),
         sa.Column("category", sa.String(100), nullable=True),
@@ -211,12 +283,8 @@ def upgrade() -> None:
         sa.Column("ativo", sa.Boolean, server_default="true", nullable=False),
     )
 
-    op.create_index(
-        "ix_ai_workflow_templates_code", "ai_workflow_templates", ["code"]
-    )
-    op.create_index(
-        "ix_ai_workflow_templates_type", "ai_workflow_templates", ["workflow_type"]
-    )
+    op.create_index("ix_ai_workflow_templates_code", "ai_workflow_templates", ["code"])
+    op.create_index("ix_ai_workflow_templates_type", "ai_workflow_templates", ["workflow_type"])
 
     # Tabela ai_workflow_optimizations
     op.create_table(
@@ -225,7 +293,15 @@ def upgrade() -> None:
         # Tipo
         sa.Column(
             "optimization_type",
-            ENUM("performance", "cost", "reliability", "efficiency", "automation", name="optimization_type_enum", create_type=False),
+            ENUM(
+                "performance",
+                "cost",
+                "reliability",
+                "efficiency",
+                "automation",
+                name="optimization_type_enum",
+                create_type=False,
+            ),
             nullable=False,
         ),
         # Sugestao

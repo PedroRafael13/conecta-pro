@@ -2,7 +2,6 @@
 
 import logging
 from datetime import datetime
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -29,9 +28,7 @@ async def get_service(db: AsyncSession = Depends(get_db)) -> InstallationService
     return InstallationService(db)
 
 
-@router.post(
-    "/", response_model=InstallationResponse, status_code=status.HTTP_201_CREATED
-)
+@router.post("/", response_model=InstallationResponse, status_code=status.HTTP_201_CREATED)
 async def create_installation(
     data: InstallationCreate,
     service: InstallationService = Depends(get_service),
@@ -51,15 +48,15 @@ async def create_installation(
 
 @router.get("/", response_model=InstallationListResponse)
 async def list_installations(
-    search: Optional[str] = Query(None),
-    status_filter: Optional[str] = Query(None, alias="status"),
-    client_id: Optional[str] = Query(None),
-    technician_id: Optional[str] = Query(None),
-    priority: Optional[str] = Query(None),
-    date_from: Optional[datetime] = Query(None),
-    date_to: Optional[datetime] = Query(None),
-    is_overdue: Optional[bool] = Query(None),
-    has_acceptance: Optional[bool] = Query(None),
+    search: str | None = Query(None),
+    status_filter: str | None = Query(None, alias="status"),
+    client_id: str | None = Query(None),
+    technician_id: str | None = Query(None),
+    priority: str | None = Query(None),
+    date_from: datetime | None = Query(None),
+    date_to: datetime | None = Query(None),
+    is_overdue: bool | None = Query(None),
+    has_acceptance: bool | None = Query(None),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     service: InstallationService = Depends(get_service),
@@ -221,7 +218,7 @@ async def start_installation(
 @router.post("/{installation_id}/complete", response_model=InstallationResponse)
 async def complete_installation(
     installation_id: str,
-    technical_report: Optional[str] = None,
+    technical_report: str | None = None,
     service: InstallationService = Depends(get_service),
 ) -> InstallationResponse:
     """Conclui uma instalação."""
@@ -254,7 +251,7 @@ async def cancel_installation(
 async def reschedule_installation(
     installation_id: str,
     new_date: datetime,
-    reason: Optional[str] = None,
+    reason: str | None = None,
     service: InstallationService = Depends(get_service),
 ) -> InstallationResponse:
     """Reagenda uma instalação."""
@@ -308,9 +305,7 @@ async def assign_technician(
     service: InstallationService = Depends(get_service),
 ) -> InstallationResponse:
     """Atribui técnico à instalação."""
-    installation = await service.assign_technician(
-        installation_id, technician_id, technician_name
-    )
+    installation = await service.assign_technician(installation_id, technician_id, technician_name)
     if not installation:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

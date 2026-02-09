@@ -3,10 +3,9 @@
 Sprint 39 - Document OCR.
 """
 
-import enum
 import uuid
 from datetime import datetime
-from typing import Optional, List, Dict, Any
+from enum import StrEnum
 
 from sqlalchemy import (
     Boolean,
@@ -25,7 +24,7 @@ from modules.ai.ocr.models.document_scan import DocumentScanType
 from modules.ai.ocr.models.extracted_field import FieldType
 
 
-class RuleType(str, enum.Enum):
+class RuleType(StrEnum):
     """Tipo de regra de extracao."""
 
     REGEX = "regex"  # Expressao regular
@@ -153,7 +152,7 @@ class DocumentTemplate(Base):
         score = matches / len(self.detection_keywords)
         return score
 
-    def get_fields(self) -> List["TemplateField"]:
+    def get_fields(self) -> list["TemplateField"]:
         """Retorna campos do template (deve ser carregado via relacionamento)."""
         return []
 

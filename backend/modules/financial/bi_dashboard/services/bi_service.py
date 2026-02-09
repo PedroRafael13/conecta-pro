@@ -116,9 +116,7 @@ class BIService:
         if not group_by and not dimension_field:
             return self._simple_aggregation(data, metric_field, aggregation)
 
-        return self._group_aggregation(
-            data, metric_field, dimension_field, aggregation, group_by
-        )
+        return self._group_aggregation(data, metric_field, dimension_field, aggregation, group_by)
 
     def _simple_aggregation(
         self,
@@ -162,7 +160,7 @@ class BIService:
 
         result = []
         for key, values in groups.items():
-            entry = dict(zip(group_fields, key))
+            entry = dict(zip(group_fields, key, strict=False))
             entry["value"] = self._calc_aggregation(values, aggregation)
             result.append(entry)
 
@@ -231,7 +229,7 @@ class BIService:
                 if name not in allowed_names and not name.isdigit():
                     raise ValueError(f"Nome nao permitido: {name}")
             # pylint: disable=eval-used
-            return eval(expression, {"__builtins__": {}}, allowed_names)
+            return eval(expression, {"__builtins__": {}}, allowed_names)  # noqa: S307
         except (SyntaxError, NameError, TypeError):
             return 0.0
 

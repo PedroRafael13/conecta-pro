@@ -5,7 +5,6 @@ Sprint: Módulo Operacional - Sistema de Notificações Push
 
 import logging
 from datetime import datetime
-from typing import Dict, List, Optional
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -40,8 +39,8 @@ class PushNotificationService:
         user_id: UUID,
         device_token: str,
         platform: str,
-        device_info: Optional[Dict] = None,
-    ) -> Dict:
+        device_info: dict | None = None,
+    ) -> dict:
         """Registra dispositivo para receber notificações push.
 
         Args:
@@ -75,17 +74,17 @@ class PushNotificationService:
             device_tokens = preference.user_device_tokens or []
 
             # Remove token duplicado se existir
-            device_tokens = [
-                t for t in device_tokens if t.get("token") != device_token
-            ]
+            device_tokens = [t for t in device_tokens if t.get("token") != device_token]
 
             # Adiciona novo token
-            device_tokens.append({
-                "token": device_token,
-                "platform": platform,
-                "device_info": device_info or {},
-                "subscribed_at": datetime.utcnow().isoformat(),
-            })
+            device_tokens.append(
+                {
+                    "token": device_token,
+                    "platform": platform,
+                    "device_info": device_info or {},
+                    "subscribed_at": datetime.utcnow().isoformat(),
+                }
+            )
 
             preference.user_device_tokens = device_tokens
             preference.push_enabled = True
@@ -93,9 +92,7 @@ class PushNotificationService:
             self.db.commit()
             self.db.refresh(preference)
 
-            logger.info(
-                f"Dispositivo registrado para push: user={user_id}, platform={platform}"
-            )
+            logger.info(f"Dispositivo registrado para push: user={user_id}, platform={platform}")
 
             return {
                 "success": True,
@@ -115,7 +112,7 @@ class PushNotificationService:
         self,
         user_id: UUID,
         device_token: str,
-    ) -> Dict:
+    ) -> dict:
         """Remove registro de dispositivo.
 
         Args:
@@ -142,9 +139,7 @@ class PushNotificationService:
                 }
 
             device_tokens = preference.user_device_tokens or []
-            device_tokens = [
-                t for t in device_tokens if t.get("token") != device_token
-            ]
+            device_tokens = [t for t in device_tokens if t.get("token") != device_token]
 
             preference.user_device_tokens = device_tokens
 
@@ -170,10 +165,10 @@ class PushNotificationService:
         user_id: UUID,
         title: str,
         body: str,
-        data: Optional[Dict] = None,
+        data: dict | None = None,
         priority: QueuePriority = QueuePriority.NORMAL,
-        action_url: Optional[str] = None,
-    ) -> Dict:
+        action_url: str | None = None,
+    ) -> dict:
         """Envia notificação push para usuário.
 
         Args:
@@ -194,8 +189,8 @@ class PushNotificationService:
                 .filter(
                     NotificationPreference.tenant_id == self.tenant_id,
                     NotificationPreference.user_id == user_id,
-                    NotificationPreference.push_enabled == True,
-                    NotificationPreference.active == True,
+                    NotificationPreference.push_enabled,
+                    NotificationPreference.active,
                 )
                 .first()
             )
@@ -254,9 +249,7 @@ class PushNotificationService:
             self.db.add(log_entry)
             self.db.commit()
 
-            logger.info(
-                f"Push notification enfileirada: user={user_id}, queue_id={queue_item.id}"
-            )
+            logger.info(f"Push notification enfileirada: user={user_id}, queue_id={queue_item.id}")
 
             return {
                 "success": True,
@@ -279,7 +272,7 @@ class PushNotificationService:
         unread_only: bool = False,
         limit: int = 50,
         offset: int = 0,
-    ) -> List[Dict]:
+    ) -> list[dict]:
         """Lista notificações do usuário.
 
         Args:
@@ -292,24 +285,16 @@ class PushNotificationService:
             Lista de notificações
         """
         try:
-            query = (
-                self.db.query(NotificationQueue)
-                .filter(
-                    NotificationQueue.tenant_id == self.tenant_id,
-                    NotificationQueue.user_id == user_id,
-                    NotificationQueue.channel_type == "push",
-                )
+            query = self.db.query(NotificationQueue).filter(
+                NotificationQueue.tenant_id == self.tenant_id,
+                NotificationQueue.user_id == user_id,
+                NotificationQueue.channel_type == "push",
             )
 
             if unread_only:
-                query = query.filter(NotificationQueue.opened == False)
+                query = query.filter(not NotificationQueue.opened)
 
-            notifications = (
-                query.order_by(NotificationQueue.created_at.desc())
-                .offset(offset)
-                .limit(limit)
-                .all()
-            )
+            notifications = query.order_by(NotificationQueue.created_at.desc()).offset(offset).limit(limit).all()
 
             return [
                 {
@@ -333,7 +318,7 @@ class PushNotificationService:
         self,
         notification_id: UUID,
         user_id: UUID,
-    ) -> Dict:
+    ) -> dict:
         """Marca notificação como lida.
 
         Args:
@@ -381,7 +366,7 @@ class PushNotificationService:
                 "message": f"Erro ao marcar notificação: {str(e)}",
             }
 
-    def mark_all_as_read(self, user_id: UUID) -> Dict:
+    def mark_all_as_read(self, user_id: UUID) -> dict:
         """Marca todas as notificações como lidas.
 
         Args:
@@ -397,7 +382,7 @@ class PushNotificationService:
                     NotificationQueue.tenant_id == self.tenant_id,
                     NotificationQueue.user_id == user_id,
                     NotificationQueue.channel_type == "push",
-                    NotificationQueue.opened == False,
+                    not NotificationQueue.opened,
                 )
                 .update(
                     {
@@ -441,7 +426,7 @@ class PushNotificationService:
                     NotificationQueue.tenant_id == self.tenant_id,
                     NotificationQueue.user_id == user_id,
                     NotificationQueue.channel_type == "push",
-                    NotificationQueue.opened == False,
+                    not NotificationQueue.opened,
                 )
                 .count()
             )

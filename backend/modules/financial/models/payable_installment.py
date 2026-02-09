@@ -3,8 +3,8 @@
 import uuid
 from datetime import date, datetime
 from decimal import Decimal
-from enum import Enum
-from typing import TYPE_CHECKING, List, Optional
+from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     Boolean,
@@ -28,7 +28,7 @@ if TYPE_CHECKING:
     from modules.financial.models.payable_payment import PayablePayment
 
 
-class InstallmentStatus(str, Enum):
+class InstallmentStatus(StrEnum):
     """Status da parcela."""
 
     PENDENTE = "pendente"
@@ -118,10 +118,8 @@ class PayableInstallment(Base):
     ativo = Column(Boolean, default=True, nullable=False)
 
     # Relacionamentos
-    payable_account: "PayableAccount" = relationship(
-        "PayableAccount", back_populates="installments"
-    )
-    payments: List["PayablePayment"] = relationship(
+    payable_account: "PayableAccount" = relationship("PayableAccount", back_populates="installments")
+    payments: list["PayablePayment"] = relationship(
         "PayablePayment",
         back_populates="installment",
         cascade="all, delete-orphan",
@@ -222,7 +220,7 @@ class PayableInstallment(Base):
     def renegotiate(
         self,
         new_due_date: date,
-        new_value: Optional[Decimal] = None,
+        new_value: Decimal | None = None,
         reason: str = "",
     ) -> None:
         """Renegocia a parcela."""

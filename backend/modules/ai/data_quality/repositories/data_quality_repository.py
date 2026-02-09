@@ -5,24 +5,24 @@ Repositório para operações de banco de dados.
 """
 
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 from uuid import UUID
 
-from sqlalchemy import and_, func, or_, desc
+from sqlalchemy import desc, func, or_
 from sqlalchemy.orm import Session
 
 from modules.ai.data_quality.models import (
-    DataQualityRule,
+    CheckStatusEnum,
+    DataProfile,
     DataQualityCheck,
     DataQualityIssue,
+    DataQualityRule,
     DuplicateRecord,
-    DataProfile,
-    RuleStatusEnum,
-    CheckStatusEnum,
-    IssueStatusEnum,
     DuplicateStatusEnum,
-    ProfileStatusEnum,
     IssueSeverityEnum,
+    IssueStatusEnum,
+    ProfileStatusEnum,
+    RuleStatusEnum,
 )
 
 
@@ -43,19 +43,13 @@ class DataQualityRepository:
         self.db.refresh(rule)
         return rule
 
-    def get_rule(self, rule_id: UUID) -> Optional[DataQualityRule]:
+    def get_rule(self, rule_id: UUID) -> DataQualityRule | None:
         """Busca regra por ID."""
-        return self.db.query(DataQualityRule).filter(
-            DataQualityRule.id == rule_id,
-            DataQualityRule.is_active == True
-        ).first()
+        return self.db.query(DataQualityRule).filter(DataQualityRule.id == rule_id, DataQualityRule.is_active).first()
 
-    def get_rule_by_code(self, code: str) -> Optional[DataQualityRule]:
+    def get_rule_by_code(self, code: str) -> DataQualityRule | None:
         """Busca regra por código."""
-        return self.db.query(DataQualityRule).filter(
-            DataQualityRule.code == code,
-            DataQualityRule.is_active == True
-        ).first()
+        return self.db.query(DataQualityRule).filter(DataQualityRule.code == code, DataQualityRule.is_active).first()
 
     def list_rules(
         self,
@@ -64,50 +58,42 @@ class DataQualityRepository:
         status: RuleStatusEnum = None,
         skip: int = 0,
         limit: int = 100,
-        organization_id: UUID = None
-    ) -> Tuple[List[DataQualityRule], int]:
+        organization_id: UUID = None,
+    ) -> tuple[list[DataQualityRule], int]:
         """Lista regras com filtros."""
-        query = self.db.query(DataQualityRule).filter(
-            DataQualityRule.is_active == True
-        )
+        query = self.db.query(DataQualityRule).filter(DataQualityRule.is_active)
 
         if entity_type:
-            query = query.filter(
-                or_(
-                    DataQualityRule.entity_type == entity_type,
-                    DataQualityRule.applies_to_all == True
-                )
-            )
+            query = query.filter(or_(DataQualityRule.entity_type == entity_type, DataQualityRule.applies_to_all))
         if category:
             query = query.filter(DataQualityRule.category == category)
         if status:
             query = query.filter(DataQualityRule.status == status)
         if organization_id:
-            query = query.filter(
-                or_(
-                    DataQualityRule.organization_id == organization_id,
-                    DataQualityRule.is_system == True
-                )
-            )
+            query = query.filter(or_(DataQualityRule.organization_id == organization_id, DataQualityRule.is_system))
 
         total = query.count()
-        rules = query.order_by(
-            DataQualityRule.priority.desc(),
-            DataQualityRule.execution_order
-        ).offset(skip).limit(limit).all()
+        rules = (
+            query.order_by(DataQualityRule.priority.desc(), DataQualityRule.execution_order)
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
 
         return rules, total
 
-    def get_active_rules_for_entity(self, entity_type: str) -> List[DataQualityRule]:
+    def get_active_rules_for_entity(self, entity_type: str) -> list[DataQualityRule]:
         """Busca regras ativas para entidade."""
-        return self.db.query(DataQualityRule).filter(
-            DataQualityRule.is_active == True,
-            DataQualityRule.status == RuleStatusEnum.ACTIVE,
-            or_(
-                DataQualityRule.entity_type == entity_type,
-                DataQualityRule.applies_to_all == True
+        return (
+            self.db.query(DataQualityRule)
+            .filter(
+                DataQualityRule.is_active,
+                DataQualityRule.status == RuleStatusEnum.ACTIVE,
+                or_(DataQualityRule.entity_type == entity_type, DataQualityRule.applies_to_all),
             )
-        ).order_by(DataQualityRule.execution_order).all()
+            .order_by(DataQualityRule.execution_order)
+            .all()
+        )
 
     def update_rule(self, rule: DataQualityRule) -> DataQualityRule:
         """Atualiza regra."""
@@ -127,9 +113,12 @@ class DataQualityRepository:
     def create_check(self, check: DataQualityCheck) -> DataQualityCheck:
         """Cria verificação."""
         # Gera número sequencial
-        last_check = self.db.query(DataQualityCheck).filter(
-            DataQualityCheck.entity_type == check.entity_type
-        ).order_by(desc(DataQualityCheck.check_number)).first()
+        last_check = (
+            self.db.query(DataQualityCheck)
+            .filter(DataQualityCheck.entity_type == check.entity_type)
+            .order_by(desc(DataQualityCheck.check_number))
+            .first()
+        )
 
         check.check_number = (last_check.check_number + 1) if last_check else 1
 
@@ -138,11 +127,9 @@ class DataQualityRepository:
         self.db.refresh(check)
         return check
 
-    def get_check(self, check_id: UUID) -> Optional[DataQualityCheck]:
+    def get_check(self, check_id: UUID) -> DataQualityCheck | None:
         """Busca verificação por ID."""
-        return self.db.query(DataQualityCheck).filter(
-            DataQualityCheck.id == check_id
-        ).first()
+        return self.db.query(DataQualityCheck).filter(DataQualityCheck.id == check_id).first()
 
     def list_checks(
         self,
@@ -150,8 +137,8 @@ class DataQualityRepository:
         status: CheckStatusEnum = None,
         skip: int = 0,
         limit: int = 100,
-        organization_id: UUID = None
-    ) -> Tuple[List[DataQualityCheck], int]:
+        organization_id: UUID = None,
+    ) -> tuple[list[DataQualityCheck], int]:
         """Lista verificações."""
         query = self.db.query(DataQualityCheck)
 
@@ -167,12 +154,14 @@ class DataQualityRepository:
 
         return checks, total
 
-    def get_latest_check(self, entity_type: str) -> Optional[DataQualityCheck]:
+    def get_latest_check(self, entity_type: str) -> DataQualityCheck | None:
         """Busca última verificação para entidade."""
-        return self.db.query(DataQualityCheck).filter(
-            DataQualityCheck.entity_type == entity_type,
-            DataQualityCheck.status == CheckStatusEnum.COMPLETED
-        ).order_by(desc(DataQualityCheck.completed_at)).first()
+        return (
+            self.db.query(DataQualityCheck)
+            .filter(DataQualityCheck.entity_type == entity_type, DataQualityCheck.status == CheckStatusEnum.COMPLETED)
+            .order_by(desc(DataQualityCheck.completed_at))
+            .first()
+        )
 
     def update_check(self, check: DataQualityCheck) -> DataQualityCheck:
         """Atualiza verificação."""
@@ -191,12 +180,11 @@ class DataQualityRepository:
         self.db.refresh(issue)
         return issue
 
-    def get_issue(self, issue_id: UUID) -> Optional[DataQualityIssue]:
+    def get_issue(self, issue_id: UUID) -> DataQualityIssue | None:
         """Busca issue por ID."""
-        return self.db.query(DataQualityIssue).filter(
-            DataQualityIssue.id == issue_id,
-            DataQualityIssue.is_active == True
-        ).first()
+        return (
+            self.db.query(DataQualityIssue).filter(DataQualityIssue.id == issue_id, DataQualityIssue.is_active).first()
+        )
 
     def list_issues(
         self,
@@ -208,12 +196,10 @@ class DataQualityRepository:
         check_id: UUID = None,
         skip: int = 0,
         limit: int = 100,
-        organization_id: UUID = None
-    ) -> Tuple[List[DataQualityIssue], int]:
+        organization_id: UUID = None,
+    ) -> tuple[list[DataQualityIssue], int]:
         """Lista issues."""
-        query = self.db.query(DataQualityIssue).filter(
-            DataQualityIssue.is_active == True
-        )
+        query = self.db.query(DataQualityIssue).filter(DataQualityIssue.is_active)
 
         if entity_type:
             query = query.filter(DataQualityIssue.entity_type == entity_type)
@@ -231,40 +217,40 @@ class DataQualityRepository:
             query = query.filter(DataQualityIssue.organization_id == organization_id)
 
         total = query.count()
-        issues = query.order_by(
-            DataQualityIssue.severity.desc(),
-            desc(DataQualityIssue.created_at)
-        ).offset(skip).limit(limit).all()
+        issues = (
+            query.order_by(DataQualityIssue.severity.desc(), desc(DataQualityIssue.created_at))
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
 
         return issues, total
 
     def get_open_issues_count(self, entity_type: str = None) -> int:
         """Conta issues abertos."""
         query = self.db.query(DataQualityIssue).filter(
-            DataQualityIssue.is_active == True,
-            DataQualityIssue.status.in_([
-                IssueStatusEnum.OPEN,
-                IssueStatusEnum.ACKNOWLEDGED,
-                IssueStatusEnum.IN_PROGRESS
-            ])
+            DataQualityIssue.is_active,
+            DataQualityIssue.status.in_(
+                [IssueStatusEnum.OPEN, IssueStatusEnum.ACKNOWLEDGED, IssueStatusEnum.IN_PROGRESS]
+            ),
         )
         if entity_type:
             query = query.filter(DataQualityIssue.entity_type == entity_type)
         return query.count()
 
-    def get_issues_by_severity(self) -> Dict[str, int]:
+    def get_issues_by_severity(self) -> dict[str, int]:
         """Conta issues por severidade."""
-        result = self.db.query(
-            DataQualityIssue.severity,
-            func.count(DataQualityIssue.id)
-        ).filter(
-            DataQualityIssue.is_active == True,
-            DataQualityIssue.status.in_([
-                IssueStatusEnum.OPEN,
-                IssueStatusEnum.ACKNOWLEDGED,
-                IssueStatusEnum.IN_PROGRESS
-            ])
-        ).group_by(DataQualityIssue.severity).all()
+        result = (
+            self.db.query(DataQualityIssue.severity, func.count(DataQualityIssue.id))
+            .filter(
+                DataQualityIssue.is_active,
+                DataQualityIssue.status.in_(
+                    [IssueStatusEnum.OPEN, IssueStatusEnum.ACKNOWLEDGED, IssueStatusEnum.IN_PROGRESS]
+                ),
+            )
+            .group_by(DataQualityIssue.severity)
+            .all()
+        )
 
         return {r[0].value: r[1] for r in result}
 
@@ -274,15 +260,13 @@ class DataQualityRepository:
         self.db.refresh(issue)
         return issue
 
-    def bulk_update_issues(
-        self,
-        issue_ids: List[UUID],
-        updates: Dict[str, Any]
-    ) -> int:
+    def bulk_update_issues(self, issue_ids: list[UUID], updates: dict[str, Any]) -> int:
         """Atualiza issues em lote."""
-        count = self.db.query(DataQualityIssue).filter(
-            DataQualityIssue.id.in_(issue_ids)
-        ).update(updates, synchronize_session=False)
+        count = (
+            self.db.query(DataQualityIssue)
+            .filter(DataQualityIssue.id.in_(issue_ids))
+            .update(updates, synchronize_session=False)
+        )
         self.db.commit()
         return count
 
@@ -297,12 +281,11 @@ class DataQualityRepository:
         self.db.refresh(duplicate)
         return duplicate
 
-    def get_duplicate(self, duplicate_id: UUID) -> Optional[DuplicateRecord]:
+    def get_duplicate(self, duplicate_id: UUID) -> DuplicateRecord | None:
         """Busca duplicata por ID."""
-        return self.db.query(DuplicateRecord).filter(
-            DuplicateRecord.id == duplicate_id,
-            DuplicateRecord.is_active == True
-        ).first()
+        return (
+            self.db.query(DuplicateRecord).filter(DuplicateRecord.id == duplicate_id, DuplicateRecord.is_active).first()
+        )
 
     def list_duplicates(
         self,
@@ -311,12 +294,10 @@ class DataQualityRepository:
         min_score: float = None,
         skip: int = 0,
         limit: int = 100,
-        organization_id: UUID = None
-    ) -> Tuple[List[DuplicateRecord], int]:
+        organization_id: UUID = None,
+    ) -> tuple[list[DuplicateRecord], int]:
         """Lista duplicatas."""
-        query = self.db.query(DuplicateRecord).filter(
-            DuplicateRecord.is_active == True
-        )
+        query = self.db.query(DuplicateRecord).filter(DuplicateRecord.is_active)
 
         if entity_type:
             query = query.filter(DuplicateRecord.entity_type == entity_type)
@@ -328,23 +309,27 @@ class DataQualityRepository:
             query = query.filter(DuplicateRecord.organization_id == organization_id)
 
         total = query.count()
-        duplicates = query.order_by(
-            desc(DuplicateRecord.similarity_score),
-            desc(DuplicateRecord.created_at)
-        ).offset(skip).limit(limit).all()
+        duplicates = (
+            query.order_by(desc(DuplicateRecord.similarity_score), desc(DuplicateRecord.created_at))
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
 
         return duplicates, total
 
     def get_pending_duplicates_count(self) -> int:
         """Conta duplicatas pendentes."""
-        return self.db.query(DuplicateRecord).filter(
-            DuplicateRecord.is_active == True,
-            DuplicateRecord.status.in_([
-                DuplicateStatusEnum.DETECTED,
-                DuplicateStatusEnum.REVIEWING,
-                DuplicateStatusEnum.CONFIRMED
-            ])
-        ).count()
+        return (
+            self.db.query(DuplicateRecord)
+            .filter(
+                DuplicateRecord.is_active,
+                DuplicateRecord.status.in_(
+                    [DuplicateStatusEnum.DETECTED, DuplicateStatusEnum.REVIEWING, DuplicateStatusEnum.CONFIRMED]
+                ),
+            )
+            .count()
+        )
 
     def update_duplicate(self, duplicate: DuplicateRecord) -> DuplicateRecord:
         """Atualiza duplicata."""
@@ -363,28 +348,21 @@ class DataQualityRepository:
         self.db.refresh(profile)
         return profile
 
-    def get_profile(self, profile_id: UUID) -> Optional[DataProfile]:
+    def get_profile(self, profile_id: UUID) -> DataProfile | None:
         """Busca perfil por ID."""
-        return self.db.query(DataProfile).filter(
-            DataProfile.id == profile_id,
-            DataProfile.is_active == True
-        ).first()
+        return self.db.query(DataProfile).filter(DataProfile.id == profile_id, DataProfile.is_active).first()
 
-    def get_profile_for_field(
-        self,
-        entity_type: str,
-        field_name: str = None
-    ) -> Optional[DataProfile]:
+    def get_profile_for_field(self, entity_type: str, field_name: str = None) -> DataProfile | None:
         """Busca perfil mais recente para campo."""
         query = self.db.query(DataProfile).filter(
             DataProfile.entity_type == entity_type,
-            DataProfile.is_active == True,
-            DataProfile.status == ProfileStatusEnum.COMPLETED
+            DataProfile.is_active,
+            DataProfile.status == ProfileStatusEnum.COMPLETED,
         )
         if field_name:
             query = query.filter(DataProfile.field_name == field_name)
         else:
-            query = query.filter(DataProfile.is_entity_profile == True)
+            query = query.filter(DataProfile.is_entity_profile)
 
         return query.order_by(desc(DataProfile.completed_at)).first()
 
@@ -394,12 +372,10 @@ class DataQualityRepository:
         status: ProfileStatusEnum = None,
         skip: int = 0,
         limit: int = 100,
-        organization_id: UUID = None
-    ) -> Tuple[List[DataProfile], int]:
+        organization_id: UUID = None,
+    ) -> tuple[list[DataProfile], int]:
         """Lista perfis."""
-        query = self.db.query(DataProfile).filter(
-            DataProfile.is_active == True
-        )
+        query = self.db.query(DataProfile).filter(DataProfile.is_active)
 
         if entity_type:
             query = query.filter(DataProfile.entity_type == entity_type)
@@ -416,11 +392,15 @@ class DataQualityRepository:
     def get_outdated_profiles_count(self, days: int = 7) -> int:
         """Conta perfis desatualizados."""
         cutoff = datetime.utcnow() - timedelta(days=days)
-        return self.db.query(DataProfile).filter(
-            DataProfile.is_active == True,
-            DataProfile.status == ProfileStatusEnum.COMPLETED,
-            DataProfile.completed_at < cutoff
-        ).count()
+        return (
+            self.db.query(DataProfile)
+            .filter(
+                DataProfile.is_active,
+                DataProfile.status == ProfileStatusEnum.COMPLETED,
+                DataProfile.completed_at < cutoff,
+            )
+            .count()
+        )
 
     def update_profile(self, profile: DataProfile) -> DataProfile:
         """Atualiza perfil."""
@@ -432,7 +412,7 @@ class DataQualityRepository:
     # Analytics
     # ============================================================
 
-    def get_quality_stats(self, organization_id: UUID = None) -> Dict[str, Any]:
+    def get_quality_stats(self, organization_id: UUID = None) -> dict[str, Any]:
         """Obtém estatísticas de qualidade."""
         base_filter = []
         if organization_id:
@@ -442,18 +422,21 @@ class DataQualityRepository:
         issues_by_severity = self.get_issues_by_severity()
 
         # Issues por tipo
-        issues_by_type = self.db.query(
-            DataQualityIssue.issue_type,
-            func.count(DataQualityIssue.id)
-        ).filter(
-            DataQualityIssue.is_active == True,
-            *base_filter
-        ).group_by(DataQualityIssue.issue_type).all()
+        issues_by_type = (
+            self.db.query(DataQualityIssue.issue_type, func.count(DataQualityIssue.id))
+            .filter(DataQualityIssue.is_active, *base_filter)
+            .group_by(DataQualityIssue.issue_type)
+            .all()
+        )
 
         # Última verificação por entidade
-        recent_checks = self.db.query(DataQualityCheck).filter(
-            DataQualityCheck.status == CheckStatusEnum.COMPLETED
-        ).order_by(desc(DataQualityCheck.completed_at)).limit(5).all()
+        recent_checks = (
+            self.db.query(DataQualityCheck)
+            .filter(DataQualityCheck.status == CheckStatusEnum.COMPLETED)
+            .order_by(desc(DataQualityCheck.completed_at))
+            .limit(5)
+            .all()
+        )
 
         return {
             "total_open_issues": self.get_open_issues_count(),

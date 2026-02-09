@@ -1,47 +1,48 @@
 """Testes para models do módulo Recruitment."""
 
-import pytest
-from datetime import date, time, datetime, timedelta
+from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 
-from modules.recruitment.models.job_position import (
-    JobPosition,
-    PositionStatus,
-    PositionType,
-    PositionLevel,
-    WorkModel,
-    Department,
-)
-from modules.recruitment.models.candidate import (
-    Candidate,
-    CandidateStatus,
-    CandidateSource,
-    Gender,
-)
+import pytest
+
 from modules.recruitment.models.application import (
     Application,
     ApplicationStatus,
     RejectionReason,
 )
-from modules.recruitment.models.interview import (
-    Interview,
-    InterviewType,
-    InterviewStatus,
-    InterviewResult,
+from modules.recruitment.models.candidate import (
+    Candidate,
+    CandidateSource,
+    CandidateStatus,
+    Gender,
+)
+from modules.recruitment.models.candidate_education import (
+    CandidateEducation,
+    EducationLevel,
+    EducationStatus,
+)
+from modules.recruitment.models.candidate_experience import (
+    CandidateExperience,
+    EmploymentType,
 )
 from modules.recruitment.models.candidate_skill import (
     CandidateSkill,
     SkillCategory,
     SkillLevel,
 )
-from modules.recruitment.models.candidate_experience import (
-    CandidateExperience,
-    EmploymentType,
+from modules.recruitment.models.interview import (
+    Interview,
+    InterviewResult,
+    InterviewStatus,
+    InterviewType,
 )
-from modules.recruitment.models.candidate_education import (
-    CandidateEducation,
-    EducationLevel,
-    EducationStatus,
+from modules.recruitment.models.job_position import (
+    Department,
+    JobPosition,
+    PositionLevel,
+    PositionStatus,
+    PositionType,
+    WorkModel,
 )
 
 
@@ -236,11 +237,7 @@ class TestApplication:
             job_position_id="pos-456",
         )
 
-        application.reject(
-            RejectionReason.PERFIL_NAO_ADEQUADO,
-            "Falta experiência",
-            "recruiter-789"
-        )
+        application.reject(RejectionReason.PERFIL_NAO_ADEQUADO, "Falta experiência", "recruiter-789")
 
         assert application.status == ApplicationStatus.REPROVADO
         assert application.rejection_reason == RejectionReason.PERFIL_NAO_ADEQUADO

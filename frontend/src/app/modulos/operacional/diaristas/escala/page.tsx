@@ -4,14 +4,13 @@ import { Users, ArrowLeft, Calendar, Check, CheckCircle, XCircle, Clock, DollarS
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-;
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useActiveDiarists, useCreateBatchSchedules } from '@/hooks/operacional/useDiarists';
+import type { DiaristResponse, BatchScheduleItem, BatchScheduleResponse } from '@/types/generated/operacional/conectaPROMóduloOPERACIONAL.schemas';
 import {
-  type Diarist,
-  type BatchScheduleItem,
   DIARIST_TYPE_LABELS,
+  type DiaristType,
 } from '@/lib/services/diarists';
 
 export default function EscalaDiariaPage() {
@@ -21,11 +20,11 @@ export default function EscalaDiariaPage() {
   // Data selecionada (default = amanha)
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
-  const [selectedDate, setSelectedDate] = useState(
-    tomorrow.toISOString().split('T')[0]
+  const [selectedDate, setSelectedDate] = useState<string>(
+    tomorrow.toISOString().split('T')[0] ?? ''
   );
 
-  const { data: diarists = [], isLoading, error: queryError } = useActiveDiarists();
+  const { data: diarists = [], isLoading, error: queryError, refetch } = useActiveDiarists({ data: selectedDate });
   const createBatchMutation = useCreateBatchSchedules();
   const [selected, setSelected] = useState<Map<string, BatchScheduleItem>>(new Map());
   const [isSaving, setIsSaving] = useState(false);
@@ -44,7 +43,7 @@ export default function EscalaDiariaPage() {
     }
   }, [queryError]);
 
-  const toggleDiarist = (diarist: Diarist) => {
+  const toggleDiarist = (diarist: DiaristResponse) => {
     const newSelected = new Map(selected);
     if (newSelected.has(diarist.id)) {
       newSelected.delete(diarist.id);
@@ -53,7 +52,7 @@ export default function EscalaDiariaPage() {
         diarist_id: diarist.id,
         horario_inicio: '08:00',
         horario_fim: '17:00',
-        servico_tipo: diarist.tipo || 'limpeza',
+        servico_tipo: diarist.tipos_servico?.[0] || 'limpeza',
       });
     }
     setSelected(newSelected);
@@ -70,7 +69,7 @@ export default function EscalaDiariaPage() {
 
   const totalValor = Array.from(selected.keys()).reduce((acc, id) => {
     const d = diarists.find(d => d.id === id);
-    return acc + (d?.valor_diaria || 0);
+    return acc + (d ? parseFloat(d.valor_diaria) || 0 : 0);
   }, 0);
 
   const handleConfirm = async () => {
@@ -84,7 +83,7 @@ export default function EscalaDiariaPage() {
       // TODO: usar condominio_id real do contexto
       const condominioId = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
 
-      const result = await createBatchMutation.mutateAsync({
+      const result: BatchScheduleResponse = await createBatchMutation.mutateAsync({
         data: {
           condominio_id: condominioId,
           data: selectedDate,
@@ -92,12 +91,16 @@ export default function EscalaDiariaPage() {
         },
       });
 
-      if (result.total_erros > 0) {
-        setError(`${result.total_criados} criados, ${result.total_erros} erros: ${result.erros.join('; ')}`);
+      const totalErros = result.total_erros ?? 0;
+      const totalCriados = result.total_criados ?? 0;
+      const erros = result.erros ?? [];
+
+      if (totalErros > 0) {
+        setError(`${totalCriados} criados, ${totalErros} erros: ${erros.join('; ')}`);
       }
 
-      if (result.total_criados > 0) {
-        setSuccess(`Escala criada com sucesso! ${result.total_criados} diaristas escalados para ${selectedDate}.`);
+      if (totalCriados > 0) {
+        setSuccess(`Escala criada com sucesso! ${totalCriados} diaristas escalados para ${selectedDate}.`);
         setSelected(new Map());
       }
     } catch (err: unknown) {
@@ -159,7 +162,7 @@ export default function EscalaDiariaPage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={loadDiarists}
+                onClick={() => refetch()}
                 disabled={isLoading}
               >
                 <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
@@ -267,7 +270,7 @@ export default function EscalaDiariaPage() {
                             {d.nome}
                           </p>
                           <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                            {DIARIST_TYPE_LABELS[d.tipo] || d.tipo} - {formatCurrency(d.valor_diaria)}
+                            {DIARIST_TYPE_LABELS[d.tipos_servico?.[0] as DiaristType] || d.tipos_servico?.[0] || 'outros'} - {formatCurrency(parseFloat(d.valor_diaria) || 0)}
                           </p>
                         </div>
                         {isSelected && (
@@ -318,7 +321,7 @@ export default function EscalaDiariaPage() {
                             <div>
                               <p className="font-medium text-sm">{d.nome}</p>
                               <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                                {formatCurrency(d.valor_diaria)}/dia
+                                {formatCurrency(parseFloat(d.valor_diaria) || 0)}/dia
                               </p>
                             </div>
                           </div>

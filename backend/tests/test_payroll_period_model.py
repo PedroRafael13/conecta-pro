@@ -1,14 +1,15 @@
 """Testes para PayrollPeriod model."""
 
-import pytest
 from datetime import date, datetime
 from decimal import Decimal
 from uuid import uuid4
 
+import pytest
+
 from modules.hr.payroll_integration.models import (
     PayrollPeriod,
-    PeriodType,
     PeriodStatus,
+    PeriodType,
 )
 
 

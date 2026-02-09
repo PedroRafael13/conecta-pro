@@ -2,6 +2,21 @@
 
 # Modelos Fisicos (Legacy - Portaria Remota)
 from .access_log import AccessLog, AccessLogType
+
+# Modelos CAMPO - Tecnicos
+from .campo_tecnico import CampoTecnico
+
+# Modelos CAMPO - Checklists
+from .checklist import (
+    CategoriaItem,
+    ChecklistItem,
+    ChecklistPreenchido,
+    ChecklistResposta,
+    ChecklistTemplate,
+    TipoResposta,
+    TipoServico,
+)
+from .equipment_status import EquipmentStatus, EquipmentStatusType
 from .guardian_occurrence import (
     GuardianOccurrence,
     OccurrenceSeverity,
@@ -9,39 +24,24 @@ from .guardian_occurrence import (
     OccurrenceType,
 )
 from .guardian_sync import GuardianSync, SyncDirection, SyncEntityType, SyncStatus
-from .equipment_status import EquipmentStatus, EquipmentStatusType
-
-# Modelos CAMPO - Tecnicos
-from .campo_tecnico import CampoTecnico
 
 # Modelos CAMPO - Ordens de Servico
 from .ordem_servico import (
     OrdemServico,
-    TipoOS,
-    StatusOS,
-    PrioridadeOS,
     OrigemOS,
+    PrioridadeOS,
+    StatusOS,
+    TipoOS,
 )
 
 # Modelos CAMPO - Visitas
 from .visita import (
-    Visita,
-    TipoVisita,
-    StatusVisita,
-    ResultadoVisita,
-    TipoResponsavel,
     OrigemVisita,
-)
-
-# Modelos CAMPO - Checklists
-from .checklist import (
-    ChecklistTemplate,
-    ChecklistItem,
-    ChecklistResposta,
-    ChecklistPreenchido,
-    TipoServico,
-    TipoResposta,
-    CategoriaItem,
+    ResultadoVisita,
+    StatusVisita,
+    TipoResponsavel,
+    TipoVisita,
+    Visita,
 )
 
 __all__ = [

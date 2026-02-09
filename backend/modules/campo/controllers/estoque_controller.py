@@ -10,7 +10,7 @@ Fornece endpoints para:
 
 from datetime import date
 from decimal import Decimal
-from typing import Any, Dict, List, Optional
+from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -19,8 +19,6 @@ from sqlalchemy.orm import Session
 
 from core.database import get_db
 from modules.campo.services.estoque_integration import (
-    EstoqueIntegrationService,
-    StatusRequisicao,
     get_estoque_integration_service,
 )
 
@@ -31,67 +29,72 @@ router = APIRouter()
 # SCHEMAS
 # =============================================================================
 
+
 class ItemRequisicaoRequest(BaseModel):
     """Item para requisição."""
+
     produto_id: UUID
     quantidade: Decimal = Field(..., gt=0)
-    observacao: Optional[str] = Field(None, max_length=200)
+    observacao: str | None = Field(None, max_length=200)
 
 
 class CriarRequisicaoRequest(BaseModel):
     """Request para criar requisição."""
+
     ordem_servico_id: UUID
     tecnico_id: UUID
-    itens: List[ItemRequisicaoRequest]
-    observacoes: Optional[str] = Field(None, max_length=500)
+    itens: list[ItemRequisicaoRequest]
+    observacoes: str | None = Field(None, max_length=500)
 
 
 class AprovarRequisicaoRequest(BaseModel):
     """Request para aprovar requisição."""
+
     aprovador_id: UUID
-    itens_aprovados: Optional[List[Dict[str, Any]]] = None
-    observacoes: Optional[str] = Field(None, max_length=500)
+    itens_aprovados: list[dict[str, Any]] | None = None
+    observacoes: str | None = Field(None, max_length=500)
 
 
 class EntregarRequisicaoRequest(BaseModel):
     """Request para registrar entrega."""
-    itens_entregues: Optional[List[Dict[str, Any]]] = None
+
+    itens_entregues: list[dict[str, Any]] | None = None
 
 
 class ItemBaixaRequest(BaseModel):
     """Item para baixa."""
+
     produto_id: str
     quantidade_utilizada: Decimal = Field(..., ge=0)
-    quantidade_requisitada: Optional[Decimal] = None
+    quantidade_requisitada: Decimal | None = None
 
 
 class RegistrarBaixaRequest(BaseModel):
     """Request para registrar baixa."""
-    itens_utilizados: List[ItemBaixaRequest]
-    tecnico_id: Optional[UUID] = None
+
+    itens_utilizados: list[ItemBaixaRequest]
+    tecnico_id: UUID | None = None
 
 
 class RequisicaoResponse(BaseModel):
     """Response de requisição."""
+
     id: str
     ordem_servico_id: str
     tecnico_id: str
     status: str
-    itens: List[Dict[str, Any]]
+    itens: list[dict[str, Any]]
     data_solicitacao: str
-    data_aprovacao: Optional[str]
-    data_entrega: Optional[str]
+    data_aprovacao: str | None
+    data_entrega: str | None
 
 
 # =============================================================================
 # ENDPOINTS - REQUISIÇÕES
 # =============================================================================
 
-@router.post(
-    "/requisicao",
-    summary="Criar requisição",
-    description="Cria requisição de materiais para uma OS"
-)
+
+@router.post("/requisicao", summary="Criar requisição", description="Cria requisição de materiais para uma OS")
 async def criar_requisicao(
     request: CriarRequisicaoRequest,
     db: Session = Depends(get_db),
@@ -137,16 +140,13 @@ async def criar_requisicao(
         }
 
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.post(
     "/requisicao/{requisicao_id}/aprovar",
     summary="Aprovar requisição",
-    description="Aprova uma requisição de materiais"
+    description="Aprova uma requisição de materiais",
 )
 async def aprovar_requisicao(
     requisicao_id: UUID,
@@ -182,16 +182,13 @@ async def aprovar_requisicao(
         }
 
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.post(
     "/requisicao/{requisicao_id}/entregar",
     summary="Registrar entrega",
-    description="Registra entrega de materiais de uma requisição"
+    description="Registra entrega de materiais de uma requisição",
 )
 async def registrar_entrega(
     requisicao_id: UUID,
@@ -219,20 +216,18 @@ async def registrar_entrega(
         }
 
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 # =============================================================================
 # ENDPOINTS - BAIXA
 # =============================================================================
 
+
 @router.post(
     "/baixa/{ordem_servico_id}",
     summary="Registrar baixa",
-    description="Registra baixa de materiais utilizados em uma OS"
+    description="Registra baixa de materiais utilizados em uma OS",
 )
 async def registrar_baixa(
     ordem_servico_id: UUID,
@@ -253,7 +248,9 @@ async def registrar_baixa(
                 {
                     "produto_id": item.produto_id,
                     "quantidade_utilizada": float(item.quantidade_utilizada),
-                    "quantidade_requisitada": float(item.quantidade_requisitada) if item.quantidade_requisitada else float(item.quantidade_utilizada),
+                    "quantidade_requisitada": float(item.quantidade_requisitada)
+                    if item.quantidade_requisitada
+                    else float(item.quantidade_utilizada),
                 }
                 for item in request.itens_utilizados
             ],
@@ -263,16 +260,13 @@ async def registrar_baixa(
         return resultado
 
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.post(
     "/baixa-automatica/{ordem_servico_id}",
     summary="Baixa automática",
-    description="Realiza baixa automática ao concluir OS"
+    description="Realiza baixa automática ao concluir OS",
 )
 async def baixa_automatica(
     ordem_servico_id: UUID,
@@ -292,20 +286,18 @@ async def baixa_automatica(
         return resultado
 
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 # =============================================================================
 # ENDPOINTS - VERIFICAÇÕES
 # =============================================================================
 
+
 @router.get(
     "/disponibilidade/{produto_id}",
     summary="Verificar disponibilidade",
-    description="Verifica disponibilidade de um produto"
+    description="Verifica disponibilidade de um produto",
 )
 async def verificar_disponibilidade(
     produto_id: UUID,
@@ -330,7 +322,7 @@ async def verificar_disponibilidade(
 @router.get(
     "/estoque-tecnico/{tecnico_id}",
     summary="Estoque do técnico",
-    description="Verifica materiais em posse de um técnico"
+    description="Verifica materiais em posse de um técnico",
 )
 async def verificar_estoque_tecnico(
     tecnico_id: UUID,
@@ -350,11 +342,7 @@ async def verificar_estoque_tecnico(
     return resultado
 
 
-@router.get(
-    "/alertas",
-    summary="Alertas de estoque",
-    description="Retorna alertas de produtos com estoque baixo"
-)
+@router.get("/alertas", summary="Alertas de estoque", description="Retorna alertas de produtos com estoque baixo")
 async def alertas_estoque_baixo(
     threshold: float = Query(20, ge=0, le=100, description="Percentual mínimo"),
     db: Session = Depends(get_db),
@@ -381,10 +369,11 @@ async def alertas_estoque_baixo(
 # ENDPOINTS - RELATÓRIOS
 # =============================================================================
 
+
 @router.get(
     "/relatorio/os/{ordem_servico_id}",
     summary="Relatório de consumo da OS",
-    description="Relatório de materiais consumidos em uma OS"
+    description="Relatório de materiais consumidos em uma OS",
 )
 async def relatorio_consumo_os(
     ordem_servico_id: UUID,
@@ -405,20 +394,19 @@ async def relatorio_consumo_os(
 
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao gerar relatório: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao gerar relatório: {str(e)}"
         )
 
 
 @router.get(
     "/relatorio/periodo",
     summary="Relatório de consumo por período",
-    description="Relatório de materiais consumidos em um período"
+    description="Relatório de materiais consumidos em um período",
 )
 async def relatorio_consumo_periodo(
     data_inicio: date = Query(..., description="Data inicial"),
     data_fim: date = Query(..., description="Data final"),
-    tecnico_id: Optional[UUID] = Query(None, description="Filtrar por técnico"),
+    tecnico_id: UUID | None = Query(None, description="Filtrar por técnico"),
     db: Session = Depends(get_db),
 ):
     """
@@ -428,8 +416,7 @@ async def relatorio_consumo_periodo(
     """
     if data_fim < data_inicio:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Data fim deve ser maior ou igual a data início"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Data fim deve ser maior ou igual a data início"
         )
 
     service = get_estoque_integration_service(db)
@@ -444,8 +431,7 @@ async def relatorio_consumo_periodo(
 
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao gerar relatório: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao gerar relatório: {str(e)}"
         )
 
 
@@ -453,11 +439,8 @@ async def relatorio_consumo_periodo(
 # ENDPOINTS - KIT PADRÃO
 # =============================================================================
 
-@router.get(
-    "/kit-padrao",
-    summary="Kits padrão",
-    description="Lista kits padrão de materiais por tipo de OS"
-)
+
+@router.get("/kit-padrao", summary="Kits padrão", description="Lista kits padrão de materiais por tipo de OS")
 async def listar_kits_padrao():
     """
     Lista kits padrão de materiais por tipo de serviço.
@@ -497,11 +480,7 @@ async def listar_kits_padrao():
     }
 
 
-@router.post(
-    "/requisitar-kit",
-    summary="Requisitar kit",
-    description="Cria requisição a partir de um kit padrão"
-)
+@router.post("/requisitar-kit", summary="Requisitar kit", description="Cria requisição a partir de um kit padrão")
 async def requisitar_kit(
     ordem_servico_id: UUID,
     tecnico_id: UUID,
@@ -527,10 +506,7 @@ async def requisitar_kit(
 
     kit = kits_padrao.get(tipo_kit.upper())
     if not kit:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Kit '{tipo_kit}' não encontrado"
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Kit '{tipo_kit}' não encontrado")
 
     service = get_estoque_integration_service(db)
 
@@ -555,7 +531,4 @@ async def requisitar_kit(
         }
 
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

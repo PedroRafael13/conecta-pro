@@ -9,12 +9,14 @@ Extrai e sincroniza:
 """
 
 import logging
-from datetime import datetime, date, timedelta
-from typing import Optional, Dict, Any, List, AsyncGenerator
+from collections.abc import AsyncGenerator
+from datetime import date, datetime
 from decimal import Decimal
-import xml.etree.ElementTree as ET
+from typing import Any
 
-from ..base_sync import BaseSynchronizer, SyncConfig, SyncResult
+import defusedxml.ElementTree as ET  # noqa: N817
+
+from ..base_sync import BaseSynchronizer, SyncConfig
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +52,7 @@ class NFSeManausSynchronizer(BaseSynchronizer):
     async def _extrair_dados(
         self,
         config: SyncConfig,
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+    ) -> AsyncGenerator[dict[str, Any], None]:
         """
         Extrai NFS-e do webservice de Manaus.
 
@@ -64,8 +66,7 @@ class NFSeManausSynchronizer(BaseSynchronizer):
         inscricao_municipal = config.parametros_extras.get("inscricao_municipal")
 
         logger.info(
-            f"[NFS-e Manaus] Extraindo notas - CNPJ: {cnpj}, "
-            f"Período: {config.data_inicial} a {config.data_final}"
+            f"[NFS-e Manaus] Extraindo notas - CNPJ: {cnpj}, Período: {config.data_inicial} a {config.data_final}"
         )
 
         # 1. Consultar NFS-e emitidas
@@ -83,9 +84,9 @@ class NFSeManausSynchronizer(BaseSynchronizer):
     async def _consultar_nfse_emitidas(
         self,
         cnpj: str,
-        inscricao_municipal: Optional[str],
+        inscricao_municipal: str | None,
         config: SyncConfig,
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+    ) -> AsyncGenerator[dict[str, Any], None]:
         """Consulta NFS-e emitidas pelo prestador."""
         try:
             if not self.nfse_transmitter:
@@ -112,7 +113,7 @@ class NFSeManausSynchronizer(BaseSynchronizer):
         self,
         cnpj: str,
         config: SyncConfig,
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+    ) -> AsyncGenerator[dict[str, Any], None]:
         """Consulta NFS-e tomadas (recebidas como tomador)."""
         try:
             if not self.nfse_transmitter:
@@ -134,9 +135,9 @@ class NFSeManausSynchronizer(BaseSynchronizer):
     async def _consultar_cancelamentos(
         self,
         cnpj: str,
-        inscricao_municipal: Optional[str],
+        inscricao_municipal: str | None,
         config: SyncConfig,
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+    ) -> AsyncGenerator[dict[str, Any], None]:
         """Verifica cancelamentos de NFS-e."""
         try:
             if not self.nfse_transmitter:
@@ -170,16 +171,16 @@ class NFSeManausSynchronizer(BaseSynchronizer):
         except Exception as e:
             logger.error(f"[NFS-e Manaus] Erro verificando cancelamentos: {e}")
 
-    async def _buscar_nfse_ativas(self, cnpj: str) -> List[Dict]:
+    async def _buscar_nfse_ativas(self, cnpj: str) -> list[dict]:
         """Busca NFS-e ativas no banco local."""
         # Implementação depende do modelo real
         return []
 
     async def _processar_nfse(
         self,
-        nota: Dict[str, Any],
+        nota: dict[str, Any],
         direcao: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Processa dados de uma NFS-e."""
         # Extrair dados do XML se presente
         xml_content = nota.get("xml")
@@ -195,24 +196,20 @@ class NFSeManausSynchronizer(BaseSynchronizer):
             "codigo_verificacao": nota.get("codigo_verificacao") or dados_xml.get("codigo_verificacao"),
             "data_emissao": self._parse_data(nota.get("data_emissao")) or dados_xml.get("data_emissao"),
             "competencia": nota.get("competencia") or dados_xml.get("competencia"),
-
             # Prestador
             "cnpj_prestador": nota.get("cnpj_prestador") or dados_xml.get("cnpj_prestador"),
             "inscricao_prestador": nota.get("inscricao_prestador") or dados_xml.get("inscricao_prestador"),
             "razao_social_prestador": nota.get("razao_social_prestador") or dados_xml.get("razao_social_prestador"),
-
             # Tomador
             "cnpj_tomador": nota.get("cnpj_tomador") or dados_xml.get("cnpj_tomador"),
             "cpf_tomador": nota.get("cpf_tomador") or dados_xml.get("cpf_tomador"),
             "razao_social_tomador": nota.get("razao_social_tomador") or dados_xml.get("razao_social_tomador"),
             "email_tomador": nota.get("email_tomador") or dados_xml.get("email_tomador"),
-
             # Serviço
             "discriminacao": nota.get("discriminacao") or dados_xml.get("discriminacao"),
             "codigo_servico": nota.get("codigo_servico") or dados_xml.get("codigo_servico"),
             "codigo_cnae": nota.get("codigo_cnae") or dados_xml.get("codigo_cnae"),
             "codigo_tributacao_municipio": nota.get("codigo_tributacao_municipio"),
-
             # Valores
             "valor_servicos": self._parse_decimal(nota.get("valor_servicos") or dados_xml.get("valor_servicos")),
             "valor_deducoes": self._parse_decimal(nota.get("valor_deducoes") or dados_xml.get("valor_deducoes")),
@@ -227,19 +224,16 @@ class NFSeManausSynchronizer(BaseSynchronizer):
             "base_calculo": self._parse_decimal(nota.get("base_calculo") or dados_xml.get("base_calculo")),
             "valor_liquido": self._parse_decimal(nota.get("valor_liquido") or dados_xml.get("valor_liquido")),
             "valor_total": self._parse_decimal(nota.get("valor_total") or dados_xml.get("valor_total")),
-
             # Impostos retidos
             "iss_retido": nota.get("iss_retido", False) or dados_xml.get("iss_retido", False),
-
             # Status
             "status": nota.get("status", "normal"),
             "situacao": nota.get("situacao"),
-
             # XML
             "xml_completo": xml_content,
         }
 
-    def _parse_xml_nfse(self, xml_content: str) -> Dict[str, Any]:
+    def _parse_xml_nfse(self, xml_content: str) -> dict[str, Any]:
         """Parse XML de NFS-e padrão Manaus/ABRASF."""
         dados = {}
 
@@ -255,7 +249,7 @@ class NFSeManausSynchronizer(BaseSynchronizer):
                     if end == -1:
                         end = xml_clean.find("'", start + len(ns))
                     if end != -1:
-                        xml_clean = xml_clean[:start] + xml_clean[end + 1:]
+                        xml_clean = xml_clean[:start] + xml_clean[end + 1 :]
 
             root = ET.fromstring(xml_clean)
 
@@ -327,7 +321,7 @@ class NFSeManausSynchronizer(BaseSynchronizer):
 
     async def _processar_registro(
         self,
-        registro: Dict[str, Any],
+        registro: dict[str, Any],
         config: SyncConfig,
     ) -> bool:
         """
@@ -351,11 +345,11 @@ class NFSeManausSynchronizer(BaseSynchronizer):
 
     async def _salvar_nfse(
         self,
-        registro: Dict[str, Any],
+        registro: dict[str, Any],
         config: SyncConfig,
     ) -> bool:
         """Salva ou atualiza NFS-e no banco."""
-        from ..models.sync_models import DocumentoFiscal, TipoDocumentoFiscal, StatusDocumentoFiscal
+        from ..models.sync_models import DocumentoFiscal, StatusDocumentoFiscal, TipoDocumentoFiscal
 
         numero = registro.get("numero")
         codigo_verificacao = registro.get("codigo_verificacao")
@@ -364,9 +358,7 @@ class NFSeManausSynchronizer(BaseSynchronizer):
         chave = f"{config.cnpj_empresa}_{numero}_{codigo_verificacao}"
 
         # Verificar se existe
-        existente = self.db.query(DocumentoFiscal).filter(
-            DocumentoFiscal.chave_acesso == chave
-        ).first()
+        existente = self.db.query(DocumentoFiscal).filter(DocumentoFiscal.chave_acesso == chave).first()
 
         # Determinar CNPJ da empresa baseado na direção
         if registro.get("direcao") == "emitida":
@@ -424,7 +416,7 @@ class NFSeManausSynchronizer(BaseSynchronizer):
 
     async def _processar_cancelamento(
         self,
-        registro: Dict[str, Any],
+        registro: dict[str, Any],
         config: SyncConfig,
     ) -> bool:
         """Processa cancelamento de NFS-e."""
@@ -433,11 +425,15 @@ class NFSeManausSynchronizer(BaseSynchronizer):
         numero = registro.get("numero_nfse")
 
         # Buscar NFS-e
-        nfse = self.db.query(DocumentoFiscal).filter(
-            DocumentoFiscal.cnpj_empresa == config.cnpj_empresa,
-            DocumentoFiscal.numero == numero,
-            DocumentoFiscal.tipo_documento == "nfse",
-        ).first()
+        nfse = (
+            self.db.query(DocumentoFiscal)
+            .filter(
+                DocumentoFiscal.cnpj_empresa == config.cnpj_empresa,
+                DocumentoFiscal.numero == numero,
+                DocumentoFiscal.tipo_documento == "nfse",
+            )
+            .first()
+        )
 
         if nfse:
             nfse.status = StatusDocumentoFiscal.CANCELADA
@@ -452,15 +448,20 @@ class NFSeManausSynchronizer(BaseSynchronizer):
 
         return False
 
-    def _obter_ultima_sincronizacao(self, cnpj: str) -> Optional[datetime]:
+    def _obter_ultima_sincronizacao(self, cnpj: str) -> datetime | None:
         """Obtém última sincronização de NFS-e Manaus."""
-        from ..models.sync_models import SyncLog, StatusSincronizacao
+        from ..models.sync_models import StatusSincronizacao, SyncLog
 
-        ultimo = self.db.query(SyncLog).filter(
-            SyncLog.cnpj_empresa == cnpj,
-            SyncLog.servico == self.SERVICO_NOME,
-            SyncLog.status == StatusSincronizacao.SUCESSO,
-        ).order_by(SyncLog.fim_execucao.desc()).first()
+        ultimo = (
+            self.db.query(SyncLog)
+            .filter(
+                SyncLog.cnpj_empresa == cnpj,
+                SyncLog.servico == self.SERVICO_NOME,
+                SyncLog.status == StatusSincronizacao.SUCESSO,
+            )
+            .order_by(SyncLog.fim_execucao.desc())
+            .first()
+        )
 
         return ultimo.fim_execucao if ultimo else None
 
@@ -473,7 +474,7 @@ class NFSeManausSynchronizer(BaseSynchronizer):
         cnpj: str,
         inscricao_municipal: str,
         numero: str,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """
         Consulta NFS-e específica por número.
 
@@ -512,7 +513,7 @@ class NFSeManausSynchronizer(BaseSynchronizer):
         numero: str,
         codigo_verificacao: str,
         motivo: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Solicita cancelamento de NFS-e.
 
@@ -545,7 +546,7 @@ class NFSeManausSynchronizer(BaseSynchronizer):
             logger.error(f"[NFS-e Manaus] Erro cancelando NFS-e {numero}: {e}")
             raise
 
-    async def obter_resumo(self, cnpj: str) -> Dict[str, Any]:
+    async def obter_resumo(self, cnpj: str) -> dict[str, Any]:
         """
         Obtém resumo das NFS-e sincronizadas.
 
@@ -555,36 +556,45 @@ class NFSeManausSynchronizer(BaseSynchronizer):
         Returns:
             Dict com resumo
         """
-        from ..models.sync_models import DocumentoFiscal, TipoDocumentoFiscal, StatusDocumentoFiscal
         from sqlalchemy import func
 
+        from ..models.sync_models import DocumentoFiscal, StatusDocumentoFiscal, TipoDocumentoFiscal
+
         # Contar por status
-        por_status = self.db.query(
-            DocumentoFiscal.status,
-            func.count(DocumentoFiscal.id)
-        ).filter(
-            DocumentoFiscal.cnpj_empresa == cnpj,
-            DocumentoFiscal.tipo_documento == TipoDocumentoFiscal.NFSE,
-        ).group_by(DocumentoFiscal.status).all()
+        por_status = (
+            self.db.query(DocumentoFiscal.status, func.count(DocumentoFiscal.id))
+            .filter(
+                DocumentoFiscal.cnpj_empresa == cnpj,
+                DocumentoFiscal.tipo_documento == TipoDocumentoFiscal.NFSE,
+            )
+            .group_by(DocumentoFiscal.status)
+            .all()
+        )
 
         # Contar por direção
-        por_direcao = self.db.query(
-            DocumentoFiscal.direcao,
-            func.count(DocumentoFiscal.id)
-        ).filter(
-            DocumentoFiscal.cnpj_empresa == cnpj,
-            DocumentoFiscal.tipo_documento == TipoDocumentoFiscal.NFSE,
-        ).group_by(DocumentoFiscal.direcao).all()
+        por_direcao = (
+            self.db.query(DocumentoFiscal.direcao, func.count(DocumentoFiscal.id))
+            .filter(
+                DocumentoFiscal.cnpj_empresa == cnpj,
+                DocumentoFiscal.tipo_documento == TipoDocumentoFiscal.NFSE,
+            )
+            .group_by(DocumentoFiscal.direcao)
+            .all()
+        )
 
         # Somar valores
-        valores = self.db.query(
-            func.sum(DocumentoFiscal.valor_total),
-            func.sum(DocumentoFiscal.valor_iss),
-        ).filter(
-            DocumentoFiscal.cnpj_empresa == cnpj,
-            DocumentoFiscal.tipo_documento == TipoDocumentoFiscal.NFSE,
-            DocumentoFiscal.status == StatusDocumentoFiscal.AUTORIZADA,
-        ).first()
+        valores = (
+            self.db.query(
+                func.sum(DocumentoFiscal.valor_total),
+                func.sum(DocumentoFiscal.valor_iss),
+            )
+            .filter(
+                DocumentoFiscal.cnpj_empresa == cnpj,
+                DocumentoFiscal.tipo_documento == TipoDocumentoFiscal.NFSE,
+                DocumentoFiscal.status == StatusDocumentoFiscal.AUTORIZADA,
+            )
+            .first()
+        )
 
         return {
             "total_nfse": sum(c for _, c in por_status),

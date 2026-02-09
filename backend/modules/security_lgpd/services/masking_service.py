@@ -10,22 +10,21 @@ Migrado de 01_security_lgpd/encryption/data_masking.py
 Compliance: LGPD Art. 12, 18 - Anonimização e Pseudonimização
 """
 
-from typing import Dict, List, Optional, Any, Set, Pattern
-from dataclasses import dataclass, field
-from enum import Enum
-from abc import ABC, abstractmethod
-import re
 import hashlib
-import secrets
 import logging
-
-from pydantic import BaseModel, Field
+import re
+import secrets
+from dataclasses import dataclass, field
+from enum import StrEnum
+from re import Pattern
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
-class MaskingStrategy(str, Enum):
+class MaskingStrategy(StrEnum):
     """Estratégias de mascaramento disponíveis."""
+
     FULL = "full"
     PARTIAL = "partial"
     HASH = "hash"
@@ -35,8 +34,9 @@ class MaskingStrategy(str, Enum):
     GENERALIZE = "generalize"
 
 
-class PIICategory(str, Enum):
+class PIICategory(StrEnum):
     """Categorias de dados pessoais identificáveis."""
+
     CPF = "cpf"
     CNPJ = "cnpj"
     RG = "rg"
@@ -56,8 +56,9 @@ class PIICategory(str, Enum):
     GENERIC = "generic"
 
 
-class MaskingLevel(str, Enum):
+class MaskingLevel(StrEnum):
     """Níveis de mascaramento baseados em contexto."""
+
     NONE = "none"
     LOW = "low"
     MEDIUM = "medium"
@@ -68,13 +69,14 @@ class MaskingLevel(str, Enum):
 @dataclass
 class MaskingRule:
     """Regra de mascaramento para um tipo de dado."""
+
     category: PIICategory
     strategy: MaskingStrategy
-    pattern: Optional[str] = None
-    replacement: Optional[str] = None
+    pattern: str | None = None
+    replacement: str | None = None
     preserve_length: bool = False
     preserve_format: bool = False
-    hash_salt: Optional[str] = None
+    hash_salt: str | None = None
     visible_chars: int = 0
     visible_position: str = "end"
 
@@ -82,23 +84,24 @@ class MaskingRule:
 @dataclass
 class MaskingConfig:
     """Configuração global de mascaramento."""
+
     default_strategy: MaskingStrategy = MaskingStrategy.PARTIAL
     default_level: MaskingLevel = MaskingLevel.MEDIUM
     log_masking_operations: bool = True
     preserve_null_values: bool = True
     global_salt: str = field(default_factory=lambda: secrets.token_hex(16))
-    rules: Dict[PIICategory, MaskingRule] = field(default_factory=dict)
+    rules: dict[PIICategory, MaskingRule] = field(default_factory=dict)
 
 
 # Padrões regex para detecção de PII
-PII_PATTERNS: Dict[PIICategory, Pattern] = {
-    PIICategory.CPF: re.compile(r'\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b'),
-    PIICategory.CNPJ: re.compile(r'\b\d{2}\.?\d{3}\.?\d{3}/?\d{4}-?\d{2}\b'),
-    PIICategory.EMAIL: re.compile(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'),
-    PIICategory.PHONE: re.compile(r'\b\(?\d{2}\)?[\s.-]?\d{4,5}[\s.-]?\d{4}\b'),
-    PIICategory.CREDIT_CARD: re.compile(r'\b\d{4}[\s.-]?\d{4}[\s.-]?\d{4}[\s.-]?\d{4}\b'),
-    PIICategory.IP_ADDRESS: re.compile(r'\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b'),
-    PIICategory.DATE_OF_BIRTH: re.compile(r'\b\d{2}/\d{2}/\d{4}\b'),
+PII_PATTERNS: dict[PIICategory, Pattern] = {
+    PIICategory.CPF: re.compile(r"\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b"),
+    PIICategory.CNPJ: re.compile(r"\b\d{2}\.?\d{3}\.?\d{3}/?\d{4}-?\d{2}\b"),
+    PIICategory.EMAIL: re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b"),
+    PIICategory.PHONE: re.compile(r"\b\(?\d{2}\)?[\s.-]?\d{4,5}[\s.-]?\d{4}\b"),
+    PIICategory.CREDIT_CARD: re.compile(r"\b\d{4}[\s.-]?\d{4}[\s.-]?\d{4}[\s.-]?\d{4}\b"),
+    PIICategory.IP_ADDRESS: re.compile(r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b"),
+    PIICategory.DATE_OF_BIRTH: re.compile(r"\b\d{2}/\d{2}/\d{4}\b"),
 }
 
 
@@ -115,7 +118,7 @@ class MaskingService:
         >>> print(masked)  # "***.***.***-00"
     """
 
-    def __init__(self, config: Optional[MaskingConfig] = None):
+    def __init__(self, config: MaskingConfig | None = None):
         """
         Inicializa o mascarador.
 
@@ -123,26 +126,63 @@ class MaskingService:
             config: Configuração de mascaramento.
         """
         self.config = config or MaskingConfig()
-        self._token_vault: Dict[str, str] = {}
-        self._reverse_vault: Dict[str, str] = {}
+        self._token_vault: dict[str, str] = {}
+        self._reverse_vault: dict[str, str] = {}
         self._init_default_rules()
         logger.info("MaskingService inicializado com nível: %s", self.config.default_level.value)
 
     def _init_default_rules(self) -> None:
         """Inicializa regras padrão para cada categoria PII."""
         default_rules = {
-            PIICategory.CPF: MaskingRule(category=PIICategory.CPF, strategy=MaskingStrategy.PARTIAL, visible_chars=2, visible_position="end", preserve_format=True),
-            PIICategory.CNPJ: MaskingRule(category=PIICategory.CNPJ, strategy=MaskingStrategy.PARTIAL, visible_chars=4, visible_position="end", preserve_format=True),
-            PIICategory.EMAIL: MaskingRule(category=PIICategory.EMAIL, strategy=MaskingStrategy.PARTIAL, visible_chars=3, visible_position="start"),
-            PIICategory.PHONE: MaskingRule(category=PIICategory.PHONE, strategy=MaskingStrategy.PARTIAL, visible_chars=4, visible_position="end"),
-            PIICategory.NAME: MaskingRule(category=PIICategory.NAME, strategy=MaskingStrategy.PARTIAL, visible_chars=2, visible_position="start"),
-            PIICategory.CREDIT_CARD: MaskingRule(category=PIICategory.CREDIT_CARD, strategy=MaskingStrategy.PARTIAL, visible_chars=4, visible_position="end"),
-            PIICategory.CARD: MaskingRule(category=PIICategory.CARD, strategy=MaskingStrategy.PARTIAL, visible_chars=4, visible_position="end"),
-            PIICategory.BANK_ACCOUNT: MaskingRule(category=PIICategory.BANK_ACCOUNT, strategy=MaskingStrategy.PARTIAL, visible_chars=4, visible_position="end"),
-            PIICategory.DATE_OF_BIRTH: MaskingRule(category=PIICategory.DATE_OF_BIRTH, strategy=MaskingStrategy.GENERALIZE),
+            PIICategory.CPF: MaskingRule(
+                category=PIICategory.CPF,
+                strategy=MaskingStrategy.PARTIAL,
+                visible_chars=2,
+                visible_position="end",
+                preserve_format=True,
+            ),
+            PIICategory.CNPJ: MaskingRule(
+                category=PIICategory.CNPJ,
+                strategy=MaskingStrategy.PARTIAL,
+                visible_chars=4,
+                visible_position="end",
+                preserve_format=True,
+            ),
+            PIICategory.EMAIL: MaskingRule(
+                category=PIICategory.EMAIL, strategy=MaskingStrategy.PARTIAL, visible_chars=3, visible_position="start"
+            ),
+            PIICategory.PHONE: MaskingRule(
+                category=PIICategory.PHONE, strategy=MaskingStrategy.PARTIAL, visible_chars=4, visible_position="end"
+            ),
+            PIICategory.NAME: MaskingRule(
+                category=PIICategory.NAME, strategy=MaskingStrategy.PARTIAL, visible_chars=2, visible_position="start"
+            ),
+            PIICategory.CREDIT_CARD: MaskingRule(
+                category=PIICategory.CREDIT_CARD,
+                strategy=MaskingStrategy.PARTIAL,
+                visible_chars=4,
+                visible_position="end",
+            ),
+            PIICategory.CARD: MaskingRule(
+                category=PIICategory.CARD, strategy=MaskingStrategy.PARTIAL, visible_chars=4, visible_position="end"
+            ),
+            PIICategory.BANK_ACCOUNT: MaskingRule(
+                category=PIICategory.BANK_ACCOUNT,
+                strategy=MaskingStrategy.PARTIAL,
+                visible_chars=4,
+                visible_position="end",
+            ),
+            PIICategory.DATE_OF_BIRTH: MaskingRule(
+                category=PIICategory.DATE_OF_BIRTH, strategy=MaskingStrategy.GENERALIZE
+            ),
             PIICategory.SALARY: MaskingRule(category=PIICategory.SALARY, strategy=MaskingStrategy.GENERALIZE),
             PIICategory.HEALTH_DATA: MaskingRule(category=PIICategory.HEALTH_DATA, strategy=MaskingStrategy.REDACT),
-            PIICategory.IP_ADDRESS: MaskingRule(category=PIICategory.IP_ADDRESS, strategy=MaskingStrategy.PARTIAL, visible_chars=4, visible_position="start"),
+            PIICategory.IP_ADDRESS: MaskingRule(
+                category=PIICategory.IP_ADDRESS,
+                strategy=MaskingStrategy.PARTIAL,
+                visible_chars=4,
+                visible_position="start",
+            ),
             PIICategory.BIOMETRIC: MaskingRule(category=PIICategory.BIOMETRIC, strategy=MaskingStrategy.HASH),
         }
 
@@ -206,11 +246,11 @@ class MaskingService:
         salt = rule.hash_salt or self.config.global_salt
         salted = f"{salt}{value}"
         hash_value = hashlib.sha256(salted.encode()).hexdigest()
-        return hash_value[:len(value)] if rule.preserve_length else hash_value[:16]
+        return hash_value[: len(value)] if rule.preserve_length else hash_value[:16]
 
     def _generalize_mask(self, value: str) -> str:
         """Generaliza o valor."""
-        date_match = re.match(r'(\d{2})/(\d{2})/(\d{4})', value)
+        date_match = re.match(r"(\d{2})/(\d{2})/(\d{4})", value)
         if date_match:
             return "**/**/****"
 
@@ -232,18 +272,18 @@ class MaskingService:
         self._reverse_vault[token] = value
         return token
 
-    def detokenize(self, token: str) -> Optional[str]:
+    def detokenize(self, token: str) -> str | None:
         """Reverte token para valor original."""
         return self._reverse_vault.get(token)
 
     # Métodos específicos para cada tipo de PII
-    def mask_cpf(self, cpf: str, level: Optional[MaskingLevel] = None) -> str:
+    def mask_cpf(self, cpf: str, level: MaskingLevel | None = None) -> str:
         """Mascara CPF brasileiro."""
         if not cpf:
             return cpf
 
         level = level or self.config.default_level
-        cpf_clean = re.sub(r'[^\d]', '', cpf)
+        cpf_clean = re.sub(r"[^\d]", "", cpf)
         if len(cpf_clean) != 11:
             return "*" * len(cpf)
 
@@ -252,13 +292,13 @@ class MaskingService:
 
         return f"{cpf_clean[:3]}.***.***-{cpf_clean[-2:]}"
 
-    def mask_cnpj(self, cnpj: str, level: Optional[MaskingLevel] = None) -> str:
+    def mask_cnpj(self, cnpj: str, level: MaskingLevel | None = None) -> str:
         """Mascara CNPJ brasileiro."""
         if not cnpj:
             return cnpj
 
         level = level or self.config.default_level
-        cnpj_clean = re.sub(r'[^\d]', '', cnpj)
+        cnpj_clean = re.sub(r"[^\d]", "", cnpj)
         if len(cnpj_clean) != 14:
             return "*" * len(cnpj)
 
@@ -267,13 +307,13 @@ class MaskingService:
 
         return f"{cnpj_clean[:2]}.***.***/{cnpj_clean[8:12]}-**"
 
-    def mask_email(self, email: str, level: Optional[MaskingLevel] = None) -> str:
+    def mask_email(self, email: str, level: MaskingLevel | None = None) -> str:
         """Mascara email preservando domínio."""
-        if not email or '@' not in email:
+        if not email or "@" not in email:
             return "*" * len(email) if email else email
 
         level = level or self.config.default_level
-        local, domain = email.rsplit('@', 1)
+        local, domain = email.rsplit("@", 1)
 
         if level == MaskingLevel.MAXIMUM:
             return f"{'*' * len(local)}@*****.***"
@@ -285,13 +325,13 @@ class MaskingService:
 
         return f"{masked_local}@{domain}"
 
-    def mask_phone(self, phone: str, level: Optional[MaskingLevel] = None) -> str:
+    def mask_phone(self, phone: str, level: MaskingLevel | None = None) -> str:
         """Mascara telefone."""
         if not phone:
             return phone
 
         level = level or self.config.default_level
-        phone_clean = re.sub(r'[^\d]', '', phone)
+        phone_clean = re.sub(r"[^\d]", "", phone)
 
         if level in [MaskingLevel.MAXIMUM, MaskingLevel.HIGH]:
             return "*" * len(phone_clean)
@@ -300,13 +340,13 @@ class MaskingService:
             return phone_clean[:2] + "*" * (len(phone_clean) - 4) + phone_clean[-2:]
         return "*" * len(phone_clean)
 
-    def mask_credit_card(self, card: str, level: Optional[MaskingLevel] = None) -> str:
+    def mask_credit_card(self, card: str, level: MaskingLevel | None = None) -> str:
         """Mascara cartão de crédito."""
         if not card:
             return card
 
         level = level or self.config.default_level
-        card_clean = re.sub(r'[^\d]', '', card)
+        card_clean = re.sub(r"[^\d]", "", card)
 
         if level == MaskingLevel.MAXIMUM:
             return "**** **** **** ****"
@@ -315,7 +355,7 @@ class MaskingService:
             return f"**** **** **** {card_clean[-4:]}"
         return "*" * len(card_clean)
 
-    def mask_name(self, name: str, level: Optional[MaskingLevel] = None) -> str:
+    def mask_name(self, name: str, level: MaskingLevel | None = None) -> str:
         """Mascara nome pessoal."""
         if not name:
             return name
@@ -335,7 +375,7 @@ class MaskingService:
         return " ".join(masked_words)
 
     # Método principal de mascaramento
-    def mask(self, data: str, category: str, level: str = "medium") -> Dict[str, Any]:
+    def mask(self, data: str, category: str, level: str = "medium") -> dict[str, Any]:
         """
         Mascara dados PII.
 
@@ -393,7 +433,9 @@ class MaskingService:
             "level": level,
         }
 
-    def mask_dict(self, data: Dict[str, Any], field_mappings: Dict[str, PIICategory], level: Optional[MaskingLevel] = None) -> Dict[str, Any]:
+    def mask_dict(
+        self, data: dict[str, Any], field_mappings: dict[str, PIICategory], level: MaskingLevel | None = None
+    ) -> dict[str, Any]:
         """Mascara campos de um dicionário."""
         masked_data = data.copy()
         level = level or self.config.default_level
@@ -405,13 +447,15 @@ class MaskingService:
 
         return masked_data
 
-    def mask_list(self, items: List[Dict[str, Any]], field_mappings: Dict[str, PIICategory], level: Optional[MaskingLevel] = None) -> List[Dict[str, Any]]:
+    def mask_list(
+        self, items: list[dict[str, Any]], field_mappings: dict[str, PIICategory], level: MaskingLevel | None = None
+    ) -> list[dict[str, Any]]:
         """Mascara lista de dicionários."""
         return [self.mask_dict(item, field_mappings, level) for item in items]
 
-    def detect_pii(self, text: str) -> Dict[PIICategory, List[str]]:
+    def detect_pii(self, text: str) -> dict[PIICategory, list[str]]:
         """Detecta dados PII em texto livre."""
-        detected: Dict[PIICategory, List[str]] = {}
+        detected: dict[PIICategory, list[str]] = {}
 
         for category, pattern in PII_PATTERNS.items():
             matches = pattern.findall(text)
@@ -420,7 +464,9 @@ class MaskingService:
 
         return detected
 
-    def mask_text(self, text: str, level: Optional[MaskingLevel] = None, categories: Optional[Set[PIICategory]] = None) -> str:
+    def mask_text(
+        self, text: str, level: MaskingLevel | None = None, categories: set[PIICategory] | None = None
+    ) -> str:
         """Mascara dados PII em texto livre."""
         if not text:
             return text
@@ -439,20 +485,22 @@ class MaskingService:
 
         return result
 
-    def get_formats(self) -> Dict[str, List[Dict[str, str]]]:
+    def get_formats(self) -> dict[str, list[dict[str, str]]]:
         """Retorna formatos de mascaramento disponíveis."""
         return {
             "categories": [{"id": c.value, "description": c.name.replace("_", " ").title()} for c in PIICategory],
-            "levels": [{"id": l.value, "description": l.name.replace("_", " ").title()} for l in MaskingLevel],
+            "levels": [
+                {"id": level.value, "description": level.name.replace("_", " ").title()} for level in MaskingLevel
+            ],
             "strategies": [{"id": s.value, "description": s.name.replace("_", " ").title()} for s in MaskingStrategy],
         }
 
 
 # Singleton
-_masking_service: Optional[MaskingService] = None
+_masking_service: MaskingService | None = None
 
 
-def get_masking_service(config: Optional[MaskingConfig] = None) -> MaskingService:
+def get_masking_service(config: MaskingConfig | None = None) -> MaskingService:
     """Retorna instância singleton do MaskingService."""
     global _masking_service
     if _masking_service is None:

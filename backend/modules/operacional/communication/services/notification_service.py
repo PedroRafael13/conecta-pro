@@ -11,7 +11,6 @@ from __future__ import annotations
 import asyncio
 import logging
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -69,7 +68,7 @@ class NotificationService:
     """
 
     # Rate limits por tipo de notificacao (por minuto)
-    DEFAULT_RATE_LIMITS: Dict[str, int] = {
+    DEFAULT_RATE_LIMITS: dict[str, int] = {
         NotificationType.OCORRENCIA.value: 10,
         NotificationType.ALERTA.value: 20,
         NotificationType.COMUNICADO.value: 5,
@@ -79,7 +78,7 @@ class NotificationService:
     def __init__(
         self,
         db: AsyncSession,
-        rate_limits: Optional[Dict[str, int]] = None,
+        rate_limits: dict[str, int] | None = None,
     ) -> None:
         """
         Inicializa o service.
@@ -91,7 +90,7 @@ class NotificationService:
         self.db = db
         self.repository = NotificationRepository(db)
         self.rate_limits = rate_limits or self.DEFAULT_RATE_LIMITS
-        self._rate_cache: Dict[str, List[datetime]] = {}
+        self._rate_cache: dict[str, list[datetime]] = {}
 
     async def send(
         self,
@@ -129,9 +128,7 @@ class NotificationService:
             notification.mark_as_sent()
             await self.db.commit()
 
-            logger.info(
-                f"Notificacao enviada: {notification.id} para {data.user_id}"
-            )
+            logger.info(f"Notificacao enviada: {notification.id} para {data.user_id}")
             return notification
 
         except NotificationRateLimitError:
@@ -142,10 +139,10 @@ class NotificationService:
 
     async def send_bulk(
         self,
-        notifications: List[NotificationCreate],
+        notifications: list[NotificationCreate],
         tenant_id: str,
         batch_size: int = 50,
-    ) -> List[Notification]:
+    ) -> list[Notification]:
         """
         Envia multiplas notificacoes em lote.
 
@@ -157,11 +154,11 @@ class NotificationService:
         Returns:
             Lista de notificacoes enviadas
         """
-        results: List[Notification] = []
+        results: list[Notification] = []
 
         # Processa em lotes
         for i in range(0, len(notifications), batch_size):
-            batch = notifications[i:i + batch_size]
+            batch = notifications[i : i + batch_size]
 
             # Cria todas do lote
             created = await self.repository.create_bulk(batch, tenant_id)
@@ -208,21 +205,14 @@ class NotificationService:
 
         # Limpa entradas antigas
         if key in self._rate_cache:
-            self._rate_cache[key] = [
-                ts for ts in self._rate_cache[key]
-                if now - ts < window
-            ]
+            self._rate_cache[key] = [ts for ts in self._rate_cache[key] if now - ts < window]
         else:
             self._rate_cache[key] = []
 
         # Verifica limite
         if len(self._rate_cache[key]) >= limit:
-            logger.warning(
-                f"Rate limit excedido para {user_id} tipo {notification_type}"
-            )
-            raise NotificationRateLimitError(
-                f"Limite de {limit} notificacoes por minuto excedido"
-            )
+            logger.warning(f"Rate limit excedido para {user_id} tipo {notification_type}")
+            raise NotificationRateLimitError(f"Limite de {limit} notificacoes por minuto excedido")
 
         # Registra
         self._rate_cache[key].append(now)
@@ -254,26 +244,18 @@ class NotificationService:
 
                 elif channel == NotificationChannel.EMAIL.value:
                     # TODO: Integrar com servico de email
-                    logger.debug(
-                        f"Email para {notification.user_id}: {notification.title}"
-                    )
+                    logger.debug(f"Email para {notification.user_id}: {notification.title}")
 
                 elif channel == NotificationChannel.SMS.value:
                     # TODO: Integrar com provedor de SMS
-                    logger.debug(
-                        f"SMS para {notification.user_id}: {notification.body}"
-                    )
+                    logger.debug(f"SMS para {notification.user_id}: {notification.body}")
 
                 elif channel == NotificationChannel.WHATSAPP.value:
                     # TODO: Integrar com WhatsApp Business API
-                    logger.debug(
-                        f"WhatsApp para {notification.user_id}: {notification.body}"
-                    )
+                    logger.debug(f"WhatsApp para {notification.user_id}: {notification.body}")
 
             except Exception as e:
-                logger.error(
-                    f"Erro ao enviar por canal {channel}: {e}"
-                )
+                logger.error(f"Erro ao enviar por canal {channel}: {e}")
 
     async def get_by_id(
         self,
@@ -293,23 +275,19 @@ class NotificationService:
         Raises:
             NotificationNotFoundError: Se nao encontrada
         """
-        notification = await self.repository.get_by_id(
-            notification_id, user_id=user_id
-        )
+        notification = await self.repository.get_by_id(notification_id, user_id=user_id)
         if not notification:
-            raise NotificationNotFoundError(
-                f"Notificacao nao encontrada: {notification_id}"
-            )
+            raise NotificationNotFoundError(f"Notificacao nao encontrada: {notification_id}")
         return notification
 
     async def list_for_user(
         self,
         tenant_id: str,
         user_id: str,
-        filters: Optional[NotificationFilter] = None,
+        filters: NotificationFilter | None = None,
         page: int = 1,
         page_size: int = 20,
-    ) -> Tuple[List[Notification], int]:
+    ) -> tuple[list[Notification], int]:
         """
         Lista notificacoes de um usuario.
 
@@ -323,9 +301,7 @@ class NotificationService:
         Returns:
             Tupla (notificacoes, total)
         """
-        return await self.repository.list_for_user(
-            tenant_id, user_id, filters, page, page_size
-        )
+        return await self.repository.list_for_user(tenant_id, user_id, filters, page, page_size)
 
     async def mark_as_read(
         self,
@@ -347,16 +323,14 @@ class NotificationService:
         """
         notification = await self.repository.mark_as_read(notification_id, user_id)
         if not notification:
-            raise NotificationNotFoundError(
-                f"Notificacao nao encontrada: {notification_id}"
-            )
+            raise NotificationNotFoundError(f"Notificacao nao encontrada: {notification_id}")
         return notification
 
     async def mark_all_as_read(
         self,
         tenant_id: str,
         user_id: str,
-        notification_ids: Optional[List[str]] = None,
+        notification_ids: list[str] | None = None,
     ) -> int:
         """
         Marca todas notificacoes como lidas.
@@ -369,9 +343,7 @@ class NotificationService:
         Returns:
             Quantidade de notificacoes atualizadas
         """
-        return await self.repository.mark_all_as_read(
-            tenant_id, user_id, notification_ids
-        )
+        return await self.repository.mark_all_as_read(tenant_id, user_id, notification_ids)
 
     async def get_unread_count(
         self,
@@ -414,9 +386,7 @@ class NotificationService:
         """
         deleted = await self.repository.delete(notification_id, user_id)
         if not deleted:
-            raise NotificationNotFoundError(
-                f"Notificacao nao encontrada: {notification_id}"
-            )
+            raise NotificationNotFoundError(f"Notificacao nao encontrada: {notification_id}")
         return True
 
     async def cleanup_old(
@@ -441,11 +411,11 @@ class NotificationService:
     async def send_occurrence_notification(
         self,
         tenant_id: str,
-        user_ids: List[str],
+        user_ids: list[str],
         occurrence_id: str,
         occurrence_title: str,
         severity: str,
-    ) -> List[Notification]:
+    ) -> list[Notification]:
         """
         Envia notificacao de ocorrencia.
 

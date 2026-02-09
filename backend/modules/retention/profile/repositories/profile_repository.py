@@ -6,25 +6,23 @@ Camada de acesso a dados para perfis operacionais e matches.
 
 import logging
 from datetime import datetime, timedelta
-from typing import Optional, List, Tuple, Dict, Any
+from typing import Any
 
-from sqlalchemy import select, func, and_, or_, desc, asc, case
+from sqlalchemy import and_, asc, desc, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from modules.retention.profile.models.profile_models import (
-    OperationalProfile,
-    ProfileQuestion,
-    PostMatch,
     QUESTIONARIO_PERFIL,
+    OperationalProfile,
+    PostMatch,
+    ProfileQuestion,
 )
 from modules.retention.profile.schemas.profile_schemas import (
-    SubmitRespostasRequest,
-    ProfileFilter,
     MatchFilter,
+    ProfileFilter,
     ProfileQuestionCreate,
     ProfileQuestionUpdate,
-    CalculateMatchRequest,
 )
 
 logger = logging.getLogger(__name__)
@@ -44,10 +42,10 @@ class ProfileRepository:
     async def create_profile(
         self,
         funcionario_id: str,
-        scores: Dict[str, int],
-        respostas: Dict[str, int],
-        tempo_resposta: Optional[int] = None,
-        condominium_id: Optional[str] = None,
+        scores: dict[str, int],
+        respostas: dict[str, int],
+        tempo_resposta: int | None = None,
+        condominium_id: str | None = None,
     ) -> OperationalProfile:
         """
         Cria um novo perfil operacional.
@@ -91,16 +89,12 @@ class ProfileRepository:
 
         return profile
 
-    async def get_profile_by_id(self, profile_id: str) -> Optional[OperationalProfile]:
+    async def get_profile_by_id(self, profile_id: str) -> OperationalProfile | None:
         """Busca perfil por ID."""
-        result = await self.session.execute(
-            select(OperationalProfile).where(OperationalProfile.id == profile_id)
-        )
+        result = await self.session.execute(select(OperationalProfile).where(OperationalProfile.id == profile_id))
         return result.scalar_one_or_none()
 
-    async def get_latest_profile(
-        self, funcionario_id: str, apenas_valido: bool = True
-    ) -> Optional[OperationalProfile]:
+    async def get_latest_profile(self, funcionario_id: str, apenas_valido: bool = True) -> OperationalProfile | None:
         """
         Busca o perfil mais recente do funcionario.
 
@@ -133,7 +127,7 @@ class ProfileRepository:
         funcionario_id: str,
         limit: int = 10,
         apenas_validos: bool = True,
-    ) -> List[OperationalProfile]:
+    ) -> list[OperationalProfile]:
         """
         Busca historico de perfis do funcionario.
 
@@ -165,12 +159,12 @@ class ProfileRepository:
 
     async def list_profiles(
         self,
-        filters: Optional[ProfileFilter] = None,
+        filters: ProfileFilter | None = None,
         skip: int = 0,
         limit: int = 20,
         order_by: str = "created_at",
         order_desc: bool = True,
-    ) -> Tuple[List[OperationalProfile], int]:
+    ) -> tuple[list[OperationalProfile], int]:
         """
         Lista perfis com filtros e paginacao.
 
@@ -184,19 +178,13 @@ class ProfileRepository:
         Returns:
             Tuple (lista de perfis, total)
         """
-        query = select(OperationalProfile).where(
-            OperationalProfile.em_andamento.is_(False)
-        )
+        query = select(OperationalProfile).where(OperationalProfile.em_andamento.is_(False))
 
         if filters:
             if filters.funcionario_id:
-                query = query.where(
-                    OperationalProfile.funcionario_id == filters.funcionario_id
-                )
+                query = query.where(OperationalProfile.funcionario_id == filters.funcionario_id)
             if filters.perfil_predominante:
-                query = query.where(
-                    OperationalProfile.perfil_predominante == filters.perfil_predominante.value
-                )
+                query = query.where(OperationalProfile.perfil_predominante == filters.perfil_predominante.value)
             if filters.score_minimo is not None:
                 # Filtra por score medio minimo
                 score_medio = (
@@ -215,17 +203,11 @@ class ProfileRepository:
                 ) / 4
                 query = query.where(score_medio <= filters.score_maximo)
             if filters.data_inicio:
-                query = query.where(
-                    OperationalProfile.data_avaliacao >= filters.data_inicio
-                )
+                query = query.where(OperationalProfile.data_avaliacao >= filters.data_inicio)
             if filters.data_fim:
-                query = query.where(
-                    OperationalProfile.data_avaliacao <= filters.data_fim
-                )
+                query = query.where(OperationalProfile.data_avaliacao <= filters.data_fim)
             if filters.condominium_id:
-                query = query.where(
-                    OperationalProfile.condominium_id == filters.condominium_id
-                )
+                query = query.where(OperationalProfile.condominium_id == filters.condominium_id)
             if filters.apenas_validos:
                 query = query.where(OperationalProfile.is_valid.is_(True))
 
@@ -249,9 +231,7 @@ class ProfileRepository:
 
         return profiles, total
 
-    async def invalidate_profile(
-        self, profile_id: str, reason: str
-    ) -> Optional[OperationalProfile]:
+    async def invalidate_profile(self, profile_id: str, reason: str) -> OperationalProfile | None:
         """Invalida um perfil."""
         profile = await self.get_profile_by_id(profile_id)
         if profile:
@@ -268,9 +248,9 @@ class ProfileRepository:
     async def save_progress(
         self,
         funcionario_id: str,
-        respostas_parciais: Dict[str, int],
+        respostas_parciais: dict[str, int],
         ultima_pergunta: int,
-        condominium_id: Optional[str] = None,
+        condominium_id: str | None = None,
     ) -> OperationalProfile:
         """
         Salva progresso do questionario.
@@ -319,7 +299,7 @@ class ProfileRepository:
         await self.session.flush()
         return profile
 
-    async def get_progress(self, funcionario_id: str) -> Optional[OperationalProfile]:
+    async def get_progress(self, funcionario_id: str) -> OperationalProfile | None:
         """Busca progresso salvo do funcionario."""
         result = await self.session.execute(
             select(OperationalProfile).where(
@@ -355,9 +335,9 @@ class ProfileRepository:
     async def get_questions(
         self,
         versao: str = "1.0.0",
-        condominium_id: Optional[str] = None,
+        condominium_id: str | None = None,
         apenas_ativas: bool = True,
-    ) -> List[ProfileQuestion]:
+    ) -> list[ProfileQuestion]:
         """
         Busca perguntas do questionario.
 
@@ -369,11 +349,7 @@ class ProfileRepository:
         Returns:
             Lista de perguntas ordenadas
         """
-        query = (
-            select(ProfileQuestion)
-            .where(ProfileQuestion.versao == versao)
-            .order_by(ProfileQuestion.ordem)
-        )
+        query = select(ProfileQuestion).where(ProfileQuestion.versao == versao).order_by(ProfileQuestion.ordem)
 
         if apenas_ativas:
             query = query.where(ProfileQuestion.ativo.is_(True))
@@ -406,13 +382,9 @@ class ProfileRepository:
         await self.session.flush()
         return question
 
-    async def update_question(
-        self, question_id: str, data: ProfileQuestionUpdate
-    ) -> Optional[ProfileQuestion]:
+    async def update_question(self, question_id: str, data: ProfileQuestionUpdate) -> ProfileQuestion | None:
         """Atualiza uma pergunta."""
-        result = await self.session.execute(
-            select(ProfileQuestion).where(ProfileQuestion.id == question_id)
-        )
+        result = await self.session.execute(select(ProfileQuestion).where(ProfileQuestion.id == question_id))
         question = result.scalar_one_or_none()
 
         if question:
@@ -433,9 +405,7 @@ class ProfileRepository:
         count = 0
         for q in QUESTIONARIO_PERFIL:
             # Verifica se ja existe
-            result = await self.session.execute(
-                select(ProfileQuestion).where(ProfileQuestion.codigo == q["id"])
-            )
+            result = await self.session.execute(select(ProfileQuestion).where(ProfileQuestion.codigo == q["id"]))
             if not result.scalar_one_or_none():
                 question = ProfileQuestion(
                     codigo=q["id"],
@@ -462,11 +432,11 @@ class ProfileRepository:
         posto_id: str,
         posto_tipo: str,
         score_match: float,
-        profile_id: Optional[str] = None,
-        fatores_positivos: Optional[List[str]] = None,
-        fatores_negativos: Optional[List[str]] = None,
-        scores_detalhados: Optional[Dict[str, Any]] = None,
-        condominium_id: Optional[str] = None,
+        profile_id: str | None = None,
+        fatores_positivos: list[str] | None = None,
+        fatores_negativos: list[str] | None = None,
+        scores_detalhados: dict[str, Any] | None = None,
+        condominium_id: str | None = None,
     ) -> PostMatch:
         """
         Cria ou atualiza match entre funcionario e posto.
@@ -541,9 +511,7 @@ class ProfileRepository:
         await self.session.flush()
         return match
 
-    async def get_match(
-        self, funcionario_id: str, posto_id: str
-    ) -> Optional[PostMatch]:
+    async def get_match(self, funcionario_id: str, posto_id: str) -> PostMatch | None:
         """Busca match especifico."""
         result = await self.session.execute(
             select(PostMatch)
@@ -562,7 +530,7 @@ class ProfileRepository:
         funcionario_id: str,
         limit: int = 10,
         apenas_recomendados: bool = False,
-    ) -> List[PostMatch]:
+    ) -> list[PostMatch]:
         """
         Busca melhores matches para um funcionario.
 
@@ -593,7 +561,7 @@ class ProfileRepository:
         posto_id: str,
         limit: int = 10,
         apenas_recomendados: bool = False,
-    ) -> List[PostMatch]:
+    ) -> list[PostMatch]:
         """
         Busca melhores funcionarios para um posto.
 
@@ -621,12 +589,12 @@ class ProfileRepository:
 
     async def list_matches(
         self,
-        filters: Optional[MatchFilter] = None,
+        filters: MatchFilter | None = None,
         skip: int = 0,
         limit: int = 20,
         order_by: str = "score_match",
         order_desc: bool = True,
-    ) -> Tuple[List[PostMatch], int]:
+    ) -> tuple[list[PostMatch], int]:
         """
         Lista matches com filtros e paginacao.
 
@@ -680,9 +648,7 @@ class ProfileRepository:
 
     async def delete_matches_by_funcionario(self, funcionario_id: str) -> int:
         """Remove todos os matches de um funcionario."""
-        result = await self.session.execute(
-            select(PostMatch).where(PostMatch.funcionario_id == funcionario_id)
-        )
+        result = await self.session.execute(select(PostMatch).where(PostMatch.funcionario_id == funcionario_id))
         matches = result.scalars().all()
         count = len(matches)
         for match in matches:
@@ -694,7 +660,7 @@ class ProfileRepository:
     # Estatisticas e Dashboard
     # ============================================================
 
-    async def get_stats(self, condominium_id: Optional[str] = None) -> Dict[str, Any]:
+    async def get_stats(self, condominium_id: str | None = None) -> dict[str, Any]:
         """
         Calcula estatisticas gerais.
 
@@ -775,11 +741,11 @@ class ProfileRepository:
         ) / 4
 
         # Desvios padrao
-        def calc_std(values: List[int], media: float) -> float:
+        def calc_std(values: list[int], media: float) -> float:
             if len(values) < 2:
                 return 0.0
             variance = sum((x - media) ** 2 for x in values) / len(values)
-            return variance ** 0.5
+            return variance**0.5
 
         stats["desvio_vigilancia"] = calc_std(vigilancias, stats["media_vigilancia"])
         stats["desvio_comunicacao"] = calc_std(comunicacoes, stats["media_comunicacao"])
@@ -790,9 +756,9 @@ class ProfileRepository:
 
     async def get_funcionarios_sem_perfil(
         self,
-        funcionario_ids: List[str],
-        condominium_id: Optional[str] = None,
-    ) -> List[str]:
+        funcionario_ids: list[str],
+        condominium_id: str | None = None,
+    ) -> list[str]:
         """
         Identifica funcionarios sem perfil avaliado.
 
@@ -815,15 +781,15 @@ class ProfileRepository:
             query = query.where(OperationalProfile.condominium_id == condominium_id)
 
         result = await self.session.execute(query.distinct())
-        com_perfil = set(r for r in result.scalars().all())
+        com_perfil = set(result.scalars().all())
 
         return [fid for fid in funcionario_ids if fid not in com_perfil]
 
     async def get_evolucao_mensal(
         self,
         meses: int = 12,
-        condominium_id: Optional[str] = None,
-    ) -> List[Dict[str, Any]]:
+        condominium_id: str | None = None,
+    ) -> list[dict[str, Any]]:
         """
         Retorna evolucao mensal de avaliacoes.
 

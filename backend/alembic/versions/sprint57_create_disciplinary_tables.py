@@ -10,10 +10,12 @@ Tabelas criadas:
 - disciplinary_actions (medidas disciplinares)
 """
 
-from alembic import op
-import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import UUID, JSONB
 import uuid
+
+import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import JSONB, UUID
+
+from alembic import op
 
 # revision identifiers
 revision = "sprint57_disciplinary"
@@ -31,42 +33,34 @@ def upgrade() -> None:
         # Identificacao
         sa.Column("id", UUID(as_uuid=False), primary_key=True, default=lambda: str(uuid.uuid4())),
         sa.Column("tenant_id", UUID(as_uuid=False), nullable=False, index=True),
-
         # Signatario
         sa.Column("signer_id", UUID(as_uuid=False), nullable=False, index=True),
         sa.Column("signer_type", sa.String(20), nullable=False, index=True),
         sa.Column("signer_name", sa.String(255), nullable=False),
         sa.Column("signer_cpf", sa.String(14), nullable=True),
         sa.Column("signer_email", sa.String(255), nullable=True),
-
         # Documento
         sa.Column("document_type", sa.String(50), nullable=False, index=True),
         sa.Column("document_id", UUID(as_uuid=False), nullable=False, index=True),
-
         # Dados da Assinatura
         sa.Column("signature_data", sa.Text(), nullable=False),
         sa.Column("signature_hash", sa.String(64), nullable=False),
-
         # Rastreabilidade
         sa.Column("ip_address", sa.String(45), nullable=True),
         sa.Column("user_agent", sa.String(500), nullable=True),
-
         # Geolocalizacao
         sa.Column("latitude", sa.Float(), nullable=True),
         sa.Column("longitude", sa.Float(), nullable=True),
         sa.Column("geolocation_accuracy", sa.Float(), nullable=True),
         sa.Column("geolocation_timestamp", sa.DateTime(), nullable=True),
-
         # Validacao
         sa.Column("is_valid", sa.Boolean(), default=True, nullable=False),
         sa.Column("validated_at", sa.DateTime(), nullable=True),
         sa.Column("invalidated_at", sa.DateTime(), nullable=True),
         sa.Column("invalidation_reason", sa.String(500), nullable=True),
-
         # Metadados
         sa.Column("device_fingerprint", sa.String(255), nullable=True),
         sa.Column("session_id", sa.String(100), nullable=True),
-
         # Controle
         sa.Column("created_at", sa.DateTime(), server_default=sa.func.now(), nullable=False),
     )
@@ -80,17 +74,14 @@ def upgrade() -> None:
         # Identificacao
         sa.Column("id", UUID(as_uuid=False), primary_key=True, default=lambda: str(uuid.uuid4())),
         sa.Column("tenant_id", UUID(as_uuid=False), nullable=False, index=True),
-
         # Dados do Template
         sa.Column("action_type", sa.String(30), nullable=False, index=True),
         sa.Column("name", sa.String(255), nullable=False),
         sa.Column("description", sa.String(500), nullable=True),
         sa.Column("content", sa.Text(), nullable=False),
-
         # Configuracoes
         sa.Column("is_default", sa.Boolean(), default=False, nullable=False),
         sa.Column("is_active", sa.Boolean(), default=True, nullable=False, index=True),
-
         # Controle
         sa.Column("created_at", sa.DateTime(), server_default=sa.func.now(), nullable=False),
         sa.Column("updated_at", sa.DateTime(), server_default=sa.func.now(), onupdate=sa.func.now(), nullable=False),
@@ -104,47 +95,40 @@ def upgrade() -> None:
         sa.Column("id", UUID(as_uuid=False), primary_key=True, default=lambda: str(uuid.uuid4())),
         sa.Column("code", sa.String(20), unique=True, nullable=False, index=True),
         sa.Column("tenant_id", UUID(as_uuid=False), nullable=False, index=True),
-
         # Tipo e Status
         sa.Column("action_type", sa.String(30), nullable=False, index=True),
         sa.Column("status", sa.String(30), default="rascunho", nullable=False, index=True),
-
         # Dados do Funcionario (Snapshot)
         sa.Column("employee_id", UUID(as_uuid=False), nullable=False, index=True),
         sa.Column("employee_name", sa.String(255), nullable=False),
         sa.Column("employee_cpf", sa.String(14), nullable=False),
         sa.Column("employee_position", sa.String(100), nullable=True),
         sa.Column("employee_admission_date", sa.Date(), nullable=True),
-
         # Local
         sa.Column("post_id", UUID(as_uuid=False), nullable=True, index=True),
         sa.Column("client_id", UUID(as_uuid=False), nullable=True, index=True),
-
         # Motivo
         sa.Column("reason_category", sa.String(30), nullable=False, index=True),
         sa.Column("reason_description", sa.Text(), nullable=False),
         sa.Column("occurrence_id", UUID(as_uuid=False), nullable=True),
-
         # Datas
         sa.Column("incident_date", sa.Date(), nullable=False),
         sa.Column("application_date", sa.Date(), nullable=True),
-
         # Suspensao (se aplicavel)
         sa.Column("suspension_start_date", sa.Date(), nullable=True),
         sa.Column("suspension_end_date", sa.Date(), nullable=True),
         sa.Column("suspension_days", sa.Integer(), nullable=True),
-
         # Documento
         sa.Column("document_text", sa.Text(), nullable=True),
-        sa.Column("document_template_id", UUID(as_uuid=False), sa.ForeignKey("disciplinary_templates.id"), nullable=True),
+        sa.Column(
+            "document_template_id", UUID(as_uuid=False), sa.ForeignKey("disciplinary_templates.id"), nullable=True
+        ),
         sa.Column("document_hash", sa.String(64), nullable=True),
-
         # Testemunhas
         sa.Column("witness_1_name", sa.String(255), nullable=True),
         sa.Column("witness_1_cpf", sa.String(14), nullable=True),
         sa.Column("witness_2_name", sa.String(255), nullable=True),
         sa.Column("witness_2_cpf", sa.String(14), nullable=True),
-
         # Aprovacao
         sa.Column("requires_approval", sa.Boolean(), default=True, nullable=False),
         sa.Column("approved_by_id", UUID(as_uuid=False), nullable=True),
@@ -153,7 +137,6 @@ def upgrade() -> None:
         sa.Column("rejected_by_id", UUID(as_uuid=False), nullable=True),
         sa.Column("rejected_at", sa.DateTime(), nullable=True),
         sa.Column("rejection_reason", sa.String(500), nullable=True),
-
         # Assinaturas do Funcionario
         sa.Column("employee_signature_id", UUID(as_uuid=False), sa.ForeignKey("digital_signatures.id"), nullable=True),
         sa.Column("employee_signed_at", sa.DateTime(), nullable=True),
@@ -162,25 +145,22 @@ def upgrade() -> None:
         sa.Column("refusal_witness_1_cpf", sa.String(14), nullable=True),
         sa.Column("refusal_witness_2_name", sa.String(255), nullable=True),
         sa.Column("refusal_witness_2_cpf", sa.String(14), nullable=True),
-
         # Outras Assinaturas
-        sa.Column("supervisor_signature_id", UUID(as_uuid=False), sa.ForeignKey("digital_signatures.id"), nullable=True),
+        sa.Column(
+            "supervisor_signature_id", UUID(as_uuid=False), sa.ForeignKey("digital_signatures.id"), nullable=True
+        ),
         sa.Column("supervisor_signed_at", sa.DateTime(), nullable=True),
         sa.Column("hr_signature_id", UUID(as_uuid=False), sa.ForeignKey("digital_signatures.id"), nullable=True),
         sa.Column("hr_signed_at", sa.DateTime(), nullable=True),
-
         # Ciencia
         sa.Column("employee_acknowledged", sa.Boolean(), default=False, nullable=False),
         sa.Column("acknowledged_at", sa.DateTime(), nullable=True),
-
         # Historico (Snapshot)
         sa.Column("previous_warnings_count", sa.Integer(), default=0, nullable=False),
         sa.Column("previous_suspensions_count", sa.Integer(), default=0, nullable=False),
-
         # IA e Metadados
         sa.Column("ai_recommendation", JSONB(), nullable=True),
         sa.Column("extra_data", JSONB(), nullable=True, default=dict),
-
         # Controle
         sa.Column("is_active", sa.Boolean(), default=True, nullable=False, index=True),
         sa.Column("created_at", sa.DateTime(), server_default=sa.func.now(), nullable=False),
@@ -210,8 +190,9 @@ def downgrade() -> None:
 
 def _insert_default_templates():
     """Insere templates padrao para cada tipo de medida."""
-    from sqlalchemy import text
     import uuid
+
+    from sqlalchemy import text
 
     default_tenant_id = "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
 
@@ -465,5 +446,5 @@ TESTEMUNHAS:
                 (:id, :tenant_id, :action_type, :name, :description, :content, :is_default, :is_active, NOW(), NOW())
                 ON CONFLICT DO NOTHING
             """),
-            template
+            template,
         )

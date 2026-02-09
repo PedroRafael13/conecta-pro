@@ -1,32 +1,33 @@
 """Tests for Mobile Services."""
 
-import pytest
-from unittest.mock import MagicMock, AsyncMock, patch
-from datetime import datetime, timedelta
 import uuid
+from datetime import datetime, timedelta
+from unittest.mock import AsyncMock, MagicMock, patch
 
-from modules.mobile.services.push_notification_service import PushNotificationService
-from modules.mobile.services.offline_sync_manager import OfflineSyncManager
-from modules.mobile.services.mobile_security import MobileSecurity, RateLimitExceeded
-from modules.mobile.services.mobile_metrics import MobileMetrics, get_metrics
+import pytest
+
 from modules.mobile.models.push_notification import (
+    NotificationPriority,
     NotificationStatus,
     NotificationType,
-    NotificationPriority,
 )
 from modules.mobile.models.sync_queue import (
+    ConflictResolution,
     SyncOperationType,
     SyncStatus,
-    ConflictResolution,
 )
 from modules.mobile.schemas.notification_schemas import (
-    PushNotificationCreate,
     BroadcastNotificationRequest,
+    PushNotificationCreate,
 )
 from modules.mobile.schemas.sync_schemas import (
-    MobileSyncRequest,
     MobileSyncOperation,
+    MobileSyncRequest,
 )
+from modules.mobile.services.mobile_metrics import MobileMetrics, get_metrics
+from modules.mobile.services.mobile_security import MobileSecurity, RateLimitExceededError
+from modules.mobile.services.offline_sync_manager import OfflineSyncManager
+from modules.mobile.services.push_notification_service import PushNotificationService
 
 
 class TestPushNotificationService:
@@ -44,7 +45,9 @@ class TestPushNotificationService:
     async def test_send_notification_no_tokens(self):
         """Test sending notification with no device tokens."""
         db = AsyncMock()
-        db.execute = AsyncMock(return_value=MagicMock(scalars=MagicMock(return_value=MagicMock(all=MagicMock(return_value=[])))))
+        db.execute = AsyncMock(
+            return_value=MagicMock(scalars=MagicMock(return_value=MagicMock(all=MagicMock(return_value=[]))))
+        )
         db.commit = AsyncMock()
 
         notification_data = PushNotificationCreate(
@@ -161,8 +164,6 @@ class TestOfflineSyncManager:
 
     def test_auto_merge_success(self):
         """Test automatic merge of non-conflicting changes."""
-        client_data = {"name": "Client Name", "email": "client@test.com"}
-        server_data = {"name": "Server Name", "phone": "123456"}
 
         # Fields changed in both with same value - no conflict
         merged = self.manager._auto_merge(
@@ -192,9 +193,7 @@ class TestOfflineSyncManager:
         mock_session.sync_token = "old_token"
         mock_session.last_sync_at = datetime.utcnow() - timedelta(hours=1)
 
-        db.execute = AsyncMock(return_value=MagicMock(
-            scalar_one_or_none=MagicMock(return_value=mock_session)
-        ))
+        db.execute = AsyncMock(return_value=MagicMock(scalar_one_or_none=MagicMock(return_value=mock_session)))
         db.flush = AsyncMock()
         db.commit = AsyncMock()
 
@@ -248,27 +247,24 @@ class TestMobileSecurity:
 
         # Call sync version for testing
         import asyncio
-        result = asyncio.get_event_loop().run_until_complete(
-            self.security._validate_api_key(key)
-        )
+
+        result = asyncio.get_event_loop().run_until_complete(self.security._validate_api_key(key))
 
         assert result is True
 
     def test_validate_api_key_invalid(self):
         """Test validation of invalid API key."""
         import asyncio
-        result = asyncio.get_event_loop().run_until_complete(
-            self.security._validate_api_key("invalid.key")
-        )
+
+        result = asyncio.get_event_loop().run_until_complete(self.security._validate_api_key("invalid.key"))
 
         assert result is False
 
     def test_validate_api_key_empty(self):
         """Test validation of empty API key."""
         import asyncio
-        result = asyncio.get_event_loop().run_until_complete(
-            self.security._validate_api_key(None)
-        )
+
+        result = asyncio.get_event_loop().run_until_complete(self.security._validate_api_key(None))
 
         assert result is False
 
@@ -277,9 +273,7 @@ class TestMobileSecurity:
         import asyncio
 
         # First request should pass
-        result = asyncio.get_event_loop().run_until_complete(
-            self.security._check_rate_limit("device:test", "default")
-        )
+        result = asyncio.get_event_loop().run_until_complete(self.security._check_rate_limit("device:test", "default"))
 
         assert result is True
 
@@ -289,9 +283,7 @@ class TestMobileSecurity:
 
         # Exhaust rate limit
         for _ in range(100):  # default is 100 req/min
-            asyncio.get_event_loop().run_until_complete(
-                self.security._check_rate_limit("device:exceeded", "default")
-            )
+            asyncio.get_event_loop().run_until_complete(self.security._check_rate_limit("device:exceeded", "default"))
 
         # 101st request should fail
         result = asyncio.get_event_loop().run_until_complete(

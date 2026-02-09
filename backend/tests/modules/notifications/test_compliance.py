@@ -7,16 +7,15 @@ from uuid import uuid4
 import pytest
 
 from modules.notifications.compliance.lgpd_manager import (
-    LGPDComplianceManager,
+    ComplianceAuditLog,
     ConsentRecord,
-    ConsentType,
     ConsentStatus,
+    ConsentType,
     DataProcessingRequest,
     DataRequestType,
+    LGPDComplianceManager,
     RequestStatus,
-    ComplianceAuditLog,
 )
-
 
 # ============================================================================
 # Fixtures
@@ -251,9 +250,7 @@ class TestDataRequests:
 
         assert request.request_type == DataRequestType.DELETION
         # Verificar prazo (15 dias para exclusão)
-        expected_deadline = datetime.utcnow() + timedelta(
-            days=compliance_manager.DELETION_REQUEST_DEADLINE_DAYS
-        )
+        expected_deadline = datetime.utcnow() + timedelta(days=compliance_manager.DELETION_REQUEST_DEADLINE_DAYS)
         assert request.deadline.date() == expected_deadline.date()
 
     @pytest.mark.asyncio
@@ -552,10 +549,7 @@ class TestAuditLogging:
             end_date=now + timedelta(hours=1),
         )
 
-        assert all(
-            now - timedelta(hours=1) <= log.timestamp <= now + timedelta(hours=1)
-            for log in logs
-        )
+        assert all(now - timedelta(hours=1) <= log.timestamp <= now + timedelta(hours=1) for log in logs)
 
 
 # ============================================================================

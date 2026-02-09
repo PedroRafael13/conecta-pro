@@ -6,7 +6,7 @@ Endpoints para verificacao de status do modulo Saude Ocupacional.
 """
 
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any
 
 from fastapi import APIRouter, status
 
@@ -67,12 +67,12 @@ async def get_health_status() -> StandardResponse:
 
 @router.get(
     "/health",
-    response_model=Dict[str, Any],
+    response_model=dict[str, Any],
     status_code=status.HTTP_200_OK,
     summary="Health check",
     description="Verifica saude do modulo.",
 )
-async def health_check() -> Dict[str, Any]:
+async def health_check() -> dict[str, Any]:
     """
     Health check do modulo.
 
@@ -89,11 +89,11 @@ async def health_check() -> Dict[str, Any]:
 
 @router.get(
     "/info",
-    response_model=Dict[str, Any],
+    response_model=dict[str, Any],
     status_code=status.HTTP_200_OK,
     summary="Informacoes do modulo",
 )
-async def get_module_info() -> Dict[str, Any]:
+async def get_module_info() -> dict[str, Any]:
     """
     Retorna informacoes detalhadas do modulo.
 

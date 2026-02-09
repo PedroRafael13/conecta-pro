@@ -3,8 +3,8 @@
 import uuid
 from datetime import datetime, timedelta
 from decimal import Decimal
-from enum import Enum
-from typing import TYPE_CHECKING, Optional
+from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Index, Numeric, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from modules.financial.models.warehouse import Warehouse
 
 
-class ReservationType(str, Enum):
+class ReservationType(StrEnum):
     """Tipo de reserva."""
 
     VENDA = "venda"
@@ -30,7 +30,7 @@ class ReservationType(str, Enum):
     OUTRO = "outro"
 
 
-class ReservationStatus(str, Enum):
+class ReservationStatus(StrEnum):
     """Status da reserva."""
 
     ATIVA = "ativa"
@@ -41,7 +41,7 @@ class ReservationStatus(str, Enum):
     LIBERADA = "liberada"
 
 
-class ReservationPriority(str, Enum):
+class ReservationPriority(StrEnum):
     """Prioridade da reserva."""
 
     BAIXA = "baixa"
@@ -214,9 +214,9 @@ class StockReservation(Base):
     def fulfillment_percentage(self) -> Decimal:
         """Percentual de atendimento."""
         if self.quantity_requested and self.quantity_requested > 0:
-            return Decimal(
-                (self.quantity_released or Decimal("0")) / self.quantity_requested * 100
-            ).quantize(Decimal("0.01"))
+            return Decimal((self.quantity_released or Decimal("0")) / self.quantity_requested * 100).quantize(
+                Decimal("0.01")
+            )
         return Decimal("0")
 
     @property
@@ -227,7 +227,7 @@ class StockReservation(Base):
         return False
 
     @property
-    def days_until_required(self) -> Optional[int]:
+    def days_until_required(self) -> int | None:
         """Dias até a data necessária."""
         if self.required_date:
             delta = self.required_date - datetime.utcnow()
@@ -235,7 +235,7 @@ class StockReservation(Base):
         return None
 
     @property
-    def days_until_expiry(self) -> Optional[int]:
+    def days_until_expiry(self) -> int | None:
         """Dias até expiração."""
         if self.expiry_date:
             delta = self.expiry_date - datetime.utcnow()
@@ -264,12 +264,10 @@ class StockReservation(Base):
         self,
         quantity: Decimal,
         user_id: uuid.UUID,
-        notes: Optional[str] = None,
+        notes: str | None = None,
     ) -> bool:
         """Libera quantidade reservada."""
-        available = (self.quantity_reserved or Decimal("0")) - (
-            self.quantity_released or Decimal("0")
-        )
+        available = (self.quantity_reserved or Decimal("0")) - (self.quantity_released or Decimal("0"))
         if quantity > available:
             return False
 
@@ -286,7 +284,7 @@ class StockReservation(Base):
 
         return True
 
-    def release_all(self, user_id: uuid.UUID, notes: Optional[str] = None) -> None:
+    def release_all(self, user_id: uuid.UUID, notes: str | None = None) -> None:
         """Libera toda quantidade reservada."""
         self.quantity_released = self.quantity_reserved
         self.released_by = user_id
@@ -309,7 +307,7 @@ class StockReservation(Base):
         self.quantity_reserved = Decimal("0")
         self.quantity_pending = Decimal("0")
 
-    def approve(self, approver_id: uuid.UUID, notes: Optional[str] = None) -> None:
+    def approve(self, approver_id: uuid.UUID, notes: str | None = None) -> None:
         """Aprova a reserva."""
         self.approved_by = approver_id
         self.approved_at = datetime.utcnow()
@@ -343,9 +341,7 @@ class StockReservation(Base):
             "quantity_released": float(self.quantity_released) if self.quantity_released else 0,
             "quantity_pending": float(self.quantity_pending) if self.quantity_pending else 0,
             "fulfillment_percentage": float(self.fulfillment_percentage),
-            "reservation_date": (
-                self.reservation_date.isoformat() if self.reservation_date else None
-            ),
+            "reservation_date": (self.reservation_date.isoformat() if self.reservation_date else None),
             "required_date": self.required_date.isoformat() if self.required_date else None,
             "expiry_date": self.expiry_date.isoformat() if self.expiry_date else None,
             "reference_type": self.reference_type,

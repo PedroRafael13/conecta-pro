@@ -1,17 +1,16 @@
 """Schemas para JobPosition."""
 
-from datetime import datetime, date
-from typing import Optional, List
+from datetime import date, datetime
 from decimal import Decimal
 
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from modules.recruitment.models.job_position import (
-    PositionType,
+    Department,
     PositionLevel,
     PositionStatus,
+    PositionType,
     WorkModel,
-    Department,
 )
 
 
@@ -19,72 +18,72 @@ class JobPositionBase(BaseModel):
     """Schema base para JobPosition."""
 
     title: str = Field(..., min_length=3, max_length=200)
-    description: Optional[str] = None
+    description: str | None = None
     position_type: PositionType = PositionType.CLT
     position_level: PositionLevel = PositionLevel.PLENO
     department: Department = Department.OPERACIONAL
-    requirements: Optional[str] = None
-    responsibilities: Optional[str] = None
-    required_skills: Optional[List[str]] = Field(default_factory=list)
-    desired_skills: Optional[List[str]] = Field(default_factory=list)
+    requirements: str | None = None
+    responsibilities: str | None = None
+    required_skills: list[str] | None = Field(default_factory=list)
+    desired_skills: list[str] | None = Field(default_factory=list)
     min_experience_years: int = Field(default=0, ge=0)
-    education_level: Optional[str] = None
-    salary_min: Optional[Decimal] = Field(None, ge=0)
-    salary_max: Optional[Decimal] = Field(None, ge=0)
+    education_level: str | None = None
+    salary_min: Decimal | None = Field(None, ge=0)
+    salary_max: Decimal | None = Field(None, ge=0)
     salary_display: bool = False
-    benefits: Optional[List[str]] = Field(default_factory=list)
+    benefits: list[str] | None = Field(default_factory=list)
     work_model: WorkModel = WorkModel.PRESENCIAL
-    city: Optional[str] = None
-    state: Optional[str] = Field(None, max_length=2)
-    address: Optional[str] = None
+    city: str | None = None
+    state: str | None = Field(None, max_length=2)
+    address: str | None = None
     vacancies: int = Field(default=1, ge=1)
     is_urgent: bool = False
     is_confidential: bool = False
-    deadline_date: Optional[date] = None
-    expected_start_date: Optional[date] = None
-    selection_stages: Optional[List[dict]] = Field(default_factory=list)
+    deadline_date: date | None = None
+    expected_start_date: date | None = None
+    selection_stages: list[dict] | None = Field(default_factory=list)
 
 
 class JobPositionCreate(JobPositionBase):
     """Schema para criação de vaga."""
 
-    condominium_id: Optional[str] = None
-    recruiter_id: Optional[str] = None
-    hiring_manager_id: Optional[str] = None
-    created_by: Optional[str] = None
+    condominium_id: str | None = None
+    recruiter_id: str | None = None
+    hiring_manager_id: str | None = None
+    created_by: str | None = None
 
 
 class JobPositionUpdate(BaseModel):
     """Schema para atualização de vaga."""
 
-    title: Optional[str] = Field(None, min_length=3, max_length=200)
-    description: Optional[str] = None
-    position_type: Optional[PositionType] = None
-    position_level: Optional[PositionLevel] = None
-    department: Optional[Department] = None
-    status: Optional[PositionStatus] = None
-    requirements: Optional[str] = None
-    responsibilities: Optional[str] = None
-    required_skills: Optional[List[str]] = None
-    desired_skills: Optional[List[str]] = None
-    min_experience_years: Optional[int] = Field(None, ge=0)
-    education_level: Optional[str] = None
-    salary_min: Optional[Decimal] = Field(None, ge=0)
-    salary_max: Optional[Decimal] = Field(None, ge=0)
-    salary_display: Optional[bool] = None
-    benefits: Optional[List[str]] = None
-    work_model: Optional[WorkModel] = None
-    city: Optional[str] = None
-    state: Optional[str] = Field(None, max_length=2)
-    address: Optional[str] = None
-    vacancies: Optional[int] = Field(None, ge=1)
-    is_urgent: Optional[bool] = None
-    is_confidential: Optional[bool] = None
-    deadline_date: Optional[date] = None
-    expected_start_date: Optional[date] = None
-    selection_stages: Optional[List[dict]] = None
-    recruiter_id: Optional[str] = None
-    hiring_manager_id: Optional[str] = None
+    title: str | None = Field(None, min_length=3, max_length=200)
+    description: str | None = None
+    position_type: PositionType | None = None
+    position_level: PositionLevel | None = None
+    department: Department | None = None
+    status: PositionStatus | None = None
+    requirements: str | None = None
+    responsibilities: str | None = None
+    required_skills: list[str] | None = None
+    desired_skills: list[str] | None = None
+    min_experience_years: int | None = Field(None, ge=0)
+    education_level: str | None = None
+    salary_min: Decimal | None = Field(None, ge=0)
+    salary_max: Decimal | None = Field(None, ge=0)
+    salary_display: bool | None = None
+    benefits: list[str] | None = None
+    work_model: WorkModel | None = None
+    city: str | None = None
+    state: str | None = Field(None, max_length=2)
+    address: str | None = None
+    vacancies: int | None = Field(None, ge=1)
+    is_urgent: bool | None = None
+    is_confidential: bool | None = None
+    deadline_date: date | None = None
+    expected_start_date: date | None = None
+    selection_stages: list[dict] | None = None
+    recruiter_id: str | None = None
+    hiring_manager_id: str | None = None
 
 
 class JobPositionResponse(JobPositionBase):
@@ -95,17 +94,17 @@ class JobPositionResponse(JobPositionBase):
     id: str
     code: str
     status: PositionStatus
-    opening_date: Optional[date] = None
-    closed_at: Optional[datetime] = None
+    opening_date: date | None = None
+    closed_at: datetime | None = None
     filled_vacancies: int = 0
     applications_count: int = 0
     views_count: int = 0
-    recruiter_id: Optional[str] = None
-    hiring_manager_id: Optional[str] = None
-    condominium_id: Optional[str] = None
-    created_by: Optional[str] = None
+    recruiter_id: str | None = None
+    hiring_manager_id: str | None = None
+    condominium_id: str | None = None
+    created_by: str | None = None
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
 
     # Computed
     is_open: bool
@@ -118,7 +117,7 @@ class JobPositionResponse(JobPositionBase):
 class JobPositionListResponse(BaseModel):
     """Schema de lista de vagas."""
 
-    items: List[JobPositionResponse]
+    items: list[JobPositionResponse]
     total: int
     page: int
     page_size: int
@@ -128,20 +127,20 @@ class JobPositionListResponse(BaseModel):
 class JobPositionFilter(BaseModel):
     """Schema para filtro de vagas."""
 
-    status: Optional[PositionStatus] = None
-    position_type: Optional[PositionType] = None
-    position_level: Optional[PositionLevel] = None
-    department: Optional[Department] = None
-    work_model: Optional[WorkModel] = None
-    city: Optional[str] = None
-    state: Optional[str] = None
-    is_urgent: Optional[bool] = None
-    is_confidential: Optional[bool] = None
-    salary_min: Optional[Decimal] = None
-    salary_max: Optional[Decimal] = None
-    recruiter_id: Optional[str] = None
-    condominium_id: Optional[str] = None
-    search: Optional[str] = None
+    status: PositionStatus | None = None
+    position_type: PositionType | None = None
+    position_level: PositionLevel | None = None
+    department: Department | None = None
+    work_model: WorkModel | None = None
+    city: str | None = None
+    state: str | None = None
+    is_urgent: bool | None = None
+    is_confidential: bool | None = None
+    salary_min: Decimal | None = None
+    salary_max: Decimal | None = None
+    recruiter_id: str | None = None
+    condominium_id: str | None = None
+    search: str | None = None
 
 
 class JobPositionStats(BaseModel):
@@ -165,7 +164,7 @@ class JobPositionStats(BaseModel):
 class JobPositionPublish(BaseModel):
     """Schema para publicar vaga."""
 
-    channels: Optional[List[str]] = Field(default_factory=list)
+    channels: list[str] | None = Field(default_factory=list)
     post_to_linkedin: bool = False
     post_to_indeed: bool = False
     post_to_catho: bool = False
@@ -176,11 +175,11 @@ class SelectionStage(BaseModel):
     """Schema para etapa do processo seletivo."""
 
     name: str
-    description: Optional[str] = None
+    description: str | None = None
     order: int = 1
     stage_type: str = "interview"
     is_mandatory: bool = True
     is_eliminatory: bool = True
     weight: float = 1.0
     duration_days: int = 7
-    responsible_id: Optional[str] = None
+    responsible_id: str | None = None

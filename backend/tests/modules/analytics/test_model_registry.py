@@ -1,21 +1,21 @@
 """Testes para o Model Registry."""
 
-import pytest
 import tempfile
+from datetime import datetime
 from pathlib import Path
 from unittest.mock import MagicMock, patch
-from datetime import datetime
 
+import pytest
 from sklearn.linear_model import LogisticRegression
 
 from modules.analytics.ml.registry.model_registry import (
-    ModelRegistry,
-    ModelVersion,
+    ModelFramework,
     ModelMetadata,
     ModelMetrics,
+    ModelRegistry,
     ModelStage,
     ModelType,
-    ModelFramework,
+    ModelVersion,
 )
 
 
@@ -38,9 +38,10 @@ def sample_model():
     model = LogisticRegression()
     # Treinar com dados dummy
     import numpy as np
-    X = np.random.randn(100, 5)
+
+    x_features = np.random.randn(100, 5)
     y = np.random.randint(0, 2, 100)
-    model.fit(X, y)
+    model.fit(x_features, y)
     return model
 
 
@@ -145,14 +146,14 @@ class TestModelRegistration:
     ):
         """Deve permitir múltiplas versões."""
         # Act
-        v1 = registry.register_model(
+        registry.register_model(
             model=sample_model,
             name="test_model",
             version="1.0.0",
             model_type=ModelType.CLASSIFICATION,
             framework=ModelFramework.SKLEARN,
         )
-        v2 = registry.register_model(
+        registry.register_model(
             model=sample_model,
             name="test_model",
             version="2.0.0",
@@ -443,12 +444,8 @@ class TestModelDeletion:
         registry.promote_model("test_model", "1.0.0", ModelStage.PRODUCTION)
 
         # Act
-        success_without_force = registry.delete_version(
-            "test_model", "1.0.0", force=False
-        )
-        success_with_force = registry.delete_version(
-            "test_model", "1.0.0", force=True
-        )
+        success_without_force = registry.delete_version("test_model", "1.0.0", force=False)
+        success_with_force = registry.delete_version("test_model", "1.0.0", force=True)
 
         # Assert
         assert not success_without_force

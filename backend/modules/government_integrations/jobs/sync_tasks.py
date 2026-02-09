@@ -4,21 +4,18 @@ Tasks de Sincronização com Serviços Governamentais.
 Implementa tarefas Celery para extração automática.
 """
 
-from datetime import datetime, timedelta
-from typing import Dict, Optional, Any, List
-from uuid import UUID
 import asyncio
 import logging
+from datetime import datetime, timedelta
+from uuid import UUID
 
 from celery import shared_task
 
 from ..extractors.orchestrator import (
-    OrquestradorExtracao,
     ConfiguracaoExtracao,
     TipoServico,
     get_orchestrator,
 )
-from ..core.rate_limiting import TaskPriority
 
 logger = logging.getLogger(__name__)
 
@@ -43,8 +40,8 @@ def run_async(coro):
 def sincronizar_nfe(
     self,
     tenant_id: str,
-    cnpjs: Optional[List[str]] = None,
-    ufs: Optional[List[str]] = None,
+    cnpjs: list[str] | None = None,
+    ufs: list[str] | None = None,
     dias: int = 30,
 ):
     """
@@ -68,11 +65,7 @@ def sincronizar_nfe(
             modo_incremental=True,
         )
 
-        resultado = run_async(
-            get_orchestrator().iniciar_extracao(
-                UUID(tenant_id), config
-            )
-        )
+        resultado = run_async(get_orchestrator().iniciar_extracao(UUID(tenant_id), config))
 
         return resultado.to_dict()
 
@@ -91,8 +84,8 @@ def sincronizar_nfe(
 def sincronizar_esocial(
     self,
     tenant_id: str,
-    cnpjs: Optional[List[str]] = None,
-    competencia: Optional[str] = None,
+    cnpjs: list[str] | None = None,
+    competencia: str | None = None,
 ):
     """
     Sincroniza eventos do eSocial.
@@ -121,11 +114,7 @@ def sincronizar_esocial(
             modo_incremental=True,
         )
 
-        resultado = run_async(
-            get_orchestrator().iniciar_extracao(
-                UUID(tenant_id), config
-            )
-        )
+        resultado = run_async(get_orchestrator().iniciar_extracao(UUID(tenant_id), config))
 
         return resultado.to_dict()
 
@@ -144,8 +133,8 @@ def sincronizar_esocial(
 def sincronizar_fgts(
     self,
     tenant_id: str,
-    cnpjs: Optional[List[str]] = None,
-    competencias: Optional[List[str]] = None,
+    cnpjs: list[str] | None = None,
+    competencias: list[str] | None = None,
 ):
     """
     Sincroniza guias do FGTS Digital.
@@ -175,11 +164,7 @@ def sincronizar_fgts(
             modo_incremental=True,
         )
 
-        resultado = run_async(
-            get_orchestrator().iniciar_extracao(
-                UUID(tenant_id), config
-            )
-        )
+        resultado = run_async(get_orchestrator().iniciar_extracao(UUID(tenant_id), config))
 
         return resultado.to_dict()
 
@@ -198,7 +183,7 @@ def sincronizar_fgts(
 def sincronizar_nfse(
     self,
     tenant_id: str,
-    cnpjs: Optional[List[str]] = None,
+    cnpjs: list[str] | None = None,
     dias: int = 30,
 ):
     """
@@ -220,11 +205,7 @@ def sincronizar_nfse(
             modo_incremental=True,
         )
 
-        resultado = run_async(
-            get_orchestrator().iniciar_extracao(
-                UUID(tenant_id), config
-            )
-        )
+        resultado = run_async(get_orchestrator().iniciar_extracao(UUID(tenant_id), config))
 
         return resultado.to_dict()
 
@@ -243,7 +224,7 @@ def sincronizar_nfse(
 def sincronizar_rfb(
     self,
     tenant_id: str,
-    cnpjs: List[str],
+    cnpjs: list[str],
 ):
     """
     Sincroniza dados da Receita Federal.
@@ -261,11 +242,7 @@ def sincronizar_rfb(
             modo_incremental=False,  # Sempre consulta completa
         )
 
-        resultado = run_async(
-            get_orchestrator().iniciar_extracao(
-                UUID(tenant_id), config
-            )
-        )
+        resultado = run_async(get_orchestrator().iniciar_extracao(UUID(tenant_id), config))
 
         return resultado.to_dict()
 
@@ -285,8 +262,8 @@ def sincronizar_rfb(
 def sincronizar_todos(
     self,
     tenant_id: str,
-    cnpjs: Optional[List[str]] = None,
-    servicos: Optional[List[str]] = None,
+    cnpjs: list[str] | None = None,
+    servicos: list[str] | None = None,
 ):
     """
     Sincroniza todos os serviços governamentais.
@@ -301,10 +278,7 @@ def sincronizar_todos(
     try:
         # Mapear serviços
         if servicos:
-            tipos_servico = [
-                TipoServico(s) for s in servicos
-                if s in [t.value for t in TipoServico]
-            ]
+            tipos_servico = [TipoServico(s) for s in servicos if s in [t.value for t in TipoServico]]
         else:
             tipos_servico = [
                 TipoServico.SEFAZ_NFE,
@@ -323,11 +297,7 @@ def sincronizar_todos(
             max_workers=3,
         )
 
-        resultado = run_async(
-            get_orchestrator().iniciar_extracao(
-                UUID(tenant_id), config
-            )
-        )
+        resultado = run_async(get_orchestrator().iniciar_extracao(UUID(tenant_id), config))
 
         return resultado.to_dict()
 
@@ -337,6 +307,7 @@ def sincronizar_todos(
 
 
 # Tasks de batch para múltiplos tenants
+
 
 @shared_task(
     name="government_integrations.tasks.batch.sincronizar_todos_tenants",

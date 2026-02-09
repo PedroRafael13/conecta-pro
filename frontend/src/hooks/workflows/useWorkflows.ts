@@ -19,7 +19,6 @@ import type {
   WorkflowStatus,
   ListWorkflowsApiV1WorkflowsGetParams,
 } from '@/types/generated/workflows/conectaPROWorkflowsAPI.schemas';
-import { AxiosResponse } from 'axios';
 
 const WORKFLOW_KEYS = {
   all: ['workflows'] as const,
@@ -40,7 +39,7 @@ const WORKFLOW_KEYS = {
 export const useWorkflowList = (
   params: ListWorkflowsApiV1WorkflowsGetParams,
   options?: Omit<
-    UseQueryOptions<AxiosResponse<WorkflowResponse[]>>,
+    UseQueryOptions<Awaited<ReturnType<typeof WorkflowService.listWorkflows>>>,
     'queryKey' | 'queryFn'
   >
 ) => {
@@ -57,7 +56,7 @@ export const useWorkflowList = (
 export const useWorkflow = (
   workflowId: string,
   options?: Omit<
-    UseQueryOptions<AxiosResponse<WorkflowResponse>>,
+    UseQueryOptions<Awaited<ReturnType<typeof WorkflowService.getWorkflow>>>,
     'queryKey' | 'queryFn'
   >
 ) => {
@@ -74,7 +73,7 @@ export const useWorkflow = (
  */
 export const useCreateWorkflow = (
   options?: UseMutationOptions<
-    AxiosResponse<WorkflowResponse>,
+    Awaited<ReturnType<typeof WorkflowService.createWorkflow>>,
     Error,
     WorkflowCreate
   >
@@ -95,7 +94,7 @@ export const useCreateWorkflow = (
  */
 export const useUpdateWorkflow = (
   options?: UseMutationOptions<
-    AxiosResponse<WorkflowResponse>,
+    Awaited<ReturnType<typeof WorkflowService.updateWorkflow>>,
     Error,
     { workflowId: string; data: WorkflowUpdate }
   >
@@ -119,7 +118,11 @@ export const useUpdateWorkflow = (
  * Hook para deletar workflow
  */
 export const useDeleteWorkflow = (
-  options?: UseMutationOptions<AxiosResponse<void>, Error, string>
+  options?: UseMutationOptions<
+    Awaited<ReturnType<typeof WorkflowService.deleteWorkflow>>,
+    Error,
+    string
+  >
 ) => {
   const queryClient = useQueryClient();
 
@@ -138,7 +141,11 @@ export const useDeleteWorkflow = (
  * Hook para ativar workflow
  */
 export const useActivateWorkflow = (
-  options?: UseMutationOptions<AxiosResponse<WorkflowResponse>, Error, string>
+  options?: UseMutationOptions<
+    Awaited<ReturnType<typeof WorkflowService.activateWorkflow>>,
+    Error,
+    string
+  >
 ) => {
   const queryClient = useQueryClient();
 
@@ -160,7 +167,11 @@ export const useActivateWorkflow = (
  * Hook para desativar workflow
  */
 export const useDeactivateWorkflow = (
-  options?: UseMutationOptions<AxiosResponse<WorkflowResponse>, Error, string>
+  options?: UseMutationOptions<
+    Awaited<ReturnType<typeof WorkflowService.deactivateWorkflow>>,
+    Error,
+    string
+  >
 ) => {
   const queryClient = useQueryClient();
 
@@ -185,7 +196,7 @@ export const useWorkflowsByCategory = (
   tenantId: string,
   category: WorkflowCategory,
   options?: Omit<
-    UseQueryOptions<AxiosResponse<WorkflowResponse[]>>,
+    UseQueryOptions<Awaited<ReturnType<typeof WorkflowService.listWorkflows>>>,
     'queryKey' | 'queryFn'
   >
 ) => {
@@ -208,7 +219,7 @@ export const useWorkflowsByStatus = (
   tenantId: string,
   status: WorkflowStatus,
   options?: Omit<
-    UseQueryOptions<AxiosResponse<WorkflowResponse[]>>,
+    UseQueryOptions<Awaited<ReturnType<typeof WorkflowService.listWorkflows>>>,
     'queryKey' | 'queryFn'
   >
 ) => {
@@ -230,7 +241,7 @@ export const useWorkflowsByStatus = (
 export const useActiveWorkflows = (
   tenantId: string,
   options?: Omit<
-    UseQueryOptions<AxiosResponse<WorkflowResponse[]>>,
+    UseQueryOptions<Awaited<ReturnType<typeof WorkflowService.listWorkflows>>>,
     'queryKey' | 'queryFn'
   >
 ) => {

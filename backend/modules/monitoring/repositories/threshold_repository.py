@@ -2,7 +2,6 @@
 Repository para thresholds.
 """
 
-from typing import List, Optional
 from uuid import UUID
 
 from sqlalchemy import select
@@ -24,17 +23,17 @@ class ThresholdRepository:
         await self.db.refresh(threshold)
         return threshold
 
-    async def get_by_id(self, threshold_id: UUID) -> Optional[MetricThreshold]:
+    async def get_by_id(self, threshold_id: UUID) -> MetricThreshold | None:
         """Busca threshold por ID."""
         stmt = select(MetricThreshold).where(MetricThreshold.id == threshold_id)
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def get_by_metric_name(self, metric_name: str) -> Optional[MetricThreshold]:
+    async def get_by_metric_name(self, metric_name: str) -> MetricThreshold | None:
         """Busca threshold por nome da metrica."""
         stmt = select(MetricThreshold).where(
             MetricThreshold.metric_name == metric_name,
-            MetricThreshold.is_active == True,
+            MetricThreshold.is_active,
         )
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
@@ -42,13 +41,13 @@ class ThresholdRepository:
     async def get_all(
         self,
         enabled_only: bool = False,
-        category: Optional[str] = None,
-    ) -> List[MetricThreshold]:
+        category: str | None = None,
+    ) -> list[MetricThreshold]:
         """Busca todos os thresholds."""
-        stmt = select(MetricThreshold).where(MetricThreshold.is_active == True)
+        stmt = select(MetricThreshold).where(MetricThreshold.is_active)
 
         if enabled_only:
-            stmt = stmt.where(MetricThreshold.enabled == True)
+            stmt = stmt.where(MetricThreshold.enabled)
 
         if category:
             stmt = stmt.where(MetricThreshold.category == category)
@@ -58,17 +57,13 @@ class ThresholdRepository:
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
 
-    async def get_enabled(self) -> List[MetricThreshold]:
+    async def get_enabled(self) -> list[MetricThreshold]:
         """Busca thresholds habilitados."""
         return await self.get_all(enabled_only=True)
 
-    async def get_categories(self) -> List[str]:
+    async def get_categories(self) -> list[str]:
         """Retorna lista de categorias unicas."""
-        stmt = (
-            select(MetricThreshold.category)
-            .where(MetricThreshold.is_active == True)
-            .distinct()
-        )
+        stmt = select(MetricThreshold.category).where(MetricThreshold.is_active).distinct()
         result = await self.db.execute(stmt)
         return [row[0] for row in result.all()]
 

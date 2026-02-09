@@ -10,16 +10,16 @@ from fastapi import status
 from httpx import AsyncClient
 
 from modules.operacional.diaristas.models.diarist import (
+    AssignmentStatus,
     Diarist,
     DiaristAssignment,
-    DiaristSchedule,
-    DiaristPayment,
     DiaristEvaluation,
+    DiaristPayment,
+    DiaristSchedule,
     DiaristStatus,
     DiaristType,
-    AssignmentStatus,
-    ScheduleStatus,
     PaymentStatus,
+    ScheduleStatus,
     Weekday,
 )
 
@@ -118,9 +118,7 @@ class TestDiaristEndpoints:
             "telefone": "11888888888",
         }
 
-        with patch(
-            "modules.diarists.services.diarist_service.DiaristService.create_diarist"
-        ) as mock:
+        with patch("modules.diarists.services.diarist_service.DiaristService.create_diarist") as mock:
             mock.side_effect = ValueError("CPF 123.456.789-00 já cadastrado")
 
             response = await async_client.post(
@@ -134,9 +132,7 @@ class TestDiaristEndpoints:
     @pytest.mark.asyncio
     async def test_list_diarists(self, async_client: AsyncClient, user_token, mock_diarist):
         """Testa listagem de diaristas."""
-        with patch(
-            "modules.diarists.services.diarist_service.DiaristService.list_diarists"
-        ) as mock:
+        with patch("modules.diarists.services.diarist_service.DiaristService.list_diarists") as mock:
             mock.return_value = [mock_diarist]
 
             response = await async_client.get(
@@ -150,13 +146,9 @@ class TestDiaristEndpoints:
         assert len(data["items"]) >= 0
 
     @pytest.mark.asyncio
-    async def test_list_diarists_with_filters(
-        self, async_client: AsyncClient, user_token, mock_diarist
-    ):
+    async def test_list_diarists_with_filters(self, async_client: AsyncClient, user_token, mock_diarist):
         """Testa listagem de diaristas com filtros."""
-        with patch(
-            "modules.diarists.services.diarist_service.DiaristService.list_diarists"
-        ) as mock:
+        with patch("modules.diarists.services.diarist_service.DiaristService.list_diarists") as mock:
             mock.return_value = [mock_diarist]
 
             response = await async_client.get(
@@ -172,13 +164,9 @@ class TestDiaristEndpoints:
         assert response.status_code == status.HTTP_200_OK
 
     @pytest.mark.asyncio
-    async def test_get_diarist_by_id(
-        self, async_client: AsyncClient, user_token, mock_diarist
-    ):
+    async def test_get_diarist_by_id(self, async_client: AsyncClient, user_token, mock_diarist):
         """Testa busca de diarista por ID."""
-        with patch(
-            "modules.diarists.services.diarist_service.DiaristService.get_diarist"
-        ) as mock:
+        with patch("modules.diarists.services.diarist_service.DiaristService.get_diarist") as mock:
             mock.return_value = mock_diarist
 
             response = await async_client.get(
@@ -193,9 +181,7 @@ class TestDiaristEndpoints:
     @pytest.mark.asyncio
     async def test_get_diarist_not_found(self, async_client: AsyncClient, user_token):
         """Testa busca de diarista inexistente."""
-        with patch(
-            "modules.diarists.services.diarist_service.DiaristService.get_diarist"
-        ) as mock:
+        with patch("modules.diarists.services.diarist_service.DiaristService.get_diarist") as mock:
             mock.return_value = None
 
             response = await async_client.get(
@@ -206,15 +192,11 @@ class TestDiaristEndpoints:
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
     @pytest.mark.asyncio
-    async def test_update_diarist(
-        self, async_client: AsyncClient, admin_token, mock_diarist
-    ):
+    async def test_update_diarist(self, async_client: AsyncClient, admin_token, mock_diarist):
         """Testa atualização de diarista."""
         update_data = {"telefone": "11777777777", "valor_hora": 30.00}
 
-        with patch(
-            "modules.diarists.services.diarist_service.DiaristService.update_diarist"
-        ) as mock:
+        with patch("modules.diarists.services.diarist_service.DiaristService.update_diarist") as mock:
             mock_diarist.telefone = update_data["telefone"]
             mock_diarist.valor_hora = Decimal(str(update_data["valor_hora"]))
             mock.return_value = mock_diarist
@@ -228,13 +210,9 @@ class TestDiaristEndpoints:
         assert response.status_code == status.HTTP_200_OK
 
     @pytest.mark.asyncio
-    async def test_activate_diarist(
-        self, async_client: AsyncClient, admin_token, mock_diarist
-    ):
+    async def test_activate_diarist(self, async_client: AsyncClient, admin_token, mock_diarist):
         """Testa ativação de diarista."""
-        with patch(
-            "modules.diarists.services.diarist_service.DiaristService.activate_diarist"
-        ) as mock:
+        with patch("modules.diarists.services.diarist_service.DiaristService.activate_diarist") as mock:
             mock_diarist.status = DiaristStatus.ATIVO
             mock.return_value = mock_diarist
 
@@ -250,9 +228,7 @@ class TestDiaristEndpoints:
         """Testa remoção de diarista."""
         diarist_id = uuid4()
 
-        with patch(
-            "modules.diarists.services.diarist_service.DiaristService.delete_diarist"
-        ) as mock:
+        with patch("modules.diarists.services.diarist_service.DiaristService.delete_diarist") as mock:
             mock.return_value = True
 
             response = await async_client.delete(
@@ -267,9 +243,7 @@ class TestScheduleEndpoints:
     """Testes para endpoints de Agendamentos."""
 
     @pytest.mark.asyncio
-    async def test_create_schedule(
-        self, async_client: AsyncClient, admin_token, mock_schedule
-    ):
+    async def test_create_schedule(self, async_client: AsyncClient, admin_token, mock_schedule):
         """Testa criação de agendamento."""
         payload = {
             "diarist_id": str(uuid4()),
@@ -280,9 +254,7 @@ class TestScheduleEndpoints:
             "valor_previsto": 180.00,
         }
 
-        with patch(
-            "modules.diarists.services.diarist_service.DiaristService.create_schedule"
-        ) as mock:
+        with patch("modules.diarists.services.diarist_service.DiaristService.create_schedule") as mock:
             mock.return_value = mock_schedule
 
             response = await async_client.post(
@@ -294,13 +266,9 @@ class TestScheduleEndpoints:
         assert response.status_code == status.HTTP_201_CREATED
 
     @pytest.mark.asyncio
-    async def test_list_schedules(
-        self, async_client: AsyncClient, user_token, mock_schedule
-    ):
+    async def test_list_schedules(self, async_client: AsyncClient, user_token, mock_schedule):
         """Testa listagem de agendamentos."""
-        with patch(
-            "modules.diarists.services.diarist_service.DiaristService.list_schedules"
-        ) as mock:
+        with patch("modules.diarists.services.diarist_service.DiaristService.list_schedules") as mock:
             mock.return_value = [mock_schedule]
 
             response = await async_client.get(
@@ -311,13 +279,9 @@ class TestScheduleEndpoints:
         assert response.status_code == status.HTTP_200_OK
 
     @pytest.mark.asyncio
-    async def test_get_today_schedules(
-        self, async_client: AsyncClient, user_token, mock_schedule
-    ):
+    async def test_get_today_schedules(self, async_client: AsyncClient, user_token, mock_schedule):
         """Testa busca de agendamentos de hoje."""
-        with patch(
-            "modules.diarists.services.diarist_service.DiaristService.get_today_schedules"
-        ) as mock:
+        with patch("modules.diarists.services.diarist_service.DiaristService.get_today_schedules") as mock:
             mock.return_value = [mock_schedule]
 
             response = await async_client.get(
@@ -328,13 +292,9 @@ class TestScheduleEndpoints:
         assert response.status_code == status.HTTP_200_OK
 
     @pytest.mark.asyncio
-    async def test_confirm_schedule(
-        self, async_client: AsyncClient, admin_token, mock_schedule
-    ):
+    async def test_confirm_schedule(self, async_client: AsyncClient, admin_token, mock_schedule):
         """Testa confirmação de agendamento."""
-        with patch(
-            "modules.diarists.services.diarist_service.DiaristService.confirm_schedule"
-        ) as mock:
+        with patch("modules.diarists.services.diarist_service.DiaristService.confirm_schedule") as mock:
             mock_schedule.status = ScheduleStatus.CONFIRMADO
             mock.return_value = mock_schedule
 
@@ -355,9 +315,7 @@ class TestScheduleEndpoints:
             "longitude": -46.6333,
         }
 
-        with patch(
-            "modules.diarists.services.diarist_service.DiaristService.register_checkin"
-        ) as mock:
+        with patch("modules.diarists.services.diarist_service.DiaristService.register_checkin") as mock:
             mock_schedule.status = ScheduleStatus.EM_ANDAMENTO
             mock.return_value = mock_schedule
 
@@ -370,18 +328,14 @@ class TestScheduleEndpoints:
         assert response.status_code == status.HTTP_200_OK
 
     @pytest.mark.asyncio
-    async def test_register_checkout(
-        self, async_client: AsyncClient, admin_token, mock_schedule
-    ):
+    async def test_register_checkout(self, async_client: AsyncClient, admin_token, mock_schedule):
         """Testa registro de check-out."""
         payload = {
             "schedule_id": str(mock_schedule.id),
             "hora_checkout": "2025-01-01T16:10:00",
         }
 
-        with patch(
-            "modules.diarists.services.diarist_service.DiaristService.register_checkout"
-        ) as mock:
+        with patch("modules.diarists.services.diarist_service.DiaristService.register_checkout") as mock:
             mock_schedule.status = ScheduleStatus.CONCLUIDO
             mock.return_value = mock_schedule
 
@@ -423,9 +377,7 @@ class TestPaymentEndpoints:
             status=PaymentStatus.PENDENTE,
         )
 
-        with patch(
-            "modules.diarists.services.diarist_service.DiaristService.create_payment"
-        ) as mock:
+        with patch("modules.diarists.services.diarist_service.DiaristService.create_payment") as mock:
             mock.return_value = mock_payment
 
             response = await async_client.post(
@@ -439,9 +391,7 @@ class TestPaymentEndpoints:
     @pytest.mark.asyncio
     async def test_list_pending_payments(self, async_client: AsyncClient, user_token):
         """Testa listagem de pagamentos pendentes."""
-        with patch(
-            "modules.diarists.services.diarist_service.DiaristService.get_pending_payments"
-        ) as mock:
+        with patch("modules.diarists.services.diarist_service.DiaristService.get_pending_payments") as mock:
             mock.return_value = []
 
             response = await async_client.get(
@@ -467,9 +417,7 @@ class TestPaymentEndpoints:
             data_pagamento=date.today(),
         )
 
-        with patch(
-            "modules.diarists.services.diarist_service.DiaristService.process_payment"
-        ) as mock:
+        with patch("modules.diarists.services.diarist_service.DiaristService.process_payment") as mock:
             mock.return_value = mock_payment
 
             response = await async_client.post(
@@ -509,9 +457,7 @@ class TestEvaluationEndpoints:
             nota_geral=5,
         )
 
-        with patch(
-            "modules.diarists.services.diarist_service.DiaristService.create_evaluation"
-        ) as mock:
+        with patch("modules.diarists.services.diarist_service.DiaristService.create_evaluation") as mock:
             mock.return_value = mock_evaluation
 
             response = await async_client.post(
@@ -525,9 +471,7 @@ class TestEvaluationEndpoints:
     @pytest.mark.asyncio
     async def test_list_evaluations(self, async_client: AsyncClient, user_token):
         """Testa listagem de avaliações."""
-        with patch(
-            "modules.diarists.services.diarist_service.DiaristService.list_evaluations"
-        ) as mock:
+        with patch("modules.diarists.services.diarist_service.DiaristService.list_evaluations") as mock:
             mock.return_value = []
 
             response = await async_client.get(
@@ -544,9 +488,7 @@ class TestAIEndpoints:
     @pytest.mark.asyncio
     async def test_suggest_diarists(self, async_client: AsyncClient, user_token):
         """Testa sugestão de diaristas por IA."""
-        with patch(
-            "modules.diarists.services.diarist_ai_service.DiaristAIService.suggest_diarists"
-        ) as mock:
+        with patch("modules.diarists.services.diarist_ai_service.DiaristAIService.suggest_diarists") as mock:
             mock.return_value = MagicMock(
                 data=date.today(),
                 tipo_servico=None,
@@ -569,9 +511,7 @@ class TestAIEndpoints:
     @pytest.mark.asyncio
     async def test_analyze_availability(self, async_client: AsyncClient, user_token):
         """Testa análise de disponibilidade por IA."""
-        with patch(
-            "modules.diarists.services.diarist_ai_service.DiaristAIService.analyze_availability"
-        ) as mock:
+        with patch("modules.diarists.services.diarist_ai_service.DiaristAIService.analyze_availability") as mock:
             mock.return_value = MagicMock(
                 periodo={"inicio": date.today(), "fim": date.today() + timedelta(days=7)},
                 analise_diaria=[],
@@ -596,9 +536,7 @@ class TestAIEndpoints:
         """Testa análise de performance por IA."""
         diarist_id = uuid4()
 
-        with patch(
-            "modules.diarists.services.diarist_ai_service.DiaristAIService.analyze_performance"
-        ) as mock:
+        with patch("modules.diarists.services.diarist_ai_service.DiaristAIService.analyze_performance") as mock:
             mock.return_value = MagicMock(
                 diarist_id=str(diarist_id),
                 nome="Maria Silva",
@@ -620,9 +558,7 @@ class TestAIEndpoints:
     @pytest.mark.asyncio
     async def test_optimize_schedule(self, async_client: AsyncClient, user_token):
         """Testa otimização de agendamentos por IA."""
-        with patch(
-            "modules.diarists.services.diarist_ai_service.DiaristAIService.optimize_schedule"
-        ) as mock:
+        with patch("modules.diarists.services.diarist_ai_service.DiaristAIService.optimize_schedule") as mock:
             mock.return_value = MagicMock(
                 periodo={},
                 condominio_id=str(uuid4()),
@@ -653,9 +589,7 @@ class TestStatisticsEndpoints:
         """Testa estatísticas do condomínio."""
         condominio_id = uuid4()
 
-        with patch(
-            "modules.diarists.services.diarist_service.DiaristService.get_condominio_statistics"
-        ) as mock:
+        with patch("modules.diarists.services.diarist_service.DiaristService.get_condominio_statistics") as mock:
             mock.return_value = {
                 "total_diaristas": 5,
                 "agendamentos": {"total": 50, "concluidos": 45},
@@ -673,9 +607,7 @@ class TestStatisticsEndpoints:
     @pytest.mark.asyncio
     async def test_get_top_diarists(self, async_client: AsyncClient, user_token):
         """Testa ranking de diaristas."""
-        with patch(
-            "modules.diarists.services.diarist_service.DiaristService.get_top_diarists"
-        ) as mock:
+        with patch("modules.diarists.services.diarist_service.DiaristService.get_top_diarists") as mock:
             mock.return_value = []
 
             response = await async_client.get(
@@ -688,9 +620,7 @@ class TestStatisticsEndpoints:
     @pytest.mark.asyncio
     async def test_get_available_diarists(self, async_client: AsyncClient, user_token):
         """Testa busca de diaristas disponíveis."""
-        with patch(
-            "modules.diarists.services.diarist_service.DiaristService.get_available_diarists"
-        ) as mock:
+        with patch("modules.diarists.services.diarist_service.DiaristService.get_available_diarists") as mock:
             mock.return_value = []
 
             response = await async_client.get(

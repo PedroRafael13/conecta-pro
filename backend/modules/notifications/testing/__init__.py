@@ -3,9 +3,9 @@
 from modules.notifications.testing.ab_testing_engine import (
     ABTestingEngine,
     Experiment,
+    ExperimentResult,
     ExperimentStatus,
     ExperimentVariant,
-    ExperimentResult,
     StatisticalSignificance,
 )
 

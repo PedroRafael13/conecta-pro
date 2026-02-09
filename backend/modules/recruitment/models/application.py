@@ -1,32 +1,32 @@
 """Model Application - Candidaturas."""
 
-import enum
 from datetime import datetime
-from typing import Optional, List, TYPE_CHECKING
+from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
-    String,
-    Text,
+    JSON,
     Boolean,
     DateTime,
-    Integer,
     Enum,
     ForeignKey,
-    JSON,
+    Integer,
+    String,
+    Text,
 )
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship, Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from core.database import Base
-from core.models import TimestampMixin, SoftDeleteMixin
+from core.models import SoftDeleteMixin, TimestampMixin
 
 if TYPE_CHECKING:
-    from .job_position import JobPosition
     from .candidate import Candidate
     from .interview import Interview
+    from .job_position import JobPosition
 
 
-class ApplicationStatus(str, enum.Enum):
+class ApplicationStatus(StrEnum):
     """Status da candidatura."""
 
     INSCRITO = "inscrito"
@@ -45,7 +45,7 @@ class ApplicationStatus(str, enum.Enum):
     BANCO_TALENTOS = "banco_talentos"
 
 
-class RejectionReason(str, enum.Enum):
+class RejectionReason(StrEnum):
     """Motivo de reprovação."""
 
     PERFIL_INADEQUADO = "perfil_inadequado"
@@ -84,80 +84,68 @@ class Application(Base, TimestampMixin, SoftDeleteMixin):
     )
 
     # Status
-    status: Mapped[ApplicationStatus] = mapped_column(
-        Enum(ApplicationStatus), default=ApplicationStatus.INSCRITO
-    )
+    status: Mapped[ApplicationStatus] = mapped_column(Enum(ApplicationStatus), default=ApplicationStatus.INSCRITO)
     current_stage: Mapped[int] = mapped_column(Integer, default=1)
-    current_stage_name: Mapped[Optional[str]] = mapped_column(String(100))
+    current_stage_name: Mapped[str | None] = mapped_column(String(100))
 
     # Scores
     matching_score: Mapped[int] = mapped_column(Integer, default=0)
-    interview_score: Mapped[Optional[int]] = mapped_column(Integer)
-    test_score: Mapped[Optional[int]] = mapped_column(Integer)
-    final_score: Mapped[Optional[int]] = mapped_column(Integer)
+    interview_score: Mapped[int | None] = mapped_column(Integer)
+    test_score: Mapped[int | None] = mapped_column(Integer)
+    final_score: Mapped[int | None] = mapped_column(Integer)
 
     # Ranking
-    ranking_position: Mapped[Optional[int]] = mapped_column(Integer)
+    ranking_position: Mapped[int | None] = mapped_column(Integer)
     is_favorite: Mapped[bool] = mapped_column(Boolean, default=False)
     is_shortlisted: Mapped[bool] = mapped_column(Boolean, default=False)
 
     # Carta de apresentação
-    cover_letter: Mapped[Optional[str]] = mapped_column(Text)
+    cover_letter: Mapped[str | None] = mapped_column(Text)
 
     # Respostas a perguntas
-    screening_answers: Mapped[Optional[List[dict]]] = mapped_column(JSON, default=list)
+    screening_answers: Mapped[list[dict] | None] = mapped_column(JSON, default=list)
 
     # Histórico de status
-    status_history: Mapped[Optional[List[dict]]] = mapped_column(JSON, default=list)
+    status_history: Mapped[list[dict] | None] = mapped_column(JSON, default=list)
 
     # Notas e feedback
-    recruiter_notes: Mapped[Optional[str]] = mapped_column(Text)
-    hiring_manager_notes: Mapped[Optional[str]] = mapped_column(Text)
-    feedback: Mapped[Optional[str]] = mapped_column(Text)
+    recruiter_notes: Mapped[str | None] = mapped_column(Text)
+    hiring_manager_notes: Mapped[str | None] = mapped_column(Text)
+    feedback: Mapped[str | None] = mapped_column(Text)
 
     # Reprovação
-    rejection_reason: Mapped[Optional[RejectionReason]] = mapped_column(
-        Enum(RejectionReason)
-    )
-    rejection_details: Mapped[Optional[str]] = mapped_column(Text)
-    rejected_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    rejected_by: Mapped[Optional[str]] = mapped_column(UUID(as_uuid=False))
+    rejection_reason: Mapped[RejectionReason | None] = mapped_column(Enum(RejectionReason))
+    rejection_details: Mapped[str | None] = mapped_column(Text)
+    rejected_at: Mapped[datetime | None] = mapped_column(DateTime)
+    rejected_by: Mapped[str | None] = mapped_column(UUID(as_uuid=False))
 
     # Proposta
-    proposal_sent_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    proposal_amount: Mapped[Optional[int]] = mapped_column(Integer)
-    proposal_response_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    proposal_accepted: Mapped[Optional[bool]] = mapped_column(Boolean)
+    proposal_sent_at: Mapped[datetime | None] = mapped_column(DateTime)
+    proposal_amount: Mapped[int | None] = mapped_column(Integer)
+    proposal_response_at: Mapped[datetime | None] = mapped_column(DateTime)
+    proposal_accepted: Mapped[bool | None] = mapped_column(Boolean)
 
     # Contratação
-    hired_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    start_date: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    hired_at: Mapped[datetime | None] = mapped_column(DateTime)
+    start_date: Mapped[datetime | None] = mapped_column(DateTime)
 
     # Datas importantes
-    applied_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow
-    )
-    last_update_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    viewed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    applied_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    last_update_at: Mapped[datetime | None] = mapped_column(DateTime)
+    viewed_at: Mapped[datetime | None] = mapped_column(DateTime)
 
     # Referência interna
-    referral_employee_id: Mapped[Optional[str]] = mapped_column(UUID(as_uuid=False))
-    referral_notes: Mapped[Optional[str]] = mapped_column(Text)
+    referral_employee_id: Mapped[str | None] = mapped_column(UUID(as_uuid=False))
+    referral_notes: Mapped[str | None] = mapped_column(Text)
 
     # Responsáveis
-    assigned_recruiter_id: Mapped[Optional[str]] = mapped_column(UUID(as_uuid=False))
-    created_by: Mapped[Optional[str]] = mapped_column(UUID(as_uuid=False))
+    assigned_recruiter_id: Mapped[str | None] = mapped_column(UUID(as_uuid=False))
+    created_by: Mapped[str | None] = mapped_column(UUID(as_uuid=False))
 
     # Relationships
-    job_position: Mapped["JobPosition"] = relationship(
-        "JobPosition", back_populates="applications"
-    )
-    candidate: Mapped["Candidate"] = relationship(
-        "Candidate", back_populates="applications"
-    )
-    interviews: Mapped[List["Interview"]] = relationship(
-        "Interview", back_populates="application", lazy="dynamic"
-    )
+    job_position: Mapped["JobPosition"] = relationship("JobPosition", back_populates="applications")
+    candidate: Mapped["Candidate"] = relationship("Candidate", back_populates="applications")
+    interviews: Mapped[list["Interview"]] = relationship("Interview", back_populates="application", lazy="dynamic")
 
     def __repr__(self) -> str:
         return f"<Application {self.id}: {self.status.value}>"
@@ -217,9 +205,7 @@ class Application(Base, TimestampMixin, SoftDeleteMixin):
         self.current_stage_name = new_status.value
         self.last_update_at = datetime.utcnow()
 
-    def reject(
-        self, reason: RejectionReason, details: str = None, rejected_by: str = None
-    ) -> None:
+    def reject(self, reason: RejectionReason, details: str = None, rejected_by: str = None) -> None:
         """Reprova candidatura."""
         self._add_status_history(f"Reprovado: {reason.value}")
         self.status = ApplicationStatus.REPROVADO
@@ -320,9 +306,7 @@ class Application(Base, TimestampMixin, SoftDeleteMixin):
 
         if scores:
             total_weight = sum(weights[: len(scores)])
-            self.final_score = int(
-                sum(s * w for s, w in zip(scores, weights)) / total_weight
-            )
+            self.final_score = int(sum(s * w for s, w in zip(scores, weights, strict=False)) / total_weight)
 
     def _add_status_history(self, notes: str = None) -> None:
         """Adiciona ao histórico de status."""

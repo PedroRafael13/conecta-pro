@@ -1,26 +1,27 @@
 """Testes para models do módulo Mobile Time Clock."""
 
-import pytest
 from datetime import datetime, time, timedelta
 from uuid import uuid4
 
+import pytest
+
 from modules.hr.mobile_time_clock.models import (
-    MobileDevice,
-    MobileCheckIn,
-    GeofenceZone,
-    OfflineQueue,
+    BiometricCapability,
+    CheckInStatus,
+    CheckInType,
     DevicePlatform,
     DeviceStatus,
-    BiometricCapability,
-    CheckInType,
-    CheckInStatus,
-    ValidationMethod,
+    GeofenceZone,
     LocationAccuracy,
-    ZoneType,
+    MobileCheckIn,
+    MobileDevice,
+    OfflineQueue,
+    QueuePriority,
+    QueueStatus,
+    ValidationMethod,
     ZoneCategory,
     ZoneStatus,
-    QueueStatus,
-    QueuePriority,
+    ZoneType,
 )
 
 

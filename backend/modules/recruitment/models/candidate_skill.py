@@ -1,20 +1,20 @@
 """Model CandidateSkill - Habilidades do candidato."""
 
-import enum
 from datetime import datetime
-from typing import Optional, TYPE_CHECKING
+from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
-    String,
-    Text,
     Boolean,
     DateTime,
-    Integer,
     Enum,
     ForeignKey,
+    Integer,
+    String,
+    Text,
 )
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship, Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from core.database import Base
 from core.models import TimestampMixin
@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     from .candidate import Candidate
 
 
-class SkillCategory(str, enum.Enum):
+class SkillCategory(StrEnum):
     """Categoria da habilidade."""
 
     TECNICA = "tecnica"
@@ -36,7 +36,7 @@ class SkillCategory(str, enum.Enum):
     OUTRO = "outro"
 
 
-class SkillLevel(str, enum.Enum):
+class SkillLevel(StrEnum):
     """Nível da habilidade."""
 
     BASICO = "basico"
@@ -65,42 +65,36 @@ class CandidateSkill(Base, TimestampMixin):
 
     # Habilidade
     name: Mapped[str] = mapped_column(String(100), nullable=False)
-    category: Mapped[SkillCategory] = mapped_column(
-        Enum(SkillCategory), default=SkillCategory.TECNICA
-    )
-    level: Mapped[SkillLevel] = mapped_column(
-        Enum(SkillLevel), default=SkillLevel.INTERMEDIARIO
-    )
+    category: Mapped[SkillCategory] = mapped_column(Enum(SkillCategory), default=SkillCategory.TECNICA)
+    level: Mapped[SkillLevel] = mapped_column(Enum(SkillLevel), default=SkillLevel.INTERMEDIARIO)
 
     # Experiência
-    years_experience: Mapped[Optional[int]] = mapped_column(Integer)
-    months_experience: Mapped[Optional[int]] = mapped_column(Integer)
-    last_used_year: Mapped[Optional[int]] = mapped_column(Integer)
+    years_experience: Mapped[int | None] = mapped_column(Integer)
+    months_experience: Mapped[int | None] = mapped_column(Integer)
+    last_used_year: Mapped[int | None] = mapped_column(Integer)
 
     # Certificação
     is_certified: Mapped[bool] = mapped_column(Boolean, default=False)
-    certification_name: Mapped[Optional[str]] = mapped_column(String(200))
-    certification_issuer: Mapped[Optional[str]] = mapped_column(String(200))
-    certification_date: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    certification_expiry: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    certification_url: Mapped[Optional[str]] = mapped_column(String(500))
+    certification_name: Mapped[str | None] = mapped_column(String(200))
+    certification_issuer: Mapped[str | None] = mapped_column(String(200))
+    certification_date: Mapped[datetime | None] = mapped_column(DateTime)
+    certification_expiry: Mapped[datetime | None] = mapped_column(DateTime)
+    certification_url: Mapped[str | None] = mapped_column(String(500))
 
     # Validação
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
-    verified_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    verified_by: Mapped[Optional[str]] = mapped_column(UUID(as_uuid=False))
+    verified_at: Mapped[datetime | None] = mapped_column(DateTime)
+    verified_by: Mapped[str | None] = mapped_column(UUID(as_uuid=False))
 
     # Notas
-    notes: Mapped[Optional[str]] = mapped_column(Text)
+    notes: Mapped[str | None] = mapped_column(Text)
 
     # Status
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     is_primary: Mapped[bool] = mapped_column(Boolean, default=False)
 
     # Relationship
-    candidate: Mapped["Candidate"] = relationship(
-        "Candidate", back_populates="skills"
-    )
+    candidate: Mapped["Candidate"] = relationship("Candidate", back_populates="skills")
 
     def __repr__(self) -> str:
         return f"<CandidateSkill {self.name}: {self.level.value}>"

@@ -36,79 +36,79 @@ audit_router.include_router(audit_controller_router)
 router = audit_router
 
 # Re-export models principais
-from modules.audit.models import (
-    # AuditLog
-    AuditLog,
+from modules.audit.models import (  # noqa: E402
+    # AccessHistory
+    AccessHistory,
+    AccessResult,
+    AccessType,
     AuditAction,
     AuditCategory,
-    AuditSeverity,
+    # AuditLog
+    AuditLog,
     AuditResult,
+    AuditSeverity,
+    CheckResult,
+    CheckStatus,
+    CheckType,
+    # ComplianceCheck
+    ComplianceCheck,
+    ComplianceFramework,
     # ComplianceRule
     ComplianceRule,
-    ComplianceFramework,
+    DataCategory,
+    # DataRetention
+    DataRetention,
+    DeviceType,
+    RetentionAction,
+    RetentionPeriod,
+    RetentionStatus,
+    RiskLevel,
     RuleCategory,
     RuleSeverity,
     RuleStatus,
-    # ComplianceCheck
-    ComplianceCheck,
-    CheckStatus,
-    CheckResult,
-    CheckType,
-    # DataRetention
-    DataRetention,
-    RetentionPeriod,
-    RetentionAction,
-    RetentionStatus,
-    DataCategory,
-    # AccessHistory
-    AccessHistory,
-    AccessType,
-    AccessResult,
-    DeviceType,
-    RiskLevel,
 )
 
-# Re-export services
-from modules.audit.services import AuditService
-
 # Re-export repositories
-from modules.audit.repositories import AuditRepository
+from modules.audit.repositories import AuditRepository  # noqa: E402
 
 # Re-export schemas principais
-from modules.audit.schemas import (
-    # AuditLog
-    AuditLogCreate,
-    AuditLogResponse,
-    AuditLogList,
-    AuditLogFilter,
-    AuditLogStats,
-    # ComplianceRule
-    ComplianceRuleCreate,
-    ComplianceRuleUpdate,
-    ComplianceRuleResponse,
-    ComplianceRuleList,
-    # ComplianceCheck
-    ComplianceCheckCreate,
-    ComplianceCheckUpdate,
-    ComplianceCheckResponse,
-    ComplianceCheckList,
-    # DataRetention
-    DataRetentionCreate,
-    DataRetentionUpdate,
-    DataRetentionResponse,
-    DataRetentionList,
-    DataRetentionExecution,
+from modules.audit.schemas import (  # noqa: E402
     # AccessHistory
     AccessHistoryCreate,
-    AccessHistoryResponse,
-    AccessHistoryList,
     AccessHistoryFilter,
+    AccessHistoryList,
+    AccessHistoryResponse,
     AccessHistoryStats,
     # Dashboard
     AuditDashboard,
+    # AuditLog
+    AuditLogCreate,
+    AuditLogFilter,
+    AuditLogList,
+    AuditLogResponse,
+    AuditLogStats,
+    # ComplianceCheck
+    ComplianceCheckCreate,
+    ComplianceCheckList,
+    ComplianceCheckResponse,
+    ComplianceCheckUpdate,
     ComplianceOverview,
+    # ComplianceRule
+    ComplianceRuleCreate,
+    ComplianceRuleList,
+    ComplianceRuleResponse,
+    ComplianceRuleUpdate,
+    # DataRetention
+    DataRetentionCreate,
+    DataRetentionExecution,
+    DataRetentionList,
+    DataRetentionResponse,
+    DataRetentionUpdate,
     SecurityOverview,
 )
+
+# Re-export services
+from modules.audit.services import AuditService  # noqa: E402
 
 __all__ = [
     # Router principal

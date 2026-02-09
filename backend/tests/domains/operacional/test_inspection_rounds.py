@@ -11,12 +11,10 @@ from uuid import uuid4
 import pytest
 from pydantic import ValidationError
 
-from modules.operacional.inspection_rounds.models.inspection_round import (
-    CheckpointStatus,
-    InspectionRoundStatus,
-)
+from modules.operacional.inspection_rounds.models.inspection_checkpoint import CheckpointStatus
+from modules.operacional.inspection_rounds.models.inspection_round import InspectionRoundStatus
 from modules.operacional.inspection_rounds.schemas.inspection_round_schemas import (
-    CheckpointCheck,
+    CheckpointCreate,
     InspectionRoundCreate,
     InspectionRoundUpdate,
     RegisterOccurrenceRequest,
@@ -67,7 +65,7 @@ class TestInspectionRoundSchemas:
             "notes": "Checkpoint verificado, tudo normal",
         }
 
-        checkpoint = CheckpointCheck(**checkpoint_data)
+        checkpoint = CheckpointCreate(**checkpoint_data)
 
         assert checkpoint.status == CheckpointStatus.OK
         assert "normal" in checkpoint.notes.lower()
@@ -82,7 +80,7 @@ class TestInspectionRoundSchemas:
         ]
 
         for status in statuses:
-            checkpoint = CheckpointCheck(
+            checkpoint = CheckpointCreate(
                 checkpoint_id=str(uuid4()),
                 checked_at=datetime.now().isoformat(),
                 status=status,
@@ -254,7 +252,7 @@ class TestInspectionRoundIntegration:
     def test_round_creates_occurrence_on_problem(self):
         """Testa que ronda pode criar ocorrência ao encontrar problema."""
         # Quando checkpoint tem status PROBLEMA, deve criar ocorrência
-        checkpoint = CheckpointCheck(
+        checkpoint = CheckpointCreate(
             checkpoint_id=str(uuid4()),
             checked_at=datetime.now().isoformat(),
             status=CheckpointStatus.PROBLEMA,

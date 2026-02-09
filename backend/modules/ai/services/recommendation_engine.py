@@ -6,7 +6,7 @@ Sprint 34 - AI Predictions.
 import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID
 
 from modules.ai.models.recommendation import (
@@ -70,7 +70,7 @@ class RecommendationEngine:
         target_entity_id: UUID,
         recommendation_type: RecommendationType,
         limit: int = 5,
-        context: Optional[dict] = None,
+        context: dict | None = None,
         algorithm: str = "hybrid",
     ) -> RecommendationResult:
         """Gera recomendacoes para uma entidade.
@@ -92,9 +92,7 @@ class RecommendationEngine:
         start_time = time.time()
 
         # Coleta features da entidade alvo
-        target_features = await self._get_entity_features(
-            tenant_id, target_entity_type, target_entity_id
-        )
+        target_features = await self._get_entity_features(tenant_id, target_entity_type, target_entity_id)
 
         # Gera candidatos baseado no tipo
         candidates = await self._generate_candidates(
@@ -321,7 +319,7 @@ class RecommendationEngine:
         target_entity_type: str,
         target_entity_id: UUID,
         recommendation_type: RecommendationType,
-        context: Optional[dict],
+        context: dict | None,
     ) -> list[dict]:
         """Gera candidatos para recomendacao.
 
@@ -454,7 +452,7 @@ class RecommendationEngine:
         candidates: list[dict],
         target_features: dict,
         algorithm: str,
-        context: Optional[dict],
+        context: dict | None,
     ) -> list[RecommendationItem]:
         """Pontua candidatos.
 
@@ -499,11 +497,7 @@ class RecommendationEngine:
             scored.append(
                 RecommendationItem(
                     entity_type=candidate["entity_type"],
-                    entity_id=(
-                        UUID(candidate["entity_id"])
-                        if "-" in candidate["entity_id"]
-                        else UUID(int=0)
-                    ),
+                    entity_id=(UUID(candidate["entity_id"]) if "-" in candidate["entity_id"] else UUID(int=0)),
                     entity_name=candidate["name"],
                     relevance_score=round(min(score, 1.0), 4),
                     confidence=round(0.7 + score * 0.2, 4),
@@ -568,7 +562,7 @@ class RecommendationEngine:
         self,
         candidate: dict,
         target_features: dict,
-        context: Optional[dict],
+        context: dict | None,
     ) -> float:
         """Calcula score baseado em regras.
 
@@ -735,8 +729,8 @@ class RecommendationEngine:
         self,
         recommendation_id: UUID,
         interaction_type: str,  # shown, clicked, accepted, rejected
-        feedback: Optional[str] = None,
-    ) -> Optional[Recommendation]:
+        feedback: str | None = None,
+    ) -> Recommendation | None:
         """Registra interacao com recomendacao.
 
         Args:
@@ -747,11 +741,7 @@ class RecommendationEngine:
         Returns:
             Recomendacao atualizada.
         """
-        recommendation = (
-            await self.db.query(Recommendation)
-            .filter(Recommendation.id == recommendation_id)
-            .first()
-        )
+        recommendation = await self.db.query(Recommendation).filter(Recommendation.id == recommendation_id).first()
 
         if not recommendation:
             return None
@@ -782,8 +772,8 @@ class RecommendationEngine:
         self,
         recommendation_id: UUID,
         conversion_value: float,
-        conversion_entity_id: Optional[UUID] = None,
-    ) -> Optional[Recommendation]:
+        conversion_entity_id: UUID | None = None,
+    ) -> Recommendation | None:
         """Registra conversao de recomendacao.
 
         Args:
@@ -794,11 +784,7 @@ class RecommendationEngine:
         Returns:
             Recomendacao atualizada.
         """
-        recommendation = (
-            await self.db.query(Recommendation)
-            .filter(Recommendation.id == recommendation_id)
-            .first()
-        )
+        recommendation = await self.db.query(Recommendation).filter(Recommendation.id == recommendation_id).first()
 
         if not recommendation:
             return None

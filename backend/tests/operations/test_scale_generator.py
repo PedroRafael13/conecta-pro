@@ -250,7 +250,7 @@ class TestShiftDistribution:
         )
 
         # Verificar que turnos foram distribuídos entre funcionários
-        employees_with_shifts = set(s.employee_id for s in shifts)
+        employees_with_shifts = {s.employee_id for s in shifts}
         assert len(employees_with_shifts) >= 1
 
     @pytest.fixture

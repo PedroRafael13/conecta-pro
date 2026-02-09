@@ -3,16 +3,13 @@ Service para integrações com eSocial.
 """
 
 import logging
-import sys
 from datetime import datetime
-from typing import Dict, Any, List
-
-
+from typing import Any
 
 # Imports relativos do módulo pai
 from modules.government_integrations.utils import (
-    get_esocial_transmitter,
     ESocialEnvironment,
+    get_esocial_transmitter,
 )
 
 logger = logging.getLogger(__name__)
@@ -22,7 +19,7 @@ class ESocialService:
     """Service para operações com eSocial."""
 
     # Eventos suportados
-    EVENTOS_SUPORTADOS: List[Dict[str, str]] = [
+    EVENTOS_SUPORTADOS: list[dict[str, str]] = [
         {
             "codigo": "S-2200",
             "nome": "Cadastramento Inicial do Vinculo e Admissao",
@@ -69,9 +66,9 @@ class ESocialService:
     def enviar_evento(
         tipo_evento: str,
         funcionario_id: str,
-        dados: Dict[str, Any],
+        dados: dict[str, Any],
         ambiente: str = "homologacao",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Envia evento para o eSocial.
 
@@ -113,7 +110,7 @@ class ESocialService:
         }
 
     @staticmethod
-    def consultar_status(protocolo: str) -> Dict[str, Any]:
+    def consultar_status(protocolo: str) -> dict[str, Any]:
         """
         Consulta status de evento eSocial.
 
@@ -138,7 +135,7 @@ class ESocialService:
         }
 
     @classmethod
-    def listar_eventos_suportados(cls) -> Dict[str, Any]:
+    def listar_eventos_suportados(cls) -> dict[str, Any]:
         """
         Lista eventos eSocial suportados.
 

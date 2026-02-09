@@ -2,21 +2,16 @@
 
 from datetime import date, datetime
 from decimal import Decimal
-from typing import List, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
-from modules.reimbursement.models.reimbursement_request import (
-    ApprovalLevel,
-    ReimbursementStatus,
+from modules.reimbursement.schemas.reimbursement_attachment import (
+    ReimbursementAttachmentResponse,
 )
 from modules.reimbursement.schemas.reimbursement_item import (
     ReimbursementItemCreate,
     ReimbursementItemResponse,
-)
-from modules.reimbursement.schemas.reimbursement_attachment import (
-    ReimbursementAttachmentResponse,
 )
 
 
@@ -24,18 +19,18 @@ class ReimbursementRequestBase(BaseModel):
     """Base schema para solicitação de reembolso."""
 
     title: str = Field(..., min_length=3, max_length=200)
-    description: Optional[str] = Field(None, max_length=2000)
+    description: str | None = Field(None, max_length=2000)
     expense_date_start: date
     expense_date_end: date
-    cost_center: Optional[str] = Field(None, max_length=50)
-    project: Optional[str] = Field(None, max_length=100)
-    notes: Optional[str] = None
+    cost_center: str | None = Field(None, max_length=50)
+    project: str | None = Field(None, max_length=100)
+    notes: str | None = None
 
     # Dados bancários (opcional na criação)
-    bank_code: Optional[str] = Field(None, max_length=10)
-    bank_agency: Optional[str] = Field(None, max_length=10)
-    bank_account: Optional[str] = Field(None, max_length=20)
-    pix_key: Optional[str] = Field(None, max_length=100)
+    bank_code: str | None = Field(None, max_length=10)
+    bank_agency: str | None = Field(None, max_length=10)
+    bank_account: str | None = Field(None, max_length=20)
+    pix_key: str | None = Field(None, max_length=100)
 
     @field_validator("expense_date_end")
     @classmethod
@@ -50,23 +45,23 @@ class ReimbursementRequestBase(BaseModel):
 class ReimbursementRequestCreate(ReimbursementRequestBase):
     """Schema para criação de solicitação de reembolso."""
 
-    items: Optional[List[ReimbursementItemCreate]] = Field(default_factory=list)
+    items: list[ReimbursementItemCreate] | None = Field(default_factory=list)
 
 
 class ReimbursementRequestUpdate(BaseModel):
     """Schema para atualização de solicitação de reembolso."""
 
-    title: Optional[str] = Field(None, min_length=3, max_length=200)
-    description: Optional[str] = Field(None, max_length=2000)
-    expense_date_start: Optional[date] = None
-    expense_date_end: Optional[date] = None
-    cost_center: Optional[str] = Field(None, max_length=50)
-    project: Optional[str] = Field(None, max_length=100)
-    notes: Optional[str] = None
-    bank_code: Optional[str] = Field(None, max_length=10)
-    bank_agency: Optional[str] = Field(None, max_length=10)
-    bank_account: Optional[str] = Field(None, max_length=20)
-    pix_key: Optional[str] = Field(None, max_length=100)
+    title: str | None = Field(None, min_length=3, max_length=200)
+    description: str | None = Field(None, max_length=2000)
+    expense_date_start: date | None = None
+    expense_date_end: date | None = None
+    cost_center: str | None = Field(None, max_length=50)
+    project: str | None = Field(None, max_length=100)
+    notes: str | None = None
+    bank_code: str | None = Field(None, max_length=10)
+    bank_agency: str | None = Field(None, max_length=10)
+    bank_account: str | None = Field(None, max_length=20)
+    pix_key: str | None = Field(None, max_length=100)
 
 
 class ReimbursementRequestResponse(BaseModel):
@@ -75,7 +70,7 @@ class ReimbursementRequestResponse(BaseModel):
     id: UUID
     code: str
     title: str
-    description: Optional[str]
+    description: str | None
     requester_id: UUID
     expense_date_start: date
     expense_date_end: date
@@ -83,28 +78,28 @@ class ReimbursementRequestResponse(BaseModel):
     approved_amount: Decimal
     paid_amount: Decimal
     status: str
-    approval_level: Optional[str]
-    submitted_at: Optional[datetime]
-    approved_by: Optional[UUID]
-    approved_at: Optional[datetime]
-    rejection_reason: Optional[str]
-    payable_account_id: Optional[UUID]
-    processed_at: Optional[datetime]
-    processed_by: Optional[UUID]
-    bank_code: Optional[str]
-    bank_agency: Optional[str]
-    bank_account: Optional[str]
-    pix_key: Optional[str]
-    cost_center: Optional[str]
-    project: Optional[str]
-    notes: Optional[str]
+    approval_level: str | None
+    submitted_at: datetime | None
+    approved_by: UUID | None
+    approved_at: datetime | None
+    rejection_reason: str | None
+    payable_account_id: UUID | None
+    processed_at: datetime | None
+    processed_by: UUID | None
+    bank_code: str | None
+    bank_agency: str | None
+    bank_account: str | None
+    pix_key: str | None
+    cost_center: str | None
+    project: str | None
+    notes: str | None
     created_at: datetime
     updated_at: datetime
     is_active: bool
 
     # Itens e anexos
-    items: List[ReimbursementItemResponse] = Field(default_factory=list)
-    attachments: List[ReimbursementAttachmentResponse] = Field(default_factory=list)
+    items: list[ReimbursementItemResponse] = Field(default_factory=list)
+    attachments: list[ReimbursementAttachmentResponse] = Field(default_factory=list)
 
     # Computed fields
     items_count: int = 0
@@ -129,9 +124,9 @@ class ReimbursementRequestListResponse(BaseModel):
     total_amount: Decimal
     approved_amount: Decimal
     status: str
-    approval_level: Optional[str]
-    submitted_at: Optional[datetime]
-    approved_at: Optional[datetime]
+    approval_level: str | None
+    submitted_at: datetime | None
+    approved_at: datetime | None
     items_count: int = 0
     attachments_count: int = 0
     can_edit: bool = False
@@ -145,16 +140,16 @@ class ReimbursementRequestListResponse(BaseModel):
 class ReimbursementRequestFilter(BaseModel):
     """Schema para filtros de listagem."""
 
-    status: Optional[str] = None
-    approval_level: Optional[str] = None
-    requester_id: Optional[UUID] = None
-    expense_date_start: Optional[date] = None
-    expense_date_end: Optional[date] = None
-    min_amount: Optional[Decimal] = None
-    max_amount: Optional[Decimal] = None
-    search: Optional[str] = None
-    cost_center: Optional[str] = None
-    project: Optional[str] = None
+    status: str | None = None
+    approval_level: str | None = None
+    requester_id: UUID | None = None
+    expense_date_start: date | None = None
+    expense_date_end: date | None = None
+    min_amount: Decimal | None = None
+    max_amount: Decimal | None = None
+    search: str | None = None
+    cost_center: str | None = None
+    project: str | None = None
 
 
 class ReimbursementRequestStats(BaseModel):
@@ -175,15 +170,15 @@ class ReimbursementRequestStats(BaseModel):
 class ReimbursementSubmitRequest(BaseModel):
     """Schema para submissão de solicitação."""
 
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class ReimbursementApproveRequest(BaseModel):
     """Schema para aprovação de solicitação."""
 
-    comments: Optional[str] = None
-    approved_items: Optional[List[UUID]] = None  # IDs dos itens a aprovar
-    rejected_items: Optional[dict] = None  # {item_id: reason}
+    comments: str | None = None
+    approved_items: list[UUID] | None = None  # IDs dos itens a aprovar
+    rejected_items: dict | None = None  # {item_id: reason}
 
 
 class ReimbursementRejectRequest(BaseModel):
@@ -201,14 +196,14 @@ class ReimbursementReturnRequest(BaseModel):
 class ReimbursementProcessRequest(BaseModel):
     """Schema para processamento (geração de conta a pagar)."""
 
-    due_date: Optional[date] = None  # Data de vencimento da conta a pagar
-    notes: Optional[str] = None
+    due_date: date | None = None  # Data de vencimento da conta a pagar
+    notes: str | None = None
 
 
 class PaginatedReimbursementResponse(BaseModel):
     """Schema para resposta paginada."""
 
-    items: List[ReimbursementRequestListResponse]
+    items: list[ReimbursementRequestListResponse]
     total: int
     page: int
     page_size: int

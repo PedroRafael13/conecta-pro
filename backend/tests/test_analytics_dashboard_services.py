@@ -1,30 +1,31 @@
 """Testes unitários para services do módulo Analytics Dashboard."""
 
-import pytest
 from datetime import datetime, timedelta
 from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
-from modules.hr.analytics_dashboard.services import (
-    KPICalculatorService,
-    MetricsAggregatorService,
-    ReportGeneratorService,
-    DashboardService,
-)
+import pytest
+
 from modules.hr.analytics_dashboard.models import (
-    KPIDefinition,
-    KPICategory,
-    KPIUnit,
-    KPIDirection,
     DashboardConfig,
     DashboardType,
     DashboardVisibility,
-    ScheduledReport,
-    ReportType,
-    ReportFormat,
-    ScheduleFrequency,
     DeliveryMethod,
+    KPICategory,
+    KPIDefinition,
+    KPIDirection,
+    KPIUnit,
+    ReportFormat,
+    ReportType,
+    ScheduledReport,
+    ScheduleFrequency,
+)
+from modules.hr.analytics_dashboard.services import (
+    DashboardService,
+    KPICalculatorService,
+    MetricsAggregatorService,
+    ReportGeneratorService,
 )
 
 
@@ -48,7 +49,7 @@ class TestKPICalculatorService:
         now = datetime.utcnow()
         period_start = now - timedelta(days=30)
 
-        with patch.object(service, '_calculate_absenteeism_rate', new_callable=AsyncMock) as mock_calc:
+        with patch.object(service, "_calculate_absenteeism_rate", new_callable=AsyncMock) as mock_calc:
             mock_calc.return_value = {
                 "value": Decimal("2.5"),
                 "trend": "down",
@@ -71,7 +72,7 @@ class TestKPICalculatorService:
         now = datetime.utcnow()
         period_start = now - timedelta(days=30)
 
-        with patch.object(service, '_calculate_punctuality_rate', new_callable=AsyncMock) as mock_calc:
+        with patch.object(service, "_calculate_punctuality_rate", new_callable=AsyncMock) as mock_calc:
             mock_calc.return_value = {
                 "value": Decimal("95.5"),
                 "trend": "up",
@@ -94,7 +95,7 @@ class TestKPICalculatorService:
         now = datetime.utcnow()
         period_start = now - timedelta(days=30)
 
-        with patch.object(service, '_calculate_overtime_hours', new_callable=AsyncMock) as mock_calc:
+        with patch.object(service, "_calculate_overtime_hours", new_callable=AsyncMock) as mock_calc:
             mock_calc.return_value = {
                 "value": Decimal("150.5"),
                 "trend": "up",
@@ -115,7 +116,7 @@ class TestKPICalculatorService:
         condominio_id = uuid4()
         kpi_codes = ["ABSENTEEISM_RATE", "PUNCTUALITY_RATE"]
 
-        with patch.object(service, 'calculate_kpi', new_callable=AsyncMock) as mock_calc:
+        with patch.object(service, "calculate_kpi", new_callable=AsyncMock) as mock_calc:
             mock_calc.side_effect = [
                 {"code": "ABSENTEEISM_RATE", "value": 2.5},
                 {"code": "PUNCTUALITY_RATE", "value": 95.0},
@@ -135,7 +136,7 @@ class TestKPICalculatorService:
         now = datetime.utcnow()
         period_start = now - timedelta(days=30)
 
-        with patch.object(service, 'get_kpi_history', new_callable=AsyncMock) as mock_history:
+        with patch.object(service, "get_kpi_history", new_callable=AsyncMock) as mock_history:
             mock_history.return_value = [
                 {"date": "2024-12-01", "value": 2.5},
                 {"date": "2024-12-02", "value": 2.3},
@@ -173,7 +174,7 @@ class TestMetricsAggregatorService:
         now = datetime.utcnow()
         period_start = now - timedelta(days=7)
 
-        with patch.object(service, 'aggregate_time_entries', new_callable=AsyncMock) as mock_agg:
+        with patch.object(service, "aggregate_time_entries", new_callable=AsyncMock) as mock_agg:
             mock_agg.return_value = {
                 "total_entries": 500,
                 "total_hours": 4000.0,
@@ -196,7 +197,7 @@ class TestMetricsAggregatorService:
         now = datetime.utcnow()
         period_start = now - timedelta(days=7)
 
-        with patch.object(service, 'aggregate_checkins', new_callable=AsyncMock) as mock_agg:
+        with patch.object(service, "aggregate_checkins", new_callable=AsyncMock) as mock_agg:
             mock_agg.return_value = {
                 "total_checkins": 1000,
                 "on_time": 950,
@@ -219,7 +220,7 @@ class TestMetricsAggregatorService:
         now = datetime.utcnow()
         period_start = now - timedelta(days=30)
 
-        with patch.object(service, 'aggregate_overtime', new_callable=AsyncMock) as mock_agg:
+        with patch.object(service, "aggregate_overtime", new_callable=AsyncMock) as mock_agg:
             mock_agg.return_value = {
                 "total_overtime_hours": 500.0,
                 "employees_with_overtime": 45,
@@ -241,7 +242,7 @@ class TestMetricsAggregatorService:
         now = datetime.utcnow()
         period_start = now - timedelta(days=7)
 
-        with patch.object(service, 'generate_time_series', new_callable=AsyncMock) as mock_series:
+        with patch.object(service, "generate_time_series", new_callable=AsyncMock) as mock_series:
             mock_series.return_value = [
                 {"date": "2024-12-25", "value": 100},
                 {"date": "2024-12-26", "value": 105},
@@ -285,11 +286,11 @@ class TestReportGeneratorService:
             delivery_method=DeliveryMethod.DOWNLOAD,
         )
 
-        with patch.object(service, 'generate_report', new_callable=AsyncMock) as mock_gen:
+        with patch.object(service, "generate_report", new_callable=AsyncMock) as mock_gen:
             mock_gen.return_value = {
                 "report_id": str(report.id),
                 "status": "success",
-                "file_path": "/tmp/report.pdf",
+                "file_path": "/tmp/report.pdf",  # noqa: S108
                 "file_size": 1024,
             }
 
@@ -310,11 +311,11 @@ class TestReportGeneratorService:
             delivery_method=DeliveryMethod.EMAIL,
         )
 
-        with patch.object(service, 'generate_report', new_callable=AsyncMock) as mock_gen:
+        with patch.object(service, "generate_report", new_callable=AsyncMock) as mock_gen:
             mock_gen.return_value = {
                 "report_id": str(report.id),
                 "status": "success",
-                "file_path": "/tmp/report.xlsx",
+                "file_path": "/tmp/report.xlsx",  # noqa: S108
             }
 
             result = await service.generate_report(report=report)
@@ -324,7 +325,7 @@ class TestReportGeneratorService:
     @pytest.mark.asyncio
     async def test_process_due_reports(self, service):
         """Testa processamento de relatórios pendentes."""
-        with patch.object(service, 'process_due_reports', new_callable=AsyncMock) as mock_process:
+        with patch.object(service, "process_due_reports", new_callable=AsyncMock) as mock_process:
             mock_process.return_value = {
                 "processed": 3,
                 "success": 2,
@@ -357,7 +358,7 @@ class TestDashboardService:
         condominio_id = uuid4()
         user_id = uuid4()
 
-        with patch.object(service, 'list_user_dashboards', new_callable=AsyncMock) as mock_list:
+        with patch.object(service, "list_user_dashboards", new_callable=AsyncMock) as mock_list:
             mock_list.return_value = (
                 [
                     {"id": str(uuid4()), "name": "Dashboard 1"},
@@ -380,7 +381,7 @@ class TestDashboardService:
         condominio_id = uuid4()
         owner_id = uuid4()
 
-        with patch.object(service, 'create_dashboard', new_callable=AsyncMock) as mock_create:
+        with patch.object(service, "create_dashboard", new_callable=AsyncMock) as mock_create:
             mock_create.return_value = {
                 "id": str(uuid4()),
                 "name": "Novo Dashboard",
@@ -388,6 +389,7 @@ class TestDashboardService:
             }
 
             from modules.hr.analytics_dashboard.schemas import DashboardConfigCreate
+
             data = MagicMock(spec=DashboardConfigCreate)
             data.name = "Novo Dashboard"
 
@@ -405,7 +407,7 @@ class TestDashboardService:
         source_id = uuid4()
         user_id = uuid4()
 
-        with patch.object(service, 'clone_dashboard', new_callable=AsyncMock) as mock_clone:
+        with patch.object(service, "clone_dashboard", new_callable=AsyncMock) as mock_clone:
             mock_clone.return_value = {
                 "id": str(uuid4()),
                 "name": "Dashboard Clonado",
@@ -425,7 +427,7 @@ class TestDashboardService:
         dashboard_id = uuid4()
         user_id = uuid4()
 
-        with patch.object(service, 'add_widget', new_callable=AsyncMock) as mock_add:
+        with patch.object(service, "add_widget", new_callable=AsyncMock) as mock_add:
             mock_add.return_value = {
                 "id": str(uuid4()),
                 "title": "Novo Widget",
@@ -433,6 +435,7 @@ class TestDashboardService:
             }
 
             from modules.hr.analytics_dashboard.schemas import DashboardWidgetCreate
+
             data = MagicMock(spec=DashboardWidgetCreate)
             data.title = "Novo Widget"
 
@@ -450,7 +453,7 @@ class TestDashboardService:
         dashboard_id = uuid4()
         user_id = uuid4()
 
-        with patch.object(service, 'refresh_dashboard_data', new_callable=AsyncMock) as mock_refresh:
+        with patch.object(service, "refresh_dashboard_data", new_callable=AsyncMock) as mock_refresh:
             mock_refresh.return_value = {
                 "dashboard_id": str(dashboard_id),
                 "widgets_refreshed": 5,
@@ -470,7 +473,7 @@ class TestDashboardService:
         widget_id = uuid4()
         user_id = uuid4()
 
-        with patch.object(service, 'get_widget_data', new_callable=AsyncMock) as mock_data:
+        with patch.object(service, "get_widget_data", new_callable=AsyncMock) as mock_data:
             mock_data.return_value = {
                 "widget_id": str(widget_id),
                 "data": [

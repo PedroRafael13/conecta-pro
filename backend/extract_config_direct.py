@@ -90,14 +90,8 @@ API do módulo de Configurações do Conecta PRO.
 
     # Adicionar servers
     full_schema["servers"] = [
-        {
-            "url": "http://localhost:8000",
-            "description": "Desenvolvimento Local"
-        },
-        {
-            "url": "https://api.conectapro.com.br",
-            "description": "Produção"
-        }
+        {"url": "http://localhost:8000", "description": "Desenvolvimento Local"},
+        {"url": "https://api.conectapro.com.br", "description": "Produção"},
     ]
 
     # Salvar arquivo
@@ -105,24 +99,24 @@ API do módulo de Configurações do Conecta PRO.
     with open(output_file, "w", encoding="utf-8") as f:
         json.dump(full_schema, f, indent=2, ensure_ascii=False)
 
-    print(f"✅ OpenAPI spec extraído com sucesso!")
+    print("✅ OpenAPI spec extraído com sucesso!")
     print(f"📄 Arquivo: {output_file}")
     print(f"📊 Endpoints encontrados: {len(full_schema.get('paths', {}))}")
     print(f"📦 Schemas extraídos: {len(full_schema.get('components', {}).get('schemas', {}))}")
 
     # Estatísticas por tipo de endpoint
     methods_count = {}
-    for path, methods in full_schema.get("paths", {}).items():
+    for _path, methods in full_schema.get("paths", {}).items():
         for method in methods.keys():
             if method in ["get", "post", "put", "patch", "delete"]:
                 methods_count[method.upper()] = methods_count.get(method.upper(), 0) + 1
 
-    print(f"\n📈 Distribuição por método HTTP:")
+    print("\n📈 Distribuição por método HTTP:")
     for method, count in sorted(methods_count.items()):
         print(f"   {method}: {count}")
 
     # Listar endpoints
-    print(f"\n📋 Endpoints extraídos:")
+    print("\n📋 Endpoints extraídos:")
     for path in sorted(full_schema.get("paths", {}).keys()):
         methods = list(full_schema["paths"][path].keys())
         methods = [m.upper() for m in methods if m in ["get", "post", "put", "patch", "delete"]]

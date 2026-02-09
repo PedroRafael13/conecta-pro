@@ -3,10 +3,9 @@
 Sprint 39 - Document OCR.
 """
 
-import enum
 import uuid
 from datetime import datetime
-from typing import Optional
+from enum import StrEnum
 
 from sqlalchemy import (
     Boolean,
@@ -23,7 +22,7 @@ from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from core.models.base import Base
 
 
-class DocumentScanStatus(str, enum.Enum):
+class DocumentScanStatus(StrEnum):
     """Status do scan do documento."""
 
     PENDING = "pending"  # Aguardando processamento
@@ -39,7 +38,7 @@ class DocumentScanStatus(str, enum.Enum):
     CANCELLED = "cancelled"  # Cancelado
 
 
-class DocumentScanType(str, enum.Enum):
+class DocumentScanType(StrEnum):
     """Tipo de documento."""
 
     # Financeiro
@@ -202,7 +201,7 @@ class DocumentScan(Base):
         """Verifica se pode tentar novamente."""
         return self.status == DocumentScanStatus.FAILED and self.processing_attempts < 3
 
-    def get_processing_time(self) -> Optional[int]:
+    def get_processing_time(self) -> int | None:
         """Retorna tempo total de processamento em ms."""
         if self.total_processing_time_ms:
             return self.total_processing_time_ms

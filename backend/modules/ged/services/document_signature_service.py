@@ -1,27 +1,26 @@
 """Service para DocumentSignature."""
 
-import logging
 import hashlib
-from typing import Optional, List
+import logging
 from datetime import datetime, timedelta
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from modules.ged.models.document_signature import (
+    SignatureRole,
+    SignatureStatus,
+    SignatureType,
+)
+from modules.ged.repositories.document_repository import DocumentRepository
 from modules.ged.repositories.document_signature_repository import (
     DocumentSignatureRepository,
 )
-from modules.ged.repositories.document_repository import DocumentRepository
-from modules.ged.models.document_signature import (
-    SignatureType,
-    SignatureStatus,
-    SignatureRole,
-)
 from modules.ged.schemas.document_signature import (
     DocumentSignatureCreate,
-    DocumentSignatureUpdate,
     DocumentSignatureResponse,
-    SignatureRequest,
+    DocumentSignatureUpdate,
     SignatureRefusalRequest,
+    SignatureRequest,
     SignatureStats,
 )
 
@@ -37,9 +36,7 @@ class DocumentSignatureService:
         self.repository = DocumentSignatureRepository(session)
         self.document_repository = DocumentRepository(session)
 
-    async def create(
-        self, data: DocumentSignatureCreate
-    ) -> DocumentSignatureResponse:
+    async def create(self, data: DocumentSignatureCreate) -> DocumentSignatureResponse:
         """Cria solicitação de assinatura."""
         # Verifica se documento existe
         document = await self.document_repository.get_by_id(data.document_id)
@@ -61,8 +58,8 @@ class DocumentSignatureService:
         return DocumentSignatureResponse.model_validate(signature)
 
     async def create_bulk(
-        self, document_id: str, signers: List[dict], created_by: str
-    ) -> List[DocumentSignatureResponse]:
+        self, document_id: str, signers: list[dict], created_by: str
+    ) -> list[DocumentSignatureResponse]:
         """Cria múltiplas solicitações de assinatura."""
         document = await self.document_repository.get_by_id(document_id)
         if not document:
@@ -95,27 +92,21 @@ class DocumentSignatureService:
         )
         return created
 
-    async def get_by_id(
-        self, signature_id: str
-    ) -> Optional[DocumentSignatureResponse]:
+    async def get_by_id(self, signature_id: str) -> DocumentSignatureResponse | None:
         """Busca assinatura por ID."""
         signature = await self.repository.get_by_id(signature_id)
         if not signature:
             return None
         return DocumentSignatureResponse.model_validate(signature)
 
-    async def get_by_token(
-        self, token: str
-    ) -> Optional[DocumentSignatureResponse]:
+    async def get_by_token(self, token: str) -> DocumentSignatureResponse | None:
         """Busca assinatura por token."""
         signature = await self.repository.get_by_token(token)
         if not signature:
             return None
         return DocumentSignatureResponse.model_validate(signature)
 
-    async def update(
-        self, signature_id: str, data: DocumentSignatureUpdate
-    ) -> Optional[DocumentSignatureResponse]:
+    async def update(self, signature_id: str, data: DocumentSignatureUpdate) -> DocumentSignatureResponse | None:
         """Atualiza assinatura."""
         signature = await self.repository.update(signature_id, data)
         if not signature:
@@ -138,14 +129,12 @@ class DocumentSignatureService:
 
     async def get_by_document(
         self, document_id: str, status: SignatureStatus = None
-    ) -> List[DocumentSignatureResponse]:
+    ) -> list[DocumentSignatureResponse]:
         """Retorna assinaturas de um documento."""
         signatures = await self.repository.get_by_document(document_id, status)
         return [DocumentSignatureResponse.model_validate(s) for s in signatures]
 
-    async def get_pending_by_document(
-        self, document_id: str
-    ) -> List[DocumentSignatureResponse]:
+    async def get_pending_by_document(self, document_id: str) -> list[DocumentSignatureResponse]:
         """Retorna assinaturas pendentes do documento."""
         signatures = await self.repository.get_pending_by_document(document_id)
         return [DocumentSignatureResponse.model_validate(s) for s in signatures]
@@ -155,7 +144,7 @@ class DocumentSignatureService:
         signer_id: str = None,
         signer_email: str = None,
         status: SignatureStatus = None,
-    ) -> List[DocumentSignatureResponse]:
+    ) -> list[DocumentSignatureResponse]:
         """Retorna assinaturas por signatário."""
         signatures = await self.repository.get_by_signer(
             signer_id=signer_id,
@@ -166,7 +155,7 @@ class DocumentSignatureService:
 
     async def get_pending_by_signer(
         self, signer_id: str = None, signer_email: str = None
-    ) -> List[DocumentSignatureResponse]:
+    ) -> list[DocumentSignatureResponse]:
         """Retorna assinaturas pendentes do signatário."""
         signatures = await self.repository.get_pending_by_signer(
             signer_id=signer_id,
@@ -174,9 +163,7 @@ class DocumentSignatureService:
         )
         return [DocumentSignatureResponse.model_validate(s) for s in signatures]
 
-    async def sign(
-        self, signature_id: str, data: SignatureRequest
-    ) -> Optional[DocumentSignatureResponse]:
+    async def sign(self, signature_id: str, data: SignatureRequest) -> DocumentSignatureResponse | None:
         """Registra assinatura."""
         signature = await self.repository.get_by_id(signature_id)
         if not signature:
@@ -188,9 +175,7 @@ class DocumentSignatureService:
 
         # Verifica se é sequencial e se é a vez
         if signature.is_sequential:
-            next_sig = await self.repository.get_next_in_sequence(
-                signature.document_id
-            )
+            next_sig = await self.repository.get_next_in_sequence(signature.document_id)
             if next_sig and next_sig.id != signature_id:
                 raise ValueError("Não é a vez desta assinatura na sequência")
 
@@ -218,9 +203,7 @@ class DocumentSignatureService:
         logger.info("Assinatura realizada: %s", signature_id)
         return DocumentSignatureResponse.model_validate(signature)
 
-    async def refuse(
-        self, signature_id: str, data: SignatureRefusalRequest
-    ) -> Optional[DocumentSignatureResponse]:
+    async def refuse(self, signature_id: str, data: SignatureRefusalRequest) -> DocumentSignatureResponse | None:
         """Recusa assinatura."""
         signature = await self.repository.get_by_id(signature_id)
         if not signature:
@@ -234,9 +217,7 @@ class DocumentSignatureService:
         logger.info("Assinatura recusada: %s", signature_id)
         return DocumentSignatureResponse.model_validate(signature)
 
-    async def cancel(
-        self, signature_id: str
-    ) -> Optional[DocumentSignatureResponse]:
+    async def cancel(self, signature_id: str) -> DocumentSignatureResponse | None:
         """Cancela assinatura."""
         signature = await self.repository.get_by_id(signature_id)
         if not signature:
@@ -250,9 +231,7 @@ class DocumentSignatureService:
         logger.info("Assinatura cancelada: %s", signature_id)
         return DocumentSignatureResponse.model_validate(signature)
 
-    async def verify(
-        self, signature_id: str
-    ) -> Optional[DocumentSignatureResponse]:
+    async def verify(self, signature_id: str) -> DocumentSignatureResponse | None:
         """Verifica assinatura."""
         signature = await self.repository.get_by_id(signature_id)
         if not signature:
@@ -268,9 +247,7 @@ class DocumentSignatureService:
         logger.info("Assinatura verificada: %s", signature_id)
         return DocumentSignatureResponse.model_validate(signature)
 
-    async def send_notification(
-        self, signature_id: str
-    ) -> Optional[DocumentSignatureResponse]:
+    async def send_notification(self, signature_id: str) -> DocumentSignatureResponse | None:
         """Envia notificação de assinatura."""
         signature = await self.repository.send_notification(signature_id)
         if not signature:
@@ -279,9 +256,7 @@ class DocumentSignatureService:
         logger.info("Notificação enviada: %s", signature_id)
         return DocumentSignatureResponse.model_validate(signature)
 
-    async def send_reminder(
-        self, signature_id: str
-    ) -> Optional[DocumentSignatureResponse]:
+    async def send_reminder(self, signature_id: str) -> DocumentSignatureResponse | None:
         """Envia lembrete de assinatura."""
         signature = await self.repository.send_reminder(signature_id)
         if not signature:
@@ -290,21 +265,15 @@ class DocumentSignatureService:
         logger.info("Lembrete enviado: %s", signature_id)
         return DocumentSignatureResponse.model_validate(signature)
 
-    async def regenerate_token(
-        self, signature_id: str, expires_in_hours: int = 72
-    ) -> Optional[str]:
+    async def regenerate_token(self, signature_id: str, expires_in_hours: int = 72) -> str | None:
         """Regenera token de assinatura."""
-        token = await self.repository.regenerate_token(
-            signature_id, expires_in_hours
-        )
+        token = await self.repository.regenerate_token(signature_id, expires_in_hours)
         if token:
             await self.session.commit()
             logger.info("Token regenerado: %s", signature_id)
         return token
 
-    async def extend_deadline(
-        self, signature_id: str, new_deadline: datetime
-    ) -> Optional[DocumentSignatureResponse]:
+    async def extend_deadline(self, signature_id: str, new_deadline: datetime) -> DocumentSignatureResponse | None:
         """Estende prazo de assinatura."""
         signature = await self.repository.extend_deadline(signature_id, new_deadline)
         if not signature:
@@ -320,9 +289,7 @@ class DocumentSignatureService:
         logger.info("%s assinaturas expiradas", count)
         return count
 
-    async def get_next_in_sequence(
-        self, document_id: str
-    ) -> Optional[DocumentSignatureResponse]:
+    async def get_next_in_sequence(self, document_id: str) -> DocumentSignatureResponse | None:
         """Retorna próxima assinatura na sequência."""
         signature = await self.repository.get_next_in_sequence(document_id)
         if not signature:
@@ -333,9 +300,7 @@ class DocumentSignatureService:
         """Verifica se documento está completamente assinado."""
         return await self.repository.is_document_fully_signed(document_id)
 
-    async def get_stats(
-        self, document_id: str = None
-    ) -> SignatureStats:
+    async def get_stats(self, document_id: str = None) -> SignatureStats:
         """Retorna estatísticas de assinaturas."""
         stats = await self.repository.get_stats(document_id)
         return SignatureStats(**stats)
@@ -353,27 +318,23 @@ class DocumentSignatureService:
 
     async def _check_document_fully_signed(self, document_id: str) -> None:
         """Verifica e atualiza status do documento se completamente assinado."""
-        is_fully_signed = await self.repository.is_document_fully_signed(
-            document_id
-        )
+        is_fully_signed = await self.repository.is_document_fully_signed(document_id)
         if is_fully_signed:
             document = await self.document_repository.get_by_id(document_id)
             if document:
                 document.is_signed = True
                 document.signed_at = datetime.utcnow()
-                logger.info(
-                    "Documento %s completamente assinado", document_id
-                )
+                logger.info("Documento %s completamente assinado", document_id)
 
     async def request_signatures(
         self,
         document_id: str,
-        signers: List[dict],
+        signers: list[dict],
         created_by: str,
         sequential: bool = False,
         deadline_days: int = 7,
         message: str = None,
-    ) -> List[DocumentSignatureResponse]:
+    ) -> list[DocumentSignatureResponse]:
         """Solicita assinaturas para documento."""
         document = await self.document_repository.get_by_id(document_id)
         if not document:
@@ -422,14 +383,10 @@ class DocumentSignatureService:
             count += 1
 
         await self.session.commit()
-        logger.info(
-            "%s assinaturas canceladas para documento %s", count, document_id
-        )
+        logger.info("%s assinaturas canceladas para documento %s", count, document_id)
         return count
 
-    async def get_signature_certificate(
-        self, signature_id: str
-    ) -> Optional[dict]:
+    async def get_signature_certificate(self, signature_id: str) -> dict | None:
         """Gera certificado de assinatura."""
         signature = await self.repository.get_by_id(signature_id)
         if not signature or not signature.is_signed:
@@ -453,8 +410,6 @@ class DocumentSignatureService:
             "signature_hash": signature.signature_hash,
             "ip_address": signature.ip_address,
             "verified": signature.is_verified,
-            "verified_at": (
-                signature.verified_at.isoformat() if signature.verified_at else None
-            ),
+            "verified_at": (signature.verified_at.isoformat() if signature.verified_at else None),
             "generated_at": datetime.utcnow().isoformat(),
         }

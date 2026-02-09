@@ -9,20 +9,18 @@ Fornece endpoints para:
 """
 
 from datetime import date
-from typing import Any, Dict, List, Optional
+from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from core.database import get_db
 from core.config import settings
+from core.database import get_db
 from modules.campo.services.roteirizacao_service import (
-    RoteirizacaoService,
-    TipoOtimizacao,
     RoteiroOtimizado,
-    PontoRota,
+    TipoOtimizacao,
     get_roteirizacao_service,
 )
 
@@ -33,8 +31,10 @@ router = APIRouter()
 # SCHEMAS
 # =============================================================================
 
+
 class PontoPartidaRequest(BaseModel):
     """Ponto de partida/retorno customizado."""
+
     endereco: str = Field(..., max_length=500)
     latitude: float = Field(..., ge=-90, le=90)
     longitude: float = Field(..., ge=-180, le=180)
@@ -42,39 +42,43 @@ class PontoPartidaRequest(BaseModel):
 
 class OtimizarRotaRequest(BaseModel):
     """Request para otimizar rota."""
+
     tecnico_id: UUID
     data: date
     tipo_otimizacao: TipoOtimizacao = TipoOtimizacao.BALANCEADA
-    ponto_partida: Optional[PontoPartidaRequest] = None
-    ponto_retorno: Optional[PontoPartidaRequest] = None
+    ponto_partida: PontoPartidaRequest | None = None
+    ponto_retorno: PontoPartidaRequest | None = None
 
 
 class ReotimizarRotaRequest(BaseModel):
     """Request para reotimizar rota."""
+
     tecnico_id: UUID
     data: date
     latitude_atual: float = Field(..., ge=-90, le=90)
     longitude_atual: float = Field(..., ge=-180, le=180)
-    os_concluidas: Optional[List[UUID]] = None
+    os_concluidas: list[UUID] | None = None
 
 
 class PontoRotaResponse(BaseModel):
     """Response de ponto de rota."""
-    ordem_servico_id: Optional[str]
-    visita_id: Optional[str]
+
+    ordem_servico_id: str | None
+    visita_id: str | None
     endereco: str
     latitude: float
     longitude: float
     tipo: str
-    nome_cliente: Optional[str]
-    janela_inicio: Optional[str]
-    janela_fim: Optional[str]
+    nome_cliente: str | None
+    janela_inicio: str | None
+    janela_fim: str | None
     duracao_estimada_minutos: int
     prioridade: int
 
 
 class TrechoRotaResponse(BaseModel):
     """Response de trecho de rota."""
+
     origem_endereco: str
     destino_endereco: str
     distancia_km: float
@@ -83,68 +87,76 @@ class TrechoRotaResponse(BaseModel):
 
 class RoteiroResponse(BaseModel):
     """Response de roteiro otimizado."""
+
     tecnico_id: str
     tecnico_nome: str
     data: str
-    pontos: List[PontoRotaResponse]
-    trechos: List[TrechoRotaResponse]
+    pontos: list[PontoRotaResponse]
+    trechos: list[TrechoRotaResponse]
     distancia_total_km: float
     duracao_total_minutos: int
     hora_inicio_sugerida: str
     hora_fim_estimada: str
-    economia_km: Optional[float]
-    economia_tempo_minutos: Optional[int]
+    economia_km: float | None
+    economia_tempo_minutos: int | None
 
 
 class AnaliseEquipeResponse(BaseModel):
     """Response de análise da equipe."""
+
     data: str
     tecnicos_analisados: int
-    rotas: List[Dict[str, Any]]
-    totais: Dict[str, Any]
+    rotas: list[dict[str, Any]]
+    totais: dict[str, Any]
 
 
 class RedistribuicaoResponse(BaseModel):
     """Response de sugestão de redistribuição."""
+
     redistribuicao_necessaria: bool
-    media_os_por_tecnico: Optional[float]
-    media_distancia_km: Optional[float]
-    tecnicos_sobrecarregados: Optional[int]
-    tecnicos_subutilizados: Optional[int]
-    sugestoes: List[Dict[str, Any]]
-    motivo: Optional[str]
+    media_os_por_tecnico: float | None
+    media_distancia_km: float | None
+    tecnicos_sobrecarregados: int | None
+    tecnicos_subutilizados: int | None
+    sugestoes: list[dict[str, Any]]
+    motivo: str | None
 
 
 # =============================================================================
 # HELPERS
 # =============================================================================
 
-def _roteiro_to_response(roteiro: RoteiroOtimizado) -> Dict[str, Any]:
+
+def _roteiro_to_response(roteiro: RoteiroOtimizado) -> dict[str, Any]:
     """Converte RoteiroOtimizado para response dict."""
     pontos = []
     for p in roteiro.pontos:
-        pontos.append({
-            "ordem_servico_id": str(p.ordem_servico_id) if p.ordem_servico_id else None,
-            "visita_id": str(p.visita_id) if p.visita_id else None,
-            "endereco": p.endereco,
-            "latitude": p.latitude,
-            "longitude": p.longitude,
-            "tipo": p.tipo,
-            "nome_cliente": p.nome_cliente,
-            "janela_inicio": p.janela_inicio.isoformat() if p.janela_inicio else None,
-            "janela_fim": p.janela_fim.isoformat() if p.janela_fim else None,
-            "duracao_estimada_minutos": p.duracao_estimada_minutos,
-            "prioridade": p.prioridade,
-        })
+        pontos.append(
+            {
+                "ordem_servico_id": str(p.ordem_servico_id) if p.ordem_servico_id else None,
+                "visita_id": str(p.visita_id) if p.visita_id else None,
+                "endereco": p.endereco,
+                "latitude": p.latitude,
+                "longitude": p.longitude,
+                "tipo": p.tipo,
+                "nome_cliente": p.nome_cliente,
+                "janela_inicio": p.janela_inicio.isoformat() if p.janela_inicio else None,
+                "janela_fim": p.janela_fim.isoformat() if p.janela_fim else None,
+                "duracao_estimada_minutos": p.duracao_estimada_minutos,
+                "prioridade": p.prioridade,
+            }
+        )
 
     trechos = []
     for t in roteiro.trechos:
-        trechos.append({
-            "origem_endereco": t.origem.endereco,
-            "destino_endereco": t.destino.endereco,
-            "distancia_km": t.distancia_km,
-            "duracao_minutos": t.duracao_minutos,
-        })
+        trechos.append(
+            {
+                "origem_endereco": t.origem.endereco,
+                "destino_endereco": t.destino.endereco,
+                "distancia_km": t.distancia_km,
+                "duracao_minutos": t.duracao_minutos,
+            }
+        )
 
     return {
         "tecnico_id": str(roteiro.tecnico_id),
@@ -165,11 +177,12 @@ def _roteiro_to_response(roteiro: RoteiroOtimizado) -> Dict[str, Any]:
 # ENDPOINTS - OTIMIZAÇÃO
 # =============================================================================
 
+
 @router.post(
     "/otimizar",
     response_model=RoteiroResponse,
     summary="Otimizar rota",
-    description="Otimiza a rota de um técnico para um dia específico"
+    description="Otimiza a rota de um técnico para um dia específico",
 )
 async def otimizar_rota(
     request: OtimizarRotaRequest,
@@ -184,7 +197,7 @@ async def otimizar_rota(
     - **balanceada**: Equilibra distância e tempo
     - **prioridade**: Prioriza OS urgentes
     """
-    google_api_key = getattr(settings, 'GOOGLE_MAPS_API_KEY', None)
+    google_api_key = getattr(settings, "GOOGLE_MAPS_API_KEY", None)
     service = get_roteirizacao_service(db, google_api_key)
 
     try:
@@ -215,14 +228,10 @@ async def otimizar_rota(
         return _roteiro_to_response(roteiro)
 
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao otimizar rota: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao otimizar rota: {str(e)}"
         )
 
 
@@ -230,19 +239,16 @@ async def otimizar_rota(
     "/tecnico/{tecnico_id}",
     response_model=RoteiroResponse,
     summary="Rota do técnico",
-    description="Retorna a rota otimizada de um técnico para uma data"
+    description="Retorna a rota otimizada de um técnico para uma data",
 )
 async def get_rota_tecnico(
     tecnico_id: UUID,
     data: date = Query(..., description="Data do roteiro"),
-    tipo_otimizacao: TipoOtimizacao = Query(
-        TipoOtimizacao.BALANCEADA,
-        description="Tipo de otimização"
-    ),
+    tipo_otimizacao: TipoOtimizacao = Query(TipoOtimizacao.BALANCEADA, description="Tipo de otimização"),
     db: Session = Depends(get_db),
 ):
     """Retorna a rota otimizada de um técnico para uma data."""
-    google_api_key = getattr(settings, 'GOOGLE_MAPS_API_KEY', None)
+    google_api_key = getattr(settings, "GOOGLE_MAPS_API_KEY", None)
     service = get_roteirizacao_service(db, google_api_key)
 
     try:
@@ -255,21 +261,19 @@ async def get_rota_tecnico(
         return _roteiro_to_response(roteiro)
 
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 # =============================================================================
 # ENDPOINTS - REOTIMIZAÇÃO
 # =============================================================================
 
+
 @router.post(
     "/reotimizar",
     response_model=RoteiroResponse,
     summary="Reotimizar rota",
-    description="Reotimiza a rota considerando posição atual do técnico"
+    description="Reotimiza a rota considerando posição atual do técnico",
 )
 async def reotimizar_rota(
     request: ReotimizarRotaRequest,
@@ -281,7 +285,7 @@ async def reotimizar_rota(
     - OS já concluídas
     - Condições de trânsito atuais
     """
-    google_api_key = getattr(settings, 'GOOGLE_MAPS_API_KEY', None)
+    google_api_key = getattr(settings, "GOOGLE_MAPS_API_KEY", None)
     service = get_roteirizacao_service(db, google_api_key)
 
     try:
@@ -296,28 +300,23 @@ async def reotimizar_rota(
         return _roteiro_to_response(roteiro)
 
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 # =============================================================================
 # ENDPOINTS - ANÁLISE
 # =============================================================================
 
+
 @router.get(
     "/analise/equipe",
     response_model=AnaliseEquipeResponse,
     summary="Análise de rotas da equipe",
-    description="Analisa rotas de toda a equipe para um dia"
+    description="Analisa rotas de toda a equipe para um dia",
 )
 async def analisar_rotas_equipe(
     data: date = Query(..., description="Data de análise"),
-    tecnico_ids: Optional[str] = Query(
-        None,
-        description="IDs dos técnicos separados por vírgula (default: todos)"
-    ),
+    tecnico_ids: str | None = Query(None, description="IDs dos técnicos separados por vírgula (default: todos)"),
     db: Session = Depends(get_db),
 ):
     """
@@ -329,12 +328,12 @@ async def analisar_rotas_equipe(
     - Duração estimada
     - Economia potencial
     """
-    google_api_key = getattr(settings, 'GOOGLE_MAPS_API_KEY', None)
+    google_api_key = getattr(settings, "GOOGLE_MAPS_API_KEY", None)
     service = get_roteirizacao_service(db, google_api_key)
 
     ids_lista = None
     if tecnico_ids:
-        ids_lista = [UUID(id.strip()) for id in tecnico_ids.split(",")]
+        ids_lista = [UUID(tid.strip()) for tid in tecnico_ids.split(",")]
 
     try:
         analise = service.analisar_rotas_equipe(
@@ -345,8 +344,7 @@ async def analisar_rotas_equipe(
 
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao analisar rotas: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao analisar rotas: {str(e)}"
         )
 
 
@@ -354,14 +352,11 @@ async def analisar_rotas_equipe(
     "/analise/redistribuicao",
     response_model=RedistribuicaoResponse,
     summary="Sugestão de redistribuição",
-    description="Sugere redistribuição de OS entre técnicos"
+    description="Sugere redistribuição de OS entre técnicos",
 )
 async def sugerir_redistribuicao(
     data: date = Query(..., description="Data de análise"),
-    tecnico_ids: Optional[str] = Query(
-        None,
-        description="IDs dos técnicos separados por vírgula"
-    ),
+    tecnico_ids: str | None = Query(None, description="IDs dos técnicos separados por vírgula"),
     db: Session = Depends(get_db),
 ):
     """
@@ -372,12 +367,12 @@ async def sugerir_redistribuicao(
     - Técnicos subutilizados
     - Sugestões de transferência
     """
-    google_api_key = getattr(settings, 'GOOGLE_MAPS_API_KEY', None)
+    google_api_key = getattr(settings, "GOOGLE_MAPS_API_KEY", None)
     service = get_roteirizacao_service(db, google_api_key)
 
     ids_lista = None
     if tecnico_ids:
-        ids_lista = [UUID(id.strip()) for id in tecnico_ids.split(",")]
+        ids_lista = [UUID(tid.strip()) for tid in tecnico_ids.split(",")]
 
     try:
         sugestoes = service.sugerir_redistribuicao(
@@ -388,8 +383,7 @@ async def sugerir_redistribuicao(
 
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao sugerir redistribuição: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao sugerir redistribuição: {str(e)}"
         )
 
 
@@ -397,10 +391,9 @@ async def sugerir_redistribuicao(
 # ENDPOINTS - UTILITÁRIOS
 # =============================================================================
 
+
 @router.get(
-    "/tipos-otimizacao",
-    summary="Listar tipos de otimização",
-    description="Lista os tipos de otimização disponíveis"
+    "/tipos-otimizacao", summary="Listar tipos de otimização", description="Lista os tipos de otimização disponíveis"
 )
 async def listar_tipos_otimizacao():
     """Lista os tipos de otimização disponíveis."""
@@ -434,11 +427,7 @@ async def listar_tipos_otimizacao():
     }
 
 
-@router.post(
-    "/calcular-distancia",
-    summary="Calcular distância",
-    description="Calcula distância entre dois pontos"
-)
+@router.post("/calcular-distancia", summary="Calcular distância", description="Calcula distância entre dois pontos")
 async def calcular_distancia(
     lat1: float = Query(..., ge=-90, le=90),
     lon1: float = Query(..., ge=-180, le=180),
@@ -455,7 +444,7 @@ async def calcular_distancia(
     import math
 
     # Fórmula de Haversine
-    R = 6371  # Raio da Terra em km
+    earth_radius = 6371  # Raio da Terra em km
 
     lat1_rad = math.radians(lat1)
     lat2_rad = math.radians(lat2)
@@ -465,7 +454,7 @@ async def calcular_distancia(
     a = math.sin(dlat / 2) ** 2 + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlon / 2) ** 2
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
-    distancia = R * c
+    distancia = earth_radius * c
 
     # Estimar tempo (30 km/h média urbana)
     tempo_minutos = int(distancia / 30 * 60)
@@ -479,18 +468,14 @@ async def calcular_distancia(
     }
 
 
-@router.get(
-    "/resumo-dia/{tecnico_id}",
-    summary="Resumo do dia",
-    description="Retorna resumo rápido da rota do técnico"
-)
+@router.get("/resumo-dia/{tecnico_id}", summary="Resumo do dia", description="Retorna resumo rápido da rota do técnico")
 async def get_resumo_dia(
     tecnico_id: UUID,
     data: date = Query(..., description="Data do roteiro"),
     db: Session = Depends(get_db),
 ):
     """Retorna resumo rápido da rota do técnico para o dia."""
-    google_api_key = getattr(settings, 'GOOGLE_MAPS_API_KEY', None)
+    google_api_key = getattr(settings, "GOOGLE_MAPS_API_KEY", None)
     service = get_roteirizacao_service(db, google_api_key)
 
     try:
@@ -518,11 +503,10 @@ async def get_resumo_dia(
             "economia": {
                 "km_economizados": roteiro.economia_km,
                 "minutos_economizados": roteiro.economia_tempo_minutos,
-            } if roteiro.economia_km else None,
+            }
+            if roteiro.economia_km
+            else None,
         }
 
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

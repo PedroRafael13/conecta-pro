@@ -1,8 +1,8 @@
 """Cost Center model - Centro de Custo."""
 
-import enum
 from datetime import datetime
 from decimal import Decimal
+from enum import StrEnum
 from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import (
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from modules.financial.models.journal_entry import JournalEntryLine
 
 
-class CostCenterType(str, enum.Enum):
+class CostCenterType(StrEnum):
     """Tipo do centro de custo."""
 
     PRODUCTIVE = "PRODUCTIVE"  # Produtivo (gera receita)
@@ -40,7 +40,7 @@ class CostCenterType(str, enum.Enum):
     OTHER = "OTHER"  # Outros
 
 
-class CostCenterStatus(str, enum.Enum):
+class CostCenterStatus(StrEnum):
     """Status do centro de custo."""
 
     ACTIVE = "ACTIVE"  # Ativo
@@ -49,7 +49,7 @@ class CostCenterStatus(str, enum.Enum):
     CLOSED = "CLOSED"  # Encerrado
 
 
-class AllocationMethod(str, enum.Enum):
+class AllocationMethod(StrEnum):
     """Método de rateio."""
 
     DIRECT = "DIRECT"  # Direto (100%)
@@ -165,9 +165,7 @@ class CostCenter(Base):
 
     # Timestamps
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
-    updated_at = Column(
-        DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
-    )
+    updated_at = Column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     deleted_at = Column(DateTime(timezone=True), nullable=True)
 
     # Audit

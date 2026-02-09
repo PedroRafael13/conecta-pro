@@ -5,15 +5,16 @@ Define templates para extracao estruturada de dados de documentos,
 com regras, campos e padroes reutilizaveis.
 """
 
+import re
 from dataclasses import dataclass, field
 from datetime import datetime
-from enum import Enum
-from typing import Any, Dict, List, Optional, Pattern
-import re
+from enum import StrEnum
+from re import Pattern
+from typing import Any
 from uuid import uuid4
 
 
-class TemplateCategory(str, Enum):
+class TemplateCategory(StrEnum):
     """Categorias de templates."""
 
     FINANCIAL = "financial"
@@ -26,7 +27,7 @@ class TemplateCategory(str, Enum):
     OTHER = "other"
 
 
-class TemplateStatus(str, Enum):
+class TemplateStatus(StrEnum):
     """Status do template."""
 
     DRAFT = "draft"
@@ -36,7 +37,7 @@ class TemplateStatus(str, Enum):
     ARCHIVED = "archived"
 
 
-class RuleType(str, Enum):
+class RuleType(StrEnum):
     """Tipos de regras de extracao."""
 
     REGEX = "regex"
@@ -51,7 +52,7 @@ class RuleType(str, Enum):
     CUSTOM = "custom"
 
 
-class PostProcessor(str, Enum):
+class PostProcessor(StrEnum):
     """Pos-processadores disponiveis."""
 
     STRIP = "strip"
@@ -86,8 +87,8 @@ class TemplateRule:
     """
 
     rule_type: RuleType = RuleType.REGEX
-    pattern: Optional[str] = None
-    anchor: Optional[str] = None
+    pattern: str | None = None
+    anchor: str | None = None
     anchor_position: str = "before"  # before, after, above, below
     anchor_offset: int = 0  # Offset em linhas/caracteres
 
@@ -96,30 +97,30 @@ class TemplateRule:
     flags: int = re.IGNORECASE | re.MULTILINE
 
     # Para posicao
-    page: Optional[int] = None
-    x_min: Optional[int] = None
-    x_max: Optional[int] = None
-    y_min: Optional[int] = None
-    y_max: Optional[int] = None
+    page: int | None = None
+    x_min: int | None = None
+    x_max: int | None = None
+    y_min: int | None = None
+    y_max: int | None = None
 
     # Para tabela
-    row: Optional[int] = None
-    column: Optional[int] = None
-    header: Optional[str] = None
+    row: int | None = None
+    column: int | None = None
+    header: str | None = None
 
     # Fallback
-    fallback_rules: List["TemplateRule"] = field(default_factory=list)
+    fallback_rules: list["TemplateRule"] = field(default_factory=list)
 
     # Pos-processamento
-    post_processors: List[PostProcessor] = field(default_factory=list)
+    post_processors: list[PostProcessor] = field(default_factory=list)
 
     # Validacao
-    min_length: Optional[int] = None
-    max_length: Optional[int] = None
-    allowed_chars: Optional[str] = None
-    validation_regex: Optional[str] = None
+    min_length: int | None = None
+    max_length: int | None = None
+    allowed_chars: str | None = None
+    validation_regex: str | None = None
 
-    def compile_pattern(self) -> Optional[Pattern]:
+    def compile_pattern(self) -> Pattern | None:
         """Compila padrao regex."""
         if self.pattern:
             try:
@@ -164,7 +165,7 @@ class TemplateRule:
                 return False
         return True
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Converte para dicionario."""
         return {
             "rule_type": self.rule_type.value,
@@ -192,36 +193,36 @@ class TemplateField:
     """
 
     name: str = ""
-    label: Optional[str] = None
+    label: str | None = None
     field_type: str = "text"  # text, number, date, currency, cpf, cnpj, etc
-    group: Optional[str] = None  # Agrupamento logico
+    group: str | None = None  # Agrupamento logico
 
     # Regras
-    rules: List[TemplateRule] = field(default_factory=list)
-    primary_rule: Optional[TemplateRule] = None
+    rules: list[TemplateRule] = field(default_factory=list)
+    primary_rule: TemplateRule | None = None
 
     # Configuracoes
     required: bool = False
-    default_value: Optional[str] = None
-    description: Optional[str] = None
+    default_value: str | None = None
+    description: str | None = None
 
     # Validacao
     min_confidence: float = 0.5
-    validators: List[str] = field(default_factory=list)
+    validators: list[str] = field(default_factory=list)
 
     # Formatacao
-    format_pattern: Optional[str] = None
-    display_format: Optional[str] = None
+    format_pattern: str | None = None
+    display_format: str | None = None
 
     # Dependencias
-    depends_on: Optional[str] = None
-    conditional_rules: Dict[str, List[TemplateRule]] = field(default_factory=dict)
+    depends_on: str | None = None
+    conditional_rules: dict[str, list[TemplateRule]] = field(default_factory=dict)
 
     # Metadados
     order: int = 0
     is_key_field: bool = False  # Campo chave para identificacao
     is_searchable: bool = True
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         """Inicializa campos derivados."""
@@ -230,13 +231,13 @@ class TemplateField:
         if self.rules and not self.primary_rule:
             self.primary_rule = self.rules[0]
 
-    def get_rules_for_condition(self, condition: str) -> List[TemplateRule]:
+    def get_rules_for_condition(self, condition: str) -> list[TemplateRule]:
         """Obtem regras para uma condicao."""
         if condition in self.conditional_rules:
             return self.conditional_rules[condition]
         return self.rules
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Converte para dicionario."""
         return {
             "name": self.name,
@@ -271,32 +272,32 @@ class ExtractionTemplate:
     """
 
     id: str = field(default_factory=lambda: str(uuid4()))
-    tenant_id: Optional[str] = None  # None = template global
+    tenant_id: str | None = None  # None = template global
     name: str = ""
-    description: Optional[str] = None
+    description: str | None = None
     document_type: str = ""
     category: TemplateCategory = TemplateCategory.OTHER
     status: TemplateStatus = TemplateStatus.DRAFT
 
     # Campos
-    fields: List[TemplateField] = field(default_factory=list)
-    field_groups: Dict[str, List[str]] = field(default_factory=dict)
+    fields: list[TemplateField] = field(default_factory=list)
+    field_groups: dict[str, list[str]] = field(default_factory=dict)
 
     # Deteccao
-    detection_rules: List[TemplateRule] = field(default_factory=list)
-    detection_keywords: List[str] = field(default_factory=list)
-    detection_patterns: List[str] = field(default_factory=list)
+    detection_rules: list[TemplateRule] = field(default_factory=list)
+    detection_keywords: list[str] = field(default_factory=list)
+    detection_patterns: list[str] = field(default_factory=list)
     min_detection_score: float = 0.7
 
     # Configuracoes
     language: str = "pt"
-    preprocessing: Dict[str, Any] = field(default_factory=dict)
-    ocr_config: Dict[str, Any] = field(default_factory=dict)
+    preprocessing: dict[str, Any] = field(default_factory=dict)
+    ocr_config: dict[str, Any] = field(default_factory=dict)
 
     # Versionamento
     version: int = 1
-    parent_version_id: Optional[str] = None
-    changelog: List[str] = field(default_factory=list)
+    parent_version_id: str | None = None
+    changelog: list[str] = field(default_factory=list)
 
     # Estatisticas
     usage_count: int = 0
@@ -305,33 +306,33 @@ class ExtractionTemplate:
     avg_processing_time_ms: int = 0
 
     # Metadados
-    author: Optional[str] = None
-    tags: List[str] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    author: str | None = None
+    tags: list[str] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
     is_official: bool = False
     is_public: bool = False
 
     # Timestamps
     created_at: datetime = field(default_factory=datetime.utcnow)
     updated_at: datetime = field(default_factory=datetime.utcnow)
-    published_at: Optional[datetime] = None
+    published_at: datetime | None = None
 
-    def get_field(self, name: str) -> Optional[TemplateField]:
+    def get_field(self, name: str) -> TemplateField | None:
         """Obtem campo por nome."""
         for fld in self.fields:
             if fld.name == name:
                 return fld
         return None
 
-    def get_required_fields(self) -> List[TemplateField]:
+    def get_required_fields(self) -> list[TemplateField]:
         """Obtem campos obrigatorios."""
         return [f for f in self.fields if f.required]
 
-    def get_key_fields(self) -> List[TemplateField]:
+    def get_key_fields(self) -> list[TemplateField]:
         """Obtem campos chave."""
         return [f for f in self.fields if f.is_key_field]
 
-    def get_fields_by_group(self, group: str) -> List[TemplateField]:
+    def get_fields_by_group(self, group: str) -> list[TemplateField]:
         """Obtem campos de um grupo."""
         return [f for f in self.fields if f.group == group]
 
@@ -361,7 +362,7 @@ class ExtractionTemplate:
         self.status = TemplateStatus.DEPRECATED
         self.updated_at = datetime.utcnow()
 
-    def clone(self, new_name: Optional[str] = None) -> "ExtractionTemplate":
+    def clone(self, new_name: str | None = None) -> "ExtractionTemplate":
         """Clona o template."""
         import copy
 
@@ -383,9 +384,7 @@ class ExtractionTemplate:
         self.version += 1
         self.updated_at = datetime.utcnow()
 
-    def update_statistics(
-        self, success: bool, confidence: float, processing_time_ms: int
-    ) -> None:
+    def update_statistics(self, success: bool, confidence: float, processing_time_ms: int) -> None:
         """Atualiza estatisticas de uso."""
         self.usage_count += 1
         if success:
@@ -397,12 +396,8 @@ class ExtractionTemplate:
             self.avg_processing_time_ms = processing_time_ms
         else:
             alpha = 0.1  # Fator de suavizacao
-            self.avg_confidence = (
-                alpha * confidence + (1 - alpha) * self.avg_confidence
-            )
-            self.avg_processing_time_ms = int(
-                alpha * processing_time_ms + (1 - alpha) * self.avg_processing_time_ms
-            )
+            self.avg_confidence = alpha * confidence + (1 - alpha) * self.avg_confidence
+            self.avg_processing_time_ms = int(alpha * processing_time_ms + (1 - alpha) * self.avg_processing_time_ms)
 
     @property
     def success_rate(self) -> float:
@@ -411,7 +406,7 @@ class ExtractionTemplate:
             return 0.0
         return self.success_count / self.usage_count
 
-    def validate(self) -> List[str]:
+    def validate(self) -> list[str]:
         """Valida template."""
         errors = []
 
@@ -439,7 +434,7 @@ class ExtractionTemplate:
 
         return errors
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Converte para dicionario."""
         return {
             "id": self.id,

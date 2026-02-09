@@ -2,7 +2,6 @@
 
 import logging
 from datetime import datetime
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -27,9 +26,7 @@ async def get_service(db: AsyncSession = Depends(get_db)) -> ComodatoService:
     return ComodatoService(db)
 
 
-@router.post(
-    "/", response_model=ComodatoResponse, status_code=status.HTTP_201_CREATED
-)
+@router.post("/", response_model=ComodatoResponse, status_code=status.HTTP_201_CREATED)
 async def create_comodato(
     data: ComodatoCreate,
     service: ComodatoService = Depends(get_service),
@@ -49,16 +46,16 @@ async def create_comodato(
 
 @router.get("/", response_model=ComodatoListResponse)
 async def list_comodatos(
-    search: Optional[str] = Query(None),
-    status_filter: Optional[str] = Query(None, alias="status"),
-    client_id: Optional[str] = Query(None),
-    equipment_id: Optional[str] = Query(None),
-    is_signed: Optional[bool] = Query(None),
-    is_delivered: Optional[bool] = Query(None),
-    is_expired: Optional[bool] = Query(None),
-    has_damages: Optional[bool] = Query(None),
-    date_from: Optional[datetime] = Query(None),
-    date_to: Optional[datetime] = Query(None),
+    search: str | None = Query(None),
+    status_filter: str | None = Query(None, alias="status"),
+    client_id: str | None = Query(None),
+    equipment_id: str | None = Query(None),
+    is_signed: bool | None = Query(None),
+    is_delivered: bool | None = Query(None),
+    is_expired: bool | None = Query(None),
+    has_damages: bool | None = Query(None),
+    date_from: datetime | None = Query(None),
+    date_to: datetime | None = Query(None),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     service: ComodatoService = Depends(get_service),
@@ -81,7 +78,7 @@ async def list_comodatos(
 
 @router.get("/stats")
 async def get_stats(
-    client_id: Optional[str] = Query(None),
+    client_id: str | None = Query(None),
     service: ComodatoService = Depends(get_service),
 ) -> dict:
     """Obtém estatísticas de comodatos."""
@@ -90,7 +87,7 @@ async def get_stats(
 
 @router.get("/active", response_model=list[ComodatoResponse])
 async def get_active(
-    client_id: Optional[str] = Query(None),
+    client_id: str | None = Query(None),
     service: ComodatoService = Depends(get_service),
 ) -> list[ComodatoResponse]:
     """Lista comodatos ativos."""
@@ -229,14 +226,12 @@ async def deliver_comodato(
     comodato_id: str,
     delivered_by: str,
     received_by: str,
-    notes: Optional[str] = None,
-    photos: Optional[list] = None,
+    notes: str | None = None,
+    photos: list | None = None,
     service: ComodatoService = Depends(get_service),
 ) -> ComodatoResponse:
     """Registra entrega do equipamento."""
-    comodato = await service.deliver(
-        comodato_id, delivered_by, received_by, notes, photos
-    )
+    comodato = await service.deliver(comodato_id, delivered_by, received_by, notes, photos)
     if not comodato:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -281,14 +276,12 @@ async def register_return(
     comodato_id: str,
     returned_by: str,
     condition: str,
-    notes: Optional[str] = None,
-    photos: Optional[list] = None,
+    notes: str | None = None,
+    photos: list | None = None,
     service: ComodatoService = Depends(get_service),
 ) -> ComodatoResponse:
     """Registra devolução."""
-    comodato = await service.register_return(
-        comodato_id, returned_by, condition, notes, photos
-    )
+    comodato = await service.register_return(comodato_id, returned_by, condition, notes, photos)
     if not comodato:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -354,9 +347,7 @@ async def transfer_comodato(
     service: ComodatoService = Depends(get_service),
 ) -> ComodatoResponse:
     """Transfere comodato para outro cliente."""
-    comodato = await service.transfer(
-        comodato_id, new_client_id, new_client_name, reason
-    )
+    comodato = await service.transfer(comodato_id, new_client_id, new_client_name, reason)
     if not comodato:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

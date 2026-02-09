@@ -1,10 +1,9 @@
 """Repository para DocumentSignature."""
 
 import logging
-from typing import Optional, List
 from datetime import datetime
 
-from sqlalchemy import select, and_
+from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.ged.models.document_signature import (
@@ -34,23 +33,17 @@ class DocumentSignatureRepository:
         await self.session.flush()
         return signature
 
-    async def get_by_id(self, signature_id: str) -> Optional[DocumentSignature]:
+    async def get_by_id(self, signature_id: str) -> DocumentSignature | None:
         """Busca assinatura por ID."""
-        result = await self.session.execute(
-            select(DocumentSignature).where(DocumentSignature.id == signature_id)
-        )
+        result = await self.session.execute(select(DocumentSignature).where(DocumentSignature.id == signature_id))
         return result.scalar_one_or_none()
 
-    async def get_by_token(self, token: str) -> Optional[DocumentSignature]:
+    async def get_by_token(self, token: str) -> DocumentSignature | None:
         """Busca assinatura por token."""
-        result = await self.session.execute(
-            select(DocumentSignature).where(DocumentSignature.signature_token == token)
-        )
+        result = await self.session.execute(select(DocumentSignature).where(DocumentSignature.signature_token == token))
         return result.scalar_one_or_none()
 
-    async def update(
-        self, signature_id: str, data: DocumentSignatureUpdate
-    ) -> Optional[DocumentSignature]:
+    async def update(self, signature_id: str, data: DocumentSignatureUpdate) -> DocumentSignature | None:
         """Atualiza uma assinatura."""
         signature = await self.get_by_id(signature_id)
         if not signature:
@@ -73,13 +66,9 @@ class DocumentSignatureRepository:
         await self.session.flush()
         return True
 
-    async def get_by_document(
-        self, document_id: str, status: SignatureStatus = None
-    ) -> List[DocumentSignature]:
+    async def get_by_document(self, document_id: str, status: SignatureStatus = None) -> list[DocumentSignature]:
         """Retorna assinaturas de um documento."""
-        query = select(DocumentSignature).where(
-            DocumentSignature.document_id == document_id
-        )
+        query = select(DocumentSignature).where(DocumentSignature.document_id == document_id)
         if status:
             query = query.where(DocumentSignature.status == status)
 
@@ -87,15 +76,13 @@ class DocumentSignatureRepository:
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    async def get_pending_by_document(
-        self, document_id: str
-    ) -> List[DocumentSignature]:
+    async def get_pending_by_document(self, document_id: str) -> list[DocumentSignature]:
         """Retorna assinaturas pendentes de um documento."""
         return await self.get_by_document(document_id, SignatureStatus.PENDENTE)
 
     async def get_by_signer(
         self, signer_id: str = None, signer_email: str = None, status: SignatureStatus = None
-    ) -> List[DocumentSignature]:
+    ) -> list[DocumentSignature]:
         """Retorna assinaturas por signatário."""
         query = select(DocumentSignature)
 
@@ -113,9 +100,7 @@ class DocumentSignatureRepository:
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    async def get_pending_by_signer(
-        self, signer_id: str = None, signer_email: str = None
-    ) -> List[DocumentSignature]:
+    async def get_pending_by_signer(self, signer_id: str = None, signer_email: str = None) -> list[DocumentSignature]:
         """Retorna assinaturas pendentes do signatário."""
         return await self.get_by_signer(
             signer_id=signer_id,
@@ -131,7 +116,7 @@ class DocumentSignatureRepository:
         ip_address: str = None,
         user_agent: str = None,
         geolocation: dict = None,
-    ) -> Optional[DocumentSignature]:
+    ) -> DocumentSignature | None:
         """Registra assinatura."""
         signature = await self.get_by_id(signature_id)
         if not signature:
@@ -147,9 +132,7 @@ class DocumentSignatureRepository:
         await self.session.flush()
         return signature
 
-    async def refuse(
-        self, signature_id: str, reason: str
-    ) -> Optional[DocumentSignature]:
+    async def refuse(self, signature_id: str, reason: str) -> DocumentSignature | None:
         """Recusa assinatura."""
         signature = await self.get_by_id(signature_id)
         if not signature:
@@ -158,7 +141,7 @@ class DocumentSignatureRepository:
         await self.session.flush()
         return signature
 
-    async def cancel(self, signature_id: str) -> Optional[DocumentSignature]:
+    async def cancel(self, signature_id: str) -> DocumentSignature | None:
         """Cancela assinatura."""
         signature = await self.get_by_id(signature_id)
         if not signature:
@@ -167,9 +150,7 @@ class DocumentSignatureRepository:
         await self.session.flush()
         return signature
 
-    async def verify(
-        self, signature_id: str, method: str
-    ) -> Optional[DocumentSignature]:
+    async def verify(self, signature_id: str, method: str) -> DocumentSignature | None:
         """Verifica assinatura."""
         signature = await self.get_by_id(signature_id)
         if not signature:
@@ -178,9 +159,7 @@ class DocumentSignatureRepository:
         await self.session.flush()
         return signature
 
-    async def send_notification(
-        self, signature_id: str
-    ) -> Optional[DocumentSignature]:
+    async def send_notification(self, signature_id: str) -> DocumentSignature | None:
         """Marca notificação como enviada."""
         signature = await self.get_by_id(signature_id)
         if not signature:
@@ -189,7 +168,7 @@ class DocumentSignatureRepository:
         await self.session.flush()
         return signature
 
-    async def send_reminder(self, signature_id: str) -> Optional[DocumentSignature]:
+    async def send_reminder(self, signature_id: str) -> DocumentSignature | None:
         """Registra envio de lembrete."""
         signature = await self.get_by_id(signature_id)
         if not signature:
@@ -198,9 +177,7 @@ class DocumentSignatureRepository:
         await self.session.flush()
         return signature
 
-    async def regenerate_token(
-        self, signature_id: str, expires_in_hours: int = 72
-    ) -> Optional[str]:
+    async def regenerate_token(self, signature_id: str, expires_in_hours: int = 72) -> str | None:
         """Regenera token de assinatura."""
         signature = await self.get_by_id(signature_id)
         if not signature:
@@ -209,9 +186,7 @@ class DocumentSignatureRepository:
         await self.session.flush()
         return token
 
-    async def extend_deadline(
-        self, signature_id: str, new_deadline: datetime
-    ) -> Optional[DocumentSignature]:
+    async def extend_deadline(self, signature_id: str, new_deadline: datetime) -> DocumentSignature | None:
         """Estende prazo."""
         signature = await self.get_by_id(signature_id)
         if not signature:
@@ -240,9 +215,7 @@ class DocumentSignatureRepository:
         await self.session.flush()
         return count
 
-    async def get_next_in_sequence(
-        self, document_id: str
-    ) -> Optional[DocumentSignature]:
+    async def get_next_in_sequence(self, document_id: str) -> DocumentSignature | None:
         """Retorna próxima assinatura na sequência."""
         # Busca assinaturas pendentes ordenadas por ordem
         pending = await self.get_pending_by_document(document_id)
@@ -262,9 +235,7 @@ class DocumentSignatureRepository:
 
         return None
 
-    async def _get_previous_signatures(
-        self, document_id: str, order: int
-    ) -> List[DocumentSignature]:
+    async def _get_previous_signatures(self, document_id: str, order: int) -> list[DocumentSignature]:
         """Retorna assinaturas anteriores na ordem."""
         query = (
             select(DocumentSignature)

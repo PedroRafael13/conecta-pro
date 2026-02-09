@@ -7,7 +7,7 @@ import logging
 import math
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID
 
 logger = logging.getLogger(__name__)
@@ -74,8 +74,8 @@ class ForecastService:
         self,
         tenant_id: UUID,
         entity_type: str,
-        entity_id: Optional[UUID] = None,
-        historical_data: Optional[list[dict]] = None,
+        entity_id: UUID | None = None,
+        historical_data: list[dict] | None = None,
         periods: int = 6,
         period_type: str = "month",  # day, week, month, quarter
         confidence_level: float = 0.95,
@@ -96,9 +96,7 @@ class ForecastService:
         """
         # Coleta dados historicos se nao fornecidos
         if historical_data is None:
-            historical_data = await self._get_historical_revenue(
-                tenant_id, entity_type, entity_id, periods * 3
-            )
+            historical_data = await self._get_historical_revenue(tenant_id, entity_type, entity_id, periods * 3)
 
         # Calcula forecast
         forecasts = self._calculate_forecast(
@@ -116,8 +114,8 @@ class ForecastService:
         self,
         tenant_id: UUID,
         entity_type: str,
-        entity_id: Optional[UUID] = None,
-        historical_data: Optional[list[dict]] = None,
+        entity_id: UUID | None = None,
+        historical_data: list[dict] | None = None,
         periods: int = 6,
         period_type: str = "month",
         confidence_level: float = 0.95,
@@ -137,9 +135,7 @@ class ForecastService:
             Resumo do forecast.
         """
         if historical_data is None:
-            historical_data = await self._get_historical_expense(
-                tenant_id, entity_type, entity_id, periods * 3
-            )
+            historical_data = await self._get_historical_expense(tenant_id, entity_type, entity_id, periods * 3)
 
         forecasts = self._calculate_forecast(
             historical_data,
@@ -155,8 +151,8 @@ class ForecastService:
         self,
         tenant_id: UUID,
         entity_type: str,
-        entity_id: Optional[UUID] = None,
-        historical_data: Optional[list[dict]] = None,
+        entity_id: UUID | None = None,
+        historical_data: list[dict] | None = None,
         periods: int = 6,
         period_type: str = "month",
         confidence_level: float = 0.95,
@@ -176,9 +172,7 @@ class ForecastService:
             Resumo do forecast.
         """
         if historical_data is None:
-            historical_data = await self._get_historical_demand(
-                tenant_id, entity_type, entity_id, periods * 3
-            )
+            historical_data = await self._get_historical_demand(tenant_id, entity_type, entity_id, periods * 3)
 
         forecasts = self._calculate_forecast(
             historical_data,
@@ -224,9 +218,7 @@ class ForecastService:
 
         # Calcula tendencia (regressao linear simples)
         trend_slope = self._calculate_trend(values)
-        trend_direction = (
-            "up" if trend_slope > 0.01 else "down" if trend_slope < -0.01 else "stable"
-        )
+        trend_direction = "up" if trend_slope > 0.01 else "down" if trend_slope < -0.01 else "stable"
 
         # Gera forecasts
         forecasts = []
@@ -478,7 +470,7 @@ class ForecastService:
         self,
         tenant_id: UUID,
         entity_type: str,
-        entity_id: Optional[UUID],
+        entity_id: UUID | None,
         periods: int,
     ) -> list[dict]:
         """Busca dados historicos de receita.
@@ -512,7 +504,7 @@ class ForecastService:
         self,
         tenant_id: UUID,
         entity_type: str,
-        entity_id: Optional[UUID],
+        entity_id: UUID | None,
         periods: int,
     ) -> list[dict]:
         """Busca dados historicos de despesa.
@@ -542,7 +534,7 @@ class ForecastService:
         self,
         tenant_id: UUID,
         entity_type: str,
-        entity_id: Optional[UUID],
+        entity_id: UUID | None,
         periods: int,
     ) -> list[dict]:
         """Busca dados historicos de demanda.

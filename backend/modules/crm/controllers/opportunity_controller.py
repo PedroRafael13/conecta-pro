@@ -2,8 +2,6 @@
 Controller (endpoints) para Opportunity.
 """
 
-from typing import Optional
-
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -68,10 +66,7 @@ async def create_opportunity_from_lead(
             detail="Lead nao encontrado ou inativo",
         )
 
-    logger.info(
-        f"Lead {data.lead_id} convertido em Opportunity {opportunity.id} "
-        f"por {current_user.email}"
-    )
+    logger.info(f"Lead {data.lead_id} convertido em Opportunity {opportunity.id} por {current_user.email}")
     return OpportunityResponse.model_validate(opportunity)
 
 
@@ -81,14 +76,14 @@ async def list_opportunities(  # pylint: disable=too-many-locals
     db: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1, description="Pagina atual"),
     page_size: int = Query(20, ge=1, le=100, description="Itens por pagina"),
-    stage: Optional[OpportunityStage] = None,
-    priority: Optional[OpportunityPriority] = None,
-    owner_id: Optional[str] = None,
-    is_open: Optional[bool] = None,
-    min_value: Optional[float] = Query(None, ge=0),
-    max_value: Optional[float] = Query(None, ge=0),
-    company_name: Optional[str] = None,
-    search: Optional[str] = None,
+    stage: OpportunityStage | None = None,
+    priority: OpportunityPriority | None = None,
+    owner_id: str | None = None,
+    is_open: bool | None = None,
+    min_value: float | None = Query(None, ge=0),
+    max_value: float | None = Query(None, ge=0),
+    company_name: str | None = None,
+    search: str | None = None,
 ) -> OpportunityListResponse:
     """
     Lista opportunities com filtros e paginacao.
@@ -108,9 +103,7 @@ async def list_opportunities(  # pylint: disable=too-many-locals
         search=search,
     )
 
-    opportunities, total = await repo.list(
-        filters=filters, page=page, page_size=page_size
-    )
+    opportunities, total = await repo.list(filters=filters, page=page, page_size=page_size)
 
     total_pages = (total + page_size - 1) // page_size
 
@@ -127,7 +120,7 @@ async def list_opportunities(  # pylint: disable=too-many-locals
 async def get_pipeline_stats(
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
-    owner_id: Optional[str] = None,
+    owner_id: str | None = None,
 ) -> PipelineStats:
     """
     Obtem estatisticas do pipeline de vendas.
@@ -205,10 +198,7 @@ async def update_opportunity_stage(
             detail="Opportunity nao encontrada",
         )
 
-    logger.info(
-        f"Opportunity {opportunity.id} stage alterado para {data.stage.value} "
-        f"por {current_user.email}"
-    )
+    logger.info(f"Opportunity {opportunity.id} stage alterado para {data.stage.value} por {current_user.email}")
     return OpportunityResponse.model_validate(opportunity)
 
 
@@ -234,10 +224,7 @@ async def close_opportunity(
         )
 
     status_str = "WON" if data.won else "LOST"
-    logger.info(
-        f"Opportunity {opportunity.id} fechada como {status_str} "
-        f"por {current_user.email}"
-    )
+    logger.info(f"Opportunity {opportunity.id} fechada como {status_str} por {current_user.email}")
     return OpportunityResponse.model_validate(opportunity)
 
 

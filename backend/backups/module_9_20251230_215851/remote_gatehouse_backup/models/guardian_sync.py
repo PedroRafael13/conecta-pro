@@ -5,8 +5,7 @@ Modelo GuardianSync para controle de sincronização.
 from __future__ import annotations
 
 from datetime import datetime
-from enum import Enum
-from typing import Optional
+from enum import StrEnum
 from uuid import uuid4
 
 from sqlalchemy import Boolean, DateTime, Integer, String, Text, func
@@ -16,7 +15,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from core.models.base import Base
 
 
-class SyncStatus(str, Enum):
+class SyncStatus(StrEnum):
     """Status da sincronização."""
 
     PENDING = "pending"  # Aguardando envio
@@ -27,7 +26,7 @@ class SyncStatus(str, Enum):
     CANCELLED = "cancelled"  # Cancelada
 
 
-class SyncDirection(str, Enum):
+class SyncDirection(StrEnum):
     """Direção da sincronização."""
 
     ERP_TO_GUARDIAN = "erp_to_guardian"  # ERP envia para Guardian
@@ -35,7 +34,7 @@ class SyncDirection(str, Enum):
     BIDIRECTIONAL = "bidirectional"  # Ambas direções
 
 
-class SyncEntityType(str, Enum):
+class SyncEntityType(StrEnum):
     """Tipo de entidade sincronizada."""
 
     # ERP -> Guardian
@@ -113,7 +112,7 @@ class GuardianSync(Base):
         nullable=False,
         index=True,
     )
-    external_id: Mapped[Optional[str]] = mapped_column(
+    external_id: Mapped[str | None] = mapped_column(
         String(100),
         nullable=True,
         index=True,
@@ -128,36 +127,36 @@ class GuardianSync(Base):
     )
 
     # Relacionamentos com outras entidades
-    client_id: Mapped[Optional[str]] = mapped_column(
+    client_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
         index=True,
     )
-    contract_id: Mapped[Optional[str]] = mapped_column(
+    contract_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
         index=True,
     )
-    post_id: Mapped[Optional[str]] = mapped_column(
+    post_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
         index=True,
     )
 
     # Dados
-    payload: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
-    response: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
-    error_message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    error_details: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    payload: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    response: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    error_details: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 
     # Retentativas
     retry_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     max_retries: Mapped[int] = mapped_column(Integer, default=3, nullable=False)
-    last_retry_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    next_retry_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    last_retry_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    next_retry_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     # Timestamps
-    synced_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    synced_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime,
@@ -170,13 +169,13 @@ class GuardianSync(Base):
         onupdate=func.now(),
         nullable=False,
     )
-    created_by: Mapped[Optional[str]] = mapped_column(
+    created_by: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
     )
 
     # Metadados
-    metadata_extra: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    metadata_extra: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 
     def __repr__(self) -> str:
         """Representação textual."""
@@ -195,10 +194,7 @@ class GuardianSync(Base):
     @property
     def can_retry(self) -> bool:
         """Verifica se pode tentar novamente."""
-        return (
-            self.status == SyncStatus.FAILED.value
-            and self.retry_count < self.max_retries
-        )
+        return self.status == SyncStatus.FAILED.value and self.retry_count < self.max_retries
 
     @property
     def is_outbound(self) -> bool:

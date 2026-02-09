@@ -1,31 +1,30 @@
 """Controller para sincronização de check-ins offline."""
 
 import logging
-from typing import List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.database import get_db
 from core.auth.dependencies import get_current_user, require_roles
+from core.database import get_db
+from modules.hr.mobile_time_clock.repositories import (
+    MobileDeviceRepository,
+    OfflineQueueRepository,
+)
 from modules.hr.mobile_time_clock.schemas import (
-    OfflineQueueItemCreate,
     OfflineQueueBatch,
-    OfflineQueueResponse,
-    OfflineQueueList,
-    OfflineQueueFilter,
-    OfflineQueueStats,
-    SyncBatchResult,
-    OfflineQueueRetry,
     OfflineQueueCleanup,
     OfflineQueueCleanupResult,
+    OfflineQueueFilter,
+    OfflineQueueItemCreate,
+    OfflineQueueList,
+    OfflineQueueResponse,
+    OfflineQueueRetry,
+    OfflineQueueStats,
+    SyncBatchResult,
 )
-from modules.hr.mobile_time_clock.services import OfflineSyncService, DeviceService
-from modules.hr.mobile_time_clock.repositories import (
-    OfflineQueueRepository,
-    MobileDeviceRepository,
-)
+from modules.hr.mobile_time_clock.services import DeviceService, OfflineSyncService
 
 logger = logging.getLogger(__name__)
 
@@ -47,9 +46,7 @@ async def queue_item(
     """Adiciona check-in offline à fila de sincronização."""
     # Validar dispositivo
     device_service = DeviceService(db)
-    is_valid, device, error = await device_service.validate_device_for_checkin(
-        device_uuid
-    )
+    is_valid, device, error = await device_service.validate_device_for_checkin(device_uuid)
 
     if not is_valid:
         raise HTTPException(
@@ -83,9 +80,7 @@ async def queue_and_sync_batch(
     """Adiciona batch de check-ins offline e tenta sincronizar."""
     # Validar dispositivo
     device_service = DeviceService(db)
-    is_valid, device, error = await device_service.validate_device_for_checkin(
-        device_uuid
-    )
+    is_valid, device, error = await device_service.validate_device_for_checkin(device_uuid)
 
     if not is_valid:
         raise HTTPException(
@@ -176,7 +171,7 @@ async def get_sync_status(
 
 @router.get(
     "/pending",
-    response_model=List[OfflineQueueResponse],
+    response_model=list[OfflineQueueResponse],
     summary="Itens pendentes",
 )
 async def get_pending_items(

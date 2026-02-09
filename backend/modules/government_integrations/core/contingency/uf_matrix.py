@@ -5,21 +5,22 @@ Define endpoints principais e de contingência para cada UF.
 """
 
 from dataclasses import dataclass
-from typing import Dict, Optional, List
 from enum import Enum
 
 
 class TipoContingencia(Enum):
     """Tipos de contingência SEFAZ."""
-    SVC_AN = "svc_an"      # Contingência Ambiente Nacional
-    SVC_RS = "svc_rs"      # Contingência Rio Grande do Sul
-    EPEC = "epec"          # Evento Prévio de Emissão em Contingência
-    FS_DA = "fs_da"        # Formulário de Segurança - Documento Auxiliar
+
+    SVC_AN = "svc_an"  # Contingência Ambiente Nacional
+    SVC_RS = "svc_rs"  # Contingência Rio Grande do Sul
+    EPEC = "epec"  # Evento Prévio de Emissão em Contingência
+    FS_DA = "fs_da"  # Formulário de Segurança - Documento Auxiliar
 
 
 @dataclass
 class EndpointConfig:
     """Configuração de endpoint."""
+
     url: str
     versao: str = "4.00"
     timeout: int = 30
@@ -29,15 +30,16 @@ class EndpointConfig:
 @dataclass
 class ConfigUF:
     """Configuração de endpoints por UF."""
+
     uf: str
     principal: EndpointConfig
-    contingencia: Optional[EndpointConfig] = None
-    contingencia_2: Optional[EndpointConfig] = None
+    contingencia: EndpointConfig | None = None
+    contingencia_2: EndpointConfig | None = None
     tipo_contingencia: TipoContingencia = TipoContingencia.SVC_AN
 
 
 # Endpoints Centralizados
-ENDPOINTS_CENTRALIZADOS: Dict[str, Dict[str, str]] = {
+ENDPOINTS_CENTRALIZADOS: dict[str, dict[str, str]] = {
     # SEFAZ AM - Produção (case-sensitive: Nfe com f minúsculo)
     "AM_PROD": {
         "NfeStatusServico": "https://nfe.sefaz.am.gov.br/services2/services/NfeStatusServico4",
@@ -114,7 +116,7 @@ ENDPOINTS_CENTRALIZADOS: Dict[str, Dict[str, str]] = {
 
 
 # Matriz de Contingência NF-e por UF
-MATRIZ_CONTINGENCIA_NFE: Dict[str, ConfigUF] = {
+MATRIZ_CONTINGENCIA_NFE: dict[str, ConfigUF] = {
     # ===== NORTE =====
     "AC": ConfigUF(
         uf="AC",
@@ -158,7 +160,6 @@ MATRIZ_CONTINGENCIA_NFE: Dict[str, ConfigUF] = {
         contingencia=EndpointConfig(url="SVC_RS"),
         tipo_contingencia=TipoContingencia.SVC_RS,
     ),
-
     # ===== NORDESTE =====
     "AL": ConfigUF(
         uf="AL",
@@ -168,17 +169,13 @@ MATRIZ_CONTINGENCIA_NFE: Dict[str, ConfigUF] = {
     ),
     "BA": ConfigUF(
         uf="BA",
-        principal=EndpointConfig(
-            url="https://nfe.sefaz.ba.gov.br/webservices/NFeAutorizacao4/"
-        ),
+        principal=EndpointConfig(url="https://nfe.sefaz.ba.gov.br/webservices/NFeAutorizacao4/"),
         contingencia=EndpointConfig(url="SVC_AN"),
         tipo_contingencia=TipoContingencia.SVC_AN,
     ),
     "CE": ConfigUF(
         uf="CE",
-        principal=EndpointConfig(
-            url="https://nfe.sefaz.ce.gov.br/nfe4/services/"
-        ),
+        principal=EndpointConfig(url="https://nfe.sefaz.ce.gov.br/nfe4/services/"),
         contingencia=EndpointConfig(url="SVC_AN"),
         tipo_contingencia=TipoContingencia.SVC_AN,
     ),
@@ -196,9 +193,7 @@ MATRIZ_CONTINGENCIA_NFE: Dict[str, ConfigUF] = {
     ),
     "PE": ConfigUF(
         uf="PE",
-        principal=EndpointConfig(
-            url="https://nfe.sefaz.pe.gov.br/nfe-service/"
-        ),
+        principal=EndpointConfig(url="https://nfe.sefaz.pe.gov.br/nfe-service/"),
         contingencia=EndpointConfig(url="SVC_AN"),
         tipo_contingencia=TipoContingencia.SVC_AN,
     ),
@@ -220,7 +215,6 @@ MATRIZ_CONTINGENCIA_NFE: Dict[str, ConfigUF] = {
         contingencia=EndpointConfig(url="SVC_RS"),
         tipo_contingencia=TipoContingencia.SVC_RS,
     ),
-
     # ===== CENTRO-OESTE =====
     "DF": ConfigUF(
         uf="DF",
@@ -230,29 +224,22 @@ MATRIZ_CONTINGENCIA_NFE: Dict[str, ConfigUF] = {
     ),
     "GO": ConfigUF(
         uf="GO",
-        principal=EndpointConfig(
-            url="https://nfe.sefaz.go.gov.br/nfe/services/"
-        ),
+        principal=EndpointConfig(url="https://nfe.sefaz.go.gov.br/nfe/services/"),
         contingencia=EndpointConfig(url="SVC_RS"),
         tipo_contingencia=TipoContingencia.SVC_RS,
     ),
     "MS": ConfigUF(
         uf="MS",
-        principal=EndpointConfig(
-            url="https://nfe.sefaz.ms.gov.br/ws/"
-        ),
+        principal=EndpointConfig(url="https://nfe.sefaz.ms.gov.br/ws/"),
         contingencia=EndpointConfig(url="SVC_RS"),
         tipo_contingencia=TipoContingencia.SVC_RS,
     ),
     "MT": ConfigUF(
         uf="MT",
-        principal=EndpointConfig(
-            url="https://nfe.sefaz.mt.gov.br/nfews/"
-        ),
+        principal=EndpointConfig(url="https://nfe.sefaz.mt.gov.br/nfews/"),
         contingencia=EndpointConfig(url="SVC_RS"),
         tipo_contingencia=TipoContingencia.SVC_RS,
     ),
-
     # ===== SUDESTE =====
     "ES": ConfigUF(
         uf="ES",
@@ -262,9 +249,7 @@ MATRIZ_CONTINGENCIA_NFE: Dict[str, ConfigUF] = {
     ),
     "MG": ConfigUF(
         uf="MG",
-        principal=EndpointConfig(
-            url="https://nfe.fazenda.mg.gov.br/nfe2/services/"
-        ),
+        principal=EndpointConfig(url="https://nfe.fazenda.mg.gov.br/nfe2/services/"),
         contingencia=EndpointConfig(url="SVC_AN"),
         tipo_contingencia=TipoContingencia.SVC_AN,
     ),
@@ -276,27 +261,20 @@ MATRIZ_CONTINGENCIA_NFE: Dict[str, ConfigUF] = {
     ),
     "SP": ConfigUF(
         uf="SP",
-        principal=EndpointConfig(
-            url="https://nfe.fazenda.sp.gov.br/ws/"
-        ),
+        principal=EndpointConfig(url="https://nfe.fazenda.sp.gov.br/ws/"),
         contingencia=EndpointConfig(url="SVC_AN"),
         tipo_contingencia=TipoContingencia.SVC_AN,
     ),
-
     # ===== SUL =====
     "PR": ConfigUF(
         uf="PR",
-        principal=EndpointConfig(
-            url="https://nfe.sefa.pr.gov.br/nfe/NFeAutorizacao4"
-        ),
+        principal=EndpointConfig(url="https://nfe.sefa.pr.gov.br/nfe/NFeAutorizacao4"),
         contingencia=EndpointConfig(url="SVC_RS"),
         tipo_contingencia=TipoContingencia.SVC_RS,
     ),
     "RS": ConfigUF(
         uf="RS",
-        principal=EndpointConfig(
-            url="https://nfe.sefazrs.rs.gov.br/ws/"
-        ),
+        principal=EndpointConfig(url="https://nfe.sefazrs.rs.gov.br/ws/"),
         contingencia=EndpointConfig(url="SVC_AN"),
         tipo_contingencia=TipoContingencia.SVC_AN,
     ),
@@ -309,7 +287,7 @@ MATRIZ_CONTINGENCIA_NFE: Dict[str, ConfigUF] = {
 }
 
 # Matriz de Contingência CT-e por UF
-MATRIZ_CONTINGENCIA_CTE: Dict[str, ConfigUF] = {
+MATRIZ_CONTINGENCIA_CTE: dict[str, ConfigUF] = {
     # Maioria usa SVRS
     "DEFAULT": ConfigUF(
         uf="DEFAULT",
@@ -319,43 +297,33 @@ MATRIZ_CONTINGENCIA_CTE: Dict[str, ConfigUF] = {
     # UFs com SEFAZ própria para CT-e
     "MG": ConfigUF(
         uf="MG",
-        principal=EndpointConfig(
-            url="https://cte.fazenda.mg.gov.br/cte/services/"
-        ),
+        principal=EndpointConfig(url="https://cte.fazenda.mg.gov.br/cte/services/"),
         contingencia=EndpointConfig(url="SVRS_CTE"),
     ),
     "MS": ConfigUF(
         uf="MS",
-        principal=EndpointConfig(
-            url="https://producao.cte.ms.gov.br/ws/"
-        ),
+        principal=EndpointConfig(url="https://producao.cte.ms.gov.br/ws/"),
         contingencia=EndpointConfig(url="SVRS_CTE"),
     ),
     "MT": ConfigUF(
         uf="MT",
-        principal=EndpointConfig(
-            url="https://cte.sefaz.mt.gov.br/ctews2/"
-        ),
+        principal=EndpointConfig(url="https://cte.sefaz.mt.gov.br/ctews2/"),
         contingencia=EndpointConfig(url="SVRS_CTE"),
     ),
     "PR": ConfigUF(
         uf="PR",
-        principal=EndpointConfig(
-            url="https://cte.fazenda.pr.gov.br/cte4/"
-        ),
+        principal=EndpointConfig(url="https://cte.fazenda.pr.gov.br/cte4/"),
         contingencia=EndpointConfig(url="SVRS_CTE"),
     ),
     "SP": ConfigUF(
         uf="SP",
-        principal=EndpointConfig(
-            url="https://nfe.fazenda.sp.gov.br/CTeWS/"
-        ),
+        principal=EndpointConfig(url="https://nfe.fazenda.sp.gov.br/CTeWS/"),
         contingencia=EndpointConfig(url="SVRS_CTE"),
     ),
 }
 
 # Matriz de Contingência MDF-e por UF
-MATRIZ_CONTINGENCIA_MDFE: Dict[str, ConfigUF] = {
+MATRIZ_CONTINGENCIA_MDFE: dict[str, ConfigUF] = {
     # Maioria usa SVRS
     "DEFAULT": ConfigUF(
         uf="DEFAULT",
@@ -365,9 +333,7 @@ MATRIZ_CONTINGENCIA_MDFE: Dict[str, ConfigUF] = {
     # RS tem SEFAZ própria
     "RS": ConfigUF(
         uf="RS",
-        principal=EndpointConfig(
-            url="https://mdfe.svrs.rs.gov.br/ws/"
-        ),
+        principal=EndpointConfig(url="https://mdfe.svrs.rs.gov.br/ws/"),
         contingencia=None,
     ),
 }
@@ -381,24 +347,18 @@ class MatrizContingencia:
         """Obtém configuração de NF-e para UF."""
         return MATRIZ_CONTINGENCIA_NFE.get(
             uf.upper(),
-            MATRIZ_CONTINGENCIA_NFE.get("AC")  # Fallback para SVRS
+            MATRIZ_CONTINGENCIA_NFE.get("AC"),  # Fallback para SVRS
         )
 
     @classmethod
     def obter_config_cte(cls, uf: str) -> ConfigUF:
         """Obtém configuração de CT-e para UF."""
-        return MATRIZ_CONTINGENCIA_CTE.get(
-            uf.upper(),
-            MATRIZ_CONTINGENCIA_CTE["DEFAULT"]
-        )
+        return MATRIZ_CONTINGENCIA_CTE.get(uf.upper(), MATRIZ_CONTINGENCIA_CTE["DEFAULT"])
 
     @classmethod
     def obter_config_mdfe(cls, uf: str) -> ConfigUF:
         """Obtém configuração de MDF-e para UF."""
-        return MATRIZ_CONTINGENCIA_MDFE.get(
-            uf.upper(),
-            MATRIZ_CONTINGENCIA_MDFE["DEFAULT"]
-        )
+        return MATRIZ_CONTINGENCIA_MDFE.get(uf.upper(), MATRIZ_CONTINGENCIA_MDFE["DEFAULT"])
 
     @classmethod
     def resolver_url(cls, config_url: str, servico: str) -> str:
@@ -416,7 +376,7 @@ class MatrizContingencia:
         return f"{config_url.rstrip('/')}/{servico}"
 
     @classmethod
-    def listar_ufs_com_sefaz_propria(cls) -> List[str]:
+    def listar_ufs_com_sefaz_propria(cls) -> list[str]:
         """Lista UFs que têm SEFAZ própria para NF-e."""
         ufs = []
         for uf, config in MATRIZ_CONTINGENCIA_NFE.items():

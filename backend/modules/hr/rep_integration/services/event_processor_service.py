@@ -4,20 +4,20 @@ Converte eventos brutos em registros de ponto (TimeEntry).
 """
 
 import logging
-from datetime import datetime, date
-from typing import Optional, List, Dict, Any
+from datetime import date, datetime
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.hr.rep_integration.models import (
-    REPEvent,
     EventStatus,
     EventType,
+    REPEvent,
 )
 from modules.hr.rep_integration.repositories import (
-    REPEventRepository,
     AFDRecordRepository,
+    REPEventRepository,
 )
 
 logger = logging.getLogger(__name__)
@@ -35,7 +35,7 @@ class EventProcessorService:
         self,
         device_id: UUID = None,
         limit: int = 100,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Processa eventos pendentes.
 
         Returns:
@@ -136,7 +136,7 @@ class EventProcessorService:
         logger.info(f"Evento {event.id} processado -> TimeEntry {time_entry_id}")
         return True
 
-    async def _validate_event(self, event: REPEvent) -> Dict[str, Any]:
+    async def _validate_event(self, event: REPEvent) -> dict[str, Any]:
         """Valida um evento."""
         errors = []
 
@@ -170,7 +170,7 @@ class EventProcessorService:
         self,
         pis_number: str,  # pylint: disable=unused-argument
         condominio_id: UUID,  # pylint: disable=unused-argument
-    ) -> Optional[UUID]:
+    ) -> UUID | None:
         """Identifica funcionário pelo PIS.
 
         Returns:
@@ -180,7 +180,7 @@ class EventProcessorService:
         # Por enquanto, retorna None para marcar como não identificado
         return None
 
-    async def _create_time_entry(self, event: REPEvent) -> Optional[UUID]:
+    async def _create_time_entry(self, event: REPEvent) -> UUID | None:
         """Cria registro de ponto a partir do evento.
 
         Returns:
@@ -202,6 +202,7 @@ class EventProcessorService:
 
             # Por enquanto, retorna UUID simulado (remover quando integrar)
             import uuid  # pylint: disable=import-outside-toplevel
+
             _ = _entry_type  # Usado na integração com time_tracking
             return uuid.uuid4()
 
@@ -248,7 +249,7 @@ class EventProcessorService:
         date_from: date = None,
         date_to: date = None,
         limit: int = 100,
-    ) -> List[REPEvent]:
+    ) -> list[REPEvent]:
         """Retorna eventos sem funcionário identificado."""
         return await self.event_repo.get_unidentified_events(
             device_id=device_id,
@@ -259,8 +260,8 @@ class EventProcessorService:
 
     async def bulk_link_events(
         self,
-        mappings: List[Dict[str, UUID]],
-    ) -> Dict[str, int]:
+        mappings: list[dict[str, UUID]],
+    ) -> dict[str, int]:
         """Vincula múltiplos eventos a funcionários.
 
         Args:
@@ -290,7 +291,7 @@ class EventProcessorService:
         self,
         device_id: UUID = None,
         limit: int = 50,
-    ) -> Dict[str, int]:
+    ) -> dict[str, int]:
         """Reprocessa eventos que falharam."""
         # Buscar eventos com erro que podem ser reprocessados
         # pylint: disable=import-outside-toplevel

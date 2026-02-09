@@ -8,29 +8,30 @@ Testa:
 - Client e Service
 """
 
-import pytest
 from datetime import datetime
-from unittest.mock import MagicMock, AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 from modules.government_integrations.core.sefaz_am import (
+    ENDPOINT_DFE_NACIONAL,
+    ENDPOINTS_SEFAZ_AM,
+    AmbienteSEFAZ,
+    EndpointConfig,
+    InformacaoCadastral,
+    ResultadoAutorizacao,
+    ResultadoConsulta,
+    ResultadoEvento,
     SefazAMClient,
     SefazAMService,
-    AmbienteSEFAZ,
-    TipoEvento,
     StatusServico,
-    ResultadoConsulta,
-    ResultadoAutorizacao,
-    ResultadoEvento,
-    InformacaoCadastral,
-    ENDPOINTS_SEFAZ_AM,
-    ENDPOINT_DFE_NACIONAL,
-    EndpointConfig,
+    TipoEvento,
 )
-
 
 # =============================================================================
 # TESTES DE CONFIGURACAO
 # =============================================================================
+
 
 class TestEndpointsConfig:
     """Testes de configuracao de endpoints."""
@@ -95,6 +96,7 @@ class TestEnums:
 # =============================================================================
 # TESTES DO CLIENT
 # =============================================================================
+
 
 class TestSefazAMClient:
     """Testes do client SEFAZ-AM."""
@@ -280,6 +282,7 @@ class TestClientParsers:
 # TESTES DO SERVICE
 # =============================================================================
 
+
 class TestSefazAMService:
     """Testes do service SEFAZ-AM."""
 
@@ -304,7 +307,7 @@ class TestSefazAMService:
         """Testa verificacao de status."""
         with patch.object(
             service,
-            '_get_client',
+            "_get_client",
             new_callable=AsyncMock,
         ) as mock_get_client:
             mock_client = AsyncMock()
@@ -329,7 +332,7 @@ class TestSefazAMService:
 
         with patch.object(
             service,
-            '_get_client',
+            "_get_client",
             new_callable=AsyncMock,
         ) as mock_get_client:
             mock_client = AsyncMock()
@@ -350,6 +353,7 @@ class TestSefazAMService:
 # =============================================================================
 # TESTES DE DATA CLASSES
 # =============================================================================
+
 
 class TestResultadoConsulta:
     """Testes da dataclass ResultadoConsulta."""
@@ -406,6 +410,7 @@ class TestInformacaoCadastral:
 # TESTES DE INTEGRACAO (MOCK)
 # =============================================================================
 
+
 class TestIntegracaoMock:
     """Testes de integracao com mocks."""
 
@@ -441,7 +446,7 @@ class TestIntegracaoMock:
 
         with patch.object(
             client_com_mock_http,
-            '_enviar_requisicao',
+            "_enviar_requisicao",
             new_callable=AsyncMock,
             return_value=(200, xml_resposta, 150.0),
         ):

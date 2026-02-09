@@ -2,7 +2,7 @@
 
 from datetime import date, datetime
 from decimal import Decimal
-from enum import Enum
+from enum import StrEnum
 from uuid import uuid4
 
 from sqlalchemy import Boolean, Column, Date, DateTime, Numeric, String, Text
@@ -11,14 +11,14 @@ from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from core.models.base import Base
 
 
-class CFOPTipo(str, Enum):
+class CFOPTipo(StrEnum):
     """Tipo de operacao do CFOP."""
 
     ENTRADA = "entrada"
     SAIDA = "saida"
 
 
-class CFOPGrupo(str, Enum):
+class CFOPGrupo(StrEnum):
     """Grupo do CFOP (primeiro digito)."""
 
     # Entradas
@@ -32,7 +32,7 @@ class CFOPGrupo(str, Enum):
     SAIDA_EXTERIOR = "7"  # Saidas para o exterior
 
 
-class CFOPNatureza(str, Enum):
+class CFOPNatureza(StrEnum):
     """Natureza da operacao do CFOP."""
 
     COMPRA = "compra"

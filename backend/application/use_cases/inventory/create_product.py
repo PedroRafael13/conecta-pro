@@ -4,23 +4,21 @@ application/use_cases/inventory/create_product.py - CREATE PRODUCT USE CASE
 Clean Architecture use case for product creation
 """
 
-from typing import Optional
-from uuid import UUID
-from decimal import Decimal
-from dataclasses import dataclass
 import logging
+from dataclasses import dataclass
+from decimal import Decimal
 
-from application.interfaces.unit_of_work import IUnitOfWork
 from application.dto.inventory import CreateProductDTO, ProductResponseDTO
+from application.interfaces.unit_of_work import IUnitOfWork
 from domains.inventory import (
+    ProductDimensions,
     ProductEntity,
-    ProductType,
-    ProductStatus,
-    UnitOfMeasure,
     ProductPricing,
+    ProductStatus,
+    ProductType,
     StockLevel,
     TaxClassification,
-    ProductDimensions
+    UnitOfMeasure,
 )
 
 logger = logging.getLogger(__name__)
@@ -31,9 +29,9 @@ class CreateProductResult:
     """Resultado da criacao de produto."""
 
     success: bool
-    product: Optional[ProductResponseDTO] = None
-    error_code: Optional[str] = None
-    error_message: Optional[str] = None
+    product: ProductResponseDTO | None = None
+    error_code: str | None = None
+    error_message: str | None = None
 
 
 class CreateProductUseCase:
@@ -60,28 +58,20 @@ class CreateProductUseCase:
         try:
             async with self._uow:
                 # 1. Valida SKU unico
-                existing = await self._uow.products.get_by_sku(
-                    dto.sku,
-                    dto.tenant_id
-                )
+                existing = await self._uow.products.get_by_sku(dto.sku, dto.tenant_id)
                 if existing:
                     return CreateProductResult(
-                        success=False,
-                        error_code="SKU_EXISTS",
-                        error_message=f"SKU {dto.sku} ja existe"
+                        success=False, error_code="SKU_EXISTS", error_message=f"SKU {dto.sku} ja existe"
                     )
 
                 # 2. Valida codigo de barras unico (se informado)
                 if dto.barcode:
-                    existing_barcode = await self._uow.products.get_by_barcode(
-                        dto.barcode,
-                        dto.tenant_id
-                    )
+                    existing_barcode = await self._uow.products.get_by_barcode(dto.barcode, dto.tenant_id)
                     if existing_barcode:
                         return CreateProductResult(
                             success=False,
                             error_code="BARCODE_EXISTS",
-                            error_message=f"Codigo de barras {dto.barcode} ja existe"
+                            error_message=f"Codigo de barras {dto.barcode} ja existe",
                         )
 
                 # 3. Cria entidade de dominio
@@ -96,10 +86,7 @@ class CreateProductUseCase:
                     category_name="",  # Sera preenchido pelo repositorio
                     unit_of_measure=UnitOfMeasure(dto.unit_of_measure),
                     dimensions=ProductDimensions(
-                        weight_kg=Decimal("0"),
-                        length_cm=Decimal("0"),
-                        width_cm=Decimal("0"),
-                        height_cm=Decimal("0")
+                        weight_kg=Decimal("0"), length_cm=Decimal("0"), width_cm=Decimal("0"), height_cm=Decimal("0")
                     ),
                     pricing=ProductPricing(
                         cost_price=dto.cost_price,
@@ -107,7 +94,7 @@ class CreateProductUseCase:
                         last_purchase_price=Decimal("0"),
                         sale_price=dto.sale_price,
                         minimum_price=Decimal("0"),
-                        currency="BRL"
+                        currency="BRL",
                     ),
                     stock_level=StockLevel(
                         minimum_stock=dto.minimum_stock,
@@ -115,7 +102,7 @@ class CreateProductUseCase:
                         reorder_point=dto.reorder_point,
                         reorder_quantity=Decimal("0"),
                         safety_stock=Decimal("0"),
-                        lead_time_days=0
+                        lead_time_days=0,
                     ),
                     tax_classification=TaxClassification(
                         ncm=dto.ncm,
@@ -124,10 +111,10 @@ class CreateProductUseCase:
                         origin="0",
                         icms_cst="00",
                         pis_cst="01",
-                        cofins_cst="01"
+                        cofins_cst="01",
                     ),
                     tenant_id=dto.tenant_id,
-                    created_by=dto.created_by
+                    created_by=dto.created_by,
                 )
 
                 # 4. Persiste
@@ -154,7 +141,7 @@ class CreateProductUseCase:
                     stock_status=created.stock_status.value,
                     stock_value=created.stock_value,
                     created_at=created.created_at,
-                    updated_at=created.updated_at
+                    updated_at=created.updated_at,
                 )
 
                 logger.info(
@@ -162,27 +149,18 @@ class CreateProductUseCase:
                     extra={
                         "product_id": str(created.product_id),
                         "tenant_id": str(dto.tenant_id),
-                        "user_id": dto.created_by
-                    }
+                        "user_id": dto.created_by,
+                    },
                 )
 
-                return CreateProductResult(
-                    success=True,
-                    product=response
-                )
+                return CreateProductResult(success=True, product=response)
 
         except ValueError as e:
             logger.warning(f"Erro de validacao ao criar produto: {e}")
-            return CreateProductResult(
-                success=False,
-                error_code="VALIDATION_ERROR",
-                error_message=str(e)
-            )
+            return CreateProductResult(success=False, error_code="VALIDATION_ERROR", error_message=str(e))
 
         except Exception as e:
             logger.error(f"Erro ao criar produto: {e}", exc_info=True)
             return CreateProductResult(
-                success=False,
-                error_code="INTERNAL_ERROR",
-                error_message="Erro interno ao criar produto"
+                success=False, error_code="INTERNAL_ERROR", error_message="Erro interno ao criar produto"
             )

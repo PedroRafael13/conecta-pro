@@ -9,7 +9,7 @@ Este serviço implementa regras de negócio para:
 """
 
 from datetime import date, timedelta
-from typing import Any, Dict, List
+from typing import Any
 
 from core.logging import logger
 
@@ -39,7 +39,7 @@ class TimeBankService:
         planned_hours: float,
         is_night_shift: bool = False,
         break_minutes: int = 0,
-    ) -> Dict[str, float]:
+    ) -> dict[str, float]:
         """
         Calcula horas extras de um turno.
 
@@ -96,7 +96,7 @@ class TimeBankService:
         is_night: bool = False,
         is_sunday: bool = False,
         is_holiday: bool = False,
-    ) -> Dict[str, float]:
+    ) -> dict[str, float]:
         """
         Calcula valor monetário das horas.
 
@@ -160,8 +160,8 @@ class TimeBankService:
 
     def check_expiration_alerts(
         self,
-        entries: List[Dict[str, Any]],
-    ) -> List[Dict[str, Any]]:
+        entries: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
         """
         Verifica entradas próximas da expiração.
 
@@ -219,7 +219,7 @@ class TimeBankService:
         employee_balance: float,
         requested_hours: float,
         compensation_date: date,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Valida solicitação de compensação.
 
@@ -239,8 +239,7 @@ class TimeBankService:
         if requested_hours > employee_balance:
             is_valid = False
             errors.append(
-                f"Saldo insuficiente: {employee_balance:.1f}h disponíveis, "
-                f"{requested_hours:.1f}h solicitadas"
+                f"Saldo insuficiente: {employee_balance:.1f}h disponíveis, {requested_hours:.1f}h solicitadas"
             )
 
         # Verificar data
@@ -262,10 +261,10 @@ class TimeBankService:
 
     def calculate_monthly_summary(
         self,
-        entries: List[Dict[str, Any]],
+        entries: list[dict[str, Any]],
         month: int,
         year: int,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Calcula resumo mensal do banco de horas.
 
@@ -285,15 +284,9 @@ class TimeBankService:
             and date.fromisoformat(str(e["reference_date"])).year == year
         ]
 
-        credit_total = sum(
-            e.get("hours", 0) for e in monthly_entries if e.get("entry_type") == "credit"
-        )
-        debit_total = sum(
-            e.get("hours", 0) for e in monthly_entries if e.get("entry_type") == "debit"
-        )
-        compensation_total = sum(
-            e.get("hours", 0) for e in monthly_entries if e.get("entry_type") == "compensation"
-        )
+        credit_total = sum(e.get("hours", 0) for e in monthly_entries if e.get("entry_type") == "credit")
+        debit_total = sum(e.get("hours", 0) for e in monthly_entries if e.get("entry_type") == "debit")
+        compensation_total = sum(e.get("hours", 0) for e in monthly_entries if e.get("entry_type") == "compensation")
 
         return {
             "month": month,
@@ -310,7 +303,7 @@ class TimeBankService:
         employee_balance: float,
         expiring_soon: float,
         monthly_avg_overtime: float,
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Gera recomendações baseadas no saldo.
 
@@ -325,9 +318,7 @@ class TimeBankService:
         recommendations = []
 
         if expiring_soon > 0:
-            recommendations.append(
-                f"Agendar compensação de {expiring_soon:.1f}h " "que expiram em breve"
-            )
+            recommendations.append(f"Agendar compensação de {expiring_soon:.1f}h que expiram em breve")
 
         if employee_balance > 40:
             recommendations.append("Considerar folga compensatória para reduzir saldo elevado")
@@ -336,9 +327,7 @@ class TimeBankService:
             recommendations.append("Saldo negativo - considerar horas extras para compensar")
 
         if monthly_avg_overtime > 30:
-            recommendations.append(
-                "Média de horas extras alta - avaliar necessidade de contratação"
-            )
+            recommendations.append("Média de horas extras alta - avaliar necessidade de contratação")
 
         return recommendations
 

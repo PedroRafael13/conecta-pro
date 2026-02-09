@@ -1,9 +1,9 @@
 """Mobile Services."""
 
-from modules.mobile.services.push_notification_service import PushNotificationService
-from modules.mobile.services.offline_sync_manager import OfflineSyncManager
-from modules.mobile.services.mobile_security import MobileSecurity
 from modules.mobile.services.mobile_metrics import MobileMetrics, get_metrics
+from modules.mobile.services.mobile_security import MobileSecurity
+from modules.mobile.services.offline_sync_manager import OfflineSyncManager
+from modules.mobile.services.push_notification_service import PushNotificationService
 
 __all__ = [
     "PushNotificationService",

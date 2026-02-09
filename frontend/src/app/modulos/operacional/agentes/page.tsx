@@ -4,7 +4,6 @@ import { UserCheck, Search, Filter, Eye, ArrowLeft, AlertCircle, RefreshCw, Mail
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-;
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/useAuth';
@@ -24,8 +23,10 @@ export default function AgentesPage() {
   const router = useRouter();
   const { isLoading: authLoading, isAuthenticated } = useAuth();
 
-  const { data: employees = [], isLoading, error: queryError, refetch } = useEmployees();
-  const total = employees.length;
+  const { data: employeesData, isLoading, error: queryError, refetch } = useEmployees();
+  const employeesRaw = employeesData?.items ?? [];
+  const employees = employeesRaw as unknown as SolidesEmployeeExtended[];
+  const total = employeesData?.total ?? employees.length;
   const [error, setError] = useState<string | null>(null);
   const [dataSource, setDataSource] = useState<string>('local');
 
@@ -339,7 +340,7 @@ export default function AgentesPage() {
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
                               <span className="text-emerald-500 font-semibold text-sm">
-                                {(employee.full_name || employee.name || '?')[0].toUpperCase()}
+                                {(employee.full_name || employee.name || '?').charAt(0).toUpperCase()}
                               </span>
                             </div>
                             <div>
@@ -433,7 +434,7 @@ export default function AgentesPage() {
               <div className="flex items-center gap-4 mb-6">
                 <div className="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center">
                   <span className="text-emerald-500 font-bold text-2xl">
-                    {(selectedEmployee.full_name || selectedEmployee.name || '?')[0].toUpperCase()}
+                    {(selectedEmployee.full_name || selectedEmployee.name || '?').charAt(0).toUpperCase()}
                   </span>
                 </div>
                 <div>

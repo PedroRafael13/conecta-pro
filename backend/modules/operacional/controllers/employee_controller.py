@@ -5,10 +5,11 @@ Integração com Solides DP (Tangerino) para dados em tempo real.
 
 import logging
 import os
-from typing import Optional, Dict, Any
+from typing import Any
 
 import httpx
-from fastapi import APIRouter, Depends, Query, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import status as http_status
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -18,11 +19,11 @@ from modules.operacional.models.employee import Employee
 from modules.operacional.permissions import Permission, require_operacional_permission
 from modules.operacional.schemas.employee import (
     EmployeeCreate,
-    EmployeeUpdate,
-    EmployeeResponse,
     EmployeeListResponse,
-    SolidesEmployeeResponse,
+    EmployeeResponse,
+    EmployeeUpdate,
     SolidesEmployeeListResponse,
+    SolidesEmployeeResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -40,13 +41,13 @@ async def list_employees(
     db: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1, description="Pagina atual"),
     page_size: int = Query(100, ge=1, le=500, description="Itens por pagina"),
-    search: Optional[str] = Query(None, description="Buscar por nome, email ou matricula"),
-    status: Optional[str] = Query(None, description="Filtrar por status"),
+    search: str | None = Query(None, description="Buscar por nome, email ou matricula"),
+    status: str | None = Query(None, description="Filtrar por status"),
 ) -> EmployeeListResponse:
     """
     Lista funcionarios com paginacao e filtros.
     """
-    filters = [Employee.is_active.is_(True)]
+    filters: list[Any] = [Employee.is_active.is_(True)]
 
     if status:
         filters.append(Employee.status == status)
@@ -62,21 +63,15 @@ async def list_employees(
         )
 
     # Count total
-    total_result = await db.execute(
-        select(func.count(Employee.id)).where(*filters)
-    )
-    total = total_result.scalar_one() or 0
+    total_result = await db.execute(select(func.count(Employee.id)).where(*filters))
+    total: int = total_result.scalar_one() or 0
     total_pages = (total + page_size - 1) // page_size
 
     # Get items
     items_result = await db.execute(
-        select(Employee)
-        .where(*filters)
-        .order_by(Employee.nome.asc())
-        .offset((page - 1) * page_size)
-        .limit(page_size)
+        select(Employee).where(*filters).order_by(Employee.nome.asc()).offset((page - 1) * page_size).limit(page_size)
     )
-    items = items_result.scalars().all()
+    items: list[Employee] = items_result.scalars().all()
 
     return EmployeeListResponse(
         items=[
@@ -101,7 +96,7 @@ async def list_employees(
 @router.post(
     "/",
     response_model=EmployeeResponse,
-    status_code=status.HTTP_201_CREATED,
+    status_code=http_status.HTTP_201_CREATED,
     dependencies=[require_operacional_permission(Permission.EMPLOYEES_CREATE)],
 )
 async def create_employee(
@@ -121,43 +116,27 @@ async def create_employee(
     from datetime import datetime
 
     # Validar email único
-    email_result = await db.execute(
-        select(Employee).where(
-            Employee.email == data.email,
-            Employee.is_active.is_(True)
-        )
-    )
+    email_result = await db.execute(select(Employee).where(Employee.email == data.email, Employee.is_active.is_(True)))
     if email_result.scalar_one_or_none():
         raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Email já cadastrado para outro funcionário"
+            status_code=http_status.HTTP_409_CONFLICT, detail="Email já cadastrado para outro funcionário"
         )
 
     # Validar CPF único (se fornecido)
     if data.cpf:
-        cpf_result = await db.execute(
-            select(Employee).where(
-                Employee.cpf == data.cpf,
-                Employee.is_active.is_(True)
-            )
-        )
+        cpf_result = await db.execute(select(Employee).where(Employee.cpf == data.cpf, Employee.is_active.is_(True)))
         if cpf_result.scalar_one_or_none():
             raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="CPF já cadastrado para outro funcionário"
+                status_code=http_status.HTTP_409_CONFLICT, detail="CPF já cadastrado para outro funcionário"
             )
 
     # Validar matrícula única
     matricula_result = await db.execute(
-        select(Employee).where(
-            Employee.matricula == data.matricula,
-            Employee.is_active.is_(True)
-        )
+        select(Employee).where(Employee.matricula == data.matricula, Employee.is_active.is_(True))
     )
     if matricula_result.scalar_one_or_none():
         raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Matrícula já cadastrada para outro funcionário"
+            status_code=http_status.HTTP_409_CONFLICT, detail="Matrícula já cadastrada para outro funcionário"
         )
 
     # Criar funcionário
@@ -180,6 +159,7 @@ async def create_employee(
     if data.data_admissao:
         try:
             from datetime import date
+
             employee.data_admissao = date.fromisoformat(data.data_admissao)
         except ValueError:
             pass
@@ -229,10 +209,8 @@ async def update_employee(
     Atualiza dados de um funcionário.
     """
     # Busca funcionário
-    result = await db.execute(
-        select(Employee).where(Employee.id == employee_id)
-    )
-    employee = result.scalar_one_or_none()
+    result = await db.execute(select(Employee).where(Employee.id == employee_id))
+    employee: Employee | None = result.scalar_one_or_none()
 
     if not employee:
         raise HTTPException(status_code=404, detail="Funcionário não encontrado")
@@ -266,17 +244,15 @@ async def update_employee(
 # ==================== INTEGRAÇÃO SOLIDES DP ====================
 
 
-async def _get_solides_connector():
+async def _get_solides_connector() -> Any:
     """Inicializa o conector Solides com credenciais."""
     from uuid import UUID
+
     from modules.integrations.connectors.solides.connector import SolidesConnector
 
     api_token = os.getenv("SOLIDES_API_TOKEN")
     if not api_token:
-        raise HTTPException(
-            status_code=500,
-            detail="Token Solides não configurado. Configure SOLIDES_API_TOKEN."
-        )
+        raise HTTPException(status_code=500, detail="Token Solides não configurado. Configure SOLIDES_API_TOKEN.")
 
     # UUID dummy para uso standalone (sem multi-tenant)
     dummy_uuid = UUID("00000000-0000-0000-0000-000000000000")
@@ -292,11 +268,11 @@ async def _get_solides_connector():
     return connector
 
 
-def _map_solides_employee(emp: Dict[str, Any], job_roles_map: Dict[int, str]) -> SolidesEmployeeResponse:
+def _map_solides_employee(emp: dict[str, Any], job_roles_map: dict[int, str]) -> SolidesEmployeeResponse:
     """Mapeia dados do Solides para schema de resposta."""
     # Extrai cargo do jobRole
-    job_role_id = None
-    job_role_name = None
+    job_role_id: int | None = None
+    job_role_name: str | None = None
 
     if emp.get("jobRole"):
         if isinstance(emp["jobRole"], dict):
@@ -310,18 +286,18 @@ def _map_solides_employee(emp: Dict[str, Any], job_roles_map: Dict[int, str]) ->
         job_role_name = job_roles_map[job_role_id]
 
     # Extrai departamento
-    department_name = None
+    department_name: str | None = None
     if emp.get("department"):
         if isinstance(emp["department"], dict):
             department_name = emp["department"].get("name")
 
     # Monta nome completo
-    nome = emp.get("name", "")
+    nome: str = emp.get("name", "")
     if not nome:
         nome = f"{emp.get('firstName', '')} {emp.get('lastName', '')}".strip()
 
     # Mapeia status (pode vir como int ou string)
-    status_map = {
+    status_map: dict[str | int, str] = {
         "ACTIVE": "Ativo",
         "INACTIVE": "Inativo",
         "TERMINATED": "Demitido",
@@ -331,21 +307,23 @@ def _map_solides_employee(emp: Dict[str, Any], job_roles_map: Dict[int, str]) ->
         1: "Inativo",
         2: "Demitido",
     }
-    status_raw = emp.get("status", "ACTIVE")
-    status = status_map.get(status_raw, str(status_raw) if status_raw else "Ativo")
+    status_raw: str | int = emp.get("status", "ACTIVE")
+    status_mapped: str = status_map.get(status_raw, str(status_raw) if status_raw else "Ativo")
 
     # Converte data_admissao (pode vir como timestamp ou string)
-    data_admissao = emp.get("admissionDate")
+    data_admissao: str | int | None = emp.get("admissionDate")
+    data_admissao_str: str | None = None
     if data_admissao:
         if isinstance(data_admissao, int):
             # Timestamp em milliseconds
             from datetime import datetime
+
             try:
-                data_admissao = datetime.fromtimestamp(data_admissao / 1000).strftime("%Y-%m-%d")
+                data_admissao_str = datetime.fromtimestamp(data_admissao / 1000).strftime("%Y-%m-%d")
             except Exception:
-                data_admissao = str(data_admissao)
+                data_admissao_str = str(data_admissao)
         else:
-            data_admissao = str(data_admissao)
+            data_admissao_str = str(data_admissao)
 
     return SolidesEmployeeResponse(
         id=str(emp.get("id", "")),
@@ -354,10 +332,10 @@ def _map_solides_employee(emp: Dict[str, Any], job_roles_map: Dict[int, str]) ->
         matricula=emp.get("registration") or emp.get("employeeCode"),
         cargo=job_role_name,
         departamento=department_name,
-        status=status,
+        status=status_mapped,
         cpf=emp.get("cpf"),
         telefone=emp.get("phone") or emp.get("cellphone"),
-        data_admissao=data_admissao,
+        data_admissao=data_admissao_str,
         pis=emp.get("pis"),
     )
 
@@ -369,8 +347,8 @@ def _map_solides_employee(emp: Dict[str, Any], job_roles_map: Dict[int, str]) ->
 )
 async def list_employees_from_solides(
     current_user: CurrentActiveUser,
-    search: Optional[str] = Query(None, description="Buscar por nome ou matricula"),
-    status: Optional[str] = Query(None, description="Filtrar por status (ACTIVE, INACTIVE, etc)"),
+    search: str | None = Query(None, description="Buscar por nome ou matricula"),
+    status: str | None = Query(None, description="Filtrar por status (ACTIVE, INACTIVE, etc)"),
     only_active: bool = Query(True, description="Apenas funcionarios ativos"),
 ) -> SolidesEmployeeListResponse:
     """
@@ -382,7 +360,7 @@ async def list_employees_from_solides(
 
         # Busca cargos primeiro para mapear
         job_roles_result = await connector.fetch_entities("job_roles")
-        job_roles_map: Dict[int, str] = {}
+        job_roles_map: dict[int, str] = {}
         if job_roles_result.success and job_roles_result.data:
             for jr in job_roles_result.data:
                 if jr.get("id") and jr.get("name"):
@@ -391,7 +369,7 @@ async def list_employees_from_solides(
         logger.info(f"Carregados {len(job_roles_map)} cargos do Solides")
 
         # Busca funcionarios
-        filters = {}
+        filters: dict[str, Any] = {}
         if only_active:
             filters["status"] = "ACTIVE"
         elif status:
@@ -405,19 +383,17 @@ async def list_employees_from_solides(
 
         if not result.success:
             logger.error(f"Erro ao buscar funcionarios do Solides: {result.errors}")
-            raise HTTPException(
-                status_code=502,
-                detail="Erro ao conectar com Solides DP"
-            )
+            raise HTTPException(status_code=502, detail="Erro ao conectar com Solides DP")
 
-        employees = result.data or []
+        employees: list[dict[str, Any]] = result.data or []
         logger.info(f"Recebidos {len(employees)} funcionarios do Solides")
 
         # Aplica filtro de busca local (API Solides não tem busca textual)
         if search:
             search_lower = search.lower()
             employees = [
-                emp for emp in employees
+                emp
+                for emp in employees
                 if search_lower in (emp.get("name", "") or "").lower()
                 or search_lower in (emp.get("firstName", "") or "").lower()
                 or search_lower in (emp.get("lastName", "") or "").lower()
@@ -450,8 +426,8 @@ async def list_employees_from_solides(
             error=str(e),
         )
         raise HTTPException(
-            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
-            detail="Timeout ao conectar com Solides DP. A API pode estar lenta ou indisponível. Tente novamente em alguns instantes."
+            status_code=http_status.HTTP_504_GATEWAY_TIMEOUT,
+            detail="Timeout ao conectar com Solides DP. A API pode estar lenta ou indisponível. Tente novamente em alguns instantes.",
         )
     except Exception as e:
         logger.exception(
@@ -460,7 +436,4 @@ async def list_employees_from_solides(
             user_id=str(current_user.id),
             error=str(e),
         )
-        raise HTTPException(
-            status_code=500,
-            detail=f"Erro interno: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Erro interno: {str(e)}")

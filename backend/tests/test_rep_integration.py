@@ -1,24 +1,25 @@
 """Testes para o módulo de integração REP."""
 
-import pytest
-from datetime import datetime, date, time
+from datetime import date, datetime, time
 from decimal import Decimal
 from uuid import uuid4
 
+import pytest
+
 from modules.hr.rep_integration.models import (
-    REPDevice,
-    REPEvent,
-    REPSync,
     AFDRecord,
+    AFDRecordType,
     DeviceManufacturer,
     DeviceModel,
     DeviceStatus,
-    EventType,
     EventStatus,
+    EventType,
     IdentificationMethod,
-    SyncType,
+    REPDevice,
+    REPEvent,
+    REPSync,
     SyncStatus,
-    AFDRecordType,
+    SyncType,
 )
 
 

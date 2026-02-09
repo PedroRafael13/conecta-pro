@@ -6,49 +6,44 @@ Expõe APIs para geração, agendamento e exportação de relatórios.
 
 import logging
 from datetime import datetime
-from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from core.database import get_db
-from modules.ai.report_generator.models.report import ReportStatusEnum, ReportTypeEnum, ReportPriorityEnum
+from modules.ai.report_generator.models.report import ReportStatusEnum, ReportTypeEnum
+from modules.ai.report_generator.models.report_execution import ExecutionStatusEnum
+from modules.ai.report_generator.models.report_schedule import ScheduleStatusEnum
 from modules.ai.report_generator.models.report_template import TemplateCategoryEnum, TemplateStatusEnum
-from modules.ai.report_generator.models.report_schedule import ScheduleFrequencyEnum, ScheduleStatusEnum
-from modules.ai.report_generator.models.report_execution import ExecutionStatusEnum, ExecutionTriggerEnum
 from modules.ai.report_generator.repositories import ReportRepository
-from modules.ai.report_generator.services import (
-    ReportGeneratorService,
-    TemplateEngine,
-    ReportScheduler,
-    ReportExporter,
-    InsightExtractor,
-)
 from modules.ai.report_generator.schemas import (
-    ReportCreate,
-    ReportUpdate,
-    ReportResponse,
-    ReportListResponse,
-    ReportSummary,
-    ReportFilter,
-    ReportTemplateCreate,
-    ReportTemplateUpdate,
-    ReportTemplateResponse,
-    ReportTemplateListResponse,
-    ReportScheduleCreate,
-    ReportScheduleUpdate,
-    ReportScheduleResponse,
-    ReportScheduleListResponse,
-    ReportExecutionResponse,
-    ReportExecutionListResponse,
-    GenerateReportRequest,
-    GenerateReportResponse,
     ExportReportRequest,
     ExportReportResponse,
+    GenerateReportRequest,
+    GenerateReportResponse,
     ReportDashboardResponse,
+    ReportExecutionListResponse,
+    ReportExecutionResponse,
+    ReportListResponse,
+    ReportResponse,
+    ReportScheduleCreate,
+    ReportScheduleListResponse,
+    ReportScheduleResponse,
+    ReportScheduleUpdate,
     ReportStatsResponse,
-    ReportFormatEnum,
+    ReportSummary,
+    ReportTemplateCreate,
+    ReportTemplateListResponse,
+    ReportTemplateResponse,
+    ReportTemplateUpdate,
+    ReportUpdate,
+)
+from modules.ai.report_generator.services import (
+    ReportExporter,
+    ReportGeneratorService,
+    ReportScheduler,
+    TemplateEngine,
 )
 
 logger = logging.getLogger(__name__)
@@ -57,6 +52,7 @@ router = APIRouter(prefix="/reports", tags=["AI Report Generator"])
 
 
 # ============== REPORT ENDPOINTS ==============
+
 
 @router.post("/generate", response_model=GenerateReportResponse, status_code=status.HTTP_202_ACCEPTED)
 async def generate_report(
@@ -97,21 +93,18 @@ async def generate_report(
         )
     except Exception as e:
         logger.error(f"Erro ao gerar relatório: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 
 @router.get("", response_model=ReportListResponse)
 async def list_reports(
-    report_type: Optional[ReportTypeEnum] = None,
-    status: Optional[ReportStatusEnum] = None,
-    category: Optional[str] = None,
-    template_id: Optional[UUID] = None,
-    period_start: Optional[datetime] = None,
-    period_end: Optional[datetime] = None,
-    search: Optional[str] = None,
+    report_type: ReportTypeEnum | None = None,
+    status: ReportStatusEnum | None = None,
+    category: str | None = None,
+    template_id: UUID | None = None,
+    period_start: datetime | None = None,
+    period_end: datetime | None = None,
+    search: str | None = None,
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
@@ -151,10 +144,7 @@ async def get_report(
     report = repository.get_report(report_id)
 
     if not report:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Relatório não encontrado"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Relatório não encontrado")
 
     # Marca como visualizado
     report.mark_as_viewed()
@@ -174,10 +164,7 @@ async def update_report(
     report = repository.get_report(report_id)
 
     if not report:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Relatório não encontrado"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Relatório não encontrado")
 
     for field, value in update_data.model_dump(exclude_unset=True).items():
         setattr(report, field, value)
@@ -193,10 +180,7 @@ async def delete_report(
     """Remove relatório."""
     repository = ReportRepository(db)
     if not repository.delete_report(report_id):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Relatório não encontrado"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Relatório não encontrado")
 
 
 @router.post("/{report_id}/export", response_model=ExportReportResponse)
@@ -229,13 +213,11 @@ async def export_report(
             expires_at=None,
         )
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 # ============== TEMPLATE ENDPOINTS ==============
+
 
 @router.post("/templates", response_model=ReportTemplateResponse, status_code=status.HTTP_201_CREATED)
 async def create_template(
@@ -253,7 +235,9 @@ async def create_template(
             category=template_data.category,
             data_sources=template_data.data_sources,
             parameters=[p.model_dump() for p in template_data.parameters] if template_data.parameters else None,
-            sections_config=[s.model_dump() for s in template_data.sections_config] if template_data.sections_config else None,
+            sections_config=[s.model_dump() for s in template_data.sections_config]
+            if template_data.sections_config
+            else None,
             widgets_config=template_data.widgets_config,
             metrics_config=template_data.metrics_config,
             supported_formats=template_data.supported_formats,
@@ -261,19 +245,16 @@ async def create_template(
         )
         return template
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.get("/templates", response_model=ReportTemplateListResponse)
 async def list_templates(
-    category: Optional[TemplateCategoryEnum] = None,
-    status: Optional[TemplateStatusEnum] = None,
-    is_public: Optional[bool] = None,
-    is_system: Optional[bool] = None,
-    search: Optional[str] = None,
+    category: TemplateCategoryEnum | None = None,
+    status: TemplateStatusEnum | None = None,
+    is_public: bool | None = None,
+    is_system: bool | None = None,
+    search: str | None = None,
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
@@ -311,10 +292,7 @@ async def get_template(
     template = repository.get_template(template_id)
 
     if not template:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Template não encontrado"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Template não encontrado")
 
     return template
 
@@ -329,21 +307,12 @@ async def update_template(
     engine = TemplateEngine(db)
 
     try:
-        template = engine.update_template(
-            template_id,
-            **update_data.model_dump(exclude_unset=True)
-        )
+        template = engine.update_template(template_id, **update_data.model_dump(exclude_unset=True))
         if not template:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Template não encontrado"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Template não encontrado")
         return template
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.delete("/templates/{template_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -354,10 +323,7 @@ async def delete_template(
     """Remove template."""
     repository = ReportRepository(db)
     if not repository.delete_template(template_id):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Template não encontrado"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Template não encontrado")
 
 
 @router.post("/templates/{template_id}/clone", response_model=ReportTemplateResponse)
@@ -374,10 +340,7 @@ async def clone_template(
         template = engine.clone_template(template_id, new_code, new_name)
         return template
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.post("/templates/{template_id}/publish", response_model=ReportTemplateResponse)
@@ -391,16 +354,10 @@ async def publish_template(
     try:
         template = engine.publish_template(template_id)
         if not template:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Template não encontrado"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Template não encontrado")
         return template
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.post("/templates/{template_id}/validate")
@@ -415,10 +372,7 @@ async def validate_template(
         result = engine.validate_template(template_id)
         return result
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 
 @router.post("/templates/initialize-defaults")
@@ -436,6 +390,7 @@ async def initialize_default_templates(
 
 
 # ============== SCHEDULE ENDPOINTS ==============
+
 
 @router.post("/schedules", response_model=ReportScheduleResponse, status_code=status.HTTP_201_CREATED)
 async def create_schedule(
@@ -471,8 +426,8 @@ async def create_schedule(
 
 @router.get("/schedules", response_model=ReportScheduleListResponse)
 async def list_schedules(
-    template_id: Optional[UUID] = None,
-    status: Optional[ScheduleStatusEnum] = None,
+    template_id: UUID | None = None,
+    status: ScheduleStatusEnum | None = None,
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
@@ -507,10 +462,7 @@ async def get_schedule(
     schedule = repository.get_schedule(schedule_id)
 
     if not schedule:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Agendamento não encontrado"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Agendamento não encontrado")
 
     return schedule
 
@@ -524,16 +476,10 @@ async def update_schedule(
     """Atualiza agendamento."""
     scheduler = ReportScheduler(db)
 
-    schedule = scheduler.update_schedule(
-        schedule_id,
-        **update_data.model_dump(exclude_unset=True)
-    )
+    schedule = scheduler.update_schedule(schedule_id, **update_data.model_dump(exclude_unset=True))
 
     if not schedule:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Agendamento não encontrado"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Agendamento não encontrado")
 
     return schedule
 
@@ -546,10 +492,7 @@ async def delete_schedule(
     """Remove agendamento."""
     repository = ReportRepository(db)
     if not repository.delete_schedule(schedule_id):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Agendamento não encontrado"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Agendamento não encontrado")
 
 
 @router.post("/schedules/{schedule_id}/pause", response_model=ReportScheduleResponse)
@@ -562,10 +505,7 @@ async def pause_schedule(
     schedule = scheduler.pause_schedule(schedule_id)
 
     if not schedule:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Agendamento não encontrado"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Agendamento não encontrado")
 
     return schedule
 
@@ -580,10 +520,7 @@ async def resume_schedule(
     schedule = scheduler.resume_schedule(schedule_id)
 
     if not schedule:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Agendamento não encontrado"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Agendamento não encontrado")
 
     return schedule
 
@@ -604,12 +541,13 @@ async def process_due_schedules(
 
 # ============== EXECUTION ENDPOINTS ==============
 
+
 @router.get("/executions", response_model=ReportExecutionListResponse)
 async def list_executions(
-    report_id: Optional[UUID] = None,
-    template_id: Optional[UUID] = None,
-    schedule_id: Optional[UUID] = None,
-    status: Optional[ExecutionStatusEnum] = None,
+    report_id: UUID | None = None,
+    template_id: UUID | None = None,
+    schedule_id: UUID | None = None,
+    status: ExecutionStatusEnum | None = None,
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
@@ -646,15 +584,13 @@ async def get_execution(
     execution = repository.get_execution(execution_id)
 
     if not execution:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Execução não encontrada"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Execução não encontrada")
 
     return execution
 
 
 # ============== DASHBOARD & STATS ==============
+
 
 @router.get("/dashboard", response_model=ReportDashboardResponse)
 async def get_dashboard(
@@ -691,7 +627,7 @@ async def get_stats(
     """Retorna estatísticas de relatórios."""
     repository = ReportRepository(db)
     stats = repository.get_report_stats(days=days)
-    exec_metrics = repository.get_execution_metrics(days=days)
+    repository.get_execution_metrics(days=days)
 
     return ReportStatsResponse(
         period=f"Últimos {days} dias",
@@ -709,6 +645,7 @@ async def get_stats(
 
 
 # ============== METADATA ENDPOINTS ==============
+
 
 @router.get("/metadata/data-sources")
 async def get_data_sources(

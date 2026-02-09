@@ -10,28 +10,27 @@ Migrado de 01_security_lgpd/audit/audit_logger.py
 Compliance: LGPD Art. 37, 49 - Registro de Operações de Tratamento
 """
 
-from typing import Dict, List, Optional, Any, Union
-from dataclasses import dataclass, field
-from enum import Enum
-from abc import ABC, abstractmethod
-from datetime import datetime, timedelta
-from uuid import UUID, uuid4
-from contextvars import ContextVar
-import json
-import hashlib
-import logging
 import asyncio
-
-from pydantic import BaseModel, Field
+import hashlib
+import json
+import logging
+from abc import ABC, abstractmethod
+from contextvars import ContextVar
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta
+from enum import StrEnum
+from typing import Any
+from uuid import UUID, uuid4
 
 logger = logging.getLogger(__name__)
 
 # Context variable para rastreamento de requisição
-_request_context: ContextVar[Dict[str, Any]] = ContextVar('request_context', default={})
+_request_context: ContextVar[dict[str, Any] | None] = ContextVar("request_context", default=None)
 
 
-class AuditAction(str, Enum):
+class AuditAction(StrEnum):
     """Ações auditáveis no sistema."""
+
     # Operações de dados
     CREATE = "create"
     READ = "read"
@@ -43,8 +42,8 @@ class AuditAction(str, Enum):
     LOGIN = "login"
     LOGOUT = "logout"
     LOGIN_FAILED = "login_failed"
-    PASSWORD_CHANGE = "password_change"
-    PASSWORD_RESET = "password_reset"
+    PASSWORD_CHANGE = "password_change"  # noqa: S105
+    PASSWORD_RESET = "password_reset"  # noqa: S105
     MFA_ENABLED = "mfa_enabled"
     MFA_DISABLED = "mfa_disabled"
     # Autorização
@@ -74,8 +73,9 @@ class AuditAction(str, Enum):
     ERASURE = "erasure"
 
 
-class AuditSeverity(str, Enum):
+class AuditSeverity(StrEnum):
     """Níveis de severidade de eventos."""
+
     DEBUG = "debug"
     INFO = "info"
     WARNING = "warning"
@@ -83,8 +83,9 @@ class AuditSeverity(str, Enum):
     CRITICAL = "critical"
 
 
-class ResourceType(str, Enum):
+class ResourceType(StrEnum):
     """Tipos de recursos auditados."""
+
     USER = "user"
     EMPLOYEE = "employee"
     CLIENT = "client"
@@ -104,17 +105,18 @@ class ResourceType(str, Enum):
 @dataclass
 class AuditContext:
     """Contexto de uma operação auditada."""
-    request_id: str
-    user_id: Optional[str] = None
-    user_email: Optional[str] = None
-    user_role: Optional[str] = None
-    ip_address: Optional[str] = None
-    user_agent: Optional[str] = None
-    session_id: Optional[str] = None
-    tenant_id: Optional[str] = None
-    correlation_id: Optional[str] = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    request_id: str
+    user_id: str | None = None
+    user_email: str | None = None
+    user_role: str | None = None
+    ip_address: str | None = None
+    user_agent: str | None = None
+    session_id: str | None = None
+    tenant_id: str | None = None
+    correlation_id: str | None = None
+
+    def to_dict(self) -> dict[str, Any]:
         return {
             "request_id": self.request_id,
             "user_id": self.user_id,
@@ -131,25 +133,26 @@ class AuditContext:
 @dataclass
 class AuditEntry:
     """Entrada de log de auditoria."""
+
     id: UUID
     timestamp: datetime
     action: AuditAction
     severity: AuditSeverity
     resource_type: ResourceType
-    resource_id: Optional[str]
+    resource_id: str | None
     context: AuditContext
     description: str
-    old_value: Optional[Dict[str, Any]] = None
-    new_value: Optional[Dict[str, Any]] = None
-    pii_fields_accessed: List[str] = field(default_factory=list)
+    old_value: dict[str, Any] | None = None
+    new_value: dict[str, Any] | None = None
+    pii_fields_accessed: list[str] = field(default_factory=list)
     success: bool = True
-    error_message: Optional[str] = None
-    duration_ms: Optional[int] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
-    previous_hash: Optional[str] = None
-    hash: Optional[str] = None
+    error_message: str | None = None
+    duration_ms: int | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
+    previous_hash: str | None = None
+    hash: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "id": str(self.id),
             "timestamp": self.timestamp.isoformat(),
@@ -185,14 +188,14 @@ class AuditStoreInterface(ABC):
     @abstractmethod
     async def query(
         self,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
-        user_id: Optional[str] = None,
-        resource_type: Optional[ResourceType] = None,
-        action: Optional[AuditAction] = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
+        user_id: str | None = None,
+        resource_type: ResourceType | None = None,
+        action: AuditAction | None = None,
         limit: int = 100,
-        offset: int = 0
-    ) -> List[AuditEntry]:
+        offset: int = 0,
+    ) -> list[AuditEntry]:
         """Consulta logs de auditoria."""
         pass
 
@@ -201,7 +204,7 @@ class InMemoryAuditStore(AuditStoreInterface):
     """Armazenamento em memória para desenvolvimento."""
 
     def __init__(self, max_entries: int = 10000):
-        self._entries: List[AuditEntry] = []
+        self._entries: list[AuditEntry] = []
         self._max_entries = max_entries
         self._lock = asyncio.Lock()
         self._last_hash = "0" * 64
@@ -219,19 +222,19 @@ class InMemoryAuditStore(AuditStoreInterface):
 
             self._entries.append(entry)
             if len(self._entries) > self._max_entries:
-                self._entries = self._entries[-self._max_entries:]
+                self._entries = self._entries[-self._max_entries :]
             return True
 
     async def query(
         self,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
-        user_id: Optional[str] = None,
-        resource_type: Optional[ResourceType] = None,
-        action: Optional[AuditAction] = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
+        user_id: str | None = None,
+        resource_type: ResourceType | None = None,
+        action: AuditAction | None = None,
         limit: int = 100,
-        offset: int = 0
-    ) -> List[AuditEntry]:
+        offset: int = 0,
+    ) -> list[AuditEntry]:
         async with self._lock:
             results = self._entries.copy()
 
@@ -247,9 +250,9 @@ class InMemoryAuditStore(AuditStoreInterface):
                 results = [e for e in results if e.action == action]
 
             results.sort(key=lambda x: x.timestamp, reverse=True)
-            return results[offset:offset + limit]
+            return results[offset : offset + limit]
 
-    async def verify_chain_integrity(self) -> Dict[str, Any]:
+    async def verify_chain_integrity(self) -> dict[str, Any]:
         """Verifica integridade da cadeia de hashes."""
         async with self._lock:
             if not self._entries:
@@ -293,10 +296,10 @@ class AuditService:
 
     def __init__(
         self,
-        store: Optional[AuditStoreInterface] = None,
+        store: AuditStoreInterface | None = None,
         app_name: str = "conecta-pro",
         enable_console_output: bool = False,
-        mask_pii_in_logs: bool = True
+        mask_pii_in_logs: bool = True,
     ):
         """
         Inicializa o logger de auditoria.
@@ -312,9 +315,19 @@ class AuditService:
         self.enable_console = enable_console_output
         self.mask_pii = mask_pii_in_logs
         self._pii_fields = {
-            "cpf", "cnpj", "rg", "email", "phone", "password",
-            "salary", "bank_account", "credit_card", "address",
-            "birth_date", "health_data", "biometric"
+            "cpf",
+            "cnpj",
+            "rg",
+            "email",
+            "phone",
+            "password",
+            "salary",
+            "bank_account",
+            "credit_card",
+            "address",
+            "birth_date",
+            "health_data",
+            "biometric",
         }
         logger.info("AuditService inicializado para %s", app_name)
 
@@ -343,7 +356,7 @@ class AuditService:
         """Limpa contexto da requisição."""
         _request_context.set({})
 
-    def _mask_pii_values(self, data: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    def _mask_pii_values(self, data: dict[str, Any] | None) -> dict[str, Any] | None:
         """Mascara valores PII nos dados."""
         if not data or not self.mask_pii:
             return data
@@ -363,15 +376,15 @@ class AuditService:
         action: AuditAction,
         resource_type: ResourceType,
         description: str,
-        resource_id: Optional[str] = None,
+        resource_id: str | None = None,
         severity: AuditSeverity = AuditSeverity.INFO,
-        old_value: Optional[Dict[str, Any]] = None,
-        new_value: Optional[Dict[str, Any]] = None,
-        pii_fields: Optional[List[str]] = None,
+        old_value: dict[str, Any] | None = None,
+        new_value: dict[str, Any] | None = None,
+        pii_fields: list[str] | None = None,
         success: bool = True,
-        error_message: Optional[str] = None,
-        duration_ms: Optional[int] = None,
-        metadata: Optional[Dict[str, Any]] = None
+        error_message: str | None = None,
+        duration_ms: int | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> AuditEntry:
         """Registra evento de auditoria."""
         entry = AuditEntry(
@@ -417,11 +430,13 @@ class AuditService:
             entry.resource_type.value,
             entry.resource_id or "-",
             entry.description,
-            entry.context.user_id or "anonymous"
+            entry.context.user_id or "anonymous",
         )
 
     # Métodos de conveniência
-    async def log_login(self, user_id: str, user_email: str, success: bool = True, failure_reason: Optional[str] = None) -> AuditEntry:
+    async def log_login(
+        self, user_id: str, user_email: str, success: bool = True, failure_reason: str | None = None
+    ) -> AuditEntry:
         """Log de tentativa de login."""
         return await self.log(
             action=AuditAction.LOGIN if success else AuditAction.LOGIN_FAILED,
@@ -431,7 +446,7 @@ class AuditService:
             severity=AuditSeverity.INFO if success else AuditSeverity.WARNING,
             success=success,
             error_message=failure_reason,
-            metadata={"email": user_email}
+            metadata={"email": user_email},
         )
 
     async def log_logout(self, user_id: str) -> AuditEntry:
@@ -443,43 +458,100 @@ class AuditService:
             description="Usuário deslogado",
         )
 
-    async def log_data_access(self, resource_type: ResourceType, resource_id: str, description: str, pii_fields: Optional[List[str]] = None) -> AuditEntry:
+    async def log_data_access(
+        self, resource_type: ResourceType, resource_id: str, description: str, pii_fields: list[str] | None = None
+    ) -> AuditEntry:
         """Log de acesso a dados."""
         action = AuditAction.PII_ACCESSED if pii_fields else AuditAction.READ
-        return await self.log(action=action, resource_type=resource_type, resource_id=resource_id, description=description, pii_fields=pii_fields)
+        return await self.log(
+            action=action,
+            resource_type=resource_type,
+            resource_id=resource_id,
+            description=description,
+            pii_fields=pii_fields,
+        )
 
-    async def log_data_modification(self, resource_type: ResourceType, resource_id: str, description: str, old_value: Optional[Dict[str, Any]] = None, new_value: Optional[Dict[str, Any]] = None, pii_fields: Optional[List[str]] = None) -> AuditEntry:
+    async def log_data_modification(
+        self,
+        resource_type: ResourceType,
+        resource_id: str,
+        description: str,
+        old_value: dict[str, Any] | None = None,
+        new_value: dict[str, Any] | None = None,
+        pii_fields: list[str] | None = None,
+    ) -> AuditEntry:
         """Log de modificação de dados."""
         action = AuditAction.PII_MODIFIED if pii_fields else AuditAction.UPDATE
-        return await self.log(action=action, resource_type=resource_type, resource_id=resource_id, description=description, old_value=old_value, new_value=new_value, pii_fields=pii_fields)
+        return await self.log(
+            action=action,
+            resource_type=resource_type,
+            resource_id=resource_id,
+            description=description,
+            old_value=old_value,
+            new_value=new_value,
+            pii_fields=pii_fields,
+        )
 
-    async def log_consent_change(self, subject_id: str, action_type: str, purposes: List[str]) -> AuditEntry:
+    async def log_consent_change(self, subject_id: str, action_type: str, purposes: list[str]) -> AuditEntry:
         """Log de alteração de consentimento."""
         action = AuditAction.CONSENT_GRANTED if action_type == "granted" else AuditAction.CONSENT_WITHDRAWN
-        return await self.log(action=action, resource_type=ResourceType.CONSENT, resource_id=subject_id, description=f"Consentimento {action_type} para: {', '.join(purposes)}", metadata={"purposes": purposes})
+        return await self.log(
+            action=action,
+            resource_type=ResourceType.CONSENT,
+            resource_id=subject_id,
+            description=f"Consentimento {action_type} para: {', '.join(purposes)}",
+            metadata={"purposes": purposes},
+        )
 
-    async def log_security_event(self, description: str, severity: AuditSeverity = AuditSeverity.WARNING, metadata: Optional[Dict[str, Any]] = None) -> AuditEntry:
+    async def log_security_event(
+        self, description: str, severity: AuditSeverity = AuditSeverity.WARNING, metadata: dict[str, Any] | None = None
+    ) -> AuditEntry:
         """Log de evento de segurança."""
-        return await self.log(action=AuditAction.SECURITY_ALERT, resource_type=ResourceType.SYSTEM, description=description, severity=severity, metadata=metadata)
+        return await self.log(
+            action=AuditAction.SECURITY_ALERT,
+            resource_type=ResourceType.SYSTEM,
+            description=description,
+            severity=severity,
+            metadata=metadata,
+        )
 
     # Métodos de consulta
-    async def query(self, start_date: Optional[datetime] = None, end_date: Optional[datetime] = None, user_id: Optional[str] = None, resource_type: Optional[ResourceType] = None, action: Optional[AuditAction] = None, limit: int = 100, offset: int = 0) -> List[AuditEntry]:
+    async def query(
+        self,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
+        user_id: str | None = None,
+        resource_type: ResourceType | None = None,
+        action: AuditAction | None = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> list[AuditEntry]:
         """Consulta logs de auditoria."""
-        return await self.store.query(start_date=start_date, end_date=end_date, user_id=user_id, resource_type=resource_type, action=action, limit=limit, offset=offset)
+        return await self.store.query(
+            start_date=start_date,
+            end_date=end_date,
+            user_id=user_id,
+            resource_type=resource_type,
+            action=action,
+            limit=limit,
+            offset=offset,
+        )
 
-    async def get_user_activity(self, user_id: str, days: int = 30) -> List[AuditEntry]:
+    async def get_user_activity(self, user_id: str, days: int = 30) -> list[AuditEntry]:
         """Recupera atividade de um usuário."""
         start_date = datetime.utcnow() - timedelta(days=days)
         return await self.query(start_date=start_date, user_id=user_id, limit=1000)
 
-    async def get_pii_access_report(self, start_date: datetime, end_date: datetime) -> Dict[str, Any]:
+    async def get_pii_access_report(self, start_date: datetime, end_date: datetime) -> dict[str, Any]:
         """Gera relatório de acesso a PII."""
-        entries = await self.query(start_date=start_date, end_date=end_date, action=AuditAction.PII_ACCESSED, limit=10000)
+        entries = await self.query(
+            start_date=start_date, end_date=end_date, action=AuditAction.PII_ACCESSED, limit=10000
+        )
 
         report = {
             "period": {"start": start_date.isoformat(), "end": end_date.isoformat()},
             "total_access_events": len(entries),
-            "unique_users": len(set(e.context.user_id for e in entries if e.context.user_id)),
+            "unique_users": len({e.context.user_id for e in entries if e.context.user_id}),
             "by_resource_type": {},
             "by_pii_field": {},
             "by_user": {},
@@ -488,23 +560,32 @@ class AuditService:
         for entry in entries:
             rt = entry.resource_type.value
             report["by_resource_type"][rt] = report["by_resource_type"].get(rt, 0) + 1
-            for field in entry.pii_fields_accessed:
-                report["by_pii_field"][field] = report["by_pii_field"].get(field, 0) + 1
+            for pii_field in entry.pii_fields_accessed:
+                report["by_pii_field"][pii_field] = report["by_pii_field"].get(pii_field, 0) + 1
             user = entry.context.user_id or "anonymous"
             report["by_user"][user] = report["by_user"].get(user, 0) + 1
 
         return report
 
-    async def verify_chain_integrity(self) -> Dict[str, Any]:
+    async def verify_chain_integrity(self) -> dict[str, Any]:
         """Verifica integridade da cadeia de hashes."""
         if isinstance(self.store, InMemoryAuditStore):
             return await self.store.verify_chain_integrity()
         return {"valid": True, "message": "Verificação disponível apenas para InMemoryStore"}
 
     # Métodos síncronos para compatibilidade
-    def log_event(self, action: str, resource_type: str, resource_id: str, user_id: str, details: Optional[Dict[str, Any]] = None, severity: str = "info") -> Dict[str, Any]:
+    def log_event(
+        self,
+        action: str,
+        resource_type: str,
+        resource_id: str,
+        user_id: str,
+        details: dict[str, Any] | None = None,
+        severity: str = "info",
+    ) -> dict[str, Any]:
         """Registra evento de auditoria (síncrono - compatibilidade)."""
         import asyncio
+
         try:
             loop = asyncio.get_event_loop()
         except RuntimeError:
@@ -513,65 +594,111 @@ class AuditService:
         self.set_context(user_id=user_id)
 
         try:
-            entry = loop.run_until_complete(self.log(
-                action=AuditAction(action) if action in [a.value for a in AuditAction] else AuditAction.READ,
-                resource_type=ResourceType(resource_type) if resource_type in [r.value for r in ResourceType] else ResourceType.DATA,
-                resource_id=resource_id,
-                description=f"{action} em {resource_type}:{resource_id}",
-                metadata=details or {},
-                severity=AuditSeverity(severity) if severity in [s.value for s in AuditSeverity] else AuditSeverity.INFO,
-            ))
-            return {"log_id": str(entry.id), "action": action, "resource_type": resource_type, "timestamp": entry.timestamp.isoformat(), "hash": entry.hash[:16] + "..." if entry.hash else None}
+            entry = loop.run_until_complete(
+                self.log(
+                    action=AuditAction(action) if action in [a.value for a in AuditAction] else AuditAction.READ,
+                    resource_type=ResourceType(resource_type)
+                    if resource_type in [r.value for r in ResourceType]
+                    else ResourceType.DATA,
+                    resource_id=resource_id,
+                    description=f"{action} em {resource_type}:{resource_id}",
+                    metadata=details or {},
+                    severity=AuditSeverity(severity)
+                    if severity in [s.value for s in AuditSeverity]
+                    else AuditSeverity.INFO,
+                )
+            )
+            return {
+                "log_id": str(entry.id),
+                "action": action,
+                "resource_type": resource_type,
+                "timestamp": entry.timestamp.isoformat(),
+                "hash": entry.hash[:16] + "..." if entry.hash else None,
+            }
         finally:
             self.clear_context()
 
-    def query_logs(self, resource_type: Optional[str] = None, user_id: Optional[str] = None, start_date: Optional[datetime] = None, end_date: Optional[datetime] = None, limit: int = 100, offset: int = 0) -> Dict[str, Any]:
+    def query_logs(
+        self,
+        resource_type: str | None = None,
+        user_id: str | None = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> dict[str, Any]:
         """Consulta eventos de auditoria (síncrono - compatibilidade)."""
         import asyncio
+
         try:
             loop = asyncio.get_event_loop()
         except RuntimeError:
             loop = asyncio.new_event_loop()
 
         rt = ResourceType(resource_type) if resource_type and resource_type in [r.value for r in ResourceType] else None
-        entries = loop.run_until_complete(self.query(start_date=start_date, end_date=end_date, user_id=user_id, resource_type=rt, limit=limit, offset=offset))
+        entries = loop.run_until_complete(
+            self.query(
+                start_date=start_date, end_date=end_date, user_id=user_id, resource_type=rt, limit=limit, offset=offset
+            )
+        )
 
         return {"logs": [e.to_dict() for e in entries], "total": len(entries), "limit": limit, "offset": offset}
 
-    def get_actions(self) -> List[Dict[str, str]]:
+    def get_actions(self) -> list[dict[str, str]]:
         """Lista ações de auditoria disponíveis."""
         return [{"id": a.value, "description": a.name.replace("_", " ").title()} for a in AuditAction]
 
-    def get_resource_types(self) -> List[Dict[str, str]]:
+    def get_resource_types(self) -> list[dict[str, str]]:
         """Lista tipos de recurso auditados."""
         return [{"id": r.value, "description": r.name.replace("_", " ").title()} for r in ResourceType]
 
 
 # Decorador para auditoria automática
-def audit_action(action: AuditAction, resource_type: ResourceType, description_template: str, pii_fields: Optional[List[str]] = None):
+def audit_action(
+    action: AuditAction, resource_type: ResourceType, description_template: str, pii_fields: list[str] | None = None
+):
     """Decorador para auditoria automática de funções."""
+
     def decorator(func):
         async def wrapper(*args, **kwargs):
             audit = get_audit_service()
             start_time = datetime.utcnow()
-            resource_id = kwargs.get('resource_id') or kwargs.get('id') or (args[0] if args else None)
+            resource_id = kwargs.get("resource_id") or kwargs.get("id") or (args[0] if args else None)
 
             try:
                 result = await func(*args, **kwargs)
                 duration = int((datetime.utcnow() - start_time).total_seconds() * 1000)
-                await audit.log(action=action, resource_type=resource_type, resource_id=str(resource_id) if resource_id else None, description=description_template.format(resource_id=resource_id), pii_fields=pii_fields, success=True, duration_ms=duration)
+                await audit.log(
+                    action=action,
+                    resource_type=resource_type,
+                    resource_id=str(resource_id) if resource_id else None,
+                    description=description_template.format(resource_id=resource_id),
+                    pii_fields=pii_fields,
+                    success=True,
+                    duration_ms=duration,
+                )
                 return result
             except Exception as e:
                 duration = int((datetime.utcnow() - start_time).total_seconds() * 1000)
-                await audit.log(action=action, resource_type=resource_type, resource_id=str(resource_id) if resource_id else None, description=description_template.format(resource_id=resource_id), severity=AuditSeverity.ERROR, success=False, error_message=str(e), duration_ms=duration)
+                await audit.log(
+                    action=action,
+                    resource_type=resource_type,
+                    resource_id=str(resource_id) if resource_id else None,
+                    description=description_template.format(resource_id=resource_id),
+                    severity=AuditSeverity.ERROR,
+                    success=False,
+                    error_message=str(e),
+                    duration_ms=duration,
+                )
                 raise
 
         return wrapper
+
     return decorator
 
 
 # Singleton
-_audit_service: Optional[AuditService] = None
+_audit_service: AuditService | None = None
 
 
 def get_audit_service() -> AuditService:
@@ -582,7 +709,9 @@ def get_audit_service() -> AuditService:
     return _audit_service
 
 
-def init_audit_service(store: Optional[AuditStoreInterface] = None, app_name: str = "conecta-pro", enable_console: bool = False) -> AuditService:
+def init_audit_service(
+    store: AuditStoreInterface | None = None, app_name: str = "conecta-pro", enable_console: bool = False
+) -> AuditService:
     """Inicializa o AuditService singleton."""
     global _audit_service
     _audit_service = AuditService(store, app_name, enable_console)

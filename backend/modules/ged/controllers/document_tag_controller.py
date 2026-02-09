@@ -1,32 +1,29 @@
 """Controller para DocumentTag."""
 
 import logging
-from typing import Optional, List
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.database import get_db
 from core.auth.dependencies import get_current_user
-from modules.ged.services.document_tag_service import DocumentTagService
+from core.database import get_db
 from modules.ged.models.document_tag import TagType
 from modules.ged.schemas.document_tag import (
     DocumentTagCreate,
-    DocumentTagUpdate,
     DocumentTagFilter,
-    DocumentTagResponse,
     DocumentTagListResponse,
+    DocumentTagResponse,
     DocumentTagTreeNode,
+    DocumentTagUpdate,
 )
+from modules.ged.services.document_tag_service import DocumentTagService
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/document-tags", tags=["GED - Tags"])
 
 
-@router.post(
-    "/", response_model=DocumentTagResponse, status_code=status.HTTP_201_CREATED
-)
+@router.post("/", response_model=DocumentTagResponse, status_code=status.HTTP_201_CREATED)
 async def create_tag(
     data: DocumentTagCreate,
     db: AsyncSession = Depends(get_db),
@@ -38,9 +35,7 @@ async def create_tag(
         data.created_by = current_user["id"]
         return await service.create(data)
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
-        ) from e
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
     except Exception as e:
         logger.error("Erro ao criar tag: %s", e)
         raise HTTPException(
@@ -59,16 +54,14 @@ async def get_tag(
     service = DocumentTagService(db)
     tag = await service.get_by_id(tag_id)
     if not tag:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Tag não encontrada"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tag não encontrada")
     return tag
 
 
 @router.get("/name/{name}", response_model=DocumentTagResponse)
 async def get_tag_by_name(
     name: str,
-    condominium_id: Optional[str] = Query(None),
+    condominium_id: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> DocumentTagResponse:
@@ -76,16 +69,14 @@ async def get_tag_by_name(
     service = DocumentTagService(db)
     tag = await service.get_by_name(name, condominium_id)
     if not tag:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Tag não encontrada"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tag não encontrada")
     return tag
 
 
 @router.get("/slug/{slug}", response_model=DocumentTagResponse)
 async def get_tag_by_slug(
     slug: str,
-    condominium_id: Optional[str] = Query(None),
+    condominium_id: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> DocumentTagResponse:
@@ -93,9 +84,7 @@ async def get_tag_by_slug(
     service = DocumentTagService(db)
     tag = await service.get_by_slug(slug, condominium_id)
     if not tag:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Tag não encontrada"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tag não encontrada")
     return tag
 
 
@@ -110,9 +99,7 @@ async def update_tag(
     service = DocumentTagService(db)
     tag = await service.update(tag_id, data)
     if not tag:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Tag não encontrada"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tag não encontrada")
     return tag
 
 
@@ -126,20 +113,16 @@ async def delete_tag(
     service = DocumentTagService(db)
     try:
         if not await service.delete(tag_id):
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Tag não encontrada"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tag não encontrada")
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
-        ) from e
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
 @router.get("/", response_model=DocumentTagListResponse)
 async def list_tags(
-    condominium_id: Optional[str] = Query(None),
-    tag_type: Optional[TagType] = Query(None),
-    is_active: Optional[bool] = Query(None),
+    condominium_id: str | None = Query(None),
+    tag_type: TagType | None = Query(None),
+    is_active: bool | None = Query(None),
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=200),
     order_by: str = Query("name"),
@@ -157,24 +140,24 @@ async def list_tags(
     return await service.list(filters, page, page_size, order_by, order_desc)
 
 
-@router.get("/type/{tag_type}", response_model=List[DocumentTagResponse])
+@router.get("/type/{tag_type}", response_model=list[DocumentTagResponse])
 async def get_by_type(
     tag_type: TagType,
-    condominium_id: Optional[str] = Query(None),
+    condominium_id: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> List[DocumentTagResponse]:
+) -> list[DocumentTagResponse]:
     """Retorna tags por tipo."""
     service = DocumentTagService(db)
     return await service.get_by_type(tag_type, condominium_id)
 
 
-@router.get("/tree/view", response_model=List[DocumentTagTreeNode])
+@router.get("/tree/view", response_model=list[DocumentTagTreeNode])
 async def get_tree(
-    condominium_id: Optional[str] = Query(None),
+    condominium_id: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> List[DocumentTagTreeNode]:
+) -> list[DocumentTagTreeNode]:
     """Retorna árvore de tags."""
     service = DocumentTagService(db)
     return await service.get_tree(condominium_id)
@@ -193,9 +176,7 @@ async def add_to_document(
         result = await service.add_to_document(tag_id, document_id)
         return {"success": result}
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
-        ) from e
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
 @router.delete("/{tag_id}/documents/{document_id}/remove")
@@ -211,12 +192,12 @@ async def remove_from_document(
     return {"success": result}
 
 
-@router.get("/document/{document_id}", response_model=List[DocumentTagResponse])
+@router.get("/document/{document_id}", response_model=list[DocumentTagResponse])
 async def get_by_document(
     document_id: str,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> List[DocumentTagResponse]:
+) -> list[DocumentTagResponse]:
     """Retorna tags de um documento."""
     service = DocumentTagService(db)
     return await service.get_by_document(document_id)
@@ -236,43 +217,41 @@ async def get_documents_by_tag(
     return {"document_ids": document_ids, "count": len(document_ids)}
 
 
-@router.post("/document/{document_id}/set", response_model=List[DocumentTagResponse])
+@router.post("/document/{document_id}/set", response_model=list[DocumentTagResponse])
 async def set_document_tags(
     document_id: str,
-    tag_ids: List[str] = Query(...),
+    tag_ids: list[str] = Query(...),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> List[DocumentTagResponse]:
+) -> list[DocumentTagResponse]:
     """Define tags de um documento."""
     service = DocumentTagService(db)
     try:
         return await service.set_document_tags(document_id, tag_ids)
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
-        ) from e
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
-@router.get("/most-used/list", response_model=List[DocumentTagResponse])
+@router.get("/most-used/list", response_model=list[DocumentTagResponse])
 async def get_most_used(
-    condominium_id: Optional[str] = Query(None),
+    condominium_id: str | None = Query(None),
     limit: int = Query(10, ge=1, le=50),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> List[DocumentTagResponse]:
+) -> list[DocumentTagResponse]:
     """Retorna tags mais usadas."""
     service = DocumentTagService(db)
     return await service.get_most_used(condominium_id, limit)
 
 
-@router.get("/search/query", response_model=List[DocumentTagResponse])
+@router.get("/search/query", response_model=list[DocumentTagResponse])
 async def search_tags(
     query: str = Query(..., min_length=1),
-    condominium_id: Optional[str] = Query(None),
+    condominium_id: str | None = Query(None),
     limit: int = Query(10, ge=1, le=50),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> List[DocumentTagResponse]:
+) -> list[DocumentTagResponse]:
     """Busca tags."""
     service = DocumentTagService(db)
     return await service.search(query, condominium_id, limit)
@@ -290,30 +269,28 @@ async def merge_tags(
     try:
         return await service.merge_tags(source_tag_id, target_tag_id)
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
-        ) from e
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
-@router.post("/suggest", response_model=List[DocumentTagResponse])
+@router.post("/suggest", response_model=list[DocumentTagResponse])
 async def get_suggested_tags(
     text: str = Query(..., min_length=10),
-    condominium_id: Optional[str] = Query(None),
+    condominium_id: str | None = Query(None),
     limit: int = Query(5, ge=1, le=20),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> List[DocumentTagResponse]:
+) -> list[DocumentTagResponse]:
     """Sugere tags baseado no texto."""
     service = DocumentTagService(db)
     return await service.get_suggested_tags(text, condominium_id, limit)
 
 
-@router.post("/default/create", response_model=List[DocumentTagResponse])
+@router.post("/default/create", response_model=list[DocumentTagResponse])
 async def create_default_tags(
     condominium_id: str = Query(...),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),
-) -> List[DocumentTagResponse]:
+) -> list[DocumentTagResponse]:
     """Cria tags padrão."""
     service = DocumentTagService(db)
     return await service.create_default_tags(condominium_id, current_user["id"])
@@ -321,7 +298,7 @@ async def create_default_tags(
 
 @router.get("/stats/summary")
 async def get_stats(
-    condominium_id: Optional[str] = Query(None),
+    condominium_id: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict:

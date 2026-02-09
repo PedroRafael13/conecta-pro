@@ -1,8 +1,7 @@
 """Schemas gerais do módulo mobile."""
 
 from datetime import datetime
-from typing import Any, Optional
-from uuid import UUID
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -14,7 +13,7 @@ class QuickAction(BaseModel):
     label: str
     icon: str
     action: str
-    route: Optional[str] = None
+    route: str | None = None
     params: dict[str, Any] = {}
     badge_count: int = 0
     enabled: bool = True
@@ -31,8 +30,8 @@ class DashboardSummary(BaseModel):
     total_revenue: float = 0.0
     pending_tasks: int = 0
     unread_notifications: int = 0
-    period_start: Optional[datetime] = None
-    period_end: Optional[datetime] = None
+    period_start: datetime | None = None
+    period_end: datetime | None = None
 
     model_config = {"from_attributes": True}
 
@@ -46,9 +45,9 @@ class RecentActivity(BaseModel):
     description: str
     icon: str
     timestamp: datetime
-    entity_type: Optional[str] = None
-    entity_id: Optional[str] = None
-    action_url: Optional[str] = None
+    entity_type: str | None = None
+    entity_id: str | None = None
+    action_url: str | None = None
 
     model_config = {"from_attributes": True}
 
@@ -62,9 +61,9 @@ class LightweightChart(BaseModel):
     data: list[dict[str, Any]]
     labels: list[str]
     colors: list[str] = []
-    total: Optional[float] = None
-    trend: Optional[float] = None
-    trend_direction: Optional[str] = None
+    total: float | None = None
+    trend: float | None = None
+    trend_direction: str | None = None
 
     model_config = {"from_attributes": True}
 
@@ -75,7 +74,7 @@ class MobileDashboardResponse(BaseModel):
     summary: DashboardSummary
     recent_activities: list[RecentActivity] = []
     quick_actions: list[QuickAction] = []
-    charts: Optional[dict[str, LightweightChart]] = None
+    charts: dict[str, LightweightChart] | None = None
     last_updated: datetime
     cache_expires_at: datetime
 
@@ -101,7 +100,7 @@ class UserProfileOffline(BaseModel):
     id: int
     name: str
     email: str
-    avatar_url: Optional[str] = None
+    avatar_url: str | None = None
     role: str
     permissions: list[str] = []
     preferences: dict[str, Any] = {}
@@ -129,7 +128,7 @@ class MobileFeature(BaseModel):
     id: str
     name: str
     enabled: bool = True
-    min_app_version: Optional[str] = None
+    min_app_version: str | None = None
     config: dict[str, Any] = {}
 
     model_config = {"from_attributes": True}
@@ -141,9 +140,9 @@ class MobileConfigResponse(BaseModel):
     api_version: str = "1.0.0"
     min_app_version: str = "1.0.0"
     force_update: bool = False
-    update_url: Optional[str] = None
+    update_url: str | None = None
     maintenance_mode: bool = False
-    maintenance_message: Optional[str] = None
+    maintenance_message: str | None = None
     features: list[MobileFeature] = []
     sync_config: dict[str, Any] = Field(
         default_factory=lambda: {

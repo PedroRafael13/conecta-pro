@@ -4,7 +4,7 @@ import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID, uuid4
 
 import numpy as np
@@ -13,8 +13,9 @@ from sklearn.preprocessing import StandardScaler
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.analytics.ml.registry.model_registry import (
+    ModelFramework,
     ModelRegistry,
-    ModelStage,
+    ModelType,
 )
 
 logger = logging.getLogger(__name__)
@@ -83,8 +84,8 @@ class FraudAlert:
     """Alerta de fraude gerado."""
 
     id: UUID
-    transaction_id: Optional[str]
-    user_id: Optional[int]
+    transaction_id: str | None
+    user_id: int | None
     fraud_type: FraudType
     risk_level: FraudRiskLevel
     risk_score: float  # 0-100
@@ -188,7 +189,7 @@ class FraudDetector:
 
     def __init__(
         self,
-        model_registry: Optional[ModelRegistry] = None,
+        model_registry: ModelRegistry | None = None,
     ) -> None:
         """
         Inicializa o detector de fraudes.
@@ -229,21 +230,21 @@ class FraudDetector:
 
         # 2. Análise comportamental
         if user_id:
-            behavior_indicators = await self._analyze_behavior(
-                db, user_id, transaction
-            )
+            behavior_indicators = await self._analyze_behavior(db, user_id, transaction)
             indicators.extend(behavior_indicators)
 
         # 3. Detecção de anomalias
         anomaly_score = self._detect_anomalies(transaction)
         if anomaly_score > 0.5:
-            indicators.append(FraudIndicator(
-                indicator_type="anomaly",
-                value=anomaly_score,
-                weight=0.3,
-                description="Padrão anômalo detectado",
-                evidence={"anomaly_score": anomaly_score},
-            ))
+            indicators.append(
+                FraudIndicator(
+                    indicator_type="anomaly",
+                    value=anomaly_score,
+                    weight=0.3,
+                    description="Padrão anômalo detectado",
+                    evidence={"anomaly_score": anomaly_score},
+                )
+            )
 
         # 4. Calcular score de risco
         risk_score = self._calculate_risk_score(indicators, violations)
@@ -253,9 +254,7 @@ class FraudDetector:
         fraud_type = self._identify_fraud_type(indicators, violations)
 
         # 6. Gerar recomendações
-        recommendations = self._generate_recommendations(
-            risk_level, fraud_type, indicators
-        )
+        recommendations = self._generate_recommendations(risk_level, fraud_type, indicators)
 
         # Criar alerta
         alert = FraudAlert(
@@ -282,9 +281,7 @@ class FraudDetector:
         if alert.status == AlertStatus.OPEN:
             self._alerts[str(alert.id)] = alert
 
-        logger.info(
-            f"Análise concluída: risco={risk_level.value}, score={risk_score}"
-        )
+        logger.info(f"Análise concluída: risco={risk_level.value}, score={risk_score}")
         return alert
 
     async def analyze_user_session(
@@ -308,75 +305,89 @@ class FraudDetector:
 
         # Verificar dispositivo
         if session_data.get("is_new_device"):
-            indicators.append(FraudIndicator(
-                indicator_type="new_device",
-                value=1.0,
-                weight=0.2,
-                description="Novo dispositivo detectado",
-                evidence={
-                    "device_id": session_data.get("device_id"),
-                    "user_agent": session_data.get("user_agent"),
-                },
-            ))
-            violations.append(RuleViolation(
-                rule_id="R004",
-                rule_name="new_device",
-                severity=6,
-                description="Acesso de dispositivo desconhecido",
-                value_detected=session_data.get("device_id"),
-                threshold="known_devices",
-            ))
+            indicators.append(
+                FraudIndicator(
+                    indicator_type="new_device",
+                    value=1.0,
+                    weight=0.2,
+                    description="Novo dispositivo detectado",
+                    evidence={
+                        "device_id": session_data.get("device_id"),
+                        "user_agent": session_data.get("user_agent"),
+                    },
+                )
+            )
+            violations.append(
+                RuleViolation(
+                    rule_id="R004",
+                    rule_name="new_device",
+                    severity=6,
+                    description="Acesso de dispositivo desconhecido",
+                    value_detected=session_data.get("device_id"),
+                    threshold="known_devices",
+                )
+            )
 
         # Verificar localização
         if session_data.get("location_change_km", 0) > 500:
-            indicators.append(FraudIndicator(
-                indicator_type="location_anomaly",
-                value=session_data["location_change_km"],
-                weight=0.35,
-                description="Mudança de localização suspeita",
-                evidence={
-                    "distance_km": session_data["location_change_km"],
-                    "new_location": session_data.get("location"),
-                },
-            ))
-            violations.append(RuleViolation(
-                rule_id="R005",
-                rule_name="location_anomaly",
-                severity=9,
-                description="Localização inconsistente",
-                value_detected=session_data["location_change_km"],
-                threshold=500,
-            ))
+            indicators.append(
+                FraudIndicator(
+                    indicator_type="location_anomaly",
+                    value=session_data["location_change_km"],
+                    weight=0.35,
+                    description="Mudança de localização suspeita",
+                    evidence={
+                        "distance_km": session_data["location_change_km"],
+                        "new_location": session_data.get("location"),
+                    },
+                )
+            )
+            violations.append(
+                RuleViolation(
+                    rule_id="R005",
+                    rule_name="location_anomaly",
+                    severity=9,
+                    description="Localização inconsistente",
+                    value_detected=session_data["location_change_km"],
+                    threshold=500,
+                )
+            )
 
         # Verificar horário
         hour = session_data.get("hour", 12)
         if 0 <= hour <= 6:
-            indicators.append(FraudIndicator(
-                indicator_type="unusual_time",
-                value=float(hour),
-                weight=0.15,
-                description="Acesso em horário incomum",
-                evidence={"hour": hour},
-            ))
+            indicators.append(
+                FraudIndicator(
+                    indicator_type="unusual_time",
+                    value=float(hour),
+                    weight=0.15,
+                    description="Acesso em horário incomum",
+                    evidence={"hour": hour},
+                )
+            )
 
         # Verificar tentativas falhas
         failed_attempts = session_data.get("failed_login_attempts", 0)
         if failed_attempts >= 3:
-            indicators.append(FraudIndicator(
-                indicator_type="failed_attempts",
-                value=float(failed_attempts),
-                weight=0.25,
-                description="Múltiplas tentativas de login falhas",
-                evidence={"attempts": failed_attempts},
-            ))
-            violations.append(RuleViolation(
-                rule_id="R006",
-                rule_name="failed_attempts",
-                severity=7,
-                description="Múltiplas tentativas falhas",
-                value_detected=failed_attempts,
-                threshold=3,
-            ))
+            indicators.append(
+                FraudIndicator(
+                    indicator_type="failed_attempts",
+                    value=float(failed_attempts),
+                    weight=0.25,
+                    description="Múltiplas tentativas de login falhas",
+                    evidence={"attempts": failed_attempts},
+                )
+            )
+            violations.append(
+                RuleViolation(
+                    rule_id="R006",
+                    rule_name="failed_attempts",
+                    severity=7,
+                    description="Múltiplas tentativas falhas",
+                    value_detected=failed_attempts,
+                    threshold=3,
+                )
+            )
 
         # Calcular scores
         risk_score = self._calculate_risk_score(indicators, violations)
@@ -393,9 +404,7 @@ class FraudDetector:
             status=AlertStatus.OPEN if risk_score > 40 else AlertStatus.RESOLVED,
             indicators=indicators,
             rule_violations=violations,
-            recommended_actions=self._generate_recommendations(
-                risk_level, FraudType.ACCOUNT_TAKEOVER, indicators
-            ),
+            recommended_actions=self._generate_recommendations(risk_level, FraudType.ACCOUNT_TAKEOVER, indicators),
             metadata=session_data,
         )
 
@@ -448,8 +457,8 @@ class FraudDetector:
     async def get_fraud_analytics(
         self,
         db: AsyncSession,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
     ) -> FraudAnalytics:
         """
         Obtém analytics de fraude.
@@ -466,10 +475,7 @@ class FraudDetector:
         start_date = start_date or (end_date - timedelta(days=30))
 
         # Filtrar alertas pelo período
-        period_alerts = [
-            a for a in self._alerts.values()
-            if start_date <= a.created_at <= end_date
-        ]
+        period_alerts = [a for a in self._alerts.values() if start_date <= a.created_at <= end_date]
 
         # Contagens
         total = len(period_alerts)
@@ -490,9 +496,7 @@ class FraudDetector:
         patterns = self._identify_patterns(period_alerts)
 
         # Simulação de valores monetários
-        total_at_risk = sum(
-            a.metadata.get("transaction_amount", 0) for a in period_alerts
-        )
+        total_at_risk = sum(a.metadata.get("transaction_amount", 0) for a in period_alerts)
         prevented = sum(
             a.metadata.get("transaction_amount", 0)
             for a in period_alerts
@@ -520,8 +524,8 @@ class FraudDetector:
         self,
         alert_id: str,
         new_status: AlertStatus,
-        notes: Optional[str] = None,
-    ) -> Optional[FraudAlert]:
+        notes: str | None = None,
+    ) -> FraudAlert | None:
         """
         Atualiza status de um alerta.
 
@@ -565,9 +569,9 @@ class FraudDetector:
         min_index = risk_order.index(min_risk_level)
 
         alerts = [
-            a for a in self._alerts.values()
-            if a.status in [AlertStatus.OPEN, AlertStatus.INVESTIGATING]
-            and risk_order.index(a.risk_level) >= min_index
+            a
+            for a in self._alerts.values()
+            if a.status in [AlertStatus.OPEN, AlertStatus.INVESTIGATING] and risk_order.index(a.risk_level) >= min_index
         ]
 
         alerts.sort(key=lambda x: x.risk_score, reverse=True)
@@ -580,39 +584,45 @@ class FraudDetector:
         # R001: Valor alto
         amount = transaction.get("amount", 0)
         if amount > self.RULES["R001"]["threshold"]:
-            violations.append(RuleViolation(
-                rule_id="R001",
-                rule_name=self.RULES["R001"]["name"],
-                severity=self.RULES["R001"]["severity"],
-                description=self.RULES["R001"]["description"],
-                value_detected=amount,
-                threshold=self.RULES["R001"]["threshold"],
-            ))
+            violations.append(
+                RuleViolation(
+                    rule_id="R001",
+                    rule_name=self.RULES["R001"]["name"],
+                    severity=self.RULES["R001"]["severity"],
+                    description=self.RULES["R001"]["description"],
+                    value_detected=amount,
+                    threshold=self.RULES["R001"]["threshold"],
+                )
+            )
 
         # R002: Horário incomum
         hour = transaction.get("hour", 12)
         time_range = self.RULES["R002"]["threshold"]
         if time_range[0] <= hour <= time_range[1]:
-            violations.append(RuleViolation(
-                rule_id="R002",
-                rule_name=self.RULES["R002"]["name"],
-                severity=self.RULES["R002"]["severity"],
-                description=self.RULES["R002"]["description"],
-                value_detected=hour,
-                threshold=time_range,
-            ))
+            violations.append(
+                RuleViolation(
+                    rule_id="R002",
+                    rule_name=self.RULES["R002"]["name"],
+                    severity=self.RULES["R002"]["severity"],
+                    description=self.RULES["R002"]["description"],
+                    value_detected=hour,
+                    threshold=time_range,
+                )
+            )
 
         # R003: Velocity
         recent_count = transaction.get("recent_transactions_count", 0)
         if recent_count > self.RULES["R003"]["threshold"]:
-            violations.append(RuleViolation(
-                rule_id="R003",
-                rule_name=self.RULES["R003"]["name"],
-                severity=self.RULES["R003"]["severity"],
-                description=self.RULES["R003"]["description"],
-                value_detected=recent_count,
-                threshold=self.RULES["R003"]["threshold"],
-            ))
+            violations.append(
+                RuleViolation(
+                    rule_id="R003",
+                    rule_name=self.RULES["R003"]["name"],
+                    severity=self.RULES["R003"]["severity"],
+                    description=self.RULES["R003"]["description"],
+                    value_detected=recent_count,
+                    threshold=self.RULES["R003"]["threshold"],
+                )
+            )
 
         return violations
 
@@ -633,32 +643,36 @@ class FraudDetector:
         typical_range = profile.get("transaction_range", [0, 5000])
 
         if amount > typical_range[1] * 2:
-            indicators.append(FraudIndicator(
-                indicator_type="amount_anomaly",
-                value=amount,
-                weight=0.25,
-                description="Valor muito acima do padrão do usuário",
-                evidence={
-                    "amount": amount,
-                    "typical_max": typical_range[1],
-                    "deviation": amount / typical_range[1],
-                },
-            ))
+            indicators.append(
+                FraudIndicator(
+                    indicator_type="amount_anomaly",
+                    value=amount,
+                    weight=0.25,
+                    description="Valor muito acima do padrão do usuário",
+                    evidence={
+                        "amount": amount,
+                        "typical_max": typical_range[1],
+                        "deviation": amount / typical_range[1],
+                    },
+                )
+            )
 
         # Verificar padrão de horário
         hour = transaction.get("hour", 12)
         typical_hours = profile.get("typical_hours", list(range(8, 22)))
         if hour not in typical_hours:
-            indicators.append(FraudIndicator(
-                indicator_type="time_anomaly",
-                value=float(hour),
-                weight=0.15,
-                description="Horário fora do padrão usual",
-                evidence={
-                    "hour": hour,
-                    "typical_hours": typical_hours,
-                },
-            ))
+            indicators.append(
+                FraudIndicator(
+                    indicator_type="time_anomaly",
+                    value=float(hour),
+                    weight=0.15,
+                    description="Horário fora do padrão usual",
+                    evidence={
+                        "hour": hour,
+                        "typical_hours": typical_hours,
+                    },
+                )
+            )
 
         return indicators
 
@@ -788,22 +802,28 @@ class FraudDetector:
         recommendations = []
 
         if risk_level == FraudRiskLevel.CRITICAL:
-            recommendations.extend([
-                "BLOQUEAR transação imediatamente",
-                "Notificar equipe de segurança",
-                "Suspender conta temporariamente",
-            ])
+            recommendations.extend(
+                [
+                    "BLOQUEAR transação imediatamente",
+                    "Notificar equipe de segurança",
+                    "Suspender conta temporariamente",
+                ]
+            )
         elif risk_level == FraudRiskLevel.HIGH:
-            recommendations.extend([
-                "Solicitar verificação adicional",
-                "Enviar notificação para usuário",
-                "Revisar manualmente antes de aprovar",
-            ])
+            recommendations.extend(
+                [
+                    "Solicitar verificação adicional",
+                    "Enviar notificação para usuário",
+                    "Revisar manualmente antes de aprovar",
+                ]
+            )
         elif risk_level == FraudRiskLevel.MEDIUM:
-            recommendations.extend([
-                "Monitorar próximas transações",
-                "Considerar 2FA para próxima operação",
-            ])
+            recommendations.extend(
+                [
+                    "Monitorar próximas transações",
+                    "Considerar 2FA para próxima operação",
+                ]
+            )
 
         # Recomendações específicas por tipo
         if fraud_type == FraudType.ACCOUNT_TAKEOVER:
@@ -826,23 +846,19 @@ class FraudDetector:
         # Contar tipos de fraude
         type_counts = {}
         for alert in alerts:
-            type_counts[alert.fraud_type.value] = type_counts.get(
-                alert.fraud_type.value, 0
-            ) + 1
+            type_counts[alert.fraud_type.value] = type_counts.get(alert.fraud_type.value, 0) + 1
 
         # Identificar padrões mais comuns
-        for fraud_type, count in sorted(
-            type_counts.items(),
-            key=lambda x: x[1],
-            reverse=True
-        )[:3]:
+        for fraud_type, count in sorted(type_counts.items(), key=lambda x: x[1], reverse=True)[:3]:
             if count > 1:
-                patterns.append({
-                    "pattern": fraud_type,
-                    "occurrences": count,
-                    "percentage": round(count / len(alerts) * 100, 2),
-                    "trend": "increasing" if count > 5 else "stable",
-                })
+                patterns.append(
+                    {
+                        "pattern": fraud_type,
+                        "occurrences": count,
+                        "percentage": round(count / len(alerts) * 100, 2),
+                        "trend": "increasing" if count > 5 else "stable",
+                    }
+                )
 
         return patterns
 

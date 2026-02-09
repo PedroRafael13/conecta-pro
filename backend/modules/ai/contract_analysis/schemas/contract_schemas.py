@@ -5,26 +5,24 @@ DTOs para entrada e saida da API de analise de contratos.
 """
 
 from datetime import date, datetime
-from typing import Any, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from modules.ai.contract_analysis.models.contract_alert import (
+    AlertPriority,
+    AlertStatus,
+    AlertType,
+)
 from modules.ai.contract_analysis.models.contract_analysis import (
     AnalysisStatus,
     ContractType,
     RiskLevel,
 )
 from modules.ai.contract_analysis.models.extracted_clause import (
-    ClauseType,
     ClauseImportance,
+    ClauseType,
 )
-from modules.ai.contract_analysis.models.contract_alert import (
-    AlertType,
-    AlertStatus,
-    AlertPriority,
-)
-
 
 # ============================================================
 # Analysis Schemas
@@ -35,11 +33,11 @@ class ContractAnalysisRequest(BaseModel):
     """Request para analisar contrato."""
 
     contract_id: UUID = Field(..., description="ID do contrato")
-    document_id: Optional[UUID] = Field(None, description="ID do documento no GED")
-    document_content: Optional[str] = Field(None, description="Conteudo do documento")
-    contract_number: Optional[str] = Field(None, max_length=50)
-    contract_title: Optional[str] = Field(None, max_length=300)
-    template_id: Optional[UUID] = Field(None, description="Template para comparacao")
+    document_id: UUID | None = Field(None, description="ID do documento no GED")
+    document_content: str | None = Field(None, description="Conteudo do documento")
+    contract_number: str | None = Field(None, max_length=50)
+    contract_title: str | None = Field(None, max_length=300)
+    template_id: UUID | None = Field(None, description="Template para comparacao")
     extract_clauses: bool = Field(default=True, description="Extrair clausulas")
     analyze_risk: bool = Field(default=True, description="Analisar riscos")
     check_compliance: bool = Field(default=True, description="Verificar conformidade")
@@ -51,24 +49,24 @@ class ExtractedClauseResponse(BaseModel):
 
     id: UUID
     analysis_id: UUID
-    clause_number: Optional[str] = None
-    clause_title: Optional[str] = None
+    clause_number: str | None = None
+    clause_title: str | None = None
     clause_type: ClauseType
     clause_type_confidence: float = 0
     original_text: str
-    normalized_text: Optional[str] = None
-    summary: Optional[str] = None
-    page_number: Optional[int] = None
+    normalized_text: str | None = None
+    summary: str | None = None
+    page_number: int | None = None
     importance: ClauseImportance
     is_standard: bool = True
     is_custom: bool = False
     is_risky: bool = False
-    entities: Optional[list[dict]] = None
-    dates_found: Optional[list[dict]] = None
-    values_found: Optional[list[dict]] = None
+    entities: list[dict] | None = None
+    dates_found: list[dict] | None = None
+    values_found: list[dict] | None = None
     risk_score: float = 0
-    risk_reasons: Optional[list[str]] = None
-    obligations: Optional[list[dict]] = None
+    risk_reasons: list[str] | None = None
+    obligations: list[dict] | None = None
     has_deadline: bool = False
     has_monetary_value: bool = False
     requires_action: bool = False
@@ -87,29 +85,29 @@ class ContractAlertResponse(BaseModel):
     id: UUID
     analysis_id: UUID
     contract_id: UUID
-    contract_number: Optional[str] = None
+    contract_number: str | None = None
     alert_type: AlertType
     status: AlertStatus
     priority: AlertPriority
     title: str
-    description: Optional[str] = None
-    recommendation: Optional[str] = None
+    description: str | None = None
+    recommendation: str | None = None
     trigger_date: date
-    due_date: Optional[date] = None
-    reference_date: Optional[date] = None
+    due_date: date | None = None
+    reference_date: date | None = None
     days_before: int = 30
-    days_remaining: Optional[int] = None
-    clause_id: Optional[UUID] = None
-    clause_number: Optional[str] = None
-    monetary_value: Optional[str] = None
-    assigned_to: Optional[UUID] = None
+    days_remaining: int | None = None
+    clause_id: UUID | None = None
+    clause_number: str | None = None
+    monetary_value: str | None = None
+    assigned_to: UUID | None = None
     notification_sent: bool = False
     confidence: int = 100
     is_active: bool = True
     is_read: bool = False
     is_overdue: bool = False
     created_at: datetime
-    resolved_at: Optional[datetime] = None
+    resolved_at: datetime | None = None
 
     class Config:
         """Pydantic config."""
@@ -122,54 +120,54 @@ class ContractAnalysisResponse(BaseModel):
 
     id: UUID
     contract_id: UUID
-    contract_number: Optional[str] = None
-    contract_title: Optional[str] = None
-    document_id: Optional[UUID] = None
-    document_name: Optional[str] = None
+    contract_number: str | None = None
+    contract_title: str | None = None
+    document_id: UUID | None = None
+    document_name: str | None = None
     status: AnalysisStatus
     contract_type: ContractType
     contract_type_confidence: float = 0
 
     # Partes
-    contractor_name: Optional[str] = None
-    contractor_document: Optional[str] = None
-    contracted_name: Optional[str] = None
-    contracted_document: Optional[str] = None
+    contractor_name: str | None = None
+    contractor_document: str | None = None
+    contracted_name: str | None = None
+    contracted_document: str | None = None
 
     # Datas
-    signature_date: Optional[date] = None
-    start_date: Optional[date] = None
-    end_date: Optional[date] = None
-    renewal_date: Optional[date] = None
-    notice_period_days: Optional[int] = None
+    signature_date: date | None = None
+    start_date: date | None = None
+    end_date: date | None = None
+    renewal_date: date | None = None
+    notice_period_days: int | None = None
 
     # Valores
-    total_value: Optional[float] = None
-    monthly_value: Optional[float] = None
+    total_value: float | None = None
+    monthly_value: float | None = None
     currency: str = "BRL"
-    payment_terms: Optional[str] = None
-    adjustment_index: Optional[str] = None
+    payment_terms: str | None = None
+    adjustment_index: str | None = None
 
     # Risco
     risk_level: RiskLevel
     risk_score: float = 50
-    risk_factors: Optional[list[dict]] = None
+    risk_factors: list[dict] | None = None
 
     # Conformidade
     compliance_score: float = 0
-    compliance_issues: Optional[list[dict]] = None
-    missing_clauses: Optional[list[str]] = None
+    compliance_issues: list[dict] | None = None
+    missing_clauses: list[str] | None = None
 
     # Estatisticas
     total_pages: int = 0
     total_words: int = 0
     total_clauses_found: int = 0
-    processing_time_seconds: Optional[float] = None
+    processing_time_seconds: float | None = None
 
     # Resumo
-    summary: Optional[str] = None
-    key_terms: Optional[list[str]] = None
-    obligations_summary: Optional[str] = None
+    summary: str | None = None
+    key_terms: list[str] | None = None
+    obligations_summary: str | None = None
 
     # Flags
     has_auto_renewal: bool = False
@@ -181,15 +179,15 @@ class ContractAnalysisResponse(BaseModel):
 
     # Metadados
     created_at: datetime
-    completed_at: Optional[datetime] = None
+    completed_at: datetime | None = None
     is_active: bool = True
 
     # Relacionamentos (opcionais)
-    clauses: Optional[list[ExtractedClauseResponse]] = None
-    alerts: Optional[list[ContractAlertResponse]] = None
+    clauses: list[ExtractedClauseResponse] | None = None
+    alerts: list[ContractAlertResponse] | None = None
 
     # Propriedades calculadas
-    days_until_expiry: Optional[int] = None
+    days_until_expiry: int | None = None
     is_expiring_soon: bool = False
     is_expired: bool = False
 
@@ -231,26 +229,26 @@ class ContractAlertCreate(BaseModel):
     alert_type: AlertType
     priority: AlertPriority = AlertPriority.MEDIUM
     title: str = Field(..., min_length=5, max_length=300)
-    description: Optional[str] = None
-    recommendation: Optional[str] = None
+    description: str | None = None
+    recommendation: str | None = None
     trigger_date: date
-    due_date: Optional[date] = None
-    reference_date: Optional[date] = None
+    due_date: date | None = None
+    reference_date: date | None = None
     days_before: int = Field(default=30, ge=0, le=365)
-    assigned_to: Optional[UUID] = None
-    notify_users: Optional[list[UUID]] = None
+    assigned_to: UUID | None = None
+    notify_users: list[UUID] | None = None
 
 
 class ContractAlertUpdate(BaseModel):
     """Schema para atualizar alerta."""
 
-    status: Optional[AlertStatus] = None
-    priority: Optional[AlertPriority] = None
-    assigned_to: Optional[UUID] = None
-    due_date: Optional[date] = None
-    resolution_notes: Optional[str] = None
-    is_read: Optional[bool] = None
-    snooze_until: Optional[datetime] = None
+    status: AlertStatus | None = None
+    priority: AlertPriority | None = None
+    assigned_to: UUID | None = None
+    due_date: date | None = None
+    resolution_notes: str | None = None
+    is_read: bool | None = None
+    snooze_until: datetime | None = None
 
 
 # ============================================================
@@ -262,14 +260,14 @@ class ContractSummary(BaseModel):
     """Resumo de contrato para dashboard."""
 
     contract_id: UUID
-    contract_number: Optional[str] = None
-    contract_title: Optional[str] = None
+    contract_number: str | None = None
+    contract_title: str | None = None
     contract_type: ContractType
     risk_level: RiskLevel
     risk_score: float
     compliance_score: float
-    end_date: Optional[date] = None
-    days_until_expiry: Optional[int] = None
+    end_date: date | None = None
+    days_until_expiry: int | None = None
     pending_alerts: int = 0
     status: str  # "active", "expiring", "expired", "review_required"
 
@@ -285,7 +283,7 @@ class RiskAssessment(BaseModel):
     risky_clauses: list[dict]
     # Ex: [{"clause_number": "5.1", "type": "penalty", "risk_score": 75}]
     recommendations: list[str]
-    comparison_with_template: Optional[dict] = None
+    comparison_with_template: dict | None = None
 
 
 class ComplianceReport(BaseModel):
@@ -310,12 +308,7 @@ class ComplianceReport(BaseModel):
 class BulkAnalysisRequest(BaseModel):
     """Request para analise em lote."""
 
-    contract_ids: list[UUID] = Field(
-        ...,
-        min_length=1,
-        max_length=50,
-        description="Lista de IDs de contratos (max 50)"
-    )
+    contract_ids: list[UUID] = Field(..., min_length=1, max_length=50, description="Lista de IDs de contratos (max 50)")
     extract_clauses: bool = True
     analyze_risk: bool = True
     check_compliance: bool = True
@@ -325,18 +318,10 @@ class BulkAnalysisRequest(BaseModel):
 class BulkAlertActionRequest(BaseModel):
     """Request para acao em lote em alertas."""
 
-    alert_ids: list[UUID] = Field(
-        ...,
-        min_length=1,
-        max_length=100,
-        description="Lista de IDs de alertas"
-    )
-    action: str = Field(
-        ...,
-        pattern="^(acknowledge|resolve|dismiss|snooze)$"
-    )
-    notes: Optional[str] = None
-    snooze_days: Optional[int] = Field(None, ge=1, le=90)
+    alert_ids: list[UUID] = Field(..., min_length=1, max_length=100, description="Lista de IDs de alertas")
+    action: str = Field(..., pattern="^(acknowledge|resolve|dismiss|snooze)$")
+    notes: str | None = None
+    snooze_days: int | None = Field(None, ge=1, le=90)
 
 
 # ============================================================

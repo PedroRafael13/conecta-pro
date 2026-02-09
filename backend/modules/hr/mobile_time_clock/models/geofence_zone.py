@@ -3,21 +3,21 @@
 Define áreas geográficas permitidas para registro de ponto.
 """
 
-import uuid
 import math
+import uuid
 from datetime import datetime, time
-from enum import Enum
-from typing import Optional, TYPE_CHECKING
+from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     Boolean,
     DateTime,
-    Time,
-    Integer,
     Float,
+    Index,
+    Integer,
     String,
     Text,
-    Index,
+    Time,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -28,25 +28,28 @@ if TYPE_CHECKING:
     from .mobile_checkin import MobileCheckIn
 
 
-class ZoneType(str, Enum):
+class ZoneType(StrEnum):
     """Tipo de zona."""
-    CIRCLE = "circle"          # Círculo com centro e raio
-    POLYGON = "polygon"        # Polígono com vértices
-    RECTANGLE = "rectangle"    # Retângulo
+
+    CIRCLE = "circle"  # Círculo com centro e raio
+    POLYGON = "polygon"  # Polígono com vértices
+    RECTANGLE = "rectangle"  # Retângulo
 
 
-class ZoneCategory(str, Enum):
+class ZoneCategory(StrEnum):
     """Categoria da zona."""
-    HEADQUARTERS = "headquarters"    # Sede principal
-    BRANCH = "branch"                # Filial
-    CLIENT_SITE = "client_site"      # Local do cliente
-    EXTERNAL = "external"            # Trabalho externo
-    HOME_OFFICE = "home_office"      # Home office
-    TEMPORARY = "temporary"          # Zona temporária
+
+    HEADQUARTERS = "headquarters"  # Sede principal
+    BRANCH = "branch"  # Filial
+    CLIENT_SITE = "client_site"  # Local do cliente
+    EXTERNAL = "external"  # Trabalho externo
+    HOME_OFFICE = "home_office"  # Home office
+    TEMPORARY = "temporary"  # Zona temporária
 
 
-class ZoneStatus(str, Enum):
+class ZoneStatus(StrEnum):
     """Status da zona."""
+
     ACTIVE = "active"
     INACTIVE = "inactive"
     SUSPENDED = "suspended"
@@ -68,14 +71,14 @@ class GeofenceZone(Base):
         nullable=False,
         index=True,
     )
-    post_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    post_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         index=True,
     )  # Opcional: vinculado a um posto
 
     # Informações básicas
     name: Mapped[str] = mapped_column(String(100), nullable=False)
-    description: Mapped[Optional[str]] = mapped_column(Text)
+    description: Mapped[str | None] = mapped_column(Text)
     zone_type: Mapped[str] = mapped_column(
         String(20),
         default=ZoneType.CIRCLE.value,
@@ -91,29 +94,29 @@ class GeofenceZone(Base):
     radius_meters: Mapped[int] = mapped_column(Integer, default=100)
 
     # Geometria - Polígono (lista de coordenadas)
-    polygon_coordinates: Mapped[Optional[list]] = mapped_column(
+    polygon_coordinates: Mapped[list | None] = mapped_column(
         JSONB,
         default=list,
     )  # [{lat: x, lng: y}, ...]
 
     # Endereço (para referência)
-    address: Mapped[Optional[str]] = mapped_column(String(500))
-    city: Mapped[Optional[str]] = mapped_column(String(100))
-    state: Mapped[Optional[str]] = mapped_column(String(50))
-    postal_code: Mapped[Optional[str]] = mapped_column(String(20))
+    address: Mapped[str | None] = mapped_column(String(500))
+    city: Mapped[str | None] = mapped_column(String(100))
+    state: Mapped[str | None] = mapped_column(String(50))
+    postal_code: Mapped[str | None] = mapped_column(String(20))
 
     # Configurações de validação
     min_accuracy_meters: Mapped[int] = mapped_column(Integer, default=50)
     require_wifi: Mapped[bool] = mapped_column(Boolean, default=False)
-    allowed_wifi_ssids: Mapped[Optional[list]] = mapped_column(JSONB, default=list)
+    allowed_wifi_ssids: Mapped[list | None] = mapped_column(JSONB, default=list)
     require_beacon: Mapped[bool] = mapped_column(Boolean, default=False)
-    allowed_beacons: Mapped[Optional[list]] = mapped_column(JSONB, default=list)
+    allowed_beacons: Mapped[list | None] = mapped_column(JSONB, default=list)
 
     # Horários permitidos
     allow_all_hours: Mapped[bool] = mapped_column(Boolean, default=True)
-    allowed_start_time: Mapped[Optional[time]] = mapped_column(Time)
-    allowed_end_time: Mapped[Optional[time]] = mapped_column(Time)
-    allowed_days: Mapped[Optional[list]] = mapped_column(
+    allowed_start_time: Mapped[time | None] = mapped_column(Time)
+    allowed_end_time: Mapped[time | None] = mapped_column(Time)
+    allowed_days: Mapped[list | None] = mapped_column(
         JSONB,
         default=lambda: [1, 2, 3, 4, 5],
     )  # 1=seg, 7=dom
@@ -125,8 +128,8 @@ class GeofenceZone(Base):
 
     # Funcionários permitidos
     allow_all_employees: Mapped[bool] = mapped_column(Boolean, default=True)
-    allowed_employees: Mapped[Optional[list]] = mapped_column(JSONB, default=list)
-    allowed_departments: Mapped[Optional[list]] = mapped_column(JSONB, default=list)
+    allowed_employees: Mapped[list | None] = mapped_column(JSONB, default=list)
+    allowed_departments: Mapped[list | None] = mapped_column(JSONB, default=list)
 
     # Status
     status: Mapped[str] = mapped_column(
@@ -139,13 +142,13 @@ class GeofenceZone(Base):
 
     # Estatísticas
     total_checkins: Mapped[int] = mapped_column(Integer, default=0)
-    last_checkin_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    last_checkin_at: Mapped[datetime | None] = mapped_column(DateTime)
 
     # Metadados
-    settings: Mapped[Optional[dict]] = mapped_column(JSONB, default=dict)
+    settings: Mapped[dict | None] = mapped_column(JSONB, default=dict)
 
     # Auditoria
-    created_by: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True))
+    created_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime,
@@ -225,10 +228,7 @@ class GeofenceZone(Base):
         delta_lat = math.radians(lat - self.center_latitude)
         delta_lng = math.radians(lng - self.center_longitude)
 
-        a = (
-            math.sin(delta_lat / 2) ** 2
-            + math.cos(lat1) * math.cos(lat2) * math.sin(delta_lng / 2) ** 2
-        )
+        a = math.sin(delta_lat / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * math.sin(delta_lng / 2) ** 2
         c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
         return earth_radius * c

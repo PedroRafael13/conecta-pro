@@ -5,17 +5,18 @@ Processa intents relacionados a banco de horas, saldos, aprovacoes
 de hora extra, compensacoes e expiracoes, consultando dados via DataConnector.
 """
 
-from typing import Dict, Any, List, Optional
-from datetime import datetime, date
-from enum import Enum
 import logging
 import re
+from datetime import date
+from enum import StrEnum
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
-class BancoHorasIntent(str, Enum):
+class BancoHorasIntent(StrEnum):
     """Intents relacionados a banco de horas."""
+
     VER_SALDO = "ver_saldo"
     VER_EXTRATO = "ver_extrato"
     APROVAR_HORA_EXTRA = "aprovar_hora_extra"
@@ -45,22 +46,29 @@ class BancoHorasAgent:
         # ==================================================================
         # APROVAR_HORA_EXTRA - Antes de pendentes (mais especifico)
         # ==================================================================
-        (r"(?:aprovar|aprove|autorizar|autorize|liberar|libere)\s+(?:a\s+)?(?:hora\s+extra|he\b|horas?\s+extras?)", BancoHorasIntent.APROVAR_HORA_EXTRA),
-        (r"(?:aprovar|aprove|autorizar|autorize)\s+(?:registro|lancamento|entrada)\s+(?:de\s+)?(?:hora|banco)", BancoHorasIntent.APROVAR_HORA_EXTRA),
+        (
+            r"(?:aprovar|aprove|autorizar|autorize|liberar|libere)\s+(?:a\s+)?(?:hora\s+extra|he\b|horas?\s+extras?)",
+            BancoHorasIntent.APROVAR_HORA_EXTRA,
+        ),
+        (
+            r"(?:aprovar|aprove|autorizar|autorize)\s+(?:registro|lancamento|entrada)\s+(?:de\s+)?(?:hora|banco)",
+            BancoHorasIntent.APROVAR_HORA_EXTRA,
+        ),
         (r"(?:aprovar|aprove)\s+(?:o\s+)?(?:banco\s+de\s+horas?|bh\b)", BancoHorasIntent.APROVAR_HORA_EXTRA),
         (r"(?:aprovar|aprove)\s+BH-\d+", BancoHorasIntent.APROVAR_HORA_EXTRA),
-
         # ==================================================================
         # SOLICITAR_COMPENSACAO - Antes de saldo (mais especifico)
         # ==================================================================
-        (r"(?:solicitar|solicite|pedir|peca|quero|desejo)\s+(?:uma?\s+)?compensac", BancoHorasIntent.SOLICITAR_COMPENSACAO),
+        (
+            r"(?:solicitar|solicite|pedir|peca|quero|desejo)\s+(?:uma?\s+)?compensac",
+            BancoHorasIntent.SOLICITAR_COMPENSACAO,
+        ),
         (r"compensar\s+(?:as?\s+)?horas?", BancoHorasIntent.SOLICITAR_COMPENSACAO),
         (r"(?:usar|utilizar|gastar)\s+(?:as?\s+)?horas?\s+(?:do\s+)?banco", BancoHorasIntent.SOLICITAR_COMPENSACAO),
         (r"(?:folgar|folga)\s+(?:com|usando)\s+(?:o\s+)?banco", BancoHorasIntent.SOLICITAR_COMPENSACAO),
         (r"(?:abater|descontar)\s+(?:do\s+)?banco\s+de\s+horas?", BancoHorasIntent.SOLICITAR_COMPENSACAO),
         (r"(?:quero|preciso)\s+(?:usar|utilizar)\s+(?:meu\s+)?(?:saldo|banco)", BancoHorasIntent.SOLICITAR_COMPENSACAO),
         (r"(?:solicitar|solicite)\s+(?:uso|utilizacao)\s+(?:do\s+)?banco", BancoHorasIntent.SOLICITAR_COMPENSACAO),
-
         # ==================================================================
         # VER_EXPIRACOES - Antes de extrato (mais especifico)
         # ==================================================================
@@ -71,38 +79,56 @@ class BancoHorasAgent:
         (r"(?:perder|perdendo)\s+horas?\s+(?:do\s+)?banco", BancoHorasIntent.VER_EXPIRACOES),
         (r"horas?\s+(?:que\s+)?(?:estao|esta)\s+(?:vencendo|expirando)", BancoHorasIntent.VER_EXPIRACOES),
         (r"(?:alertas?|avisos?)\s+(?:de\s+)?(?:expirac|vencimento)", BancoHorasIntent.VER_EXPIRACOES),
-
         # ==================================================================
         # VER_PENDENTES - Pendencias de aprovacao
         # ==================================================================
         (r"(?:horas?\s+extras?|he\b)\s+pendentes?", BancoHorasIntent.VER_PENDENTES),
         (r"(?:aprovac|pendencia)\w*\s+(?:de\s+)?(?:horas?\s+extras?|banco|he\b)", BancoHorasIntent.VER_PENDENTES),
         (r"(?:pendentes?|pendencia)\s+(?:de\s+)?(?:aprovacao|banco\s+de\s+horas?)", BancoHorasIntent.VER_PENDENTES),
-        (r"(?:o\s+que\s+)?(?:tem|ha|há)\s+(?:para|pra)\s+aprovar\s+(?:no\s+|de\s+)?(?:banco|horas?)", BancoHorasIntent.VER_PENDENTES),
-        (r"(?:listar|ver|veja|mostrar|mostre)\s+(?:as?\s+)?(?:pendentes?|pendencias?)\s+(?:de\s+)?(?:banco|hora)", BancoHorasIntent.VER_PENDENTES),
+        (
+            r"(?:o\s+que\s+)?(?:tem|ha|há)\s+(?:para|pra)\s+aprovar\s+(?:no\s+|de\s+)?(?:banco|horas?)",
+            BancoHorasIntent.VER_PENDENTES,
+        ),
+        (
+            r"(?:listar|ver|veja|mostrar|mostre)\s+(?:as?\s+)?(?:pendentes?|pendencias?)\s+(?:de\s+)?(?:banco|hora)",
+            BancoHorasIntent.VER_PENDENTES,
+        ),
         (r"(?:banco|horas?)\s+(?:aguardando|esperando)\s+(?:aprovacao|liberacao)", BancoHorasIntent.VER_PENDENTES),
-
         # ==================================================================
         # VER_EXTRATO - Extrato detalhado
         # ==================================================================
-        (r"(?:extrato|historico|movimentac)\w*\s+(?:do\s+|de\s+)?(?:banco\s+de\s+horas?|bh\b)", BancoHorasIntent.VER_EXTRATO),
-        (r"(?:ver|veja|mostrar|mostre|exibir|exiba)\s+(?:o\s+)?extrato\s+(?:do\s+|de\s+)?(?:banco|horas?)", BancoHorasIntent.VER_EXTRATO),
+        (
+            r"(?:extrato|historico|movimentac)\w*\s+(?:do\s+|de\s+)?(?:banco\s+de\s+horas?|bh\b)",
+            BancoHorasIntent.VER_EXTRATO,
+        ),
+        (
+            r"(?:ver|veja|mostrar|mostre|exibir|exiba)\s+(?:o\s+)?extrato\s+(?:do\s+|de\s+)?(?:banco|horas?)",
+            BancoHorasIntent.VER_EXTRATO,
+        ),
         (r"(?:detalhes?|detalh\w+)\s+(?:do\s+)?banco\s+de\s+horas?", BancoHorasIntent.VER_EXTRATO),
         (r"(?:creditos?|debitos?)\s+(?:do\s+|no\s+)?banco\s+de\s+horas?", BancoHorasIntent.VER_EXTRATO),
         (r"(?:lancamentos?|entradas?)\s+(?:do\s+|no\s+)?banco\s+de\s+horas?", BancoHorasIntent.VER_EXTRATO),
         (r"(?:movimentacao|movimentos?)\s+(?:do\s+|de\s+)?banco", BancoHorasIntent.VER_EXTRATO),
-
         # ==================================================================
         # VER_SALDO - Generico (por ultimo)
         # ==================================================================
-        (r"(?:ver|veja|mostrar|mostre|exibir|exiba|consultar|consulte)\s+(?:o\s+)?saldo\s+(?:do\s+|de\s+)?(?:banco|bh\b)", BancoHorasIntent.VER_SALDO),
+        (
+            r"(?:ver|veja|mostrar|mostre|exibir|exiba|consultar|consulte)\s+(?:o\s+)?saldo\s+(?:do\s+|de\s+)?(?:banco|bh\b)",
+            BancoHorasIntent.VER_SALDO,
+        ),
         (r"saldo\s+(?:do\s+|de\s+)?(?:banco\s+de\s+horas?|bh\b)", BancoHorasIntent.VER_SALDO),
         (r"(?:quanto|quantas)\s+(?:tem|tenho|possui)\s+(?:no\s+|de\s+)?(?:banco|horas?)", BancoHorasIntent.VER_SALDO),
-        (r"(?:banco\s+de\s+horas?|bh\b)\s+(?:do\s+|de\s+)?(?:funcionario|colaborador|vigilante|porteiro)", BancoHorasIntent.VER_SALDO),
+        (
+            r"(?:banco\s+de\s+horas?|bh\b)\s+(?:do\s+|de\s+)?(?:funcionario|colaborador|vigilante|porteiro)",
+            BancoHorasIntent.VER_SALDO,
+        ),
         (r"(?:ver|veja|mostrar|mostre|listar|liste)\s+(?:o\s+)?banco\s+de\s+horas?", BancoHorasIntent.VER_SALDO),
         (r"(?:meu|minha)\s+(?:banco\s+de\s+horas?|saldo\s+de\s+horas?)", BancoHorasIntent.VER_SALDO),
         (r"banco\s+de\s+horas?$", BancoHorasIntent.VER_SALDO),
-        (r"(?:horas?\s+extras?|he\b)\s+(?:do\s+|de\s+)?(?:funcionario|colaborador|vigilante|porteiro)", BancoHorasIntent.VER_SALDO),
+        (
+            r"(?:horas?\s+extras?|he\b)\s+(?:do\s+|de\s+)?(?:funcionario|colaborador|vigilante|porteiro)",
+            BancoHorasIntent.VER_SALDO,
+        ),
     ]
 
     def __init__(self, db=None, data_connector=None):
@@ -112,12 +138,13 @@ class BancoHorasAgent:
         if db and not data_connector:
             try:
                 from modules.ai.bartolo.services.data_connector import DataConnector
+
                 self.data_connector = DataConnector(db)
             except Exception as e:
                 logger.warning(f"Nao foi possivel criar DataConnector: {e}")
                 self.data_connector = None
 
-    async def process(self, message: str, context: Dict[str, Any] = None) -> Dict[str, Any]:
+    async def process(self, message: str, context: dict[str, Any] = None) -> dict[str, Any]:
         """
         Processa uma mensagem relacionada a banco de horas.
 
@@ -142,7 +169,7 @@ class BancoHorasAgent:
         else:
             return await self._handle_default(message, context)
 
-    def _detect_intent(self, message: str) -> Optional[BancoHorasIntent]:
+    def _detect_intent(self, message: str) -> BancoHorasIntent | None:
         """Detecta o intent da mensagem."""
         message_lower = message.lower()
 
@@ -155,7 +182,7 @@ class BancoHorasAgent:
     # HELPERS - Extrair nome de funcionario da mensagem
     # =========================================================================
 
-    def _extract_employee_name(self, message: str) -> Optional[str]:
+    def _extract_employee_name(self, message: str) -> str | None:
         """Extrai nome de funcionario da mensagem."""
         patterns = [
             r"(?:do|da|de)\s+(?:funcionario|colaborador|vigilante|porteiro|agente)\s+([A-Za-zÀ-ÿ\s]{3,50})",
@@ -172,7 +199,7 @@ class BancoHorasAgent:
                     return name.title()
         return None
 
-    def _extract_entry_id(self, message: str) -> Optional[str]:
+    def _extract_entry_id(self, message: str) -> str | None:
         """Extrai ID de entrada (BH-xxx) da mensagem."""
         match = re.search(r"BH-\d+", message.upper())
         return match.group(0) if match else None
@@ -181,7 +208,7 @@ class BancoHorasAgent:
     # HANDLERS
     # =========================================================================
 
-    async def _handle_ver_saldo(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_ver_saldo(self, message: str, context: dict) -> dict[str, Any]:
         """Mostra saldo do banco de horas usando DataConnector."""
         employee_name = self._extract_employee_name(message)
 
@@ -193,23 +220,20 @@ class BancoHorasAgent:
 
                     # Se tem nome de funcionario, filtrar
                     if employee_name:
-                        filtered = [
-                            f for f in ranking
-                            if employee_name.lower() in f.get("nome", "").lower()
-                        ]
+                        filtered = [f for f in ranking if employee_name.lower() in f.get("nome", "").lower()]
                         if filtered:
                             func_data = filtered[0]
                             saldo_icon = "+" if func_data.get("saldo_banco", 0) >= 0 else ""
-                            response = f"""**SALDO BANCO DE HORAS - {func_data['nome']}**
+                            response = f"""**SALDO BANCO DE HORAS - {func_data["nome"]}**
 
-**Saldo atual:** {saldo_icon}{func_data.get('saldo_banco', 0):.1f}h
-**Horas extras acumuladas:** {func_data.get('horas_extras', 0):.1f}h
+**Saldo atual:** {saldo_icon}{func_data.get("saldo_banco", 0):.1f}h
+**Horas extras acumuladas:** {func_data.get("horas_extras", 0):.1f}h
 
 **Detalhamento:**
-- Creditos (horas trabalhadas a mais): {func_data.get('horas_extras', 0):.1f}h
-- Saldo disponivel para compensacao: {func_data.get('saldo_banco', 0):.1f}h
+- Creditos (horas trabalhadas a mais): {func_data.get("horas_extras", 0):.1f}h
+- Saldo disponivel para compensacao: {func_data.get("saldo_banco", 0):.1f}h
 
-Use `/banco_horas extrato {func_data['nome']}` para ver movimentacoes."""
+Use `/banco_horas extrato {func_data["nome"]}` para ver movimentacoes."""
                             return {
                                 "response": response,
                                 "intent": BancoHorasIntent.VER_SALDO.value,
@@ -299,7 +323,7 @@ Use `/banco_horas extrato {func_data['nome']}` para ver movimentacoes."""
             ],
         }
 
-    async def _handle_ver_extrato(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_ver_extrato(self, message: str, context: dict) -> dict[str, Any]:
         """Mostra extrato detalhado do banco de horas."""
         employee_name = self._extract_employee_name(message)
 
@@ -307,7 +331,6 @@ Use `/banco_horas extrato {func_data['nome']}` para ver movimentacoes."""
             try:
                 from modules.operacional.repositories.time_bank_repository import TimeBankRepository
                 from modules.operacional.schemas.time_bank import TimeBankFilter
-                from modules.operacional.models.time_bank import TimeBankStatus
 
                 repo = TimeBankRepository(self.db)
                 filters = TimeBankFilter()
@@ -332,15 +355,12 @@ Use `/banco_horas extrato {func_data['nome']}` para ver movimentacoes."""
                             "expired": "Expirado",
                         }.get(entry.status, entry.status)
 
-                        ref_date = entry.reference_date.strftime('%d/%m/%Y') if entry.reference_date else 'N/A'
-                        desc = entry.description or entry.reason or 'Sem descricao'
+                        ref_date = entry.reference_date.strftime("%d/%m/%Y") if entry.reference_date else "N/A"
+                        desc = entry.description or entry.reason or "Sem descricao"
                         if len(desc) > 40:
                             desc = desc[:37] + "..."
 
-                        lines.append(
-                            f"| {ref_date} | {tipo_icon}{entry.hours:.1f}h | "
-                            f"{status_icon} | {desc} |"
-                        )
+                        lines.append(f"| {ref_date} | {tipo_icon}{entry.hours:.1f}h | {status_icon} | {desc} |")
 
                     response = f"""**EXTRATO BANCO DE HORAS** ({total} registros)
 
@@ -371,8 +391,8 @@ Use `/banco_horas extrato {func_data['nome']}` para ver movimentacoes."""
 
 | Data | Tipo | Horas | Saldo | Status | Descricao |
 |------|------|-------|-------|--------|-----------|
-| {today.strftime('%d/%m/%Y')} | Credito | +4.0h | 32.0h | Aprovado | HE - Turno noturno |
-| {today.strftime('%d/%m/%Y')} | Credito | +2.0h | 28.0h | Pendente | HE - Cobertura falta |
+| {today.strftime("%d/%m/%Y")} | Credito | +4.0h | 32.0h | Aprovado | HE - Turno noturno |
+| {today.strftime("%d/%m/%Y")} | Credito | +2.0h | 28.0h | Pendente | HE - Cobertura falta |
 | 25/01/2026 | Compensacao | -8.0h | 26.0h | Aprovado | Folga compensatoria |
 | 20/01/2026 | Credito | +6.0h | 34.0h | Aprovado | HE - Evento especial |
 | 15/01/2026 | Credito | +3.5h | 28.0h | Aprovado | HE - Turno diurno |
@@ -402,7 +422,7 @@ Use `/banco_horas extrato {func_data['nome']}` para ver movimentacoes."""
             ],
         }
 
-    async def _handle_aprovar_hora_extra(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_aprovar_hora_extra(self, message: str, context: dict) -> dict[str, Any]:
         """Aprova horas extras pendentes."""
         entry_id = self._extract_entry_id(message)
 
@@ -411,6 +431,7 @@ Use `/banco_horas extrato {func_data['nome']}` para ver movimentacoes."""
             if self.data_connector and self.db:
                 try:
                     from modules.operacional.repositories.time_bank_repository import TimeBankRepository
+
                     repo = TimeBankRepository(self.db)
                     entry = await repo.get_by_id(entry_id)
 
@@ -421,8 +442,8 @@ Use `/banco_horas extrato {func_data['nome']}` para ver movimentacoes."""
 - Funcionario: {entry.employee_id}
 - Horas: {entry.hours:.1f}h
 - Tipo: {entry.entry_type}
-- Data referencia: {entry.reference_date.strftime('%d/%m/%Y') if entry.reference_date else 'N/A'}
-- Descricao: {entry.description or 'N/A'}
+- Data referencia: {entry.reference_date.strftime("%d/%m/%Y") if entry.reference_date else "N/A"}
+- Descricao: {entry.description or "N/A"}
 - Status atual: {entry.status}
 
 **Confirmar aprovacao?**"""
@@ -450,7 +471,7 @@ Use `/banco_horas extrato {func_data['nome']}` para ver movimentacoes."""
 **Detalhes:**
 - Funcionario: Jose Silva
 - Horas: 4.0h
-- Data: {date.today().strftime('%d/%m/%Y')}
+- Data: {date.today().strftime("%d/%m/%Y")}
 - Motivo: Hora extra - Turno noturno
 - Status: Pendente
 
@@ -471,7 +492,7 @@ Use `/banco_horas extrato {func_data['nome']}` para ver movimentacoes."""
         # Sem ID especifico - listar pendentes para aprovar
         return await self._handle_ver_pendentes(message, context)
 
-    async def _handle_solicitar_compensacao(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_solicitar_compensacao(self, message: str, context: dict) -> dict[str, Any]:
         """Solicita compensacao de horas - redireciona para wizard."""
         employee_name = self._extract_employee_name(message)
 
@@ -481,10 +502,7 @@ Use `/banco_horas extrato {func_data['nome']}` para ver movimentacoes."""
             try:
                 result = await self.data_connector._get_hora_extra_ranking()
                 if result.success and result.data and employee_name:
-                    filtered = [
-                        f for f in result.data
-                        if employee_name.lower() in f.get("nome", "").lower()
-                    ]
+                    filtered = [f for f in result.data if employee_name.lower() in f.get("nome", "").lower()]
                     if filtered:
                         func_data = filtered[0]
                         saldo = func_data.get("saldo_banco", 0)
@@ -493,7 +511,7 @@ Use `/banco_horas extrato {func_data['nome']}` para ver movimentacoes."""
                             return {
                                 "response": f"""**SOLICITAR COMPENSACAO**
 
-Funcionario: **{func_data['nome']}**
+Funcionario: **{func_data["nome"]}**
 Saldo atual: **{saldo:+.1f}h**
 
 O funcionario nao possui saldo suficiente no banco de horas para compensacao.""",
@@ -531,13 +549,12 @@ Posso iniciar o **assistente guiado** para coletar esses dados passo a passo.
             ],
         }
 
-    async def _handle_ver_pendentes(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_ver_pendentes(self, message: str, context: dict) -> dict[str, Any]:
         """Lista horas extras pendentes de aprovacao."""
         if self.data_connector and self.db:
             try:
                 from modules.operacional.repositories.time_bank_repository import TimeBankRepository
                 from modules.operacional.schemas.time_bank import TimeBankFilter
-                from modules.operacional.models.time_bank import TimeBankStatus
 
                 repo = TimeBankRepository(self.db)
                 filters = TimeBankFilter(is_pending=True)
@@ -546,8 +563,8 @@ Posso iniciar o **assistente guiado** para coletar esses dados passo a passo.
                 if entries:
                     lines = []
                     for entry in entries:
-                        ref_date = entry.reference_date.strftime('%d/%m/%Y') if entry.reference_date else 'N/A'
-                        desc = entry.description or entry.reason or 'Sem descricao'
+                        ref_date = entry.reference_date.strftime("%d/%m/%Y") if entry.reference_date else "N/A"
+                        desc = entry.description or entry.reason or "Sem descricao"
                         if len(desc) > 35:
                             desc = desc[:32] + "..."
                         lines.append(
@@ -589,8 +606,8 @@ Para aprovar, use: `/banco_horas aprovar <id>`"""
         return {
             "response": f"""**APROVACOES PENDENTES - BANCO DE HORAS** (5)
 
-- **BH-001** | Jose Silva | +4.0h | {today.strftime('%d/%m/%Y')} | HE - Turno noturno
-- **BH-002** | Maria Santos | +2.5h | {today.strftime('%d/%m/%Y')} | HE - Cobertura falta
+- **BH-001** | Jose Silva | +4.0h | {today.strftime("%d/%m/%Y")} | HE - Turno noturno
+- **BH-002** | Maria Santos | +2.5h | {today.strftime("%d/%m/%Y")} | HE - Cobertura falta
 - **BH-003** | Pedro Oliveira | +6.0h | 27/01/2026 | HE - Evento especial
 - **BH-004** | Ana Costa | +3.0h | 26/01/2026 | HE - Turno extra
 - **BH-005** | Carlos Lima | +8.0h | 25/01/2026 | HE - Feriado
@@ -618,14 +635,15 @@ Para aprovar, use: `/banco_horas aprovar <id>`""",
             ],
         }
 
-    async def _handle_ver_expiracoes(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_ver_expiracoes(self, message: str, context: dict) -> dict[str, Any]:
         """Lista horas prestes a expirar."""
         if self.data_connector and self.db:
             try:
+                from datetime import timedelta
+
+                from modules.operacional.models.time_bank import TimeBankEntryType, TimeBankStatus
                 from modules.operacional.repositories.time_bank_repository import TimeBankRepository
                 from modules.operacional.schemas.time_bank import TimeBankFilter
-                from modules.operacional.models.time_bank import TimeBankStatus, TimeBankEntryType
-                from datetime import timedelta
 
                 repo = TimeBankRepository(self.db)
                 # Buscar entradas aprovadas que tem data de expiracao
@@ -643,13 +661,15 @@ Para aprovar, use: `/banco_horas aprovar <id>`""",
                     if entry.expiration_date and entry.expiration_date <= limite_30_dias:
                         days_left = (entry.expiration_date - today).days
                         if days_left >= 0:
-                            expiring.append({
-                                "id": entry.id[:8],
-                                "employee_id": entry.employee_id[:8],
-                                "hours": entry.hours,
-                                "expiration_date": entry.expiration_date,
-                                "days_left": days_left,
-                            })
+                            expiring.append(
+                                {
+                                    "id": entry.id[:8],
+                                    "employee_id": entry.employee_id[:8],
+                                    "hours": entry.hours,
+                                    "expiration_date": entry.expiration_date,
+                                    "days_left": days_left,
+                                }
+                            )
 
                 expiring.sort(key=lambda x: x["days_left"])
 
@@ -657,7 +677,7 @@ Para aprovar, use: `/banco_horas aprovar <id>`""",
                     lines = []
                     for e in expiring[:15]:
                         urgency = "!!!" if e["days_left"] <= 7 else "!" if e["days_left"] <= 15 else ""
-                        exp_date = e["expiration_date"].strftime('%d/%m/%Y')
+                        exp_date = e["expiration_date"].strftime("%d/%m/%Y")
                         lines.append(
                             f"- {urgency} **{e['id']}...** | {e['employee_id']}... | "
                             f"{e['hours']:.1f}h | Expira: {exp_date} ({e['days_left']} dias)"
@@ -725,7 +745,7 @@ Use `/banco_horas compensar <funcionario> <horas> <data>` para solicitar.""",
             ],
         }
 
-    async def _handle_default(self, message: str, context: Dict) -> Optional[Dict[str, Any]]:
+    async def _handle_default(self, message: str, context: dict) -> dict[str, Any] | None:
         """Handler padrao - retorna None para permitir que DataConnector processe."""
         return None
 
@@ -745,10 +765,10 @@ Use `/banco_horas compensar <funcionario> <horas> <data>` para solicitar.""",
     async def process_followup(
         self,
         message: str,
-        context: Dict[str, Any],
+        context: dict[str, Any],
         previous_intent: str,
-        previous_data: Optional[Dict] = None,
-    ) -> Optional[Dict[str, Any]]:
+        previous_data: dict | None = None,
+    ) -> dict[str, Any] | None:
         """
         Processa follow-up de uma conversa anterior com o BancoHorasAgent.
 
@@ -771,7 +791,7 @@ Use `/banco_horas compensar <funcionario> <horas> <data>` para solicitar.""",
                     entry_id = previous_data.get("entry_id", "N/A")
                     return {
                         "response": f"Hora extra **{entry_id}** aprovada com sucesso!\n\n"
-                                    "O saldo do funcionario sera atualizado automaticamente.",
+                        "O saldo do funcionario sera atualizado automaticamente.",
                         "intent": BancoHorasIntent.APROVAR_HORA_EXTRA.value,
                         "data": {**previous_data, "approved": True},
                         "suggestions": ["/banco_horas pendentes", "/banco_horas saldo"],
@@ -808,7 +828,7 @@ Use `/banco_horas compensar <funcionario> <horas> <data>` para solicitar.""",
 
         return None
 
-    def get_capabilities(self) -> List[str]:
+    def get_capabilities(self) -> list[str]:
         """Retorna lista de capabilities do agente."""
         return [
             "Consultar saldo de banco de horas",

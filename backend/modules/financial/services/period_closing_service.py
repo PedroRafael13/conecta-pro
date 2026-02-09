@@ -8,11 +8,10 @@ Responsável por:
 - Auditoria de lançamentos
 """
 
-import enum
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Optional
+from enum import StrEnum
 from uuid import UUID
 
 from sqlalchemy import and_, func, select
@@ -38,7 +37,7 @@ from modules.financial.models.journal_entry import (
 )
 
 
-class ClosingStepType(str, enum.Enum):
+class ClosingStepType(StrEnum):
     """Tipos de etapas do fechamento."""
 
     VALIDATE_ENTRIES = "VALIDATE_ENTRIES"  # Validar lançamentos
@@ -50,7 +49,7 @@ class ClosingStepType(str, enum.Enum):
     FINALIZE = "FINALIZE"  # Finalizar fechamento
 
 
-class ProvisionType(str, enum.Enum):
+class ProvisionType(StrEnum):
     """Tipos de provisões."""
 
     DEPRECIATION = "DEPRECIATION"  # Depreciação
@@ -61,7 +60,7 @@ class ProvisionType(str, enum.Enum):
     OTHER = "OTHER"  # Outras
 
 
-class AuditIssueType(str, enum.Enum):
+class AuditIssueType(StrEnum):
     """Tipos de problemas de auditoria."""
 
     UNBALANCED_ENTRY = "UNBALANCED_ENTRY"  # Lançamento não balanceado
@@ -81,8 +80,8 @@ class ClosingStep:
     name: str
     status: str = "pending"  # pending, running, completed, failed
     message: str = ""
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
     details: dict = field(default_factory=dict)
 
 
@@ -105,8 +104,8 @@ class AuditIssue:
     issue_type: AuditIssueType
     severity: str  # ERROR, WARNING, INFO
     message: str
-    entry_id: Optional[UUID] = None
-    account_id: Optional[UUID] = None
+    entry_id: UUID | None = None
+    account_id: UUID | None = None
     amount: Decimal = Decimal("0")
     details: dict = field(default_factory=dict)
 
@@ -120,7 +119,7 @@ class ClosingResult:
     year: int
     month: int
     started_at: datetime
-    completed_at: Optional[datetime] = None
+    completed_at: datetime | None = None
     status: str = "in_progress"  # in_progress, completed, failed
 
     # Etapas
@@ -132,7 +131,7 @@ class ClosingResult:
     period_result: Decimal = Decimal("0")  # Lucro/Prejuízo
 
     # Lançamentos gerados
-    closing_entry_id: Optional[UUID] = None
+    closing_entry_id: UUID | None = None
     provisions_generated: int = 0
 
     # Problemas
@@ -170,7 +169,7 @@ class PeriodClosingService:
         month: int,
         closing_type: ClosingType = ClosingType.PROVISIONAL,
         generate_provisions: bool = True,
-        user_id: Optional[UUID] = None,
+        user_id: UUID | None = None,
     ) -> ClosingResult:
         """Executa fechamento do período contábil.
 
@@ -273,7 +272,7 @@ class PeriodClosingService:
         year: int,
         month: int,
         reason: str,
-        user_id: Optional[UUID] = None,
+        user_id: UUID | None = None,
     ) -> dict:
         """Reabre um período fechado.
 
@@ -347,22 +346,26 @@ class PeriodClosingService:
         for entry in entries:
             # Verifica balanceamento
             if not entry.is_balanced:
-                issues.append(AuditIssue(
-                    issue_type=AuditIssueType.UNBALANCED_ENTRY,
-                    severity="ERROR",
-                    message=f"Lançamento {entry.entry_number} não balanceado",
-                    entry_id=entry.id,
-                    amount=abs(entry.total_debit - entry.total_credit),
-                ))
+                issues.append(
+                    AuditIssue(
+                        issue_type=AuditIssueType.UNBALANCED_ENTRY,
+                        severity="ERROR",
+                        message=f"Lançamento {entry.entry_number} não balanceado",
+                        entry_id=entry.id,
+                        amount=abs(entry.total_debit - entry.total_credit),
+                    )
+                )
 
             # Verifica documento
             if entry.status == EntryStatus.POSTED and not entry.source_number:
-                issues.append(AuditIssue(
-                    issue_type=AuditIssueType.MISSING_DOCUMENT,
-                    severity="WARNING",
-                    message=f"Lançamento {entry.entry_number} sem documento de origem",
-                    entry_id=entry.id,
-                ))
+                issues.append(
+                    AuditIssue(
+                        issue_type=AuditIssueType.MISSING_DOCUMENT,
+                        severity="WARNING",
+                        message=f"Lançamento {entry.entry_number} sem documento de origem",
+                        entry_id=entry.id,
+                    )
+                )
 
         # Verifica duplicados
         duplicates = await self._find_duplicate_entries(condominio_id, start_date, end_date)
@@ -378,8 +381,8 @@ class PeriodClosingService:
         self,
         condominio_id: UUID,
         provision: ProvisionEntry,
-        user_id: Optional[UUID] = None,
-    ) -> Optional[UUID]:
+        user_id: UUID | None = None,
+    ) -> UUID | None:
         """Gera lançamento de provisão.
 
         Args:
@@ -531,7 +534,7 @@ class PeriodClosingService:
         condominio_id: UUID,
         year: int,
         month: int,
-    ) -> Optional[AccountingPeriod]:
+    ) -> AccountingPeriod | None:
         """Busca período existente."""
         query = select(AccountingPeriod).where(
             and_(
@@ -566,11 +569,13 @@ class PeriodClosingService:
         except Exception as exc:  # pylint: disable=broad-exception-caught
             step.status = "failed"
             step.message = str(exc)
-            result.add_issue(AuditIssue(
-                issue_type=AuditIssueType.UNAUTHORIZED,
-                severity="ERROR",
-                message=f"Erro na etapa {name}: {exc}",
-            ))
+            result.add_issue(
+                AuditIssue(
+                    issue_type=AuditIssueType.UNAUTHORIZED,
+                    severity="ERROR",
+                    message=f"Erro na etapa {name}: {exc}",
+                )
+            )
         finally:
             step.completed_at = datetime.utcnow()
 
@@ -598,16 +603,13 @@ class PeriodClosingService:
 
     async def _check_balance(self, period: AccountingPeriod) -> dict:
         """Verifica balanceamento do período."""
-        totals_query = (
-            select(
-                func.sum(JournalEntry.total_debit).label("total_debit"),
-                func.sum(JournalEntry.total_credit).label("total_credit"),
-            )
-            .where(
-                and_(
-                    JournalEntry.period_id == period.id,
-                    JournalEntry.status == EntryStatus.POSTED,
-                )
+        totals_query = select(
+            func.sum(JournalEntry.total_debit).label("total_debit"),
+            func.sum(JournalEntry.total_credit).label("total_credit"),
+        ).where(
+            and_(
+                JournalEntry.period_id == period.id,
+                JournalEntry.status == EntryStatus.POSTED,
             )
         )
 
@@ -628,7 +630,7 @@ class PeriodClosingService:
     async def _generate_provisions(
         self,
         period: AccountingPeriod,  # pylint: disable=unused-argument
-        user_id: Optional[UUID],  # pylint: disable=unused-argument
+        user_id: UUID | None,  # pylint: disable=unused-argument
     ) -> dict:
         """Gera provisões automáticas."""
         # Placeholder - em produção, geraria provisões reais
@@ -642,18 +644,20 @@ class PeriodClosingService:
     async def _close_result_accounts(
         self,
         period: AccountingPeriod,
-        user_id: Optional[UUID],  # pylint: disable=unused-argument
+        user_id: UUID | None,  # pylint: disable=unused-argument
     ) -> dict:
         """Encerra contas de resultado (receitas e despesas)."""
         # Busca contas de resultado com saldo
         accounts_query = select(AccountingAccount).where(
             and_(
                 AccountingAccount.condominio_id == period.condominio_id,
-                AccountingAccount.account_type.in_([
-                    AccountType.REVENUE,
-                    AccountType.EXPENSE,
-                    AccountType.COST,
-                ]),
+                AccountingAccount.account_type.in_(
+                    [
+                        AccountType.REVENUE,
+                        AccountType.EXPENSE,
+                        AccountType.COST,
+                    ]
+                ),
                 AccountingAccount.active.is_(True),
             )
         )
@@ -683,7 +687,7 @@ class PeriodClosingService:
         self,
         period: AccountingPeriod,
         result: ClosingResult,
-        user_id: Optional[UUID],  # pylint: disable=unused-argument
+        user_id: UUID | None,  # pylint: disable=unused-argument
     ) -> dict:
         """Transfere resultado do período para o PL."""
         # Calcula resultado
@@ -702,7 +706,7 @@ class PeriodClosingService:
         self,
         period: AccountingPeriod,
         closing_type: ClosingType,
-        user_id: Optional[UUID],
+        user_id: UUID | None,
     ) -> dict:
         """Finaliza o fechamento do período."""
         # Atualiza status do período
@@ -748,9 +752,7 @@ class PeriodClosingService:
         credit = Decimal(str(row.credit))
 
         # Busca natureza da conta
-        account_query = select(AccountingAccount.nature).where(
-            AccountingAccount.id == account_id
-        )
+        account_query = select(AccountingAccount.nature).where(AccountingAccount.id == account_id)
         account_result = await self.session.execute(account_query)
         nature = account_result.scalar_one_or_none()
 
@@ -761,16 +763,13 @@ class PeriodClosingService:
     async def _calculate_period_totals(self, period: AccountingPeriod) -> dict:
         """Calcula totais do período."""
         # Totais de lançamentos
-        entries_query = (
-            select(
-                func.sum(JournalEntry.total_debit).label("total_debit"),
-                func.sum(JournalEntry.total_credit).label("total_credit"),
-            )
-            .where(
-                and_(
-                    JournalEntry.period_id == period.id,
-                    JournalEntry.status == EntryStatus.POSTED,
-                )
+        entries_query = select(
+            func.sum(JournalEntry.total_debit).label("total_debit"),
+            func.sum(JournalEntry.total_credit).label("total_credit"),
+        ).where(
+            and_(
+                JournalEntry.period_id == period.id,
+                JournalEntry.status == EntryStatus.POSTED,
             )
         )
 
@@ -822,15 +821,16 @@ class PeriodClosingService:
         duplicates = result.fetchall()
 
         for dup in duplicates:
-            issues.append(AuditIssue(
-                issue_type=AuditIssueType.DUPLICATE_ENTRY,
-                severity="WARNING",
-                message=(
-                    f"Possível duplicidade: {dup.count} lançamentos de "
-                    f"R$ {dup.total_debit} em {dup.entry_date}"
-                ),
-                amount=dup.total_debit,
-            ))
+            issues.append(
+                AuditIssue(
+                    issue_type=AuditIssueType.DUPLICATE_ENTRY,
+                    severity="WARNING",
+                    message=(
+                        f"Possível duplicidade: {dup.count} lançamentos de R$ {dup.total_debit} em {dup.entry_date}"
+                    ),
+                    amount=dup.total_debit,
+                )
+            )
 
         return issues
 
@@ -860,20 +860,19 @@ class PeriodClosingService:
         count = result.scalar() or 0
 
         if count > 0:
-            issues.append(AuditIssue(
-                issue_type=AuditIssueType.RECONCILIATION_PENDING,
-                severity="INFO",
-                message=f"{count} partidas pendentes de conciliação",
-            ))
+            issues.append(
+                AuditIssue(
+                    issue_type=AuditIssueType.RECONCILIATION_PENDING,
+                    severity="INFO",
+                    message=f"{count} partidas pendentes de conciliação",
+                )
+            )
 
         return issues
 
     async def _generate_entry_number(self, condominio_id: UUID) -> str:
         """Gera número sequencial de lançamento."""
-        max_query = (
-            select(func.max(JournalEntry.entry_number))
-            .where(JournalEntry.condominio_id == condominio_id)
-        )
+        max_query = select(func.max(JournalEntry.entry_number)).where(JournalEntry.condominio_id == condominio_id)
 
         result = await self.session.execute(max_query)
         max_number = result.scalar()
@@ -893,8 +892,18 @@ class PeriodClosingService:
     def _get_month_name(month: int) -> str:
         """Retorna nome do mês em português."""
         months = [
-            "", "Janeiro", "Fevereiro", "Março", "Abril",
-            "Maio", "Junho", "Julho", "Agosto",
-            "Setembro", "Outubro", "Novembro", "Dezembro",
+            "",
+            "Janeiro",
+            "Fevereiro",
+            "Março",
+            "Abril",
+            "Maio",
+            "Junho",
+            "Julho",
+            "Agosto",
+            "Setembro",
+            "Outubro",
+            "Novembro",
+            "Dezembro",
         ]
         return months[month] if 1 <= month <= 12 else ""

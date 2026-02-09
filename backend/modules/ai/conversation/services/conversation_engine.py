@@ -2,11 +2,12 @@
 
 import logging
 import time
+from collections.abc import AsyncGenerator
 from dataclasses import dataclass
-from typing import Any, AsyncGenerator, Optional
+from typing import Any
 from uuid import UUID, uuid4
 
-from modules.ai.conversation.models.chat_message import IntentCategory, MessageType
+from modules.ai.conversation.models.chat_message import IntentCategory
 from modules.ai.conversation.services.context_manager import ContextManager, ConversationContext
 from modules.ai.conversation.services.intent_classifier import IntentClassifier, IntentResult
 from modules.ai.conversation.services.llm_provider import LLMProvider, LLMResponse
@@ -21,7 +22,7 @@ class ConversationResult:
     message_id: UUID
     session_id: UUID
     response: str
-    response_html: Optional[str]
+    response_html: str | None
     intent: IntentCategory
     intent_confidence: float
     entities: dict[str, Any]
@@ -51,9 +52,9 @@ class ConversationEngine:
 
     def __init__(
         self,
-        llm_provider: Optional[LLMProvider] = None,
-        context_manager: Optional[ContextManager] = None,
-        intent_classifier: Optional[IntentClassifier] = None,
+        llm_provider: LLMProvider | None = None,
+        context_manager: ContextManager | None = None,
+        intent_classifier: IntentClassifier | None = None,
     ) -> None:
         """
         Inicializa o motor de conversacao.
@@ -166,9 +167,7 @@ Entidades principais:
 - Lote: agrupamento para rastreabilidade
 """
 
-    def _build_system_prompt(
-        self, context: ConversationContext, user_name: Optional[str] = None
-    ) -> str:
+    def _build_system_prompt(self, context: ConversationContext, user_name: str | None = None) -> str:
         """Constroi prompt de sistema baseado no contexto."""
         parts = [self._get_base_prompt()]
 
@@ -182,16 +181,12 @@ Entidades principais:
 
         # Adiciona entidades do contexto
         if context.entities:
-            entities_str = ", ".join(
-                f"{k}: {v}" for k, v in context.entities.items()
-            )
+            entities_str = ", ".join(f"{k}: {v}" for k, v in context.entities.items())
             parts.append(f"\nEntidades identificadas: {entities_str}")
 
         # Adiciona preferencias
         if context.preferences:
-            prefs_str = ", ".join(
-                f"{k}: {v}" for k, v in context.preferences.items()
-            )
+            prefs_str = ", ".join(f"{k}: {v}" for k, v in context.preferences.items())
             parts.append(f"\nPreferencias do usuario: {prefs_str}")
 
         return "\n".join(parts)
@@ -204,33 +199,53 @@ Entidades principais:
 
         # Sugestoes por intencao
         if intent.intent == IntentCategory.GREETING:
-            suggestions.extend([
-                {"text": "Ver dashboard", "type": "quick_reply", "action": "navigate", "payload": {"route": "/dashboard"}},
-                {"text": "Minhas tarefas", "type": "quick_reply", "action": "navigate", "payload": {"route": "/tasks"}},
-                {"text": "O que posso fazer?", "type": "quick_reply", "action": "ask"},
-            ])
+            suggestions.extend(
+                [
+                    {
+                        "text": "Ver dashboard",
+                        "type": "quick_reply",
+                        "action": "navigate",
+                        "payload": {"route": "/dashboard"},
+                    },
+                    {
+                        "text": "Minhas tarefas",
+                        "type": "quick_reply",
+                        "action": "navigate",
+                        "payload": {"route": "/tasks"},
+                    },
+                    {"text": "O que posso fazer?", "type": "quick_reply", "action": "ask"},
+                ]
+            )
         elif intent.intent == IntentCategory.DATA_QUERY:
-            suggestions.extend([
-                {"text": "Exportar dados", "type": "action", "action": "export"},
-                {"text": "Ver grafico", "type": "action", "action": "chart"},
-                {"text": "Filtrar resultados", "type": "action", "action": "filter"},
-            ])
+            suggestions.extend(
+                [
+                    {"text": "Exportar dados", "type": "action", "action": "export"},
+                    {"text": "Ver grafico", "type": "action", "action": "chart"},
+                    {"text": "Filtrar resultados", "type": "action", "action": "filter"},
+                ]
+            )
         elif intent.intent == IntentCategory.ACTION_REQUEST:
-            suggestions.extend([
-                {"text": "Confirmar acao", "type": "action", "action": "confirm"},
-                {"text": "Cancelar", "type": "action", "action": "cancel"},
-            ])
+            suggestions.extend(
+                [
+                    {"text": "Confirmar acao", "type": "action", "action": "confirm"},
+                    {"text": "Cancelar", "type": "action", "action": "cancel"},
+                ]
+            )
         elif intent.intent == IntentCategory.HELP_NAVIGATION:
-            suggestions.extend([
-                {"text": "Ver tutorial", "type": "quick_reply", "action": "tutorial"},
-                {"text": "Abrir ajuda", "type": "quick_reply", "action": "help"},
-            ])
+            suggestions.extend(
+                [
+                    {"text": "Ver tutorial", "type": "quick_reply", "action": "tutorial"},
+                    {"text": "Abrir ajuda", "type": "quick_reply", "action": "help"},
+                ]
+            )
         elif intent.intent == IntentCategory.TROUBLESHOOTING:
-            suggestions.extend([
-                {"text": "Abrir chamado", "type": "action", "action": "ticket"},
-                {"text": "Ver FAQ", "type": "quick_reply", "action": "faq"},
-                {"text": "Contatar suporte", "type": "action", "action": "support"},
-            ])
+            suggestions.extend(
+                [
+                    {"text": "Abrir chamado", "type": "action", "action": "ticket"},
+                    {"text": "Ver FAQ", "type": "quick_reply", "action": "faq"},
+                    {"text": "Contatar suporte", "type": "action", "action": "support"},
+                ]
+            )
 
         # Sugestoes baseadas no modulo
         if context.module == "crm":
@@ -239,7 +254,12 @@ Entidades principais:
             )
         elif context.module == "financial":
             suggestions.append(
-                {"text": "Fluxo de caixa", "type": "quick_reply", "action": "navigate", "payload": {"route": "/financial/cashflow"}}
+                {
+                    "text": "Fluxo de caixa",
+                    "type": "quick_reply",
+                    "action": "navigate",
+                    "payload": {"route": "/financial/cashflow"},
+                }
             )
 
         return suggestions[:4]  # Limita a 4 sugestoes
@@ -256,39 +276,49 @@ Entidades principais:
 
             if any(k in keywords for k in ["criar", "adicionar", "cadastrar", "registrar"]):
                 entity = entities.get("module", context.module or "item")
-                actions.append({
-                    "type": "create",
-                    "label": f"Criar {entity}",
-                    "module": context.module,
-                    "entity": entity,
-                    "requires_confirmation": True,
-                })
+                actions.append(
+                    {
+                        "type": "create",
+                        "label": f"Criar {entity}",
+                        "module": context.module,
+                        "entity": entity,
+                        "requires_confirmation": True,
+                    }
+                )
             elif any(k in keywords for k in ["deletar", "excluir", "remover"]):
-                actions.append({
-                    "type": "delete",
-                    "label": "Excluir registro",
-                    "requires_confirmation": True,
-                })
+                actions.append(
+                    {
+                        "type": "delete",
+                        "label": "Excluir registro",
+                        "requires_confirmation": True,
+                    }
+                )
             elif any(k in keywords for k in ["editar", "alterar", "atualizar", "modificar"]):
-                actions.append({
-                    "type": "update",
-                    "label": "Editar registro",
-                    "requires_confirmation": False,
-                })
+                actions.append(
+                    {
+                        "type": "update",
+                        "label": "Editar registro",
+                        "requires_confirmation": False,
+                    }
+                )
 
         elif intent.intent == IntentCategory.DATA_QUERY:
-            actions.append({
-                "type": "export",
-                "label": "Exportar para Excel",
-                "params": {"format": "xlsx"},
-            })
+            actions.append(
+                {
+                    "type": "export",
+                    "label": "Exportar para Excel",
+                    "params": {"format": "xlsx"},
+                }
+            )
 
         elif intent.intent == IntentCategory.ANALYSIS_REQUEST:
-            actions.append({
-                "type": "report",
-                "label": "Gerar relatorio",
-                "params": {"format": "pdf"},
-            })
+            actions.append(
+                {
+                    "type": "report",
+                    "label": "Gerar relatorio",
+                    "params": {"format": "pdf"},
+                }
+            )
 
         return actions
 
@@ -297,8 +327,8 @@ Entidades principais:
         user_id: int,
         session_id: str,
         message: str,
-        user_name: Optional[str] = None,
-        context_data: Optional[dict[str, Any]] = None,
+        user_name: str | None = None,
+        context_data: dict[str, Any] | None = None,
     ) -> ConversationResult:
         """
         Processa uma mensagem do usuario.
@@ -319,10 +349,7 @@ Entidades principais:
         try:
             # 1. Classifica intencao
             intent_result = self.intent_classifier.classify(message)
-            logger.info(
-                f"Intent classificado: {intent_result.intent.value} "
-                f"(conf: {intent_result.confidence})"
-            )
+            logger.info(f"Intent classificado: {intent_result.intent.value} (conf: {intent_result.confidence})")
 
             # 2. Recupera/atualiza contexto
             context = await self.context_manager.get_context(user_id, session_id)
@@ -350,9 +377,7 @@ Entidades principais:
             )
 
             # 4. Prepara mensagens para o LLM
-            llm_messages = await self.context_manager.get_messages_for_llm(
-                user_id, session_id
-            )
+            llm_messages = await self.context_manager.get_messages_for_llm(user_id, session_id)
 
             # 5. Constroi prompt de sistema
             system_prompt = self._build_system_prompt(context, user_name)
@@ -415,9 +440,7 @@ Entidades principais:
                 intent=IntentCategory.GENERAL_CONVERSATION,
                 intent_confidence=0.0,
                 entities={},
-                suggestions=[
-                    {"text": "Tentar novamente", "type": "action", "action": "retry"}
-                ],
+                suggestions=[{"text": "Tentar novamente", "type": "action", "action": "retry"}],
                 actions=[],
                 processing_time_ms=processing_time_ms,
                 model_used="error",
@@ -429,8 +452,8 @@ Entidades principais:
         user_id: int,
         session_id: str,
         message: str,
-        user_name: Optional[str] = None,
-        context_data: Optional[dict[str, Any]] = None,
+        user_name: str | None = None,
+        context_data: dict[str, Any] | None = None,
     ) -> AsyncGenerator[str, None]:
         """
         Processa mensagem com streaming de resposta.
@@ -447,7 +470,7 @@ Entidades principais:
         """
         try:
             # Classifica intencao
-            intent_result = self.intent_classifier.classify(message)
+            self.intent_classifier.classify(message)
 
             # Recupera contexto
             context = await self.context_manager.get_context(user_id, session_id)
@@ -466,9 +489,7 @@ Entidades principais:
             )
 
             # Prepara mensagens e prompt
-            llm_messages = await self.context_manager.get_messages_for_llm(
-                user_id, session_id
-            )
+            llm_messages = await self.context_manager.get_messages_for_llm(user_id, session_id)
             system_prompt = self._build_system_prompt(context, user_name)
 
             # Gera resposta em streaming
@@ -514,9 +535,7 @@ Entidades principais:
 
         return f"<div class='chat-response'>{html}</div>"
 
-    async def get_conversation_summary(
-        self, user_id: int, session_id: str
-    ) -> dict[str, Any]:
+    async def get_conversation_summary(self, user_id: int, session_id: str) -> dict[str, Any]:
         """Retorna resumo da conversa."""
         context = await self.context_manager.get_context(user_id, session_id)
 
@@ -533,9 +552,7 @@ Entidades principais:
         await self.context_manager.clear_context(user_id, session_id)
         logger.info(f"Conversa limpa: user={user_id}, session={session_id}")
 
-    async def set_module_context(
-        self, user_id: int, session_id: str, module: str
-    ) -> None:
+    async def set_module_context(self, user_id: int, session_id: str, module: str) -> None:
         """Define modulo ativo na conversa."""
         await self.context_manager.set_module(user_id, session_id, module)
         logger.info(f"Modulo definido: {module}")

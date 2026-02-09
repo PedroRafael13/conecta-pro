@@ -5,7 +5,7 @@ Sprint 34 - AI Predictions.
 
 import logging
 from datetime import datetime, timedelta
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID
 
 from modules.ai.models.ml_model import MLModel, ModelStatus
@@ -31,11 +31,11 @@ class PredictionService:
         prediction_type: PredictionType,
         entity_type: str,
         entity_id: UUID,
-        model_id: Optional[UUID] = None,
-        features: Optional[dict] = None,
+        model_id: UUID | None = None,
+        features: dict | None = None,
         valid_days: int = 30,
-        requested_by: Optional[UUID] = None,
-        tags: Optional[list] = None,
+        requested_by: UUID | None = None,
+        tags: list | None = None,
     ) -> Prediction:
         """Cria uma nova previsao.
 
@@ -84,8 +84,8 @@ class PredictionService:
     async def get_prediction(
         self,
         prediction_id: UUID,
-        tenant_id: Optional[UUID] = None,
-    ) -> Optional[Prediction]:
+        tenant_id: UUID | None = None,
+    ) -> Prediction | None:
         """Busca uma previsao por ID.
 
         Args:
@@ -105,7 +105,7 @@ class PredictionService:
         tenant_id: UUID,
         entity_type: str,
         entity_id: UUID,
-        prediction_type: Optional[PredictionType] = None,
+        prediction_type: PredictionType | None = None,
         only_valid: bool = True,
         limit: int = 10,
     ) -> list[Prediction]:
@@ -146,13 +146,13 @@ class PredictionService:
     async def complete_prediction(
         self,
         prediction: Prediction,
-        value: Optional[float] = None,
-        label: Optional[str] = None,
-        confidence: Optional[float] = None,
-        probabilities: Optional[dict] = None,
-        explanation: Optional[str] = None,
-        feature_importance: Optional[dict] = None,
-        processing_time_ms: Optional[int] = None,
+        value: float | None = None,
+        label: str | None = None,
+        confidence: float | None = None,
+        probabilities: dict | None = None,
+        explanation: str | None = None,
+        feature_importance: dict | None = None,
+        processing_time_ms: int | None = None,
     ) -> Prediction:
         """Completa uma previsao com resultados.
 
@@ -237,10 +237,10 @@ class PredictionService:
     async def add_feedback(
         self,
         prediction: Prediction,
-        actual_value: Optional[float] = None,
-        actual_label: Optional[str] = None,
-        user_id: Optional[UUID] = None,
-        notes: Optional[str] = None,
+        actual_value: float | None = None,
+        actual_label: str | None = None,
+        user_id: UUID | None = None,
+        notes: str | None = None,
     ) -> Prediction:
         """Adiciona feedback a uma previsao.
 
@@ -278,7 +278,7 @@ class PredictionService:
         self,
         tenant_id: UUID,
         prediction_type: PredictionType,
-    ) -> Optional[MLModel]:
+    ) -> MLModel | None:
         """Busca modelo para um tipo de previsao.
 
         Args:
@@ -328,7 +328,7 @@ class PredictionService:
         self,
         tenant_id: UUID,
         days: int = 30,
-        prediction_type: Optional[PredictionType] = None,
+        prediction_type: PredictionType | None = None,
     ) -> dict:
         """Retorna estatisticas de previsoes.
 
@@ -343,9 +343,7 @@ class PredictionService:
         since = datetime.utcnow() - timedelta(days=days)
 
         query = (
-            self.db.query(Prediction)
-            .filter(Prediction.tenant_id == tenant_id)
-            .filter(Prediction.created_at >= since)
+            self.db.query(Prediction).filter(Prediction.tenant_id == tenant_id).filter(Prediction.created_at >= since)
         )
 
         if prediction_type:
@@ -364,9 +362,7 @@ class PredictionService:
 
         accuracy = 0.0
         if correct_predictions or incorrect_predictions:
-            accuracy = len(correct_predictions) / (
-                len(correct_predictions) + len(incorrect_predictions)
-            )
+            accuracy = len(correct_predictions) / (len(correct_predictions) + len(incorrect_predictions))
 
         # Calcula erro medio
         errors = [p.percentage_error for p in predictions if p.percentage_error is not None]
@@ -413,7 +409,7 @@ class PredictionService:
 
     async def expire_old_predictions(
         self,
-        tenant_id: Optional[UUID] = None,
+        tenant_id: UUID | None = None,
     ) -> int:
         """Expira previsoes antigas.
 

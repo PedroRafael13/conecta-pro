@@ -3,10 +3,9 @@
 Sprint 35 - Task Scheduler.
 """
 
-import enum
 import uuid
 from datetime import datetime
-from typing import Optional
+from enum import StrEnum
 
 from sqlalchemy import Boolean, Column, DateTime, Enum, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
@@ -15,7 +14,7 @@ from sqlalchemy.orm import relationship
 from core.models.base import Base
 
 
-class TaskStatus(str, enum.Enum):
+class TaskStatus(StrEnum):
     """Status da tarefa."""
 
     DRAFT = "draft"
@@ -27,7 +26,7 @@ class TaskStatus(str, enum.Enum):
     EXPIRED = "expired"
 
 
-class TaskType(str, enum.Enum):
+class TaskType(StrEnum):
     """Tipo de tarefa."""
 
     CRON = "cron"  # Execução baseada em cron expression
@@ -38,7 +37,7 @@ class TaskType(str, enum.Enum):
     MANUAL = "manual"  # Execução manual sob demanda
 
 
-class TaskCategory(str, enum.Enum):
+class TaskCategory(StrEnum):
     """Categoria da tarefa."""
 
     SYSTEM = "system"  # Tarefas do sistema
@@ -151,7 +150,7 @@ class ScheduledTask(Base):
     dependent_tasks = relationship(
         "ScheduledTask",
         backref="parent_task",
-        remote_side=[id],
+        remote_side=[id],  # noqa: A003
         foreign_keys=[depends_on_task_id],
     )
 
@@ -159,7 +158,7 @@ class ScheduledTask(Base):
         return f"<ScheduledTask {self.name} ({self.status.value})>"
 
     @property
-    def success_rate(self) -> Optional[float]:
+    def success_rate(self) -> float | None:
         """Taxa de sucesso."""
         if self.total_executions == 0:
             return None

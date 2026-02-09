@@ -4,12 +4,13 @@ Script para filtrar OpenAPI spec do módulo REPORTS.
 
 import json
 
+
 def filter_reports_openapi():
     """Filtra OpenAPI spec para módulo REPORTS."""
 
     # Carrega OpenAPI completo
     print("📖 Lendo OpenAPI completo...")
-    with open("openapi-full.json", "r", encoding="utf-8") as f:
+    with open("openapi-full.json", encoding="utf-8") as f:
         openapi_schema = json.load(f)
 
     # Filtra apenas endpoints de reports
@@ -17,9 +18,9 @@ def filter_reports_openapi():
 
     # Prefixos que queremos incluir
     prefixes_to_include = [
-        "/api/v1/reports",           # Módulo reports principal
-        "/api/v1/ai/reports",         # AI Report Generator
-        "/api/v1/operacional/reports" # Operational Reports
+        "/api/v1/reports",  # Módulo reports principal
+        "/api/v1/ai/reports",  # AI Report Generator
+        "/api/v1/operacional/reports",  # Operational Reports
     ]
 
     print("\n🔍 Filtrando endpoints de REPORTS...")
@@ -54,11 +55,7 @@ def filter_reports_openapi():
     extract_schema_refs(reports_paths)
 
     # Filtra apenas schemas usados
-    filtered_schemas = {
-        name: schema
-        for name, schema in all_schemas.items()
-        if name in used_schemas
-    }
+    filtered_schemas = {name: schema for name, schema in all_schemas.items() if name in used_schemas}
 
     # Monta OpenAPI filtrado
     reports_openapi = {
@@ -66,23 +63,17 @@ def filter_reports_openapi():
         "info": {
             "title": "Conecta PRO - Reports API",
             "version": "2.0.0",
-            "description": "API completa do módulo de Relatórios incluindo Reports, Intelligent Reports, AI Reports e Operational Reports"
+            "description": "API completa do módulo de Relatórios incluindo Reports, Intelligent Reports, AI Reports e Operational Reports",
         },
         "servers": [
-            {
-                "url": "http://localhost:8000",
-                "description": "Servidor de desenvolvimento"
-            },
-            {
-                "url": "https://api.conectapro.com.br",
-                "description": "Servidor de produção"
-            }
+            {"url": "http://localhost:8000", "description": "Servidor de desenvolvimento"},
+            {"url": "https://api.conectapro.com.br", "description": "Servidor de produção"},
         ],
         "paths": reports_paths,
         "components": {
             "schemas": filtered_schemas,
-            "securitySchemes": openapi_schema.get("components", {}).get("securitySchemes", {})
-        }
+            "securitySchemes": openapi_schema.get("components", {}).get("securitySchemes", {}),
+        },
     }
 
     # Salva arquivo
@@ -94,7 +85,7 @@ def filter_reports_openapi():
     num_paths = len(reports_paths)
     num_schemas = len(filtered_schemas)
 
-    print(f"\n✅ OpenAPI spec REPORTS extraído com sucesso!")
+    print("\n✅ OpenAPI spec REPORTS extraído com sucesso!")
     print(f"📁 Arquivo: {output_file}")
     print(f"🔗 Endpoints: {num_paths}")
     print(f"📦 Schemas: {num_schemas}")
@@ -110,13 +101,14 @@ def filter_reports_openapi():
     # Lista alguns endpoints
     print("\nExemplos de endpoints:")
     for i, path in enumerate(sorted(reports_paths.keys())[:15]):
-        methods = list(path_item.keys()) if path in reports_paths else []
-        print(f"  {i+1}. {path}")
+        list(path_item.keys()) if path in reports_paths else []
+        print(f"  {i + 1}. {path}")
 
     if num_paths > 15:
         print(f"  ... e mais {num_paths - 15} endpoints")
 
     return output_file, num_paths, num_schemas
+
 
 if __name__ == "__main__":
     filter_reports_openapi()

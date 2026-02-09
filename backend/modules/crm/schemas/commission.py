@@ -1,10 +1,10 @@
 """
 Schemas Pydantic para Commission (Comissões de Vendedores).
 """
+
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -14,7 +14,6 @@ from modules.crm.models.commission import (
     CommissionType,
     PaymentMethod,
 )
-
 
 # ============== CommissionRule Schemas ==============
 
@@ -31,11 +30,11 @@ class CommissionRuleBase(BaseModel):
     """Schema base para regra de comissão."""
 
     name: str = Field(..., min_length=1, max_length=100)
-    description: Optional[str] = None
+    description: str | None = None
     commission_type: CommissionType = CommissionType.PERCENTAGE
     base_value: float = Field(default=0.0, ge=0, description="Valor ou percentual base")
-    min_value: Optional[float] = Field(None, ge=0, description="Comissão mínima")
-    max_value: Optional[float] = Field(None, ge=0, description="Comissão máxima")
+    min_value: float | None = Field(None, ge=0, description="Comissão mínima")
+    max_value: float | None = Field(None, ge=0, description="Comissão máxima")
     trigger: CommissionTrigger = CommissionTrigger.ON_FIRST_PAYMENT
     trigger_delay_days: int = Field(default=0, ge=0, description="Dias após gatilho")
 
@@ -43,38 +42,38 @@ class CommissionRuleBase(BaseModel):
 class CommissionRuleCreate(CommissionRuleBase):
     """Schema para criação de regra de comissão."""
 
-    progressive_scale: Optional[list[ProgressiveTier]] = None
+    progressive_scale: list[ProgressiveTier] | None = None
     applies_to_all: bool = True
-    product_categories: Optional[list[str]] = None
-    service_types: Optional[list[str]] = None
-    min_sale_value: Optional[float] = Field(None, ge=0)
-    max_sale_value: Optional[float] = Field(None, ge=0)
+    product_categories: list[str] | None = None
+    service_types: list[str] | None = None
+    min_sale_value: float | None = Field(None, ge=0)
+    max_sale_value: float | None = Field(None, ge=0)
     valid_from: date = Field(default_factory=date.today)
-    valid_until: Optional[date] = None
+    valid_until: date | None = None
     priority: int = Field(default=0, ge=0)
 
 
 class CommissionRuleUpdate(BaseModel):
     """Schema para atualização de regra de comissão."""
 
-    name: Optional[str] = Field(None, min_length=1, max_length=100)
-    description: Optional[str] = None
-    commission_type: Optional[CommissionType] = None
-    base_value: Optional[float] = Field(None, ge=0)
-    min_value: Optional[float] = Field(None, ge=0)
-    max_value: Optional[float] = Field(None, ge=0)
-    progressive_scale: Optional[list[ProgressiveTier]] = None
-    trigger: Optional[CommissionTrigger] = None
-    trigger_delay_days: Optional[int] = Field(None, ge=0)
-    applies_to_all: Optional[bool] = None
-    product_categories: Optional[list[str]] = None
-    service_types: Optional[list[str]] = None
-    min_sale_value: Optional[float] = Field(None, ge=0)
-    max_sale_value: Optional[float] = Field(None, ge=0)
-    valid_from: Optional[date] = None
-    valid_until: Optional[date] = None
-    priority: Optional[int] = Field(None, ge=0)
-    is_active: Optional[bool] = None
+    name: str | None = Field(None, min_length=1, max_length=100)
+    description: str | None = None
+    commission_type: CommissionType | None = None
+    base_value: float | None = Field(None, ge=0)
+    min_value: float | None = Field(None, ge=0)
+    max_value: float | None = Field(None, ge=0)
+    progressive_scale: list[ProgressiveTier] | None = None
+    trigger: CommissionTrigger | None = None
+    trigger_delay_days: int | None = Field(None, ge=0)
+    applies_to_all: bool | None = None
+    product_categories: list[str] | None = None
+    service_types: list[str] | None = None
+    min_sale_value: float | None = Field(None, ge=0)
+    max_sale_value: float | None = Field(None, ge=0)
+    valid_from: date | None = None
+    valid_until: date | None = None
+    priority: int | None = Field(None, ge=0)
+    is_active: bool | None = None
 
 
 class CommissionRuleResponse(CommissionRuleBase):
@@ -83,20 +82,20 @@ class CommissionRuleResponse(CommissionRuleBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: str
-    progressive_scale: Optional[str]  # JSON string
+    progressive_scale: str | None  # JSON string
     applies_to_all: bool
-    product_categories: Optional[str]
-    service_types: Optional[str]
-    min_sale_value: Optional[float]
-    max_sale_value: Optional[float]
+    product_categories: str | None
+    service_types: str | None
+    min_sale_value: float | None
+    max_sale_value: float | None
     valid_from: date
-    valid_until: Optional[date]
+    valid_until: date | None
     priority: int
     is_valid: bool
     is_active: bool
     created_at: datetime
     updated_at: datetime
-    created_by_id: Optional[str]
+    created_by_id: str | None
 
 
 class CommissionRuleListResponse(BaseModel):
@@ -117,9 +116,9 @@ class SellerCommissionRuleCreate(BaseModel):
 
     seller_id: str
     rule_id: str
-    custom_base_value: Optional[float] = Field(None, ge=0)
+    custom_base_value: float | None = Field(None, ge=0)
     valid_from: date = Field(default_factory=date.today)
-    valid_until: Optional[date] = None
+    valid_until: date | None = None
 
 
 class SellerCommissionRuleResponse(BaseModel):
@@ -130,9 +129,9 @@ class SellerCommissionRuleResponse(BaseModel):
     id: str
     seller_id: str
     rule_id: str
-    custom_base_value: Optional[float]
+    custom_base_value: float | None
     valid_from: date
-    valid_until: Optional[date]
+    valid_until: date | None
     is_active: bool
     created_at: datetime
 
@@ -144,24 +143,24 @@ class CommissionBase(BaseModel):
     """Schema base para comissão."""
 
     seller_id: str
-    proposal_id: Optional[str] = None
+    proposal_id: str | None = None
     sale_value: float = Field(..., gt=0)
     sale_margin: float = Field(default=0.0, ge=0)
-    description: Optional[str] = Field(None, max_length=255)
-    notes: Optional[str] = None
+    description: str | None = Field(None, max_length=255)
+    notes: str | None = None
 
 
 class CommissionCreate(CommissionBase):
     """Schema para criação de comissão."""
 
-    rule_id: Optional[str] = None
-    commission_type: Optional[CommissionType] = None
-    commission_rate: Optional[float] = Field(None, ge=0)
-    trigger: Optional[CommissionTrigger] = None
-    trigger_date: Optional[date] = None
-    due_date: Optional[date] = None
-    period_start: Optional[date] = None
-    period_end: Optional[date] = None
+    rule_id: str | None = None
+    commission_type: CommissionType | None = None
+    commission_rate: float | None = Field(None, ge=0)
+    trigger: CommissionTrigger | None = None
+    trigger_date: date | None = None
+    due_date: date | None = None
+    period_start: date | None = None
+    period_end: date | None = None
 
 
 class CommissionCalculateRequest(BaseModel):
@@ -171,29 +170,29 @@ class CommissionCalculateRequest(BaseModel):
     proposal_id: str
     sale_value: float = Field(..., gt=0)
     sale_margin: float = Field(default=0.0, ge=0)
-    rule_id: Optional[str] = None  # Se não informado, usa regra padrão
+    rule_id: str | None = None  # Se não informado, usa regra padrão
 
 
 class CommissionUpdate(BaseModel):
     """Schema para atualização de comissão."""
 
-    adjustments: Optional[float] = None
-    description: Optional[str] = Field(None, max_length=255)
-    notes: Optional[str] = None
-    due_date: Optional[date] = None
+    adjustments: float | None = None
+    description: str | None = Field(None, max_length=255)
+    notes: str | None = None
+    due_date: date | None = None
 
 
 class CommissionStatusUpdate(BaseModel):
     """Schema para atualização de status."""
 
     status: CommissionStatus
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class CommissionApprove(BaseModel):
     """Schema para aprovar comissão."""
 
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class CommissionResponse(BaseModel):
@@ -203,9 +202,9 @@ class CommissionResponse(BaseModel):
 
     id: str
     reference_number: str
-    seller_id: Optional[str]
-    proposal_id: Optional[str]
-    rule_id: Optional[str]
+    seller_id: str | None
+    proposal_id: str | None
+    rule_id: str | None
 
     # Valores da venda
     sale_value: float
@@ -221,17 +220,17 @@ class CommissionResponse(BaseModel):
     # Status
     status: CommissionStatus
     trigger: str
-    trigger_date: Optional[date]
-    due_date: Optional[date]
-    paid_date: Optional[date]
+    trigger_date: date | None
+    due_date: date | None
+    paid_date: date | None
 
     # Período
-    period_start: Optional[date]
-    period_end: Optional[date]
+    period_start: date | None
+    period_end: date | None
 
     # Descrição
-    description: Optional[str]
-    notes: Optional[str]
+    description: str | None
+    notes: str | None
 
     # Propriedades calculadas
     is_pending: bool
@@ -240,22 +239,22 @@ class CommissionResponse(BaseModel):
     paid_amount: float
     pending_amount: float
     is_overdue: bool
-    days_until_due: Optional[int]
+    days_until_due: int | None
 
     # Controle
     is_active: bool
     created_at: datetime
     updated_at: datetime
-    created_by_id: Optional[str]
-    approved_by_id: Optional[str]
-    approved_at: Optional[datetime]
+    created_by_id: str | None
+    approved_by_id: str | None
+    approved_at: datetime | None
 
 
 class CommissionDetailResponse(CommissionResponse):
     """Schema de resposta detalhada com pagamentos."""
 
-    payments: list["CommissionPaymentResponse"] = []
-    rule: Optional[CommissionRuleResponse] = None
+    payments: list[CommissionPaymentResponse] = []
+    rule: CommissionRuleResponse | None = None
 
 
 class CommissionListResponse(BaseModel):
@@ -271,17 +270,17 @@ class CommissionListResponse(BaseModel):
 class CommissionFilter(BaseModel):
     """Schema para filtros de busca de comissões."""
 
-    seller_id: Optional[str] = None
-    proposal_id: Optional[str] = None
-    status: Optional[CommissionStatus] = None
-    trigger: Optional[CommissionTrigger] = None
-    is_overdue: Optional[bool] = None
-    min_value: Optional[float] = None
-    max_value: Optional[float] = None
-    date_from: Optional[date] = None
-    date_to: Optional[date] = None
-    due_date_from: Optional[date] = None
-    due_date_to: Optional[date] = None
+    seller_id: str | None = None
+    proposal_id: str | None = None
+    status: CommissionStatus | None = None
+    trigger: CommissionTrigger | None = None
+    is_overdue: bool | None = None
+    min_value: float | None = None
+    max_value: float | None = None
+    date_from: date | None = None
+    date_to: date | None = None
+    due_date_from: date | None = None
+    due_date_to: date | None = None
 
 
 # ============== CommissionPayment Schemas ==============
@@ -294,16 +293,16 @@ class CommissionPaymentCreate(BaseModel):
     amount: float = Field(..., gt=0)
     payment_method: PaymentMethod = PaymentMethod.PAYROLL
     payment_date: date
-    payment_reference: Optional[str] = Field(None, max_length=100)
-    bank_account: Optional[str] = Field(None, max_length=50)
-    transaction_id: Optional[str] = Field(None, max_length=100)
-    notes: Optional[str] = None
+    payment_reference: str | None = Field(None, max_length=100)
+    bank_account: str | None = Field(None, max_length=50)
+    transaction_id: str | None = Field(None, max_length=100)
+    notes: str | None = None
 
 
 class CommissionPaymentConfirm(BaseModel):
     """Schema para confirmar pagamento."""
 
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class CommissionPaymentResponse(BaseModel):
@@ -316,15 +315,15 @@ class CommissionPaymentResponse(BaseModel):
     amount: float
     payment_method: PaymentMethod
     payment_date: date
-    payment_reference: Optional[str]
-    bank_account: Optional[str]
-    transaction_id: Optional[str]
+    payment_reference: str | None
+    bank_account: str | None
+    transaction_id: str | None
     is_confirmed: bool
-    confirmed_at: Optional[datetime]
-    confirmed_by_id: Optional[str]
-    notes: Optional[str]
+    confirmed_at: datetime | None
+    confirmed_by_id: str | None
+    notes: str | None
     created_at: datetime
-    created_by_id: Optional[str]
+    created_by_id: str | None
 
 
 # ============== CommissionSummary Schemas ==============
@@ -344,13 +343,13 @@ class CommissionSummaryResponse(BaseModel):
     total_commissions: float
     total_paid: float
     total_pending: float
-    sales_target: Optional[float]
-    target_percentage: Optional[float]
+    sales_target: float | None
+    target_percentage: float | None
     bonus_earned: float
     is_target_achieved: bool
     remaining_to_target: float
     is_closed: bool
-    closed_at: Optional[datetime]
+    closed_at: datetime | None
     created_at: datetime
     updated_at: datetime
 
@@ -358,10 +357,10 @@ class CommissionSummaryResponse(BaseModel):
 class CommissionSummaryFilter(BaseModel):
     """Schema para filtros de resumo."""
 
-    seller_id: Optional[str] = None
-    year: Optional[int] = None
-    month: Optional[int] = None
-    is_closed: Optional[bool] = None
+    seller_id: str | None = None
+    year: int | None = None
+    month: int | None = None
+    is_closed: bool | None = None
 
 
 # ============== Statistics Schemas ==============
@@ -396,7 +395,7 @@ class SellerCommissionStats(BaseModel):
     """Estatísticas de comissões por vendedor."""
 
     seller_id: str
-    seller_name: Optional[str] = None
+    seller_name: str | None = None
     total_sales: float
     total_commissions: float
     pending_commissions: float
@@ -405,8 +404,8 @@ class SellerCommissionStats(BaseModel):
     sales_count: int
     current_month_sales: float
     current_month_commissions: float
-    target: Optional[float] = None
-    target_percentage: Optional[float] = None
+    target: float | None = None
+    target_percentage: float | None = None
 
 
 class CommissionRanking(BaseModel):

@@ -2,16 +2,16 @@
 
 import uuid
 from datetime import datetime
-from enum import Enum
-from typing import Optional, List, TYPE_CHECKING
+from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     Boolean,
     DateTime,
+    Index,
     Integer,
     String,
     Text,
-    Index,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -22,34 +22,37 @@ if TYPE_CHECKING:
     from .dashboard_widget import DashboardWidget
 
 
-class DashboardType(str, Enum):
+class DashboardType(StrEnum):
     """Tipo de dashboard."""
-    EXECUTIVE = "executive"          # Visão executiva
-    OPERATIONAL = "operational"      # Operacional diário
-    ANALYTICAL = "analytical"        # Análises detalhadas
-    COMPLIANCE = "compliance"        # Conformidade CLT
-    CUSTOM = "custom"                # Personalizado
+
+    EXECUTIVE = "executive"  # Visão executiva
+    OPERATIONAL = "operational"  # Operacional diário
+    ANALYTICAL = "analytical"  # Análises detalhadas
+    COMPLIANCE = "compliance"  # Conformidade CLT
+    CUSTOM = "custom"  # Personalizado
 
 
-class DashboardVisibility(str, Enum):
+class DashboardVisibility(StrEnum):
     """Visibilidade do dashboard."""
-    PRIVATE = "private"              # Só o criador
-    TEAM = "team"                    # Equipe/departamento
-    ORGANIZATION = "organization"   # Toda organização
-    PUBLIC = "public"                # Todos os condôminos
+
+    PRIVATE = "private"  # Só o criador
+    TEAM = "team"  # Equipe/departamento
+    ORGANIZATION = "organization"  # Toda organização
+    PUBLIC = "public"  # Todos os condôminos
 
 
-class RefreshInterval(str, Enum):
+class RefreshInterval(StrEnum):
     """Intervalo de atualização."""
-    REALTIME = "realtime"            # Tempo real
-    MINUTE_1 = "1m"                  # 1 minuto
-    MINUTE_5 = "5m"                  # 5 minutos
-    MINUTE_15 = "15m"                # 15 minutos
-    MINUTE_30 = "30m"                # 30 minutos
-    HOUR_1 = "1h"                    # 1 hora
-    HOUR_6 = "6h"                    # 6 horas
-    DAILY = "daily"                  # Diário
-    MANUAL = "manual"                # Manual
+
+    REALTIME = "realtime"  # Tempo real
+    MINUTE_1 = "1m"  # 1 minuto
+    MINUTE_5 = "5m"  # 5 minutos
+    MINUTE_15 = "15m"  # 15 minutos
+    MINUTE_30 = "30m"  # 30 minutos
+    HOUR_1 = "1h"  # 1 hora
+    HOUR_6 = "6h"  # 6 horas
+    DAILY = "daily"  # Diário
+    MANUAL = "manual"  # Manual
 
 
 class DashboardConfig(Base):
@@ -76,7 +79,7 @@ class DashboardConfig(Base):
 
     # Informações básicas
     name: Mapped[str] = mapped_column(String(100), nullable=False)
-    description: Mapped[Optional[str]] = mapped_column(Text)
+    description: Mapped[str | None] = mapped_column(Text)
     slug: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
 
     # Tipo e visibilidade
@@ -109,17 +112,17 @@ class DashboardConfig(Base):
         String(20),
         default="last_30_days",
     )  # today, yesterday, last_7_days, last_30_days, this_month, last_month, custom
-    default_filters: Mapped[Optional[dict]] = mapped_column(JSONB, default=dict)
+    default_filters: Mapped[dict | None] = mapped_column(JSONB, default=dict)
 
     # Compartilhamento
-    shared_with_users: Mapped[Optional[list]] = mapped_column(JSONB, default=list)
-    shared_with_roles: Mapped[Optional[list]] = mapped_column(JSONB, default=list)
-    shared_with_departments: Mapped[Optional[list]] = mapped_column(JSONB, default=list)
+    shared_with_users: Mapped[list | None] = mapped_column(JSONB, default=list)
+    shared_with_roles: Mapped[list | None] = mapped_column(JSONB, default=list)
+    shared_with_departments: Mapped[list | None] = mapped_column(JSONB, default=list)
 
     # Tema e estilo
     theme: Mapped[str] = mapped_column(String(20), default="light")
-    color_scheme: Mapped[Optional[dict]] = mapped_column(JSONB, default=dict)
-    custom_css: Mapped[Optional[str]] = mapped_column(Text)
+    color_scheme: Mapped[dict | None] = mapped_column(JSONB, default=dict)
+    custom_css: Mapped[str | None] = mapped_column(Text)
 
     # Favoritos e ordenação
     is_default: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -128,14 +131,14 @@ class DashboardConfig(Base):
 
     # Estatísticas
     view_count: Mapped[int] = mapped_column(Integer, default=0)
-    last_viewed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    last_viewed_at: Mapped[datetime | None] = mapped_column(DateTime)
 
     # Metadados
-    settings: Mapped[Optional[dict]] = mapped_column(JSONB, default=dict)
-    tags: Mapped[Optional[list]] = mapped_column(JSONB, default=list)
+    settings: Mapped[dict | None] = mapped_column(JSONB, default=dict)
+    tags: Mapped[list | None] = mapped_column(JSONB, default=list)
 
     # Auditoria
-    created_by: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True))
+    created_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     is_template: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(
@@ -149,7 +152,7 @@ class DashboardConfig(Base):
     )
 
     # Relacionamentos
-    widgets: Mapped[List["DashboardWidget"]] = relationship(
+    widgets: Mapped[list["DashboardWidget"]] = relationship(
         "DashboardWidget",
         back_populates="dashboard",
         lazy="dynamic",

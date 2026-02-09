@@ -3,10 +3,9 @@
 Sprint 31 - Automacoes WhatsApp.
 """
 
-import enum
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional
+from enum import StrEnum
 
 from sqlalchemy import (
     Boolean,
@@ -25,7 +24,7 @@ from sqlalchemy.orm import relationship
 from core.models import Base
 
 
-class MessageStatus(str, enum.Enum):
+class MessageStatus(StrEnum):
     """Status da mensagem na fila."""
 
     QUEUED = "QUEUED"  # Na fila aguardando
@@ -38,7 +37,7 @@ class MessageStatus(str, enum.Enum):
     EXPIRED = "EXPIRED"  # Expirada
 
 
-class MessagePriority(str, enum.Enum):
+class MessagePriority(StrEnum):
     """Prioridade da mensagem."""
 
     LOW = "LOW"  # Baixa prioridade
@@ -47,7 +46,7 @@ class MessagePriority(str, enum.Enum):
     URGENT = "URGENT"  # Urgente
 
 
-class MessageType(str, enum.Enum):
+class MessageType(StrEnum):
     """Tipo de mensagem."""
 
     TEMPLATE = "TEMPLATE"  # Mensagem via template
@@ -57,7 +56,7 @@ class MessageType(str, enum.Enum):
     REACTION = "REACTION"  # Reacao a mensagem
 
 
-class MessagePurpose(str, enum.Enum):
+class MessagePurpose(StrEnum):
     """Proposito da mensagem."""
 
     BILLING = "BILLING"  # Cobranca
@@ -245,7 +244,7 @@ class MessageQueue(Base):
         self.error_message = error_message
         self.retry_count = (self.retry_count or 0) + 1
 
-    def schedule_retry(self, next_retry: Optional[datetime] = None) -> None:
+    def schedule_retry(self, next_retry: datetime | None = None) -> None:
         """Agenda retentativa."""
         if not self.can_retry:
             return

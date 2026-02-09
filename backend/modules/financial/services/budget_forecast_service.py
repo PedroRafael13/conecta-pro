@@ -8,11 +8,10 @@ Responsável por:
 - Análise de tendências
 """
 
-import enum
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Optional
+from enum import StrEnum
 from uuid import UUID
 
 from sqlalchemy import and_, func, select
@@ -22,7 +21,7 @@ from modules.financial.models.cost_center import CostCenter, CostCenterStatus
 from modules.financial.models.journal_entry import EntryStatus, JournalEntry, JournalEntryLine
 
 
-class AlertSeverity(str, enum.Enum):
+class AlertSeverity(StrEnum):
     """Severidade do alerta."""
 
     INFO = "INFO"  # Informativo
@@ -30,7 +29,7 @@ class AlertSeverity(str, enum.Enum):
     CRITICAL = "CRITICAL"  # Crítico
 
 
-class AlertType(str, enum.Enum):
+class AlertType(StrEnum):
     """Tipo de alerta orçamentário."""
 
     OVER_BUDGET = "OVER_BUDGET"  # Acima do orçamento
@@ -41,7 +40,7 @@ class AlertType(str, enum.Enum):
     PROJECTION_EXCEEDED = "PROJECTION_EXCEEDED"  # Projeção excede orçamento
 
 
-class ForecastMethod(str, enum.Enum):
+class ForecastMethod(StrEnum):
     """Método de previsão."""
 
     AVERAGE = "AVERAGE"  # Média simples
@@ -57,10 +56,10 @@ class BudgetAlert:
     alert_type: AlertType
     severity: AlertSeverity
     message: str
-    cost_center_id: Optional[UUID] = None
+    cost_center_id: UUID | None = None
     cost_center_code: str = ""
     cost_center_name: str = ""
-    account_id: Optional[UUID] = None
+    account_id: UUID | None = None
     account_code: str = ""
 
     budgeted: Decimal = Decimal("0")
@@ -89,7 +88,7 @@ class BudgetAlert:
 class ExpenseForecast:
     """Previsão de despesa."""
 
-    cost_center_id: Optional[UUID] = None
+    cost_center_id: UUID | None = None
     cost_center_code: str = ""
     cost_center_name: str = ""
 
@@ -185,9 +184,7 @@ class BudgetForecastService:
         cost_centers = await self._get_active_cost_centers(condominio_id)
 
         for cost_center in cost_centers:
-            forecast = await self._generate_cost_center_forecast(
-                cost_center, reference_date, forecast_months, method
-            )
+            forecast = await self._generate_cost_center_forecast(cost_center, reference_date, forecast_months, method)
             report.forecasts.append(forecast)
 
             # Gera alertas se necessário
@@ -236,63 +233,69 @@ class BudgetForecastService:
             # Verifica se não tem orçamento
             if cost_center.budget_monthly == Decimal("0"):
                 if include_info:
-                    alerts.append(BudgetAlert(
-                        alert_type=AlertType.NO_BUDGET,
-                        severity=AlertSeverity.INFO,
-                        message=f"Centro de custo {cost_center.code} sem orçamento definido",
-                        cost_center_id=cost_center.id,
-                        cost_center_code=cost_center.code,
-                        cost_center_name=cost_center.name,
-                    ))
+                    alerts.append(
+                        BudgetAlert(
+                            alert_type=AlertType.NO_BUDGET,
+                            severity=AlertSeverity.INFO,
+                            message=f"Centro de custo {cost_center.code} sem orçamento definido",
+                            cost_center_id=cost_center.id,
+                            cost_center_code=cost_center.code,
+                            cost_center_name=cost_center.name,
+                        )
+                    )
                 continue
 
             # Calcula realizado no mês
-            realized = await self._get_month_realized(
-                cost_center.id, today.year, current_month
-            )
+            realized = await self._get_month_realized(cost_center.id, today.year, current_month)
             budgeted = cost_center.budget_monthly
             usage_pct = (realized / budgeted) * Decimal("100") if budgeted > 0 else Decimal("0")
 
             # Verifica alertas
             if realized > budgeted:
-                alerts.append(BudgetAlert(
-                    alert_type=AlertType.OVER_BUDGET,
-                    severity=AlertSeverity.CRITICAL,
-                    message=f"Centro de custo {cost_center.code} excedeu orçamento mensal",
-                    cost_center_id=cost_center.id,
-                    cost_center_code=cost_center.code,
-                    cost_center_name=cost_center.name,
-                    budgeted=budgeted,
-                    realized=realized,
-                    variance=realized - budgeted,
-                    variance_pct=usage_pct - Decimal("100"),
-                ))
+                alerts.append(
+                    BudgetAlert(
+                        alert_type=AlertType.OVER_BUDGET,
+                        severity=AlertSeverity.CRITICAL,
+                        message=f"Centro de custo {cost_center.code} excedeu orçamento mensal",
+                        cost_center_id=cost_center.id,
+                        cost_center_code=cost_center.code,
+                        cost_center_name=cost_center.name,
+                        budgeted=budgeted,
+                        realized=realized,
+                        variance=realized - budgeted,
+                        variance_pct=usage_pct - Decimal("100"),
+                    )
+                )
             elif usage_pct >= self.WARNING_THRESHOLD:
-                alerts.append(BudgetAlert(
-                    alert_type=AlertType.NEAR_LIMIT,
-                    severity=AlertSeverity.WARNING,
-                    message=f"Centro de custo {cost_center.code} em {usage_pct:.1f}% do orçamento",
-                    cost_center_id=cost_center.id,
-                    cost_center_code=cost_center.code,
-                    cost_center_name=cost_center.name,
-                    budgeted=budgeted,
-                    realized=realized,
-                    variance=budgeted - realized,
-                    variance_pct=usage_pct,
-                ))
+                alerts.append(
+                    BudgetAlert(
+                        alert_type=AlertType.NEAR_LIMIT,
+                        severity=AlertSeverity.WARNING,
+                        message=f"Centro de custo {cost_center.code} em {usage_pct:.1f}% do orçamento",
+                        cost_center_id=cost_center.id,
+                        cost_center_code=cost_center.code,
+                        cost_center_name=cost_center.name,
+                        budgeted=budgeted,
+                        realized=realized,
+                        variance=budgeted - realized,
+                        variance_pct=usage_pct,
+                    )
+                )
             elif usage_pct >= self.NEAR_LIMIT_THRESHOLD and include_info:
-                alerts.append(BudgetAlert(
-                    alert_type=AlertType.NEAR_LIMIT,
-                    severity=AlertSeverity.INFO,
-                    message=f"Centro de custo {cost_center.code} em {usage_pct:.1f}% do orçamento",
-                    cost_center_id=cost_center.id,
-                    cost_center_code=cost_center.code,
-                    cost_center_name=cost_center.name,
-                    budgeted=budgeted,
-                    realized=realized,
-                    variance=budgeted - realized,
-                    variance_pct=usage_pct,
-                ))
+                alerts.append(
+                    BudgetAlert(
+                        alert_type=AlertType.NEAR_LIMIT,
+                        severity=AlertSeverity.INFO,
+                        message=f"Centro de custo {cost_center.code} em {usage_pct:.1f}% do orçamento",
+                        cost_center_id=cost_center.id,
+                        cost_center_code=cost_center.code,
+                        cost_center_name=cost_center.name,
+                        budgeted=budgeted,
+                        realized=realized,
+                        variance=budgeted - realized,
+                        variance_pct=usage_pct,
+                    )
+                )
 
         # Ordena por severidade
         severity_order = {
@@ -332,17 +335,19 @@ class BudgetForecastService:
                 year -= 1
 
             realized = await self._get_month_realized(cost_center_id, year, month)
-            monthly_data.append({
-                "year": year,
-                "month": month,
-                "month_name": self._get_month_name(month),
-                "realized": realized,
-            })
+            monthly_data.append(
+                {
+                    "year": year,
+                    "month": month,
+                    "month_name": self._get_month_name(month),
+                    "realized": realized,
+                }
+            )
 
         # Calcula tendência
         if len(monthly_data) >= 2:
-            first_half = sum(d["realized"] for d in monthly_data[:len(monthly_data)//2])
-            second_half = sum(d["realized"] for d in monthly_data[len(monthly_data)//2:])
+            first_half = sum(d["realized"] for d in monthly_data[: len(monthly_data) // 2])
+            second_half = sum(d["realized"] for d in monthly_data[len(monthly_data) // 2 :])
 
             if first_half > Decimal("0"):
                 trend_pct = ((second_half - first_half) / first_half) * Decimal("100")
@@ -370,9 +375,7 @@ class BudgetForecastService:
         return {
             "cost_center_id": str(cost_center_id),
             "months_analyzed": months_back,
-            "monthly_data": [
-                {**d, "realized": float(d["realized"])} for d in monthly_data
-            ],
+            "monthly_data": [{**d, "realized": float(d["realized"])} for d in monthly_data],
             "total": float(total),
             "average": float(average),
             "trend_direction": trend_direction,
@@ -408,9 +411,7 @@ class BudgetForecastService:
             # Calcula YTD (Year to Date)
             ytd_realized = Decimal("0")
             for month in range(1, current_month + 1):
-                ytd_realized += await self._get_month_realized(
-                    cost_center.id, year, month
-                )
+                ytd_realized += await self._get_month_realized(cost_center.id, year, month)
 
             # Projeção: média mensal * 12
             if current_month > 0:
@@ -422,17 +423,19 @@ class BudgetForecastService:
             annual_budget = cost_center.budget_annual
             variance = annual_budget - annual_projection
 
-            projections.append({
-                "cost_center_id": str(cost_center.id),
-                "cost_center_code": cost_center.code,
-                "cost_center_name": cost_center.name,
-                "ytd_realized": ytd_realized,
-                "monthly_average": monthly_avg if current_month > 0 else Decimal("0"),
-                "annual_projection": annual_projection,
-                "annual_budget": annual_budget,
-                "projected_variance": variance,
-                "will_exceed": annual_projection > annual_budget,
-            })
+            projections.append(
+                {
+                    "cost_center_id": str(cost_center.id),
+                    "cost_center_code": cost_center.code,
+                    "cost_center_name": cost_center.name,
+                    "ytd_realized": ytd_realized,
+                    "monthly_average": monthly_avg if current_month > 0 else Decimal("0"),
+                    "annual_projection": annual_projection,
+                    "annual_budget": annual_budget,
+                    "projected_variance": variance,
+                    "will_exceed": annual_projection > annual_budget,
+                }
+            )
 
             total_ytd += ytd_realized
             total_projected += annual_projection
@@ -468,13 +471,17 @@ class BudgetForecastService:
         condominio_id: UUID,
     ) -> list[CostCenter]:
         """Busca centros de custo ativos."""
-        query = select(CostCenter).where(
-            and_(
-                CostCenter.condominio_id == condominio_id,
-                CostCenter.status == CostCenterStatus.ACTIVE,
-                CostCenter.active.is_(True),
+        query = (
+            select(CostCenter)
+            .where(
+                and_(
+                    CostCenter.condominio_id == condominio_id,
+                    CostCenter.status == CostCenterStatus.ACTIVE,
+                    CostCenter.active.is_(True),
+                )
             )
-        ).order_by(CostCenter.code)
+            .order_by(CostCenter.code)
+        )
 
         result = await self.session.execute(query)
         return list(result.scalars().all())
@@ -542,25 +549,22 @@ class BudgetForecastService:
         # Calcula projeção conforme método
         if method == ForecastMethod.AVERAGE:
             forecast.historical_average = (
-                forecast.historical_total / Decimal(str(len(historical)))
-                if historical else Decimal("0")
+                forecast.historical_total / Decimal(str(len(historical))) if historical else Decimal("0")
             )
             forecast.projected_monthly = forecast.historical_average
         elif method == ForecastMethod.WEIGHTED_AVERAGE:
             # Pesos crescentes para meses mais recentes
             weights = [1, 1, 2, 2, 3, 3]
-            weighted_sum = sum(h * w for h, w in zip(historical, weights))
-            total_weight = sum(weights[:len(historical)])
+            weighted_sum = sum(h * w for h, w in zip(historical, weights, strict=False))
+            total_weight = sum(weights[: len(historical)])
             forecast.historical_average = (
-                weighted_sum / Decimal(str(total_weight))
-                if total_weight > 0 else Decimal("0")
+                weighted_sum / Decimal(str(total_weight)) if total_weight > 0 else Decimal("0")
             )
             forecast.projected_monthly = forecast.historical_average
         else:
             # Fallback para média simples
             forecast.historical_average = (
-                forecast.historical_total / Decimal(str(len(historical)))
-                if historical else Decimal("0")
+                forecast.historical_total / Decimal(str(len(historical))) if historical else Decimal("0")
             )
             forecast.projected_monthly = forecast.historical_average
 
@@ -629,35 +633,33 @@ class BudgetForecastService:
 
         # Alerta de projeção excedendo orçamento
         if forecast.will_exceed_budget:
-            alerts.append(BudgetAlert(
-                alert_type=AlertType.PROJECTION_EXCEEDED,
-                severity=AlertSeverity.WARNING,
-                message=(
-                    f"Projeção de {cost_center.code} excede orçamento em "
-                    f"R$ {forecast.excess_amount:,.2f}"
-                ),
-                cost_center_id=cost_center.id,
-                cost_center_code=cost_center.code,
-                cost_center_name=cost_center.name,
-                budgeted=forecast.annual_budget,
-                realized=forecast.projected_annual,
-                variance=forecast.excess_amount,
-            ))
+            alerts.append(
+                BudgetAlert(
+                    alert_type=AlertType.PROJECTION_EXCEEDED,
+                    severity=AlertSeverity.WARNING,
+                    message=(f"Projeção de {cost_center.code} excede orçamento em R$ {forecast.excess_amount:,.2f}"),
+                    cost_center_id=cost_center.id,
+                    cost_center_code=cost_center.code,
+                    cost_center_name=cost_center.name,
+                    budgeted=forecast.annual_budget,
+                    realized=forecast.projected_annual,
+                    variance=forecast.excess_amount,
+                )
+            )
 
         # Alerta de tendência negativa
         if forecast.trend_direction == "UP" and forecast.trend_percentage > Decimal("20"):
-            alerts.append(BudgetAlert(
-                alert_type=AlertType.TREND_NEGATIVE,
-                severity=AlertSeverity.WARNING,
-                message=(
-                    f"Tendência de aumento de {forecast.trend_percentage:.1f}% "
-                    f"em {cost_center.code}"
-                ),
-                cost_center_id=cost_center.id,
-                cost_center_code=cost_center.code,
-                cost_center_name=cost_center.name,
-                variance_pct=forecast.trend_percentage,
-            ))
+            alerts.append(
+                BudgetAlert(
+                    alert_type=AlertType.TREND_NEGATIVE,
+                    severity=AlertSeverity.WARNING,
+                    message=(f"Tendência de aumento de {forecast.trend_percentage:.1f}% em {cost_center.code}"),
+                    cost_center_id=cost_center.id,
+                    cost_center_code=cost_center.code,
+                    cost_center_name=cost_center.name,
+                    variance_pct=forecast.trend_percentage,
+                )
+            )
 
         return alerts
 
@@ -665,8 +667,18 @@ class BudgetForecastService:
     def _get_month_name(month: int) -> str:
         """Retorna nome do mês."""
         months = [
-            "", "Jan", "Fev", "Mar", "Abr",
-            "Mai", "Jun", "Jul", "Ago",
-            "Set", "Out", "Nov", "Dez",
+            "",
+            "Jan",
+            "Fev",
+            "Mar",
+            "Abr",
+            "Mai",
+            "Jun",
+            "Jul",
+            "Ago",
+            "Set",
+            "Out",
+            "Nov",
+            "Dez",
         ]
         return months[month] if 1 <= month <= 12 else ""

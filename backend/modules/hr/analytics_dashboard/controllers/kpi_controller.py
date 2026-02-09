@@ -2,33 +2,32 @@
 
 import logging
 from datetime import datetime
-from typing import Optional, List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.database import get_db
 from core.auth.dependencies import get_current_user
+from core.database import get_db
 from modules.hr.analytics_dashboard.models import KPICategory
-from modules.hr.analytics_dashboard.schemas import (
-    KPIDefinitionCreate,
-    KPIDefinitionUpdate,
-    KPIDefinitionResponse,
-    KPIValueResponse,
-    KPIDashboardResponse,
-    KPIHistoryResponse,
-)
 from modules.hr.analytics_dashboard.repositories import KPIRepository
+from modules.hr.analytics_dashboard.schemas import (
+    KPIDashboardResponse,
+    KPIDefinitionCreate,
+    KPIDefinitionResponse,
+    KPIDefinitionUpdate,
+    KPIHistoryResponse,
+    KPIValueResponse,
+)
 from modules.hr.analytics_dashboard.services import KPICalculatorService
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/kpis", tags=["KPIs"])
 
 
-@router.get("/", response_model=List[KPIDefinitionResponse])
+@router.get("/", response_model=list[KPIDefinitionResponse])
 async def list_kpis(
-    category: Optional[KPICategory] = Query(None),
+    category: KPICategory | None = Query(None),
     featured_only: bool = Query(False),
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
@@ -108,9 +107,9 @@ async def list_kpi_codes(
 
 @router.get("/dashboard", response_model=KPIDashboardResponse)
 async def get_kpi_dashboard(
-    kpi_codes: Optional[str] = Query(None, description="Códigos separados por vírgula"),
-    period_start: Optional[datetime] = Query(None),
-    period_end: Optional[datetime] = Query(None),
+    kpi_codes: str | None = Query(None, description="Códigos separados por vírgula"),
+    period_start: datetime | None = Query(None),
+    period_end: datetime | None = Query(None),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
@@ -192,8 +191,8 @@ async def delete_kpi(
 @router.get("/{kpi_code}/value", response_model=KPIValueResponse)
 async def get_kpi_value(
     kpi_code: str,
-    period_start: Optional[datetime] = Query(None),
-    period_end: Optional[datetime] = Query(None),
+    period_start: datetime | None = Query(None),
+    period_end: datetime | None = Query(None),
     force_refresh: bool = Query(False),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),

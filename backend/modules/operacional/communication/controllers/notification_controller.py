@@ -8,34 +8,32 @@ Quality Score Target: 99+/100
 
 import logging
 from datetime import datetime
-from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
-from modules.operacional.communication.models.notification import NotificationType
 from modules.operacional.communication.models.alert import AlertSeverity, AlertType
+from modules.operacional.communication.models.notification import NotificationType
 from modules.operacional.communication.schemas.communication_schemas import (
-    NotificationResponse,
-    NotificationListResponse,
-    NotificationFilter,
-    MarkNotificationReadRequest,
-    NotificationUnreadCount,
     AlertCreate,
-    AlertResponse,
-    AlertListResponse,
-    AlertAcknowledgeRequest,
     AlertFilter,
-)
-from modules.operacional.communication.services.notification_service import (
-    NotificationService,
-    NotificationNotFoundError,
+    AlertListResponse,
+    AlertResponse,
+    MarkNotificationReadRequest,
+    NotificationFilter,
+    NotificationListResponse,
+    NotificationResponse,
+    NotificationUnreadCount,
 )
 from modules.operacional.communication.services.alert_service import (
-    AlertService,
     AlertNotFoundError,
+    AlertService,
+)
+from modules.operacional.communication.services.notification_service import (
+    NotificationNotFoundError,
+    NotificationService,
 )
 
 logger = logging.getLogger(__name__)
@@ -48,7 +46,7 @@ def _get_tenant_id(user: CurrentActiveUser) -> str:
     return getattr(user, "tenant_id", str(user.id))
 
 
-def _get_user_roles(user: CurrentActiveUser) -> List[str]:
+def _get_user_roles(user: CurrentActiveUser) -> list[str]:
     """Extrai roles do usuario."""
     role = getattr(user, "role", None)
     return [role] if role else []
@@ -70,11 +68,11 @@ async def list_notifications(
     db: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1, description="Pagina atual"),
     page_size: int = Query(20, ge=1, le=100, description="Itens por pagina"),
-    type_filter: Optional[NotificationType] = Query(None, alias="type"),
-    is_read: Optional[bool] = None,
-    reference_type: Optional[str] = None,
-    created_after: Optional[datetime] = None,
-    created_before: Optional[datetime] = None,
+    type_filter: NotificationType | None = Query(None, alias="type"),
+    is_read: bool | None = None,
+    reference_type: str | None = None,
+    created_after: datetime | None = None,
+    created_before: datetime | None = None,
 ) -> NotificationListResponse:
     """
     Lista notificacoes do usuario.
@@ -224,9 +222,7 @@ async def mark_all_notifications_read(
         notification_ids=request_data.notification_ids,
     )
 
-    logger.info(
-        f"Notificacoes marcadas como lidas por {current_user.email}: {count}"
-    )
+    logger.info(f"Notificacoes marcadas como lidas por {current_user.email}: {count}")
 
     return {
         "success": True,
@@ -263,9 +259,7 @@ async def delete_notification(
             notification_id=notification_id,
             user_id=str(current_user.id),
         )
-        logger.info(
-            f"Notificacao removida por {current_user.email}: {notification_id}"
-        )
+        logger.info(f"Notificacao removida por {current_user.email}: {notification_id}")
 
     except NotificationNotFoundError:
         raise HTTPException(
@@ -288,9 +282,9 @@ async def delete_notification(
 async def list_active_alerts(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
-    alert_type: Optional[AlertType] = None,
-    severity: Optional[AlertSeverity] = None,
-    reference_type: Optional[str] = None,
+    alert_type: AlertType | None = None,
+    severity: AlertSeverity | None = None,
+    reference_type: str | None = None,
 ) -> AlertListResponse:
     """
     Lista alertas ativos.
@@ -309,11 +303,15 @@ async def list_active_alerts(
     tenant_id = _get_tenant_id(current_user)
     user_roles = _get_user_roles(current_user)
 
-    filters = AlertFilter(
-        alert_type=alert_type,
-        severity=severity,
-        reference_type=reference_type,
-    ) if any([alert_type, severity, reference_type]) else None
+    filters = (
+        AlertFilter(
+            alert_type=alert_type,
+            severity=severity,
+            reference_type=reference_type,
+        )
+        if any([alert_type, severity, reference_type])
+        else None
+    )
 
     alerts = await service.get_active_alerts(
         tenant_id=tenant_id,
@@ -399,9 +397,7 @@ async def acknowledge_alert(
             tenant_id=tenant_id,
         )
 
-        logger.info(
-            f"Alerta confirmado por {current_user.email}: {alert_id}"
-        )
+        logger.info(f"Alerta confirmado por {current_user.email}: {alert_id}")
 
         return AlertResponse.model_validate(alert)
 
@@ -445,8 +441,6 @@ async def create_alert(
         tenant_id=tenant_id,
     )
 
-    logger.info(
-        f"Alerta criado por {current_user.email}: {alert.id} [{alert.severity}]"
-    )
+    logger.info(f"Alerta criado por {current_user.email}: {alert.id} [{alert.severity}]")
 
     return AlertResponse.model_validate(alert)

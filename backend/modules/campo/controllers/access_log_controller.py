@@ -3,7 +3,6 @@ Controller FastAPI para AccessLog.
 """
 
 from datetime import datetime
-from typing import Optional, List
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -52,7 +51,7 @@ async def create_access_log(
 
 @router.post("/batch", status_code=status.HTTP_201_CREATED)
 async def create_access_logs_batch(
-    data: List[AccessLogCreate],
+    data: list[AccessLogCreate],
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """Cria múltiplos logs de acesso em lote."""
@@ -67,17 +66,17 @@ async def create_access_logs_batch(
 
 @router.get("/", response_model=AccessLogListResponse)
 async def list_access_logs(  # pylint: disable=too-many-locals
-    search: Optional[str] = Query(None),
-    log_type: Optional[AccessLogType] = Query(None),
-    client_id: Optional[str] = Query(None),
-    post_id: Optional[str] = Query(None),
-    person_type: Optional[str] = Query(None),
-    access_method: Optional[str] = Query(None),
-    unit_code: Optional[str] = Query(None),
-    vehicle_plate: Optional[str] = Query(None),
-    date_from: Optional[datetime] = Query(None),
-    date_to: Optional[datetime] = Query(None),
-    is_denied: Optional[bool] = Query(None),
+    search: str | None = Query(None),
+    log_type: AccessLogType | None = Query(None),
+    client_id: str | None = Query(None),
+    post_id: str | None = Query(None),
+    person_type: str | None = Query(None),
+    access_method: str | None = Query(None),
+    unit_code: str | None = Query(None),
+    vehicle_plate: str | None = Query(None),
+    date_from: datetime | None = Query(None),
+    date_to: datetime | None = Query(None),
+    is_denied: bool | None = Query(None),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
@@ -111,9 +110,9 @@ async def list_access_logs(  # pylint: disable=too-many-locals
 
 @router.get("/stats", response_model=AccessLogStats)
 async def get_access_log_stats(
-    client_id: Optional[str] = Query(None),
-    date_from: Optional[datetime] = Query(None),
-    date_to: Optional[datetime] = Query(None),
+    client_id: str | None = Query(None),
+    date_from: datetime | None = Query(None),
+    date_to: datetime | None = Query(None),
     db: AsyncSession = Depends(get_db),
 ) -> AccessLogStats:
     """Obtém estatísticas de logs de acesso."""
@@ -126,7 +125,7 @@ async def get_logs_by_person(
     person_document: str,
     limit: int = Query(50, ge=1, le=200),
     db: AsyncSession = Depends(get_db),
-) -> List[AccessLogResponse]:
+) -> list[AccessLogResponse]:
     """Obtém logs de acesso de uma pessoa específica."""
     repo = AccessLogRepository(db)
     # Limpar documento
@@ -140,7 +139,7 @@ async def get_logs_by_vehicle(
     vehicle_plate: str,
     limit: int = Query(50, ge=1, le=200),
     db: AsyncSession = Depends(get_db),
-) -> List[AccessLogResponse]:
+) -> list[AccessLogResponse]:
     """Obtém logs de acesso de um veículo específico."""
     repo = AccessLogRepository(db)
     # Normalizar placa

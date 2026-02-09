@@ -5,34 +5,46 @@ Pydantic schemas for voice recognition API.
 """
 
 from datetime import datetime
-from typing import Optional, List, Dict, Any
+from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field, validator
-
+from pydantic import BaseModel, Field, field_validator
 
 # ============== Voice Recording Schemas ==============
 
+
 class VoiceRecordingCreate(BaseModel):
     """Schema for creating a voice recording."""
-    title: Optional[str] = Field(None, max_length=255)
-    description: Optional[str] = None
+
+    title: str | None = Field(None, max_length=255)
+    description: str | None = None
     source: str = Field(default="other")
     language: str = Field(default="pt-BR")
-    caller_phone: Optional[str] = Field(None, max_length=20)
-    callee_phone: Optional[str] = Field(None, max_length=20)
-    call_direction: Optional[str] = None
-    user_id: Optional[UUID] = None
-    contact_id: Optional[UUID] = None
-    ticket_id: Optional[UUID] = None
-    meeting_id: Optional[UUID] = None
-    tags: List[str] = Field(default_factory=list)
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    caller_phone: str | None = Field(None, max_length=20)
+    callee_phone: str | None = Field(None, max_length=20)
+    call_direction: str | None = None
+    user_id: UUID | None = None
+    contact_id: UUID | None = None
+    ticket_id: UUID | None = None
+    meeting_id: UUID | None = None
+    tags: list[str] = Field(default_factory=list)
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
-    @validator("source")
+    @field_validator("source")
+    @classmethod
     def validate_source(cls, v):
-        valid = ["phone_call", "voicemail", "meeting", "dictation", "intercom",
-                 "mobile_app", "web_app", "ivr", "support_ticket", "other"]
+        valid = [
+            "phone_call",
+            "voicemail",
+            "meeting",
+            "dictation",
+            "intercom",
+            "mobile_app",
+            "web_app",
+            "ivr",
+            "support_ticket",
+            "other",
+        ]
         if v not in valid:
             raise ValueError(f"Source must be one of: {valid}")
         return v
@@ -40,23 +52,26 @@ class VoiceRecordingCreate(BaseModel):
 
 class VoiceRecordingUpdate(BaseModel):
     """Schema for updating a voice recording."""
-    title: Optional[str] = Field(None, max_length=255)
-    description: Optional[str] = None
-    tags: Optional[List[str]] = None
-    metadata: Optional[Dict[str, Any]] = None
+
+    title: str | None = Field(None, max_length=255)
+    description: str | None = None
+    tags: list[str] | None = None
+    metadata: dict[str, Any] | None = None
 
 
 class VoiceRecordingUpload(BaseModel):
     """Schema for uploading audio file info."""
+
     file_name: str
     file_size_bytes: int
     audio_format: str
-    mime_type: Optional[str] = None
-    duration_seconds: Optional[float] = None
-    sample_rate: Optional[int] = None
-    channels: Optional[int] = 1
+    mime_type: str | None = None
+    duration_seconds: float | None = None
+    sample_rate: int | None = None
+    channels: int | None = 1
 
-    @validator("audio_format")
+    @field_validator("audio_format")
+    @classmethod
     def validate_format(cls, v):
         valid = ["wav", "mp3", "ogg", "flac", "m4a", "webm", "aac", "wma", "amr", "other"]
         if v.lower() not in valid:
@@ -66,25 +81,26 @@ class VoiceRecordingUpload(BaseModel):
 
 class VoiceRecordingResponse(BaseModel):
     """Schema for voice recording response."""
+
     id: UUID
     tenant_id: UUID
-    title: Optional[str]
-    description: Optional[str]
+    title: str | None
+    description: str | None
     source: str
     status: str
-    file_name: Optional[str]
-    file_size_bytes: Optional[int]
+    file_name: str | None
+    file_size_bytes: int | None
     audio_format: str
-    duration_seconds: Optional[float]
+    duration_seconds: float | None
     language: str
-    detected_language: Optional[str]
-    speaker_count: Optional[int]
-    quality_score: Optional[float]
-    caller_phone: Optional[str]
-    callee_phone: Optional[str]
-    tags: List[str]
+    detected_language: str | None
+    speaker_count: int | None
+    quality_score: float | None
+    caller_phone: str | None
+    callee_phone: str | None
+    tags: list[str]
     created_at: datetime
-    updated_at: Optional[datetime]
+    updated_at: datetime | None
 
     class Config:
         from_attributes = True
@@ -92,19 +108,30 @@ class VoiceRecordingResponse(BaseModel):
 
 # ============== Transcription Schemas ==============
 
+
 class TranscribeRequest(BaseModel):
     """Schema for transcription request."""
+
     recording_id: UUID
     provider: str = Field(default="whisper")
     language: str = Field(default="pt-BR")
     enable_speaker_labels: bool = Field(default=True)
     enable_punctuation: bool = Field(default=True)
-    options: Dict[str, Any] = Field(default_factory=dict)
+    options: dict[str, Any] = Field(default_factory=dict)
 
-    @validator("provider")
+    @field_validator("provider")
+    @classmethod
     def validate_provider(cls, v):
-        valid = ["google_speech", "aws_transcribe", "azure_speech", "whisper",
-                 "deepgram", "assemblyai", "vosk", "local"]
+        valid = [
+            "google_speech",
+            "aws_transcribe",
+            "azure_speech",
+            "whisper",
+            "deepgram",
+            "assemblyai",
+            "vosk",
+            "local",
+        ]
         if v not in valid:
             raise ValueError(f"Provider must be one of: {valid}")
         return v
@@ -112,6 +139,7 @@ class TranscribeRequest(BaseModel):
 
 class TranscriptionCreate(BaseModel):
     """Schema for creating transcription record."""
+
     recording_id: UUID
     provider: str = "whisper"
     language: str = "pt-BR"
@@ -119,16 +147,17 @@ class TranscriptionCreate(BaseModel):
 
 class TranscriptionSegmentResponse(BaseModel):
     """Schema for transcription segment."""
+
     segment_index: int
     text: str
     start_time: float
     end_time: float
-    duration: Optional[float]
-    speaker_id: Optional[str]
-    speaker_name: Optional[str]
-    confidence: Optional[float]
-    sentiment: Optional[str]
-    keywords: List[str]
+    duration: float | None
+    speaker_id: str | None
+    speaker_name: str | None
+    confidence: float | None
+    sentiment: str | None
+    keywords: list[str]
 
     class Config:
         from_attributes = True
@@ -136,27 +165,28 @@ class TranscriptionSegmentResponse(BaseModel):
 
 class TranscriptionResponse(BaseModel):
     """Schema for transcription response."""
+
     id: UUID
     tenant_id: UUID
     recording_id: UUID
     status: str
     provider: str
-    text: Optional[str]
-    text_formatted: Optional[str]
-    word_count: Optional[int]
-    segment_count: Optional[int]
-    confidence_score: Optional[float]
+    text: str | None
+    text_formatted: str | None
+    word_count: int | None
+    segment_count: int | None
+    confidence_score: float | None
     language: str
-    detected_language: Optional[str]
-    speaker_count: Optional[int]
-    speakers: List[Dict]
-    duration_seconds: Optional[float]
-    words_per_minute: Optional[float]
-    processing_time_ms: Optional[int]
+    detected_language: str | None
+    speaker_count: int | None
+    speakers: list[dict]
+    duration_seconds: float | None
+    words_per_minute: float | None
+    processing_time_ms: int | None
     has_corrections: bool
-    error_message: Optional[str]
+    error_message: str | None
     created_at: datetime
-    updated_at: Optional[datetime]
+    updated_at: datetime | None
 
     class Config:
         from_attributes = True
@@ -164,27 +194,30 @@ class TranscriptionResponse(BaseModel):
 
 # ============== Voice Command Schemas ==============
 
+
 class CommandDefinitionCreate(BaseModel):
     """Schema for creating command definition."""
+
     name: str = Field(..., min_length=1, max_length=100)
     code: str = Field(..., min_length=1, max_length=50)
-    description: Optional[str] = None
+    description: str | None = None
     category: str = Field(default="custom")
-    phrases: List[str] = Field(..., min_items=1)
-    synonyms: Dict[str, List[str]] = Field(default_factory=dict)
-    parameters: List[Dict] = Field(default_factory=list)
+    phrases: list[str] = Field(..., min_items=1)
+    synonyms: dict[str, list[str]] = Field(default_factory=dict)
+    parameters: list[dict] = Field(default_factory=list)
     action_type: str
-    action_config: Dict[str, Any]
-    success_response: Optional[str] = None
-    error_response: Optional[str] = None
-    confirmation_prompt: Optional[str] = None
+    action_config: dict[str, Any]
+    success_response: str | None = None
+    error_response: str | None = None
+    confirmation_prompt: str | None = None
     requires_confirmation: bool = False
     is_dangerous: bool = False
     min_confidence: float = Field(default=0.7, ge=0, le=1)
     priority: int = Field(default=50, ge=0, le=100)
-    allowed_roles: List[str] = Field(default_factory=list)
+    allowed_roles: list[str] = Field(default_factory=list)
 
-    @validator("action_type")
+    @field_validator("action_type")
+    @classmethod
     def validate_action_type(cls, v):
         valid = ["api_call", "workflow", "function", "navigate", "query", "custom"]
         if v not in valid:
@@ -194,37 +227,39 @@ class CommandDefinitionCreate(BaseModel):
 
 class CommandDefinitionUpdate(BaseModel):
     """Schema for updating command definition."""
-    name: Optional[str] = Field(None, max_length=100)
-    description: Optional[str] = None
-    phrases: Optional[List[str]] = None
-    synonyms: Optional[Dict[str, List[str]]] = None
-    parameters: Optional[List[Dict]] = None
-    action_config: Optional[Dict[str, Any]] = None
-    success_response: Optional[str] = None
-    error_response: Optional[str] = None
-    requires_confirmation: Optional[bool] = None
-    min_confidence: Optional[float] = Field(None, ge=0, le=1)
-    priority: Optional[int] = Field(None, ge=0, le=100)
-    is_active: Optional[bool] = None
+
+    name: str | None = Field(None, max_length=100)
+    description: str | None = None
+    phrases: list[str] | None = None
+    synonyms: dict[str, list[str]] | None = None
+    parameters: list[dict] | None = None
+    action_config: dict[str, Any] | None = None
+    success_response: str | None = None
+    error_response: str | None = None
+    requires_confirmation: bool | None = None
+    min_confidence: float | None = Field(None, ge=0, le=1)
+    priority: int | None = Field(None, ge=0, le=100)
+    is_active: bool | None = None
 
 
 class CommandDefinitionResponse(BaseModel):
     """Schema for command definition response."""
+
     id: UUID
-    tenant_id: Optional[UUID]
+    tenant_id: UUID | None
     name: str
     code: str
-    description: Optional[str]
+    description: str | None
     category: str
-    phrases: List[str]
-    parameters: List[Dict]
+    phrases: list[str]
+    parameters: list[dict]
     action_type: str
     requires_confirmation: bool
     is_dangerous: bool
     min_confidence: float
     priority: int
     total_uses: int
-    success_rate: Optional[float]
+    success_rate: float | None
     is_active: bool
     is_system: bool
     created_at: datetime
@@ -235,54 +270,58 @@ class CommandDefinitionResponse(BaseModel):
 
 class VoiceCommandCreate(BaseModel):
     """Schema for creating voice command."""
+
     raw_text: str = Field(..., min_length=1)
-    recording_id: Optional[UUID] = None
-    transcription_id: Optional[UUID] = None
-    session_id: Optional[str] = None
-    context: Dict[str, Any] = Field(default_factory=dict)
-    device_type: Optional[str] = None
+    recording_id: UUID | None = None
+    transcription_id: UUID | None = None
+    session_id: str | None = None
+    context: dict[str, Any] = Field(default_factory=dict)
+    device_type: str | None = None
 
 
 class CommandExecuteRequest(BaseModel):
     """Schema for executing a voice command."""
+
     text: str = Field(..., min_length=1)
-    session_id: Optional[str] = None
-    context: Dict[str, Any] = Field(default_factory=dict)
+    session_id: str | None = None
+    context: dict[str, Any] = Field(default_factory=dict)
     auto_confirm: bool = False
 
 
 class CommandExecuteResponse(BaseModel):
     """Schema for command execution response."""
+
     command_id: UUID
     recognized: bool
-    command_code: Optional[str]
-    confidence: Optional[float]
+    command_code: str | None
+    confidence: float | None
     status: str
     requires_confirmation: bool
-    confirmation_prompt: Optional[str]
-    response_text: Optional[str]
-    result: Optional[Dict]
-    alternatives: List[Dict]
-    missing_params: List[str]
-    error_message: Optional[str]
+    confirmation_prompt: str | None
+    response_text: str | None
+    result: dict | None
+    alternatives: list[dict]
+    missing_params: list[str]
+    error_message: str | None
 
 
 class VoiceCommandResponse(BaseModel):
     """Schema for voice command response."""
+
     id: UUID
     tenant_id: UUID
     user_id: UUID
     raw_text: str
-    command_code: Optional[str]
-    confidence: Optional[float]
+    command_code: str | None
+    confidence: float | None
     status: str
-    parameters: Dict
-    response_text: Optional[str]
-    action_result: Optional[Dict]
-    execution_time_ms: Optional[int]
+    parameters: dict
+    response_text: str | None
+    action_result: dict | None
+    execution_time_ms: int | None
     requires_confirmation: bool
-    confirmed: Optional[bool]
-    user_feedback: Optional[str]
+    confirmed: bool | None
+    user_feedback: str | None
     created_at: datetime
 
     class Config:
@@ -291,43 +330,47 @@ class VoiceCommandResponse(BaseModel):
 
 # ============== Call Analysis Schemas ==============
 
+
 class AnalyzeCallRequest(BaseModel):
     """Schema for call analysis request."""
+
     recording_id: UUID
-    transcription_id: Optional[UUID] = None
-    agent_id: Optional[UUID] = None
-    customer_id: Optional[UUID] = None
-    options: Dict[str, Any] = Field(default_factory=dict)
+    transcription_id: UUID | None = None
+    agent_id: UUID | None = None
+    customer_id: UUID | None = None
+    options: dict[str, Any] = Field(default_factory=dict)
 
 
 class CallAnalysisCreate(BaseModel):
     """Schema for creating call analysis."""
+
     recording_id: UUID
-    transcription_id: Optional[UUID] = None
-    agent_id: Optional[UUID] = None
-    agent_name: Optional[str] = None
-    customer_id: Optional[UUID] = None
-    customer_name: Optional[str] = None
+    transcription_id: UUID | None = None
+    agent_id: UUID | None = None
+    agent_name: str | None = None
+    customer_id: UUID | None = None
+    customer_name: str | None = None
 
 
 class CallAnalysisSummary(BaseModel):
     """Schema for call analysis summary."""
+
     id: UUID
     recording_id: UUID
     status: str
-    call_type: Optional[str]
-    overall_sentiment: Optional[str]
-    sentiment_score: Optional[float]
-    quality_score: Optional[float]
-    csat_predicted: Optional[float]
+    call_type: str | None
+    overall_sentiment: str | None
+    sentiment_score: float | None
+    quality_score: float | None
+    csat_predicted: float | None
     complaint_detected: bool
     escalation_needed: bool
-    resolution_status: Optional[str]
-    summary: Optional[str]
-    key_points: List[str]
+    resolution_status: str | None
+    summary: str | None
+    key_points: list[str]
     issues_count: int
     action_items_count: int
-    analyzed_at: Optional[datetime]
+    analyzed_at: datetime | None
 
     class Config:
         from_attributes = True
@@ -335,53 +378,54 @@ class CallAnalysisSummary(BaseModel):
 
 class CallAnalysisResponse(BaseModel):
     """Schema for full call analysis response."""
+
     id: UUID
     tenant_id: UUID
     recording_id: UUID
-    transcription_id: Optional[UUID]
+    transcription_id: UUID | None
     status: str
-    call_type: Optional[str]
-    call_type_confidence: Optional[float]
-    call_categories: List[str]
-    agent_id: Optional[UUID]
-    agent_name: Optional[str]
-    customer_id: Optional[UUID]
-    customer_name: Optional[str]
-    total_duration_seconds: Optional[float]
-    agent_talk_time: Optional[float]
-    customer_talk_time: Optional[float]
-    talk_ratio: Optional[float]
-    overall_sentiment: Optional[str]
-    sentiment_score: Optional[float]
-    agent_sentiment: Optional[float]
-    customer_sentiment: Optional[float]
-    emotions_detected: Dict
-    dominant_emotion: Optional[str]
-    topics: List[str]
-    primary_topic: Optional[str]
-    keywords: List[str]
-    issues_identified: List[Dict]
+    call_type: str | None
+    call_type_confidence: float | None
+    call_categories: list[str]
+    agent_id: UUID | None
+    agent_name: str | None
+    customer_id: UUID | None
+    customer_name: str | None
+    total_duration_seconds: float | None
+    agent_talk_time: float | None
+    customer_talk_time: float | None
+    talk_ratio: float | None
+    overall_sentiment: str | None
+    sentiment_score: float | None
+    agent_sentiment: float | None
+    customer_sentiment: float | None
+    emotions_detected: dict
+    dominant_emotion: str | None
+    topics: list[str]
+    primary_topic: str | None
+    keywords: list[str]
+    issues_identified: list[dict]
     complaint_detected: bool
     escalation_needed: bool
-    escalation_reason: Optional[str]
-    resolution_status: Optional[str]
-    resolution_summary: Optional[str]
-    action_items: List[Dict]
+    escalation_reason: str | None
+    resolution_status: str | None
+    resolution_summary: str | None
+    action_items: list[dict]
     follow_up_required: bool
-    quality_score: Optional[float]
-    quality_breakdown: Dict
-    agent_score: Optional[float]
-    agent_metrics: Dict
-    csat_predicted: Optional[float]
-    nps_predicted: Optional[float]
-    compliance_score: Optional[float]
-    compliance_issues: List[Dict]
-    summary: Optional[str]
-    key_points: List[str]
-    recommendations: List[str]
-    alerts: List[Dict]
-    processing_time_ms: Optional[int]
-    analyzed_at: Optional[datetime]
+    quality_score: float | None
+    quality_breakdown: dict
+    agent_score: float | None
+    agent_metrics: dict
+    csat_predicted: float | None
+    nps_predicted: float | None
+    compliance_score: float | None
+    compliance_issues: list[dict]
+    summary: str | None
+    key_points: list[str]
+    recommendations: list[str]
+    alerts: list[dict]
+    processing_time_ms: int | None
+    analyzed_at: datetime | None
     created_at: datetime
 
     class Config:
@@ -390,22 +434,24 @@ class CallAnalysisResponse(BaseModel):
 
 # ============== Dashboard Schemas ==============
 
+
 class VoiceRecognitionDashboard(BaseModel):
     """Schema for voice recognition dashboard."""
+
     total_recordings: int
     total_transcriptions: int
     total_commands: int
     total_calls_analyzed: int
-    avg_transcription_confidence: Optional[float]
-    avg_call_quality_score: Optional[float]
-    avg_csat_predicted: Optional[float]
-    recordings_by_source: Dict[str, int]
-    recordings_by_status: Dict[str, int]
-    calls_by_type: Dict[str, int]
-    calls_by_sentiment: Dict[str, int]
-    commands_by_category: Dict[str, int]
-    command_success_rate: Optional[float]
-    escalation_rate: Optional[float]
-    top_topics: List[Dict]
-    top_commands: List[Dict]
-    recent_alerts: List[Dict]
+    avg_transcription_confidence: float | None
+    avg_call_quality_score: float | None
+    avg_csat_predicted: float | None
+    recordings_by_source: dict[str, int]
+    recordings_by_status: dict[str, int]
+    calls_by_type: dict[str, int]
+    calls_by_sentiment: dict[str, int]
+    commands_by_category: dict[str, int]
+    command_success_rate: float | None
+    escalation_rate: float | None
+    top_topics: list[dict]
+    top_commands: list[dict]
+    recent_alerts: list[dict]

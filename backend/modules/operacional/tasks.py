@@ -6,11 +6,9 @@ Sprint: Geração Automática de Escalas
 
 import asyncio
 import logging
-from datetime import date
-from uuid import UUID
 
 from celery_app import app
-from core.database.session import get_sync_db, get_async_db_session
+from core.database.session import get_async_db_session, get_sync_db
 from modules.operacional.services.notification_triggers import (
     OperacionalNotificationTriggers,
     _get_active_tenants,

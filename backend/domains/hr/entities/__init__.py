@@ -3,26 +3,26 @@ domains/hr/entities/__init__.py - ENTITIES
 ==========================================
 """
 
-from .enums import (
-    EmploymentType,
-    EmployeeStatus,
-    DepartmentType,
-    WorkScheduleType,
-    PayrollEventType,
-    TimeClockEventType,
-    LeaveType,
-    TerminationType
-)
 from .employee import (
-    EmployeeEntity,
     Address,
     BankAccount,
-    EmergencyContact,
-    Dependent,
-    LeaveRecord,
-    EmployeeId,
     DepartmentId,
-    PositionId
+    Dependent,
+    EmergencyContact,
+    EmployeeEntity,
+    EmployeeId,
+    LeaveRecord,
+    PositionId,
+)
+from .enums import (
+    DepartmentType,
+    EmployeeStatus,
+    EmploymentType,
+    LeaveType,
+    PayrollEventType,
+    TerminationType,
+    TimeClockEventType,
+    WorkScheduleType,
 )
 
 __all__ = [
@@ -45,5 +45,5 @@ __all__ = [
     # Type aliases
     "EmployeeId",
     "DepartmentId",
-    "PositionId"
+    "PositionId",
 ]

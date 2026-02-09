@@ -182,15 +182,11 @@ class TestBankAccountController:
         """Testa atualização de conta bancária."""
         with patch("modules.financial.repositories.BankAccountRepository") as mock_repo:
             mock_instance = mock_repo.return_value
-            updated_account = BankAccount(
-                **{**sample_bank_account.__dict__, "name": "Conta Atualizada"}
-            )
+            updated_account = BankAccount(**{**sample_bank_account.__dict__, "name": "Conta Atualizada"})
             mock_instance.get_by_id = AsyncMock(return_value=sample_bank_account)
             mock_instance.update = AsyncMock(return_value=updated_account)
 
-            result = await mock_instance.update(
-                sample_bank_account.id, {"name": "Conta Atualizada"}
-            )
+            result = await mock_instance.update(sample_bank_account.id, {"name": "Conta Atualizada"})
             assert result.name == "Conta Atualizada"
 
 
@@ -201,9 +197,7 @@ class TestBankTransactionController:
     """Testes para BankTransactionController."""
 
     @pytest.mark.asyncio
-    async def test_create_transaction(
-        self, mock_current_user, sample_bank_account, sample_bank_transaction
-    ):
+    async def test_create_transaction(self, mock_current_user, sample_bank_account, sample_bank_transaction):
         """Testa criação de transação."""
         with patch("modules.financial.repositories.BankTransactionRepository") as mock_repo:
             mock_instance = mock_repo.return_value
@@ -223,23 +217,17 @@ class TestBankTransactionController:
             assert result.transaction_type == TransactionType.CREDITO
 
     @pytest.mark.asyncio
-    async def test_get_pending_reconciliation(
-        self, mock_current_user, sample_bank_account, sample_bank_transaction
-    ):
+    async def test_get_pending_reconciliation(self, mock_current_user, sample_bank_account, sample_bank_transaction):
         """Testa obtenção de transações pendentes de conciliação."""
         with patch("modules.financial.repositories.BankTransactionRepository") as mock_repo:
             mock_instance = mock_repo.return_value
-            mock_instance.get_pending_reconciliation = AsyncMock(
-                return_value=[sample_bank_transaction]
-            )
+            mock_instance.get_pending_reconciliation = AsyncMock(return_value=[sample_bank_transaction])
 
             result = await mock_instance.get_pending_reconciliation(sample_bank_account.id, 100)
             assert len(result) == 1
 
     @pytest.mark.asyncio
-    async def test_get_by_period(
-        self, mock_current_user, sample_bank_account, sample_bank_transaction
-    ):
+    async def test_get_by_period(self, mock_current_user, sample_bank_account, sample_bank_transaction):
         """Testa obtenção de transações por período."""
         with patch("modules.financial.repositories.BankTransactionRepository") as mock_repo:
             mock_instance = mock_repo.return_value
@@ -260,9 +248,7 @@ class TestBankReconciliationController:
     """Testes para BankReconciliationController."""
 
     @pytest.mark.asyncio
-    async def test_create_reconciliation(
-        self, mock_current_user, sample_bank_account, sample_reconciliation
-    ):
+    async def test_create_reconciliation(self, mock_current_user, sample_bank_account, sample_reconciliation):
         """Testa criação de conciliação."""
         with patch("modules.financial.repositories.BankReconciliationRepository") as mock_repo:
             mock_instance = mock_repo.return_value
@@ -281,9 +267,7 @@ class TestBankReconciliationController:
             assert result.period_type == ReconciliationPeriodType.MENSAL
 
     @pytest.mark.asyncio
-    async def test_get_in_progress(
-        self, mock_current_user, sample_bank_account, sample_reconciliation
-    ):
+    async def test_get_in_progress(self, mock_current_user, sample_bank_account, sample_reconciliation):
         """Testa obtenção de conciliação em andamento."""
         with patch("modules.financial.repositories.BankReconciliationRepository") as mock_repo:
             mock_instance = mock_repo.return_value

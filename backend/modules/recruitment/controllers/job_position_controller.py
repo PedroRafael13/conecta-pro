@@ -1,28 +1,27 @@
 """Controller para JobPosition."""
 
 import logging
-from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.database import get_db
 from core.auth.dependencies import get_current_user
-from modules.recruitment.schemas.job_position import (
-    JobPositionCreate,
-    JobPositionUpdate,
-    JobPositionResponse,
-    JobPositionListResponse,
-    JobPositionFilter,
-    JobPositionStats,
-    JobPositionPublish,
-)
+from core.database import get_db
 from modules.recruitment.models.job_position import (
+    Department,
+    PositionLevel,
     PositionStatus,
     PositionType,
-    PositionLevel,
     WorkModel,
-    Department,
+)
+from modules.recruitment.schemas.job_position import (
+    JobPositionCreate,
+    JobPositionFilter,
+    JobPositionListResponse,
+    JobPositionPublish,
+    JobPositionResponse,
+    JobPositionStats,
+    JobPositionUpdate,
 )
 from modules.recruitment.services.job_position_service import JobPositionService
 
@@ -66,16 +65,16 @@ async def create_position(
 async def list_positions(  # pylint: disable=too-many-locals
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
-    status_filter: Optional[PositionStatus] = Query(None, alias="status"),
-    position_type: Optional[PositionType] = None,
-    position_level: Optional[PositionLevel] = None,
-    department: Optional[Department] = None,
-    work_model: Optional[WorkModel] = None,
-    city: Optional[str] = None,
-    state: Optional[str] = None,
-    is_urgent: Optional[bool] = None,
-    condominium_id: Optional[str] = None,
-    search: Optional[str] = None,
+    status_filter: PositionStatus | None = Query(None, alias="status"),
+    position_type: PositionType | None = None,
+    position_level: PositionLevel | None = None,
+    department: Department | None = None,
+    work_model: WorkModel | None = None,
+    city: str | None = None,
+    state: str | None = None,
+    is_urgent: bool | None = None,
+    condominium_id: str | None = None,
+    search: str | None = None,
     order_by: str = "created_at",
     order_desc: bool = True,
     db: AsyncSession = Depends(get_db),
@@ -97,9 +96,7 @@ async def list_positions(  # pylint: disable=too-many-locals
         search=search,
     )
 
-    positions, total = await service.list_with_filters(
-        filters, skip, limit, order_by, order_desc
-    )
+    positions, total = await service.list_with_filters(filters, skip, limit, order_by, order_desc)
 
     return JobPositionListResponse(
         items=[JobPositionResponse.model_validate(p) for p in positions],
@@ -117,7 +114,7 @@ async def list_positions(  # pylint: disable=too-many-locals
 async def list_open_positions(
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
-    condominium_id: Optional[str] = None,
+    condominium_id: str | None = None,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> JobPositionListResponse:
@@ -161,7 +158,7 @@ async def list_expiring_positions(
     summary="Estatísticas de vagas",
 )
 async def get_position_stats(
-    condominium_id: Optional[str] = None,
+    condominium_id: str | None = None,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> JobPositionStats:
@@ -300,7 +297,7 @@ async def publish_position(
 )
 async def pause_position(
     position_id: str,
-    reason: Optional[str] = None,
+    reason: str | None = None,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> JobPositionResponse:
@@ -351,7 +348,7 @@ async def reopen_position(
 )
 async def close_position(
     position_id: str,
-    reason: Optional[str] = None,
+    reason: str | None = None,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> JobPositionResponse:

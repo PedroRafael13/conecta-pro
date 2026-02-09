@@ -11,8 +11,8 @@ Date: 2026-01-23
 from __future__ import annotations
 
 from datetime import datetime
-from enum import Enum
-from typing import TYPE_CHECKING, List, Optional
+from enum import StrEnum
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Index, Integer, String, Text, func
@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from .inspection_checkpoint import InspectionCheckpoint
 
 
-class InspectionRoundStatus(str, Enum):
+class InspectionRoundStatus(StrEnum):
     """Status da ronda de inspecao."""
 
     AGENDADA = "agendada"
@@ -35,7 +35,7 @@ class InspectionRoundStatus(str, Enum):
     CANCELADA = "cancelada"
 
 
-class InspectorRole(str, Enum):
+class InspectorRole(StrEnum):
     """Cargo/funcao do inspetor que realiza a ronda."""
 
     GERENTE_OPERACIONAL = "gerente_operacional"
@@ -122,35 +122,35 @@ class InspectionRound(Base):
         default=InspectionRoundStatus.AGENDADA.value,
         index=True,
     )
-    scheduled_date: Mapped[Optional[datetime]] = mapped_column(
+    scheduled_date: Mapped[datetime | None] = mapped_column(
         DateTime,
         nullable=True,
         index=True,
     )
-    started_at: Mapped[Optional[datetime]] = mapped_column(
+    started_at: Mapped[datetime | None] = mapped_column(
         DateTime,
         nullable=True,
     )
-    completed_at: Mapped[Optional[datetime]] = mapped_column(
+    completed_at: Mapped[datetime | None] = mapped_column(
         DateTime,
         nullable=True,
     )
-    paused_at: Mapped[Optional[datetime]] = mapped_column(
+    paused_at: Mapped[datetime | None] = mapped_column(
         DateTime,
         nullable=True,
     )
-    duration_minutes: Mapped[Optional[int]] = mapped_column(
+    duration_minutes: Mapped[int | None] = mapped_column(
         Integer,
         nullable=True,
     )
 
     # === Postos ===
-    posts_to_visit: Mapped[Optional[list]] = mapped_column(
+    posts_to_visit: Mapped[list | None] = mapped_column(
         JSONB,
         nullable=True,
         default=list,
     )
-    posts_visited: Mapped[Optional[list]] = mapped_column(
+    posts_visited: Mapped[list | None] = mapped_column(
         JSONB,
         nullable=True,
         default=list,
@@ -179,44 +179,44 @@ class InspectionRound(Base):
     )
 
     # === Observacoes ===
-    observations: Mapped[Optional[str]] = mapped_column(
+    observations: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
     )
-    summary: Mapped[Optional[str]] = mapped_column(
+    summary: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
     )
 
     # === Geolocalizacao ===
-    start_latitude: Mapped[Optional[float]] = mapped_column(
+    start_latitude: Mapped[float | None] = mapped_column(
         Float,
         nullable=True,
     )
-    start_longitude: Mapped[Optional[float]] = mapped_column(
+    start_longitude: Mapped[float | None] = mapped_column(
         Float,
         nullable=True,
     )
-    end_latitude: Mapped[Optional[float]] = mapped_column(
+    end_latitude: Mapped[float | None] = mapped_column(
         Float,
         nullable=True,
     )
-    end_longitude: Mapped[Optional[float]] = mapped_column(
+    end_longitude: Mapped[float | None] = mapped_column(
         Float,
         nullable=True,
     )
-    route_coordinates: Mapped[Optional[list]] = mapped_column(
+    route_coordinates: Mapped[list | None] = mapped_column(
         JSONB,
         nullable=True,
         default=list,
     )
-    total_distance_km: Mapped[Optional[float]] = mapped_column(
+    total_distance_km: Mapped[float | None] = mapped_column(
         Float,
         nullable=True,
     )
 
     # === Metadados ===
-    extra_data: Mapped[Optional[dict]] = mapped_column(
+    extra_data: Mapped[dict | None] = mapped_column(
         JSONB,
         nullable=True,
         default=dict,
@@ -239,13 +239,13 @@ class InspectionRound(Base):
         default=func.now(),
         onupdate=func.now(),
     )
-    created_by: Mapped[Optional[str]] = mapped_column(
+    created_by: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
     )
 
     # === Relacionamentos ===
-    checkpoints: Mapped[List["InspectionCheckpoint"]] = relationship(
+    checkpoints: Mapped[list[InspectionCheckpoint]] = relationship(
         "InspectionCheckpoint",
         back_populates="inspection_round",
         lazy="selectin",
@@ -309,7 +309,7 @@ class InspectionRound(Base):
 
     # === Methods ===
 
-    def start(self, latitude: Optional[float] = None, longitude: Optional[float] = None) -> None:
+    def start(self, latitude: float | None = None, longitude: float | None = None) -> None:
         """Inicia a ronda."""
         self.status = InspectionRoundStatus.EM_ANDAMENTO.value
         self.started_at = datetime.utcnow()
@@ -330,9 +330,9 @@ class InspectionRound(Base):
 
     def complete(
         self,
-        summary: Optional[str] = None,
-        latitude: Optional[float] = None,
-        longitude: Optional[float] = None,
+        summary: str | None = None,
+        latitude: float | None = None,
+        longitude: float | None = None,
     ) -> None:
         """Conclui a ronda."""
         self.status = InspectionRoundStatus.CONCLUIDA.value
@@ -348,7 +348,7 @@ class InspectionRound(Base):
             delta = self.completed_at - self.started_at
             self.duration_minutes = int(delta.total_seconds() / 60)
 
-    def cancel(self, reason: Optional[str] = None) -> None:
+    def cancel(self, reason: str | None = None) -> None:
         """Cancela a ronda."""
         self.status = InspectionRoundStatus.CANCELADA.value
         if reason:
@@ -367,11 +367,13 @@ class InspectionRound(Base):
         """Adiciona coordenada ao trajeto."""
         if self.route_coordinates is None:
             self.route_coordinates = []
-        self.route_coordinates.append({
-            "lat": latitude,
-            "lng": longitude,
-            "timestamp": datetime.utcnow().isoformat(),
-        })
+        self.route_coordinates.append(
+            {
+                "lat": latitude,
+                "lng": longitude,
+                "timestamp": datetime.utcnow().isoformat(),
+            }
+        )
 
     def increment_occurrences(self) -> None:
         """Incrementa contador de ocorrencias."""

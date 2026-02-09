@@ -2,8 +2,8 @@
 
 from datetime import datetime, timedelta
 from decimal import Decimal
-from enum import Enum
-from typing import TYPE_CHECKING, Any, Optional
+from enum import StrEnum
+from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, Numeric, String, Text
@@ -14,17 +14,17 @@ from sqlalchemy.orm import relationship
 from core.models.base import Base
 
 if TYPE_CHECKING:
-    from modules.financial.models.fiscal_obligation import SUFRAMAConfig
+    pass
 
 
-class NFeTipo(str, Enum):
+class NFeTipo(StrEnum):
     """Tipo de NF-e."""
 
     ENTRADA = "0"  # Entrada
     SAIDA = "1"  # Saida
 
 
-class NFeStatus(str, Enum):
+class NFeStatus(StrEnum):
     """Status da NF-e."""
 
     RASCUNHO = "rascunho"
@@ -39,7 +39,7 @@ class NFeStatus(str, Enum):
     CONTINGENCIA = "contingencia"
 
 
-class NFeFinalidade(str, Enum):
+class NFeFinalidade(StrEnum):
     """Finalidade da NF-e."""
 
     NORMAL = "1"  # NF-e normal
@@ -48,7 +48,7 @@ class NFeFinalidade(str, Enum):
     DEVOLUCAO = "4"  # Devolucao de mercadoria
 
 
-class NFeModalidadeFrete(str, Enum):
+class NFeModalidadeFrete(StrEnum):
     """Modalidade do frete."""
 
     CIF = "0"  # Contratacao do Frete por conta do Remetente (CIF)
@@ -59,7 +59,7 @@ class NFeModalidadeFrete(str, Enum):
     SEM_FRETE = "9"  # Sem Ocorrencia de Transporte
 
 
-class NFeFormaPagamento(str, Enum):
+class NFeFormaPagamento(StrEnum):
     """Forma de pagamento da NF-e."""
 
     DINHEIRO = "01"
@@ -81,14 +81,14 @@ class NFeFormaPagamento(str, Enum):
     OUTROS = "99"
 
 
-class NFeAmbiente(str, Enum):
+class NFeAmbiente(StrEnum):
     """Ambiente de emissao."""
 
     PRODUCAO = "1"
     HOMOLOGACAO = "2"
 
 
-class NFeProcessoEmissao(str, Enum):
+class NFeProcessoEmissao(StrEnum):
     """Processo de emissao."""
 
     EMISSAO_NORMAL = "0"
@@ -97,7 +97,7 @@ class NFeProcessoEmissao(str, Enum):
     CONTRIBUINTE_SITE_FISCO = "3"
 
 
-class NFeContingencia(str, Enum):
+class NFeContingencia(StrEnum):
     """Tipo de contingencia."""
 
     NORMAL = "normal"
@@ -140,9 +140,7 @@ class NFe(Base):
     emitente_ie = Column(String(14), nullable=True)
     emitente_razao_social = Column(String(150), nullable=False)
     emitente_nome_fantasia = Column(String(60), nullable=True)
-    emitente_endereco = Column(
-        JSONB, nullable=True
-    )  # {logradouro, numero, bairro, cidade, uf, cep, pais}
+    emitente_endereco = Column(JSONB, nullable=True)  # {logradouro, numero, bairro, cidade, uf, cep, pais}
 
     # Destinatario
     destinatario_tipo = Column(String(1), nullable=True)  # 1=PF, 2=PJ
@@ -151,9 +149,7 @@ class NFe(Base):
     destinatario_razao_social = Column(String(150), nullable=True)
     destinatario_email = Column(String(200), nullable=True)
     destinatario_endereco = Column(JSONB, nullable=True)
-    destinatario_indicador_ie = Column(
-        String(1), nullable=True
-    )  # 1=Contribuinte, 2=Isento, 9=Nao contribuinte
+    destinatario_indicador_ie = Column(String(1), nullable=True)  # 1=Contribuinte, 2=Isento, 9=Nao contribuinte
 
     # Valores Totais
     valor_produtos = Column(Numeric(15, 2), nullable=False, default=Decimal("0"))
@@ -188,9 +184,7 @@ class NFe(Base):
     veiculo_uf = Column(String(2), nullable=True)
 
     # Volumes
-    volumes = Column(
-        JSONB, nullable=True
-    )  # [{qtde, especie, marca, numeracao, peso_liq, peso_brut}]
+    volumes = Column(JSONB, nullable=True)  # [{qtde, especie, marca, numeracao, peso_liq, peso_brut}]
 
     # Pagamento
     forma_pagamento = Column(String(2), nullable=True)
@@ -281,10 +275,7 @@ class NFe(Base):
         codigo_numerico: str,
     ) -> str:
         """Gera chave de acesso da NF-e (sem digito verificador)."""
-        chave = (
-            f"{codigo_uf}{ano_mes}{cnpj}{modelo}"
-            f"{serie.zfill(3)}{numero.zfill(9)}{tipo_emissao}{codigo_numerico}"
-        )
+        chave = f"{codigo_uf}{ano_mes}{cnpj}{modelo}{serie.zfill(3)}{numero.zfill(9)}{tipo_emissao}{codigo_numerico}"
         # Calcula digito verificador
         peso = 2
         soma = 0
@@ -297,33 +288,16 @@ class NFe(Base):
 
     def calcular_totais(self) -> None:
         """Recalcula totais da NF-e."""
-        self.valor_produtos = (
-            sum(item.valor_total for item in self.itens) if self.itens else Decimal("0")
-        )
-        self.valor_icms = (
-            sum(item.valor_icms for item in self.itens) if self.itens else Decimal("0")
-        )
+        self.valor_produtos = sum(item.valor_total for item in self.itens) if self.itens else Decimal("0")
+        self.valor_icms = sum(item.valor_icms for item in self.itens) if self.itens else Decimal("0")
         self.valor_icms_st = (
-            sum(item.valor_icms_st or Decimal("0") for item in self.itens)
-            if self.itens
-            else Decimal("0")
+            sum(item.valor_icms_st or Decimal("0") for item in self.itens) if self.itens else Decimal("0")
         )
-        self.valor_ipi = (
-            sum(item.valor_ipi or Decimal("0") for item in self.itens)
-            if self.itens
-            else Decimal("0")
-        )
+        self.valor_ipi = sum(item.valor_ipi or Decimal("0") for item in self.itens) if self.itens else Decimal("0")
         self.valor_pis = sum(item.valor_pis for item in self.itens) if self.itens else Decimal("0")
-        self.valor_cofins = (
-            sum(item.valor_cofins for item in self.itens) if self.itens else Decimal("0")
-        )
+        self.valor_cofins = sum(item.valor_cofins for item in self.itens) if self.itens else Decimal("0")
         self.valor_total_tributos = (
-            self.valor_icms
-            + self.valor_icms_st
-            + self.valor_ipi
-            + self.valor_pis
-            + self.valor_cofins
-            + self.valor_ii
+            self.valor_icms + self.valor_icms_st + self.valor_ipi + self.valor_pis + self.valor_cofins + self.valor_ii
         )
         self.valor_total = (
             self.valor_produtos
@@ -432,7 +406,7 @@ class NFeItem(Base):
         """Representacao string."""
         return f"<NFeItem {self.numero_item}: {self.descricao}>"
 
-    def calcular_impostos(self, _config: Optional[Any] = None) -> None:
+    def calcular_impostos(self, _config: Any | None = None) -> None:
         """Calcula impostos do item."""
         # Valor base para calculo
         base = self.valor_total - self.valor_desconto + self.valor_frete + self.valor_seguro

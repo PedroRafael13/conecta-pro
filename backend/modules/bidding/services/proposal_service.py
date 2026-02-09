@@ -3,19 +3,22 @@ Service de Proposta - Licitacoes
 ================================
 """
 
+import builtins
 import logging
-from datetime import datetime
 from decimal import Decimal
-from typing import Optional, List, Tuple
 from uuid import UUID
 
 from sqlalchemy.orm import Session
 
-from modules.bidding.repositories.proposal_repository import ProposalRepository
 from modules.bidding.models.proposal import BiddingProposal, ProposalStatus
+from modules.bidding.repositories.proposal_repository import ProposalRepository
 from modules.bidding.schemas.proposal import (
-    ProposalCreate, ProposalUpdate, ProposalResponse,
-    ProposalCalculateBDI, ProposalBDIResponse, ProposalListResponse
+    ProposalBDIResponse,
+    ProposalCalculateBDI,
+    ProposalCreate,
+    ProposalListResponse,
+    ProposalResponse,
+    ProposalUpdate,
 )
 
 logger = logging.getLogger(__name__)
@@ -28,50 +31,32 @@ class ProposalService:
         self.db = db
         self.repository = ProposalRepository(db)
 
-    async def get(self, proposal_id: UUID) -> Optional[ProposalResponse]:
+    async def get(self, proposal_id: UUID) -> ProposalResponse | None:
         """Busca proposta por ID."""
         proposal = await self.repository.get_by_id(proposal_id)
         if not proposal:
             return None
         return self._to_response(proposal)
 
-    async def get_by_tender(self, tender_id: UUID) -> List[ProposalResponse]:
+    async def get_by_tender(self, tender_id: UUID) -> list[ProposalResponse]:
         """Lista propostas de um edital."""
         proposals = await self.repository.get_by_tender(tender_id)
         return [self._to_response(p) for p in proposals]
 
     async def list(
-        self,
-        tender_id: UUID = None,
-        status: str = None,
-        page: int = 1,
-        size: int = 50
+        self, tender_id: UUID = None, status: str = None, page: int = 1, size: int = 50
     ) -> ProposalListResponse:
         """Lista propostas com filtros."""
         items, total = await self.repository.list(tender_id, status, page, size)
 
-        return ProposalListResponse(
-            items=[self._to_response(p) for p in items],
-            total=total,
-            page=page,
-            size=size
-        )
+        return ProposalListResponse(items=[self._to_response(p) for p in items], total=total, page=page, size=size)
 
-    async def create(
-        self,
-        data: ProposalCreate,
-        user_id: UUID = None
-    ) -> ProposalResponse:
+    async def create(self, data: ProposalCreate, user_id: UUID = None) -> ProposalResponse:
         """Cria nova proposta."""
         proposal = await self.repository.create(data, user_id)
         return self._to_response(proposal)
 
-    async def update(
-        self,
-        proposal_id: UUID,
-        data: ProposalUpdate,
-        user_id: UUID = None
-    ) -> Optional[ProposalResponse]:
+    async def update(self, proposal_id: UUID, data: ProposalUpdate, user_id: UUID = None) -> ProposalResponse | None:
         """Atualiza proposta."""
         proposal = await self.repository.update(proposal_id, data, user_id)
         if not proposal:
@@ -82,7 +67,7 @@ class ProposalService:
         """Remove proposta."""
         return await self.repository.delete(proposal_id)
 
-    async def marcar_pronta(self, proposal_id: UUID) -> Optional[ProposalResponse]:
+    async def marcar_pronta(self, proposal_id: UUID) -> ProposalResponse | None:
         """Marca proposta como pronta para envio."""
         proposal = await self.repository.get_by_id(proposal_id)
         if not proposal:
@@ -98,7 +83,7 @@ class ProposalService:
         update = ProposalUpdate(status=ProposalStatus.READY.value)
         return await self.update(proposal_id, update)
 
-    async def enviar(self, proposal_id: UUID) -> Optional[ProposalResponse]:
+    async def enviar(self, proposal_id: UUID) -> ProposalResponse | None:
         """Envia proposta."""
         proposal = await self.repository.submit(proposal_id)
         if not proposal:
@@ -106,29 +91,19 @@ class ProposalService:
         return self._to_response(proposal)
 
     async def registrar_resultado(
-        self,
-        proposal_id: UUID,
-        vencedora: bool,
-        posicao: int = None,
-        valor_final: Decimal = None
-    ) -> Optional[ProposalResponse]:
+        self, proposal_id: UUID, vencedora: bool, posicao: int = None, valor_final: Decimal = None
+    ) -> ProposalResponse | None:
         """Registra resultado da proposta."""
         status = ProposalStatus.WINNER.value if vencedora else ProposalStatus.CLASSIFIED.value
         if posicao == 2:
             status = ProposalStatus.SECOND_PLACE.value
 
-        proposal = await self.repository.register_result(
-            proposal_id, status, posicao, valor_final
-        )
+        proposal = await self.repository.register_result(proposal_id, status, posicao, valor_final)
         if not proposal:
             return None
         return self._to_response(proposal)
 
-    async def registrar_lance(
-        self,
-        proposal_id: UUID,
-        valor: Decimal
-    ) -> Optional[ProposalResponse]:
+    async def registrar_lance(self, proposal_id: UUID, valor: Decimal) -> ProposalResponse | None:
         """Registra lance em pregao."""
         proposal = await self.repository.add_lance(proposal_id, valor)
         if not proposal:
@@ -176,11 +151,11 @@ class ProposalService:
                 "cofins": float(data.cofins),
                 "iss": float(data.iss),
                 "tributos_total": float(tributos),
-                "custos_indiretos": float((custos_indiretos - 1) * 100)
-            }
+                "custos_indiretos": float((custos_indiretos - 1) * 100),
+            },
         )
 
-    async def get_vencedoras(self) -> List[ProposalResponse]:
+    async def get_vencedoras(self) -> builtins.list[ProposalResponse]:
         """Lista propostas vencedoras."""
         proposals = await self.repository.get_vencedoras()
         return [self._to_response(p) for p in proposals]
@@ -200,7 +175,7 @@ class ProposalService:
             "propostas_vencedoras": vencidas,
             "taxa_sucesso": (vencidas / enviadas * 100) if enviadas > 0 else 0,
             "por_status": contagem,
-            "valor_total_vencidas": sum(p.valor_total for p in vencedoras)
+            "valor_total_vencidas": sum(p.valor_total for p in vencedoras),
         }
 
     def _to_response(self, proposal: BiddingProposal) -> ProposalResponse:
@@ -231,5 +206,5 @@ class ProposalService:
             justificativa_preco=proposal.justificativa_preco,
             observacoes=proposal.observacoes,
             created_at=proposal.created_at,
-            updated_at=proposal.updated_at
+            updated_at=proposal.updated_at,
         )

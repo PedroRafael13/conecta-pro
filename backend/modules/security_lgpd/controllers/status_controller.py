@@ -3,7 +3,7 @@ Controller de Status do Modulo LGPD.
 """
 
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any
 
 from fastapi import APIRouter, status
 
@@ -59,12 +59,12 @@ async def get_lgpd_status() -> StandardResponse:
 
 @router.get(
     "/health",
-    response_model=Dict[str, Any],
+    response_model=dict[str, Any],
     status_code=status.HTTP_200_OK,
     summary="Health check",
     description="Verifica saude do modulo.",
 )
-async def health_check() -> Dict[str, Any]:
+async def health_check() -> dict[str, Any]:
     """
     Health check do modulo.
 

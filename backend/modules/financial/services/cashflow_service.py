@@ -3,7 +3,6 @@
 import logging
 from datetime import date, timedelta
 from decimal import Decimal
-from typing import Dict, List, Optional
 from uuid import UUID
 
 from sqlalchemy import and_, func, select
@@ -33,9 +32,9 @@ class CashFlowProjection:  # pylint: disable=too-few-public-methods
         self.receivables = receivables
         self.balance = balance
         self.cumulative_balance = Decimal("0")
-        self.details: List[Dict] = []
+        self.details: list[dict] = []
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         """Converte para dicionário."""
         return {
             "date": self.date.isoformat(),
@@ -57,12 +56,12 @@ class CashFlowService:
     async def get_projection(  # pylint: disable=too-many-locals
         self,
         condominio_id: UUID,
-        start_date: Optional[date] = None,
-        end_date: Optional[date] = None,
+        start_date: date | None = None,
+        end_date: date | None = None,
         include_pending: bool = True,  # pylint: disable=unused-argument
         include_scheduled: bool = True,
         group_by: str = "day",  # day, week, month
-    ) -> List[CashFlowProjection]:
+    ) -> list[CashFlowProjection]:
         """Gera projeção de fluxo de caixa."""
         if start_date is None:
             start_date = date.today()
@@ -95,7 +94,7 @@ class CashFlowService:
         installments = list(result.scalars().all())
 
         # Agrupa por data
-        projections_map: Dict[date, CashFlowProjection] = {}
+        projections_map: dict[date, CashFlowProjection] = {}
 
         for inst in installments:
             proj_date = self._get_grouped_date(inst.due_date, group_by)
@@ -145,7 +144,7 @@ class CashFlowService:
         self,
         condominio_id: UUID,
         period_days: int = 30,
-    ) -> Dict:
+    ) -> dict:
         """Retorna resumo do fluxo de caixa."""
         today = date.today()
         end_date = today + timedelta(days=period_days)
@@ -168,10 +167,7 @@ class CashFlowService:
         )
 
         status_result = await self.session.execute(status_query)
-        status_data = {
-            row.status: {"total": float(row.total or 0), "count": row.count}
-            for row in status_result
-        }
+        status_data = {row.status: {"total": float(row.total or 0), "count": row.count} for row in status_result}
 
         # Vencidos
         overdue_query = select(
@@ -181,9 +177,7 @@ class CashFlowService:
             and_(
                 PayableAccount.condominio_id == condominio_id,
                 PayableAccount.ativo.is_(True),
-                PayableAccount.status.in_(
-                    [PayableStatus.PENDENTE.value, PayableStatus.APROVADA.value]
-                ),
+                PayableAccount.status.in_([PayableStatus.PENDENTE.value, PayableStatus.APROVADA.value]),
                 PayableAccount.due_date < today,
             )
         )
@@ -200,9 +194,7 @@ class CashFlowService:
             and_(
                 PayableAccount.condominio_id == condominio_id,
                 PayableAccount.ativo.is_(True),
-                PayableAccount.status.in_(
-                    [PayableStatus.PENDENTE.value, PayableStatus.APROVADA.value]
-                ),
+                PayableAccount.status.in_([PayableStatus.PENDENTE.value, PayableStatus.APROVADA.value]),
                 PayableAccount.due_date >= today,
                 PayableAccount.due_date <= week_end,
             )
@@ -219,9 +211,7 @@ class CashFlowService:
             and_(
                 PayableAccount.condominio_id == condominio_id,
                 PayableAccount.ativo.is_(True),
-                PayableAccount.status.in_(
-                    [PayableStatus.PENDENTE.value, PayableStatus.APROVADA.value]
-                ),
+                PayableAccount.status.in_([PayableStatus.PENDENTE.value, PayableStatus.APROVADA.value]),
                 PayableAccount.due_date >= today,
                 PayableAccount.due_date <= end_date,
             )
@@ -250,9 +240,9 @@ class CashFlowService:
     async def get_category_breakdown(
         self,
         condominio_id: UUID,
-        start_date: Optional[date] = None,
-        end_date: Optional[date] = None,
-    ) -> List[Dict]:
+        start_date: date | None = None,
+        end_date: date | None = None,
+    ) -> list[dict]:
         """Retorna breakdown por categoria."""
         if start_date is None:
             start_date = date.today().replace(day=1)
@@ -296,10 +286,10 @@ class CashFlowService:
     async def get_supplier_breakdown(
         self,
         condominio_id: UUID,
-        start_date: Optional[date] = None,
-        end_date: Optional[date] = None,
+        start_date: date | None = None,
+        end_date: date | None = None,
         limit: int = 10,
-    ) -> List[Dict]:
+    ) -> list[dict]:
         """Retorna breakdown por fornecedor."""
         if start_date is None:
             start_date = date.today().replace(day=1)
@@ -345,7 +335,7 @@ class CashFlowService:
         self,
         condominio_id: UUID,
         months: int = 12,
-    ) -> List[Dict]:
+    ) -> list[dict]:
         """Retorna tendência mensal de pagamentos."""
         today = date.today()
         start_date = (today.replace(day=1) - timedelta(days=months * 30)).replace(day=1)

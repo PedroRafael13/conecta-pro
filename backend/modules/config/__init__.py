@@ -10,29 +10,29 @@ Este módulo fornece:
 - NotificationTemplate: Templates de notificação multicanal
 """
 
+from modules.config.controllers import router
 from modules.config.models import (
-    Tenant,
-    TenantStatus,
-    TenantPlan,
-    TenantType,
-    TenantSettings,
-    SettingCategory,
-    SettingType,
-    SystemConfig,
-    ConfigScope,
     ConfigPriority,
+    ConfigScope,
     FeatureFlag,
     FlagStatus,
     FlagType,
-    RolloutStrategy,
-    NotificationTemplate,
     NotificationChannel,
+    NotificationTemplate,
     NotificationType,
+    RolloutStrategy,
+    SettingCategory,
+    SettingType,
+    SystemConfig,
     TemplateStatus,
+    Tenant,
+    TenantPlan,
+    TenantSettings,
+    TenantStatus,
+    TenantType,
 )
 from modules.config.repositories import ConfigRepository
 from modules.config.services import ConfigService
-from modules.config.controllers import router
 
 __all__ = [
     # Models

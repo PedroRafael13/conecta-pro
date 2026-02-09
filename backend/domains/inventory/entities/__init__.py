@@ -4,36 +4,28 @@ domains/inventory/entities/__init__.py - ENTITIES
 """
 
 from .enums import (
-    ProductType,
+    BatchStatus,
+    InventoryCountStatus,
+    InventoryValuationMethod,
     ProductStatus,
+    ProductType,
+    ReorderPointStatus,
     StockMovementType,
-    WarehouseType,
     StockStatus,
     UnitOfMeasure,
-    InventoryValuationMethod,
-    ReorderPointStatus,
-    BatchStatus,
-    InventoryCountStatus
+    WarehouseType,
 )
 from .product import (
-    ProductEntity,
+    CategoryId,
     ProductDimensions,
+    ProductEntity,
+    ProductId,
     ProductPricing,
     StockLevel,
+    SupplierId,
     TaxClassification,
-    ProductId,
-    CategoryId,
-    SupplierId
 )
-from .stock_movement import (
-    StockMovementEntity,
-    MovementLine,
-    BatchInfo,
-    SerialNumber,
-    MovementId,
-    BatchId,
-    WarehouseId
-)
+from .stock_movement import BatchId, BatchInfo, MovementId, MovementLine, SerialNumber, StockMovementEntity, WarehouseId
 
 __all__ = [
     # Enums
@@ -63,5 +55,5 @@ __all__ = [
     "SerialNumber",
     "MovementId",
     "BatchId",
-    "WarehouseId"
+    "WarehouseId",
 ]

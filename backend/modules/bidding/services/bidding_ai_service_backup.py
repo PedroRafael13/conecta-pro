@@ -6,10 +6,8 @@ Analise inteligente de editais e propostas.
 
 import logging
 import re
-from datetime import datetime, date
 from decimal import Decimal
-from typing import Optional, List, Dict, Any
-from uuid import UUID
+from typing import Any
 
 from sqlalchemy.orm import Session
 
@@ -22,53 +20,76 @@ class BiddingAIService:
     # Palavras-chave por segmento
     SEGMENTOS_KEYWORDS = {
         "seguranca": [
-            "vigilância", "vigilancia", "segurança", "seguranca",
-            "portaria", "monitoramento", "cftv", "alarme", "ronda",
-            "vigilante", "controlador de acesso"
+            "vigilância",
+            "vigilancia",
+            "segurança",
+            "seguranca",
+            "portaria",
+            "monitoramento",
+            "cftv",
+            "alarme",
+            "ronda",
+            "vigilante",
+            "controlador de acesso",
         ],
         "limpeza": [
-            "limpeza", "conservação", "conservacao", "asseio",
-            "higienização", "higienizacao", "faxina", "jardinagem",
-            "copeira", "servente"
+            "limpeza",
+            "conservação",
+            "conservacao",
+            "asseio",
+            "higienização",
+            "higienizacao",
+            "faxina",
+            "jardinagem",
+            "copeira",
+            "servente",
         ],
         "facilities": [
-            "facilities", "terceirização", "terceirizacao",
-            "mão de obra", "mao de obra", "apoio administrativo",
-            "recepção", "recepcao", "telefonista"
+            "facilities",
+            "terceirização",
+            "terceirizacao",
+            "mão de obra",
+            "mao de obra",
+            "apoio administrativo",
+            "recepção",
+            "recepcao",
+            "telefonista",
         ],
         "manutencao": [
-            "manutenção", "manutencao", "predial", "elétrica", "eletrica",
-            "hidráulica", "hidraulica", "ar condicionado", "elevador"
+            "manutenção",
+            "manutencao",
+            "predial",
+            "elétrica",
+            "eletrica",
+            "hidráulica",
+            "hidraulica",
+            "ar condicionado",
+            "elevador",
         ],
         "ti": [
-            "tecnologia", "informática", "informatica", "software",
-            "hardware", "rede", "suporte técnico", "suporte tecnico"
-        ]
+            "tecnologia",
+            "informática",
+            "informatica",
+            "software",
+            "hardware",
+            "rede",
+            "suporte técnico",
+            "suporte tecnico",
+        ],
     }
 
     # Documentos comuns exigidos
     DOCUMENTOS_COMUNS = {
-        "habilitacao_juridica": [
-            "contrato social", "estatuto", "cnpj", "procuração"
-        ],
-        "regularidade_fiscal": [
-            "cnd federal", "cnd estadual", "cnd municipal",
-            "fgts", "crf", "cndt", "trabalhista"
-        ],
-        "qualificacao_tecnica": [
-            "atestado", "capacidade técnica", "acervo",
-            "registro", "crea", "cra"
-        ],
-        "qualificacao_economica": [
-            "balanço", "patrimônio líquido", "índice",
-            "falência", "recuperação judicial"
-        ]
+        "habilitacao_juridica": ["contrato social", "estatuto", "cnpj", "procuração"],
+        "regularidade_fiscal": ["cnd federal", "cnd estadual", "cnd municipal", "fgts", "crf", "cndt", "trabalhista"],
+        "qualificacao_tecnica": ["atestado", "capacidade técnica", "acervo", "registro", "crea", "cra"],
+        "qualificacao_economica": ["balanço", "patrimônio líquido", "índice", "falência", "recuperação judicial"],
     }
 
     def __init__(self, db: Session):
         self.db = db
 
-    async def classificar_edital(self, texto_objeto: str) -> Dict[str, Any]:
+    async def classificar_edital(self, texto_objeto: str) -> dict[str, Any]:
         """
         Classifica um edital por segmento baseado no objeto.
 
@@ -87,11 +108,7 @@ class BiddingAIService:
                 scores[segmento] = score
 
         if not scores:
-            return {
-                "segmento": "outros",
-                "confianca": 0,
-                "segmentos_possiveis": []
-            }
+            return {"segmento": "outros", "confianca": 0, "segmentos_possiveis": []}
 
         # Segmento com maior score
         segmento_principal = max(scores, key=scores.get)
@@ -101,12 +118,11 @@ class BiddingAIService:
             "segmento": segmento_principal,
             "confianca": scores[segmento_principal] / total_matches if total_matches > 0 else 0,
             "segmentos_possiveis": [
-                {"segmento": s, "score": sc}
-                for s, sc in sorted(scores.items(), key=lambda x: -x[1])
-            ]
+                {"segmento": s, "score": sc} for s, sc in sorted(scores.items(), key=lambda x: -x[1])
+            ],
         }
 
-    async def extrair_requisitos(self, texto_edital: str) -> Dict[str, List[str]]:
+    async def extrair_requisitos(self, texto_edital: str) -> dict[str, list[str]]:
         """
         Extrai requisitos de habilitacao do texto do edital.
 
@@ -122,7 +138,7 @@ class BiddingAIService:
             "regularidade_fiscal": [],
             "qualificacao_tecnica": [],
             "qualificacao_economica": [],
-            "outros": []
+            "outros": [],
         }
 
         for categoria, keywords in self.DOCUMENTOS_COMUNS.items():
@@ -137,12 +153,8 @@ class BiddingAIService:
         return requisitos
 
     async def analisar_viabilidade(
-        self,
-        valor_estimado: Decimal,
-        segmento: str,
-        documentos_disponiveis: List[str],
-        documentos_exigidos: List[str]
-    ) -> Dict[str, Any]:
+        self, valor_estimado: Decimal, segmento: str, documentos_disponiveis: list[str], documentos_exigidos: list[str]
+    ) -> dict[str, Any]:
         """
         Analisa viabilidade de participacao em licitacao.
 
@@ -156,19 +168,13 @@ class BiddingAIService:
             Analise de viabilidade
         """
         # Verifica documentacao
-        docs_faltantes = [
-            d for d in documentos_exigidos
-            if d not in documentos_disponiveis
-        ]
+        docs_faltantes = [d for d in documentos_exigidos if d not in documentos_disponiveis]
 
         # Score de documentacao
         if not documentos_exigidos:
             score_docs = 100
         else:
-            score_docs = (
-                (len(documentos_exigidos) - len(docs_faltantes))
-                / len(documentos_exigidos) * 100
-            )
+            score_docs = (len(documentos_exigidos) - len(docs_faltantes)) / len(documentos_exigidos) * 100
 
         # Analise de valor
         analise_valor = self._analisar_faixa_valor(valor_estimado, segmento)
@@ -193,15 +199,12 @@ class BiddingAIService:
             "documentos_faltantes": docs_faltantes,
             "analise_valor": analise_valor,
             "recomendacao": recomendacao,
-            "acoes_necessarias": self._gerar_acoes(docs_faltantes, analise_valor)
+            "acoes_necessarias": self._gerar_acoes(docs_faltantes, analise_valor),
         }
 
     async def sugerir_bdi(
-        self,
-        tipo_servico: str,
-        valor_base: Decimal,
-        regime_tributario: str = "lucro_presumido"
-    ) -> Dict[str, Any]:
+        self, tipo_servico: str, valor_base: Decimal, regime_tributario: str = "lucro_presumido"
+    ) -> dict[str, Any]:
         """
         Sugere composicao de BDI baseado no tipo de servico.
 
@@ -221,7 +224,7 @@ class BiddingAIService:
                 "garantia": 0.5,
                 "risco": 1.5,
                 "despesas_financeiras": 1.0,
-                "lucro": 6.5
+                "lucro": 6.5,
             },
             "limpeza": {
                 "administracao": 3.5,
@@ -229,7 +232,7 @@ class BiddingAIService:
                 "garantia": 0.5,
                 "risco": 1.0,
                 "despesas_financeiras": 0.8,
-                "lucro": 6.0
+                "lucro": 6.0,
             },
             "facilities": {
                 "administracao": 4.0,
@@ -237,7 +240,7 @@ class BiddingAIService:
                 "garantia": 0.5,
                 "risco": 1.2,
                 "despesas_financeiras": 0.9,
-                "lucro": 6.0
+                "lucro": 6.0,
             },
             "default": {
                 "administracao": 4.0,
@@ -245,25 +248,22 @@ class BiddingAIService:
                 "garantia": 0.5,
                 "risco": 1.0,
                 "despesas_financeiras": 1.0,
-                "lucro": 7.0
-            }
+                "lucro": 7.0,
+            },
         }
 
         # Tributos por regime
         tributos = {
             "simples": {"pis": 0, "cofins": 0, "iss": 5.0},
             "lucro_presumido": {"pis": 0.65, "cofins": 3.0, "iss": 5.0},
-            "lucro_real": {"pis": 1.65, "cofins": 7.6, "iss": 5.0}
+            "lucro_real": {"pis": 1.65, "cofins": 7.6, "iss": 5.0},
         }
 
         ref = bdi_referencia.get(tipo_servico, bdi_referencia["default"])
         trib = tributos.get(regime_tributario, tributos["lucro_presumido"])
 
         # Calcula BDI
-        custos = (
-            ref["administracao"] + ref["seguro"] + ref["garantia"] +
-            ref["risco"] + ref["despesas_financeiras"]
-        )
+        custos = ref["administracao"] + ref["seguro"] + ref["garantia"] + ref["risco"] + ref["despesas_financeiras"]
         tributos_total = trib["pis"] + trib["cofins"] + trib["iss"]
 
         # Formula: BDI = [(1 + AC + S + G + R + DF) * (1 + L)] / (1 - T) - 1
@@ -278,20 +278,15 @@ class BiddingAIService:
             "bdi_percentual": round(bdi_percentual, 2),
             "valor_base": float(valor_base),
             "valor_com_bdi": round(float(valor_com_bdi), 2),
-            "composicao": {
-                **ref,
-                "tributos": tributos_total
-            },
+            "composicao": {**ref, "tributos": tributos_total},
             "tributos_detalhados": trib,
             "regime_tributario": regime_tributario,
-            "observacao": f"BDI sugerido para {tipo_servico} em regime {regime_tributario}"
+            "observacao": f"BDI sugerido para {tipo_servico} em regime {regime_tributario}",
         }
 
     async def analisar_concorrentes(
-        self,
-        historico_lances: List[Dict[str, Any]],
-        valor_estimado: Decimal
-    ) -> Dict[str, Any]:
+        self, historico_lances: list[dict[str, Any]], valor_estimado: Decimal
+    ) -> dict[str, Any]:
         """
         Analisa padrao de concorrentes baseado em historico.
 
@@ -303,19 +298,13 @@ class BiddingAIService:
             Analise de concorrentes
         """
         if not historico_lances:
-            return {
-                "analise_disponivel": False,
-                "mensagem": "Sem historico suficiente para analise"
-            }
+            return {"analise_disponivel": False, "mensagem": "Sem historico suficiente para analise"}
 
         # Extrai valores
-        valores = [Decimal(str(l.get("valor", 0))) for l in historico_lances if l.get("valor")]
+        valores = [Decimal(str(lance.get("valor", 0))) for lance in historico_lances if lance.get("valor")]
 
         if not valores:
-            return {
-                "analise_disponivel": False,
-                "mensagem": "Historico sem valores validos"
-            }
+            return {"analise_disponivel": False, "mensagem": "Historico sem valores validos"}
 
         # Estatisticas
         valor_medio = sum(valores) / len(valores)
@@ -324,9 +313,9 @@ class BiddingAIService:
 
         # Desconto medio sobre estimado
         descontos = []
-        for l in historico_lances:
-            if l.get("valor") and l.get("valor_estimado"):
-                desc = (1 - Decimal(str(l["valor"])) / Decimal(str(l["valor_estimado"]))) * 100
+        for lance in historico_lances:
+            if lance.get("valor") and lance.get("valor_estimado"):
+                desc = (1 - Decimal(str(lance["valor"])) / Decimal(str(lance["valor_estimado"]))) * 100
                 descontos.append(desc)
 
         desconto_medio = sum(descontos) / len(descontos) if descontos else Decimal("0")
@@ -344,22 +333,18 @@ class BiddingAIService:
             "lance_sugerido": float(lance_sugerido),
             "faixa_competitiva": {
                 "minimo": float(lance_sugerido * Decimal("0.95")),
-                "maximo": float(lance_sugerido * Decimal("1.05"))
-            }
+                "maximo": float(lance_sugerido * Decimal("1.05")),
+            },
         }
 
-    def _analisar_faixa_valor(
-        self,
-        valor: Decimal,
-        segmento: str
-    ) -> Dict[str, Any]:
+    def _analisar_faixa_valor(self, valor: Decimal, segmento: str) -> dict[str, Any]:
         """Analisa se valor esta em faixa adequada."""
         # Faixas de referencia por segmento (valores mensais tipicos)
         faixas = {
             "seguranca": {"min": 50000, "ideal_min": 100000, "ideal_max": 2000000, "max": 5000000},
             "limpeza": {"min": 30000, "ideal_min": 80000, "ideal_max": 1500000, "max": 3000000},
             "facilities": {"min": 50000, "ideal_min": 100000, "ideal_max": 2000000, "max": 5000000},
-            "default": {"min": 30000, "ideal_min": 100000, "ideal_max": 2000000, "max": 5000000}
+            "default": {"min": 30000, "ideal_min": 100000, "ideal_max": 2000000, "max": 5000000},
         }
 
         faixa = faixas.get(segmento, faixas["default"])
@@ -376,11 +361,7 @@ class BiddingAIService:
         else:
             return {"score": 50, "classificacao": "muito_alto", "mensagem": "Valor muito elevado"}
 
-    def _gerar_acoes(
-        self,
-        docs_faltantes: List[str],
-        analise_valor: Dict[str, Any]
-    ) -> List[str]:
+    def _gerar_acoes(self, docs_faltantes: list[str], analise_valor: dict[str, Any]) -> list[str]:
         """Gera lista de acoes necessarias."""
         acoes = []
 

@@ -8,19 +8,18 @@ Integra com o modelo User real do sistema via SQLAlchemy async.
 import logging
 import time
 from dataclasses import dataclass, field
-from typing import Any, Optional
 from datetime import datetime
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.ai.bartolo.config.user_profiles import (
-    UserRole,
-    Department,
     USER_PROFILES,
+    Department,
+    UserRole,
+    get_communication_style,
     get_profile_context,
     get_profile_modules,
-    get_communication_style,
 )
 
 logger = logging.getLogger(__name__)
@@ -32,19 +31,20 @@ CACHE_TTL_SECONDS = 300
 @dataclass
 class UserContext:
     """Contexto do usuario para o Bartolo."""
+
     user_id: int
-    name: Optional[str] = None
-    email: Optional[str] = None
-    role: Optional[UserRole] = None
-    department: Optional[Department] = None
+    name: str | None = None
+    email: str | None = None
+    role: UserRole | None = None
+    department: Department | None = None
     is_manager: bool = False
     experience_level: str = "intermediate"
     preferences: dict = field(default_factory=dict)
     permissions: list = field(default_factory=list)
     last_modules: list = field(default_factory=list)
     interaction_count: int = 0
-    first_interaction: Optional[datetime] = None
-    last_interaction: Optional[datetime] = None
+    first_interaction: datetime | None = None
+    last_interaction: datetime | None = None
 
     def to_prompt_context(self) -> str:
         """Converte contexto para texto de prompt."""
@@ -102,7 +102,7 @@ class ProfileService:
     - Fallback para dados mock quando db nao disponivel
     """
 
-    def __init__(self, db: Optional[AsyncSession] = None):
+    def __init__(self, db: AsyncSession | None = None):
         """
         Inicializa o servico.
 
@@ -110,11 +110,11 @@ class ProfileService:
             db: Sessao async do banco de dados (opcional).
                 Pode ser definida depois via set_db().
         """
-        self._db: Optional[AsyncSession] = db
+        self._db: AsyncSession | None = db
         self._user_cache: dict[int, UserContext] = {}
         self._cache_timestamps: dict[int, float] = {}
 
-    def set_db(self, db: Optional[AsyncSession]) -> None:
+    def set_db(self, db: AsyncSession | None) -> None:
         """
         Define ou atualiza a sessao do banco de dados.
 
@@ -204,7 +204,7 @@ class ProfileService:
         # Fallback: dados mock para desenvolvimento/testes
         return self._get_fallback_user_data(user_id)
 
-    async def _load_from_database(self, user_id: int) -> Optional[dict]:
+    async def _load_from_database(self, user_id: int) -> dict | None:
         """
         Consulta o modelo User real no banco de dados.
 
@@ -214,8 +214,9 @@ class ProfileService:
         Returns:
             Dict com dados mapeados ou None se nao encontrado
         """
-        from core.models.user import User, UserRole as SystemUserRole, ROLE_HIERARCHY
         from uuid import UUID
+
+        from core.models.user import User
 
         user = None
 
@@ -224,7 +225,7 @@ class ProfileService:
             user_uuid = UUID(str(user_id))
             query = select(User).where(
                 User.id == user_uuid,
-                User.is_active == True  # noqa: E712
+                User.is_active == True,  # noqa: E712
             )
             result = await self._db.execute(query)
             user = result.scalar_one_or_none()
@@ -241,9 +242,13 @@ class ProfileService:
             user_id_int = int(user_id)
 
             # Busca todos usuarios ativos ordenados por created_at (mesma ordem que a UI)
-            query = select(User).where(
-                User.is_active == True  # noqa: E712
-            ).order_by(User.created_at)
+            query = (
+                select(User)
+                .where(
+                    User.is_active == True  # noqa: E712
+                )
+                .order_by(User.created_at)
+            )
 
             result = await self._db.execute(query)
             users = result.scalars().all()
@@ -321,13 +326,13 @@ class ProfileService:
         Returns:
             String correspondente ao Department
         """
-        profile = USER_PROFILES.get(None)
+        USER_PROFILES.get(None)
         # Busca no USER_PROFILES o departamento configurado
         for role_enum, profile_data in USER_PROFILES.items():
             if role_enum.value == bartolo_role:
                 dept = profile_data.get("department")
                 if dept:
-                    return dept.value if hasattr(dept, 'value') else str(dept)
+                    return dept.value if hasattr(dept, "value") else str(dept)
                 break
 
         return "administrativo"
@@ -404,15 +409,18 @@ class ProfileService:
             },
         }
 
-        return test_users.get(user_id, {
-            "name": f"Usuario {user_id}",
-            "email": f"user{user_id}@conectapro.com.br",
-            "role": "assistente_administrativo",
-            "department": "administrativo",
-            "experience_level": "intermediate",
-        })
+        return test_users.get(
+            user_id,
+            {
+                "name": f"Usuario {user_id}",
+                "email": f"user{user_id}@conectapro.com.br",
+                "role": "assistente_administrativo",
+                "department": "administrativo",
+                "experience_level": "intermediate",
+            },
+        )
 
-    def _parse_role(self, role_str: Optional[str]) -> Optional[UserRole]:
+    def _parse_role(self, role_str: str | None) -> UserRole | None:
         """Converte string para UserRole."""
         if not role_str:
             return None
@@ -421,7 +429,7 @@ class ProfileService:
         except ValueError:
             return None
 
-    def _parse_department(self, dept_str: Optional[str]) -> Optional[Department]:
+    def _parse_department(self, dept_str: str | None) -> Department | None:
         """Converte string para Department."""
         if not dept_str:
             return None
@@ -472,7 +480,7 @@ class ProfileService:
             "recent_modules": context.last_modules[:5],
         }
 
-    def clear_cache(self, user_id: Optional[int] = None) -> None:
+    def clear_cache(self, user_id: int | None = None) -> None:
         """Limpa cache de usuarios e timestamps."""
         if user_id:
             self._user_cache.pop(user_id, None)

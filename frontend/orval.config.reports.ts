@@ -4,7 +4,6 @@ export default defineConfig({
   reports: {
     input: {
       target: './src/api/specs/openapi-reports.json',
-      validation: false, // Desabilita validação estrita para aceitar schemas FastAPI
     },
     output: {
       mode: 'tags-split',

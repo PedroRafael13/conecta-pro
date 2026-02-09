@@ -5,17 +5,18 @@ Schemas Pydantic para validação de dados do módulo de relatórios.
 """
 
 from datetime import datetime, time
-from enum import Enum
-from typing import Any, Dict, List, Optional
+from enum import StrEnum
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
-
 # ============== ENUMS ==============
 
-class ReportTypeEnum(str, Enum):
+
+class ReportTypeEnum(StrEnum):
     """Tipos de relatório."""
+
     DASHBOARD = "dashboard"
     SUMMARY = "summary"
     DETAILED = "detailed"
@@ -38,8 +39,9 @@ class ReportTypeEnum(str, Enum):
     AD_HOC = "ad_hoc"
 
 
-class ReportStatusEnum(str, Enum):
+class ReportStatusEnum(StrEnum):
     """Status do relatório."""
+
     DRAFT = "draft"
     GENERATING = "generating"
     COMPLETED = "completed"
@@ -48,8 +50,9 @@ class ReportStatusEnum(str, Enum):
     EXPIRED = "expired"
 
 
-class ReportFormatEnum(str, Enum):
+class ReportFormatEnum(StrEnum):
     """Formatos de exportação."""
+
     PDF = "pdf"
     EXCEL = "excel"
     CSV = "csv"
@@ -59,16 +62,18 @@ class ReportFormatEnum(str, Enum):
     POWERPOINT = "powerpoint"
 
 
-class ReportPriorityEnum(str, Enum):
+class ReportPriorityEnum(StrEnum):
     """Prioridade do relatório."""
+
     LOW = "low"
     NORMAL = "normal"
     HIGH = "high"
     CRITICAL = "critical"
 
 
-class TemplateCategoryEnum(str, Enum):
+class TemplateCategoryEnum(StrEnum):
     """Categorias de template."""
+
     FINANCIAL = "financial"
     SALES = "sales"
     HR = "hr"
@@ -85,8 +90,9 @@ class TemplateCategoryEnum(str, Enum):
     CUSTOM = "custom"
 
 
-class TemplateStatusEnum(str, Enum):
+class TemplateStatusEnum(StrEnum):
     """Status do template."""
+
     DRAFT = "draft"
     ACTIVE = "active"
     INACTIVE = "inactive"
@@ -94,8 +100,9 @@ class TemplateStatusEnum(str, Enum):
     ARCHIVED = "archived"
 
 
-class DataSourceEnum(str, Enum):
+class DataSourceEnum(StrEnum):
     """Fontes de dados disponíveis."""
+
     LEADS = "leads"
     OPPORTUNITIES = "opportunities"
     CUSTOMERS = "customers"
@@ -120,8 +127,9 @@ class DataSourceEnum(str, Enum):
     EXTERNAL_API = "external_api"
 
 
-class ScheduleFrequencyEnum(str, Enum):
+class ScheduleFrequencyEnum(StrEnum):
     """Frequência de agendamento."""
+
     ONCE = "once"
     HOURLY = "hourly"
     DAILY = "daily"
@@ -133,8 +141,9 @@ class ScheduleFrequencyEnum(str, Enum):
     CUSTOM = "custom"
 
 
-class ScheduleStatusEnum(str, Enum):
+class ScheduleStatusEnum(StrEnum):
     """Status do agendamento."""
+
     ACTIVE = "active"
     PAUSED = "paused"
     COMPLETED = "completed"
@@ -143,8 +152,9 @@ class ScheduleStatusEnum(str, Enum):
     CANCELLED = "cancelled"
 
 
-class DeliveryMethodEnum(str, Enum):
+class DeliveryMethodEnum(StrEnum):
     """Método de entrega."""
+
     EMAIL = "email"
     SLACK = "slack"
     TEAMS = "teams"
@@ -154,8 +164,9 @@ class DeliveryMethodEnum(str, Enum):
     S3 = "s3"
 
 
-class ExecutionStatusEnum(str, Enum):
+class ExecutionStatusEnum(StrEnum):
     """Status da execução."""
+
     PENDING = "pending"
     QUEUED = "queued"
     RUNNING = "running"
@@ -171,8 +182,9 @@ class ExecutionStatusEnum(str, Enum):
     TIMEOUT = "timeout"
 
 
-class ExecutionTriggerEnum(str, Enum):
+class ExecutionTriggerEnum(StrEnum):
     """Gatilho da execução."""
+
     MANUAL = "manual"
     SCHEDULED = "scheduled"
     API = "api"
@@ -181,8 +193,9 @@ class ExecutionTriggerEnum(str, Enum):
     RETRY = "retry"
 
 
-class SectionTypeEnum(str, Enum):
+class SectionTypeEnum(StrEnum):
     """Tipos de seção."""
+
     HEADER = "header"
     FOOTER = "footer"
     COVER = "cover"
@@ -213,8 +226,9 @@ class SectionTypeEnum(str, Enum):
     CUSTOM = "custom"
 
 
-class SectionLayoutEnum(str, Enum):
+class SectionLayoutEnum(StrEnum):
     """Layout da seção."""
+
     FULL_WIDTH = "full_width"
     HALF_WIDTH = "half_width"
     THIRD_WIDTH = "third_width"
@@ -223,8 +237,9 @@ class SectionLayoutEnum(str, Enum):
     CUSTOM = "custom"
 
 
-class WidgetTypeEnum(str, Enum):
+class WidgetTypeEnum(StrEnum):
     """Tipos de widget."""
+
     BAR_CHART = "bar_chart"
     LINE_CHART = "line_chart"
     PIE_CHART = "pie_chart"
@@ -262,8 +277,9 @@ class WidgetTypeEnum(str, Enum):
     CUSTOM = "custom"
 
 
-class WidgetSizeEnum(str, Enum):
+class WidgetSizeEnum(StrEnum):
     """Tamanhos predefinidos."""
+
     SMALL = "small"
     MEDIUM = "medium"
     LARGE = "large"
@@ -272,6 +288,7 @@ class WidgetSizeEnum(str, Enum):
 
 
 # ============== BASE SCHEMAS ==============
+
 
 class BaseSchema(BaseModel):
     """Schema base."""
@@ -283,102 +300,108 @@ class BaseSchema(BaseModel):
 
 # ============== REPORT SCHEMAS ==============
 
+
 class ReportCreate(BaseSchema):
     """Schema para criar relatório."""
+
     name: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = Field(None, max_length=2000)
+    description: str | None = Field(None, max_length=2000)
     report_type: ReportTypeEnum = ReportTypeEnum.SUMMARY
-    category: Optional[str] = Field(None, max_length=100)
-    tags: Optional[List[str]] = Field(default_factory=list)
+    category: str | None = Field(None, max_length=100)
+    tags: list[str] | None = Field(default_factory=list)
     priority: ReportPriorityEnum = ReportPriorityEnum.NORMAL
-    template_id: Optional[UUID] = None
-    period_start: Optional[datetime] = None
-    period_end: Optional[datetime] = None
-    period_type: Optional[str] = None
-    filters: Optional[Dict[str, Any]] = Field(default_factory=dict)
-    parameters: Optional[Dict[str, Any]] = Field(default_factory=dict)
-    recipients: Optional[List[str]] = Field(default_factory=list)
+    template_id: UUID | None = None
+    period_start: datetime | None = None
+    period_end: datetime | None = None
+    period_type: str | None = None
+    filters: dict[str, Any] | None = Field(default_factory=dict)
+    parameters: dict[str, Any] | None = Field(default_factory=dict)
+    recipients: list[str] | None = Field(default_factory=list)
     is_public: bool = False
-    allowed_roles: Optional[List[str]] = Field(default_factory=list)
-    expires_at: Optional[datetime] = None
+    allowed_roles: list[str] | None = Field(default_factory=list)
+    expires_at: datetime | None = None
     retention_days: int = Field(default=90, ge=1, le=3650)
 
 
 class ReportUpdate(BaseSchema):
     """Schema para atualizar relatório."""
-    name: Optional[str] = Field(None, min_length=1, max_length=255)
-    description: Optional[str] = Field(None, max_length=2000)
-    category: Optional[str] = Field(None, max_length=100)
-    tags: Optional[List[str]] = None
-    priority: Optional[ReportPriorityEnum] = None
-    status: Optional[ReportStatusEnum] = None
-    recipients: Optional[List[str]] = None
-    is_public: Optional[bool] = None
-    allowed_roles: Optional[List[str]] = None
-    expires_at: Optional[datetime] = None
+
+    name: str | None = Field(None, min_length=1, max_length=255)
+    description: str | None = Field(None, max_length=2000)
+    category: str | None = Field(None, max_length=100)
+    tags: list[str] | None = None
+    priority: ReportPriorityEnum | None = None
+    status: ReportStatusEnum | None = None
+    recipients: list[str] | None = None
+    is_public: bool | None = None
+    allowed_roles: list[str] | None = None
+    expires_at: datetime | None = None
 
 
 class ReportResponse(BaseSchema):
     """Schema de resposta de relatório."""
+
     id: UUID
     code: str
     name: str
-    description: Optional[str]
+    description: str | None
     report_type: ReportTypeEnum
-    category: Optional[str]
-    tags: List[str]
+    category: str | None
+    tags: list[str]
     status: ReportStatusEnum
     priority: ReportPriorityEnum
-    template_id: Optional[UUID]
-    period_start: Optional[datetime]
-    period_end: Optional[datetime]
-    period_type: Optional[str]
-    filters: Dict[str, Any]
-    parameters: Dict[str, Any]
-    summary: Dict[str, Any]
-    metrics: Dict[str, Any]
-    insights: List[Dict[str, Any]]
-    recommendations: List[Dict[str, Any]]
-    anomalies: List[Dict[str, Any]]
+    template_id: UUID | None
+    period_start: datetime | None
+    period_end: datetime | None
+    period_type: str | None
+    filters: dict[str, Any]
+    parameters: dict[str, Any]
+    summary: dict[str, Any]
+    metrics: dict[str, Any]
+    insights: list[dict[str, Any]]
+    recommendations: list[dict[str, Any]]
+    anomalies: list[dict[str, Any]]
     data_quality_score: float
     completeness_score: float
     accuracy_score: float
-    exported_formats: List[str]
-    file_paths: Dict[str, str]
-    recipients: List[str]
-    sent_at: Optional[datetime]
+    exported_formats: list[str]
+    file_paths: dict[str, str]
+    recipients: list[str]
+    sent_at: datetime | None
     view_count: int
     download_count: int
-    last_viewed_at: Optional[datetime]
-    created_by: Optional[UUID]
-    organization_id: Optional[UUID]
+    last_viewed_at: datetime | None
+    created_by: UUID | None
+    organization_id: UUID | None
     is_public: bool
     generation_time_ms: int
-    expires_at: Optional[datetime]
+    expires_at: datetime | None
     version: int
     created_at: datetime
-    updated_at: Optional[datetime]
-    generated_at: Optional[datetime]
+    updated_at: datetime | None
+    generated_at: datetime | None
 
 
 class ReportSummary(BaseSchema):
     """Schema resumido de relatório."""
+
     id: UUID
     code: str
     name: str
     report_type: ReportTypeEnum
     status: ReportStatusEnum
-    period_description: Optional[str]
+    period_description: str | None
     insights_count: int
     has_anomalies: bool
     quality_score: float
     created_at: datetime
-    generated_at: Optional[datetime]
+    generated_at: datetime | None
 
 
 class ReportListResponse(BaseSchema):
     """Schema de lista de relatórios."""
-    items: List[ReportSummary]
+
+    items: list[ReportSummary]
     total: int
     page: int
     size: int
@@ -387,73 +410,78 @@ class ReportListResponse(BaseSchema):
 
 class ReportFilter(BaseSchema):
     """Schema de filtro de relatórios."""
-    report_type: Optional[ReportTypeEnum] = None
-    status: Optional[ReportStatusEnum] = None
-    category: Optional[str] = None
-    priority: Optional[ReportPriorityEnum] = None
-    template_id: Optional[UUID] = None
-    created_by: Optional[UUID] = None
-    period_start: Optional[datetime] = None
-    period_end: Optional[datetime] = None
-    tags: Optional[List[str]] = None
-    search: Optional[str] = None
+
+    report_type: ReportTypeEnum | None = None
+    status: ReportStatusEnum | None = None
+    category: str | None = None
+    priority: ReportPriorityEnum | None = None
+    template_id: UUID | None = None
+    created_by: UUID | None = None
+    period_start: datetime | None = None
+    period_end: datetime | None = None
+    tags: list[str] | None = None
+    search: str | None = None
 
 
 # ============== TEMPLATE SCHEMAS ==============
 
+
 class TemplateParameter(BaseSchema):
     """Schema de parâmetro de template."""
+
     name: str
     label: str
     type: str  # string, number, date, boolean, select, multi_select
     required: bool = False
-    default_value: Optional[Any] = None
-    options: Optional[List[Dict[str, Any]]] = None
-    validation: Optional[Dict[str, Any]] = None
-    description: Optional[str] = None
+    default_value: Any | None = None
+    options: list[dict[str, Any]] | None = None
+    validation: dict[str, Any] | None = None
+    description: str | None = None
 
 
 class TemplateSectionConfig(BaseSchema):
     """Schema de configuração de seção."""
+
     code: str
     name: str
     section_type: SectionTypeEnum
     layout: SectionLayoutEnum = SectionLayoutEnum.FULL_WIDTH
     order: int = 0
-    data_source: Optional[str] = None
-    query: Optional[str] = None
-    filters: Optional[Dict[str, Any]] = None
-    title: Optional[str] = None
-    content_template: Optional[str] = None
-    chart_config: Optional[Dict[str, Any]] = None
-    table_config: Optional[Dict[str, Any]] = None
-    styles: Optional[Dict[str, Any]] = None
+    data_source: str | None = None
+    query: str | None = None
+    filters: dict[str, Any] | None = None
+    title: str | None = None
+    content_template: str | None = None
+    chart_config: dict[str, Any] | None = None
+    table_config: dict[str, Any] | None = None
+    styles: dict[str, Any] | None = None
     is_visible: bool = True
 
 
 class ReportTemplateCreate(BaseSchema):
     """Schema para criar template."""
+
     code: str = Field(..., min_length=1, max_length=50)
     name: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = Field(None, max_length=2000)
+    description: str | None = Field(None, max_length=2000)
     category: TemplateCategoryEnum = TemplateCategoryEnum.GENERAL
-    subcategory: Optional[str] = Field(None, max_length=100)
-    tags: Optional[List[str]] = Field(default_factory=list)
-    data_sources: List[str] = Field(default_factory=list)
-    primary_source: Optional[str] = None
-    queries: Optional[Dict[str, str]] = Field(default_factory=dict)
-    parameters: Optional[List[TemplateParameter]] = Field(default_factory=list)
-    required_parameters: Optional[List[str]] = Field(default_factory=list)
-    default_values: Optional[Dict[str, Any]] = Field(default_factory=dict)
-    default_filters: Optional[Dict[str, Any]] = Field(default_factory=dict)
-    sections_config: Optional[List[TemplateSectionConfig]] = Field(default_factory=list)
-    widgets_config: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
-    metrics_config: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
+    subcategory: str | None = Field(None, max_length=100)
+    tags: list[str] | None = Field(default_factory=list)
+    data_sources: list[str] = Field(default_factory=list)
+    primary_source: str | None = None
+    queries: dict[str, str] | None = Field(default_factory=dict)
+    parameters: list[TemplateParameter] | None = Field(default_factory=list)
+    required_parameters: list[str] | None = Field(default_factory=list)
+    default_values: dict[str, Any] | None = Field(default_factory=dict)
+    default_filters: dict[str, Any] | None = Field(default_factory=dict)
+    sections_config: list[TemplateSectionConfig] | None = Field(default_factory=list)
+    widgets_config: list[dict[str, Any]] | None = Field(default_factory=list)
+    metrics_config: list[dict[str, Any]] | None = Field(default_factory=list)
     ai_insights_enabled: bool = True
     anomaly_detection_enabled: bool = True
     trend_analysis_enabled: bool = True
     recommendations_enabled: bool = True
-    supported_formats: List[str] = Field(default=["pdf", "excel", "csv"])
+    supported_formats: list[str] = Field(default=["pdf", "excel", "csv"])
     default_format: str = "pdf"
     is_public: bool = False
     is_system: bool = False
@@ -463,6 +491,7 @@ class ReportTemplateCreate(BaseSchema):
     def validate_code(cls, v: str) -> str:
         """Valida código do template."""
         import re
+
         if not re.match(r"^[a-z][a-z0-9_]*$", v):
             raise ValueError("Código deve conter apenas letras minúsculas, números e underscore")
         return v
@@ -470,62 +499,65 @@ class ReportTemplateCreate(BaseSchema):
 
 class ReportTemplateUpdate(BaseSchema):
     """Schema para atualizar template."""
-    name: Optional[str] = Field(None, min_length=1, max_length=255)
-    description: Optional[str] = Field(None, max_length=2000)
-    category: Optional[TemplateCategoryEnum] = None
-    subcategory: Optional[str] = Field(None, max_length=100)
-    tags: Optional[List[str]] = None
-    status: Optional[TemplateStatusEnum] = None
-    data_sources: Optional[List[str]] = None
-    primary_source: Optional[str] = None
-    parameters: Optional[List[TemplateParameter]] = None
-    sections_config: Optional[List[TemplateSectionConfig]] = None
-    widgets_config: Optional[List[Dict[str, Any]]] = None
-    ai_insights_enabled: Optional[bool] = None
-    supported_formats: Optional[List[str]] = None
-    is_public: Optional[bool] = None
+
+    name: str | None = Field(None, min_length=1, max_length=255)
+    description: str | None = Field(None, max_length=2000)
+    category: TemplateCategoryEnum | None = None
+    subcategory: str | None = Field(None, max_length=100)
+    tags: list[str] | None = None
+    status: TemplateStatusEnum | None = None
+    data_sources: list[str] | None = None
+    primary_source: str | None = None
+    parameters: list[TemplateParameter] | None = None
+    sections_config: list[TemplateSectionConfig] | None = None
+    widgets_config: list[dict[str, Any]] | None = None
+    ai_insights_enabled: bool | None = None
+    supported_formats: list[str] | None = None
+    is_public: bool | None = None
 
 
 class ReportTemplateResponse(BaseSchema):
     """Schema de resposta de template."""
+
     id: UUID
     code: str
     name: str
-    description: Optional[str]
+    description: str | None
     category: TemplateCategoryEnum
-    subcategory: Optional[str]
-    tags: List[str]
+    subcategory: str | None
+    tags: list[str]
     status: TemplateStatusEnum
-    data_sources: List[str]
-    primary_source: Optional[str]
-    parameters: List[Dict[str, Any]]
-    required_parameters: List[str]
-    default_values: Dict[str, Any]
-    sections_config: List[Dict[str, Any]]
-    widgets_config: List[Dict[str, Any]]
-    metrics_config: List[Dict[str, Any]]
+    data_sources: list[str]
+    primary_source: str | None
+    parameters: list[dict[str, Any]]
+    required_parameters: list[str]
+    default_values: dict[str, Any]
+    sections_config: list[dict[str, Any]]
+    widgets_config: list[dict[str, Any]]
+    metrics_config: list[dict[str, Any]]
     ai_insights_enabled: bool
     anomaly_detection_enabled: bool
     trend_analysis_enabled: bool
     recommendations_enabled: bool
-    supported_formats: List[str]
+    supported_formats: list[str]
     default_format: str
     is_public: bool
     is_system: bool
     is_ready: bool
     usage_count: int
-    last_used_at: Optional[datetime]
+    last_used_at: datetime | None
     average_generation_time_ms: int
     version: int
-    created_by: Optional[UUID]
-    organization_id: Optional[UUID]
+    created_by: UUID | None
+    organization_id: UUID | None
     created_at: datetime
-    updated_at: Optional[datetime]
+    updated_at: datetime | None
 
 
 class ReportTemplateListResponse(BaseSchema):
     """Schema de lista de templates."""
-    items: List[ReportTemplateResponse]
+
+    items: list[ReportTemplateResponse]
     total: int
     page: int
     size: int
@@ -534,86 +566,91 @@ class ReportTemplateListResponse(BaseSchema):
 
 # ============== SCHEDULE SCHEMAS ==============
 
+
 class ReportScheduleCreate(BaseSchema):
     """Schema para criar agendamento."""
+
     name: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = Field(None, max_length=2000)
+    description: str | None = Field(None, max_length=2000)
     template_id: UUID
     frequency: ScheduleFrequencyEnum = ScheduleFrequencyEnum.DAILY
-    cron_expression: Optional[str] = None
-    run_time: Optional[time] = None
+    cron_expression: str | None = None
+    run_time: time | None = None
     timezone: str = "America/Sao_Paulo"
-    days_of_week: Optional[List[int]] = None
-    days_of_month: Optional[List[int]] = None
-    period_type: Optional[str] = None
-    parameters: Optional[Dict[str, Any]] = Field(default_factory=dict)
-    filters: Optional[Dict[str, Any]] = Field(default_factory=dict)
-    output_formats: List[str] = Field(default=["pdf"])
-    delivery_methods: List[str] = Field(default=["email"])
-    email_recipients: Optional[List[str]] = Field(default_factory=list)
-    email_subject: Optional[str] = None
-    email_body: Optional[str] = None
-    webhook_url: Optional[str] = None
-    slack_channel: Optional[str] = None
-    start_date: Optional[datetime] = None
-    end_date: Optional[datetime] = None
-    max_runs: Optional[int] = None
+    days_of_week: list[int] | None = None
+    days_of_month: list[int] | None = None
+    period_type: str | None = None
+    parameters: dict[str, Any] | None = Field(default_factory=dict)
+    filters: dict[str, Any] | None = Field(default_factory=dict)
+    output_formats: list[str] = Field(default=["pdf"])
+    delivery_methods: list[str] = Field(default=["email"])
+    email_recipients: list[str] | None = Field(default_factory=list)
+    email_subject: str | None = None
+    email_body: str | None = None
+    webhook_url: str | None = None
+    slack_channel: str | None = None
+    start_date: datetime | None = None
+    end_date: datetime | None = None
+    max_runs: int | None = None
     notify_on_failure: bool = True
 
 
 class ReportScheduleUpdate(BaseSchema):
     """Schema para atualizar agendamento."""
-    name: Optional[str] = Field(None, min_length=1, max_length=255)
-    description: Optional[str] = Field(None, max_length=2000)
-    status: Optional[ScheduleStatusEnum] = None
-    frequency: Optional[ScheduleFrequencyEnum] = None
-    run_time: Optional[time] = None
-    parameters: Optional[Dict[str, Any]] = None
-    filters: Optional[Dict[str, Any]] = None
-    output_formats: Optional[List[str]] = None
-    email_recipients: Optional[List[str]] = None
-    email_subject: Optional[str] = None
-    end_date: Optional[datetime] = None
+
+    name: str | None = Field(None, min_length=1, max_length=255)
+    description: str | None = Field(None, max_length=2000)
+    status: ScheduleStatusEnum | None = None
+    frequency: ScheduleFrequencyEnum | None = None
+    run_time: time | None = None
+    parameters: dict[str, Any] | None = None
+    filters: dict[str, Any] | None = None
+    output_formats: list[str] | None = None
+    email_recipients: list[str] | None = None
+    email_subject: str | None = None
+    end_date: datetime | None = None
 
 
 class ReportScheduleResponse(BaseSchema):
     """Schema de resposta de agendamento."""
+
     id: UUID
     name: str
-    description: Optional[str]
+    description: str | None
     template_id: UUID
     status: ScheduleStatusEnum
     frequency: ScheduleFrequencyEnum
-    cron_expression: Optional[str]
-    run_time: Optional[time]
+    cron_expression: str | None
+    run_time: time | None
     timezone: str
-    days_of_week: List[int]
-    days_of_month: List[int]
-    period_type: Optional[str]
-    parameters: Dict[str, Any]
-    filters: Dict[str, Any]
-    output_formats: List[str]
-    delivery_methods: List[str]
-    email_recipients: List[str]
-    next_run_at: Optional[datetime]
-    last_run_at: Optional[datetime]
-    last_success_at: Optional[datetime]
-    last_failure_at: Optional[datetime]
+    days_of_week: list[int]
+    days_of_month: list[int]
+    period_type: str | None
+    parameters: dict[str, Any]
+    filters: dict[str, Any]
+    output_formats: list[str]
+    delivery_methods: list[str]
+    email_recipients: list[str]
+    next_run_at: datetime | None
+    last_run_at: datetime | None
+    last_success_at: datetime | None
+    last_failure_at: datetime | None
     total_runs: int
     successful_runs: int
     failed_runs: int
     success_rate: float
-    start_date: Optional[datetime]
-    end_date: Optional[datetime]
-    created_by: Optional[UUID]
-    organization_id: Optional[UUID]
+    start_date: datetime | None
+    end_date: datetime | None
+    created_by: UUID | None
+    organization_id: UUID | None
     created_at: datetime
-    updated_at: Optional[datetime]
+    updated_at: datetime | None
 
 
 class ReportScheduleListResponse(BaseSchema):
     """Schema de lista de agendamentos."""
-    items: List[ReportScheduleResponse]
+
+    items: list[ReportScheduleResponse]
     total: int
     page: int
     size: int
@@ -622,8 +659,10 @@ class ReportScheduleListResponse(BaseSchema):
 
 # ============== EXECUTION SCHEMAS ==============
 
+
 class ExecutionMetrics(BaseSchema):
     """Schema de métricas de execução."""
+
     queue_time_ms: int
     data_collection_time_ms: int
     processing_time_ms: int
@@ -641,29 +680,30 @@ class ExecutionMetrics(BaseSchema):
 
 class ReportExecutionResponse(BaseSchema):
     """Schema de resposta de execução."""
+
     id: UUID
     execution_number: int
-    report_id: Optional[UUID]
-    template_id: Optional[UUID]
-    schedule_id: Optional[UUID]
+    report_id: UUID | None
+    template_id: UUID | None
+    schedule_id: UUID | None
     status: ExecutionStatusEnum
     progress: float
-    current_step: Optional[str]
+    current_step: str | None
     trigger: ExecutionTriggerEnum
-    triggered_by: Optional[UUID]
-    parameters: Dict[str, Any]
-    period_start: Optional[datetime]
-    period_end: Optional[datetime]
-    requested_formats: List[str]
-    generated_formats: List[str]
-    started_at: Optional[datetime]
-    completed_at: Optional[datetime]
-    failed_at: Optional[datetime]
-    metrics: Optional[ExecutionMetrics]
-    output_files: List[Dict[str, Any]]
-    delivery_status: Dict[str, Any]
-    error_message: Optional[str]
-    error_code: Optional[str]
+    triggered_by: UUID | None
+    parameters: dict[str, Any]
+    period_start: datetime | None
+    period_end: datetime | None
+    requested_formats: list[str]
+    generated_formats: list[str]
+    started_at: datetime | None
+    completed_at: datetime | None
+    failed_at: datetime | None
+    metrics: ExecutionMetrics | None
+    output_files: list[dict[str, Any]]
+    delivery_status: dict[str, Any]
+    error_message: str | None
+    error_code: str | None
     retry_count: int
     can_retry: bool
     created_at: datetime
@@ -671,7 +711,8 @@ class ReportExecutionResponse(BaseSchema):
 
 class ReportExecutionListResponse(BaseSchema):
     """Schema de lista de execuções."""
-    items: List[ReportExecutionResponse]
+
+    items: list[ReportExecutionResponse]
     total: int
     page: int
     size: int
@@ -680,64 +721,68 @@ class ReportExecutionListResponse(BaseSchema):
 
 # ============== SECTION SCHEMAS ==============
 
+
 class ReportSectionCreate(BaseSchema):
     """Schema para criar seção."""
+
     code: str = Field(..., min_length=1, max_length=100)
     name: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = None
+    description: str | None = None
     section_type: SectionTypeEnum
     layout: SectionLayoutEnum = SectionLayoutEnum.FULL_WIDTH
     order: int = 0
-    data_source: Optional[str] = None
-    query: Optional[str] = None
-    filters: Optional[Dict[str, Any]] = None
-    title: Optional[str] = None
-    content: Optional[str] = None
-    chart_type: Optional[str] = None
-    chart_config: Optional[Dict[str, Any]] = None
-    table_columns: Optional[List[Dict[str, Any]]] = None
-    table_config: Optional[Dict[str, Any]] = None
-    styles: Optional[Dict[str, Any]] = None
+    data_source: str | None = None
+    query: str | None = None
+    filters: dict[str, Any] | None = None
+    title: str | None = None
+    content: str | None = None
+    chart_type: str | None = None
+    chart_config: dict[str, Any] | None = None
+    table_columns: list[dict[str, Any]] | None = None
+    table_config: dict[str, Any] | None = None
+    styles: dict[str, Any] | None = None
     is_visible: bool = True
 
 
 class ReportSectionUpdate(BaseSchema):
     """Schema para atualizar seção."""
-    name: Optional[str] = Field(None, min_length=1, max_length=255)
-    description: Optional[str] = None
-    section_type: Optional[SectionTypeEnum] = None
-    layout: Optional[SectionLayoutEnum] = None
-    order: Optional[int] = None
-    data_source: Optional[str] = None
-    query: Optional[str] = None
-    title: Optional[str] = None
-    content: Optional[str] = None
-    styles: Optional[Dict[str, Any]] = None
-    is_visible: Optional[bool] = None
+
+    name: str | None = Field(None, min_length=1, max_length=255)
+    description: str | None = None
+    section_type: SectionTypeEnum | None = None
+    layout: SectionLayoutEnum | None = None
+    order: int | None = None
+    data_source: str | None = None
+    query: str | None = None
+    title: str | None = None
+    content: str | None = None
+    styles: dict[str, Any] | None = None
+    is_visible: bool | None = None
 
 
 class ReportSectionResponse(BaseSchema):
     """Schema de resposta de seção."""
+
     id: UUID
     code: str
     name: str
-    description: Optional[str]
+    description: str | None
     section_type: SectionTypeEnum
     layout: SectionLayoutEnum
     order: int
     level: int
-    title: Optional[str]
-    subtitle: Optional[str]
-    content: Optional[str]
-    data: Dict[str, Any]
-    chart_type: Optional[str]
-    chart_data: Dict[str, Any]
-    table_columns: List[Dict[str, Any]]
-    table_data: List[Dict[str, Any]]
-    metric_value: Optional[str]
-    metric_label: Optional[str]
-    metric_trend: Optional[str]
-    metric_change: Optional[float]
+    title: str | None
+    subtitle: str | None
+    content: str | None
+    data: dict[str, Any]
+    chart_type: str | None
+    chart_data: dict[str, Any]
+    table_columns: list[dict[str, Any]]
+    table_data: list[dict[str, Any]]
+    metric_value: str | None
+    metric_label: str | None
+    metric_trend: str | None
+    metric_change: float | None
     is_visible: bool
     has_data: bool
     created_at: datetime
@@ -745,63 +790,67 @@ class ReportSectionResponse(BaseSchema):
 
 # ============== WIDGET SCHEMAS ==============
 
+
 class ReportWidgetCreate(BaseSchema):
     """Schema para criar widget."""
+
     code: str = Field(..., min_length=1, max_length=100)
     name: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = None
+    description: str | None = None
     widget_type: WidgetTypeEnum
     size: WidgetSizeEnum = WidgetSizeEnum.MEDIUM
-    data_source: Optional[str] = None
-    query: Optional[str] = None
-    data_mapping: Optional[Dict[str, str]] = None
-    title: Optional[str] = None
-    colors: Optional[List[str]] = None
-    x_axis_config: Optional[Dict[str, Any]] = None
-    y_axis_config: Optional[Dict[str, Any]] = None
+    data_source: str | None = None
+    query: str | None = None
+    data_mapping: dict[str, str] | None = None
+    title: str | None = None
+    colors: list[str] | None = None
+    x_axis_config: dict[str, Any] | None = None
+    y_axis_config: dict[str, Any] | None = None
     show_legend: bool = True
     show_values: bool = True
-    thresholds: Optional[List[Dict[str, Any]]] = None
-    styles: Optional[Dict[str, Any]] = None
+    thresholds: list[dict[str, Any]] | None = None
+    styles: dict[str, Any] | None = None
     is_interactive: bool = True
 
 
 class ReportWidgetUpdate(BaseSchema):
     """Schema para atualizar widget."""
-    name: Optional[str] = Field(None, min_length=1, max_length=255)
-    description: Optional[str] = None
-    widget_type: Optional[WidgetTypeEnum] = None
-    size: Optional[WidgetSizeEnum] = None
-    data_source: Optional[str] = None
-    title: Optional[str] = None
-    colors: Optional[List[str]] = None
-    show_legend: Optional[bool] = None
-    styles: Optional[Dict[str, Any]] = None
-    is_visible: Optional[bool] = None
+
+    name: str | None = Field(None, min_length=1, max_length=255)
+    description: str | None = None
+    widget_type: WidgetTypeEnum | None = None
+    size: WidgetSizeEnum | None = None
+    data_source: str | None = None
+    title: str | None = None
+    colors: list[str] | None = None
+    show_legend: bool | None = None
+    styles: dict[str, Any] | None = None
+    is_visible: bool | None = None
 
 
 class ReportWidgetResponse(BaseSchema):
     """Schema de resposta de widget."""
+
     id: UUID
     code: str
     name: str
-    description: Optional[str]
+    description: str | None
     widget_type: WidgetTypeEnum
     size: WidgetSizeEnum
-    title: Optional[str]
-    data_source: Optional[str]
-    data: Dict[str, Any]
-    data_mapping: Dict[str, str]
-    colors: List[str]
+    title: str | None
+    data_source: str | None
+    data: dict[str, Any]
+    data_mapping: dict[str, str]
+    colors: list[str]
     show_legend: bool
     show_values: bool
-    thresholds: List[Dict[str, Any]]
-    kpi_value: Optional[str]
-    kpi_label: Optional[str]
-    kpi_unit: Optional[str]
-    kpi_trend: Optional[str]
-    kpi_change: Optional[float]
-    kpi_status: Optional[str]
+    thresholds: list[dict[str, Any]]
+    kpi_value: str | None
+    kpi_label: str | None
+    kpi_unit: str | None
+    kpi_trend: str | None
+    kpi_change: float | None
+    kpi_status: str | None
     has_data: bool
     is_visible: bool
     is_reusable: bool
@@ -810,83 +859,92 @@ class ReportWidgetResponse(BaseSchema):
 
 # ============== GENERATION SCHEMAS ==============
 
+
 class GenerateReportRequest(BaseSchema):
     """Schema para solicitar geração de relatório."""
-    template_id: Optional[UUID] = None
-    template_code: Optional[str] = None
-    name: Optional[str] = None
-    report_type: Optional[ReportTypeEnum] = None
-    period_start: Optional[datetime] = None
-    period_end: Optional[datetime] = None
-    period_type: Optional[str] = None
-    parameters: Optional[Dict[str, Any]] = Field(default_factory=dict)
-    filters: Optional[Dict[str, Any]] = Field(default_factory=dict)
-    output_formats: List[str] = Field(default=["pdf"])
+
+    template_id: UUID | None = None
+    template_code: str | None = None
+    name: str | None = None
+    report_type: ReportTypeEnum | None = None
+    period_start: datetime | None = None
+    period_end: datetime | None = None
+    period_type: str | None = None
+    parameters: dict[str, Any] | None = Field(default_factory=dict)
+    filters: dict[str, Any] | None = Field(default_factory=dict)
+    output_formats: list[str] = Field(default=["pdf"])
     include_insights: bool = True
     include_recommendations: bool = True
     include_anomalies: bool = True
     priority: ReportPriorityEnum = ReportPriorityEnum.NORMAL
     async_generation: bool = False
     notify_on_completion: bool = False
-    recipients: Optional[List[str]] = None
+    recipients: list[str] | None = None
 
 
 class GenerateReportResponse(BaseSchema):
     """Schema de resposta de geração."""
+
     report_id: UUID
     execution_id: UUID
     status: ExecutionStatusEnum
     message: str
-    estimated_time_seconds: Optional[int]
-    progress_url: Optional[str]
+    estimated_time_seconds: int | None
+    progress_url: str | None
 
 
 # ============== EXPORT SCHEMAS ==============
 
+
 class ExportReportRequest(BaseSchema):
     """Schema para exportar relatório."""
+
     report_id: UUID
     format: ReportFormatEnum
     include_charts: bool = True
     include_data: bool = True
-    page_size: Optional[str] = "A4"
-    orientation: Optional[str] = "portrait"
+    page_size: str | None = "A4"
+    orientation: str | None = "portrait"
     include_header: bool = True
     include_footer: bool = True
-    password: Optional[str] = None
+    password: str | None = None
 
 
 class ExportReportResponse(BaseSchema):
     """Schema de resposta de exportação."""
+
     report_id: UUID
     format: ReportFormatEnum
     file_path: str
-    file_url: Optional[str]
+    file_url: str | None
     file_size_bytes: int
     generated_at: datetime
-    expires_at: Optional[datetime]
+    expires_at: datetime | None
 
 
 # ============== DASHBOARD SCHEMAS ==============
 
+
 class ReportDashboardResponse(BaseSchema):
     """Schema de dashboard de relatórios."""
+
     total_reports: int
-    reports_by_status: Dict[str, int]
-    reports_by_type: Dict[str, int]
+    reports_by_status: dict[str, int]
+    reports_by_type: dict[str, int]
     reports_this_month: int
-    reports_trend: List[Dict[str, Any]]
+    reports_trend: list[dict[str, Any]]
     average_generation_time_ms: int
     total_insights_generated: int
     total_anomalies_detected: int
-    most_used_templates: List[Dict[str, Any]]
-    recent_reports: List[ReportSummary]
+    most_used_templates: list[dict[str, Any]]
+    recent_reports: list[ReportSummary]
     scheduled_reports_count: int
     failed_schedules_count: int
 
 
 class ReportStatsResponse(BaseSchema):
     """Schema de estatísticas de relatórios."""
+
     period: str
     total_generated: int
     total_exported: int
@@ -895,6 +953,6 @@ class ReportStatsResponse(BaseSchema):
     delivery_success_rate: float
     average_generation_time_ms: int
     insights_per_report: float
-    most_common_types: List[Dict[str, int]]
-    most_common_formats: List[Dict[str, int]]
-    busiest_hours: List[Dict[str, int]]
+    most_common_types: list[dict[str, int]]
+    most_common_formats: list[dict[str, int]]
+    busiest_hours: list[dict[str, int]]

@@ -7,49 +7,44 @@ checklists, gerenciamento de etapas e acompanhamento de progresso.
 
 Classes:
     OnboardingService: Service principal com toda a lógica de negócio
-    OnboardingException: Exceção customizada para erros de onboarding
+    OnboardingError: Exceção customizada para erros de onboarding
 """
 
 import logging
 from datetime import date, datetime, timedelta
-from typing import Optional, List, Tuple, Dict, Any
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.retention.onboarding.models import (
     OnboardingChecklist,
-    OnboardingStep,
     OnboardingProgress,
-    StepType,
+    OnboardingStep,
     ProgressStatus,
 )
+from modules.retention.onboarding.repositories import OnboardingRepository
 from modules.retention.onboarding.schemas import (
     ChecklistCreate,
     ChecklistUpdate,
-    ChecklistResponse,
-    ChecklistDetailResponse,
-    StepCreate,
-    StepUpdate,
-    StepResponse,
-    ProgressCreate,
-    ProgressUpdate,
-    ProgressComplete,
-    ProgressResponse,
-    ProgressDetailResponse,
     FuncionarioOnboardingCreate,
     FuncionarioOnboardingResponse,
-    OnboardingStats,
     OnboardingAlert,
     OnboardingDashboard,
     OnboardingFilter,
+    OnboardingStats,
+    ProgressComplete,
+    ProgressCreate,
+    ProgressDetailResponse,
+    StepCreate,
+    StepResponse,
+    StepUpdate,
 )
-from modules.retention.onboarding.repositories import OnboardingRepository
 
 logger = logging.getLogger(__name__)
 
 
-class OnboardingException(Exception):
+class OnboardingError(Exception):
     """
     Exceção customizada para erros de onboarding.
 
@@ -63,7 +58,7 @@ class OnboardingException(Exception):
         self,
         message: str,
         code: str = "ONBOARDING_ERROR",
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
     ) -> None:
         """
         Inicializa a exceção.
@@ -123,14 +118,12 @@ class OnboardingService:
             Checklist criado
 
         Raises:
-            OnboardingException: Se já existir checklist com mesmo nome
+            OnboardingError: Se já existir checklist com mesmo nome
         """
         # Verifica duplicidade
-        existing = await self.repository.get_checklist_by_nome(
-            data.nome, data.condominium_id
-        )
+        existing = await self.repository.get_checklist_by_nome(data.nome, data.condominium_id)
         if existing:
-            raise OnboardingException(
+            raise OnboardingError(
                 message=f"Já existe um checklist com o nome '{data.nome}'",
                 code="CHECKLIST_DUPLICATE",
             )
@@ -166,7 +159,7 @@ class OnboardingService:
         self,
         checklist_id: UUID,
         include_etapas: bool = True,
-    ) -> Optional[OnboardingChecklist]:
+    ) -> OnboardingChecklist | None:
         """
         Busca checklist por ID.
 
@@ -177,15 +170,13 @@ class OnboardingService:
         Returns:
             Checklist encontrado ou None
         """
-        return await self.repository.get_checklist_by_id(
-            checklist_id, include_etapas
-        )
+        return await self.repository.get_checklist_by_id(checklist_id, include_etapas)
 
     async def update_checklist(
         self,
         checklist_id: UUID,
         data: ChecklistUpdate,
-    ) -> Optional[OnboardingChecklist]:
+    ) -> OnboardingChecklist | None:
         """
         Atualiza um checklist.
 
@@ -197,7 +188,7 @@ class OnboardingService:
             Checklist atualizado ou None
 
         Raises:
-            OnboardingException: Se houver conflito de nome
+            OnboardingError: Se houver conflito de nome
         """
         checklist = await self.repository.get_checklist_by_id(checklist_id)
         if not checklist:
@@ -205,11 +196,9 @@ class OnboardingService:
 
         # Verifica duplicidade de nome
         if data.nome and data.nome != checklist.nome:
-            existing = await self.repository.get_checklist_by_nome(
-                data.nome, checklist.condominium_id
-            )
+            existing = await self.repository.get_checklist_by_nome(data.nome, checklist.condominium_id)
             if existing:
-                raise OnboardingException(
+                raise OnboardingError(
                     message=f"Já existe um checklist com o nome '{data.nome}'",
                     code="CHECKLIST_DUPLICATE",
                 )
@@ -239,12 +228,10 @@ class OnboardingService:
             True se removido com sucesso
 
         Raises:
-            OnboardingException: Se houver progressos vinculados
+            OnboardingError: Se houver progressos vinculados
         """
         # Verifica se há progressos ativos
-        checklist = await self.repository.get_checklist_by_id(
-            checklist_id, include_etapas=True
-        )
+        checklist = await self.repository.get_checklist_by_id(checklist_id, include_etapas=True)
         if not checklist:
             return False
 
@@ -252,11 +239,10 @@ class OnboardingService:
         for etapa in checklist.etapas:
             if etapa.progressos:
                 ativos = [
-                    p for p in etapa.progressos
-                    if p.status not in [ProgressStatus.CONCLUIDO, ProgressStatus.CANCELADO]
+                    p for p in etapa.progressos if p.status not in [ProgressStatus.CONCLUIDO, ProgressStatus.CANCELADO]
                 ]
                 if ativos:
-                    raise OnboardingException(
+                    raise OnboardingError(
                         message="Não é possível excluir checklist com progressos ativos",
                         code="CHECKLIST_HAS_PROGRESS",
                         details={"progressos_ativos": len(ativos)},
@@ -277,8 +263,8 @@ class OnboardingService:
         condominium_id: UUID,
         skip: int = 0,
         limit: int = 20,
-        filters: Optional[OnboardingFilter] = None,
-    ) -> Tuple[List[OnboardingChecklist], int]:
+        filters: OnboardingFilter | None = None,
+    ) -> tuple[list[OnboardingChecklist], int]:
         """
         Lista checklists com filtros.
 
@@ -326,13 +312,11 @@ class OnboardingService:
             Novo checklist criado
 
         Raises:
-            OnboardingException: Se checklist não encontrado
+            OnboardingError: Se checklist não encontrado
         """
-        original = await self.repository.get_checklist_by_id(
-            checklist_id, include_etapas=True
-        )
+        original = await self.repository.get_checklist_by_id(checklist_id, include_etapas=True)
         if not original:
-            raise OnboardingException(
+            raise OnboardingError(
                 message="Checklist não encontrado",
                 code="CHECKLIST_NOT_FOUND",
             )
@@ -412,11 +396,11 @@ class OnboardingService:
             Etapa criada
 
         Raises:
-            OnboardingException: Se checklist não encontrado
+            OnboardingError: Se checklist não encontrado
         """
         checklist = await self.repository.get_checklist_by_id(data.checklist_id)
         if not checklist:
-            raise OnboardingException(
+            raise OnboardingError(
                 message="Checklist não encontrado",
                 code="CHECKLIST_NOT_FOUND",
             )
@@ -434,7 +418,7 @@ class OnboardingService:
 
         return step
 
-    async def get_step(self, step_id: UUID) -> Optional[OnboardingStep]:
+    async def get_step(self, step_id: UUID) -> OnboardingStep | None:
         """
         Busca etapa por ID.
 
@@ -450,7 +434,7 @@ class OnboardingService:
         self,
         step_id: UUID,
         data: StepUpdate,
-    ) -> Optional[OnboardingStep]:
+    ) -> OnboardingStep | None:
         """
         Atualiza uma etapa.
 
@@ -483,7 +467,7 @@ class OnboardingService:
             True se removida com sucesso
 
         Raises:
-            OnboardingException: Se houver progressos vinculados
+            OnboardingError: Se houver progressos vinculados
         """
         step = await self.repository.get_step_by_id(step_id)
         if not step:
@@ -492,11 +476,10 @@ class OnboardingService:
         # Verifica progressos
         if step.progressos:
             ativos = [
-                p for p in step.progressos
-                if p.status not in [ProgressStatus.CONCLUIDO, ProgressStatus.CANCELADO]
+                p for p in step.progressos if p.status not in [ProgressStatus.CONCLUIDO, ProgressStatus.CANCELADO]
             ]
             if ativos:
-                raise OnboardingException(
+                raise OnboardingError(
                     message="Não é possível excluir etapa com progressos ativos",
                     code="STEP_HAS_PROGRESS",
                     details={"progressos_ativos": len(ativos)},
@@ -515,8 +498,8 @@ class OnboardingService:
     async def reorder_steps(
         self,
         checklist_id: UUID,
-        step_orders: List[Dict[str, Any]],
-    ) -> List[OnboardingStep]:
+        step_orders: list[dict[str, Any]],
+    ) -> list[OnboardingStep]:
         """
         Reordena etapas de um checklist.
 
@@ -558,16 +541,13 @@ class OnboardingService:
             Resposta com resumo do onboarding criado
 
         Raises:
-            OnboardingException: Se funcionário já possui onboarding ativo
+            OnboardingError: Se funcionário já possui onboarding ativo
         """
         # Verifica se já tem onboarding ativo
         existing = await self.repository.list_by_funcionario(data.funcionario_id)
-        ativos = [
-            p for p in existing
-            if p.status not in [ProgressStatus.CONCLUIDO, ProgressStatus.CANCELADO]
-        ]
+        ativos = [p for p in existing if p.status not in [ProgressStatus.CONCLUIDO, ProgressStatus.CANCELADO]]
         if ativos:
-            raise OnboardingException(
+            raise OnboardingError(
                 message="Funcionário já possui onboarding em andamento",
                 code="ONBOARDING_ALREADY_EXISTS",
                 details={"progressos_ativos": len(ativos)},
@@ -576,32 +556,30 @@ class OnboardingService:
         # Obtém checklist
         checklist = None
         if data.checklist_id:
-            checklist = await self.repository.get_checklist_by_id(
-                data.checklist_id, include_etapas=True
-            )
+            checklist = await self.repository.get_checklist_by_id(data.checklist_id, include_etapas=True)
         else:
             # Busca checklist padrão
             # Precisaria do condominium_id do funcionário
             # Por enquanto, retorna erro
-            raise OnboardingException(
+            raise OnboardingError(
                 message="ID do checklist é obrigatório",
                 code="CHECKLIST_REQUIRED",
             )
 
         if not checklist:
-            raise OnboardingException(
+            raise OnboardingError(
                 message="Checklist não encontrado",
                 code="CHECKLIST_NOT_FOUND",
             )
 
         if not checklist.is_active:
-            raise OnboardingException(
+            raise OnboardingError(
                 message="Checklist não está ativo",
                 code="CHECKLIST_INACTIVE",
             )
 
         if not checklist.etapas:
-            raise OnboardingException(
+            raise OnboardingError(
                 message="Checklist não possui etapas configuradas",
                 code="CHECKLIST_EMPTY",
             )
@@ -650,7 +628,7 @@ class OnboardingService:
     async def get_funcionario_onboarding(
         self,
         funcionario_id: UUID,
-    ) -> Optional[FuncionarioOnboardingResponse]:
+    ) -> FuncionarioOnboardingResponse | None:
         """
         Obtém o status do onboarding de um funcionário.
 
@@ -660,9 +638,7 @@ class OnboardingService:
         Returns:
             Resposta com status do onboarding ou None
         """
-        summary = await self.repository.get_funcionario_onboarding_summary(
-            funcionario_id
-        )
+        summary = await self.repository.get_funcionario_onboarding_summary(funcionario_id)
 
         if not summary.get("tem_onboarding"):
             return None
@@ -728,26 +704,24 @@ class OnboardingService:
             Progresso atualizado
 
         Raises:
-            OnboardingException: Se progresso não encontrado ou já concluído
+            OnboardingError: Se progresso não encontrado ou já concluído
         """
-        progress = await self.repository.get_progress_by_id(
-            progress_id, include_step=True
-        )
+        progress = await self.repository.get_progress_by_id(progress_id, include_step=True)
 
         if not progress:
-            raise OnboardingException(
+            raise OnboardingError(
                 message="Progresso não encontrado",
                 code="PROGRESS_NOT_FOUND",
             )
 
         if progress.status == ProgressStatus.CONCLUIDO:
-            raise OnboardingException(
+            raise OnboardingError(
                 message="Etapa já foi concluída",
                 code="PROGRESS_ALREADY_COMPLETED",
             )
 
         if progress.status == ProgressStatus.CANCELADO:
-            raise OnboardingException(
+            raise OnboardingError(
                 message="Etapa foi cancelada",
                 code="PROGRESS_CANCELLED",
             )
@@ -759,12 +733,10 @@ class OnboardingService:
                 progress.step.dependencia_step_id,
             )
             if dep_progress and dep_progress.status != ProgressStatus.CONCLUIDO:
-                raise OnboardingException(
+                raise OnboardingError(
                     message="Etapa de dependência ainda não foi concluída",
                     code="DEPENDENCY_NOT_COMPLETED",
-                    details={
-                        "dependencia_step_id": str(progress.step.dependencia_step_id)
-                    },
+                    details={"dependencia_step_id": str(progress.step.dependencia_step_id)},
                 )
 
         # Marca como concluída
@@ -802,18 +774,18 @@ class OnboardingService:
             Progresso atualizado
 
         Raises:
-            OnboardingException: Se progresso não encontrado
+            OnboardingError: Se progresso não encontrado
         """
         progress = await self.repository.get_progress_by_id(progress_id)
 
         if not progress:
-            raise OnboardingException(
+            raise OnboardingError(
                 message="Progresso não encontrado",
                 code="PROGRESS_NOT_FOUND",
             )
 
         if progress.status != ProgressStatus.PENDENTE:
-            raise OnboardingException(
+            raise OnboardingError(
                 message="Apenas etapas pendentes podem ser iniciadas",
                 code="INVALID_STATUS_TRANSITION",
             )
@@ -844,27 +816,25 @@ class OnboardingService:
             Progresso atualizado
 
         Raises:
-            OnboardingException: Se progresso não encontrado ou já concluído
+            OnboardingError: Se progresso não encontrado ou já concluído
         """
-        progress = await self.repository.get_progress_by_id(
-            progress_id, include_step=True
-        )
+        progress = await self.repository.get_progress_by_id(progress_id, include_step=True)
 
         if not progress:
-            raise OnboardingException(
+            raise OnboardingError(
                 message="Progresso não encontrado",
                 code="PROGRESS_NOT_FOUND",
             )
 
         if progress.status == ProgressStatus.CONCLUIDO:
-            raise OnboardingException(
+            raise OnboardingError(
                 message="Etapa concluída não pode ser cancelada",
                 code="CANNOT_CANCEL_COMPLETED",
             )
 
         # Verifica se etapa é obrigatória
         if progress.step and progress.step.obrigatorio:
-            raise OnboardingException(
+            raise OnboardingError(
                 message="Etapas obrigatórias não podem ser canceladas",
                 code="CANNOT_CANCEL_MANDATORY",
             )
@@ -889,7 +859,7 @@ class OnboardingService:
     async def verificar_atrasos(
         self,
         condominium_id: UUID,
-    ) -> Dict[str, int]:
+    ) -> dict[str, int]:
         """
         Verifica e marca etapas atrasadas.
 
@@ -939,12 +909,8 @@ class OnboardingService:
         alerts_data = await self.repository.get_alerts(condominium_id)
 
         stats = OnboardingStats(
-            total_funcionarios_em_onboarding=stats_data.get(
-                "total_funcionarios_em_onboarding", 0
-            ),
-            total_funcionarios_concluidos=stats_data.get(
-                "total_funcionarios_concluidos", 0
-            ),
+            total_funcionarios_em_onboarding=stats_data.get("total_funcionarios_em_onboarding", 0),
+            total_funcionarios_concluidos=stats_data.get("total_funcionarios_concluidos", 0),
             total_etapas_pendentes=stats_data.get("total_etapas_pendentes", 0),
             total_etapas_em_andamento=stats_data.get("total_etapas_em_andamento", 0),
             total_etapas_concluidas=stats_data.get("total_etapas_concluidas", 0),
@@ -976,7 +942,7 @@ class OnboardingService:
         ]
 
         # Funcionários atrasados únicos
-        func_atrasados = len(set(a["funcionario_id"] for a in alerts_data if a["tipo"] == "atrasado"))
+        func_atrasados = len({a["funcionario_id"] for a in alerts_data if a["tipo"] == "atrasado"})
 
         return OnboardingDashboard(
             stats=stats,
@@ -990,7 +956,7 @@ class OnboardingService:
         self,
         condominium_id: UUID,
         limit: int = 50,
-    ) -> List[OnboardingAlert]:
+    ) -> list[OnboardingAlert]:
         """
         Obtém alertas de onboarding.
 
@@ -1027,7 +993,7 @@ class OnboardingService:
         condominium_id: UUID,
         skip: int = 0,
         limit: int = 50,
-    ) -> Tuple[List[OnboardingProgress], int]:
+    ) -> tuple[list[OnboardingProgress], int]:
         """
         Lista progressos pendentes.
 
@@ -1046,7 +1012,7 @@ class OnboardingService:
         condominium_id: UUID,
         skip: int = 0,
         limit: int = 50,
-    ) -> Tuple[List[OnboardingProgress], int]:
+    ) -> tuple[list[OnboardingProgress], int]:
         """
         Lista progressos atrasados.
 

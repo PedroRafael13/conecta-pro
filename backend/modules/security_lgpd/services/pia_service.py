@@ -5,7 +5,7 @@ Service de Avaliacao de Impacto de Privacidade (PIA/DPIA) LGPD.
 import logging
 import uuid
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +18,7 @@ class PIAService:
     """
 
     # Armazenamento em memoria (em producao, usar banco de dados)
-    _assessments: Dict[str, Dict[str, Any]] = {}
+    _assessments: dict[str, dict[str, Any]] = {}
 
     # Categorias de dados sensiveis (Art. 5, II LGPD)
     SENSITIVE_CATEGORIES = [
@@ -37,10 +37,10 @@ class PIAService:
 
     def _calculate_risk_level(
         self,
-        data_categories: List[str],
-        processing_purposes: List[str],
-        data_subjects: List[str],
-        risk_factors: List[str],
+        data_categories: list[str],
+        processing_purposes: list[str],
+        data_subjects: list[str],
+        risk_factors: list[str],
     ) -> str:
         """Calcula nivel de risco baseado nos fatores.
 
@@ -79,8 +79,8 @@ class PIAService:
     def _generate_recommendations(
         self,
         risk_level: str,
-        data_categories: List[str],
-    ) -> List[str]:
+        data_categories: list[str],
+    ) -> list[str]:
         """Gera recomendacoes baseadas na avaliacao."""
         recommendations = []
 
@@ -106,11 +106,11 @@ class PIAService:
         self,
         project_name: str,
         description: str,
-        data_categories: List[str],
-        processing_purposes: List[str],
-        data_subjects: Optional[List[str]] = None,
-        risk_factors: Optional[List[str]] = None,
-    ) -> Dict[str, Any]:
+        data_categories: list[str],
+        processing_purposes: list[str],
+        data_subjects: list[str] | None = None,
+        risk_factors: list[str] | None = None,
+    ) -> dict[str, Any]:
         """Cria avaliacao de impacto de privacidade.
 
         Args:
@@ -171,7 +171,7 @@ class PIAService:
             "recommendations": recommendations,
         }
 
-    def get_assessment(self, assessment_id: str) -> Dict[str, Any]:
+    def get_assessment(self, assessment_id: str) -> dict[str, Any]:
         """Consulta avaliacao de impacto.
 
         Args:
@@ -190,10 +190,10 @@ class PIAService:
 
     def list_assessments(
         self,
-        status: Optional[str] = None,
+        status: str | None = None,
         limit: int = 100,
         offset: int = 0,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Lista avaliacoes de impacto.
 
         Args:
@@ -210,7 +210,7 @@ class PIAService:
             assessments = [a for a in assessments if a["status"] == status]
 
         total = len(assessments)
-        paginated = assessments[offset:offset + limit]
+        paginated = assessments[offset : offset + limit]
 
         return {
             "assessments": paginated,
@@ -219,7 +219,7 @@ class PIAService:
             "offset": offset,
         }
 
-    def get_risk_categories(self) -> List[Dict[str, str]]:
+    def get_risk_categories(self) -> list[dict[str, str]]:
         """Lista categorias de risco disponiveis.
 
         Returns:
@@ -232,7 +232,7 @@ class PIAService:
             {"id": "critical", "description": "Risco critico", "color": "red"},
         ]
 
-    def get_data_categories(self) -> List[Dict[str, str]]:
+    def get_data_categories(self) -> list[dict[str, str]]:
         """Lista categorias de dados LGPD.
 
         Returns:

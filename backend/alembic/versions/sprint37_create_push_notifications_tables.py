@@ -16,10 +16,10 @@ Sprint 37 - Push Notifications Mobile:
 - push_delivery_reports: Relatórios de entrega
 """
 
-from alembic import op
-from sqlalchemy.dialects import postgresql
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY, ENUM
+from sqlalchemy.dialects.postgresql import ARRAY, ENUM, JSONB, UUID
+
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "sprint37_push_notifications"
@@ -49,10 +49,27 @@ def upgrade() -> None:
 
     create_enum_safe("device_platform", ["ios", "android", "web", "huawei", "windows", "macos"])
     create_enum_safe("device_status", ["active", "inactive", "unregistered", "blocked", "failed"])
-    create_enum_safe("campaign_status", ["draft", "scheduled", "sending", "sent", "paused", "cancelled", "failed", "completed"])
+    create_enum_safe(
+        "campaign_status", ["draft", "scheduled", "sending", "sent", "paused", "cancelled", "failed", "completed"]
+    )
     create_enum_safe("campaign_type", ["one_time", "scheduled", "recurring", "triggered", "ab_test", "transactional"])
     create_enum_safe("target_type", ["all", "segment", "users", "devices", "topic", "tags", "geo"])
-    create_enum_safe("notification_status", ["pending", "queued", "sending", "sent", "delivered", "opened", "clicked", "dismissed", "failed", "expired", "undeliverable"])
+    create_enum_safe(
+        "notification_status",
+        [
+            "pending",
+            "queued",
+            "sending",
+            "sent",
+            "delivered",
+            "opened",
+            "clicked",
+            "dismissed",
+            "failed",
+            "expired",
+            "undeliverable",
+        ],
+    )
     create_enum_safe("notification_priority", ["low", "normal", "high", "urgent"])
     create_enum_safe("metric_period", ["hourly", "daily", "weekly", "monthly"])
 
@@ -67,11 +84,17 @@ def upgrade() -> None:
         sa.Column("user_id", UUID(as_uuid=True), nullable=False, index=True),
         sa.Column("device_id", sa.String(200), nullable=False),
         sa.Column("device_token", sa.Text, nullable=False),
-        sa.Column("platform", ENUM("ios", "android", "web", "huawei", "windows", "macos",
-                                    name="device_platform", create_type=False), nullable=False),
-        sa.Column("status", ENUM("active", "inactive", "unregistered", "blocked", "failed",
-                                  name="device_status", create_type=False),
-                  nullable=False, server_default="active"),
+        sa.Column(
+            "platform",
+            ENUM("ios", "android", "web", "huawei", "windows", "macos", name="device_platform", create_type=False),
+            nullable=False,
+        ),
+        sa.Column(
+            "status",
+            ENUM("active", "inactive", "unregistered", "blocked", "failed", name="device_status", create_type=False),
+            nullable=False,
+            server_default="active",
+        ),
         sa.Column("app_id", sa.String(200), nullable=False),
         sa.Column("app_version", sa.String(50)),
         sa.Column("app_build", sa.String(50)),
@@ -102,9 +125,7 @@ def upgrade() -> None:
     )
 
     op.create_unique_constraint(
-        "uq_push_devices_tenant_user_device",
-        "push_devices",
-        ["tenant_id", "user_id", "device_id"]
+        "uq_push_devices_tenant_user_device", "push_devices", ["tenant_id", "user_id", "device_id"]
     )
     op.create_index("ix_push_devices_token", "push_devices", ["device_token"])
     op.create_index("ix_push_devices_platform", "push_devices", ["platform"])
@@ -117,9 +138,13 @@ def upgrade() -> None:
     op.create_table(
         "push_device_sessions",
         sa.Column("id", UUID(as_uuid=True), primary_key=True),
-        sa.Column("device_id", UUID(as_uuid=True),
-                  sa.ForeignKey("push_devices.id", ondelete="CASCADE"),
-                  nullable=False, index=True),
+        sa.Column(
+            "device_id",
+            UUID(as_uuid=True),
+            sa.ForeignKey("push_devices.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+        ),
         sa.Column("session_id", sa.String(100), nullable=False),
         sa.Column("ip_address", sa.String(45)),
         sa.Column("user_agent", sa.Text),
@@ -162,14 +187,38 @@ def upgrade() -> None:
         sa.Column("created_by", UUID(as_uuid=True), nullable=False),
         sa.Column("name", sa.String(200), nullable=False),
         sa.Column("description", sa.Text),
-        sa.Column("status", ENUM("draft", "scheduled", "sending", "sent", "paused",
-                                     "cancelled", "failed", "completed",
-                                     name="campaign_status", create_type=False),
-                  nullable=False, server_default="draft"),
-        sa.Column("campaign_type", ENUM("one_time", "scheduled", "recurring", "triggered",
-                                            "ab_test", "transactional",
-                                            name="campaign_type", create_type=False),
-                  nullable=False, server_default="one_time"),
+        sa.Column(
+            "status",
+            ENUM(
+                "draft",
+                "scheduled",
+                "sending",
+                "sent",
+                "paused",
+                "cancelled",
+                "failed",
+                "completed",
+                name="campaign_status",
+                create_type=False,
+            ),
+            nullable=False,
+            server_default="draft",
+        ),
+        sa.Column(
+            "campaign_type",
+            ENUM(
+                "one_time",
+                "scheduled",
+                "recurring",
+                "triggered",
+                "ab_test",
+                "transactional",
+                name="campaign_type",
+                create_type=False,
+            ),
+            nullable=False,
+            server_default="one_time",
+        ),
         sa.Column("title", sa.String(100), nullable=False),
         sa.Column("body", sa.Text, nullable=False),
         sa.Column("image_url", sa.String(500)),
@@ -179,9 +228,12 @@ def upgrade() -> None:
         sa.Column("android_config", JSONB, server_default="{}"),
         sa.Column("ios_config", JSONB, server_default="{}"),
         sa.Column("web_config", JSONB, server_default="{}"),
-        sa.Column("target_type", ENUM("all", "segment", "users", "devices", "topic", "tags", "geo",
-                                          name="target_type", create_type=False),
-                  nullable=False, server_default="all"),
+        sa.Column(
+            "target_type",
+            ENUM("all", "segment", "users", "devices", "topic", "tags", "geo", name="target_type", create_type=False),
+            nullable=False,
+            server_default="all",
+        ),
         sa.Column("segment_id", UUID(as_uuid=True)),
         sa.Column("target_users", ARRAY(UUID(as_uuid=True))),
         sa.Column("target_devices", ARRAY(UUID(as_uuid=True))),
@@ -230,27 +282,49 @@ def upgrade() -> None:
         "push_notifications",
         sa.Column("id", UUID(as_uuid=True), primary_key=True),
         sa.Column("tenant_id", UUID(as_uuid=True), nullable=False, index=True),
-        sa.Column("device_id", UUID(as_uuid=True),
-                  sa.ForeignKey("push_devices.id", ondelete="CASCADE"),
-                  nullable=False, index=True),
+        sa.Column(
+            "device_id",
+            UUID(as_uuid=True),
+            sa.ForeignKey("push_devices.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+        ),
         sa.Column("user_id", UUID(as_uuid=True), nullable=False, index=True),
-        sa.Column("campaign_id", UUID(as_uuid=True),
-                  sa.ForeignKey("push_campaigns.id", ondelete="SET NULL"),
-                  index=True),
+        sa.Column(
+            "campaign_id", UUID(as_uuid=True), sa.ForeignKey("push_campaigns.id", ondelete="SET NULL"), index=True
+        ),
         sa.Column("message_id", sa.String(200), unique=True),
         sa.Column("title", sa.String(100), nullable=False),
         sa.Column("body", sa.Text, nullable=False),
         sa.Column("image_url", sa.String(500)),
         sa.Column("action_url", sa.String(500)),
         sa.Column("data", JSONB, server_default="{}"),
-        sa.Column("status", ENUM("pending", "queued", "sending", "sent", "delivered",
-                                     "opened", "clicked", "dismissed", "failed",
-                                     "expired", "undeliverable",
-                                     name="notification_status", create_type=False),
-                  nullable=False, server_default="pending"),
-        sa.Column("priority", ENUM("low", "normal", "high", "urgent",
-                                       name="notification_priority", create_type=False),
-                  nullable=False, server_default="normal"),
+        sa.Column(
+            "status",
+            ENUM(
+                "pending",
+                "queued",
+                "sending",
+                "sent",
+                "delivered",
+                "opened",
+                "clicked",
+                "dismissed",
+                "failed",
+                "expired",
+                "undeliverable",
+                name="notification_status",
+                create_type=False,
+            ),
+            nullable=False,
+            server_default="pending",
+        ),
+        sa.Column(
+            "priority",
+            ENUM("low", "normal", "high", "urgent", name="notification_priority", create_type=False),
+            nullable=False,
+            server_default="normal",
+        ),
         sa.Column("ttl_seconds", sa.Integer),
         sa.Column("collapse_key", sa.String(100)),
         sa.Column("queued_at", sa.DateTime),
@@ -284,9 +358,13 @@ def upgrade() -> None:
     op.create_table(
         "push_notification_actions",
         sa.Column("id", UUID(as_uuid=True), primary_key=True),
-        sa.Column("notification_id", UUID(as_uuid=True),
-                  sa.ForeignKey("push_notifications.id", ondelete="CASCADE"),
-                  nullable=False, index=True),
+        sa.Column(
+            "notification_id",
+            UUID(as_uuid=True),
+            sa.ForeignKey("push_notifications.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+        ),
         sa.Column("action_id", sa.String(50), nullable=False),
         sa.Column("action_type", sa.String(50)),
         sa.Column("action_url", sa.String(500)),
@@ -302,8 +380,11 @@ def upgrade() -> None:
         "push_metrics",
         sa.Column("id", UUID(as_uuid=True), primary_key=True),
         sa.Column("tenant_id", UUID(as_uuid=True), nullable=False, index=True),
-        sa.Column("period", ENUM("hourly", "daily", "weekly", "monthly",
-                                     name="metric_period", create_type=False), nullable=False),
+        sa.Column(
+            "period",
+            ENUM("hourly", "daily", "weekly", "monthly", name="metric_period", create_type=False),
+            nullable=False,
+        ),
         sa.Column("period_start", sa.DateTime, nullable=False),
         sa.Column("period_end", sa.DateTime, nullable=False),
         sa.Column("platform", sa.String(20)),
@@ -334,7 +415,7 @@ def upgrade() -> None:
     op.create_unique_constraint(
         "uq_push_metrics_period",
         "push_metrics",
-        ["tenant_id", "period", "period_start", "platform", "app_id", "campaign_id"]
+        ["tenant_id", "period", "period_start", "platform", "app_id", "campaign_id"],
     )
 
     # ========================================================================
@@ -344,9 +425,13 @@ def upgrade() -> None:
     op.create_table(
         "push_ab_test_results",
         sa.Column("id", UUID(as_uuid=True), primary_key=True),
-        sa.Column("campaign_id", UUID(as_uuid=True),
-                  sa.ForeignKey("push_campaigns.id", ondelete="CASCADE"),
-                  nullable=False, index=True),
+        sa.Column(
+            "campaign_id",
+            UUID(as_uuid=True),
+            sa.ForeignKey("push_campaigns.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+        ),
         sa.Column("variant_id", sa.String(50), nullable=False),
         sa.Column("variant_name", sa.String(100)),
         sa.Column("total_sent", sa.Integer, server_default="0"),
@@ -369,9 +454,13 @@ def upgrade() -> None:
     op.create_table(
         "push_delivery_reports",
         sa.Column("id", UUID(as_uuid=True), primary_key=True),
-        sa.Column("campaign_id", UUID(as_uuid=True),
-                  sa.ForeignKey("push_campaigns.id", ondelete="CASCADE"),
-                  nullable=False, index=True),
+        sa.Column(
+            "campaign_id",
+            UUID(as_uuid=True),
+            sa.ForeignKey("push_campaigns.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+        ),
         sa.Column("report_date", sa.Date, nullable=False),
         sa.Column("by_platform", JSONB, server_default="{}"),
         sa.Column("by_status", JSONB, server_default="{}"),

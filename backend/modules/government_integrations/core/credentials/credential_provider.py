@@ -4,24 +4,25 @@ Provedor de Credenciais para Serviços Governamentais.
 Fornece credenciais unificadas para diferentes serviços.
 """
 
-from datetime import datetime
-from typing import Dict, Optional, Any, List
-from dataclasses import dataclass
-from enum import Enum
 import logging
+from dataclasses import dataclass
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
-from .vault_client import VaultClient, get_vault_client
 from .certificate_manager import (
-    GerenciadorCertificados,
     CertificadoInfo,
+    GerenciadorCertificados,
     TipoCertificado,
 )
+from .vault_client import VaultClient, get_vault_client
 
 logger = logging.getLogger(__name__)
 
 
 class TipoCredencial(Enum):
     """Tipos de credencial por serviço."""
+
     # SEFAZ - usa certificado digital
     SEFAZ_NFE = "sefaz_nfe"
     SEFAZ_CTE = "sefaz_cte"
@@ -47,37 +48,38 @@ class TipoCredencial(Enum):
 @dataclass
 class CredencialGoverno:
     """Credencial para acesso a serviço governamental."""
+
     tenant_id: str
     servico: TipoCredencial
     tipo_autenticacao: str  # "certificado", "usuario_senha", "token", "oauth"
 
     # Certificado (se aplicável)
-    certificado_tipo: Optional[TipoCertificado] = None
-    certificado_info: Optional[CertificadoInfo] = None
+    certificado_tipo: TipoCertificado | None = None
+    certificado_info: CertificadoInfo | None = None
 
     # Usuário/senha (se aplicável)
-    usuario: Optional[str] = None
-    senha: Optional[str] = None
+    usuario: str | None = None
+    senha: str | None = None
 
     # Token (se aplicável)
-    token: Optional[str] = None
-    token_expiracao: Optional[datetime] = None
+    token: str | None = None
+    token_expiracao: datetime | None = None
 
     # OAuth (se aplicável)
-    client_id: Optional[str] = None
-    client_secret: Optional[str] = None
-    access_token: Optional[str] = None
-    refresh_token: Optional[str] = None
+    client_id: str | None = None
+    client_secret: str | None = None
+    access_token: str | None = None
+    refresh_token: str | None = None
 
     # Metadados
     ambiente: str = "producao"  # producao, homologacao
-    codigo_municipio: Optional[str] = None  # Para NFS-e municipal
-    inscricao_municipal: Optional[str] = None
+    codigo_municipio: str | None = None  # Para NFS-e municipal
+    inscricao_municipal: str | None = None
 
     # Validação
     valida: bool = True
-    erro: Optional[str] = None
-    ultima_validacao: Optional[datetime] = None
+    erro: str | None = None
+    ultima_validacao: datetime | None = None
 
 
 class ProvedorCredenciais:
@@ -110,20 +112,12 @@ class ProvedorCredenciais:
         TipoCredencial.RECEITA_FEDERAL: "certificado",
     }
 
-    def __init__(
-        self,
-        vault_client: Optional[VaultClient] = None,
-        cert_manager: Optional[GerenciadorCertificados] = None
-    ):
+    def __init__(self, vault_client: VaultClient | None = None, cert_manager: GerenciadorCertificados | None = None):
         self.vault = vault_client or get_vault_client()
         self.cert_manager = cert_manager or GerenciadorCertificados(self.vault)
 
     async def obter_credencial(
-        self,
-        tenant_id: str,
-        servico: TipoCredencial,
-        ambiente: str = "producao",
-        codigo_municipio: Optional[str] = None
+        self, tenant_id: str, servico: TipoCredencial, ambiente: str = "producao", codigo_municipio: str | None = None
     ) -> CredencialGoverno:
         """
         Obtém credencial para um serviço.
@@ -184,10 +178,7 @@ class ProvedorCredenciais:
         credencial.certificado_tipo = tipo_cert
 
         # Obter info do certificado (sem chave privada)
-        info = await self.cert_manager.obter_info_certificado(
-            credencial.tenant_id,
-            tipo_cert
-        )
+        info = await self.cert_manager.obter_info_certificado(credencial.tenant_id, tipo_cert)
 
         if not info:
             credencial.valida = False
@@ -201,10 +192,7 @@ class ProvedorCredenciais:
             credencial.erro = "Certificado expirado"
 
         elif info.alerta_expiracao:
-            logger.warning(
-                f"Certificado próximo da expiração: {credencial.tenant_id} "
-                f"({info.dias_restantes} dias)"
-            )
+            logger.warning(f"Certificado próximo da expiração: {credencial.tenant_id} ({info.dias_restantes} dias)")
 
     async def _carregar_usuario_senha(self, credencial: CredencialGoverno):
         """Carrega credenciais de usuário/senha."""
@@ -213,10 +201,7 @@ class ProvedorCredenciais:
         if credencial.codigo_municipio:
             servico_key = f"{servico_key}/{credencial.codigo_municipio}"
 
-        dados = await self.vault.obter_credencial_servico(
-            credencial.tenant_id,
-            servico_key
-        )
+        dados = await self.vault.obter_credencial_servico(credencial.tenant_id, servico_key)
 
         if not dados:
             credencial.valida = False
@@ -233,10 +218,7 @@ class ProvedorCredenciais:
 
     async def _carregar_token(self, credencial: CredencialGoverno):
         """Carrega token de acesso."""
-        dados = await self.vault.obter_credencial_servico(
-            credencial.tenant_id,
-            credencial.servico.value
-        )
+        dados = await self.vault.obter_credencial_servico(credencial.tenant_id, credencial.servico.value)
 
         if not dados:
             credencial.valida = False
@@ -255,10 +237,7 @@ class ProvedorCredenciais:
 
     async def _carregar_oauth(self, credencial: CredencialGoverno):
         """Carrega credenciais OAuth."""
-        dados = await self.vault.obter_credencial_servico(
-            credencial.tenant_id,
-            credencial.servico.value
-        )
+        dados = await self.vault.obter_credencial_servico(credencial.tenant_id, credencial.servico.value)
 
         if not dados:
             credencial.valida = False
@@ -277,16 +256,10 @@ class ProvedorCredenciais:
     async def _carregar_dados_servico(self, credencial: CredencialGoverno):
         """Carrega dados adicionais específicos do serviço."""
         # Dados comuns a todos os serviços
-        dados = await self.vault.obter_credencial_servico(
-            credencial.tenant_id,
-            f"{credencial.servico.value}/config"
-        )
+        dados = await self.vault.obter_credencial_servico(credencial.tenant_id, f"{credencial.servico.value}/config")
 
         if dados:
-            credencial.inscricao_municipal = dados.get(
-                "inscricao_municipal",
-                credencial.inscricao_municipal
-            )
+            credencial.inscricao_municipal = dados.get("inscricao_municipal", credencial.inscricao_municipal)
 
     async def salvar_credencial_usuario_senha(
         self,
@@ -294,9 +267,9 @@ class ProvedorCredenciais:
         servico: TipoCredencial,
         usuario: str,
         senha: str,
-        codigo_municipio: Optional[str] = None,
-        inscricao_municipal: Optional[str] = None,
-        metadata: Optional[Dict] = None
+        codigo_municipio: str | None = None,
+        inscricao_municipal: str | None = None,
+        metadata: dict | None = None,
     ) -> bool:
         """
         Salva credenciais de usuário/senha.
@@ -324,19 +297,15 @@ class ProvedorCredenciais:
             **(metadata or {}),
         }
 
-        return await self.vault.salvar_credencial_servico(
-            tenant_id,
-            servico_key,
-            dados
-        )
+        return await self.vault.salvar_credencial_servico(tenant_id, servico_key, dados)
 
     async def salvar_token(
         self,
         tenant_id: str,
         servico: TipoCredencial,
         token: str,
-        expiracao: Optional[datetime] = None,
-        metadata: Optional[Dict] = None
+        expiracao: datetime | None = None,
+        metadata: dict | None = None,
     ) -> bool:
         """Salva token de acesso."""
         dados = {
@@ -345,11 +314,7 @@ class ProvedorCredenciais:
             **(metadata or {}),
         }
 
-        return await self.vault.salvar_credencial_servico(
-            tenant_id,
-            servico.value,
-            dados
-        )
+        return await self.vault.salvar_credencial_servico(tenant_id, servico.value, dados)
 
     async def salvar_oauth(
         self,
@@ -357,10 +322,10 @@ class ProvedorCredenciais:
         servico: TipoCredencial,
         client_id: str,
         client_secret: str,
-        access_token: Optional[str] = None,
-        refresh_token: Optional[str] = None,
-        token_expiracao: Optional[datetime] = None,
-        metadata: Optional[Dict] = None
+        access_token: str | None = None,
+        refresh_token: str | None = None,
+        token_expiracao: datetime | None = None,
+        metadata: dict | None = None,
     ) -> bool:
         """Salva configuração OAuth."""
         dados = {
@@ -372,18 +337,9 @@ class ProvedorCredenciais:
             **(metadata or {}),
         }
 
-        return await self.vault.salvar_credencial_servico(
-            tenant_id,
-            servico.value,
-            dados
-        )
+        return await self.vault.salvar_credencial_servico(tenant_id, servico.value, dados)
 
-    async def validar_credencial(
-        self,
-        tenant_id: str,
-        servico: TipoCredencial,
-        **kwargs
-    ) -> Dict[str, Any]:
+    async def validar_credencial(self, tenant_id: str, servico: TipoCredencial, **kwargs) -> dict[str, Any]:
         """
         Valida uma credencial.
 
@@ -418,47 +374,43 @@ class ProvedorCredenciais:
 
         return resultado
 
-    async def listar_credenciais_tenant(
-        self,
-        tenant_id: str
-    ) -> List[Dict[str, Any]]:
+    async def listar_credenciais_tenant(self, tenant_id: str) -> list[dict[str, Any]]:
         """Lista todas as credenciais configuradas para um tenant."""
         credenciais = []
 
         # Listar certificados
         certificados = await self.cert_manager.listar_certificados(tenant_id)
         for cert in certificados:
-            credenciais.append({
-                "tipo": "certificado",
-                "servico": cert.tipo.value,
-                "valido": cert.valido,
-                "expiracao": cert.validade_fim.isoformat(),
-                "dias_restantes": cert.dias_restantes,
-            })
+            credenciais.append(
+                {
+                    "tipo": "certificado",
+                    "servico": cert.tipo.value,
+                    "valido": cert.valido,
+                    "expiracao": cert.validade_fim.isoformat(),
+                    "dias_restantes": cert.dias_restantes,
+                }
+            )
 
         # Listar outras credenciais
         servicos = await self.vault.listar_credenciais_tenant(tenant_id)
         for servico in servicos:
             servico = servico.rstrip("/")
             if servico not in [c.tipo.value for c in certificados]:
-                dados = await self.vault.obter_credencial_servico(
-                    tenant_id, servico
-                )
+                dados = await self.vault.obter_credencial_servico(tenant_id, servico)
                 if dados:
-                    credenciais.append({
-                        "tipo": "servico",
-                        "servico": servico,
-                        "configurado": True,
-                        "updated_at": dados.get("updated_at"),
-                    })
+                    credenciais.append(
+                        {
+                            "tipo": "servico",
+                            "servico": servico,
+                            "configurado": True,
+                            "updated_at": dados.get("updated_at"),
+                        }
+                    )
 
         return credenciais
 
     async def remover_credencial(
-        self,
-        tenant_id: str,
-        servico: TipoCredencial,
-        codigo_municipio: Optional[str] = None
+        self, tenant_id: str, servico: TipoCredencial, codigo_municipio: str | None = None
     ) -> bool:
         """Remove credencial de um serviço."""
         servico_key = servico.value
@@ -470,7 +422,7 @@ class ProvedorCredenciais:
 
 
 # Instância singleton
-_credential_provider_instance: Optional[ProvedorCredenciais] = None
+_credential_provider_instance: ProvedorCredenciais | None = None
 
 
 def get_credential_provider() -> "ProvedorCredenciais":
@@ -485,9 +437,11 @@ def get_credential_provider() -> "ProvedorCredenciais":
         # Tentar usar FileCredentialProvider primeiro (modo simplificado)
         try:
             from .file_credential_provider import get_file_credential_provider
+
             file_provider = get_file_credential_provider()
             # Verificar se o certificado existe
             from pathlib import Path
+
             if Path(file_provider.config.cert_path).exists():
                 logger.info("Usando FileCredentialProvider (modo simplificado)")
                 _credential_provider_instance = file_provider

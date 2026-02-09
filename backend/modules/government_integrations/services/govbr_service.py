@@ -4,16 +4,14 @@ Service para Gov.br - Plataforma de Login Unico do Governo Federal.
 Camada de servico para operacoes de autenticacao Gov.br.
 """
 
-import os
 import logging
+import os
 from datetime import datetime
-from typing import Dict, List, Optional, Any
+from typing import Any
 
 from ..core.govbr import (
     GovBrManager,
     NivelAutenticacao,
-    TipoDocumento,
-    UsuarioGovBr,
     TokenGovBr,
 )
 
@@ -27,14 +25,11 @@ class GovBrService:
         """Inicializa o service."""
         self.client_id = os.getenv("GOVBR_CLIENT_ID", "")
         self.client_secret = os.getenv("GOVBR_CLIENT_SECRET", "")
-        self.redirect_uri = os.getenv(
-            "GOVBR_REDIRECT_URI",
-            "https://app.conectaplus.com.br/auth/govbr/callback"
-        )
+        self.redirect_uri = os.getenv("GOVBR_REDIRECT_URI", "https://app.conectaplus.com.br/auth/govbr/callback")
         self.ambiente = os.getenv("GOVBR_AMBIENTE", "producao")
 
         # Armazenamento temporario de code_verifier (em producao, usar Redis ou sessao)
-        self._pending_auth: Dict[str, Dict[str, str]] = {}
+        self._pending_auth: dict[str, dict[str, str]] = {}
 
         self.manager = GovBrManager(
             client_id=self.client_id,
@@ -44,15 +39,14 @@ class GovBrService:
         )
 
         logger.info(
-            f"Gov.br Service inicializado - Ambiente: {self.ambiente}, "
-            f"Client ID configurado: {bool(self.client_id)}"
+            f"Gov.br Service inicializado - Ambiente: {self.ambiente}, Client ID configurado: {bool(self.client_id)}"
         )
 
     def gerar_url_autorizacao(
         self,
-        scopes: Optional[List[str]] = None,
-        nivel_minimo: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        scopes: list[str] | None = None,
+        nivel_minimo: str | None = None,
+    ) -> dict[str, Any]:
         """
         Gera URL de autorizacao OAuth2 para redirecionar o usuario.
 
@@ -97,8 +91,8 @@ class GovBrService:
         self,
         code: str,
         state: str,
-        code_verifier: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        code_verifier: str | None = None,
+    ) -> dict[str, Any]:
         """
         Troca codigo de autorizacao por tokens OAuth2.
 
@@ -141,10 +135,10 @@ class GovBrService:
     def obter_dados_usuario(
         self,
         access_token: str,
-        token_type: str = "Bearer",
+        token_type: str = "Bearer",  # noqa: S107
         expires_in: int = 3600,
-        scope: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        scope: str | None = None,
+    ) -> dict[str, Any]:
         """
         Obtem dados do usuario autenticado.
 
@@ -184,7 +178,7 @@ class GovBrService:
     def renovar_token(
         self,
         refresh_token: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Renova access_token usando refresh_token.
 
@@ -211,10 +205,10 @@ class GovBrService:
     def validar_token(
         self,
         access_token: str,
-        token_type: str = "Bearer",
+        token_type: str = "Bearer",  # noqa: S107
         expires_in: int = 0,
-        scope: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        scope: str | None = None,
+    ) -> dict[str, Any]:
         """
         Valida token de acesso.
 
@@ -247,8 +241,8 @@ class GovBrService:
     def gerar_url_logout(
         self,
         id_token: str,
-        post_logout_redirect_uri: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        post_logout_redirect_uri: str | None = None,
+    ) -> dict[str, Any]:
         """
         Gera URL de logout do Gov.br.
 
@@ -274,9 +268,9 @@ class GovBrService:
     def obter_empresas_vinculadas(
         self,
         access_token: str,
-        token_type: str = "Bearer",
-        scope: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        token_type: str = "Bearer",  # noqa: S107
+        scope: str | None = None,
+    ) -> dict[str, Any]:
         """
         Obtem empresas vinculadas ao CPF do usuario.
 
@@ -305,7 +299,7 @@ class GovBrService:
             "data_consulta": datetime.now().isoformat(),
         }
 
-    def validar_status(self) -> Dict[str, Any]:
+    def validar_status(self) -> dict[str, Any]:
         """
         Valida status da configuracao Gov.br.
 
@@ -360,7 +354,7 @@ class GovBrService:
 
 
 # Singleton
-_govbr_service: Optional[GovBrService] = None
+_govbr_service: GovBrService | None = None
 
 
 def get_govbr_service() -> GovBrService:

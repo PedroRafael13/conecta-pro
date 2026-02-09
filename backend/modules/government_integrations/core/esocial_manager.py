@@ -1,5 +1,5 @@
 """
-Module: eSocialManager
+Module: ESocialManager
 Description: Integração com eSocial - Sistema de Escrituração Digital
              das Obrigações Fiscais, Previdenciárias e Trabalhistas
 Author: Conecta PRO
@@ -15,18 +15,16 @@ eSocial:
 - Certificado digital ICP-Brasil obrigatório
 """
 
-import re
 import logging
+import re
+import xml.etree.ElementTree as ET  # noqa: S405
 from dataclasses import dataclass, field
-from datetime import datetime, date
+from datetime import date, datetime
 from decimal import Decimal
-from enum import Enum
-from typing import Dict, List, Optional, Any
+from enum import StrEnum
 from uuid import UUID, uuid4
-import xml.etree.ElementTree as ET
-from xml.dom import minidom
-import base64
-import gzip
+from xml.dom import minidom  # noqa: S408
+from xml.etree.ElementTree import Element  # noqa: S405
 
 logger = logging.getLogger(__name__)
 
@@ -44,15 +42,17 @@ ESOCIAL_ENDPOINTS = {
 }
 
 
-class GrupoEvento(str, Enum):
+class GrupoEvento(StrEnum):
     """Grupos de eventos do eSocial."""
-    TABELAS = "1"           # Eventos de Tabelas (S-1000 a S-1080)
-    NAO_PERIODICOS = "2"    # Eventos Não Periódicos (S-2190 a S-2420)
-    PERIODICOS = "3"        # Eventos Periódicos (S-1200 a S-1299)
+
+    TABELAS = "1"  # Eventos de Tabelas (S-1000 a S-1080)
+    NAO_PERIODICOS = "2"  # Eventos Não Periódicos (S-2190 a S-2420)
+    PERIODICOS = "3"  # Eventos Periódicos (S-1200 a S-1299)
 
 
-class TipoEvento(str, Enum):
+class TipoEvento(StrEnum):
     """Tipos de eventos do eSocial."""
+
     # Tabelas
     S1000 = "S-1000"  # Informações do Empregador
     S1005 = "S-1005"  # Tabela de Estabelecimentos
@@ -87,23 +87,26 @@ class TipoEvento(str, Enum):
     S1299 = "S-1299"  # Fechamento dos Eventos Periódicos
 
 
-class TipoInscricao(str, Enum):
+class TipoInscricao(StrEnum):
     """Tipo de inscrição."""
+
     CNPJ = "1"
     CPF = "2"
     CAEPF = "3"
     CNO = "4"
 
 
-class NaturezaJuridica(str, Enum):
+class NaturezaJuridica(StrEnum):
     """Natureza jurídica simplificada."""
+
     PESSOA_JURIDICA = "1"
     PESSOA_FISICA = "2"
     ORGAO_PUBLICO = "3"
 
 
-class CategoriaTabalhador(str, Enum):
+class CategoriaTabalhador(StrEnum):
     """Categoria do trabalhador."""
+
     EMPREGADO = "101"
     EMPREGADO_RURAL = "102"
     EMPREGADO_APRENDIZ = "103"
@@ -118,6 +121,7 @@ class CategoriaTabalhador(str, Enum):
 @dataclass
 class Empregador:
     """Dados do empregador."""
+
     tipo_inscricao: TipoInscricao
     numero_inscricao: str  # CNPJ ou CPF
     razao_social: str
@@ -126,20 +130,21 @@ class Empregador:
     ind_coop: str = "0"  # 0=Não é cooperativa
     ind_constr: str = "0"  # 0=Não é construtora
     ind_opt_reg_eletron: str = "0"  # Opção pelo registro eletrônico
-    cnae_preponderante: Optional[str] = None
+    cnae_preponderante: str | None = None
     endereco_logradouro: str = ""
     endereco_numero: str = ""
     endereco_bairro: str = ""
     endereco_cep: str = ""
     endereco_municipio: str = ""
     endereco_uf: str = ""
-    telefone: Optional[str] = None
-    email: Optional[str] = None
+    telefone: str | None = None
+    email: str | None = None
 
 
 @dataclass
 class Trabalhador:
     """Dados do trabalhador."""
+
     cpf: str
     nome: str
     data_nascimento: date
@@ -147,34 +152,35 @@ class Trabalhador:
     raca_cor: str  # 1=Branca, 2=Preta, 3=Parda, 4=Amarela, 5=Indígena, 6=Não informado
     estado_civil: str  # 1=Solteiro, 2=Casado, 3=Divorciado, 4=Separado, 5=Viúvo
     grau_instrucao: str  # 01 a 12 (tabela)
-    nome_social: Optional[str] = None
+    nome_social: str | None = None
     nacionalidade: str = "105"  # Brasil
-    pis_pasep: Optional[str] = None
-    ctps_numero: Optional[str] = None
-    ctps_serie: Optional[str] = None
-    ctps_uf: Optional[str] = None
-    rg_numero: Optional[str] = None
-    rg_orgao: Optional[str] = None
-    rg_uf: Optional[str] = None
+    pis_pasep: str | None = None
+    ctps_numero: str | None = None
+    ctps_serie: str | None = None
+    ctps_uf: str | None = None
+    rg_numero: str | None = None
+    rg_orgao: str | None = None
+    rg_uf: str | None = None
     endereco_logradouro: str = ""
     endereco_numero: str = ""
     endereco_bairro: str = ""
     endereco_cep: str = ""
     endereco_municipio: str = ""
     endereco_uf: str = ""
-    telefone: Optional[str] = None
-    email: Optional[str] = None
+    telefone: str | None = None
+    email: str | None = None
 
     # Dados bancários
-    banco: Optional[str] = None
-    agencia: Optional[str] = None
-    conta: Optional[str] = None
-    tipo_conta: Optional[str] = None  # 1=Conta corrente, 2=Conta poupança
+    banco: str | None = None
+    agencia: str | None = None
+    conta: str | None = None
+    tipo_conta: str | None = None  # 1=Conta corrente, 2=Conta poupança
 
 
 @dataclass
 class Contrato:
     """Dados do contrato de trabalho."""
+
     matricula: str
     categoria: CategoriaTabalhador
     data_admissao: date
@@ -184,28 +190,31 @@ class Contrato:
     cargo: str
     cargo_cbo: str  # Código CBO
     salario: Decimal
-    unidade_salario: str  # 1=Por hora, 2=Por dia, 3=Por semana, 4=Por quinzena, 5=Por mês, 6=Por tarefa, 7=Não aplicável
+    unidade_salario: (
+        str  # 1=Por hora, 2=Por dia, 3=Por semana, 4=Por quinzena, 5=Por mês, 6=Por tarefa, 7=Não aplicável
+    )
     jornada_semanal: int  # Horas semanais
     tipo_jornada: str  # 1=Integral, 2=Parcial
-    data_termino: Optional[date] = None  # Se prazo determinado
+    data_termino: date | None = None  # Se prazo determinado
     local_trabalho_tipo: str = "1"  # 1=Estabelecimento do empregador
-    local_trabalho_cnpj: Optional[str] = None
-    desc_salario_variavel: Optional[str] = None
+    local_trabalho_cnpj: str | None = None
+    desc_salario_variavel: str | None = None
 
 
 @dataclass
 class EventoeSocial:
     """Evento do eSocial."""
+
     id: UUID = field(default_factory=uuid4)
     tipo: TipoEvento = TipoEvento.S1000
     grupo: GrupoEvento = GrupoEvento.TABELAS
     empregador: Empregador = None
-    trabalhador: Optional[Trabalhador] = None
-    contrato: Optional[Contrato] = None
+    trabalhador: Trabalhador | None = None
+    contrato: Contrato | None = None
     data_evento: datetime = None
-    periodo_apuracao: Optional[str] = None  # AAAA-MM
-    numero_recibo: Optional[str] = None  # Retorno após envio
-    protocolo: Optional[str] = None
+    periodo_apuracao: str | None = None  # AAAA-MM
+    numero_recibo: str | None = None  # Retorno após envio
+    protocolo: str | None = None
     status: str = "pendente"
 
     def __post_init__(self):
@@ -213,7 +222,7 @@ class EventoeSocial:
             self.data_evento = datetime.now()
 
 
-class eSocialXMLBuilder:
+class ESocialXMLBuilder:
     """Builder de XML para eventos do eSocial."""
 
     NAMESPACE = "http://www.esocial.gov.br/schema/evt"
@@ -232,7 +241,7 @@ class eSocialXMLBuilder:
         """
         # ID do evento: formato específico do eSocial
         # ID + tipo_insc(1) + nr_insc(14) + AAAAMMDDHHMMSS(14) + seq(5) = 36 chars
-        nr_insc = re.sub(r'[^\d]', '', evento.empregador.numero_inscricao).zfill(14)
+        nr_insc = re.sub(r"[^\d]", "", evento.empregador.numero_inscricao).zfill(14)
         timestamp = evento.data_evento.strftime("%Y%m%d%H%M%S")
         seq = "00001"
         evento_id = f"ID{evento.empregador.tipo_inscricao.value}{nr_insc}{timestamp}{seq}"
@@ -252,7 +261,7 @@ class eSocialXMLBuilder:
             # Evento genérico (placeholder)
             return self._build_generico(root, evento, evento_id, ambiente)
 
-    def _build_s1000(self, root: ET.Element, evento: EventoeSocial, evento_id: str, ambiente: str) -> str:
+    def _build_s1000(self, root: Element, evento: EventoeSocial, evento_id: str, ambiente: str) -> str:
         """Constrói S-1000 - Informações do Empregador."""
         evt = ET.SubElement(root, "evtInfoEmpregador", Id=evento_id)
 
@@ -263,7 +272,7 @@ class eSocialXMLBuilder:
 
         ide_empregador = ET.SubElement(evt, "ideEmpregador")
         ET.SubElement(ide_empregador, "tpInsc").text = evento.empregador.tipo_inscricao.value
-        ET.SubElement(ide_empregador, "nrInsc").text = re.sub(r'[^\d]', '', evento.empregador.numero_inscricao)[:8]
+        ET.SubElement(ide_empregador, "nrInsc").text = re.sub(r"[^\d]", "", evento.empregador.numero_inscricao)[:8]
 
         info = ET.SubElement(evt, "infoEmpregador")
         inclusao = ET.SubElement(info, "inclusao")
@@ -280,7 +289,7 @@ class eSocialXMLBuilder:
 
         return self._prettify(root)
 
-    def _build_s2200(self, root: ET.Element, evento: EventoeSocial, evento_id: str, ambiente: str) -> str:
+    def _build_s2200(self, root: Element, evento: EventoeSocial, evento_id: str, ambiente: str) -> str:
         """Constrói S-2200 - Admissão de Trabalhador."""
         evt = ET.SubElement(root, "evtAdmissao", Id=evento_id)
 
@@ -294,13 +303,13 @@ class eSocialXMLBuilder:
         # ideEmpregador
         ide_empregador = ET.SubElement(evt, "ideEmpregador")
         ET.SubElement(ide_empregador, "tpInsc").text = evento.empregador.tipo_inscricao.value
-        ET.SubElement(ide_empregador, "nrInsc").text = re.sub(r'[^\d]', '', evento.empregador.numero_inscricao)[:8]
+        ET.SubElement(ide_empregador, "nrInsc").text = re.sub(r"[^\d]", "", evento.empregador.numero_inscricao)[:8]
 
         # trabalhador
         trab = evento.trabalhador
         if trab:
             trabalhador = ET.SubElement(evt, "trabalhador")
-            ET.SubElement(trabalhador, "cpfTrab").text = re.sub(r'[^\d]', '', trab.cpf)
+            ET.SubElement(trabalhador, "cpfTrab").text = re.sub(r"[^\d]", "", trab.cpf)
             ET.SubElement(trabalhador, "nmTrab").text = trab.nome
             ET.SubElement(trabalhador, "sexo").text = trab.sexo
             ET.SubElement(trabalhador, "racaCor").text = trab.raca_cor
@@ -327,7 +336,7 @@ class eSocialXMLBuilder:
             ET.SubElement(brasil, "dscLograd").text = trab.endereco_logradouro
             ET.SubElement(brasil, "nrLograd").text = trab.endereco_numero
             ET.SubElement(brasil, "bairro").text = trab.endereco_bairro
-            ET.SubElement(brasil, "cep").text = re.sub(r'[^\d]', '', trab.endereco_cep)
+            ET.SubElement(brasil, "cep").text = re.sub(r"[^\d]", "", trab.endereco_cep)
             ET.SubElement(brasil, "codMunic").text = trab.endereco_municipio
             ET.SubElement(brasil, "uf").text = trab.endereco_uf
 
@@ -358,7 +367,7 @@ class eSocialXMLBuilder:
 
         return self._prettify(root)
 
-    def _build_s2299(self, root: ET.Element, evento: EventoeSocial, evento_id: str, ambiente: str) -> str:
+    def _build_s2299(self, root: Element, evento: EventoeSocial, evento_id: str, ambiente: str) -> str:
         """Constrói S-2299 - Desligamento."""
         evt = ET.SubElement(root, "evtDeslig", Id=evento_id)
 
@@ -370,16 +379,16 @@ class eSocialXMLBuilder:
 
         ide_empregador = ET.SubElement(evt, "ideEmpregador")
         ET.SubElement(ide_empregador, "tpInsc").text = evento.empregador.tipo_inscricao.value
-        ET.SubElement(ide_empregador, "nrInsc").text = re.sub(r'[^\d]', '', evento.empregador.numero_inscricao)[:8]
+        ET.SubElement(ide_empregador, "nrInsc").text = re.sub(r"[^\d]", "", evento.empregador.numero_inscricao)[:8]
 
         if evento.trabalhador:
             ide_vinculo = ET.SubElement(evt, "ideVinculo")
-            ET.SubElement(ide_vinculo, "cpfTrab").text = re.sub(r'[^\d]', '', evento.trabalhador.cpf)
+            ET.SubElement(ide_vinculo, "cpfTrab").text = re.sub(r"[^\d]", "", evento.trabalhador.cpf)
             ET.SubElement(ide_vinculo, "matricula").text = evento.contrato.matricula if evento.contrato else ""
 
         return self._prettify(root)
 
-    def _build_s1200(self, root: ET.Element, evento: EventoeSocial, evento_id: str, ambiente: str) -> str:
+    def _build_s1200(self, root: Element, evento: EventoeSocial, evento_id: str, ambiente: str) -> str:
         """Constrói S-1200 - Remuneração do Trabalhador."""
         evt = ET.SubElement(root, "evtRemun", Id=evento_id)
 
@@ -392,15 +401,15 @@ class eSocialXMLBuilder:
 
         ide_empregador = ET.SubElement(evt, "ideEmpregador")
         ET.SubElement(ide_empregador, "tpInsc").text = evento.empregador.tipo_inscricao.value
-        ET.SubElement(ide_empregador, "nrInsc").text = re.sub(r'[^\d]', '', evento.empregador.numero_inscricao)[:8]
+        ET.SubElement(ide_empregador, "nrInsc").text = re.sub(r"[^\d]", "", evento.empregador.numero_inscricao)[:8]
 
         if evento.trabalhador:
             ide_trab = ET.SubElement(evt, "ideTrabalhador")
-            ET.SubElement(ide_trab, "cpfTrab").text = re.sub(r'[^\d]', '', evento.trabalhador.cpf)
+            ET.SubElement(ide_trab, "cpfTrab").text = re.sub(r"[^\d]", "", evento.trabalhador.cpf)
 
         return self._prettify(root)
 
-    def _build_generico(self, root: ET.Element, evento: EventoeSocial, evento_id: str, ambiente: str) -> str:
+    def _build_generico(self, root: Element, evento: EventoeSocial, evento_id: str, ambiente: str) -> str:
         """Constrói evento genérico (placeholder)."""
         evt = ET.SubElement(root, f"evt{evento.tipo.value.replace('-', '')}", Id=evento_id)
 
@@ -411,30 +420,31 @@ class eSocialXMLBuilder:
 
         ide_empregador = ET.SubElement(evt, "ideEmpregador")
         ET.SubElement(ide_empregador, "tpInsc").text = evento.empregador.tipo_inscricao.value
-        ET.SubElement(ide_empregador, "nrInsc").text = re.sub(r'[^\d]', '', evento.empregador.numero_inscricao)[:8]
+        ET.SubElement(ide_empregador, "nrInsc").text = re.sub(r"[^\d]", "", evento.empregador.numero_inscricao)[:8]
 
         return self._prettify(root)
 
-    def _prettify(self, elem: ET.Element) -> str:
+    def _prettify(self, elem: Element) -> str:
         """Formata XML."""
-        rough_string = ET.tostring(elem, encoding='unicode')
-        reparsed = minidom.parseString(rough_string)
+        rough_string = ET.tostring(elem, encoding="unicode")
+        reparsed = minidom.parseString(rough_string)  # noqa: S318 - Apenas formata XML gerado internamente
         return reparsed.toprettyxml(indent="  ")
 
 
 @dataclass
-class eSocialResult:
+class ESocialResult:
     """Resultado de operação com eSocial."""
+
     sucesso: bool
     mensagem: str
-    protocolo: Optional[str] = None
-    numero_recibo: Optional[str] = None
-    codigo_retorno: Optional[str] = None
-    xml_retorno: Optional[str] = None
+    protocolo: str | None = None
+    numero_recibo: str | None = None
+    codigo_retorno: str | None = None
+    xml_retorno: str | None = None
     tempo_resposta: float = 0.0
 
 
-class eSocialManager:
+class ESocialManager:
     """
     Gerenciador de eventos do eSocial.
 
@@ -445,8 +455,8 @@ class eSocialManager:
     def __init__(
         self,
         ambiente: str = "2",
-        cert_path: Optional[str] = None,
-        cert_password: Optional[str] = None,
+        cert_path: str | None = None,
+        cert_password: str | None = None,
     ):
         """
         Inicializa o gerenciador eSocial.
@@ -462,15 +472,12 @@ class eSocialManager:
 
         env_key = "producao" if ambiente == "1" else "producao_restrita"
         self.endpoints = ESOCIAL_ENDPOINTS[env_key]
-        self.xml_builder = eSocialXMLBuilder()
+        self.xml_builder = ESocialXMLBuilder()
 
-        logger.info(f"eSocialManager inicializado: Ambiente={'Produção' if ambiente == '1' else 'Produção Restrita'}")
+        logger.info(f"ESocialManager inicializado: Ambiente={'Produção' if ambiente == '1' else 'Produção Restrita'}")
 
     def criar_evento_admissao(
-        self,
-        empregador: Empregador,
-        trabalhador: Trabalhador,
-        contrato: Contrato
+        self, empregador: Empregador, trabalhador: Trabalhador, contrato: Contrato
     ) -> EventoeSocial:
         """Cria evento S-2200 - Admissão."""
         return EventoeSocial(
@@ -482,12 +489,7 @@ class eSocialManager:
         )
 
     def criar_evento_desligamento(
-        self,
-        empregador: Empregador,
-        trabalhador: Trabalhador,
-        contrato: Contrato,
-        data_desligamento: date,
-        motivo: str
+        self, empregador: Empregador, trabalhador: Trabalhador, contrato: Contrato, data_desligamento: date, motivo: str
     ) -> EventoeSocial:
         """Cria evento S-2299 - Desligamento."""
         return EventoeSocial(
@@ -502,7 +504,7 @@ class eSocialManager:
         self,
         empregador: Empregador,
         trabalhador: Trabalhador,
-        periodo: str  # AAAA-MM
+        periodo: str,  # AAAA-MM
     ) -> EventoeSocial:
         """Cria evento S-1200 - Remuneração."""
         return EventoeSocial(
@@ -528,19 +530,18 @@ class eSocialManager:
         Returns:
             XML do lote
         """
-        import hashlib
         from datetime import datetime
 
         # ID do lote: ID + tp inscrição + nr inscrição + timestamp
-        timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-        lote_id = f"ID1{self._nr_insc[:14]}{timestamp}"
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        f"ID1{self._nr_insc[:14]}{timestamp}"
 
         # Montar eventos - cada evento precisa de Id
-        eventos_xml = ''
+        eventos_xml = ""
         for idx, evt in enumerate(eventos):
             # Extrair Id do evento do XML
             id_match = re.search(r'Id="([^"]+)"', evt)
-            evt_id = id_match.group(1) if id_match else f"ID{idx+1:010d}"
+            evt_id = id_match.group(1) if id_match else f"ID{idx + 1:010d}"
             eventos_xml += f'<evento Id="{evt_id}">{evt}</evento>'
 
         lote = f'''<eSocial xmlns="http://www.esocial.gov.br/schema/lote/eventos/envio/v1_1_1">
@@ -559,7 +560,7 @@ class eSocialManager:
 
         return lote
 
-    async def enviar_evento(self, evento: EventoeSocial) -> eSocialResult:
+    async def enviar_evento(self, evento: EventoeSocial) -> ESocialResult:
         """
         Envia evento para o eSocial.
 
@@ -571,7 +572,7 @@ class eSocialManager:
         """
         return await self.enviar_lote([evento])
 
-    async def enviar_lote(self, eventos: list) -> eSocialResult:
+    async def enviar_lote(self, eventos: list) -> ESocialResult:
         """
         Envia lote de eventos para o eSocial.
 
@@ -581,29 +582,24 @@ class eSocialManager:
         Returns:
             Resultado do envio
         """
-        import time
         import ssl
         import tempfile
+        import time
+
         import httpx
 
         start_time = time.time()
 
         try:
             if not self.cert_path:
-                return eSocialResult(
-                    sucesso=False,
-                    mensagem="Certificado digital não configurado"
-                )
+                return ESocialResult(sucesso=False, mensagem="Certificado digital não configurado")
 
             # Importar dependências
             from .certificate_manager import CertificateManager
-            from .xml_signer import XMLSigner, SignatureType
+            from .xml_signer import SignatureType, XMLSigner
 
             # Carregar certificado
-            cert_manager = CertificateManager(
-                pfx_path=self.cert_path,
-                password=self.cert_password
-            )
+            cert_manager = CertificateManager(pfx_path=self.cert_path, password=self.cert_password)
             cert_manager.load()
 
             signer = XMLSigner(cert_manager)
@@ -615,7 +611,7 @@ class eSocialManager:
 
             # Guardar nr_insc para o lote
             if primeiro_evento and primeiro_evento.empregador:
-                self._nr_insc = re.sub(r'[^\d]', '', primeiro_evento.empregador.numero_inscricao)
+                self._nr_insc = re.sub(r"[^\d]", "", primeiro_evento.empregador.numero_inscricao)
             else:
                 self._nr_insc = "00000000000000"
 
@@ -628,7 +624,7 @@ class eSocialManager:
                     ref_uri = f"#{id_match.group(1)}"
                     xml_assinado = signer.sign(xml, SignatureType.ESOCIAL, ref_uri)
                     # Remover declaração XML
-                    xml_assinado = re.sub(r'<\?xml[^>]+\?>\s*', '', xml_assinado)
+                    xml_assinado = re.sub(r"<\?xml[^>]+\?>\s*", "", xml_assinado)
                     eventos_assinados.append(xml_assinado)
                 else:
                     eventos_assinados.append(xml)
@@ -641,11 +637,11 @@ class eSocialManager:
             ssl_context.check_hostname = False
             ssl_context.verify_mode = ssl.CERT_NONE
 
-            with tempfile.NamedTemporaryFile(mode='wb', suffix='.pem', delete=False) as f:
+            with tempfile.NamedTemporaryFile(mode="wb", suffix=".pem", delete=False) as f:
                 f.write(cert_manager.get_certificate_pem())
                 cert_pem = f.name
 
-            with tempfile.NamedTemporaryFile(mode='wb', suffix='.pem', delete=False) as f:
+            with tempfile.NamedTemporaryFile(mode="wb", suffix=".pem", delete=False) as f:
                 f.write(cert_manager.get_private_key_pem())
                 key_pem = f.name
 
@@ -669,17 +665,15 @@ class eSocialManager:
             async with httpx.AsyncClient(verify=ssl_context, timeout=60.0) as client:
                 response = await client.post(
                     url,
-                    content=envelope.encode('utf-8'),
-                    headers={
-                        "Content-Type": "text/xml; charset=utf-8",
-                        "SOAPAction": soap_action
-                    }
+                    content=envelope.encode("utf-8"),
+                    headers={"Content-Type": "text/xml; charset=utf-8", "SOAPAction": soap_action},
                 )
 
             tempo = time.time() - start_time
 
             # Limpar arquivos temporários
             import os
+
             os.unlink(cert_pem)
             os.unlink(key_pem)
 
@@ -688,9 +682,9 @@ class eSocialManager:
                 xml_retorno = response.text
 
                 # Extrair informações
-                protocolo_match = re.search(r'<protocoloEnvio>([^<]+)</protocoloEnvio>', xml_retorno)
-                status_match = re.search(r'<cdResposta>(\d+)</cdResposta>', xml_retorno)
-                msg_match = re.search(r'<descResposta>([^<]+)</descResposta>', xml_retorno)
+                protocolo_match = re.search(r"<protocoloEnvio>([^<]+)</protocoloEnvio>", xml_retorno)
+                status_match = re.search(r"<cdResposta>(\d+)</cdResposta>", xml_retorno)
+                msg_match = re.search(r"<descResposta>([^<]+)</descResposta>", xml_retorno)
 
                 protocolo = protocolo_match.group(1) if protocolo_match else None
                 codigo = status_match.group(1) if status_match else None
@@ -699,31 +693,27 @@ class eSocialManager:
                 # Código 201 = Lote recebido com sucesso
                 sucesso = codigo in ["201", "202"]
 
-                return eSocialResult(
+                return ESocialResult(
                     sucesso=sucesso,
                     mensagem=mensagem,
                     protocolo=protocolo,
                     codigo_retorno=codigo,
                     xml_retorno=xml_retorno,
-                    tempo_resposta=tempo
+                    tempo_resposta=tempo,
                 )
             else:
-                return eSocialResult(
+                return ESocialResult(
                     sucesso=False,
                     mensagem=f"Erro HTTP {response.status_code}",
                     xml_retorno=response.text,
-                    tempo_resposta=tempo
+                    tempo_resposta=tempo,
                 )
 
         except Exception as e:
             logger.error(f"Erro ao enviar lote eSocial: {e}")
-            return eSocialResult(
-                sucesso=False,
-                mensagem=str(e),
-                tempo_resposta=time.time() - start_time
-            )
+            return ESocialResult(sucesso=False, mensagem=str(e), tempo_resposta=time.time() - start_time)
 
-    async def consultar_lote(self, protocolo: str) -> eSocialResult:
+    async def consultar_lote(self, protocolo: str) -> ESocialResult:
         """
         Consulta resultado do processamento de um lote.
 
@@ -733,44 +723,41 @@ class eSocialManager:
         Returns:
             Resultado da consulta
         """
-        import time
         import ssl
         import tempfile
+        import time
+
         import httpx
 
         start_time = time.time()
 
         try:
             if not self.cert_path:
-                return eSocialResult(
-                    sucesso=False,
-                    mensagem="Certificado digital não configurado"
-                )
+                return ESocialResult(sucesso=False, mensagem="Certificado digital não configurado")
 
             from .certificate_manager import CertificateManager
 
-            cert_manager = CertificateManager(
-                pfx_path=self.cert_path,
-                password=self.cert_password
-            )
+            cert_manager = CertificateManager(pfx_path=self.cert_path, password=self.cert_password)
             cert_manager.load()
 
             ssl_context = ssl.create_default_context()
             ssl_context.check_hostname = False
             ssl_context.verify_mode = ssl.CERT_NONE
 
-            with tempfile.NamedTemporaryFile(mode='wb', suffix='.pem', delete=False) as f:
+            with tempfile.NamedTemporaryFile(mode="wb", suffix=".pem", delete=False) as f:
                 f.write(cert_manager.get_certificate_pem())
                 cert_pem = f.name
 
-            with tempfile.NamedTemporaryFile(mode='wb', suffix='.pem', delete=False) as f:
+            with tempfile.NamedTemporaryFile(mode="wb", suffix=".pem", delete=False) as f:
                 f.write(cert_manager.get_private_key_pem())
                 key_pem = f.name
 
             ssl_context.load_cert_chain(cert_pem, key_pem)
 
             url = self.endpoints["consulta_lote"]
-            wsdl_ns = "http://www.esocial.gov.br/servicos/empregador/lote/eventos/envio/consulta/retornoProcessamento/v1_1_0"
+            wsdl_ns = (
+                "http://www.esocial.gov.br/servicos/empregador/lote/eventos/envio/consulta/retornoProcessamento/v1_1_0"
+            )
 
             envelope = f'''<?xml version="1.0" encoding="UTF-8"?>
 <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope">
@@ -787,16 +774,17 @@ class eSocialManager:
             async with httpx.AsyncClient(verify=ssl_context, timeout=60.0) as client:
                 response = await client.post(
                     url,
-                    content=envelope.encode('utf-8'),
+                    content=envelope.encode("utf-8"),
                     headers={
                         "Content-Type": "text/xml; charset=utf-8",
-                        "SOAPAction": f"{wsdl_ns}/ConsultarLoteEventos"
-                    }
+                        "SOAPAction": f"{wsdl_ns}/ConsultarLoteEventos",
+                    },
                 )
 
             tempo = time.time() - start_time
 
             import os
+
             os.unlink(cert_pem)
             os.unlink(key_pem)
 
@@ -804,30 +792,22 @@ class eSocialManager:
                 xml_retorno = response.text
 
                 # Extrair recibos
-                recibos = re.findall(r'<nrRecibo>([^<]+)</nrRecibo>', xml_retorno)
+                recibos = re.findall(r"<nrRecibo>([^<]+)</nrRecibo>", xml_retorno)
 
-                return eSocialResult(
+                return ESocialResult(
                     sucesso=True,
                     mensagem=f"Consulta realizada. {len(recibos)} recibo(s) encontrado(s).",
                     protocolo=protocolo,
                     numero_recibo=recibos[0] if recibos else None,
                     xml_retorno=xml_retorno,
-                    tempo_resposta=tempo
+                    tempo_resposta=tempo,
                 )
             else:
-                return eSocialResult(
-                    sucesso=False,
-                    mensagem=f"Erro HTTP {response.status_code}",
-                    tempo_resposta=tempo
-                )
+                return ESocialResult(sucesso=False, mensagem=f"Erro HTTP {response.status_code}", tempo_resposta=tempo)
 
         except Exception as e:
             logger.error(f"Erro ao consultar lote eSocial: {e}")
-            return eSocialResult(
-                sucesso=False,
-                mensagem=str(e),
-                tempo_resposta=time.time() - start_time
-            )
+            return ESocialResult(sucesso=False, mensagem=str(e), tempo_resposta=time.time() - start_time)
 
 
-logger.info("Módulo eSocialManager carregado")
+logger.info("Módulo ESocialManager carregado")

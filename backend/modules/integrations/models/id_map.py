@@ -4,14 +4,10 @@ Sprint 33: Integration Framework
 """
 
 from datetime import datetime
-from typing import Optional
 from uuid import uuid4
 
-from sqlalchemy import (
-    Column, String, Text, Boolean, DateTime,
-    Index, ForeignKey, UniqueConstraint
-)
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Index, String, Text, UniqueConstraint
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 from core.database import Base
 
@@ -22,6 +18,7 @@ class IDMap(Base):
     Mantém a relação ID externo <-> ID interno por entidade.
     Essencial para idempotência e reconciliação.
     """
+
     __tablename__ = "id_maps"
 
     # Primary key
@@ -30,10 +27,7 @@ class IDMap(Base):
     # Referências
     tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
     account_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("integration_accounts.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True
+        UUID(as_uuid=True), ForeignKey("integration_accounts.id", ondelete="CASCADE"), nullable=False, index=True
     )
 
     # Sistema e Entidade
@@ -79,22 +73,14 @@ class IDMap(Base):
     # Auditoria
     ativo = Column(Boolean, nullable=False, default=True)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(
-        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Índices e constraints
     __table_args__ = (
         # Unicidade: tenant + account + entity + external_id
-        UniqueConstraint(
-            "tenant_id", "account_id", "entity_type", "external_id",
-            name="uq_id_map_external"
-        ),
+        UniqueConstraint("tenant_id", "account_id", "entity_type", "external_id", name="uq_id_map_external"),
         # Unicidade: tenant + account + entity + internal_id
-        UniqueConstraint(
-            "tenant_id", "account_id", "entity_type", "internal_id",
-            name="uq_id_map_internal"
-        ),
+        UniqueConstraint("tenant_id", "account_id", "entity_type", "internal_id", name="uq_id_map_internal"),
         Index("ix_id_maps_tenant_id", "tenant_id"),
         Index("ix_id_maps_account_id", "account_id"),
         Index("ix_id_maps_entity_type", "entity_type"),
@@ -102,16 +88,8 @@ class IDMap(Base):
         Index("ix_id_maps_internal_id", "internal_id"),
         Index("ix_id_maps_connector_type", "connector_type"),
         Index("ix_id_maps_external_code", "external_code"),
-        Index(
-            "ix_id_maps_tenant_entity",
-            "tenant_id",
-            "entity_type"
-        ),
-        Index(
-            "ix_id_maps_account_entity",
-            "account_id",
-            "entity_type"
-        ),
+        Index("ix_id_maps_tenant_entity", "tenant_id", "entity_type"),
+        Index("ix_id_maps_account_entity", "account_id", "entity_type"),
         Index("ix_id_maps_needs_update", "needs_update"),
         Index("ix_id_maps_has_conflict", "has_conflict"),
         Index("ix_id_maps_ativo", "ativo"),
@@ -120,11 +98,7 @@ class IDMap(Base):
     def __repr__(self) -> str:
         return f"<IDMap {self.entity_type} ext={self.external_id} int={self.internal_id}>"
 
-    def mark_synced(
-        self,
-        direction: str = "inbound",
-        data_hash: Optional[str] = None
-    ) -> None:
+    def mark_synced(self, direction: str = "inbound", data_hash: str | None = None) -> None:
         """Marca como sincronizado."""
         self.last_synced_at = datetime.utcnow()
         self.last_sync_direction = direction
@@ -148,11 +122,7 @@ class IDMap(Base):
         self.is_synced = False
         self.updated_at = datetime.utcnow()
 
-    def resolve_conflict(
-        self,
-        resolved_by: Optional[str] = None,
-        keep_external: bool = True
-    ) -> None:
+    def resolve_conflict(self, resolved_by: str | None = None, keep_external: bool = True) -> None:
         """Resolve conflito."""
         self.has_conflict = False
         self.conflict_resolved_at = datetime.utcnow()
@@ -164,7 +134,7 @@ class IDMap(Base):
             self.conflict_data["resolved_at"] = datetime.utcnow().isoformat()
         self.updated_at = datetime.utcnow()
 
-    def deactivate(self, reason: Optional[str] = None) -> None:
+    def deactivate(self, reason: str | None = None) -> None:
         """Desativa o mapeamento."""
         self.is_active = False
         if reason:
@@ -203,7 +173,7 @@ class IDMap(Base):
     def sync_age_hours(self) -> float:
         """Horas desde último sync."""
         if not self.last_synced_at:
-            return float('inf')
+            return float("inf")
         delta = datetime.utcnow() - self.last_synced_at
         return delta.total_seconds() / 3600
 
@@ -216,9 +186,9 @@ class IDMap(Base):
         entity_type: str,
         external_id: str,
         internal_id: str,
-        external_code: Optional[str] = None,
-        data_hash: Optional[str] = None,
-        extra_metadata: Optional[dict] = None
+        external_code: str | None = None,
+        data_hash: str | None = None,
+        extra_metadata: dict | None = None,
     ) -> "IDMap":
         """Factory method para criar mapeamento."""
         return cls(
@@ -234,5 +204,5 @@ class IDMap(Base):
             first_synced_at=datetime.utcnow(),
             last_synced_at=datetime.utcnow(),
             is_active=True,
-            is_synced=True
+            is_synced=True,
         )

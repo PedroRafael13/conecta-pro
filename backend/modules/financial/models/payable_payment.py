@@ -3,8 +3,8 @@
 import uuid
 from datetime import date, datetime
 from decimal import Decimal
-from enum import Enum
-from typing import TYPE_CHECKING, Optional
+from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, Column, Date, DateTime, ForeignKey, Index, Numeric, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from modules.financial.models.payable_installment import PayableInstallment
 
 
-class PaymentStatus(str, Enum):
+class PaymentStatus(StrEnum):
     """Status do pagamento."""
 
     PENDENTE = "pendente"  # Aguardando processamento
@@ -27,7 +27,7 @@ class PaymentStatus(str, Enum):
     CANCELADO = "cancelado"  # Cancelado
 
 
-class PaymentOrigin(str, Enum):
+class PaymentOrigin(StrEnum):
     """Origem do pagamento."""
 
     MANUAL = "manual"  # Lançamento manual
@@ -122,9 +122,7 @@ class PayablePayment(Base):
     ativo = Column(Boolean, default=True, nullable=False)
 
     # Relacionamentos
-    installment: "PayableInstallment" = relationship(
-        "PayableInstallment", back_populates="payments"
-    )
+    installment: "PayableInstallment" = relationship("PayableInstallment", back_populates="payments")
 
     __table_args__ = (
         Index("ix_payable_payments_date", "payment_date"),
@@ -166,15 +164,9 @@ class PayablePayment(Base):
 
     def calculate_net_value(self) -> Decimal:
         """Calcula valor líquido."""
-        return (
-            self.paid_value
-            - self.discount_value
-            + self.interest_value
-            + self.penalty_value
-            + self.fee_value
-        )
+        return self.paid_value - self.discount_value + self.interest_value + self.penalty_value + self.fee_value
 
-    def confirm(self, confirmation_date: Optional[date] = None) -> None:
+    def confirm(self, confirmation_date: date | None = None) -> None:
         """Confirma o pagamento."""
         self.status = PaymentStatus.CONFIRMADO.value
         self.confirmation_date = confirmation_date or date.today()
@@ -189,7 +181,7 @@ class PayablePayment(Base):
         self,
         user_id: uuid.UUID,
         reason: str,
-        receipt: Optional[str] = None,
+        receipt: str | None = None,
     ) -> None:
         """Estorna o pagamento."""
         self.is_reversed = True
@@ -202,7 +194,7 @@ class PayablePayment(Base):
     def reconcile(
         self,
         user_id: uuid.UUID,
-        notes: Optional[str] = None,
+        notes: str | None = None,
     ) -> None:
         """Marca como conciliado."""
         self.is_reconciled = True
@@ -230,9 +222,7 @@ class PayablePayment(Base):
             "fee_value": float(self.fee_value),
             "net_value": float(self.net_value),
             "payment_date": self.payment_date.isoformat(),
-            "confirmation_date": (
-                self.confirmation_date.isoformat() if self.confirmation_date else None
-            ),
+            "confirmation_date": (self.confirmation_date.isoformat() if self.confirmation_date else None),
             "payment_method_name": self.payment_method_name,
             "receipt_number": self.receipt_number,
             "is_confirmed": self.is_confirmed,

@@ -5,11 +5,9 @@ Sprint 33: Integration Framework
 Processa eventos de webhook recebidos do Sólides.
 """
 
-import asyncio
-import json
 import logging
 from datetime import datetime
-from typing import Any, Dict, Optional, Callable, Awaitable
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import select
@@ -17,15 +15,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.integrations.connectors.solides.connector import SolidesConnector
 from modules.integrations.connectors.solides.models import (
-    SolidesWebhookLog,
     SolidesIntegrationConfig,
-    SyncSource,
-    log_webhook,
+    SolidesWebhookLog,
     log_webhook_async,
-)
-from modules.integrations.connectors.solides.schemas import (
-    SolidesWebhookEvent,
-    SolidesWebhookEventType,
 )
 
 logger = logging.getLogger(__name__)
@@ -60,12 +52,7 @@ class SolidesWebhookHandler:
         "mudanca_etapa": "_handle_stage_change",
     }
 
-    def __init__(
-        self,
-        db: AsyncSession,
-        redis_client=None,
-        async_processing: bool = True
-    ):
+    def __init__(self, db: AsyncSession, redis_client=None, async_processing: bool = True):
         """
         Inicializa o handler.
 
@@ -81,12 +68,12 @@ class SolidesWebhookHandler:
     async def handle_webhook(
         self,
         event_type: str,
-        payload: Dict[str, Any],
-        headers: Dict[str, str],
+        payload: dict[str, Any],
+        headers: dict[str, str],
         raw_body: bytes,
-        request_id: Optional[str] = None,
-        ip_address: Optional[str] = None
-    ) -> Dict[str, Any]:
+        request_id: str | None = None,
+        ip_address: str | None = None,
+    ) -> dict[str, Any]:
         """
         Processa webhook recebido.
 
@@ -113,21 +100,16 @@ class SolidesWebhookHandler:
             condominio_id=condominio_id,
             headers=dict(headers),
             request_id=request_id,
-            ip_address=ip_address
+            ip_address=ip_address,
         )
 
-        logger.info(
-            f"[Solides Webhook] Recebido evento '{event_type}' "
-            f"(id={webhook_log.id}, empresa={empresa_id})"
-        )
+        logger.info(f"[Solides Webhook] Recebido evento '{event_type}' (id={webhook_log.id}, empresa={empresa_id})")
 
         # Validar assinatura se configurado
         if condominio_id:
             config = await self._get_config(condominio_id)
             if config and config.webhook_secret:
-                connector = SolidesConnector(
-                    credentials={"webhook_secret": config.webhook_secret}
-                )
+                connector = SolidesConnector(credentials={"webhook_secret": config.webhook_secret})
                 if not await connector.validate_webhook(headers, raw_body):
                     webhook_log.status = "invalid_signature"
                     webhook_log.error = "Assinatura inválida"
@@ -146,10 +128,7 @@ class SolidesWebhookHandler:
             result = await self._process_event(webhook_log)
             return {"status": result, "webhook_id": str(webhook_log.id)}
 
-    async def _process_event(
-        self,
-        webhook_log: SolidesWebhookLog
-    ) -> str:
+    async def _process_event(self, webhook_log: SolidesWebhookLog) -> str:
         """
         Processa evento de webhook.
 
@@ -208,16 +187,10 @@ class SolidesWebhookHandler:
             webhook_id: ID do webhook
         """
         if self.redis:
-            await self.redis.lpush(
-                "solides:webhooks:queue",
-                str(webhook_id)
-            )
+            await self.redis.lpush("solides:webhooks:queue", str(webhook_id))
             logger.debug(f"[Solides Webhook] Enfileirado {webhook_id}")
 
-    async def _get_condominio_from_empresa(
-        self,
-        empresa_id: Optional[int]
-    ) -> Optional[UUID]:
+    async def _get_condominio_from_empresa(self, empresa_id: int | None) -> UUID | None:
         """
         Mapeia empresa_id do Sólides para condominio_id.
 
@@ -232,33 +205,24 @@ class SolidesWebhookHandler:
 
         # Buscar mapeamento
         stmt = select(SolidesIntegrationConfig).where(
-            SolidesIntegrationConfig.extra_config['empresa_id'].astext == str(empresa_id)
+            SolidesIntegrationConfig.extra_config["empresa_id"].astext == str(empresa_id)
         )
         result = await self.db.execute(stmt)
         config = result.scalar_one_or_none()
 
         return config.condominio_id if config else None
 
-    async def _get_config(
-        self,
-        condominio_id: UUID
-    ) -> Optional[SolidesIntegrationConfig]:
+    async def _get_config(self, condominio_id: UUID) -> SolidesIntegrationConfig | None:
         """
         Obtém configuração da integração.
         """
-        stmt = select(SolidesIntegrationConfig).where(
-            SolidesIntegrationConfig.condominio_id == condominio_id
-        )
+        stmt = select(SolidesIntegrationConfig).where(SolidesIntegrationConfig.condominio_id == condominio_id)
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 
     # ==================== HANDLERS DE EVENTOS ====================
 
-    async def _handle_new_employee(
-        self,
-        condominio_id: Optional[UUID],
-        payload: Dict[str, Any]
-    ) -> None:
+    async def _handle_new_employee(self, condominio_id: UUID | None, payload: dict[str, Any]) -> None:
         """
         Processa evento de novo colaborador.
         """
@@ -272,11 +236,7 @@ class SolidesWebhookHandler:
         logger.info(f"[Solides Webhook] Processando novo colaborador {solides_id}")
         # Sincronização será implementada via integration_service
 
-    async def _handle_employee_update(
-        self,
-        condominio_id: Optional[UUID],
-        payload: Dict[str, Any]
-    ) -> None:
+    async def _handle_employee_update(self, condominio_id: UUID | None, payload: dict[str, Any]) -> None:
         """
         Processa evento de atualização de colaborador.
         """
@@ -288,11 +248,7 @@ class SolidesWebhookHandler:
 
         logger.info(f"[Solides Webhook] Processando atualização colaborador {solides_id}")
 
-    async def _handle_employee_termination(
-        self,
-        condominio_id: Optional[UUID],
-        payload: Dict[str, Any]
-    ) -> None:
+    async def _handle_employee_termination(self, condominio_id: UUID | None, payload: dict[str, Any]) -> None:
         """
         Processa evento de demissão de colaborador.
         """
@@ -304,11 +260,7 @@ class SolidesWebhookHandler:
 
         logger.info(f"[Solides Webhook] Processando demissão colaborador {solides_id}")
 
-    async def _handle_new_occurrence(
-        self,
-        condominio_id: Optional[UUID],
-        payload: Dict[str, Any]
-    ) -> None:
+    async def _handle_new_occurrence(self, condominio_id: UUID | None, payload: dict[str, Any]) -> None:
         """
         Processa evento de nova ocorrência.
         """
@@ -320,11 +272,7 @@ class SolidesWebhookHandler:
 
         logger.info(f"[Solides Webhook] Processando nova ocorrência {solides_id}")
 
-    async def _handle_new_absence(
-        self,
-        condominio_id: Optional[UUID],
-        payload: Dict[str, Any]
-    ) -> None:
+    async def _handle_new_absence(self, condominio_id: UUID | None, payload: dict[str, Any]) -> None:
         """
         Processa evento de novo absenteísmo.
         """
@@ -336,21 +284,13 @@ class SolidesWebhookHandler:
 
         logger.info(f"[Solides Webhook] Processando novo absenteísmo {solides_id}")
 
-    async def _handle_survey_response(
-        self,
-        condominio_id: Optional[UUID],
-        payload: Dict[str, Any]
-    ) -> None:
+    async def _handle_survey_response(self, condominio_id: UUID | None, payload: dict[str, Any]) -> None:
         """
         Processa evento de resposta em pesquisa.
         """
         logger.info("[Solides Webhook] Resposta de pesquisa recebida (não processado)")
 
-    async def _handle_new_resume(
-        self,
-        condominio_id: Optional[UUID],
-        payload: Dict[str, Any]
-    ) -> None:
+    async def _handle_new_resume(self, condominio_id: UUID | None, payload: dict[str, Any]) -> None:
         """
         Processa evento de novo currículo.
         """
@@ -362,11 +302,7 @@ class SolidesWebhookHandler:
 
         logger.info(f"[Solides Webhook] Processando novo currículo {solides_id}")
 
-    async def _handle_new_application(
-        self,
-        condominio_id: Optional[UUID],
-        payload: Dict[str, Any]
-    ) -> None:
+    async def _handle_new_application(self, condominio_id: UUID | None, payload: dict[str, Any]) -> None:
         """
         Processa evento de nova inscrição em vaga.
         """
@@ -378,11 +314,7 @@ class SolidesWebhookHandler:
 
         logger.info(f"[Solides Webhook] Processando nova inscrição {solides_id}")
 
-    async def _handle_stage_change(
-        self,
-        condominio_id: Optional[UUID],
-        payload: Dict[str, Any]
-    ) -> None:
+    async def _handle_stage_change(self, condominio_id: UUID | None, payload: dict[str, Any]) -> None:
         """
         Processa evento de mudança de etapa em processo seletivo.
         """
@@ -397,11 +329,8 @@ class SolidesWebhookHandler:
 
 # ==================== WORKER PARA FILA ====================
 
-async def process_webhook_queue(
-    db: AsyncSession,
-    redis_client,
-    batch_size: int = 10
-) -> int:
+
+async def process_webhook_queue(db: AsyncSession, redis_client, batch_size: int = 10) -> int:
     """
     Processa webhooks enfileirados.
 
@@ -425,9 +354,7 @@ async def process_webhook_queue(
         webhook_id = webhook_id_bytes.decode()
 
         # Buscar webhook
-        stmt = select(SolidesWebhookLog).where(
-            SolidesWebhookLog.id == webhook_id
-        )
+        stmt = select(SolidesWebhookLog).where(SolidesWebhookLog.id == webhook_id)
         result = await db.execute(stmt)
         webhook_log = result.scalar_one_or_none()
 

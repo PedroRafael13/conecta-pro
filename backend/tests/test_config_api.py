@@ -2,33 +2,34 @@
 Testes da API do módulo Config
 Sprint 35: Configurações e Multi-tenant
 """
+
 # pylint: disable=redefined-outer-name,unused-argument,too-many-lines
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from httpx import AsyncClient
 
 from modules.config.models import (
-    Tenant,
-    TenantStatus,
-    TenantPlan,
-    TenantType,
-    TenantSettings,
-    SettingCategory,
-    SettingType,
-    SystemConfig,
-    ConfigScope,
     ConfigPriority,
+    ConfigScope,
     FeatureFlag,
     FlagStatus,
     FlagType,
-    RolloutStrategy,
-    NotificationTemplate,
     NotificationChannel,
+    NotificationTemplate,
     NotificationType,
+    RolloutStrategy,
+    SettingCategory,
+    SettingType,
+    SystemConfig,
     TemplateStatus,
+    Tenant,
+    TenantPlan,
+    TenantSettings,
+    TenantStatus,
+    TenantType,
 )
 
 
@@ -61,8 +62,8 @@ def sample_tenant():
         features_habilitadas=["reports", "dashboard"],
         modulos_habilitados=["crm", "financial"],
         ativo=True,
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
     )
 
 
@@ -82,8 +83,8 @@ def sample_setting():
         is_editavel=True,
         is_visivel=True,
         ativo=True,
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
     )
 
 
@@ -104,8 +105,8 @@ def sample_config():
         is_visivel=True,
         permite_override=True,
         ativo=True,
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
     )
 
 
@@ -128,8 +129,8 @@ def sample_flag():
         is_ab_test=False,
         tags=["dashboard", "ui"],
         ativo=True,
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
     )
 
 
@@ -155,8 +156,8 @@ def sample_template():
         metricas={"sent": 100, "opened": 45},
         tags=["welcome", "onboarding"],
         ativo=True,
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
     )
 
 

@@ -3,8 +3,8 @@
 Sprint 33 - Workflow Engine (Unificado).
 """
 
-import enum
 from datetime import datetime
+from enum import StrEnum
 from typing import Any
 
 from sqlalchemy import (
@@ -23,7 +23,7 @@ from sqlalchemy.orm import relationship
 from core.models import Base
 
 
-class StepExecutionStatus(str, enum.Enum):
+class StepExecutionStatus(StrEnum):
     """Status da execucao do step."""
 
     PENDING = "PENDING"  # Pendente

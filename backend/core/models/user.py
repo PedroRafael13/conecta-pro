@@ -2,8 +2,7 @@
 Modelo de usuário com RBAC.
 """
 
-from enum import Enum
-from typing import Optional
+from enum import StrEnum
 
 from sqlalchemy import String, Text
 from sqlalchemy.dialects.postgresql import ARRAY
@@ -12,7 +11,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from .base import BaseModel
 
 
-class UserRole(str, Enum):
+class UserRole(StrEnum):
     """Roles disponíveis no sistema."""
 
     SUPER_ADMIN = "super_admin"  # Acesso total ao sistema
@@ -58,11 +57,11 @@ class User(BaseModel):
         String(100),
         nullable=False,
     )
-    phone: Mapped[Optional[str]] = mapped_column(
+    phone: Mapped[str | None] = mapped_column(
         String(20),
         nullable=True,
     )
-    avatar_url: Mapped[Optional[str]] = mapped_column(
+    avatar_url: Mapped[str | None] = mapped_column(
         String(500),
         nullable=True,
     )
@@ -73,14 +72,14 @@ class User(BaseModel):
         default=UserRole.OPERATOR.value,
         nullable=False,
     )
-    permissions: Mapped[Optional[list[str]]] = mapped_column(
+    permissions: Mapped[list[str] | None] = mapped_column(
         ARRAY(String),
         default=list,
         nullable=True,
     )
 
     # OAuth providers
-    google_id: Mapped[Optional[str]] = mapped_column(
+    google_id: Mapped[str | None] = mapped_column(
         String(100),
         nullable=True,
         unique=True,
@@ -88,11 +87,11 @@ class User(BaseModel):
     )
 
     # Metadata
-    last_login: Mapped[Optional[str]] = mapped_column(
+    last_login: Mapped[str | None] = mapped_column(
         String(50),
         nullable=True,
     )
-    notes: Mapped[Optional[str]] = mapped_column(
+    notes: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
     )

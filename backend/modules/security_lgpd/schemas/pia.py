@@ -2,7 +2,7 @@
 Schemas de PIA (Privacy Impact Assessment) do modulo de seguranca LGPD.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -31,23 +31,23 @@ class PIARequest(BaseModel):
         max_length=5000,
         description="Descricao do tratamento",
     )
-    data_categories: List[str] = Field(
+    data_categories: list[str] = Field(
         ...,
         min_length=1,
         max_length=20,
         description="Categorias de dados tratados",
     )
-    processing_purposes: List[str] = Field(
+    processing_purposes: list[str] = Field(
         ...,
         min_length=1,
         max_length=10,
         description="Finalidades do tratamento",
     )
-    data_subjects: List[str] = Field(
+    data_subjects: list[str] = Field(
         default_factory=lambda: ["funcionarios"],
         description="Titulares afetados",
     )
-    risk_factors: List[str] = Field(
+    risk_factors: list[str] = Field(
         default_factory=list,
         description="Fatores de risco identificados",
     )
@@ -73,5 +73,5 @@ class PIAResponse(BaseModel):
     project_name: str = Field(..., description="Nome do projeto")
     risk_level: str = Field(..., description="Nivel de risco")
     requires_dpia: bool = Field(..., description="Requer DPIA completo")
-    recommendations: List[str] = Field(..., description="Recomendacoes")
-    details: Optional[Dict[str, Any]] = Field(None, description="Detalhes completos")
+    recommendations: list[str] = Field(..., description="Recomendacoes")
+    details: dict[str, Any] | None = Field(None, description="Detalhes completos")

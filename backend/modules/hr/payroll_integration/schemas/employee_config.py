@@ -2,7 +2,6 @@
 
 from datetime import date, datetime, time
 from decimal import Decimal
-from typing import List, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
@@ -20,13 +19,13 @@ class BenefitConfigSchema(BaseModel):
 
     benefit_type: str = Field(..., min_length=1, max_length=50)
     value: Decimal = Field(..., ge=0)
-    discount_rate: Optional[Decimal] = Field(None, ge=0, le=100)
-    discount_type: Optional[str] = Field(
+    discount_rate: Decimal | None = Field(None, ge=0, le=100)
+    discount_type: str | None = Field(
         None,
         pattern="^(percentage|fixed)$",
     )
-    provider: Optional[str] = None
-    plan_type: Optional[str] = None  # employee_only, family, etc.
+    provider: str | None = None
+    plan_type: str | None = None  # employee_only, family, etc.
 
 
 class LoanConfigSchema(BaseModel):
@@ -38,8 +37,8 @@ class LoanConfigSchema(BaseModel):
     total_installments: int = Field(..., ge=1)
     paid_installments: int = Field(default=0, ge=0)
     start_date: date
-    end_date: Optional[date] = None
-    interest_rate: Optional[Decimal] = Field(None, ge=0)
+    end_date: date | None = None
+    interest_rate: Decimal | None = Field(None, ge=0)
 
     @field_validator("paid_installments")
     @classmethod
@@ -64,17 +63,17 @@ class AlimonyConfigSchema(BaseModel):
         default="net_salary",
         pattern="^(gross_salary|net_salary|specific_events)$",
     )
-    bank_code: Optional[str] = None
-    branch: Optional[str] = None
-    account: Optional[str] = None
-    document: Optional[str] = None  # CPF do beneficiário
+    bank_code: str | None = None
+    branch: str | None = None
+    account: str | None = None
+    document: str | None = None  # CPF do beneficiário
 
 
 class DependentSchema(BaseModel):
     """Configuração de dependente."""
 
     name: str = Field(..., min_length=1, max_length=200)
-    cpf: Optional[str] = Field(None, min_length=11, max_length=11)
+    cpf: str | None = Field(None, min_length=11, max_length=11)
     birth_date: date
     relationship: str = Field(
         ...,
@@ -97,11 +96,11 @@ class CalculationConfigSchema(BaseModel):
 class ExternalCodesSchema(BaseModel):
     """Códigos externos para integração."""
 
-    esocial_matricula: Optional[str] = None
-    totvs_chapa: Optional[str] = None
-    senior_codigo: Optional[str] = None
-    adp_id: Optional[str] = None
-    custom_code: Optional[str] = None
+    esocial_matricula: str | None = None
+    totvs_chapa: str | None = None
+    senior_codigo: str | None = None
+    adp_id: str | None = None
+    custom_code: str | None = None
 
 
 class EmployeePayrollConfigBase(BaseModel):
@@ -109,88 +108,88 @@ class EmployeePayrollConfigBase(BaseModel):
 
     contract_type: ContractType = Field(default=ContractType.CLT)
     admission_date: date
-    termination_date: Optional[date] = None
-    experience_end_date: Optional[date] = None
+    termination_date: date | None = None
+    experience_end_date: date | None = None
     base_salary: Decimal = Field(..., ge=0)
     salary_type: str = Field(
         default="monthly",
         pattern="^(monthly|hourly|daily)$",
     )
-    hourly_rate: Optional[Decimal] = Field(None, ge=0)
-    daily_rate: Optional[Decimal] = Field(None, ge=0)
+    hourly_rate: Decimal | None = Field(None, ge=0)
+    daily_rate: Decimal | None = Field(None, ge=0)
     work_schedule_type: WorkScheduleType = Field(default=WorkScheduleType.STANDARD)
     weekly_hours: Decimal = Field(default=Decimal("44.0"), ge=0, le=44)
     daily_hours: Decimal = Field(default=Decimal("8.0"), ge=0, le=12)
     monthly_hours: Decimal = Field(default=Decimal("220.0"), ge=0)
-    work_start: Optional[time] = None
-    work_end: Optional[time] = None
-    lunch_start: Optional[time] = None
-    lunch_end: Optional[time] = None
+    work_start: time | None = None
+    work_end: time | None = None
+    lunch_start: time | None = None
+    lunch_end: time | None = None
     lunch_duration_minutes: int = Field(default=60, ge=0, le=120)
     overtime_rule: OvertimeRule = Field(default=OvertimeRule.PAY)
     overtime_rate_50: Decimal = Field(default=Decimal("50.0"), ge=0)
     overtime_rate_100: Decimal = Field(default=Decimal("100.0"), ge=0)
     overtime_threshold: Decimal = Field(default=Decimal("44.0"), ge=0)
     night_shift_rate: Decimal = Field(default=Decimal("20.0"), ge=0)
-    night_shift_start: Optional[time] = None
-    night_shift_end: Optional[time] = None
+    night_shift_start: time | None = None
+    night_shift_end: time | None = None
     night_hour_reduction: bool = True
     bank_hours_enabled: bool = False
-    bank_hours_policy: Optional[BankHoursPolicy] = None
+    bank_hours_policy: BankHoursPolicy | None = None
     bank_hours_balance: Decimal = Field(default=Decimal("0"), ge=-999, le=999)
-    bank_hours_limit: Optional[Decimal] = Field(None, ge=0)
-    bank_hours_hybrid_threshold: Optional[Decimal] = Field(None, ge=0)
-    hazard_pay_rate: Optional[Decimal] = Field(None, ge=0, le=30)
-    unhealthy_pay_rate: Optional[Decimal] = Field(None, ge=0, le=40)
-    unhealthy_pay_base: Optional[str] = Field(
+    bank_hours_limit: Decimal | None = Field(None, ge=0)
+    bank_hours_hybrid_threshold: Decimal | None = Field(None, ge=0)
+    hazard_pay_rate: Decimal | None = Field(None, ge=0, le=30)
+    unhealthy_pay_rate: Decimal | None = Field(None, ge=0, le=40)
+    unhealthy_pay_base: str | None = Field(
         None,
         pattern="^(salary|minimum_wage)$",
     )
     dependents_count: int = Field(default=0, ge=0)
-    union_id: Optional[str] = None
+    union_id: str | None = None
     union_contribution_enabled: bool = False
-    union_contribution_type: Optional[str] = Field(
+    union_contribution_type: str | None = Field(
         None,
         pattern="^(annual|monthly)$",
     )
-    union_contribution_value: Optional[Decimal] = Field(None, ge=0)
+    union_contribution_value: Decimal | None = Field(None, ge=0)
 
 
 class EmployeePayrollConfigCreate(EmployeePayrollConfigBase):
     """Schema para criação de configuração."""
 
     employee_id: UUID
-    benefits: Optional[List[BenefitConfigSchema]] = Field(default_factory=list)
-    loans: Optional[List[LoanConfigSchema]] = Field(default_factory=list)
-    alimony: Optional[List[AlimonyConfigSchema]] = Field(default_factory=list)
-    dependents: Optional[List[DependentSchema]] = Field(default_factory=list)
-    calculation_config: Optional[CalculationConfigSchema] = None
-    external_codes: Optional[ExternalCodesSchema] = None
+    benefits: list[BenefitConfigSchema] | None = Field(default_factory=list)
+    loans: list[LoanConfigSchema] | None = Field(default_factory=list)
+    alimony: list[AlimonyConfigSchema] | None = Field(default_factory=list)
+    dependents: list[DependentSchema] | None = Field(default_factory=list)
+    calculation_config: CalculationConfigSchema | None = None
+    external_codes: ExternalCodesSchema | None = None
 
 
 class EmployeePayrollConfigUpdate(BaseModel):
     """Schema para atualização de configuração."""
 
-    termination_date: Optional[date] = None
-    base_salary: Optional[Decimal] = Field(None, ge=0)
-    hourly_rate: Optional[Decimal] = Field(None, ge=0)
-    work_schedule_type: Optional[WorkScheduleType] = None
-    weekly_hours: Optional[Decimal] = Field(None, ge=0, le=44)
-    work_start: Optional[time] = None
-    work_end: Optional[time] = None
-    overtime_rule: Optional[OvertimeRule] = None
-    bank_hours_enabled: Optional[bool] = None
-    bank_hours_policy: Optional[BankHoursPolicy] = None
-    bank_hours_balance: Optional[Decimal] = None
-    hazard_pay_rate: Optional[Decimal] = Field(None, ge=0, le=30)
-    unhealthy_pay_rate: Optional[Decimal] = Field(None, ge=0, le=40)
-    dependents_count: Optional[int] = Field(None, ge=0)
-    benefits: Optional[List[BenefitConfigSchema]] = None
-    loans: Optional[List[LoanConfigSchema]] = None
-    alimony: Optional[List[AlimonyConfigSchema]] = None
-    dependents: Optional[List[DependentSchema]] = None
-    calculation_config: Optional[CalculationConfigSchema] = None
-    external_codes: Optional[ExternalCodesSchema] = None
+    termination_date: date | None = None
+    base_salary: Decimal | None = Field(None, ge=0)
+    hourly_rate: Decimal | None = Field(None, ge=0)
+    work_schedule_type: WorkScheduleType | None = None
+    weekly_hours: Decimal | None = Field(None, ge=0, le=44)
+    work_start: time | None = None
+    work_end: time | None = None
+    overtime_rule: OvertimeRule | None = None
+    bank_hours_enabled: bool | None = None
+    bank_hours_policy: BankHoursPolicy | None = None
+    bank_hours_balance: Decimal | None = None
+    hazard_pay_rate: Decimal | None = Field(None, ge=0, le=30)
+    unhealthy_pay_rate: Decimal | None = Field(None, ge=0, le=40)
+    dependents_count: int | None = Field(None, ge=0)
+    benefits: list[BenefitConfigSchema] | None = None
+    loans: list[LoanConfigSchema] | None = None
+    alimony: list[AlimonyConfigSchema] | None = None
+    dependents: list[DependentSchema] | None = None
+    calculation_config: CalculationConfigSchema | None = None
+    external_codes: ExternalCodesSchema | None = None
 
 
 class EmployeePayrollConfigResponse(BaseModel):
@@ -201,19 +200,19 @@ class EmployeePayrollConfigResponse(BaseModel):
     employee_id: UUID
     contract_type: str
     admission_date: date
-    termination_date: Optional[date]
-    experience_end_date: Optional[date]
+    termination_date: date | None
+    experience_end_date: date | None
     base_salary: Decimal
     salary_type: str
-    hourly_rate: Optional[Decimal]
-    daily_rate: Optional[Decimal]
+    hourly_rate: Decimal | None
+    daily_rate: Decimal | None
     calculated_hourly_rate: Decimal
     work_schedule_type: str
     weekly_hours: Decimal
     daily_hours: Decimal
     monthly_hours: Decimal
-    work_start: Optional[time]
-    work_end: Optional[time]
+    work_start: time | None
+    work_end: time | None
     overtime_rule: str
     overtime_rate_50: Decimal
     overtime_rate_100: Decimal
@@ -222,21 +221,21 @@ class EmployeePayrollConfigResponse(BaseModel):
     night_shift_rate: Decimal
     night_shift_hourly_rate: Decimal
     bank_hours_enabled: bool
-    bank_hours_policy: Optional[str]
+    bank_hours_policy: str | None
     bank_hours_balance: Decimal
-    hazard_pay_rate: Optional[Decimal]
-    unhealthy_pay_rate: Optional[Decimal]
+    hazard_pay_rate: Decimal | None
+    unhealthy_pay_rate: Decimal | None
     dependents_count: int
-    benefits: Optional[dict]
-    loans: Optional[List[dict]]
-    alimony: Optional[List[dict]]
-    dependents: Optional[List[dict]]
-    calculation_config: Optional[dict]
-    external_codes: Optional[dict]
+    benefits: dict | None
+    loans: list[dict] | None
+    alimony: list[dict] | None
+    dependents: list[dict] | None
+    calculation_config: dict | None
+    external_codes: dict | None
     total_loans_installment: Decimal
     is_trust_position: bool
     created_at: datetime
-    updated_at: Optional[datetime]
+    updated_at: datetime | None
 
     model_config = {"from_attributes": True}
 
@@ -249,8 +248,8 @@ class SalaryCalculationRequest(BaseModel):
     overtime_hours_100: Decimal = Field(default=Decimal("0"), ge=0)
     night_hours: Decimal = Field(default=Decimal("0"), ge=0)
     absence_hours: Decimal = Field(default=Decimal("0"), ge=0)
-    additional_earnings: Optional[List[dict]] = Field(default_factory=list)
-    additional_deductions: Optional[List[dict]] = Field(default_factory=list)
+    additional_earnings: list[dict] | None = Field(default_factory=list)
+    additional_deductions: list[dict] | None = Field(default_factory=list)
     dependents_count: int = Field(default=0, ge=0)
 
 
@@ -283,7 +282,7 @@ class BankHoursAdjustmentRequest(BaseModel):
     )
     hours: Decimal = Field(..., ge=0)
     reason: str = Field(..., min_length=1, max_length=500)
-    reference_date: Optional[date] = None
+    reference_date: date | None = None
 
 
 class BankHoursBalanceResponse(BaseModel):
@@ -291,7 +290,7 @@ class BankHoursBalanceResponse(BaseModel):
 
     employee_id: UUID
     current_balance: Decimal
-    policy: Optional[str]
-    limit: Optional[Decimal]
-    expiration_date: Optional[date]
-    history: List[dict] = Field(default_factory=list)
+    policy: str | None
+    limit: Decimal | None
+    expiration_date: date | None
+    history: list[dict] = Field(default_factory=list)

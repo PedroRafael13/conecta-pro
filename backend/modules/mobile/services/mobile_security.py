@@ -4,10 +4,8 @@ import hashlib
 import hmac
 import logging
 import re
-import secrets
 import time
-from datetime import datetime, timedelta
-from typing import Any, Optional
+from typing import Any
 
 from fastapi import HTTPException, Request, status
 from sqlalchemy import select, update
@@ -19,7 +17,7 @@ from modules.mobile.models.mobile_session import MobileSession
 logger = logging.getLogger(__name__)
 
 
-class RateLimitExceeded(Exception):
+class RateLimitExceededError(Exception):
     """Exceção para rate limit excedido."""
 
     def __init__(self, retry_after: int):
@@ -82,9 +80,7 @@ class MobileSecurity:
         self._rate_limit_cache: dict[str, dict] = {}
 
         # Compilar patterns
-        self._suspicious_ua_re = [
-            re.compile(p, re.IGNORECASE) for p in self.SUSPICIOUS_UA_PATTERNS
-        ]
+        self._suspicious_ua_re = [re.compile(p, re.IGNORECASE) for p in self.SUSPICIOUS_UA_PATTERNS]
 
     async def validate_request(
         self,
@@ -128,9 +124,7 @@ class MobileSecurity:
 
         # Verificar user agent suspeito
         if self.strict_mode and self._is_suspicious_ua(request):
-            logger.warning(
-                f"Suspicious UA detected: {request.headers.get('user-agent')}"
-            )
+            logger.warning(f"Suspicious UA detected: {request.headers.get('user-agent')}")
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Access denied",
@@ -145,9 +139,7 @@ class MobileSecurity:
 
         # Verificar integridade do app
         if not await self._verify_app_integrity(security_headers):
-            logger.warning(
-                f"App integrity check failed for device {security_headers.get('device_id')}"
-            )
+            logger.warning(f"App integrity check failed for device {security_headers.get('device_id')}")
             if self.strict_mode:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
@@ -186,7 +178,7 @@ class MobileSecurity:
             "signature": headers.get("x-request-signature"),
         }
 
-    async def _validate_api_key(self, api_key: Optional[str]) -> bool:
+    async def _validate_api_key(self, api_key: str | None) -> bool:
         """Valida API key mobile."""
         if not api_key:
             return False
@@ -319,7 +311,7 @@ class MobileSecurity:
         # Buscar tokens do dispositivo
         query = select(DeviceToken).where(
             DeviceToken.device_id == device_id,
-            DeviceToken.is_active == True,
+            DeviceToken.is_active,
         )
         result = await db.execute(query)
         token = result.scalar_one_or_none()
@@ -388,7 +380,7 @@ class MobileSecurity:
         path: str,
         timestamp: str,
         nonce: str,
-        body: Optional[str] = None,
+        body: str | None = None,
     ) -> str:
         """
         Gera assinatura de requisição para validação.
@@ -462,8 +454,8 @@ class MobileSecurity:
         self,
         db: AsyncSession,
         event_type: str,
-        device_id: Optional[str],
-        user_id: Optional[int],
+        device_id: str | None,
+        user_id: int | None,
         details: dict,
         severity: str = "info",
     ) -> None:
@@ -479,13 +471,8 @@ class MobileSecurity:
             severity: Severidade (info, warning, error, critical)
         """
         logger.log(
-            logging.INFO if severity == "info" else
-            logging.WARNING if severity == "warning" else
-            logging.ERROR,
-            f"Security event: {event_type} | "
-            f"device={device_id} | "
-            f"user={user_id} | "
-            f"details={details}"
+            logging.INFO if severity == "info" else logging.WARNING if severity == "warning" else logging.ERROR,
+            f"Security event: {event_type} | device={device_id} | user={user_id} | details={details}",
         )
 
         # TODO: Persistir em tabela de audit log
@@ -519,11 +506,7 @@ class MobileSecurity:
         result = await db.execute(query)
 
         # Invalidar sessões
-        session_query = (
-            update(MobileSession)
-            .where(MobileSession.device_id == device_id)
-            .values(is_active=False)
-        )
+        session_query = update(MobileSession).where(MobileSession.device_id == device_id).values(is_active=False)
         await db.execute(session_query)
 
         await db.commit()
@@ -550,22 +533,13 @@ class MobileSecurity:
         recommendations = []
 
         if security_headers.get("is_rooted"):
-            recommendations.append(
-                "Your device is rooted/jailbroken. "
-                "This may expose your data to security risks."
-            )
+            recommendations.append("Your device is rooted/jailbroken. This may expose your data to security risks.")
 
         if security_headers.get("is_emulator"):
-            recommendations.append(
-                "Running on emulator detected. "
-                "For best security, use a physical device."
-            )
+            recommendations.append("Running on emulator detected. For best security, use a physical device.")
 
         if not security_headers.get("app_signature"):
-            recommendations.append(
-                "App signature verification not available. "
-                "Please update to the latest version."
-            )
+            recommendations.append("App signature verification not available. Please update to the latest version.")
 
         install_source = security_headers.get("install_source", "")
         if install_source not in ["play_store", "app_store"]:
@@ -575,9 +549,6 @@ class MobileSecurity:
             )
 
         if security_level in ["low", "critical"]:
-            recommendations.append(
-                "Your security level is low. "
-                "Please review and update your device settings."
-            )
+            recommendations.append("Your security level is low. Please review and update your device settings.")
 
         return recommendations

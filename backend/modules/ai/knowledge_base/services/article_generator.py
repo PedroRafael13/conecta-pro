@@ -7,9 +7,7 @@ Servico de geracao de artigos e conteudo com IA.
 import logging
 import re
 import time
-from typing import List, Dict, Any, Optional
-from datetime import datetime
-import hashlib
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -84,7 +82,7 @@ class ArticleGenerator:
         topic: str,
         article_type: str = "guide",
         additional_context: str = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Gera estrutura de artigo.
 
@@ -111,9 +109,7 @@ class ArticleGenerator:
         for section_name in template["structure"]:
             section = {
                 "title": section_name,
-                "content_suggestion": self._suggest_section_content(
-                    section_name, topic, article_type
-                ),
+                "content_suggestion": self._suggest_section_content(section_name, topic, article_type),
                 "estimated_length": self._estimate_section_length(section_name),
             }
             sections.append(section)
@@ -146,7 +142,7 @@ class ArticleGenerator:
         content: str,
         max_length: int = 200,
         style: str = "informative",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Gera resumo de conteudo.
 
@@ -176,7 +172,7 @@ class ArticleGenerator:
         summary_sentences = []
         current_length = 0
 
-        for sentence, score in scored_sentences:
+        for sentence, _score in scored_sentences:
             if current_length + len(sentence) <= max_length:
                 summary_sentences.append(sentence)
                 current_length += len(sentence) + 1
@@ -193,7 +189,7 @@ class ArticleGenerator:
 
         # Ajusta tamanho se necessario
         if len(summary) > max_length:
-            summary = summary[:max_length-3] + "..."
+            summary = summary[: max_length - 3] + "..."
 
         processing_time = int((time.time() - start_time) * 1000)
 
@@ -211,7 +207,7 @@ class ArticleGenerator:
         content: str,
         max_faqs: int = 5,
         topic: str = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Gera FAQs a partir de conteudo.
 
@@ -240,13 +236,15 @@ class ArticleGenerator:
         for sentence in informative_sentences[:max_faqs]:
             question = self._generate_question_for_answer(sentence, topic)
             if question:
-                faqs.append({
-                    "question": question,
-                    "answer": sentence,
-                    "answer_short": sentence[:200] if len(sentence) > 200 else sentence,
-                    "confidence": 0.7,
-                    "source": "ai_generated",
-                })
+                faqs.append(
+                    {
+                        "question": question,
+                        "answer": sentence,
+                        "answer_short": sentence[:200] if len(sentence) > 200 else sentence,
+                        "confidence": 0.7,
+                        "source": "ai_generated",
+                    }
+                )
 
         processing_time = int((time.time() - start_time) * 1000)
 
@@ -261,7 +259,7 @@ class ArticleGenerator:
         self,
         content: str,
         max_keywords: int = 10,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Extrai keywords de conteudo.
 
@@ -292,20 +290,22 @@ class ArticleGenerator:
         total_words = len(words)
 
         for word, count in sorted_words[:max_keywords]:
-            keywords.append({
-                "keyword": word,
-                "frequency": count,
-                "relevance": count / total_words if total_words > 0 else 0,
-            })
+            keywords.append(
+                {
+                    "keyword": word,
+                    "frequency": count,
+                    "relevance": count / total_words if total_words > 0 else 0,
+                }
+            )
 
         return keywords
 
     def suggest_related_topics(
         self,
         topic: str,
-        existing_topics: List[str] = None,
+        existing_topics: list[str] = None,
         max_suggestions: int = 5,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Sugere topicos relacionados.
 
@@ -334,11 +334,13 @@ class ArticleGenerator:
 
         for pattern in patterns:
             if pattern not in existing_topics:
-                suggestions.append({
-                    "topic": pattern,
-                    "type": self._detect_article_type(pattern),
-                    "relevance": 0.8,
-                })
+                suggestions.append(
+                    {
+                        "topic": pattern,
+                        "type": self._detect_article_type(pattern),
+                        "relevance": 0.8,
+                    }
+                )
 
                 if len(suggestions) >= max_suggestions:
                     break
@@ -348,8 +350,8 @@ class ArticleGenerator:
     def improve_content(
         self,
         content: str,
-        improvements: List[str] = None,
-    ) -> Dict[str, Any]:
+        improvements: list[str] = None,
+    ) -> dict[str, Any]:
         """
         Sugere melhorias para conteudo.
 
@@ -367,33 +369,39 @@ class ArticleGenerator:
         if "readability" in improvements:
             readability = self._analyze_readability(content)
             if readability["score"] < 60:
-                suggestions.append({
-                    "type": "readability",
-                    "issue": "Texto pode ser difícil de ler",
-                    "suggestion": "Considere usar frases mais curtas e palavras simples",
-                    "priority": "high",
-                })
+                suggestions.append(
+                    {
+                        "type": "readability",
+                        "issue": "Texto pode ser difícil de ler",
+                        "suggestion": "Considere usar frases mais curtas e palavras simples",
+                        "priority": "high",
+                    }
+                )
 
         # Analisa estrutura
         if "structure" in improvements:
             structure = self._analyze_structure(content)
             if not structure["has_headings"]:
-                suggestions.append({
-                    "type": "structure",
-                    "issue": "Falta de títulos e subtítulos",
-                    "suggestion": "Adicione títulos para organizar o conteúdo",
-                    "priority": "medium",
-                })
+                suggestions.append(
+                    {
+                        "type": "structure",
+                        "issue": "Falta de títulos e subtítulos",
+                        "suggestion": "Adicione títulos para organizar o conteúdo",
+                        "priority": "medium",
+                    }
+                )
 
         # Analisa SEO
         if "seo" in improvements:
             if len(content) < 300:
-                suggestions.append({
-                    "type": "seo",
-                    "issue": "Conteúdo muito curto",
-                    "suggestion": "Expanda o conteúdo para pelo menos 300 palavras",
-                    "priority": "high",
-                })
+                suggestions.append(
+                    {
+                        "type": "seo",
+                        "issue": "Conteúdo muito curto",
+                        "suggestion": "Expanda o conteúdo para pelo menos 300 palavras",
+                        "priority": "high",
+                    }
+                )
 
         return {
             "suggestions": suggestions,
@@ -458,24 +466,24 @@ class ArticleGenerator:
         }
         return lengths.get(section_name, 100)
 
-    def _estimate_reading_time(self, sections: List[Dict[str, Any]]) -> int:
+    def _estimate_reading_time(self, sections: list[dict[str, Any]]) -> int:
         """Estima tempo de leitura em minutos."""
         total_words = sum(s.get("estimated_length", 100) for s in sections)
         return max(1, total_words // 200)  # ~200 palavras por minuto
 
-    def _extract_keywords_from_topic(self, topic: str) -> List[str]:
+    def _extract_keywords_from_topic(self, topic: str) -> list[str]:
         """Extrai keywords do topico."""
         words = self._tokenize(topic)
         return [w for w in words if len(w) >= 3]
 
-    def _suggest_tags(self, topic: str, article_type: str) -> List[str]:
+    def _suggest_tags(self, topic: str, article_type: str) -> list[str]:
         """Sugere tags para artigo."""
         tags = [article_type]
         words = self._tokenize(topic)
         tags.extend(words[:3])
         return list(set(tags))
 
-    def _split_sentences(self, text: str) -> List[str]:
+    def _split_sentences(self, text: str) -> list[str]:
         """Divide texto em frases."""
         sentences = re.split(r"[.!?]+", text)
         return [s.strip() for s in sentences if s.strip()]
@@ -528,7 +536,7 @@ class ArticleGenerator:
         self,
         answer: str,
         topic: str = None,
-    ) -> Optional[str]:
+    ) -> str | None:
         """Gera pergunta para uma resposta."""
         # Padroes de transformacao
         if "é" in answer.lower() or "são" in answer.lower():
@@ -547,7 +555,7 @@ class ArticleGenerator:
 
         return None
 
-    def _tokenize(self, text: str) -> List[str]:
+    def _tokenize(self, text: str) -> list[str]:
         """Tokeniza texto."""
         text = re.sub(r"[^\w\s]", " ", text.lower())
         stopwords = {"a", "o", "e", "de", "da", "do", "em", "um", "uma", "para", "com"}
@@ -567,7 +575,7 @@ class ArticleGenerator:
             return "guide"
         return "guide"
 
-    def _analyze_readability(self, content: str) -> Dict[str, Any]:
+    def _analyze_readability(self, content: str) -> dict[str, Any]:
         """Analisa legibilidade do texto."""
         sentences = self._split_sentences(content)
         words = content.split()
@@ -585,7 +593,7 @@ class ArticleGenerator:
             "total_words": len(words),
         }
 
-    def _analyze_structure(self, content: str) -> Dict[str, Any]:
+    def _analyze_structure(self, content: str) -> dict[str, Any]:
         """Analisa estrutura do texto."""
         has_headings = bool(re.search(r"^#+\s|^[A-Z][^.]*:$", content, re.MULTILINE))
         has_lists = "•" in content or "- " in content or re.search(r"^\d+\.", content, re.MULTILINE)
@@ -597,7 +605,7 @@ class ArticleGenerator:
             "paragraph_count": paragraphs,
         }
 
-    def _count_priorities(self, suggestions: List[Dict[str, Any]]) -> Dict[str, int]:
+    def _count_priorities(self, suggestions: list[dict[str, Any]]) -> dict[str, int]:
         """Conta sugestoes por prioridade."""
         counts = {"high": 0, "medium": 0, "low": 0}
         for s in suggestions:

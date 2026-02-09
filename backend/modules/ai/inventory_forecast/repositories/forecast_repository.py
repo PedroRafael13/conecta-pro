@@ -6,27 +6,26 @@ Repository para acesso a dados de previsao de estoque.
 
 import logging
 from datetime import date, datetime, timedelta
-from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import and_, desc, func, or_
 from sqlalchemy.orm import Session, joinedload
 
+from modules.ai.inventory_forecast.models.demand_pattern import (
+    DemandPattern,
+    PatternType,
+    TrendDirection,
+)
 from modules.ai.inventory_forecast.models.forecast import (
     Forecast,
     ForecastResult,
     ForecastStatus,
     ForecastType,
 )
-from modules.ai.inventory_forecast.models.demand_pattern import (
-    DemandPattern,
-    PatternType,
-    TrendDirection,
-)
 from modules.ai.inventory_forecast.schemas.forecast_schemas import (
+    DemandPatternCreate,
     ForecastCreate,
     ForecastUpdate,
-    DemandPatternCreate,
 )
 
 logger = logging.getLogger(__name__)
@@ -66,11 +65,7 @@ class ForecastRepository:
         logger.info(f"Previsao criada: {forecast.id} para produto {data.product_code}")
         return forecast
 
-    def get_forecast(
-        self,
-        forecast_id: UUID,
-        include_results: bool = False
-    ) -> Optional[Forecast]:
+    def get_forecast(self, forecast_id: UUID, include_results: bool = False) -> Forecast | None:
         """Busca previsao por ID."""
         query = self.db.query(Forecast).filter(Forecast.id == forecast_id)
         if include_results:
@@ -79,11 +74,11 @@ class ForecastRepository:
 
     def get_forecasts(
         self,
-        product_id: Optional[UUID] = None,
-        status: Optional[ForecastStatus] = None,
-        forecast_type: Optional[ForecastType] = None,
-        start_date: Optional[date] = None,
-        end_date: Optional[date] = None,
+        product_id: UUID | None = None,
+        status: ForecastStatus | None = None,
+        forecast_type: ForecastType | None = None,
+        start_date: date | None = None,
+        end_date: date | None = None,
         is_active: bool = True,
         page: int = 1,
         page_size: int = 20,
@@ -110,20 +105,11 @@ class ForecastRepository:
             query = query.filter(Forecast.end_date <= end_date)
 
         total = query.count()
-        items = (
-            query.order_by(desc(Forecast.created_at))
-            .offset((page - 1) * page_size)
-            .limit(page_size)
-            .all()
-        )
+        items = query.order_by(desc(Forecast.created_at)).offset((page - 1) * page_size).limit(page_size).all()
 
         return items, total
 
-    def update_forecast(
-        self,
-        forecast_id: UUID,
-        data: ForecastUpdate
-    ) -> Optional[Forecast]:
+    def update_forecast(self, forecast_id: UUID, data: ForecastUpdate) -> Forecast | None:
         """Atualiza previsao."""
         forecast = self.get_forecast(forecast_id)
         if not forecast:
@@ -154,10 +140,8 @@ class ForecastRepository:
         return True
 
     def get_latest_forecast(
-        self,
-        product_id: UUID,
-        forecast_type: ForecastType = ForecastType.DEMAND
-    ) -> Optional[Forecast]:
+        self, product_id: UUID, forecast_type: ForecastType = ForecastType.DEMAND
+    ) -> Forecast | None:
         """Busca previsao mais recente para produto."""
         return (
             self.db.query(Forecast)
@@ -166,7 +150,7 @@ class ForecastRepository:
                     Forecast.product_id == product_id,
                     Forecast.forecast_type == forecast_type,
                     Forecast.status == ForecastStatus.COMPLETED,
-                    Forecast.is_active == True,
+                    Forecast.is_active,
                 )
             )
             .order_by(desc(Forecast.created_at))
@@ -177,18 +161,11 @@ class ForecastRepository:
     # Forecast Results
     # ============================================================
 
-    def add_forecast_results(
-        self,
-        forecast_id: UUID,
-        results: list[dict]
-    ) -> list[ForecastResult]:
+    def add_forecast_results(self, forecast_id: UUID, results: list[dict]) -> list[ForecastResult]:
         """Adiciona resultados a previsao."""
         forecast_results = []
         for result_data in results:
-            result = ForecastResult(
-                forecast_id=forecast_id,
-                **result_data
-            )
+            result = ForecastResult(forecast_id=forecast_id, **result_data)
             self.db.add(result)
             forecast_results.append(result)
 
@@ -198,13 +175,11 @@ class ForecastRepository:
     def get_forecast_results(
         self,
         forecast_id: UUID,
-        start_date: Optional[date] = None,
-        end_date: Optional[date] = None,
+        start_date: date | None = None,
+        end_date: date | None = None,
     ) -> list[ForecastResult]:
         """Busca resultados de previsao."""
-        query = self.db.query(ForecastResult).filter(
-            ForecastResult.forecast_id == forecast_id
-        )
+        query = self.db.query(ForecastResult).filter(ForecastResult.forecast_id == forecast_id)
 
         if start_date:
             query = query.filter(ForecastResult.date >= start_date)
@@ -214,12 +189,7 @@ class ForecastRepository:
 
         return query.order_by(ForecastResult.date).all()
 
-    def update_actual_demand(
-        self,
-        forecast_id: UUID,
-        date_value: date,
-        actual_demand: float
-    ) -> Optional[ForecastResult]:
+    def update_actual_demand(self, forecast_id: UUID, date_value: date, actual_demand: float) -> ForecastResult | None:
         """Atualiza demanda real para validacao."""
         result = (
             self.db.query(ForecastResult)
@@ -237,9 +207,7 @@ class ForecastRepository:
             if result.predicted_demand:
                 result.variance = actual_demand - result.predicted_demand
                 if result.predicted_demand != 0:
-                    result.variance_pct = (
-                        result.variance / result.predicted_demand
-                    ) * 100
+                    result.variance_pct = (result.variance / result.predicted_demand) * 100
 
             self.db.commit()
             self.db.refresh(result)
@@ -264,23 +232,18 @@ class ForecastRepository:
         self.db.refresh(pattern)
         return pattern
 
-    def get_demand_pattern(self, pattern_id: UUID) -> Optional[DemandPattern]:
+    def get_demand_pattern(self, pattern_id: UUID) -> DemandPattern | None:
         """Busca padrao por ID."""
-        return self.db.query(DemandPattern).filter(
-            DemandPattern.id == pattern_id
-        ).first()
+        return self.db.query(DemandPattern).filter(DemandPattern.id == pattern_id).first()
 
-    def get_latest_demand_pattern(
-        self,
-        product_id: UUID
-    ) -> Optional[DemandPattern]:
+    def get_latest_demand_pattern(self, product_id: UUID) -> DemandPattern | None:
         """Busca padrao mais recente para produto."""
         return (
             self.db.query(DemandPattern)
             .filter(
                 and_(
                     DemandPattern.product_id == product_id,
-                    DemandPattern.is_active == True,
+                    DemandPattern.is_active,
                 )
             )
             .order_by(desc(DemandPattern.created_at))
@@ -289,9 +252,9 @@ class ForecastRepository:
 
     def get_demand_patterns(
         self,
-        pattern_type: Optional[PatternType] = None,
-        trend_direction: Optional[TrendDirection] = None,
-        min_predictability: Optional[float] = None,
+        pattern_type: PatternType | None = None,
+        trend_direction: TrendDirection | None = None,
+        min_predictability: float | None = None,
         is_active: bool = True,
         page: int = 1,
         page_size: int = 20,
@@ -309,25 +272,14 @@ class ForecastRepository:
             query = query.filter(DemandPattern.trend_direction == trend_direction)
 
         if min_predictability:
-            query = query.filter(
-                DemandPattern.predictability_score >= min_predictability
-            )
+            query = query.filter(DemandPattern.predictability_score >= min_predictability)
 
         total = query.count()
-        items = (
-            query.order_by(desc(DemandPattern.created_at))
-            .offset((page - 1) * page_size)
-            .limit(page_size)
-            .all()
-        )
+        items = query.order_by(desc(DemandPattern.created_at)).offset((page - 1) * page_size).limit(page_size).all()
 
         return items, total
 
-    def update_demand_pattern(
-        self,
-        pattern_id: UUID,
-        data: dict
-    ) -> Optional[DemandPattern]:
+    def update_demand_pattern(self, pattern_id: UUID, data: dict) -> DemandPattern | None:
         """Atualiza padrao de demanda."""
         pattern = self.get_demand_pattern(pattern_id)
         if not pattern:
@@ -353,7 +305,7 @@ class ForecastRepository:
             self.db.query(Forecast)
             .filter(
                 and_(
-                    Forecast.is_active == True,
+                    Forecast.is_active,
                     Forecast.status == ForecastStatus.COMPLETED,
                     or_(
                         Forecast.updated_at < cutoff_date,
@@ -364,11 +316,7 @@ class ForecastRepository:
             .all()
         )
 
-    def get_forecast_accuracy_stats(
-        self,
-        product_id: Optional[UUID] = None,
-        days: int = 30
-    ) -> dict:
+    def get_forecast_accuracy_stats(self, product_id: UUID | None = None, days: int = 30) -> dict:
         """Calcula estatisticas de acuracidade das previsoes."""
         cutoff = datetime.utcnow() - timedelta(days=days)
 
@@ -382,7 +330,7 @@ class ForecastRepository:
             .join(Forecast)
             .filter(
                 and_(
-                    Forecast.is_active == True,
+                    Forecast.is_active,
                     ForecastResult.created_at >= cutoff,
                 )
             )
@@ -398,10 +346,7 @@ class ForecastRepository:
             "avg_abs_variance": float(result.avg_abs_variance or 0),
             "total_predictions": result.total_predictions,
             "validated_predictions": result.validated_predictions,
-            "accuracy_rate": (
-                (1 - abs(result.avg_variance_pct or 0) / 100) * 100
-                if result.avg_variance_pct else None
-            ),
+            "accuracy_rate": ((1 - abs(result.avg_variance_pct or 0) / 100) * 100 if result.avg_variance_pct else None),
         }
 
     def count_products_by_trend(self) -> dict:
@@ -411,7 +356,7 @@ class ForecastRepository:
                 DemandPattern.trend_direction,
                 func.count(DemandPattern.id).label("count"),
             )
-            .filter(DemandPattern.is_active == True)
+            .filter(DemandPattern.is_active)
             .group_by(DemandPattern.trend_direction)
             .all()
         )

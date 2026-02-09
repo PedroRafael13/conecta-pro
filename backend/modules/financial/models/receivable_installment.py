@@ -3,8 +3,8 @@
 import uuid
 from datetime import date, datetime
 from decimal import Decimal
-from enum import Enum
-from typing import TYPE_CHECKING, List, Optional
+from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     Boolean,
@@ -28,7 +28,7 @@ if TYPE_CHECKING:
     from modules.financial.models.receivable_payment import ReceivablePayment
 
 
-class InstallmentStatus(str, Enum):
+class InstallmentStatus(StrEnum):
     """Status da parcela."""
 
     PENDENTE = "pendente"
@@ -126,10 +126,8 @@ class ReceivableInstallment(Base):
     ativo = Column(Boolean, default=True, nullable=False)
 
     # Relacionamentos
-    receivable_account: "ReceivableAccount" = relationship(
-        "ReceivableAccount", back_populates="installments"
-    )
-    payments: List["ReceivablePayment"] = relationship(
+    receivable_account: "ReceivableAccount" = relationship("ReceivableAccount", back_populates="installments")
+    payments: list["ReceivablePayment"] = relationship(
         "ReceivablePayment",
         back_populates="installment",
         cascade="all, delete-orphan",
@@ -192,11 +190,7 @@ class ReceivableInstallment(Base):
     @property
     def can_generate_boleto(self) -> bool:
         """Verifica se pode gerar boleto."""
-        return (
-            not self.is_paid
-            and self.status != InstallmentStatus.CANCELADA.value
-            and self.balance > 0
-        )
+        return not self.is_paid and self.status != InstallmentStatus.CANCELADA.value and self.balance > 0
 
     def calculate_current_value(self) -> Decimal:
         """Calcula valor atual com juros e multa se vencido."""
@@ -241,7 +235,7 @@ class ReceivableInstallment(Base):
     def renegotiate(
         self,
         new_due_date: date,
-        new_value: Optional[Decimal] = None,
+        new_value: Decimal | None = None,
         reason: str = "",
     ) -> None:
         """Renegocia a parcela."""
@@ -263,8 +257,8 @@ class ReceivableInstallment(Base):
         number: str,
         barcode: str,
         digitable_line: str,
-        url: Optional[str] = None,
-        expires_at: Optional[date] = None,
+        url: str | None = None,
+        expires_at: date | None = None,
     ) -> None:
         """Registra geracao de boleto."""
         self.boleto_generated = True
@@ -280,7 +274,7 @@ class ReceivableInstallment(Base):
         qrcode: str,
         copy_paste: str,
         txid: str,
-        expires_at: Optional[datetime] = None,
+        expires_at: datetime | None = None,
     ) -> None:
         """Registra geracao de PIX."""
         self.pix_generated = True

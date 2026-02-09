@@ -3,11 +3,8 @@ Service para cálculos de FGTS e INSS.
 """
 
 import logging
-import sys
 from decimal import Decimal
-from typing import Dict, Any, List
-
-
+from typing import Any
 
 # Imports relativos do módulo pai
 from modules.government_integrations.utils import CalculoError
@@ -19,7 +16,7 @@ class FGTSINSSService:
     """Service para cálculos trabalhistas (FGTS e INSS)."""
 
     # Tabela INSS 2026 (progressiva)
-    FAIXAS_INSS_2026: List[Dict[str, Decimal]] = [
+    FAIXAS_INSS_2026: list[dict[str, Decimal]] = [
         {"limite": Decimal("1412.00"), "aliquota": Decimal("0.075")},
         {"limite": Decimal("2666.68"), "aliquota": Decimal("0.09")},
         {"limite": Decimal("4000.03"), "aliquota": Decimal("0.12")},
@@ -37,7 +34,7 @@ class FGTSINSSService:
         mes_referencia: str,
         tipo_recolhimento: str = "mensal",
         rescisao: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Calcula FGTS.
 
@@ -84,7 +81,7 @@ class FGTSINSSService:
         salario_bruto: Decimal,
         categoria: str,
         mes_referencia: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Calcula INSS com tabela progressiva.
 
@@ -112,12 +109,14 @@ class FGTSINSSService:
                 inss_total += contribuicao
                 salario_restante -= base_faixa
 
-                detalhamento.append({
-                    "faixa": i + 1,
-                    "base": str(base_faixa.quantize(Decimal("0.01"))),
-                    "aliquota": f"{faixa['aliquota'] * 100}%",
-                    "contribuicao": str(contribuicao.quantize(Decimal("0.01"))),
-                })
+                detalhamento.append(
+                    {
+                        "faixa": i + 1,
+                        "base": str(base_faixa.quantize(Decimal("0.01"))),
+                        "aliquota": f"{faixa['aliquota'] * 100}%",
+                        "contribuicao": str(contribuicao.quantize(Decimal("0.01"))),
+                    }
+                )
 
         teto_aplicado = False
         if inss_total > cls.TETO_INSS_2026:
@@ -138,7 +137,7 @@ class FGTSINSSService:
         }
 
     @classmethod
-    def get_tabela_inss(cls) -> Dict[str, Any]:
+    def get_tabela_inss(cls) -> dict[str, Any]:
         """
         Retorna tabela INSS vigente.
 

@@ -5,9 +5,7 @@ Analisa dados e gera insights automaticamente usando técnicas de IA.
 """
 
 import logging
-from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Tuple
-from uuid import UUID
+from typing import Any
 
 from sqlalchemy.orm import Session
 
@@ -174,10 +172,10 @@ class InsightExtractor:
 
     def extract_insights(
         self,
-        data: Dict[str, Any],
-        metrics: Dict[str, Any],
-        context: Optional[Dict[str, Any]] = None,
-    ) -> List[Dict[str, Any]]:
+        data: dict[str, Any],
+        metrics: dict[str, Any],
+        context: dict[str, Any] | None = None,
+    ) -> list[dict[str, Any]]:
         """
         Extrai insights dos dados e métricas.
 
@@ -225,10 +223,10 @@ class InsightExtractor:
 
     def generate_recommendations(
         self,
-        insights: List[Dict[str, Any]],
-        data: Dict[str, Any],
-        metrics: Dict[str, Any],
-    ) -> List[Dict[str, Any]]:
+        insights: list[dict[str, Any]],
+        data: dict[str, Any],
+        metrics: dict[str, Any],
+    ) -> list[dict[str, Any]]:
         """
         Gera recomendações baseadas nos insights.
 
@@ -282,9 +280,9 @@ class InsightExtractor:
 
     def detect_anomalies(
         self,
-        data: Dict[str, Any],
+        data: dict[str, Any],
         sensitivity: float = 2.0,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Detecta anomalias nos dados usando análise estatística.
 
@@ -299,9 +297,9 @@ class InsightExtractor:
 
     def analyze_trends(
         self,
-        data: Dict[str, Any],
+        data: dict[str, Any],
         min_points: int = 5,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Analisa tendências nos dados.
 
@@ -314,7 +312,7 @@ class InsightExtractor:
         """
         return self._analyze_trends(data, min_points)
 
-    def _analyze_growth(self, metrics: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def _analyze_growth(self, metrics: dict[str, Any]) -> list[dict[str, Any]]:
         """Analisa métricas de crescimento."""
         insights = []
 
@@ -337,7 +335,7 @@ class InsightExtractor:
         self,
         metric_name: str,
         value: float,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """Cria insight de crescimento baseado no valor."""
         thresholds = INSIGHT_THRESHOLDS["growth"]
 
@@ -356,17 +354,14 @@ class InsightExtractor:
             "type": template["type"],
             "category": "growth",
             "title": template["title"],
-            "description": template["template"].format(
-                metric=metric_name,
-                value=abs(value)
-            ),
+            "description": template["template"].format(metric=metric_name, value=abs(value)),
             "impact": template["impact"],
             "confidence": 0.85,
             "value": value,
             "metric": metric_name,
         }
 
-    def _analyze_retention(self, metrics: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def _analyze_retention(self, metrics: dict[str, Any]) -> list[dict[str, Any]]:
         """Analisa métricas de retenção."""
         insights = []
 
@@ -376,19 +371,21 @@ class InsightExtractor:
 
             if rate < thresholds["warning"]:
                 template = INSIGHT_TEMPLATES["retention_warning"]
-                insights.append({
-                    "type": template["type"],
-                    "category": "retention",
-                    "title": template["title"],
-                    "description": template["template"].format(value=rate),
-                    "impact": template["impact"],
-                    "confidence": 0.88,
-                    "value": rate,
-                })
+                insights.append(
+                    {
+                        "type": template["type"],
+                        "category": "retention",
+                        "title": template["title"],
+                        "description": template["template"].format(value=rate),
+                        "impact": template["impact"],
+                        "confidence": 0.88,
+                        "value": rate,
+                    }
+                )
 
         return insights
 
-    def _analyze_margin(self, metrics: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def _analyze_margin(self, metrics: dict[str, Any]) -> list[dict[str, Any]]:
         """Analisa métricas de margem."""
         insights = []
 
@@ -405,20 +402,22 @@ class InsightExtractor:
                 else:
                     continue
 
-                insights.append({
-                    "type": template["type"],
-                    "category": "financial",
-                    "title": template["title"],
-                    "description": template["template"].format(value=value),
-                    "impact": template["impact"],
-                    "confidence": 0.90,
-                    "value": value,
-                })
+                insights.append(
+                    {
+                        "type": template["type"],
+                        "category": "financial",
+                        "title": template["title"],
+                        "description": template["template"].format(value=value),
+                        "impact": template["impact"],
+                        "confidence": 0.90,
+                        "value": value,
+                    }
+                )
                 break
 
         return insights
 
-    def _analyze_conversion(self, metrics: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def _analyze_conversion(self, metrics: dict[str, Any]) -> list[dict[str, Any]]:
         """Analisa métricas de conversão."""
         insights = []
 
@@ -427,33 +426,37 @@ class InsightExtractor:
             thresholds = INSIGHT_THRESHOLDS["conversion"]
 
             if rate >= thresholds["excellent"]:
-                insights.append({
-                    "type": "positive",
-                    "category": "sales",
-                    "title": "Excelente Taxa de Conversão",
-                    "description": f"Taxa de conversão de {rate}% está acima da média do mercado.",
-                    "impact": "medium",
-                    "confidence": 0.82,
-                    "value": rate,
-                })
+                insights.append(
+                    {
+                        "type": "positive",
+                        "category": "sales",
+                        "title": "Excelente Taxa de Conversão",
+                        "description": f"Taxa de conversão de {rate}% está acima da média do mercado.",
+                        "impact": "medium",
+                        "confidence": 0.82,
+                        "value": rate,
+                    }
+                )
             elif rate < thresholds["warning"]:
-                insights.append({
-                    "type": "warning",
-                    "category": "sales",
-                    "title": "Taxa de Conversão Baixa",
-                    "description": f"Taxa de conversão de {rate}% indica necessidade de otimização do funil.",
-                    "impact": "high",
-                    "confidence": 0.85,
-                    "value": rate,
-                })
+                insights.append(
+                    {
+                        "type": "warning",
+                        "category": "sales",
+                        "title": "Taxa de Conversão Baixa",
+                        "description": f"Taxa de conversão de {rate}% indica necessidade de otimização do funil.",
+                        "impact": "high",
+                        "confidence": 0.85,
+                        "value": rate,
+                    }
+                )
 
         return insights
 
     def _detect_anomalies(
         self,
-        data: Dict[str, Any],
+        data: dict[str, Any],
         sensitivity: float = 2.0,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Detecta anomalias usando Z-score."""
         insights = []
 
@@ -485,7 +488,7 @@ class InsightExtractor:
                     nums = [v[1] for v in values]
                     avg = sum(nums) / len(nums)
                     variance = sum((x - avg) ** 2 for x in nums) / len(nums)
-                    std = variance ** 0.5
+                    std = variance**0.5
 
                     if std == 0:
                         continue
@@ -498,29 +501,28 @@ class InsightExtractor:
                             anomaly_type = "spike" if z_score > 0 else "drop"
                             template = INSIGHT_TEMPLATES[f"anomaly_{anomaly_type}"]
 
-                            insights.append({
-                                "type": template["type"],
-                                "category": source,
-                                "title": template["title"],
-                                "description": template["template"].format(
-                                    date=date,
-                                    value=value,
-                                    expected=round(avg, 2),
-                                    deviation=round(abs(z_score), 1)
-                                ),
-                                "impact": template["impact"],
-                                "confidence": min(0.95, 0.7 + abs(z_score) * 0.1),
-                                "anomaly_type": anomaly_type,
-                                "z_score": round(z_score, 2),
-                            })
+                            insights.append(
+                                {
+                                    "type": template["type"],
+                                    "category": source,
+                                    "title": template["title"],
+                                    "description": template["template"].format(
+                                        date=date, value=value, expected=round(avg, 2), deviation=round(abs(z_score), 1)
+                                    ),
+                                    "impact": template["impact"],
+                                    "confidence": min(0.95, 0.7 + abs(z_score) * 0.1),
+                                    "anomaly_type": anomaly_type,
+                                    "z_score": round(z_score, 2),
+                                }
+                            )
 
         return insights[:5]  # Limita anomalias retornadas
 
     def _analyze_trends(
         self,
-        data: Dict[str, Any],
+        data: dict[str, Any],
         min_points: int = 5,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Analisa tendências nos dados."""
         insights = []
 
@@ -565,19 +567,20 @@ class InsightExtractor:
                     else:
                         continue
 
-                    insights.append({
-                        "type": template["type"],
-                        "category": source,
-                        "title": template["title"],
-                        "description": template["template"].format(
-                            metric=source.replace("_", " ").title(),
-                            change=round(abs(change), 1)
-                        ),
-                        "impact": template["impact"],
-                        "confidence": 0.75,
-                        "trend_direction": direction,
-                        "change_percent": round(change, 2),
-                    })
+                    insights.append(
+                        {
+                            "type": template["type"],
+                            "category": source,
+                            "title": template["title"],
+                            "description": template["template"].format(
+                                metric=source.replace("_", " ").title(), change=round(abs(change), 1)
+                            ),
+                            "impact": template["impact"],
+                            "confidence": 0.75,
+                            "trend_direction": direction,
+                            "change_percent": round(change, 2),
+                        }
+                    )
 
         return insights
 
@@ -603,16 +606,13 @@ class InsightExtractor:
 
         # Sample size factor (log scale)
         import math
+
         sample_factor = min(1.0, math.log10(max(1, sample_size)) / 4)
 
         # Time range factor
         time_factor = min(1.0, time_range_days / 90)
 
         # Média ponderada
-        confidence = (
-            quality_factor * 0.4 +
-            sample_factor * 0.35 +
-            time_factor * 0.25
-        )
+        confidence = quality_factor * 0.4 + sample_factor * 0.35 + time_factor * 0.25
 
         return round(min(0.95, max(0.3, confidence)), 2)

@@ -7,6 +7,8 @@ from uuid import uuid4
 import pytest
 
 from modules.operacional.diaristas.models.diarist import (
+    AssignmentStatus,
+    AssignmentType,
     Diarist,
     DiaristAssignment,
     DiaristEvaluation,
@@ -14,12 +16,10 @@ from modules.operacional.diaristas.models.diarist import (
     DiaristSchedule,
     DiaristStatus,
     DiaristType,
-    AssignmentStatus,
-    AssignmentType,
+    PaymentMethod,
+    PaymentStatus,
     RecurrenceType,
     ScheduleStatus,
-    PaymentStatus,
-    PaymentMethod,
     Weekday,
 )
 
@@ -286,7 +286,7 @@ class TestDiaristPaymentModel:
         """Testa retenções no pagamento."""
         valor_bruto = Decimal("1000.00")
         inss = Decimal("110.00")  # 11%
-        iss = Decimal("50.00")    # 5%
+        iss = Decimal("50.00")  # 5%
         irrf = Decimal("0.00")
         outros = Decimal("0.00")
         valor_liquido = valor_bruto - inss - iss - irrf - outros

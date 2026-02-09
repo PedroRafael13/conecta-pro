@@ -3,21 +3,26 @@ Service de Contrato Publico - Licitacoes
 ========================================
 """
 
+import builtins
 import logging
-from datetime import datetime, date
+from datetime import date
 from decimal import Decimal
-from typing import Optional, List, Tuple
 from uuid import UUID
 
 from sqlalchemy.orm import Session
 
+from modules.bidding.models.measurement import Measurement
+from modules.bidding.models.public_contract import PublicContract
 from modules.bidding.repositories.contract_repository import ContractRepository
-from modules.bidding.models.public_contract import PublicContract, ContractStatus
-from modules.bidding.models.measurement import Measurement, MeasurementStatus
 from modules.bidding.schemas.contract import (
-    PublicContractCreate, PublicContractUpdate, PublicContractResponse,
-    ContractAddendumCreate, ContractReadjustRequest, ContractReadjustResponse,
-    ContractListResponse, MeasurementSummary
+    ContractAddendumCreate,
+    ContractListResponse,
+    ContractReadjustRequest,
+    ContractReadjustResponse,
+    MeasurementSummary,
+    PublicContractCreate,
+    PublicContractResponse,
+    PublicContractUpdate,
 )
 
 logger = logging.getLogger(__name__)
@@ -30,18 +35,14 @@ class ContractService:
         self.db = db
         self.repository = ContractRepository(db)
 
-    async def get(self, contract_id: UUID) -> Optional[PublicContractResponse]:
+    async def get(self, contract_id: UUID) -> PublicContractResponse | None:
         """Busca contrato por ID."""
         contract = await self.repository.get_by_id(contract_id)
         if not contract:
             return None
         return self._to_response(contract)
 
-    async def get_by_numero(
-        self,
-        numero: str,
-        ano: int
-    ) -> Optional[PublicContractResponse]:
+    async def get_by_numero(self, numero: str, ano: int) -> PublicContractResponse | None:
         """Busca contrato por numero e ano."""
         contract = await self.repository.get_by_numero(numero, ano)
         if not contract:
@@ -49,17 +50,10 @@ class ContractService:
         return self._to_response(contract)
 
     async def list(
-        self,
-        orgao_cnpj: str = None,
-        status: str = None,
-        vigente: bool = None,
-        page: int = 1,
-        size: int = 50
+        self, orgao_cnpj: str = None, status: str = None, vigente: bool = None, page: int = 1, size: int = 50
     ) -> ContractListResponse:
         """Lista contratos com filtros."""
-        items, total = await self.repository.list(
-            orgao_cnpj, status, vigente, page, size
-        )
+        items, total = await self.repository.list(orgao_cnpj, status, vigente, page, size)
 
         totals = await self.repository.get_totals()
 
@@ -68,34 +62,23 @@ class ContractService:
             total=total,
             page=page,
             size=size,
-            valor_total_contratos=totals['valor_total'],
-            valor_total_executado=totals['total_executado']
+            valor_total_contratos=totals["valor_total"],
+            valor_total_executado=totals["total_executado"],
         )
 
-    async def create(
-        self,
-        data: PublicContractCreate,
-        user_id: UUID = None
-    ) -> PublicContractResponse:
+    async def create(self, data: PublicContractCreate, user_id: UUID = None) -> PublicContractResponse:
         """Cria novo contrato."""
         # Verifica duplicidade
-        existing = await self.repository.get_by_numero(
-            data.numero_contrato, data.ano_contrato
-        )
+        existing = await self.repository.get_by_numero(data.numero_contrato, data.ano_contrato)
         if existing:
-            raise ValueError(
-                f"Contrato {data.numero_contrato}/{data.ano_contrato} ja existe"
-            )
+            raise ValueError(f"Contrato {data.numero_contrato}/{data.ano_contrato} ja existe")
 
         contract = await self.repository.create(data, user_id)
         return self._to_response(contract)
 
     async def update(
-        self,
-        contract_id: UUID,
-        data: PublicContractUpdate,
-        user_id: UUID = None
-    ) -> Optional[PublicContractResponse]:
+        self, contract_id: UUID, data: PublicContractUpdate, user_id: UUID = None
+    ) -> PublicContractResponse | None:
         """Atualiza contrato."""
         contract = await self.repository.update(contract_id, data, user_id)
         if not contract:
@@ -106,11 +89,7 @@ class ContractService:
         """Remove contrato."""
         return await self.repository.delete(contract_id)
 
-    async def add_addendum(
-        self,
-        contract_id: UUID,
-        data: ContractAddendumCreate
-    ) -> Optional[PublicContractResponse]:
+    async def add_addendum(self, contract_id: UUID, data: ContractAddendumCreate) -> PublicContractResponse | None:
         """Adiciona aditivo ao contrato."""
         contract = await self.repository.add_addendum(
             contract_id,
@@ -119,17 +98,15 @@ class ContractService:
             objeto=data.objeto,
             valor=data.valor,
             prazo_dias=data.prazo_dias,
-            data_assinatura=data.data_assinatura
+            data_assinatura=data.data_assinatura,
         )
         if not contract:
             return None
         return self._to_response(contract)
 
     async def calcular_reajuste(
-        self,
-        contract_id: UUID,
-        data: ContractReadjustRequest
-    ) -> Optional[ContractReadjustResponse]:
+        self, contract_id: UUID, data: ContractReadjustRequest
+    ) -> ContractReadjustResponse | None:
         """Calcula reajuste do contrato."""
         contract = await self.repository.get_by_id(contract_id)
         if not contract:
@@ -146,15 +123,12 @@ class ContractService:
             valor_reajuste=valor_reajuste,
             valor_novo=valor_novo,
             indice_utilizado=contract.indice_reajuste or "IGPM",
-            data_aplicacao=data.data_aplicacao or date.today()
+            data_aplicacao=data.data_aplicacao or date.today(),
         )
 
     async def aplicar_reajuste(
-        self,
-        contract_id: UUID,
-        percentual: Decimal,
-        data_aplicacao: date = None
-    ) -> Optional[PublicContractResponse]:
+        self, contract_id: UUID, percentual: Decimal, data_aplicacao: date = None
+    ) -> PublicContractResponse | None:
         """Aplica reajuste ao contrato."""
         contract = await self.repository.get_by_id(contract_id)
         if not contract:
@@ -166,12 +140,12 @@ class ContractService:
 
         return self._to_response(contract)
 
-    async def get_expiring(self, days: int = 90) -> List[PublicContractResponse]:
+    async def get_expiring(self, days: int = 90) -> builtins.list[PublicContractResponse]:
         """Lista contratos vencendo."""
         contracts = await self.repository.get_expiring(days)
         return [self._to_response(c) for c in contracts]
 
-    async def get_vigentes(self) -> List[PublicContractResponse]:
+    async def get_vigentes(self) -> builtins.list[PublicContractResponse]:
         """Lista contratos vigentes."""
         contracts = await self.repository.get_vigentes()
         return [self._to_response(c) for c in contracts]
@@ -180,16 +154,15 @@ class ContractService:
         """Retorna dados para dashboard."""
         totals = await self.repository.get_totals()
         expiring = await self.repository.get_expiring(90)
-        vigentes = await self.repository.get_vigentes()
+        await self.repository.get_vigentes()
 
         return {
-            "total_contratos_vigentes": totals['total_contratos'],
-            "valor_total": totals['valor_total'],
-            "valor_executado": totals['total_executado'],
-            "valor_pago": totals['total_pago'],
+            "total_contratos_vigentes": totals["total_contratos"],
+            "valor_total": totals["valor_total"],
+            "valor_executado": totals["total_executado"],
+            "valor_pago": totals["total_pago"],
             "percentual_executado": (
-                (totals['total_executado'] / totals['valor_total'] * 100)
-                if totals['valor_total'] > 0 else 0
+                (totals["total_executado"] / totals["valor_total"] * 100) if totals["valor_total"] > 0 else 0
             ),
             "contratos_vencendo_90d": len(expiring),
             "proximos_vencimentos": [
@@ -198,10 +171,10 @@ class ContractService:
                     "numero": c.numero_contrato,
                     "orgao": c.orgao_nome,
                     "vencimento": c.data_vigencia_fim.isoformat(),
-                    "dias_restantes": c.dias_para_vencer
+                    "dias_restantes": c.dias_para_vencer,
                 }
                 for c in expiring[:5]
-            ]
+            ],
         }
 
     # Medicoes
@@ -212,12 +185,12 @@ class ContractService:
         periodo_inicio: date,
         periodo_fim: date,
         valor_bruto: Decimal,
-        user_id: UUID = None
+        user_id: UUID = None,
     ) -> dict:
         """Adiciona medicao ao contrato."""
         # Busca proxima medicao
         medicoes = await self.repository.get_measurements(contract_id)
-        numero = (len(medicoes) + 1)
+        numero = len(medicoes) + 1
 
         measurement = await self.repository.add_measurement(
             contract_id=contract_id,
@@ -226,27 +199,21 @@ class ContractService:
             periodo_inicio=periodo_inicio,
             periodo_fim=periodo_fim,
             valor_bruto=valor_bruto,
-            user_id=user_id
+            user_id=user_id,
         )
 
         return self._measurement_to_dict(measurement)
 
-    async def get_measurements(self, contract_id: UUID) -> List[dict]:
+    async def get_measurements(self, contract_id: UUID) -> builtins.list[dict]:
         """Lista medicoes de um contrato."""
         measurements = await self.repository.get_measurements(contract_id)
         return [self._measurement_to_dict(m) for m in measurements]
 
     async def approve_measurement(
-        self,
-        measurement_id: UUID,
-        aprovador: str,
-        cargo: str = None,
-        observacoes: str = None
-    ) -> Optional[dict]:
+        self, measurement_id: UUID, aprovador: str, cargo: str = None, observacoes: str = None
+    ) -> dict | None:
         """Aprova medicao."""
-        measurement = await self.repository.approve_measurement(
-            measurement_id, aprovador, cargo, observacoes
-        )
+        measurement = await self.repository.approve_measurement(measurement_id, aprovador, cargo, observacoes)
         if not measurement:
             return None
         return self._measurement_to_dict(measurement)
@@ -261,7 +228,7 @@ class ContractService:
                 valor_bruto=m.valor_bruto,
                 valor_liquido=m.valor_liquido,
                 status=m.status,
-                data_aprovacao=m.data_aprovacao
+                data_aprovacao=m.data_aprovacao,
             )
             for m in (contract.medicoes or [])
         ]
@@ -316,7 +283,7 @@ class ContractService:
             medicoes=medicoes_summary,
             observacoes=contract.observacoes,
             created_at=contract.created_at,
-            updated_at=contract.updated_at
+            updated_at=contract.updated_at,
         )
 
     def _measurement_to_dict(self, m: Measurement) -> dict:
@@ -338,5 +305,5 @@ class ContractService:
             "data_aprovacao": m.data_aprovacao.isoformat() if m.data_aprovacao else None,
             "aprovador_nome": m.aprovador_nome,
             "nota_fiscal_numero": m.nota_fiscal_numero,
-            "created_at": m.created_at.isoformat()
+            "created_at": m.created_at.isoformat(),
         }

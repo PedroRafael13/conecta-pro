@@ -2,10 +2,10 @@
 
 from datetime import datetime, timedelta
 from decimal import Decimal
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID
 
-from sqlalchemy import and_, func, desc
+from sqlalchemy import desc, func
 from sqlalchemy.orm import Session
 
 from modules.financial.bi_dashboard.models.analytics_cache import (
@@ -54,11 +54,9 @@ class CacheRepository:
         self,
         cache_key: str,
         condominio_id: UUID = None,
-    ) -> Optional[AnalyticsCache]:
+    ) -> AnalyticsCache | None:
         """Busca cache por chave."""
-        query = self.db.query(AnalyticsCache).filter(
-            AnalyticsCache.cache_key == cache_key
-        )
+        query = self.db.query(AnalyticsCache).filter(AnalyticsCache.cache_key == cache_key)
         if condominio_id:
             query = query.filter(AnalyticsCache.condominio_id == condominio_id)
         return query.first()
@@ -67,11 +65,9 @@ class CacheRepository:
         self,
         cache_id: UUID,
         condominio_id: UUID = None,
-    ) -> Optional[AnalyticsCache]:
+    ) -> AnalyticsCache | None:
         """Busca cache por ID."""
-        query = self.db.query(AnalyticsCache).filter(
-            AnalyticsCache.id == cache_id
-        )
+        query = self.db.query(AnalyticsCache).filter(AnalyticsCache.id == cache_id)
         if condominio_id:
             query = query.filter(AnalyticsCache.condominio_id == condominio_id)
         return query.first()
@@ -119,7 +115,7 @@ class CacheRepository:
         cache_key: str,
         condominio_id: UUID,
         record_stats: bool = True,
-    ) -> Optional[Any]:
+    ) -> Any | None:
         """Busca valor do cache."""
         cache = self.get_by_key(cache_key, condominio_id)
 
@@ -179,10 +175,14 @@ class CacheRepository:
     ) -> int:
         """Invalida caches por tipo."""
         count = 0
-        for cache in self.db.query(AnalyticsCache).filter(
-            AnalyticsCache.condominio_id == condominio_id,
-            AnalyticsCache.tipo == tipo,
-        ).all():
+        for cache in (
+            self.db.query(AnalyticsCache)
+            .filter(
+                AnalyticsCache.condominio_id == condominio_id,
+                AnalyticsCache.tipo == tipo,
+            )
+            .all()
+        ):
             cache.invalidate()
             count += 1
 
@@ -192,9 +192,7 @@ class CacheRepository:
     def invalidate_all(self, condominio_id: UUID) -> int:
         """Invalida todos os caches do condominio."""
         count = 0
-        for cache in self.db.query(AnalyticsCache).filter(
-            AnalyticsCache.condominio_id == condominio_id
-        ).all():
+        for cache in self.db.query(AnalyticsCache).filter(AnalyticsCache.condominio_id == condominio_id).all():
             cache.invalidate()
             count += 1
 
@@ -208,9 +206,7 @@ class CacheRepository:
     ) -> int:
         """Remove caches expirados."""
         cutoff = datetime.utcnow() - timedelta(hours=older_than_hours)
-        query = self.db.query(AnalyticsCache).filter(
-            AnalyticsCache.expires_at < cutoff
-        )
+        query = self.db.query(AnalyticsCache).filter(AnalyticsCache.expires_at < cutoff)
         if condominio_id:
             query = query.filter(AnalyticsCache.condominio_id == condominio_id)
 
@@ -221,43 +217,27 @@ class CacheRepository:
 
     def get_stats(self, condominio_id: UUID) -> CacheStats:
         """Retorna estatisticas do cache."""
-        base_query = self.db.query(AnalyticsCache).filter(
-            AnalyticsCache.condominio_id == condominio_id
-        )
+        base_query = self.db.query(AnalyticsCache).filter(AnalyticsCache.condominio_id == condominio_id)
 
         total_entries = base_query.count()
         valid_entries = base_query.filter(
             AnalyticsCache.status == CacheStatus.VALID,
             AnalyticsCache.expires_at > datetime.utcnow(),
         ).count()
-        stale_entries = base_query.filter(
-            AnalyticsCache.status == CacheStatus.STALE
-        ).count()
-        expired_entries = base_query.filter(
-            AnalyticsCache.status == CacheStatus.EXPIRED
-        ).count()
-        error_entries = base_query.filter(
-            AnalyticsCache.status == CacheStatus.ERROR
-        ).count()
+        stale_entries = base_query.filter(AnalyticsCache.status == CacheStatus.STALE).count()
+        expired_entries = base_query.filter(AnalyticsCache.status == CacheStatus.EXPIRED).count()
+        error_entries = base_query.filter(AnalyticsCache.status == CacheStatus.ERROR).count()
 
-        total_size_bytes = base_query.with_entities(
-            func.sum(AnalyticsCache.data_size_bytes)
-        ).scalar() or 0
-        total_hits = base_query.with_entities(
-            func.sum(AnalyticsCache.hit_count)
-        ).scalar() or 0
-        total_misses = base_query.with_entities(
-            func.sum(AnalyticsCache.miss_count)
-        ).scalar() or 0
+        total_size_bytes = base_query.with_entities(func.sum(AnalyticsCache.data_size_bytes)).scalar() or 0
+        total_hits = base_query.with_entities(func.sum(AnalyticsCache.hit_count)).scalar() or 0
+        total_misses = base_query.with_entities(func.sum(AnalyticsCache.miss_count)).scalar() or 0
 
         overall_hit_rate = Decimal("0")
         total_requests = total_hits + total_misses
         if total_requests > 0:
             overall_hit_rate = Decimal(str((total_hits / total_requests) * 100))
 
-        avg_ttl = base_query.with_entities(
-            func.avg(AnalyticsCache.ttl_seconds)
-        ).scalar() or 0
+        avg_ttl = base_query.with_entities(func.avg(AnalyticsCache.ttl_seconds)).scalar() or 0
 
         by_type = {}
         for tipo in CacheType:
@@ -324,10 +304,14 @@ class CacheRepository:
         condominio_id: UUID,
     ) -> list[AnalyticsCache]:
         """Lista caches por tipo de entidade."""
-        return self.db.query(AnalyticsCache).filter(
-            AnalyticsCache.condominio_id == condominio_id,
-            AnalyticsCache.entity_type == entity_type,
-        ).all()
+        return (
+            self.db.query(AnalyticsCache)
+            .filter(
+                AnalyticsCache.condominio_id == condominio_id,
+                AnalyticsCache.entity_type == entity_type,
+            )
+            .all()
+        )
 
     def get_hot_entries(
         self,
@@ -335,9 +319,13 @@ class CacheRepository:
         limit: int = 10,
     ) -> list[AnalyticsCache]:
         """Lista entradas mais acessadas."""
-        return self.db.query(AnalyticsCache).filter(
-            AnalyticsCache.condominio_id == condominio_id,
-            AnalyticsCache.status == CacheStatus.VALID,
-        ).order_by(
-            desc(AnalyticsCache.hit_count)
-        ).limit(limit).all()
+        return (
+            self.db.query(AnalyticsCache)
+            .filter(
+                AnalyticsCache.condominio_id == condominio_id,
+                AnalyticsCache.status == CacheStatus.VALID,
+            )
+            .order_by(desc(AnalyticsCache.hit_count))
+            .limit(limit)
+            .all()
+        )

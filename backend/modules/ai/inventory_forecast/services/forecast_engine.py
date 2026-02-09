@@ -7,8 +7,7 @@ Suporta Prophet, ARIMA e Exponential Smoothing.
 
 import logging
 import math
-from datetime import date, datetime, timedelta
-from typing import Any, Optional
+from datetime import date, timedelta
 from uuid import UUID
 
 import numpy as np
@@ -16,7 +15,6 @@ from sqlalchemy.orm import Session
 
 from modules.ai.inventory_forecast.models.forecast import (
     Forecast,
-    ForecastResult,
     ForecastStatus,
     ForecastType,
 )
@@ -52,7 +50,7 @@ class ForecastEngine:
         request: ForecastRequest,
         product_info: dict,
         historical_data: list[dict],
-        created_by: Optional[UUID] = None,
+        created_by: UUID | None = None,
     ) -> Forecast:
         """
         Gera previsao de demanda para um produto.
@@ -89,17 +87,11 @@ class ForecastEngine:
 
         try:
             # Atualizar status
-            self.repository.update_forecast(
-                forecast.id,
-                ForecastUpdate(status=ForecastStatus.PROCESSING)
-            )
+            self.repository.update_forecast(forecast.id, ForecastUpdate(status=ForecastStatus.PROCESSING))
 
             # Validar dados
             if len(historical_data) < 30:
-                raise ValueError(
-                    f"Dados insuficientes: {len(historical_data)} pontos. "
-                    "Minimo: 30 pontos."
-                )
+                raise ValueError(f"Dados insuficientes: {len(historical_data)} pontos. Minimo: 30 pontos.")
 
             # Selecionar modelo
             model_type = request.model_type
@@ -155,7 +147,7 @@ class ForecastEngine:
                 ForecastUpdate(
                     status=ForecastStatus.FAILED,
                     error_message=str(e),
-                )
+                ),
             )
             raise
 
@@ -230,22 +222,21 @@ class ForecastEngine:
 
             # Componentes
             trend_component = baseline * trend * (i + 1) / 365
-            seasonal_component = (
-                predicted - baseline - trend_component
-                if predicted > baseline else 0
-            )
+            seasonal_component = predicted - baseline - trend_component if predicted > baseline else 0
 
-            results.append({
-                "date": forecast_date,
-                "period_type": "daily",
-                "predicted_demand": max(0, round(predicted, 2)),
-                "lower_bound": max(0, round(predicted - margin, 2)),
-                "upper_bound": round(predicted + margin, 2),
-                "confidence_level": confidence_level,
-                "trend_component": round(trend_component, 2),
-                "seasonal_component": round(seasonal_component, 2),
-                "residual_component": 0,
-            })
+            results.append(
+                {
+                    "date": forecast_date,
+                    "period_type": "daily",
+                    "predicted_demand": max(0, round(predicted, 2)),
+                    "lower_bound": max(0, round(predicted - margin, 2)),
+                    "upper_bound": round(predicted + margin, 2),
+                    "confidence_level": confidence_level,
+                    "trend_component": round(trend_component, 2),
+                    "seasonal_component": round(seasonal_component, 2),
+                    "residual_component": 0,
+                }
+            )
 
         # Calcular metricas (usando validacao cruzada simples)
         metrics = self._calculate_metrics(values, baseline, trend)
@@ -265,11 +256,7 @@ class ForecastEngine:
         except Exception:
             return 0.0
 
-    def _calculate_seasonality(
-        self,
-        values: np.ndarray,
-        dates: list[date]
-    ) -> dict[int, float]:
+    def _calculate_seasonality(self, values: np.ndarray, dates: list[date]) -> dict[int, float]:
         """Calcula fatores de sazonalidade por dia da semana."""
         if len(values) < 14:
             return {}
@@ -291,12 +278,7 @@ class ForecastEngine:
 
         return factors
 
-    def _calculate_metrics(
-        self,
-        values: np.ndarray,
-        baseline: float,
-        trend: float
-    ) -> dict:
+    def _calculate_metrics(self, values: np.ndarray, baseline: float, trend: float) -> dict:
         """Calcula metricas de qualidade."""
         if len(values) < 10:
             return {"confidence_score": 50.0}
@@ -321,7 +303,7 @@ class ForecastEngine:
 
         # MAPE (evitar divisao por zero)
         mape_values = []
-        for actual, pred in zip(test, predictions):
+        for actual, pred in zip(test, predictions, strict=False):
             if actual > 0:
                 mape_values.append(abs(actual - pred) / actual * 100)
         mape = np.mean(mape_values) if mape_values else 0
@@ -399,18 +381,14 @@ class ForecastEngine:
             "safety_stock": round(safety_stock, 2),
         }
 
-    def get_forecast(
-        self,
-        forecast_id: UUID,
-        include_results: bool = True
-    ) -> Optional[Forecast]:
+    def get_forecast(self, forecast_id: UUID, include_results: bool = True) -> Forecast | None:
         """Busca previsao por ID."""
         return self.repository.get_forecast(forecast_id, include_results)
 
     def get_forecasts(
         self,
-        product_id: Optional[UUID] = None,
-        status: Optional[ForecastStatus] = None,
+        product_id: UUID | None = None,
+        status: ForecastStatus | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[Forecast], int]:
@@ -423,9 +401,7 @@ class ForecastEngine:
         )
 
     def get_latest_forecast(
-        self,
-        product_id: UUID,
-        forecast_type: ForecastType = ForecastType.DEMAND
-    ) -> Optional[Forecast]:
+        self, product_id: UUID, forecast_type: ForecastType = ForecastType.DEMAND
+    ) -> Forecast | None:
         """Busca previsao mais recente para produto."""
         return self.repository.get_latest_forecast(product_id, forecast_type)

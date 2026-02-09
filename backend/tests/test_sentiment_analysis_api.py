@@ -4,42 +4,42 @@ Testes de API - Sentiment Analysis (Sprint 46)
 Testes de integracao para os endpoints de analise de sentimento.
 """
 
-import pytest
 from datetime import datetime, timedelta
+from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
-from unittest.mock import AsyncMock, patch, MagicMock
 
+import pytest
 from fastapi.testclient import TestClient
 from httpx import AsyncClient
 
 from modules.ai.sentiment_analysis.models import (
-    SentimentAnalysis,
-    SentimentType,
-    EmotionType,
-    SourceType,
     AnalysisStatus,
-    SentimentRule,
-    RuleCategory,
-    RuleAction,
-    SentimentTrend,
-    TrendPeriod,
-    TrendDirection,
+    EmotionType,
     FeedbackInsight,
-    InsightType,
     InsightPriority,
+    InsightType,
+    RuleAction,
+    RuleCategory,
+    SentimentAnalysis,
+    SentimentRule,
+    SentimentTrend,
+    SentimentType,
+    SourceType,
+    TrendDirection,
+    TrendPeriod,
 )
-from modules.ai.sentiment_analysis.models.sentiment_trend import TrendCategory
 from modules.ai.sentiment_analysis.models.feedback_insight import InsightStatus
+from modules.ai.sentiment_analysis.models.sentiment_trend import TrendCategory
 from modules.ai.sentiment_analysis.schemas import (
     AnalyzeTextRequest,
-    SentimentRuleCreate,
     FeedbackInsightCreate,
+    SentimentRuleCreate,
 )
-
 
 # ============================================================
 # Fixtures
 # ============================================================
+
 
 @pytest.fixture
 def mock_analysis():
@@ -221,6 +221,7 @@ def mock_insight():
 # Tests - Analysis Endpoints
 # ============================================================
 
+
 class TestAnalysisEndpoints:
     """Testes para endpoints de analise."""
 
@@ -235,15 +236,13 @@ class TestAnalysisEndpoints:
         }
 
         # Mock do analyzer
-        with patch(
-            "modules.ai.sentiment_analysis.controllers.sentiment_controller.SentimentAnalyzer"
-        ) as MockAnalyzer:
+        with patch("modules.ai.sentiment_analysis.controllers.sentiment_controller.SentimentAnalyzer") as mock_analyzer:
             mock_instance = AsyncMock()
             mock_instance.analyze_text.return_value = mock_analysis
-            MockAnalyzer.return_value = mock_instance
+            mock_analyzer.return_value = mock_instance
 
             # Simulacao de chamada
-            analyzer = MockAnalyzer(None)
+            analyzer = mock_analyzer(None)
             result = await analyzer.analyze_text(AnalyzeTextRequest(**request_data))
 
             assert result.sentiment_type == SentimentType.POSITIVE
@@ -257,18 +256,16 @@ class TestAnalysisEndpoints:
             "source_type": "complaint",
         }
 
-        with patch(
-            "modules.ai.sentiment_analysis.services.SentimentAnalyzer"
-        ) as MockAnalyzer:
+        with patch("modules.ai.sentiment_analysis.services.SentimentAnalyzer") as mock_analyzer:
             mock_instance = AsyncMock()
             mock_result = MagicMock()
             mock_result.sentiment_type = SentimentType.VERY_NEGATIVE
             mock_result.sentiment_score = -75.0
             mock_result.has_complaint = True
             mock_instance.analyze_text.return_value = mock_result
-            MockAnalyzer.return_value = mock_instance
+            mock_analyzer.return_value = mock_instance
 
-            analyzer = MockAnalyzer(None)
+            analyzer = mock_analyzer(None)
             result = await analyzer.analyze_text(AnalyzeTextRequest(**request_data))
 
             assert result.sentiment_type == SentimentType.VERY_NEGATIVE
@@ -285,9 +282,7 @@ class TestAnalysisEndpoints:
             ]
         }
 
-        with patch(
-            "modules.ai.sentiment_analysis.services.SentimentAnalyzer"
-        ) as MockAnalyzer:
+        with patch("modules.ai.sentiment_analysis.services.SentimentAnalyzer") as mock_analyzer:
             mock_instance = AsyncMock()
             mock_result = MagicMock()
             mock_result.total = 2
@@ -296,9 +291,9 @@ class TestAnalysisEndpoints:
             mock_result.results = [mock_analysis, mock_analysis]
             mock_result.errors = []
             mock_instance.batch_analyze.return_value = mock_result
-            MockAnalyzer.return_value = mock_instance
+            mock_analyzer.return_value = mock_instance
 
-            analyzer = MockAnalyzer(None)
+            analyzer = mock_analyzer(None)
             result = await analyzer.batch_analyze(request_data)
 
             assert result.total == 2
@@ -307,14 +302,12 @@ class TestAnalysisEndpoints:
     @pytest.mark.asyncio
     async def test_list_analyses(self, mock_analysis):
         """Testa listagem de analises."""
-        with patch(
-            "modules.ai.sentiment_analysis.repositories.SentimentRepository"
-        ) as MockRepo:
+        with patch("modules.ai.sentiment_analysis.repositories.SentimentRepository") as mock_repo:
             mock_instance = AsyncMock()
             mock_instance.list_analyses.return_value = ([mock_analysis], 1)
-            MockRepo.return_value = mock_instance
+            mock_repo.return_value = mock_instance
 
-            repo = MockRepo(None)
+            repo = mock_repo(None)
             items, total = await repo.list_analyses(page=1, page_size=50)
 
             assert total == 1
@@ -326,14 +319,12 @@ class TestAnalysisEndpoints:
         mock_analysis.is_critical = True
         mock_analysis.sentiment_type = SentimentType.VERY_NEGATIVE
 
-        with patch(
-            "modules.ai.sentiment_analysis.repositories.SentimentRepository"
-        ) as MockRepo:
+        with patch("modules.ai.sentiment_analysis.repositories.SentimentRepository") as mock_repo:
             mock_instance = AsyncMock()
             mock_instance.get_critical_analyses.return_value = [mock_analysis]
-            MockRepo.return_value = mock_instance
+            mock_repo.return_value = mock_instance
 
-            repo = MockRepo(None)
+            repo = mock_repo(None)
             results = await repo.get_critical_analyses(hours=24)
 
             assert len(results) == 1
@@ -343,6 +334,7 @@ class TestAnalysisEndpoints:
 # ============================================================
 # Tests - Rule Endpoints
 # ============================================================
+
 
 class TestRuleEndpoints:
     """Testes para endpoints de regras."""
@@ -358,14 +350,12 @@ class TestRuleEndpoints:
             primary_action=RuleAction.ALERT,
         )
 
-        with patch(
-            "modules.ai.sentiment_analysis.services.SentimentAlertService"
-        ) as MockService:
+        with patch("modules.ai.sentiment_analysis.services.SentimentAlertService") as mock_service:
             mock_instance = AsyncMock()
             mock_instance.create_rule.return_value = mock_rule
-            MockService.return_value = mock_instance
+            mock_service.return_value = mock_instance
 
-            service = MockService(None)
+            service = mock_service(None)
             result = await service.create_rule(rule_data)
 
             assert result.code == "TEST_RULE"
@@ -374,14 +364,12 @@ class TestRuleEndpoints:
     @pytest.mark.asyncio
     async def test_list_rules(self, mock_rule):
         """Testa listagem de regras."""
-        with patch(
-            "modules.ai.sentiment_analysis.repositories.SentimentRepository"
-        ) as MockRepo:
+        with patch("modules.ai.sentiment_analysis.repositories.SentimentRepository") as mock_repo:
             mock_instance = AsyncMock()
             mock_instance.list_rules.return_value = ([mock_rule], 1)
-            MockRepo.return_value = mock_instance
+            mock_repo.return_value = mock_instance
 
-            repo = MockRepo(None)
+            repo = mock_repo(None)
             items, total = await repo.list_rules()
 
             assert total == 1
@@ -390,15 +378,13 @@ class TestRuleEndpoints:
     @pytest.mark.asyncio
     async def test_toggle_rule(self, mock_rule):
         """Testa ativar/desativar regra."""
-        with patch(
-            "modules.ai.sentiment_analysis.services.SentimentAlertService"
-        ) as MockService:
+        with patch("modules.ai.sentiment_analysis.services.SentimentAlertService") as mock_service:
             mock_rule.is_active = False
             mock_instance = AsyncMock()
             mock_instance.toggle_rule.return_value = mock_rule
-            MockService.return_value = mock_instance
+            mock_service.return_value = mock_instance
 
-            service = MockService(None)
+            service = mock_service(None)
             result = await service.toggle_rule(mock_rule.id, False)
 
             assert result.is_active is False
@@ -406,9 +392,7 @@ class TestRuleEndpoints:
     @pytest.mark.asyncio
     async def test_evaluate_rules(self, mock_analysis, mock_rule):
         """Testa avaliacao de regras."""
-        with patch(
-            "modules.ai.sentiment_analysis.services.SentimentAlertService"
-        ) as MockService:
+        with patch("modules.ai.sentiment_analysis.services.SentimentAlertService") as mock_service:
             mock_result = MagicMock()
             mock_result.rule_id = mock_rule.id
             mock_result.matched = True
@@ -416,9 +400,9 @@ class TestRuleEndpoints:
 
             mock_instance = AsyncMock()
             mock_instance.evaluate_analysis.return_value = [mock_result]
-            MockService.return_value = mock_instance
+            mock_service.return_value = mock_instance
 
-            service = MockService(None)
+            service = mock_service(None)
             results = await service.evaluate_analysis(mock_analysis)
 
             assert len(results) == 1
@@ -429,20 +413,19 @@ class TestRuleEndpoints:
 # Tests - Trend Endpoints
 # ============================================================
 
+
 class TestTrendEndpoints:
     """Testes para endpoints de tendencias."""
 
     @pytest.mark.asyncio
     async def test_calculate_trend(self, mock_trend):
         """Testa calculo de tendencia."""
-        with patch(
-            "modules.ai.sentiment_analysis.services.TrendCalculator"
-        ) as MockCalc:
+        with patch("modules.ai.sentiment_analysis.services.TrendCalculator") as mock_calc:
             mock_instance = AsyncMock()
             mock_instance.calculate_trend.return_value = mock_trend
-            MockCalc.return_value = mock_instance
+            mock_calc.return_value = mock_instance
 
-            calc = MockCalc(None)
+            calc = mock_calc(None)
             result = await calc.calculate_trend(
                 period_type=TrendPeriod.DAILY,
                 period_start=datetime.utcnow() - timedelta(days=1),
@@ -455,9 +438,7 @@ class TestTrendEndpoints:
     @pytest.mark.asyncio
     async def test_get_trend_comparison(self, mock_trend):
         """Testa comparacao de tendencias."""
-        with patch(
-            "modules.ai.sentiment_analysis.services.TrendCalculator"
-        ) as MockCalc:
+        with patch("modules.ai.sentiment_analysis.services.TrendCalculator") as mock_calc:
             mock_instance = AsyncMock()
             mock_instance.get_trend_comparison.return_value = {
                 "current": mock_trend.to_summary(),
@@ -465,9 +446,9 @@ class TestTrendEndpoints:
                 "score_improvement": 5.0,
                 "trend_direction": "improving",
             }
-            MockCalc.return_value = mock_instance
+            mock_calc.return_value = mock_instance
 
-            calc = MockCalc(None)
+            calc = mock_calc(None)
             result = await calc.get_trend_comparison(
                 period_type=TrendPeriod.WEEKLY,
                 current_start=datetime.utcnow() - timedelta(weeks=1),
@@ -481,9 +462,7 @@ class TestTrendEndpoints:
     @pytest.mark.asyncio
     async def test_get_dashboard_summary(self):
         """Testa resumo do dashboard."""
-        with patch(
-            "modules.ai.sentiment_analysis.services.TrendCalculator"
-        ) as MockCalc:
+        with patch("modules.ai.sentiment_analysis.services.TrendCalculator") as mock_calc:
             mock_instance = AsyncMock()
             mock_instance.get_dashboard_summary.return_value = {
                 "daily": {"total": 50, "avg_score": 45.0},
@@ -491,9 +470,9 @@ class TestTrendEndpoints:
                 "emotions": {"satisfaction": 100, "frustration": 20},
                 "top_keywords": [{"word": "atendimento", "count": 50}],
             }
-            MockCalc.return_value = mock_instance
+            mock_calc.return_value = mock_instance
 
-            calc = MockCalc(None)
+            calc = mock_calc(None)
             result = await calc.get_dashboard_summary()
 
             assert "daily" in result
@@ -505,13 +484,14 @@ class TestTrendEndpoints:
 # Tests - Insight Endpoints
 # ============================================================
 
+
 class TestInsightEndpoints:
     """Testes para endpoints de insights."""
 
     @pytest.mark.asyncio
     async def test_create_insight(self, mock_insight):
         """Testa criacao de insight."""
-        insight_data = FeedbackInsightCreate(
+        FeedbackInsightCreate(
             title="Novo Insight",
             insight_type=InsightType.SERVICE_ISSUE,
             priority=InsightPriority.MEDIUM,
@@ -521,14 +501,12 @@ class TestInsightEndpoints:
             actionability_score=65.0,
         )
 
-        with patch(
-            "modules.ai.sentiment_analysis.repositories.SentimentRepository"
-        ) as MockRepo:
+        with patch("modules.ai.sentiment_analysis.repositories.SentimentRepository") as mock_repo:
             mock_instance = AsyncMock()
             mock_instance.create_insight.return_value = mock_insight
-            MockRepo.return_value = mock_instance
+            mock_repo.return_value = mock_instance
 
-            repo = MockRepo(None)
+            repo = mock_repo(None)
             result = await repo.create_insight(mock_insight)
 
             assert result.insight_type == InsightType.SENTIMENT_DROP
@@ -536,14 +514,12 @@ class TestInsightEndpoints:
     @pytest.mark.asyncio
     async def test_list_insights(self, mock_insight):
         """Testa listagem de insights."""
-        with patch(
-            "modules.ai.sentiment_analysis.repositories.SentimentRepository"
-        ) as MockRepo:
+        with patch("modules.ai.sentiment_analysis.repositories.SentimentRepository") as mock_repo:
             mock_instance = AsyncMock()
             mock_instance.list_insights.return_value = ([mock_insight], 1)
-            MockRepo.return_value = mock_instance
+            mock_repo.return_value = mock_instance
 
-            repo = MockRepo(None)
+            repo = mock_repo(None)
             items, total = await repo.list_insights()
 
             assert total == 1
@@ -552,14 +528,12 @@ class TestInsightEndpoints:
     @pytest.mark.asyncio
     async def test_get_active_insights(self, mock_insight):
         """Testa busca de insights ativos."""
-        with patch(
-            "modules.ai.sentiment_analysis.services.InsightGenerator"
-        ) as MockGen:
+        with patch("modules.ai.sentiment_analysis.services.InsightGenerator") as mock_gen:
             mock_instance = AsyncMock()
             mock_instance.get_active_insights.return_value = [mock_insight]
-            MockGen.return_value = mock_instance
+            mock_gen.return_value = mock_instance
 
-            gen = MockGen(None)
+            gen = mock_gen(None)
             results = await gen.get_active_insights()
 
             assert len(results) == 1
@@ -570,14 +544,12 @@ class TestInsightEndpoints:
         """Testa reconhecimento de insight."""
         mock_insight.status = InsightStatus.ACKNOWLEDGED
 
-        with patch(
-            "modules.ai.sentiment_analysis.services.InsightGenerator"
-        ) as MockGen:
+        with patch("modules.ai.sentiment_analysis.services.InsightGenerator") as mock_gen:
             mock_instance = AsyncMock()
             mock_instance.acknowledge_insight.return_value = mock_insight
-            MockGen.return_value = mock_instance
+            mock_gen.return_value = mock_instance
 
-            gen = MockGen(None)
+            gen = mock_gen(None)
             result = await gen.acknowledge_insight(mock_insight.id, uuid4())
 
             assert result.status == InsightStatus.ACKNOWLEDGED
@@ -587,31 +559,25 @@ class TestInsightEndpoints:
         """Testa resolucao de insight."""
         mock_insight.status = InsightStatus.IMPLEMENTED
 
-        with patch(
-            "modules.ai.sentiment_analysis.services.InsightGenerator"
-        ) as MockGen:
+        with patch("modules.ai.sentiment_analysis.services.InsightGenerator") as mock_gen:
             mock_instance = AsyncMock()
             mock_instance.resolve_insight.return_value = mock_insight
-            MockGen.return_value = mock_instance
+            mock_gen.return_value = mock_instance
 
-            gen = MockGen(None)
-            result = await gen.resolve_insight(
-                mock_insight.id, uuid4(), "success", "Problema corrigido"
-            )
+            gen = mock_gen(None)
+            result = await gen.resolve_insight(mock_insight.id, uuid4(), "success", "Problema corrigido")
 
             assert result.status == InsightStatus.IMPLEMENTED
 
     @pytest.mark.asyncio
     async def test_generate_insights(self, mock_insight):
         """Testa geracao automatica de insights."""
-        with patch(
-            "modules.ai.sentiment_analysis.services.InsightGenerator"
-        ) as MockGen:
+        with patch("modules.ai.sentiment_analysis.services.InsightGenerator") as mock_gen:
             mock_instance = AsyncMock()
             mock_instance.analyze_and_generate.return_value = [mock_insight]
-            MockGen.return_value = mock_instance
+            mock_gen.return_value = mock_instance
 
-            gen = MockGen(None)
+            gen = mock_gen(None)
             results = await gen.analyze_and_generate(
                 period_type=TrendPeriod.DAILY,
                 days_back=1,
@@ -624,15 +590,14 @@ class TestInsightEndpoints:
 # Tests - Stats Endpoints
 # ============================================================
 
+
 class TestStatsEndpoints:
     """Testes para endpoints de estatisticas."""
 
     @pytest.mark.asyncio
     async def test_get_analysis_stats(self):
         """Testa estatisticas de analises."""
-        with patch(
-            "modules.ai.sentiment_analysis.repositories.SentimentRepository"
-        ) as MockRepo:
+        with patch("modules.ai.sentiment_analysis.repositories.SentimentRepository") as mock_repo:
             mock_instance = AsyncMock()
             mock_instance.get_analysis_stats.return_value = {
                 "total": 1000,
@@ -644,9 +609,9 @@ class TestStatsEndpoints:
                 },
                 "complaint_count": 150,
             }
-            MockRepo.return_value = mock_instance
+            mock_repo.return_value = mock_instance
 
-            repo = MockRepo(None)
+            repo = mock_repo(None)
             stats = await repo.get_analysis_stats()
 
             assert stats["total"] == 1000
@@ -655,9 +620,7 @@ class TestStatsEndpoints:
     @pytest.mark.asyncio
     async def test_get_emotion_distribution(self):
         """Testa distribuicao de emocoes."""
-        with patch(
-            "modules.ai.sentiment_analysis.repositories.SentimentRepository"
-        ) as MockRepo:
+        with patch("modules.ai.sentiment_analysis.repositories.SentimentRepository") as mock_repo:
             mock_instance = AsyncMock()
             mock_instance.get_emotion_distribution.return_value = {
                 "satisfaction": 300,
@@ -665,9 +628,9 @@ class TestStatsEndpoints:
                 "anger": 50,
                 "neutral": 200,
             }
-            MockRepo.return_value = mock_instance
+            mock_repo.return_value = mock_instance
 
-            repo = MockRepo(None)
+            repo = mock_repo(None)
             dist = await repo.get_emotion_distribution()
 
             assert dist["satisfaction"] == 300
@@ -676,18 +639,16 @@ class TestStatsEndpoints:
     @pytest.mark.asyncio
     async def test_get_top_keywords(self):
         """Testa keywords mais frequentes."""
-        with patch(
-            "modules.ai.sentiment_analysis.repositories.SentimentRepository"
-        ) as MockRepo:
+        with patch("modules.ai.sentiment_analysis.repositories.SentimentRepository") as mock_repo:
             mock_instance = AsyncMock()
             mock_instance.get_top_keywords.return_value = [
                 {"word": "atendimento", "count": 150},
                 {"word": "preco", "count": 100},
                 {"word": "qualidade", "count": 80},
             ]
-            MockRepo.return_value = mock_instance
+            mock_repo.return_value = mock_instance
 
-            repo = MockRepo(None)
+            repo = mock_repo(None)
             keywords = await repo.get_top_keywords(limit=10)
 
             assert len(keywords) == 3

@@ -1,8 +1,8 @@
 """Trial Balance model - Balancete de Verificação."""
 
-import enum
 from datetime import datetime
 from decimal import Decimal
+from enum import StrEnum
 
 from sqlalchemy import (
     Boolean,
@@ -23,7 +23,7 @@ from sqlalchemy.orm import relationship
 from core.models import Base
 
 
-class BalanceType(str, enum.Enum):
+class BalanceType(StrEnum):
     """Tipo de balancete."""
 
     VERIFICATION = "VERIFICATION"  # Balancete de Verificação
@@ -33,7 +33,7 @@ class BalanceType(str, enum.Enum):
     CONSOLIDATED = "CONSOLIDATED"  # Consolidado
 
 
-class BalanceStatus(str, enum.Enum):
+class BalanceStatus(StrEnum):
     """Status do balancete."""
 
     DRAFT = "DRAFT"  # Rascunho
@@ -43,7 +43,7 @@ class BalanceStatus(str, enum.Enum):
     ARCHIVED = "ARCHIVED"  # Arquivado
 
 
-class BalancePeriod(str, enum.Enum):
+class BalancePeriod(StrEnum):
     """Período do balancete."""
 
     MONTHLY = "MONTHLY"  # Mensal
@@ -189,9 +189,7 @@ class TrialBalance(Base):
 
     # Timestamps
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
-    updated_at = Column(
-        DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
-    )
+    updated_at = Column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     deleted_at = Column(DateTime(timezone=True), nullable=True)
 
     # Audit

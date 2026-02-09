@@ -5,19 +5,19 @@ Models for speech-to-text transcription results.
 """
 
 from datetime import datetime
-from enum import Enum
-from typing import Optional, List, Dict, Any
+from enum import StrEnum
+from typing import Any
 from uuid import uuid4
 
-from sqlalchemy import Column, String, Boolean, DateTime, Float, Integer, Text, ForeignKey
-from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY
-from sqlalchemy.orm import relationship
+from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 
 from core.models.base import Base
 
 
-class TranscriptionStatusEnum(str, Enum):
+class TranscriptionStatusEnum(StrEnum):
     """Transcription status."""
+
     PENDING = "pending"
     PROCESSING = "processing"
     COMPLETED = "completed"
@@ -27,8 +27,9 @@ class TranscriptionStatusEnum(str, Enum):
     CORRECTED = "corrected"
 
 
-class TranscriptionProviderEnum(str, Enum):
+class TranscriptionProviderEnum(StrEnum):
     """Transcription provider."""
+
     GOOGLE_SPEECH = "google_speech"
     AWS_TRANSCRIBE = "aws_transcribe"
     AZURE_SPEECH = "azure_speech"
@@ -117,8 +118,8 @@ class Transcription(Base):
         self,
         text: str,
         confidence: float,
-        words: List[Dict],
-        segments: List[Dict],
+        words: list[dict],
+        segments: list[dict],
         processing_time_ms: int,
     ) -> None:
         """Set transcription result."""
@@ -136,7 +137,7 @@ class Transcription(Base):
         if self.duration_seconds and self.duration_seconds > 0:
             self.words_per_minute = (self.word_count / self.duration_seconds) * 60
 
-    def mark_failed(self, error: str, error_code: Optional[str] = None) -> None:
+    def mark_failed(self, error: str, error_code: str | None = None) -> None:
         """Mark transcription as failed."""
         self.status = TranscriptionStatusEnum.FAILED.value
         self.error_message = error
@@ -147,12 +148,14 @@ class Transcription(Base):
         """Add a correction to the transcription."""
         if not self.corrections:
             self.corrections = []
-        self.corrections.append({
-            "original": original,
-            "corrected": corrected,
-            "position": position,
-            "timestamp": datetime.utcnow().isoformat(),
-        })
+        self.corrections.append(
+            {
+                "original": original,
+                "corrected": corrected,
+                "position": position,
+                "timestamp": datetime.utcnow().isoformat(),
+            }
+        )
         self.has_corrections = True
         self.updated_at = datetime.utcnow()
 
@@ -160,13 +163,9 @@ class Transcription(Base):
         """Get text spoken by a specific speaker."""
         if not self.segments:
             return ""
-        return " ".join(
-            seg.get("text", "")
-            for seg in self.segments
-            if seg.get("speaker") == speaker_id
-        )
+        return " ".join(seg.get("text", "") for seg in self.segments if seg.get("speaker") == speaker_id)
 
-    def get_segment_at_time(self, time_seconds: float) -> Optional[Dict]:
+    def get_segment_at_time(self, time_seconds: float) -> dict | None:
         """Get segment at a specific time."""
         if not self.segments:
             return None
@@ -175,7 +174,7 @@ class Transcription(Base):
                 return segment
         return None
 
-    def get_quality_metrics(self) -> Dict[str, Any]:
+    def get_quality_metrics(self) -> dict[str, Any]:
         """Get transcription quality metrics."""
         return {
             "confidence_score": self.confidence_score,

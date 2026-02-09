@@ -11,8 +11,9 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from .jwt import TokenError, verify_access_token
 from core.database import get_db
+
+from .jwt import TokenError, verify_access_token
 
 if TYPE_CHECKING:
     from core.models import User
@@ -54,7 +55,7 @@ CurrentUserId = Annotated[str, Depends(get_current_user_id)]
 async def get_current_user(
     user_id: CurrentUserId,
     db: AsyncSession = Depends(get_db),  # Usar dependência correta
-) -> "User":
+) -> User:
     """
     Busca o usuario atual no banco de dados.
     """
@@ -76,7 +77,7 @@ async def get_current_user(
 async def get_current_active_user(
     user_id: CurrentUserId,
     db: AsyncSession = Depends(get_db),  # Usar dependência correta
-) -> "User":
+) -> User:
     """
     Busca o usuario atual e verifica se esta ativo.
     """

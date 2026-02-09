@@ -6,31 +6,25 @@ do sistema de arquivos, útil para ambientes de desenvolvimento ou
 quando o Vault não está disponível.
 """
 
-from datetime import datetime
-from typing import Dict, Optional, Any, List
-from dataclasses import dataclass
-from pathlib import Path
-from uuid import UUID
-import asyncio
 import logging
 import os
-import base64
 import ssl
-import tempfile
+from dataclasses import dataclass
+from datetime import UTC, datetime
+from pathlib import Path
+from typing import Any
 
 from cryptography import x509
-from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.backends import default_backend
 from OpenSSL import crypto
 
-from .credential_provider import (
-    ProvedorCredenciais,
-    CredencialGoverno,
-    TipoCredencial,
-)
 from .certificate_manager import (
     CertificadoInfo,
     TipoCertificado,
+)
+from .credential_provider import (
+    CredencialGoverno,
+    TipoCredencial,
 )
 
 logger = logging.getLogger(__name__)
@@ -39,9 +33,10 @@ logger = logging.getLogger(__name__)
 @dataclass
 class FileCredentialConfig:
     """Configuração do provedor de credenciais baseado em arquivo."""
+
     # Paths
     cert_path: str = "/opt/conecta-pro/credentials/certificates/certificado.pfx"
-    cert_password: str = "Conecta123"
+    cert_password: str = "Conecta123"  # noqa: S105
     cert_pem_path: str = "/opt/conecta-pro/credentials/certificates/a1_cert.pem"
     key_pem_path: str = "/opt/conecta-pro/credentials/certificates/a1_key.pem"
 
@@ -57,19 +52,10 @@ class FileCredentialConfig:
     def from_env(cls) -> "FileCredentialConfig":
         """Cria configuração a partir de variáveis de ambiente."""
         return cls(
-            cert_path=os.getenv(
-                "CERTIFICATE_PATH",
-                "/opt/conecta-pro/credentials/certificates/certificado.pfx"
-            ),
-            cert_password=os.getenv("CERTIFICATE_PASSWORD", "Conecta123"),
-            cert_pem_path=os.getenv(
-                "CERT_PEM_PATH",
-                "/opt/conecta-pro/credentials/certificates/a1_cert.pem"
-            ),
-            key_pem_path=os.getenv(
-                "KEY_PEM_PATH",
-                "/opt/conecta-pro/credentials/certificates/a1_key.pem"
-            ),
+            cert_path=os.getenv("CERTIFICATE_PATH", "/opt/conecta-pro/credentials/certificates/certificado.pfx"),
+            cert_password=os.getenv("CERTIFICATE_PASSWORD", "Conecta123"),  # noqa: S105
+            cert_pem_path=os.getenv("CERT_PEM_PATH", "/opt/conecta-pro/credentials/certificates/a1_cert.pem"),
+            key_pem_path=os.getenv("KEY_PEM_PATH", "/opt/conecta-pro/credentials/certificates/a1_key.pem"),
             cnpj=os.getenv("EMPRESA_CNPJ", "35710481000103"),
             razao_social=os.getenv("EMPRESA_RAZAO_SOCIAL", "JORDAN SANTOS DE JESUS LTDA"),
             ambiente=os.getenv("SEFAZ_ENVIRONMENT", "1") == "1" and "producao" or "homologacao",
@@ -83,17 +69,13 @@ class FileCredentialProvider:
     Substitui o Vault para instalações simplificadas.
     """
 
-    def __init__(self, config: Optional[FileCredentialConfig] = None):
+    def __init__(self, config: FileCredentialConfig | None = None):
         self.config = config or FileCredentialConfig.from_env()
-        self._cert_info: Optional[CertificadoInfo] = None
-        self._ssl_context: Optional[ssl.SSLContext] = None
+        self._cert_info: CertificadoInfo | None = None
+        self._ssl_context: ssl.SSLContext | None = None
 
     async def obter_credencial(
-        self,
-        tenant_id: str,
-        servico: TipoCredencial,
-        ambiente: str = "producao",
-        codigo_municipio: Optional[str] = None
+        self, tenant_id: str, servico: TipoCredencial, ambiente: str = "producao", codigo_municipio: str | None = None
     ) -> CredencialGoverno:
         """
         Obtém credencial para um serviço.
@@ -173,9 +155,7 @@ class FileCredentialProvider:
             credencial.valida = False
             credencial.erro = "Certificado expirado"
         elif self._cert_info.alerta_expiracao:
-            logger.warning(
-                f"Certificado próximo da expiração: {self._cert_info.dias_restantes} dias"
-            )
+            logger.warning(f"Certificado próximo da expiração: {self._cert_info.dias_restantes} dias")
 
     async def _extrair_certificado_pfx(self):
         """Extrai certificado e chave do arquivo PFX."""
@@ -239,14 +219,15 @@ class FileCredentialProvider:
                 cnpj = parts[1] if len(parts) > 1 else None
 
             # Calcular dias restantes
-            validade_fim = cert.not_valid_after_utc if hasattr(cert, 'not_valid_after_utc') else cert.not_valid_after
-            validade_inicio = cert.not_valid_before_utc if hasattr(cert, 'not_valid_before_utc') else cert.not_valid_before
+            validade_fim = cert.not_valid_after_utc if hasattr(cert, "not_valid_after_utc") else cert.not_valid_after
+            validade_inicio = (
+                cert.not_valid_before_utc if hasattr(cert, "not_valid_before_utc") else cert.not_valid_before
+            )
 
             # Fazer timezone-aware se necessário
             agora = datetime.utcnow()
             if validade_fim.tzinfo is not None:
-                from datetime import timezone
-                agora = datetime.now(timezone.utc)
+                agora = datetime.now(UTC)
 
             dias_restantes = (validade_fim - agora).days
 
@@ -255,7 +236,7 @@ class FileCredentialProvider:
                 tipo=TipoCertificado.E_CNPJ,
                 subject=cn or self.config.razao_social,
                 issuer=str(cert.issuer),
-                serial_number=format(cert.serial_number, 'X'),
+                serial_number=format(cert.serial_number, "X"),
                 validade_inicio=validade_inicio,
                 validade_fim=validade_fim,
                 dias_restantes=dias_restantes,
@@ -293,12 +274,7 @@ class FileCredentialProvider:
         """Retorna paths dos arquivos de certificado e chave."""
         return self.config.cert_pem_path, self.config.key_pem_path
 
-    async def validar_credencial(
-        self,
-        tenant_id: str,
-        servico: TipoCredencial,
-        **kwargs
-    ) -> Dict[str, Any]:
+    async def validar_credencial(self, tenant_id: str, servico: TipoCredencial, **kwargs) -> dict[str, Any]:
         """Valida uma credencial."""
         credencial = await self.obter_credencial(tenant_id, servico, **kwargs)
 
@@ -323,7 +299,7 @@ class FileCredentialProvider:
 
 
 # Singleton
-_file_provider_instance: Optional[FileCredentialProvider] = None
+_file_provider_instance: FileCredentialProvider | None = None
 
 
 def get_file_credential_provider() -> FileCredentialProvider:

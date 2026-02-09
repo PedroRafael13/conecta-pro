@@ -2,8 +2,6 @@
 Controller FastAPI para GuardianSync.
 """
 
-from typing import Optional, List
-
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -50,13 +48,13 @@ async def create_sync(
 
 @router.get("/", response_model=GuardianSyncListResponse)
 async def list_syncs(
-    search: Optional[str] = Query(None),
-    direction: Optional[SyncDirection] = Query(None),
-    entity_type: Optional[SyncEntityType] = Query(None),
-    sync_status: Optional[SyncStatus] = Query(None, alias="status"),
-    client_id: Optional[str] = Query(None),
-    contract_id: Optional[str] = Query(None),
-    can_retry: Optional[bool] = Query(None),
+    search: str | None = Query(None),
+    direction: SyncDirection | None = Query(None),
+    entity_type: SyncEntityType | None = Query(None),
+    sync_status: SyncStatus | None = Query(None, alias="status"),
+    client_id: str | None = Query(None),
+    contract_id: str | None = Query(None),
+    can_retry: bool | None = Query(None),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
@@ -86,7 +84,7 @@ async def list_syncs(
 
 @router.get("/stats", response_model=GuardianSyncStats)
 async def get_sync_stats(
-    client_id: Optional[str] = Query(None),
+    client_id: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
 ) -> GuardianSyncStats:
     """Obtém estatísticas de sincronização."""
@@ -98,7 +96,7 @@ async def get_sync_stats(
 async def get_pending_syncs(
     limit: int = Query(100, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
-) -> List[GuardianSyncResponse]:
+) -> list[GuardianSyncResponse]:
     """Obtém sincronizações pendentes."""
     repo = GuardianSyncRepository(db)
     syncs = await repo.get_pending(limit)
@@ -109,7 +107,7 @@ async def get_pending_syncs(
 async def get_failed_for_retry(
     limit: int = Query(50, ge=1, le=200),
     db: AsyncSession = Depends(get_db),
-) -> List[GuardianSyncResponse]:
+) -> list[GuardianSyncResponse]:
     """Obtém sincronizações falhas que podem ser reprocessadas."""
     repo = GuardianSyncRepository(db)
     syncs = await repo.get_failed_for_retry(limit)
@@ -178,7 +176,7 @@ async def retry_sync(
 @router.post("/{sync_id}/mark-completed", response_model=GuardianSyncResponse)
 async def mark_sync_completed(
     sync_id: str,
-    external_id: Optional[str] = Query(None),
+    external_id: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
 ) -> GuardianSyncResponse:
     """Marca uma sincronização como concluída."""

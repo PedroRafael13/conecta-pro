@@ -83,7 +83,7 @@ export function useOccurrences(options: UseOccurrencesOptions = {}): UseOccurren
   }, []);
 
   return {
-    occurrences: (data?.items ?? []) as Occurrence[],
+    occurrences: (data?.items ?? []) as unknown as Occurrence[],
     total: data?.total ?? 0,
     page,
     pageSize,
@@ -127,7 +127,7 @@ export function usePostOccurrences(postId: string | null) {
     query: { enabled: !!postId },
   });
 
-  const occurrences = (data ?? []) as Occurrence[];
+  const occurrences = (data ?? []) as unknown as Occurrence[];
 
   return {
     occurrences,
@@ -151,8 +151,8 @@ export function useOccurrenceMutations() {
   const createOccurrence = useCallback(async (data: OccurrenceCreate): Promise<Occurrence | null> => {
     setError(null);
     try {
-      const result = await createMutation.mutateAsync({ data });
-      return result as Occurrence;
+      const result = await createMutation.mutateAsync({ data: data as Parameters<typeof createMutation.mutateAsync>[0]['data'] });
+      return result as unknown as Occurrence;
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Erro ao criar ocorrência';
       setError(msg);
@@ -163,8 +163,8 @@ export function useOccurrenceMutations() {
   const updateOccurrence = useCallback(async (id: string, data: OccurrenceUpdate): Promise<Occurrence | null> => {
     setError(null);
     try {
-      const result = await updateMutation.mutateAsync({ occurrenceId: id, data });
-      return result as Occurrence;
+      const result = await updateMutation.mutateAsync({ occurrenceId: id, data: data as Parameters<typeof updateMutation.mutateAsync>[0]['data'] });
+      return result as unknown as Occurrence;
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Erro ao atualizar ocorrência';
       setError(msg);
@@ -175,8 +175,8 @@ export function useOccurrenceMutations() {
   const resolveOccurrence = useCallback(async (id: string, data: OccurrenceResolve): Promise<Occurrence | null> => {
     setError(null);
     try {
-      const result = await resolveMutation.mutateAsync({ occurrenceId: id, data });
-      return result as Occurrence;
+      const result = await resolveMutation.mutateAsync({ occurrenceId: id, data: data as Parameters<typeof resolveMutation.mutateAsync>[0]['data'] });
+      return result as unknown as Occurrence;
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Erro ao resolver ocorrência';
       setError(msg);

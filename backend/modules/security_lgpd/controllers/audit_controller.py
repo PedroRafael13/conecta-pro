@@ -4,7 +4,6 @@ Controller de Auditoria LGPD.
 
 import logging
 from datetime import datetime
-from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query, status
 
@@ -72,10 +71,10 @@ async def create_audit_log(request: AuditLogRequest) -> StandardResponse:
     description="Retorna eventos de auditoria com filtros.",
 )
 async def list_audit_logs(
-    resource_type: Optional[str] = Query(None, description="Tipo de recurso"),
-    user_id: Optional[str] = Query(None, description="ID do usuario"),
-    start_date: Optional[datetime] = Query(None, description="Data inicial"),
-    end_date: Optional[datetime] = Query(None, description="Data final"),
+    resource_type: str | None = Query(None, description="Tipo de recurso"),
+    user_id: str | None = Query(None, description="ID do usuario"),
+    start_date: datetime | None = Query(None, description="Data inicial"),
+    end_date: datetime | None = Query(None, description="Data final"),
     limit: int = Query(100, ge=1, le=1000, description="Limite de resultados"),
     offset: int = Query(0, ge=0, description="Offset para paginacao"),
 ) -> StandardResponse:

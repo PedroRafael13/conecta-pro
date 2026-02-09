@@ -7,6 +7,13 @@ from modules.ai.signature.models.signature import (
     SignatureStatus,
     SignatureType,
 )
+from modules.ai.signature.models.signature_request import (
+    ReminderFrequency,
+    RequestPriority,
+    RequestStatus,
+    SignaturePurpose,
+    SignatureRequest,
+)
 from modules.ai.signature.models.signature_template import (
     MatchingMode,
     SignatureTemplate,
@@ -19,13 +26,6 @@ from modules.ai.signature.models.signature_verification import (
     VerificationMethod,
     VerificationResult,
     VerificationStatus,
-)
-from modules.ai.signature.models.signature_request import (
-    ReminderFrequency,
-    RequestPriority,
-    RequestStatus,
-    SignaturePurpose,
-    SignatureRequest,
 )
 from modules.ai.signature.models.signed_document import (
     ArchiveStatus,

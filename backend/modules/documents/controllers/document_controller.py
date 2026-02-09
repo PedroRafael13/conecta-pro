@@ -6,19 +6,19 @@ OCR, extracao e validacao de dados.
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from pydantic import BaseModel, Field
 
-from ..models.document import Document, DocumentSource, DocumentStatus, DocumentType
-from ..models.extraction_template import TemplateCategory, TemplateStatus
+from ..models.document import DocumentSource, DocumentType
+from ..models.extraction_template import TemplateCategory
 from ..services.data_extractor import DataExtractor
-from ..services.document_classifier import ClassificationResult, DocumentClassifier
-from ..services.document_scanner import DocumentScanner, ScanConfig, ScanResult
+from ..services.document_classifier import DocumentClassifier
+from ..services.document_scanner import DocumentScanner, ScanConfig
 from ..services.ocr_engine import OCRConfig, OCREngine, OCRProvider
 from ..services.template_manager import TemplateManager
-from ..services.validation_engine import ValidationConfig, ValidationEngine
+from ..services.validation_engine import ValidationEngine
 
 logger = logging.getLogger(__name__)
 
@@ -32,10 +32,10 @@ class DocumentUploadResponse(BaseModel):
     """Resposta de upload de documento."""
 
     success: bool
-    document_id: Optional[str] = None
+    document_id: str | None = None
     status: str
     message: str
-    warnings: List[str] = []
+    warnings: list[str] = []
 
 
 class DocumentResponse(BaseModel):
@@ -47,8 +47,8 @@ class DocumentResponse(BaseModel):
     status: str
     confidence_score: float
     needs_review: bool
-    extracted_data: Dict[str, Any] = {}
-    processing_summary: Dict[str, Any] = {}
+    extracted_data: dict[str, Any] = {}
+    processing_summary: dict[str, Any] = {}
     created_at: str
 
 
@@ -57,9 +57,9 @@ class ClassificationResponse(BaseModel):
 
     document_type: str
     confidence: float
-    matched_keywords: List[str]
-    matched_patterns: List[str]
-    alternatives: List[Dict[str, Any]]
+    matched_keywords: list[str]
+    matched_patterns: list[str]
+    alternatives: list[dict[str, Any]]
 
 
 class ExtractionResponse(BaseModel):
@@ -67,7 +67,7 @@ class ExtractionResponse(BaseModel):
 
     document_id: str
     fields_extracted: int
-    fields: List[Dict[str, Any]]
+    fields: list[dict[str, Any]]
     confidence: float
 
 
@@ -80,19 +80,19 @@ class ValidationResponse(BaseModel):
     total_fields: int
     fields_passed: int
     fields_failed: int
-    errors: List[str]
-    warnings: List[str]
+    errors: list[str]
+    warnings: list[str]
 
 
 class TemplateRequest(BaseModel):
     """Request para criacao de template."""
 
     name: str = Field(..., min_length=3, max_length=100)
-    description: Optional[str] = None
+    description: str | None = None
     document_type: str
     category: str = "other"
-    detection_keywords: List[str] = []
-    fields: List[Dict[str, Any]] = []
+    detection_keywords: list[str] = []
+    fields: list[dict[str, Any]] = []
 
 
 class TemplateResponse(BaseModel):
@@ -127,7 +127,7 @@ class ProcessingRequest(BaseModel):
     classify: bool = True
     extract: bool = True
     validate: bool = True
-    template_id: Optional[str] = None
+    template_id: str | None = None
 
 
 # ============ Dependencies ============
@@ -239,15 +239,15 @@ async def upload_document(
 
 @router.post(
     "/upload/batch",
-    response_model=List[DocumentUploadResponse],
+    response_model=list[DocumentUploadResponse],
     status_code=status.HTTP_201_CREATED,
     summary="Upload de multiplos documentos",
 )
 async def upload_batch(
-    files: List[UploadFile] = File(...),
+    files: list[UploadFile] = File(...),
     tenant_id: str = Query(...),
     scanner: DocumentScanner = Depends(get_scanner),
-) -> List[DocumentUploadResponse]:
+) -> list[DocumentUploadResponse]:
     """Upload de multiplos documentos em lote."""
     results = []
 
@@ -328,7 +328,7 @@ async def run_ocr(
 )
 async def classify_document(
     document_id: str,
-    classifier: DocumentClassifier = Depends(get_classifier),
+    _classifier: DocumentClassifier = Depends(get_classifier),
     template_manager: TemplateManager = Depends(get_template_manager),
 ) -> ClassificationResponse:
     """
@@ -362,7 +362,7 @@ async def classify_document(
 )
 async def extract_data(
     document_id: str,
-    template_id: Optional[str] = Query(None, description="ID do template"),
+    template_id: str | None = Query(None, description="ID do template"),
     extractor: DataExtractor = Depends(get_extractor),
     template_manager: TemplateManager = Depends(get_template_manager),
 ) -> ExtractionResponse:
@@ -432,7 +432,7 @@ async def process_document(
     document_id: str,
     request: ProcessingRequest,
     scanner: DocumentScanner = Depends(get_scanner),
-    classifier: DocumentClassifier = Depends(get_classifier),
+    _classifier: DocumentClassifier = Depends(get_classifier),
     extractor: DataExtractor = Depends(get_extractor),
     validator: ValidationEngine = Depends(get_validator),
     template_manager: TemplateManager = Depends(get_template_manager),
@@ -465,15 +465,15 @@ async def process_document(
 
 @router.get(
     "/templates",
-    response_model=List[TemplateResponse],
+    response_model=list[TemplateResponse],
     summary="Listar templates",
 )
 async def list_templates(
-    category: Optional[str] = Query(None, description="Filtrar por categoria"),
-    document_type: Optional[str] = Query(None, description="Filtrar por tipo"),
+    category: str | None = Query(None, description="Filtrar por categoria"),
+    document_type: str | None = Query(None, description="Filtrar por tipo"),
     include_builtin: bool = Query(True, description="Incluir templates builtin"),
     template_manager: TemplateManager = Depends(get_template_manager),
-) -> List[TemplateResponse]:
+) -> list[TemplateResponse]:
     """Lista templates de extracao disponiveis."""
     try:
         cat = TemplateCategory(category) if category else None
@@ -510,13 +510,13 @@ async def list_templates(
 
 @router.get(
     "/templates/{template_id}",
-    response_model=Dict[str, Any],
+    response_model=dict[str, Any],
     summary="Obter template",
 )
 async def get_template(
     template_id: str,
     template_manager: TemplateManager = Depends(get_template_manager),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Obtem detalhes de um template."""
     template = template_manager.get_template(template_id)
     if not template:
@@ -622,48 +622,48 @@ async def delete_template(
 
 @router.get(
     "/types",
-    response_model=List[Dict[str, str]],
+    response_model=list[dict[str, str]],
     summary="Listar tipos de documentos",
 )
-async def list_document_types() -> List[Dict[str, str]]:
+async def list_document_types() -> list[dict[str, str]]:
     """Lista todos os tipos de documentos suportados."""
     return [{"type": t.value, "name": t.name} for t in DocumentType]
 
 
 @router.get(
     "/providers",
-    response_model=Dict[str, Any],
+    response_model=dict[str, Any],
     summary="Listar providers OCR",
 )
 async def list_ocr_providers(
     ocr_engine: OCREngine = Depends(get_ocr_engine),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Lista providers de OCR disponiveis."""
     return ocr_engine.get_provider_info()
 
 
 @router.get(
     "/stats",
-    response_model=Dict[str, Any],
+    response_model=dict[str, Any],
     summary="Estatisticas de armazenamento",
 )
 async def get_storage_stats(
     tenant_id: str = Query(...),
     scanner: DocumentScanner = Depends(get_scanner),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Obtem estatisticas de armazenamento do tenant."""
     return scanner.get_storage_stats(tenant_id)
 
 
 @router.post(
     "/validate/cpf",
-    response_model=Dict[str, bool],
+    response_model=dict[str, bool],
     summary="Validar CPF",
 )
 async def validate_cpf(
     cpf: str = Query(..., description="CPF a validar"),
     validator: ValidationEngine = Depends(get_validator),
-) -> Dict[str, bool]:
+) -> dict[str, bool]:
     """Valida um CPF."""
     from ..models.validation_result import ValidationType
 
@@ -673,13 +673,13 @@ async def validate_cpf(
 
 @router.post(
     "/validate/cnpj",
-    response_model=Dict[str, bool],
+    response_model=dict[str, bool],
     summary="Validar CNPJ",
 )
 async def validate_cnpj(
     cnpj: str = Query(..., description="CNPJ a validar"),
     validator: ValidationEngine = Depends(get_validator),
-) -> Dict[str, bool]:
+) -> dict[str, bool]:
     """Valida um CNPJ."""
     from ..models.validation_result import ValidationType
 

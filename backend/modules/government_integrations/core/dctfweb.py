@@ -17,33 +17,36 @@ Funcionalidades:
 """
 
 import logging
-from datetime import datetime, date
-from decimal import Decimal
-from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, field
-from enum import Enum
+from datetime import date, datetime
+from decimal import Decimal
+from enum import StrEnum
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
-class TipoDeclaracao(str, Enum):
+class TipoDeclaracao(StrEnum):
     """Tipo de declaração DCTFWeb."""
+
     MENSAL = "1"  # DCTFWeb Mensal
-    ANUAL = "2"   # DCTFWeb 13º Salário
+    ANUAL = "2"  # DCTFWeb 13º Salário
     DIARIA = "3"  # DCTFWeb Diária (espetáculos desportivos)
     ESPECIAL = "4"  # DCTFWeb Especial (situações especiais)
 
 
-class SituacaoDeclaracao(str, Enum):
+class SituacaoDeclaracao(StrEnum):
     """Situação da declaração."""
+
     EM_ANDAMENTO = "em_andamento"
     ATIVA = "ativa"
     RETIFICADA = "retificada"
     EXCLUIDA = "excluida"
 
 
-class TipoCredito(str, Enum):
+class TipoCredito(StrEnum):
     """Tipo de crédito vinculável."""
+
     SALARIO_FAMILIA = "1"
     SALARIO_MATERNIDADE = "2"
     RETENCAO_LEI_9711 = "3"
@@ -55,13 +58,14 @@ class TipoCredito(str, Enum):
 @dataclass
 class DebitoContribuicao:
     """Débito de contribuição previdenciária."""
+
     codigo_receita: str
     descricao: str
     valor_principal: Decimal
     valor_acrescimos: Decimal = Decimal("0")
     periodo_apuracao: str = ""  # YYYY-MM
-    cnpj_tomador: Optional[str] = None
-    numero_processo: Optional[str] = None
+    cnpj_tomador: str | None = None
+    numero_processo: str | None = None
 
     @property
     def valor_total(self) -> Decimal:
@@ -71,16 +75,18 @@ class DebitoContribuicao:
 @dataclass
 class CreditoVinculavel:
     """Crédito vinculável à DCTFWeb."""
+
     tipo: TipoCredito
     descricao: str
     valor: Decimal
     periodo_apuracao: str
-    numero_documento: Optional[str] = None
+    numero_documento: str | None = None
 
 
 @dataclass
 class DARF:
     """Documento de Arrecadação de Receitas Federais."""
+
     codigo_receita: str
     periodo_apuracao: str
     data_vencimento: date
@@ -88,9 +94,9 @@ class DARF:
     valor_multa: Decimal = Decimal("0")
     valor_juros: Decimal = Decimal("0")
     valor_total: Decimal = Decimal("0")
-    numero_referencia: Optional[str] = None
-    codigo_barras: Optional[str] = None
-    linha_digitavel: Optional[str] = None
+    numero_referencia: str | None = None
+    codigo_barras: str | None = None
+    linha_digitavel: str | None = None
 
     def __post_init__(self):
         if self.valor_total == Decimal("0"):
@@ -100,25 +106,26 @@ class DARF:
 @dataclass
 class DCTFWebDeclaracao:
     """Representação de uma DCTFWeb."""
+
     # Identificação
-    numero_recibo: Optional[str] = None
+    numero_recibo: str | None = None
     tipo: TipoDeclaracao = TipoDeclaracao.MENSAL
     situacao: SituacaoDeclaracao = SituacaoDeclaracao.EM_ANDAMENTO
 
     # Período
     periodo_apuracao: str = ""  # YYYY-MM
-    data_transmissao: Optional[datetime] = None
+    data_transmissao: datetime | None = None
 
     # Contribuinte
     cnpj: str = ""
     razao_social: str = ""
 
     # Valores
-    debitos: List[DebitoContribuicao] = field(default_factory=list)
-    creditos: List[CreditoVinculavel] = field(default_factory=list)
+    debitos: list[DebitoContribuicao] = field(default_factory=list)
+    creditos: list[CreditoVinculavel] = field(default_factory=list)
 
     # DARFs gerados
-    darfs: List[DARF] = field(default_factory=list)
+    darfs: list[DARF] = field(default_factory=list)
 
     @property
     def total_debitos(self) -> Decimal:
@@ -147,7 +154,6 @@ class DCTFWebManager:
         "1141": "CP Patronal - Contribuintes Individuais",
         "1162": "CP Descontada do Segurado",
         "1171": "GILRAT/RAT Ajustado",
-
         # Outras entidades (Sistema S)
         "1184": "Terceiros - Salário Educação",
         "1187": "Terceiros - INCRA",
@@ -160,7 +166,6 @@ class DCTFWebManager:
         "1208": "Terceiros - SEST",
         "1211": "Terceiros - SENAT",
         "1214": "Terceiros - SESCOOP",
-
         # Retenção
         "1701": "Retenção Lei 9.711/98 - Serviços",
     }
@@ -184,9 +189,7 @@ class DCTFWebManager:
         self.ambiente = ambiente
 
     def criar_declaracao(
-        self,
-        periodo_apuracao: str,
-        tipo: TipoDeclaracao = TipoDeclaracao.MENSAL
+        self, periodo_apuracao: str, tipo: TipoDeclaracao = TipoDeclaracao.MENSAL
     ) -> DCTFWebDeclaracao:
         """
         Cria uma nova declaração DCTFWeb.
@@ -205,11 +208,7 @@ class DCTFWebManager:
             razao_social=self.razao_social,
         )
 
-    def importar_esocial(
-        self,
-        declaracao: DCTFWebDeclaracao,
-        dados_esocial: Dict[str, Any]
-    ) -> DCTFWebDeclaracao:
+    def importar_esocial(self, declaracao: DCTFWebDeclaracao, dados_esocial: dict[str, Any]) -> DCTFWebDeclaracao:
         """
         Importa dados do eSocial para a DCTFWeb.
 
@@ -224,77 +223,85 @@ class DCTFWebManager:
         if "contribuicao_patronal" in dados_esocial:
             valor = Decimal(str(dados_esocial["contribuicao_patronal"]))
             if valor > 0:
-                declaracao.debitos.append(DebitoContribuicao(
-                    codigo_receita="1138",
-                    descricao="CP Patronal - Empregados",
-                    valor_principal=valor,
-                    periodo_apuracao=declaracao.periodo_apuracao,
-                ))
+                declaracao.debitos.append(
+                    DebitoContribuicao(
+                        codigo_receita="1138",
+                        descricao="CP Patronal - Empregados",
+                        valor_principal=valor,
+                        periodo_apuracao=declaracao.periodo_apuracao,
+                    )
+                )
 
         # Contribuição descontada do segurado
         if "contribuicao_segurado" in dados_esocial:
             valor = Decimal(str(dados_esocial["contribuicao_segurado"]))
             if valor > 0:
-                declaracao.debitos.append(DebitoContribuicao(
-                    codigo_receita="1162",
-                    descricao="CP Descontada do Segurado",
-                    valor_principal=valor,
-                    periodo_apuracao=declaracao.periodo_apuracao,
-                ))
+                declaracao.debitos.append(
+                    DebitoContribuicao(
+                        codigo_receita="1162",
+                        descricao="CP Descontada do Segurado",
+                        valor_principal=valor,
+                        periodo_apuracao=declaracao.periodo_apuracao,
+                    )
+                )
 
         # RAT
         if "rat" in dados_esocial:
             valor = Decimal(str(dados_esocial["rat"]))
             if valor > 0:
-                declaracao.debitos.append(DebitoContribuicao(
-                    codigo_receita="1171",
-                    descricao="GILRAT/RAT Ajustado",
-                    valor_principal=valor,
-                    periodo_apuracao=declaracao.periodo_apuracao,
-                ))
+                declaracao.debitos.append(
+                    DebitoContribuicao(
+                        codigo_receita="1171",
+                        descricao="GILRAT/RAT Ajustado",
+                        valor_principal=valor,
+                        periodo_apuracao=declaracao.periodo_apuracao,
+                    )
+                )
 
         # Terceiros (Sistema S)
         if "terceiros" in dados_esocial:
             for cod, valor in dados_esocial["terceiros"].items():
                 valor_decimal = Decimal(str(valor))
                 if valor_decimal > 0 and cod in self.CODIGOS_RECEITA:
-                    declaracao.debitos.append(DebitoContribuicao(
-                        codigo_receita=cod,
-                        descricao=self.CODIGOS_RECEITA[cod],
-                        valor_principal=valor_decimal,
-                        periodo_apuracao=declaracao.periodo_apuracao,
-                    ))
+                    declaracao.debitos.append(
+                        DebitoContribuicao(
+                            codigo_receita=cod,
+                            descricao=self.CODIGOS_RECEITA[cod],
+                            valor_principal=valor_decimal,
+                            periodo_apuracao=declaracao.periodo_apuracao,
+                        )
+                    )
 
         # Salário família (crédito)
         if "salario_familia" in dados_esocial:
             valor = Decimal(str(dados_esocial["salario_familia"]))
             if valor > 0:
-                declaracao.creditos.append(CreditoVinculavel(
-                    tipo=TipoCredito.SALARIO_FAMILIA,
-                    descricao="Salário-Família",
-                    valor=valor,
-                    periodo_apuracao=declaracao.periodo_apuracao,
-                ))
+                declaracao.creditos.append(
+                    CreditoVinculavel(
+                        tipo=TipoCredito.SALARIO_FAMILIA,
+                        descricao="Salário-Família",
+                        valor=valor,
+                        periodo_apuracao=declaracao.periodo_apuracao,
+                    )
+                )
 
         # Salário maternidade (crédito)
         if "salario_maternidade" in dados_esocial:
             valor = Decimal(str(dados_esocial["salario_maternidade"]))
             if valor > 0:
-                declaracao.creditos.append(CreditoVinculavel(
-                    tipo=TipoCredito.SALARIO_MATERNIDADE,
-                    descricao="Salário-Maternidade",
-                    valor=valor,
-                    periodo_apuracao=declaracao.periodo_apuracao,
-                ))
+                declaracao.creditos.append(
+                    CreditoVinculavel(
+                        tipo=TipoCredito.SALARIO_MATERNIDADE,
+                        descricao="Salário-Maternidade",
+                        valor=valor,
+                        periodo_apuracao=declaracao.periodo_apuracao,
+                    )
+                )
 
         logger.info(f"Importados dados eSocial: {len(declaracao.debitos)} débitos, {len(declaracao.creditos)} créditos")
         return declaracao
 
-    def importar_reinf(
-        self,
-        declaracao: DCTFWebDeclaracao,
-        dados_reinf: Dict[str, Any]
-    ) -> DCTFWebDeclaracao:
+    def importar_reinf(self, declaracao: DCTFWebDeclaracao, dados_reinf: dict[str, Any]) -> DCTFWebDeclaracao:
         """
         Importa dados da EFD-Reinf para a DCTFWeb.
 
@@ -310,13 +317,15 @@ class DCTFWebManager:
             for ret in dados_reinf["retencoes_tomados"]:
                 valor = Decimal(str(ret.get("valor_retencao", 0)))
                 if valor > 0:
-                    declaracao.creditos.append(CreditoVinculavel(
-                        tipo=TipoCredito.RETENCAO_LEI_9711,
-                        descricao=f"Retenção Lei 9.711/98 - {ret.get('cnpj_prestador', '')}",
-                        valor=valor,
-                        periodo_apuracao=declaracao.periodo_apuracao,
-                        numero_documento=ret.get("numero_nf"),
-                    ))
+                    declaracao.creditos.append(
+                        CreditoVinculavel(
+                            tipo=TipoCredito.RETENCAO_LEI_9711,
+                            descricao=f"Retenção Lei 9.711/98 - {ret.get('cnpj_prestador', '')}",
+                            valor=valor,
+                            periodo_apuracao=declaracao.periodo_apuracao,
+                            numero_documento=ret.get("numero_nf"),
+                        )
+                    )
 
         # Retenções de serviços prestados (R-2020) - débito
         if "retencoes_prestados" in dados_reinf:
@@ -325,21 +334,19 @@ class DCTFWebManager:
                 total_retido += Decimal(str(ret.get("valor_retencao", 0)))
 
             if total_retido > 0:
-                declaracao.debitos.append(DebitoContribuicao(
-                    codigo_receita="1701",
-                    descricao="Retenção Lei 9.711/98 - Serviços Prestados",
-                    valor_principal=total_retido,
-                    periodo_apuracao=declaracao.periodo_apuracao,
-                ))
+                declaracao.debitos.append(
+                    DebitoContribuicao(
+                        codigo_receita="1701",
+                        descricao="Retenção Lei 9.711/98 - Serviços Prestados",
+                        valor_principal=total_retido,
+                        periodo_apuracao=declaracao.periodo_apuracao,
+                    )
+                )
 
-        logger.info(f"Importados dados EFD-Reinf para DCTFWeb")
+        logger.info("Importados dados EFD-Reinf para DCTFWeb")
         return declaracao
 
-    def gerar_darfs(
-        self,
-        declaracao: DCTFWebDeclaracao,
-        data_vencimento: Optional[date] = None
-    ) -> List[DARF]:
+    def gerar_darfs(self, declaracao: DCTFWebDeclaracao, data_vencimento: date | None = None) -> list[DARF]:
         """
         Gera DARFs para os débitos da declaração.
 
@@ -363,7 +370,7 @@ class DCTFWebManager:
         darfs = []
 
         # Agrupa débitos por código de receita
-        debitos_por_codigo: Dict[str, Decimal] = {}
+        debitos_por_codigo: dict[str, Decimal] = {}
         for debito in declaracao.debitos:
             if debito.codigo_receita not in debitos_por_codigo:
                 debitos_por_codigo[debito.codigo_receita] = Decimal("0")
@@ -391,7 +398,7 @@ class DCTFWebManager:
 
         return darfs
 
-    def transmitir(self, declaracao: DCTFWebDeclaracao) -> Dict[str, Any]:
+    def transmitir(self, declaracao: DCTFWebDeclaracao) -> dict[str, Any]:
         """
         Transmite a declaração DCTFWeb.
 
@@ -408,7 +415,9 @@ class DCTFWebManager:
         declaracao.situacao = SituacaoDeclaracao.ATIVA
 
         # Número de recibo seria retornado pela Receita
-        declaracao.numero_recibo = f"DCTFWeb{declaracao.periodo_apuracao.replace('-', '')}{datetime.now().strftime('%H%M%S')}"
+        declaracao.numero_recibo = (
+            f"DCTFWeb{declaracao.periodo_apuracao.replace('-', '')}{datetime.now().strftime('%H%M%S')}"
+        )
 
         logger.info(f"DCTFWeb transmitida: {declaracao.numero_recibo}")
 
@@ -422,7 +431,7 @@ class DCTFWebManager:
             "quantidade_darfs": len(declaracao.darfs),
         }
 
-    def consultar(self, periodo_apuracao: str) -> Dict[str, Any]:
+    def consultar(self, periodo_apuracao: str) -> dict[str, Any]:
         """
         Consulta declaração DCTFWeb por período.
 
@@ -437,5 +446,5 @@ class DCTFWebManager:
             "periodo_apuracao": periodo_apuracao,
             "cnpj": self.cnpj,
             "situacao": "consulta_pendente",
-            "mensagem": "Implementar consulta via e-CAC"
+            "mensagem": "Implementar consulta via e-CAC",
         }

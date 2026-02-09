@@ -23,15 +23,15 @@ Endpoints:
 - POST /mobile/notifications/{id}/read  - Marcar como lida
 """
 
-from modules.mobile.gateway import MobileGateway, CompressionMiddleware, DeviceDetector
+from modules.mobile.controllers import router as mobile_router
+from modules.mobile.gateway import CompressionMiddleware, DeviceDetector, MobileGateway
 from modules.mobile.services import (
-    PushNotificationService,
-    OfflineSyncManager,
-    MobileSecurity,
     MobileMetrics,
+    MobileSecurity,
+    OfflineSyncManager,
+    PushNotificationService,
     get_metrics,
 )
-from modules.mobile.controllers import router as mobile_router
 
 __all__ = [
     # Gateway

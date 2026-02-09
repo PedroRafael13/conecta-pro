@@ -3,7 +3,7 @@ Schemas de auditoria do modulo de seguranca LGPD.
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -32,7 +32,7 @@ class AuditLogRequest(BaseModel):
     )
     resource_id: str = Field(..., description="ID do recurso")
     user_id: str = Field(..., description="ID do usuario")
-    details: Optional[Dict[str, Any]] = Field(
+    details: dict[str, Any] | None = Field(
         default=None,
         description="Detalhes adicionais",
     )
@@ -68,7 +68,7 @@ class AuditLogResponse(BaseModel):
 class AuditLogListResponse(BaseModel):
     """Response com lista de logs de auditoria."""
 
-    logs: List[Dict[str, Any]] = Field(..., description="Lista de logs")
+    logs: list[dict[str, Any]] = Field(..., description="Lista de logs")
     total: int = Field(..., description="Total de logs")
     limit: int = Field(..., description="Limite aplicado")
     offset: int = Field(..., description="Offset aplicado")

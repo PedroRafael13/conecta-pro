@@ -1,18 +1,18 @@
 """Schemas de Relatorio Agendado Financeiro."""
 
-from datetime import datetime, date, time
+from datetime import date, datetime, time
 from decimal import Decimal
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field, ConfigDict, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 from modules.financial.bi_dashboard.models.scheduled_report import (
-    ReportType,
+    DeliveryMethod,
     ReportFormat,
     ReportFrequency,
     ReportStatus,
-    DeliveryMethod,
+    ReportType,
 )
 
 
@@ -20,7 +20,7 @@ class ReportBase(BaseModel):
     """Schema base de Relatorio."""
 
     nome: str = Field(..., min_length=1, max_length=200)
-    descricao: Optional[str] = Field(None, max_length=2000)
+    descricao: str | None = Field(None, max_length=2000)
     tipo: ReportType = Field(default=ReportType.CASH_FLOW)
     formato: ReportFormat = Field(default=ReportFormat.PDF)
 
@@ -30,8 +30,8 @@ class ReportScheduleConfig(BaseModel):
 
     frequencia: ReportFrequency = Field(default=ReportFrequency.MONTHLY)
     hora_execucao: time = Field(default_factory=lambda: time(8, 0))
-    dia_semana: Optional[int] = Field(None, ge=0, le=6)
-    dia_mes: Optional[int] = Field(None, ge=1, le=31)
+    dia_semana: int | None = Field(None, ge=0, le=6)
+    dia_mes: int | None = Field(None, ge=1, le=31)
     timezone: str = Field(default="America/Sao_Paulo", max_length=50)
 
 
@@ -40,8 +40,8 @@ class ReportPeriodConfig(BaseModel):
 
     periodo_tipo: str = Field(default="last_month", max_length=50)
     periodo_dias: int = Field(default=30, ge=1, le=365)
-    data_inicio: Optional[date] = None
-    data_fim: Optional[date] = None
+    data_inicio: date | None = None
+    data_fim: date | None = None
 
 
 class ReportDeliveryConfig(BaseModel):
@@ -49,20 +49,20 @@ class ReportDeliveryConfig(BaseModel):
 
     metodo: DeliveryMethod = Field(default=DeliveryMethod.EMAIL)
     destinatarios_email: list[EmailStr] = Field(default_factory=list)
-    webhook_url: Optional[str] = Field(None, max_length=500)
-    storage_path: Optional[str] = Field(None, max_length=500)
+    webhook_url: str | None = Field(None, max_length=500)
+    storage_path: str | None = Field(None, max_length=500)
     notificar_sucesso: bool = Field(default=True)
     notificar_erro: bool = Field(default=True)
-    notificar_email: Optional[EmailStr] = None
+    notificar_email: EmailStr | None = None
 
 
 class ReportTemplateConfig(BaseModel):
     """Configuracao de template."""
 
-    template_id: Optional[str] = Field(None, max_length=100)
-    logo_url: Optional[str] = Field(None, max_length=500)
-    header_text: Optional[str] = None
-    footer_text: Optional[str] = None
+    template_id: str | None = Field(None, max_length=100)
+    logo_url: str | None = Field(None, max_length=500)
+    header_text: str | None = None
+    footer_text: str | None = None
     show_charts: bool = Field(default=True)
     show_summary: bool = Field(default=True)
     paper_size: str = Field(default="A4", max_length=20)
@@ -80,30 +80,30 @@ class ReportCreate(ReportBase):
     filtros: dict = Field(default_factory=dict)
     ordenacao: list = Field(default_factory=list)
     agrupamento: list = Field(default_factory=list)
-    custom_query: Optional[str] = None
+    custom_query: str | None = None
     valido_de: date = Field(default_factory=date.today)
-    valido_ate: Optional[date] = None
+    valido_ate: date | None = None
     tags: list = Field(default_factory=list)
 
 
 class ReportUpdate(BaseModel):
     """Schema para atualizar Relatorio."""
 
-    nome: Optional[str] = Field(None, min_length=1, max_length=200)
-    descricao: Optional[str] = Field(None, max_length=2000)
-    tipo: Optional[ReportType] = None
-    formato: Optional[ReportFormat] = None
-    status: Optional[ReportStatus] = None
-    schedule: Optional[ReportScheduleConfig] = None
-    period: Optional[ReportPeriodConfig] = None
-    delivery: Optional[ReportDeliveryConfig] = None
-    template: Optional[ReportTemplateConfig] = None
-    filtros: Optional[dict] = None
-    ordenacao: Optional[list] = None
-    agrupamento: Optional[list] = None
-    custom_query: Optional[str] = None
-    valido_ate: Optional[date] = None
-    tags: Optional[list] = None
+    nome: str | None = Field(None, min_length=1, max_length=200)
+    descricao: str | None = Field(None, max_length=2000)
+    tipo: ReportType | None = None
+    formato: ReportFormat | None = None
+    status: ReportStatus | None = None
+    schedule: ReportScheduleConfig | None = None
+    period: ReportPeriodConfig | None = None
+    delivery: ReportDeliveryConfig | None = None
+    template: ReportTemplateConfig | None = None
+    filtros: dict | None = None
+    ordenacao: list | None = None
+    agrupamento: list | None = None
+    custom_query: str | None = None
+    valido_ate: date | None = None
+    tags: list | None = None
 
 
 class ReportResponse(ReportBase):
@@ -115,20 +115,20 @@ class ReportResponse(ReportBase):
     status: ReportStatus
     frequencia: ReportFrequency
     hora_execucao: time
-    dia_semana: Optional[int] = None
-    dia_mes: Optional[int] = None
+    dia_semana: int | None = None
+    dia_mes: int | None = None
     timezone: str = "America/Sao_Paulo"
     periodo_tipo: str = "last_month"
     periodo_dias: int = 30
-    data_inicio: Optional[date] = None
-    data_fim: Optional[date] = None
+    data_inicio: date | None = None
+    data_fim: date | None = None
     valido_de: date
-    valido_ate: Optional[date] = None
+    valido_ate: date | None = None
     metodo_entrega: DeliveryMethod
     destinatarios_email: list = Field(default_factory=list)
-    webhook_url: Optional[str] = None
-    storage_path: Optional[str] = None
-    template_id: Optional[str] = None
+    webhook_url: str | None = None
+    storage_path: str | None = None
+    template_id: str | None = None
     show_charts: bool = True
     show_summary: bool = True
     paper_size: str = "A4"
@@ -136,20 +136,20 @@ class ReportResponse(ReportBase):
     filtros: dict = Field(default_factory=dict)
     ordenacao: list = Field(default_factory=list)
     agrupamento: list = Field(default_factory=list)
-    proxima_execucao_at: Optional[datetime] = None
-    ultima_execucao_at: Optional[datetime] = None
-    ultima_execucao_status: Optional[str] = None
-    ultima_execucao_erro: Optional[str] = None
+    proxima_execucao_at: datetime | None = None
+    ultima_execucao_at: datetime | None = None
+    ultima_execucao_status: str | None = None
+    ultima_execucao_erro: str | None = None
     total_execucoes: int = 0
     total_erros: int = 0
-    ultimo_arquivo_url: Optional[str] = None
-    ultimo_arquivo_tamanho: Optional[int] = None
+    ultimo_arquivo_url: str | None = None
+    ultimo_arquivo_tamanho: int | None = None
     is_active: bool = True
     is_due: bool = False
     success_rate: Decimal = Decimal("100")
     tags: list = Field(default_factory=list)
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -158,11 +158,11 @@ class ReportSchedule(BaseModel):
     """Informacoes de agendamento."""
 
     report_id: UUID
-    proxima_execucao: Optional[datetime] = None
-    ultima_execucao: Optional[datetime] = None
+    proxima_execucao: datetime | None = None
+    ultima_execucao: datetime | None = None
     frequencia: str
     is_due: bool
-    time_until_next: Optional[int] = None
+    time_until_next: int | None = None
 
 
 class ReportExecution(BaseModel):
@@ -172,25 +172,25 @@ class ReportExecution(BaseModel):
     success: bool
     executed_at: datetime
     duration_ms: int
-    file_url: Optional[str] = None
-    file_size: Optional[int] = None
-    error: Optional[str] = None
+    file_url: str | None = None
+    file_size: int | None = None
+    error: str | None = None
     recipients_notified: int = 0
 
 
 class ReportFilters(BaseModel):
     """Filtros para busca de Relatorios."""
 
-    tipo: Optional[ReportType] = None
-    formato: Optional[ReportFormat] = None
-    status: Optional[ReportStatus] = None
-    frequencia: Optional[ReportFrequency] = None
-    metodo_entrega: Optional[DeliveryMethod] = None
-    is_due: Optional[bool] = None
-    search: Optional[str] = Field(None, max_length=200)
-    tags: Optional[list[str]] = None
-    created_after: Optional[datetime] = None
-    created_before: Optional[datetime] = None
+    tipo: ReportType | None = None
+    formato: ReportFormat | None = None
+    status: ReportStatus | None = None
+    frequencia: ReportFrequency | None = None
+    metodo_entrega: DeliveryMethod | None = None
+    is_due: bool | None = None
+    search: str | None = Field(None, max_length=200)
+    tags: list[str] | None = None
+    created_after: datetime | None = None
+    created_before: datetime | None = None
 
 
 class ReportStats(BaseModel):
@@ -213,8 +213,8 @@ class ReportExecuteNow(BaseModel):
     """Executar relatorio imediatamente."""
 
     report_id: UUID
-    override_period: Optional[ReportPeriodConfig] = None
-    override_recipients: Optional[list[EmailStr]] = None
+    override_period: ReportPeriodConfig | None = None
+    override_recipients: list[EmailStr] | None = None
     save_file: bool = Field(default=True)
     send_notification: bool = Field(default=True)
 

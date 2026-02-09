@@ -1,11 +1,10 @@
 """Repository para férias."""
 
 import logging
-from datetime import datetime, date, timedelta
-from typing import Optional, List, Tuple
+from datetime import date, datetime, timedelta
 from uuid import UUID, uuid4
 
-from sqlalchemy import select, func, and_, desc
+from sqlalchemy import and_, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.hr.employee_portal.models import (
@@ -59,11 +58,9 @@ class VacationPeriodRepository:
         )
         return period
 
-    async def get_by_id(self, period_id: UUID) -> Optional[VacationPeriod]:
+    async def get_by_id(self, period_id: UUID) -> VacationPeriod | None:
         """Busca período por ID."""
-        result = await self.db.execute(
-            select(VacationPeriod).where(VacationPeriod.id == period_id)
-        )
+        result = await self.db.execute(select(VacationPeriod).where(VacationPeriod.id == period_id))
         return result.scalar_one_or_none()
 
     async def list_by_employee(
@@ -72,11 +69,9 @@ class VacationPeriodRepository:
         *,
         include_expired: bool = False,
         include_fully_used: bool = False,
-    ) -> List[VacationPeriod]:
+    ) -> list[VacationPeriod]:
         """Lista períodos do funcionário."""
-        query = select(VacationPeriod).where(
-            VacationPeriod.employee_id == employee_id
-        )
+        query = select(VacationPeriod).where(VacationPeriod.employee_id == employee_id)
 
         if not include_expired:
             query = query.where(VacationPeriod.is_expired.is_(False))
@@ -107,7 +102,7 @@ class VacationPeriodRepository:
         days: int,
         *,
         sell_days: int = 0,
-    ) -> Optional[VacationPeriod]:
+    ) -> VacationPeriod | None:
         """Usa dias do período."""
         period = await self.get_by_id(period_id)
         if not period:
@@ -131,7 +126,7 @@ class VacationPeriodRepository:
     async def check_expiring_periods(
         self,
         days_ahead: int = 30,
-    ) -> List[VacationPeriod]:
+    ) -> list[VacationPeriod]:
         """Busca períodos prestes a expirar."""
         target_date = date.today() + timedelta(days=days_ahead)
         result = await self.db.execute(
@@ -158,7 +153,7 @@ class VacationRequestRepository:
         data: VacationRequestCreate,
         condominio_id: UUID,
         *,
-        created_by: Optional[UUID] = None,
+        created_by: UUID | None = None,
     ) -> VacationRequest:
         """Cria nova solicitação de férias."""
         request = VacationRequest(
@@ -193,21 +188,18 @@ class VacationRequestRepository:
         # pylint: disable=import-outside-toplevel
         import random
         import string
-        suffix = "".join(random.choices(string.ascii_uppercase + string.digits, k=8))
+
+        suffix = "".join(random.choices(string.ascii_uppercase + string.digits, k=8))  # noqa: S311
         return f"FER{suffix}"
 
-    async def get_by_id(self, request_id: UUID) -> Optional[VacationRequest]:
+    async def get_by_id(self, request_id: UUID) -> VacationRequest | None:
         """Busca solicitação por ID."""
-        result = await self.db.execute(
-            select(VacationRequest).where(VacationRequest.id == request_id)
-        )
+        result = await self.db.execute(select(VacationRequest).where(VacationRequest.id == request_id))
         return result.scalar_one_or_none()
 
-    async def get_by_code(self, code: str) -> Optional[VacationRequest]:
+    async def get_by_code(self, code: str) -> VacationRequest | None:
         """Busca solicitação por código."""
-        result = await self.db.execute(
-            select(VacationRequest).where(VacationRequest.request_code == code)
-        )
+        result = await self.db.execute(select(VacationRequest).where(VacationRequest.request_code == code))
         return result.scalar_one_or_none()
 
     async def list_by_employee(
@@ -216,20 +208,16 @@ class VacationRequestRepository:
         *,
         page: int = 1,
         page_size: int = 20,
-        status: Optional[VacationStatus] = None,
-    ) -> Tuple[List[VacationRequest], int]:
+        status: VacationStatus | None = None,
+    ) -> tuple[list[VacationRequest], int]:
         """Lista solicitações do funcionário."""
-        query = select(VacationRequest).where(
-            VacationRequest.employee_id == employee_id
-        )
+        query = select(VacationRequest).where(VacationRequest.employee_id == employee_id)
 
         if status:
             query = query.where(VacationRequest.status == status.value)
 
         # Total
-        count_result = await self.db.execute(
-            select(func.count()).select_from(query.subquery())
-        )
+        count_result = await self.db.execute(select(func.count()).select_from(query.subquery()))
         total = count_result.scalar() or 0
 
         # Paginação
@@ -246,7 +234,7 @@ class VacationRequestRepository:
         manager_level: bool = True,
         page: int = 1,
         page_size: int = 50,
-    ) -> Tuple[List[VacationRequest], int]:
+    ) -> tuple[list[VacationRequest], int]:
         """Lista solicitações pendentes de aprovação."""
         query = select(VacationRequest).where(
             and_(
@@ -266,9 +254,7 @@ class VacationRequestRepository:
             )
 
         # Total
-        count_result = await self.db.execute(
-            select(func.count()).select_from(query.subquery())
-        )
+        count_result = await self.db.execute(select(func.count()).select_from(query.subquery()))
         total = count_result.scalar() or 0
 
         # Paginação
@@ -282,7 +268,7 @@ class VacationRequestRepository:
         self,
         request_id: UUID,
         data: VacationRequestUpdate,
-    ) -> Optional[VacationRequest]:
+    ) -> VacationRequest | None:
         """Atualiza solicitação de férias."""
         request = await self.get_by_id(request_id)
         if not request:
@@ -298,7 +284,7 @@ class VacationRequestRepository:
 
         return request
 
-    async def submit(self, request_id: UUID) -> Optional[VacationRequest]:
+    async def submit(self, request_id: UUID) -> VacationRequest | None:
         """Submete solicitação para aprovação."""
         request = await self.get_by_id(request_id)
         if not request:
@@ -322,9 +308,9 @@ class VacationRequestRepository:
         approved: bool,
         *,
         approved_by: UUID,
-        notes: Optional[str] = None,
-        rejection_reason: Optional[str] = None,
-    ) -> Optional[VacationRequest]:
+        notes: str | None = None,
+        rejection_reason: str | None = None,
+    ) -> VacationRequest | None:
         """Aprovação do gestor."""
         request = await self.get_by_id(request_id)
         if not request:
@@ -355,9 +341,9 @@ class VacationRequestRepository:
         approved: bool,
         *,
         approved_by: UUID,
-        notes: Optional[str] = None,
-        rejection_reason: Optional[str] = None,
-    ) -> Optional[VacationRequest]:
+        notes: str | None = None,
+        rejection_reason: str | None = None,
+    ) -> VacationRequest | None:
         """Aprovação do RH."""
         request = await self.get_by_id(request_id)
         if not request:
@@ -390,7 +376,7 @@ class VacationRequestRepository:
         *,
         scheduled_by: UUID,
         payment_date: date,
-    ) -> Optional[VacationRequest]:
+    ) -> VacationRequest | None:
         """Programa férias aprovadas."""
         request = await self.get_by_id(request_id)
         if not request:
@@ -420,7 +406,7 @@ class VacationRequestRepository:
         reason: str,
         *,
         cancelled_by: UUID,
-    ) -> Optional[VacationRequest]:
+    ) -> VacationRequest | None:
         """Cancela solicitação de férias."""
         request = await self.get_by_id(request_id)
         if not request:
@@ -446,18 +432,20 @@ class VacationRequestRepository:
         start_date: date,
         end_date: date,
         *,
-        exclude_id: Optional[UUID] = None,
+        exclude_id: UUID | None = None,
     ) -> bool:
         """Verifica conflito de datas com outras solicitações."""
         query = select(VacationRequest).where(
             and_(
                 VacationRequest.employee_id == employee_id,
-                VacationRequest.status.in_([
-                    VacationStatus.PENDING.value,
-                    VacationStatus.APPROVED.value,
-                    VacationStatus.SCHEDULED.value,
-                    VacationStatus.IN_PROGRESS.value,
-                ]),
+                VacationRequest.status.in_(
+                    [
+                        VacationStatus.PENDING.value,
+                        VacationStatus.APPROVED.value,
+                        VacationStatus.SCHEDULED.value,
+                        VacationStatus.IN_PROGRESS.value,
+                    ]
+                ),
                 VacationRequest.start_date <= end_date,
                 VacationRequest.end_date >= start_date,
             )
@@ -473,17 +461,19 @@ class VacationRequestRepository:
         self,
         condominio_id: UUID,
         days_ahead: int = 30,
-    ) -> List[VacationRequest]:
+    ) -> list[VacationRequest]:
         """Retorna férias programadas para os próximos dias."""
         target_date = date.today() + timedelta(days=days_ahead)
         result = await self.db.execute(
-            select(VacationRequest).where(
+            select(VacationRequest)
+            .where(
                 and_(
                     VacationRequest.condominio_id == condominio_id,
                     VacationRequest.status == VacationStatus.SCHEDULED.value,
                     VacationRequest.start_date <= target_date,
                     VacationRequest.start_date >= date.today(),
                 )
-            ).order_by(VacationRequest.start_date)
+            )
+            .order_by(VacationRequest.start_date)
         )
         return list(result.scalars().all())

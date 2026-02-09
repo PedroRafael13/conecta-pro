@@ -5,27 +5,27 @@ from modules.ai.ocr.models.document_scan import (
     DocumentScanStatus,
     DocumentScanType,
 )
-from modules.ai.ocr.models.ocr_result import (
-    OCRResult,
-    OCRProvider,
-    OCRLine,
-    OCRWord,
+from modules.ai.ocr.models.document_template import (
+    DocumentTemplate,
+    ExtractionRule,
+    RuleType,
+    TemplateField,
 )
 from modules.ai.ocr.models.extracted_field import (
     ExtractedField,
     FieldType,
     FieldValidationStatus,
 )
-from modules.ai.ocr.models.document_template import (
-    DocumentTemplate,
-    TemplateField,
-    ExtractionRule,
-    RuleType,
+from modules.ai.ocr.models.ocr_result import (
+    OCRLine,
+    OCRProvider,
+    OCRResult,
+    OCRWord,
 )
 from modules.ai.ocr.models.validation_result import (
+    ValidationAction,
     ValidationResult,
     ValidationStatus,
-    ValidationAction,
 )
 
 __all__ = [

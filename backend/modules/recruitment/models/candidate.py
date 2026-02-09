@@ -1,35 +1,35 @@
 """Model Candidate - Candidatos."""
 
-import enum
-from datetime import datetime, date
-from typing import Optional, List, TYPE_CHECKING
+from datetime import date, datetime
 from decimal import Decimal
+from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
-    String,
-    Text,
+    JSON,
     Boolean,
-    DateTime,
     Date,
+    DateTime,
+    Enum,
     Integer,
     Numeric,
-    Enum,
-    JSON,
+    String,
+    Text,
 )
-from sqlalchemy.dialects.postgresql import UUID, ARRAY
-from sqlalchemy.orm import relationship, Mapped, mapped_column
+from sqlalchemy.dialects.postgresql import ARRAY, UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from core.database import Base
-from core.models import TimestampMixin, SoftDeleteMixin
+from core.models import SoftDeleteMixin, TimestampMixin
 
 if TYPE_CHECKING:
     from .application import Application
-    from .candidate_skill import CandidateSkill
-    from .candidate_experience import CandidateExperience
     from .candidate_education import CandidateEducation
+    from .candidate_experience import CandidateExperience
+    from .candidate_skill import CandidateSkill
 
 
-class CandidateStatus(str, enum.Enum):
+class CandidateStatus(StrEnum):
     """Status do candidato."""
 
     ATIVO = "ativo"
@@ -39,7 +39,7 @@ class CandidateStatus(str, enum.Enum):
     ARQUIVADO = "arquivado"
 
 
-class CandidateSource(str, enum.Enum):
+class CandidateSource(StrEnum):
     """Origem do candidato."""
 
     SITE = "site"
@@ -55,7 +55,7 @@ class CandidateSource(str, enum.Enum):
     OUTRO = "outro"
 
 
-class Gender(str, enum.Enum):
+class Gender(StrEnum):
     """Gênero."""
 
     MASCULINO = "masculino"
@@ -64,7 +64,7 @@ class Gender(str, enum.Enum):
     PREFIRO_NAO_DIZER = "prefiro_nao_dizer"
 
 
-class MaritalStatus(str, enum.Enum):
+class MaritalStatus(StrEnum):
     """Estado civil."""
 
     SOLTEIRO = "solteiro"
@@ -88,68 +88,64 @@ class Candidate(Base, TimestampMixin, SoftDeleteMixin):
     # Dados pessoais
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
-    phone: Mapped[Optional[str]] = mapped_column(String(20))
-    whatsapp: Mapped[Optional[str]] = mapped_column(String(20))
-    cpf: Mapped[Optional[str]] = mapped_column(String(14), unique=True)
-    rg: Mapped[Optional[str]] = mapped_column(String(20))
-    birth_date: Mapped[Optional[date]] = mapped_column(Date)
-    gender: Mapped[Optional[Gender]] = mapped_column(Enum(Gender))
-    marital_status: Mapped[Optional[MaritalStatus]] = mapped_column(Enum(MaritalStatus))
+    phone: Mapped[str | None] = mapped_column(String(20))
+    whatsapp: Mapped[str | None] = mapped_column(String(20))
+    cpf: Mapped[str | None] = mapped_column(String(14), unique=True)
+    rg: Mapped[str | None] = mapped_column(String(20))
+    birth_date: Mapped[date | None] = mapped_column(Date)
+    gender: Mapped[Gender | None] = mapped_column(Enum(Gender))
+    marital_status: Mapped[MaritalStatus | None] = mapped_column(Enum(MaritalStatus))
 
     # Endereço
-    address: Mapped[Optional[str]] = mapped_column(String(300))
-    city: Mapped[Optional[str]] = mapped_column(String(100))
-    state: Mapped[Optional[str]] = mapped_column(String(2))
-    zip_code: Mapped[Optional[str]] = mapped_column(String(10))
-    neighborhood: Mapped[Optional[str]] = mapped_column(String(100))
+    address: Mapped[str | None] = mapped_column(String(300))
+    city: Mapped[str | None] = mapped_column(String(100))
+    state: Mapped[str | None] = mapped_column(String(2))
+    zip_code: Mapped[str | None] = mapped_column(String(10))
+    neighborhood: Mapped[str | None] = mapped_column(String(100))
 
     # Profissional
-    headline: Mapped[Optional[str]] = mapped_column(String(200))
-    summary: Mapped[Optional[str]] = mapped_column(Text)
-    linkedin_url: Mapped[Optional[str]] = mapped_column(String(300))
-    portfolio_url: Mapped[Optional[str]] = mapped_column(String(300))
-    github_url: Mapped[Optional[str]] = mapped_column(String(300))
+    headline: Mapped[str | None] = mapped_column(String(200))
+    summary: Mapped[str | None] = mapped_column(Text)
+    linkedin_url: Mapped[str | None] = mapped_column(String(300))
+    portfolio_url: Mapped[str | None] = mapped_column(String(300))
+    github_url: Mapped[str | None] = mapped_column(String(300))
 
     # Currículo
-    resume_file_path: Mapped[Optional[str]] = mapped_column(String(500))
-    resume_text: Mapped[Optional[str]] = mapped_column(Text)
-    resume_updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    photo_url: Mapped[Optional[str]] = mapped_column(String(500))
+    resume_file_path: Mapped[str | None] = mapped_column(String(500))
+    resume_text: Mapped[str | None] = mapped_column(Text)
+    resume_updated_at: Mapped[datetime | None] = mapped_column(DateTime)
+    photo_url: Mapped[str | None] = mapped_column(String(500))
 
     # Pretensão
-    salary_expectation: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2))
-    salary_expectation_pj: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2))
+    salary_expectation: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
+    salary_expectation_pj: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
 
     # Disponibilidade
     available_immediately: Mapped[bool] = mapped_column(Boolean, default=True)
     notice_period_days: Mapped[int] = mapped_column(Integer, default=0)
-    available_date: Mapped[Optional[date]] = mapped_column(Date)
+    available_date: Mapped[date | None] = mapped_column(Date)
     available_for_travel: Mapped[bool] = mapped_column(Boolean, default=False)
     available_for_relocation: Mapped[bool] = mapped_column(Boolean, default=False)
-    preferred_work_model: Mapped[Optional[str]] = mapped_column(String(50))
+    preferred_work_model: Mapped[str | None] = mapped_column(String(50))
 
     # CNH
     has_cnh: Mapped[bool] = mapped_column(Boolean, default=False)
-    cnh_category: Mapped[Optional[str]] = mapped_column(String(5))
+    cnh_category: Mapped[str | None] = mapped_column(String(5))
     has_vehicle: Mapped[bool] = mapped_column(Boolean, default=False)
 
     # Idiomas
-    languages: Mapped[Optional[List[dict]]] = mapped_column(JSON, default=list)
+    languages: Mapped[list[dict] | None] = mapped_column(JSON, default=list)
 
     # Status e origem
-    status: Mapped[CandidateStatus] = mapped_column(
-        Enum(CandidateStatus), default=CandidateStatus.ATIVO
-    )
-    source: Mapped[CandidateSource] = mapped_column(
-        Enum(CandidateSource), default=CandidateSource.SITE
-    )
-    source_detail: Mapped[Optional[str]] = mapped_column(String(200))
+    status: Mapped[CandidateStatus] = mapped_column(Enum(CandidateStatus), default=CandidateStatus.ATIVO)
+    source: Mapped[CandidateSource] = mapped_column(Enum(CandidateSource), default=CandidateSource.SITE)
+    source_detail: Mapped[str | None] = mapped_column(String(200))
 
     # Bloqueio
     is_blocked: Mapped[bool] = mapped_column(Boolean, default=False)
-    block_reason: Mapped[Optional[str]] = mapped_column(Text)
-    blocked_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    blocked_by: Mapped[Optional[str]] = mapped_column(UUID(as_uuid=False))
+    block_reason: Mapped[str | None] = mapped_column(Text)
+    blocked_at: Mapped[datetime | None] = mapped_column(DateTime)
+    blocked_by: Mapped[str | None] = mapped_column(UUID(as_uuid=False))
 
     # Scores e métricas
     profile_score: Mapped[int] = mapped_column(Integer, default=0)
@@ -158,35 +154,31 @@ class Candidate(Base, TimestampMixin, SoftDeleteMixin):
     hired_count: Mapped[int] = mapped_column(Integer, default=0)
 
     # Tags e notas
-    tags: Mapped[Optional[List[str]]] = mapped_column(ARRAY(String), default=list)
-    internal_notes: Mapped[Optional[str]] = mapped_column(Text)
+    tags: Mapped[list[str] | None] = mapped_column(ARRAY(String), default=list)
+    internal_notes: Mapped[str | None] = mapped_column(Text)
 
     # Última atividade
-    last_activity_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    last_application_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    last_activity_at: Mapped[datetime | None] = mapped_column(DateTime)
+    last_application_at: Mapped[datetime | None] = mapped_column(DateTime)
 
     # PCD
     is_pcd: Mapped[bool] = mapped_column(Boolean, default=False)
-    pcd_type: Mapped[Optional[str]] = mapped_column(String(100))
-    pcd_cid: Mapped[Optional[str]] = mapped_column(String(20))
+    pcd_type: Mapped[str | None] = mapped_column(String(100))
+    pcd_cid: Mapped[str | None] = mapped_column(String(20))
     needs_accommodation: Mapped[bool] = mapped_column(Boolean, default=False)
-    accommodation_notes: Mapped[Optional[str]] = mapped_column(Text)
+    accommodation_notes: Mapped[str | None] = mapped_column(Text)
 
     # Relacionamentos
-    condominium_id: Mapped[Optional[str]] = mapped_column(UUID(as_uuid=False))
-    created_by: Mapped[Optional[str]] = mapped_column(UUID(as_uuid=False))
+    condominium_id: Mapped[str | None] = mapped_column(UUID(as_uuid=False))
+    created_by: Mapped[str | None] = mapped_column(UUID(as_uuid=False))
 
     # Relationships
-    applications: Mapped[List["Application"]] = relationship(
-        "Application", back_populates="candidate", lazy="dynamic"
-    )
-    skills: Mapped[List["CandidateSkill"]] = relationship(
-        "CandidateSkill", back_populates="candidate", lazy="dynamic"
-    )
-    experiences: Mapped[List["CandidateExperience"]] = relationship(
+    applications: Mapped[list["Application"]] = relationship("Application", back_populates="candidate", lazy="dynamic")
+    skills: Mapped[list["CandidateSkill"]] = relationship("CandidateSkill", back_populates="candidate", lazy="dynamic")
+    experiences: Mapped[list["CandidateExperience"]] = relationship(
         "CandidateExperience", back_populates="candidate", lazy="dynamic"
     )
-    educations: Mapped[List["CandidateEducation"]] = relationship(
+    educations: Mapped[list["CandidateEducation"]] = relationship(
         "CandidateEducation", back_populates="candidate", lazy="dynamic"
     )
 
@@ -194,7 +186,7 @@ class Candidate(Base, TimestampMixin, SoftDeleteMixin):
         return f"<Candidate {self.name} ({self.email})>"
 
     @property
-    def age(self) -> Optional[int]:
+    def age(self) -> int | None:
         """Calcula idade."""
         if not self.birth_date:
             return None

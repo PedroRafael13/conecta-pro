@@ -1,14 +1,13 @@
 """Schemas para Interview."""
 
-from datetime import datetime, date, time
-from typing import Optional, List
+from datetime import date, datetime, time
 
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from modules.recruitment.models.interview import (
-    InterviewType,
-    InterviewStatus,
     InterviewResult,
+    InterviewStatus,
+    InterviewType,
 )
 
 
@@ -20,45 +19,45 @@ class InterviewBase(BaseModel):
     scheduled_time: time
     duration_minutes: int = Field(default=60, ge=15, le=480)
     timezone: str = "America/Sao_Paulo"
-    location: Optional[str] = None
-    meeting_link: Optional[str] = None
-    meeting_platform: Optional[str] = None
-    meeting_id: Optional[str] = None
-    meeting_password: Optional[str] = None
-    interviewer_ids: Optional[List[str]] = Field(default_factory=list)
-    interviewer_names: Optional[List[str]] = Field(default_factory=list)
-    lead_interviewer_id: Optional[str] = None
-    script: Optional[str] = None
-    questions: Optional[List[dict]] = Field(default_factory=list)
-    competencies_to_assess: Optional[List[str]] = Field(default_factory=list)
+    location: str | None = None
+    meeting_link: str | None = None
+    meeting_platform: str | None = None
+    meeting_id: str | None = None
+    meeting_password: str | None = None
+    interviewer_ids: list[str] | None = Field(default_factory=list)
+    interviewer_names: list[str] | None = Field(default_factory=list)
+    lead_interviewer_id: str | None = None
+    script: str | None = None
+    questions: list[dict] | None = Field(default_factory=list)
+    competencies_to_assess: list[str] | None = Field(default_factory=list)
 
 
 class InterviewCreate(InterviewBase):
     """Schema para criação de entrevista."""
 
     application_id: str
-    created_by: Optional[str] = None
+    created_by: str | None = None
 
 
 class InterviewUpdate(BaseModel):
     """Schema para atualização de entrevista."""
 
-    interview_type: Optional[InterviewType] = None
-    scheduled_date: Optional[date] = None
-    scheduled_time: Optional[time] = None
-    duration_minutes: Optional[int] = Field(None, ge=15, le=480)
-    location: Optional[str] = None
-    meeting_link: Optional[str] = None
-    meeting_platform: Optional[str] = None
-    meeting_id: Optional[str] = None
-    meeting_password: Optional[str] = None
-    interviewer_ids: Optional[List[str]] = None
-    interviewer_names: Optional[List[str]] = None
-    lead_interviewer_id: Optional[str] = None
-    script: Optional[str] = None
-    questions: Optional[List[dict]] = None
-    competencies_to_assess: Optional[List[str]] = None
-    internal_notes: Optional[str] = None
+    interview_type: InterviewType | None = None
+    scheduled_date: date | None = None
+    scheduled_time: time | None = None
+    duration_minutes: int | None = Field(None, ge=15, le=480)
+    location: str | None = None
+    meeting_link: str | None = None
+    meeting_platform: str | None = None
+    meeting_id: str | None = None
+    meeting_password: str | None = None
+    interviewer_ids: list[str] | None = None
+    interviewer_names: list[str] | None = None
+    lead_interviewer_id: str | None = None
+    script: str | None = None
+    questions: list[dict] | None = None
+    competencies_to_assess: list[str] | None = None
+    internal_notes: str | None = None
 
 
 class InterviewResponse(InterviewBase):
@@ -69,33 +68,33 @@ class InterviewResponse(InterviewBase):
     id: str
     application_id: str
     status: InterviewStatus
-    result: Optional[InterviewResult] = None
-    actual_start_time: Optional[datetime] = None
-    actual_end_time: Optional[datetime] = None
-    actual_duration_minutes: Optional[int] = None
-    score: Optional[int] = None
-    evaluation: Optional[dict] = None
-    strengths: Optional[List[str]] = None
-    weaknesses: Optional[List[str]] = None
-    competency_scores: Optional[dict] = None
-    feedback: Optional[str] = None
-    recommendation: Optional[str] = None
-    internal_notes: Optional[str] = None
-    candidate_feedback: Optional[str] = None
-    candidate_questions: Optional[List[str]] = None
+    result: InterviewResult | None = None
+    actual_start_time: datetime | None = None
+    actual_end_time: datetime | None = None
+    actual_duration_minutes: int | None = None
+    score: int | None = None
+    evaluation: dict | None = None
+    strengths: list[str] | None = None
+    weaknesses: list[str] | None = None
+    competency_scores: dict | None = None
+    feedback: str | None = None
+    recommendation: str | None = None
+    internal_notes: str | None = None
+    candidate_feedback: str | None = None
+    candidate_questions: list[str] | None = None
     candidate_confirmed: bool = False
-    candidate_confirmed_at: Optional[datetime] = None
+    candidate_confirmed_at: datetime | None = None
     interviewer_confirmed: bool = False
     reminder_sent: bool = False
-    reminder_sent_at: Optional[datetime] = None
-    cancelled_at: Optional[datetime] = None
-    cancellation_reason: Optional[str] = None
+    reminder_sent_at: datetime | None = None
+    cancelled_at: datetime | None = None
+    cancellation_reason: str | None = None
     reschedule_count: int = 0
     is_recorded: bool = False
-    recording_url: Optional[str] = None
-    created_by: Optional[str] = None
+    recording_url: str | None = None
+    created_by: str | None = None
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
 
     # Computed
     scheduled_datetime: datetime
@@ -109,7 +108,7 @@ class InterviewResponse(InterviewBase):
 class InterviewListResponse(BaseModel):
     """Schema de lista de entrevistas."""
 
-    items: List[InterviewResponse]
+    items: list[InterviewResponse]
     total: int
     page: int
     page_size: int
@@ -119,15 +118,15 @@ class InterviewListResponse(BaseModel):
 class InterviewFilter(BaseModel):
     """Schema para filtro de entrevistas."""
 
-    application_id: Optional[str] = None
-    interview_type: Optional[InterviewType] = None
-    status: Optional[InterviewStatus] = None
-    result: Optional[InterviewResult] = None
-    interviewer_id: Optional[str] = None
-    scheduled_after: Optional[date] = None
-    scheduled_before: Optional[date] = None
-    is_today: Optional[bool] = None
-    is_upcoming: Optional[bool] = None
+    application_id: str | None = None
+    interview_type: InterviewType | None = None
+    status: InterviewStatus | None = None
+    result: InterviewResult | None = None
+    interviewer_id: str | None = None
+    scheduled_after: date | None = None
+    scheduled_before: date | None = None
+    is_today: bool | None = None
+    is_upcoming: bool | None = None
 
 
 class InterviewStats(BaseModel):
@@ -149,12 +148,12 @@ class InterviewComplete(BaseModel):
     """Schema para completar entrevista."""
 
     result: InterviewResult
-    score: Optional[int] = Field(None, ge=0, le=100)
-    feedback: Optional[str] = None
-    strengths: Optional[List[str]] = Field(default_factory=list)
-    weaknesses: Optional[List[str]] = Field(default_factory=list)
-    competency_scores: Optional[dict] = None
-    recommendation: Optional[str] = None
+    score: int | None = Field(None, ge=0, le=100)
+    feedback: str | None = None
+    strengths: list[str] | None = Field(default_factory=list)
+    weaknesses: list[str] | None = Field(default_factory=list)
+    competency_scores: dict | None = None
+    recommendation: str | None = None
 
 
 class InterviewReschedule(BaseModel):
@@ -162,7 +161,7 @@ class InterviewReschedule(BaseModel):
 
     new_date: date
     new_time: time
-    reason: Optional[str] = None
+    reason: str | None = None
     notify_candidate: bool = True
     notify_interviewers: bool = True
 
@@ -179,13 +178,13 @@ class InterviewEvaluation(BaseModel):
     """Schema para avaliação de entrevista."""
 
     competency_scores: dict = Field(...)
-    strengths: List[str] = Field(default_factory=list)
-    weaknesses: List[str] = Field(default_factory=list)
+    strengths: list[str] = Field(default_factory=list)
+    weaknesses: list[str] = Field(default_factory=list)
     recommendation: str
-    overall_impression: Optional[str] = None
-    culture_fit_score: Optional[int] = Field(None, ge=0, le=100)
-    technical_score: Optional[int] = Field(None, ge=0, le=100)
-    communication_score: Optional[int] = Field(None, ge=0, le=100)
+    overall_impression: str | None = None
+    culture_fit_score: int | None = Field(None, ge=0, le=100)
+    technical_score: int | None = Field(None, ge=0, le=100)
+    communication_score: int | None = Field(None, ge=0, le=100)
 
 
 class InterviewSlot(BaseModel):
@@ -202,5 +201,5 @@ class InterviewCalendar(BaseModel):
     """Schema para calendário de entrevistas."""
 
     date: date
-    interviews: List[InterviewResponse]
-    available_slots: List[InterviewSlot]
+    interviews: list[InterviewResponse]
+    available_slots: list[InterviewSlot]

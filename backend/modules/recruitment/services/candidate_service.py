@@ -1,23 +1,22 @@
 """Service para Candidate."""
 
 import logging
-from typing import Optional, List, Tuple
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.recruitment.models.candidate import (
     Candidate,
-    CandidateStatus,
     CandidateSource,
-)
-from modules.recruitment.schemas.candidate import (
-    CandidateCreate,
-    CandidateUpdate,
-    CandidateFilter,
-    CandidateBlock,
-    CandidateImport,
+    CandidateStatus,
 )
 from modules.recruitment.repositories.candidate_repository import CandidateRepository
+from modules.recruitment.schemas.candidate import (
+    CandidateBlock,
+    CandidateCreate,
+    CandidateFilter,
+    CandidateImport,
+    CandidateUpdate,
+)
 from modules.recruitment.services.recruitment_ai_service import RecruitmentAIService
 
 logger = logging.getLogger(__name__)
@@ -63,27 +62,23 @@ class CandidateService:
 
         return candidate
 
-    async def get_by_id(self, candidate_id: str) -> Optional[Candidate]:
+    async def get_by_id(self, candidate_id: str) -> Candidate | None:
         """Busca candidato por ID."""
         return await self.repository.get_by_id(candidate_id)
 
-    async def get_by_id_with_relations(
-        self, candidate_id: str
-    ) -> Optional[Candidate]:
+    async def get_by_id_with_relations(self, candidate_id: str) -> Candidate | None:
         """Busca candidato por ID com relacionamentos."""
         return await self.repository.get_by_id_with_relations(candidate_id)
 
-    async def get_by_email(self, email: str) -> Optional[Candidate]:
+    async def get_by_email(self, email: str) -> Candidate | None:
         """Busca candidato por email."""
         return await self.repository.get_by_email(email)
 
-    async def get_by_cpf(self, cpf: str) -> Optional[Candidate]:
+    async def get_by_cpf(self, cpf: str) -> Candidate | None:
         """Busca candidato por CPF."""
         return await self.repository.get_by_cpf(cpf)
 
-    async def update(
-        self, candidate_id: str, data: CandidateUpdate
-    ) -> Optional[Candidate]:
+    async def update(self, candidate_id: str, data: CandidateUpdate) -> Candidate | None:
         """
         Atualiza um candidato.
 
@@ -121,12 +116,12 @@ class CandidateService:
 
     async def list_with_filters(
         self,
-        filters: Optional[CandidateFilter] = None,
+        filters: CandidateFilter | None = None,
         skip: int = 0,
         limit: int = 20,
         order_by: str = "created_at",
         order_desc: bool = True,
-    ) -> Tuple[List[Candidate], int]:
+    ) -> tuple[list[Candidate], int]:
         """
         Lista candidatos com filtros.
 
@@ -140,43 +135,29 @@ class CandidateService:
         Returns:
             Tuple com lista de candidatos e total
         """
-        return await self.repository.list_with_filters(
-            filters, skip, limit, order_by, order_desc
-        )
+        return await self.repository.list_with_filters(filters, skip, limit, order_by, order_desc)
 
-    async def get_active(
-        self, condominium_id: str = None, skip: int = 0, limit: int = 50
-    ) -> List[Candidate]:
+    async def get_active(self, condominium_id: str = None, skip: int = 0, limit: int = 50) -> list[Candidate]:
         """Retorna candidatos ativos."""
         return await self.repository.get_active(condominium_id, skip, limit)
 
-    async def get_by_source(
-        self, source: CandidateSource, skip: int = 0, limit: int = 50
-    ) -> List[Candidate]:
+    async def get_by_source(self, source: CandidateSource, skip: int = 0, limit: int = 50) -> list[Candidate]:
         """Retorna candidatos por fonte."""
         return await self.repository.get_by_source(source, skip, limit)
 
-    async def get_blocked(
-        self, skip: int = 0, limit: int = 50
-    ) -> List[Candidate]:
+    async def get_blocked(self, skip: int = 0, limit: int = 50) -> list[Candidate]:
         """Retorna candidatos bloqueados."""
         return await self.repository.get_blocked(skip, limit)
 
-    async def search_by_skills(
-        self, skills: List[str], limit: int = 50
-    ) -> List[Candidate]:
+    async def search_by_skills(self, skills: list[str], limit: int = 50) -> list[Candidate]:
         """Busca candidatos por habilidades."""
         return await self.repository.search_by_skills(skills, limit)
 
-    async def get_recently_active(
-        self, days: int = 30, limit: int = 50
-    ) -> List[Candidate]:
+    async def get_recently_active(self, days: int = 30, limit: int = 50) -> list[Candidate]:
         """Retorna candidatos ativos recentemente."""
         return await self.repository.get_recently_active(days, limit)
 
-    async def block(
-        self, candidate_id: str, data: CandidateBlock
-    ) -> Optional[Candidate]:
+    async def block(self, candidate_id: str, data: CandidateBlock) -> Candidate | None:
         """
         Bloqueia um candidato.
 
@@ -187,9 +168,7 @@ class CandidateService:
         Returns:
             Candidato bloqueado ou None
         """
-        candidate = await self.repository.block(
-            candidate_id, data.reason, data.blocked_by
-        )
+        candidate = await self.repository.block(candidate_id, data.reason, data.blocked_by)
         if candidate:
             await self.session.commit()
             logger.warning(
@@ -202,7 +181,7 @@ class CandidateService:
             )
         return candidate
 
-    async def unblock(self, candidate_id: str) -> Optional[Candidate]:
+    async def unblock(self, candidate_id: str) -> Candidate | None:
         """
         Desbloqueia um candidato.
 
@@ -221,7 +200,7 @@ class CandidateService:
             )
         return candidate
 
-    async def mark_as_hired(self, candidate_id: str) -> Optional[Candidate]:
+    async def mark_as_hired(self, candidate_id: str) -> Candidate | None:
         """
         Marca candidato como contratado.
 
@@ -240,7 +219,7 @@ class CandidateService:
             )
         return candidate
 
-    async def archive(self, candidate_id: str) -> Optional[Candidate]:
+    async def archive(self, candidate_id: str) -> Candidate | None:
         """
         Arquiva um candidato.
 
@@ -260,7 +239,7 @@ class CandidateService:
             )
         return candidate
 
-    async def activate(self, candidate_id: str) -> Optional[Candidate]:
+    async def activate(self, candidate_id: str) -> Candidate | None:
         """
         Ativa um candidato.
 
@@ -280,9 +259,7 @@ class CandidateService:
             )
         return candidate
 
-    async def import_from_resume(
-        self, data: CandidateImport
-    ) -> Candidate:
+    async def import_from_resume(self, data: CandidateImport) -> Candidate:
         """
         Importa candidato a partir do currículo.
 
@@ -321,9 +298,7 @@ class CandidateService:
 
         return candidate
 
-    async def update_tags(
-        self, candidate_id: str, tags: List[str]
-    ) -> Optional[Candidate]:
+    async def update_tags(self, candidate_id: str, tags: list[str]) -> Candidate | None:
         """
         Atualiza tags do candidato.
 
@@ -340,9 +315,7 @@ class CandidateService:
             await self.session.commit()
         return candidate
 
-    async def add_note(
-        self, candidate_id: str, note: str, author: str
-    ) -> Optional[Candidate]:
+    async def add_note(self, candidate_id: str, note: str, author: str) -> Candidate | None:
         """
         Adiciona nota ao candidato.
 
@@ -357,11 +330,13 @@ class CandidateService:
         candidate = await self.repository.get_by_id(candidate_id)
         if candidate:
             notes = candidate.notes or []
-            notes.append({
-                "text": note,
-                "author": author,
-                "created_at": candidate.created_at.isoformat(),
-            })
+            notes.append(
+                {
+                    "text": note,
+                    "author": author,
+                    "created_at": candidate.created_at.isoformat(),
+                }
+            )
             candidate.notes = notes
             await self.session.commit()
         return candidate
@@ -370,9 +345,7 @@ class CandidateService:
         """Retorna estatísticas de candidatos."""
         return await self.repository.get_stats(condominium_id)
 
-    async def merge_duplicates(
-        self, primary_id: str, secondary_id: str
-    ) -> Optional[Candidate]:
+    async def merge_duplicates(self, primary_id: str, secondary_id: str) -> Candidate | None:
         """
         Mescla candidatos duplicados.
 

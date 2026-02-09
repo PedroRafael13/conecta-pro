@@ -4,7 +4,6 @@ Repository de Consentimento LGPD.
 
 import logging
 from datetime import datetime
-from typing import List, Optional
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -43,7 +42,7 @@ class ConsentRepository:
         logger.info("Consentimento criado: %s", consent.id)
         return consent
 
-    def get_by_id(self, consent_id: UUID) -> Optional[Consent]:
+    def get_by_id(self, consent_id: UUID) -> Consent | None:
         """Busca consentimento por ID.
 
         Args:
@@ -57,8 +56,8 @@ class ConsentRepository:
     def get_by_titular(
         self,
         titular_id: UUID,
-        status: Optional[ConsentStatus] = None,
-    ) -> List[Consent]:
+        status: ConsentStatus | None = None,
+    ) -> list[Consent]:
         """Busca consentimentos de um titular.
 
         Args:
@@ -89,7 +88,7 @@ class ConsentRepository:
         self.db.refresh(consent)
         return consent
 
-    def revoke(self, consent_id: UUID, reason: str) -> Optional[Consent]:
+    def revoke(self, consent_id: UUID, reason: str) -> Consent | None:
         """Revoga um consentimento.
 
         Args:
@@ -107,7 +106,7 @@ class ConsentRepository:
             return self.update(consent)
         return None
 
-    def list_expired(self, limit: int = 100) -> List[Consent]:
+    def list_expired(self, limit: int = 100) -> list[Consent]:
         """Lista consentimentos expirados.
 
         Args:
@@ -133,9 +132,5 @@ class ConsentRepository:
         """
         from sqlalchemy import func
 
-        result = (
-            self.db.query(Consent.status, func.count(Consent.id))
-            .group_by(Consent.status)
-            .all()
-        )
+        result = self.db.query(Consent.status, func.count(Consent.id)).group_by(Consent.status).all()
         return {status.value: count for status, count in result}

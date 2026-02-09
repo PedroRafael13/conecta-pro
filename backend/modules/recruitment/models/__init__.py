@@ -1,46 +1,46 @@
 """Models do módulo Recruitment."""
 
-from .job_position import (
-    JobPosition,
-    PositionType,
-    PositionLevel,
-    PositionStatus,
-    WorkModel,
-    Department,
-)
-from .candidate import (
-    Candidate,
-    CandidateStatus,
-    CandidateSource,
-    Gender,
-    MaritalStatus,
-)
 from .application import (
     Application,
     ApplicationStatus,
     RejectionReason,
 )
-from .interview import (
-    Interview,
-    InterviewType,
-    InterviewStatus,
-    InterviewResult,
-)
-from .candidate_skill import (
-    CandidateSkill,
-    SkillCategory,
-    SkillLevel,
-)
-from .candidate_experience import (
-    CandidateExperience,
-    EmploymentType,
-    ExperienceLevel,
+from .candidate import (
+    Candidate,
+    CandidateSource,
+    CandidateStatus,
+    Gender,
+    MaritalStatus,
 )
 from .candidate_education import (
     CandidateEducation,
     EducationLevel,
     EducationStatus,
     StudyPeriod,
+)
+from .candidate_experience import (
+    CandidateExperience,
+    EmploymentType,
+    ExperienceLevel,
+)
+from .candidate_skill import (
+    CandidateSkill,
+    SkillCategory,
+    SkillLevel,
+)
+from .interview import (
+    Interview,
+    InterviewResult,
+    InterviewStatus,
+    InterviewType,
+)
+from .job_position import (
+    Department,
+    JobPosition,
+    PositionLevel,
+    PositionStatus,
+    PositionType,
+    WorkModel,
 )
 
 __all__ = [

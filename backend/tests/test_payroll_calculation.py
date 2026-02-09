@@ -1,13 +1,14 @@
 """Testes para cálculos de folha de pagamento."""
 
-import pytest
 from decimal import Decimal
 
+import pytest
+
 from modules.hr.payroll_integration.models.employee_payroll_config import (
-    calculate_inss,
-    calculate_irrf,
     INSS_TABLE_2024,
     IRRF_TABLE_2024,
+    calculate_inss,
+    calculate_irrf,
 )
 
 

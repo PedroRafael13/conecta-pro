@@ -1,10 +1,9 @@
 """Repository para GeofenceZone."""
 
 from datetime import datetime
-from typing import Optional, List, Tuple
 from uuid import UUID
 
-from sqlalchemy import select, func, update
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.hr.mobile_time_clock.models import (
@@ -13,8 +12,8 @@ from modules.hr.mobile_time_clock.models import (
 )
 from modules.hr.mobile_time_clock.schemas import (
     GeofenceZoneCreate,
-    GeofenceZoneUpdate,
     GeofenceZoneFilter,
+    GeofenceZoneUpdate,
 )
 
 
@@ -42,8 +41,7 @@ class GeofenceZoneRepository:
             center_longitude=data.center_longitude,
             radius_meters=data.radius_meters,
             polygon_coordinates=(
-                [c.model_dump() for c in data.polygon_coordinates]
-                if data.polygon_coordinates else None
+                [c.model_dump() for c in data.polygon_coordinates] if data.polygon_coordinates else None
             ),
             address=data.address,
             city=data.city,
@@ -62,14 +60,8 @@ class GeofenceZoneRepository:
             exit_tolerance_minutes=data.exit_tolerance_minutes,
             grace_period_meters=data.grace_period_meters,
             allow_all_employees=data.allow_all_employees,
-            allowed_employees=(
-                [str(e) for e in data.allowed_employees]
-                if data.allowed_employees else None
-            ),
-            allowed_departments=(
-                [str(d) for d in data.allowed_departments]
-                if data.allowed_departments else None
-            ),
+            allowed_employees=([str(e) for e in data.allowed_employees] if data.allowed_employees else None),
+            allowed_departments=([str(d) for d in data.allowed_departments] if data.allowed_departments else None),
             is_primary=data.is_primary,
             priority=data.priority,
             created_by=created_by,
@@ -80,36 +72,30 @@ class GeofenceZoneRepository:
         await self.db.refresh(zone)
         return zone
 
-    async def get_by_id(self, zone_id: UUID) -> Optional[GeofenceZone]:
+    async def get_by_id(self, zone_id: UUID) -> GeofenceZone | None:
         """Busca zona por ID."""
-        result = await self.db.execute(
-            select(GeofenceZone).where(GeofenceZone.id == zone_id)
-        )
+        result = await self.db.execute(select(GeofenceZone).where(GeofenceZone.id == zone_id))
         return result.scalar_one_or_none()
 
     async def get_by_condominio(
         self,
         condominio_id: UUID,
         active_only: bool = True,
-    ) -> List[GeofenceZone]:
+    ) -> list[GeofenceZone]:
         """Busca zonas do condomínio."""
-        query = select(GeofenceZone).where(
-            GeofenceZone.condominio_id == condominio_id
-        )
+        query = select(GeofenceZone).where(GeofenceZone.condominio_id == condominio_id)
 
         if active_only:
             query = query.where(GeofenceZone.is_active.is_(True))
             query = query.where(GeofenceZone.status == ZoneStatus.ACTIVE.value)
 
-        result = await self.db.execute(
-            query.order_by(GeofenceZone.priority.desc(), GeofenceZone.name)
-        )
+        result = await self.db.execute(query.order_by(GeofenceZone.priority.desc(), GeofenceZone.name))
         return list(result.scalars().all())
 
     async def get_by_post(
         self,
         post_id: UUID,
-    ) -> List[GeofenceZone]:
+    ) -> list[GeofenceZone]:
         """Busca zonas do posto."""
         result = await self.db.execute(
             select(GeofenceZone)
@@ -123,7 +109,7 @@ class GeofenceZoneRepository:
         self,
         zone_id: UUID,
         data: GeofenceZoneUpdate,
-    ) -> Optional[GeofenceZone]:
+    ) -> GeofenceZone | None:
         """Atualiza zona."""
         zone = await self.get_by_id(zone_id)
         if not zone:
@@ -134,8 +120,7 @@ class GeofenceZoneRepository:
         # Converter coordenadas
         if "polygon_coordinates" in update_data and update_data["polygon_coordinates"]:
             update_data["polygon_coordinates"] = [
-                c.model_dump() if hasattr(c, 'model_dump') else c
-                for c in update_data["polygon_coordinates"]
+                c.model_dump() if hasattr(c, "model_dump") else c for c in update_data["polygon_coordinates"]
             ]
 
         for key, value in update_data.items():
@@ -153,7 +138,7 @@ class GeofenceZoneRepository:
         longitude: float,
         employee_id: str = None,
         max_distance_km: float = 10,
-    ) -> List[Tuple[GeofenceZone, float, bool]]:
+    ) -> list[tuple[GeofenceZone, float, bool]]:
         """Encontra zonas próximas à localização.
 
         Retorna lista de (zona, distância, está_dentro).
@@ -186,7 +171,7 @@ class GeofenceZoneRepository:
         latitude: float,
         longitude: float,
         employee_id: str = None,
-    ) -> Optional[GeofenceZone]:
+    ) -> GeofenceZone | None:
         """Encontra zona que contém o ponto."""
         zones = await self.find_zones_for_location(
             condominio_id,
@@ -231,11 +216,7 @@ class GeofenceZoneRepository:
         )
 
         # Define como primária
-        await self.db.execute(
-            update(GeofenceZone)
-            .where(GeofenceZone.id == zone_id)
-            .values(is_primary=True)
-        )
+        await self.db.execute(update(GeofenceZone).where(GeofenceZone.id == zone_id).values(is_primary=True))
 
         await self.db.commit()
 
@@ -244,7 +225,7 @@ class GeofenceZoneRepository:
         filters: GeofenceZoneFilter,
         page: int = 1,
         page_size: int = 50,
-    ) -> Tuple[List[GeofenceZone], int]:
+    ) -> tuple[list[GeofenceZone], int]:
         """Lista zonas com filtros."""
         query = select(GeofenceZone)
 
@@ -317,11 +298,13 @@ class GeofenceZoneRepository:
             by_status[zone.status] = by_status.get(zone.status, 0) + 1
             total_checkins += zone.total_checkins
             radii.append(zone.radius_meters)
-            most_used.append({
-                "id": str(zone.id),
-                "name": zone.name,
-                "checkins": zone.total_checkins,
-            })
+            most_used.append(
+                {
+                    "id": str(zone.id),
+                    "name": zone.name,
+                    "checkins": zone.total_checkins,
+                }
+            )
 
         # Top 5 mais usadas
         most_used.sort(key=lambda x: x["checkins"], reverse=True)

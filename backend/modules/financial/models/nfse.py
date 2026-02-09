@@ -2,7 +2,7 @@
 
 from datetime import date, datetime
 from decimal import Decimal
-from enum import Enum
+from enum import StrEnum
 from uuid import uuid4
 
 from sqlalchemy import Boolean, Column, Date, DateTime, Integer, Numeric, String, Text
@@ -12,7 +12,7 @@ from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from core.models.base import Base
 
 
-class NFSeStatus(str, Enum):
+class NFSeStatus(StrEnum):
     """Status da NFS-e."""
 
     RASCUNHO = "rascunho"
@@ -27,7 +27,7 @@ class NFSeStatus(str, Enum):
     ERRO = "erro"
 
 
-class NFSeNaturezaOperacao(str, Enum):
+class NFSeNaturezaOperacao(StrEnum):
     """Natureza da operacao da NFS-e."""
 
     TRIBUTACAO_MUNICIPIO = "1"  # Tributacao no municipio
@@ -38,7 +38,7 @@ class NFSeNaturezaOperacao(str, Enum):
     EXIGIBILIDADE_SUSPENSA_PROCESSO_ADM = "6"
 
 
-class NFSeRegimeEspecial(str, Enum):
+class NFSeRegimeEspecial(StrEnum):
     """Regime especial de tributacao."""
 
     NENHUM = "0"
@@ -50,14 +50,14 @@ class NFSeRegimeEspecial(str, Enum):
     ME_EPP_SIMPLES = "6"
 
 
-class NFSeSimNao(str, Enum):
+class NFSeSimNao(StrEnum):
     """Opcao Sim/Nao."""
 
     SIM = "1"
     NAO = "2"
 
 
-class NFSeLocalServico(str, Enum):
+class NFSeLocalServico(StrEnum):
     """Local de prestacao do servico."""
 
     PRESTADOR = "prestador"
@@ -65,7 +65,7 @@ class NFSeLocalServico(str, Enum):
     OUTRO = "outro"
 
 
-class NFSeTipoRPS(str, Enum):
+class NFSeTipoRPS(StrEnum):
     """Tipo de RPS."""
 
     RPS = "1"  # Recibo Provisorio de Servicos
@@ -73,14 +73,14 @@ class NFSeTipoRPS(str, Enum):
     CUPOM = "3"  # Cupom
 
 
-class NFSeResponsavelRetencao(str, Enum):
+class NFSeResponsavelRetencao(StrEnum):
     """Responsavel pela retencao do ISS."""
 
     TOMADOR = "1"
     INTERMEDIARIO = "2"
 
 
-class NFSeLayoutPadrao(str, Enum):
+class NFSeLayoutPadrao(StrEnum):
     """Layout padrao de NFS-e (varia por municipio)."""
 
     ABRASF_1_0 = "abrasf_1_0"
@@ -163,9 +163,7 @@ class NFSe(Base):
     codigo_servico_municipal = Column(String(20), nullable=True)  # Codigo do servico no municipio
     codigo_cnae = Column(String(10), nullable=True)  # CNAE
     discriminacao = Column(Text, nullable=False)  # Descricao do servico
-    natureza_operacao = Column(
-        String(1), nullable=False, default=NFSeNaturezaOperacao.TRIBUTACAO_MUNICIPIO.value
-    )
+    natureza_operacao = Column(String(1), nullable=False, default=NFSeNaturezaOperacao.TRIBUTACAO_MUNICIPIO.value)
     regime_especial = Column(String(1), nullable=True)
 
     # Local de prestacao
@@ -283,9 +281,7 @@ class NFSe(Base):
     def calcular_valores(self) -> None:
         """Recalcula valores da NFS-e."""
         # Base de calculo = Servicos - Deducoes - Descontos
-        self.valor_base_calculo = (
-            self.valor_servicos - self.valor_deducoes - self.valor_desconto_incondicionado
-        )
+        self.valor_base_calculo = self.valor_servicos - self.valor_deducoes - self.valor_desconto_incondicionado
 
         self.valor_base_calculo = max(self.valor_base_calculo, Decimal("0"))
 
@@ -341,9 +337,7 @@ class NFSeLote(Base):  # pylint: disable=too-few-public-methods
     versao = Column(String(10), nullable=True)
 
     # Status
-    status = Column(
-        String(20), nullable=False, default="pendente"
-    )  # pendente, enviado, processado, erro
+    status = Column(String(20), nullable=False, default="pendente")  # pendente, enviado, processado, erro
     data_envio = Column(DateTime, nullable=True)
     data_processamento = Column(DateTime, nullable=True)
 

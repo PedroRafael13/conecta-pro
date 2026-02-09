@@ -2,8 +2,8 @@
 
 from datetime import date, datetime
 from decimal import Decimal
-from enum import Enum
-from typing import Any, Optional
+from enum import StrEnum
+from typing import Any
 from uuid import uuid4
 
 from sqlalchemy import (
@@ -15,12 +15,13 @@ from sqlalchemy import (
     String,
     Text,
 )
-from sqlalchemy.dialects.postgresql import JSONB, UUID as PGUUID
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import UUID as PGUUID
 
 from core.models.base import Base
 
 
-class TaxRegime(str, Enum):
+class TaxRegime(StrEnum):
     """Regime tributario da empresa."""
 
     SIMPLES_NACIONAL = "simples_nacional"
@@ -32,7 +33,7 @@ class TaxRegime(str, Enum):
     ISENTO = "isento"
 
 
-class TaxType(str, Enum):
+class TaxType(StrEnum):
     """Tipo de imposto."""
 
     # Federais
@@ -66,7 +67,7 @@ class TaxType(str, Enum):
     SENAR = "senar"  # Servico Nacional de Aprendizagem Rural
 
 
-class TaxCalculationType(str, Enum):
+class TaxCalculationType(StrEnum):
     """Tipo de calculo do imposto."""
 
     PERCENTUAL = "percentual"
@@ -79,7 +80,7 @@ class TaxCalculationType(str, Enum):
     SUSPENSAO = "suspensao"
 
 
-class TaxConfigurationStatus(str, Enum):
+class TaxConfigurationStatus(StrEnum):
     """Status da configuracao de imposto."""
 
     ATIVA = "ativa"
@@ -88,7 +89,7 @@ class TaxConfigurationStatus(str, Enum):
     EXPIRADA = "expirada"
 
 
-class PISCOFINSRegime(str, Enum):
+class PISCOFINSRegime(StrEnum):
     """Regime de apuracao de PIS/COFINS."""
 
     CUMULATIVO = "cumulativo"  # Lucro Presumido
@@ -96,7 +97,7 @@ class PISCOFINSRegime(str, Enum):
     MISTO = "misto"
 
 
-class ICMSOrigin(str, Enum):
+class ICMSOrigin(StrEnum):
     """Origem da mercadoria para ICMS."""
 
     NACIONAL = "0"  # Nacional
@@ -110,7 +111,7 @@ class ICMSOrigin(str, Enum):
     NACIONAL_CONTEUDO_IMPORTADO_ACIMA_70 = "8"  # Nacional com conteudo importado acima de 70%
 
 
-class ICMSModalidadeBC(str, Enum):
+class ICMSModalidadeBC(StrEnum):
     """Modalidade de base de calculo do ICMS."""
 
     MARGEM_VALOR_AGREGADO = "0"  # Margem Valor Agregado (%)
@@ -119,7 +120,7 @@ class ICMSModalidadeBC(str, Enum):
     VALOR_OPERACAO = "3"  # Valor da operacao
 
 
-class ICMSModalidadeBCST(str, Enum):
+class ICMSModalidadeBCST(StrEnum):
     """Modalidade de base de calculo do ICMS ST."""
 
     PRECO_TABELADO = "0"
@@ -131,7 +132,7 @@ class ICMSModalidadeBCST(str, Enum):
     VALOR_OPERACAO = "6"
 
 
-class ICMSCST(str, Enum):
+class ICMSCST(StrEnum):
     """Codigo de Situacao Tributaria do ICMS."""
 
     TRIBUTADA_INTEGRALMENTE = "00"
@@ -144,7 +145,7 @@ class ICMSCST(str, Enum):
     OUTRAS = "90"
 
 
-class ICMSCSOSN(str, Enum):
+class ICMSCSOSN(StrEnum):
     """Codigo de Situacao da Operacao no Simples Nacional."""
 
     TRIBUTADA_PELO_SIMPLES = "101"
@@ -171,9 +172,7 @@ class TaxConfiguration(Base):
     tax_regime = Column(String(30), nullable=False, index=True)
 
     # Configuracao
-    calculation_type = Column(
-        String(30), nullable=False, default=TaxCalculationType.PERCENTUAL.value
-    )
+    calculation_type = Column(String(30), nullable=False, default=TaxCalculationType.PERCENTUAL.value)
     rate = Column(Numeric(8, 4), nullable=True)  # Aliquota em %
     fixed_value = Column(Numeric(15, 2), nullable=True)  # Valor fixo
     base_reduction = Column(Numeric(8, 4), nullable=True)  # Reducao de base (%)
@@ -406,9 +405,10 @@ class SimplesNacionalConfig(Base):
             return {"value": Decimal("0"), "effective_rate": Decimal("0")}
 
         aliquota_efetiva = (
-            (self.faturamento_12_meses * self.aliquota_nominal / 100)
-            - (self.parcela_deduzir or Decimal("0"))
-        ) / self.faturamento_12_meses * 100
+            ((self.faturamento_12_meses * self.aliquota_nominal / 100) - (self.parcela_deduzir or Decimal("0")))
+            / self.faturamento_12_meses
+            * 100
+        )
 
         das = receita_bruta * aliquota_efetiva / 100
 
@@ -435,7 +435,7 @@ class SimplesNacionalConfig(Base):
         """Verifica se e Anexo V (depende do Fator R)."""
         return self.anexo == "V"
 
-    def calculate_fator_r(self) -> Optional[Decimal]:
+    def calculate_fator_r(self) -> Decimal | None:
         """Calcula Fator R."""
         if not self.folha_pagamento_12_meses or not self.faturamento_12_meses:
             return None

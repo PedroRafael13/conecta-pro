@@ -1,8 +1,8 @@
 """Cost Object model - Objetos de Custo (produtos, serviços, clientes, projetos)."""
 
-import enum
 from datetime import datetime
 from decimal import Decimal
+from enum import StrEnum
 from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import (
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from modules.financial.costing.models.cost_allocation import CostAllocation
 
 
-class CostObjectType(str, enum.Enum):
+class CostObjectType(StrEnum):
     """Tipo do objeto de custo."""
 
     PRODUCT = "PRODUCT"  # Produto
@@ -44,7 +44,7 @@ class CostObjectType(str, enum.Enum):
     CAMPAIGN = "CAMPAIGN"  # Campanha
 
 
-class CostObjectStatus(str, enum.Enum):
+class CostObjectStatus(StrEnum):
     """Status do objeto de custo."""
 
     ACTIVE = "ACTIVE"
@@ -53,7 +53,7 @@ class CostObjectStatus(str, enum.Enum):
     PENDING = "PENDING"
 
 
-class ProfitabilityLevel(str, enum.Enum):
+class ProfitabilityLevel(StrEnum):
     """Nível de rentabilidade."""
 
     HIGHLY_PROFITABLE = "HIGHLY_PROFITABLE"  # >20% margem
@@ -67,9 +67,7 @@ class CostObject(Base):
     """Objeto de Custo - destino final dos custos alocados."""
 
     __tablename__ = "fin_cost_objects"
-    __table_args__ = (
-        UniqueConstraint("condominio_id", "code", name="uq_cost_object_code"),
-    )
+    __table_args__ = (UniqueConstraint("condominio_id", "code", name="uq_cost_object_code"),)
 
     # Primary Key
     id = Column(
@@ -132,9 +130,7 @@ class CostObject(Base):
 
     # Custos Indiretos (alocados via ABC)
     allocated_overhead = Column(Numeric(18, 2), default=Decimal("0"), nullable=False)
-    allocated_activity_cost = Column(
-        Numeric(18, 2), default=Decimal("0"), nullable=False
-    )
+    allocated_activity_cost = Column(Numeric(18, 2), default=Decimal("0"), nullable=False)
     total_indirect_cost = Column(Numeric(18, 2), default=Decimal("0"), nullable=False)
 
     # Custo Total
@@ -146,9 +142,7 @@ class CostObject(Base):
     gross_margin = Column(Numeric(18, 2), default=Decimal("0"), nullable=False)
     gross_margin_percent = Column(Numeric(8, 4), default=Decimal("0"), nullable=False)
     contribution_margin = Column(Numeric(18, 2), default=Decimal("0"), nullable=False)
-    contribution_margin_percent = Column(
-        Numeric(8, 4), default=Decimal("0"), nullable=False
-    )
+    contribution_margin_percent = Column(Numeric(8, 4), default=Decimal("0"), nullable=False)
     net_margin = Column(Numeric(18, 2), default=Decimal("0"), nullable=False)
     net_margin_percent = Column(Numeric(8, 4), default=Decimal("0"), nullable=False)
 
@@ -257,12 +251,8 @@ class CostObject(Base):
     def calculate_margins(self) -> None:
         """Calcula todas as margens."""
         # Custo total
-        self.total_direct_cost = (
-            self.direct_material_cost + self.direct_labor_cost + self.other_direct_cost
-        )
-        self.total_indirect_cost = (
-            self.allocated_overhead + self.allocated_activity_cost
-        )
+        self.total_direct_cost = self.direct_material_cost + self.direct_labor_cost + self.other_direct_cost
+        self.total_indirect_cost = self.allocated_overhead + self.allocated_activity_cost
         self.total_cost = self.total_direct_cost + self.total_indirect_cost
 
         # Margem bruta (receita - custo direto)
@@ -275,9 +265,7 @@ class CostObject(Base):
         # Margem de contribuição
         self.contribution_margin = self.gross_margin
         if self.revenue > 0:
-            self.contribution_margin_percent = (
-                self.contribution_margin / self.revenue
-            ) * 100
+            self.contribution_margin_percent = (self.contribution_margin / self.revenue) * 100
         else:
             self.contribution_margin_percent = Decimal("0")
 
@@ -318,9 +306,7 @@ class CostObject(Base):
             self.profitability_level = ProfitabilityLevel.UNPROFITABLE
             self.profitability_score = Decimal("10")
 
-    def add_direct_cost(
-        self, material: Decimal = None, labor: Decimal = None, other: Decimal = None
-    ) -> None:
+    def add_direct_cost(self, material: Decimal = None, labor: Decimal = None, other: Decimal = None) -> None:
         """Adiciona custos diretos."""
         if material:
             self.direct_material_cost += material
@@ -330,9 +316,7 @@ class CostObject(Base):
             self.other_direct_cost += other
         self.calculate_margins()
 
-    def add_allocated_cost(
-        self, overhead: Decimal = None, activity: Decimal = None
-    ) -> None:
+    def add_allocated_cost(self, overhead: Decimal = None, activity: Decimal = None) -> None:
         """Adiciona custos alocados (indiretos)."""
         if overhead:
             self.allocated_overhead += overhead

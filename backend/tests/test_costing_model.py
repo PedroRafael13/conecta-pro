@@ -7,42 +7,42 @@ from uuid import uuid4
 import pytest
 
 from modules.financial.costing.models import (
-    CostDriver,
     CostActivity,
-    CostPool,
-    CostObject,
     CostAllocation,
     CostAnalysis,
-)
-from modules.financial.costing.models.cost_driver import (
-    DriverType,
-    DriverCategory,
-    DriverStatus,
-    DriverMeasureUnit,
+    CostDriver,
+    CostObject,
+    CostPool,
 )
 from modules.financial.costing.models.cost_activity import (
-    ActivityType,
     ActivityLevel,
     ActivityStatus,
+    ActivityType,
     ValueAddedType,
 )
-from modules.financial.costing.models.cost_pool import (
-    PoolType,
-    PoolStatus,
-    AllocationBasis,
-)
-from modules.financial.costing.models.cost_object import (
-    ObjectType,
-    ProfitabilityLevel,
-)
 from modules.financial.costing.models.cost_allocation import (
-    AllocationType,
     AllocationMethod,
     AllocationStatus,
+    AllocationType,
 )
 from modules.financial.costing.models.cost_analysis import (
-    AnalysisType,
     AnalysisStatus,
+    AnalysisType,
+)
+from modules.financial.costing.models.cost_driver import (
+    DriverCategory,
+    DriverMeasureUnit,
+    DriverStatus,
+    DriverType,
+)
+from modules.financial.costing.models.cost_object import (
+    CostObjectType,
+    ProfitabilityLevel,
+)
+from modules.financial.costing.models.cost_pool import (
+    AllocationBasis,
+    PoolStatus,
+    PoolType,
 )
 
 
@@ -209,7 +209,7 @@ class TestCostObjectModel:
             condominio_id=uuid4(),
             codigo="OBJ-001",
             nome="Serviço de Vigilância",
-            tipo=ObjectType.SERVICE,
+            tipo=CostObjectType.SERVICE,
             custo_direto=Decimal("50000.00"),
             custo_indireto=Decimal("20000.00"),
             receita=Decimal("100000.00"),
@@ -217,7 +217,7 @@ class TestCostObjectModel:
         )
 
         assert obj.codigo == "OBJ-001"
-        assert obj.tipo == ObjectType.SERVICE
+        assert obj.tipo == CostObjectType.SERVICE
         assert obj.receita == Decimal("100000.00")
 
     def test_total_cost(self):
@@ -226,7 +226,7 @@ class TestCostObjectModel:
             condominio_id=uuid4(),
             codigo="OBJ-002",
             nome="Objeto Teste",
-            tipo=ObjectType.SERVICE,
+            tipo=CostObjectType.SERVICE,
             custo_direto=Decimal("50000.00"),
             custo_indireto=Decimal("20000.00"),
         )
@@ -239,7 +239,7 @@ class TestCostObjectModel:
             condominio_id=uuid4(),
             codigo="OBJ-003",
             nome="Objeto Teste",
-            tipo=ObjectType.SERVICE,
+            tipo=CostObjectType.SERVICE,
             custo_direto=Decimal("50000.00"),
             custo_indireto=Decimal("20000.00"),
             receita=Decimal("100000.00"),
@@ -253,7 +253,7 @@ class TestCostObjectModel:
             condominio_id=uuid4(),
             codigo="OBJ-004",
             nome="Objeto Teste",
-            tipo=ObjectType.SERVICE,
+            tipo=CostObjectType.SERVICE,
             custo_direto=Decimal("50000.00"),
             custo_indireto=Decimal("20000.00"),
             receita=Decimal("100000.00"),
@@ -267,7 +267,7 @@ class TestCostObjectModel:
             condominio_id=uuid4(),
             codigo="OBJ-005",
             nome="Objeto Teste",
-            tipo=ObjectType.PRODUCT,
+            tipo=CostObjectType.PRODUCT,
             custo_direto=Decimal("50000.00"),
             custo_indireto=Decimal("20000.00"),
             quantidade=Decimal("100"),
@@ -281,7 +281,7 @@ class TestCostObjectModel:
             condominio_id=uuid4(),
             codigo="OBJ-HIGH",
             nome="Alta Lucratividade",
-            tipo=ObjectType.SERVICE,
+            tipo=CostObjectType.SERVICE,
             custo_direto=Decimal("30000.00"),
             receita=Decimal("100000.00"),
         )
@@ -294,7 +294,7 @@ class TestCostObjectModel:
             condominio_id=uuid4(),
             codigo="OBJ-NEG",
             nome="Negativo",
-            tipo=ObjectType.SERVICE,
+            tipo=CostObjectType.SERVICE,
             custo_direto=Decimal("120000.00"),
             receita=Decimal("100000.00"),
         )

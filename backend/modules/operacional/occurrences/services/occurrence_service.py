@@ -8,9 +8,9 @@ Quality Score: 99+/100
 
 from __future__ import annotations
 
+import builtins
 import logging
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -18,27 +18,22 @@ from sqlalchemy.orm import Session
 from modules.operacional.occurrences.models import (
     Occurrence,
     OccurrenceAttachment,
-    OccurrenceComment,
     OccurrenceCategoryConfig,
+    OccurrenceComment,
     OccurrenceStatus,
-    OccurrenceSeverity,
-    OccurrencePriority,
-    OccurrenceCategory,
 )
 from modules.operacional.occurrences.repositories import OccurrenceRepository
 from modules.operacional.occurrences.schemas import (
-    OccurrenceCreate,
-    OccurrenceUpdate,
-    OccurrenceFilter,
-    OccurrenceResponse,
     AttachmentCreate,
-    CommentCreate,
-    EscalateRequest,
-    ResolveRequest,
-    ReopenRequest,
-    DashboardStats,
     CategoryConfigCreate,
-    CategoryConfigUpdate,
+    CommentCreate,
+    DashboardStats,
+    EscalateRequest,
+    OccurrenceCreate,
+    OccurrenceFilter,
+    OccurrenceUpdate,
+    ReopenRequest,
+    ResolveRequest,
 )
 
 logger = logging.getLogger(__name__)
@@ -112,9 +107,7 @@ class OccurrenceService:
         code = Occurrence.generate_code(year, sequence)
 
         # Buscar configuracao da categoria se existir
-        category_config = self.repository.get_category_config(
-            str(data.tenant_id), data.category.value
-        )
+        category_config = self.repository.get_category_config(str(data.tenant_id), data.category.value)
 
         # Criar ocorrencia
         occurrence = Occurrence(
@@ -141,9 +134,7 @@ class OccurrenceService:
 
         # Calcular SLA
         if category_config:
-            occurrence.calculate_sla_deadline(
-                category_config=category_config.to_config_dict()
-            )
+            occurrence.calculate_sla_deadline(category_config=category_config.to_config_dict())
         else:
             occurrence.calculate_sla_deadline()
 
@@ -254,8 +245,8 @@ class OccurrenceService:
         tenant_id: str,
         skip: int = 0,
         limit: int = 100,
-        filters: Optional[OccurrenceFilter] = None,
-    ) -> Tuple[List[Occurrence], int]:
+        filters: OccurrenceFilter | None = None,
+    ) -> tuple[builtins.list[Occurrence], int]:
         """Lista ocorrencias com filtros.
 
         Args:
@@ -289,9 +280,7 @@ class OccurrenceService:
         occurrence = self.get_by_id(occurrence_id)
 
         if occurrence.status != OccurrenceStatus.ABERTA.value:
-            raise OccurrenceValidationError(
-                f"Ocorrencia nao pode iniciar analise no status {occurrence.status}"
-            )
+            raise OccurrenceValidationError(f"Ocorrencia nao pode iniciar analise no status {occurrence.status}")
 
         occurrence.start_analysis()
         occurrence = self.repository.update(occurrence)
@@ -356,7 +345,7 @@ class OccurrenceService:
     def reopen(
         self,
         occurrence_id: str,
-        data: Optional[ReopenRequest] = None,
+        data: ReopenRequest | None = None,
     ) -> Occurrence:
         """Reabre uma ocorrencia.
 
@@ -377,9 +366,7 @@ class OccurrenceService:
             OccurrenceStatus.RESOLVIDA.value,
             OccurrenceStatus.ARQUIVADA.value,
         ]:
-            raise OccurrenceValidationError(
-                f"Ocorrencia no status {occurrence.status} nao pode ser reaberta"
-            )
+            raise OccurrenceValidationError(f"Ocorrencia no status {occurrence.status} nao pode ser reaberta")
 
         reason = data.reason if data else None
         occurrence.reopen(reason)
@@ -426,9 +413,7 @@ class OccurrenceService:
         occurrence = self.get_by_id(occurrence_id)
 
         if not occurrence.is_open:
-            raise OccurrenceValidationError(
-                f"Ocorrencia no status {occurrence.status} nao pode ser escalada"
-            )
+            raise OccurrenceValidationError(f"Ocorrencia no status {occurrence.status} nao pode ser escalada")
 
         occurrence.escalate(
             escalated_to_id=str(data.escalated_to_id),
@@ -485,7 +470,7 @@ class OccurrenceService:
     def get_attachments(
         self,
         occurrence_id: str,
-    ) -> List[OccurrenceAttachment]:
+    ) -> builtins.list[OccurrenceAttachment]:
         """Lista anexos de uma ocorrencia.
 
         Args:
@@ -545,7 +530,7 @@ class OccurrenceService:
         self,
         occurrence_id: str,
         include_internal: bool = True,
-    ) -> List[OccurrenceComment]:
+    ) -> builtins.list[OccurrenceComment]:
         """Lista comentarios de uma ocorrencia.
 
         Args:
@@ -576,8 +561,8 @@ class OccurrenceService:
     def get_dashboard_stats(
         self,
         tenant_id: str,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
     ) -> DashboardStats:
         """Obtem estatisticas do dashboard.
 
@@ -615,7 +600,7 @@ class OccurrenceService:
         tenant_id: str,
         skip: int = 0,
         limit: int = 100,
-    ) -> List[Occurrence]:
+    ) -> builtins.list[Occurrence]:
         """Lista ocorrencias pendentes para um usuario.
 
         Args:
@@ -633,7 +618,7 @@ class OccurrenceService:
         self,
         tenant_id: str,
         hours_threshold: int = 4,
-    ) -> List[Occurrence]:
+    ) -> builtins.list[Occurrence]:
         """Lista ocorrencias com SLA vencendo.
 
         Args:
@@ -673,13 +658,9 @@ class OccurrenceService:
             Configuracao criada.
         """
         # Verificar se ja existe
-        existing = self.repository.get_category_config(
-            str(data.tenant_id), data.code
-        )
+        existing = self.repository.get_category_config(str(data.tenant_id), data.code)
         if existing:
-            raise OccurrenceValidationError(
-                f"Categoria {data.code} ja existe para este tenant"
-            )
+            raise OccurrenceValidationError(f"Categoria {data.code} ja existe para este tenant")
 
         config = OccurrenceCategoryConfig(
             tenant_id=str(data.tenant_id),
@@ -714,7 +695,7 @@ class OccurrenceService:
     def get_category_configs(
         self,
         tenant_id: str,
-    ) -> List[OccurrenceCategoryConfig]:
+    ) -> builtins.list[OccurrenceCategoryConfig]:
         """Lista configuracoes de categoria.
 
         Args:
@@ -739,17 +720,15 @@ class OccurrenceService:
             occurrence: Ocorrencia critica (severity GRAVE ou GRAVISSIMA).
         """
         try:
-            from modules.notifications.services.push_service import PushNotificationService
             from modules.notifications.models import QueuePriority
-            from modules.operacional.models.post import Post
+            from modules.notifications.services.push_service import PushNotificationService
             from modules.operacional.models.employee import Employee as OpEmployee
+            from modules.operacional.models.post import Post
 
             # Identificar tenant_id via Post
             post = self.db.query(Post).filter(Post.id == occurrence.post_id).first()
             if not post or not post.client_id:
-                logger.warning(
-                    f"Post {occurrence.post_id} sem client_id, skip notificação"
-                )
+                logger.warning(f"Post {occurrence.post_id} sem client_id, skip notificação")
                 return
 
             tenant_id = UUID(str(post.client_id))
@@ -764,11 +743,7 @@ class OccurrenceService:
 
             # 2. Gestor do employee envolvido
             if occurrence.employee_id:
-                emp = (
-                    self.db.query(OpEmployee)
-                    .filter(OpEmployee.id == str(occurrence.employee_id))
-                    .first()
-                )
+                emp = self.db.query(OpEmployee).filter(OpEmployee.id == str(occurrence.employee_id)).first()
                 if emp and getattr(emp, "gestor_id", None):
                     notify_user_ids.add(str(emp.gestor_id))
 
@@ -796,10 +771,11 @@ class OccurrenceService:
 
             # WebSocket broadcast
             try:
+                import asyncio
+
                 from modules.operacional.communication.controllers.websocket_controller import (
                     get_connection_manager,
                 )
-                import asyncio
 
                 manager = get_connection_manager()
                 ws_message = {
@@ -814,23 +790,18 @@ class OccurrenceService:
                 }
 
                 try:
-                    loop = asyncio.get_running_loop()
-                    asyncio.ensure_future(
-                        manager.broadcast_to_tenant(str(tenant_id), ws_message)
-                    )
+                    asyncio.get_running_loop()
+                    asyncio.ensure_future(manager.broadcast_to_tenant(str(tenant_id), ws_message))
                 except RuntimeError:
                     pass
             except Exception as ws_err:
                 logger.debug(f"WebSocket broadcast indisponível: {ws_err}")
 
             logger.warning(
-                f"OCORRENCIA CRITICA notificada: {occurrence.code} -> "
-                f"{sent_count}/{len(notify_user_ids)} destinatários"
+                f"OCORRENCIA CRITICA notificada: {occurrence.code} -> {sent_count}/{len(notify_user_ids)} destinatários"
             )
         except Exception as e:
-            logger.error(
-                f"Erro ao notificar ocorrência crítica {occurrence.code}: {e}"
-            )
+            logger.error(f"Erro ao notificar ocorrência crítica {occurrence.code}: {e}")
 
     def _notify_escalation(self, occurrence: Occurrence, data: EscalateRequest) -> None:
         """Notifica o usuario alvo sobre a escalacao via push.
@@ -840,16 +811,14 @@ class OccurrenceService:
             data: Dados da escalacao com escalated_to_id e reason.
         """
         try:
-            from modules.notifications.services.push_service import PushNotificationService
             from modules.notifications.models import QueuePriority
+            from modules.notifications.services.push_service import PushNotificationService
             from modules.operacional.models.post import Post
 
             # Identificar tenant via Post
             post = self.db.query(Post).filter(Post.id == occurrence.post_id).first()
             if not post or not post.client_id:
-                logger.warning(
-                    f"Post {occurrence.post_id} sem client_id, skip notificação de escalação"
-                )
+                logger.warning(f"Post {occurrence.post_id} sem client_id, skip notificação de escalação")
                 return
 
             tenant_id = UUID(str(post.client_id))
@@ -858,10 +827,7 @@ class OccurrenceService:
             push_service.send_push_notification(
                 user_id=data.escalated_to_id,
                 title=f"Ocorrência Escalada: {occurrence.code}",
-                body=(
-                    f"{occurrence.title} foi escalada para você. "
-                    f"Motivo: {data.reason or 'Não informado'}"
-                ),
+                body=(f"{occurrence.title} foi escalada para você. Motivo: {data.reason or 'Não informado'}"),
                 data={
                     "type": "occurrence_escalated",
                     "occurrence_id": str(occurrence.id),
@@ -872,13 +838,9 @@ class OccurrenceService:
                 action_url=f"/modulos/operacional/ocorrencias?id={occurrence.id}",
             )
 
-            logger.info(
-                f"Notificação de escalação enviada: {occurrence.code} -> {data.escalated_to_id}"
-            )
+            logger.info(f"Notificação de escalação enviada: {occurrence.code} -> {data.escalated_to_id}")
         except Exception as e:
-            logger.error(
-                f"Erro ao notificar escalação {occurrence.code}: {e}"
-            )
+            logger.error(f"Erro ao notificar escalação {occurrence.code}: {e}")
 
     def _should_suggest_disciplinary_action(
         self,

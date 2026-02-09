@@ -2,7 +2,7 @@
 
 import logging
 from datetime import date
-from typing import List, Optional
+from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -82,27 +82,27 @@ async def create_account(
 
 @router.get(
     "",
-    response_model=List[ReceivableAccountListResponse],
+    response_model=list[ReceivableAccountListResponse],
     summary="Listar contas a receber",
 )
 async def list_accounts(  # pylint: disable=too-many-locals
     condominio_id: UUID,
-    search: Optional[str] = Query(None, description="Busca na descricao"),
-    customer_id: Optional[UUID] = Query(None, description="Filtrar por cliente"),
-    unidade_id: Optional[UUID] = Query(None, description="Filtrar por unidade"),
-    category_id: Optional[UUID] = Query(None, description="Filtrar por categoria"),
-    status_filter: Optional[str] = Query(None, alias="status", description="Status"),
-    due_date_start: Optional[date] = Query(None, description="Vencimento inicial"),
-    due_date_end: Optional[date] = Query(None, description="Vencimento final"),
-    is_recurring: Optional[bool] = Query(None, description="Apenas recorrentes"),
-    is_overdue: Optional[bool] = Query(None, description="Apenas vencidas"),
-    min_value: Optional[float] = Query(None, description="Valor minimo"),
-    max_value: Optional[float] = Query(None, description="Valor maximo"),
+    search: str | None = Query(None, description="Busca na descricao"),
+    customer_id: UUID | None = Query(None, description="Filtrar por cliente"),
+    unidade_id: UUID | None = Query(None, description="Filtrar por unidade"),
+    category_id: UUID | None = Query(None, description="Filtrar por categoria"),
+    status_filter: str | None = Query(None, alias="status", description="Status"),
+    due_date_start: date | None = Query(None, description="Vencimento inicial"),
+    due_date_end: date | None = Query(None, description="Vencimento final"),
+    is_recurring: bool | None = Query(None, description="Apenas recorrentes"),
+    is_overdue: bool | None = Query(None, description="Apenas vencidas"),
+    min_value: float | None = Query(None, description="Valor minimo"),
+    max_value: float | None = Query(None, description="Valor maximo"),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     service: ReceivableService = Depends(get_service),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-):
+) -> list[ReceivableAccountListResponse]:
     """Lista contas a receber com filtros."""
     filters = ReceivableAccountFilter(
         search=search,
@@ -128,7 +128,7 @@ async def list_accounts(  # pylint: disable=too-many-locals
     summary="Estatisticas de contas a receber",
 )
 async def get_stats(
-    condominio_id: Optional[UUID] = Query(None, description="ID do condomínio (opcional)"),
+    condominio_id: UUID | None = Query(None, description="ID do condomínio (opcional)"),
     service: ReceivableService = Depends(get_service),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> ReceivableAccountStats:
@@ -138,15 +138,15 @@ async def get_stats(
 
 @router.get(
     "/overdue",
-    response_model=List[ReceivableAccountListResponse],
+    response_model=list[ReceivableAccountListResponse],
     summary="Contas vencidas",
 )
 async def get_overdue(
-    condominio_id: Optional[UUID] = Query(None, description="ID do condomínio (opcional)"),
+    condominio_id: UUID | None = Query(None, description="ID do condomínio (opcional)"),
     limit: int = Query(100, ge=1, le=500),
     service: ReceivableService = Depends(get_service),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-):
+) -> list[ReceivableAccountListResponse]:
     """Retorna contas vencidas."""
     accounts = await service.get_overdue_accounts(condominio_id, limit)
     return [ReceivableAccountListResponse.model_validate(a) for a in accounts]
@@ -154,16 +154,16 @@ async def get_overdue(
 
 @router.get(
     "/due-soon",
-    response_model=List[ReceivableAccountListResponse],
+    response_model=list[ReceivableAccountListResponse],
     summary="Contas a vencer",
 )
 async def get_due_soon(
-    condominio_id: Optional[UUID] = Query(None, description="ID do condomínio (opcional)"),
+    condominio_id: UUID | None = Query(None, description="ID do condomínio (opcional)"),
     days: int = Query(7, ge=1, le=90, description="Dias para vencimento"),
     limit: int = Query(100, ge=1, le=500),
     service: ReceivableService = Depends(get_service),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-):
+) -> list[ReceivableAccountListResponse]:
     """Retorna contas a vencer nos proximos dias."""
     accounts = await service.get_due_soon_accounts(condominio_id, days, limit)
     return [ReceivableAccountListResponse.model_validate(a) for a in accounts]
@@ -222,7 +222,7 @@ async def delete_account(
     account_id: UUID,
     service: ReceivableService = Depends(get_service),
     current_user: dict = Depends(get_current_user),
-):
+) -> None:
     """Exclui uma conta a receber (soft delete)."""
     try:
         deleted = await service.delete_account(account_id, UUID(current_user["id"]))
@@ -251,9 +251,7 @@ async def cancel_account(
 ) -> ReceivableAccountResponse:
     """Cancela uma conta a receber."""
     try:
-        account = await service.cancel_account(
-            account_id, UUID(current_user["id"]), reason
-        )
+        account = await service.cancel_account(account_id, UUID(current_user["id"]), reason)
         if not account:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -277,9 +275,7 @@ async def suspend_account(
 ) -> ReceivableAccountResponse:
     """Suspende uma conta a receber."""
     try:
-        account = await service.suspend_account(
-            account_id, UUID(current_user["id"]), reason
-        )
+        account = await service.suspend_account(account_id, UUID(current_user["id"]), reason)
         if not account:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -306,9 +302,7 @@ async def protest_account(
 ) -> ReceivableAccountResponse:
     """Envia conta para protesto."""
     try:
-        account = await service.protest_account(
-            account_id, UUID(current_user["id"]), data.protest_number
-        )
+        account = await service.protest_account(account_id, UUID(current_user["id"]), data.protest_number)
         if not account:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -332,9 +326,7 @@ async def write_off_account(
 ) -> ReceivableAccountResponse:
     """Baixa conta como perda."""
     try:
-        account = await service.write_off_account(
-            account_id, UUID(current_user["id"]), data.reason
-        )
+        account = await service.write_off_account(account_id, UUID(current_user["id"]), data.reason)
         if not account:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -350,14 +342,14 @@ async def write_off_account(
 
 @router.get(
     "/{account_id}/installments",
-    response_model=List[ReceivableInstallmentResponse],
+    response_model=list[ReceivableInstallmentResponse],
     summary="Listar parcelas",
 )
 async def list_installments(
     account_id: UUID,
     service: ReceivableService = Depends(get_service),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-):
+) -> list[ReceivableInstallmentResponse]:
     """Lista parcelas de uma conta."""
     installments = await service.list_installments(account_id)
     return [ReceivableInstallmentResponse.model_validate(i) for i in installments]
@@ -365,20 +357,18 @@ async def list_installments(
 
 @router.get(
     "/installments/pending",
-    response_model=List[ReceivableInstallmentResponse],
+    response_model=list[ReceivableInstallmentResponse],
     summary="Parcelas pendentes",
 )
 async def get_pending_installments(
     condominio_id: UUID,
-    due_date_start: Optional[date] = Query(None),
-    due_date_end: Optional[date] = Query(None),
+    due_date_start: date | None = Query(None),
+    due_date_end: date | None = Query(None),
     service: ReceivableService = Depends(get_service),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-):
+) -> list[ReceivableInstallmentResponse]:
     """Retorna parcelas pendentes."""
-    installments = await service.get_pending_installments(
-        condominio_id, due_date_start, due_date_end
-    )
+    installments = await service.get_pending_installments(condominio_id, due_date_start, due_date_end)
     return [ReceivableInstallmentResponse.model_validate(i) for i in installments]
 
 
@@ -439,9 +429,7 @@ async def renegotiate_installment(
 ) -> ReceivableInstallmentResponse:
     """Renegocia uma parcela."""
     try:
-        installment = await service.renegotiate_installment(
-            installment_id, data, UUID(current_user["id"])
-        )
+        installment = await service.renegotiate_installment(installment_id, data, UUID(current_user["id"]))
         if not installment:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -507,7 +495,7 @@ async def bulk_generate_boletos(
     data: ReceivableBulkBoletoRequest,
     service: ReceivableService = Depends(get_service),  # pylint: disable=unused-argument
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-):
+) -> dict[str, Any]:
     """Gera boletos para multiplas parcelas."""
     # Implementar geracao em lote (a implementar)
     return {
@@ -535,9 +523,7 @@ async def register_payment(
 ) -> ReceivablePaymentResponse:
     """Registra recebimento de uma parcela."""
     try:
-        payment = await service.register_payment(
-            installment_id, data, UUID(current_user["id"])
-        )
+        payment = await service.register_payment(installment_id, data, UUID(current_user["id"]))
         return ReceivablePaymentResponse.model_validate(payment)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
@@ -551,11 +537,9 @@ async def bulk_payment(
     data: ReceivableBulkPaymentRequest,
     service: ReceivableService = Depends(get_service),
     current_user: dict = Depends(get_current_user),
-):
+) -> dict[str, Any]:
     """Processa recebimento em lote."""
-    success, errors, payment_ids = await service.bulk_payment(
-        data, UUID(current_user["id"])
-    )
+    success, errors, payment_ids = await service.bulk_payment(data, UUID(current_user["id"]))
     return {
         "success_count": success,
         "error_count": errors,
@@ -577,9 +561,7 @@ async def reverse_payment(
 ) -> ReceivablePaymentResponse:
     """Estorna um recebimento."""
     try:
-        payment = await service.reverse_payment(
-            payment_id, data, UUID(current_user["id"])
-        )
+        payment = await service.reverse_payment(payment_id, data, UUID(current_user["id"]))
         if not payment:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -603,9 +585,7 @@ async def reconcile_payment(
 ) -> ReceivablePaymentResponse:
     """Reconcilia recebimento com extrato bancario."""
     try:
-        payment = await service.reconcile_payment(
-            payment_id, data, UUID(current_user["id"])
-        )
+        payment = await service.reconcile_payment(payment_id, data, UUID(current_user["id"]))
         if not payment:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -618,14 +598,14 @@ async def reconcile_payment(
 
 @router.get(
     "/payments/pending-reconciliation",
-    response_model=List[ReceivablePaymentResponse],
+    response_model=list[ReceivablePaymentResponse],
     summary="Recebimentos pendentes de reconciliacao",
 )
 async def get_pending_reconciliation(
     condominio_id: UUID,
     service: ReceivableService = Depends(get_service),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-):
+) -> list[ReceivablePaymentResponse]:
     """Retorna recebimentos pendentes de reconciliacao."""
     payments = await service.get_pending_reconciliation(condominio_id)
     return [ReceivablePaymentResponse.model_validate(p) for p in payments]
@@ -642,7 +622,7 @@ async def bulk_notify(
     data: ReceivableBulkNotifyRequest,
     service: ReceivableService = Depends(get_service),  # pylint: disable=unused-argument
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-):
+) -> dict[str, Any]:
     """Envia notificacoes para devedores em lote."""
     # Implementar notificacoes
     return {
@@ -689,7 +669,7 @@ async def get_customer_debt(
     customer_id: UUID,
     service: ReceivableService = Depends(get_service),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-):
+) -> dict[str, Any]:
     """Retorna divida total e vencida do cliente."""
     total, overdue = await service.get_customer_debt(customer_id)
     return {
@@ -707,7 +687,7 @@ async def get_unit_debt(
     unidade_id: UUID,
     service: ReceivableService = Depends(get_service),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-):
+) -> dict[str, Any]:
     """Retorna divida total e vencida da unidade."""
     total, overdue = await service.get_unit_debt(unidade_id)
     return {
@@ -728,7 +708,7 @@ async def get_customer_risk(
     customer_id: UUID,
     ai_service: ReceivableAIService = Depends(get_ai_service),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-):
+) -> dict[str, Any]:
     """Retorna analise de risco do cliente usando IA."""
     risk = await ai_service.calculate_customer_risk(customer_id)
     return {
@@ -754,7 +734,7 @@ async def get_collection_priorities(
     limit: int = Query(20, ge=1, le=100),
     ai_service: ReceivableAIService = Depends(get_ai_service),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-):
+) -> list[dict[str, Any]]:
     """Retorna lista priorizada de cobrancas usando IA."""
     priorities = await ai_service.get_collection_priorities(condominio_id, limit)
     return [
@@ -782,7 +762,7 @@ async def get_cash_flow_forecast(
     months: int = Query(6, ge=1, le=12, description="Meses de previsao"),
     ai_service: ReceivableAIService = Depends(get_ai_service),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-):
+) -> dict[str, Any]:
     """Retorna previsao de fluxo de caixa usando IA."""
     forecast = await ai_service.forecast_cash_flow(condominio_id, months)
     return {
@@ -812,7 +792,7 @@ async def get_delinquency_analysis(
     condominio_id: UUID,
     ai_service: ReceivableAIService = Depends(get_ai_service),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-):
+) -> dict[str, Any]:
     """Retorna analise de inadimplencia usando IA."""
     analysis = await ai_service.analyze_delinquency(condominio_id)
     return {

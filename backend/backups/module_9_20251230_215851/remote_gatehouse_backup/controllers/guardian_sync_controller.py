@@ -2,13 +2,7 @@
 Controller FastAPI para GuardianSync.
 """
 
-from typing import Optional
-
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from core.database import get_db
-from core.logging import logger
 from modules.remote_gatehouse.models.guardian_sync import (
     SyncDirection,
     SyncEntityType,
@@ -28,6 +22,10 @@ from modules.remote_gatehouse.schemas.guardian_sync import (
 from modules.remote_gatehouse.services.guardian_sync_service import (
     guardian_sync_service,
 )
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from core.database import get_db
+from core.logging import logger
 
 router = APIRouter(prefix="/guardian/sync", tags=["GuardianSync"])
 
@@ -50,13 +48,13 @@ async def create_sync(
 
 @router.get("/", response_model=GuardianSyncListResponse)
 async def list_syncs(
-    search: Optional[str] = Query(None),
-    direction: Optional[SyncDirection] = Query(None),
-    entity_type: Optional[SyncEntityType] = Query(None),
-    sync_status: Optional[SyncStatus] = Query(None, alias="status"),
-    client_id: Optional[str] = Query(None),
-    contract_id: Optional[str] = Query(None),
-    can_retry: Optional[bool] = Query(None),
+    search: str | None = Query(None),
+    direction: SyncDirection | None = Query(None),
+    entity_type: SyncEntityType | None = Query(None),
+    sync_status: SyncStatus | None = Query(None, alias="status"),
+    client_id: str | None = Query(None),
+    contract_id: str | None = Query(None),
+    can_retry: bool | None = Query(None),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
@@ -86,7 +84,7 @@ async def list_syncs(
 
 @router.get("/stats", response_model=GuardianSyncStats)
 async def get_sync_stats(
-    client_id: Optional[str] = Query(None),
+    client_id: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
 ) -> GuardianSyncStats:
     """Obtém estatísticas de sincronização."""
@@ -178,7 +176,7 @@ async def retry_sync(
 @router.post("/{sync_id}/mark-completed", response_model=GuardianSyncResponse)
 async def mark_sync_completed(
     sync_id: str,
-    external_id: Optional[str] = Query(None),
+    external_id: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
 ) -> GuardianSyncResponse:
     """Marca uma sincronização como concluída."""

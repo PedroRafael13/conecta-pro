@@ -1,8 +1,7 @@
 """Service para Interview."""
 
 import logging
-from typing import Optional, List, Tuple
-from datetime import date, time, datetime, timedelta
+from datetime import date, datetime, time, timedelta
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -10,20 +9,20 @@ from modules.recruitment.models.interview import (
     Interview,
     InterviewStatus,
 )
-from modules.recruitment.schemas.interview import (
-    InterviewCreate,
-    InterviewUpdate,
-    InterviewFilter,
-    InterviewComplete,
-    InterviewReschedule,
-    InterviewCancel,
-    InterviewEvaluation,
-    InterviewSlot,
-    InterviewCalendar,
-)
-from modules.recruitment.repositories.interview_repository import InterviewRepository
 from modules.recruitment.repositories.application_repository import (
     ApplicationRepository,
+)
+from modules.recruitment.repositories.interview_repository import InterviewRepository
+from modules.recruitment.schemas.interview import (
+    InterviewCalendar,
+    InterviewCancel,
+    InterviewComplete,
+    InterviewCreate,
+    InterviewEvaluation,
+    InterviewFilter,
+    InterviewReschedule,
+    InterviewSlot,
+    InterviewUpdate,
 )
 from modules.recruitment.services.recruitment_ai_service import RecruitmentAIService
 
@@ -79,19 +78,15 @@ class InterviewService:
 
         return interview
 
-    async def get_by_id(self, interview_id: str) -> Optional[Interview]:
+    async def get_by_id(self, interview_id: str) -> Interview | None:
         """Busca entrevista por ID."""
         return await self.repository.get_by_id(interview_id)
 
-    async def get_by_id_with_relations(
-        self, interview_id: str
-    ) -> Optional[Interview]:
+    async def get_by_id_with_relations(self, interview_id: str) -> Interview | None:
         """Busca entrevista por ID com relacionamentos."""
         return await self.repository.get_by_id_with_relations(interview_id)
 
-    async def update(
-        self, interview_id: str, data: InterviewUpdate
-    ) -> Optional[Interview]:
+    async def update(self, interview_id: str, data: InterviewUpdate) -> Interview | None:
         """
         Atualiza uma entrevista.
 
@@ -129,12 +124,12 @@ class InterviewService:
 
     async def list_with_filters(
         self,
-        filters: Optional[InterviewFilter] = None,
+        filters: InterviewFilter | None = None,
         skip: int = 0,
         limit: int = 20,
         order_by: str = "scheduled_date",
         order_desc: bool = False,
-    ) -> Tuple[List[Interview], int]:
+    ) -> tuple[list[Interview], int]:
         """
         Lista entrevistas com filtros.
 
@@ -148,31 +143,25 @@ class InterviewService:
         Returns:
             Tuple com lista de entrevistas e total
         """
-        return await self.repository.list_with_filters(
-            filters, skip, limit, order_by, order_desc
-        )
+        return await self.repository.list_with_filters(filters, skip, limit, order_by, order_desc)
 
-    async def get_by_application(
-        self, application_id: str, status: InterviewStatus = None
-    ) -> List[Interview]:
+    async def get_by_application(self, application_id: str, status: InterviewStatus = None) -> list[Interview]:
         """Retorna entrevistas de uma candidatura."""
         return await self.repository.get_by_application(application_id, status)
 
-    async def get_today(self, interviewer_id: str = None) -> List[Interview]:
+    async def get_today(self, interviewer_id: str = None) -> list[Interview]:
         """Retorna entrevistas de hoje."""
         return await self.repository.get_today(interviewer_id)
 
-    async def get_upcoming(
-        self, days: int = 7, interviewer_id: str = None
-    ) -> List[Interview]:
+    async def get_upcoming(self, days: int = 7, interviewer_id: str = None) -> list[Interview]:
         """Retorna próximas entrevistas."""
         return await self.repository.get_upcoming(days, interviewer_id)
 
-    async def get_pending_confirmation(self) -> List[Interview]:
+    async def get_pending_confirmation(self) -> list[Interview]:
         """Retorna entrevistas pendentes de confirmação."""
         return await self.repository.get_pending_confirmation()
 
-    async def get_pending_result(self) -> List[Interview]:
+    async def get_pending_result(self) -> list[Interview]:
         """Retorna entrevistas pendentes de resultado."""
         return await self.repository.get_pending_result()
 
@@ -181,13 +170,11 @@ class InterviewService:
         start_date: date,
         end_date: date,
         interviewer_id: str = None,
-    ) -> List[Interview]:
+    ) -> list[Interview]:
         """Retorna entrevistas em um período."""
-        return await self.repository.get_by_date_range(
-            start_date, end_date, interviewer_id
-        )
+        return await self.repository.get_by_date_range(start_date, end_date, interviewer_id)
 
-    async def confirm_candidate(self, interview_id: str) -> Optional[Interview]:
+    async def confirm_candidate(self, interview_id: str) -> Interview | None:
         """
         Confirma presença do candidato.
 
@@ -211,7 +198,7 @@ class InterviewService:
 
         return interview
 
-    async def confirm_interviewer(self, interview_id: str) -> Optional[Interview]:
+    async def confirm_interviewer(self, interview_id: str) -> Interview | None:
         """
         Confirma presença do entrevistador.
 
@@ -235,7 +222,7 @@ class InterviewService:
 
         return interview
 
-    async def start(self, interview_id: str) -> Optional[Interview]:
+    async def start(self, interview_id: str) -> Interview | None:
         """
         Inicia entrevista.
 
@@ -259,9 +246,7 @@ class InterviewService:
 
         return interview
 
-    async def complete(
-        self, interview_id: str, data: InterviewComplete
-    ) -> Optional[Interview]:
+    async def complete(self, interview_id: str, data: InterviewComplete) -> Interview | None:
         """
         Completa entrevista.
 
@@ -283,22 +268,15 @@ class InterviewService:
 
         # Atualiza score na candidatura
         if data.score is not None:
-            application = await self.application_repo.get_by_id(
-                interview.application_id
-            )
+            application = await self.application_repo.get_by_id(interview.application_id)
             if application:
                 # Atualiza score de entrevista (pode ser média se múltiplas)
                 if not application.interview_score:
                     application.interview_score = data.score
                 else:
                     # Média com entrevistas anteriores
-                    interviews = await self.repository.get_by_application(
-                        interview.application_id
-                    )
-                    completed = [
-                        i for i in interviews
-                        if i.status == InterviewStatus.REALIZADA and i.score
-                    ]
+                    interviews = await self.repository.get_by_application(interview.application_id)
+                    completed = [i for i in interviews if i.status == InterviewStatus.REALIZADA and i.score]
                     if completed:
                         avg_score = sum(i.score for i in completed) / len(completed)
                         application.interview_score = avg_score
@@ -318,9 +296,7 @@ class InterviewService:
 
         return interview
 
-    async def cancel(
-        self, interview_id: str, data: InterviewCancel
-    ) -> Optional[Interview]:
+    async def cancel(self, interview_id: str, data: InterviewCancel) -> Interview | None:
         """
         Cancela entrevista.
 
@@ -331,9 +307,7 @@ class InterviewService:
         Returns:
             Entrevista cancelada ou None
         """
-        interview = await self.repository.cancel(
-            interview_id, data.reason, data.cancelled_by
-        )
+        interview = await self.repository.cancel(interview_id, data.reason, data.cancelled_by)
         if interview:
             await self.session.commit()
             logger.info(
@@ -345,9 +319,7 @@ class InterviewService:
             )
         return interview
 
-    async def reschedule(
-        self, interview_id: str, data: InterviewReschedule
-    ) -> Optional[Interview]:
+    async def reschedule(self, interview_id: str, data: InterviewReschedule) -> Interview | None:
         """
         Reagenda entrevista.
 
@@ -373,9 +345,7 @@ class InterviewService:
         if conflict:
             raise ValueError(f"Conflito de horário: {conflict}")
 
-        interview = await self.repository.reschedule(
-            interview_id, data.new_date, data.new_time
-        )
+        interview = await self.repository.reschedule(interview_id, data.new_date, data.new_time)
         if interview:
             await self.session.commit()
             logger.info(
@@ -388,7 +358,7 @@ class InterviewService:
             )
         return interview
 
-    async def mark_no_show(self, interview_id: str) -> Optional[Interview]:
+    async def mark_no_show(self, interview_id: str) -> Interview | None:
         """
         Marca como não compareceu.
 
@@ -407,9 +377,7 @@ class InterviewService:
             )
         return interview
 
-    async def add_evaluation(
-        self, interview_id: str, data: InterviewEvaluation
-    ) -> Optional[Interview]:
+    async def add_evaluation(self, interview_id: str, data: InterviewEvaluation) -> Interview | None:
         """
         Adiciona avaliação de competência.
 
@@ -449,11 +417,11 @@ class InterviewService:
 
     async def get_available_slots(  # pylint: disable=too-many-locals,too-many-nested-blocks
         self,
-        interviewer_ids: List[str],
+        interviewer_ids: list[str],
         start_date: date,
         end_date: date,
         duration_minutes: int = 60,
-    ) -> List[InterviewSlot]:
+    ) -> list[InterviewSlot]:
         """
         Retorna horários disponíveis para agendamento.
 
@@ -503,9 +471,7 @@ class InterviewService:
                                 interview.scheduled_date,
                                 interview.scheduled_time,
                             )
-                            int_end = int_start + timedelta(
-                                minutes=interview.duration_minutes
-                            )
+                            int_end = int_start + timedelta(minutes=interview.duration_minutes)
                             slot_end = current_time + slot_duration
 
                             if not (slot_end <= int_start or current_time >= int_end):
@@ -528,9 +494,7 @@ class InterviewService:
 
         return slots
 
-    async def get_calendar(
-        self, interviewer_id: str, month: int, year: int
-    ) -> InterviewCalendar:
+    async def get_calendar(self, interviewer_id: str, month: int, year: int) -> InterviewCalendar:
         """
         Retorna calendário de entrevistas.
 
@@ -548,9 +512,7 @@ class InterviewService:
         else:
             end_date = date(year, month + 1, 1) - timedelta(days=1)
 
-        interviews = await self.repository.get_by_date_range(
-            start_date, end_date, interviewer_id
-        )
+        interviews = await self.repository.get_by_date_range(start_date, end_date, interviewer_id)
 
         # Agrupa por dia
         days = {}
@@ -558,13 +520,15 @@ class InterviewService:
             day = interview.scheduled_date.day
             if day not in days:
                 days[day] = []
-            days[day].append({
-                "id": str(interview.id),
-                "time": interview.scheduled_time.isoformat(),
-                "type": interview.interview_type.value,
-                "status": interview.status.value,
-                "duration": interview.duration_minutes,
-            })
+            days[day].append(
+                {
+                    "id": str(interview.id),
+                    "time": interview.scheduled_time.isoformat(),
+                    "type": interview.interview_type.value,
+                    "status": interview.status.value,
+                    "duration": interview.duration_minutes,
+                }
+            )
 
         return InterviewCalendar(
             month=month,
@@ -574,9 +538,7 @@ class InterviewService:
             total_interviews=len(interviews),
         )
 
-    async def generate_questions(
-        self, interview_id: str
-    ) -> Optional[List[dict]]:
+    async def generate_questions(self, interview_id: str) -> list[dict] | None:
         """
         Gera sugestões de perguntas para entrevista.
 
@@ -610,16 +572,14 @@ class InterviewService:
         scheduled_date: date,
         scheduled_time: time,
         duration_minutes: int,
-        interviewer_ids: List[str],
+        interviewer_ids: list[str],
         exclude_interview_id: str = None,
-    ) -> Optional[str]:
+    ) -> str | None:
         """Verifica conflito de horário."""
         if not interviewer_ids:
             return None
 
-        existing = await self.repository.get_by_date_range(
-            scheduled_date, scheduled_date
-        )
+        existing = await self.repository.get_by_date_range(scheduled_date, scheduled_date)
 
         new_start = datetime.combine(scheduled_date, scheduled_time)
         new_end = new_start + timedelta(minutes=duration_minutes)

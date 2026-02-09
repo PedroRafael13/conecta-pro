@@ -36,15 +36,17 @@ class TestPostAPIEndpoints:
         repo.update = AsyncMock(return_value=mock_post)
         repo.delete = AsyncMock(return_value=True)
         repo.list = AsyncMock(return_value=([mock_post], 1))
-        repo.get_stats = AsyncMock(return_value={
-            "total": 10,
-            "active": 8,
-            "by_type": {"vigilancia": 5, "portaria": 3},
-            "by_status": {"active": 8, "inactive": 2},
-            "with_vacancies": 3,
-            "total_vacancies": 5,
-            "avg_headcount": 3.5,
-        })
+        repo.get_stats = AsyncMock(
+            return_value={
+                "total": 10,
+                "active": 8,
+                "by_type": {"vigilancia": 5, "portaria": 3},
+                "by_status": {"active": 8, "inactive": 2},
+                "with_vacancies": 3,
+                "total_vacancies": 5,
+                "avg_headcount": 3.5,
+            }
+        )
         return repo
 
     @pytest.mark.asyncio
@@ -127,8 +129,9 @@ class TestPostAPIValidation:
     def test_post_name_required(self):
         """Verifica que name é obrigatório."""
         from pydantic import ValidationError
-        from modules.operacional.schemas.post import PostCreate
+
         from modules.operacional.models.post import PostType, ShiftType
+        from modules.operacional.schemas.post import PostCreate
 
         with pytest.raises(ValidationError):
             PostCreate(
@@ -139,6 +142,7 @@ class TestPostAPIValidation:
     def test_post_type_validation(self):
         """Verifica validação de tipo de posto."""
         from pydantic import ValidationError
+
         from modules.operacional.schemas.post import PostCreate
 
         # Tipo inválido deve falhar
@@ -152,8 +156,9 @@ class TestPostAPIValidation:
     def test_state_max_length(self):
         """Verifica limite de caracteres do estado."""
         from pydantic import ValidationError
-        from modules.operacional.schemas.post import PostCreate
+
         from modules.operacional.models.post import PostType, ShiftType
+        from modules.operacional.schemas.post import PostCreate
 
         with pytest.raises(ValidationError):
             PostCreate(
@@ -166,8 +171,9 @@ class TestPostAPIValidation:
     def test_headcount_positive(self):
         """Verifica que headcount deve ser positivo."""
         from pydantic import ValidationError
-        from modules.operacional.schemas.post import PostCreate
+
         from modules.operacional.models.post import PostType, ShiftType
+        from modules.operacional.schemas.post import PostCreate
 
         with pytest.raises(ValidationError):
             PostCreate(
@@ -179,8 +185,8 @@ class TestPostAPIValidation:
 
     def test_valid_post_create(self):
         """Testa criação de post válido."""
-        from modules.operacional.schemas.post import PostCreate
         from modules.operacional.models.post import PostType, ShiftType
+        from modules.operacional.schemas.post import PostCreate
 
         post = PostCreate(
             name="Posto Teste",
@@ -203,6 +209,7 @@ class TestPostAPIResponse:
     def test_post_response_serialization(self, sample_post_data):
         """Testa serialização da resposta."""
         from datetime import datetime
+
         from modules.operacional.schemas.post import PostResponse
 
         # Adicionar campos calculados

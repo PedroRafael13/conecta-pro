@@ -4,29 +4,29 @@ Modelos do Document Intelligence.
 
 from modules.documents.models.document import (
     Document,
-    DocumentType,
-    DocumentStatus,
     DocumentSource,
+    DocumentStatus,
+    DocumentType,
     ProcessingStatus,
-)
-from modules.documents.models.ocr_result import (
-    OCRResult,
-    OCRLine,
-    OCRWord,
-    OCRBlock,
-    OCRProvider,
 )
 from modules.documents.models.extracted_field import (
     ExtractedField,
-    FieldType,
-    FieldConfidence,
     ExtractionMethod,
+    FieldConfidence,
+    FieldType,
 )
 from modules.documents.models.extraction_template import (
     ExtractionTemplate,
+    TemplateCategory,
     TemplateField,
     TemplateRule,
-    TemplateCategory,
+)
+from modules.documents.models.ocr_result import (
+    OCRBlock,
+    OCRLine,
+    OCRProvider,
+    OCRResult,
+    OCRWord,
 )
 from modules.documents.models.validation_result import (
     ValidationResult,

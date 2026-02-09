@@ -2,24 +2,25 @@
 AlertaAgent - Agente especialista em alertas proativos
 """
 
-from typing import Dict, Any, List, Optional
-from datetime import datetime, date, timedelta
-from enum import Enum
 import logging
+from enum import StrEnum
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
-class AlertaPrioridade(str, Enum):
+class AlertaPrioridade(StrEnum):
     """Níveis de prioridade de alertas"""
+
     CRITICO = "critico"
     ALTO = "alto"
     MEDIO = "medio"
     BAIXO = "baixo"
 
 
-class AlertaIntent(str, Enum):
+class AlertaIntent(StrEnum):
     """Intents relacionados a alertas"""
+
     VER_ALERTAS = "ver_alertas"
     ALERTAS_CRITICOS = "alertas_criticos"
     COBERTURA = "cobertura"
@@ -55,7 +56,6 @@ class AlertaAgent:
         (r"(?:ignorar|ignore|dispensar|dispense)\s+(?:o\s+|esse\s+)?(?:alerta)?", AlertaIntent.IGNORAR),
         (r"(?:deixar|deixe)\s+(?:para\s+)?depois", AlertaIntent.IGNORAR),
         (r"(?:adiar|adie)\s+(?:o\s+)?alerta", AlertaIntent.IGNORAR),
-
         # ==================================================================
         # URGENTE - Requer atenção (ANTES de ALERTAS_CRITICOS para "urgente atencao")
         # ==================================================================
@@ -63,7 +63,6 @@ class AlertaAgent:
         (r"(?:atencao|aten[çc][aã]o)\s+(?:imediata|urgente)", AlertaIntent.URGENTE),
         (r"(?:precisa|precisamos)\s+(?:de\s+)?(?:atencao|aten[çc][aã]o)", AlertaIntent.URGENTE),
         (r"(?:agora|ja)\s+(?:precisa|precisamos)", AlertaIntent.URGENTE),
-
         # ==================================================================
         # RESOLVER - Iniciar resolução
         # ==================================================================
@@ -71,7 +70,6 @@ class AlertaAgent:
         (r"(?:fechar|encerrar)\s+(?:o\s+)?alerta", AlertaIntent.RESOLVER),
         (r"(?:solucionar|solucion[ea])\s+(?:o\s+)?(?:problema|alerta)", AlertaIntent.RESOLVER),
         (r"(?:cuidar|atender)\s+(?:o\s+)?alerta", AlertaIntent.RESOLVER),
-
         # ==================================================================
         # VER_ALERTAS - Listar alertas
         # ==================================================================
@@ -80,7 +78,6 @@ class AlertaAgent:
         (r"alertas?\s+(?:do\s+)?(?:dia|sistema|hoje)", AlertaIntent.VER_ALERTAS),
         (r"notifica[cç][oõ]es?(?:\s+pendentes?)?", AlertaIntent.VER_ALERTAS),
         (r"(?:tem|ha)\s+(?:algum\s+)?alerta", AlertaIntent.VER_ALERTAS),
-
         # ==================================================================
         # ALERTAS_CRITICOS - Apenas críticos/urgentes
         # ==================================================================
@@ -89,7 +86,6 @@ class AlertaAgent:
         (r"(?:mais\s+)?(?:graves?|serios?|importantes?)", AlertaIntent.ALERTAS_CRITICOS),
         (r"emergencia", AlertaIntent.ALERTAS_CRITICOS),
         (r"(?:prioridade\s+)?(?:maxima|alta)", AlertaIntent.ALERTAS_CRITICOS),
-
         # ==================================================================
         # COBERTURA - Alertas de cobertura
         # ==================================================================
@@ -98,7 +94,6 @@ class AlertaAgent:
         (r"postos?\s+(?:sem|descobertos?|criticos?)", AlertaIntent.COBERTURA),
         (r"postos?\s+(?:com\s+)?(?:problemas?|alertas?)\s+(?:de\s+)?cobertura", AlertaIntent.COBERTURA),
         (r"cobertura\s+(?:critica|baixa)", AlertaIntent.COBERTURA),
-
         # ==================================================================
         # DOCUMENTOS - Documentos vencendo
         # ==================================================================
@@ -107,7 +102,6 @@ class AlertaAgent:
         (r"(?:vencimento|validade)\s+(?:de\s+)?(?:documentos?|docs?)", AlertaIntent.DOCUMENTOS),
         (r"(?:CNV|ASO|NR|cnv|aso|nr)\s+(?:vencendo|vencido)", AlertaIntent.DOCUMENTOS),
         (r"(?:documentos?|docs?)\s+(?:a\s+)?vencer", AlertaIntent.DOCUMENTOS),
-
         # ==================================================================
         # ATRASOS - Alertas de atrasos
         # ==================================================================
@@ -142,14 +136,14 @@ class AlertaAgent:
         if db and not data_connector:
             try:
                 from modules.ai.bartolo.services.data_connector import DataConnector
+
                 self.data_connector = DataConnector(db)
             except Exception as e:
                 logger.warning(f"Não foi possível criar DataConnector: {e}")
                 self.data_connector = None
 
-    async def process(self, message: str, context: Dict[str, Any] = None) -> Dict[str, Any]:
+    async def process(self, message: str, context: dict[str, Any] = None) -> dict[str, Any]:
         """Processa mensagem relacionada a alertas"""
-        import re
 
         intent = self._detect_intent(message)
         context = context or {}
@@ -167,9 +161,10 @@ class AlertaAgent:
         handler = handlers.get(intent, self._handle_default)
         return await handler(message, context)
 
-    def _detect_intent(self, message: str) -> Optional[AlertaIntent]:
+    def _detect_intent(self, message: str) -> AlertaIntent | None:
         """Detecta intent da mensagem"""
         import re
+
         message_lower = message.lower()
 
         for pattern, intent in self.INTENT_PATTERNS:
@@ -177,7 +172,7 @@ class AlertaAgent:
                 return intent
         return None
 
-    async def _handle_ver_alertas(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_ver_alertas(self, message: str, context: dict) -> dict[str, Any]:
         """Lista todos os alertas usando dados reais do DataConnector"""
         # Tentar buscar dados reais
         if self.data_connector:
@@ -217,7 +212,7 @@ class AlertaAgent:
             "priority": "high",
         }
 
-    async def _handle_criticos(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_criticos(self, message: str, context: dict) -> dict[str, Any]:
         """Lista apenas alertas críticos usando dados reais do DataConnector"""
         # Tentar buscar dados reais de cobertura crítica
         if self.data_connector:
@@ -236,11 +231,11 @@ class AlertaAgent:
                         parts.append(f"- Código: {p['codigo']}")
                         parts.append(f"- Cobertura: {p['cobertura']}% ({p['alocados']}/{p['requeridos']})")
                         parts.append(f"- Déficit: {p['deficit']} funcionário(s)")
-                        parts.append(f"- Ação sugerida: Buscar substituto\n")
+                        parts.append("- Ação sugerida: Buscar substituto\n")
 
                 if alerts_result.success and alerts_result.data:
                     for alert in alerts_result.data:
-                        if alert.get('severidade') == 'alta':
+                        if alert.get("severidade") == "alta":
                             critical_count += 1
                             parts.append(f"**{critical_count}. {alert['mensagem']}**")
                             parts.append(f"- Ação: {alert['acao']}\n")
@@ -256,7 +251,11 @@ class AlertaAgent:
                     "data": {"critical_count": critical_count},
                     "suggestions": ["Resolver pendências", "Ver cobertura", "Notificar supervisor"],
                     "actions": [
-                        {"type": "navigate", "label": "Buscar Substituto", "target": "/modulos/operacional/substituicoes"},
+                        {
+                            "type": "navigate",
+                            "label": "Buscar Substituto",
+                            "target": "/modulos/operacional/substituicoes",
+                        },
                     ],
                     "priority": "critical" if critical_count > 0 else "normal",
                 }
@@ -290,7 +289,7 @@ class AlertaAgent:
             "priority": "critical",
         }
 
-    async def _handle_cobertura(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_cobertura(self, message: str, context: dict) -> dict[str, Any]:
         """Alertas de cobertura usando dados reais do DataConnector"""
         # Tentar buscar dados reais
         if self.data_connector:
@@ -327,14 +326,14 @@ class AlertaAgent:
             "suggestions": ["Resolver Centro-001", "Ver detalhes Norte-003", "Ignorar Sul-002"],
         }
 
-    async def _handle_documentos(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_documentos(self, message: str, context: dict) -> dict[str, Any]:
         """Alertas de documentos vencendo usando dados reais do DataConnector"""
         # Tentar buscar dados reais de alertas (inclui documentos)
         if self.data_connector:
             try:
                 result = await self.data_connector._get_pending_alerts()
                 if result.success and result.data:
-                    doc_alerts = [a for a in result.data if a.get('tipo') == 'documento']
+                    doc_alerts = [a for a in result.data if a.get("tipo") == "documento"]
                     if doc_alerts:
                         lines = [f"- {a['mensagem']}" for a in doc_alerts]
                         response = f"""**📄 Documentos - Alertas**
@@ -374,7 +373,7 @@ class AlertaAgent:
             "suggestions": ["Notificar todos", "Ver lista completa", "Agendar renovações"],
         }
 
-    async def _handle_atrasos(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_atrasos(self, message: str, context: dict) -> dict[str, Any]:
         """Alertas de atrasos usando dados reais do DataConnector"""
         # Tentar buscar dados reais
         if self.data_connector:
@@ -409,7 +408,7 @@ class AlertaAgent:
             "suggestions": ["Ligar para João", "Buscar substituto", "Ver histórico de atrasos"],
         }
 
-    async def _handle_urgente(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_urgente(self, message: str, context: dict) -> dict[str, Any]:
         """O que precisa de atenção urgente usando dados reais do DataConnector"""
         # Tentar buscar dados reais
         if self.data_connector:
@@ -427,7 +426,9 @@ class AlertaAgent:
                     parts.append("**Prioridade 1 - Resolver AGORA:**")
                     for p in cobertura_result.data[:3]:
                         item_num += 1
-                        parts.append(f"{item_num}. 🔴 **{p['nome']}** - cobertura {p['cobertura']}% (déficit: {p['deficit']})")
+                        parts.append(
+                            f"{item_num}. 🔴 **{p['nome']}** - cobertura {p['cobertura']}% (déficit: {p['deficit']})"
+                        )
                     parts.append("")
 
                 # Prioridade 2 - Outros alertas
@@ -435,7 +436,7 @@ class AlertaAgent:
                     parts.append("**Prioridade 2 - Resolver HOJE:**")
                     for a in alerts_result.data:
                         item_num += 1
-                        sev_icon = "🟠" if a.get('severidade') in ('alta', 'media') else "🟡"
+                        sev_icon = "🟠" if a.get("severidade") in ("alta", "media") else "🟡"
                         parts.append(f"{item_num}. {sev_icon} {a['mensagem']}")
                     parts.append("")
 
@@ -472,7 +473,7 @@ class AlertaAgent:
             "priority": "critical",
         }
 
-    async def _handle_resolver(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_resolver(self, message: str, context: dict) -> dict[str, Any]:
         """Resolver um alerta específico"""
         return {
             "response": "Qual alerta você deseja resolver? Informe o número ou descreva o problema.",
@@ -480,13 +481,13 @@ class AlertaAgent:
             "suggestions": ["Alerta #1", "Alerta #2", "Ver todos os alertas"],
         }
 
-    async def _handle_default(self, message: str, context: Dict) -> Optional[Dict[str, Any]]:
+    async def _handle_default(self, message: str, context: dict) -> dict[str, Any] | None:
         """Handler padrão - retorna None para permitir que DataConnector processe"""
         # Se chegou aqui, não detectamos intent específico de alerta
         # Retorna None para permitir que o fluxo continue (DataConnector, LLM, etc)
         return None
 
-    async def _handle_help(self, message: str, context: Dict) -> Dict[str, Any]:
+    async def _handle_help(self, message: str, context: dict) -> dict[str, Any]:
         """Handler de ajuda explícita"""
         return {
             "response": """**🔔 Central de Alertas**
@@ -503,7 +504,7 @@ O que você quer verificar?""",
             "suggestions": ["Ver todos os alertas", "Alertas críticos", "Atrasos de hoje"],
         }
 
-    async def check_proactive_alerts(self) -> List[Dict[str, Any]]:
+    async def check_proactive_alerts(self) -> list[dict[str, Any]]:
         """
         Verifica alertas proativamente (chamado por scheduler).
         Retorna lista de alertas que precisam de ação.
@@ -515,7 +516,7 @@ O que você quer verificar?""",
 
         return alerts
 
-    def get_capabilities(self) -> List[str]:
+    def get_capabilities(self) -> list[str]:
         """Retorna capabilities do agente"""
         return [
             "Monitorar cobertura de postos em tempo real",

@@ -5,16 +5,16 @@ Gerencia o histórico e status de sincronizações com dispositivos REP.
 
 import uuid
 from datetime import datetime
-from enum import Enum
-from typing import Optional, TYPE_CHECKING
+from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     DateTime,
+    ForeignKey,
+    Index,
     Integer,
     String,
     Text,
-    Index,
-    ForeignKey,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -22,25 +22,27 @@ from sqlalchemy.orm import Mapped, mapped_column
 from core.database import Base
 
 if TYPE_CHECKING:
-    from .rep_device import REPDevice
+    pass
 
 
-class SyncType(str, Enum):
+class SyncType(StrEnum):
     """Tipos de sincronização."""
-    EVENTS_PULL = "events_pull"        # Buscar eventos do REP
-    EVENTS_PUSH = "events_push"        # REP enviou eventos (webhook)
-    USERS_PUSH = "users_push"          # Enviar usuários para REP
-    USERS_PULL = "users_pull"          # Buscar usuários do REP
+
+    EVENTS_PULL = "events_pull"  # Buscar eventos do REP
+    EVENTS_PUSH = "events_push"  # REP enviou eventos (webhook)
+    USERS_PUSH = "users_push"  # Enviar usuários para REP
+    USERS_PULL = "users_pull"  # Buscar usuários do REP
     TEMPLATES_PUSH = "templates_push"  # Enviar templates biométricos
     TEMPLATES_PULL = "templates_pull"  # Buscar templates biométricos
-    TIME_SYNC = "time_sync"            # Sincronizar horário
-    CONFIG_PUSH = "config_push"        # Enviar configurações
-    STATUS_CHECK = "status_check"      # Verificar status
-    FULL_SYNC = "full_sync"            # Sincronização completa
+    TIME_SYNC = "time_sync"  # Sincronizar horário
+    CONFIG_PUSH = "config_push"  # Enviar configurações
+    STATUS_CHECK = "status_check"  # Verificar status
+    FULL_SYNC = "full_sync"  # Sincronização completa
 
 
-class SyncStatus(str, Enum):
+class SyncStatus(StrEnum):
     """Status da sincronização."""
+
     PENDING = "pending"
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
@@ -50,8 +52,9 @@ class SyncStatus(str, Enum):
     TIMEOUT = "timeout"
 
 
-class SyncTrigger(str, Enum):
+class SyncTrigger(StrEnum):
     """O que disparou a sincronização."""
+
     SCHEDULED = "scheduled"
     MANUAL = "manual"
     WEBHOOK = "webhook"
@@ -100,15 +103,15 @@ class REPSync(Base):
     )
 
     # Timestamps
-    started_at: Mapped[Optional[datetime]] = mapped_column(
+    started_at: Mapped[datetime | None] = mapped_column(
         DateTime,
         nullable=True,
     )
-    completed_at: Mapped[Optional[datetime]] = mapped_column(
+    completed_at: Mapped[datetime | None] = mapped_column(
         DateTime,
         nullable=True,
     )
-    duration_seconds: Mapped[Optional[int]] = mapped_column(
+    duration_seconds: Mapped[int | None] = mapped_column(
         Integer,
         nullable=True,
     )
@@ -136,35 +139,35 @@ class REPSync(Base):
     )
 
     # Para sync de eventos
-    last_nsr_before: Mapped[Optional[int]] = mapped_column(
+    last_nsr_before: Mapped[int | None] = mapped_column(
         Integer,
         nullable=True,
         comment="Último NSR antes da sync",
     )
-    last_nsr_after: Mapped[Optional[int]] = mapped_column(
+    last_nsr_after: Mapped[int | None] = mapped_column(
         Integer,
         nullable=True,
         comment="Último NSR após a sync",
     )
-    events_from_datetime: Mapped[Optional[datetime]] = mapped_column(
+    events_from_datetime: Mapped[datetime | None] = mapped_column(
         DateTime,
         nullable=True,
     )
-    events_to_datetime: Mapped[Optional[datetime]] = mapped_column(
+    events_to_datetime: Mapped[datetime | None] = mapped_column(
         DateTime,
         nullable=True,
     )
 
     # Erros
-    error_message: Mapped[Optional[str]] = mapped_column(
+    error_message: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
     )
-    error_code: Mapped[Optional[str]] = mapped_column(
+    error_code: Mapped[str | None] = mapped_column(
         String(50),
         nullable=True,
     )
-    error_details: Mapped[Optional[dict]] = mapped_column(
+    error_details: Mapped[dict | None] = mapped_column(
         JSONB,
         nullable=True,
     )
@@ -178,23 +181,23 @@ class REPSync(Base):
         Integer,
         default=3,
     )
-    next_retry_at: Mapped[Optional[datetime]] = mapped_column(
+    next_retry_at: Mapped[datetime | None] = mapped_column(
         DateTime,
         nullable=True,
     )
 
     # Logs e detalhes
-    request_log: Mapped[Optional[dict]] = mapped_column(
+    request_log: Mapped[dict | None] = mapped_column(
         JSONB,
         nullable=True,
         comment="Log das requisições HTTP",
     )
-    response_log: Mapped[Optional[dict]] = mapped_column(
+    response_log: Mapped[dict | None] = mapped_column(
         JSONB,
         nullable=True,
         comment="Log das respostas",
     )
-    items_log: Mapped[Optional[list]] = mapped_column(
+    items_log: Mapped[list | None] = mapped_column(
         JSONB,
         nullable=True,
         comment="Log dos itens processados (erros)",
@@ -211,7 +214,7 @@ class REPSync(Base):
     )
 
     # Quem disparou
-    triggered_by: Mapped[Optional[uuid.UUID]] = mapped_column(
+    triggered_by: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         nullable=True,
     )
@@ -225,8 +228,7 @@ class REPSync(Base):
     __table_args__ = (
         Index("ix_rep_syncs_device_type", "device_id", "sync_type"),
         Index("ix_rep_syncs_device_created", "device_id", "created_at"),
-        Index("ix_rep_syncs_status_pending", "status",
-              postgresql_where="status IN ('pending', 'in_progress')"),
+        Index("ix_rep_syncs_status_pending", "status", postgresql_where="status IN ('pending', 'in_progress')"),
     )
 
     def __repr__(self) -> str:
@@ -263,10 +265,7 @@ class REPSync(Base):
 
     def can_retry(self) -> bool:
         """Verifica se pode tentar novamente."""
-        return (
-            self.status == SyncStatus.FAILED.value and
-            self.retry_count < self.max_retries
-        )
+        return self.status == SyncStatus.FAILED.value and self.retry_count < self.max_retries
 
     def start(self) -> None:
         """Inicia a sincronização."""
@@ -278,9 +277,7 @@ class REPSync(Base):
         self.status = SyncStatus.PARTIAL.value if partial else SyncStatus.COMPLETED.value
         self.completed_at = datetime.utcnow()
         if self.started_at:
-            self.duration_seconds = int(
-                (self.completed_at - self.started_at).total_seconds()
-            )
+            self.duration_seconds = int((self.completed_at - self.started_at).total_seconds())
 
     def fail(self, error_message: str, error_code: str = None) -> None:
         """Marca como falha."""
@@ -289,9 +286,7 @@ class REPSync(Base):
         self.error_code = error_code
         self.completed_at = datetime.utcnow()
         if self.started_at:
-            self.duration_seconds = int(
-                (self.completed_at - self.started_at).total_seconds()
-            )
+            self.duration_seconds = int((self.completed_at - self.started_at).total_seconds())
 
     def to_dict(self) -> dict:
         """Converte para dicionário."""

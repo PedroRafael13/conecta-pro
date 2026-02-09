@@ -1,22 +1,24 @@
 """Model de Versão de Documento para GED."""
 
 from datetime import datetime
-from enum import Enum
-from typing import Optional, TYPE_CHECKING
+from enum import StrEnum
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from sqlalchemy import (
-    String,
     Boolean,
     DateTime,
-    Text,
+    Float,
     ForeignKey,
     Integer,
-    Float,
+    String,
+    Text,
+)
+from sqlalchemy import (
     Enum as SQLEnum,
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB
-from sqlalchemy.orm import relationship, Mapped, mapped_column
+from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from core.database import Base
 
@@ -24,7 +26,7 @@ if TYPE_CHECKING:
     from modules.ged.models.document import Document
 
 
-class VersionType(str, Enum):
+class VersionType(StrEnum):
     """Tipos de versão."""
 
     MAJOR = "major"  # Mudança significativa
@@ -33,7 +35,7 @@ class VersionType(str, Enum):
     REVISION = "revision"  # Revisão
 
 
-class VersionStatus(str, Enum):
+class VersionStatus(StrEnum):
     """Status da versão."""
 
     ATIVA = "ativa"
@@ -47,25 +49,19 @@ class DocumentVersion(Base):
     __tablename__ = "ged_document_versions"
 
     # Identificação
-    id: Mapped[str] = mapped_column(
-        UUID(as_uuid=False), primary_key=True, default=lambda: str(uuid4())
-    )
+    id: Mapped[str] = mapped_column(UUID(as_uuid=False), primary_key=True, default=lambda: str(uuid4()))
     document_id: Mapped[str] = mapped_column(
         UUID(as_uuid=False), ForeignKey("ged_documents.id"), nullable=False, index=True
     )
 
     # Versão
     version_number: Mapped[int] = mapped_column(Integer, nullable=False)
-    version_label: Mapped[Optional[str]] = mapped_column(
-        String(50), nullable=True
-    )  # Ex: "1.0.0", "v2"
+    version_label: Mapped[str | None] = mapped_column(String(50), nullable=True)  # Ex: "1.0.0", "v2"
     version_type: Mapped[VersionType] = mapped_column(
-        SQLEnum(VersionType, native_enum=False, create_constraint=False),
-        default=VersionType.MINOR
+        SQLEnum(VersionType, native_enum=False, create_constraint=False), default=VersionType.MINOR
     )
     status: Mapped[VersionStatus] = mapped_column(
-        SQLEnum(VersionStatus, native_enum=False, create_constraint=False),
-        default=VersionStatus.ATIVA
+        SQLEnum(VersionStatus, native_enum=False, create_constraint=False), default=VersionStatus.ATIVA
     )
     is_current: Mapped[bool] = mapped_column(Boolean, default=True)
 
@@ -77,26 +73,24 @@ class DocumentVersion(Base):
     checksum: Mapped[str] = mapped_column(String(64), nullable=False)
 
     # Thumbnail
-    thumbnail_path: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)
+    thumbnail_path: Mapped[str | None] = mapped_column(String(1000), nullable=True)
 
     # Mudanças
-    change_summary: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    change_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    changes_from_previous: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    change_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
+    change_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    changes_from_previous: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     # {"added": [], "removed": [], "modified": []}
 
     # OCR
-    ocr_text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    ocr_confidence: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    ocr_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    ocr_confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
 
     # Aprovação
-    approved_by: Mapped[Optional[str]] = mapped_column(
-        UUID(as_uuid=False), nullable=True
-    )
-    approved_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    approved_by: Mapped[str | None] = mapped_column(UUID(as_uuid=False), nullable=True)
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     # Metadados
-    extra_metadata: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    extra_metadata: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 
     # Estatísticas
     view_count: Mapped[int] = mapped_column(Integer, default=0)
@@ -104,7 +98,7 @@ class DocumentVersion(Base):
 
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    archived_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     # Auditoria
     created_by: Mapped[str] = mapped_column(UUID(as_uuid=False), nullable=False)

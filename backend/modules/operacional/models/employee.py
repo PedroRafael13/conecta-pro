@@ -4,10 +4,9 @@ Sprint 21: Sync com banco de dados - campos criticos adicionados.
 """
 
 from datetime import date, datetime
-from typing import Optional
 
-from sqlalchemy import Boolean, Column, Date, DateTime, String, Text, Numeric, Integer
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy import Boolean, Column, Date, DateTime, Integer, Numeric, String, Text
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 from core.database import Base
 
@@ -154,17 +153,19 @@ class Employee(Base):
         return self.nome_social or self.nome
 
     @property
-    def idade(self) -> Optional[int]:
+    def idade(self) -> int | None:
         """Calcula idade do funcionario."""
         if not self.data_nascimento:
             return None
         today = date.today()
-        return today.year - self.data_nascimento.year - (
-            (today.month, today.day) < (self.data_nascimento.month, self.data_nascimento.day)
+        return (
+            today.year
+            - self.data_nascimento.year
+            - ((today.month, today.day) < (self.data_nascimento.month, self.data_nascimento.day))
         )
 
     @property
-    def tempo_empresa_dias(self) -> Optional[int]:
+    def tempo_empresa_dias(self) -> int | None:
         """Calcula tempo de empresa em dias."""
         if not self.data_admissao:
             return None

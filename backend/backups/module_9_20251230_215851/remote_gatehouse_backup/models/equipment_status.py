@@ -5,8 +5,7 @@ Modelo EquipmentStatus para status de equipamentos do Guardian.
 from __future__ import annotations
 
 from datetime import datetime
-from enum import Enum
-from typing import Optional
+from enum import StrEnum
 from uuid import uuid4
 
 from sqlalchemy import Boolean, DateTime, Float, Integer, String, Text, func
@@ -16,7 +15,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from core.models.base import Base
 
 
-class EquipmentStatusType(str, Enum):
+class EquipmentStatusType(StrEnum):
     """Status do equipamento."""
 
     ONLINE = "online"  # Online e funcionando
@@ -77,10 +76,10 @@ class EquipmentStatus(Base):
         index=True,
     )  # camera, alarm, access_control, sensor, dvr, nvr, intercom
     equipment_name: Mapped[str] = mapped_column(String(100), nullable=False)
-    equipment_model: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    equipment_brand: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    serial_number: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    firmware_version: Mapped[Optional[str]] = mapped_column(String(30), nullable=True)
+    equipment_model: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    equipment_brand: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    serial_number: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    firmware_version: Mapped[str | None] = mapped_column(String(30), nullable=True)
 
     # Status
     status: Mapped[str] = mapped_column(
@@ -89,8 +88,8 @@ class EquipmentStatus(Base):
         nullable=False,
         index=True,
     )
-    status_message: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
-    status_code: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    status_message: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    status_code: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     # Referências
     client_id: Mapped[str] = mapped_column(
@@ -98,63 +97,63 @@ class EquipmentStatus(Base):
         nullable=False,
         index=True,
     )
-    contract_id: Mapped[Optional[str]] = mapped_column(
+    contract_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
         index=True,
     )
-    post_id: Mapped[Optional[str]] = mapped_column(
+    post_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
         index=True,
     )
 
     # Localização
-    location: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
-    location_details: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    location: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    location_details: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Rede
-    ip_address: Mapped[Optional[str]] = mapped_column(String(45), nullable=True)
-    mac_address: Mapped[Optional[str]] = mapped_column(String(17), nullable=True)
-    port: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    ip_address: Mapped[str | None] = mapped_column(String(45), nullable=True)
+    mac_address: Mapped[str | None] = mapped_column(String(17), nullable=True)
+    port: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     # Conectividade
-    last_ping_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    ping_latency_ms: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    last_online_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    last_offline_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    last_ping_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    ping_latency_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    last_online_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    last_offline_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     # Métricas
-    uptime_percentage: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    uptime_hours_24h: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    uptime_hours_7d: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    uptime_hours_30d: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    uptime_percentage: Mapped[float | None] = mapped_column(Float, nullable=True)
+    uptime_hours_24h: Mapped[float | None] = mapped_column(Float, nullable=True)
+    uptime_hours_7d: Mapped[float | None] = mapped_column(Float, nullable=True)
+    uptime_hours_30d: Mapped[float | None] = mapped_column(Float, nullable=True)
     incidents_count_30d: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
     # Último evento
-    last_event_type: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    last_event_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    last_event_description: Mapped[Optional[str]] = mapped_column(
+    last_event_type: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    last_event_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    last_event_description: Mapped[str | None] = mapped_column(
         String(255),
         nullable=True,
     )
 
     # Métricas específicas (JSONB para flexibilidade)
-    metrics: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    metrics: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     # Ex para câmera: {"fps": 30, "resolution": "1080p", "storage_days": 15}
     # Ex para alarme: {"zones": 8, "armed_zones": 6, "battery_level": 95}
 
     # Alertas
     has_alerts: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    active_alerts: Mapped[Optional[list]] = mapped_column(JSONB, nullable=True)
+    active_alerts: Mapped[list | None] = mapped_column(JSONB, nullable=True)
     alert_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
     # Manutenção
-    next_maintenance_at: Mapped[Optional[datetime]] = mapped_column(
+    next_maintenance_at: Mapped[datetime | None] = mapped_column(
         DateTime,
         nullable=True,
     )
-    maintenance_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    maintenance_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Timestamps
     received_at: Mapped[datetime] = mapped_column(
@@ -176,8 +175,8 @@ class EquipmentStatus(Base):
     )
 
     # Metadados
-    guardian_metadata: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
-    sync_id: Mapped[Optional[str]] = mapped_column(
+    guardian_metadata: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    sync_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
     )

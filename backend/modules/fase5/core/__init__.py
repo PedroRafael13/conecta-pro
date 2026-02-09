@@ -4,12 +4,12 @@ modules/fase5/core/__init__.py - Core Orchestration Components
 
 from .orchestrator import (
     ConectaProOrchestrator,
-    WorkflowOrchestrator,
+    CrossPhaseEvent,
+    IntegrationError,
     PhaseType,
     SystemComponent,
-    CrossPhaseEvent,
     SystemHealth,
-    IntegrationError
+    WorkflowOrchestrator,
 )
 
 __all__ = [
@@ -19,5 +19,5 @@ __all__ = [
     "SystemComponent",
     "CrossPhaseEvent",
     "SystemHealth",
-    "IntegrationError"
+    "IntegrationError",
 ]

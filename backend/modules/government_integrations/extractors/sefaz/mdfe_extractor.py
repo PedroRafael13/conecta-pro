@@ -7,16 +7,16 @@ Implementa:
 - Download de XML
 """
 
-from datetime import datetime, timedelta
-from typing import Dict, Optional, Any, List
-from uuid import UUID
 import asyncio
 import logging
-from xml.etree import ElementTree as ET
+from datetime import datetime, timedelta
+from uuid import UUID
+from xml.etree.ElementTree import Element  # noqa: S405
 
-from ..base_extractor import ExtratorBase, DocumentoExtraido, ResultadoExtracao
-from ...core.credentials import ProvedorCredenciais, TipoCredencial
-from ...core.contingency import ComutadorEndpoints, MatrizContingencia
+from defusedxml import ElementTree as ET  # noqa: N817
+
+from ...core.credentials import TipoCredencial
+from ..base_extractor import DocumentoExtraido, ExtratorBase, ResultadoExtracao
 
 logger = logging.getLogger(__name__)
 
@@ -58,10 +58,10 @@ class ExtratorMDFe(ExtratorBase):
     async def extrair(
         self,
         tenant_id: UUID,
-        data_inicio: Optional[datetime] = None,
-        data_fim: Optional[datetime] = None,
-        cnpjs: Optional[List[str]] = None,
-        ufs: Optional[List[str]] = None,
+        data_inicio: datetime | None = None,
+        data_fim: datetime | None = None,
+        cnpjs: list[str] | None = None,
+        ufs: list[str] | None = None,
         incremental: bool = True,
     ) -> ResultadoExtracao:
         """
@@ -88,15 +88,10 @@ class ExtratorMDFe(ExtratorBase):
         if data_inicio is None:
             data_inicio = data_fim - timedelta(days=30)
 
-        logger.info(
-            f"Iniciando extração MDF-e: {tenant_id} - "
-            f"Período: {data_inicio.date()} a {data_fim.date()}"
-        )
+        logger.info(f"Iniciando extração MDF-e: {tenant_id} - Período: {data_inicio.date()} a {data_fim.date()}")
 
         try:
-            credencial = await self.credentials.obter_credencial(
-                tenant_id, self.tipo_credencial
-            )
+            credencial = await self.credentials.obter_credencial(tenant_id, self.tipo_credencial)
 
             if not credencial.valida:
                 resultado.status = "falha"
@@ -108,9 +103,7 @@ class ExtratorMDFe(ExtratorBase):
             for cnpj in cnpjs:
                 logger.info(f"Extraindo MDF-e para CNPJ: {cnpj}")
 
-                docs = await self._extrair_distribuicao(
-                    tenant_id, cnpj, data_inicio, data_fim, incremental
-                )
+                docs = await self._extrair_distribuicao(tenant_id, cnpj, data_inicio, data_fim, incremental)
 
                 for doc in docs:
                     resultado.documentos.append(doc)
@@ -143,7 +136,7 @@ class ExtratorMDFe(ExtratorBase):
         data_inicio: datetime,
         data_fim: datetime,
         incremental: bool,
-    ) -> List[DocumentoExtraido]:
+    ) -> list[DocumentoExtraido]:
         """Extrai documentos via MDFeDistribuicaoDFe."""
         documentos = []
         nsu_atual = "000000000000000"
@@ -158,17 +151,13 @@ class ExtratorMDFe(ExtratorBase):
                 envelope = self._montar_envelope_distribuicao(cnpj, nsu_atual)
                 url = await self._obter_url_servico("AN", "distribuicao")
 
-                resposta = await self._fazer_requisicao(
-                    tenant_id, url, data=envelope
-                )
+                resposta = await self._fazer_requisicao(tenant_id, url, data=envelope)
 
                 if not resposta:
                     logger.warning("Sem resposta do serviço de distribuição MDF-e")
                     break
 
-                docs, ultimo_nsu, tem_mais = self._processar_resposta_distribuicao(
-                    resposta
-                )
+                docs, ultimo_nsu, tem_mais = self._processar_resposta_distribuicao(resposta)
 
                 for doc in docs:
                     doc = await self._processar_documento(doc)
@@ -187,12 +176,7 @@ class ExtratorMDFe(ExtratorBase):
         logger.info(f"Distribuição MDF-e: {len(documentos)} documentos extraídos")
         return documentos
 
-    def _montar_envelope_distribuicao(
-        self,
-        cnpj: str,
-        nsu: str,
-        tipo_consulta: str = "distNSU"
-    ) -> str:
+    def _montar_envelope_distribuicao(self, cnpj: str, nsu: str, tipo_consulta: str = "distNSU") -> str:
         """Monta envelope SOAP para distribuição DFe de MDF-e."""
         ambiente = "1"
         cod_uf = "13"
@@ -217,10 +201,7 @@ class ExtratorMDFe(ExtratorBase):
 
         return envelope
 
-    def _processar_resposta_distribuicao(
-        self,
-        xml_resposta: str
-    ) -> tuple[List[DocumentoExtraido], str, bool]:
+    def _processar_resposta_distribuicao(self, xml_resposta: str) -> tuple[list[DocumentoExtraido], str, bool]:
         """Processa resposta da distribuição DFe de MDF-e."""
         documentos = []
         ultimo_nsu = "000000000000000"
@@ -229,23 +210,23 @@ class ExtratorMDFe(ExtratorBase):
         try:
             root = ET.fromstring(xml_resposta.encode())
 
-            ret = root.find(".//{%s}retDistDFeInt" % NS_MDFE)
+            ret = root.find(f".//{{{NS_MDFE}}}retDistDFeInt")
             if ret is None:
                 return documentos, ultimo_nsu, False
 
-            cStat = ret.findtext("{%s}cStat" % NS_MDFE)
-            if cStat not in ["137", "138"]:
-                logger.warning(f"Status distribuição MDF-e: {cStat}")
+            c_stat = ret.findtext(f"{{{NS_MDFE}}}cStat")
+            if c_stat not in ["137", "138"]:
+                logger.warning(f"Status distribuição MDF-e: {c_stat}")
                 return documentos, ultimo_nsu, False
 
-            ultimo_nsu = ret.findtext("{%s}ultNSU" % NS_MDFE) or ultimo_nsu
-            max_nsu = ret.findtext("{%s}maxNSU" % NS_MDFE) or ultimo_nsu
+            ultimo_nsu = ret.findtext(f"{{{NS_MDFE}}}ultNSU") or ultimo_nsu
+            max_nsu = ret.findtext(f"{{{NS_MDFE}}}maxNSU") or ultimo_nsu
 
             tem_mais = ultimo_nsu < max_nsu
 
-            lote = ret.find("{%s}loteDistDFeInt" % NS_MDFE)
+            lote = ret.find(f"{{{NS_MDFE}}}loteDistDFeInt")
             if lote is not None:
-                for doc_zip in lote.findall("{%s}docZip" % NS_MDFE):
+                for doc_zip in lote.findall(f"{{{NS_MDFE}}}docZip"):
                     nsu = doc_zip.get("NSU")
                     schema = doc_zip.get("schema", "")
 
@@ -270,12 +251,7 @@ class ExtratorMDFe(ExtratorBase):
 
         return documentos, ultimo_nsu, tem_mais
 
-    def _extrair_dados_documento(
-        self,
-        xml: str,
-        schema: str,
-        nsu: str
-    ) -> Optional[DocumentoExtraido]:
+    def _extrair_dados_documento(self, xml: str, schema: str, nsu: str) -> DocumentoExtraido | None:
         """Extrai dados de um documento MDF-e XML."""
         try:
             root = ET.fromstring(xml.encode())
@@ -294,14 +270,9 @@ class ExtratorMDFe(ExtratorBase):
             logger.error(f"Erro ao extrair dados do MDF-e: {e}")
             return None
 
-    def _extrair_mdfe(
-        self,
-        root: ET.Element,
-        xml: str,
-        nsu: str
-    ) -> DocumentoExtraido:
+    def _extrair_mdfe(self, root: Element, xml: str, nsu: str) -> DocumentoExtraido:
         """Extrai dados de MDF-e completo."""
-        inf_mdfe = root.find(".//{%s}infMDFe" % NS_MDFE)
+        inf_mdfe = root.find(f".//{{{NS_MDFE}}}infMDFe")
 
         if inf_mdfe is None:
             return DocumentoExtraido(
@@ -314,57 +285,55 @@ class ExtratorMDFe(ExtratorBase):
 
         chave = inf_mdfe.get("Id", "").replace("MDFe", "")
 
-        ide = inf_mdfe.find("{%s}ide" % NS_MDFE) or ET.Element("ide")
-        emit = inf_mdfe.find("{%s}emit" % NS_MDFE) or ET.Element("emit")
-        tot = inf_mdfe.find("{%s}tot" % NS_MDFE) or ET.Element("tot")
+        ide = inf_mdfe.find(f"{{{NS_MDFE}}}ide") or ET.Element("ide")
+        emit = inf_mdfe.find(f"{{{NS_MDFE}}}emit") or ET.Element("emit")
+        tot = inf_mdfe.find(f"{{{NS_MDFE}}}tot") or ET.Element("tot")
 
         # Informações de percurso
-        infMunCarrega = ide.findall("{%s}infMunCarrega" % NS_MDFE)
+        inf_mun_carrega = ide.findall(f"{{{NS_MDFE}}}infMunCarrega")
         municipios_carregamento = []
-        for mun in infMunCarrega:
-            municipios_carregamento.append({
-                "codigo": mun.findtext("{%s}cMunCarrega" % NS_MDFE),
-                "nome": mun.findtext("{%s}xMunCarrega" % NS_MDFE),
-            })
+        for mun in inf_mun_carrega:
+            municipios_carregamento.append(
+                {
+                    "codigo": mun.findtext(f"{{{NS_MDFE}}}cMunCarrega"),
+                    "nome": mun.findtext(f"{{{NS_MDFE}}}xMunCarrega"),
+                }
+            )
 
         # Informações de percurso UF
-        infPercurso = ide.findall("{%s}infPercurso" % NS_MDFE)
-        ufs_percurso = [p.findtext("{%s}UFPer" % NS_MDFE) for p in infPercurso]
+        inf_percurso = ide.findall(f"{{{NS_MDFE}}}infPercurso")
+        ufs_percurso = [p.findtext(f"{{{NS_MDFE}}}UFPer") for p in inf_percurso]
 
         dados = {
             "chave_acesso": chave,
-            "numero": ide.findtext("{%s}nMDF" % NS_MDFE),
-            "serie": ide.findtext("{%s}serie" % NS_MDFE),
-            "data_emissao": ide.findtext("{%s}dhEmi" % NS_MDFE),
-            "modal": ide.findtext("{%s}modal" % NS_MDFE),
-            "tipo_emitente": ide.findtext("{%s}tpEmit" % NS_MDFE),
-            "tipo_transportador": ide.findtext("{%s}tpTransp" % NS_MDFE),
-            "uf_inicio": ide.findtext("{%s}UFIni" % NS_MDFE),
-            "uf_fim": ide.findtext("{%s}UFFim" % NS_MDFE),
-
-            "emit_cnpj": emit.findtext("{%s}CNPJ" % NS_MDFE),
-            "emit_nome": emit.findtext("{%s}xNome" % NS_MDFE),
+            "numero": ide.findtext(f"{{{NS_MDFE}}}nMDF"),
+            "serie": ide.findtext(f"{{{NS_MDFE}}}serie"),
+            "data_emissao": ide.findtext(f"{{{NS_MDFE}}}dhEmi"),
+            "modal": ide.findtext(f"{{{NS_MDFE}}}modal"),
+            "tipo_emitente": ide.findtext(f"{{{NS_MDFE}}}tpEmit"),
+            "tipo_transportador": ide.findtext(f"{{{NS_MDFE}}}tpTransp"),
+            "uf_inicio": ide.findtext(f"{{{NS_MDFE}}}UFIni"),
+            "uf_fim": ide.findtext(f"{{{NS_MDFE}}}UFFim"),
+            "emit_cnpj": emit.findtext(f"{{{NS_MDFE}}}CNPJ"),
+            "emit_nome": emit.findtext(f"{{{NS_MDFE}}}xNome"),
             "emit_uf": self._extrair_uf_elemento(emit, "enderEmit"),
-
-            "qtde_cte": tot.findtext("{%s}qCTe" % NS_MDFE),
-            "qtde_nfe": tot.findtext("{%s}qNFe" % NS_MDFE),
-            "valor_carga": tot.findtext("{%s}vCarga" % NS_MDFE),
-            "peso_bruto": tot.findtext("{%s}qCarga" % NS_MDFE),
-
+            "qtde_cte": tot.findtext(f"{{{NS_MDFE}}}qCTe"),
+            "qtde_nfe": tot.findtext(f"{{{NS_MDFE}}}qNFe"),
+            "valor_carga": tot.findtext(f"{{{NS_MDFE}}}vCarga"),
+            "peso_bruto": tot.findtext(f"{{{NS_MDFE}}}qCarga"),
             "municipios_carregamento": municipios_carregamento,
             "ufs_percurso": ufs_percurso,
-
             "nsu": nsu,
         }
 
         # Protocolo de autorização
-        prot = root.find(".//{%s}protMDFe" % NS_MDFE)
+        prot = root.find(f".//{{{NS_MDFE}}}protMDFe")
         if prot is not None:
-            inf_prot = prot.find("{%s}infProt" % NS_MDFE)
+            inf_prot = prot.find(f"{{{NS_MDFE}}}infProt")
             if inf_prot is not None:
-                dados["protocolo"] = inf_prot.findtext("{%s}nProt" % NS_MDFE)
-                dados["status_sefaz"] = inf_prot.findtext("{%s}cStat" % NS_MDFE)
-                dados["data_autorizacao"] = inf_prot.findtext("{%s}dhRecbto" % NS_MDFE)
+                dados["protocolo"] = inf_prot.findtext(f"{{{NS_MDFE}}}nProt")
+                dados["status_sefaz"] = inf_prot.findtext(f"{{{NS_MDFE}}}cStat")
+                dados["data_autorizacao"] = inf_prot.findtext(f"{{{NS_MDFE}}}dhRecbto")
 
         return DocumentoExtraido(
             id=chave or nsu,
@@ -374,14 +343,9 @@ class ExtratorMDFe(ExtratorBase):
             data_documento=self._parse_data(dados.get("data_emissao")),
         )
 
-    def _extrair_resumo_mdfe(
-        self,
-        root: ET.Element,
-        xml: str,
-        nsu: str
-    ) -> DocumentoExtraido:
+    def _extrair_resumo_mdfe(self, root: Element, xml: str, nsu: str) -> DocumentoExtraido:
         """Extrai dados de resumo de MDF-e."""
-        res = root if root.tag.endswith("resMDFe") else root.find(".//{%s}resMDFe" % NS_MDFE)
+        res = root if root.tag.endswith("resMDFe") else root.find(f".//{{{NS_MDFE}}}resMDFe")
 
         if res is None:
             return DocumentoExtraido(
@@ -391,15 +355,15 @@ class ExtratorMDFe(ExtratorBase):
                 xml_original=xml,
             )
 
-        chave = res.findtext("{%s}chMDFe" % NS_MDFE)
+        chave = res.findtext(f"{{{NS_MDFE}}}chMDFe")
 
         dados = {
             "chave_acesso": chave,
-            "cnpj_emitente": res.findtext("{%s}CNPJ" % NS_MDFE),
-            "nome_emitente": res.findtext("{%s}xNome" % NS_MDFE),
-            "data_emissao": res.findtext("{%s}dhEmi" % NS_MDFE),
-            "modal": res.findtext("{%s}modal" % NS_MDFE),
-            "situacao": res.findtext("{%s}cSitMDFe" % NS_MDFE),
+            "cnpj_emitente": res.findtext(f"{{{NS_MDFE}}}CNPJ"),
+            "nome_emitente": res.findtext(f"{{{NS_MDFE}}}xNome"),
+            "data_emissao": res.findtext(f"{{{NS_MDFE}}}dhEmi"),
+            "modal": res.findtext(f"{{{NS_MDFE}}}modal"),
+            "situacao": res.findtext(f"{{{NS_MDFE}}}cSitMDFe"),
             "nsu": nsu,
         }
 
@@ -411,14 +375,9 @@ class ExtratorMDFe(ExtratorBase):
             data_documento=self._parse_data(dados.get("data_emissao")),
         )
 
-    def _extrair_evento(
-        self,
-        root: ET.Element,
-        xml: str,
-        nsu: str
-    ) -> DocumentoExtraido:
+    def _extrair_evento(self, root: Element, xml: str, nsu: str) -> DocumentoExtraido:
         """Extrai dados de evento MDF-e."""
-        res = root if root.tag.endswith("resEvento") else root.find(".//{%s}resEvento" % NS_MDFE)
+        res = root if root.tag.endswith("resEvento") else root.find(f".//{{{NS_MDFE}}}resEvento")
 
         if res is None:
             return DocumentoExtraido(
@@ -428,15 +387,15 @@ class ExtratorMDFe(ExtratorBase):
                 xml_original=xml,
             )
 
-        chave = res.findtext("{%s}chMDFe" % NS_MDFE)
-        tipo_evento = res.findtext("{%s}tpEvento" % NS_MDFE)
+        chave = res.findtext(f"{{{NS_MDFE}}}chMDFe")
+        tipo_evento = res.findtext(f"{{{NS_MDFE}}}tpEvento")
 
         dados = {
             "chave_acesso": chave,
             "tipo_evento": tipo_evento,
-            "descricao_evento": res.findtext("{%s}xEvento" % NS_MDFE),
-            "numero_sequencial": res.findtext("{%s}nSeqEvento" % NS_MDFE),
-            "data_evento": res.findtext("{%s}dhEvento" % NS_MDFE),
+            "descricao_evento": res.findtext(f"{{{NS_MDFE}}}xEvento"),
+            "numero_sequencial": res.findtext(f"{{{NS_MDFE}}}nSeqEvento"),
+            "data_evento": res.findtext(f"{{{NS_MDFE}}}dhEvento"),
             "nsu": nsu,
         }
 
@@ -448,43 +407,37 @@ class ExtratorMDFe(ExtratorBase):
             data_documento=self._parse_data(dados.get("data_evento")),
         )
 
-    def _extrair_uf_elemento(self, elem: ET.Element, nome_ender: str) -> Optional[str]:
+    def _extrair_uf_elemento(self, elem: Element, nome_ender: str) -> str | None:
         """Extrai UF de um elemento de endereço."""
-        ender = elem.find("{%s}%s" % (NS_MDFE, nome_ender))
+        ender = elem.find(f"{{{NS_MDFE}}}{nome_ender}")
         if ender is not None:
-            return ender.findtext("{%s}UF" % NS_MDFE)
+            return ender.findtext(f"{{{NS_MDFE}}}UF")
         return None
 
-    def _parse_data(self, data_str: Optional[str]) -> Optional[datetime]:
+    def _parse_data(self, data_str: str | None) -> datetime | None:
         """Parseia string de data para datetime."""
         if not data_str:
             return None
         try:
             return datetime.fromisoformat(data_str.replace("Z", "+00:00"))
-        except:
+        except Exception:
             try:
                 return datetime.strptime(data_str[:19], "%Y-%m-%dT%H:%M:%S")
-            except:
+            except Exception:
                 return None
 
     async def _obter_url_servico(self, uf: str, servico: str) -> str:
         """Obtém URL do serviço MDF-e para uma UF."""
         nome_servico = self.SERVICOS.get(servico, servico)
 
-        url, usando_contingencia = await self.comutador.obter_endpoint(
-            uf, "mdfe", nome_servico
-        )
+        url, usando_contingencia = await self.comutador.obter_endpoint(uf, "mdfe", nome_servico)
 
         if usando_contingencia:
             logger.warning(f"Usando contingência MDF-e para {uf}")
 
         return url
 
-    async def consultar_mdfe(
-        self,
-        tenant_id: UUID,
-        chave: str
-    ) -> Optional[DocumentoExtraido]:
+    async def consultar_mdfe(self, tenant_id: UUID, chave: str) -> DocumentoExtraido | None:
         """Consulta um MDF-e específico por chave de acesso."""
         cod_uf = chave[:2]
         uf = self._cod_uf_para_sigla(cod_uf)
@@ -518,34 +471,30 @@ class ExtratorMDFe(ExtratorBase):
     </soap12:Body>
 </soap12:Envelope>"""
 
-    def _processar_resposta_consulta(
-        self,
-        xml_resposta: str,
-        chave: str
-    ) -> Optional[DocumentoExtraido]:
+    def _processar_resposta_consulta(self, xml_resposta: str, chave: str) -> DocumentoExtraido | None:
         """Processa resposta da consulta de MDF-e."""
         try:
             root = ET.fromstring(xml_resposta.encode())
 
-            ret = root.find(".//{%s}retConsSitMDFe" % NS_MDFE)
+            ret = root.find(f".//{{{NS_MDFE}}}retConsSitMDFe")
             if ret is None:
                 return None
 
-            cStat = ret.findtext("{%s}cStat" % NS_MDFE)
+            c_stat = ret.findtext(f"{{{NS_MDFE}}}cStat")
 
             dados = {
                 "chave_acesso": chave,
-                "status_sefaz": cStat,
-                "motivo": ret.findtext("{%s}xMotivo" % NS_MDFE),
+                "status_sefaz": c_stat,
+                "motivo": ret.findtext(f"{{{NS_MDFE}}}xMotivo"),
             }
 
-            if cStat in ["100", "101", "132"]:
-                prot = ret.find("{%s}protMDFe" % NS_MDFE)
+            if c_stat in ["100", "101", "132"]:
+                prot = ret.find(f"{{{NS_MDFE}}}protMDFe")
                 if prot is not None:
-                    inf_prot = prot.find("{%s}infProt" % NS_MDFE)
+                    inf_prot = prot.find(f"{{{NS_MDFE}}}infProt")
                     if inf_prot is not None:
-                        dados["protocolo"] = inf_prot.findtext("{%s}nProt" % NS_MDFE)
-                        dados["data_autorizacao"] = inf_prot.findtext("{%s}dhRecbto" % NS_MDFE)
+                        dados["protocolo"] = inf_prot.findtext(f"{{{NS_MDFE}}}nProt")
+                        dados["data_autorizacao"] = inf_prot.findtext(f"{{{NS_MDFE}}}dhRecbto")
 
             return DocumentoExtraido(
                 id=chave,
@@ -561,11 +510,32 @@ class ExtratorMDFe(ExtratorBase):
     def _cod_uf_para_sigla(self, cod: str) -> str:
         """Converte código IBGE para sigla da UF."""
         mapeamento = {
-            "11": "RO", "12": "AC", "13": "AM", "14": "RR", "15": "PA",
-            "16": "AP", "17": "TO", "21": "MA", "22": "PI", "23": "CE",
-            "24": "RN", "25": "PB", "26": "PE", "27": "AL", "28": "SE",
-            "29": "BA", "31": "MG", "32": "ES", "33": "RJ", "35": "SP",
-            "41": "PR", "42": "SC", "43": "RS", "50": "MS", "51": "MT",
-            "52": "GO", "53": "DF",
+            "11": "RO",
+            "12": "AC",
+            "13": "AM",
+            "14": "RR",
+            "15": "PA",
+            "16": "AP",
+            "17": "TO",
+            "21": "MA",
+            "22": "PI",
+            "23": "CE",
+            "24": "RN",
+            "25": "PB",
+            "26": "PE",
+            "27": "AL",
+            "28": "SE",
+            "29": "BA",
+            "31": "MG",
+            "32": "ES",
+            "33": "RJ",
+            "35": "SP",
+            "41": "PR",
+            "42": "SC",
+            "43": "RS",
+            "50": "MS",
+            "51": "MT",
+            "52": "GO",
+            "53": "DF",
         }
         return mapeamento.get(cod, "SP")

@@ -5,29 +5,28 @@ Conformidade com CLT e acordos coletivos.
 """
 
 import uuid
-from datetime import datetime, date, time, timedelta
+from datetime import date, datetime, time, timedelta
 from decimal import Decimal
-from enum import Enum
-from typing import Optional, List
+from enum import StrEnum
 
 from sqlalchemy import (
     Boolean,
-    DateTime,
     Date,
-    Time,
+    DateTime,
+    Index,
     Integer,
+    Numeric,
     String,
     Text,
-    Numeric,
-    Index,
+    Time,
 )
-from sqlalchemy.dialects.postgresql import JSONB, UUID, ARRAY
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from core.database import Base
 
 
-class OvertimeType(str, Enum):
+class OvertimeType(StrEnum):
     """Tipo de hora extra."""
 
     HORA_EXTRA_50 = "hora_extra_50"  # 50% adicional
@@ -39,7 +38,7 @@ class OvertimeType(str, Enum):
     INTERJORNADA = "interjornada"  # Hora entre jornadas (dobro)
 
 
-class OvertimeStatus(str, Enum):
+class OvertimeStatus(StrEnum):
     """Status da hora extra."""
 
     PENDENTE = "pendente"
@@ -53,7 +52,7 @@ class OvertimeStatus(str, Enum):
     CANCELADA = "cancelada"
 
 
-class OvertimeReason(str, Enum):
+class OvertimeReason(StrEnum):
     """Motivo da hora extra."""
 
     DEMANDA_TRABALHO = "demanda_trabalho"
@@ -68,7 +67,7 @@ class OvertimeReason(str, Enum):
     OUTRO = "outro"
 
 
-class CompensationType(str, Enum):
+class CompensationType(StrEnum):
     """Tipo de compensação."""
 
     FOLGA = "folga"
@@ -88,36 +87,28 @@ class Overtime(Base):
     __tablename__ = "overtimes"
 
     # Identificação
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     code: Mapped[str] = mapped_column(String(30), unique=True, nullable=False)
 
     # Funcionário
     employee_id: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     employee_name: Mapped[str] = mapped_column(String(200), nullable=False)
-    employee_registration: Mapped[Optional[str]] = mapped_column(String(50))
-    department_id: Mapped[Optional[str]] = mapped_column(String(50))
-    department_name: Mapped[Optional[str]] = mapped_column(String(100))
+    employee_registration: Mapped[str | None] = mapped_column(String(50))
+    department_id: Mapped[str | None] = mapped_column(String(50))
+    department_name: Mapped[str | None] = mapped_column(String(100))
 
     # Tipo e status
-    overtime_type: Mapped[OvertimeType] = mapped_column(
-        String(30), default=OvertimeType.HORA_EXTRA_50
-    )
-    status: Mapped[OvertimeStatus] = mapped_column(
-        String(30), default=OvertimeStatus.PENDENTE
-    )
-    reason: Mapped[OvertimeReason] = mapped_column(
-        String(30), default=OvertimeReason.DEMANDA_TRABALHO
-    )
-    reason_description: Mapped[Optional[str]] = mapped_column(Text)
+    overtime_type: Mapped[OvertimeType] = mapped_column(String(30), default=OvertimeType.HORA_EXTRA_50)
+    status: Mapped[OvertimeStatus] = mapped_column(String(30), default=OvertimeStatus.PENDENTE)
+    reason: Mapped[OvertimeReason] = mapped_column(String(30), default=OvertimeReason.DEMANDA_TRABALHO)
+    reason_description: Mapped[str | None] = mapped_column(Text)
 
     # Data e horário
     overtime_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
     start_time: Mapped[time] = mapped_column(Time, nullable=False)
     end_time: Mapped[time] = mapped_column(Time, nullable=False)
-    start_datetime: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    end_datetime: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    start_datetime: Mapped[datetime | None] = mapped_column(DateTime)
+    end_datetime: Mapped[datetime | None] = mapped_column(DateTime)
 
     # Duração (em minutos)
     duration_minutes: Mapped[int] = mapped_column(Integer, nullable=False)
@@ -131,80 +122,72 @@ class Overtime(Base):
     # É feriado/domingo
     is_holiday: Mapped[bool] = mapped_column(Boolean, default=False)
     is_sunday: Mapped[bool] = mapped_column(Boolean, default=False)
-    holiday_name: Mapped[Optional[str]] = mapped_column(String(100))
+    holiday_name: Mapped[str | None] = mapped_column(String(100))
 
     # Valores e multiplicadores
     hourly_rate: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal("0"))
     multiplier: Mapped[Decimal] = mapped_column(Numeric(4, 2), default=Decimal("1.50"))
     total_value: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal("0"))
-    night_multiplier: Mapped[Decimal] = mapped_column(
-        Numeric(4, 2), default=Decimal("1.20")
-    )
-    night_additional_value: Mapped[Decimal] = mapped_column(
-        Numeric(12, 2), default=Decimal("0")
-    )
+    night_multiplier: Mapped[Decimal] = mapped_column(Numeric(4, 2), default=Decimal("1.20"))
+    night_additional_value: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal("0"))
 
     # Pré-aprovação (solicitação prévia)
     is_pre_approved: Mapped[bool] = mapped_column(Boolean, default=False)
-    pre_approved_by_id: Mapped[Optional[str]] = mapped_column(String(50))
-    pre_approved_by_name: Mapped[Optional[str]] = mapped_column(String(200))
-    pre_approved_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    pre_approval_notes: Mapped[Optional[str]] = mapped_column(Text)
+    pre_approved_by_id: Mapped[str | None] = mapped_column(String(50))
+    pre_approved_by_name: Mapped[str | None] = mapped_column(String(200))
+    pre_approved_at: Mapped[datetime | None] = mapped_column(DateTime)
+    pre_approval_notes: Mapped[str | None] = mapped_column(Text)
 
     # Aprovação
     requires_approval: Mapped[bool] = mapped_column(Boolean, default=True)
-    approved_by_id: Mapped[Optional[str]] = mapped_column(String(50))
-    approved_by_name: Mapped[Optional[str]] = mapped_column(String(200))
-    approved_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    approval_notes: Mapped[Optional[str]] = mapped_column(Text)
-    rejection_reason: Mapped[Optional[str]] = mapped_column(Text)
+    approved_by_id: Mapped[str | None] = mapped_column(String(50))
+    approved_by_name: Mapped[str | None] = mapped_column(String(200))
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime)
+    approval_notes: Mapped[str | None] = mapped_column(Text)
+    rejection_reason: Mapped[str | None] = mapped_column(Text)
 
     # Pagamento
     is_paid: Mapped[bool] = mapped_column(Boolean, default=False)
-    paid_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    payment_reference: Mapped[Optional[str]] = mapped_column(String(100))
-    payroll_period: Mapped[Optional[str]] = mapped_column(String(7))  # YYYY-MM
+    paid_at: Mapped[datetime | None] = mapped_column(DateTime)
+    payment_reference: Mapped[str | None] = mapped_column(String(100))
+    payroll_period: Mapped[str | None] = mapped_column(String(7))  # YYYY-MM
 
     # Banco de horas (se aplicável)
     use_time_bank: Mapped[bool] = mapped_column(Boolean, default=False)
     time_bank_credited: Mapped[bool] = mapped_column(Boolean, default=False)
-    time_bank_credited_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    time_bank_expires_at: Mapped[Optional[date]] = mapped_column(Date)
+    time_bank_credited_at: Mapped[datetime | None] = mapped_column(DateTime)
+    time_bank_expires_at: Mapped[date | None] = mapped_column(Date)
 
     # Compensação
     is_compensated: Mapped[bool] = mapped_column(Boolean, default=False)
-    compensated_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    compensation_type: Mapped[Optional[CompensationType]] = mapped_column(String(30))
-    compensation_date: Mapped[Optional[date]] = mapped_column(Date)
-    compensation_reference_id: Mapped[Optional[str]] = mapped_column(String(50))
+    compensated_at: Mapped[datetime | None] = mapped_column(DateTime)
+    compensation_type: Mapped[CompensationType | None] = mapped_column(String(30))
+    compensation_date: Mapped[date | None] = mapped_column(Date)
+    compensation_reference_id: Mapped[str | None] = mapped_column(String(50))
     compensated_minutes: Mapped[int] = mapped_column(Integer, default=0)
     remaining_minutes: Mapped[int] = mapped_column(Integer, default=0)
 
     # Registros de ponto vinculados
-    time_entry_ids: Mapped[Optional[List[str]]] = mapped_column(
-        ARRAY(String), default=list
-    )
+    time_entry_ids: Mapped[list[str] | None] = mapped_column(ARRAY(String), default=list)
 
     # Jornada
-    work_schedule_id: Mapped[Optional[str]] = mapped_column(String(50))
+    work_schedule_id: Mapped[str | None] = mapped_column(String(50))
 
     # Local
-    condominium_id: Mapped[Optional[str]] = mapped_column(String(50), index=True)
-    condominium_name: Mapped[Optional[str]] = mapped_column(String(200))
-    work_location: Mapped[Optional[str]] = mapped_column(String(200))
+    condominium_id: Mapped[str | None] = mapped_column(String(50), index=True)
+    condominium_name: Mapped[str | None] = mapped_column(String(200))
+    work_location: Mapped[str | None] = mapped_column(String(200))
 
     # Observações e metadados
-    notes: Mapped[Optional[str]] = mapped_column(Text)
-    tags: Mapped[Optional[list]] = mapped_column(JSONB, default=list)
-    extra_metadata: Mapped[Optional[dict]] = mapped_column(JSONB, default=dict)
+    notes: Mapped[str | None] = mapped_column(Text)
+    tags: Mapped[list | None] = mapped_column(JSONB, default=list)
+    extra_metadata: Mapped[dict | None] = mapped_column(JSONB, default=dict)
 
     # Controle
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
-    created_by_id: Mapped[Optional[str]] = mapped_column(String(50))
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_by_id: Mapped[str | None] = mapped_column(String(50))
 
     # Índices
     __table_args__ = (
@@ -261,9 +244,7 @@ class Overtime(Base):
         # Adicional noturno
         if self.night_minutes > 0:
             night_hours = Decimal(self.night_minutes) / Decimal(60)
-            self.night_additional_value = (
-                night_hours * self.hourly_rate * (self.night_multiplier - 1)
-            )
+            self.night_additional_value = night_hours * self.hourly_rate * (self.night_multiplier - 1)
             self.total_value += self.night_additional_value
 
     def calculate_duration(self) -> int:
@@ -385,9 +366,7 @@ class Overtime(Base):
         self.time_bank_credited_at = datetime.utcnow()
 
         # Define expiração (padrão 6 meses)
-        self.time_bank_expires_at = (
-            date.today() + timedelta(days=180)
-        )
+        self.time_bank_expires_at = date.today() + timedelta(days=180)
 
     def mark_as_paid(
         self,
@@ -487,24 +466,19 @@ class Overtime(Base):
     @property
     def is_pending_payment(self) -> bool:
         """Verifica se está pendente de pagamento."""
-        return (
-            self.status == OvertimeStatus.APROVADA
-            and not self.use_time_bank
-            and not self.is_paid
-        )
+        return self.status == OvertimeStatus.APROVADA and not self.use_time_bank and not self.is_paid
 
     @property
     def is_pending_compensation(self) -> bool:
         """Verifica se está pendente de compensação."""
         return (
-            self.status
-            in [OvertimeStatus.APROVADA, OvertimeStatus.PARCIALMENTE_COMPENSADA]
+            self.status in [OvertimeStatus.APROVADA, OvertimeStatus.PARCIALMENTE_COMPENSADA]
             and self.use_time_bank
             and self.remaining_minutes > 0
         )
 
     @property
-    def days_until_expiration(self) -> Optional[int]:
+    def days_until_expiration(self) -> int | None:
         """Dias até expirar (banco de horas)."""
         if not self.time_bank_expires_at:
             return None
@@ -543,7 +517,4 @@ class Overtime(Base):
 
     def __repr__(self) -> str:
         """Representação do objeto."""
-        return (
-            f"<Overtime {self.code}: {self.employee_name} "
-            f"{self.overtime_date} {self.duration_hours:.1f}h>"
-        )
+        return f"<Overtime {self.code}: {self.employee_name} {self.overtime_date} {self.duration_hours:.1f}h>"

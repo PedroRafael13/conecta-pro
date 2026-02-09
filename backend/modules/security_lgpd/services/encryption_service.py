@@ -6,7 +6,7 @@ import base64
 import hashlib
 import logging
 import os
-from typing import Any, Dict, Optional
+from typing import Any
 
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM, ChaCha20Poly1305
@@ -28,7 +28,7 @@ class EncryptionService:
         "chacha20-poly1305": {"key_size": 32, "nonce_size": 12},
     }
 
-    def __init__(self, master_key: Optional[bytes] = None):
+    def __init__(self, master_key: bytes | None = None):
         """Inicializa o service.
 
         Args:
@@ -36,20 +36,18 @@ class EncryptionService:
         """
         self._master_key = master_key or os.urandom(32)
 
-    def _derive_key(self, key_id: Optional[str] = None) -> bytes:
+    def _derive_key(self, key_id: str | None = None) -> bytes:
         """Deriva uma chave a partir do key_id."""
         if key_id:
-            return hashlib.sha256(
-                self._master_key + key_id.encode()
-            ).digest()
+            return hashlib.sha256(self._master_key + key_id.encode()).digest()
         return self._master_key
 
     def encrypt(
         self,
         data: str,
         algorithm: str = "aes-256-gcm",
-        key_id: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        key_id: str | None = None,
+    ) -> dict[str, Any]:
         """Criptografa dados.
 
         Args:
@@ -105,8 +103,8 @@ class EncryptionService:
     def decrypt(
         self,
         encrypted_data: str,
-        key_id: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        key_id: str | None = None,
+    ) -> dict[str, Any]:
         """Descriptografa dados.
 
         Args:

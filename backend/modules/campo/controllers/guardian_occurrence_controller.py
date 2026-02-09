@@ -3,7 +3,6 @@ Controller FastAPI para GuardianOccurrence.
 """
 
 from datetime import datetime
-from typing import Optional, List
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -60,18 +59,18 @@ async def create_occurrence(
 
 @router.get("/", response_model=GuardianOccurrenceListResponse)
 async def list_occurrences(  # pylint: disable=too-many-locals
-    search: Optional[str] = Query(None),
-    occurrence_type: Optional[OccurrenceType] = Query(None),
-    severity: Optional[OccurrenceSeverity] = Query(None),
-    occurrence_status: Optional[OccurrenceStatus] = Query(None, alias="status"),
-    client_id: Optional[str] = Query(None),
-    post_id: Optional[str] = Query(None),
-    is_open: Optional[bool] = Query(None),
-    is_critical: Optional[bool] = Query(None),
-    is_false_alarm: Optional[bool] = Query(None),
-    requires_followup: Optional[bool] = Query(None),
-    date_from: Optional[datetime] = Query(None),
-    date_to: Optional[datetime] = Query(None),
+    search: str | None = Query(None),
+    occurrence_type: OccurrenceType | None = Query(None),
+    severity: OccurrenceSeverity | None = Query(None),
+    occurrence_status: OccurrenceStatus | None = Query(None, alias="status"),
+    client_id: str | None = Query(None),
+    post_id: str | None = Query(None),
+    is_open: bool | None = Query(None),
+    is_critical: bool | None = Query(None),
+    is_false_alarm: bool | None = Query(None),
+    requires_followup: bool | None = Query(None),
+    date_from: datetime | None = Query(None),
+    date_to: datetime | None = Query(None),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
@@ -106,9 +105,9 @@ async def list_occurrences(  # pylint: disable=too-many-locals
 
 @router.get("/stats", response_model=GuardianOccurrenceStats)
 async def get_occurrence_stats(
-    client_id: Optional[str] = Query(None),
-    date_from: Optional[datetime] = Query(None),
-    date_to: Optional[datetime] = Query(None),
+    client_id: str | None = Query(None),
+    date_from: datetime | None = Query(None),
+    date_to: datetime | None = Query(None),
     db: AsyncSession = Depends(get_db),
 ) -> GuardianOccurrenceStats:
     """Obtém estatísticas de ocorrências."""
@@ -118,10 +117,10 @@ async def get_occurrence_stats(
 
 @router.get("/open")
 async def get_open_occurrences(
-    client_id: Optional[str] = Query(None),
+    client_id: str | None = Query(None),
     limit: int = Query(100, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
-) -> List[GuardianOccurrenceResponse]:
+) -> list[GuardianOccurrenceResponse]:
     """Obtém ocorrências abertas."""
     repo = GuardianOccurrenceRepository(db)
     occurrences = await repo.get_open(client_id, limit)
@@ -132,7 +131,7 @@ async def get_open_occurrences(
 async def get_critical_open_occurrences(
     limit: int = Query(50, ge=1, le=200),
     db: AsyncSession = Depends(get_db),
-) -> List[GuardianOccurrenceResponse]:
+) -> list[GuardianOccurrenceResponse]:
     """Obtém ocorrências críticas abertas."""
     repo = GuardianOccurrenceRepository(db)
     occurrences = await repo.get_critical_open(limit)
@@ -152,8 +151,8 @@ async def classify_occurrence(
 async def suggest_occurrence_actions(
     occurrence_type: OccurrenceType = Query(...),
     severity: OccurrenceSeverity = Query(...),
-    location: Optional[str] = Query(None),
-) -> List[dict]:
+    location: str | None = Query(None),
+) -> list[dict]:
     """Sugere ações para uma ocorrência usando IA."""
     return occurrence_analyzer.suggest_actions(
         occurrence_type.value,

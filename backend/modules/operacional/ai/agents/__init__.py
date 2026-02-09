@@ -5,32 +5,32 @@ Author: Conecta PRO Team
 Date: 2026-01-18
 """
 
+from .occurrence_analyzer import (
+    ActionSuggestion,
+    OccurrenceAnalysis,
+    OccurrenceAnalyzer,
+    OccurrenceClassification,
+    SimilarOccurrence,
+)
+from .predictive_analyzer import (
+    AbsencePrediction,
+    AnomalyPattern,
+    OvertimeForecast,
+    PredictiveAnalyzer,
+    TurnoverRisk,
+)
 from .scale_optimizer import (
-    ScaleOptimizer,
-    ShiftSlot,
     EmployeeAvailability,
     EmployeePreference,
     OptimizationConstraints,
     OptimizationResult,
+    ScaleOptimizer,
+    ShiftSlot,
 )
 from .substitution_optimizer import (
-    SubstitutionOptimizer,
     SubstituteSuggestion,
+    SubstitutionOptimizer,
     SubstitutionRequest,
-)
-from .predictive_analyzer import (
-    PredictiveAnalyzer,
-    AbsencePrediction,
-    TurnoverRisk,
-    OvertimeForecast,
-    AnomalyPattern,
-)
-from .occurrence_analyzer import (
-    OccurrenceAnalyzer,
-    OccurrenceAnalysis,
-    OccurrenceClassification,
-    ActionSuggestion,
-    SimilarOccurrence,
 )
 
 __all__ = [

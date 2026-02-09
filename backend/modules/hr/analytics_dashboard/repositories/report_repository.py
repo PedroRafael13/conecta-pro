@@ -2,15 +2,14 @@
 
 import logging
 from datetime import datetime, timedelta
-from typing import Optional, List, Tuple
 from uuid import UUID
 
-from sqlalchemy import select, update, func, and_, or_
+from sqlalchemy import and_, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.hr.analytics_dashboard.models import (
-    ScheduledReport,
     ReportStatus,
+    ScheduledReport,
 )
 from modules.hr.analytics_dashboard.schemas import (
     ScheduledReportCreate,
@@ -51,7 +50,7 @@ class ReportRepository:
     async def get_report_by_id(
         self,
         report_id: UUID,
-    ) -> Optional[ScheduledReport]:
+    ) -> ScheduledReport | None:
         """Busca relatório por ID."""
         query = select(ScheduledReport).where(
             ScheduledReport.id == report_id,
@@ -68,7 +67,7 @@ class ReportRepository:
         status: ReportStatus = None,
         page: int = 1,
         page_size: int = 20,
-    ) -> Tuple[List[ScheduledReport], int]:
+    ) -> tuple[list[ScheduledReport], int]:
         """Lista relatórios com filtros."""
         conditions = [
             ScheduledReport.condominio_id == condominio_id,
@@ -112,7 +111,7 @@ class ReportRepository:
         self,
         report_id: UUID,
         data: ScheduledReportUpdate,
-    ) -> Optional[ScheduledReport]:
+    ) -> ScheduledReport | None:
         """Atualiza relatório."""
         report = await self.get_report_by_id(report_id)
         if not report:
@@ -121,10 +120,7 @@ class ReportRepository:
         update_data = data.model_dump(exclude_unset=True)
 
         # Se mudou frequência ou horário, recalcular próxima execução
-        recalculate = any(
-            key in update_data
-            for key in ["frequency", "schedule_time", "schedule_day"]
-        )
+        recalculate = any(key in update_data for key in ["frequency", "schedule_time", "schedule_day"])
 
         for field, value in update_data.items():
             setattr(report, field, value)
@@ -155,7 +151,7 @@ class ReportRepository:
     async def get_due_reports(
         self,
         limit: int = 50,
-    ) -> List[ScheduledReport]:
+    ) -> list[ScheduledReport]:
         """Busca relatórios prontos para execução."""
         query = (
             select(ScheduledReport)
@@ -178,7 +174,7 @@ class ReportRepository:
         file_path: str = None,
         file_size: int = None,
         duration_ms: int = None,
-    ) -> Optional[ScheduledReport]:
+    ) -> ScheduledReport | None:
         """Registra execução de relatório."""
         report = await self.get_report_by_id(report_id)
         if not report:
@@ -210,7 +206,7 @@ class ReportRepository:
         await self.db.commit()
         return result.rowcount > 0
 
-    async def resume_report(self, report_id: UUID) -> Optional[ScheduledReport]:
+    async def resume_report(self, report_id: UUID) -> ScheduledReport | None:
         """Retoma relatório pausado."""
         report = await self.get_report_by_id(report_id)
         if not report:
@@ -225,7 +221,7 @@ class ReportRepository:
         self,
         email: str,
         condominio_id: UUID = None,
-    ) -> List[ScheduledReport]:
+    ) -> list[ScheduledReport]:
         """Busca relatórios por destinatário."""
         conditions = [
             ScheduledReport.is_active.is_(True),
@@ -252,7 +248,7 @@ class ReportRepository:
         self,
         condominio_id: UUID,
         hours_ahead: int = 24,
-    ) -> List[ScheduledReport]:
+    ) -> list[ScheduledReport]:
         """Busca relatórios que serão executados nas próximas horas."""
         future = datetime.utcnow() + timedelta(hours=hours_ahead)
 
@@ -356,11 +352,7 @@ class ReportRepository:
         count = count_result.scalar()
 
         if not dry_run and count > 0:
-            stmt = (
-                update(ScheduledReport)
-                .where(and_(*conditions))
-                .values(is_active=False)
-            )
+            stmt = update(ScheduledReport).where(and_(*conditions)).values(is_active=False)
             await self.db.execute(stmt)
             await self.db.commit()
 

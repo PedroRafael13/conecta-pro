@@ -3,8 +3,8 @@
 Sprint 33 - Workflow Engine (Unificado).
 """
 
-import enum
 from datetime import datetime
+from enum import StrEnum
 
 from sqlalchemy import (
     Boolean,
@@ -22,7 +22,7 @@ from sqlalchemy.orm import relationship
 from core.models import Base
 
 
-class TriggerType(str, enum.Enum):
+class TriggerType(StrEnum):
     """Tipo de trigger."""
 
     # Tipos genericos
@@ -59,7 +59,7 @@ class TriggerType(str, enum.Enum):
     INVOICE_OVERDUE = "INVOICE_OVERDUE"  # Fatura vencida
 
 
-class TriggerEvent(str, enum.Enum):
+class TriggerEvent(StrEnum):
     """Eventos do sistema."""
 
     # Documentos
@@ -111,7 +111,7 @@ class TriggerEvent(str, enum.Enum):
     CUSTOM = "custom"
 
 
-class TriggerStatus(str, enum.Enum):
+class TriggerStatus(StrEnum):
     """Status do trigger."""
 
     ACTIVE = "ACTIVE"  # Ativo
@@ -329,8 +329,12 @@ class WorkflowTrigger(Base):
         Returns:
             True se corresponde.
         """
-        if self.trigger_type not in (TriggerType.EVENT, TriggerType.ENTITY_CREATED,
-                                      TriggerType.ENTITY_UPDATED, TriggerType.ENTITY_DELETED):
+        if self.trigger_type not in (
+            TriggerType.EVENT,
+            TriggerType.ENTITY_CREATED,
+            TriggerType.ENTITY_UPDATED,
+            TriggerType.ENTITY_DELETED,
+        ):
             return False
 
         # Verifica nome do evento

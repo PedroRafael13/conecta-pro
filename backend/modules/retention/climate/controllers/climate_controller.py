@@ -6,7 +6,6 @@ coleta de respostas e visualizacao de resultados.
 """
 
 from datetime import datetime
-from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -25,12 +24,10 @@ from modules.retention.climate.schemas.climate_schemas import (
     AlertResponse,
     CalculationRequest,
     CalculationResult,
-    ClimateByEquipe,
     ClimateByEmpresa,
+    ClimateByEquipe,
     ClimateByPosto,
     ClimateDashboard,
-    ClimateScoreListResponse,
-    ClimateScoreResponse,
     ClimateTrend,
     QuestionSchema,
     ResponseConfirmation,
@@ -75,8 +72,8 @@ async def list_surveys(
     db: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1, description="Pagina atual"),
     page_size: int = Query(20, ge=1, le=100, description="Itens por pagina"),
-    empresa_id: Optional[str] = Query(None, description="Filtrar por empresa"),
-    ativo: Optional[bool] = Query(None, description="Filtrar por status"),
+    empresa_id: str | None = Query(None, description="Filtrar por empresa"),
+    ativo: bool | None = Query(None, description="Filtrar por status"),
 ) -> SurveyListResponse:
     """Lista pesquisas de clima com filtros e paginacao."""
     repo = ClimateSurveyRepository(db)
@@ -130,7 +127,7 @@ async def create_survey(
 async def get_active_survey(
     current_user: CurrentActiveUser,
     service: ClimateService = Depends(get_climate_service),
-    empresa_id: Optional[str] = Query(None, description="ID da empresa"),
+    empresa_id: str | None = Query(None, description="ID da empresa"),
 ) -> SurveyActiveResponse:
     """Busca pesquisa ativa para responder."""
     survey = await service.get_pesquisa_ativa(empresa_id)
@@ -142,9 +139,7 @@ async def get_active_survey(
         )
 
     # Converter perguntas para schema
-    perguntas = [
-        QuestionSchema(**p) if isinstance(p, dict) else p for p in survey.perguntas
-    ]
+    perguntas = [QuestionSchema(**p) if isinstance(p, dict) else p for p in survey.perguntas]
 
     # Tempo estimado: 30 segundos por pergunta
     tempo_estimado = max(3, len(perguntas) * 0.5)
@@ -161,14 +156,14 @@ async def get_active_survey(
 
 @router.get(
     "/surveys/perguntas-padrao",
-    response_model=List[QuestionSchema],
+    response_model=list[QuestionSchema],
     summary="Lista perguntas padrao",
     description="Retorna as perguntas padrao do sistema.",
 )
 async def get_default_questions(
     current_user: CurrentActiveUser,
     service: ClimateService = Depends(get_climate_service),
-) -> List[QuestionSchema]:
+) -> list[QuestionSchema]:
     """Retorna perguntas padrao do sistema."""
     return await service.get_perguntas_padrao()
 
@@ -300,7 +295,7 @@ async def get_results_by_posto(
     posto_id: str,
     current_user: CurrentActiveUser,
     service: ClimateService = Depends(get_climate_service),
-    periodo: Optional[str] = Query(
+    periodo: str | None = Query(
         None,
         pattern=r"^\d{4}-\d{2}$",
         description="Periodo YYYY-MM (default: atual)",
@@ -312,7 +307,7 @@ async def get_results_by_posto(
     if not result:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Nenhum resultado encontrado para o posto no periodo",
+            detail="Nenhum resultado encontrado para o posto no periodo",
         )
 
     return result
@@ -328,7 +323,7 @@ async def get_results_by_equipe(
     equipe_id: str,
     current_user: CurrentActiveUser,
     service: ClimateService = Depends(get_climate_service),
-    periodo: Optional[str] = Query(
+    periodo: str | None = Query(
         None,
         pattern=r"^\d{4}-\d{2}$",
         description="Periodo YYYY-MM (default: atual)",
@@ -355,8 +350,8 @@ async def get_results_by_equipe(
 async def get_results_empresa(
     current_user: CurrentActiveUser,
     service: ClimateService = Depends(get_climate_service),
-    empresa_id: Optional[str] = Query(None, description="ID da empresa"),
-    periodo: Optional[str] = Query(
+    empresa_id: str | None = Query(None, description="ID da empresa"),
+    periodo: str | None = Query(
         None,
         pattern=r"^\d{4}-\d{2}$",
         description="Periodo YYYY-MM (default: atual)",
@@ -419,7 +414,7 @@ async def get_trends(
 async def get_dashboard(
     current_user: CurrentActiveUser,
     service: ClimateService = Depends(get_climate_service),
-    empresa_id: Optional[str] = Query(None, description="Filtrar por empresa"),
+    empresa_id: str | None = Query(None, description="Filtrar por empresa"),
 ) -> ClimateDashboard:
     """Retorna dashboard geral de clima."""
     return await service.get_dashboard(empresa_id)
@@ -439,8 +434,8 @@ async def get_dashboard(
 async def list_alerts(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
-    empresa_id: Optional[str] = Query(None, description="Filtrar por empresa"),
-    severidade: Optional[AlertSeverity] = Query(None, description="Filtrar por severidade"),
+    empresa_id: str | None = Query(None, description="Filtrar por empresa"),
+    severidade: AlertSeverity | None = Query(None, description="Filtrar por severidade"),
     limit: int = Query(50, ge=1, le=200, description="Limite de resultados"),
 ) -> AlertListResponse:
     """Lista alertas ativos."""
@@ -512,9 +507,7 @@ async def calculate_scores(
 
     Este endpoint pode ser chamado manualmente ou por um job agendado.
     """
-    logger.info(
-        f"Calculo de scores iniciado por {current_user.email} para periodo {data.periodo}"
-    )
+    logger.info(f"Calculo de scores iniciado por {current_user.email} para periodo {data.periodo}")
 
     result = await service.calcular_scores_periodo(
         periodo=data.periodo,
@@ -534,7 +527,7 @@ async def calculate_scores(
 async def check_alerts(
     current_user: CurrentActiveUser,
     service: ClimateService = Depends(get_climate_service),
-    empresa_id: Optional[str] = Query(None, description="Filtrar por empresa"),
+    empresa_id: str | None = Query(None, description="Filtrar por empresa"),
 ) -> dict:
     """Verifica quedas e gera alertas."""
     alertas = await service.verificar_quedas(empresa_id)

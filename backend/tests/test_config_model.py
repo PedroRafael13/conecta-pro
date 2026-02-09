@@ -2,30 +2,32 @@
 Testes dos Models do módulo Config
 Sprint 35: Configurações e Multi-tenant
 """
+
 # pylint: disable=redefined-outer-name,unused-argument
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
+
 import pytest
 
 from modules.config.models import (
-    Tenant,
-    TenantStatus,
-    TenantPlan,
-    TenantType,
-    TenantSettings,
-    SettingCategory,
-    SettingType,
-    SystemConfig,
-    ConfigScope,
     ConfigPriority,
+    ConfigScope,
     FeatureFlag,
     FlagStatus,
     FlagType,
-    RolloutStrategy,
-    NotificationTemplate,
     NotificationChannel,
+    NotificationTemplate,
     NotificationType,
+    RolloutStrategy,
+    SettingCategory,
+    SettingType,
+    SystemConfig,
     TemplateStatus,
+    Tenant,
+    TenantPlan,
+    TenantSettings,
+    TenantStatus,
+    TenantType,
 )
 
 
@@ -71,11 +73,11 @@ class TestTenantModel:
             documento="12345678000101",
             email="trial@empresa.com",
             status=TenantStatus.TRIAL,
-            data_fim_trial=datetime.now(timezone.utc) + timedelta(days=14),
+            data_fim_trial=datetime.now(UTC) + timedelta(days=14),
         )
         assert tenant.is_trial is True
 
-        tenant.data_fim_trial = datetime.now(timezone.utc) - timedelta(days=1)
+        tenant.data_fim_trial = datetime.now(UTC) - timedelta(days=1)
         assert tenant.is_trial is False
 
     def test_tenant_activate(self):

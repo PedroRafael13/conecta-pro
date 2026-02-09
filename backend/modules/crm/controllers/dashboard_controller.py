@@ -3,7 +3,6 @@ Controller (endpoints) para Dashboard CRM.
 """
 
 from datetime import date
-from typing import List, Optional
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import select
@@ -27,35 +26,27 @@ from modules.crm.services.dashboard_service import (
 router = APIRouter(prefix="/dashboard", tags=["CRM - Dashboard"])
 
 
-async def _get_all_leads(db: AsyncSession) -> List[Lead]:
+async def _get_all_leads(db: AsyncSession) -> list[Lead]:
     """Busca todos os leads ativos."""
-    result = await db.execute(
-        select(Lead).where(Lead.is_active.is_(True))
-    )
+    result = await db.execute(select(Lead).where(Lead.is_active.is_(True)))
     return list(result.scalars().all())
 
 
-async def _get_all_opportunities(db: AsyncSession) -> List[Opportunity]:
+async def _get_all_opportunities(db: AsyncSession) -> list[Opportunity]:
     """Busca todas as opportunities ativas."""
-    result = await db.execute(
-        select(Opportunity).where(Opportunity.is_active.is_(True))
-    )
+    result = await db.execute(select(Opportunity).where(Opportunity.is_active.is_(True)))
     return list(result.scalars().all())
 
 
-async def _get_all_proposals(db: AsyncSession) -> List[Proposal]:
+async def _get_all_proposals(db: AsyncSession) -> list[Proposal]:
     """Busca todas as propostas ativas."""
-    result = await db.execute(
-        select(Proposal).where(Proposal.is_active.is_(True))
-    )
+    result = await db.execute(select(Proposal).where(Proposal.is_active.is_(True)))
     return list(result.scalars().all())
 
 
-async def _get_all_commissions(db: AsyncSession) -> List[Commission]:
+async def _get_all_commissions(db: AsyncSession) -> list[Commission]:
     """Busca todas as comissões ativas."""
-    result = await db.execute(
-        select(Commission).where(Commission.is_active.is_(True))
-    )
+    result = await db.execute(select(Commission).where(Commission.is_active.is_(True)))
     return list(result.scalars().all())
 
 
@@ -63,8 +54,8 @@ async def _get_all_commissions(db: AsyncSession) -> List[Commission]:
 async def get_dashboard_kpis(
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
-    date_from: Optional[date] = None,
-    date_to: Optional[date] = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
 ) -> DashboardKPIs:
     """
     Retorna todos os KPIs principais do CRM.
@@ -108,13 +99,13 @@ async def get_sales_funnel(
     return chart
 
 
-@router.get("/trends/leads", response_model=List[DashboardTrend])
+@router.get("/trends/leads", response_model=list[DashboardTrend])
 async def get_leads_trends(
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
     period: str = Query("month", pattern="^(day|week|month)$"),
     periods_count: int = Query(6, ge=2, le=12),
-) -> List[DashboardTrend]:
+) -> list[DashboardTrend]:
     """
     Retorna tendência de novos leads ao longo do tempo.
 
@@ -136,13 +127,13 @@ async def get_leads_trends(
     return trends
 
 
-@router.get("/trends/sales", response_model=List[DashboardTrend])
+@router.get("/trends/sales", response_model=list[DashboardTrend])
 async def get_sales_trends(
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
     period: str = Query("month", pattern="^(day|week|month)$"),
     periods_count: int = Query(6, ge=2, le=12),
-) -> List[DashboardTrend]:
+) -> list[DashboardTrend]:
     """
     Retorna tendência de vendas (opportunities ganhas) ao longo do tempo.
     """
@@ -152,7 +143,7 @@ async def get_sales_trends(
     # Filtrar apenas opportunities ganhas
     won_opps = [o for o in opportunities if o.is_won]
 
-    has_close_date = won_opps and hasattr(won_opps[0], 'actual_close_date')
+    has_close_date = won_opps and hasattr(won_opps[0], "actual_close_date")
     date_fld = "actual_close_date" if has_close_date else "updated_at"
     trends = service.generate_trends(
         data=won_opps,
@@ -165,13 +156,13 @@ async def get_sales_trends(
     return trends
 
 
-@router.get("/trends/commissions", response_model=List[DashboardTrend])
+@router.get("/trends/commissions", response_model=list[DashboardTrend])
 async def get_commissions_trends(
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
     period: str = Query("month", pattern="^(day|week|month)$"),
     periods_count: int = Query(6, ge=2, le=12),
-) -> List[DashboardTrend]:
+) -> list[DashboardTrend]:
     """
     Retorna tendência de comissões ao longo do tempo.
     """
@@ -211,7 +202,7 @@ async def get_seller_performance(
     seller_id: str,
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
-    target: Optional[float] = None,
+    target: float | None = None,
 ) -> PerformanceMetrics:
     """
     Retorna métricas de performance de um vendedor específico.
@@ -233,12 +224,12 @@ async def get_seller_performance(
     return metrics
 
 
-@router.get("/top-performers", response_model=List[PerformanceMetrics])
+@router.get("/top-performers", response_model=list[PerformanceMetrics])
 async def get_top_performers(
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
     limit: int = Query(5, ge=1, le=20),
-) -> List[PerformanceMetrics]:
+) -> list[PerformanceMetrics]:
     """
     Retorna os top performers (vendedores com maior volume de vendas).
     """
@@ -258,7 +249,7 @@ async def get_top_performers(
             seller_ids.add(str(opp.owner_id))
 
     # Criar dict de vendedores (sem nomes por enquanto)
-    sellers = {sid: None for sid in seller_ids}
+    sellers = dict.fromkeys(seller_ids)
 
     top = service.get_top_performers(
         leads=leads,

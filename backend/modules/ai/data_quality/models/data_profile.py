@@ -6,25 +6,27 @@ Armazena análises estatísticas e perfis de dados por entidade/campo.
 
 import uuid
 from datetime import datetime
-from enum import Enum
-from typing import Any, Dict, List, Optional
+from enum import StrEnum
+from typing import Any
 
 from sqlalchemy import (
     Boolean,
     Column,
     DateTime,
-    Enum as SQLEnum,
     Float,
     Integer,
     String,
     Text,
+)
+from sqlalchemy import (
+    Enum as SQLEnum,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 from core.database import Base
 
 
-class ProfileStatusEnum(str, Enum):
+class ProfileStatusEnum(StrEnum):
     """Status do perfil."""
 
     PENDING = "pending"
@@ -34,7 +36,7 @@ class ProfileStatusEnum(str, Enum):
     OUTDATED = "outdated"
 
 
-class DataTypeEnum(str, Enum):
+class DataTypeEnum(StrEnum):
     """Tipo de dado detectado."""
 
     STRING = "string"
@@ -68,9 +70,7 @@ class DataProfile(Base):
 
     # Status
     status = Column(
-        SQLEnum(ProfileStatusEnum, name="dq_profile_status_enum"),
-        nullable=False,
-        default=ProfileStatusEnum.PENDING
+        SQLEnum(ProfileStatusEnum, name="dq_profile_status_enum"), nullable=False, default=ProfileStatusEnum.PENDING
     )
 
     # Escopo
@@ -79,10 +79,7 @@ class DataProfile(Base):
     is_entity_profile = Column(Boolean, default=False)
 
     # Tipo de dado
-    detected_type = Column(
-        SQLEnum(DataTypeEnum, name="dq_data_type_enum"),
-        nullable=True
-    )
+    detected_type = Column(SQLEnum(DataTypeEnum, name="dq_data_type_enum"), nullable=True)
     declared_type = Column(String(50), nullable=True)
 
     # Estatísticas gerais
@@ -210,9 +207,7 @@ class DataProfile(Base):
         self.status = ProfileStatusEnum.COMPLETED
         self.completed_at = datetime.utcnow()
         if self.started_at:
-            self.duration_ms = int(
-                (self.completed_at - self.started_at).total_seconds() * 1000
-            )
+            self.duration_ms = int((self.completed_at - self.started_at).total_seconds() * 1000)
         self._calculate_scores()
 
     def fail_profiling(self, error: str) -> None:
@@ -255,7 +250,7 @@ class DataProfile(Base):
         mean: float,
         median: float,
         std: float,
-        percentiles: Dict[str, float] = None
+        percentiles: dict[str, float] = None,
     ) -> None:
         """Define estatísticas numéricas."""
         self.min_value = min_val
@@ -263,17 +258,11 @@ class DataProfile(Base):
         self.mean_value = mean
         self.median_value = median
         self.std_deviation = std
-        self.variance = std ** 2 if std else None
+        self.variance = std**2 if std else None
         if percentiles:
             self.percentiles = percentiles
 
-    def set_string_stats(
-        self,
-        min_len: int,
-        max_len: int,
-        avg_len: float,
-        patterns: List[str] = None
-    ) -> None:
+    def set_string_stats(self, min_len: int, max_len: int, avg_len: float, patterns: list[str] = None) -> None:
         """Define estatísticas de string."""
         self.min_length = min_len
         self.max_length = max_len
@@ -285,13 +274,11 @@ class DataProfile(Base):
         """Adiciona recomendação."""
         if not self.recommendations:
             self.recommendations = []
-        self.recommendations.append({
-            "text": recommendation,
-            "priority": priority,
-            "created_at": datetime.utcnow().isoformat()
-        })
+        self.recommendations.append(
+            {"text": recommendation, "priority": priority, "created_at": datetime.utcnow().isoformat()}
+        )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Converte para dicionário."""
         return {
             "id": str(self.id),
@@ -312,7 +299,7 @@ class DataProfile(Base):
             "completed_at": self.completed_at.isoformat() if self.completed_at else None,
         }
 
-    def to_summary_dict(self) -> Dict[str, Any]:
+    def to_summary_dict(self) -> dict[str, Any]:
         """Converte para dicionário resumido."""
         return {
             "id": str(self.id),
@@ -323,7 +310,7 @@ class DataProfile(Base):
             "total_records": self.total_records,
         }
 
-    def to_stats_dict(self) -> Dict[str, Any]:
+    def to_stats_dict(self) -> dict[str, Any]:
         """Converte para dicionário de estatísticas."""
         stats = {
             "total_records": self.total_records,
@@ -336,22 +323,26 @@ class DataProfile(Base):
 
         # Adiciona stats numéricas se disponíveis
         if self.detected_type in [DataTypeEnum.INTEGER, DataTypeEnum.FLOAT, DataTypeEnum.CURRENCY]:
-            stats.update({
-                "min": self.min_value,
-                "max": self.max_value,
-                "mean": self.mean_value,
-                "median": self.median_value,
-                "std": self.std_deviation,
-                "percentiles": self.percentiles,
-            })
+            stats.update(
+                {
+                    "min": self.min_value,
+                    "max": self.max_value,
+                    "mean": self.mean_value,
+                    "median": self.median_value,
+                    "std": self.std_deviation,
+                    "percentiles": self.percentiles,
+                }
+            )
 
         # Adiciona stats de string se disponíveis
         if self.detected_type == DataTypeEnum.STRING:
-            stats.update({
-                "min_length": self.min_length,
-                "max_length": self.max_length,
-                "avg_length": self.avg_length,
-                "patterns": self.common_patterns,
-            })
+            stats.update(
+                {
+                    "min_length": self.min_length,
+                    "max_length": self.max_length,
+                    "avg_length": self.avg_length,
+                    "patterns": self.common_patterns,
+                }
+            )
 
         return stats

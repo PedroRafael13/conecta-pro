@@ -5,20 +5,19 @@ O AFD é o arquivo oficial de ponto que deve ser mantido por 5 anos.
 """
 
 import uuid
-from datetime import datetime, date, time
-from enum import Enum
-from typing import Optional
+from datetime import date, datetime, time
+from enum import StrEnum
 
 from sqlalchemy import (
     Boolean,
-    DateTime,
     Date,
-    Time,
+    DateTime,
+    ForeignKey,
+    Index,
     Integer,
     String,
     Text,
-    Index,
-    ForeignKey,
+    Time,
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -26,13 +25,14 @@ from sqlalchemy.orm import Mapped, mapped_column
 from core.database import Base
 
 
-class AFDRecordType(str, Enum):
+class AFDRecordType(StrEnum):
     """Tipos de registro AFD conforme Portaria 671."""
-    HEADER = "1"           # Cabeçalho do arquivo
-    COMPANY_INFO = "2"     # Dados do empregador
-    TIME_RECORD = "3"      # Marcação de ponto
-    ADJUSTMENT = "4"       # Inclusão/alteração de marcação
-    TRAILER = "9"          # Fim do arquivo
+
+    HEADER = "1"  # Cabeçalho do arquivo
+    COMPANY_INFO = "2"  # Dados do empregador
+    TIME_RECORD = "3"  # Marcação de ponto
+    ADJUSTMENT = "4"  # Inclusão/alteração de marcação
+    TRAILER = "9"  # Fim do arquivo
 
 
 class AFDRecord(Base):
@@ -88,81 +88,81 @@ class AFDRecord(Base):
     )
 
     # Dados parsed (para tipo 3 - marcação)
-    record_date: Mapped[Optional[date]] = mapped_column(
+    record_date: Mapped[date | None] = mapped_column(
         Date,
         nullable=True,
         index=True,
     )
-    record_time: Mapped[Optional[time]] = mapped_column(
+    record_time: Mapped[time | None] = mapped_column(
         Time,
         nullable=True,
     )
-    pis_number: Mapped[Optional[str]] = mapped_column(
+    pis_number: Mapped[str | None] = mapped_column(
         String(12),
         nullable=True,
         index=True,
     )
 
     # Para tipo 2 - empregador
-    cnpj: Mapped[Optional[str]] = mapped_column(
+    cnpj: Mapped[str | None] = mapped_column(
         String(14),
         nullable=True,
     )
-    cei: Mapped[Optional[str]] = mapped_column(
+    cei: Mapped[str | None] = mapped_column(
         String(12),
         nullable=True,
     )
-    company_name: Mapped[Optional[str]] = mapped_column(
+    company_name: Mapped[str | None] = mapped_column(
         String(150),
         nullable=True,
     )
 
     # Para tipo 1 - cabeçalho
-    rep_serial: Mapped[Optional[str]] = mapped_column(
+    rep_serial: Mapped[str | None] = mapped_column(
         String(17),
         nullable=True,
     )
-    rep_manufacturer: Mapped[Optional[str]] = mapped_column(
+    rep_manufacturer: Mapped[str | None] = mapped_column(
         String(20),
         nullable=True,
     )
-    rep_model: Mapped[Optional[str]] = mapped_column(
+    rep_model: Mapped[str | None] = mapped_column(
         String(20),
         nullable=True,
     )
-    generation_date: Mapped[Optional[datetime]] = mapped_column(
+    generation_date: Mapped[datetime | None] = mapped_column(
         DateTime,
         nullable=True,
     )
-    start_date: Mapped[Optional[date]] = mapped_column(
+    start_date: Mapped[date | None] = mapped_column(
         Date,
         nullable=True,
     )
-    end_date: Mapped[Optional[date]] = mapped_column(
+    end_date: Mapped[date | None] = mapped_column(
         Date,
         nullable=True,
     )
 
     # Para tipo 4 - ajuste
-    original_date: Mapped[Optional[date]] = mapped_column(
+    original_date: Mapped[date | None] = mapped_column(
         Date,
         nullable=True,
     )
-    original_time: Mapped[Optional[time]] = mapped_column(
+    original_time: Mapped[time | None] = mapped_column(
         Time,
         nullable=True,
     )
-    adjusted_date: Mapped[Optional[date]] = mapped_column(
+    adjusted_date: Mapped[date | None] = mapped_column(
         Date,
         nullable=True,
     )
-    adjusted_time: Mapped[Optional[time]] = mapped_column(
+    adjusted_time: Mapped[time | None] = mapped_column(
         Time,
         nullable=True,
     )
 
     # Referência ao evento original
-    event_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    event_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("rep_events.id", ondelete="SET NULL"),
         nullable=True,
@@ -180,11 +180,11 @@ class AFDRecord(Base):
         Boolean,
         default=False,
     )
-    exported_at: Mapped[Optional[datetime]] = mapped_column(
+    exported_at: Mapped[datetime | None] = mapped_column(
         DateTime,
         nullable=True,
     )
-    export_file_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    export_file_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         nullable=True,
     )
@@ -194,7 +194,7 @@ class AFDRecord(Base):
         Boolean,
         default=True,
     )
-    validation_error: Mapped[Optional[str]] = mapped_column(
+    validation_error: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
     )
@@ -297,13 +297,7 @@ class AFDRecord(Base):
         19-22: Hora (hhmm)
         23-34: PIS (12 dígitos)
         """
-        line = (
-            f"{str(nsr).zfill(9)}"
-            f"3"
-            f"{record_date.strftime('%d%m%Y')}"
-            f"{record_time.strftime('%H%M')}"
-            f"{pis.zfill(12)[:12]}"
-        )
+        line = f"{str(nsr).zfill(9)}3{record_date.strftime('%d%m%Y')}{record_time.strftime('%H%M')}{pis.zfill(12)[:12]}"
         return line
 
     @classmethod
@@ -315,11 +309,7 @@ class AFDRecord(Base):
         10: Tipo (9)
         11-19: Quantidade de registros tipo 3 (9 dígitos)
         """
-        line = (
-            f"{str(nsr).zfill(9)}"
-            f"9"
-            f"{str(total_records).zfill(9)}"
-        )
+        line = f"{str(nsr).zfill(9)}9{str(total_records).zfill(9)}"
         return line
 
     @classmethod

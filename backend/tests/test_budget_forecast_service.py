@@ -357,9 +357,9 @@ class TestBudgetForecastService:  # pylint: disable=protected-access
 
     def test_thresholds(self) -> None:
         """Testa thresholds do servico."""
-        assert BudgetForecastService.NEAR_LIMIT_THRESHOLD == Decimal("80")
-        assert BudgetForecastService.WARNING_THRESHOLD == Decimal("90")
-        assert BudgetForecastService.HIGH_VARIANCE_THRESHOLD == Decimal("15")
+        assert Decimal("80") == BudgetForecastService.NEAR_LIMIT_THRESHOLD
+        assert Decimal("90") == BudgetForecastService.WARNING_THRESHOLD
+        assert Decimal("15") == BudgetForecastService.HIGH_VARIANCE_THRESHOLD
 
     def test_get_month_name(self) -> None:
         """Testa obtencao de nome do mes."""
@@ -375,8 +375,7 @@ class TestBudgetForecastService:  # pylint: disable=protected-access
 
     def test_get_month_name_all_months(self) -> None:
         """Testa todos os meses."""
-        expected = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun",
-                    "Jul", "Ago", "Set", "Out", "Nov", "Dez"]
+        expected = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]
 
         for month, name in enumerate(expected, 1):
             assert BudgetForecastService._get_month_name(month) == name
@@ -397,7 +396,7 @@ class TestForecastCalculations:
         ]
         weights = [1, 1, 2, 2, 3, 3]
 
-        weighted_sum = sum(h * w for h, w in zip(historical, weights))
+        weighted_sum = sum(h * w for h, w in zip(historical, weights, strict=False))
         total_weight = sum(weights)
         weighted_avg = weighted_sum / Decimal(str(total_weight))
 

@@ -4,7 +4,7 @@ import hashlib
 import json
 from datetime import datetime, timedelta
 from decimal import Decimal
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 from uuid import uuid4
 
@@ -12,18 +12,21 @@ from sqlalchemy import (
     Boolean,
     Column,
     DateTime,
-    Enum as SQLEnum,
     ForeignKey,
     Integer,
     String,
     Text,
 )
-from sqlalchemy.dialects.postgresql import JSONB, UUID as PGUUID
+from sqlalchemy import (
+    Enum as SQLEnum,
+)
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import UUID as PGUUID
 
 from core.models.base import Base
 
 
-class CacheStatus(str, Enum):
+class CacheStatus(StrEnum):
     """Status do cache."""
 
     VALID = "VALID"
@@ -33,7 +36,7 @@ class CacheStatus(str, Enum):
     ERROR = "ERROR"
 
 
-class CacheType(str, Enum):
+class CacheType(StrEnum):
     """Tipo de cache."""
 
     WIDGET = "WIDGET"
@@ -222,6 +225,6 @@ class AnalyticsCache(Base):
         key = f"{entity_type}:{entity_id}"
         if params:
             param_str = json.dumps(params, sort_keys=True)
-            param_hash = hashlib.md5(param_str.encode()).hexdigest()[:8]
+            param_hash = hashlib.sha256(param_str.encode()).hexdigest()[:8]
             key = f"{key}:{param_hash}"
         return key

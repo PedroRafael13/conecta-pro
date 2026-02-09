@@ -9,7 +9,7 @@ Corrige violações de Float para valores monetários em todo o sistema CRM.
 Converte colunas Float para Numeric(15, 2) para precisão financeira.
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 import sqlalchemy as sa
 from sqlalchemy import inspect
@@ -18,9 +18,9 @@ from alembic import op
 
 # revision identifiers, used by Alembic (pylint: disable=invalid-name).
 revision: str = "sprint36_fix_float_numeric"
-down_revision: Union[str, None] = "sprint35_config"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None  # pylint: disable=invalid-name
+down_revision: str | None = "sprint35_config"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None  # pylint: disable=invalid-name
 
 
 def table_exists(table_name: str) -> bool:

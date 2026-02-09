@@ -4,26 +4,27 @@ Gerenciador de Filas para Integrações Governamentais.
 Integra Celery com rate limiting e gerenciamento de prioridades.
 """
 
-from datetime import datetime
-from typing import Dict, List, Optional, Any, Callable
-from dataclasses import dataclass
-from enum import Enum
 import asyncio
-import logging
 import json
+import logging
+from dataclasses import dataclass
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
+import redis.asyncio as redis
 from celery import Celery
 from celery.result import AsyncResult
-import redis.asyncio as redis
 
-from .rate_limiter import RateLimiter, get_rate_limiter, LIMITES_SERVICOS
 from .celery_config import TaskPriority, criar_celery_app
+from .rate_limiter import LIMITES_SERVICOS, RateLimiter, get_rate_limiter
 
 logger = logging.getLogger(__name__)
 
 
 class StatusFila(Enum):
     """Status de uma fila."""
+
     ATIVA = "ativa"
     PAUSADA = "pausada"
     DEGRADADA = "degradada"
@@ -33,15 +34,16 @@ class StatusFila(Enum):
 @dataclass
 class TaskInfo:
     """Informações de uma task na fila."""
+
     task_id: str
     servico: str
     tenant_id: str
     prioridade: int
-    payload: Dict[str, Any]
+    payload: dict[str, Any]
     criada_em: datetime
     status: str
-    resultado: Optional[Any] = None
-    erro: Optional[str] = None
+    resultado: Any | None = None
+    erro: str | None = None
 
 
 class GerenciadorFilas:
@@ -57,15 +59,15 @@ class GerenciadorFilas:
 
     def __init__(
         self,
-        celery_app: Optional[Celery] = None,
-        rate_limiter: Optional[RateLimiter] = None,
-        redis_url: str = "redis://localhost:6379/0"
+        celery_app: Celery | None = None,
+        rate_limiter: RateLimiter | None = None,
+        redis_url: str = "redis://localhost:6379/0",
     ):
         self.celery = celery_app or criar_celery_app()
         self.rate_limiter = rate_limiter or get_rate_limiter()
         self._redis_url = redis_url
-        self._redis: Optional[redis.Redis] = None
-        self._filas_pausadas: Dict[str, bool] = {}
+        self._redis: redis.Redis | None = None
+        self._filas_pausadas: dict[str, bool] = {}
 
     async def _get_redis(self) -> redis.Redis:
         """Obtém conexão Redis."""
@@ -78,12 +80,12 @@ class GerenciadorFilas:
         task_name: str,
         servico: str,
         tenant_id: str,
-        payload: Dict[str, Any],
+        payload: dict[str, Any],
         prioridade: TaskPriority = TaskPriority.NORMAL,
-        uf: Optional[str] = None,
+        uf: str | None = None,
         aguardar_rate_limit: bool = True,
-        timeout_rate_limit: float = 60.0
-    ) -> Optional[str]:
+        timeout_rate_limit: float = 60.0,
+    ) -> str | None:
         """
         Enfileira task respeitando rate limits.
 
@@ -108,24 +110,14 @@ class GerenciadorFilas:
 
         # Verificar/aguardar rate limit
         if aguardar_rate_limit:
-            pode_executar = await self.rate_limiter.aguardar_permissao(
-                servico, tenant_id, uf, timeout_rate_limit
-            )
+            pode_executar = await self.rate_limiter.aguardar_permissao(servico, tenant_id, uf, timeout_rate_limit)
             if not pode_executar:
-                logger.warning(
-                    f"Rate limit timeout para {servico}/{tenant_id}, "
-                    f"task não enfileirada"
-                )
+                logger.warning(f"Rate limit timeout para {servico}/{tenant_id}, task não enfileirada")
                 return None
         else:
-            pode, espera = await self.rate_limiter.pode_executar(
-                servico, tenant_id, uf
-            )
+            pode, espera = await self.rate_limiter.pode_executar(servico, tenant_id, uf)
             if not pode:
-                logger.info(
-                    f"Rate limit ativo para {servico}/{tenant_id}, "
-                    f"aguardar {espera:.1f}s"
-                )
+                logger.info(f"Rate limit ativo para {servico}/{tenant_id}, aguardar {espera:.1f}s")
                 return None
 
         # Enfileirar task
@@ -138,14 +130,9 @@ class GerenciadorFilas:
             )
 
             # Registrar na fila de monitoramento
-            await self._registrar_task(
-                result.id, servico, tenant_id, prioridade, payload
-            )
+            await self._registrar_task(result.id, servico, tenant_id, prioridade, payload)
 
-            logger.info(
-                f"Task enfileirada: {result.id} ({task_name}) "
-                f"em {fila} com prioridade {prioridade.name}"
-            )
+            logger.info(f"Task enfileirada: {result.id} ({task_name}) em {fila} com prioridade {prioridade.name}")
 
             return result.id
 
@@ -158,11 +145,11 @@ class GerenciadorFilas:
         task_name: str,
         servico: str,
         tenant_id: str,
-        payloads: List[Dict[str, Any]],
+        payloads: list[dict[str, Any]],
         prioridade: TaskPriority = TaskPriority.BAIXA,
-        uf: Optional[str] = None,
-        intervalo_ms: int = 0
-    ) -> List[str]:
+        uf: str | None = None,
+        intervalo_ms: int = 0,
+    ) -> list[str]:
         """
         Enfileira múltiplas tasks respeitando rate limits.
 
@@ -180,9 +167,7 @@ class GerenciadorFilas:
         """
         task_ids = []
         limite = LIMITES_SERVICOS.get(servico)
-        intervalo = intervalo_ms / 1000 if intervalo_ms else (
-            (limite.intervalo_minimo_ms / 1000) if limite else 0.5
-        )
+        intervalo = intervalo_ms / 1000 if intervalo_ms else ((limite.intervalo_minimo_ms / 1000) if limite else 0.5)
 
         for i, payload in enumerate(payloads):
             task_id = await self.enfileirar(
@@ -202,10 +187,7 @@ class GerenciadorFilas:
             if i < len(payloads) - 1 and intervalo > 0:
                 await asyncio.sleep(intervalo)
 
-        logger.info(
-            f"Batch enfileirado: {len(task_ids)}/{len(payloads)} tasks "
-            f"para {servico}"
-        )
+        logger.info(f"Batch enfileirado: {len(task_ids)}/{len(payloads)} tasks para {servico}")
 
         return task_ids
 
@@ -223,12 +205,7 @@ class GerenciadorFilas:
         return mapeamento.get(servico, "gov.batch")
 
     async def _registrar_task(
-        self,
-        task_id: str,
-        servico: str,
-        tenant_id: str,
-        prioridade: TaskPriority,
-        payload: Dict
+        self, task_id: str, servico: str, tenant_id: str, prioridade: TaskPriority, payload: dict
     ):
         """Registra task no Redis para monitoramento."""
         try:
@@ -248,19 +225,17 @@ class GerenciadorFilas:
             await redis_client.expire(chave, 86400)  # 24 horas
 
             # Adicionar à lista do tenant
-            await redis_client.lpush(
-                f"tenant:{tenant_id}:tasks",
-                task_id
-            )
+            await redis_client.lpush(f"tenant:{tenant_id}:tasks", task_id)
             await redis_client.ltrim(
                 f"tenant:{tenant_id}:tasks",
-                0, 999  # Manter últimas 1000
+                0,
+                999,  # Manter últimas 1000
             )
 
         except Exception as e:
             logger.warning(f"Erro ao registrar task no Redis: {e}")
 
-    async def obter_status_task(self, task_id: str) -> Optional[TaskInfo]:
+    async def obter_status_task(self, task_id: str) -> TaskInfo | None:
         """Obtém status de uma task."""
         try:
             # Status do Celery
@@ -292,18 +267,11 @@ class GerenciadorFilas:
             logger.error(f"Erro ao obter status da task: {e}")
             return None
 
-    async def obter_tasks_tenant(
-        self,
-        tenant_id: str,
-        limite: int = 50
-    ) -> List[TaskInfo]:
+    async def obter_tasks_tenant(self, tenant_id: str, limite: int = 50) -> list[TaskInfo]:
         """Obtém tasks recentes de um tenant."""
         try:
             redis_client = await self._get_redis()
-            task_ids = await redis_client.lrange(
-                f"tenant:{tenant_id}:tasks",
-                0, limite - 1
-            )
+            task_ids = await redis_client.lrange(f"tenant:{tenant_id}:tasks", 0, limite - 1)
 
             tasks = []
             for task_id in task_ids:
@@ -328,11 +296,13 @@ class GerenciadorFilas:
             await redis_client.hset(
                 "filas:status",
                 fila,
-                json.dumps({
-                    "pausada": True,
-                    "motivo": motivo,
-                    "timestamp": datetime.utcnow().isoformat(),
-                })
+                json.dumps(
+                    {
+                        "pausada": True,
+                        "motivo": motivo,
+                        "timestamp": datetime.utcnow().isoformat(),
+                    }
+                ),
             )
         except Exception as e:
             logger.warning(f"Erro ao registrar pausa no Redis: {e}")
@@ -348,7 +318,7 @@ class GerenciadorFilas:
         except Exception as e:
             logger.warning(f"Erro ao registrar retomada no Redis: {e}")
 
-    async def obter_status_filas(self) -> Dict[str, Dict]:
+    async def obter_status_filas(self) -> dict[str, dict]:
         """Obtém status de todas as filas."""
         filas = [
             "gov.esocial",
@@ -368,7 +338,7 @@ class GerenciadorFilas:
             inspect = self.celery.control.inspect()
             active = inspect.active() or {}
             reserved = inspect.reserved() or {}
-            scheduled = inspect.scheduled() or {}
+            inspect.scheduled() or {}
 
             for fila in filas:
                 # Contar tasks
@@ -400,7 +370,7 @@ class GerenciadorFilas:
 
         return status
 
-    async def obter_metricas(self) -> Dict[str, Any]:
+    async def obter_metricas(self) -> dict[str, Any]:
         """Obtém métricas gerais do sistema de filas."""
         try:
             redis_client = await self._get_redis()
@@ -414,24 +384,15 @@ class GerenciadorFilas:
                     chaves_minuto.append(key)
 
                 rate_limits[servico] = {
-                    "tenants_ativos": len(set(
-                        k.decode().split(":")[2]
-                        for k in chaves_minuto
-                    )) if chaves_minuto else 0,
+                    "tenants_ativos": len({k.decode().split(":")[2] for k in chaves_minuto}) if chaves_minuto else 0,
                 }
 
             # Status das filas
             status_filas = await self.obter_status_filas()
 
             # Totais
-            total_ativas = sum(
-                f.get("tasks_ativas", 0)
-                for f in status_filas.values()
-            )
-            total_reservadas = sum(
-                f.get("tasks_reservadas", 0)
-                for f in status_filas.values()
-            )
+            total_ativas = sum(f.get("tasks_ativas", 0) for f in status_filas.values())
+            total_reservadas = sum(f.get("tasks_reservadas", 0) for f in status_filas.values())
 
             return {
                 "timestamp": datetime.utcnow().isoformat(),
@@ -440,11 +401,8 @@ class GerenciadorFilas:
                 "totais": {
                     "tasks_ativas": total_ativas,
                     "tasks_reservadas": total_reservadas,
-                    "filas_pausadas": sum(
-                        1 for f in status_filas.values()
-                        if f.get("pausada", False)
-                    ),
-                }
+                    "filas_pausadas": sum(1 for f in status_filas.values() if f.get("pausada", False)),
+                },
             }
 
         except Exception as e:
@@ -457,9 +415,7 @@ class GerenciadorFilas:
             # Verificar se pertence ao tenant
             info = await self.obter_status_task(task_id)
             if not info or info.tenant_id != tenant_id:
-                logger.warning(
-                    f"Task {task_id} não encontrada ou não pertence ao tenant"
-                )
+                logger.warning(f"Task {task_id} não encontrada ou não pertence ao tenant")
                 return False
 
             # Revogar no Celery
@@ -478,7 +434,7 @@ class GerenciadorFilas:
 
 
 # Instância singleton
-_queue_manager_instance: Optional[GerenciadorFilas] = None
+_queue_manager_instance: GerenciadorFilas | None = None
 
 
 def get_queue_manager() -> GerenciadorFilas:

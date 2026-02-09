@@ -2,8 +2,9 @@
 Skill /escala - Gerenciamento de escalas via comando
 """
 
+import contextlib
 import logging
-from typing import Dict, Any, List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Optional
 
 from .base_skill import BaseSkill
 
@@ -28,8 +29,16 @@ class EscalaSkill(BaseSkill):
     name = "escala"
     description = "Gerenciamento de escalas de trabalho"
     commands = [
-        "gerar", "otimizar", "validar", "publicar", "custo", "comparar",
-        "pendentes", "auto_gerar", "template", "help",
+        "gerar",
+        "otimizar",
+        "validar",
+        "publicar",
+        "custo",
+        "comparar",
+        "pendentes",
+        "auto_gerar",
+        "template",
+        "help",
     ]
 
     def __init__(self, data_connector: Optional["DataConnector"] = None, scale_repo=None, shift_repo=None):
@@ -37,7 +46,7 @@ class EscalaSkill(BaseSkill):
         self.scale_repo = scale_repo
         self.shift_repo = shift_repo
 
-    async def execute(self, command: str, args: List[str], context: Dict[str, Any]) -> Dict[str, Any]:
+    async def execute(self, command: str, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Executa comando de escala"""
 
         if not command or command == "help":
@@ -64,7 +73,7 @@ class EscalaSkill(BaseSkill):
             "suggestions": self.commands[:4],
         }
 
-    async def _gerar(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _gerar(self, args: list[str], context: dict) -> dict[str, Any]:
         """Gerar nova escala"""
         if len(args) < 1:
             return {
@@ -95,7 +104,7 @@ Ou informe: `/escala gerar {posto} {periodo} 12x36`""",
             ],
         }
 
-    async def _otimizar(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _otimizar(self, args: list[str], context: dict) -> dict[str, Any]:
         """Otimizar escala existente"""
         if not args:
             return {
@@ -119,7 +128,7 @@ Qual otimizacao aplicar?""",
             "suggestions": ["Reduzir custo", "Balancear", "Maximizar cobertura"],
         }
 
-    async def _validar(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _validar(self, args: list[str], context: dict) -> dict[str, Any]:
         """Validar escala"""
         if not args:
             return {"response": "**Uso:** `/escala validar <id_escala>`"}
@@ -138,7 +147,7 @@ Qual otimizacao aplicar?""",
             "data": {"scale_id": scale_id, "valid": True, "warnings": 1},
         }
 
-    async def _publicar(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _publicar(self, args: list[str], context: dict) -> dict[str, Any]:
         """Publicar escala"""
         if not args:
             return {"response": "**Uso:** `/escala publicar <id_escala>`"}
@@ -160,7 +169,7 @@ Ao publicar:
             ],
         }
 
-    async def _custo(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _custo(self, args: list[str], context: dict) -> dict[str, Any]:
         """Calcular custo"""
         if not args:
             return {"response": "**Uso:** `/escala custo <posto> [periodo]`"}
@@ -173,9 +182,7 @@ Ao publicar:
             try:
                 he_result = await self.data_connector._get_hora_extra_ranking()
                 if he_result.success and he_result.data:
-                    total_he_horas = sum(
-                        f.get("horas", 0) for f in he_result.data[:5]
-                    )
+                    total_he_horas = sum(f.get("horas", 0) for f in he_result.data[:5])
                     custo_he = total_he_horas * 30  # Estimativa R$30/h extra
 
                     return {
@@ -216,7 +223,7 @@ Periodo: {periodo}
             "data": {"posto": posto, "periodo": periodo, "custo_total": 7806.40},
         }
 
-    async def _comparar(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _comparar(self, args: list[str], context: dict) -> dict[str, Any]:
         """Comparar escalas"""
         if len(args) < 2:
             return {"response": "**Uso:** `/escala comparar <id1> <id2>`"}
@@ -234,7 +241,7 @@ Periodo: {periodo}
 **Recomendacao:** {args[0]} (menor custo com cobertura aceitavel)""",
         }
 
-    async def _pendentes(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _pendentes(self, args: list[str], context: dict) -> dict[str, Any]:
         """Listar escalas pendentes de aprovacao/publicacao"""
 
         # Tenta buscar dados reais
@@ -274,7 +281,7 @@ Periodo: {periodo}
             "suggestions": ["/escala validar ESC-001", "/escala publicar ESC-002"],
         }
 
-    async def _auto_gerar(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _auto_gerar(self, args: list[str], context: dict) -> dict[str, Any]:
         """Gerar escalas automaticamente para todos os postos."""
         from datetime import datetime as dt
 
@@ -288,46 +295,51 @@ Periodo: {periodo}
             except ValueError:
                 # Tentar nome do mes
                 meses_map = {
-                    "jan": 1, "fev": 2, "mar": 3, "abr": 4, "mai": 5, "jun": 6,
-                    "jul": 7, "ago": 8, "set": 9, "out": 10, "nov": 11, "dez": 12,
+                    "jan": 1,
+                    "fev": 2,
+                    "mar": 3,
+                    "abr": 4,
+                    "mai": 5,
+                    "jun": 6,
+                    "jul": 7,
+                    "ago": 8,
+                    "set": 9,
+                    "out": 10,
+                    "nov": 11,
+                    "dez": 12,
                 }
                 mes = meses_map.get(args[0][:3].lower())
 
         if len(args) >= 2:
-            try:
+            with contextlib.suppress(ValueError):
                 ano = int(args[1])
-            except ValueError:
-                pass
 
         # Tentar usar AutoScaleService
         try:
             from modules.operacional.services.auto_scale_service import AutoScaleService
-            if self.data_connector and hasattr(self.data_connector, 'db'):
+
+            if self.data_connector and hasattr(self.data_connector, "db"):
                 service = AutoScaleService(self.data_connector.db)
                 if mes:
                     result = await service.generate_scales_for_month(
                         month=mes, year=ano, created_by=context.get("user_id")
                     )
                 else:
-                    result = await service.generate_scales_for_current_month(
-                        created_by=context.get("user_id")
-                    )
+                    result = await service.generate_scales_for_current_month(created_by=context.get("user_id"))
 
                 erros_text = ""
                 if result.get("errors"):
-                    erros_text = "\n\n**Erros:**\n" + "\n".join(
-                        f"- {e}" for e in result["errors"][:5]
-                    )
+                    erros_text = "\n\n**Erros:**\n" + "\n".join(f"- {e}" for e in result["errors"][:5])
 
                 periodo = f"{mes:02d}/{ano}" if mes else "mes atual"
                 return {
                     "response": f"""**Geracao Automatica de Escalas**
 
 Periodo: {periodo}
-Escalas criadas: {result.get('scales_created', 0)}
-Turnos gerados: {result.get('shifts_created', 0)}
+Escalas criadas: {result.get("scales_created", 0)}
+Turnos gerados: {result.get("shifts_created", 0)}
 
-{result.get('message', '')}{erros_text}""",
+{result.get("message", "")}{erros_text}""",
                     "data": result,
                     "suggestions": ["/escala pendentes", "/escala validar"],
                 }
@@ -363,15 +375,15 @@ O sistema ira:
             ],
         }
 
-    async def _otimizar_inteligente(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _otimizar_inteligente(self, args: list[str], context: dict) -> dict[str, Any]:
         """Otimizar escala com IA avancada via IntelligentOperationsService."""
-        from datetime import datetime as dt
         import calendar
+        from datetime import datetime as dt
 
         if len(args) < 2:
             return {
                 "response": "**Uso:** `/escala otimizar <posto> <mes>`\n\n"
-                            "Exemplo: `/escala otimizar POST-001 3` (marco)",
+                "Exemplo: `/escala otimizar POST-001 3` (marco)",
                 "suggestions": ["/escala otimizar POST-001 2", "/escala help"],
             }
 
@@ -388,7 +400,8 @@ O sistema ira:
             from modules.operacional.services.intelligent_operations_service import (
                 IntelligentOperationsService,
             )
-            if self.data_connector and hasattr(self.data_connector, 'db') and tenant_id:
+
+            if self.data_connector and hasattr(self.data_connector, "db") and tenant_id:
                 service = IntelligentOperationsService(self.data_connector.db, tenant_id)
                 _, last_day = calendar.monthrange(ano, mes)
                 start_date = dt(ano, mes, 1)
@@ -410,9 +423,9 @@ O sistema ira:
 Periodo: {mes:02d}/{ano}
 Eficiencia: {schedule.efficiency_score:.1%}
 Cobertura: {schedule.coverage_score:.1%}
-Custo total: R$ {cost.get('total_cost', 0):,.2f}
-Custo HE: R$ {cost.get('overtime_cost', 0):,.2f}
-Alocacoes: {schedule.optimization_metrics.get('total_assignments', 0)}{insights_text}""",
+Custo total: R$ {cost.get("total_cost", 0):,.2f}
+Custo HE: R$ {cost.get("overtime_cost", 0):,.2f}
+Alocacoes: {schedule.optimization_metrics.get("total_assignments", 0)}{insights_text}""",
                     "data": {
                         "schedule_id": schedule.id,
                         "efficiency": schedule.efficiency_score,
@@ -455,7 +468,7 @@ O sistema utilizara IA para:
             "suggestions": ["/escala otimizar POST-001 3", "/escala help"],
         }
 
-    async def _template(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _template(self, args: list[str], context: dict) -> dict[str, Any]:
         """Sub-comandos de template: criar, aplicar, listar."""
         if not args:
             return {
@@ -488,15 +501,16 @@ O sistema utilizara IA para:
         else:
             return {
                 "response": f"Subcomando '{subcommand}' nao reconhecido.\n\n"
-                            "Use: `/escala template listar|criar|aplicar`",
+                "Use: `/escala template listar|criar|aplicar`",
                 "suggestions": ["/escala template listar", "/escala template help"],
             }
 
-    async def _template_listar(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _template_listar(self, args: list[str], context: dict) -> dict[str, Any]:
         """Listar templates disponíveis."""
         try:
             from modules.operacional.repositories.scale_template_repository import ScaleTemplateRepository
-            if self.data_connector and hasattr(self.data_connector, 'db'):
+
+            if self.data_connector and hasattr(self.data_connector, "db"):
                 repo = ScaleTemplateRepository(self.data_connector.db)
                 tenant_id = context.get("tenant_id") or context.get("cliente_id")
                 if tenant_id:
@@ -519,15 +533,13 @@ O sistema utilizara IA para:
 | # | Nome | Tipo | Func. | Uso | ID |
 |---|------|------|-------|-----|----|
 {table}""",
-                            "data": {"total": total, "templates": [
-                                {"id": t.id, "name": t.name} for t in templates
-                            ]},
+                            "data": {"total": total, "templates": [{"id": t.id, "name": t.name} for t in templates]},
                             "suggestions": ["/escala template criar", "/escala template aplicar"],
                         }
                     else:
                         return {
                             "response": "**Nenhum template encontrado.**\n\n"
-                                        "Crie um: `/escala template criar <nome> <escala_id>`",
+                            "Crie um: `/escala template criar <nome> <escala_id>`",
                             "suggestions": ["/escala template criar", "/escala pendentes"],
                         }
         except ImportError:
@@ -540,12 +552,12 @@ O sistema utilizara IA para:
             "suggestions": ["/escala help"],
         }
 
-    async def _template_criar(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _template_criar(self, args: list[str], context: dict) -> dict[str, Any]:
         """Criar template a partir de escala existente."""
         if len(args) < 2:
             return {
                 "response": "**Uso:** `/escala template criar <nome> <escala_id>`\n\n"
-                            "Exemplo: `/escala template criar Portaria12x36 ESC-001`",
+                "Exemplo: `/escala template criar Portaria12x36 ESC-001`",
                 "suggestions": ["/escala pendentes"],
             }
 
@@ -553,11 +565,11 @@ O sistema utilizara IA para:
         scale_id = args[1]
 
         try:
-            from modules.operacional.services.scale_template_service import ScaleTemplateService
             from modules.operacional.repositories.scale_template_repository import ScaleTemplateRepository
             from modules.operacional.schemas.scale_template import ScaleTemplateCreate
+            from modules.operacional.services.scale_template_service import ScaleTemplateService
 
-            if self.data_connector and hasattr(self.data_connector, 'db'):
+            if self.data_connector and hasattr(self.data_connector, "db"):
                 db = self.data_connector.db
                 service = ScaleTemplateService(db)
                 repo = ScaleTemplateRepository(db)
@@ -575,9 +587,7 @@ O sistema utilizara IA para:
                     description=f"Template criado via Bartolo (escala {scale_id})",
                     template_data=template_data,
                 )
-                template = await repo.create(
-                    data=create_data, tenant_id=tenant_id, created_by=user_id
-                )
+                template = await repo.create(data=create_data, tenant_id=tenant_id, created_by=user_id)
 
                 return {
                     "response": f"""**Template Criado**
@@ -609,13 +619,13 @@ Cobertura: {template_data.metadata.coverage_percentage:.1f}%""",
             "suggestions": ["/escala help"],
         }
 
-    async def _template_aplicar(self, args: List[str], context: Dict) -> Dict[str, Any]:
+    async def _template_aplicar(self, args: list[str], context: dict) -> dict[str, Any]:
         """Aplicar template em posto/mes."""
         if len(args) < 3:
             return {
                 "response": "**Uso:** `/escala template aplicar <template_id> <posto> <mes>`\n\n"
-                            "Exemplo: `/escala template aplicar TPL-001 POST-001 3`\n"
-                            "O ano padrao e o atual. Adicione ano: `/escala template aplicar TPL-001 POST-001 3 2026`",
+                "Exemplo: `/escala template aplicar TPL-001 POST-001 3`\n"
+                "O ano padrao e o atual. Adicione ano: `/escala template aplicar TPL-001 POST-001 3 2026`",
                 "suggestions": ["/escala template listar"],
             }
 
@@ -627,14 +637,15 @@ Cobertura: {template_data.metadata.coverage_percentage:.1f}%""",
             return {"response": "Mes invalido. Informe um numero de 1 a 12."}
 
         from datetime import datetime as dt
+
         ano = int(args[3]) if len(args) >= 4 else dt.now().year
 
         try:
-            from modules.operacional.services.scale_template_service import ScaleTemplateService
             from modules.operacional.repositories.scale_template_repository import ScaleTemplateRepository
             from modules.operacional.schemas.scale_template import ScaleTemplateApplyRequest
+            from modules.operacional.services.scale_template_service import ScaleTemplateService
 
-            if self.data_connector and hasattr(self.data_connector, 'db'):
+            if self.data_connector and hasattr(self.data_connector, "db"):
                 db = self.data_connector.db
                 repo = ScaleTemplateRepository(db)
                 service = ScaleTemplateService(db)
@@ -648,9 +659,7 @@ Cobertura: {template_data.metadata.coverage_percentage:.1f}%""",
                         "suggestions": ["/escala template listar"],
                     }
 
-                apply_request = ScaleTemplateApplyRequest(
-                    month=mes, year=ano, post_id=posto_id
-                )
+                apply_request = ScaleTemplateApplyRequest(month=mes, year=ano, post_id=posto_id)
                 user_id = context.get("user_id", "")
                 scale = await service.apply_template_to_period(
                     template_data=template.template_data,

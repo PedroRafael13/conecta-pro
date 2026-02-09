@@ -4,6 +4,7 @@
 # Legacy - Portaria Remota
 # =============================================================================
 from .access_log_repository import AccessLogRepository
+from .checklist_repository import ChecklistRepository
 from .equipment_status_repository import EquipmentStatusRepository
 from .guardian_occurrence_repository import GuardianOccurrenceRepository
 from .guardian_sync_repository import GuardianSyncRepository
@@ -13,7 +14,6 @@ from .guardian_sync_repository import GuardianSyncRepository
 # =============================================================================
 from .ordem_servico_repository import OrdemServicoRepository
 from .visita_repository import VisitaRepository
-from .checklist_repository import ChecklistRepository
 
 __all__ = [
     # Legacy

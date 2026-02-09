@@ -5,19 +5,20 @@ Schemas Pydantic para validacao de dados de analise de sentimento.
 """
 
 from datetime import datetime
-from typing import Optional, List, Dict, Any
+from enum import StrEnum
+from typing import Any
 from uuid import UUID
-from enum import Enum
 
-from pydantic import BaseModel, Field, validator
-
+from pydantic import BaseModel, Field, field_validator
 
 # ============================================================
 # Enums
 # ============================================================
 
-class SentimentTypeEnum(str, Enum):
+
+class SentimentTypeEnum(StrEnum):
     """Tipos de sentimento."""
+
     VERY_POSITIVE = "very_positive"
     POSITIVE = "positive"
     NEUTRAL = "neutral"
@@ -26,8 +27,9 @@ class SentimentTypeEnum(str, Enum):
     MIXED = "mixed"
 
 
-class EmotionTypeEnum(str, Enum):
+class EmotionTypeEnum(StrEnum):
     """Tipos de emocao."""
+
     JOY = "joy"
     SATISFACTION = "satisfaction"
     GRATITUDE = "gratitude"
@@ -45,8 +47,9 @@ class EmotionTypeEnum(str, Enum):
     URGENCY = "urgency"
 
 
-class SourceTypeEnum(str, Enum):
+class SourceTypeEnum(StrEnum):
     """Tipo de fonte."""
+
     TICKET = "ticket"
     EMAIL = "email"
     CHAT = "chat"
@@ -63,8 +66,9 @@ class SourceTypeEnum(str, Enum):
     OTHER = "other"
 
 
-class AnalysisStatusEnum(str, Enum):
+class AnalysisStatusEnum(StrEnum):
     """Status da analise."""
+
     PENDING = "pending"
     PROCESSING = "processing"
     COMPLETED = "completed"
@@ -72,8 +76,9 @@ class AnalysisStatusEnum(str, Enum):
     REQUIRES_REVIEW = "requires_review"
 
 
-class TrendPeriodEnum(str, Enum):
+class TrendPeriodEnum(StrEnum):
     """Periodo de tendencia."""
+
     HOURLY = "hourly"
     DAILY = "daily"
     WEEKLY = "weekly"
@@ -82,16 +87,18 @@ class TrendPeriodEnum(str, Enum):
     YEARLY = "yearly"
 
 
-class TrendDirectionEnum(str, Enum):
+class TrendDirectionEnum(StrEnum):
     """Direcao da tendencia."""
+
     IMPROVING = "improving"
     STABLE = "stable"
     DECLINING = "declining"
     VOLATILE = "volatile"
 
 
-class InsightTypeEnum(str, Enum):
+class InsightTypeEnum(StrEnum):
     """Tipos de insight."""
+
     SENTIMENT_DROP = "sentiment_drop"
     SENTIMENT_SPIKE = "sentiment_spike"
     SENTIMENT_ANOMALY = "sentiment_anomaly"
@@ -115,8 +122,9 @@ class InsightTypeEnum(str, Enum):
     TEAM_RECOGNITION = "team_recognition"
 
 
-class InsightPriorityEnum(str, Enum):
+class InsightPriorityEnum(StrEnum):
     """Prioridade do insight."""
+
     CRITICAL = "critical"
     HIGH = "high"
     MEDIUM = "medium"
@@ -124,8 +132,9 @@ class InsightPriorityEnum(str, Enum):
     INFO = "info"
 
 
-class InsightStatusEnum(str, Enum):
+class InsightStatusEnum(StrEnum):
     """Status do insight."""
+
     NEW = "new"
     ACKNOWLEDGED = "acknowledged"
     IN_PROGRESS = "in_progress"
@@ -134,8 +143,9 @@ class InsightStatusEnum(str, Enum):
     EXPIRED = "expired"
 
 
-class RuleCategoryEnum(str, Enum):
+class RuleCategoryEnum(StrEnum):
     """Categorias de regras."""
+
     SENTIMENT = "sentiment"
     EMOTION = "emotion"
     KEYWORD = "keyword"
@@ -148,8 +158,9 @@ class RuleCategoryEnum(str, Enum):
     CUSTOM = "custom"
 
 
-class RuleActionEnum(str, Enum):
+class RuleActionEnum(StrEnum):
     """Acoes da regra."""
+
     ALERT = "alert"
     ESCALATE = "escalate"
     NOTIFY_EMAIL = "notify_email"
@@ -168,8 +179,10 @@ class RuleActionEnum(str, Enum):
 # Base Schemas
 # ============================================================
 
+
 class AspectSchema(BaseModel):
     """Schema para aspecto identificado."""
+
     aspect: str
     sentiment: str
     score: float
@@ -178,27 +191,31 @@ class AspectSchema(BaseModel):
 
 class KeywordSchema(BaseModel):
     """Schema para keyword."""
+
     word: str
     frequency: int = 1
 
 
 class EmotionScoreSchema(BaseModel):
     """Schema para score de emocao."""
+
     emotion: EmotionTypeEnum
     score: float = Field(..., ge=0, le=100)
 
 
 class RecommendationSchema(BaseModel):
     """Schema para recomendacao."""
+
     action: str
     expected_impact: str
     effort: str = "medium"
     priority: int = 1
-    details: Optional[Dict[str, Any]] = None
+    details: dict[str, Any] | None = None
 
 
 class RuleConditionSchema(BaseModel):
     """Schema para condicao de regra."""
+
     field: str
     operator: str
     value: Any
@@ -208,26 +225,28 @@ class RuleConditionSchema(BaseModel):
 # Sentiment Analysis Schemas
 # ============================================================
 
+
 class AnalyzeTextRequest(BaseModel):
     """Request para analise de texto."""
+
     text: str = Field(..., min_length=1, max_length=50000)
     source_type: SourceTypeEnum = SourceTypeEnum.OTHER
-    source_id: Optional[UUID] = None
-    source_reference: Optional[str] = Field(None, max_length=255)
+    source_id: UUID | None = None
+    source_reference: str | None = Field(None, max_length=255)
 
-    entity_type: Optional[str] = Field(None, max_length=50)
-    entity_id: Optional[UUID] = None
-    entity_name: Optional[str] = Field(None, max_length=255)
+    entity_type: str | None = Field(None, max_length=50)
+    entity_id: UUID | None = None
+    entity_name: str | None = Field(None, max_length=255)
 
-    customer_id: Optional[UUID] = None
-    customer_name: Optional[str] = Field(None, max_length=255)
-    customer_segment: Optional[str] = Field(None, max_length=100)
+    customer_id: UUID | None = None
+    customer_name: str | None = Field(None, max_length=255)
+    customer_segment: str | None = Field(None, max_length=100)
 
     language: str = Field("pt", max_length=10)
-    nps_score: Optional[int] = Field(None, ge=0, le=10)
+    nps_score: int | None = Field(None, ge=0, le=10)
 
-    metadata: Optional[Dict[str, Any]] = None
-    tags: Optional[List[str]] = None
+    metadata: dict[str, Any] | None = None
+    tags: list[str] | None = None
 
     # Opcoes de analise
     detect_emotions: bool = True
@@ -236,15 +255,17 @@ class AnalyzeTextRequest(BaseModel):
     check_urgency: bool = True
     apply_rules: bool = True
 
-    @validator('text')
+    @field_validator("text")
+    @classmethod
     def text_not_empty(cls, v):
         if not v or not v.strip():
-            raise ValueError('Texto nao pode ser vazio')
+            raise ValueError("Texto nao pode ser vazio")
         return v.strip()
 
 
 class AnalyzeTextResponse(BaseModel):
     """Response da analise de texto."""
+
     id: UUID
 
     # Sentimento
@@ -259,14 +280,14 @@ class AnalyzeTextResponse(BaseModel):
     neutral_score: float
 
     # Emocoes
-    primary_emotion: Optional[EmotionTypeEnum]
-    secondary_emotion: Optional[EmotionTypeEnum]
-    emotion_scores: Dict[str, float]
+    primary_emotion: EmotionTypeEnum | None
+    secondary_emotion: EmotionTypeEnum | None
+    emotion_scores: dict[str, float]
 
     # Aspectos e keywords
-    aspects: List[AspectSchema]
-    keywords: List[KeywordSchema]
-    topics: List[str]
+    aspects: list[AspectSchema]
+    keywords: list[KeywordSchema]
+    topics: list[str]
 
     # Indicadores
     has_urgency: bool
@@ -280,16 +301,16 @@ class AnalyzeTextResponse(BaseModel):
     is_critical: bool
 
     # Frases
-    key_phrases: List[str]
-    negative_phrases: List[str]
-    positive_phrases: List[str]
+    key_phrases: list[str]
+    negative_phrases: list[str]
+    positive_phrases: list[str]
 
     # NPS
-    nps_score: Optional[int]
-    nps_category: Optional[str]
+    nps_score: int | None
+    nps_category: str | None
 
     # Regras
-    triggered_rules: List[Dict[str, Any]]
+    triggered_rules: list[dict[str, Any]]
     alert_generated: bool
 
     # Meta
@@ -303,72 +324,77 @@ class AnalyzeTextResponse(BaseModel):
 
 class BatchAnalyzeRequest(BaseModel):
     """Request para analise em lote."""
-    texts: List[AnalyzeTextRequest] = Field(..., min_items=1, max_items=100)
+
+    texts: list[AnalyzeTextRequest] = Field(..., min_items=1, max_items=100)
 
     # Opcoes globais
     async_processing: bool = False
-    callback_url: Optional[str] = None
+    callback_url: str | None = None
 
 
 class BatchAnalyzeResponse(BaseModel):
     """Response da analise em lote."""
+
     total: int
     processed: int
     failed: int
-    results: List[AnalyzeTextResponse]
-    errors: List[Dict[str, Any]]
+    results: list[AnalyzeTextResponse]
+    errors: list[dict[str, Any]]
     processing_time_ms: int
 
 
 class SentimentAnalysisCreate(BaseModel):
     """Schema para criar analise."""
+
     original_text: str = Field(..., min_length=1)
     source_type: SourceTypeEnum
-    source_id: Optional[UUID] = None
-    source_reference: Optional[str] = None
-    entity_type: Optional[str] = None
-    entity_id: Optional[UUID] = None
-    customer_id: Optional[UUID] = None
-    customer_name: Optional[str] = None
+    source_id: UUID | None = None
+    source_reference: str | None = None
+    entity_type: str | None = None
+    entity_id: UUID | None = None
+    customer_id: UUID | None = None
+    customer_name: str | None = None
     language: str = "pt"
-    metadata: Optional[Dict[str, Any]] = None
-    tags: Optional[List[str]] = None
+    metadata: dict[str, Any] | None = None
+    tags: list[str] | None = None
 
 
 class SentimentAnalysisUpdate(BaseModel):
     """Schema para atualizar analise."""
-    is_reviewed: Optional[bool] = None
-    corrected_sentiment: Optional[SentimentTypeEnum] = None
-    review_notes: Optional[str] = None
-    tags: Optional[List[str]] = None
-    metadata: Optional[Dict[str, Any]] = None
+
+    is_reviewed: bool | None = None
+    corrected_sentiment: SentimentTypeEnum | None = None
+    review_notes: str | None = None
+    tags: list[str] | None = None
+    metadata: dict[str, Any] | None = None
 
 
 class SentimentAnalysisResponse(BaseModel):
     """Response completo da analise."""
+
     id: UUID
 
     # Texto
     original_text: str
-    normalized_text: Optional[str]
+    normalized_text: str | None
     language: str
-    word_count: Optional[int]
-    char_count: Optional[int]
+    word_count: int | None
+    char_count: int | None
 
     # Fonte
     source_type: SourceTypeEnum
-    source_id: Optional[UUID]
-    source_reference: Optional[str]
+    source_id: UUID | None
+    source_reference: str | None
 
     # Entidade
-    entity_type: Optional[str]
-    entity_id: Optional[UUID]
-    entity_name: Optional[str]
+    entity_type: str | None
+    entity_id: UUID | None
+    entity_name: str | None
 
     # Cliente
-    customer_id: Optional[UUID]
-    customer_name: Optional[str]
-    customer_segment: Optional[str]
+    customer_id: UUID | None
+    customer_name: str | None
+    customer_segment: str | None
 
     # Sentimento
     sentiment_type: SentimentTypeEnum
@@ -379,19 +405,19 @@ class SentimentAnalysisResponse(BaseModel):
     neutral_score: float
 
     # Emocoes
-    primary_emotion: Optional[EmotionTypeEnum]
-    secondary_emotion: Optional[EmotionTypeEnum]
-    emotion_scores: Dict[str, float]
+    primary_emotion: EmotionTypeEnum | None
+    secondary_emotion: EmotionTypeEnum | None
+    emotion_scores: dict[str, float]
 
     # Aspectos
-    aspects: List[Dict[str, Any]]
-    topics: List[str]
-    keywords: List[Dict[str, Any]]
+    aspects: list[dict[str, Any]]
+    topics: list[str]
+    keywords: list[dict[str, Any]]
 
     # Entidades
-    entities_mentioned: List[str]
-    products_mentioned: List[str]
-    services_mentioned: List[str]
+    entities_mentioned: list[str]
+    products_mentioned: list[str]
+    services_mentioned: list[str]
 
     # Indicadores
     has_urgency: bool
@@ -404,38 +430,38 @@ class SentimentAnalysisResponse(BaseModel):
     requires_action: bool
 
     # Frases
-    key_phrases: List[str]
-    negative_phrases: List[str]
-    positive_phrases: List[str]
+    key_phrases: list[str]
+    negative_phrases: list[str]
+    positive_phrases: list[str]
 
     # NPS
-    nps_score: Optional[int]
-    nps_category: Optional[str]
+    nps_score: int | None
+    nps_category: str | None
 
     # Status
     status: AnalysisStatusEnum
-    processing_time_ms: Optional[int]
-    model_version: Optional[str]
+    processing_time_ms: int | None
+    model_version: str | None
 
     # Revisao
     is_reviewed: bool
-    reviewed_by: Optional[UUID]
-    reviewed_at: Optional[datetime]
-    corrected_sentiment: Optional[SentimentTypeEnum]
+    reviewed_by: UUID | None
+    reviewed_at: datetime | None
+    corrected_sentiment: SentimentTypeEnum | None
 
     # Regras
-    triggered_rules: List[Dict[str, Any]]
+    triggered_rules: list[dict[str, Any]]
     alert_generated: bool
-    alert_id: Optional[UUID]
+    alert_id: UUID | None
 
     # Meta
-    metadata: Dict[str, Any]
-    tags: List[str]
+    metadata: dict[str, Any]
+    tags: list[str]
 
     # Timestamps
-    analyzed_at: Optional[datetime]
+    analyzed_at: datetime | None
     created_at: datetime
-    updated_at: Optional[datetime]
+    updated_at: datetime | None
 
     class Config:
         from_attributes = True
@@ -443,17 +469,18 @@ class SentimentAnalysisResponse(BaseModel):
 
 class SentimentAnalysisSummary(BaseModel):
     """Resumo da analise."""
+
     id: UUID
     sentiment: SentimentTypeEnum
     sentiment_label: str
     score: float
     confidence: float
-    primary_emotion: Optional[str]
+    primary_emotion: str | None
     is_critical: bool
     requires_action: bool
-    key_aspects: List[Dict[str, Any]]
+    key_aspects: list[dict[str, Any]]
     source_type: SourceTypeEnum
-    analyzed_at: Optional[datetime]
+    analyzed_at: datetime | None
 
     class Config:
         from_attributes = True
@@ -461,7 +488,8 @@ class SentimentAnalysisSummary(BaseModel):
 
 class SentimentAnalysisListResponse(BaseModel):
     """Response de lista de analises."""
-    items: List[SentimentAnalysisSummary]
+
+    items: list[SentimentAnalysisSummary]
     total: int
     page: int
     page_size: int
@@ -470,90 +498,93 @@ class SentimentAnalysisListResponse(BaseModel):
 
 class SentimentAnalysisFilter(BaseModel):
     """Filtros para analises."""
-    sentiment_types: Optional[List[SentimentTypeEnum]] = None
-    source_types: Optional[List[SourceTypeEnum]] = None
-    emotions: Optional[List[EmotionTypeEnum]] = None
-    customer_id: Optional[UUID] = None
-    entity_type: Optional[str] = None
-    entity_id: Optional[UUID] = None
 
-    min_score: Optional[float] = Field(None, ge=-100, le=100)
-    max_score: Optional[float] = Field(None, ge=-100, le=100)
-    min_confidence: Optional[float] = Field(None, ge=0, le=100)
+    sentiment_types: list[SentimentTypeEnum] | None = None
+    source_types: list[SourceTypeEnum] | None = None
+    emotions: list[EmotionTypeEnum] | None = None
+    customer_id: UUID | None = None
+    entity_type: str | None = None
+    entity_id: UUID | None = None
 
-    has_urgency: Optional[bool] = None
-    has_complaint: Optional[bool] = None
-    has_intent_to_leave: Optional[bool] = None
-    requires_action: Optional[bool] = None
-    is_critical: Optional[bool] = None
-    is_reviewed: Optional[bool] = None
+    min_score: float | None = Field(None, ge=-100, le=100)
+    max_score: float | None = Field(None, ge=-100, le=100)
+    min_confidence: float | None = Field(None, ge=0, le=100)
 
-    keywords: Optional[List[str]] = None
-    topics: Optional[List[str]] = None
-    tags: Optional[List[str]] = None
+    has_urgency: bool | None = None
+    has_complaint: bool | None = None
+    has_intent_to_leave: bool | None = None
+    requires_action: bool | None = None
+    is_critical: bool | None = None
+    is_reviewed: bool | None = None
 
-    date_from: Optional[datetime] = None
-    date_to: Optional[datetime] = None
+    keywords: list[str] | None = None
+    topics: list[str] | None = None
+    tags: list[str] | None = None
+
+    date_from: datetime | None = None
+    date_to: datetime | None = None
 
 
 # ============================================================
 # Sentiment Rule Schemas
 # ============================================================
 
+
 class SentimentRuleCreate(BaseModel):
     """Schema para criar regra."""
+
     code: str = Field(..., min_length=1, max_length=50)
     name: str = Field(..., min_length=1, max_length=200)
-    description: Optional[str] = None
+    description: str | None = None
 
     category: RuleCategoryEnum
-    subcategory: Optional[str] = Field(None, max_length=100)
+    subcategory: str | None = Field(None, max_length=100)
     priority: int = Field(50, ge=1, le=100)
     weight: float = Field(1.0, ge=0, le=10)
 
     # Condicoes
-    conditions: Optional[List[RuleConditionSchema]] = None
-    sentiment_threshold: Optional[float] = Field(None, ge=-100, le=100)
-    sentiment_types: Optional[List[SentimentTypeEnum]] = None
-    emotion_types: Optional[List[EmotionTypeEnum]] = None
-    emotion_threshold: Optional[float] = Field(None, ge=0, le=100)
+    conditions: list[RuleConditionSchema] | None = None
+    sentiment_threshold: float | None = Field(None, ge=-100, le=100)
+    sentiment_types: list[SentimentTypeEnum] | None = None
+    emotion_types: list[EmotionTypeEnum] | None = None
+    emotion_threshold: float | None = Field(None, ge=0, le=100)
 
     # Keywords
-    keywords_include: Optional[List[str]] = None
-    keywords_exclude: Optional[List[str]] = None
+    keywords_include: list[str] | None = None
+    keywords_exclude: list[str] | None = None
     keywords_match_all: bool = False
 
     # Aspectos
-    aspects_include: Optional[List[str]] = None
-    aspects_sentiment: Optional[str] = None
+    aspects_include: list[str] | None = None
+    aspects_sentiment: str | None = None
 
     # Fontes
-    source_types: Optional[List[SourceTypeEnum]] = None
-    exclude_sources: Optional[List[SourceTypeEnum]] = None
+    source_types: list[SourceTypeEnum] | None = None
+    exclude_sources: list[SourceTypeEnum] | None = None
 
     # Clientes
-    customer_segments: Optional[List[str]] = None
-    customer_tiers: Optional[List[str]] = None
+    customer_segments: list[str] | None = None
+    customer_tiers: list[str] | None = None
 
     # Acoes
     primary_action: RuleActionEnum = RuleActionEnum.ALERT
-    secondary_actions: Optional[List[RuleActionEnum]] = None
-    action_config: Optional[Dict[str, Any]] = None
+    secondary_actions: list[RuleActionEnum] | None = None
+    action_config: dict[str, Any] | None = None
 
     # Notificacoes
-    notify_channels: Optional[List[str]] = None
-    notify_recipients: Optional[List[str]] = None
-    notify_template: Optional[str] = None
+    notify_channels: list[str] | None = None
+    notify_recipients: list[str] | None = None
+    notify_template: str | None = None
 
     # Cooldown
     cooldown_minutes: int = Field(60, ge=0)
     cooldown_per_customer: bool = True
-    max_triggers_per_day: Optional[int] = Field(None, ge=1)
+    max_triggers_per_day: int | None = Field(None, ge=1)
 
     # Horarios
-    active_hours_start: Optional[int] = Field(None, ge=0, le=23)
-    active_hours_end: Optional[int] = Field(None, ge=0, le=23)
-    active_days: Optional[List[int]] = None  # 0-6
+    active_hours_start: int | None = Field(None, ge=0, le=23)
+    active_hours_end: int | None = Field(None, ge=0, le=23)
+    active_days: list[int] | None = None  # 0-6
 
     is_active: bool = True
     is_test_mode: bool = False
@@ -561,82 +592,84 @@ class SentimentRuleCreate(BaseModel):
 
 class SentimentRuleUpdate(BaseModel):
     """Schema para atualizar regra."""
-    name: Optional[str] = Field(None, max_length=200)
-    description: Optional[str] = None
-    priority: Optional[int] = Field(None, ge=1, le=100)
-    weight: Optional[float] = Field(None, ge=0, le=10)
 
-    conditions: Optional[List[RuleConditionSchema]] = None
-    sentiment_threshold: Optional[float] = None
-    sentiment_types: Optional[List[SentimentTypeEnum]] = None
-    emotion_types: Optional[List[EmotionTypeEnum]] = None
+    name: str | None = Field(None, max_length=200)
+    description: str | None = None
+    priority: int | None = Field(None, ge=1, le=100)
+    weight: float | None = Field(None, ge=0, le=10)
 
-    keywords_include: Optional[List[str]] = None
-    keywords_exclude: Optional[List[str]] = None
+    conditions: list[RuleConditionSchema] | None = None
+    sentiment_threshold: float | None = None
+    sentiment_types: list[SentimentTypeEnum] | None = None
+    emotion_types: list[EmotionTypeEnum] | None = None
 
-    primary_action: Optional[RuleActionEnum] = None
-    secondary_actions: Optional[List[RuleActionEnum]] = None
-    action_config: Optional[Dict[str, Any]] = None
+    keywords_include: list[str] | None = None
+    keywords_exclude: list[str] | None = None
 
-    notify_channels: Optional[List[str]] = None
-    notify_recipients: Optional[List[str]] = None
+    primary_action: RuleActionEnum | None = None
+    secondary_actions: list[RuleActionEnum] | None = None
+    action_config: dict[str, Any] | None = None
 
-    cooldown_minutes: Optional[int] = None
-    max_triggers_per_day: Optional[int] = None
+    notify_channels: list[str] | None = None
+    notify_recipients: list[str] | None = None
 
-    is_active: Optional[bool] = None
-    is_test_mode: Optional[bool] = None
+    cooldown_minutes: int | None = None
+    max_triggers_per_day: int | None = None
+
+    is_active: bool | None = None
+    is_test_mode: bool | None = None
 
 
 class SentimentRuleResponse(BaseModel):
     """Response da regra."""
+
     id: UUID
     code: str
     name: str
-    description: Optional[str]
+    description: str | None
 
     category: RuleCategoryEnum
-    subcategory: Optional[str]
+    subcategory: str | None
     priority: int
     weight: float
 
-    conditions: List[Dict[str, Any]]
-    sentiment_threshold: Optional[float]
-    sentiment_types: List[str]
-    emotion_types: List[str]
+    conditions: list[dict[str, Any]]
+    sentiment_threshold: float | None
+    sentiment_types: list[str]
+    emotion_types: list[str]
 
-    keywords_include: List[str]
-    keywords_exclude: List[str]
+    keywords_include: list[str]
+    keywords_exclude: list[str]
     keywords_match_all: bool
 
-    aspects_include: List[str]
-    source_types: List[str]
-    customer_segments: List[str]
+    aspects_include: list[str]
+    source_types: list[str]
+    customer_segments: list[str]
 
     primary_action: RuleActionEnum
-    secondary_actions: List[str]
-    action_config: Dict[str, Any]
+    secondary_actions: list[str]
+    action_config: dict[str, Any]
 
-    notify_channels: List[str]
-    notify_recipients: List[str]
+    notify_channels: list[str]
+    notify_recipients: list[str]
 
     cooldown_minutes: int
-    max_triggers_per_day: Optional[int]
+    max_triggers_per_day: int | None
 
     # Stats
     total_triggers: int
     total_actions: int
     true_positives: int
     false_positives: int
-    precision_rate: Optional[float]
-    last_triggered_at: Optional[datetime]
+    precision_rate: float | None
+    last_triggered_at: datetime | None
 
     is_active: bool
     is_system: bool
     is_test_mode: bool
 
     created_at: datetime
-    updated_at: Optional[datetime]
+    updated_at: datetime | None
 
     class Config:
         from_attributes = True
@@ -644,7 +677,8 @@ class SentimentRuleResponse(BaseModel):
 
 class SentimentRuleListResponse(BaseModel):
     """Response de lista de regras."""
-    items: List[SentimentRuleResponse]
+
+    items: list[SentimentRuleResponse]
     total: int
     page: int
     page_size: int
@@ -652,33 +686,37 @@ class SentimentRuleListResponse(BaseModel):
 
 class RuleEvaluationResult(BaseModel):
     """Resultado da avaliacao de regra."""
+
     rule_id: UUID
     rule_code: str
     rule_name: str
     matched: bool
     conditions_matched: int
     conditions_total: int
-    reasons: List[str]
-    actions_to_execute: List[Dict[str, Any]]
+    reasons: list[str]
+    actions_to_execute: list[dict[str, Any]]
 
 
 # ============================================================
 # Sentiment Trend Schemas
 # ============================================================
 
+
 class TrendFilter(BaseModel):
     """Filtros para tendencias."""
-    period_type: Optional[TrendPeriodEnum] = None
-    category: Optional[str] = None
-    category_value: Optional[str] = None
-    entity_type: Optional[str] = None
-    entity_id: Optional[UUID] = None
-    date_from: Optional[datetime] = None
-    date_to: Optional[datetime] = None
+
+    period_type: TrendPeriodEnum | None = None
+    category: str | None = None
+    category_value: str | None = None
+    entity_type: str | None = None
+    entity_id: UUID | None = None
+    date_from: datetime | None = None
+    date_to: datetime | None = None
 
 
 class SentimentTrendResponse(BaseModel):
     """Response de tendencia."""
+
     id: UUID
 
     # Periodo
@@ -689,15 +727,15 @@ class SentimentTrendResponse(BaseModel):
 
     # Categoria
     category: str
-    category_value: Optional[str]
-    entity_type: Optional[str]
-    entity_id: Optional[UUID]
+    category_value: str | None
+    entity_type: str | None
+    entity_id: UUID | None
 
     # Metricas
     avg_sentiment_score: float
-    min_sentiment_score: Optional[float]
-    max_sentiment_score: Optional[float]
-    std_sentiment_score: Optional[float]
+    min_sentiment_score: float | None
+    max_sentiment_score: float | None
+    std_sentiment_score: float | None
 
     # Distribuicao
     very_positive_count: int
@@ -716,15 +754,15 @@ class SentimentTrendResponse(BaseModel):
     total_analyses: int
 
     # Emocoes e aspectos
-    emotion_distribution: Dict[str, int]
-    primary_emotion: Optional[str]
-    aspect_sentiments: Dict[str, float]
-    top_positive_aspects: List[str]
-    top_negative_aspects: List[str]
-    top_keywords: List[Dict[str, Any]]
+    emotion_distribution: dict[str, int]
+    primary_emotion: str | None
+    aspect_sentiments: dict[str, float]
+    top_positive_aspects: list[str]
+    top_negative_aspects: list[str]
+    top_keywords: list[dict[str, Any]]
 
     # NPS
-    nps_score: Optional[float]
+    nps_score: float | None
     promoters_count: int
     passives_count: int
     detractors_count: int
@@ -736,7 +774,7 @@ class SentimentTrendResponse(BaseModel):
     churn_risk_count: int
 
     # Comparacao
-    prev_avg_score: Optional[float]
+    prev_avg_score: float | None
     score_change: float
     score_change_pct: float
     volume_change: int
@@ -748,11 +786,11 @@ class SentimentTrendResponse(BaseModel):
     trend_confidence: float
 
     # Previsao
-    predicted_next_score: Optional[float]
-    prediction_confidence: Optional[float]
+    predicted_next_score: float | None
+    prediction_confidence: float | None
 
     # Insights
-    insights: List[Dict[str, Any]]
+    insights: list[dict[str, Any]]
     alerts_generated: int
 
     # Taxas calculadas
@@ -769,6 +807,7 @@ class SentimentTrendResponse(BaseModel):
 
 class TrendSummary(BaseModel):
     """Resumo de tendencia."""
+
     period: str
     period_type: str
     category: str
@@ -778,49 +817,53 @@ class TrendSummary(BaseModel):
     dissatisfaction_rate: float
     trend: str
     score_change: float
-    nps_score: Optional[float]
+    nps_score: float | None
     needs_attention: bool
 
 
 class SentimentTrendListResponse(BaseModel):
     """Response de lista de tendencias."""
-    items: List[TrendSummary]
+
+    items: list[TrendSummary]
     total: int
 
 
 class TrendComparisonResponse(BaseModel):
     """Comparacao de tendencias."""
+
     current_period: TrendSummary
-    previous_period: Optional[TrendSummary]
+    previous_period: TrendSummary | None
     score_improvement: float
     volume_change: int
     satisfaction_change: float
     trend_direction: TrendDirectionEnum
-    highlights: List[str]
+    highlights: list[str]
 
 
 # ============================================================
 # Feedback Insight Schemas
 # ============================================================
 
+
 class FeedbackInsightCreate(BaseModel):
     """Schema para criar insight."""
+
     title: str = Field(..., min_length=1, max_length=300)
-    description: Optional[str] = None
+    description: str | None = None
 
     insight_type: InsightTypeEnum
     priority: InsightPriorityEnum = InsightPriorityEnum.MEDIUM
 
-    category: Optional[str] = Field(None, max_length=100)
-    subcategory: Optional[str] = Field(None, max_length=100)
-    tags: Optional[List[str]] = None
+    category: str | None = Field(None, max_length=100)
+    subcategory: str | None = Field(None, max_length=100)
+    tags: list[str] | None = None
 
-    scope: Optional[str] = Field(None, max_length=50)
-    scope_value: Optional[str] = Field(None, max_length=255)
+    scope: str | None = Field(None, max_length=50)
+    scope_value: str | None = Field(None, max_length=255)
 
-    entity_type: Optional[str] = Field(None, max_length=50)
-    entity_id: Optional[UUID] = None
-    entity_name: Optional[str] = Field(None, max_length=255)
+    entity_type: str | None = Field(None, max_length=50)
+    entity_id: UUID | None = None
+    entity_name: str | None = Field(None, max_length=255)
 
     # Scores
     impact_score: float = Field(0, ge=0, le=100)
@@ -829,85 +872,87 @@ class FeedbackInsightCreate(BaseModel):
     actionability_score: float = Field(0, ge=0, le=100)
 
     # Dados
-    supporting_data: Optional[Dict[str, Any]] = None
-    analysis_ids: Optional[List[UUID]] = None
+    supporting_data: dict[str, Any] | None = None
+    analysis_ids: list[UUID] | None = None
 
     # Periodo
-    period_start: Optional[datetime] = None
-    period_end: Optional[datetime] = None
+    period_start: datetime | None = None
+    period_end: datetime | None = None
 
     # Metricas
-    avg_sentiment: Optional[float] = None
-    sentiment_change: Optional[float] = None
-    volume: Optional[int] = None
-    affected_customers: Optional[int] = None
+    avg_sentiment: float | None = None
+    sentiment_change: float | None = None
+    volume: int | None = None
+    affected_customers: int | None = None
 
     # Topicos
-    related_keywords: Optional[List[str]] = None
-    related_topics: Optional[List[str]] = None
-    related_aspects: Optional[List[str]] = None
+    related_keywords: list[str] | None = None
+    related_topics: list[str] | None = None
+    related_aspects: list[str] | None = None
 
     # Recomendacoes
-    recommendations: Optional[List[RecommendationSchema]] = None
+    recommendations: list[RecommendationSchema] | None = None
 
     # Previsao
-    predicted_impact: Optional[str] = None
-    predicted_revenue_impact: Optional[float] = None
-    predicted_churn_impact: Optional[float] = None
+    predicted_impact: str | None = None
+    predicted_revenue_impact: float | None = None
+    predicted_churn_impact: float | None = None
 
     # Validade
-    valid_until: Optional[datetime] = None
+    valid_until: datetime | None = None
     is_recurring: bool = False
 
     # Notificacoes
-    notify_recipients: Optional[List[str]] = None
+    notify_recipients: list[str] | None = None
 
 
 class FeedbackInsightUpdate(BaseModel):
     """Schema para atualizar insight."""
-    title: Optional[str] = Field(None, max_length=300)
-    description: Optional[str] = None
-    priority: Optional[InsightPriorityEnum] = None
-    status: Optional[InsightStatusEnum] = None
 
-    tags: Optional[List[str]] = None
+    title: str | None = Field(None, max_length=300)
+    description: str | None = None
+    priority: InsightPriorityEnum | None = None
+    status: InsightStatusEnum | None = None
 
-    impact_score: Optional[float] = Field(None, ge=0, le=100)
-    urgency_score: Optional[float] = Field(None, ge=0, le=100)
+    tags: list[str] | None = None
 
-    recommendations: Optional[List[RecommendationSchema]] = None
-    actions_taken: Optional[List[Dict[str, Any]]] = None
-    action_results: Optional[str] = None
+    impact_score: float | None = Field(None, ge=0, le=100)
+    urgency_score: float | None = Field(None, ge=0, le=100)
 
-    assigned_to: Optional[UUID] = None
-    assigned_team: Optional[str] = None
+    recommendations: list[RecommendationSchema] | None = None
+    actions_taken: list[dict[str, Any]] | None = None
+    action_results: str | None = None
 
-    valid_until: Optional[datetime] = None
-    notify_recipients: Optional[List[str]] = None
+    assigned_to: UUID | None = None
+    assigned_team: str | None = None
+
+    valid_until: datetime | None = None
+    notify_recipients: list[str] | None = None
 
 
 class FeedbackInsightResponse(BaseModel):
     """Response do insight."""
+
     id: UUID
     insight_number: str
     title: str
-    description: Optional[str]
+    description: str | None
 
     insight_type: InsightTypeEnum
     priority: InsightPriorityEnum
     priority_label: str
     status: InsightStatusEnum
 
-    category: Optional[str]
-    subcategory: Optional[str]
-    tags: List[str]
+    category: str | None
+    subcategory: str | None
+    tags: list[str]
 
-    scope: Optional[str]
-    scope_value: Optional[str]
+    scope: str | None
+    scope_value: str | None
 
-    entity_type: Optional[str]
-    entity_id: Optional[UUID]
-    entity_name: Optional[str]
+    entity_type: str | None
+    entity_id: UUID | None
+    entity_name: str | None
 
     # Scores
     impact_score: float
@@ -917,69 +962,69 @@ class FeedbackInsightResponse(BaseModel):
     overall_score: float
 
     # Dados
-    supporting_data: Dict[str, Any]
-    analysis_ids: List[UUID]
+    supporting_data: dict[str, Any]
+    analysis_ids: list[UUID]
     analysis_count: int
 
     # Periodo
-    period_start: Optional[datetime]
-    period_end: Optional[datetime]
+    period_start: datetime | None
+    period_end: datetime | None
 
     # Metricas
-    avg_sentiment: Optional[float]
-    sentiment_change: Optional[float]
-    volume: Optional[int]
-    affected_customers: Optional[int]
+    avg_sentiment: float | None
+    sentiment_change: float | None
+    volume: int | None
+    affected_customers: int | None
 
     # Topicos
-    related_keywords: List[str]
-    related_topics: List[str]
-    related_aspects: List[str]
+    related_keywords: list[str]
+    related_topics: list[str]
+    related_aspects: list[str]
 
     # Recomendacoes
-    recommendations: List[Dict[str, Any]]
-    actions_taken: List[Dict[str, Any]]
-    action_results: Optional[str]
+    recommendations: list[dict[str, Any]]
+    actions_taken: list[dict[str, Any]]
+    action_results: str | None
 
     # Benchmark
-    benchmark_value: Optional[float]
-    deviation_from_benchmark: Optional[float]
+    benchmark_value: float | None
+    deviation_from_benchmark: float | None
 
     # Previsao
-    predicted_impact: Optional[str]
-    predicted_revenue_impact: Optional[float]
-    predicted_churn_impact: Optional[float]
+    predicted_impact: str | None
+    predicted_revenue_impact: float | None
+    predicted_churn_impact: float | None
 
     # Estado
     is_actionable: bool
     is_critical: bool
     is_expired: bool
     is_recurring: bool
-    valid_until: Optional[datetime]
+    valid_until: datetime | None
 
     # Atribuicao
-    assigned_to: Optional[UUID]
-    assigned_at: Optional[datetime]
-    assigned_team: Optional[str]
+    assigned_to: UUID | None
+    assigned_at: datetime | None
+    assigned_team: str | None
 
     # Resolucao
-    resolved_by: Optional[UUID]
-    resolved_at: Optional[datetime]
-    resolution_notes: Optional[str]
-    resolution_outcome: Optional[str]
+    resolved_by: UUID | None
+    resolved_at: datetime | None
+    resolution_notes: str | None
+    resolution_outcome: str | None
 
     # Feedback
-    was_useful: Optional[bool]
-    usefulness_rating: Optional[int]
-    feedback_notes: Optional[str]
+    was_useful: bool | None
+    usefulness_rating: int | None
+    feedback_notes: str | None
 
     # Notificacoes
     notifications_sent: int
-    last_notified_at: Optional[datetime]
+    last_notified_at: datetime | None
 
     # Timestamps
     created_at: datetime
-    updated_at: Optional[datetime]
+    updated_at: datetime | None
 
     class Config:
         from_attributes = True
@@ -987,6 +1032,7 @@ class FeedbackInsightResponse(BaseModel):
 
 class InsightSummary(BaseModel):
     """Resumo do insight."""
+
     id: UUID
     number: str
     type: str
@@ -997,14 +1043,15 @@ class InsightSummary(BaseModel):
     overall_score: float
     is_actionable: bool
     is_critical: bool
-    affected_customers: Optional[int]
+    affected_customers: int | None
     recommendations_count: int
-    created_at: Optional[datetime]
+    created_at: datetime | None
 
 
 class FeedbackInsightListResponse(BaseModel):
     """Response de lista de insights."""
-    items: List[InsightSummary]
+
+    items: list[InsightSummary]
     total: int
     page: int
     page_size: int
@@ -1012,36 +1059,39 @@ class FeedbackInsightListResponse(BaseModel):
 
 class InsightFilter(BaseModel):
     """Filtros para insights."""
-    insight_types: Optional[List[InsightTypeEnum]] = None
-    priorities: Optional[List[InsightPriorityEnum]] = None
-    statuses: Optional[List[InsightStatusEnum]] = None
 
-    category: Optional[str] = None
-    entity_type: Optional[str] = None
-    entity_id: Optional[UUID] = None
+    insight_types: list[InsightTypeEnum] | None = None
+    priorities: list[InsightPriorityEnum] | None = None
+    statuses: list[InsightStatusEnum] | None = None
 
-    min_impact_score: Optional[float] = Field(None, ge=0, le=100)
-    min_urgency_score: Optional[float] = Field(None, ge=0, le=100)
+    category: str | None = None
+    entity_type: str | None = None
+    entity_id: UUID | None = None
 
-    is_actionable: Optional[bool] = None
-    is_critical: Optional[bool] = None
-    is_expired: Optional[bool] = None
+    min_impact_score: float | None = Field(None, ge=0, le=100)
+    min_urgency_score: float | None = Field(None, ge=0, le=100)
 
-    assigned_to: Optional[UUID] = None
-    assigned_team: Optional[str] = None
+    is_actionable: bool | None = None
+    is_critical: bool | None = None
+    is_expired: bool | None = None
 
-    tags: Optional[List[str]] = None
+    assigned_to: UUID | None = None
+    assigned_team: str | None = None
 
-    date_from: Optional[datetime] = None
-    date_to: Optional[datetime] = None
+    tags: list[str] | None = None
+
+    date_from: datetime | None = None
+    date_to: datetime | None = None
 
 
 # ============================================================
 # Dashboard Schemas
 # ============================================================
 
+
 class SentimentMetricsResponse(BaseModel):
     """Metricas de sentimento."""
+
     total_analyses: int
     avg_sentiment_score: float
 
@@ -1068,7 +1118,8 @@ class SentimentMetricsResponse(BaseModel):
 
 class EmotionDistributionResponse(BaseModel):
     """Distribuicao de emocoes."""
-    emotions: Dict[str, int]
+
+    emotions: dict[str, int]
     total: int
     primary_emotion: str
     primary_emotion_pct: float
@@ -1076,14 +1127,16 @@ class EmotionDistributionResponse(BaseModel):
 
 class AspectAnalysisResponse(BaseModel):
     """Analise por aspectos."""
-    aspects: List[Dict[str, Any]]
-    top_positive: List[Dict[str, Any]]
-    top_negative: List[Dict[str, Any]]
+
+    aspects: list[dict[str, Any]]
+    top_positive: list[dict[str, Any]]
+    top_negative: list[dict[str, Any]]
     total_aspects: int
 
 
 class SentimentDashboardResponse(BaseModel):
     """Dashboard completo de sentimento."""
+
     # Metricas gerais
     metrics: SentimentMetricsResponse
 
@@ -1098,11 +1151,11 @@ class SentimentDashboardResponse(BaseModel):
     trend_direction: TrendDirectionEnum
 
     # Top keywords
-    top_keywords: List[Dict[str, Any]]
-    trending_keywords: List[Dict[str, Any]]
+    top_keywords: list[dict[str, Any]]
+    trending_keywords: list[dict[str, Any]]
 
     # Insights ativos
-    active_insights: List[InsightSummary]
+    active_insights: list[InsightSummary]
     critical_insights_count: int
 
     # Alertas
@@ -1110,14 +1163,14 @@ class SentimentDashboardResponse(BaseModel):
     alerts_today: int
 
     # Por fonte
-    by_source: Dict[str, Dict[str, Any]]
+    by_source: dict[str, dict[str, Any]]
 
     # Ultimas analises criticas
-    recent_critical: List[SentimentAnalysisSummary]
+    recent_critical: list[SentimentAnalysisSummary]
 
     # NPS
-    nps_score: Optional[float]
-    nps_trend: Optional[str]
+    nps_score: float | None
+    nps_trend: str | None
 
     # Periodo
     period_start: datetime

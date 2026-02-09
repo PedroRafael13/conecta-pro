@@ -4,7 +4,7 @@ import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID, uuid4
 
 import numpy as np
@@ -15,7 +15,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.analytics.ml.registry.model_registry import (
     ModelFramework,
-    ModelMetrics,
     ModelRegistry,
     ModelStage,
     ModelType,
@@ -98,7 +97,7 @@ class LeadScore:
     insights: list[LeadInsight]
     next_best_action: str
     estimated_value: float
-    time_to_conversion: Optional[int]  # dias
+    time_to_conversion: int | None  # dias
     model_version: str
     created_at: datetime = field(default_factory=datetime.utcnow)
 
@@ -169,7 +168,7 @@ class LeadScorer:
 
     def __init__(
         self,
-        model_registry: Optional[ModelRegistry] = None,
+        model_registry: ModelRegistry | None = None,
     ) -> None:
         """
         Inicializa o Lead Scorer.
@@ -218,10 +217,10 @@ class LeadScorer:
 
         # Score ponderado
         total_score = (
-            demographic_score * self.CATEGORY_WEIGHTS["demographic"] +
-            firmographic_score * self.CATEGORY_WEIGHTS["firmographic"] +
-            behavioral_score * self.CATEGORY_WEIGHTS["behavioral"] +
-            engagement_score * self.CATEGORY_WEIGHTS["engagement"]
+            demographic_score * self.CATEGORY_WEIGHTS["demographic"]
+            + firmographic_score * self.CATEGORY_WEIGHTS["firmographic"]
+            + behavioral_score * self.CATEGORY_WEIGHTS["behavioral"]
+            + engagement_score * self.CATEGORY_WEIGHTS["engagement"]
         )
 
         # Ajuste com modelo ML se disponível
@@ -236,27 +235,21 @@ class LeadScorer:
         quality = self._classify_quality(total_score)
 
         # Calcular probabilidade de conversão
-        conversion_prob = self._calculate_conversion_probability(
-            total_score, lead_data
-        )
+        conversion_prob = self._calculate_conversion_probability(total_score, lead_data)
         conversion_level = self._classify_conversion_level(conversion_prob)
 
         # Identificar estágio no funil
         stage = self._identify_stage(lead_data)
 
         # Gerar insights
-        insights = self._generate_insights(
-            quality, factors, lead_data, conversion_prob
-        )
+        insights = self._generate_insights(quality, factors, lead_data, conversion_prob)
 
         # Próxima melhor ação
         next_action = self._determine_next_action(quality, stage, insights)
 
         # Estimativas
         estimated_value = self._estimate_deal_value(lead_data)
-        time_to_conversion = self._estimate_time_to_conversion(
-            stage, conversion_prob
-        )
+        time_to_conversion = self._estimate_time_to_conversion(stage, conversion_prob)
 
         return LeadScore(
             id=uuid4(),
@@ -324,10 +317,7 @@ class LeadScorer:
         quality_order = list(LeadQuality)
         min_index = quality_order.index(min_quality)
 
-        filtered = [
-            s for s in scores
-            if quality_order.index(s.quality) <= min_index
-        ]
+        filtered = [s for s in scores if quality_order.index(s.quality) <= min_index]
 
         # Ordenar por score
         filtered.sort(key=lambda x: x.total_score, reverse=True)
@@ -336,8 +326,8 @@ class LeadScorer:
     async def get_scoring_analytics(
         self,
         db: AsyncSession,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
     ) -> ScoringAnalytics:
         """
         Obtém analytics de scoring.
@@ -393,11 +383,7 @@ class LeadScorer:
                 "avg_impact": round(np.mean(impacts), 2),
                 "frequency": len(impacts),
             }
-            for name, impacts in sorted(
-                factor_impacts.items(),
-                key=lambda x: abs(np.mean(x[1])),
-                reverse=True
-            )[:5]
+            for name, impacts in sorted(factor_impacts.items(), key=lambda x: abs(np.mean(x[1])), reverse=True)[:5]
         ]
 
         # Pipeline value
@@ -425,7 +411,7 @@ class LeadScorer:
     async def train_model(
         self,
         db: AsyncSession,
-        training_data: Optional[pd.DataFrame] = None,
+        training_data: pd.DataFrame | None = None,
         version: str = "1.0.0",
     ) -> dict[str, Any]:
         """
@@ -456,7 +442,7 @@ class LeadScorer:
             metrics=["accuracy", "precision", "recall", "f1_score", "auc_roc"],
         )
 
-        data = self.training_pipeline.prepare_data(training_data, config)
+        self.training_pipeline.prepare_data(training_data, config)
 
         models = [
             ("logistic", LogisticRegression(max_iter=1000)),
@@ -464,9 +450,7 @@ class LeadScorer:
             ("gradient_boosting", GradientBoostingClassifier(n_estimators=100)),
         ]
 
-        results = self.training_pipeline.train_with_automl(
-            training_data, config, models, version
-        )
+        results = self.training_pipeline.train_with_automl(training_data, config, models, version)
 
         if results and results[0].status == "success":
             self.model_registry.promote_model(
@@ -589,14 +573,16 @@ class LeadScorer:
             elif any(t in title.lower() for t in ["manager", "lead"]):
                 impact = 15
 
-            factors.append(ScoreFactor(
-                name="job_title",
-                value=title,
-                score_impact=impact,
-                weight=0.15,
-                category="demographic",
-                description=f"Cargo: {title}",
-            ))
+            factors.append(
+                ScoreFactor(
+                    name="job_title",
+                    value=title,
+                    score_impact=impact,
+                    weight=0.15,
+                    category="demographic",
+                    description=f"Cargo: {title}",
+                )
+            )
 
         return factors
 
@@ -613,26 +599,30 @@ class LeadScorer:
         elif company_size > 20:
             size_impact = 10
 
-        factors.append(ScoreFactor(
-            name="company_size",
-            value=company_size,
-            score_impact=size_impact,
-            weight=0.2,
-            category="firmographic",
-            description=f"Empresa com {company_size} funcionários",
-        ))
+        factors.append(
+            ScoreFactor(
+                name="company_size",
+                value=company_size,
+                score_impact=size_impact,
+                weight=0.2,
+                category="firmographic",
+                description=f"Empresa com {company_size} funcionários",
+            )
+        )
 
         budget = lead_data.get("budget_range", 0)
         if budget > 0:
             budget_impact = min(25, budget / 2000)
-            factors.append(ScoreFactor(
-                name="budget_range",
-                value=budget,
-                score_impact=budget_impact,
-                weight=0.15,
-                category="firmographic",
-                description=f"Budget: R$ {budget:,.0f}",
-            ))
+            factors.append(
+                ScoreFactor(
+                    name="budget_range",
+                    value=budget,
+                    score_impact=budget_impact,
+                    weight=0.15,
+                    category="firmographic",
+                    description=f"Budget: R$ {budget:,.0f}",
+                )
+            )
 
         return factors
 
@@ -642,25 +632,29 @@ class LeadScorer:
 
         visits = lead_data.get("website_visits", 0)
         if visits > 0:
-            factors.append(ScoreFactor(
-                name="website_visits",
-                value=visits,
-                score_impact=min(20, visits * 2),
-                weight=0.1,
-                category="behavioral",
-                description=f"{visits} visitas ao site",
-            ))
+            factors.append(
+                ScoreFactor(
+                    name="website_visits",
+                    value=visits,
+                    score_impact=min(20, visits * 2),
+                    weight=0.1,
+                    category="behavioral",
+                    description=f"{visits} visitas ao site",
+                )
+            )
 
         downloads = lead_data.get("content_downloads", 0)
         if downloads > 0:
-            factors.append(ScoreFactor(
-                name="content_downloads",
-                value=downloads,
-                score_impact=min(25, downloads * 5),
-                weight=0.15,
-                category="behavioral",
-                description=f"{downloads} downloads de conteúdo",
-            ))
+            factors.append(
+                ScoreFactor(
+                    name="content_downloads",
+                    value=downloads,
+                    score_impact=min(25, downloads * 5),
+                    weight=0.15,
+                    category="behavioral",
+                    description=f"{downloads} downloads de conteúdo",
+                )
+            )
 
         return factors
 
@@ -670,25 +664,29 @@ class LeadScorer:
 
         demos = lead_data.get("demo_requests", 0)
         if demos > 0:
-            factors.append(ScoreFactor(
-                name="demo_requests",
-                value=demos,
-                score_impact=min(30, demos * 15),
-                weight=0.2,
-                category="engagement",
-                description=f"{demos} solicitação(ões) de demo",
-            ))
+            factors.append(
+                ScoreFactor(
+                    name="demo_requests",
+                    value=demos,
+                    score_impact=min(30, demos * 15),
+                    weight=0.2,
+                    category="engagement",
+                    description=f"{demos} solicitação(ões) de demo",
+                )
+            )
 
         email_clicks = lead_data.get("email_clicks", 0)
         if email_clicks > 0:
-            factors.append(ScoreFactor(
-                name="email_clicks",
-                value=email_clicks,
-                score_impact=min(20, email_clicks * 4),
-                weight=0.1,
-                category="engagement",
-                description=f"{email_clicks} cliques em emails",
-            ))
+            factors.append(
+                ScoreFactor(
+                    name="email_clicks",
+                    value=email_clicks,
+                    score_impact=min(20, email_clicks * 4),
+                    weight=0.1,
+                    category="engagement",
+                    description=f"{email_clicks} cliques em emails",
+                )
+            )
 
         return factors
 
@@ -757,60 +755,70 @@ class LeadScorer:
 
         # Insight de qualidade
         if quality in [LeadQuality.HOT, LeadQuality.WARM]:
-            insights.append(LeadInsight(
-                insight_type="quality",
-                title="Lead qualificado",
-                description=f"Este lead tem alta qualificação ({quality.value})",
-                action_recommended="Priorizar contato imediato",
-                priority=1,
-                confidence=0.9,
-            ))
+            insights.append(
+                LeadInsight(
+                    insight_type="quality",
+                    title="Lead qualificado",
+                    description=f"Este lead tem alta qualificação ({quality.value})",
+                    action_recommended="Priorizar contato imediato",
+                    priority=1,
+                    confidence=0.9,
+                )
+            )
 
         # Insight de engagement
         if lead_data.get("demo_requests", 0) > 0:
-            insights.append(LeadInsight(
-                insight_type="engagement",
-                title="Alto interesse demonstrado",
-                description="Lead solicitou demonstração do produto",
-                action_recommended="Agendar demo o mais rápido possível",
-                priority=1,
-                confidence=0.95,
-            ))
+            insights.append(
+                LeadInsight(
+                    insight_type="engagement",
+                    title="Alto interesse demonstrado",
+                    description="Lead solicitou demonstração do produto",
+                    action_recommended="Agendar demo o mais rápido possível",
+                    priority=1,
+                    confidence=0.95,
+                )
+            )
 
         # Insight de timing
         timeline = lead_data.get("decision_timeline", "")
         if timeline == "immediate":
-            insights.append(LeadInsight(
-                insight_type="timing",
-                title="Decisão urgente",
-                description="Lead indicou necessidade imediata",
-                action_recommended="Acelerar processo de vendas",
-                priority=1,
-                confidence=0.85,
-            ))
+            insights.append(
+                LeadInsight(
+                    insight_type="timing",
+                    title="Decisão urgente",
+                    description="Lead indicou necessidade imediata",
+                    action_recommended="Acelerar processo de vendas",
+                    priority=1,
+                    confidence=0.85,
+                )
+            )
 
         # Insight de budget
         budget = lead_data.get("budget_range", 0)
         if budget > 50000:
-            insights.append(LeadInsight(
-                insight_type="value",
-                title="Alto potencial de valor",
-                description=f"Budget indicado: R$ {budget:,.0f}",
-                action_recommended="Preparar proposta premium",
-                priority=2,
-                confidence=0.8,
-            ))
+            insights.append(
+                LeadInsight(
+                    insight_type="value",
+                    title="Alto potencial de valor",
+                    description=f"Budget indicado: R$ {budget:,.0f}",
+                    action_recommended="Preparar proposta premium",
+                    priority=2,
+                    confidence=0.8,
+                )
+            )
 
         # Gaps
         if lead_data.get("content_downloads", 0) == 0:
-            insights.append(LeadInsight(
-                insight_type="gap",
-                title="Baixo consumo de conteúdo",
-                description="Lead não baixou nenhum material",
-                action_recommended="Enviar conteúdo relevante",
-                priority=3,
-                confidence=0.7,
-            ))
+            insights.append(
+                LeadInsight(
+                    insight_type="gap",
+                    title="Baixo consumo de conteúdo",
+                    description="Lead não baixou nenhum material",
+                    action_recommended="Enviar conteúdo relevante",
+                    priority=3,
+                    confidence=0.7,
+                )
+            )
 
         return insights
 
@@ -854,7 +862,7 @@ class LeadScorer:
         self,
         stage: LeadStage,
         conversion_prob: float,
-    ) -> Optional[int]:
+    ) -> int | None:
         """Estima tempo até conversão em dias."""
         stage_times = {
             LeadStage.AWARENESS: 90,
@@ -874,15 +882,12 @@ class LeadScorer:
             return int(base_time * 0.8)
         return base_time
 
-    def _load_model(self) -> Optional[Any]:
+    def _load_model(self) -> Any | None:
         """Carrega modelo de produção."""
         if self._model is None:
             self._model = self.model_registry.get_production_model("lead_scorer")
             if self._model:
-                version = self.model_registry.get_model_version(
-                    "lead_scorer",
-                    stage=ModelStage.PRODUCTION
-                )
+                version = self.model_registry.get_model_version("lead_scorer", stage=ModelStage.PRODUCTION)
                 self._model_version = version.version if version else None
         return self._model
 
@@ -892,10 +897,10 @@ class LeadScorer:
         features: dict,
     ) -> float:
         """Faz predição com modelo ML."""
-        X = pd.DataFrame([features])
+        x_features = pd.DataFrame([features])
         if hasattr(model, "predict_proba"):
-            return model.predict_proba(X)[0][1]
-        return model.predict(X)[0]
+            return model.predict_proba(x_features)[0][1]
+        return model.predict(x_features)[0]
 
     def _generate_sample_leads(self, n: int) -> list[dict]:
         """Gera leads de exemplo."""
@@ -903,29 +908,27 @@ class LeadScorer:
         leads = []
 
         for i in range(n):
-            leads.append({
-                "id": f"lead_{i}",
-                "title": np.random.choice([
-                    "CEO", "CTO", "Manager", "Analyst", "Director"
-                ]),
-                "company_size": np.random.randint(10, 1000),
-                "industry_fit": np.random.uniform(0.3, 1.0),
-                "budget_range": np.random.randint(5000, 100000),
-                "decision_timeline": np.random.choice([
-                    "immediate", "1-3 months", "6+ months"
-                ]),
-                "website_visits": np.random.randint(0, 20),
-                "page_views": np.random.randint(0, 50),
-                "time_on_site": np.random.randint(0, 600),
-                "email_opens": np.random.randint(0, 10),
-                "email_clicks": np.random.randint(0, 5),
-                "content_downloads": np.random.randint(0, 5),
-                "demo_requests": np.random.randint(0, 2),
-                "form_submissions": np.random.randint(0, 3),
-                "social_engagement": np.random.randint(0, 10),
-                "event_attendance": np.random.randint(0, 2),
-                "product_interest_score": np.random.uniform(0, 1),
-            })
+            leads.append(
+                {
+                    "id": f"lead_{i}",
+                    "title": np.random.choice(["CEO", "CTO", "Manager", "Analyst", "Director"]),
+                    "company_size": np.random.randint(10, 1000),
+                    "industry_fit": np.random.uniform(0.3, 1.0),
+                    "budget_range": np.random.randint(5000, 100000),
+                    "decision_timeline": np.random.choice(["immediate", "1-3 months", "6+ months"]),
+                    "website_visits": np.random.randint(0, 20),
+                    "page_views": np.random.randint(0, 50),
+                    "time_on_site": np.random.randint(0, 600),
+                    "email_opens": np.random.randint(0, 10),
+                    "email_clicks": np.random.randint(0, 5),
+                    "content_downloads": np.random.randint(0, 5),
+                    "demo_requests": np.random.randint(0, 2),
+                    "form_submissions": np.random.randint(0, 3),
+                    "social_engagement": np.random.randint(0, 10),
+                    "event_attendance": np.random.randint(0, 2),
+                    "product_interest_score": np.random.uniform(0, 1),
+                }
+            )
 
         return leads
 
@@ -938,19 +941,10 @@ class LeadScorer:
         df["converted"] = 0
 
         # Simular conversões baseado em features
-        high_score_mask = (
-            (df["demo_requests"] > 0) &
-            (df["company_size"] > 100) &
-            (df["budget_range"] > 30000)
-        )
-        df.loc[high_score_mask, "converted"] = np.random.binomial(
-            1, 0.7, high_score_mask.sum()
-        )
+        high_score_mask = (df["demo_requests"] > 0) & (df["company_size"] > 100) & (df["budget_range"] > 30000)
+        df.loc[high_score_mask, "converted"] = np.random.binomial(1, 0.7, high_score_mask.sum())
 
-        medium_mask = (
-            (df["content_downloads"] > 2) &
-            (df["website_visits"] > 5)
-        )
+        medium_mask = (df["content_downloads"] > 2) & (df["website_visits"] > 5)
         df.loc[medium_mask & ~high_score_mask, "converted"] = np.random.binomial(
             1, 0.3, (medium_mask & ~high_score_mask).sum()
         )

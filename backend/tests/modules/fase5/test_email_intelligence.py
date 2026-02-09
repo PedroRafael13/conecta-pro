@@ -4,17 +4,12 @@ tests/modules/fase5/test_email_intelligence.py - Email Intelligence Tests
 Testes para Email Intelligence
 """
 
-import pytest
 from uuid import uuid4
 
-from modules.fase5.email_intelligence.models import EmailMessage, EmailContext
-from modules.fase5.email_intelligence.enums import (
-    EmailCategory,
-    EmailPriority,
-    EmailIntent,
-    SentimentType,
-    ActionType
-)
+import pytest
+
+from modules.fase5.email_intelligence.enums import ActionType, EmailCategory, EmailIntent, EmailPriority, SentimentType
+from modules.fase5.email_intelligence.models import EmailContext, EmailMessage
 
 
 class TestEmailMessage:
@@ -27,7 +22,7 @@ class TestEmailMessage:
             to_addresses=["destino@email.com"],
             subject="Assunto",
             body_text="Corpo do email",
-            tenant_id=uuid4()
+            tenant_id=uuid4(),
         )
         assert email.from_address == "remetente@email.com"
         assert len(email.to_addresses) == 1
@@ -37,14 +32,10 @@ class TestEmailMessage:
         """Deve aceitar multiplos destinatarios."""
         email = EmailMessage(
             from_address="remetente@email.com",
-            to_addresses=[
-                "destino1@email.com",
-                "destino2@email.com",
-                "destino3@email.com"
-            ],
+            to_addresses=["destino1@email.com", "destino2@email.com", "destino3@email.com"],
             subject="Para varios",
             body_text="Email para multiplos destinatarios",
-            tenant_id=uuid4()
+            tenant_id=uuid4(),
         )
         assert len(email.to_addresses) == 3
 
@@ -57,7 +48,7 @@ class TestEmailMessage:
             bcc_addresses=["oculto@email.com"],
             subject="Com copias",
             body_text="Email com copias",
-            tenant_id=uuid4()
+            tenant_id=uuid4(),
         )
         assert len(email.cc_addresses) == 1
         assert len(email.bcc_addresses) == 1
@@ -69,7 +60,7 @@ class TestEmailMessage:
             to_addresses=["destino@email.com"],
             subject="Teste",
             body_text="Corpo",
-            tenant_id=uuid4()
+            tenant_id=uuid4(),
         )
         assert email.subject == "Teste"
 
@@ -81,7 +72,7 @@ class TestEmailMessage:
             to_addresses=["destino@email.com"],
             subject="Teste",
             body_text="Corpo",
-            tenant_id=tid
+            tenant_id=tid,
         )
         assert email.tenant_id == tid
 
@@ -91,9 +82,7 @@ class TestEmailContext:
 
     def test_criar_contexto(self):
         """Deve criar contexto valido."""
-        contexto = EmailContext(
-            email_address="teste@email.com"
-        )
+        contexto = EmailContext(email_address="teste@email.com")
         assert contexto.email_address == "teste@email.com"
         assert contexto.total_emails_received == 0
         assert contexto.is_cliente is False
@@ -105,7 +94,7 @@ class TestEmailContext:
             total_emails_received=15,
             total_emails_sent=8,
             is_cliente=True,
-            cliente_nome="Empresa ABC"
+            cliente_nome="Empresa ABC",
         )
         assert contexto.total_emails_received == 15
         assert contexto.total_emails_sent == 8

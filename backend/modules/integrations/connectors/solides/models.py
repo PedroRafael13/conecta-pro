@@ -6,30 +6,27 @@ Tabelas para rastreamento de sincronização, conflitos e logs.
 """
 
 from datetime import datetime
-from enum import Enum
-from typing import Optional, Dict, Any, List
+from enum import StrEnum
 from uuid import uuid4
 
-from sqlalchemy import (
-    Column, String, Boolean, DateTime, ForeignKey, Text, Integer,
-    Index, UniqueConstraint, JSON, Enum as SQLEnum
-)
-from sqlalchemy.dialects.postgresql import UUID, JSONB
-from sqlalchemy.orm import relationship
-from sqlalchemy.ext.declarative import declared_attr
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Index, Integer, String, Text, UniqueConstraint
+from sqlalchemy import Enum as SQLEnum
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 from core.database import Base
 
 
-class SyncDirection(str, Enum):
+class SyncDirection(StrEnum):
     """Direção da sincronização."""
+
     SOLIDES_TO_CONECTA = "solides_to_conecta"
     CONECTA_TO_SOLIDES = "conecta_to_solides"
     BIDIRECTIONAL = "bidirectional"
 
 
-class SyncStatus(str, Enum):
+class SyncStatus(StrEnum):
     """Status da sincronização."""
+
     PENDING = "pending"
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
@@ -37,23 +34,26 @@ class SyncStatus(str, Enum):
     PARTIAL = "partial"
 
 
-class ConflictStatus(str, Enum):
+class ConflictStatus(StrEnum):
     """Status do conflito."""
+
     PENDING = "pending"
     RESOLVED = "resolved"
     IGNORED = "ignored"
 
 
-class ConflictStrategy(str, Enum):
+class ConflictStrategy(StrEnum):
     """Estratégia de resolução de conflito."""
+
     SOLIDES_WINS = "solides_wins"
     CONECTA_WINS = "conecta_wins"
     MOST_RECENT = "most_recent"
     MANUAL = "manual"
 
 
-class SyncSource(str, Enum):
+class SyncSource(StrEnum):
     """Fonte da última alteração."""
+
     SOLIDES = "solides"
     CONECTA = "conecta"
     MANUAL = "manual"
@@ -65,6 +65,7 @@ class SolidesSyncState(Base):
     Estado de sincronização por entidade/empresa.
     Rastreia última sincronização e cursor.
     """
+
     __tablename__ = "solides_sync_state"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
@@ -97,8 +98,8 @@ class SolidesSyncState(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     __table_args__ = (
-        UniqueConstraint('condominio_id', 'entity_type', name='uq_solides_sync_entity'),
-        Index('ix_solides_sync_status', 'status'),
+        UniqueConstraint("condominio_id", "entity_type", name="uq_solides_sync_entity"),
+        Index("ix_solides_sync_status", "status"),
     )
 
 
@@ -106,6 +107,7 @@ class SolidesSyncLog(Base):
     """
     Log de cada operação de sincronização.
     """
+
     __tablename__ = "solides_sync_log"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
@@ -141,8 +143,8 @@ class SolidesSyncLog(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     __table_args__ = (
-        Index('ix_solides_sync_log_date', 'started_at'),
-        Index('ix_solides_sync_log_entity', 'entity_type', 'started_at'),
+        Index("ix_solides_sync_log_date", "started_at"),
+        Index("ix_solides_sync_log_entity", "entity_type", "started_at"),
     )
 
 
@@ -150,11 +152,12 @@ class SolidesSyncConflict(Base):
     """
     Conflitos de sincronização detectados.
     """
+
     __tablename__ = "solides_sync_conflict"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     condominio_id = Column(UUID(as_uuid=True), nullable=False, index=True)
-    sync_log_id = Column(UUID(as_uuid=True), ForeignKey('solides_sync_log.id'))
+    sync_log_id = Column(UUID(as_uuid=True), ForeignKey("solides_sync_log.id"))
 
     # Entidade em conflito
     entity_type = Column(String(50), nullable=False)
@@ -183,8 +186,8 @@ class SolidesSyncConflict(Base):
     detected_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     __table_args__ = (
-        Index('ix_solides_conflict_status', 'status'),
-        Index('ix_solides_conflict_entity', 'entity_type', 'solides_id'),
+        Index("ix_solides_conflict_status", "status"),
+        Index("ix_solides_conflict_entity", "entity_type", "solides_id"),
     )
 
 
@@ -193,6 +196,7 @@ class SolidesEntityMapping(Base):
     Mapeamento de IDs entre Sólides e Conecta PRO.
     Permite lookup rápido de entidades sincronizadas.
     """
+
     __tablename__ = "solides_entity_mapping"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
@@ -221,9 +225,9 @@ class SolidesEntityMapping(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     __table_args__ = (
-        UniqueConstraint('condominio_id', 'entity_type', 'solides_id', name='uq_solides_mapping_solides'),
-        UniqueConstraint('condominio_id', 'entity_type', 'conecta_id', name='uq_solides_mapping_conecta'),
-        Index('ix_solides_mapping_lookup', 'entity_type', 'solides_id'),
+        UniqueConstraint("condominio_id", "entity_type", "solides_id", name="uq_solides_mapping_solides"),
+        UniqueConstraint("condominio_id", "entity_type", "conecta_id", name="uq_solides_mapping_conecta"),
+        Index("ix_solides_mapping_lookup", "entity_type", "solides_id"),
     )
 
 
@@ -231,6 +235,7 @@ class SolidesWebhookLog(Base):
     """
     Log de webhooks recebidos do Sólides.
     """
+
     __tablename__ = "solides_webhook_log"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
@@ -268,20 +273,21 @@ class SolidesIntegrationConfig(Base):
     Configuração da integração Sólides por condomínio.
     Espelha a tabela existente no banco de dados.
     """
+
     __tablename__ = "solides_integration_config"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     condominio_id = Column(UUID(as_uuid=True), nullable=False, unique=True)
 
     # Configurações de API
-    api_version = Column(String(10), default='v1', nullable=False)
+    api_version = Column(String(10), default="v1", nullable=False)
     base_url_v1 = Column(String(500))
     base_url_v3 = Column(String(500))
 
     # Configurações de sincronização
     sync_interval_minutes = Column(Integer, default=15, nullable=False)
     sync_entities = Column(JSONB)
-    conflict_strategy = Column(String(50), default='most_recent', nullable=False)
+    conflict_strategy = Column(String(50), default="most_recent", nullable=False)
     auto_create_departments = Column(Boolean, default=True, nullable=False)
     auto_create_positions = Column(Boolean, default=True, nullable=False)
 
@@ -321,6 +327,7 @@ class SolidesCredential(Base):
     """
     Credenciais de acesso à API Sólides (armazenadas de forma segura).
     """
+
     __tablename__ = "solides_credential"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
@@ -348,25 +355,19 @@ class SolidesCredential(Base):
 
 # ==================== HELPERS ====================
 
-def get_or_create_sync_state(
-    db,
-    condominio_id,
-    entity_type: str
-) -> SolidesSyncState:
+
+def get_or_create_sync_state(db, condominio_id, entity_type: str) -> SolidesSyncState:
     """
     Obtém ou cria estado de sincronização para entidade.
     """
-    state = db.query(SolidesSyncState).filter(
-        SolidesSyncState.condominio_id == condominio_id,
-        SolidesSyncState.entity_type == entity_type
-    ).first()
+    state = (
+        db.query(SolidesSyncState)
+        .filter(SolidesSyncState.condominio_id == condominio_id, SolidesSyncState.entity_type == entity_type)
+        .first()
+    )
 
     if not state:
-        state = SolidesSyncState(
-            condominio_id=condominio_id,
-            entity_type=entity_type,
-            status=SyncStatus.PENDING
-        )
+        state = SolidesSyncState(condominio_id=condominio_id, entity_type=entity_type, status=SyncStatus.PENDING)
         db.add(state)
         db.commit()
         db.refresh(state)
@@ -375,19 +376,15 @@ def get_or_create_sync_state(
 
 
 def get_entity_mapping(
-    db,
-    condominio_id,
-    entity_type: str,
-    solides_id: str = None,
-    conecta_id: str = None
-) -> Optional[SolidesEntityMapping]:
+    db, condominio_id, entity_type: str, solides_id: str = None, conecta_id: str = None
+) -> SolidesEntityMapping | None:
     """
     Busca mapeamento de entidade por solides_id ou conecta_id.
     """
     query = db.query(SolidesEntityMapping).filter(
         SolidesEntityMapping.condominio_id == condominio_id,
         SolidesEntityMapping.entity_type == entity_type,
-        SolidesEntityMapping.is_active == True
+        SolidesEntityMapping.is_active,
     )
 
     if solides_id:
@@ -408,7 +405,7 @@ def create_or_update_mapping(
     conecta_id,
     sync_source: SyncSource = SyncSource.SOLIDES,
     data_hash: str = None,
-    extra_data: Dict = None
+    extra_data: dict = None,
 ) -> SolidesEntityMapping:
     """
     Cria ou atualiza mapeamento de entidade.
@@ -430,7 +427,7 @@ def create_or_update_mapping(
             conecta_id=conecta_id,
             sync_source=sync_source,
             data_hash=data_hash,
-            extra_data=extra_data or {}
+            extra_data=extra_data or {},
         )
         db.add(mapping)
 
@@ -447,7 +444,7 @@ def log_sync_operation(
     status: SyncStatus,
     direction: SyncDirection = None,
     triggered_by: str = "system",
-    **kwargs
+    **kwargs,
 ) -> SolidesSyncLog:
     """
     Registra log de operação de sincronização.
@@ -460,7 +457,7 @@ def log_sync_operation(
         direction=direction,
         triggered_by=triggered_by,
         started_at=datetime.utcnow(),
-        **kwargs
+        **kwargs,
     )
     db.add(log)
     db.commit()
@@ -471,11 +468,11 @@ def log_sync_operation(
 def log_webhook(
     db,
     event_type: str,
-    payload: Dict,
-    condominio_id = None,
-    headers: Dict = None,
+    payload: dict,
+    condominio_id=None,
+    headers: dict = None,
     request_id: str = None,
-    ip_address: str = None
+    ip_address: str = None,
 ) -> SolidesWebhookLog:
     """
     Registra log de webhook recebido (síncrono).
@@ -486,7 +483,7 @@ def log_webhook(
         payload=payload,
         headers=headers or {},
         request_id=request_id,
-        ip_address=ip_address
+        ip_address=ip_address,
     )
     db.add(log)
     db.commit()
@@ -497,11 +494,11 @@ def log_webhook(
 async def log_webhook_async(
     db,
     event_type: str,
-    payload: Dict,
-    condominio_id = None,
-    headers: Dict = None,
+    payload: dict,
+    condominio_id=None,
+    headers: dict = None,
     request_id: str = None,
-    ip_address: str = None
+    ip_address: str = None,
 ) -> SolidesWebhookLog:
     """
     Registra log de webhook recebido (assíncrono).
@@ -512,7 +509,7 @@ async def log_webhook_async(
         payload=payload,
         headers=headers or {},
         request_id=request_id,
-        ip_address=ip_address
+        ip_address=ip_address,
     )
     db.add(log)
     await db.commit()
@@ -526,12 +523,12 @@ def create_conflict(
     entity_type: str,
     entity_id: str,
     solides_id: str,
-    solides_data: Dict,
-    conecta_data: Dict,
-    changed_fields: List[str],
-    sync_log_id = None,
+    solides_data: dict,
+    conecta_data: dict,
+    changed_fields: list[str],
+    sync_log_id=None,
     solides_updated_at: datetime = None,
-    conecta_updated_at: datetime = None
+    conecta_updated_at: datetime = None,
 ) -> SolidesSyncConflict:
     """
     Registra conflito de sincronização.
@@ -547,7 +544,7 @@ def create_conflict(
         changed_fields=changed_fields,
         solides_updated_at=solides_updated_at,
         conecta_updated_at=conecta_updated_at,
-        status=ConflictStatus.PENDING
+        status=ConflictStatus.PENDING,
     )
     db.add(conflict)
     db.commit()
@@ -557,11 +554,13 @@ def create_conflict(
 
 # ==================== TABELAS DE DADOS IMPORTADOS ====================
 
+
 class SolidesEmployee(Base):
     """
     Colaboradores importados do Sólides.
     Tabela de staging com todos os dados históricos sincronizados.
     """
+
     __tablename__ = "solides_employees"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
@@ -638,11 +637,11 @@ class SolidesEmployee(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     __table_args__ = (
-        UniqueConstraint('condominio_id', 'solides_id', name='uq_solides_employee_id'),
-        Index('ix_solides_employee_cpf', 'cpf'),
-        Index('ix_solides_employee_email', 'email'),
-        Index('ix_solides_employee_matricula', 'matricula'),
-        Index('ix_solides_employee_situacao', 'situacao'),
+        UniqueConstraint("condominio_id", "solides_id", name="uq_solides_employee_id"),
+        Index("ix_solides_employee_cpf", "cpf"),
+        Index("ix_solides_employee_email", "email"),
+        Index("ix_solides_employee_matricula", "matricula"),
+        Index("ix_solides_employee_situacao", "situacao"),
     )
 
 
@@ -650,6 +649,7 @@ class SolidesDepartment(Base):
     """
     Departamentos importados do Sólides.
     """
+
     __tablename__ = "solides_departments"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
@@ -672,15 +672,14 @@ class SolidesDepartment(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    __table_args__ = (
-        UniqueConstraint('condominio_id', 'solides_id', name='uq_solides_department_id'),
-    )
+    __table_args__ = (UniqueConstraint("condominio_id", "solides_id", name="uq_solides_department_id"),)
 
 
 class SolidesPosition(Base):
     """
     Cargos importados do Sólides.
     """
+
     __tablename__ = "solides_positions"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
@@ -707,15 +706,14 @@ class SolidesPosition(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    __table_args__ = (
-        UniqueConstraint('condominio_id', 'solides_id', name='uq_solides_position_id'),
-    )
+    __table_args__ = (UniqueConstraint("condominio_id", "solides_id", name="uq_solides_position_id"),)
 
 
 class SolidesOccurrence(Base):
     """
     Ocorrências importadas do Sólides.
     """
+
     __tablename__ = "solides_occurrences"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
@@ -756,10 +754,10 @@ class SolidesOccurrence(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     __table_args__ = (
-        UniqueConstraint('condominio_id', 'solides_id', name='uq_solides_occurrence_id'),
-        Index('ix_solides_occurrence_colaborador', 'colaborador_id'),
-        Index('ix_solides_occurrence_tipo', 'tipo'),
-        Index('ix_solides_occurrence_data', 'data'),
+        UniqueConstraint("condominio_id", "solides_id", name="uq_solides_occurrence_id"),
+        Index("ix_solides_occurrence_colaborador", "colaborador_id"),
+        Index("ix_solides_occurrence_tipo", "tipo"),
+        Index("ix_solides_occurrence_data", "data"),
     )
 
 
@@ -767,6 +765,7 @@ class SolidesAbsence(Base):
     """
     Absenteísmos/Afastamentos importados do Sólides.
     """
+
     __tablename__ = "solides_absences"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
@@ -813,10 +812,10 @@ class SolidesAbsence(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     __table_args__ = (
-        UniqueConstraint('condominio_id', 'solides_id', name='uq_solides_absence_id'),
-        Index('ix_solides_absence_colaborador', 'colaborador_id'),
-        Index('ix_solides_absence_tipo', 'tipo'),
-        Index('ix_solides_absence_data', 'data_inicio'),
+        UniqueConstraint("condominio_id", "solides_id", name="uq_solides_absence_id"),
+        Index("ix_solides_absence_colaborador", "colaborador_id"),
+        Index("ix_solides_absence_tipo", "tipo"),
+        Index("ix_solides_absence_data", "data_inicio"),
     )
 
 
@@ -824,6 +823,7 @@ class SolidesWorkplace(Base):
     """
     Locais de trabalho/Unidades importados do Sólides.
     """
+
     __tablename__ = "solides_workplaces"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
@@ -847,15 +847,14 @@ class SolidesWorkplace(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    __table_args__ = (
-        UniqueConstraint('condominio_id', 'solides_id', name='uq_solides_workplace_id'),
-    )
+    __table_args__ = (UniqueConstraint("condominio_id", "solides_id", name="uq_solides_workplace_id"),)
 
 
 class SolidesWorkSchedule(Base):
     """
     Escalas de trabalho importadas do Sólides.
     """
+
     __tablename__ = "solides_work_schedules"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
@@ -881,15 +880,14 @@ class SolidesWorkSchedule(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    __table_args__ = (
-        UniqueConstraint('condominio_id', 'solides_id', name='uq_solides_work_schedule_id'),
-    )
+    __table_args__ = (UniqueConstraint("condominio_id", "solides_id", name="uq_solides_work_schedule_id"),)
 
 
 class SolidesCostCenter(Base):
     """
     Centros de custo importados do Sólides.
     """
+
     __tablename__ = "solides_cost_centers"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
@@ -910,6 +908,4 @@ class SolidesCostCenter(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    __table_args__ = (
-        UniqueConstraint('condominio_id', 'solides_id', name='uq_solides_cost_center_id'),
-    )
+    __table_args__ = (UniqueConstraint("condominio_id", "solides_id", name="uq_solides_cost_center_id"),)

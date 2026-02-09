@@ -6,21 +6,21 @@ Servico para gerenciamento de alertas de fraude.
 
 import logging
 from datetime import datetime, timedelta
-from typing import Optional, List, Dict, Any
+from typing import Any
 from uuid import UUID
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session
-from sqlalchemy import func, and_, or_
 
 from modules.ai.fraud_detection.models.fraud_alert import (
-    FraudAlert,
-    FraudCategory,
     AlertSeverity,
     AlertStatus,
+    FraudAlert,
+    FraudCategory,
 )
-from modules.ai.fraud_detection.models.fraud_rule import FraudRule
 from modules.ai.fraud_detection.models.fraud_pattern import FraudPattern
-from modules.ai.fraud_detection.models.risk_profile import RiskProfile, EntityType
+from modules.ai.fraud_detection.models.fraud_rule import FraudRule
+from modules.ai.fraud_detection.models.risk_profile import EntityType, RiskProfile
 
 logger = logging.getLogger(__name__)
 
@@ -55,19 +55,19 @@ class AlertManager:
         title: str,
         entity_type: str,
         entity_id: UUID,
-        description: Optional[str] = None,
-        transaction_id: Optional[UUID] = None,
-        transaction_value: Optional[float] = None,
-        rule_id: Optional[UUID] = None,
-        pattern_id: Optional[UUID] = None,
+        description: str | None = None,
+        transaction_id: UUID | None = None,
+        transaction_value: float | None = None,
+        rule_id: UUID | None = None,
+        pattern_id: UUID | None = None,
         risk_score: float = 0,
-        confidence_score: Optional[float] = None,
-        evidence: Optional[List[Dict[str, Any]]] = None,
-        indicators: Optional[List[str]] = None,
-        ip_address: Optional[str] = None,
-        device_id: Optional[str] = None,
-        location: Optional[str] = None,
-        potential_loss: Optional[float] = None,
+        confidence_score: float | None = None,
+        evidence: list[dict[str, Any]] | None = None,
+        indicators: list[str] | None = None,
+        ip_address: str | None = None,
+        device_id: str | None = None,
+        location: str | None = None,
+        potential_loss: float | None = None,
         requires_immediate_action: bool = False,
     ) -> FraudAlert:
         """
@@ -78,9 +78,7 @@ class AlertManager:
         """
         try:
             # Verificar se ja existe alerta similar recente
-            existing = await self._check_duplicate_alert(
-                entity_type, entity_id, category, transaction_id
-            )
+            existing = await self._check_duplicate_alert(entity_type, entity_id, category, transaction_id)
             if existing:
                 logger.info(f"Alerta similar ja existe: {existing.alert_number}")
                 return existing
@@ -120,9 +118,7 @@ class AlertManager:
             self.db.commit()
             self.db.refresh(alert)
 
-            logger.info(
-                f"Alerta criado: {alert.alert_number} - {title} - Severity: {severity.value}"
-            )
+            logger.info(f"Alerta criado: {alert.alert_number} - {title} - Severity: {severity.value}")
 
             # Enviar notificacoes
             await self._send_notifications(alert)
@@ -147,7 +143,7 @@ class AlertManager:
         self,
         alert_id: UUID,
         assigned_to: UUID,
-        assigned_by: Optional[UUID] = None,
+        assigned_by: UUID | None = None,
     ) -> FraudAlert:
         """Atribui alerta a um analista."""
         alert = self.db.query(FraudAlert).filter(FraudAlert.id == alert_id).first()
@@ -158,12 +154,14 @@ class AlertManager:
 
         # Registrar acao
         alert.actions_log = alert.actions_log or []
-        alert.actions_log.append({
-            "action": "assigned",
-            "assigned_to": str(assigned_to),
-            "assigned_by": str(assigned_by) if assigned_by else None,
-            "timestamp": datetime.utcnow().isoformat(),
-        })
+        alert.actions_log.append(
+            {
+                "action": "assigned",
+                "assigned_to": str(assigned_to),
+                "assigned_by": str(assigned_by) if assigned_by else None,
+                "timestamp": datetime.utcnow().isoformat(),
+            }
+        )
 
         self.db.commit()
         logger.info(f"Alerta {alert.alert_number} atribuido a {assigned_to}")
@@ -175,10 +173,10 @@ class AlertManager:
         alert_id: UUID,
         resolved_by: UUID,
         resolution_type: str,
-        resolution_notes: Optional[str] = None,
-        actions_taken: Optional[List[Dict[str, Any]]] = None,
-        actual_loss: Optional[float] = None,
-        recovered_amount: Optional[float] = None,
+        resolution_notes: str | None = None,
+        actions_taken: list[dict[str, Any]] | None = None,
+        actual_loss: float | None = None,
+        recovered_amount: float | None = None,
     ) -> FraudAlert:
         """Resolve um alerta."""
         alert = self.db.query(FraudAlert).filter(FraudAlert.id == alert_id).first()
@@ -200,9 +198,7 @@ class AlertManager:
             alert.recovered_amount = recovered_amount
 
         self.db.commit()
-        logger.info(
-            f"Alerta {alert.alert_number} resolvido: {resolution_type}"
-        )
+        logger.info(f"Alerta {alert.alert_number} resolvido: {resolution_type}")
 
         return alert
 
@@ -210,8 +206,8 @@ class AlertManager:
         self,
         alert_id: UUID,
         confirmed_by: UUID,
-        notes: Optional[str] = None,
-        actual_loss: Optional[float] = None,
+        notes: str | None = None,
+        actual_loss: float | None = None,
     ) -> FraudAlert:
         """Confirma alerta como fraude verdadeira."""
         alert = self.db.query(FraudAlert).filter(FraudAlert.id == alert_id).first()
@@ -229,9 +225,7 @@ class AlertManager:
         logger.info(f"Alerta {alert.alert_number} confirmado como fraude")
 
         # Atualizar perfil com fraude confirmada
-        await self._record_confirmed_fraud(
-            alert.entity_type, alert.entity_id, alert_id
-        )
+        await self._record_confirmed_fraud(alert.entity_type, alert.entity_id, alert_id)
 
         # Atualizar precisao da regra/padrao
         if alert.rule_id:
@@ -244,8 +238,8 @@ class AlertManager:
     async def mark_false_positive(
         self,
         alert_id: UUID,
-        marked_by: UUID,
-        notes: Optional[str] = None,
+        _marked_by: UUID,
+        notes: str | None = None,
     ) -> FraudAlert:
         """Marca alerta como falso positivo."""
         alert = self.db.query(FraudAlert).filter(FraudAlert.id == alert_id).first()
@@ -270,7 +264,7 @@ class AlertManager:
         alert_id: UUID,
         escalate_to: UUID,
         reason: str,
-        escalated_by: Optional[UUID] = None,
+        escalated_by: UUID | None = None,
     ) -> FraudAlert:
         """Escala alerta para nivel superior."""
         alert = self.db.query(FraudAlert).filter(FraudAlert.id == alert_id).first()
@@ -281,13 +275,15 @@ class AlertManager:
 
         # Registrar escalonamento
         alert.actions_log = alert.actions_log or []
-        alert.actions_log.append({
-            "action": "escalated",
-            "escalate_to": str(escalate_to),
-            "reason": reason,
-            "escalated_by": str(escalated_by) if escalated_by else None,
-            "timestamp": datetime.utcnow().isoformat(),
-        })
+        alert.actions_log.append(
+            {
+                "action": "escalated",
+                "escalate_to": str(escalate_to),
+                "reason": reason,
+                "escalated_by": str(escalated_by) if escalated_by else None,
+                "timestamp": datetime.utcnow().isoformat(),
+            }
+        )
 
         # Aumentar severidade se necessario
         if alert.severity in [AlertSeverity.LOW, AlertSeverity.MEDIUM]:
@@ -306,7 +302,7 @@ class AlertManager:
         alert_id: UUID,
         is_correct: bool,
         feedback_by: UUID,
-        notes: Optional[str] = None,
+        notes: str | None = None,
     ) -> FraudAlert:
         """Adiciona feedback ao alerta."""
         alert = self.db.query(FraudAlert).filter(FraudAlert.id == alert_id).first()
@@ -319,23 +315,22 @@ class AlertManager:
 
         # Registrar no log
         alert.actions_log = alert.actions_log or []
-        alert.actions_log.append({
-            "action": "feedback",
-            "is_correct": is_correct,
-            "notes": notes,
-            "by": str(feedback_by),
-            "timestamp": datetime.utcnow().isoformat(),
-        })
+        alert.actions_log.append(
+            {
+                "action": "feedback",
+                "is_correct": is_correct,
+                "notes": notes,
+                "by": str(feedback_by),
+                "timestamp": datetime.utcnow().isoformat(),
+            }
+        )
 
         self.db.commit()
-        logger.info(
-            f"Feedback adicionado ao alerta {alert.alert_number}: "
-            f"{'correto' if is_correct else 'incorreto'}"
-        )
+        logger.info(f"Feedback adicionado ao alerta {alert.alert_number}: {'correto' if is_correct else 'incorreto'}")
 
         return alert
 
-    async def get_dashboard_stats(self) -> Dict[str, Any]:
+    async def get_dashboard_stats(self) -> dict[str, Any]:
         """Obtem estatisticas para dashboard."""
         now = datetime.utcnow()
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -345,7 +340,7 @@ class AlertManager:
         # Contagens por status
         status_counts = dict(
             self.db.query(FraudAlert.status, func.count(FraudAlert.id))
-            .filter(FraudAlert.is_active == True)
+            .filter(FraudAlert.is_active)
             .group_by(FraudAlert.status)
             .all()
         )
@@ -354,11 +349,13 @@ class AlertManager:
         severity_counts = dict(
             self.db.query(FraudAlert.severity, func.count(FraudAlert.id))
             .filter(
-                FraudAlert.is_active == True,
-                FraudAlert.status.in_([
-                    AlertStatus.PENDING,
-                    AlertStatus.INVESTIGATING,
-                ])
+                FraudAlert.is_active,
+                FraudAlert.status.in_(
+                    [
+                        AlertStatus.PENDING,
+                        AlertStatus.INVESTIGATING,
+                    ]
+                ),
             )
             .group_by(FraudAlert.severity)
             .all()
@@ -374,22 +371,11 @@ class AlertManager:
 
         # Alertas por periodo
         today_count = (
-            self.db.query(func.count(FraudAlert.id))
-            .filter(FraudAlert.created_at >= today_start)
-            .scalar()
-            or 0
+            self.db.query(func.count(FraudAlert.id)).filter(FraudAlert.created_at >= today_start).scalar() or 0
         )
-        week_count = (
-            self.db.query(func.count(FraudAlert.id))
-            .filter(FraudAlert.created_at >= week_start)
-            .scalar()
-            or 0
-        )
+        week_count = self.db.query(func.count(FraudAlert.id)).filter(FraudAlert.created_at >= week_start).scalar() or 0
         month_count = (
-            self.db.query(func.count(FraudAlert.id))
-            .filter(FraudAlert.created_at >= month_start)
-            .scalar()
-            or 0
+            self.db.query(func.count(FraudAlert.id)).filter(FraudAlert.created_at >= month_start).scalar() or 0
         )
 
         # Tempo medio de resolucao
@@ -404,29 +390,19 @@ class AlertManager:
 
         avg_resolution_hours = 0
         if resolved_alerts:
-            total_hours = sum(
-                (a.resolved_at - a.created_at).total_seconds() / 3600
-                for a in resolved_alerts
-            )
+            total_hours = sum((a.resolved_at - a.created_at).total_seconds() / 3600 for a in resolved_alerts)
             avg_resolution_hours = total_hours / len(resolved_alerts)
 
         # Perdas
         total_potential_loss = (
-            self.db.query(func.sum(FraudAlert.potential_loss))
-            .filter(FraudAlert.created_at >= month_start)
-            .scalar()
+            self.db.query(func.sum(FraudAlert.potential_loss)).filter(FraudAlert.created_at >= month_start).scalar()
             or 0
         )
         total_actual_loss = (
-            self.db.query(func.sum(FraudAlert.actual_loss))
-            .filter(FraudAlert.created_at >= month_start)
-            .scalar()
-            or 0
+            self.db.query(func.sum(FraudAlert.actual_loss)).filter(FraudAlert.created_at >= month_start).scalar() or 0
         )
         total_recovered = (
-            self.db.query(func.sum(FraudAlert.recovered_amount))
-            .filter(FraudAlert.created_at >= month_start)
-            .scalar()
+            self.db.query(func.sum(FraudAlert.recovered_amount)).filter(FraudAlert.created_at >= month_start).scalar()
             or 0
         )
 
@@ -453,18 +429,18 @@ class AlertManager:
         )
 
         total_reviewed = confirmed + false_positives
-        false_positive_rate = (
-            (false_positives / total_reviewed * 100) if total_reviewed > 0 else 0
-        )
+        false_positive_rate = (false_positives / total_reviewed * 100) if total_reviewed > 0 else 0
 
         # Alertas vencidos (SLA)
         overdue_count = (
             self.db.query(func.count(FraudAlert.id))
             .filter(
-                FraudAlert.status.in_([
-                    AlertStatus.PENDING,
-                    AlertStatus.INVESTIGATING,
-                ]),
+                FraudAlert.status.in_(
+                    [
+                        AlertStatus.PENDING,
+                        AlertStatus.INVESTIGATING,
+                    ]
+                ),
                 FraudAlert.sla_deadline < now,
             )
             .scalar()
@@ -475,11 +451,13 @@ class AlertManager:
         escalated_count = (
             self.db.query(func.count(FraudAlert.id))
             .filter(
-                FraudAlert.is_escalated == True,
-                FraudAlert.status.in_([
-                    AlertStatus.PENDING,
-                    AlertStatus.INVESTIGATING,
-                ]),
+                FraudAlert.is_escalated,
+                FraudAlert.status.in_(
+                    [
+                        AlertStatus.PENDING,
+                        AlertStatus.INVESTIGATING,
+                    ]
+                ),
             )
             .scalar()
             or 0
@@ -492,12 +470,8 @@ class AlertManager:
                 "total_confirmed": status_counts.get(AlertStatus.CONFIRMED, 0),
                 "total_resolved": status_counts.get(AlertStatus.RESOLVED, 0),
                 "total_false_positives": status_counts.get(AlertStatus.FALSE_POSITIVE, 0),
-                "by_severity": {
-                    s.value: c for s, c in severity_counts.items()
-                },
-                "by_category": {
-                    c.value: cnt for c, cnt in category_counts.items()
-                },
+                "by_severity": {s.value: c for s, c in severity_counts.items()},
+                "by_category": {c.value: cnt for c, cnt in category_counts.items()},
                 "avg_resolution_time_hours": round(avg_resolution_hours, 1),
                 "escalated_count": escalated_count,
                 "overdue_count": overdue_count,
@@ -508,24 +482,20 @@ class AlertManager:
             "total_loss_prevented": float(loss_prevented),
             "actual_losses": float(total_actual_loss),
             "recovered_amount": float(total_recovered),
-            "recovery_rate": (
-                (total_recovered / total_actual_loss * 100)
-                if total_actual_loss > 0
-                else 0
-            ),
+            "recovery_rate": ((total_recovered / total_actual_loss * 100) if total_actual_loss > 0 else 0),
             "false_positive_rate": round(false_positive_rate, 1),
         }
 
     async def get_pending_alerts(
         self,
-        severity: Optional[AlertSeverity] = None,
-        category: Optional[FraudCategory] = None,
+        severity: AlertSeverity | None = None,
+        category: FraudCategory | None = None,
         limit: int = 50,
-    ) -> List[FraudAlert]:
+    ) -> list[FraudAlert]:
         """Obtem alertas pendentes."""
         query = self.db.query(FraudAlert).filter(
             FraudAlert.status == AlertStatus.PENDING,
-            FraudAlert.is_active == True,
+            FraudAlert.is_active,
         )
 
         if severity:
@@ -542,15 +512,17 @@ class AlertManager:
             .all()
         )
 
-    async def get_overdue_alerts(self) -> List[FraudAlert]:
+    async def get_overdue_alerts(self) -> list[FraudAlert]:
         """Obtem alertas que excederam SLA."""
         return (
             self.db.query(FraudAlert)
             .filter(
-                FraudAlert.status.in_([
-                    AlertStatus.PENDING,
-                    AlertStatus.INVESTIGATING,
-                ]),
+                FraudAlert.status.in_(
+                    [
+                        AlertStatus.PENDING,
+                        AlertStatus.INVESTIGATING,
+                    ]
+                ),
                 FraudAlert.sla_deadline < datetime.utcnow(),
             )
             .order_by(FraudAlert.sla_deadline.asc())
@@ -559,9 +531,9 @@ class AlertManager:
 
     async def auto_assign_alerts(
         self,
-        analysts: List[UUID],
+        analysts: list[UUID],
         max_per_analyst: int = 10,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Distribui alertas automaticamente entre analistas."""
         pending = await self.get_pending_alerts()
         assignments = {str(a): 0 for a in analysts}
@@ -594,8 +566,8 @@ class AlertManager:
         entity_type: str,
         entity_id: UUID,
         category: FraudCategory,
-        transaction_id: Optional[UUID],
-    ) -> Optional[FraudAlert]:
+        transaction_id: UUID | None,
+    ) -> FraudAlert | None:
         """Verifica se existe alerta duplicado recente."""
         cutoff = datetime.utcnow() - timedelta(hours=1)
 
@@ -604,10 +576,12 @@ class AlertManager:
             FraudAlert.entity_id == entity_id,
             FraudAlert.category == category,
             FraudAlert.created_at >= cutoff,
-            FraudAlert.status.in_([
-                AlertStatus.PENDING,
-                AlertStatus.INVESTIGATING,
-            ]),
+            FraudAlert.status.in_(
+                [
+                    AlertStatus.PENDING,
+                    AlertStatus.INVESTIGATING,
+                ]
+            ),
         )
 
         if transaction_id:
@@ -637,10 +611,7 @@ class AlertManager:
         """Envia notificacoes para o alerta."""
         channels = self.NOTIFICATION_CHANNELS.get(alert.severity, ["email"])
 
-        logger.info(
-            f"Enviando notificacoes para alerta {alert.alert_number} "
-            f"via {channels}"
-        )
+        logger.info(f"Enviando notificacoes para alerta {alert.alert_number} via {channels}")
         # Implementacao real integraria com servico de notificacoes
 
     async def _send_escalation_notification(
@@ -650,10 +621,7 @@ class AlertManager:
         reason: str,
     ) -> None:
         """Envia notificacao de escalonamento."""
-        logger.info(
-            f"Notificacao de escalonamento: Alerta {alert.alert_number} "
-            f"escalado para {escalate_to}: {reason}"
-        )
+        logger.info(f"Notificacao de escalonamento: Alerta {alert.alert_number} escalado para {escalate_to}: {reason}")
 
     async def _update_risk_profile(
         self,
@@ -718,9 +686,7 @@ class AlertManager:
 
     async def _update_pattern_stats(self, pattern_id: UUID) -> None:
         """Atualiza estatisticas do padrao."""
-        pattern = (
-            self.db.query(FraudPattern).filter(FraudPattern.id == pattern_id).first()
-        )
+        pattern = self.db.query(FraudPattern).filter(FraudPattern.id == pattern_id).first()
         if pattern:
             pattern.record_detection(is_confirmed=False)
             self.db.commit()
@@ -741,18 +707,14 @@ class AlertManager:
 
     async def _record_pattern_confirmed(self, pattern_id: UUID) -> None:
         """Registra caso confirmado no padrao."""
-        pattern = (
-            self.db.query(FraudPattern).filter(FraudPattern.id == pattern_id).first()
-        )
+        pattern = self.db.query(FraudPattern).filter(FraudPattern.id == pattern_id).first()
         if pattern:
             pattern.record_detection(is_confirmed=True)
             self.db.commit()
 
     async def _record_pattern_false_positive(self, pattern_id: UUID) -> None:
         """Registra falso positivo no padrao."""
-        pattern = (
-            self.db.query(FraudPattern).filter(FraudPattern.id == pattern_id).first()
-        )
+        pattern = self.db.query(FraudPattern).filter(FraudPattern.id == pattern_id).first()
         if pattern:
             pattern.false_positives = (pattern.false_positives or 0) + 1
             self.db.commit()

@@ -2,27 +2,26 @@
 
 import logging
 from datetime import date
-from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.database import get_db
 from core.auth.dependencies import get_current_user
-from modules.hr.rep_integration.services import AFDService
+from core.database import get_db
 from modules.hr.rep_integration.repositories import AFDRecordRepository
 from modules.hr.rep_integration.schemas import (
-    AFDRecordResponse,
-    AFDRecordList,
-    AFDRecordFilter,
     AFDExportRequest,
     AFDExportResponse,
-    AFDValidationResult,
     AFDImportRequest,
     AFDImportResponse,
+    AFDRecordFilter,
+    AFDRecordList,
+    AFDRecordResponse,
+    AFDValidationResult,
 )
+from modules.hr.rep_integration.services import AFDService
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/afd", tags=["AFD Records"])
@@ -30,13 +29,13 @@ router = APIRouter(prefix="/afd", tags=["AFD Records"])
 
 @router.get("/records", response_model=AFDRecordList)
 async def list_afd_records(
-    device_id: Optional[UUID] = None,
-    condominio_id: Optional[UUID] = None,
-    record_type: Optional[str] = None,
-    pis_number: Optional[str] = None,
-    date_from: Optional[date] = None,
-    date_to: Optional[date] = None,
-    is_exported: Optional[bool] = None,
+    device_id: UUID | None = None,
+    condominio_id: UUID | None = None,
+    record_type: str | None = None,
+    pis_number: str | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
+    is_exported: bool | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(100, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
@@ -192,8 +191,8 @@ async def import_afd(
 
 @router.get("/statistics")
 async def get_afd_statistics(
-    device_id: Optional[UUID] = None,
-    condominio_id: Optional[UUID] = None,
+    device_id: UUID | None = None,
+    condominio_id: UUID | None = None,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict:

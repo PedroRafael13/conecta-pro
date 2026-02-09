@@ -4,7 +4,6 @@ Repository de Solicitacao de Exclusao de Dados LGPD.
 
 import logging
 from datetime import datetime
-from typing import List, Optional
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -46,7 +45,7 @@ class ErasureRepository:
         logger.info("Solicitacao de exclusao criada: %s", request.id)
         return request
 
-    def get_by_id(self, request_id: UUID) -> Optional[ErasureRequest]:
+    def get_by_id(self, request_id: UUID) -> ErasureRequest | None:
         """Busca solicitacao por ID.
 
         Args:
@@ -57,7 +56,7 @@ class ErasureRepository:
         """
         return self.db.query(ErasureRequest).filter(ErasureRequest.id == request_id).first()
 
-    def get_by_titular(self, titular_id: UUID) -> List[ErasureRequest]:
+    def get_by_titular(self, titular_id: UUID) -> list[ErasureRequest]:
         """Busca solicitacoes de um titular.
 
         Args:
@@ -91,9 +90,9 @@ class ErasureRepository:
         self,
         request_id: UUID,
         status: ErasureStatus,
-        processor_id: Optional[str] = None,
-        notes: Optional[str] = None,
-    ) -> Optional[ErasureRequest]:
+        processor_id: str | None = None,
+        notes: str | None = None,
+    ) -> ErasureRequest | None:
         """Atualiza status de uma solicitacao.
 
         Args:
@@ -117,7 +116,7 @@ class ErasureRepository:
             return self.update(request)
         return None
 
-    def list_pending(self, limit: int = 100, offset: int = 0) -> List[ErasureRequest]:
+    def list_pending(self, limit: int = 100, offset: int = 0) -> list[ErasureRequest]:
         """Lista solicitacoes pendentes.
 
         Args:
@@ -136,7 +135,7 @@ class ErasureRepository:
             .all()
         )
 
-    def list_overdue(self) -> List[ErasureRequest]:
+    def list_overdue(self) -> list[ErasureRequest]:
         """Lista solicitacoes com prazo vencido.
 
         Returns:
@@ -159,8 +158,6 @@ class ErasureRepository:
         from sqlalchemy import func
 
         result = (
-            self.db.query(ErasureRequest.status, func.count(ErasureRequest.id))
-            .group_by(ErasureRequest.status)
-            .all()
+            self.db.query(ErasureRequest.status, func.count(ErasureRequest.id)).group_by(ErasureRequest.status).all()
         )
         return {status.value: count for status, count in result}

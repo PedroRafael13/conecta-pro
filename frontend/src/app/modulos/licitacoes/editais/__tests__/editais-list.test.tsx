@@ -5,16 +5,19 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { render, mockToast } from '@/test/helpers/test-utils';
+import { render } from '@/test/helpers/test-utils';
 import { mockEditais, mockEdital } from '@/test/fixtures/licitacoes';
 import * as tendersHooks from '@/hooks/bidding/useTenders';
 
-vi.mock('@/hooks/bidding/useTenders');
+vi.mock('@/hooks/bidding/useTenders', () => ({
+  useListarEditais: vi.fn(),
+  useRemoverEdital: vi.fn(),
+}));
 
-// Simular página de editais (importação fictícia para testes)
+// Componente simulado de página de editais
 const EditaisPage = () => {
-  const { data: editais, isLoading } = (tendersHooks as any).useTenders();
-  const { mutate: deleteTender } = (tendersHooks as any).useDeleteTender();
+  const { data: editais, isLoading } = (tendersHooks as any).useListarEditais();
+  const { mutate: deleteTender } = (tendersHooks as any).useRemoverEdital();
 
   if (isLoading) return <div>Carregando...</div>;
 
@@ -45,14 +48,18 @@ const EditaisPage = () => {
 describe('Listagem de Editais', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Mock padrão para useRemoverEdital
+    vi.mocked(tendersHooks.useRemoverEdital).mockReturnValue({
+      mutate: vi.fn(),
+    } as any);
   });
 
   describe('Renderização', () => {
     it('deve renderizar título e botão novo edital', () => {
-      vi.spyOn(tendersHooks, 'useListarEditais').mockReturnValue({
+      vi.mocked(tendersHooks.useListarEditais).mockReturnValue({
         data: [],
         isLoading: false,
-      } as never);
+      } as any);
 
       render(<EditaisPage />);
 
@@ -61,10 +68,10 @@ describe('Listagem de Editais', () => {
     });
 
     it('deve mostrar loading state', () => {
-      vi.spyOn(tendersHooks, 'useListarEditais').mockReturnValue({
+      vi.mocked(tendersHooks.useListarEditais).mockReturnValue({
         data: undefined,
         isLoading: true,
-      } as never);
+      } as any);
 
       render(<EditaisPage />);
 
@@ -72,10 +79,10 @@ describe('Listagem de Editais', () => {
     });
 
     it('deve renderizar lista de editais', () => {
-      vi.spyOn(tendersHooks, 'useListarEditais').mockReturnValue({
+      vi.mocked(tendersHooks.useListarEditais).mockReturnValue({
         data: mockEditais,
         isLoading: false,
-      } as never);
+      } as any);
 
       render(<EditaisPage />);
 
@@ -87,10 +94,10 @@ describe('Listagem de Editais', () => {
 
   describe('Dados exibidos', () => {
     beforeEach(() => {
-      vi.spyOn(tendersHooks, 'useListarEditais').mockReturnValue({
+      vi.mocked(tendersHooks.useListarEditais).mockReturnValue({
         data: [mockEdital],
         isLoading: false,
-      } as never);
+      } as any);
     });
 
     it('deve exibir número do edital', () => {
@@ -114,13 +121,13 @@ describe('Listagem de Editais', () => {
   describe('Ações CRUD', () => {
     it('deve permitir deletar edital', async () => {
       const mockDelete = vi.fn();
-      vi.spyOn(tendersHooks, 'useListarEditais').mockReturnValue({
+      vi.mocked(tendersHooks.useListarEditais).mockReturnValue({
         data: [mockEdital],
         isLoading: false,
-      } as never);
-      vi.spyOn(tendersHooks, 'useRemoverEdital').mockReturnValue({
+      } as any);
+      vi.mocked(tendersHooks.useRemoverEdital).mockReturnValue({
         mutate: mockDelete,
-      } as never);
+      } as any);
 
       const user = userEvent.setup();
       render(<EditaisPage />);
@@ -134,15 +141,15 @@ describe('Listagem de Editais', () => {
 
   describe('Estados vazios', () => {
     it('deve lidar com lista vazia', () => {
-      vi.spyOn(tendersHooks, 'useListarEditais').mockReturnValue({
+      vi.mocked(tendersHooks.useListarEditais).mockReturnValue({
         data: [],
         isLoading: false,
-      } as never);
+      } as any);
 
       render(<EditaisPage />);
 
-      // Não deve ter nenhuma linha de edital
-      const rows = screen.queryAllByRole('row');
+      // Não deve ter nenhuma linha de edital na tabela
+      const rows = screen.queryAllByTestId(/edital-/);
       expect(rows.length).toBe(0);
     });
   });

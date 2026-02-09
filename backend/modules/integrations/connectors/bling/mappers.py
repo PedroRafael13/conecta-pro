@@ -8,17 +8,13 @@ Mapeamento bidirecional entre entidades Bling API v3 e modelos internos Conecta 
 import logging
 from datetime import datetime
 from decimal import Decimal
-from typing import Any, Dict, Optional
+from typing import Any
 from uuid import UUID
 
 from modules.integrations.connectors.bling.schemas import (
-    BlingContato,
     BlingContatoCreate,
-    BlingProduto,
-    BlingProdutoCreate,
-    BlingPedido,
-    BlingNFe,
     BlingEndereco,
+    BlingProdutoCreate,
 )
 
 logger = logging.getLogger(__name__)
@@ -26,16 +22,16 @@ logger = logging.getLogger(__name__)
 
 class BlingMapperError(Exception):
     """Erro no mapeamento de entidades Bling."""
+
     pass
 
 
 # ==================== CONTATO → CUSTOMER/SUPPLIER ====================
 
+
 def bling_contato_to_customer(
-    bling_data: Dict[str, Any],
-    condominio_id: UUID,
-    defaults: Optional[Dict[str, Any]] = None
-) -> Dict[str, Any]:
+    bling_data: dict[str, Any], condominio_id: UUID, defaults: dict[str, Any] | None = None
+) -> dict[str, Any]:
     """
     Mapeia contato Bling para dados de Customer interno.
 
@@ -94,10 +90,8 @@ def bling_contato_to_customer(
 
 
 def bling_contato_to_supplier(
-    bling_data: Dict[str, Any],
-    condominio_id: UUID,
-    defaults: Optional[Dict[str, Any]] = None
-) -> Dict[str, Any]:
+    bling_data: dict[str, Any], condominio_id: UUID, defaults: dict[str, Any] | None = None
+) -> dict[str, Any]:
     """
     Mapeia contato Bling para dados de Supplier interno.
 
@@ -150,9 +144,7 @@ def bling_contato_to_supplier(
     }
 
 
-def customer_to_bling_contato(
-    customer_data: Dict[str, Any]
-) -> BlingContatoCreate:
+def customer_to_bling_contato(customer_data: dict[str, Any]) -> BlingContatoCreate:
     """
     Mapeia Customer interno para dados de criação no Bling.
 
@@ -190,9 +182,7 @@ def customer_to_bling_contato(
     )
 
 
-def supplier_to_bling_contato(
-    supplier_data: Dict[str, Any]
-) -> BlingContatoCreate:
+def supplier_to_bling_contato(supplier_data: dict[str, Any]) -> BlingContatoCreate:
     """
     Mapeia Supplier interno para dados de criação no Bling.
 
@@ -215,9 +205,7 @@ def supplier_to_bling_contato(
         )
 
     # Determinar tipo
-    tipo = "J" if supplier_data.get("supplier_type") in [
-        "pessoa_juridica", "mei", "eireli", "cooperativa"
-    ] else "F"
+    tipo = "J" if supplier_data.get("supplier_type") in ["pessoa_juridica", "mei", "eireli", "cooperativa"] else "F"
 
     return BlingContatoCreate(
         nome=supplier_data.get("name", ""),
@@ -235,11 +223,10 @@ def supplier_to_bling_contato(
 
 # ==================== PRODUTO ====================
 
+
 def bling_produto_to_product(
-    bling_data: Dict[str, Any],
-    condominio_id: UUID,
-    defaults: Optional[Dict[str, Any]] = None
-) -> Dict[str, Any]:
+    bling_data: dict[str, Any], condominio_id: UUID, defaults: dict[str, Any] | None = None
+) -> dict[str, Any]:
     """
     Mapeia produto Bling para dados de Product interno.
 
@@ -312,9 +299,7 @@ def bling_produto_to_product(
     }
 
 
-def product_to_bling_produto(
-    product_data: Dict[str, Any]
-) -> BlingProdutoCreate:
+def product_to_bling_produto(product_data: dict[str, Any]) -> BlingProdutoCreate:
     """
     Mapeia Product interno para dados de criação no Bling.
 
@@ -360,11 +345,10 @@ def product_to_bling_produto(
 
 # ==================== NFE ====================
 
+
 def bling_nfe_to_nfe(
-    bling_data: Dict[str, Any],
-    condominio_id: UUID,
-    defaults: Optional[Dict[str, Any]] = None
-) -> Dict[str, Any]:
+    bling_data: dict[str, Any], condominio_id: UUID, defaults: dict[str, Any] | None = None
+) -> dict[str, Any]:
     """
     Mapeia NFe Bling para dados de NFe interno.
 
@@ -420,11 +404,10 @@ def bling_nfe_to_nfe(
 
 # ==================== PEDIDO ====================
 
+
 def bling_pedido_to_order(
-    bling_data: Dict[str, Any],
-    condominio_id: UUID,
-    defaults: Optional[Dict[str, Any]] = None
-) -> Dict[str, Any]:
+    bling_data: dict[str, Any], condominio_id: UUID, defaults: dict[str, Any] | None = None
+) -> dict[str, Any]:
     """
     Mapeia Pedido Bling para dados de pedido interno.
 
@@ -459,15 +442,17 @@ def bling_pedido_to_order(
     itens = []
     for item_bling in bling_data.get("itens") or []:
         produto = item_bling.get("produto") or {}
-        itens.append({
-            "produto_id": produto.get("id"),
-            "produto_codigo": item_bling.get("codigo"),
-            "descricao": item_bling.get("descricao"),
-            "quantidade": item_bling.get("quantidade"),
-            "valor_unitario": item_bling.get("valor"),
-            "desconto": item_bling.get("desconto"),
-            "unidade": item_bling.get("unidade"),
-        })
+        itens.append(
+            {
+                "produto_id": produto.get("id"),
+                "produto_codigo": item_bling.get("codigo"),
+                "descricao": item_bling.get("descricao"),
+                "quantidade": item_bling.get("quantidade"),
+                "valor_unitario": item_bling.get("valor"),
+                "desconto": item_bling.get("desconto"),
+                "unidade": item_bling.get("unidade"),
+            }
+        )
 
     return {
         "condominio_id": condominio_id,
@@ -496,21 +481,22 @@ def bling_pedido_to_order(
 
 # ==================== HELPERS ====================
 
-def _clean_document(doc: Optional[str]) -> Optional[str]:
+
+def _clean_document(doc: str | None) -> str | None:
     """Remove formatação de CPF/CNPJ."""
     if not doc:
         return None
     return doc.replace(".", "").replace("-", "").replace("/", "").strip()
 
 
-def _clean_cep(cep: Optional[str]) -> Optional[str]:
+def _clean_cep(cep: str | None) -> str | None:
     """Remove formatação de CEP."""
     if not cep:
         return None
     return cep.replace("-", "").replace(".", "").strip()
 
 
-def _parse_date(date_str: Optional[str]) -> Optional[datetime]:
+def _parse_date(date_str: str | None) -> datetime | None:
     """Parse de data do Bling."""
     if not date_str:
         return None
@@ -534,7 +520,7 @@ def _parse_date(date_str: Optional[str]) -> Optional[datetime]:
     return None
 
 
-def _parse_decimal(value: Any) -> Optional[Decimal]:
+def _parse_decimal(value: Any) -> Decimal | None:
     """Parse de valor decimal."""
     if value is None:
         return None
@@ -546,7 +532,8 @@ def _parse_decimal(value: Any) -> Optional[Decimal]:
 
 # ==================== DATA HASH ====================
 
-def compute_bling_entity_hash(entity_type: str, data: Dict[str, Any]) -> str:
+
+def compute_bling_entity_hash(entity_type: str, data: dict[str, Any]) -> str:
     """
     Computa hash de dados da entidade para detectar mudanças.
 
@@ -575,4 +562,4 @@ def compute_bling_entity_hash(entity_type: str, data: Dict[str, Any]) -> str:
 
     # Serializar e computar hash
     json_str = json.dumps(hash_data, sort_keys=True, default=str)
-    return hashlib.md5(json_str.encode()).hexdigest()
+    return hashlib.sha256(json_str.encode()).hexdigest()

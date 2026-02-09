@@ -16,7 +16,6 @@ import type {
   ExecutionStatus,
   ListExecutionsApiV1WorkflowsWorkflowIdExecutionsGetParams,
 } from '@/types/generated/workflows/conectaPROWorkflowsAPI.schemas';
-import { AxiosResponse } from 'axios';
 
 const EXECUTION_KEYS = {
   all: ['executions'] as const,
@@ -42,7 +41,7 @@ export const useExecutionList = (
   workflowId: string,
   params?: ListExecutionsApiV1WorkflowsWorkflowIdExecutionsGetParams,
   options?: Omit<
-    UseQueryOptions<AxiosResponse<ExecutionResponse[]>>,
+    UseQueryOptions<Awaited<ReturnType<typeof ExecutionService.listExecutions>>>,
     'queryKey' | 'queryFn'
   >
 ) => {
@@ -61,7 +60,7 @@ export const useExecutionsByStatus = (
   workflowId: string,
   status: ExecutionStatus,
   options?: Omit<
-    UseQueryOptions<AxiosResponse<ExecutionResponse[]>>,
+    UseQueryOptions<Awaited<ReturnType<typeof ExecutionService.listExecutions>>>,
     'queryKey' | 'queryFn'
   >
 ) => {
@@ -79,22 +78,17 @@ export const useExecutionsByStatus = (
 export const useRunningExecutions = (
   workflowId: string,
   options?: Omit<
-    UseQueryOptions<AxiosResponse<ExecutionResponse[]>>,
+    UseQueryOptions<Awaited<ReturnType<typeof ExecutionService.listExecutions>>>,
     'queryKey' | 'queryFn'
   >
 ) => {
   return useQuery({
     queryKey: EXECUTION_KEYS.running(workflowId),
     queryFn: async () => {
-      const response = await ExecutionService.listExecutions(workflowId);
-      // Filtra apenas execuções em andamento
-      const runningExecutions = response.data.filter((execution) =>
+      const executions = await ExecutionService.listExecutions(workflowId);
+      return executions.filter((execution) =>
         ExecutionService.isExecutionRunning(execution)
       );
-      return {
-        ...response,
-        data: runningExecutions,
-      };
     },
     enabled: !!workflowId,
     refetchInterval: 5000, // Atualiza a cada 5 segundos
@@ -109,7 +103,7 @@ export const useRecentExecutions = (
   workflowId: string,
   limit = 10,
   options?: Omit<
-    UseQueryOptions<AxiosResponse<ExecutionResponse[]>>,
+    UseQueryOptions<Awaited<ReturnType<typeof ExecutionService.listExecutions>>>,
     'queryKey' | 'queryFn'
   >
 ) => {
@@ -129,7 +123,7 @@ export const useRecentExecutions = (
  * Hook para cancelar execução
  */
 export const useCancelExecution = (
-  options?: UseMutationOptions<AxiosResponse<unknown>, Error, string>
+  options?: UseMutationOptions<Awaited<ReturnType<typeof ExecutionService.cancelExecution>>, Error, string>
 ) => {
   const queryClient = useQueryClient();
 
@@ -170,11 +164,11 @@ export const useExecutionStats = (
   return useQuery({
     queryKey: [...EXECUTION_KEYS.byWorkflow(workflowId), 'stats'],
     queryFn: async () => {
-      const response = await ExecutionService.listExecutions(workflowId, {
+      const executions = await ExecutionService.listExecutions(workflowId, {
         skip: 0,
         limit: 500, // Pegamos um limite grande para calcular stats
       });
-      return ExecutionService.getExecutionStats(response.data);
+      return ExecutionService.getExecutionStats(executions);
     },
     enabled: !!workflowId,
     staleTime: 30000, // Cache por 30 segundos
@@ -190,7 +184,7 @@ export const useExecutionMonitoring = (
   workflowId: string,
   refreshInterval = 5000,
   options?: Omit<
-    UseQueryOptions<AxiosResponse<ExecutionResponse[]>>,
+    UseQueryOptions<Awaited<ReturnType<typeof ExecutionService.listExecutions>>>,
     'queryKey' | 'queryFn'
   >
 ) => {

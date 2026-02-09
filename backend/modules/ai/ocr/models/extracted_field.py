@@ -3,10 +3,10 @@
 Sprint 39 - Document OCR.
 """
 
-import enum
 import uuid
 from datetime import datetime
-from typing import Optional, Any
+from enum import StrEnum
+from typing import Any
 
 from sqlalchemy import (
     Boolean,
@@ -23,7 +23,7 @@ from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from core.models.base import Base
 
 
-class FieldType(str, enum.Enum):
+class FieldType(StrEnum):
     """Tipo de campo extraido."""
 
     # Texto
@@ -81,7 +81,7 @@ class FieldType(str, enum.Enum):
     CUSTOM = "custom"
 
 
-class FieldValidationStatus(str, enum.Enum):
+class FieldValidationStatus(StrEnum):
     """Status de validacao do campo."""
 
     PENDING = "pending"  # Aguardando validacao
@@ -208,7 +208,7 @@ class ExtractedField(Base):
             return self.typed_value
         return self.normalized_value or self.extracted_value
 
-    def set_corrected_value(self, value: str, corrected_by: Optional[str] = None) -> None:
+    def set_corrected_value(self, value: str, corrected_by: str | None = None) -> None:
         """Define valor corrigido."""
         if not self.was_corrected:
             self.original_value = self.extracted_value

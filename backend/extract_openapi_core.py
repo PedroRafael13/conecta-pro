@@ -11,11 +11,12 @@ from pathlib import Path
 # Add backend to path
 sys.path.insert(0, str(Path(__file__).parent))
 
+# Import CORE routers directly (bypass __init__.py to avoid circular imports)
+import importlib.util
+
 from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
 
-# Import CORE routers directly (bypass __init__.py to avoid circular imports)
-import importlib.util
 
 def load_module_from_file(module_name, file_path):
     spec = importlib.util.spec_from_file_location(module_name, file_path)
@@ -23,6 +24,7 @@ def load_module_from_file(module_name, file_path):
     sys.modules[module_name] = module
     spec.loader.exec_module(module)
     return module
+
 
 auth_module = load_module_from_file("auth", Path(__file__).parent / "api/v1/endpoints/auth.py")
 users_module = load_module_from_file("users", Path(__file__).parent / "api/v1/endpoints/users.py")
@@ -60,17 +62,17 @@ def extract_core_openapi():
     )
 
     # Count endpoints
-    endpoint_count = len([route for route in app.routes if hasattr(route, 'methods')])
+    endpoint_count = len([route for route in app.routes if hasattr(route, "methods")])
     print(f"\n✅ Total de endpoints extraídos: {endpoint_count}")
 
     # Count by tag
     print("\n📊 Endpoints por submódulo:")
-    paths = openapi_schema.get('paths', {})
+    paths = openapi_schema.get("paths", {})
     tag_counts = {}
     for path_data in paths.values():
         for method_data in path_data.values():
-            if isinstance(method_data, dict) and 'tags' in method_data:
-                for tag in method_data['tags']:
+            if isinstance(method_data, dict) and "tags" in method_data:
+                for tag in method_data["tags"]:
                     tag_counts[tag] = tag_counts.get(tag, 0) + 1
 
     for tag, count in sorted(tag_counts.items()):
@@ -78,7 +80,7 @@ def extract_core_openapi():
 
     # Save to file
     output_file = Path(__file__).parent / "openapi-core.json"
-    with open(output_file, 'w', encoding='utf-8') as f:
+    with open(output_file, "w", encoding="utf-8") as f:
         json.dump(openapi_schema, f, indent=2, ensure_ascii=False)
 
     print(f"\n✅ OpenAPI spec salvo em: {output_file}")
@@ -94,5 +96,6 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"\n❌ Erro ao extrair OpenAPI: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)

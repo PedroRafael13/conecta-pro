@@ -3,9 +3,8 @@
 Sprint 34 - AI Predictions.
 """
 
-import enum
 from datetime import datetime
-from typing import Optional
+from enum import StrEnum
 
 from sqlalchemy import Boolean, Column, DateTime, Enum, Float, Integer, String, Text
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
@@ -14,7 +13,7 @@ from sqlalchemy.orm import relationship
 from core.models import Base
 
 
-class ModelType(str, enum.Enum):
+class ModelType(StrEnum):
     """Tipo de modelo."""
 
     CLASSIFICATION = "CLASSIFICATION"  # Classificacao
@@ -27,7 +26,7 @@ class ModelType(str, enum.Enum):
     RANKING = "RANKING"  # Ranking/scoring
 
 
-class ModelStatus(str, enum.Enum):
+class ModelStatus(StrEnum):
     """Status do modelo."""
 
     DRAFT = "DRAFT"  # Rascunho
@@ -87,9 +86,7 @@ class MLModel(Base):
     feature_store_id = Column(UUID(as_uuid=True), nullable=True, index=True)
     input_features = Column(ARRAY(String), nullable=True)
     target_variable = Column(String(100), nullable=True)
-    feature_preprocessing = Column(
-        JSONB, nullable=True
-    )  # Ex: {"age": "normalize", "city": "one_hot"}
+    feature_preprocessing = Column(JSONB, nullable=True)  # Ex: {"age": "normalize", "city": "one_hot"}
 
     # Artefatos
     model_path = Column(String(500), nullable=True)  # Caminho do arquivo do modelo
@@ -210,8 +207,8 @@ class MLModel(Base):
     def complete_training(
         self,
         metrics: dict,
-        model_path: Optional[str] = None,
-        model_size: Optional[int] = None,
+        model_path: str | None = None,
+        model_size: int | None = None,
     ) -> None:
         """Completa treinamento.
 
@@ -251,7 +248,7 @@ class MLModel(Base):
     def record_prediction(
         self,
         success: bool,
-        prediction_time_ms: Optional[int] = None,
+        prediction_time_ms: int | None = None,
     ) -> None:
         """Registra predicao.
 
@@ -270,9 +267,7 @@ class MLModel(Base):
         if prediction_time_ms is not None:
             current_avg = self.avg_prediction_time_ms or 0
             total = self.total_predictions
-            self.avg_prediction_time_ms = int(
-                ((current_avg * (total - 1)) + prediction_time_ms) / total
-            )
+            self.avg_prediction_time_ms = int(((current_avg * (total - 1)) + prediction_time_ms) / total)
 
     def update_drift(self, drift_score: float, threshold: float = 0.3) -> bool:
         """Atualiza score de drift.

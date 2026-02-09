@@ -3,7 +3,6 @@
 import logging
 from datetime import date
 from decimal import Decimal
-from typing import List, Optional, Tuple
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -72,17 +71,17 @@ class ReceivableService:
         logger.info(f"Conta criada com sucesso: {account.id}")
         return account
 
-    async def get_account(self, account_id: UUID) -> Optional[ReceivableAccount]:
+    async def get_account(self, account_id: UUID) -> ReceivableAccount | None:
         """Busca conta por ID."""
         return await self.account_repo.get_by_id(account_id, with_relations=True)
 
     async def list_accounts(
         self,
         condominio_id: UUID,
-        filters: Optional[ReceivableAccountFilter] = None,
+        filters: ReceivableAccountFilter | None = None,
         skip: int = 0,
         limit: int = 100,
-    ) -> Tuple[List[ReceivableAccount], int]:
+    ) -> tuple[list[ReceivableAccount], int]:
         """Lista contas com filtros e paginacao."""
         accounts = await self.account_repo.list(condominio_id, filters, skip, limit)
         total = await self.account_repo.count(condominio_id, filters)
@@ -93,7 +92,7 @@ class ReceivableService:
         account_id: UUID,
         data: ReceivableAccountUpdate,
         user_id: UUID,  # pylint: disable=unused-argument
-    ) -> Optional[ReceivableAccount]:
+    ) -> ReceivableAccount | None:
         """Atualiza uma conta a receber."""
         account = await self.account_repo.get_by_id(account_id)
         if not account:
@@ -123,7 +122,7 @@ class ReceivableService:
         if account.customer_id:
             customer = await self.customer_repo.get_by_id(account.customer_id)
             if customer:
-                customer.total_debt -= (account.net_value - account.paid_value)
+                customer.total_debt -= account.net_value - account.paid_value
 
         await self.account_repo.delete(account)
         await self.session.commit()
@@ -142,7 +141,7 @@ class ReceivableService:
         account_id: UUID,
         user_id: UUID,  # pylint: disable=unused-argument
         reason: str,
-    ) -> Optional[ReceivableAccount]:
+    ) -> ReceivableAccount | None:
         """Cancela uma conta."""
         account = await self.account_repo.get_by_id(account_id)
         if not account:
@@ -171,7 +170,7 @@ class ReceivableService:
         account_id: UUID,
         user_id: UUID,  # pylint: disable=unused-argument
         reason: str,
-    ) -> Optional[ReceivableAccount]:
+    ) -> ReceivableAccount | None:
         """Suspende uma conta."""
         account = await self.account_repo.get_by_id(account_id)
         if not account:
@@ -193,7 +192,7 @@ class ReceivableService:
         account_id: UUID,
         user_id: UUID,
         protest_number: str,
-    ) -> Optional[ReceivableAccount]:
+    ) -> ReceivableAccount | None:
         """Envia conta para protesto."""
         account = await self.account_repo.get_by_id(account_id)
         if not account:
@@ -213,7 +212,7 @@ class ReceivableService:
         account_id: UUID,
         user_id: UUID,
         reason: str,
-    ) -> Optional[ReceivableAccount]:
+    ) -> ReceivableAccount | None:
         """Baixa conta (perda)."""
         account = await self.account_repo.get_by_id(account_id)
         if not account:
@@ -267,7 +266,7 @@ class ReceivableService:
         self,
         request: ReceivableBulkPaymentRequest,
         user_id: UUID,
-    ) -> Tuple[int, int, List[UUID]]:
+    ) -> tuple[int, int, list[UUID]]:
         """Processa recebimento em lote."""
         success_count = 0
         error_count = 0
@@ -303,7 +302,7 @@ class ReceivableService:
         payment_id: UUID,
         request: ReceivablePaymentReverseRequest,
         user_id: UUID,
-    ) -> Optional[ReceivablePayment]:
+    ) -> ReceivablePayment | None:
         """Estorna um recebimento."""
         payment = await self.payment_repo.get_by_id(payment_id)
         if not payment:
@@ -343,7 +342,7 @@ class ReceivableService:
         payment_id: UUID,
         request: ReceivablePaymentReconcileRequest,
         user_id: UUID,
-    ) -> Optional[ReceivablePayment]:
+    ) -> ReceivablePayment | None:
         """Concilia recebimento com extrato bancario."""
         payment = await self.payment_repo.get_by_id(payment_id)
         if not payment:
@@ -360,14 +359,14 @@ class ReceivableService:
     async def get_installment(
         self,
         installment_id: UUID,
-    ) -> Optional[ReceivableInstallment]:
+    ) -> ReceivableInstallment | None:
         """Busca parcela por ID."""
         return await self.installment_repo.get_by_id(installment_id)
 
     async def list_installments(
         self,
         account_id: UUID,
-    ) -> List[ReceivableInstallment]:
+    ) -> list[ReceivableInstallment]:
         """Lista parcelas de uma conta."""
         return await self.installment_repo.list_by_account(account_id)
 
@@ -375,7 +374,7 @@ class ReceivableService:
         self,
         installment_id: UUID,
         data: ReceivableInstallmentUpdate,
-    ) -> Optional[ReceivableInstallment]:
+    ) -> ReceivableInstallment | None:
         """Atualiza uma parcela."""
         installment = await self.installment_repo.get_by_id(installment_id)
         if not installment:
@@ -396,7 +395,7 @@ class ReceivableService:
         installment_id: UUID,
         request: ReceivableInstallmentRenegotiateRequest,
         user_id: UUID,  # pylint: disable=unused-argument
-    ) -> Optional[ReceivableInstallment]:
+    ) -> ReceivableInstallment | None:
         """Renegocia uma parcela."""
         installment = await self.installment_repo.get_by_id(installment_id)
         if not installment:
@@ -424,7 +423,7 @@ class ReceivableService:
         self,
         condominio_id: UUID,
         limit: int = 100,
-    ) -> List[ReceivableAccount]:
+    ) -> list[ReceivableAccount]:
         """Retorna contas vencidas."""
         return await self.account_repo.get_overdue(condominio_id, limit)
 
@@ -433,32 +432,30 @@ class ReceivableService:
         condominio_id: UUID,
         days: int = 7,
         limit: int = 100,
-    ) -> List[ReceivableAccount]:
+    ) -> list[ReceivableAccount]:
         """Retorna contas a vencer nos proximos dias."""
         return await self.account_repo.get_due_soon(condominio_id, days, limit)
 
     async def get_pending_installments(
         self,
         condominio_id: UUID,
-        due_date_start: Optional[date] = None,
-        due_date_end: Optional[date] = None,
-    ) -> List[ReceivableInstallment]:
+        due_date_start: date | None = None,
+        due_date_end: date | None = None,
+    ) -> list[ReceivableInstallment]:
         """Retorna parcelas pendentes."""
-        return await self.installment_repo.get_pending(
-            condominio_id, due_date_start, due_date_end
-        )
+        return await self.installment_repo.get_pending(condominio_id, due_date_start, due_date_end)
 
     async def get_pending_reconciliation(
         self,
         condominio_id: UUID,
-    ) -> List[ReceivablePayment]:
+    ) -> list[ReceivablePayment]:
         """Retorna recebimentos pendentes de conciliacao."""
         return await self.payment_repo.get_pending_reconciliation(condominio_id)
 
     async def get_customer_debt(
         self,
         customer_id: UUID,
-    ) -> Tuple[Decimal, Decimal]:
+    ) -> tuple[Decimal, Decimal]:
         """Retorna divida do cliente (total, vencida)."""
         customer = await self.customer_repo.get_by_id(customer_id)
         if not customer:
@@ -468,7 +465,7 @@ class ReceivableService:
     async def get_unit_debt(
         self,
         unidade_id: UUID,
-    ) -> Tuple[Decimal, Decimal]:
+    ) -> tuple[Decimal, Decimal]:
         """Retorna divida da unidade (total, vencida)."""
         accounts = await self.account_repo.get_by_unidade(unidade_id)
         total = Decimal("0")

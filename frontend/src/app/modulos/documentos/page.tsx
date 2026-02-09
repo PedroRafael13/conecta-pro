@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-;
 import Link from 'next/link';
 import {
   formatFileSize,
@@ -16,6 +15,20 @@ import {
   DOCUMENT_TYPES,
   DOCUMENT_CATEGORIES,
 } from '@/types/generated/ged/conectaPROMóduloGED.schemas';
+
+// Stats estendido - o backend retorna mais campos que o GEDStats base
+interface PageGEDStats extends GEDStats {
+  active_folders?: number;
+  active_documents?: number;
+  total_storage_bytes?: number;
+  total_versions?: number;
+  expired_documents?: number;
+  total_signatures?: number;
+  total_shares?: number;
+  active_shares?: number;
+  total_tags?: number;
+}
+
 import {
   DocumentApprovalDialog,
   DocumentSignatureDialog,
@@ -46,7 +59,7 @@ export default function DocumentosPage() {
 
   // Computed values
   const loading = loadingStats || loadingFolders || loadingApprovals || loadingSignatures || loadingExpiring;
-  const stats = statsData || null;
+  const stats = (statsData as PageGEDStats | undefined) ?? null;
   const rootFolders = foldersData?.items?.filter((f: Folder) => f.is_root) || [];
 
   // Dialogs
@@ -319,7 +332,7 @@ export default function DocumentosPage() {
               <CardContent>
                 <div className="space-y-3">
                   {stats?.documents_by_type && Object.entries(stats.documents_by_type).slice(0, 5).map(([type, count]) => {
-                    const typeLabel = DOCUMENT_TYPES.find(t => t.value === type)?.label || type;
+                    const typeLabel = DOCUMENT_TYPES[type as keyof typeof DOCUMENT_TYPES] || type;
                     const percentage = stats.total_documents > 0 ? (count / stats.total_documents) * 100 : 0;
 
                     return (

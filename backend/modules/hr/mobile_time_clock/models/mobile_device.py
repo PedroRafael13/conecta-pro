@@ -5,16 +5,16 @@ Gerencia smartphones e tablets autorizados para registro de ponto.
 
 import uuid
 from datetime import datetime
-from enum import Enum
-from typing import Optional, TYPE_CHECKING
+from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     Boolean,
     DateTime,
+    Index,
     Integer,
     String,
     Text,
-    Index,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -25,29 +25,32 @@ if TYPE_CHECKING:
     from .mobile_checkin import MobileCheckIn
 
 
-class DevicePlatform(str, Enum):
+class DevicePlatform(StrEnum):
     """Plataforma do dispositivo."""
+
     ANDROID = "android"
     IOS = "ios"
     WEB = "web"
 
 
-class DeviceStatus(str, Enum):
+class DeviceStatus(StrEnum):
     """Status do dispositivo."""
-    PENDING = "pending"          # Aguardando aprovação
-    ACTIVE = "active"            # Ativo e autorizado
-    BLOCKED = "blocked"          # Bloqueado por admin
-    REVOKED = "revoked"          # Autorização revogada
-    LOST = "lost"                # Reportado como perdido
+
+    PENDING = "pending"  # Aguardando aprovação
+    ACTIVE = "active"  # Ativo e autorizado
+    BLOCKED = "blocked"  # Bloqueado por admin
+    REVOKED = "revoked"  # Autorização revogada
+    LOST = "lost"  # Reportado como perdido
 
 
-class BiometricCapability(str, Enum):
+class BiometricCapability(StrEnum):
     """Capacidades biométricas do dispositivo."""
+
     NONE = "none"
     FINGERPRINT = "fingerprint"
     FACE_ID = "face_id"
     IRIS = "iris"
-    BOTH = "both"               # Fingerprint + Face
+    BOTH = "both"  # Fingerprint + Face
 
 
 class MobileDevice(Base):
@@ -79,14 +82,14 @@ class MobileDevice(Base):
         String(20),
         default=DevicePlatform.ANDROID.value,
     )
-    os_version: Mapped[Optional[str]] = mapped_column(String(50))
-    app_version: Mapped[Optional[str]] = mapped_column(String(20))
-    model: Mapped[Optional[str]] = mapped_column(String(100))
-    manufacturer: Mapped[Optional[str]] = mapped_column(String(100))
+    os_version: Mapped[str | None] = mapped_column(String(50))
+    app_version: Mapped[str | None] = mapped_column(String(20))
+    model: Mapped[str | None] = mapped_column(String(100))
+    manufacturer: Mapped[str | None] = mapped_column(String(100))
 
     # Push notifications
-    push_token: Mapped[Optional[str]] = mapped_column(Text)
-    push_provider: Mapped[Optional[str]] = mapped_column(String(20))  # fcm, apns
+    push_token: Mapped[str | None] = mapped_column(Text)
+    push_provider: Mapped[str | None] = mapped_column(String(20))  # fcm, apns
 
     # Biometria
     biometric_capability: Mapped[str] = mapped_column(
@@ -94,14 +97,14 @@ class MobileDevice(Base):
         default=BiometricCapability.NONE.value,
     )
     biometric_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
-    biometric_enrolled_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    biometric_enrolled_at: Mapped[datetime | None] = mapped_column(DateTime)
 
     # Geolocalização
     location_permission: Mapped[bool] = mapped_column(Boolean, default=False)
     background_location: Mapped[bool] = mapped_column(Boolean, default=False)
-    last_known_lat: Mapped[Optional[float]] = mapped_column()
-    last_known_lng: Mapped[Optional[float]] = mapped_column()
-    last_location_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    last_known_lat: Mapped[float | None] = mapped_column()
+    last_known_lng: Mapped[float | None] = mapped_column()
+    last_location_at: Mapped[datetime | None] = mapped_column(DateTime)
 
     # Status e segurança
     status: Mapped[str] = mapped_column(
@@ -113,8 +116,8 @@ class MobileDevice(Base):
     trust_score: Mapped[int] = mapped_column(Integer, default=0)  # 0-100
 
     # Tokens e autenticação
-    refresh_token_hash: Mapped[Optional[str]] = mapped_column(String(256))
-    token_expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    refresh_token_hash: Mapped[str | None] = mapped_column(String(256))
+    token_expires_at: Mapped[datetime | None] = mapped_column(DateTime)
 
     # Configurações
     allow_offline_checkin: Mapped[bool] = mapped_column(Boolean, default=True)
@@ -125,25 +128,25 @@ class MobileDevice(Base):
     # Contadores
     checkin_count: Mapped[int] = mapped_column(Integer, default=0)
     failed_attempts: Mapped[int] = mapped_column(Integer, default=0)
-    last_failed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    last_failed_at: Mapped[datetime | None] = mapped_column(DateTime)
 
     # Aprovação
-    approved_by: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True))
-    approved_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    blocked_reason: Mapped[Optional[str]] = mapped_column(Text)
-    blocked_by: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True))
-    blocked_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    approved_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime)
+    blocked_reason: Mapped[str | None] = mapped_column(Text)
+    blocked_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    blocked_at: Mapped[datetime | None] = mapped_column(DateTime)
 
     # Metadados
-    device_info: Mapped[Optional[dict]] = mapped_column(JSONB, default=dict)
-    settings: Mapped[Optional[dict]] = mapped_column(JSONB, default=dict)
+    device_info: Mapped[dict | None] = mapped_column(JSONB, default=dict)
+    settings: Mapped[dict | None] = mapped_column(JSONB, default=dict)
 
     # Timestamps
     first_seen_at: Mapped[datetime] = mapped_column(
         DateTime,
         default=datetime.utcnow,
     )
-    last_seen_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    last_seen_at: Mapped[datetime | None] = mapped_column(DateTime)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime,

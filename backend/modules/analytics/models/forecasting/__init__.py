@@ -1,9 +1,9 @@
 """Sales Forecasting Model - Sprint 04."""
 
 from modules.analytics.models.forecasting.sales_forecaster import (
-    SalesForecaster,
-    SalesForecast,
     ForecastGranularity,
+    SalesForecast,
+    SalesForecaster,
     SeasonalityType,
 )
 

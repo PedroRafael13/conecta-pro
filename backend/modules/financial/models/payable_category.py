@@ -2,8 +2,8 @@
 
 import uuid
 from datetime import datetime
-from enum import Enum
-from typing import TYPE_CHECKING, List
+from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.dialects.postgresql import UUID
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from modules.financial.models.payable_account import PayableAccount
 
 
-class CategoryType(str, Enum):
+class CategoryType(StrEnum):
     """Tipo de categoria."""
 
     DESPESA = "despesa"  # Despesas operacionais
@@ -27,7 +27,7 @@ class CategoryType(str, Enum):
     OUTRO = "outro"
 
 
-class CategoryNature(str, Enum):
+class CategoryNature(StrEnum):
     """Natureza da categoria (plano de contas)."""
 
     # Despesas Operacionais
@@ -118,15 +118,13 @@ class PayableCategory(Base):
     ativo = Column(Boolean, default=True, nullable=False)
 
     # Relacionamentos
-    children: List["PayableCategory"] = relationship(
+    children: list["PayableCategory"] = relationship(
         "PayableCategory",
         backref="parent",
-        remote_side=[id],
+        remote_side=[id],  # noqa: A003
         foreign_keys=[parent_id],
     )
-    payable_accounts: List["PayableAccount"] = relationship(
-        "PayableAccount", back_populates="category"
-    )
+    payable_accounts: list["PayableAccount"] = relationship("PayableAccount", back_populates="category")
 
     __table_args__ = (
         Index("ix_payable_categories_code", "code"),

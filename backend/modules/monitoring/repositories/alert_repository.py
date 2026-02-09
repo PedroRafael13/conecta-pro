@@ -3,7 +3,6 @@ Repository para alertas.
 """
 
 from datetime import datetime, timedelta
-from typing import List, Optional
 from uuid import UUID
 
 from sqlalchemy import func, select
@@ -25,7 +24,7 @@ class AlertRepository:
         await self.db.refresh(alert)
         return alert
 
-    async def get_by_id(self, alert_id: UUID) -> Optional[Alert]:
+    async def get_by_id(self, alert_id: UUID) -> Alert | None:
         """Busca alerta por ID."""
         stmt = select(Alert).where(Alert.id == alert_id)
         result = await self.db.execute(stmt)
@@ -33,13 +32,13 @@ class AlertRepository:
 
     async def get_active(
         self,
-        level: Optional[AlertLevel] = None,
+        level: AlertLevel | None = None,
         limit: int = 100,
-    ) -> List[Alert]:
+    ) -> list[Alert]:
         """Busca alertas ativos."""
         stmt = select(Alert).where(
             Alert.status == AlertStatus.ACTIVE,
-            Alert.is_active == True,
+            Alert.is_active,
         )
 
         if level:
@@ -54,13 +53,13 @@ class AlertRepository:
         self,
         metric_name: str,
         limit: int = 50,
-    ) -> List[Alert]:
+    ) -> list[Alert]:
         """Busca alertas por metrica."""
         stmt = (
             select(Alert)
             .where(
                 Alert.metric_name == metric_name,
-                Alert.is_active == True,
+                Alert.is_active,
             )
             .order_by(Alert.triggered_at.desc())
             .limit(limit)
@@ -73,7 +72,7 @@ class AlertRepository:
         self,
         hours: int = 24,
         limit: int = 100,
-    ) -> List[Alert]:
+    ) -> list[Alert]:
         """Busca alertas recentes."""
         threshold = datetime.utcnow() - timedelta(hours=hours)
 
@@ -81,7 +80,7 @@ class AlertRepository:
             select(Alert)
             .where(
                 Alert.triggered_at >= threshold,
-                Alert.is_active == True,
+                Alert.is_active,
             )
             .order_by(Alert.triggered_at.desc())
             .limit(limit)
@@ -108,7 +107,7 @@ class AlertRepository:
             stmt = select(func.count(Alert.id)).where(
                 Alert.triggered_at >= threshold,
                 Alert.level == level,
-                Alert.is_active == True,
+                Alert.is_active,
             )
             result = await self.db.execute(stmt)
             counts[level.value] = result.scalar() or 0
@@ -127,7 +126,7 @@ class AlertRepository:
             stmt = select(func.count(Alert.id)).where(
                 Alert.triggered_at >= threshold,
                 Alert.status == status,
-                Alert.is_active == True,
+                Alert.is_active,
             )
             result = await self.db.execute(stmt)
             counts[status.value] = result.scalar() or 0
@@ -137,14 +136,14 @@ class AlertRepository:
     async def get_unresolved_older_than(
         self,
         minutes: int,
-    ) -> List[Alert]:
+    ) -> list[Alert]:
         """Busca alertas nao resolvidos mais antigos que X minutos."""
         threshold = datetime.utcnow() - timedelta(minutes=minutes)
 
         stmt = select(Alert).where(
             Alert.status == AlertStatus.ACTIVE,
             Alert.triggered_at < threshold,
-            Alert.is_active == True,
+            Alert.is_active,
         )
 
         result = await self.db.execute(stmt)

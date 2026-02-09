@@ -7,23 +7,20 @@ Motor principal de deteccao de fraudes.
 import logging
 import time
 from datetime import datetime
-from typing import Optional, List, Dict, Any, Tuple
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy.orm import Session
 
 from modules.ai.fraud_detection.models.fraud_alert import (
+    AlertSeverity,
     FraudAlert,
     FraudCategory,
-    AlertSeverity,
-    AlertStatus,
 )
-from modules.ai.fraud_detection.models.fraud_rule import FraudRule
-from modules.ai.fraud_detection.models.fraud_pattern import FraudPattern
 from modules.ai.fraud_detection.models.risk_profile import (
-    RiskProfile,
     EntityType,
     RiskLevel,
+    RiskProfile,
 )
 from modules.ai.fraud_detection.repositories.fraud_repository import FraudRepository
 
@@ -50,13 +47,13 @@ class FraudDetector:
         amount: float,
         payer_id: UUID,
         payer_type: str,
-        payee_id: Optional[UUID] = None,
-        payee_type: Optional[str] = None,
-        ip_address: Optional[str] = None,
-        device_id: Optional[str] = None,
-        location: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        payee_id: UUID | None = None,
+        payee_type: str | None = None,
+        ip_address: str | None = None,
+        device_id: str | None = None,
+        location: str | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """
         Verifica transacao para fraude.
 
@@ -152,9 +149,11 @@ class FraudDetector:
         )
 
         for pattern in patterns:
-            matched, confidence, indicators = pattern.match({
-                "indicators": self._extract_indicators(data, profile),
-            })
+            matched, confidence, indicators = pattern.match(
+                {
+                    "indicators": self._extract_indicators(data, profile),
+                }
+            )
             if matched:
                 matched_patterns.append(pattern.code)
                 total_risk_score += pattern.risk_score * confidence * 0.5
@@ -212,8 +211,7 @@ class FraudDetector:
         processing_time = int((time.time() - start_time) * 1000)
 
         logger.info(
-            f"Transacao {transaction_id} verificada: {decision} "
-            f"(score: {risk_score:.1f}, tempo: {processing_time}ms)"
+            f"Transacao {transaction_id} verificada: {decision} (score: {risk_score:.1f}, tempo: {processing_time}ms)"
         )
 
         return {
@@ -236,14 +234,14 @@ class FraudDetector:
         user_id: UUID,
         ip_address: str,
         action: str,
-        session_id: Optional[str] = None,
-        device_id: Optional[str] = None,
-        user_agent: Optional[str] = None,
-        location: Optional[str] = None,
-        geo_coordinates: Optional[Dict[str, float]] = None,
-        resource: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        session_id: str | None = None,
+        device_id: str | None = None,
+        user_agent: str | None = None,
+        location: str | None = None,
+        geo_coordinates: dict[str, float] | None = None,
+        resource: str | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """
         Verifica acesso para fraude.
 
@@ -304,9 +302,7 @@ class FraudDetector:
             total_risk_score += 15
 
         # Verificar IP novo
-        is_new_ip = False
         if ip_address and ip_address not in (profile.known_ips or []):
-            is_new_ip = True
             anomalies.append("new_ip")
             risk_factors.append("IP desconhecido")
             total_risk_score += 10
@@ -412,10 +408,7 @@ class FraudDetector:
 
         processing_time = int((time.time() - start_time) * 1000)
 
-        logger.info(
-            f"Acesso de {user_id} verificado: {decision} "
-            f"(score: {risk_score:.1f}, tempo: {processing_time}ms)"
-        )
+        logger.info(f"Acesso de {user_id} verificado: {decision} (score: {risk_score:.1f}, tempo: {processing_time}ms)")
 
         return {
             "user_id": user_id,
@@ -436,9 +429,9 @@ class FraudDetector:
     def _determine_decision(
         self,
         risk_score: float,
-        matched_rules: List[str],
-        matched_patterns: List[str],
-    ) -> Tuple[RiskLevel, str]:
+        matched_rules: list[str],
+        matched_patterns: list[str],
+    ) -> tuple[RiskLevel, str]:
         """Determina nivel de risco e decisao."""
         if risk_score >= 80 or len(matched_patterns) >= 2:
             return RiskLevel.CRITICAL, "block"
@@ -453,9 +446,9 @@ class FraudDetector:
 
     def _extract_indicators(
         self,
-        data: Dict[str, Any],
+        data: dict[str, Any],
         profile: RiskProfile,
-    ) -> List[str]:
+    ) -> list[str]:
         """Extrai indicadores dos dados."""
         indicators = []
 
@@ -489,12 +482,12 @@ class FraudDetector:
         entity_type: str,
         entity_id: UUID,
         risk_score: float,
-        matched_rules: List[str],
-        matched_patterns: List[str],
-        decision_reasons: List[str],
-        ip_address: Optional[str] = None,
-        location: Optional[str] = None,
-    ) -> Optional[FraudAlert]:
+        matched_rules: list[str],
+        matched_patterns: list[str],
+        decision_reasons: list[str],
+        ip_address: str | None = None,
+        location: str | None = None,
+    ) -> FraudAlert | None:
         """Cria alerta de transacao."""
         # Determinar severidade
         if risk_score >= 80:
@@ -532,12 +525,12 @@ class FraudDetector:
         user_id: UUID,
         action: str,
         risk_score: float,
-        anomalies: List[str],
-        risk_factors: List[str],
-        ip_address: Optional[str] = None,
-        device_id: Optional[str] = None,
-        location: Optional[str] = None,
-    ) -> Optional[FraudAlert]:
+        anomalies: list[str],
+        risk_factors: list[str],
+        ip_address: str | None = None,
+        device_id: str | None = None,
+        location: str | None = None,
+    ) -> FraudAlert | None:
         """Cria alerta de acesso."""
         if risk_score >= 70:
             severity = AlertSeverity.HIGH

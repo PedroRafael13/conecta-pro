@@ -8,10 +8,9 @@ Responsavel por:
 - Segmentacao
 """
 
-import random
+import random  # noqa: S311
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import and_, func, select
@@ -84,7 +83,7 @@ class ABTestResult:
     variant_b_clicks: int = 0
     variant_a_sent: int = 0
     variant_b_sent: int = 0
-    winner_id: Optional[UUID] = None
+    winner_id: UUID | None = None
     winner_criteria: str = "open_rate"
     confidence: float = 0.0
 
@@ -125,8 +124,8 @@ class DripStep:
     template_id: UUID
     delay_days: int = 0
     delay_hours: int = 0
-    condition: Optional[dict] = None  # Condicao para envio
-    subject_override: Optional[str] = None
+    condition: dict | None = None  # Condicao para envio
+    subject_override: str | None = None
 
 
 class CampaignService:
@@ -147,9 +146,9 @@ class CampaignService:
         name: str,
         template_id: UUID,
         campaign_type: CampaignType = CampaignType.REGULAR,
-        segment_filters: Optional[dict] = None,
-        scheduled_at: Optional[datetime] = None,
-        description: Optional[str] = None,
+        segment_filters: dict | None = None,
+        scheduled_at: datetime | None = None,
+        description: str | None = None,
     ) -> EmailCampaign:
         """Cria nova campanha.
 
@@ -394,7 +393,7 @@ class CampaignService:
 
         return True
 
-    async def determine_ab_winner(self, campaign_id: UUID) -> Optional[ABTestResult]:
+    async def determine_ab_winner(self, campaign_id: UUID) -> ABTestResult | None:
         """Determina vencedor do teste A/B.
 
         Args:
@@ -453,7 +452,7 @@ class CampaignService:
         name: str,
         steps: list[DripStep],
         trigger_type: str = "signup",
-        trigger_config: Optional[dict] = None,
+        trigger_config: dict | None = None,
     ) -> EmailCampaign:
         """Cria drip campaign.
 
@@ -509,8 +508,8 @@ class CampaignService:
         _tenant_id: UUID,
         drip_campaign_id: UUID,
         recipient_email: str,
-        recipient_name: Optional[str] = None,
-        variables: Optional[dict] = None,
+        recipient_name: str | None = None,
+        variables: dict | None = None,
     ) -> bool:
         """Processa trigger de drip campaign.
 
@@ -582,13 +581,13 @@ class CampaignService:
 
     # --- Metodos privados ---
 
-    async def _get_campaign(self, campaign_id: UUID) -> Optional[EmailCampaign]:
+    async def _get_campaign(self, campaign_id: UUID) -> EmailCampaign | None:
         """Busca campanha."""
         query = select(EmailCampaign).where(EmailCampaign.id == campaign_id)
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
-    async def _get_template(self, template_id: UUID) -> Optional[EmailTemplate]:
+    async def _get_template(self, template_id: UUID) -> EmailTemplate | None:
         """Busca template."""
         query = select(EmailTemplate).where(EmailTemplate.id == template_id)
         result = await self.session.execute(query)
@@ -597,9 +596,9 @@ class CampaignService:
     async def _get_recipients(
         self,
         tenant_id: UUID,
-        _segment_filters: Optional[dict],
-        _include_lists: Optional[list],
-        _exclude_lists: Optional[list],
+        _segment_filters: dict | None,
+        _include_lists: list | None,
+        _exclude_lists: list | None,
     ) -> list[EmailSubscription]:
         """Busca destinatarios da campanha."""
         query = select(EmailSubscription).where(
@@ -625,7 +624,7 @@ class CampaignService:
             return default_template
 
         # Selecao aleatoria baseada no peso (50/50 por padrao)
-        if random.random() < 0.5:  # nosec B311
+        if random.random() < 0.5:  # nosec B311  # noqa: S311
             return default_template
 
         variant_b_id = UUID(campaign.ab_variants["variant_b"])
@@ -639,13 +638,10 @@ class CampaignService:
     ) -> dict:
         """Busca estatisticas de variante."""
         # Contagem de enviados
-        sent_query = (
-            select(func.count(EmailQueue.id))
-            .where(
-                and_(
-                    EmailQueue.campaign_id == campaign_id,
-                    EmailQueue.template_id == template_id,
-                )
+        sent_query = select(func.count(EmailQueue.id)).where(
+            and_(
+                EmailQueue.campaign_id == campaign_id,
+                EmailQueue.template_id == template_id,
             )
         )
         sent_result = await self.session.execute(sent_query)
@@ -691,7 +687,7 @@ class CampaignService:
         self,
         parent_id: UUID,
         step_number: int,
-    ) -> Optional[EmailCampaign]:
+    ) -> EmailCampaign | None:
         """Busca passo de drip campaign."""
         query = select(EmailCampaign).where(
             and_(
@@ -706,7 +702,7 @@ class CampaignService:
         self,
         step: EmailCampaign,
         recipient_email: str,
-        recipient_name: Optional[str],
+        recipient_name: str | None,
         variables: dict,
         scheduled_at: datetime,
     ) -> None:

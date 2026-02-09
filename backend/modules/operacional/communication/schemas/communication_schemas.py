@@ -9,10 +9,14 @@ Quality Score Target: 99+/100
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from modules.operacional.communication.models.alert import (
+    AlertSeverity,
+    AlertType,
+)
 from modules.operacional.communication.models.announcement import (
     AnnouncementCategory,
     AnnouncementPriority,
@@ -23,11 +27,6 @@ from modules.operacional.communication.models.notification import (
     NotificationChannel,
     NotificationType,
 )
-from modules.operacional.communication.models.alert import (
-    AlertSeverity,
-    AlertType,
-)
-
 
 # =============================================================================
 # ANNOUNCEMENT SCHEMAS
@@ -61,11 +60,11 @@ class AnnouncementBase(BaseModel):
         default=AnnouncementTargetType.ALL,
         description="Tipo de destinatario",
     )
-    target_ids: Optional[List[str]] = Field(
+    target_ids: list[str] | None = Field(
         default=None,
         description="Lista de IDs dos destinatarios especificos",
     )
-    target_roles: Optional[List[str]] = Field(
+    target_roles: list[str] | None = Field(
         default=None,
         description="Lista de roles destinatarias",
     )
@@ -98,24 +97,22 @@ class AnnouncementBase(BaseModel):
 class AnnouncementCreate(AnnouncementBase):
     """Schema para criacao de Comunicado."""
 
-    publish_at: Optional[datetime] = Field(
+    publish_at: datetime | None = Field(
         default=None,
         description="Data/hora para publicacao agendada",
     )
-    expires_at: Optional[datetime] = Field(
+    expires_at: datetime | None = Field(
         default=None,
         description="Data/hora de expiracao",
     )
-    attachments: Optional[List[AttachmentSchema]] = Field(
+    attachments: list[AttachmentSchema] | None = Field(
         default=None,
         description="Lista de anexos",
     )
 
     @field_validator("expires_at")
     @classmethod
-    def validate_expires_at(
-        cls, v: Optional[datetime], info
-    ) -> Optional[datetime]:
+    def validate_expires_at(cls, v: datetime | None, info) -> datetime | None:
         """Valida que expiracao e posterior a publicacao."""
         if v is None:
             return v
@@ -128,18 +125,18 @@ class AnnouncementCreate(AnnouncementBase):
 class AnnouncementUpdate(BaseModel):
     """Schema para atualizacao parcial de Comunicado."""
 
-    title: Optional[str] = Field(None, min_length=3, max_length=200)
-    content: Optional[str] = Field(None, min_length=10)
-    target_type: Optional[AnnouncementTargetType] = None
-    target_ids: Optional[List[str]] = None
-    target_roles: Optional[List[str]] = None
-    priority: Optional[AnnouncementPriority] = None
-    category: Optional[AnnouncementCategory] = None
-    publish_at: Optional[datetime] = None
-    expires_at: Optional[datetime] = None
-    requires_acknowledgment: Optional[bool] = None
-    attachments: Optional[List[AttachmentSchema]] = None
-    is_active: Optional[bool] = None
+    title: str | None = Field(None, min_length=3, max_length=200)
+    content: str | None = Field(None, min_length=10)
+    target_type: AnnouncementTargetType | None = None
+    target_ids: list[str] | None = None
+    target_roles: list[str] | None = None
+    priority: AnnouncementPriority | None = None
+    category: AnnouncementCategory | None = None
+    publish_at: datetime | None = None
+    expires_at: datetime | None = None
+    requires_acknowledgment: bool | None = None
+    attachments: list[AttachmentSchema] | None = None
+    is_active: bool | None = None
 
 
 class AnnouncementResponse(BaseModel):
@@ -150,23 +147,23 @@ class AnnouncementResponse(BaseModel):
     id: str
     tenant_id: str
     target_type: str
-    target_ids: Optional[List[str]]
-    target_roles: Optional[List[str]]
+    target_ids: list[str] | None
+    target_roles: list[str] | None
     title: str
     content: str
     priority: str
     category: str
-    publish_at: Optional[datetime]
-    expires_at: Optional[datetime]
+    publish_at: datetime | None
+    expires_at: datetime | None
     requires_acknowledgment: bool
-    attachments: Optional[List[Dict[str, Any]]]
+    attachments: list[dict[str, Any]] | None
     status: str
-    published_by: Optional[str]
-    published_at: Optional[datetime]
+    published_by: str | None
+    published_at: datetime | None
     is_active: bool
     created_at: datetime
     updated_at: datetime
-    created_by: Optional[str]
+    created_by: str | None
 
     # Propriedades calculadas
     is_published: bool
@@ -180,7 +177,7 @@ class AnnouncementResponse(BaseModel):
 class AnnouncementListResponse(BaseModel):
     """Schema para listagem paginada de Comunicados."""
 
-    items: List[AnnouncementResponse]
+    items: list[AnnouncementResponse]
     total: int
     page: int
     page_size: int
@@ -190,25 +187,25 @@ class AnnouncementListResponse(BaseModel):
 class AnnouncementFilter(BaseModel):
     """Schema para filtros de busca de Comunicados."""
 
-    status: Optional[AnnouncementStatus] = None
-    priority: Optional[AnnouncementPriority] = None
-    category: Optional[AnnouncementCategory] = None
-    target_type: Optional[AnnouncementTargetType] = None
-    requires_acknowledgment: Optional[bool] = None
-    is_active: Optional[bool] = Field(default=True)
-    search: Optional[str] = Field(
+    status: AnnouncementStatus | None = None
+    priority: AnnouncementPriority | None = None
+    category: AnnouncementCategory | None = None
+    target_type: AnnouncementTargetType | None = None
+    requires_acknowledgment: bool | None = None
+    is_active: bool | None = Field(default=True)
+    search: str | None = Field(
         None,
         max_length=100,
         description="Busca por titulo ou conteudo",
     )
-    created_after: Optional[datetime] = None
-    created_before: Optional[datetime] = None
+    created_after: datetime | None = None
+    created_before: datetime | None = None
 
 
 class AnnouncementPublishRequest(BaseModel):
     """Schema para solicitacao de publicacao."""
 
-    schedule_at: Optional[datetime] = Field(
+    schedule_at: datetime | None = Field(
         default=None,
         description="Data/hora para agendar publicacao (None = publicar agora)",
     )
@@ -223,7 +220,7 @@ class AnnouncementReadResponse(BaseModel):
     announcement_id: str
     user_id: str
     read_at: datetime
-    acknowledged_at: Optional[datetime]
+    acknowledged_at: datetime | None
     is_acknowledged: bool
 
 
@@ -235,18 +232,18 @@ class AnnouncementReadStats(BaseModel):
     total_acknowledgments: int
     read_percentage: float
     acknowledgment_percentage: float
-    reads: List[AnnouncementReadResponse]
+    reads: list[AnnouncementReadResponse]
 
 
 class AnnouncementAcknowledgeRequest(BaseModel):
     """Schema para confirmacao de leitura."""
 
-    ip_address: Optional[str] = Field(
+    ip_address: str | None = Field(
         None,
         max_length=45,
         description="Endereco IP do usuario",
     )
-    user_agent: Optional[str] = Field(
+    user_agent: str | None = Field(
         None,
         max_length=500,
         description="User-Agent do navegador",
@@ -268,25 +265,25 @@ class NotificationCreate(BaseModel):
         default=NotificationType.SISTEMA,
         description="Tipo da notificacao",
     )
-    channels: List[NotificationChannel] = Field(
+    channels: list[NotificationChannel] = Field(
         default=[NotificationChannel.IN_APP],
         description="Canais de envio",
     )
-    reference_type: Optional[str] = Field(
+    reference_type: str | None = Field(
         None,
         max_length=50,
         description="Tipo da entidade referenciada",
     )
-    reference_id: Optional[str] = Field(
+    reference_id: str | None = Field(
         None,
         description="ID da entidade referenciada",
     )
-    action_url: Optional[str] = Field(
+    action_url: str | None = Field(
         None,
         max_length=500,
         description="URL de acao",
     )
-    extra_data: Optional[Dict[str, Any]] = Field(
+    extra_data: dict[str, Any] | None = Field(
         default=None,
         description="Dados adicionais",
     )
@@ -309,14 +306,14 @@ class NotificationResponse(BaseModel):
     title: str
     body: str
     type: str
-    reference_type: Optional[str]
-    reference_id: Optional[str]
-    channels: List[str]
-    sent_at: Optional[datetime]
-    read_at: Optional[datetime]
-    clicked_at: Optional[datetime]
-    action_url: Optional[str]
-    extra_data: Optional[Dict[str, Any]]
+    reference_type: str | None
+    reference_id: str | None
+    channels: list[str]
+    sent_at: datetime | None
+    read_at: datetime | None
+    clicked_at: datetime | None
+    action_url: str | None
+    extra_data: dict[str, Any] | None
     is_active: bool
     created_at: datetime
 
@@ -329,7 +326,7 @@ class NotificationResponse(BaseModel):
 class NotificationListResponse(BaseModel):
     """Schema para listagem paginada de Notificacoes."""
 
-    items: List[NotificationResponse]
+    items: list[NotificationResponse]
     total: int
     page: int
     page_size: int
@@ -339,18 +336,18 @@ class NotificationListResponse(BaseModel):
 class NotificationFilter(BaseModel):
     """Schema para filtros de busca de Notificacoes."""
 
-    type: Optional[NotificationType] = None
-    is_read: Optional[bool] = None
-    is_sent: Optional[bool] = None
-    reference_type: Optional[str] = None
-    created_after: Optional[datetime] = None
-    created_before: Optional[datetime] = None
+    type: NotificationType | None = None
+    is_read: bool | None = None
+    is_sent: bool | None = None
+    reference_type: str | None = None
+    created_after: datetime | None = None
+    created_before: datetime | None = None
 
 
 class MarkNotificationReadRequest(BaseModel):
     """Schema para marcar notificacao como lida."""
 
-    notification_ids: Optional[List[str]] = Field(
+    notification_ids: list[str] | None = Field(
         default=None,
         description="IDs especificos (None = todas)",
     )
@@ -360,7 +357,7 @@ class NotificationUnreadCount(BaseModel):
     """Schema para contagem de nao lidas."""
 
     total: int
-    by_type: Dict[str, int]
+    by_type: dict[str, int]
 
 
 # =============================================================================
@@ -390,20 +387,20 @@ class AlertCreate(BaseModel):
         min_length=10,
         description="Mensagem detalhada",
     )
-    reference_type: Optional[str] = Field(
+    reference_type: str | None = Field(
         None,
         max_length=50,
         description="Tipo da entidade referenciada",
     )
-    reference_id: Optional[str] = Field(
+    reference_id: str | None = Field(
         None,
         description="ID da entidade referenciada",
     )
-    target_users: Optional[List[str]] = Field(
+    target_users: list[str] | None = Field(
         default=None,
         description="Lista de IDs de usuarios destinatarios",
     )
-    target_roles: Optional[List[str]] = Field(
+    target_roles: list[str] | None = Field(
         default=None,
         description="Lista de roles destinatarias",
     )
@@ -432,12 +429,12 @@ class AlertResponse(BaseModel):
     severity: str
     title: str
     message: str
-    reference_type: Optional[str]
-    reference_id: Optional[str]
-    target_users: Optional[List[str]]
-    target_roles: Optional[List[str]]
-    acknowledged_by: Optional[List[str]]
-    expires_at: Optional[datetime]
+    reference_type: str | None
+    reference_id: str | None
+    target_users: list[str] | None
+    target_roles: list[str] | None
+    acknowledged_by: list[str] | None
+    expires_at: datetime | None
     is_active: bool
     created_at: datetime
 
@@ -451,7 +448,7 @@ class AlertResponse(BaseModel):
 class AlertListResponse(BaseModel):
     """Schema para listagem de Alertas."""
 
-    items: List[AlertResponse]
+    items: list[AlertResponse]
     total: int
 
 
@@ -464,12 +461,12 @@ class AlertAcknowledgeRequest(BaseModel):
 class AlertFilter(BaseModel):
     """Schema para filtros de busca de Alertas."""
 
-    alert_type: Optional[AlertType] = None
-    severity: Optional[AlertSeverity] = None
-    is_active: Optional[bool] = Field(default=True)
-    is_expired: Optional[bool] = None
-    reference_type: Optional[str] = None
-    created_after: Optional[datetime] = None
+    alert_type: AlertType | None = None
+    severity: AlertSeverity | None = None
+    is_active: bool | None = Field(default=True)
+    is_expired: bool | None = None
+    reference_type: str | None = None
+    created_after: datetime | None = None
 
 
 # =============================================================================
@@ -481,7 +478,7 @@ class WebSocketMessage(BaseModel):
     """Schema base para mensagem WebSocket."""
 
     type: str = Field(..., description="Tipo da mensagem")
-    data: Dict[str, Any] = Field(..., description="Dados da mensagem")
+    data: dict[str, Any] = Field(..., description="Dados da mensagem")
     timestamp: datetime = Field(
         default_factory=datetime.utcnow,
         description="Timestamp da mensagem",
@@ -516,7 +513,7 @@ class WebSocketConnectionInfo(BaseModel):
     connection_id: str = Field(..., description="ID da conexao")
     user_id: str = Field(..., description="ID do usuario")
     tenant_id: str = Field(..., description="ID do tenant")
-    roles: List[str] = Field(default=[], description="Roles do usuario")
+    roles: list[str] = Field(default=[], description="Roles do usuario")
     connected_at: datetime = Field(
         default_factory=datetime.utcnow,
         description="Timestamp da conexao",

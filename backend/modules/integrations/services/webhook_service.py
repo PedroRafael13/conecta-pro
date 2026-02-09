@@ -8,20 +8,20 @@ import asyncio
 import json
 import logging
 from datetime import datetime
-from typing import Optional, List, Dict, Any, Tuple
+from typing import Any
 from uuid import UUID
 
 import httpx
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.integrations.models import (
-    WebhookConfig,
     IntegrationLog,
-    WebhookStatus,
-    WebhookAuthType,
-    LogType,
     LogLevel,
     LogStatus,
+    LogType,
+    WebhookAuthType,
+    WebhookConfig,
+    WebhookStatus,
 )
 from modules.integrations.repositories import IntegrationRepository
 from modules.integrations.schemas import (
@@ -41,15 +41,12 @@ class WebhookService:
         """Inicializa o serviço."""
         self.db = db
         self.repository = IntegrationRepository(db)
-        self._http_client: Optional[httpx.AsyncClient] = None
+        self._http_client: httpx.AsyncClient | None = None
 
     async def _get_http_client(self) -> httpx.AsyncClient:
         """Obtém cliente HTTP."""
         if self._http_client is None:
-            self._http_client = httpx.AsyncClient(
-                timeout=httpx.Timeout(30.0, connect=10.0),
-                follow_redirects=True
-            )
+            self._http_client = httpx.AsyncClient(timeout=httpx.Timeout(30.0, connect=10.0), follow_redirects=True)
         return self._http_client
 
     async def close(self) -> None:
@@ -60,21 +57,12 @@ class WebhookService:
 
     # ==================== CRUD Operations ====================
 
-    async def create_webhook(
-        self,
-        data: WebhookConfigCreate,
-        user_id: Optional[UUID] = None
-    ) -> WebhookConfig:
+    async def create_webhook(self, data: WebhookConfigCreate, user_id: UUID | None = None) -> WebhookConfig:
         """Cria um novo webhook."""
         # Gera secret key para HMAC
         secret_key = WebhookConfig.generate_secret()
 
-        webhook = WebhookConfig(
-            **data.model_dump(),
-            secret_key=secret_key,
-            created_by=user_id,
-            updated_by=user_id
-        )
+        webhook = WebhookConfig(**data.model_dump(), secret_key=secret_key, created_by=user_id, updated_by=user_id)
 
         result = await self.repository.create_webhook(webhook)
 
@@ -85,39 +73,29 @@ class WebhookService:
             level=LogLevel.INFO,
             status=LogStatus.SUCCESS,
             action="webhook_created",
-            metadata={"name": data.name, "events": data.events}
+            metadata={"name": data.name, "events": data.events},
         )
         await self.repository.create_log(log)
 
         return result
 
-    async def get_webhook(self, webhook_id: UUID) -> Optional[WebhookConfig]:
+    async def get_webhook(self, webhook_id: UUID) -> WebhookConfig | None:
         """Busca webhook por ID."""
         return await self.repository.get_webhook_by_id(webhook_id)
 
     async def list_webhooks(
-        self,
-        client_id: Optional[UUID] = None,
-        status: Optional[WebhookStatus] = None,
-        page: int = 1,
-        page_size: int = 50
-    ) -> Tuple[List[WebhookConfig], int, int]:
+        self, client_id: UUID | None = None, status: WebhookStatus | None = None, page: int = 1, page_size: int = 50
+    ) -> tuple[list[WebhookConfig], int, int]:
         """Lista webhooks com paginação."""
         skip = (page - 1) * page_size
         webhooks, total = await self.repository.list_webhooks(
-            client_id=client_id,
-            status=status,
-            skip=skip,
-            limit=page_size
+            client_id=client_id, status=status, skip=skip, limit=page_size
         )
         pages = (total + page_size - 1) // page_size
         return webhooks, total, pages
 
     async def update_webhook(
-        self,
-        webhook_id: UUID,
-        data: WebhookConfigUpdate,
-        user_id: Optional[UUID] = None
+        self, webhook_id: UUID, data: WebhookConfigUpdate, user_id: UUID | None = None
     ) -> WebhookConfig:
         """Atualiza webhook."""
         webhook = await self.get_webhook(webhook_id)
@@ -142,17 +120,13 @@ class WebhookService:
                 log_type=LogType.SYSTEM,
                 level=LogLevel.INFO,
                 status=LogStatus.SUCCESS,
-                action="webhook_deleted"
+                action="webhook_deleted",
             )
             await self.repository.create_log(log)
 
         return result
 
-    async def regenerate_secret(
-        self,
-        webhook_id: UUID,
-        user_id: Optional[UUID] = None
-    ) -> str:
+    async def regenerate_secret(self, webhook_id: UUID, user_id: UUID | None = None) -> str:
         """Regenera secret key do webhook."""
         webhook = await self.get_webhook(webhook_id)
         if not webhook:
@@ -169,7 +143,7 @@ class WebhookService:
             log_type=LogType.SYSTEM,
             level=LogLevel.WARNING,
             status=LogStatus.SUCCESS,
-            action="webhook_secret_regenerated"
+            action="webhook_secret_regenerated",
         )
         await self.repository.create_log(log)
 
@@ -216,21 +190,14 @@ class WebhookService:
     # ==================== Delivery ====================
 
     async def trigger_event(
-        self,
-        event: str,
-        payload: Dict[str, Any],
-        client_id: Optional[UUID] = None,
-        correlation_id: Optional[str] = None
-    ) -> List[Dict[str, Any]]:
+        self, event: str, payload: dict[str, Any], client_id: UUID | None = None, correlation_id: str | None = None
+    ) -> list[dict[str, Any]]:
         """
         Dispara evento para todos os webhooks inscritos.
         Retorna lista de resultados das entregas.
         """
         # Busca webhooks para o evento
-        webhooks = await self.repository.get_webhooks_for_event(
-            event=event,
-            client_id=client_id
-        )
+        webhooks = await self.repository.get_webhooks_for_event(event=event, client_id=client_id)
 
         if not webhooks:
             logger.debug(f"Nenhum webhook inscrito para evento: {event}")
@@ -241,10 +208,7 @@ class WebhookService:
         # Processa cada webhook
         for webhook in webhooks:
             result = await self._deliver_webhook(
-                webhook=webhook,
-                event=event,
-                payload=payload,
-                correlation_id=correlation_id
+                webhook=webhook, event=event, payload=payload, correlation_id=correlation_id
             )
             results.append(result)
 
@@ -254,10 +218,10 @@ class WebhookService:
         self,
         webhook: WebhookConfig,
         event: str,
-        payload: Dict[str, Any],
-        correlation_id: Optional[str] = None,
-        retry_count: int = 0
-    ) -> Dict[str, Any]:
+        payload: dict[str, Any],
+        correlation_id: str | None = None,
+        retry_count: int = 0,
+    ) -> dict[str, Any]:
         """Entrega payload para um webhook."""
         start_time = datetime.utcnow()
         result = {
@@ -268,7 +232,7 @@ class WebhookService:
             "status_code": None,
             "error": None,
             "response_time_ms": 0,
-            "retry_count": retry_count
+            "retry_count": retry_count,
         }
 
         try:
@@ -287,16 +251,10 @@ class WebhookService:
             # Faz requisição
             client = await self._get_http_client()
             response = await client.request(
-                method=webhook.method,
-                url=webhook.url,
-                content=payload_str,
-                headers=headers,
-                auth=auth
+                method=webhook.method, url=webhook.url, content=payload_str, headers=headers, auth=auth
             )
 
-            response_time = int(
-                (datetime.utcnow() - start_time).total_seconds() * 1000
-            )
+            response_time = int((datetime.utcnow() - start_time).total_seconds() * 1000)
 
             result["status_code"] = response.status_code
             result["response_time_ms"] = response_time
@@ -306,7 +264,7 @@ class WebhookService:
             webhook.record_delivery(
                 success=result["success"],
                 response_time_ms=response_time,
-                error=None if result["success"] else f"HTTP {response.status_code}"
+                error=None if result["success"] else f"HTTP {response.status_code}",
             )
             await self.repository.update_webhook(webhook)
 
@@ -317,51 +275,33 @@ class WebhookService:
                 duration_ms=response_time,
                 status_code=response.status_code,
                 correlation_id=correlation_id,
-                metadata={"event": event}
+                metadata={"event": event},
             )
             await self.repository.create_log(log)
 
         except httpx.TimeoutException as e:
             result["error"] = "Timeout"
             result["response_time_ms"] = webhook.timeout_seconds * 1000
-            await self._handle_delivery_error(
-                webhook, event, str(e), correlation_id
-            )
+            await self._handle_delivery_error(webhook, event, str(e), correlation_id)
 
         except httpx.RequestError as e:
             result["error"] = str(e)
-            result["response_time_ms"] = int(
-                (datetime.utcnow() - start_time).total_seconds() * 1000
-            )
-            await self._handle_delivery_error(
-                webhook, event, str(e), correlation_id
-            )
+            result["response_time_ms"] = int((datetime.utcnow() - start_time).total_seconds() * 1000)
+            await self._handle_delivery_error(webhook, event, str(e), correlation_id)
 
         except (ValueError, RuntimeError) as e:
             result["error"] = str(e)
-            result["response_time_ms"] = int(
-                (datetime.utcnow() - start_time).total_seconds() * 1000
-            )
-            await self._handle_delivery_error(
-                webhook, event, str(e), correlation_id
-            )
+            result["response_time_ms"] = int((datetime.utcnow() - start_time).total_seconds() * 1000)
+            await self._handle_delivery_error(webhook, event, str(e), correlation_id)
 
         # Retry se falhou e retry habilitado
         if not result["success"] and webhook.retry_enabled:
             if retry_count < webhook.max_retries:
-                delay = webhook.retry_delay_seconds * (
-                    webhook.retry_backoff_multiplier ** retry_count
-                )
-                logger.info(
-                    f"Agendando retry {retry_count + 1} para webhook "
-                    f"{webhook.id} em {delay}s"
-                )
+                delay = webhook.retry_delay_seconds * (webhook.retry_backoff_multiplier**retry_count)
+                logger.info(f"Agendando retry {retry_count + 1} para webhook {webhook.id} em {delay}s")
                 # Em produção, isso seria feito por um worker
                 asyncio.create_task(
-                    self._schedule_retry(
-                        webhook, event, payload, correlation_id,
-                        retry_count + 1, delay
-                    )
+                    self._schedule_retry(webhook, event, payload, correlation_id, retry_count + 1, delay)
                 )
 
         return result
@@ -370,34 +310,22 @@ class WebhookService:
         self,
         webhook: WebhookConfig,
         event: str,
-        payload: Dict[str, Any],
-        correlation_id: Optional[str],
+        payload: dict[str, Any],
+        correlation_id: str | None,
         retry_count: int,
-        delay: int
+        delay: int,
     ) -> None:
         """Agenda retry de entrega."""
         await asyncio.sleep(delay)
         await self._deliver_webhook(
-            webhook=webhook,
-            event=event,
-            payload=payload,
-            correlation_id=correlation_id,
-            retry_count=retry_count
+            webhook=webhook, event=event, payload=payload, correlation_id=correlation_id, retry_count=retry_count
         )
 
     async def _handle_delivery_error(
-        self,
-        webhook: WebhookConfig,
-        event: str,
-        error: str,
-        correlation_id: Optional[str] = None
+        self, webhook: WebhookConfig, event: str, error: str, correlation_id: str | None = None
     ) -> None:
         """Trata erro de entrega."""
-        webhook.record_delivery(
-            success=False,
-            response_time_ms=0,
-            error=error
-        )
+        webhook.record_delivery(success=False, response_time_ms=0, error=error)
         await self.repository.update_webhook(webhook)
 
         log = IntegrationLog.create_webhook_log(
@@ -406,16 +334,11 @@ class WebhookService:
             duration_ms=0,
             error_message=error,
             correlation_id=correlation_id,
-            metadata={"event": event}
+            metadata={"event": event},
         )
         await self.repository.create_log(log)
 
-    def _prepare_payload(
-        self,
-        webhook: WebhookConfig,
-        event: str,
-        payload: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def _prepare_payload(self, webhook: WebhookConfig, event: str, payload: dict[str, Any]) -> dict[str, Any]:
         """Prepara payload para envio."""
         if webhook.payload_template:
             # Template customizado - em produção usaria Jinja2
@@ -426,19 +349,15 @@ class WebhookService:
             "event": event,
             "timestamp": datetime.utcnow().isoformat(),
             "webhook_id": str(webhook.id),
-            "data": payload
+            "data": payload,
         }
 
-    def _prepare_headers(
-        self,
-        webhook: WebhookConfig,
-        payload_str: str
-    ) -> Dict[str, str]:
+    def _prepare_headers(self, webhook: WebhookConfig, payload_str: str) -> dict[str, str]:
         """Prepara headers para envio."""
         headers = {
             "Content-Type": webhook.content_type,
             "User-Agent": "ERP-ConectaMais-Webhook/1.0",
-            "X-Webhook-ID": str(webhook.id)
+            "X-Webhook-ID": str(webhook.id),
         }
 
         # Adiciona assinatura HMAC
@@ -452,10 +371,7 @@ class WebhookService:
 
         return headers
 
-    def _prepare_auth(
-        self,
-        webhook: WebhookConfig
-    ) -> Optional[httpx.Auth]:
+    def _prepare_auth(self, webhook: WebhookConfig) -> httpx.Auth | None:
         """Prepara autenticação para envio."""
         if not webhook.auth_credentials:
             return None
@@ -463,7 +379,7 @@ class WebhookService:
         if webhook.auth_type == WebhookAuthType.BASIC:
             return httpx.BasicAuth(
                 username=webhook.auth_credentials.get("username", ""),
-                password=webhook.auth_credentials.get("password", "")
+                password=webhook.auth_credentials.get("password", ""),
             )
 
         if webhook.auth_type == WebhookAuthType.BEARER:
@@ -474,29 +390,20 @@ class WebhookService:
 
     # ==================== Testing ====================
 
-    async def test_webhook(
-        self,
-        webhook_id: UUID,
-        request: WebhookTestRequest
-    ) -> WebhookTestResponse:
+    async def test_webhook(self, webhook_id: UUID, request: WebhookTestRequest) -> WebhookTestResponse:
         """Testa entrega de webhook."""
         webhook = await self.get_webhook(webhook_id)
         if not webhook:
             raise ValueError("Webhook não encontrado")
 
         # Prepara payload de teste
-        test_payload = request.payload or {
-            "test": True,
-            "message": "Teste de webhook do ERP Conecta Mais"
-        }
+        test_payload = request.payload or {"test": True, "message": "Teste de webhook do ERP Conecta Mais"}
 
         start_time = datetime.utcnow()
 
         try:
             # Prepara request
-            full_payload = self._prepare_payload(
-                webhook, request.event, test_payload
-            )
+            full_payload = self._prepare_payload(webhook, request.event, test_payload)
             payload_str = json.dumps(full_payload)
             headers = self._prepare_headers(webhook, payload_str)
             auth = self._prepare_auth(webhook)
@@ -504,56 +411,37 @@ class WebhookService:
             # Faz requisição
             client = await self._get_http_client()
             response = await client.request(
-                method=webhook.method,
-                url=webhook.url,
-                content=payload_str,
-                headers=headers,
-                auth=auth
+                method=webhook.method, url=webhook.url, content=payload_str, headers=headers, auth=auth
             )
 
-            response_time = int(
-                (datetime.utcnow() - start_time).total_seconds() * 1000
-            )
+            response_time = int((datetime.utcnow() - start_time).total_seconds() * 1000)
 
             return WebhookTestResponse(
                 success=200 <= response.status_code < 300,
                 status_code=response.status_code,
                 response_time_ms=response_time,
                 response_body=response.text[:1000] if response.text else None,
-                error=None
+                error=None,
             )
 
         except httpx.TimeoutException:
             return WebhookTestResponse(
-                success=False,
-                response_time_ms=webhook.timeout_seconds * 1000,
-                error="Timeout ao conectar"
+                success=False, response_time_ms=webhook.timeout_seconds * 1000, error="Timeout ao conectar"
             )
 
         except httpx.RequestError as e:
-            response_time = int(
-                (datetime.utcnow() - start_time).total_seconds() * 1000
-            )
-            return WebhookTestResponse(
-                success=False,
-                response_time_ms=response_time,
-                error=str(e)
-            )
+            response_time = int((datetime.utcnow() - start_time).total_seconds() * 1000)
+            return WebhookTestResponse(success=False, response_time_ms=response_time, error=str(e))
 
     # ==================== Maintenance ====================
 
-    async def check_failing_webhooks(self) -> List[WebhookConfig]:
+    async def check_failing_webhooks(self) -> list[WebhookConfig]:
         """Verifica webhooks com muitas falhas."""
         return await self.repository.get_failing_webhooks(min_failures=5)
 
-    async def auto_disable_failing_webhooks(
-        self,
-        min_failures: int = 10
-    ) -> int:
+    async def auto_disable_failing_webhooks(self, min_failures: int = 10) -> int:
         """Desativa automaticamente webhooks com muitas falhas."""
-        failing = await self.repository.get_failing_webhooks(
-            min_failures=min_failures
-        )
+        failing = await self.repository.get_failing_webhooks(min_failures=min_failures)
 
         count = 0
         for webhook in failing:
@@ -567,7 +455,7 @@ class WebhookService:
                     level=LogLevel.WARNING,
                     status=LogStatus.SUCCESS,
                     action="webhook_auto_disabled",
-                    metadata={"consecutive_failures": webhook.consecutive_failures}
+                    metadata={"consecutive_failures": webhook.consecutive_failures},
                 )
                 await self.repository.create_log(log)
                 count += 1
@@ -575,10 +463,7 @@ class WebhookService:
         logger.info(f"Desativados {count} webhooks por falhas consecutivas")
         return count
 
-    async def get_webhook_stats(
-        self,
-        webhook_id: UUID
-    ) -> Dict[str, Any]:
+    async def get_webhook_stats(self, webhook_id: UUID) -> dict[str, Any]:
         """Obtém estatísticas de um webhook."""
         webhook = await self.get_webhook(webhook_id)
         if not webhook:
@@ -595,17 +480,8 @@ class WebhookService:
             "consecutive_failures": webhook.consecutive_failures,
             "delivery_rate": webhook.delivery_rate,
             "avg_response_time_ms": webhook.avg_response_time_ms,
-            "last_delivery_at": (
-                webhook.last_delivery_at.isoformat()
-                if webhook.last_delivery_at else None
-            ),
-            "last_success_at": (
-                webhook.last_success_at.isoformat()
-                if webhook.last_success_at else None
-            ),
-            "last_failure_at": (
-                webhook.last_failure_at.isoformat()
-                if webhook.last_failure_at else None
-            ),
-            "last_failure_reason": webhook.last_failure_reason
+            "last_delivery_at": (webhook.last_delivery_at.isoformat() if webhook.last_delivery_at else None),
+            "last_success_at": (webhook.last_success_at.isoformat() if webhook.last_success_at else None),
+            "last_failure_at": (webhook.last_failure_at.isoformat() if webhook.last_failure_at else None),
+            "last_failure_reason": webhook.last_failure_reason,
         }

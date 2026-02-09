@@ -2,10 +2,10 @@
 Enums e tipos para o sistema de ações executivas do Bartolo.
 """
 
-from enum import Enum
+from enum import StrEnum
 
 
-class ActionType(str, Enum):
+class ActionType(StrEnum):
     """Tipos de ações operacionais que o Bartolo pode executar."""
 
     # Escalas
@@ -102,7 +102,7 @@ class ActionType(str, Enum):
     OPENCLAW_DAEMON_STOP = "openclaw_daemon_stop"
 
 
-class ActionCategory(str, Enum):
+class ActionCategory(StrEnum):
     """Categorias de ações."""
 
     OPERATIONAL = "operational"
@@ -111,7 +111,7 @@ class ActionCategory(str, Enum):
     REPORT = "report"
 
 
-class ActionStatus(str, Enum):
+class ActionStatus(StrEnum):
     """Status de uma ação."""
 
     PENDING_CONFIRMATION = "pending_confirmation"

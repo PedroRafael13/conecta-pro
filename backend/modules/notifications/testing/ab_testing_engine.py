@@ -3,11 +3,10 @@
 import hashlib
 import logging
 import math
-import random
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID, uuid4
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -72,12 +71,12 @@ class ExperimentResult:
     """Resultado de um experimento."""
 
     experiment_id: UUID
-    winning_variant: Optional[str]
+    winning_variant: str | None
     variants_results: dict[str, dict[str, float]]
     statistical_significance: StatisticalSignificance
     recommendation: str
     insights: list[str]
-    completed_at: Optional[datetime]
+    completed_at: datetime | None
 
 
 @dataclass
@@ -93,8 +92,8 @@ class Experiment:
     secondary_metrics: list[MetricType]
     target_sample_size: int
     min_confidence_level: float
-    start_date: Optional[datetime]
-    end_date: Optional[datetime]
+    start_date: datetime | None
+    end_date: datetime | None
     created_at: datetime = field(default_factory=datetime.utcnow)
     updated_at: datetime = field(default_factory=datetime.utcnow)
     filters: dict[str, Any] = field(default_factory=dict)
@@ -140,10 +139,10 @@ class ABTestingEngine:
         description: str,
         variants: list[dict[str, Any]],
         primary_metric: MetricType = MetricType.OPEN_RATE,
-        secondary_metrics: Optional[list[MetricType]] = None,
+        secondary_metrics: list[MetricType] | None = None,
         target_sample_size: int = DEFAULT_SAMPLE_SIZE,
         min_confidence: float = DEFAULT_CONFIDENCE,
-        filters: Optional[dict[str, Any]] = None,
+        filters: dict[str, Any] | None = None,
     ) -> Experiment:
         """
         Cria um novo experimento.
@@ -283,7 +282,7 @@ class ABTestingEngine:
         self,
         experiment_id: UUID,
         user_id: int,
-    ) -> Optional[ExperimentVariant]:
+    ) -> ExperimentVariant | None:
         """
         Aloca usuário a uma variante usando hashing consistente.
 
@@ -300,7 +299,7 @@ class ABTestingEngine:
 
         # Hash consistente
         hash_input = f"{experiment_id}:{user_id}"
-        hash_value = int(hashlib.md5(hash_input.encode()).hexdigest(), 16)
+        hash_value = int(hashlib.sha256(hash_input.encode()).hexdigest(), 16)
         bucket = (hash_value % 10000) / 10000.0
 
         # Determinar variante
@@ -319,7 +318,7 @@ class ABTestingEngine:
         variant_id: str,
         event_type: str,
         user_id: int,
-        metadata: Optional[dict] = None,
+        metadata: dict | None = None,
     ) -> None:
         """
         Registra evento de um experimento.
@@ -441,7 +440,7 @@ class ABTestingEngine:
     def _calculate_significance(
         self,
         experiment: Experiment,
-        control: Optional[ExperimentVariant],
+        control: ExperimentVariant | None,
         results: dict[str, dict[str, float]],
     ) -> StatisticalSignificance:
         """Calcula significância estatística."""
@@ -449,7 +448,6 @@ class ABTestingEngine:
             control = experiment.variants[0]
 
         control_results = results.get(control.variant_id, {})
-        best_variant_id = None
         best_lift = 0.0
 
         # Encontrar melhor variante vs controle
@@ -465,7 +463,6 @@ class ABTestingEngine:
                 lift = (variant_rate - control_rate) / control_rate
                 if lift > best_lift:
                     best_lift = lift
-                    best_variant_id = variant_id
 
         # Calcular tamanho de amostra
         total_samples = sum(v.impressions for v in experiment.variants)
@@ -478,10 +475,7 @@ class ABTestingEngine:
             experiment.primary_metric,
         )
 
-        is_significant = (
-            p_value < (1 - experiment.min_confidence_level)
-            and total_samples >= needed_samples
-        )
+        is_significant = p_value < (1 - experiment.min_confidence_level) and total_samples >= needed_samples
 
         return StatisticalSignificance(
             is_significant=is_significant,
@@ -511,8 +505,9 @@ class ABTestingEngine:
         p2 = baseline_rate * (1 + mde)
         p_avg = (p1 + p2) / 2
 
-        numerator = (z_alpha * math.sqrt(2 * p_avg * (1 - p_avg)) +
-                    z_beta * math.sqrt(p1 * (1 - p1) + p2 * (1 - p2))) ** 2
+        numerator = (
+            z_alpha * math.sqrt(2 * p_avg * (1 - p_avg)) + z_beta * math.sqrt(p1 * (1 - p1) + p2 * (1 - p2))
+        ) ** 2
         denominator = (p2 - p1) ** 2
 
         if denominator <= 0:
@@ -566,7 +561,7 @@ class ABTestingEngine:
             if p_pooled <= 0 or p_pooled >= 1:
                 continue
 
-            se = math.sqrt(p_pooled * (1 - p_pooled) * (1/control.impressions + 1/variant.impressions))
+            se = math.sqrt(p_pooled * (1 - p_pooled) * (1 / control.impressions + 1 / variant.impressions))
 
             if se <= 0:
                 continue
@@ -588,7 +583,7 @@ class ABTestingEngine:
         experiment: Experiment,
         results: dict[str, dict[str, float]],
         significance: StatisticalSignificance,
-    ) -> Optional[str]:
+    ) -> str | None:
         """Determina variante vencedora."""
         if not significance.is_significant:
             return None
@@ -617,7 +612,9 @@ class ABTestingEngine:
         # Insight de amostra
         if significance.current_sample_size < significance.sample_size_needed:
             pct = (significance.current_sample_size / significance.sample_size_needed) * 100
-            insights.append(f"Amostra em {pct:.0f}% do necessário ({significance.current_sample_size}/{significance.sample_size_needed})")
+            insights.append(
+                f"Amostra em {pct:.0f}% do necessário ({significance.current_sample_size}/{significance.sample_size_needed})"
+            )
 
         # Insight de lift
         if significance.lift_percentage > 0:
@@ -640,7 +637,7 @@ class ABTestingEngine:
 
     def _generate_recommendation(
         self,
-        winner: Optional[str],
+        winner: str | None,
         significance: StatisticalSignificance,
         insights: list[str],
     ) -> str:
@@ -696,7 +693,7 @@ class ABTestingEngine:
         variant_id: str,
         event_type: str,
         user_id: int,
-        metadata: Optional[dict],
+        metadata: dict | None,
     ) -> None:
         """Salva evento no banco."""
         # TODO: Implementar persistência real
@@ -705,7 +702,7 @@ class ABTestingEngine:
     async def list_experiments(
         self,
         db: AsyncSession,
-        status: Optional[ExperimentStatus] = None,
+        status: ExperimentStatus | None = None,
     ) -> list[Experiment]:
         """Lista experimentos."""
         experiments = list(self._experiments.values())
@@ -717,6 +714,6 @@ class ABTestingEngine:
         self,
         db: AsyncSession,
         experiment_id: UUID,
-    ) -> Optional[Experiment]:
+    ) -> Experiment | None:
         """Obtém experimento por ID."""
         return self._experiments.get(experiment_id)

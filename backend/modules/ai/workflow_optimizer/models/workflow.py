@@ -4,27 +4,30 @@ AIWorkflow Model - Sprint 55.
 Modelo para workflows e automacoes otimizadas por IA.
 """
 
+import uuid
+from datetime import datetime
+from enum import StrEnum
+
 from sqlalchemy import (
-    Column,
-    String,
-    Text,
     Boolean,
+    Column,
     DateTime,
-    Integer,
     Float,
     ForeignKey,
+    Integer,
+    String,
+    Text,
+)
+from sqlalchemy import (
     Enum as SQLEnum,
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import relationship
-from datetime import datetime
-import uuid
-import enum
 
 from core.models.base import Base
 
 
-class WorkflowStatusEnum(str, enum.Enum):
+class WorkflowStatusEnum(StrEnum):
     """Status do workflow."""
 
     DRAFT = "draft"
@@ -34,7 +37,7 @@ class WorkflowStatusEnum(str, enum.Enum):
     DISABLED = "disabled"
 
 
-class WorkflowTypeEnum(str, enum.Enum):
+class WorkflowTypeEnum(StrEnum):
     """Tipo de workflow."""
 
     APPROVAL = "approval"
@@ -50,7 +53,7 @@ class WorkflowTypeEnum(str, enum.Enum):
     CUSTOM = "custom"
 
 
-class TriggerTypeEnum(str, enum.Enum):
+class TriggerTypeEnum(StrEnum):
     """Tipo de trigger."""
 
     EVENT = "event"
@@ -61,7 +64,7 @@ class TriggerTypeEnum(str, enum.Enum):
     API = "api"
 
 
-class StepTypeEnum(str, enum.Enum):
+class StepTypeEnum(StrEnum):
     """Tipo de step."""
 
     ACTION = "action"
@@ -76,7 +79,7 @@ class StepTypeEnum(str, enum.Enum):
     SCRIPT = "script"
 
 
-class ExecutionStatusEnum(str, enum.Enum):
+class ExecutionStatusEnum(StrEnum):
     """Status de execucao."""
 
     PENDING = "pending"
@@ -89,7 +92,7 @@ class ExecutionStatusEnum(str, enum.Enum):
     PAUSED = "paused"
 
 
-class OptimizationTypeEnum(str, enum.Enum):
+class OptimizationTypeEnum(StrEnum):
     """Tipo de otimizacao."""
 
     PERFORMANCE = "performance"

@@ -1,32 +1,32 @@
 """Model JobPosition - Vagas de emprego."""
 
-import enum
-from datetime import datetime, date
-from typing import Optional, List, TYPE_CHECKING
+from datetime import date, datetime
 from decimal import Decimal
+from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
-    String,
-    Text,
+    JSON,
     Boolean,
-    DateTime,
     Date,
+    DateTime,
+    Enum,
     Integer,
     Numeric,
-    Enum,
-    JSON,
+    String,
+    Text,
 )
-from sqlalchemy.dialects.postgresql import UUID, ARRAY
-from sqlalchemy.orm import relationship, Mapped, mapped_column
+from sqlalchemy.dialects.postgresql import ARRAY, UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from core.database import Base
-from core.models import TimestampMixin, SoftDeleteMixin
+from core.models import SoftDeleteMixin, TimestampMixin
 
 if TYPE_CHECKING:
     from .application import Application
 
 
-class PositionType(str, enum.Enum):
+class PositionType(StrEnum):
     """Tipo de contratação."""
 
     CLT = "clt"
@@ -38,7 +38,7 @@ class PositionType(str, enum.Enum):
     TERCEIRIZADO = "terceirizado"
 
 
-class PositionLevel(str, enum.Enum):
+class PositionLevel(StrEnum):
     """Nível da vaga."""
 
     ESTAGIARIO = "estagiario"
@@ -51,7 +51,7 @@ class PositionLevel(str, enum.Enum):
     DIRETOR = "diretor"
 
 
-class PositionStatus(str, enum.Enum):
+class PositionStatus(StrEnum):
     """Status da vaga."""
 
     RASCUNHO = "rascunho"
@@ -62,7 +62,7 @@ class PositionStatus(str, enum.Enum):
     PREENCHIDA = "preenchida"
 
 
-class WorkModel(str, enum.Enum):
+class WorkModel(StrEnum):
     """Modelo de trabalho."""
 
     PRESENCIAL = "presencial"
@@ -70,7 +70,7 @@ class WorkModel(str, enum.Enum):
     HIBRIDO = "hibrido"
 
 
-class Department(str, enum.Enum):
+class Department(StrEnum):
     """Departamento."""
 
     OPERACIONAL = "operacional"
@@ -101,47 +101,33 @@ class JobPosition(Base, TimestampMixin, SoftDeleteMixin):
     # Identificação
     code: Mapped[str] = mapped_column(String(20), unique=True, nullable=False)
     title: Mapped[str] = mapped_column(String(200), nullable=False)
-    description: Mapped[Optional[str]] = mapped_column(Text)
+    description: Mapped[str | None] = mapped_column(Text)
 
     # Classificação
-    position_type: Mapped[PositionType] = mapped_column(
-        Enum(PositionType), default=PositionType.CLT
-    )
-    position_level: Mapped[PositionLevel] = mapped_column(
-        Enum(PositionLevel), default=PositionLevel.PLENO
-    )
-    department: Mapped[Department] = mapped_column(
-        Enum(Department), default=Department.OPERACIONAL
-    )
-    status: Mapped[PositionStatus] = mapped_column(
-        Enum(PositionStatus), default=PositionStatus.RASCUNHO
-    )
+    position_type: Mapped[PositionType] = mapped_column(Enum(PositionType), default=PositionType.CLT)
+    position_level: Mapped[PositionLevel] = mapped_column(Enum(PositionLevel), default=PositionLevel.PLENO)
+    department: Mapped[Department] = mapped_column(Enum(Department), default=Department.OPERACIONAL)
+    status: Mapped[PositionStatus] = mapped_column(Enum(PositionStatus), default=PositionStatus.RASCUNHO)
 
     # Requisitos
-    requirements: Mapped[Optional[str]] = mapped_column(Text)
-    responsibilities: Mapped[Optional[str]] = mapped_column(Text)
-    required_skills: Mapped[Optional[List[str]]] = mapped_column(
-        ARRAY(String), default=list
-    )
-    desired_skills: Mapped[Optional[List[str]]] = mapped_column(
-        ARRAY(String), default=list
-    )
+    requirements: Mapped[str | None] = mapped_column(Text)
+    responsibilities: Mapped[str | None] = mapped_column(Text)
+    required_skills: Mapped[list[str] | None] = mapped_column(ARRAY(String), default=list)
+    desired_skills: Mapped[list[str] | None] = mapped_column(ARRAY(String), default=list)
     min_experience_years: Mapped[int] = mapped_column(Integer, default=0)
-    education_level: Mapped[Optional[str]] = mapped_column(String(100))
+    education_level: Mapped[str | None] = mapped_column(String(100))
 
     # Remuneração
-    salary_min: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2))
-    salary_max: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2))
+    salary_min: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
+    salary_max: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
     salary_display: Mapped[bool] = mapped_column(Boolean, default=False)
-    benefits: Mapped[Optional[List[str]]] = mapped_column(ARRAY(String), default=list)
+    benefits: Mapped[list[str] | None] = mapped_column(ARRAY(String), default=list)
 
     # Localização
-    work_model: Mapped[WorkModel] = mapped_column(
-        Enum(WorkModel), default=WorkModel.PRESENCIAL
-    )
-    city: Mapped[Optional[str]] = mapped_column(String(100))
-    state: Mapped[Optional[str]] = mapped_column(String(2))
-    address: Mapped[Optional[str]] = mapped_column(String(300))
+    work_model: Mapped[WorkModel] = mapped_column(Enum(WorkModel), default=WorkModel.PRESENCIAL)
+    city: Mapped[str | None] = mapped_column(String(100))
+    state: Mapped[str | None] = mapped_column(String(2))
+    address: Mapped[str | None] = mapped_column(String(300))
 
     # Vagas
     vacancies: Mapped[int] = mapped_column(Integer, default=1)
@@ -150,28 +136,28 @@ class JobPosition(Base, TimestampMixin, SoftDeleteMixin):
     is_confidential: Mapped[bool] = mapped_column(Boolean, default=False)
 
     # Datas
-    opening_date: Mapped[Optional[date]] = mapped_column(Date)
-    deadline_date: Mapped[Optional[date]] = mapped_column(Date)
-    closed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    opening_date: Mapped[date | None] = mapped_column(Date)
+    deadline_date: Mapped[date | None] = mapped_column(Date)
+    closed_at: Mapped[datetime | None] = mapped_column(DateTime)
 
     # Processo seletivo
-    selection_stages: Mapped[Optional[List[dict]]] = mapped_column(JSON, default=list)
-    expected_start_date: Mapped[Optional[date]] = mapped_column(Date)
+    selection_stages: Mapped[list[dict] | None] = mapped_column(JSON, default=list)
+    expected_start_date: Mapped[date | None] = mapped_column(Date)
 
     # Contadores
     applications_count: Mapped[int] = mapped_column(Integer, default=0)
     views_count: Mapped[int] = mapped_column(Integer, default=0)
 
     # Responsável
-    recruiter_id: Mapped[Optional[str]] = mapped_column(UUID(as_uuid=False))
-    hiring_manager_id: Mapped[Optional[str]] = mapped_column(UUID(as_uuid=False))
+    recruiter_id: Mapped[str | None] = mapped_column(UUID(as_uuid=False))
+    hiring_manager_id: Mapped[str | None] = mapped_column(UUID(as_uuid=False))
 
     # Relacionamentos
-    condominium_id: Mapped[Optional[str]] = mapped_column(UUID(as_uuid=False))
-    created_by: Mapped[Optional[str]] = mapped_column(UUID(as_uuid=False))
+    condominium_id: Mapped[str | None] = mapped_column(UUID(as_uuid=False))
+    created_by: Mapped[str | None] = mapped_column(UUID(as_uuid=False))
 
     # Relationships
-    applications: Mapped[List["Application"]] = relationship(
+    applications: Mapped[list["Application"]] = relationship(
         "Application", back_populates="job_position", lazy="dynamic"
     )
 
@@ -221,7 +207,8 @@ class JobPosition(Base, TimestampMixin, SoftDeleteMixin):
         self.status = PositionStatus.PAUSADA
 
     def close(
-        self, reason: str = None  # pylint: disable=unused-argument
+        self,
+        reason: str = None,  # pylint: disable=unused-argument
     ) -> None:
         """Fecha a vaga."""
         self.status = PositionStatus.FECHADA

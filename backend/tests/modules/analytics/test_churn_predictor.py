@@ -1,23 +1,23 @@
 """Testes para o Churn Predictor."""
 
-import pytest
 from datetime import datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
 import numpy as np
 import pandas as pd
+import pytest
 
+from modules.analytics.ml.features.feature_store import FeatureStore
+from modules.analytics.ml.registry.model_registry import ModelRegistry
 from modules.analytics.models.churn.churn_predictor import (
-    ChurnPredictor,
+    ChurnAnalytics,
     ChurnPrediction,
+    ChurnPredictor,
     ChurnRiskLevel,
     RetentionAction,
     RetentionActionType,
-    ChurnAnalytics,
 )
-from modules.analytics.ml.features.feature_store import FeatureStore
-from modules.analytics.ml.registry.model_registry import ModelRegistry
 
 
 @pytest.fixture
@@ -57,24 +57,30 @@ class TestChurnPrediction:
         """Deve retornar predição válida."""
         # Arrange
         user_id = 1
-        feature_store.get_user_features = AsyncMock(return_value={
-            "tenure_days": 100,
-            "total_spent": 5000,
-            "avg_order_value": 250,
-            "order_frequency": 20,
-            "last_activity_days": 5,
-            "login_frequency": 15,
-        })
-        feature_store.get_engagement_features = AsyncMock(return_value={
-            "session_duration_avg": 300,
-            "pages_per_session": 10,
-            "notification_response_rate": 0.6,
-        })
-        feature_store.get_transaction_features = AsyncMock(return_value={
-            "transaction_count_30d": 5,
-            "transaction_value_30d": 1000,
-            "refund_rate": 0.02,
-        })
+        feature_store.get_user_features = AsyncMock(
+            return_value={
+                "tenure_days": 100,
+                "total_spent": 5000,
+                "avg_order_value": 250,
+                "order_frequency": 20,
+                "last_activity_days": 5,
+                "login_frequency": 15,
+            }
+        )
+        feature_store.get_engagement_features = AsyncMock(
+            return_value={
+                "session_duration_avg": 300,
+                "pages_per_session": 10,
+                "notification_response_rate": 0.6,
+            }
+        )
+        feature_store.get_transaction_features = AsyncMock(
+            return_value={
+                "transaction_count_30d": 5,
+                "transaction_value_30d": 1000,
+                "refund_rate": 0.02,
+            }
+        )
 
         # Act
         prediction = await churn_predictor.predict(mock_db, user_id)
@@ -96,24 +102,30 @@ class TestChurnPrediction:
         """Deve identificar usuário de alto risco."""
         # Arrange - usuário inativo com poucos logins
         user_id = 2
-        feature_store.get_user_features = AsyncMock(return_value={
-            "tenure_days": 365,
-            "total_spent": 500,
-            "avg_order_value": 50,
-            "order_frequency": 2,
-            "last_activity_days": 45,  # Muito inativo
-            "login_frequency": 1,  # Raramente loga
-        })
-        feature_store.get_engagement_features = AsyncMock(return_value={
-            "session_duration_avg": 60,
-            "pages_per_session": 2,
-            "notification_response_rate": 0.1,
-        })
-        feature_store.get_transaction_features = AsyncMock(return_value={
-            "transaction_count_30d": 0,  # Sem transações recentes
-            "transaction_value_30d": 0,
-            "refund_rate": 0.15,
-        })
+        feature_store.get_user_features = AsyncMock(
+            return_value={
+                "tenure_days": 365,
+                "total_spent": 500,
+                "avg_order_value": 50,
+                "order_frequency": 2,
+                "last_activity_days": 45,  # Muito inativo
+                "login_frequency": 1,  # Raramente loga
+            }
+        )
+        feature_store.get_engagement_features = AsyncMock(
+            return_value={
+                "session_duration_avg": 60,
+                "pages_per_session": 2,
+                "notification_response_rate": 0.1,
+            }
+        )
+        feature_store.get_transaction_features = AsyncMock(
+            return_value={
+                "transaction_count_30d": 0,  # Sem transações recentes
+                "transaction_value_30d": 0,
+                "refund_rate": 0.15,
+            }
+        )
 
         # Act
         prediction = await churn_predictor.predict(mock_db, user_id)
@@ -134,14 +146,16 @@ class TestChurnPrediction:
     ):
         """Deve incluir ações de retenção."""
         # Arrange
-        feature_store.get_user_features = AsyncMock(return_value={
-            "tenure_days": 200,
-            "total_spent": 3000,
-            "avg_order_value": 150,
-            "order_frequency": 10,
-            "last_activity_days": 20,
-            "login_frequency": 3,
-        })
+        feature_store.get_user_features = AsyncMock(
+            return_value={
+                "tenure_days": 200,
+                "total_spent": 3000,
+                "avg_order_value": 150,
+                "order_frequency": 10,
+                "last_activity_days": 20,
+                "login_frequency": 3,
+            }
+        )
         feature_store.get_engagement_features = AsyncMock(return_value={})
         feature_store.get_transaction_features = AsyncMock(return_value={})
 
@@ -164,10 +178,12 @@ class TestChurnPrediction:
     ):
         """Deve incluir fatores contribuintes."""
         # Arrange
-        feature_store.get_user_features = AsyncMock(return_value={
-            "last_activity_days": 30,
-            "login_frequency": 2,
-        })
+        feature_store.get_user_features = AsyncMock(
+            return_value={
+                "last_activity_days": 30,
+                "login_frequency": 2,
+            }
+        )
         feature_store.get_engagement_features = AsyncMock(return_value={})
         feature_store.get_transaction_features = AsyncMock(return_value={})
 
@@ -261,10 +277,12 @@ class TestHighRiskUsers:
     ):
         """Deve retornar lista ordenada por probabilidade."""
         # Arrange
-        feature_store.get_user_features = AsyncMock(return_value={
-            "last_activity_days": 25,
-            "login_frequency": 2,
-        })
+        feature_store.get_user_features = AsyncMock(
+            return_value={
+                "last_activity_days": 25,
+                "login_frequency": 2,
+            }
+        )
         feature_store.get_engagement_features = AsyncMock(return_value={})
         feature_store.get_transaction_features = AsyncMock(return_value={})
 
@@ -315,9 +333,11 @@ class TestChurnAnalytics:
     ):
         """Deve incluir top fatores de churn."""
         # Arrange
-        feature_store.get_user_features = AsyncMock(return_value={
-            "last_activity_days": 20,
-        })
+        feature_store.get_user_features = AsyncMock(
+            return_value={
+                "last_activity_days": 20,
+            }
+        )
         feature_store.get_engagement_features = AsyncMock(return_value={})
         feature_store.get_transaction_features = AsyncMock(return_value={})
 
@@ -356,10 +376,7 @@ class TestRetentionActions:
             features,
         )
 
-        vip_actions = [
-            a for a in actions
-            if a.action_type == RetentionActionType.VIP_UPGRADE
-        ]
+        vip_actions = [a for a in actions if a.action_type == RetentionActionType.VIP_UPGRADE]
         assert len(vip_actions) > 0
 
 
@@ -426,7 +443,7 @@ class TestTrendCalculation:
     def test_calculate_trend_stable(self, churn_predictor):
         """Deve identificar tendência estável."""
         predictions = []
-        for i in range(20):
+        for _i in range(20):
             pred = MagicMock()
             pred.churn_probability = 0.5  # Constante
             predictions.append(pred)

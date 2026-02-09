@@ -1,34 +1,34 @@
 """Models do módulo de Ponto Eletrônico."""
 
+from .overtime import (
+    CompensationType,
+    Overtime,
+    OvertimeReason,
+    OvertimeStatus,
+    OvertimeType,
+)
 from .time_entry import (
-    TimeEntry,
+    AnomalyType,
+    EntryStatus,
     EntryType,
     RegistrationMethod,
-    EntryStatus,
-    AnomalyType,
-)
-from .work_schedule import (
-    WorkSchedule,
-    ScheduleType,
-    ScheduleStatus,
-    DayOfWeek,
-)
-from .overtime import (
-    Overtime,
-    OvertimeType,
-    OvertimeStatus,
-    OvertimeReason,
-    CompensationType,
+    TimeEntry,
 )
 from .time_justification import (
-    TimeJustification,
-    JustificationType,
-    JustificationStatus,
     JustificationCategory,
+    JustificationStatus,
+    JustificationType,
+    TimeJustification,
 )
 from .time_sheet import (
     TimeSheet,
     TimeSheetStatus,
+)
+from .work_schedule import (
+    DayOfWeek,
+    ScheduleStatus,
+    ScheduleType,
+    WorkSchedule,
 )
 
 __all__ = [

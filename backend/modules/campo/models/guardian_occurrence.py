@@ -5,8 +5,7 @@ Modelo GuardianOccurrence para ocorrências do Guardian.
 from __future__ import annotations
 
 from datetime import datetime
-from enum import Enum
-from typing import Optional
+from enum import StrEnum
 from uuid import uuid4
 
 from sqlalchemy import Boolean, DateTime, String, Text, func
@@ -16,7 +15,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from core.models.base import Base
 
 
-class OccurrenceType(str, Enum):
+class OccurrenceType(StrEnum):
     """Tipo de ocorrência."""
 
     ALARM = "alarm"  # Alarme
@@ -35,7 +34,7 @@ class OccurrenceType(str, Enum):
     OTHER = "other"  # Outros
 
 
-class OccurrenceSeverity(str, Enum):
+class OccurrenceSeverity(StrEnum):
     """Gravidade da ocorrência."""
 
     LOW = "low"  # Baixa
@@ -44,7 +43,7 @@ class OccurrenceSeverity(str, Enum):
     CRITICAL = "critical"  # Crítica
 
 
-class OccurrenceStatus(str, Enum):
+class OccurrenceStatus(StrEnum):
     """Status da ocorrência."""
 
     OPEN = "open"  # Aberta
@@ -133,12 +132,12 @@ class GuardianOccurrence(Base):
         nullable=False,
         index=True,
     )
-    contract_id: Mapped[Optional[str]] = mapped_column(
+    contract_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
         index=True,
     )
-    post_id: Mapped[Optional[str]] = mapped_column(
+    post_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
         index=True,
@@ -147,36 +146,36 @@ class GuardianOccurrence(Base):
     # Descrição
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
-    location: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
-    location_details: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    location: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    location_details: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Ações
-    action_taken: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    action_required: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    resolution: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    action_taken: Mapped[str | None] = mapped_column(Text, nullable=True)
+    action_required: Mapped[str | None] = mapped_column(Text, nullable=True)
+    resolution: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Pessoas
-    involved_persons: Mapped[Optional[list]] = mapped_column(JSONB, nullable=True)
-    witnesses: Mapped[Optional[list]] = mapped_column(JSONB, nullable=True)
-    reported_by: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    reported_by_id: Mapped[Optional[str]] = mapped_column(
+    involved_persons: Mapped[list | None] = mapped_column(JSONB, nullable=True)
+    witnesses: Mapped[list | None] = mapped_column(JSONB, nullable=True)
+    reported_by: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    reported_by_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
     )
 
     # Atendimento
-    operator_id: Mapped[Optional[str]] = mapped_column(
+    operator_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
     )
-    operator_name: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    response_time_seconds: Mapped[Optional[int]] = mapped_column(nullable=True)
-    resolution_time_seconds: Mapped[Optional[int]] = mapped_column(nullable=True)
+    operator_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    response_time_seconds: Mapped[int | None] = mapped_column(nullable=True)
+    resolution_time_seconds: Mapped[int | None] = mapped_column(nullable=True)
 
     # Escalação
-    escalated_to: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    escalation_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    escalated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    escalated_to: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    escalation_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    escalated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     # Serviços externos
     police_notified: Mapped[bool] = mapped_column(
@@ -184,7 +183,7 @@ class GuardianOccurrence(Base):
         default=False,
         nullable=False,
     )
-    police_report_number: Mapped[Optional[str]] = mapped_column(
+    police_report_number: Mapped[str | None] = mapped_column(
         String(50),
         nullable=True,
     )
@@ -200,10 +199,10 @@ class GuardianOccurrence(Base):
     )
 
     # Mídia
-    images: Mapped[Optional[list]] = mapped_column(JSONB, nullable=True)
-    videos: Mapped[Optional[list]] = mapped_column(JSONB, nullable=True)
-    audio_recordings: Mapped[Optional[list]] = mapped_column(JSONB, nullable=True)
-    attachments: Mapped[Optional[list]] = mapped_column(JSONB, nullable=True)
+    images: Mapped[list | None] = mapped_column(JSONB, nullable=True)
+    videos: Mapped[list | None] = mapped_column(JSONB, nullable=True)
+    audio_recordings: Mapped[list | None] = mapped_column(JSONB, nullable=True)
+    attachments: Mapped[list | None] = mapped_column(JSONB, nullable=True)
 
     # Timestamps
     event_timestamp: Mapped[datetime] = mapped_column(
@@ -211,9 +210,9 @@ class GuardianOccurrence(Base):
         nullable=False,
         index=True,
     )
-    acknowledged_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    resolved_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    closed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    acknowledged_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    closed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     received_at: Mapped[datetime] = mapped_column(
         DateTime,
         default=func.now(),
@@ -227,7 +226,7 @@ class GuardianOccurrence(Base):
         default=False,
         nullable=False,
     )
-    followup_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    followup_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime,
@@ -242,12 +241,12 @@ class GuardianOccurrence(Base):
     )
 
     # Metadados
-    guardian_metadata: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
-    sync_id: Mapped[Optional[str]] = mapped_column(
+    guardian_metadata: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    sync_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=False),
         nullable=True,
     )
-    tags: Mapped[Optional[list]] = mapped_column(JSONB, nullable=True)
+    tags: Mapped[list | None] = mapped_column(JSONB, nullable=True)
 
     def __repr__(self) -> str:
         """Representação textual."""
@@ -291,11 +290,7 @@ class GuardianOccurrence(Base):
     @property
     def involved_external_services(self) -> bool:
         """Verifica se envolveu serviços externos."""
-        return (
-            self.police_notified
-            or self.fire_department_notified
-            or self.ambulance_notified
-        )
+        return self.police_notified or self.fire_department_notified or self.ambulance_notified
 
     def acknowledge(self, operator_id: str, operator_name: str) -> None:
         """Reconhece a ocorrência."""

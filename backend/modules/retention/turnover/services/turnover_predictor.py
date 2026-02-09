@@ -11,8 +11,8 @@ Importante: Score NUNCA visivel para o funcionario.
 import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from decimal import Decimal, ROUND_HALF_UP
-from typing import Any, Dict, List, Optional, Tuple
+from decimal import ROUND_HALF_UP, Decimal
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -20,6 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from modules.retention.turnover.models.turnover_models import (
     CategoriaFator,
     NivelRisco,
+    RiskAlert,
     TipoAlerta,
     TurnoverPrediction,
 )
@@ -45,10 +46,10 @@ class FeatureDefinition:
     categoria: CategoriaFator
     peso: float
     descricao: str
-    threshold_alto: Optional[float] = None
-    threshold_baixo: Optional[float] = None
-    threshold_negativo: Optional[float] = None
-    threshold_critico: Optional[float] = None
+    threshold_alto: float | None = None
+    threshold_baixo: float | None = None
+    threshold_negativo: float | None = None
+    threshold_critico: float | None = None
     inversao: bool = False  # True se maior valor = menor risco
     recomendacao_template: str = ""
 
@@ -57,7 +58,7 @@ class FeatureDefinition:
 # Feature Definitions
 # =============================================================================
 
-FEATURES_CONFIG: Dict[str, FeatureDefinition] = {
+FEATURES_CONFIG: dict[str, FeatureDefinition] = {
     # Comportamentais (peso alto)
     "faltas_ultimo_mes": FeatureDefinition(
         nome="faltas_ultimo_mes",
@@ -66,8 +67,7 @@ FEATURES_CONFIG: Dict[str, FeatureDefinition] = {
         descricao="Numero de faltas no ultimo mes",
         threshold_alto=2,
         recomendacao_template=(
-            "Agendar conversa individual para entender motivos das faltas. "
-            "Verificar situacao pessoal/familiar."
+            "Agendar conversa individual para entender motivos das faltas. Verificar situacao pessoal/familiar."
         ),
     ),
     "atrasos_ultimo_mes": FeatureDefinition(
@@ -77,8 +77,7 @@ FEATURES_CONFIG: Dict[str, FeatureDefinition] = {
         descricao="Numero de atrasos no ultimo mes",
         threshold_alto=5,
         recomendacao_template=(
-            "Avaliar problemas de transporte ou escala. "
-            "Considerar flexibilizacao de horario se aplicavel."
+            "Avaliar problemas de transporte ou escala. Considerar flexibilizacao de horario se aplicavel."
         ),
     ),
     "ocorrencias_trimestre": FeatureDefinition(
@@ -87,10 +86,7 @@ FEATURES_CONFIG: Dict[str, FeatureDefinition] = {
         peso=0.12,
         descricao="Ocorrencias disciplinares no ultimo trimestre",
         threshold_alto=2,
-        recomendacao_template=(
-            "Revisar historico de ocorrencias. "
-            "Aplicar medidas corretivas ou oferecer suporte."
-        ),
+        recomendacao_template=("Revisar historico de ocorrencias. Aplicar medidas corretivas ou oferecer suporte."),
     ),
     "advertencias_total": FeatureDefinition(
         nome="advertencias_total",
@@ -99,10 +95,7 @@ FEATURES_CONFIG: Dict[str, FeatureDefinition] = {
         descricao="Total de advertencias no historico",
         threshold_alto=1,
         threshold_critico=3,
-        recomendacao_template=(
-            "Avaliar gravidade e frequencia das advertencias. "
-            "Considerar plano de desenvolvimento."
-        ),
+        recomendacao_template=("Avaliar gravidade e frequencia das advertencias. Considerar plano de desenvolvimento."),
     ),
     # Engajamento (peso alto)
     "score_clima_atual": FeatureDefinition(
@@ -114,8 +107,7 @@ FEATURES_CONFIG: Dict[str, FeatureDefinition] = {
         threshold_critico=2.0,
         inversao=True,  # Maior score = menor risco
         recomendacao_template=(
-            "Analisar respostas da pesquisa de clima. "
-            "Identificar areas de insatisfacao e agir proativamente."
+            "Analisar respostas da pesquisa de clima. Identificar areas de insatisfacao e agir proativamente."
         ),
     ),
     "tendencia_clima": FeatureDefinition(
@@ -126,8 +118,7 @@ FEATURES_CONFIG: Dict[str, FeatureDefinition] = {
         threshold_negativo=-0.3,
         inversao=True,  # Tendencia positiva = menor risco
         recomendacao_template=(
-            "Investigar causa da queda no engajamento. "
-            "Conversa individual para entender preocupacoes."
+            "Investigar causa da queda no engajamento. Conversa individual para entender preocupacoes."
         ),
     ),
     # Operacionais (peso medio)
@@ -139,8 +130,7 @@ FEATURES_CONFIG: Dict[str, FeatureDefinition] = {
         threshold_alto=20,
         threshold_critico=40,
         recomendacao_template=(
-            "Avaliar possibilidade de realocacao para posto mais proximo. "
-            "Considerar auxilio transporte adicional."
+            "Avaliar possibilidade de realocacao para posto mais proximo. Considerar auxilio transporte adicional."
         ),
     ),
     "horas_extras_media": FeatureDefinition(
@@ -151,8 +141,7 @@ FEATURES_CONFIG: Dict[str, FeatureDefinition] = {
         threshold_alto=30,
         threshold_critico=50,
         recomendacao_template=(
-            "Verificar necessidade de contratacao adicional. "
-            "Equilibrar carga de trabalho entre equipe."
+            "Verificar necessidade de contratacao adicional. Equilibrar carga de trabalho entre equipe."
         ),
     ),
     "tempo_empresa_meses": FeatureDefinition(
@@ -163,8 +152,7 @@ FEATURES_CONFIG: Dict[str, FeatureDefinition] = {
         threshold_critico=3,
         inversao=True,  # Mais tempo = menor risco
         recomendacao_template=(
-            "Fortalecer onboarding e acompanhamento inicial. "
-            "Designar mentor para novos colaboradores."
+            "Fortalecer onboarding e acompanhamento inicial. Designar mentor para novos colaboradores."
         ),
     ),
     # Contextuais (peso baixo)
@@ -175,10 +163,7 @@ FEATURES_CONFIG: Dict[str, FeatureDefinition] = {
         descricao="Dias desde o ultimo reajuste salarial",
         threshold_alto=365,
         threshold_critico=730,
-        recomendacao_template=(
-            "Avaliar politica de remuneracao. "
-            "Considerar ajuste salarial ou beneficios adicionais."
-        ),
+        recomendacao_template=("Avaliar politica de remuneracao. Considerar ajuste salarial ou beneficios adicionais."),
     ),
 }
 
@@ -214,8 +199,8 @@ class TurnoverPredictor:
         self,
         funcionario_id: UUID,
         condominium_id: UUID,
-        dados_funcionario: Dict[str, Any],
-        calculado_por: Optional[UUID] = None,
+        dados_funcionario: dict[str, Any],
+        calculado_por: UUID | None = None,
     ) -> TurnoverPrediction:
         """
         Calcula o risco de turnover para um funcionario.
@@ -232,15 +217,11 @@ class TurnoverPredictor:
         logger.info(f"Calculando risco para funcionario {funcionario_id}")
 
         # 1. Buscar predicao anterior para comparacao
-        predicao_anterior = await self.repository.get_latest_prediction(
-            funcionario_id
-        )
+        predicao_anterior = await self.repository.get_latest_prediction(funcionario_id)
 
         # 2. Calcular features e score
         features_calculadas = self._calcular_features(dados_funcionario)
-        score, fatores_detalhados = self._calcular_score_heuristico(
-            features_calculadas
-        )
+        score, fatores_detalhados = self._calcular_score_heuristico(features_calculadas)
         nivel = TurnoverPrediction.calcular_nivel(score)
 
         # 3. Marcar predicoes anteriores como recalculadas
@@ -250,9 +231,7 @@ class TurnoverPredictor:
         prediction_data = PredictionCreate(
             funcionario_id=funcionario_id,
             condominium_id=condominium_id,
-            score_risco=Decimal(str(score)).quantize(
-                Decimal("0.01"), rounding=ROUND_HALF_UP
-            ),
+            score_risco=Decimal(str(score)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
             nivel=nivel,
             modelo_versao=self.MODELO_VERSAO,
             features_usadas=features_calculadas,
@@ -291,18 +270,15 @@ class TurnoverPredictor:
             condominium_id=condominium_id,
         )
 
-        logger.info(
-            f"Predicao calculada: funcionario={funcionario_id}, "
-            f"score={score:.2f}, nivel={nivel.value}"
-        )
+        logger.info(f"Predicao calculada: funcionario={funcionario_id}, score={score:.2f}, nivel={nivel.value}")
 
         return prediction
 
     async def calcular_risco_batch(
         self,
-        funcionarios_dados: List[Dict[str, Any]],
+        funcionarios_dados: list[dict[str, Any]],
         condominium_id: UUID,
-        calculado_por: Optional[UUID] = None,
+        calculado_por: UUID | None = None,
     ) -> RecalcularBatchResponse:
         """
         Calcula risco em lote para multiplos funcionarios.
@@ -319,7 +295,7 @@ class TurnoverPredictor:
         total_sucesso = 0
         total_erros = 0
         alertas_gerados = 0
-        erros: List[Dict[str, Any]] = []
+        erros: list[dict[str, Any]] = []
 
         for dados in funcionarios_dados:
             try:
@@ -328,8 +304,7 @@ class TurnoverPredictor:
                     continue
 
                 prediction = await self.calcular_risco(
-                    funcionario_id=UUID(funcionario_id)
-                    if isinstance(funcionario_id, str) else funcionario_id,
+                    funcionario_id=UUID(funcionario_id) if isinstance(funcionario_id, str) else funcionario_id,
                     condominium_id=condominium_id,
                     dados_funcionario=dados,
                     calculado_por=calculado_por,
@@ -341,13 +316,13 @@ class TurnoverPredictor:
 
             except Exception as e:
                 total_erros += 1
-                erros.append({
-                    "funcionario_id": str(dados.get("funcionario_id")),
-                    "erro": str(e),
-                })
-                logger.error(
-                    f"Erro ao calcular risco para {dados.get('funcionario_id')}: {e}"
+                erros.append(
+                    {
+                        "funcionario_id": str(dados.get("funcionario_id")),
+                        "erro": str(e),
+                    }
                 )
+                logger.error(f"Erro ao calcular risco para {dados.get('funcionario_id')}: {e}")
 
         tempo_execucao = (datetime.utcnow() - inicio).total_seconds()
 
@@ -370,7 +345,7 @@ class TurnoverPredictor:
         self,
         funcionario_id: UUID,
         condominium_id: UUID,
-        dados_funcionario: Dict[str, Any],
+        dados_funcionario: dict[str, Any],
         calculado_por: UUID,
     ) -> RecalcularResponse:
         """
@@ -386,16 +361,10 @@ class TurnoverPredictor:
             RecalcularResponse com comparacao
         """
         # Buscar predicao anterior
-        predicao_anterior = await self.repository.get_latest_prediction(
-            funcionario_id
-        )
+        predicao_anterior = await self.repository.get_latest_prediction(funcionario_id)
 
-        score_anterior = (
-            predicao_anterior.score_risco if predicao_anterior else None
-        )
-        nivel_anterior = (
-            predicao_anterior.nivel if predicao_anterior else None
-        )
+        score_anterior = predicao_anterior.score_risco if predicao_anterior else None
+        nivel_anterior = predicao_anterior.nivel if predicao_anterior else None
 
         # Calcular novo risco
         prediction = await self.calcular_risco(
@@ -424,8 +393,8 @@ class TurnoverPredictor:
 
     def _calcular_features(
         self,
-        dados: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        dados: dict[str, Any],
+    ) -> dict[str, Any]:
         """
         Extrai e normaliza features dos dados do funcionario.
 
@@ -541,8 +510,8 @@ class TurnoverPredictor:
 
     def _calcular_score_heuristico(
         self,
-        features: Dict[str, Any],
-    ) -> Tuple[float, List[Dict[str, Any]]]:
+        features: dict[str, Any],
+    ) -> tuple[float, list[dict[str, Any]]]:
         """
         Calcula score final usando modelo heuristico.
 
@@ -577,29 +546,26 @@ class TurnoverPredictor:
 
             score_total += contribuicao
 
-            fatores_detalhados.append({
-                "nome": nome,
-                "categoria": config.categoria,
-                "peso": peso,
-                "valor_atual": valor_bruto,
-                "valor_normalizado": round(valor_norm, 4),
-                "contribuicao": round(contribuicao, 2),
-                "threshold_violado": threshold_violado,
-                "descricao": self._gerar_descricao(config, valor_bruto),
-                "recomendacao": (
-                    config.recomendacao_template if threshold_violado else None
-                ),
-                "dados_brutos": dados,
-            })
+            fatores_detalhados.append(
+                {
+                    "nome": nome,
+                    "categoria": config.categoria,
+                    "peso": peso,
+                    "valor_atual": valor_bruto,
+                    "valor_normalizado": round(valor_norm, 4),
+                    "contribuicao": round(contribuicao, 2),
+                    "threshold_violado": threshold_violado,
+                    "descricao": self._gerar_descricao(config, valor_bruto),
+                    "recomendacao": (config.recomendacao_template if threshold_violado else None),
+                    "dados_brutos": dados,
+                }
+            )
 
         # Normalizar score para garantir range 0-100
         score_final = max(0, min(100, score_total))
 
         # Ordenar fatores por contribuicao
-        fatores_detalhados.sort(
-            key=lambda x: x["contribuicao"],
-            reverse=True
-        )
+        fatores_detalhados.sort(key=lambda x: x["contribuicao"], reverse=True)
 
         return score_final, fatores_detalhados
 
@@ -640,30 +606,18 @@ class TurnoverPredictor:
 
         if config.inversao:
             if config.threshold_baixo and float(valor) < config.threshold_baixo:
-                return (
-                    f"{config.descricao}: {valor} (abaixo do ideal "
-                    f"de {config.threshold_baixo})"
-                )
+                return f"{config.descricao}: {valor} (abaixo do ideal de {config.threshold_baixo})"
             if config.threshold_negativo and float(valor) < config.threshold_negativo:
-                return (
-                    f"{config.descricao}: {valor} (tendencia negativa "
-                    f"maior que {config.threshold_negativo})"
-                )
+                return f"{config.descricao}: {valor} (tendencia negativa maior que {config.threshold_negativo})"
         else:
             if config.threshold_alto and float(valor) >= config.threshold_alto:
-                return (
-                    f"{config.descricao}: {valor} (acima do limite "
-                    f"de {config.threshold_alto})"
-                )
+                return f"{config.descricao}: {valor} (acima do limite de {config.threshold_alto})"
             if config.threshold_critico and float(valor) >= config.threshold_critico:
-                return (
-                    f"{config.descricao}: {valor} (nivel critico, "
-                    f"limite {config.threshold_critico})"
-                )
+                return f"{config.descricao}: {valor} (nivel critico, limite {config.threshold_critico})"
 
         return f"{config.descricao}: {valor}"
 
-    def _get_metricas_modelo(self) -> Dict[str, Any]:
+    def _get_metricas_modelo(self) -> dict[str, Any]:
         """Retorna metricas do modelo heuristico."""
         return {
             "tipo": "heuristico",
@@ -671,15 +625,9 @@ class TurnoverPredictor:
             "total_features": len(self._features),
             "soma_pesos": sum(f.peso for f in self._features.values()),
             "categorias": {
-                cat.value: sum(
-                    1 for f in self._features.values() if f.categoria == cat
-                )
-                for cat in CategoriaFator
+                cat.value: sum(1 for f in self._features.values() if f.categoria == cat) for cat in CategoriaFator
             },
-            "nota": (
-                "Modelo baseado em regras heuristicas. "
-                "Score indica tendencia, nao certeza."
-            ),
+            "nota": ("Modelo baseado em regras heuristicas. Score indica tendencia, nao certeza."),
         }
 
     # =========================================================================
@@ -689,9 +637,9 @@ class TurnoverPredictor:
     async def _verificar_e_criar_alerta(
         self,
         prediction: TurnoverPrediction,
-        predicao_anterior: Optional[TurnoverPrediction],
+        predicao_anterior: TurnoverPrediction | None,
         condominium_id: UUID,
-    ) -> Optional[UUID]:
+    ) -> UUID | None:
         """
         Verifica se deve criar alerta baseado na predicao.
 
@@ -715,14 +663,11 @@ class TurnoverPredictor:
         if score_atual < self.THRESHOLD_ALERTA:
             return None
 
-        score_anterior = (
-            float(predicao_anterior.score_risco)
-            if predicao_anterior else None
-        )
+        score_anterior = float(predicao_anterior.score_risco) if predicao_anterior else None
         nivel_anterior = predicao_anterior.nivel if predicao_anterior else None
 
         # Determinar tipo de alerta
-        tipo_alerta: Optional[TipoAlerta] = None
+        tipo_alerta: TipoAlerta | None = None
         titulo = ""
         mensagem = ""
 
@@ -742,13 +687,10 @@ class TurnoverPredictor:
                 f"Nivel: {prediction.nivel.value.upper()}."
             )
 
-        elif (
-            score_anterior is not None
-            and (score_atual - score_anterior) >= self.THRESHOLD_AUMENTO_SIGNIFICATIVO
-        ):
+        elif score_anterior is not None and (score_atual - score_anterior) >= self.THRESHOLD_AUMENTO_SIGNIFICATIVO:
             tipo_alerta = TipoAlerta.AUMENTO_RISCO
             variacao = score_atual - score_anterior
-            titulo = f"Aumento significativo no risco de turnover"
+            titulo = "Aumento significativo no risco de turnover"
             mensagem = (
                 f"Score de risco aumentou {variacao:.1f} pontos "
                 f"(de {score_anterior:.1f} para {score_atual:.1f}). "
@@ -774,9 +716,7 @@ class TurnoverPredictor:
         # Adicionar principais fatores na mensagem
         principais = prediction.principais_fatores[:3]
         if principais:
-            fatores_texto = ", ".join(
-                f.nome.replace("_", " ") for f in principais
-            )
+            fatores_texto = ", ".join(f.nome.replace("_", " ") for f in principais)
             mensagem += f"\n\nPrincipais fatores de risco: {fatores_texto}."
 
         # Criar alerta
@@ -786,13 +726,8 @@ class TurnoverPredictor:
             condominium_id=condominium_id,
             tipo=tipo_alerta,
             score_atual=prediction.score_risco,
-            score_anterior=(
-                predicao_anterior.score_risco if predicao_anterior else None
-            ),
-            variacao_score=(
-                Decimal(str(score_atual - score_anterior))
-                if score_anterior else None
-            ),
+            score_anterior=(predicao_anterior.score_risco if predicao_anterior else None),
+            variacao_score=(Decimal(str(score_atual - score_anterior)) if score_anterior else None),
             nivel_atual=prediction.nivel,
             nivel_anterior=nivel_anterior,
             titulo=titulo,
@@ -803,10 +738,7 @@ class TurnoverPredictor:
         )
 
         alert = await self.repository.create_alert(alert_data)
-        logger.info(
-            f"Alerta criado: tipo={tipo_alerta.value}, "
-            f"funcionario={prediction.funcionario_id}"
-        )
+        logger.info(f"Alerta criado: tipo={tipo_alerta.value}, funcionario={prediction.funcionario_id}")
 
         return alert.id
 
@@ -814,7 +746,7 @@ class TurnoverPredictor:
     # Configuration
     # =========================================================================
 
-    def get_features_config(self) -> List[Dict[str, Any]]:
+    def get_features_config(self) -> list[dict[str, Any]]:
         """Retorna configuracao das features."""
         return [
             {
@@ -834,7 +766,3 @@ class TurnoverPredictor:
     def get_total_peso(self) -> float:
         """Retorna soma total dos pesos das features."""
         return sum(f.peso for f in self._features.values())
-
-
-# Import necessario para alertas
-from modules.retention.turnover.models.turnover_models import RiskAlert

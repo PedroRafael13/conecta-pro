@@ -3,36 +3,34 @@ Service para Checklist.
 """
 
 from datetime import datetime
-from typing import Optional, List, Tuple, Union
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.campo.models.checklist import (
-    ChecklistTemplate,
     ChecklistItem,
-    ChecklistResposta,
     ChecklistPreenchido,
+    ChecklistResposta,
+    ChecklistTemplate,
     TipoServico,
-    TipoResposta,
 )
 from modules.campo.repositories.checklist_repository import ChecklistRepository
 from modules.campo.schemas.checklist import (
-    ChecklistTemplateCreate,
-    ChecklistTemplateUpdate,
-    ChecklistTemplateRead,
-    ChecklistTemplateListItem,
+    ChecklistComItens,
     ChecklistItemCreate,
-    ChecklistItemUpdate,
     ChecklistItemRead,
-    ChecklistRespostaCreate,
-    ChecklistRespostaRead,
+    ChecklistItemUpdate,
+    ChecklistPreenchidoCompleto,
     ChecklistPreenchidoCreate,
     ChecklistPreenchidoRead,
+    ChecklistRespostaCreate,
+    ChecklistRespostaRead,
+    ChecklistTemplateCreate,
+    ChecklistTemplateListItem,
+    ChecklistTemplateRead,
+    ChecklistTemplateUpdate,
     TemplateFiltro,
     TemplatePaginatedResponse,
-    ChecklistComItens,
-    ChecklistPreenchidoCompleto,
     ValidacaoResult,
 )
 
@@ -53,7 +51,7 @@ class ChecklistService:
         """Cria um novo template de checklist."""
         return await self.repository.create_template(data, created_by)
 
-    async def obter_template(self, template_id: UUID) -> Optional[ChecklistComItens]:
+    async def obter_template(self, template_id: UUID) -> ChecklistComItens | None:
         """Obtem template com seus itens."""
         template = await self.repository.get_template_by_id(template_id)
         if not template:
@@ -66,7 +64,7 @@ class ChecklistService:
             itens=[ChecklistItemRead.model_validate(item) for item in itens],
         )
 
-    async def obter_template_por_codigo(self, codigo: str) -> Optional[ChecklistTemplate]:
+    async def obter_template_por_codigo(self, codigo: str) -> ChecklistTemplate | None:
         """Obtem template por codigo."""
         return await self.repository.get_template_by_codigo(codigo)
 
@@ -75,7 +73,7 @@ class ChecklistService:
         template_id: UUID,
         data: ChecklistTemplateUpdate,
         updated_by: UUID = None,
-    ) -> Optional[ChecklistTemplate]:
+    ) -> ChecklistTemplate | None:
         """Atualiza um template."""
         template = await self.repository.get_template_by_id(template_id)
         if not template:
@@ -91,7 +89,7 @@ class ChecklistService:
 
     async def listar_templates(
         self,
-        filtro: Optional[TemplateFiltro] = None,
+        filtro: TemplateFiltro | None = None,
         page: int = 1,
         page_size: int = 50,
     ) -> TemplatePaginatedResponse:
@@ -107,11 +105,13 @@ class ChecklistService:
             pages=(total + page_size - 1) // page_size,
         )
 
-    async def listar_templates_por_tipo(self, tipo_servico: TipoServico) -> List[ChecklistTemplate]:
+    async def listar_templates_por_tipo(self, tipo_servico: TipoServico) -> list[ChecklistTemplate]:
         """Lista templates ativos para um tipo de servico."""
         return await self.repository.get_templates_por_tipo_servico(tipo_servico)
 
-    async def clonar_template(self, template_id: UUID, novo_nome: str, created_by: UUID = None) -> Optional[ChecklistTemplate]:
+    async def clonar_template(
+        self, template_id: UUID, novo_nome: str, created_by: UUID = None
+    ) -> ChecklistTemplate | None:
         """Clona um template existente."""
         template = await self.repository.get_template_by_id(template_id)
         if not template:
@@ -168,11 +168,11 @@ class ChecklistService:
         """Adiciona item a um template."""
         return await self.repository.create_item(data)
 
-    async def obter_item(self, item_id: UUID) -> Optional[ChecklistItem]:
+    async def obter_item(self, item_id: UUID) -> ChecklistItem | None:
         """Obtem item por ID."""
         return await self.repository.get_item_by_id(item_id)
 
-    async def atualizar_item(self, item_id: UUID, data: ChecklistItemUpdate) -> Optional[ChecklistItem]:
+    async def atualizar_item(self, item_id: UUID, data: ChecklistItemUpdate) -> ChecklistItem | None:
         """Atualiza um item."""
         item = await self.repository.get_item_by_id(item_id)
         if not item:
@@ -186,11 +186,11 @@ class ChecklistService:
             return False
         return await self.repository.delete_item(item)
 
-    async def listar_itens_template(self, template_id: UUID) -> List[ChecklistItem]:
+    async def listar_itens_template(self, template_id: UUID) -> list[ChecklistItem]:
         """Lista itens de um template."""
         return await self.repository.list_itens_template(template_id)
 
-    async def reordenar_itens(self, template_id: UUID, nova_ordem: List[UUID]) -> bool:
+    async def reordenar_itens(self, template_id: UUID, nova_ordem: list[UUID]) -> bool:
         """Reordena itens de um template."""
         return await self.repository.reordenar_itens(template_id, nova_ordem)
 
@@ -228,15 +228,15 @@ class ChecklistService:
         self,
         ordem_servico_id: UUID,
         item_id: UUID,
-        valor: Union[str, int, float, bool, list, dict, None],
+        valor: str | int | float | bool | list | dict | None,
         respondido_por: UUID = None,
         foto_url: str = None,
-        fotos_urls: List[str] = None,
+        fotos_urls: list[str] = None,
         assinatura_url: str = None,
         latitude: float = None,
         longitude: float = None,
         observacao: str = None,
-    ) -> Tuple[ChecklistResposta, ValidacaoResult]:
+    ) -> tuple[ChecklistResposta, ValidacaoResult]:
         """Responde um item do checklist."""
         # Buscar preenchido
         preenchido = await self.repository.get_preenchido_by_os(ordem_servico_id)
@@ -331,7 +331,7 @@ class ChecklistService:
     async def obter_checklist_completo(
         self,
         ordem_servico_id: UUID,
-    ) -> Optional[ChecklistPreenchidoCompleto]:
+    ) -> ChecklistPreenchidoCompleto | None:
         """Obtem checklist preenchido completo com template, itens e respostas."""
         preenchido = await self.repository.get_preenchido_by_os(ordem_servico_id)
         if not preenchido:
@@ -351,7 +351,7 @@ class ChecklistService:
     async def obter_progresso_checklist(
         self,
         ordem_servico_id: UUID,
-    ) -> Optional[ChecklistPreenchidoRead]:
+    ) -> ChecklistPreenchidoRead | None:
         """Obtem progresso do checklist."""
         preenchido = await self.repository.get_preenchido_by_os(ordem_servico_id)
         if not preenchido:

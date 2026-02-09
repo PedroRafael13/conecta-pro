@@ -4,28 +4,16 @@ application/use_cases/inventory/receive_stock.py - RECEIVE STOCK USE CASE
 Clean Architecture use case for stock receipt with financial integration
 """
 
-from typing import Optional, List
-from uuid import UUID, uuid4
-from decimal import Decimal
-from datetime import datetime, date
-from dataclasses import dataclass
 import logging
+from dataclasses import dataclass
+from datetime import date, datetime
+from decimal import Decimal
+from uuid import UUID, uuid4
 
-from application.interfaces.unit_of_work import IUnitOfWork
 from application.dto.inventory import CreateStockMovementDTO, StockMovementResponseDTO
-from domains.inventory import (
-    StockMovementEntity,
-    StockMovementType,
-    WarehouseType,
-    MovementLine
-)
-from domains.financial import (
-    JournalEntryEntity,
-    JournalEntryType,
-    JournalEntryStatus,
-    TransactionSource,
-    JournalLine
-)
+from application.interfaces.unit_of_work import IUnitOfWork
+from domains.financial import JournalEntryEntity, JournalEntryStatus, JournalEntryType, JournalLine, TransactionSource
+from domains.inventory import MovementLine, StockMovementEntity, StockMovementType, WarehouseType
 
 logger = logging.getLogger(__name__)
 
@@ -35,11 +23,11 @@ class ReceiveStockResult:
     """Resultado do recebimento de estoque."""
 
     success: bool
-    movement: Optional[StockMovementResponseDTO] = None
-    journal_entry_id: Optional[UUID] = None
-    error_code: Optional[str] = None
-    error_message: Optional[str] = None
-    warnings: List[str] = None
+    movement: StockMovementResponseDTO | None = None
+    journal_entry_id: UUID | None = None
+    error_code: str | None = None
+    error_message: str | None = None
+    warnings: list[str] = None
 
     def __post_init__(self):
         if self.warnings is None:
@@ -57,14 +45,10 @@ class ReceiveStockUseCase:
     """
 
     # Contas contabeis padrao (configuravel)
-    ACCOUNT_STOCK = "1.1.3.01"       # Estoque
-    ACCOUNT_SUPPLIER = "2.1.1.01"    # Fornecedores
+    ACCOUNT_STOCK = "1.1.3.01"  # Estoque
+    ACCOUNT_SUPPLIER = "2.1.1.01"  # Fornecedores
 
-    def __init__(
-        self,
-        unit_of_work: IUnitOfWork,
-        generate_journal_entry: bool = True
-    ):
+    def __init__(self, unit_of_work: IUnitOfWork, generate_journal_entry: bool = True):
         self._uow = unit_of_work
         self._generate_journal_entry = generate_journal_entry
 
@@ -78,7 +62,7 @@ class ReceiveStockUseCase:
         Returns:
             ReceiveStockResult com movimento criado ou erro
         """
-        warnings: List[str] = []
+        warnings: list[str] = []
 
         try:
             async with self._uow:
@@ -87,11 +71,11 @@ class ReceiveStockUseCase:
                     return ReceiveStockResult(
                         success=False,
                         error_code="INVALID_MOVEMENT_TYPE",
-                        error_message="Use case especifico para recebimento de compra"
+                        error_message="Use case especifico para recebimento de compra",
                     )
 
                 # 2. Valida e processa linhas
-                movement_lines: List[MovementLine] = []
+                movement_lines: list[MovementLine] = []
                 products_to_update = []
 
                 for line_dto in dto.lines:
@@ -101,14 +85,14 @@ class ReceiveStockUseCase:
                         return ReceiveStockResult(
                             success=False,
                             error_code="PRODUCT_NOT_FOUND",
-                            error_message=f"Produto {line_dto.product_id} nao encontrado"
+                            error_message=f"Produto {line_dto.product_id} nao encontrado",
                         )
 
                     if not product.is_active:
                         return ReceiveStockResult(
                             success=False,
                             error_code="PRODUCT_INACTIVE",
-                            error_message=f"Produto {product.sku} esta inativo"
+                            error_message=f"Produto {product.sku} esta inativo",
                         )
 
                     # Cria linha de movimento
@@ -121,21 +105,18 @@ class ReceiveStockUseCase:
                         quantity=line_dto.quantity,
                         unit_of_measure=product.unit_of_measure,
                         unit_cost=line_dto.unit_cost,
-                        total_cost=total_cost
+                        total_cost=total_cost,
                     )
                     movement_lines.append(movement_line)
 
                     # Prepara atualizacao do produto
-                    products_to_update.append({
-                        "product": product,
-                        "quantity": line_dto.quantity,
-                        "unit_cost": line_dto.unit_cost
-                    })
+                    products_to_update.append(
+                        {"product": product, "quantity": line_dto.quantity, "unit_cost": line_dto.unit_cost}
+                    )
 
                     # Verifica estoque maximo
                     new_stock = product.current_stock + line_dto.quantity
-                    if product.stock_level.maximum_stock > 0 and \
-                       new_stock > product.stock_level.maximum_stock:
+                    if product.stock_level.maximum_stock > 0 and new_stock > product.stock_level.maximum_stock:
                         warnings.append(
                             f"Produto {product.sku} excedera estoque maximo "
                             f"(atual: {product.current_stock}, recebendo: {line_dto.quantity}, "
@@ -144,8 +125,7 @@ class ReceiveStockUseCase:
 
                 # 3. Cria movimento de estoque
                 movement_number = StockMovementEntity.generate_movement_number(
-                    datetime.now().year,
-                    int(uuid4().hex[:8], 16)
+                    datetime.now().year, int(uuid4().hex[:8], 16)
                 )
 
                 movement = StockMovementEntity(
@@ -160,7 +140,7 @@ class ReceiveStockUseCase:
                     description=dto.description,
                     lines=movement_lines,
                     tenant_id=dto.tenant_id,
-                    created_by=dto.created_by
+                    created_by=dto.created_by,
                 )
 
                 # 4. Persiste movimento
@@ -170,9 +150,7 @@ class ReceiveStockUseCase:
                 for item in products_to_update:
                     product = item["product"]
                     product.receive_stock(
-                        quantity=item["quantity"],
-                        unit_cost=item["unit_cost"],
-                        user_id=dto.created_by
+                        quantity=item["quantity"], unit_cost=item["unit_cost"], user_id=dto.created_by
                     )
                     await self._uow.products.update(product)
 
@@ -180,9 +158,7 @@ class ReceiveStockUseCase:
                 journal_entry_id = None
                 if self._generate_journal_entry:
                     journal_entry = await self._create_journal_entry(
-                        movement=created_movement,
-                        tenant_id=dto.tenant_id,
-                        user_id=dto.created_by
+                        movement=created_movement, tenant_id=dto.tenant_id, user_id=dto.created_by
                     )
                     if journal_entry:
                         created_entry = await self._uow.journal_entries.create(journal_entry)
@@ -211,7 +187,7 @@ class ReceiveStockUseCase:
                     is_cancelled=created_movement.is_cancelled,
                     lines_count=len(created_movement.lines),
                     created_at=created_movement.created_at,
-                    created_by=created_movement.created_by
+                    created_by=created_movement.created_by,
                 )
 
                 logger.info(
@@ -223,39 +199,30 @@ class ReceiveStockUseCase:
                         "products_count": len(products_to_update),
                         "journal_entry_id": str(journal_entry_id) if journal_entry_id else None,
                         "tenant_id": str(dto.tenant_id),
-                        "user_id": dto.created_by
-                    }
+                        "user_id": dto.created_by,
+                    },
                 )
 
                 return ReceiveStockResult(
                     success=True,
                     movement=response,
                     journal_entry_id=journal_entry_id,
-                    warnings=warnings if warnings else None
+                    warnings=warnings if warnings else None,
                 )
 
         except ValueError as e:
             logger.warning(f"Erro de validacao no recebimento: {e}")
-            return ReceiveStockResult(
-                success=False,
-                error_code="VALIDATION_ERROR",
-                error_message=str(e)
-            )
+            return ReceiveStockResult(success=False, error_code="VALIDATION_ERROR", error_message=str(e))
 
         except Exception as e:
             logger.error(f"Erro no recebimento de estoque: {e}", exc_info=True)
             return ReceiveStockResult(
-                success=False,
-                error_code="INTERNAL_ERROR",
-                error_message="Erro interno no recebimento de estoque"
+                success=False, error_code="INTERNAL_ERROR", error_message="Erro interno no recebimento de estoque"
             )
 
     async def _create_journal_entry(
-        self,
-        movement: StockMovementEntity,
-        tenant_id: UUID,
-        user_id: str
-    ) -> Optional[JournalEntryEntity]:
+        self, movement: StockMovementEntity, tenant_id: UUID, user_id: str
+    ) -> JournalEntryEntity | None:
         """
         Cria lancamento contabil para o recebimento.
 
@@ -264,10 +231,7 @@ class ReceiveStockUseCase:
         """
         try:
             today = date.today()
-            entry_number = JournalEntryEntity.generate_entry_number(
-                today.year,
-                int(uuid4().hex[:8], 16)
-            )
+            entry_number = JournalEntryEntity.generate_entry_number(today.year, int(uuid4().hex[:8], 16))
 
             # Linha de debito - Estoque
             debit_line = JournalLine(
@@ -276,7 +240,7 @@ class ReceiveStockUseCase:
                 account_name="Estoque de Mercadorias",
                 debit_amount=movement.total_cost,
                 credit_amount=Decimal("0"),
-                description=f"Entrada estoque - {movement.movement_number}"
+                description=f"Entrada estoque - {movement.movement_number}",
             )
 
             # Linha de credito - Fornecedores
@@ -286,7 +250,7 @@ class ReceiveStockUseCase:
                 account_name="Fornecedores",
                 debit_amount=Decimal("0"),
                 credit_amount=movement.total_cost,
-                description=f"Compra a prazo - {movement.source_document_number or movement.movement_number}"
+                description=f"Compra a prazo - {movement.source_document_number or movement.movement_number}",
             )
 
             journal_entry = JournalEntryEntity(
@@ -302,7 +266,7 @@ class ReceiveStockUseCase:
                 description=f"Entrada de estoque - {movement.description}",
                 lines=[debit_line, credit_line],
                 tenant_id=tenant_id,
-                created_by=user_id
+                created_by=user_id,
             )
 
             return journal_entry

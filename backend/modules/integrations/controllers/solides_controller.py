@@ -12,12 +12,13 @@ Endpoints para:
 """
 
 import asyncio
+import contextlib
 import hashlib
 import hmac
 import logging
 import os
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 from uuid import UUID
 
 from fastapi import (
@@ -28,10 +29,8 @@ from fastapi import (
     HTTPException,
     Query,
     Request,
-    Response,
     status,
 )
-from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -47,9 +46,8 @@ from modules.integrations.connectors.solides.connector import SolidesConnector
 from modules.integrations.connectors.solides.models import (
     ConflictStatus,
     ConflictStrategy,
-    SolidesEmployee,
     SolidesCredential,
-    SolidesEntityMapping,
+    SolidesEmployee,
     SolidesIntegrationConfig,
     SolidesSyncConflict,
     SolidesSyncLog,
@@ -104,11 +102,7 @@ def verify_webhook_signature(payload: bytes, signature: str, secret: str) -> boo
         signature = signature[7:]
 
     # Calcula HMAC SHA256
-    expected = hmac.new(
-        key=secret.encode("utf-8"),
-        msg=payload,
-        digestmod=hashlib.sha256
-    ).hexdigest()
+    expected = hmac.new(key=secret.encode("utf-8"), msg=payload, digestmod=hashlib.sha256).hexdigest()
 
     # Comparação segura contra timing attacks
     return hmac.compare_digest(expected.lower(), signature.lower())
@@ -130,41 +124,26 @@ def get_webhook_secret() -> str:
 class SolidesConfigRequest(BaseModel):
     """Schema para configurar integração Sólides."""
 
-    api_token: str = Field(
-        ...,
-        min_length=10,
-        description="Token de API do Sólides (Basic Auth base64)"
-    )
+    api_token: str = Field(..., min_length=10, description="Token de API do Sólides (Basic Auth base64)")
     sync_direction: str = Field(
         default="solides_to_conecta",
-        description="Direção da sincronização: solides_to_conecta, conecta_to_solides, bidirectional"
+        description="Direção da sincronização: solides_to_conecta, conecta_to_solides, bidirectional",
     )
     conflict_strategy: str = Field(
-        default="most_recent",
-        description="Estratégia de conflito: solides_wins, conecta_wins, most_recent, manual"
+        default="most_recent", description="Estratégia de conflito: solides_wins, conecta_wins, most_recent, manual"
     )
-    enabled_entities: List[str] = Field(
+    enabled_entities: list[str] = Field(
         default=["colaboradores", "departamentos", "cargos", "ocorrencias", "absenteismos"],
-        description="Entidades habilitadas para sincronização"
+        description="Entidades habilitadas para sincronização",
     )
     incremental_sync_interval_minutes: int = Field(
-        default=15,
-        ge=5,
-        le=60,
-        description="Intervalo em minutos para sincronização incremental"
+        default=15, ge=5, le=60, description="Intervalo em minutos para sincronização incremental"
     )
     auto_create_departments: bool = Field(
-        default=True,
-        description="Criar departamentos automaticamente se não existirem"
+        default=True, description="Criar departamentos automaticamente se não existirem"
     )
-    auto_create_positions: bool = Field(
-        default=True,
-        description="Criar cargos automaticamente se não existirem"
-    )
-    webhook_enabled: bool = Field(
-        default=True,
-        description="Habilitar recebimento de webhooks"
-    )
+    auto_create_positions: bool = Field(default=True, description="Criar cargos automaticamente se não existirem")
+    webhook_enabled: bool = Field(default=True, description="Habilitar recebimento de webhooks")
 
 
 class SolidesConfigResponse(BaseModel):
@@ -172,28 +151,21 @@ class SolidesConfigResponse(BaseModel):
 
     is_enabled: bool
     is_connected: bool
-    sync_direction: Optional[str] = None
-    conflict_strategy: Optional[str] = None
-    enabled_entities: List[str] = Field(default_factory=list)
-    last_health_check_at: Optional[datetime] = None
-    last_health_check_status: Optional[bool] = None
+    sync_direction: str | None = None
+    conflict_strategy: str | None = None
+    enabled_entities: list[str] = Field(default_factory=list)
+    last_health_check_at: datetime | None = None
+    last_health_check_status: bool | None = None
 
 
 class SyncTriggerRequest(BaseModel):
     """Request para disparar sincronização manual."""
 
-    entity_types: Optional[List[str]] = Field(
-        default=None,
-        description="Tipos de entidade a sincronizar (None = todas habilitadas)"
+    entity_types: list[str] | None = Field(
+        default=None, description="Tipos de entidade a sincronizar (None = todas habilitadas)"
     )
-    full_sync: bool = Field(
-        default=False,
-        description="Se True, executa sincronização completa"
-    )
-    force: bool = Field(
-        default=False,
-        description="Se True, ignora verificações de intervalo mínimo"
-    )
+    full_sync: bool = Field(default=False, description="Se True, executa sincronização completa")
+    force: bool = Field(default=False, description="Se True, ignora verificações de intervalo mínimo")
 
 
 class SyncTriggerResponse(BaseModel):
@@ -201,20 +173,20 @@ class SyncTriggerResponse(BaseModel):
 
     success: bool
     message: str
-    task_id: Optional[str] = None
+    task_id: str | None = None
     sync_type: str
-    entity_types: Optional[List[str]] = None
+    entity_types: list[str] | None = None
 
 
 class SyncStatusResponse(BaseModel):
     """Status atual da sincronização."""
 
     connected: bool
-    api_latency_ms: Optional[int] = None
-    entities: Dict[str, Any] = Field(default_factory=dict)
+    api_latency_ms: int | None = None
+    entities: dict[str, Any] = Field(default_factory=dict)
     pending_conflicts: int = 0
-    last_full_sync_at: Optional[datetime] = None
-    last_incremental_sync_at: Optional[datetime] = None
+    last_full_sync_at: datetime | None = None
+    last_incremental_sync_at: datetime | None = None
     webhook_enabled: bool = False
 
 
@@ -226,27 +198,19 @@ class ConflictResponse(BaseModel):
     entity_id: str
     solides_id: str
     status: str
-    changed_fields: List[str] = Field(default_factory=list)
+    changed_fields: list[str] = Field(default_factory=list)
     detected_at: datetime
-    solides_data: Dict[str, Any]
-    conecta_data: Dict[str, Any]
+    solides_data: dict[str, Any]
+    conecta_data: dict[str, Any]
 
 
 class ConflictResolutionRequest(BaseModel):
     """Request para resolver conflito manualmente."""
 
-    strategy: str = Field(
-        ...,
-        description="Estratégia: solides_wins, conecta_wins, most_recent, manual"
-    )
-    resolution_notes: Optional[str] = Field(
-        default=None,
-        max_length=500,
-        description="Notas sobre a resolução"
-    )
-    manual_data: Optional[Dict[str, Any]] = Field(
-        default=None,
-        description="Dados para resolução manual (quando strategy=manual)"
+    strategy: str = Field(..., description="Estratégia: solides_wins, conecta_wins, most_recent, manual")
+    resolution_notes: str | None = Field(default=None, max_length=500, description="Notas sobre a resolução")
+    manual_data: dict[str, Any] | None = Field(
+        default=None, description="Dados para resolução manual (quando strategy=manual)"
     )
 
 
@@ -258,8 +222,8 @@ class SyncLogResponse(BaseModel):
     entity_type: str
     status: str
     started_at: datetime
-    completed_at: Optional[datetime] = None
-    duration_seconds: Optional[int] = None
+    completed_at: datetime | None = None
+    duration_seconds: int | None = None
     total_processed: int = 0
     created_count: int = 0
     updated_count: int = 0
@@ -270,9 +234,9 @@ class WebhookResponse(BaseModel):
     """Resposta do endpoint de webhook."""
 
     status: str
-    message: Optional[str] = None
-    webhook_id: Optional[str] = None
-    event_type: Optional[str] = None
+    message: str | None = None
+    webhook_id: str | None = None
+    event_type: str | None = None
 
 
 class IntegrationStatusResponse(BaseModel):
@@ -280,9 +244,9 @@ class IntegrationStatusResponse(BaseModel):
 
     healthy: bool
     connected: bool
-    latency_ms: Optional[int] = None
-    message: Optional[str] = None
-    last_sync_at: Optional[datetime] = None
+    latency_ms: int | None = None
+    message: str | None = None
+    last_sync_at: datetime | None = None
     pending_items: int = 0
 
 
@@ -294,22 +258,22 @@ class SolidesEmployeeResponse(BaseModel):
     id: UUID
     solides_id: str
     nome: str
-    email: Optional[str] = None
-    cpf: Optional[str] = None
-    matricula: Optional[str] = None
-    cargo_nome: Optional[str] = None
-    departamento_nome: Optional[str] = None
-    situacao: Optional[str] = None
-    telefone: Optional[str] = None
-    celular: Optional[str] = None
-    data_admissao: Optional[datetime] = None
-    foto_url: Optional[str] = None
+    email: str | None = None
+    cpf: str | None = None
+    matricula: str | None = None
+    cargo_nome: str | None = None
+    departamento_nome: str | None = None
+    situacao: str | None = None
+    telefone: str | None = None
+    celular: str | None = None
+    data_admissao: datetime | None = None
+    foto_url: str | None = None
 
 
 class SolidesEmployeeListResponse(BaseModel):
     """Schema para listagem paginada de colaboradores do Sólides."""
 
-    items: List[SolidesEmployeeResponse]
+    items: list[SolidesEmployeeResponse]
     total: int
     page: int
     page_size: int
@@ -330,8 +294,8 @@ async def list_solides_employees(
     current_user: Any = Depends(get_current_user),
     page: int = Query(1, ge=1, description="Página atual"),
     page_size: int = Query(20, ge=1, le=200, description="Itens por página"),
-    search: Optional[str] = Query(None, description="Buscar por nome, email ou matricula"),
-    situacao: Optional[str] = Query(None, description="Filtrar por situacao"),
+    search: str | None = Query(None, description="Buscar por nome, email ou matricula"),
+    situacao: str | None = Query(None, description="Filtrar por situacao"),
     include_inactive: bool = Query(False, description="Incluir registros inativos"),
 ) -> SolidesEmployeeListResponse:
     """
@@ -358,9 +322,7 @@ async def list_solides_employees(
             )
         )
 
-    total_result = await db.execute(
-        select(func.count()).select_from(SolidesEmployee).where(*filters)
-    )
+    total_result = await db.execute(select(func.count()).select_from(SolidesEmployee).where(*filters))
     total = total_result.scalar_one() or 0
     total_pages = (total + page_size - 1) // page_size
 
@@ -415,26 +377,20 @@ async def list_solides_employees(
         400: {"description": "Payload inválido"},
         401: {"description": "Assinatura inválida"},
         500: {"description": "Erro interno no processamento"},
-    }
+    },
 )
 async def receive_webhook(
     request: Request,
     db: Session = Depends(get_db),
-    x_solides_signature: Optional[str] = Header(
-        default=None,
-        alias="X-Solides-Signature",
-        description="Assinatura HMAC SHA256 do payload"
+    x_solides_signature: str | None = Header(
+        default=None, alias="X-Solides-Signature", description="Assinatura HMAC SHA256 do payload"
     ),
-    x_webhook_signature: Optional[str] = Header(
-        default=None,
-        alias="X-Webhook-Signature",
-        description="Assinatura alternativa HMAC SHA256"
+    x_webhook_signature: str | None = Header(
+        default=None, alias="X-Webhook-Signature", description="Assinatura alternativa HMAC SHA256"
     ),
-    x_request_id: Optional[str] = Header(
-        default=None,
-        alias="X-Request-ID",
-        description="ID único da requisição para rastreamento"
-    )
+    x_request_id: str | None = Header(
+        default=None, alias="X-Request-ID", description="ID único da requisição para rastreamento"
+    ),
 ) -> WebhookResponse:
     """
     Endpoint para receber webhooks do Sólides DP.
@@ -447,10 +403,7 @@ async def receive_webhook(
         body = await request.body()
     except Exception as e:
         logger.error(f"[Solides Webhook] Erro ao ler body: {e}")
-        return WebhookResponse(
-            status="error",
-            message="Erro ao ler requisição"
-        )
+        return WebhookResponse(status="error", message="Erro ao ler requisição")
 
     # Validar assinatura HMAC
     webhook_secret = get_webhook_secret()
@@ -462,26 +415,19 @@ async def receive_webhook(
                 f"[Solides Webhook] Requisição sem assinatura "
                 f"(request_id={x_request_id}, ip={request.client.host if request.client else 'unknown'})"
             )
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Assinatura do webhook não fornecida"
-            )
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Assinatura do webhook não fornecida")
 
         if not verify_webhook_signature(body, signature, webhook_secret):
             logger.warning(
                 f"[Solides Webhook] Assinatura inválida "
                 f"(request_id={x_request_id}, ip={request.client.host if request.client else 'unknown'})"
             )
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Assinatura do webhook inválida"
-            )
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Assinatura do webhook inválida")
 
-        logger.debug(f"[Solides Webhook] Assinatura validada com sucesso")
+        logger.debug("[Solides Webhook] Assinatura validada com sucesso")
     else:
         logger.warning(
-            "[Solides Webhook] SOLIDES_WEBHOOK_SECRET não configurado - "
-            "validação de assinatura desabilitada"
+            "[Solides Webhook] SOLIDES_WEBHOOK_SECRET não configurado - validação de assinatura desabilitada"
         )
 
     # Parse do payload JSON
@@ -489,18 +435,10 @@ async def receive_webhook(
         payload = await request.json()
     except Exception as e:
         logger.error(f"[Solides Webhook] JSON inválido: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Payload JSON inválido"
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Payload JSON inválido")
 
     # Extrair tipo de evento (suporta diferentes formatos)
-    event_type = (
-        payload.get("event") or
-        payload.get("type") or
-        payload.get("event_type") or
-        "unknown"
-    )
+    event_type = payload.get("event") or payload.get("type") or payload.get("event_type") or "unknown"
 
     # Headers para logging/rastreamento
     headers = {
@@ -520,10 +458,7 @@ async def receive_webhook(
     if forwarded_for:
         client_ip = forwarded_for.split(",")[0].strip()
 
-    logger.info(
-        f"[Solides Webhook] Recebido evento '{event_type}' "
-        f"(request_id={x_request_id}, ip={client_ip})"
-    )
+    logger.info(f"[Solides Webhook] Recebido evento '{event_type}' (request_id={x_request_id}, ip={client_ip})")
 
     # Processar via handler
     try:
@@ -535,28 +470,21 @@ async def receive_webhook(
             headers=headers,
             raw_body=body,
             request_id=x_request_id,
-            ip_address=client_ip
+            ip_address=client_ip,
         )
 
         return WebhookResponse(
             status=result.get("status", "received"),
             message=result.get("message"),
             webhook_id=result.get("webhook_id"),
-            event_type=event_type
+            event_type=event_type,
         )
 
     except Exception as e:
-        logger.error(
-            f"[Solides Webhook] Erro no processamento: {e}",
-            exc_info=True
-        )
+        logger.error(f"[Solides Webhook] Erro no processamento: {e}", exc_info=True)
         # Retorna 200 mesmo em erro para evitar retry do Sólides
         # O erro foi logado para investigação
-        return WebhookResponse(
-            status="error",
-            message="Erro interno - evento será reprocessado",
-            event_type=event_type
-        )
+        return WebhookResponse(status="error", message="Erro interno - evento será reprocessado", event_type=event_type)
 
 
 # ==================== ENDPOINT DE STATUS (PÚBLICO PARA HEALTH CHECK) ====================
@@ -566,11 +494,10 @@ async def receive_webhook(
     "/status",
     response_model=SyncStatusResponse,
     summary="Status da integração Sólides",
-    description="Retorna status atual da integração e última sincronização."
+    description="Retorna status atual da integração e última sincronização.",
 )
 async def get_integration_status(
-    db: Session = Depends(get_db),
-    current_user: Any = Depends(get_current_user)
+    db: Session = Depends(get_db), current_user: Any = Depends(get_current_user)
 ) -> SyncStatusResponse:
     """
     Retorna status atual da integração Sólides.
@@ -586,9 +513,9 @@ async def get_integration_status(
 
     try:
         # Buscar configuração
-        config = db.query(SolidesIntegrationConfig).filter(
-            SolidesIntegrationConfig.condominio_id == condominio_id
-        ).first()
+        config = (
+            db.query(SolidesIntegrationConfig).filter(SolidesIntegrationConfig.condominio_id == condominio_id).first()
+        )
 
         if not config or not config.is_enabled:
             return SyncStatusResponse(
@@ -598,7 +525,7 @@ async def get_integration_status(
                 pending_conflicts=0,
                 last_full_sync_at=None,
                 last_incremental_sync_at=None,
-                webhook_enabled=False
+                webhook_enabled=False,
             )
 
         # Obter status via sync_service
@@ -612,16 +539,20 @@ async def get_integration_status(
             loop.close()
 
         # Buscar última sync completa
-        last_full = db.query(SolidesSyncState).filter(
-            SolidesSyncState.condominio_id == condominio_id,
-            SolidesSyncState.last_full_sync_at.isnot(None)
-        ).order_by(SolidesSyncState.last_full_sync_at.desc()).first()
+        last_full = (
+            db.query(SolidesSyncState)
+            .filter(SolidesSyncState.condominio_id == condominio_id, SolidesSyncState.last_full_sync_at.isnot(None))
+            .order_by(SolidesSyncState.last_full_sync_at.desc())
+            .first()
+        )
 
         # Buscar última sync incremental
-        last_incremental = db.query(SolidesSyncState).filter(
-            SolidesSyncState.condominio_id == condominio_id,
-            SolidesSyncState.last_sync_at.isnot(None)
-        ).order_by(SolidesSyncState.last_sync_at.desc()).first()
+        last_incremental = (
+            db.query(SolidesSyncState)
+            .filter(SolidesSyncState.condominio_id == condominio_id, SolidesSyncState.last_sync_at.isnot(None))
+            .order_by(SolidesSyncState.last_sync_at.desc())
+            .first()
+        )
 
         return SyncStatusResponse(
             connected=status_data.get("connected", False),
@@ -630,14 +561,13 @@ async def get_integration_status(
             pending_conflicts=status_data.get("pending_conflicts", 0),
             last_full_sync_at=last_full.last_full_sync_at if last_full else None,
             last_incremental_sync_at=last_incremental.last_sync_at if last_incremental else None,
-            webhook_enabled=config.webhook_enabled if config else False
+            webhook_enabled=config.webhook_enabled if config else False,
         )
 
     except Exception as e:
         logger.error(f"[Solides] Erro ao obter status: {e}", exc_info=True)
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao obter status da integração: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao obter status da integração: {str(e)}"
         )
 
 
@@ -661,12 +591,12 @@ async def get_integration_status(
     - cargos
     - ocorrencias
     - absenteismos
-    """
+    """,
 )
 async def trigger_sync(
     request: SyncTriggerRequest = Body(default=SyncTriggerRequest()),
     db: Session = Depends(get_db),
-    current_user: Any = Depends(get_current_user)
+    current_user: Any = Depends(get_current_user),
 ) -> SyncTriggerResponse:
     """
     Dispara sincronização manual com o Sólides.
@@ -682,15 +612,14 @@ async def trigger_sync(
     condominio_id = str(current_user.condominio_id)
 
     # Verificar se integração está habilitada
-    config = db.query(SolidesIntegrationConfig).filter(
-        SolidesIntegrationConfig.condominio_id == current_user.condominio_id
-    ).first()
+    config = (
+        db.query(SolidesIntegrationConfig)
+        .filter(SolidesIntegrationConfig.condominio_id == current_user.condominio_id)
+        .first()
+    )
 
     if not config or not config.is_enabled:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Integração Sólides não está habilitada"
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Integração Sólides não está habilitada")
 
     try:
         if request.full_sync:
@@ -710,18 +639,13 @@ async def trigger_sync(
         )
 
         return SyncTriggerResponse(
-            success=True,
-            message=message,
-            task_id=str(task.id),
-            sync_type=sync_type,
-            entity_types=request.entity_types
+            success=True, message=message, task_id=str(task.id), sync_type=sync_type, entity_types=request.entity_types
         )
 
     except Exception as e:
         logger.error(f"[Solides] Erro ao agendar sincronização: {e}", exc_info=True)
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao agendar sincronização: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao agendar sincronização: {str(e)}"
         )
 
 
@@ -729,28 +653,22 @@ async def trigger_sync(
     "/sync/full",
     response_model=SyncTriggerResponse,
     summary="Disparar sincronização completa",
-    description="Dispara sincronização completa de todas as entidades."
+    description="Dispara sincronização completa de todas as entidades.",
 )
 async def trigger_full_sync(
     request: SyncTriggerRequest = Body(default=SyncTriggerRequest()),
     db: Session = Depends(get_db),
-    current_user: Any = Depends(get_current_user)
+    current_user: Any = Depends(get_current_user),
 ) -> SyncTriggerResponse:
     """Dispara sincronização completa."""
     condominio_id = str(current_user.condominio_id)
 
     task = schedule_full_sync(condominio_id)
 
-    logger.info(
-        f"[Solides] Sincronização completa agendada "
-        f"(condominio={condominio_id}, task_id={task.id})"
-    )
+    logger.info(f"[Solides] Sincronização completa agendada (condominio={condominio_id}, task_id={task.id})")
 
     return SyncTriggerResponse(
-        success=True,
-        message="Sincronização completa agendada",
-        task_id=str(task.id),
-        sync_type="full"
+        success=True, message="Sincronização completa agendada", task_id=str(task.id), sync_type="full"
     )
 
 
@@ -758,28 +676,22 @@ async def trigger_full_sync(
     "/sync/incremental",
     response_model=SyncTriggerResponse,
     summary="Disparar sincronização incremental",
-    description="Dispara sincronização incremental (apenas alterações)."
+    description="Dispara sincronização incremental (apenas alterações).",
 )
 async def trigger_incremental_sync(
     request: SyncTriggerRequest = Body(default=SyncTriggerRequest()),
     db: Session = Depends(get_db),
-    current_user: Any = Depends(get_current_user)
+    current_user: Any = Depends(get_current_user),
 ) -> SyncTriggerResponse:
     """Dispara sincronização incremental."""
     condominio_id = str(current_user.condominio_id)
 
     task = schedule_incremental_sync(condominio_id)
 
-    logger.info(
-        f"[Solides] Sincronização incremental agendada "
-        f"(condominio={condominio_id}, task_id={task.id})"
-    )
+    logger.info(f"[Solides] Sincronização incremental agendada (condominio={condominio_id}, task_id={task.id})")
 
     return SyncTriggerResponse(
-        success=True,
-        message="Sincronização incremental agendada",
-        task_id=str(task.id),
-        sync_type="incremental"
+        success=True, message="Sincronização incremental agendada", task_id=str(task.id), sync_type="incremental"
     )
 
 
@@ -787,13 +699,10 @@ async def trigger_incremental_sync(
     "/sync/entity/{entity_type}/{solides_id}",
     response_model=SyncTriggerResponse,
     summary="Sincronizar entidade específica",
-    description="Sincroniza uma entidade específica pelo ID do Sólides."
+    description="Sincroniza uma entidade específica pelo ID do Sólides.",
 )
 async def sync_single_entity(
-    entity_type: str,
-    solides_id: str,
-    db: Session = Depends(get_db),
-    current_user: Any = Depends(get_current_user)
+    entity_type: str, solides_id: str, db: Session = Depends(get_db), current_user: Any = Depends(get_current_user)
 ) -> SyncTriggerResponse:
     """Sincroniza uma entidade específica."""
     condominio_id = str(current_user.condominio_id)
@@ -803,14 +712,13 @@ async def sync_single_entity(
     if entity_type not in valid_types:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Tipo de entidade inválido. Válidos: {', '.join(valid_types)}"
+            detail=f"Tipo de entidade inválido. Válidos: {', '.join(valid_types)}",
         )
 
     task = schedule_entity_sync(condominio_id, entity_type, solides_id)
 
     logger.info(
-        f"[Solides] Sincronização de entidade agendada "
-        f"(entity={entity_type}/{solides_id}, condominio={condominio_id})"
+        f"[Solides] Sincronização de entidade agendada (entity={entity_type}/{solides_id}, condominio={condominio_id})"
     )
 
     return SyncTriggerResponse(
@@ -818,7 +726,7 @@ async def sync_single_entity(
         message=f"Sincronização de {entity_type}/{solides_id} agendada",
         task_id=str(task.id),
         sync_type="entity",
-        entity_types=[entity_type]
+        entity_types=[entity_type],
     )
 
 
@@ -827,36 +735,22 @@ async def sync_single_entity(
 
 @router.get(
     "/logs",
-    response_model=List[SyncLogResponse],
+    response_model=list[SyncLogResponse],
     summary="Listar logs de sincronização",
-    description="Retorna histórico de logs de sincronização."
+    description="Retorna histórico de logs de sincronização.",
 )
 async def get_sync_logs(
-    since: Optional[datetime] = Query(
-        default=None,
-        description="Filtrar logs a partir desta data"
+    since: datetime | None = Query(default=None, description="Filtrar logs a partir desta data"),
+    entity_type: str | None = Query(default=None, description="Filtrar por tipo de entidade"),
+    status_filter: str | None = Query(
+        default=None, alias="status", description="Filtrar por status: pending, processing, completed, failed"
     ),
-    entity_type: Optional[str] = Query(
-        default=None,
-        description="Filtrar por tipo de entidade"
-    ),
-    status_filter: Optional[str] = Query(
-        default=None,
-        alias="status",
-        description="Filtrar por status: pending, processing, completed, failed"
-    ),
-    limit: int = Query(
-        default=100,
-        le=200,
-        description="Limite de registros"
-    ),
+    limit: int = Query(default=100, le=200, description="Limite de registros"),
     db: Session = Depends(get_db),
-    current_user: Any = Depends(get_current_user)
-) -> List[SyncLogResponse]:
+    current_user: Any = Depends(get_current_user),
+) -> list[SyncLogResponse]:
     """Retorna logs de sincronização com filtros."""
-    query = db.query(SolidesSyncLog).filter(
-        SolidesSyncLog.condominio_id == current_user.condominio_id
-    )
+    query = db.query(SolidesSyncLog).filter(SolidesSyncLog.condominio_id == current_user.condominio_id)
 
     if since:
         query = query.filter(SolidesSyncLog.started_at >= since)
@@ -865,14 +759,10 @@ async def get_sync_logs(
         query = query.filter(SolidesSyncLog.entity_type == entity_type)
 
     if status_filter:
-        try:
+        with contextlib.suppress(ValueError):
             query = query.filter(SolidesSyncLog.status == SyncStatus(status_filter))
-        except ValueError:
-            pass  # Ignora filtro inválido
 
-    logs = query.order_by(
-        SolidesSyncLog.started_at.desc()
-    ).limit(limit).all()
+    logs = query.order_by(SolidesSyncLog.started_at.desc()).limit(limit).all()
 
     return [
         SyncLogResponse(
@@ -886,7 +776,7 @@ async def get_sync_logs(
             total_processed=log.total_processed or 0,
             created_count=log.created_count or 0,
             updated_count=log.updated_count or 0,
-            error_count=log.error_count or 0
+            error_count=log.error_count or 0,
         )
         for log in logs
     ]
@@ -895,32 +785,25 @@ async def get_sync_logs(
 @router.get(
     "/logs/{log_id}",
     summary="Detalhes de log de sincronização",
-    description="Retorna detalhes completos de um log específico."
+    description="Retorna detalhes completos de um log específico.",
 )
 async def get_sync_log_detail(
-    log_id: str,
-    db: Session = Depends(get_db),
-    current_user: Any = Depends(get_current_user)
-) -> Dict[str, Any]:
+    log_id: str, db: Session = Depends(get_db), current_user: Any = Depends(get_current_user)
+) -> dict[str, Any]:
     """Retorna detalhes de um log de sincronização."""
     try:
         log_uuid = UUID(log_id)
     except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="ID de log inválido"
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="ID de log inválido")
 
-    log = db.query(SolidesSyncLog).filter(
-        SolidesSyncLog.id == log_uuid,
-        SolidesSyncLog.condominio_id == current_user.condominio_id
-    ).first()
+    log = (
+        db.query(SolidesSyncLog)
+        .filter(SolidesSyncLog.id == log_uuid, SolidesSyncLog.condominio_id == current_user.condominio_id)
+        .first()
+    )
 
     if not log:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Log não encontrado"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Log não encontrado")
 
     return {
         "id": str(log.id),
@@ -951,16 +834,17 @@ async def get_sync_log_detail(
     "/config",
     response_model=SolidesConfigResponse,
     summary="Obter configuração",
-    description="Retorna configuração atual da integração Sólides."
+    description="Retorna configuração atual da integração Sólides.",
 )
 async def get_config(
-    db: Session = Depends(get_db),
-    current_user: Any = Depends(get_current_user)
+    db: Session = Depends(get_db), current_user: Any = Depends(get_current_user)
 ) -> SolidesConfigResponse:
     """Retorna configuração atual da integração."""
-    config = db.query(SolidesIntegrationConfig).filter(
-        SolidesIntegrationConfig.condominio_id == current_user.condominio_id
-    ).first()
+    config = (
+        db.query(SolidesIntegrationConfig)
+        .filter(SolidesIntegrationConfig.condominio_id == current_user.condominio_id)
+        .first()
+    )
 
     if not config:
         return SolidesConfigResponse(
@@ -970,7 +854,7 @@ async def get_config(
             conflict_strategy=None,
             enabled_entities=[],
             last_health_check_at=None,
-            last_health_check_status=None
+            last_health_check_status=None,
         )
 
     return SolidesConfigResponse(
@@ -980,20 +864,14 @@ async def get_config(
         conflict_strategy=config.conflict_strategy.value if config.conflict_strategy else None,
         enabled_entities=config.enabled_entities or [],
         last_health_check_at=config.last_health_check_at,
-        last_health_check_status=config.last_health_check_status
+        last_health_check_status=config.last_health_check_status,
     )
 
 
-@router.post(
-    "/config",
-    summary="Configurar integração",
-    description="Configura ou atualiza integração com Sólides."
-)
+@router.post("/config", summary="Configurar integração", description="Configura ou atualiza integração com Sólides.")
 async def configure_integration(
-    config_data: SolidesConfigRequest,
-    db: Session = Depends(get_db),
-    current_user: Any = Depends(get_current_user)
-) -> Dict[str, Any]:
+    config_data: SolidesConfigRequest, db: Session = Depends(get_db), current_user: Any = Depends(get_current_user)
+) -> dict[str, Any]:
     """Configura integração com Sólides."""
     condominio_id = current_user.condominio_id
 
@@ -1011,23 +889,17 @@ async def configure_integration(
 
         if not health.healthy:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Token inválido ou API indisponível: {health.message}"
+                status_code=status.HTTP_400_BAD_REQUEST, detail=f"Token inválido ou API indisponível: {health.message}"
             )
 
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"[Solides] Erro ao validar token: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Erro ao validar token: {str(e)}"
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Erro ao validar token: {str(e)}")
 
     # Salvar/atualizar credencial
-    credential = db.query(SolidesCredential).filter(
-        SolidesCredential.condominio_id == condominio_id
-    ).first()
+    credential = db.query(SolidesCredential).filter(SolidesCredential.condominio_id == condominio_id).first()
 
     if credential:
         credential.api_token_encrypted = config_data.api_token  # TODO: encrypt
@@ -1040,14 +912,12 @@ async def configure_integration(
             api_token_encrypted=config_data.api_token,  # TODO: encrypt
             last_validated_at=datetime.utcnow(),
             is_valid=True,
-            created_by=current_user.id
+            created_by=current_user.id,
         )
         db.add(credential)
 
     # Salvar/atualizar config
-    config = db.query(SolidesIntegrationConfig).filter(
-        SolidesIntegrationConfig.condominio_id == condominio_id
-    ).first()
+    config = db.query(SolidesIntegrationConfig).filter(SolidesIntegrationConfig.condominio_id == condominio_id).first()
 
     if config:
         config.is_enabled = True
@@ -1074,33 +944,27 @@ async def configure_integration(
             auto_create_positions=config_data.auto_create_positions,
             webhook_enabled=config_data.webhook_enabled,
             last_health_check_at=datetime.utcnow(),
-            last_health_check_status=True
+            last_health_check_status=True,
         )
         db.add(config)
 
     db.commit()
 
-    logger.info(
-        f"[Solides] Integração configurada "
-        f"(condominio={condominio_id}, user={current_user.id})"
-    )
+    logger.info(f"[Solides] Integração configurada (condominio={condominio_id}, user={current_user.id})")
 
     return {"success": True, "message": "Integração configurada com sucesso"}
 
 
-@router.delete(
-    "/config",
-    summary="Desabilitar integração",
-    description="Desabilita a integração com Sólides."
-)
+@router.delete("/config", summary="Desabilitar integração", description="Desabilita a integração com Sólides.")
 async def disable_integration(
-    db: Session = Depends(get_db),
-    current_user: Any = Depends(get_current_user)
-) -> Dict[str, Any]:
+    db: Session = Depends(get_db), current_user: Any = Depends(get_current_user)
+) -> dict[str, Any]:
     """Desabilita integração com Sólides."""
-    config = db.query(SolidesIntegrationConfig).filter(
-        SolidesIntegrationConfig.condominio_id == current_user.condominio_id
-    ).first()
+    config = (
+        db.query(SolidesIntegrationConfig)
+        .filter(SolidesIntegrationConfig.condominio_id == current_user.condominio_id)
+        .first()
+    )
 
     if config:
         config.is_enabled = False
@@ -1108,8 +972,7 @@ async def disable_integration(
         db.commit()
 
         logger.info(
-            f"[Solides] Integração desabilitada "
-            f"(condominio={current_user.condominio_id}, user={current_user.id})"
+            f"[Solides] Integração desabilitada (condominio={current_user.condominio_id}, user={current_user.id})"
         )
 
     return {"success": True, "message": "Integração desabilitada"}
@@ -1120,35 +983,26 @@ async def disable_integration(
 
 @router.get(
     "/conflicts",
-    response_model=List[ConflictResponse],
+    response_model=list[ConflictResponse],
     summary="Listar conflitos",
-    description="Lista conflitos de sincronização pendentes de resolução."
+    description="Lista conflitos de sincronização pendentes de resolução.",
 )
 async def list_conflicts(
-    status_filter: Optional[str] = Query(
-        default=None,
-        alias="status",
-        description="Filtrar por status: pending, resolved, ignored"
+    status_filter: str | None = Query(
+        default=None, alias="status", description="Filtrar por status: pending, resolved, ignored"
     ),
-    entity_type: Optional[str] = Query(
-        default=None,
-        description="Filtrar por tipo de entidade"
-    ),
+    entity_type: str | None = Query(default=None, description="Filtrar por tipo de entidade"),
     limit: int = Query(default=50, le=100),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
-    current_user: Any = Depends(get_current_user)
-) -> List[ConflictResponse]:
+    current_user: Any = Depends(get_current_user),
+) -> list[ConflictResponse]:
     """Lista conflitos de sincronização."""
-    query = db.query(SolidesSyncConflict).filter(
-        SolidesSyncConflict.condominio_id == current_user.condominio_id
-    )
+    query = db.query(SolidesSyncConflict).filter(SolidesSyncConflict.condominio_id == current_user.condominio_id)
 
     if status_filter:
-        try:
+        with contextlib.suppress(ValueError):
             query = query.filter(SolidesSyncConflict.status == ConflictStatus(status_filter))
-        except ValueError:
-            pass
     else:
         # Por padrão, só pendentes
         query = query.filter(SolidesSyncConflict.status == ConflictStatus.PENDING)
@@ -1156,9 +1010,7 @@ async def list_conflicts(
     if entity_type:
         query = query.filter(SolidesSyncConflict.entity_type == entity_type)
 
-    conflicts = query.order_by(
-        SolidesSyncConflict.detected_at.desc()
-    ).offset(offset).limit(limit).all()
+    conflicts = query.order_by(SolidesSyncConflict.detected_at.desc()).offset(offset).limit(limit).all()
 
     return [
         ConflictResponse(
@@ -1170,48 +1022,40 @@ async def list_conflicts(
             changed_fields=c.changed_fields or [],
             detected_at=c.detected_at,
             solides_data=c.solides_data or {},
-            conecta_data=c.conecta_data or {}
+            conecta_data=c.conecta_data or {},
         )
         for c in conflicts
     ]
 
 
 @router.post(
-    "/conflicts/{conflict_id}/resolve",
-    summary="Resolver conflito",
-    description="Resolve um conflito de sincronização."
+    "/conflicts/{conflict_id}/resolve", summary="Resolver conflito", description="Resolve um conflito de sincronização."
 )
 async def resolve_conflict(
     conflict_id: str,
     resolution: ConflictResolutionRequest,
     db: Session = Depends(get_db),
-    current_user: Any = Depends(get_current_user)
-) -> Dict[str, Any]:
+    current_user: Any = Depends(get_current_user),
+) -> dict[str, Any]:
     """Resolve conflito de sincronização."""
     try:
         conflict_uuid = UUID(conflict_id)
     except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="ID de conflito inválido"
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="ID de conflito inválido")
 
-    conflict = db.query(SolidesSyncConflict).filter(
-        SolidesSyncConflict.id == conflict_uuid,
-        SolidesSyncConflict.condominio_id == current_user.condominio_id
-    ).first()
+    conflict = (
+        db.query(SolidesSyncConflict)
+        .filter(
+            SolidesSyncConflict.id == conflict_uuid, SolidesSyncConflict.condominio_id == current_user.condominio_id
+        )
+        .first()
+    )
 
     if not conflict:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Conflito não encontrado"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conflito não encontrado")
 
     if conflict.status != ConflictStatus.PENDING:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Conflito já foi resolvido"
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Conflito já foi resolvido")
 
     # Validar estratégia
     try:
@@ -1219,7 +1063,7 @@ async def resolve_conflict(
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Estratégia inválida. Válidas: solides_wins, conecta_wins, most_recent, manual"
+            detail="Estratégia inválida. Válidas: solides_wins, conecta_wins, most_recent, manual",
         )
 
     # Resolver
@@ -1229,7 +1073,7 @@ async def resolve_conflict(
         conflict=conflict,
         strategy=strategy,
         resolved_by=current_user.id,
-        resolution_notes=resolution.resolution_notes
+        resolution_notes=resolution.resolution_notes,
     )
 
     logger.info(
@@ -1241,48 +1085,40 @@ async def resolve_conflict(
         "success": True,
         "message": "Conflito resolvido",
         "strategy_used": resolution.strategy,
-        "resolved_data": resolved_data
+        "resolved_data": resolved_data,
     }
 
 
 @router.post(
-    "/conflicts/{conflict_id}/ignore",
-    summary="Ignorar conflito",
-    description="Marca um conflito como ignorado."
+    "/conflicts/{conflict_id}/ignore", summary="Ignorar conflito", description="Marca um conflito como ignorado."
 )
 async def ignore_conflict(
     conflict_id: str,
-    notes: Optional[str] = Body(default=None, embed=True),
+    notes: str | None = Body(default=None, embed=True),
     db: Session = Depends(get_db),
-    current_user: Any = Depends(get_current_user)
-) -> Dict[str, Any]:
+    current_user: Any = Depends(get_current_user),
+) -> dict[str, Any]:
     """Ignora conflito de sincronização."""
     try:
         conflict_uuid = UUID(conflict_id)
     except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="ID de conflito inválido"
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="ID de conflito inválido")
 
-    conflict = db.query(SolidesSyncConflict).filter(
-        SolidesSyncConflict.id == conflict_uuid,
-        SolidesSyncConflict.condominio_id == current_user.condominio_id
-    ).first()
+    conflict = (
+        db.query(SolidesSyncConflict)
+        .filter(
+            SolidesSyncConflict.id == conflict_uuid, SolidesSyncConflict.condominio_id == current_user.condominio_id
+        )
+        .first()
+    )
 
     if not conflict:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Conflito não encontrado"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conflito não encontrado")
 
     resolver = ConflictResolver()
     resolver.ignore_conflict(db, conflict, current_user.id, notes)
 
-    logger.info(
-        f"[Solides] Conflito ignorado "
-        f"(conflict_id={conflict_id}, user={current_user.id})"
-    )
+    logger.info(f"[Solides] Conflito ignorado (conflict_id={conflict_id}, user={current_user.id})")
 
     return {"success": True, "message": "Conflito ignorado"}
 
@@ -1294,24 +1130,23 @@ async def ignore_conflict(
     "/health",
     response_model=IntegrationStatusResponse,
     summary="Health check",
-    description="Verifica saúde da conexão com Sólides."
+    description="Verifica saúde da conexão com Sólides.",
 )
 async def health_check(
-    db: Session = Depends(get_db),
-    current_user: Any = Depends(get_current_user)
+    db: Session = Depends(get_db), current_user: Any = Depends(get_current_user)
 ) -> IntegrationStatusResponse:
     """Verifica saúde da integração com Sólides."""
     try:
         # Verificar se está configurado
-        config = db.query(SolidesIntegrationConfig).filter(
-            SolidesIntegrationConfig.condominio_id == current_user.condominio_id
-        ).first()
+        config = (
+            db.query(SolidesIntegrationConfig)
+            .filter(SolidesIntegrationConfig.condominio_id == current_user.condominio_id)
+            .first()
+        )
 
         if not config or not config.is_enabled:
             return IntegrationStatusResponse(
-                healthy=False,
-                connected=False,
-                message="Integração não configurada ou desabilitada"
+                healthy=False, connected=False, message="Integração não configurada ou desabilitada"
             )
 
         # Testar conexão
@@ -1325,16 +1160,25 @@ async def health_check(
             loop.close()
 
         # Contar itens pendentes
-        pending = db.query(SolidesSyncConflict).filter(
-            SolidesSyncConflict.condominio_id == current_user.condominio_id,
-            SolidesSyncConflict.status == ConflictStatus.PENDING
-        ).count()
+        pending = (
+            db.query(SolidesSyncConflict)
+            .filter(
+                SolidesSyncConflict.condominio_id == current_user.condominio_id,
+                SolidesSyncConflict.status == ConflictStatus.PENDING,
+            )
+            .count()
+        )
 
         # Última sync
-        last_sync = db.query(SolidesSyncLog).filter(
-            SolidesSyncLog.condominio_id == current_user.condominio_id,
-            SolidesSyncLog.status == SyncStatus.COMPLETED
-        ).order_by(SolidesSyncLog.completed_at.desc()).first()
+        last_sync = (
+            db.query(SolidesSyncLog)
+            .filter(
+                SolidesSyncLog.condominio_id == current_user.condominio_id,
+                SolidesSyncLog.status == SyncStatus.COMPLETED,
+            )
+            .order_by(SolidesSyncLog.completed_at.desc())
+            .first()
+        )
 
         return IntegrationStatusResponse(
             healthy=status_data.get("connected", False),
@@ -1342,13 +1186,9 @@ async def health_check(
             latency_ms=status_data.get("api_latency_ms"),
             message=status_data.get("api_message", "OK"),
             last_sync_at=last_sync.completed_at if last_sync else None,
-            pending_items=pending
+            pending_items=pending,
         )
 
     except Exception as e:
         logger.error(f"[Solides] Erro no health check: {e}", exc_info=True)
-        return IntegrationStatusResponse(
-            healthy=False,
-            connected=False,
-            message=str(e)
-        )
+        return IntegrationStatusResponse(healthy=False, connected=False, message=str(e))

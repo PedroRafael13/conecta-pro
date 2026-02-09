@@ -47,10 +47,7 @@ class TestPostModel:
 
     def test_post_vacancy_count(self, sample_post_data):
         """Testa cálculo de vagas disponíveis."""
-        vacancy_count = (
-            sample_post_data["required_headcount"] -
-            sample_post_data["current_headcount"]
-        )
+        vacancy_count = sample_post_data["required_headcount"] - sample_post_data["current_headcount"]
         assert vacancy_count == 1
 
     def test_post_required_fields(self, sample_post_data):

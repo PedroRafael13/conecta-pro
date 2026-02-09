@@ -7,7 +7,6 @@
 
 import { MessageSquare, Brain, TrendingUp, Book, Sparkles } from 'lucide-react';
 import { useState } from 'react';
-;
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -18,6 +17,38 @@ import {
   useBartoloModules,
   useBartoloWizards,
 } from '@/hooks/ai/useBartolo';
+
+interface BartoloStats {
+  total_interactions: number;
+  interactions_today: number;
+  satisfaction_rate: number;
+  total_feedback: number;
+  avg_response_time_ms: number;
+  wizards_completed: number;
+  data_queries_count: number;
+}
+
+interface BartoloLearningStats {
+  patterns_count: number;
+}
+
+interface BartoloModule {
+  id: string;
+  name: string;
+  description: string;
+  icon?: string;
+  commands_count: number;
+  capabilities?: string[];
+}
+
+interface BartoloWizard {
+  id: string;
+  name: string;
+  description: string;
+  steps_count: number;
+  estimated_time: number;
+  tags?: string[];
+}
 
 export default function AssistentePage() {
   return (
@@ -97,8 +128,10 @@ export default function AssistentePage() {
 // ==========================================
 
 function StatsView() {
-  const { data: stats, isLoading } = useBartoloStats();
-  const { data: learningStats } = useBartoloLearningStats();
+  const { data: statsRaw, isLoading } = useBartoloStats();
+  const stats = statsRaw as BartoloStats | undefined;
+  const { data: learningRaw } = useBartoloLearningStats();
+  const learningStats = learningRaw as BartoloLearningStats | undefined;
 
   if (isLoading) {
     return <div>Carregando estatísticas...</div>;
@@ -182,7 +215,8 @@ function StatsView() {
 }
 
 function ModulesView() {
-  const { data: modules, isLoading } = useBartoloModules();
+  const { data: modulesRaw, isLoading } = useBartoloModules();
+  const modules = modulesRaw as BartoloModule[] | undefined;
 
   if (isLoading) {
     return <div>Carregando módulos...</div>;
@@ -190,7 +224,7 @@ function ModulesView() {
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      {modules?.map((module: any) => (
+      {modules?.map((module) => (
         <Card key={module.id}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -221,7 +255,8 @@ function ModulesView() {
 }
 
 function WizardsView() {
-  const { data: wizards, isLoading } = useBartoloWizards();
+  const { data: wizardsRaw, isLoading } = useBartoloWizards();
+  const wizards = wizardsRaw as BartoloWizard[] | undefined;
 
   if (isLoading) {
     return <div>Carregando assistentes...</div>;
@@ -229,7 +264,7 @@ function WizardsView() {
 
   return (
     <div className="grid gap-4 md:grid-cols-2">
-      {wizards?.map((wizard: any) => (
+      {wizards?.map((wizard) => (
         <Card key={wizard.id}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">

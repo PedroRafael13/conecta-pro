@@ -5,18 +5,17 @@ Endpoints para operações do FGTS Digital.
 """
 
 import logging
-from typing import Dict, Any
 
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from ..schemas.common import StandardResponse
 from ..schemas.fgts_digital import (
     CalcularFolhaRequest,
-    ImportarESocialRequest,
-    GerarGuiaMensalRequest,
-    RescisaoRequest,
     ConsultarDebitosRequest,
     ConsultarExtratoRequest,
+    GerarGuiaMensalRequest,
+    ImportarESocialRequest,
+    RescisaoRequest,
     SimularSaqueRequest,
 )
 from ..services.fgts_digital_service import (
@@ -38,92 +37,64 @@ def get_service() -> FGTSDigitalService:
     "/status",
     response_model=StandardResponse,
     summary="Status do FGTS Digital",
-    description="Retorna o status da configuração do FGTS Digital"
+    description="Retorna o status da configuração do FGTS Digital",
 )
-async def get_status(
-    service: FGTSDigitalService = Depends(get_service)
-) -> StandardResponse:
+async def get_status(service: FGTSDigitalService = Depends(get_service)) -> StandardResponse:
     """Retorna status da configuração."""
     try:
         status_data = service.validar_status()
 
-        return StandardResponse(
-            success=True,
-            message="Status FGTS Digital obtido",
-            data=status_data
-        )
+        return StandardResponse(success=True, message="Status FGTS Digital obtido", data=status_data)
 
     except Exception as e:
         logger.error(f"Erro ao obter status: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro: {str(e)}"
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro: {str(e)}")
 
 
 @router.get(
     "/categorias",
     response_model=StandardResponse,
     summary="Lista categorias",
-    description="Retorna a lista de categorias de trabalhadores"
+    description="Retorna a lista de categorias de trabalhadores",
 )
-async def listar_categorias(
-    service: FGTSDigitalService = Depends(get_service)
-) -> StandardResponse:
+async def listar_categorias(service: FGTSDigitalService = Depends(get_service)) -> StandardResponse:
     """Lista categorias de trabalhadores."""
     try:
         categorias = service.listar_categorias()
 
-        return StandardResponse(
-            success=True,
-            message="Categorias listadas",
-            data=categorias
-        )
+        return StandardResponse(success=True, message="Categorias listadas", data=categorias)
 
     except Exception as e:
         logger.error(f"Erro ao listar categorias: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro: {str(e)}"
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro: {str(e)}")
 
 
 @router.get(
     "/modalidades-saque",
     response_model=StandardResponse,
     summary="Lista modalidades de saque",
-    description="Retorna a lista de modalidades de saque"
+    description="Retorna a lista de modalidades de saque",
 )
-async def listar_modalidades_saque(
-    service: FGTSDigitalService = Depends(get_service)
-) -> StandardResponse:
+async def listar_modalidades_saque(service: FGTSDigitalService = Depends(get_service)) -> StandardResponse:
     """Lista modalidades de saque."""
     try:
         modalidades = service.listar_modalidades_saque()
 
-        return StandardResponse(
-            success=True,
-            message="Modalidades listadas",
-            data=modalidades
-        )
+        return StandardResponse(success=True, message="Modalidades listadas", data=modalidades)
 
     except Exception as e:
         logger.error(f"Erro ao listar modalidades: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro: {str(e)}"
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro: {str(e)}")
 
 
 @router.post(
     "/calcular-folha",
     response_model=StandardResponse,
     summary="Calcular FGTS da folha",
-    description="Calcula o FGTS da folha de pagamento"
+    description="Calcula o FGTS da folha de pagamento",
 )
 async def calcular_folha(
-    request: CalcularFolhaRequest,
-    service: FGTSDigitalService = Depends(get_service)
+    request: CalcularFolhaRequest, service: FGTSDigitalService = Depends(get_service)
 ) -> StandardResponse:
     """Calcula FGTS da folha."""
     try:
@@ -134,35 +105,24 @@ async def calcular_folha(
             trabalhadores=trabalhadores,
         )
 
-        return StandardResponse(
-            success=True,
-            message=f"FGTS calculado: R$ {resultado['total_fgts']}",
-            data=resultado
-        )
+        return StandardResponse(success=True, message=f"FGTS calculado: R$ {resultado['total_fgts']}", data=resultado)
 
     except ValueError as e:
         logger.warning(f"Erro de validação: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         logger.error(f"Erro no cálculo: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro: {str(e)}"
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro: {str(e)}")
 
 
 @router.post(
     "/importar-esocial",
     response_model=StandardResponse,
     summary="Importar do eSocial",
-    description="Importa dados do eSocial para cálculo do FGTS"
+    description="Importa dados do eSocial para cálculo do FGTS",
 )
 async def importar_esocial(
-    request: ImportarESocialRequest,
-    service: FGTSDigitalService = Depends(get_service)
+    request: ImportarESocialRequest, service: FGTSDigitalService = Depends(get_service)
 ) -> StandardResponse:
     """Importa dados do eSocial."""
     try:
@@ -172,23 +132,15 @@ async def importar_esocial(
         )
 
         return StandardResponse(
-            success=True,
-            message=f"Importados {resultado['quantidade_importados']} trabalhadores",
-            data=resultado
+            success=True, message=f"Importados {resultado['quantidade_importados']} trabalhadores", data=resultado
         )
 
     except ValueError as e:
         logger.warning(f"Erro de validação: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         logger.error(f"Erro na importação: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro: {str(e)}"
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro: {str(e)}")
 
 
 @router.post(
@@ -196,11 +148,10 @@ async def importar_esocial(
     response_model=StandardResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Gerar guia mensal",
-    description="Gera guia de recolhimento mensal (GRFGTS) com PIX"
+    description="Gera guia de recolhimento mensal (GRFGTS) com PIX",
 )
 async def gerar_guia_mensal(
-    request: GerarGuiaMensalRequest,
-    service: FGTSDigitalService = Depends(get_service)
+    request: GerarGuiaMensalRequest, service: FGTSDigitalService = Depends(get_service)
 ) -> StandardResponse:
     """Gera guia mensal."""
     try:
@@ -213,23 +164,15 @@ async def gerar_guia_mensal(
         )
 
         return StandardResponse(
-            success=True,
-            message=f"GRFGTS gerada: R$ {resultado['guia']['valor_total']}",
-            data=resultado
+            success=True, message=f"GRFGTS gerada: R$ {resultado['guia']['valor_total']}", data=resultado
         )
 
     except ValueError as e:
         logger.warning(f"Erro de validação: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         logger.error(f"Erro na geração: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro: {str(e)}"
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro: {str(e)}")
 
 
 @router.post(
@@ -237,45 +180,32 @@ async def gerar_guia_mensal(
     response_model=StandardResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Gerar guia rescisória",
-    description="Gera guia de recolhimento rescisório (GRRF) com PIX"
+    description="Gera guia de recolhimento rescisório (GRRF) com PIX",
 )
 async def gerar_guia_rescisoria(
-    request: RescisaoRequest,
-    service: FGTSDigitalService = Depends(get_service)
+    request: RescisaoRequest, service: FGTSDigitalService = Depends(get_service)
 ) -> StandardResponse:
     """Gera guia rescisória."""
     try:
         resultado = service.gerar_guia_rescisoria(request.model_dump())
 
         return StandardResponse(
-            success=True,
-            message=f"GRRF gerada: R$ {resultado['guia']['valor_total']}",
-            data=resultado
+            success=True, message=f"GRRF gerada: R$ {resultado['guia']['valor_total']}", data=resultado
         )
 
     except ValueError as e:
         logger.warning(f"Erro de validação: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         logger.error(f"Erro na geração: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro: {str(e)}"
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro: {str(e)}")
 
 
 @router.post(
-    "/debitos",
-    response_model=StandardResponse,
-    summary="Consultar débitos",
-    description="Consulta débitos de FGTS"
+    "/debitos", response_model=StandardResponse, summary="Consultar débitos", description="Consulta débitos de FGTS"
 )
 async def consultar_debitos(
-    request: ConsultarDebitosRequest,
-    service: FGTSDigitalService = Depends(get_service)
+    request: ConsultarDebitosRequest, service: FGTSDigitalService = Depends(get_service)
 ) -> StandardResponse:
     """Consulta débitos."""
     try:
@@ -284,35 +214,24 @@ async def consultar_debitos(
             competencia_fim=request.competencia_fim,
         )
 
-        return StandardResponse(
-            success=True,
-            message=f"Encontrados {resultado['quantidade']} débitos",
-            data=resultado
-        )
+        return StandardResponse(success=True, message=f"Encontrados {resultado['quantidade']} débitos", data=resultado)
 
     except ValueError as e:
         logger.warning(f"Erro de validação: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         logger.error(f"Erro na consulta: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro: {str(e)}"
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro: {str(e)}")
 
 
 @router.post(
     "/extrato",
     response_model=StandardResponse,
     summary="Consultar extrato",
-    description="Consulta extrato do FGTS de um trabalhador"
+    description="Consulta extrato do FGTS de um trabalhador",
 )
 async def consultar_extrato(
-    request: ConsultarExtratoRequest,
-    service: FGTSDigitalService = Depends(get_service)
+    request: ConsultarExtratoRequest, service: FGTSDigitalService = Depends(get_service)
 ) -> StandardResponse:
     """Consulta extrato do trabalhador."""
     try:
@@ -321,35 +240,21 @@ async def consultar_extrato(
             pis_pasep=request.pis_pasep,
         )
 
-        return StandardResponse(
-            success=True,
-            message="Extrato consultado",
-            data=resultado
-        )
+        return StandardResponse(success=True, message="Extrato consultado", data=resultado)
 
     except ValueError as e:
         logger.warning(f"Erro de validação: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         logger.error(f"Erro na consulta: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro: {str(e)}"
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro: {str(e)}")
 
 
 @router.post(
-    "/simular-saque",
-    response_model=StandardResponse,
-    summary="Simular saque",
-    description="Simula saque do FGTS"
+    "/simular-saque", response_model=StandardResponse, summary="Simular saque", description="Simula saque do FGTS"
 )
 async def simular_saque(
-    request: SimularSaqueRequest,
-    service: FGTSDigitalService = Depends(get_service)
+    request: SimularSaqueRequest, service: FGTSDigitalService = Depends(get_service)
 ) -> StandardResponse:
     """Simula saque do FGTS."""
     try:
@@ -359,35 +264,24 @@ async def simular_saque(
             valor_solicitado=str(request.valor_solicitado) if request.valor_solicitado else None,
         )
 
-        return StandardResponse(
-            success=True,
-            message="Simulação realizada",
-            data=resultado
-        )
+        return StandardResponse(success=True, message="Simulação realizada", data=resultado)
 
     except ValueError as e:
         logger.warning(f"Erro de validação: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         logger.error(f"Erro na simulação: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro: {str(e)}"
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro: {str(e)}")
 
 
 @router.post(
     "/relatorio-mensal",
     response_model=StandardResponse,
     summary="Relatório mensal",
-    description="Gera relatório mensal de FGTS"
+    description="Gera relatório mensal de FGTS",
 )
 async def gerar_relatorio_mensal(
-    request: CalcularFolhaRequest,
-    service: FGTSDigitalService = Depends(get_service)
+    request: CalcularFolhaRequest, service: FGTSDigitalService = Depends(get_service)
 ) -> StandardResponse:
     """Gera relatório mensal."""
     try:
@@ -399,20 +293,12 @@ async def gerar_relatorio_mensal(
         )
 
         return StandardResponse(
-            success=True,
-            message=f"Relatório gerado: {resultado['resumo']['total_geral']}",
-            data=resultado
+            success=True, message=f"Relatório gerado: {resultado['resumo']['total_geral']}", data=resultado
         )
 
     except ValueError as e:
         logger.warning(f"Erro de validação: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         logger.error(f"Erro no relatório: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro: {str(e)}"
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro: {str(e)}")

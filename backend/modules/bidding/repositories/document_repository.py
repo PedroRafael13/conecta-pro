@@ -3,12 +3,12 @@ Repository de Documento da Empresa - Licitacoes
 ===============================================
 """
 
+import builtins
 import logging
-from datetime import datetime, date, timedelta
-from typing import Optional, List, Tuple
+from datetime import date, datetime, timedelta
 from uuid import UUID
 
-from sqlalchemy import select, func, and_, or_
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from modules.bidding.models.company_document import CompanyDocument, DocumentStatus
@@ -23,35 +23,27 @@ class DocumentRepository:
     def __init__(self, db: Session):
         self.db = db
 
-    async def get_by_id(self, document_id: UUID) -> Optional[CompanyDocument]:
+    async def get_by_id(self, document_id: UUID) -> CompanyDocument | None:
         """Busca documento por ID."""
         result = await self.db.execute(
-            select(CompanyDocument).where(
-                CompanyDocument.id == document_id,
-                CompanyDocument.ativo == True
-            )
+            select(CompanyDocument).where(CompanyDocument.id == document_id, CompanyDocument.ativo)
         )
         return result.scalar_one_or_none()
 
-    async def get_by_tipo(self, tipo: str) -> Optional[CompanyDocument]:
+    async def get_by_tipo(self, tipo: str) -> CompanyDocument | None:
         """Busca documento mais recente por tipo."""
         result = await self.db.execute(
-            select(CompanyDocument).where(
-                CompanyDocument.tipo == tipo,
-                CompanyDocument.ativo == True
-            ).order_by(CompanyDocument.data_validade.desc())
+            select(CompanyDocument)
+            .where(CompanyDocument.tipo == tipo, CompanyDocument.ativo)
+            .order_by(CompanyDocument.data_validade.desc())
         )
         return result.scalar_one_or_none()
 
     async def list(
-        self,
-        tipo: str = None,
-        status: str = None,
-        page: int = 1,
-        size: int = 50
-    ) -> Tuple[List[CompanyDocument], int]:
+        self, tipo: str = None, status: str = None, page: int = 1, size: int = 50
+    ) -> tuple[list[CompanyDocument], int]:
         """Lista documentos com filtros."""
-        query = select(CompanyDocument).where(CompanyDocument.ativo == True)
+        query = select(CompanyDocument).where(CompanyDocument.ativo)
 
         if tipo:
             query = query.where(CompanyDocument.tipo == tipo)
@@ -74,16 +66,9 @@ class DocumentRepository:
 
         return items, total
 
-    async def create(
-        self,
-        data: CompanyDocumentCreate,
-        user_id: UUID = None
-    ) -> CompanyDocument:
+    async def create(self, data: CompanyDocumentCreate, user_id: UUID = None) -> CompanyDocument:
         """Cria novo documento."""
-        document = CompanyDocument(
-            **data.model_dump(exclude_unset=True),
-            created_by=user_id
-        )
+        document = CompanyDocument(**data.model_dump(exclude_unset=True), created_by=user_id)
 
         # Atualiza status baseado na validade
         document.atualizar_status()
@@ -95,11 +80,8 @@ class DocumentRepository:
         return document
 
     async def update(
-        self,
-        document_id: UUID,
-        data: CompanyDocumentUpdate,
-        user_id: UUID = None
-    ) -> Optional[CompanyDocument]:
+        self, document_id: UUID, data: CompanyDocumentUpdate, user_id: UUID = None
+    ) -> CompanyDocument | None:
         """Atualiza documento existente."""
         document = await self.get_by_id(document_id)
         if not document:
@@ -130,59 +112,62 @@ class DocumentRepository:
         logger.info(f"Documento removido: {document.tipo} - {document.nome}")
         return True
 
-    async def get_expiring(self, days: int = 30) -> List[CompanyDocument]:
+    async def get_expiring(self, days: int = 30) -> builtins.list[CompanyDocument]:
         """Lista documentos vencendo nos proximos X dias."""
         limite = date.today() + timedelta(days=days)
         result = await self.db.execute(
-            select(CompanyDocument).where(
-                CompanyDocument.ativo == True,
+            select(CompanyDocument)
+            .where(
+                CompanyDocument.ativo,
                 CompanyDocument.data_validade.isnot(None),
                 CompanyDocument.data_validade <= limite,
-                CompanyDocument.data_validade >= date.today()
-            ).order_by(CompanyDocument.data_validade.asc())
+                CompanyDocument.data_validade >= date.today(),
+            )
+            .order_by(CompanyDocument.data_validade.asc())
         )
         return list(result.scalars().all())
 
-    async def get_expired(self) -> List[CompanyDocument]:
+    async def get_expired(self) -> builtins.list[CompanyDocument]:
         """Lista documentos vencidos."""
         result = await self.db.execute(
-            select(CompanyDocument).where(
-                CompanyDocument.ativo == True,
+            select(CompanyDocument)
+            .where(
+                CompanyDocument.ativo,
                 CompanyDocument.data_validade.isnot(None),
-                CompanyDocument.data_validade < date.today()
-            ).order_by(CompanyDocument.data_validade.desc())
+                CompanyDocument.data_validade < date.today(),
+            )
+            .order_by(CompanyDocument.data_validade.desc())
         )
         return list(result.scalars().all())
 
-    async def get_pending_renewal(self) -> List[CompanyDocument]:
+    async def get_pending_renewal(self) -> builtins.list[CompanyDocument]:
         """Lista documentos que precisam renovacao."""
         result = await self.db.execute(
-            select(CompanyDocument).where(
-                CompanyDocument.ativo == True,
-                CompanyDocument.certidao_automatica == True,
+            select(CompanyDocument)
+            .where(
+                CompanyDocument.ativo,
+                CompanyDocument.certidao_automatica,
                 or_(
                     CompanyDocument.status == DocumentStatus.EXPIRED.value,
-                    CompanyDocument.status == DocumentStatus.EXPIRING.value
-                )
-            ).order_by(CompanyDocument.data_validade.asc())
+                    CompanyDocument.status == DocumentStatus.EXPIRING.value,
+                ),
+            )
+            .order_by(CompanyDocument.data_validade.asc())
         )
         return list(result.scalars().all())
 
-    async def get_all_valid(self) -> List[CompanyDocument]:
+    async def get_all_valid(self) -> builtins.list[CompanyDocument]:
         """Lista todos documentos validos."""
         result = await self.db.execute(
-            select(CompanyDocument).where(
-                CompanyDocument.ativo == True,
-                CompanyDocument.status == DocumentStatus.VALID.value
-            ).order_by(CompanyDocument.tipo)
+            select(CompanyDocument)
+            .where(CompanyDocument.ativo, CompanyDocument.status == DocumentStatus.VALID.value)
+            .order_by(CompanyDocument.tipo)
         )
         return list(result.scalars().all())
 
     async def update_all_status(self) -> int:
         """Atualiza status de todos os documentos baseado na validade."""
-        result = await self.db.execute(
-            select(CompanyDocument).where(CompanyDocument.ativo == True)
-        )
+        result = await self.db.execute(select(CompanyDocument).where(CompanyDocument.ativo))
         documents = result.scalars().all()
 
         updated = 0
@@ -200,12 +185,12 @@ class DocumentRepository:
         """Conta documentos por status."""
         result = await self.db.execute(
             select(CompanyDocument.status, func.count(CompanyDocument.id))
-            .where(CompanyDocument.ativo == True)
+            .where(CompanyDocument.ativo)
             .group_by(CompanyDocument.status)
         )
         return {row[0]: row[1] for row in result.all()}
 
-    async def get_by_tipos(self, tipos: List[str]) -> List[CompanyDocument]:
+    async def get_by_tipos(self, tipos: builtins.list[str]) -> builtins.list[CompanyDocument]:
         """Busca documentos mais recentes de tipos especificos."""
         # Subquery para pegar o mais recente de cada tipo
         documents = []

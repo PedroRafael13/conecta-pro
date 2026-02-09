@@ -3,19 +3,16 @@ Service para integrações com Receita Federal.
 """
 
 import logging
-import sys
 from datetime import date
-from typing import Dict, Any
-
-
+from typing import Any
 
 # Imports relativos do módulo pai
 from modules.government_integrations.utils import (
-    get_receita_service,
-    validar_cpf,
-    validar_cnpj,
-    formatar_cpf,
     formatar_cnpj,
+    formatar_cpf,
+    get_receita_service,
+    validar_cnpj,
+    validar_cpf,
 )
 
 logger = logging.getLogger(__name__)
@@ -25,7 +22,7 @@ class ReceitaFederalApiService:
     """Service para operações com Receita Federal."""
 
     @staticmethod
-    def validar_documento(documento: str, tipo: str) -> Dict[str, Any]:
+    def validar_documento(documento: str, tipo: str) -> dict[str, Any]:
         """
         Valida CPF ou CNPJ.
 
@@ -53,7 +50,7 @@ class ReceitaFederalApiService:
         }
 
     @staticmethod
-    def consultar_cpf(cpf: str, data_nascimento: date) -> Dict[str, Any]:
+    def consultar_cpf(cpf: str, data_nascimento: date) -> dict[str, Any]:
         """
         Consulta CPF na Receita Federal.
 
@@ -87,7 +84,7 @@ class ReceitaFederalApiService:
         }
 
     @staticmethod
-    def consultar_cnpj(cnpj: str) -> Dict[str, Any]:
+    def consultar_cnpj(cnpj: str) -> dict[str, Any]:
         """
         Consulta CNPJ na Receita Federal.
 

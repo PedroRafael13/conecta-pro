@@ -2,15 +2,14 @@
 
 import logging
 from datetime import date
-from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
-from modules.document_kits.services.kit_operational_service import KitOperationalService
-from modules.document_kits.services.kit_monthly_generator_service import KitMonthlyGeneratorService
 from modules.document_kits import scheduler as kit_scheduler
+from modules.document_kits.services.kit_monthly_generator_service import KitMonthlyGeneratorService
+from modules.document_kits.services.kit_operational_service import KitOperationalService
 
 logger = logging.getLogger(__name__)
 
@@ -30,14 +29,14 @@ async def get_generator_service(db: AsyncSession = Depends(get_db)) -> KitMonthl
 # === Operational Integration Endpoints ===
 
 
-@router.get("/employees", response_model=List[dict])
+@router.get("/employees", response_model=list[dict])
 async def get_employees_by_condominium(
     condominium_id: str,
-    start_date: Optional[str] = Query(None, description="Data inicial (YYYY-MM-DD)"),
-    end_date: Optional[str] = Query(None, description="Data final (YYYY-MM-DD)"),
+    start_date: str | None = Query(None, description="Data inicial (YYYY-MM-DD)"),
+    end_date: str | None = Query(None, description="Data final (YYYY-MM-DD)"),
     include_inactive: bool = Query(False, description="Incluir funcionários inativos"),
     op_service: KitOperationalService = Depends(get_operational_service),
-) -> List[dict]:
+) -> list[dict]:
     """
     Busca todos os colaboradores alocados em um condomínio no período.
 
@@ -89,14 +88,14 @@ async def get_employees_by_condominium(
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
-@router.get("/employees/month", response_model=List[dict])
+@router.get("/employees/month", response_model=list[dict])
 async def get_employees_by_month(
     condominium_id: str,
     month: int = Query(..., ge=1, le=12, description="Mês (1-12)"),
     year: int = Query(..., ge=2020, le=2100, description="Ano (ex: 2026)"),
     include_inactive: bool = Query(False, description="Incluir funcionários inativos"),
     op_service: KitOperationalService = Depends(get_operational_service),
-) -> List[dict]:
+) -> list[dict]:
     """
     Busca colaboradores de um condomínio em um mês específico.
 
@@ -142,10 +141,10 @@ async def get_employees_by_month(
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
-@router.get("/condominiums", response_model=List[dict])
+@router.get("/condominiums", response_model=list[dict])
 async def get_condominiums_with_employees(
     op_service: KitOperationalService = Depends(get_operational_service),
-) -> List[dict]:
+) -> list[dict]:
     """
     Busca TODOS os condomínios que possuem funcionários alocados atualmente.
 
@@ -182,8 +181,8 @@ async def get_condominiums_with_employees(
 @router.get("/validate", response_model=dict)
 async def validate_condominium_has_employees(
     condominium_id: str,
-    month: Optional[int] = Query(None, ge=1, le=12, description="Mês (1-12)"),
-    year: Optional[int] = Query(None, ge=2020, le=2100, description="Ano"),
+    month: int | None = Query(None, ge=1, le=12, description="Mês (1-12)"),
+    year: int | None = Query(None, ge=2020, le=2100, description="Ano"),
     op_service: KitOperationalService = Depends(get_operational_service),
 ) -> dict:
     """

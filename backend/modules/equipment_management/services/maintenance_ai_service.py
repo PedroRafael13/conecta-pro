@@ -2,7 +2,6 @@
 
 import logging
 from datetime import datetime, timedelta
-from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import and_, select
@@ -28,16 +27,14 @@ class MaintenanceAIService:
 
     async def analyze_equipment_health(  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
         self, equipment_id: str | UUID
-    ) -> Optional[dict]:
+    ) -> dict | None:
         """Analisa saúde do equipamento e gera score."""
         if isinstance(equipment_id, str):
             equipment_id = UUID(equipment_id)
 
         # Buscar equipamento
         result = await self.session.execute(
-            select(Equipment).where(
-                and_(Equipment.id == equipment_id, Equipment.is_active.is_(True))
-            )
+            select(Equipment).where(and_(Equipment.id == equipment_id, Equipment.is_active.is_(True)))
         )
         equipment = result.scalar_one_or_none()
         if not equipment:
@@ -69,107 +66,123 @@ class MaintenanceAIService:
             age_factor = min(age_months / 60, 1.0) * 15  # Max 15 pontos
             health_score -= age_factor
             if age_months > 36:
-                risk_factors.append({
-                    "factor": "equipment_age",
-                    "severity": "medium",
-                    "description": f"Equipamento com {int(age_months)} meses de uso",
-                })
+                risk_factors.append(
+                    {
+                        "factor": "equipment_age",
+                        "severity": "medium",
+                        "description": f"Equipamento com {int(age_months)} meses de uso",
+                    }
+                )
 
         # Fator 2: Status online
         if not equipment.is_online and equipment.status == EquipmentStatus.INSTALADO:
             health_score -= 20
-            risk_factors.append({
-                "factor": "offline_status",
-                "severity": "high",
-                "description": "Equipamento está offline",
-            })
-            recommendations.append({
-                "action": "check_connectivity",
-                "priority": "high",
-                "description": "Verificar conexão e alimentação do equipamento",
-            })
+            risk_factors.append(
+                {
+                    "factor": "offline_status",
+                    "severity": "high",
+                    "description": "Equipamento está offline",
+                }
+            )
+            recommendations.append(
+                {
+                    "action": "check_connectivity",
+                    "priority": "high",
+                    "description": "Verificar conexão e alimentação do equipamento",
+                }
+            )
 
         # Fator 3: Uptime
         if equipment.uptime_percent is not None and equipment.uptime_percent < 95:
             uptime_penalty = (95 - equipment.uptime_percent) / 2
             health_score -= uptime_penalty
             if equipment.uptime_percent < 90:
-                risk_factors.append({
-                    "factor": "low_uptime",
-                    "severity": "medium",
-                    "description": f"Uptime baixo: {equipment.uptime_percent:.1f}%",
-                })
+                risk_factors.append(
+                    {
+                        "factor": "low_uptime",
+                        "severity": "medium",
+                        "description": f"Uptime baixo: {equipment.uptime_percent:.1f}%",
+                    }
+                )
 
         # Fator 4: Garantia
         if equipment.warranty_end:
             if equipment.warranty_end < now:
                 health_score -= 5
-                risk_factors.append({
-                    "factor": "warranty_expired",
-                    "severity": "low",
-                    "description": "Garantia expirada",
-                })
+                risk_factors.append(
+                    {
+                        "factor": "warranty_expired",
+                        "severity": "low",
+                        "description": "Garantia expirada",
+                    }
+                )
             elif equipment.warranty_end < now + timedelta(days=30):
-                recommendations.append({
-                    "action": "check_warranty",
-                    "priority": "medium",
-                    "description": "Garantia expira em breve - considerar extensão",
-                })
+                recommendations.append(
+                    {
+                        "action": "check_warranty",
+                        "priority": "medium",
+                        "description": "Garantia expira em breve - considerar extensão",
+                    }
+                )
 
         # Fator 5: Manutenção atrasada
         if equipment.next_maintenance_at and equipment.next_maintenance_at < now:
             days_overdue = (now - equipment.next_maintenance_at).days
             overdue_penalty = min(days_overdue / 10, 20)  # Max 20 pontos
             health_score -= overdue_penalty
-            risk_factors.append({
-                "factor": "maintenance_overdue",
-                "severity": "high",
-                "description": f"Manutenção atrasada em {days_overdue} dias",
-            })
-            recommendations.append({
-                "action": "schedule_maintenance",
-                "priority": "urgent",
-                "description": "Agendar manutenção preventiva imediatamente",
-            })
+            risk_factors.append(
+                {
+                    "factor": "maintenance_overdue",
+                    "severity": "high",
+                    "description": f"Manutenção atrasada em {days_overdue} dias",
+                }
+            )
+            recommendations.append(
+                {
+                    "action": "schedule_maintenance",
+                    "priority": "urgent",
+                    "description": "Agendar manutenção preventiva imediatamente",
+                }
+            )
 
         # Fator 6: Histórico de manutenções
         if maintenances:
             # Contagem de manutenções corretivas vs preventivas
-            corrective_count = sum(
-                1 for m in maintenances
-                if m.maintenance_type == MaintenanceType.CORRETIVA
-            )
+            corrective_count = sum(1 for m in maintenances if m.maintenance_type == MaintenanceType.CORRETIVA)
             total_count = len(maintenances)
 
             if total_count > 0:
                 corrective_ratio = corrective_count / total_count
                 if corrective_ratio > 0.5:
                     health_score -= corrective_ratio * 10
-                    risk_factors.append({
-                        "factor": "high_corrective_ratio",
-                        "severity": "medium",
-                        "description": (
-                            f"Alto índice de manutenções corretivas: {corrective_ratio:.0%}"
-                        ),
-                    })
-                    recommendations.append({
-                        "action": "increase_preventive",
-                        "priority": "medium",
-                        "description": "Aumentar frequência de manutenções preventivas",
-                    })
+                    risk_factors.append(
+                        {
+                            "factor": "high_corrective_ratio",
+                            "severity": "medium",
+                            "description": (f"Alto índice de manutenções corretivas: {corrective_ratio:.0%}"),
+                        }
+                    )
+                    recommendations.append(
+                        {
+                            "action": "increase_preventive",
+                            "priority": "medium",
+                            "description": "Aumentar frequência de manutenções preventivas",
+                        }
+                    )
 
             # Verificar problemas não resolvidos
             unresolved = sum(
-                1 for m in maintenances
-                if m.status == MaintenanceStatus.COMPLETED and not m.problem_resolved
+                1 for m in maintenances if m.status == MaintenanceStatus.COMPLETED and not m.problem_resolved
             )
             if unresolved > 0:
                 health_score -= unresolved * 5
-                risk_factors.append({
-                    "factor": "unresolved_issues",
-                    "severity": "high",
-                    "description": f"{unresolved} manutenções com problemas não resolvidos",
-                })
+                risk_factors.append(
+                    {
+                        "factor": "unresolved_issues",
+                        "severity": "high",
+                        "description": f"{unresolved} manutenções com problemas não resolvidos",
+                    }
+                )
 
             # Tempo médio entre falhas (MTBF)
             if corrective_count >= 2:
@@ -186,16 +199,20 @@ class MaintenanceAIService:
                     mtbf = days_span / (corrective_count - 1)
                     if mtbf < 30:
                         health_score -= 15
-                        risk_factors.append({
-                            "factor": "low_mtbf",
-                            "severity": "high",
-                            "description": f"MTBF baixo: {mtbf:.0f} dias entre falhas",
-                        })
-                        recommendations.append({
-                            "action": "consider_replacement",
-                            "priority": "high",
-                            "description": "Considerar substituição do equipamento",
-                        })
+                        risk_factors.append(
+                            {
+                                "factor": "low_mtbf",
+                                "severity": "high",
+                                "description": f"MTBF baixo: {mtbf:.0f} dias entre falhas",
+                            }
+                        )
+                        recommendations.append(
+                            {
+                                "action": "consider_replacement",
+                                "priority": "high",
+                                "description": "Considerar substituição do equipamento",
+                            }
+                        )
 
         # Garantir score entre 0 e 100
         health_score = max(0, min(100, health_score))
@@ -226,9 +243,7 @@ class MaintenanceAIService:
             else None,
         }
 
-    async def predict_failure(
-        self, equipment_id: str | UUID
-    ) -> Optional[dict]:
+    async def predict_failure(self, equipment_id: str | UUID) -> dict | None:
         """Prevê probabilidade de falha do equipamento."""
         if isinstance(equipment_id, str):
             equipment_id = UUID(equipment_id)
@@ -279,7 +294,7 @@ class MaintenanceAIService:
         }
 
     async def recommend_maintenance_schedule(  # pylint: disable=too-many-locals
-        self, client_id: Optional[str] = None
+        self, client_id: str | None = None
     ) -> list[dict]:
         """Recomenda agenda de manutenções preventivas."""
         # Buscar equipamentos que precisam de atenção
@@ -291,9 +306,7 @@ class MaintenanceAIService:
         if client_id:
             conditions.append(Equipment.client_id == client_id)
 
-        result = await self.session.execute(
-            select(Equipment).where(and_(*conditions))
-        )
+        result = await self.session.execute(select(Equipment).where(and_(*conditions)))
         equipments = list(result.scalars().all())
 
         recommendations = []
@@ -336,20 +349,22 @@ class MaintenanceAIService:
                 elif equipment.next_maintenance_at < recommended_date:
                     recommended_date = equipment.next_maintenance_at
 
-            recommendations.append({
-                "equipment_id": str(equipment.id),
-                "equipment_code": equipment.equipment_code,
-                "equipment_name": equipment.name,
-                "client_id": equipment.client_id,
-                "client_name": equipment.client_name,
-                "health_score": health["health_score"],
-                "health_status": health["health_status"],
-                "priority": priority.value,
-                "recommended_date": recommended_date.isoformat(),
-                "reason": reason,
-                "estimated_duration_hours": 2.0,
-                "actions": [r["description"] for r in health["recommendations"]],
-            })
+            recommendations.append(
+                {
+                    "equipment_id": str(equipment.id),
+                    "equipment_code": equipment.equipment_code,
+                    "equipment_name": equipment.name,
+                    "client_id": equipment.client_id,
+                    "client_name": equipment.client_name,
+                    "health_score": health["health_score"],
+                    "health_status": health["health_status"],
+                    "priority": priority.value,
+                    "recommended_date": recommended_date.isoformat(),
+                    "reason": reason,
+                    "estimated_duration_hours": 2.0,
+                    "actions": [r["description"] for r in health["recommendations"]],
+                }
+            )
 
         # Ordenar por prioridade e data
         priority_order = {
@@ -359,9 +374,7 @@ class MaintenanceAIService:
             "medium": 3,
             "low": 4,
         }
-        recommendations.sort(
-            key=lambda x: (priority_order.get(x["priority"], 5), x["recommended_date"])
-        )
+        recommendations.sort(key=lambda x: (priority_order.get(x["priority"], 5), x["recommended_date"]))
 
         return recommendations
 
@@ -379,10 +392,12 @@ class MaintenanceAIService:
                     EquipmentMaintenance.technician_id == technician_id,
                     EquipmentMaintenance.scheduled_date >= start,
                     EquipmentMaintenance.scheduled_date < end,
-                    EquipmentMaintenance.status.in_([
-                        MaintenanceStatus.SCHEDULED,
-                        MaintenanceStatus.PENDING,
-                    ]),
+                    EquipmentMaintenance.status.in_(
+                        [
+                            MaintenanceStatus.SCHEDULED,
+                            MaintenanceStatus.PENDING,
+                        ]
+                    ),
                     EquipmentMaintenance.is_active.is_(True),
                 )
             )
@@ -397,9 +412,7 @@ class MaintenanceAIService:
         # Buscar equipamentos para obter localizações
         equipment_locations = {}
         for m in maintenances:
-            eq_result = await self.session.execute(
-                select(Equipment).where(Equipment.id == UUID(m.equipment_id))
-            )
+            eq_result = await self.session.execute(select(Equipment).where(Equipment.id == UUID(m.equipment_id)))
             equipment = eq_result.scalar_one_or_none()
             if equipment:
                 equipment_locations[m.equipment_id] = {
@@ -430,19 +443,21 @@ class MaintenanceAIService:
             location = equipment_locations.get(m.equipment_id, {})
             duration = m.estimated_duration_hours or 2.0
 
-            route.append({
-                "order": i + 1,
-                "maintenance_id": str(m.id),
-                "maintenance_code": m.maintenance_code,
-                "equipment_code": m.equipment_code,
-                "equipment_name": m.equipment_name,
-                "priority": m.priority.value,
-                "scheduled_time": current_time.strftime("%H:%M"),
-                "estimated_duration_hours": duration,
-                "address": location.get("address"),
-                "latitude": location.get("lat"),
-                "longitude": location.get("lon"),
-            })
+            route.append(
+                {
+                    "order": i + 1,
+                    "maintenance_id": str(m.id),
+                    "maintenance_code": m.maintenance_code,
+                    "equipment_code": m.equipment_code,
+                    "equipment_name": m.equipment_name,
+                    "priority": m.priority.value,
+                    "scheduled_time": current_time.strftime("%H:%M"),
+                    "estimated_duration_hours": duration,
+                    "address": location.get("address"),
+                    "latitude": location.get("lat"),
+                    "longitude": location.get("lon"),
+                }
+            )
 
             # Adicionar tempo de deslocamento (30 min) + duração
             current_time += timedelta(hours=duration + 0.5)
@@ -450,7 +465,7 @@ class MaintenanceAIService:
         return route
 
     async def analyze_maintenance_patterns(  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
-        self, client_id: Optional[str] = None, months: int = 12
+        self, client_id: str | None = None, months: int = 12
     ) -> dict:
         """Analisa padrões de manutenção para insights."""
         now = datetime.utcnow()
@@ -464,9 +479,7 @@ class MaintenanceAIService:
         if client_id:
             conditions.append(EquipmentMaintenance.client_id == client_id)
 
-        result = await self.session.execute(
-            select(EquipmentMaintenance).where(and_(*conditions))
-        )
+        result = await self.session.execute(select(EquipmentMaintenance).where(and_(*conditions)))
         maintenances = list(result.scalars().all())
 
         if not maintenances:
@@ -498,7 +511,7 @@ class MaintenanceAIService:
                 by_equipment_type[eq_type]["costs"].append(m.total_cost)
 
         # Calcular médias
-        for eq_type, eq_data in by_equipment_type.items():
+        for _eq_type, eq_data in by_equipment_type.items():
             costs = eq_data["costs"]
             if costs:
                 eq_data["avg_cost"] = sum(costs) / len(costs)
@@ -518,31 +531,30 @@ class MaintenanceAIService:
 
         # Gerar insights
         insights = []
-        total_corrective = sum(
-            1 for m in maintenances if m.maintenance_type == MaintenanceType.CORRETIVA
-        )
-        total_preventive = sum(
-            1 for m in maintenances if m.maintenance_type == MaintenanceType.PREVENTIVA
-        )
+        total_corrective = sum(1 for m in maintenances if m.maintenance_type == MaintenanceType.CORRETIVA)
+        total_preventive = sum(1 for m in maintenances if m.maintenance_type == MaintenanceType.PREVENTIVA)
 
         corrective_ratio = total_corrective / len(maintenances) if maintenances else 0
 
         if corrective_ratio > 0.6:
-            insights.append({
-                "type": "warning",
-                "title": "Alto índice de manutenções corretivas",
-                "description": (
-                    f"{corrective_ratio:.0%} das manutenções são corretivas. "
-                    "Considere aumentar preventivas."
-                ),
-            })
+            insights.append(
+                {
+                    "type": "warning",
+                    "title": "Alto índice de manutenções corretivas",
+                    "description": (
+                        f"{corrective_ratio:.0%} das manutenções são corretivas. Considere aumentar preventivas."
+                    ),
+                }
+            )
 
         if corrective_ratio < 0.3:
-            insights.append({
-                "type": "success",
-                "title": "Bom equilíbrio preventivo/corretivo",
-                "description": f"Apenas {corrective_ratio:.0%} de manutenções corretivas.",
-            })
+            insights.append(
+                {
+                    "type": "success",
+                    "title": "Bom equilíbrio preventivo/corretivo",
+                    "description": f"Apenas {corrective_ratio:.0%} de manutenções corretivas.",
+                }
+            )
 
         # Identificar equipamentos problemáticos
         by_equipment = {}
@@ -556,19 +568,16 @@ class MaintenanceAIService:
                 }
             by_equipment[eq_id]["count"] += 1
 
-        problematic = [
-            eq for eq in by_equipment.values() if eq["count"] > 3
-        ]
+        problematic = [eq for eq in by_equipment.values() if eq["count"] > 3]
         if problematic:
-            insights.append({
-                "type": "warning",
-                "title": "Equipamentos com muitas manutenções",
-                "description": (
-                    f"{len(problematic)} equipamentos tiveram mais de 3 "
-                    "manutenções no período."
-                ),
-                "equipment": problematic[:5],
-            })
+            insights.append(
+                {
+                    "type": "warning",
+                    "title": "Equipamentos com muitas manutenções",
+                    "description": (f"{len(problematic)} equipamentos tiveram mais de 3 manutenções no período."),
+                    "equipment": problematic[:5],
+                }
+            )
 
         return {
             "period_months": months,
@@ -584,7 +593,7 @@ class MaintenanceAIService:
 
     async def estimate_maintenance_cost(
         self, equipment_id: str | UUID, maintenance_type: str = "preventiva"
-    ) -> Optional[dict]:
+    ) -> dict | None:
         """Estima custo de manutenção baseado em histórico."""
         if isinstance(equipment_id, str):
             equipment_id = UUID(equipment_id)

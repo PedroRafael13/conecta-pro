@@ -14,8 +14,8 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from sqlalchemy.ext.asyncio import create_async_engine
-from core.config import settings
 
+from core.config import settings
 
 SEED_SQL = """
 -- Seed de Postos
@@ -47,7 +47,7 @@ async def run_seed():
         async with engine.begin() as conn:
             # Executar SQL
             await conn.execute(text("DELETE FROM posts WHERE code LIKE 'POST-2026-%'"))
-            result = await conn.execute(text(SEED_SQL))
+            await conn.execute(text(SEED_SQL))
 
             print("\n✅ Seed concluído com sucesso!")
             print("""
@@ -64,4 +64,5 @@ async def run_seed():
 
 if __name__ == "__main__":
     from sqlalchemy import text
+
     asyncio.run(run_seed())

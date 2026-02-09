@@ -4,21 +4,21 @@ Armazena registros de entrada/saída feitos pelo aplicativo.
 """
 
 import uuid
-from datetime import datetime, date, time
-from enum import Enum
-from typing import Optional, TYPE_CHECKING
+from datetime import date, datetime, time
+from enum import StrEnum
+from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import (
     Boolean,
-    DateTime,
     Date,
-    Time,
-    Integer,
+    DateTime,
     Float,
+    ForeignKey,
+    Index,
+    Integer,
     String,
     Text,
-    Index,
-    ForeignKey,
+    Time,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -26,48 +26,52 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from core.database import Base
 
 if TYPE_CHECKING:
-    from .mobile_device import MobileDevice
     from .geofence_zone import GeofenceZone
+    from .mobile_device import MobileDevice
 
 
-class CheckInType(str, Enum):
+class CheckInType(StrEnum):
     """Tipo de registro."""
-    ENTRY = "entry"                    # Entrada
-    EXIT = "exit"                      # Saída
-    BREAK_START = "break_start"        # Início intervalo
-    BREAK_END = "break_end"            # Fim intervalo
-    EXTRA_ENTRY = "extra_entry"        # Entrada extra
-    EXTRA_EXIT = "extra_exit"          # Saída extra
+
+    ENTRY = "entry"  # Entrada
+    EXIT = "exit"  # Saída
+    BREAK_START = "break_start"  # Início intervalo
+    BREAK_END = "break_end"  # Fim intervalo
+    EXTRA_ENTRY = "extra_entry"  # Entrada extra
+    EXTRA_EXIT = "extra_exit"  # Saída extra
 
 
-class CheckInStatus(str, Enum):
+class CheckInStatus(StrEnum):
     """Status do registro."""
-    PENDING = "pending"                # Aguardando processamento
-    VALIDATED = "validated"            # Validado automaticamente
-    APPROVED = "approved"              # Aprovado por supervisor
-    REJECTED = "rejected"              # Rejeitado
-    FLAGGED = "flagged"                # Marcado para revisão
-    PROCESSED = "processed"            # Processado no ponto
+
+    PENDING = "pending"  # Aguardando processamento
+    VALIDATED = "validated"  # Validado automaticamente
+    APPROVED = "approved"  # Aprovado por supervisor
+    REJECTED = "rejected"  # Rejeitado
+    FLAGGED = "flagged"  # Marcado para revisão
+    PROCESSED = "processed"  # Processado no ponto
 
 
-class ValidationMethod(str, Enum):
+class ValidationMethod(StrEnum):
     """Método de validação usado."""
-    GEOFENCE = "geofence"              # Dentro da zona permitida
-    BIOMETRIC = "biometric"            # Biometria do dispositivo
-    PHOTO = "photo"                    # Foto selfie
-    SUPERVISOR = "supervisor"          # Aprovação manual
-    QR_CODE = "qr_code"               # Leitura de QR code
-    NFC = "nfc"                       # Tag NFC
-    WIFI = "wifi"                     # Rede WiFi específica
-    BEACON = "beacon"                 # Beacon Bluetooth
+
+    GEOFENCE = "geofence"  # Dentro da zona permitida
+    BIOMETRIC = "biometric"  # Biometria do dispositivo
+    PHOTO = "photo"  # Foto selfie
+    SUPERVISOR = "supervisor"  # Aprovação manual
+    QR_CODE = "qr_code"  # Leitura de QR code
+    NFC = "nfc"  # Tag NFC
+    WIFI = "wifi"  # Rede WiFi específica
+    BEACON = "beacon"  # Beacon Bluetooth
 
 
-class LocationAccuracy(str, Enum):
+class LocationAccuracy(StrEnum):
     """Precisão da localização."""
-    HIGH = "high"          # < 10m
-    MEDIUM = "medium"      # 10-50m
-    LOW = "low"           # 50-100m
-    VERY_LOW = "very_low" # > 100m
+
+    HIGH = "high"  # < 10m
+    MEDIUM = "medium"  # 10-50m
+    LOW = "low"  # 50-100m
+    VERY_LOW = "very_low"  # > 100m
     UNKNOWN = "unknown"
 
 
@@ -117,23 +121,23 @@ class MobileCheckIn(Base):
     time_drift_seconds: Mapped[int] = mapped_column(Integer, default=0)
 
     # Geolocalização
-    latitude: Mapped[Optional[float]] = mapped_column(Float)
-    longitude: Mapped[Optional[float]] = mapped_column(Float)
-    altitude: Mapped[Optional[float]] = mapped_column(Float)
-    accuracy_meters: Mapped[Optional[float]] = mapped_column(Float)
+    latitude: Mapped[float | None] = mapped_column(Float)
+    longitude: Mapped[float | None] = mapped_column(Float)
+    altitude: Mapped[float | None] = mapped_column(Float)
+    accuracy_meters: Mapped[float | None] = mapped_column(Float)
     location_accuracy: Mapped[str] = mapped_column(
         String(20),
         default=LocationAccuracy.UNKNOWN.value,
     )
-    location_provider: Mapped[Optional[str]] = mapped_column(String(20))  # gps, network, fused
+    location_provider: Mapped[str | None] = mapped_column(String(20))  # gps, network, fused
 
     # Geofence
-    geofence_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    geofence_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("geofence_zones.id", ondelete="SET NULL"),
     )
     inside_geofence: Mapped[bool] = mapped_column(Boolean, default=False)
-    distance_from_center: Mapped[Optional[float]] = mapped_column(Float)  # metros
+    distance_from_center: Mapped[float | None] = mapped_column(Float)  # metros
 
     # Validação
     status: Mapped[str] = mapped_column(
@@ -141,55 +145,55 @@ class MobileCheckIn(Base):
         default=CheckInStatus.PENDING.value,
         index=True,
     )
-    validation_methods: Mapped[Optional[list]] = mapped_column(JSONB, default=list)
+    validation_methods: Mapped[list | None] = mapped_column(JSONB, default=list)
     validation_score: Mapped[int] = mapped_column(Integer, default=0)  # 0-100
     is_valid: Mapped[bool] = mapped_column(Boolean, default=True)
 
     # Biometria
     biometric_verified: Mapped[bool] = mapped_column(Boolean, default=False)
-    biometric_type: Mapped[Optional[str]] = mapped_column(String(20))
-    biometric_score: Mapped[Optional[int]] = mapped_column(Integer)
+    biometric_type: Mapped[str | None] = mapped_column(String(20))
+    biometric_score: Mapped[int | None] = mapped_column(Integer)
 
     # Foto selfie
     photo_captured: Mapped[bool] = mapped_column(Boolean, default=False)
-    photo_path: Mapped[Optional[str]] = mapped_column(String(500))
+    photo_path: Mapped[str | None] = mapped_column(String(500))
     photo_verified: Mapped[bool] = mapped_column(Boolean, default=False)
-    face_match_score: Mapped[Optional[float]] = mapped_column(Float)
+    face_match_score: Mapped[float | None] = mapped_column(Float)
 
     # QR Code / NFC
-    qr_code_data: Mapped[Optional[str]] = mapped_column(String(500))
-    nfc_tag_id: Mapped[Optional[str]] = mapped_column(String(100))
+    qr_code_data: Mapped[str | None] = mapped_column(String(500))
+    nfc_tag_id: Mapped[str | None] = mapped_column(String(100))
 
     # WiFi / Beacon
-    wifi_ssid: Mapped[Optional[str]] = mapped_column(String(100))
-    wifi_bssid: Mapped[Optional[str]] = mapped_column(String(20))
-    beacon_uuid: Mapped[Optional[str]] = mapped_column(String(50))
+    wifi_ssid: Mapped[str | None] = mapped_column(String(100))
+    wifi_bssid: Mapped[str | None] = mapped_column(String(20))
+    beacon_uuid: Mapped[str | None] = mapped_column(String(50))
 
     # Offline
     is_offline: Mapped[bool] = mapped_column(Boolean, default=False)
-    synced_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    offline_queue_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True))
+    synced_at: Mapped[datetime | None] = mapped_column(DateTime)
+    offline_queue_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
 
     # Anomalias
     has_anomaly: Mapped[bool] = mapped_column(Boolean, default=False)
-    anomaly_type: Mapped[Optional[str]] = mapped_column(String(50))
-    anomaly_details: Mapped[Optional[dict]] = mapped_column(JSONB)
+    anomaly_type: Mapped[str | None] = mapped_column(String(50))
+    anomaly_details: Mapped[dict | None] = mapped_column(JSONB)
 
     # Processamento
-    time_entry_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True))
-    processed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    time_entry_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    processed_at: Mapped[datetime | None] = mapped_column(DateTime)
 
     # Aprovação/Rejeição
-    reviewed_by: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True))
-    reviewed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    review_notes: Mapped[Optional[str]] = mapped_column(Text)
-    rejection_reason: Mapped[Optional[str]] = mapped_column(Text)
+    reviewed_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime)
+    review_notes: Mapped[str | None] = mapped_column(Text)
+    rejection_reason: Mapped[str | None] = mapped_column(Text)
 
     # Metadados do dispositivo
-    device_info: Mapped[Optional[dict]] = mapped_column(JSONB, default=dict)
-    app_version: Mapped[Optional[str]] = mapped_column(String(20))
-    ip_address: Mapped[Optional[str]] = mapped_column(String(45))
-    user_agent: Mapped[Optional[str]] = mapped_column(String(500))
+    device_info: Mapped[dict | None] = mapped_column(JSONB, default=dict)
+    app_version: Mapped[str | None] = mapped_column(String(20))
+    ip_address: Mapped[str | None] = mapped_column(String(45))
+    user_agent: Mapped[str | None] = mapped_column(String(500))
 
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(
@@ -231,7 +235,7 @@ class MobileCheckIn(Base):
         return self.status == CheckInStatus.FLAGGED.value or self.has_anomaly
 
     @property
-    def location_tuple(self) -> Optional[tuple]:
+    def location_tuple(self) -> tuple | None:
         """Retorna tupla (lat, lng)."""
         if self.latitude and self.longitude:
             return (self.latitude, self.longitude)

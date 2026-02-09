@@ -7,15 +7,14 @@ Implementa:
 - Consulta Simples Nacional
 """
 
-from datetime import datetime, timedelta
-from typing import Dict, Optional, Any, List
-from uuid import UUID
 import asyncio
 import logging
 import re
+from datetime import datetime
+from uuid import UUID
 
-from ..base_extractor import ExtratorBase, DocumentoExtraido, ResultadoExtracao
-from ...core.credentials import ProvedorCredenciais, TipoCredencial
+from ...core.credentials import TipoCredencial
+from ..base_extractor import DocumentoExtraido, ExtratorBase, ResultadoExtracao
 
 logger = logging.getLogger(__name__)
 
@@ -47,10 +46,10 @@ class ExtratorRFB(ExtratorBase):
     async def extrair(
         self,
         tenant_id: UUID,
-        data_inicio: Optional[datetime] = None,
-        data_fim: Optional[datetime] = None,
-        cnpjs: Optional[List[str]] = None,
-        ufs: Optional[List[str]] = None,
+        data_inicio: datetime | None = None,
+        data_fim: datetime | None = None,
+        cnpjs: list[str] | None = None,
+        ufs: list[str] | None = None,
         incremental: bool = True,
     ) -> ResultadoExtracao:
         """Extrai dados da Receita Federal."""
@@ -101,11 +100,7 @@ class ExtratorRFB(ExtratorBase):
 
         return resultado
 
-    async def _consultar_cnpj(
-        self,
-        tenant_id: UUID,
-        cnpj: str
-    ) -> Optional[DocumentoExtraido]:
+    async def _consultar_cnpj(self, tenant_id: UUID, cnpj: str) -> DocumentoExtraido | None:
         """Consulta situação cadastral do CNPJ."""
         try:
             session = await self._get_session(tenant_id, with_cert=False)
@@ -172,11 +167,7 @@ class ExtratorRFB(ExtratorBase):
                 erro=str(e),
             )
 
-    async def _consultar_simples(
-        self,
-        tenant_id: UUID,
-        cnpj: str
-    ) -> Optional[DocumentoExtraido]:
+    async def _consultar_simples(self, tenant_id: UUID, cnpj: str) -> DocumentoExtraido | None:
         """Consulta situação no Simples Nacional."""
         try:
             # Consulta simplificada
@@ -197,11 +188,7 @@ class ExtratorRFB(ExtratorBase):
             logger.error(f"Erro ao consultar Simples: {e}")
             return None
 
-    async def consultar_certidao_cnd(
-        self,
-        tenant_id: UUID,
-        cnpj: str
-    ) -> Optional[Dict]:
+    async def consultar_certidao_cnd(self, tenant_id: UUID, cnpj: str) -> dict | None:
         """
         Consulta Certidão Negativa de Débitos.
 
@@ -210,7 +197,7 @@ class ExtratorRFB(ExtratorBase):
         """
         # Esta consulta requer certificado digital
         try:
-            session = await self._get_session(tenant_id, with_cert=True)
+            await self._get_session(tenant_id, with_cert=True)
 
             # Implementar consulta com certificado
             # ...

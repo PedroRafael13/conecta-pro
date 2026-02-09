@@ -20,28 +20,30 @@ Fluxo OAuth2:
 5. Usa access_token para acessar APIs
 """
 
-import logging
 import base64
 import hashlib
+import logging
 import secrets
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, field
-from enum import Enum
+from datetime import datetime, timedelta
+from enum import StrEnum
+from typing import Any
 from urllib.parse import urlencode
 
 logger = logging.getLogger(__name__)
 
 
-class NivelAutenticacao(str, Enum):
+class NivelAutenticacao(StrEnum):
     """Nível de autenticação Gov.br."""
+
     BRONZE = "1"
     PRATA = "2"
     OURO = "3"
 
 
-class TipoDocumento(str, Enum):
+class TipoDocumento(StrEnum):
     """Tipo de documento de identidade."""
+
     CNH = "cnh"
     RG = "rg"
     PASSAPORTE = "passaporte"
@@ -52,31 +54,33 @@ class TipoDocumento(str, Enum):
 @dataclass
 class UsuarioGovBr:
     """Dados do usuário autenticado via Gov.br."""
+
     cpf: str
     nome: str
-    email: Optional[str] = None
-    telefone: Optional[str] = None
-    foto: Optional[str] = None  # URL ou Base64
+    email: str | None = None
+    telefone: str | None = None
+    foto: str | None = None  # URL ou Base64
     nivel_autenticacao: NivelAutenticacao = NivelAutenticacao.BRONZE
 
     # Dados adicionais
-    data_nascimento: Optional[str] = None
-    nome_mae: Optional[str] = None
-    cnpj_vinculados: List[str] = field(default_factory=list)
+    data_nascimento: str | None = None
+    nome_mae: str | None = None
+    cnpj_vinculados: list[str] = field(default_factory=list)
 
     # Empresas (se solicitado scope empresas)
-    empresas: List[Dict[str, Any]] = field(default_factory=list)
+    empresas: list[dict[str, Any]] = field(default_factory=list)
 
 
 @dataclass
 class TokenGovBr:
     """Tokens OAuth2 do Gov.br."""
+
     access_token: str
-    token_type: str = "Bearer"
+    token_type: str = "Bearer"  # noqa: S105
     expires_in: int = 0
-    refresh_token: Optional[str] = None
-    scope: Optional[str] = None
-    id_token: Optional[str] = None
+    refresh_token: str | None = None
+    scope: str | None = None
+    id_token: str | None = None
 
     # Metadados
     data_obtencao: datetime = field(default_factory=datetime.now)
@@ -103,7 +107,7 @@ class GovBrManager:
 
     # Endpoints
     ENDPOINT_AUTHORIZE = "/authorize"
-    ENDPOINT_TOKEN = "/token"
+    ENDPOINT_TOKEN = "/token"  # noqa: S105
     ENDPOINT_USERINFO = "/userinfo"
     ENDPOINT_LOGOUT = "/logout"
     ENDPOINT_JWKS = "/jwks"
@@ -141,16 +145,16 @@ class GovBrManager:
         self.base_url = self.URL_PRODUCAO if ambiente == "producao" else self.URL_STAGING
 
         # PKCE
-        self._code_verifier: Optional[str] = None
-        self._code_challenge: Optional[str] = None
-        self._state: Optional[str] = None
-        self._nonce: Optional[str] = None
+        self._code_verifier: str | None = None
+        self._code_challenge: str | None = None
+        self._state: str | None = None
+        self._nonce: str | None = None
 
     def gerar_url_autorizacao(
         self,
-        scopes: Optional[List[str]] = None,
-        nivel_minimo: Optional[NivelAutenticacao] = None,
-    ) -> Dict[str, str]:
+        scopes: list[str] | None = None,
+        nivel_minimo: NivelAutenticacao | None = None,
+    ) -> dict[str, str]:
         """
         Gera URL de autorização para redirecionamento.
 
@@ -204,7 +208,7 @@ class GovBrManager:
         self,
         code: str,
         state: str,
-        code_verifier: Optional[str] = None,
+        code_verifier: str | None = None,
     ) -> TokenGovBr:
         """
         Troca código de autorização por tokens.
@@ -226,24 +230,9 @@ class GovBrManager:
             raise ValueError("Code verifier não disponível")
 
         # Parâmetros da requisição
-        params = {
-            "grant_type": "authorization_code",
-            "code": code,
-            "redirect_uri": self.redirect_uri,
-            "code_verifier": verifier,
-        }
 
         # Autenticação do cliente
-        credentials = base64.b64encode(
-            f"{self.client_id}:{self.client_secret}".encode()
-        ).decode()
-
-        headers = {
-            "Authorization": f"Basic {credentials}",
-            "Content-Type": "application/x-www-form-urlencoded",
-        }
-
-        url = f"{self.base_url}{self.ENDPOINT_TOKEN}"
+        base64.b64encode(f"{self.client_id}:{self.client_secret}".encode()).decode()
 
         logger.info("Trocando código por token Gov.br")
 
@@ -251,7 +240,7 @@ class GovBrManager:
         # Aqui retorna um token simulado para estrutura
         return TokenGovBr(
             access_token="",
-            token_type="Bearer",
+            token_type="Bearer",  # noqa: S106
             expires_in=3600,
             scope=" ".join(["openid", "email", "profile"]),
         )
@@ -268,12 +257,6 @@ class GovBrManager:
         """
         if token.expirado:
             raise ValueError("Token expirado")
-
-        headers = {
-            "Authorization": f"{token.token_type} {token.access_token}",
-        }
-
-        url = f"{self.base_url}{self.ENDPOINT_USERINFO}"
 
         logger.info("Obtendo dados do usuário Gov.br")
 
@@ -294,34 +277,21 @@ class GovBrManager:
         Returns:
             Novos tokens
         """
-        params = {
-            "grant_type": "refresh_token",
-            "refresh_token": refresh_token,
-        }
 
-        credentials = base64.b64encode(
-            f"{self.client_id}:{self.client_secret}".encode()
-        ).decode()
-
-        headers = {
-            "Authorization": f"Basic {credentials}",
-            "Content-Type": "application/x-www-form-urlencoded",
-        }
-
-        url = f"{self.base_url}{self.ENDPOINT_TOKEN}"
+        base64.b64encode(f"{self.client_id}:{self.client_secret}".encode()).decode()
 
         logger.info("Renovando token Gov.br")
 
         return TokenGovBr(
             access_token="",
-            token_type="Bearer",
+            token_type="Bearer",  # noqa: S106
             expires_in=3600,
         )
 
     def gerar_url_logout(
         self,
         id_token: str,
-        post_logout_redirect_uri: Optional[str] = None,
+        post_logout_redirect_uri: str | None = None,
     ) -> str:
         """
         Gera URL de logout do Gov.br.
@@ -345,7 +315,7 @@ class GovBrManager:
         logger.info("Gerada URL de logout Gov.br")
         return url
 
-    def validar_token(self, token: TokenGovBr) -> Dict[str, Any]:
+    def validar_token(self, token: TokenGovBr) -> dict[str, Any]:
         """
         Valida o token de acesso.
 
@@ -361,7 +331,7 @@ class GovBrManager:
             "scopes": token.scope.split() if token.scope else [],
         }
 
-    def obter_empresas_vinculadas(self, token: TokenGovBr) -> List[Dict[str, Any]]:
+    def obter_empresas_vinculadas(self, token: TokenGovBr) -> list[dict[str, Any]]:
         """
         Obtém empresas vinculadas ao CPF (requer scope govbr_empresa).
 

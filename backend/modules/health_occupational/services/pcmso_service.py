@@ -7,25 +7,23 @@ Logica de negocio para exames medicos e ASO.
 
 import logging
 from datetime import date, datetime, timedelta
-from typing import List, Optional, Dict, Any
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy.orm import Session
 
 from modules.health_occupational.models.pcmso import (
-    MedicalExam,
     ASO,
     ComplementaryExam,
-    ExamType,
     ExamStatus,
-    FitnessResult,
+    MedicalExam,
 )
 from modules.health_occupational.schemas.pcmso import (
-    MedicalExamRequest,
-    MedicalExamUpdateRequest,
     ASORequest,
     ASOUpdateRequest,
     ComplementaryExamRequest,
+    MedicalExamRequest,
+    MedicalExamUpdateRequest,
 )
 
 logger = logging.getLogger(__name__)
@@ -34,14 +32,14 @@ logger = logging.getLogger(__name__)
 class PCMSOService:
     """Service para gerenciamento de exames medicos (PCMSO - NR-7)."""
 
-    def __init__(self, db: Optional[Session] = None):
+    def __init__(self, db: Session | None = None):
         self.db = db
 
     # ==========================================================================
     # Medical Exam Operations
     # ==========================================================================
 
-    def schedule_exam(self, request: MedicalExamRequest, created_by: Optional[UUID] = None) -> MedicalExam:
+    def schedule_exam(self, request: MedicalExamRequest, created_by: UUID | None = None) -> MedicalExam:
         """
         Agenda exame medico ocupacional.
 
@@ -80,7 +78,7 @@ class PCMSOService:
 
         return exam
 
-    def update_exam(self, exam_id: UUID, request: MedicalExamUpdateRequest) -> Optional[MedicalExam]:
+    def update_exam(self, exam_id: UUID, request: MedicalExamUpdateRequest) -> MedicalExam | None:
         """
         Atualiza exame medico.
 
@@ -105,18 +103,18 @@ class PCMSOService:
         logger.info("Exame atualizado: id=%s", exam_id)
         return exam
 
-    def get_exam(self, exam_id: UUID) -> Optional[MedicalExam]:
+    def get_exam(self, exam_id: UUID) -> MedicalExam | None:
         """Busca exame por ID."""
         return self.db.query(MedicalExam).filter(MedicalExam.id == exam_id).first()
 
     def list_employee_exams(
         self,
         funcionario_id: UUID,
-        status_filter: Optional[str] = None,
-        tipo_filter: Optional[str] = None,
+        status_filter: str | None = None,
+        tipo_filter: str | None = None,
         page: int = 1,
         size: int = 20,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Lista exames de um funcionario.
 
@@ -130,9 +128,7 @@ class PCMSOService:
         Returns:
             Dict com exames e metadados.
         """
-        query = self.db.query(MedicalExam).filter(
-            MedicalExam.funcionario_id == funcionario_id
-        )
+        query = self.db.query(MedicalExam).filter(MedicalExam.funcionario_id == funcionario_id)
 
         if status_filter:
             query = query.filter(MedicalExam.status == status_filter)
@@ -141,9 +137,7 @@ class PCMSOService:
             query = query.filter(MedicalExam.tipo_exame == tipo_filter)
 
         total = query.count()
-        exams = query.order_by(MedicalExam.data_agendamento.desc()).offset(
-            (page - 1) * size
-        ).limit(size).all()
+        exams = query.order_by(MedicalExam.data_agendamento.desc()).offset((page - 1) * size).limit(size).all()
 
         return {
             "items": exams,
@@ -152,16 +146,21 @@ class PCMSOService:
             "size": size,
         }
 
-    def list_pending_exams(self, days_ahead: int = 30) -> List[MedicalExam]:
+    def list_pending_exams(self, days_ahead: int = 30) -> list[MedicalExam]:
         """Lista exames pendentes nos proximos dias."""
         limit_date = date.today() + timedelta(days=days_ahead)
 
-        return self.db.query(MedicalExam).filter(
-            MedicalExam.status.in_([ExamStatus.AGENDADO.value, ExamStatus.CONFIRMADO.value]),
-            MedicalExam.data_agendamento <= limit_date,
-        ).order_by(MedicalExam.data_agendamento).all()
+        return (
+            self.db.query(MedicalExam)
+            .filter(
+                MedicalExam.status.in_([ExamStatus.AGENDADO.value, ExamStatus.CONFIRMADO.value]),
+                MedicalExam.data_agendamento <= limit_date,
+            )
+            .order_by(MedicalExam.data_agendamento)
+            .all()
+        )
 
-    def confirm_exam(self, exam_id: UUID) -> Optional[MedicalExam]:
+    def confirm_exam(self, exam_id: UUID) -> MedicalExam | None:
         """Confirma agendamento de exame."""
         exam = self.get_exam(exam_id)
         if not exam:
@@ -172,7 +171,7 @@ class PCMSOService:
         self.db.refresh(exam)
         return exam
 
-    def complete_exam(self, exam_id: UUID) -> Optional[MedicalExam]:
+    def complete_exam(self, exam_id: UUID) -> MedicalExam | None:
         """Marca exame como realizado."""
         exam = self.get_exam(exam_id)
         if not exam:
@@ -184,7 +183,7 @@ class PCMSOService:
         self.db.refresh(exam)
         return exam
 
-    def cancel_exam(self, exam_id: UUID, motivo: Optional[str] = None) -> Optional[MedicalExam]:
+    def cancel_exam(self, exam_id: UUID, motivo: str | None = None) -> MedicalExam | None:
         """Cancela exame."""
         exam = self.get_exam(exam_id)
         if not exam:
@@ -259,15 +258,15 @@ class PCMSOService:
 
         return aso
 
-    def get_aso(self, aso_id: UUID) -> Optional[ASO]:
+    def get_aso(self, aso_id: UUID) -> ASO | None:
         """Busca ASO por ID."""
         return self.db.query(ASO).filter(ASO.id == aso_id).first()
 
-    def get_aso_by_exam(self, exam_id: UUID) -> Optional[ASO]:
+    def get_aso_by_exam(self, exam_id: UUID) -> ASO | None:
         """Busca ASO pelo exame."""
         return self.db.query(ASO).filter(ASO.exame_id == exam_id).first()
 
-    def list_expiring_asos(self, days: int = 30) -> List[Dict[str, Any]]:
+    def list_expiring_asos(self, days: int = 30) -> list[dict[str, Any]]:
         """
         Lista ASOs com vencimento proximo.
 
@@ -279,29 +278,35 @@ class PCMSOService:
         """
         limit_date = date.today() + timedelta(days=days)
 
-        asos = self.db.query(ASO).filter(
-            ASO.ativo == True,
-            ASO.cancelado == False,
-            ASO.data_vencimento <= limit_date,
-            ASO.data_vencimento >= date.today(),
-        ).all()
+        asos = (
+            self.db.query(ASO)
+            .filter(
+                ASO.ativo,
+                not ASO.cancelado,
+                ASO.data_vencimento <= limit_date,
+                ASO.data_vencimento >= date.today(),
+            )
+            .all()
+        )
 
         result = []
         for aso in asos:
             exam = self.get_exam(aso.exame_id)
-            result.append({
-                "aso_id": str(aso.id),
-                "funcionario_id": str(exam.funcionario_id) if exam else None,
-                "numero_aso": aso.numero_aso,
-                "tipo_exame": exam.tipo_exame if exam else None,
-                "data_vencimento": aso.data_vencimento.isoformat(),
-                "dias_para_vencer": aso.dias_para_vencer,
-                "resultado": aso.resultado,
-            })
+            result.append(
+                {
+                    "aso_id": str(aso.id),
+                    "funcionario_id": str(exam.funcionario_id) if exam else None,
+                    "numero_aso": aso.numero_aso,
+                    "tipo_exame": exam.tipo_exame if exam else None,
+                    "data_vencimento": aso.data_vencimento.isoformat(),
+                    "dias_para_vencer": aso.dias_para_vencer,
+                    "resultado": aso.resultado,
+                }
+            )
 
         return result
 
-    def update_aso(self, aso_id: UUID, request: ASOUpdateRequest) -> Optional[ASO]:
+    def update_aso(self, aso_id: UUID, request: ASOUpdateRequest) -> ASO | None:
         """Atualiza ASO."""
         aso = self.get_aso(aso_id)
         if not aso:
@@ -318,7 +323,7 @@ class PCMSOService:
         self.db.refresh(aso)
         return aso
 
-    def cancel_aso(self, aso_id: UUID, motivo: str) -> Optional[ASO]:
+    def cancel_aso(self, aso_id: UUID, motivo: str) -> ASO | None:
         """Cancela ASO."""
         aso = self.get_aso(aso_id)
         if not aso:
@@ -337,9 +342,7 @@ class PCMSOService:
     def _generate_aso_number(self) -> str:
         """Gera numero sequencial de ASO."""
         year = date.today().year
-        count = self.db.query(ASO).filter(
-            ASO.data_emissao >= datetime(year, 1, 1)
-        ).count()
+        count = self.db.query(ASO).filter(ASO.data_emissao >= datetime(year, 1, 1)).count()
         return f"ASO-{year}-{count + 1:06d}"
 
     # ==========================================================================
@@ -360,33 +363,35 @@ class PCMSOService:
         self.db.refresh(exam)
         return exam
 
-    def list_complementary_exams(self, exam_id: UUID) -> List[ComplementaryExam]:
+    def list_complementary_exams(self, exam_id: UUID) -> list[ComplementaryExam]:
         """Lista exames complementares de um exame principal."""
-        return self.db.query(ComplementaryExam).filter(
-            ComplementaryExam.exame_principal_id == exam_id
-        ).all()
+        return self.db.query(ComplementaryExam).filter(ComplementaryExam.exame_principal_id == exam_id).all()
 
     # ==========================================================================
     # Statistics
     # ==========================================================================
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Retorna estatisticas do PCMSO."""
         today = date.today()
         start_of_year = date(today.year, 1, 1)
 
-        total_exams = self.db.query(MedicalExam).filter(
-            MedicalExam.data_agendamento >= start_of_year
-        ).count()
+        total_exams = self.db.query(MedicalExam).filter(MedicalExam.data_agendamento >= start_of_year).count()
 
-        pending_exams = self.db.query(MedicalExam).filter(
-            MedicalExam.status.in_([ExamStatus.AGENDADO.value, ExamStatus.CONFIRMADO.value])
-        ).count()
+        pending_exams = (
+            self.db.query(MedicalExam)
+            .filter(MedicalExam.status.in_([ExamStatus.AGENDADO.value, ExamStatus.CONFIRMADO.value]))
+            .count()
+        )
 
-        completed_exams = self.db.query(MedicalExam).filter(
-            MedicalExam.status == ExamStatus.REALIZADO.value,
-            MedicalExam.data_realizacao >= start_of_year,
-        ).count()
+        completed_exams = (
+            self.db.query(MedicalExam)
+            .filter(
+                MedicalExam.status == ExamStatus.REALIZADO.value,
+                MedicalExam.data_realizacao >= start_of_year,
+            )
+            .count()
+        )
 
         expiring_asos = len(self.list_expiring_asos(days=30))
 

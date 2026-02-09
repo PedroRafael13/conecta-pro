@@ -4,21 +4,20 @@ Service para SPED Fiscal (EFD ICMS/IPI).
 Camada de serviço que encapsula a lógica de negócio do SPED Fiscal.
 """
 
-import os
 import logging
-from datetime import datetime, date
+import os
+from datetime import datetime
 from decimal import Decimal
-from typing import Dict, List, Optional, Any
+from typing import Any
 
 from ..core.sped_fiscal import (
-    SPEDFiscalManager,
-    Participante,
-    Produto,
     DocumentoFiscal,
-    Inventario,
-    ApuracaoICMS,
     FinalidadeArquivo,
+    Inventario,
+    Participante,
     PerfilArquivo,
+    Produto,
+    SPEDFiscalManager,
 )
 
 logger = logging.getLogger(__name__)
@@ -65,7 +64,7 @@ class SPEDFiscalService:
 
         logger.info(f"SPEDFiscalService iniciado: CNPJ={self.cnpj}, UF={self.uf}")
 
-    def validar_status(self) -> Dict[str, Any]:
+    def validar_status(self) -> dict[str, Any]:
         """Valida e retorna status da configuração."""
         return {
             "cnpj": self.cnpj,
@@ -85,7 +84,7 @@ class SPEDFiscalService:
             ],
         }
 
-    def adicionar_participante(self, dados: Dict[str, Any]) -> Dict[str, Any]:
+    def adicionar_participante(self, dados: dict[str, Any]) -> dict[str, Any]:
         """
         Adiciona um participante ao cadastro.
 
@@ -117,7 +116,7 @@ class SPEDFiscalService:
             "tipo_pessoa": "Jurídica" if len(participante.cnpj_cpf) == 14 else "Física",
         }
 
-    def adicionar_produto(self, dados: Dict[str, Any]) -> Dict[str, Any]:
+    def adicionar_produto(self, dados: dict[str, Any]) -> dict[str, Any]:
         """
         Adiciona um produto ao cadastro.
 
@@ -149,7 +148,7 @@ class SPEDFiscalService:
             "unidade": produto.unidade,
         }
 
-    def adicionar_documento(self, dados: Dict[str, Any]) -> Dict[str, Any]:
+    def adicionar_documento(self, dados: dict[str, Any]) -> dict[str, Any]:
         """
         Adiciona um documento fiscal.
 
@@ -162,11 +161,13 @@ class SPEDFiscalService:
         # Verifica se participante existe ou cria temporário
         cod_part = dados["codigo_participante"]
         if cod_part not in self.manager.participantes:
-            self.manager.adicionar_participante(Participante(
-                codigo=cod_part,
-                nome=f"Participante {cod_part}",
-                cnpj_cpf="00000000000000",
-            ))
+            self.manager.adicionar_participante(
+                Participante(
+                    codigo=cod_part,
+                    nome=f"Participante {cod_part}",
+                    cnpj_cpf="00000000000000",
+                )
+            )
 
         documento = DocumentoFiscal(
             tipo=dados["tipo"],
@@ -195,7 +196,7 @@ class SPEDFiscalService:
             "valor_total": str(documento.valor_total),
         }
 
-    def adicionar_inventario(self, dados: Dict[str, Any]) -> Dict[str, Any]:
+    def adicionar_inventario(self, dados: dict[str, Any]) -> dict[str, Any]:
         """
         Adiciona um item ao inventário.
 
@@ -227,11 +228,7 @@ class SPEDFiscalService:
             "valor_total": str(item.valor_total),
         }
 
-    def calcular_apuracao(
-        self,
-        periodo: str,
-        documentos: Optional[List[Dict[str, Any]]] = None
-    ) -> Dict[str, Any]:
+    def calcular_apuracao(self, periodo: str, documentos: list[dict[str, Any]] | None = None) -> dict[str, Any]:
         """
         Calcula a apuração de ICMS do período.
 
@@ -268,11 +265,11 @@ class SPEDFiscalService:
         periodo_inicio: str,
         periodo_fim: str,
         finalidade: str = "0",
-        participantes: Optional[List[Dict[str, Any]]] = None,
-        produtos: Optional[List[Dict[str, Any]]] = None,
-        documentos: Optional[List[Dict[str, Any]]] = None,
-        inventario: Optional[List[Dict[str, Any]]] = None,
-    ) -> Dict[str, Any]:
+        participantes: list[dict[str, Any]] | None = None,
+        produtos: list[dict[str, Any]] | None = None,
+        documentos: list[dict[str, Any]] | None = None,
+        inventario: list[dict[str, Any]] | None = None,
+    ) -> dict[str, Any]:
         """
         Gera o arquivo SPED Fiscal.
 
@@ -326,7 +323,7 @@ class SPEDFiscalService:
             "conteudo": conteudo,
         }
 
-    def validar_arquivo(self, conteudo: str) -> Dict[str, Any]:
+    def validar_arquivo(self, conteudo: str) -> dict[str, Any]:
         """
         Valida um arquivo SPED.
 
@@ -338,16 +335,11 @@ class SPEDFiscalService:
         """
         return self.manager.validar_arquivo(conteudo)
 
-    def listar_blocos(self) -> Dict[str, Any]:
+    def listar_blocos(self) -> dict[str, Any]:
         """Lista blocos do SPED Fiscal."""
-        return {
-            "blocos": [
-                {"codigo": k, "descricao": v}
-                for k, v in self.BLOCOS.items()
-            ]
-        }
+        return {"blocos": [{"codigo": k, "descricao": v} for k, v in self.BLOCOS.items()]}
 
-    def listar_participantes(self) -> Dict[str, Any]:
+    def listar_participantes(self) -> dict[str, Any]:
         """Lista participantes cadastrados."""
         return {
             "participantes": [
@@ -361,7 +353,7 @@ class SPEDFiscalService:
             ]
         }
 
-    def listar_produtos(self) -> Dict[str, Any]:
+    def listar_produtos(self) -> dict[str, Any]:
         """Lista produtos cadastrados."""
         return {
             "produtos": [
@@ -375,7 +367,7 @@ class SPEDFiscalService:
             ]
         }
 
-    def listar_documentos(self) -> Dict[str, Any]:
+    def listar_documentos(self) -> dict[str, Any]:
         """Lista documentos cadastrados."""
         return {
             "documentos": [
@@ -391,7 +383,7 @@ class SPEDFiscalService:
             ]
         }
 
-    def limpar_dados(self) -> Dict[str, Any]:
+    def limpar_dados(self) -> dict[str, Any]:
         """Limpa dados do manager."""
         self.manager.participantes.clear()
         self.manager.produtos.clear()
@@ -403,7 +395,7 @@ class SPEDFiscalService:
 
 
 # Singleton
-_service_instance: Optional[SPEDFiscalService] = None
+_service_instance: SPEDFiscalService | None = None
 
 
 def get_sped_fiscal_service() -> SPEDFiscalService:

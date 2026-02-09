@@ -24,21 +24,21 @@ from .controllers import router as government_integrations_router
 
 # Re-export schemas para compatibilidade
 from .schemas import (
-    StandardResponse,
-    ValidateDocumentRequest,
-    ConsultaCPFRequest,
-    ConsultaCNPJRequest,
     CalculoFGTSRequest,
     CalculoINSSRequest,
+    ConsultaCNPJRequest,
+    ConsultaCPFRequest,
     ESocialEventRequest,
     NFERequest,
+    StandardResponse,
+    ValidateDocumentRequest,
 )
 
 # Re-export services
 from .services import (
-    ReceitaFederalApiService,
-    FGTSINSSService,
     ESocialService,
+    FGTSINSSService,
+    ReceitaFederalApiService,
     SEFAZService,
 )
 

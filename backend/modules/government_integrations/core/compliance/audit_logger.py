@@ -4,14 +4,14 @@ Sistema de Audit Trail para Integrações Governamentais.
 Registra todas as operações para compliance e rastreabilidade.
 """
 
-from datetime import datetime
-from typing import Dict, Optional, Any, List
-from dataclasses import dataclass, field
-from enum import Enum
-from uuid import UUID, uuid4
+import hashlib
 import json
 import logging
-import hashlib
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
+from uuid import UUID, uuid4
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 
 class TipoEvento(Enum):
     """Tipos de evento de auditoria."""
+
     # Operações de leitura
     CONSULTA = "consulta"
     DOWNLOAD = "download"
@@ -60,27 +61,28 @@ class TipoEvento(Enum):
 @dataclass
 class AuditEvent:
     """Evento de auditoria."""
+
     id: UUID = field(default_factory=uuid4)
     timestamp: datetime = field(default_factory=datetime.utcnow)
-    tenant_id: Optional[UUID] = None
-    usuario_id: Optional[UUID] = None
+    tenant_id: UUID | None = None
+    usuario_id: UUID | None = None
     tipo: TipoEvento = TipoEvento.CONSULTA
     recurso: str = ""  # Ex: "nfe", "funcionario", "certificado"
-    recurso_id: Optional[str] = None
+    recurso_id: str | None = None
     acao: str = ""  # Descrição da ação
-    ip_origem: Optional[str] = None
-    user_agent: Optional[str] = None
-    dados_antes: Optional[Dict] = None
-    dados_depois: Optional[Dict] = None
-    metadata: Dict = field(default_factory=dict)
+    ip_origem: str | None = None
+    user_agent: str | None = None
+    dados_antes: dict | None = None
+    dados_depois: dict | None = None
+    metadata: dict = field(default_factory=dict)
     sucesso: bool = True
-    erro: Optional[str] = None
+    erro: str | None = None
 
     # Campos para rastreabilidade
-    request_id: Optional[str] = None
-    session_id: Optional[str] = None
+    request_id: str | None = None
+    session_id: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Converte para dicionário."""
         return {
             "id": str(self.id),
@@ -111,20 +113,27 @@ class AuditLogger:
 
     # Campos que devem ser mascarados em logs
     CAMPOS_SENSIVEIS = {
-        "senha", "password", "secret", "token", "api_key",
-        "cpf", "rg", "cnh", "pis", "nis",
-        "numero_cartao", "cvv", "conta_bancaria",
-        "private_key", "certificate",
+        "senha",
+        "password",
+        "secret",
+        "token",
+        "api_key",
+        "cpf",
+        "rg",
+        "cnh",
+        "pis",
+        "nis",
+        "numero_cartao",
+        "cvv",
+        "conta_bancaria",
+        "private_key",
+        "certificate",
     }
 
-    def __init__(
-        self,
-        db_session: Optional[AsyncSession] = None,
-        mascarar_dados: bool = True
-    ):
+    def __init__(self, db_session: AsyncSession | None = None, mascarar_dados: bool = True):
         self.db = db_session
         self.mascarar_dados = mascarar_dados
-        self._buffer: List[AuditEvent] = []
+        self._buffer: list[AuditEvent] = []
         self._buffer_size = 100
 
     async def registrar(self, evento: AuditEvent) -> UUID:
@@ -177,7 +186,7 @@ class AuditLogger:
 
         return evento
 
-    def _mascarar_dict(self, dados: Dict) -> Dict:
+    def _mascarar_dict(self, dados: dict) -> dict:
         """Mascara campos sensíveis em um dicionário."""
         resultado = {}
 
@@ -195,10 +204,7 @@ class AuditLogger:
                 resultado[chave] = self._mascarar_dict(valor)
 
             elif isinstance(valor, list):
-                resultado[chave] = [
-                    self._mascarar_dict(item) if isinstance(item, dict) else item
-                    for item in valor
-                ]
+                resultado[chave] = [self._mascarar_dict(item) if isinstance(item, dict) else item for item in valor]
 
             else:
                 resultado[chave] = valor
@@ -246,7 +252,7 @@ class AuditLogger:
                     "request_id": evento.request_id,
                     "session_id": evento.session_id,
                     "hash": hash_integridade,
-                }
+                },
             )
             await self.db.commit()
 
@@ -255,14 +261,7 @@ class AuditLogger:
 
     # Métodos de conveniência
 
-    async def log_consulta(
-        self,
-        tenant_id: UUID,
-        usuario_id: UUID,
-        recurso: str,
-        recurso_id: str,
-        **kwargs
-    ) -> UUID:
+    async def log_consulta(self, tenant_id: UUID, usuario_id: UUID, recurso: str, recurso_id: str, **kwargs) -> UUID:
         """Registra consulta a recurso."""
         evento = AuditEvent(
             tenant_id=tenant_id,
@@ -271,18 +270,12 @@ class AuditLogger:
             recurso=recurso,
             recurso_id=recurso_id,
             acao=f"Consulta {recurso}",
-            **kwargs
+            **kwargs,
         )
         return await self.registrar(evento)
 
     async def log_criacao(
-        self,
-        tenant_id: UUID,
-        usuario_id: UUID,
-        recurso: str,
-        recurso_id: str,
-        dados: Dict,
-        **kwargs
+        self, tenant_id: UUID, usuario_id: UUID, recurso: str, recurso_id: str, dados: dict, **kwargs
     ) -> UUID:
         """Registra criação de recurso."""
         evento = AuditEvent(
@@ -293,7 +286,7 @@ class AuditLogger:
             recurso_id=recurso_id,
             acao=f"Criação de {recurso}",
             dados_depois=dados,
-            **kwargs
+            **kwargs,
         )
         return await self.registrar(evento)
 
@@ -303,9 +296,9 @@ class AuditLogger:
         usuario_id: UUID,
         recurso: str,
         recurso_id: str,
-        dados_antes: Dict,
-        dados_depois: Dict,
-        **kwargs
+        dados_antes: dict,
+        dados_depois: dict,
+        **kwargs,
     ) -> UUID:
         """Registra atualização de recurso."""
         evento = AuditEvent(
@@ -317,18 +310,12 @@ class AuditLogger:
             acao=f"Atualização de {recurso}",
             dados_antes=dados_antes,
             dados_depois=dados_depois,
-            **kwargs
+            **kwargs,
         )
         return await self.registrar(evento)
 
     async def log_exclusao(
-        self,
-        tenant_id: UUID,
-        usuario_id: UUID,
-        recurso: str,
-        recurso_id: str,
-        dados: Dict,
-        **kwargs
+        self, tenant_id: UUID, usuario_id: UUID, recurso: str, recurso_id: str, dados: dict, **kwargs
     ) -> UUID:
         """Registra exclusão de recurso."""
         evento = AuditEvent(
@@ -339,7 +326,7 @@ class AuditLogger:
             recurso_id=recurso_id,
             acao=f"Exclusão de {recurso}",
             dados_antes=dados,
-            **kwargs
+            **kwargs,
         )
         return await self.registrar(evento)
 
@@ -350,8 +337,8 @@ class AuditLogger:
         recurso_id: str,
         servico: str,
         sucesso: bool,
-        erro: Optional[str] = None,
-        **kwargs
+        erro: str | None = None,
+        **kwargs,
     ) -> UUID:
         """Registra envio para serviço governamental."""
         evento = AuditEvent(
@@ -363,18 +350,12 @@ class AuditLogger:
             sucesso=sucesso,
             erro=erro,
             metadata={"servico": servico, **kwargs.get("metadata", {})},
-            **{k: v for k, v in kwargs.items() if k != "metadata"}
+            **{k: v for k, v in kwargs.items() if k != "metadata"},
         )
         return await self.registrar(evento)
 
     async def log_acesso_dados_pessoais(
-        self,
-        tenant_id: UUID,
-        usuario_id: UUID,
-        titular_id: str,
-        dados_acessados: List[str],
-        finalidade: str,
-        **kwargs
+        self, tenant_id: UUID, usuario_id: UUID, titular_id: str, dados_acessados: list[str], finalidade: str, **kwargs
     ) -> UUID:
         """Registra acesso a dados pessoais (LGPD)."""
         evento = AuditEvent(
@@ -389,17 +370,11 @@ class AuditLogger:
                 "campos_acessados": dados_acessados,
                 "finalidade": finalidade,
             },
-            **kwargs
+            **kwargs,
         )
         return await self.registrar(evento)
 
-    async def log_erro(
-        self,
-        tenant_id: UUID,
-        recurso: str,
-        erro: str,
-        **kwargs
-    ) -> UUID:
+    async def log_erro(self, tenant_id: UUID, recurso: str, erro: str, **kwargs) -> UUID:
         """Registra erro no sistema."""
         evento = AuditEvent(
             tenant_id=tenant_id,
@@ -408,7 +383,7 @@ class AuditLogger:
             acao="Erro no sistema",
             sucesso=False,
             erro=erro,
-            **kwargs
+            **kwargs,
         )
         return await self.registrar(evento)
 
@@ -417,14 +392,14 @@ class AuditLogger:
     async def buscar_eventos(
         self,
         tenant_id: UUID,
-        tipo: Optional[TipoEvento] = None,
-        recurso: Optional[str] = None,
-        usuario_id: Optional[UUID] = None,
-        data_inicio: Optional[datetime] = None,
-        data_fim: Optional[datetime] = None,
+        tipo: TipoEvento | None = None,
+        recurso: str | None = None,
+        usuario_id: UUID | None = None,
+        data_inicio: datetime | None = None,
+        data_fim: datetime | None = None,
         limite: int = 100,
-        offset: int = 0
-    ) -> List[Dict]:
+        offset: int = 0,
+    ) -> list[dict]:
         """Busca eventos de auditoria."""
         if not self.db:
             return []
@@ -464,33 +439,32 @@ class AuditLogger:
             ORDER BY timestamp DESC
             LIMIT :limite OFFSET :offset
             """),
-            params
+            params,
         )
 
         eventos = []
         for row in result.fetchall():
-            eventos.append({
-                "id": str(row.id),
-                "timestamp": row.timestamp.isoformat(),
-                "usuario_id": str(row.usuario_id) if row.usuario_id else None,
-                "tipo": row.tipo,
-                "recurso": row.recurso,
-                "recurso_id": row.recurso_id,
-                "acao": row.acao,
-                "ip_origem": row.ip_origem,
-                "sucesso": row.sucesso,
-                "erro": row.erro,
-                "metadata": json.loads(row.metadata) if row.metadata else {},
-            })
+            eventos.append(
+                {
+                    "id": str(row.id),
+                    "timestamp": row.timestamp.isoformat(),
+                    "usuario_id": str(row.usuario_id) if row.usuario_id else None,
+                    "tipo": row.tipo,
+                    "recurso": row.recurso,
+                    "recurso_id": row.recurso_id,
+                    "acao": row.acao,
+                    "ip_origem": row.ip_origem,
+                    "sucesso": row.sucesso,
+                    "erro": row.erro,
+                    "metadata": json.loads(row.metadata) if row.metadata else {},
+                }
+            )
 
         return eventos
 
     async def gerar_relatorio_compliance(
-        self,
-        tenant_id: UUID,
-        data_inicio: datetime,
-        data_fim: datetime
-    ) -> Dict[str, Any]:
+        self, tenant_id: UUID, data_inicio: datetime, data_fim: datetime
+    ) -> dict[str, Any]:
         """Gera relatório de compliance para o período."""
         if not self.db:
             return {"erro": "Banco de dados não configurado"}
@@ -505,7 +479,7 @@ class AuditLogger:
             GROUP BY tipo
             ORDER BY total DESC
             """),
-            {"tenant_id": tenant_id, "inicio": data_inicio, "fim": data_fim}
+            {"tenant_id": tenant_id, "inicio": data_inicio, "fim": data_fim},
         )
 
         eventos_por_tipo = {}
@@ -530,7 +504,7 @@ class AuditLogger:
                 "inicio": data_inicio,
                 "fim": data_fim,
                 "tipo": TipoEvento.ACESSO_DADOS_PESSOAIS.value,
-            }
+            },
         )
         acessos_dados_pessoais = result.scalar() or 0
 
@@ -549,7 +523,7 @@ class AuditLogger:
 
 
 # Instância singleton
-_audit_logger_instance: Optional[AuditLogger] = None
+_audit_logger_instance: AuditLogger | None = None
 
 
 def get_audit_logger() -> AuditLogger:

@@ -4,24 +4,22 @@ Controller de Extração de Dados Governamentais.
 Endpoints para iniciar e gerenciar extrações.
 """
 
-from datetime import datetime, timedelta
-from typing import Dict, Optional, List, Any
-from uuid import UUID
 import logging
+from datetime import datetime, timedelta
+from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status, BackgroundTasks
-from pydantic import BaseModel, Field, validator
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, status
+from pydantic import BaseModel, Field, field_validator
 
 from ..extractors.orchestrator import (
-    OrquestradorExtracao,
     ConfiguracaoExtracao,
     TipoServico,
     get_orchestrator,
 )
 from ..jobs.sync_tasks import (
-    sincronizar_nfe,
     sincronizar_esocial,
     sincronizar_fgts,
+    sincronizar_nfe,
     sincronizar_nfse,
     sincronizar_rfb,
     sincronizar_todos,
@@ -36,48 +34,25 @@ router = APIRouter(prefix="/extracao", tags=["Extração Governamental"])
 # Schemas
 # ============================================================================
 
+
 class IniciarExtracaoRequest(BaseModel):
     """Requisição para iniciar extração."""
 
-    servicos: Optional[List[str]] = Field(
-        None,
-        description="Serviços a sincronizar. Se vazio, sincroniza todos.",
-        example=["sefaz_nfe", "esocial"]
+    servicos: list[str] | None = Field(
+        None, description="Serviços a sincronizar. Se vazio, sincroniza todos.", example=["sefaz_nfe", "esocial"]
     )
-    cnpjs: Optional[List[str]] = Field(
-        None,
-        description="CNPJs específicos. Se vazio, usa todos do tenant.",
-        example=["12345678000100"]
+    cnpjs: list[str] | None = Field(
+        None, description="CNPJs específicos. Se vazio, usa todos do tenant.", example=["12345678000100"]
     )
-    ufs: Optional[List[str]] = Field(
-        None,
-        description="UFs para consulta SEFAZ",
-        example=["AM", "SP"]
-    )
-    data_inicio: Optional[datetime] = Field(
-        None,
-        description="Data inicial do período"
-    )
-    data_fim: Optional[datetime] = Field(
-        None,
-        description="Data final do período"
-    )
-    dias: int = Field(
-        30,
-        ge=1,
-        le=365,
-        description="Dias para trás (se data_inicio não informada)"
-    )
-    modo_incremental: bool = Field(
-        True,
-        description="Se True, busca apenas novos documentos"
-    )
-    executar_async: bool = Field(
-        True,
-        description="Se True, executa em background via Celery"
-    )
+    ufs: list[str] | None = Field(None, description="UFs para consulta SEFAZ", example=["AM", "SP"])
+    data_inicio: datetime | None = Field(None, description="Data inicial do período")
+    data_fim: datetime | None = Field(None, description="Data final do período")
+    dias: int = Field(30, ge=1, le=365, description="Dias para trás (se data_inicio não informada)")
+    modo_incremental: bool = Field(True, description="Se True, busca apenas novos documentos")
+    executar_async: bool = Field(True, description="Se True, executa em background via Celery")
 
-    @validator('servicos', pre=True, always=True)
+    @field_validator("servicos")
+    @classmethod
     def validar_servicos(cls, v):
         if v:
             validos = [t.value for t in TipoServico]
@@ -92,7 +67,7 @@ class ExtracaoResponse(BaseModel):
 
     id: str
     status: str
-    servicos: List[str]
+    servicos: list[str]
     iniciado_em: datetime
     modo: str
     mensagem: str
@@ -107,11 +82,11 @@ class StatusExtracaoResponse(BaseModel):
     documentos_processados: int
     documentos_novos: int
     documentos_erro: int
-    servicos_concluidos: List[str]
-    servicos_pendentes: List[str]
-    erros: List[str]
+    servicos_concluidos: list[str]
+    servicos_pendentes: list[str]
+    erros: list[str]
     iniciado_em: datetime
-    estimativa_conclusao: Optional[datetime] = None
+    estimativa_conclusao: datetime | None = None
 
 
 class HistoricoExtracaoResponse(BaseModel):
@@ -119,20 +94,21 @@ class HistoricoExtracaoResponse(BaseModel):
 
     id: str
     tenant_id: str
-    servicos: List[str]
+    servicos: list[str]
     status: str
     documentos_processados: int
     documentos_novos: int
     documentos_erro: int
     iniciado_em: datetime
-    finalizado_em: Optional[datetime]
-    duracao_segundos: Optional[float]
-    usuario_id: Optional[str]
+    finalizado_em: datetime | None
+    duracao_segundos: float | None
+    usuario_id: str | None
 
 
 # ============================================================================
 # Endpoints
 # ============================================================================
+
 
 @router.post("/iniciar", response_model=ExtracaoResponse)
 async def iniciar_extracao(
@@ -151,10 +127,7 @@ async def iniciar_extracao(
     try:
         tid = UUID(tenant_id)
     except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="ID de tenant inválido"
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="ID de tenant inválido")
 
     # Determinar período
     data_fim = request.data_fim or datetime.utcnow()
@@ -171,12 +144,7 @@ async def iniciar_extracao(
         task_ids = []
 
         if not request.servicos or "sefaz_nfe" in (request.servicos or []):
-            task = sincronizar_nfe.delay(
-                tenant_id,
-                request.cnpjs,
-                request.ufs,
-                request.dias
-            )
+            task = sincronizar_nfe.delay(tenant_id, request.cnpjs, request.ufs, request.dias)
             task_ids.append(("sefaz_nfe", task.id))
 
         if not request.servicos or "esocial" in (request.servicos or []):
@@ -205,7 +173,7 @@ async def iniciar_extracao(
             servicos=[t[0] for t in task_ids],
             iniciado_em=datetime.utcnow(),
             modo="async",
-            mensagem=f"Extração enfileirada. {len(task_ids)} tarefas criadas."
+            mensagem=f"Extração enfileirada. {len(task_ids)} tarefas criadas.",
         )
 
     else:
@@ -228,7 +196,7 @@ async def iniciar_extracao(
             servicos=[s.value for s in servicos],
             iniciado_em=resultado.inicio,
             modo="sync",
-            mensagem=f"Extração concluída. {resultado.documentos_novos} novos documentos."
+            mensagem=f"Extração concluída. {resultado.documentos_novos} novos documentos.",
         )
 
 
@@ -255,7 +223,7 @@ async def obter_status_extracao(extracao_id: str):
     )
 
 
-@router.get("/historico", response_model=List[HistoricoExtracaoResponse])
+@router.get("/historico", response_model=list[HistoricoExtracaoResponse])
 async def listar_historico_extracoes(
     tenant_id: str,
     limite: int = Query(20, ge=1, le=100),
@@ -279,22 +247,19 @@ async def cancelar_extracao(extracao_id: str):
     # from celery.result import AsyncResult
     # AsyncResult(extracao_id).revoke(terminate=True)
 
-    return {
-        "id": extracao_id,
-        "status": "cancelada",
-        "mensagem": "Solicitação de cancelamento enviada"
-    }
+    return {"id": extracao_id, "status": "cancelada", "mensagem": "Solicitação de cancelamento enviada"}
 
 
 # ============================================================================
 # Endpoints de Sincronização Rápida
 # ============================================================================
 
+
 @router.post("/sync/nfe")
 async def sincronizar_nfe_rapido(
     tenant_id: str,
-    cnpjs: Optional[List[str]] = None,
-    ufs: Optional[List[str]] = None,
+    cnpjs: list[str] | None = None,
+    ufs: list[str] | None = None,
     dias: int = Query(30, ge=1, le=365),
 ):
     """
@@ -306,15 +271,15 @@ async def sincronizar_nfe_rapido(
         "task_id": task.id,
         "servico": "sefaz_nfe",
         "status": "enfileirada",
-        "mensagem": "Sincronização de NF-e iniciada"
+        "mensagem": "Sincronização de NF-e iniciada",
     }
 
 
 @router.post("/sync/esocial")
 async def sincronizar_esocial_rapido(
     tenant_id: str,
-    cnpjs: Optional[List[str]] = None,
-    competencia: Optional[str] = None,
+    cnpjs: list[str] | None = None,
+    competencia: str | None = None,
 ):
     """
     Sincroniza eSocial de forma rápida (background).
@@ -325,15 +290,15 @@ async def sincronizar_esocial_rapido(
         "task_id": task.id,
         "servico": "esocial",
         "status": "enfileirada",
-        "mensagem": "Sincronização do eSocial iniciada"
+        "mensagem": "Sincronização do eSocial iniciada",
     }
 
 
 @router.post("/sync/fgts")
 async def sincronizar_fgts_rapido(
     tenant_id: str,
-    cnpjs: Optional[List[str]] = None,
-    competencias: Optional[List[str]] = None,
+    cnpjs: list[str] | None = None,
+    competencias: list[str] | None = None,
 ):
     """
     Sincroniza FGTS Digital de forma rápida (background).
@@ -344,14 +309,14 @@ async def sincronizar_fgts_rapido(
         "task_id": task.id,
         "servico": "fgts_digital",
         "status": "enfileirada",
-        "mensagem": "Sincronização do FGTS Digital iniciada"
+        "mensagem": "Sincronização do FGTS Digital iniciada",
     }
 
 
 @router.post("/sync/nfse")
 async def sincronizar_nfse_rapido(
     tenant_id: str,
-    cnpjs: Optional[List[str]] = None,
+    cnpjs: list[str] | None = None,
     dias: int = Query(30, ge=1, le=365),
 ):
     """
@@ -363,23 +328,20 @@ async def sincronizar_nfse_rapido(
         "task_id": task.id,
         "servico": "nfse_manaus",
         "status": "enfileirada",
-        "mensagem": "Sincronização de NFS-e iniciada"
+        "mensagem": "Sincronização de NFS-e iniciada",
     }
 
 
 @router.post("/sync/rfb")
 async def sincronizar_rfb_rapido(
     tenant_id: str,
-    cnpjs: List[str],
+    cnpjs: list[str],
 ):
     """
     Sincroniza dados da Receita Federal (background).
     """
     if not cnpjs:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Informe ao menos um CNPJ"
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Informe ao menos um CNPJ")
 
     task = sincronizar_rfb.delay(tenant_id, cnpjs)
 
@@ -387,15 +349,15 @@ async def sincronizar_rfb_rapido(
         "task_id": task.id,
         "servico": "receita_federal",
         "status": "enfileirada",
-        "mensagem": "Sincronização da Receita Federal iniciada"
+        "mensagem": "Sincronização da Receita Federal iniciada",
     }
 
 
 @router.post("/sync/todos")
 async def sincronizar_todos_rapido(
     tenant_id: str,
-    cnpjs: Optional[List[str]] = None,
-    servicos: Optional[List[str]] = None,
+    cnpjs: list[str] | None = None,
+    servicos: list[str] | None = None,
 ):
     """
     Sincroniza todos os serviços governamentais (background).
@@ -406,5 +368,5 @@ async def sincronizar_todos_rapido(
         "task_id": task.id,
         "servico": "todos",
         "status": "enfileirada",
-        "mensagem": "Sincronização completa iniciada"
+        "mensagem": "Sincronização completa iniciada",
     }

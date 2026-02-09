@@ -21,7 +21,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-;
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -55,14 +54,16 @@ interface Employee {
 }
 
 export default function ColaboradoresPage() {
-  const { data: employees = [], isLoading: loading, error: queryError, refetch } = useEmployees();
+  const { data: employeesData, isLoading: loading, error: queryError, refetch } = useEmployees();
+  const employeesRaw = employeesData?.items ?? [];
+  const employees = employeesRaw as unknown as Employee[];
   const { mutateAsync: updateEmployeeMutation } = useUpdateEmployee();
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [source, setSource] = useState<string>('local');
-  const total = employees.length;
+  const total = employeesData?.total ?? employees.length;
 
   // Estados para edição
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -97,9 +98,10 @@ export default function ColaboradoresPage() {
       });
       setEditDialogOpen(false);
       refetch();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Erro ao salvar:', err);
-      setError(err.response?.data?.detail || 'Erro ao salvar alterações');
+      const message = err instanceof Error ? err.message : 'Erro ao salvar alterações';
+      setError(message);
     } finally {
       setSaving(false);
     }

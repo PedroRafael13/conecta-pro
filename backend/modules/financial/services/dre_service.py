@@ -10,10 +10,9 @@ Implementa calculo e geracao de DRE mensal/anual com:
 import calendar
 import logging
 from dataclasses import dataclass, field
-from datetime import date, datetime, timedelta, UTC
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
-from enum import Enum
-from typing import Dict, List, Optional
+from enum import StrEnum
 from uuid import UUID
 
 from sqlalchemy import and_, func, select
@@ -33,7 +32,7 @@ from modules.financial.models.journal_entry import (
 logger = logging.getLogger(__name__)
 
 
-class DREPeriodType(str, Enum):
+class DREPeriodType(StrEnum):
     """Tipo de periodo do DRE."""
 
     MONTHLY = "monthly"
@@ -43,7 +42,7 @@ class DREPeriodType(str, Enum):
     CUSTOM = "custom"
 
 
-class DREGroupType(str, Enum):
+class DREGroupType(StrEnum):
     """Tipos de grupos do DRE."""
 
     RECEITA_BRUTA = "receita_bruta"
@@ -69,10 +68,10 @@ class DREGroupType(str, Enum):
 class DRELineItem:
     """Representa uma linha do DRE."""
 
-    account_id: Optional[UUID] = None
+    account_id: UUID | None = None
     account_code: str = ""
     account_name: str = ""
-    group_type: Optional[DREGroupType] = None
+    group_type: DREGroupType | None = None
     level: int = 0
     is_total: bool = False
     current_value: Decimal = Decimal("0")
@@ -82,9 +81,9 @@ class DRELineItem:
     variation_percent: Decimal = Decimal("0")
     av_percent: Decimal = Decimal("0")  # Analise Vertical
     ah_percent: Decimal = Decimal("0")  # Analise Horizontal
-    cost_center_breakdown: Dict[str, Decimal] = field(default_factory=dict)
+    cost_center_breakdown: dict[str, Decimal] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         """Converte para dicionario."""
         return {
             "account_id": str(self.account_id) if self.account_id else None,
@@ -100,9 +99,7 @@ class DRELineItem:
             "variation_percent": float(self.variation_percent),
             "av_percent": float(self.av_percent),
             "ah_percent": float(self.ah_percent),
-            "cost_center_breakdown": {
-                k: float(v) for k, v in self.cost_center_breakdown.items()
-            },
+            "cost_center_breakdown": {k: float(v) for k, v in self.cost_center_breakdown.items()},
         }
 
 
@@ -114,26 +111,22 @@ class DREReport:
     period_type: DREPeriodType
     start_date: date
     end_date: date
-    previous_start_date: Optional[date] = None
-    previous_end_date: Optional[date] = None
-    lines: List[DRELineItem] = field(default_factory=list)
-    totals: Dict[str, Decimal] = field(default_factory=dict)
-    cost_centers: List[Dict] = field(default_factory=list)
+    previous_start_date: date | None = None
+    previous_end_date: date | None = None
+    lines: list[DRELineItem] = field(default_factory=list)
+    totals: dict[str, Decimal] = field(default_factory=dict)
+    cost_centers: list[dict] = field(default_factory=list)
     generated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         """Converte para dicionario."""
         return {
             "condominio_id": str(self.condominio_id),
             "period_type": self.period_type.value,
             "start_date": self.start_date.isoformat(),
             "end_date": self.end_date.isoformat(),
-            "previous_start_date": (
-                self.previous_start_date.isoformat() if self.previous_start_date else None
-            ),
-            "previous_end_date": (
-                self.previous_end_date.isoformat() if self.previous_end_date else None
-            ),
+            "previous_start_date": (self.previous_start_date.isoformat() if self.previous_start_date else None),
+            "previous_end_date": (self.previous_end_date.isoformat() if self.previous_end_date else None),
             "lines": [line.to_dict() for line in self.lines],
             "totals": {k: float(v) for k, v in self.totals.items()},
             "cost_centers": self.cost_centers,
@@ -142,7 +135,7 @@ class DREReport:
 
 
 # Mapeamento de tipos de conta para grupos DRE
-ACCOUNT_TYPE_TO_DRE_GROUP: Dict[AccountType, DREGroupType] = {
+ACCOUNT_TYPE_TO_DRE_GROUP: dict[AccountType, DREGroupType] = {
     AccountType.REVENUE: DREGroupType.RECEITA_BRUTA,
     AccountType.COST: DREGroupType.CUSTO_PRODUTOS,
     AccountType.EXPENSE: DREGroupType.DESPESAS_OPERACIONAIS,
@@ -171,8 +164,8 @@ class DREService:
         start_date: date,
         end_date: date,
         include_previous: bool = True,
-        include_budget: bool = False,  # pylint: disable=unused-argument
-        cost_center_ids: Optional[List[UUID]] = None,
+        _include_budget: bool = False,  # pylint: disable=unused-argument
+        cost_center_ids: list[UUID] | None = None,
     ) -> DREReport:
         """Gera DRE para o periodo especificado.
 
@@ -219,7 +212,7 @@ class DREService:
         )
 
         # Busca lancamentos do periodo anterior
-        previous_balances: Dict[UUID, Decimal] = {}
+        previous_balances: dict[UUID, Decimal] = {}
         if include_previous and previous_start and previous_end:
             previous_balances = await self._get_period_balances(
                 condominio_id=condominio_id,
@@ -281,7 +274,7 @@ class DREService:
     async def _get_result_accounts(
         self,
         condominio_id: UUID,
-    ) -> List[AccountingAccount]:
+    ) -> list[AccountingAccount]:
         """Busca contas de resultado (Receita, Custo, Despesa)."""
         query = (
             select(AccountingAccount)
@@ -289,11 +282,13 @@ class DREService:
                 and_(
                     AccountingAccount.condominio_id == condominio_id,
                     AccountingAccount.active.is_(True),
-                    AccountingAccount.account_type.in_([
-                        AccountType.REVENUE,
-                        AccountType.COST,
-                        AccountType.EXPENSE,
-                    ]),
+                    AccountingAccount.account_type.in_(
+                        [
+                            AccountType.REVENUE,
+                            AccountType.COST,
+                            AccountType.EXPENSE,
+                        ]
+                    ),
                 )
             )
             .order_by(AccountingAccount.code)
@@ -307,8 +302,8 @@ class DREService:
         condominio_id: UUID,
         start_date: date,
         end_date: date,
-        cost_center_ids: Optional[List[UUID]] = None,
-    ) -> Dict[UUID, Decimal]:
+        cost_center_ids: list[UUID] | None = None,
+    ) -> dict[UUID, Decimal]:
         """Busca saldos das contas no periodo."""
         query = (
             select(
@@ -333,7 +328,7 @@ class DREService:
 
         result = await self.session.execute(query)
 
-        balances: Dict[UUID, Decimal] = {}
+        balances: dict[UUID, Decimal] = {}
         for row in result:
             debit = Decimal(str(row.total_debit or 0))
             credit = Decimal(str(row.total_credit or 0))
@@ -347,7 +342,7 @@ class DREService:
         condominio_id: UUID,
         start_date: date,
         end_date: date,
-    ) -> Dict[UUID, Dict[str, Decimal]]:
+    ) -> dict[UUID, dict[str, Decimal]]:
         """Busca breakdown por centro de custo."""
         query = (
             select(
@@ -371,7 +366,7 @@ class DREService:
 
         result = await self.session.execute(query)
 
-        breakdown: Dict[UUID, Dict[str, Decimal]] = {}
+        breakdown: dict[UUID, dict[str, Decimal]] = {}
         for row in result:
             if row.account_id not in breakdown:
                 breakdown[row.account_id] = {}
@@ -383,7 +378,7 @@ class DREService:
 
         return breakdown
 
-    async def _get_cost_centers(self, condominio_id: UUID) -> List[Dict]:
+    async def _get_cost_centers(self, condominio_id: UUID) -> list[dict]:
         """Busca centros de custo do condominio."""
         query = (
             select(CostCenter.id, CostCenter.code, CostCenter.name)
@@ -398,20 +393,17 @@ class DREService:
 
         result = await self.session.execute(query)
 
-        return [
-            {"id": str(row.id), "code": row.code, "name": row.name}
-            for row in result
-        ]
+        return [{"id": str(row.id), "code": row.code, "name": row.name} for row in result]
 
     def _build_dre_lines(
         self,
-        accounts: List[AccountingAccount],
-        current_balances: Dict[UUID, Decimal],
-        previous_balances: Dict[UUID, Decimal],
-        cost_center_breakdown: Dict[UUID, Dict[str, Decimal]],
-    ) -> List[DRELineItem]:
+        accounts: list[AccountingAccount],
+        current_balances: dict[UUID, Decimal],
+        previous_balances: dict[UUID, Decimal],
+        cost_center_breakdown: dict[UUID, dict[str, Decimal]],
+    ) -> list[DRELineItem]:
         """Monta as linhas do DRE."""
-        lines: List[DRELineItem] = []
+        lines: list[DRELineItem] = []
 
         # Agrupa contas por tipo
         revenue_accounts = [a for a in accounts if a.account_type == AccountType.REVENUE]
@@ -419,12 +411,14 @@ class DREService:
         expense_accounts = [a for a in accounts if a.account_type == AccountType.EXPENSE]
 
         # Receita Bruta
-        lines.append(DRELineItem(
-            account_name="RECEITA BRUTA",
-            group_type=DREGroupType.RECEITA_BRUTA,
-            level=0,
-            is_total=True,
-        ))
+        lines.append(
+            DRELineItem(
+                account_name="RECEITA BRUTA",
+                group_type=DREGroupType.RECEITA_BRUTA,
+                level=0,
+                is_total=True,
+            )
+        )
 
         for account in revenue_accounts:
             if account.dre_group == "deducoes":
@@ -433,24 +427,28 @@ class DREService:
             previous = previous_balances.get(account.id, Decimal("0"))
             cc_breakdown = cost_center_breakdown.get(account.id, {})
 
-            lines.append(DRELineItem(
-                account_id=account.id,
-                account_code=account.code,
-                account_name=account.name,
-                group_type=DREGroupType.RECEITA_BRUTA,
-                level=1,
-                current_value=current,
-                previous_value=previous,
-                cost_center_breakdown=cc_breakdown,
-            ))
+            lines.append(
+                DRELineItem(
+                    account_id=account.id,
+                    account_code=account.code,
+                    account_name=account.name,
+                    group_type=DREGroupType.RECEITA_BRUTA,
+                    level=1,
+                    current_value=current,
+                    previous_value=previous,
+                    cost_center_breakdown=cc_breakdown,
+                )
+            )
 
         # Deducoes da Receita
-        lines.append(DRELineItem(
-            account_name="(-) DEDUCOES DA RECEITA",
-            group_type=DREGroupType.DEDUCOES,
-            level=0,
-            is_total=True,
-        ))
+        lines.append(
+            DRELineItem(
+                account_name="(-) DEDUCOES DA RECEITA",
+                group_type=DREGroupType.DEDUCOES,
+                level=0,
+                is_total=True,
+            )
+        )
 
         for account in revenue_accounts:
             if account.dre_group != "deducoes":
@@ -458,88 +456,102 @@ class DREService:
             current = current_balances.get(account.id, Decimal("0"))
             previous = previous_balances.get(account.id, Decimal("0"))
 
-            lines.append(DRELineItem(
-                account_id=account.id,
-                account_code=account.code,
-                account_name=account.name,
-                group_type=DREGroupType.DEDUCOES,
-                level=1,
-                current_value=current,
-                previous_value=previous,
-            ))
+            lines.append(
+                DRELineItem(
+                    account_id=account.id,
+                    account_code=account.code,
+                    account_name=account.name,
+                    group_type=DREGroupType.DEDUCOES,
+                    level=1,
+                    current_value=current,
+                    previous_value=previous,
+                )
+            )
 
         # Custos
-        lines.append(DRELineItem(
-            account_name="(-) CUSTOS DOS PRODUTOS/SERVICOS",
-            group_type=DREGroupType.CUSTO_PRODUTOS,
-            level=0,
-            is_total=True,
-        ))
+        lines.append(
+            DRELineItem(
+                account_name="(-) CUSTOS DOS PRODUTOS/SERVICOS",
+                group_type=DREGroupType.CUSTO_PRODUTOS,
+                level=0,
+                is_total=True,
+            )
+        )
 
         for account in cost_accounts:
             current = current_balances.get(account.id, Decimal("0"))
             previous = previous_balances.get(account.id, Decimal("0"))
             cc_breakdown = cost_center_breakdown.get(account.id, {})
 
-            lines.append(DRELineItem(
-                account_id=account.id,
-                account_code=account.code,
-                account_name=account.name,
-                group_type=DREGroupType.CUSTO_PRODUTOS,
-                level=1,
-                current_value=abs(current),  # Custo e positivo no DRE
-                previous_value=abs(previous),
-                cost_center_breakdown=cc_breakdown,
-            ))
+            lines.append(
+                DRELineItem(
+                    account_id=account.id,
+                    account_code=account.code,
+                    account_name=account.name,
+                    group_type=DREGroupType.CUSTO_PRODUTOS,
+                    level=1,
+                    current_value=abs(current),  # Custo e positivo no DRE
+                    previous_value=abs(previous),
+                    cost_center_breakdown=cc_breakdown,
+                )
+            )
 
         # Lucro Bruto (calculado)
-        lines.append(DRELineItem(
-            account_name="LUCRO BRUTO",
-            group_type=DREGroupType.LUCRO_BRUTO,
-            level=0,
-            is_total=True,
-        ))
+        lines.append(
+            DRELineItem(
+                account_name="LUCRO BRUTO",
+                group_type=DREGroupType.LUCRO_BRUTO,
+                level=0,
+                is_total=True,
+            )
+        )
 
         # Despesas Operacionais
-        lines.append(DRELineItem(
-            account_name="(-) DESPESAS OPERACIONAIS",
-            group_type=DREGroupType.DESPESAS_OPERACIONAIS,
-            level=0,
-            is_total=True,
-        ))
+        lines.append(
+            DRELineItem(
+                account_name="(-) DESPESAS OPERACIONAIS",
+                group_type=DREGroupType.DESPESAS_OPERACIONAIS,
+                level=0,
+                is_total=True,
+            )
+        )
 
         for account in expense_accounts:
             current = current_balances.get(account.id, Decimal("0"))
             previous = previous_balances.get(account.id, Decimal("0"))
             cc_breakdown = cost_center_breakdown.get(account.id, {})
 
-            lines.append(DRELineItem(
-                account_id=account.id,
-                account_code=account.code,
-                account_name=account.name,
-                group_type=DREGroupType.DESPESAS_OPERACIONAIS,
-                level=1,
-                current_value=abs(current),
-                previous_value=abs(previous),
-                cost_center_breakdown=cc_breakdown,
-            ))
+            lines.append(
+                DRELineItem(
+                    account_id=account.id,
+                    account_code=account.code,
+                    account_name=account.name,
+                    group_type=DREGroupType.DESPESAS_OPERACIONAIS,
+                    level=1,
+                    current_value=abs(current),
+                    previous_value=abs(previous),
+                    cost_center_breakdown=cc_breakdown,
+                )
+            )
 
         # Lucro Liquido (calculado)
-        lines.append(DRELineItem(
-            account_name="LUCRO/PREJUIZO LIQUIDO",
-            group_type=DREGroupType.LUCRO_LIQUIDO,
-            level=0,
-            is_total=True,
-        ))
+        lines.append(
+            DRELineItem(
+                account_name="LUCRO/PREJUIZO LIQUIDO",
+                group_type=DREGroupType.LUCRO_LIQUIDO,
+                level=0,
+                is_total=True,
+            )
+        )
 
         return lines
 
     def _calculate_totals(  # pylint: disable=too-many-branches
         self,
-        lines: List[DRELineItem],
-    ) -> Dict[str, Decimal]:
+        lines: list[DRELineItem],
+    ) -> dict[str, Decimal]:
         """Calcula os totais do DRE."""
-        totals: Dict[str, Decimal] = {
+        totals: dict[str, Decimal] = {
             "receita_bruta": Decimal("0"),
             "deducoes": Decimal("0"),
             "receita_liquida": Decimal("0"),
@@ -589,8 +601,8 @@ class DREService:
 
     def _calculate_analysis(
         self,
-        lines: List[DRELineItem],
-        totals: Dict[str, Decimal],
+        lines: list[DRELineItem],
+        totals: dict[str, Decimal],
     ) -> None:
         """Calcula analises vertical e horizontal."""
         receita_liquida = totals.get("receita_liquida", Decimal("0"))
@@ -604,9 +616,7 @@ class DREService:
             line.variation_value = line.current_value - line.previous_value
 
             if line.previous_value != Decimal("0"):
-                line.variation_percent = (
-                    (line.variation_value / abs(line.previous_value)) * Decimal("100")
-                )
+                line.variation_percent = (line.variation_value / abs(line.previous_value)) * Decimal("100")
 
             # Analise Horizontal (igual a variacao percentual)
             line.ah_percent = line.variation_percent
@@ -616,7 +626,7 @@ class DREService:
         condominio_id: UUID,
         year: int,
         months: int = 12,
-    ) -> Dict:
+    ) -> dict:
         """Gera comparativo mensal do DRE.
 
         Args:
@@ -627,7 +637,7 @@ class DREService:
         Returns:
             Dados do comparativo mensal.
         """
-        comparison_data: Dict[str, List] = {
+        comparison_data: dict[str, list] = {
             "months": [],
             "receita_bruta": [],
             "custos": [],

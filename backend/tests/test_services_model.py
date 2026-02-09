@@ -3,17 +3,26 @@ Tests for Services Module - Models
 Sprint 31: Gestão de Serviços
 """
 
-import pytest
-from datetime import datetime, date, timedelta
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 from uuid import uuid4
 
+import pytest
+
 from modules.services.models import (
-    ServiceCatalog, ServiceOrder, ServiceExecution,
-    ServiceReport, SLAConfig,
-    ServiceCategory, ServiceType, ServiceStatus,
-    OrderStatus, OrderPriority, ExecutionStatus,
-    ReportType, SLAMetricType
+    ExecutionStatus,
+    OrderPriority,
+    OrderStatus,
+    ReportType,
+    ServiceCatalog,
+    ServiceCategory,
+    ServiceExecution,
+    ServiceOrder,
+    ServiceReport,
+    ServiceStatus,
+    ServiceType,
+    SLAConfig,
+    SLAMetricType,
 )
 
 
@@ -29,7 +38,7 @@ class TestServiceCatalog:
             category=ServiceCategory.MANUTENCAO_PREDIAL,
             service_type=ServiceType.PREVENTIVO,
             status=ServiceStatus.ATIVO,
-            base_price=Decimal("500.00")
+            base_price=Decimal("500.00"),
         )
 
         assert service.name == "Manutenção Predial"
@@ -40,12 +49,7 @@ class TestServiceCatalog:
 
     def test_service_activate(self):
         """Test activating a service."""
-        service = ServiceCatalog(
-            id=uuid4(),
-            code="SRV-002",
-            name="Limpeza",
-            status=ServiceStatus.INATIVO
-        )
+        service = ServiceCatalog(id=uuid4(), code="SRV-002", name="Limpeza", status=ServiceStatus.INATIVO)
 
         service.activate()
 
@@ -54,12 +58,7 @@ class TestServiceCatalog:
 
     def test_service_deactivate(self):
         """Test deactivating a service."""
-        service = ServiceCatalog(
-            id=uuid4(),
-            code="SRV-003",
-            name="Segurança",
-            status=ServiceStatus.ATIVO
-        )
+        service = ServiceCatalog(id=uuid4(), code="SRV-003", name="Segurança", status=ServiceStatus.ATIVO)
 
         service.deactivate()
 
@@ -68,12 +67,7 @@ class TestServiceCatalog:
 
     def test_service_discontinue(self):
         """Test discontinuing a service."""
-        service = ServiceCatalog(
-            id=uuid4(),
-            code="SRV-004",
-            name="Consultoria",
-            status=ServiceStatus.ATIVO
-        )
+        service = ServiceCatalog(id=uuid4(), code="SRV-004", name="Consultoria", status=ServiceStatus.ATIVO)
 
         service.discontinue()
 
@@ -82,12 +76,7 @@ class TestServiceCatalog:
 
     def test_calculate_price_base(self):
         """Test calculating price with base price."""
-        service = ServiceCatalog(
-            id=uuid4(),
-            code="SRV-005",
-            name="Jardinagem",
-            base_price=Decimal("200.00")
-        )
+        service = ServiceCatalog(id=uuid4(), code="SRV-005", name="Jardinagem", base_price=Decimal("200.00"))
 
         price = service.calculate_price()
 
@@ -95,12 +84,7 @@ class TestServiceCatalog:
 
     def test_calculate_price_with_quantity(self):
         """Test calculating price with quantity."""
-        service = ServiceCatalog(
-            id=uuid4(),
-            code="SRV-006",
-            name="Piscina",
-            unit_price=Decimal("50.00")
-        )
+        service = ServiceCatalog(id=uuid4(), code="SRV-006", name="Piscina", unit_price=Decimal("50.00"))
 
         price = service.calculate_price(quantity=3)
 
@@ -114,7 +98,7 @@ class TestServiceCatalog:
             name="Emergência",
             base_price=Decimal("100.00"),
             is_emergency_available=True,
-            emergency_surcharge_percent=Decimal("50.00")
+            emergency_surcharge_percent=Decimal("50.00"),
         )
 
         price = service.calculate_price(is_emergency=True)
@@ -129,7 +113,7 @@ class TestServiceCatalog:
             name="Elevadores",
             total_orders=10,
             completed_orders=8,
-            total_revenue=Decimal("5000.00")
+            total_revenue=Decimal("5000.00"),
         )
 
         service.update_metrics(Decimal("600.00"), 5)
@@ -141,24 +125,13 @@ class TestServiceCatalog:
 
     def test_completion_rate(self):
         """Test completion rate calculation."""
-        service = ServiceCatalog(
-            id=uuid4(),
-            code="SRV-009",
-            name="Portaria",
-            total_orders=100,
-            completed_orders=85
-        )
+        service = ServiceCatalog(id=uuid4(), code="SRV-009", name="Portaria", total_orders=100, completed_orders=85)
 
         assert service.completion_rate == 85.0
 
     def test_completion_rate_no_orders(self):
         """Test completion rate with no orders."""
-        service = ServiceCatalog(
-            id=uuid4(),
-            code="SRV-010",
-            name="Novo Serviço",
-            total_orders=0
-        )
+        service = ServiceCatalog(id=uuid4(), code="SRV-010", name="Novo Serviço", total_orders=0)
 
         assert service.completion_rate == 0.0
 
@@ -174,7 +147,7 @@ class TestServiceOrder:
             service_id=uuid4(),
             client_id=uuid4(),
             title="Manutenção de Ar Condicionado",
-            priority=OrderPriority.ALTA
+            priority=OrderPriority.ALTA,
         )
 
         assert order.title == "Manutenção de Ar Condicionado"
@@ -189,7 +162,7 @@ class TestServiceOrder:
             service_id=uuid4(),
             client_id=uuid4(),
             title="Limpeza Geral",
-            status=OrderStatus.RASCUNHO
+            status=OrderStatus.RASCUNHO,
         )
 
         order.submit()
@@ -204,7 +177,7 @@ class TestServiceOrder:
             service_id=uuid4(),
             client_id=uuid4(),
             title="Segurança 24h",
-            status=OrderStatus.PENDENTE
+            status=OrderStatus.PENDENTE,
         )
 
         order.approve()
@@ -220,7 +193,7 @@ class TestServiceOrder:
             service_id=uuid4(),
             client_id=uuid4(),
             title="Jardinagem",
-            status=OrderStatus.PENDENTE
+            status=OrderStatus.PENDENTE,
         )
 
         order.reject("Fora do escopo contratual")
@@ -236,7 +209,7 @@ class TestServiceOrder:
             service_id=uuid4(),
             client_id=uuid4(),
             title="Piscina",
-            status=OrderStatus.APROVADA
+            status=OrderStatus.APROVADA,
         )
 
         schedule_date = date.today() + timedelta(days=3)
@@ -255,7 +228,7 @@ class TestServiceOrder:
             service_id=uuid4(),
             client_id=uuid4(),
             title="Elevadores",
-            status=OrderStatus.AGENDADA
+            status=OrderStatus.AGENDADA,
         )
 
         order.start()
@@ -271,7 +244,7 @@ class TestServiceOrder:
             service_id=uuid4(),
             client_id=uuid4(),
             title="Portaria",
-            status=OrderStatus.EM_ANDAMENTO
+            status=OrderStatus.EM_ANDAMENTO,
         )
 
         order.pause("Aguardando material")
@@ -288,7 +261,7 @@ class TestServiceOrder:
             service_id=uuid4(),
             client_id=uuid4(),
             title="Administração",
-            status=OrderStatus.PAUSADA
+            status=OrderStatus.PAUSADA,
         )
 
         order.resume()
@@ -304,7 +277,7 @@ class TestServiceOrder:
             client_id=uuid4(),
             title="Consultoria",
             status=OrderStatus.EM_ANDAMENTO,
-            started_at=datetime.utcnow() - timedelta(hours=2)
+            started_at=datetime.utcnow() - timedelta(hours=2),
         )
 
         order.complete()
@@ -321,7 +294,7 @@ class TestServiceOrder:
             service_id=uuid4(),
             client_id=uuid4(),
             title="Tecnologia",
-            status=OrderStatus.AGENDADA
+            status=OrderStatus.AGENDADA,
         )
 
         order.cancel("Cliente solicitou cancelamento")
@@ -338,7 +311,7 @@ class TestServiceOrder:
             service_id=uuid4(),
             client_id=uuid4(),
             title="Eventos",
-            status=OrderStatus.CONCLUIDA
+            status=OrderStatus.CONCLUIDA,
         )
 
         order.rate(5, "Excelente serviço!")
@@ -356,7 +329,7 @@ class TestServiceOrder:
             client_id=uuid4(),
             title="Manutenção",
             status=OrderStatus.EM_ANDAMENTO,
-            sla_resolution_deadline=datetime.utcnow() - timedelta(hours=1)
+            sla_resolution_deadline=datetime.utcnow() - timedelta(hours=1),
         )
 
         assert order.is_overdue is True
@@ -364,11 +337,7 @@ class TestServiceOrder:
     def test_order_assign_technician(self):
         """Test assigning technician."""
         order = ServiceOrder(
-            id=uuid4(),
-            order_number="OS-2026-0013",
-            service_id=uuid4(),
-            client_id=uuid4(),
-            title="Limpeza"
+            id=uuid4(), order_number="OS-2026-0013", service_id=uuid4(), client_id=uuid4(), title="Limpeza"
         )
 
         tech_id = uuid4()
@@ -384,11 +353,7 @@ class TestServiceExecution:
     def test_create_service_execution(self):
         """Test creating a service execution."""
         execution = ServiceExecution(
-            id=uuid4(),
-            execution_number="EX-2026-0001",
-            order_id=uuid4(),
-            sequence=1,
-            technician_name="Carlos Santos"
+            id=uuid4(), execution_number="EX-2026-0001", order_id=uuid4(), sequence=1, technician_name="Carlos Santos"
         )
 
         assert execution.execution_number == "EX-2026-0001"
@@ -399,10 +364,7 @@ class TestServiceExecution:
     def test_execution_start_travel(self):
         """Test starting travel."""
         execution = ServiceExecution(
-            id=uuid4(),
-            execution_number="EX-2026-0002",
-            order_id=uuid4(),
-            status=ExecutionStatus.AGENDADA
+            id=uuid4(), execution_number="EX-2026-0002", order_id=uuid4(), status=ExecutionStatus.AGENDADA
         )
 
         execution.start_travel()
@@ -417,7 +379,7 @@ class TestServiceExecution:
             execution_number="EX-2026-0003",
             order_id=uuid4(),
             status=ExecutionStatus.EM_DESLOCAMENTO,
-            travel_start=datetime.utcnow() - timedelta(minutes=30)
+            travel_start=datetime.utcnow() - timedelta(minutes=30),
         )
 
         execution.arrive_at_location()
@@ -429,10 +391,7 @@ class TestServiceExecution:
     def test_execution_start_execution(self):
         """Test starting execution."""
         execution = ServiceExecution(
-            id=uuid4(),
-            execution_number="EX-2026-0004",
-            order_id=uuid4(),
-            status=ExecutionStatus.NO_LOCAL
+            id=uuid4(), execution_number="EX-2026-0004", order_id=uuid4(), status=ExecutionStatus.NO_LOCAL
         )
 
         execution.start_execution()
@@ -443,10 +402,7 @@ class TestServiceExecution:
     def test_execution_pause(self):
         """Test pausing execution."""
         execution = ServiceExecution(
-            id=uuid4(),
-            execution_number="EX-2026-0005",
-            order_id=uuid4(),
-            status=ExecutionStatus.EM_EXECUCAO
+            id=uuid4(), execution_number="EX-2026-0005", order_id=uuid4(), status=ExecutionStatus.EM_EXECUCAO
         )
 
         execution.pause_execution("Aguardando aprovação")
@@ -458,10 +414,7 @@ class TestServiceExecution:
     def test_execution_resume(self):
         """Test resuming execution."""
         execution = ServiceExecution(
-            id=uuid4(),
-            execution_number="EX-2026-0006",
-            order_id=uuid4(),
-            status=ExecutionStatus.PAUSADA
+            id=uuid4(), execution_number="EX-2026-0006", order_id=uuid4(), status=ExecutionStatus.PAUSADA
         )
 
         execution.resume_execution()
@@ -476,7 +429,7 @@ class TestServiceExecution:
             execution_number="EX-2026-0007",
             order_id=uuid4(),
             status=ExecutionStatus.EM_EXECUCAO,
-            actual_start=datetime.utcnow() - timedelta(hours=2)
+            actual_start=datetime.utcnow() - timedelta(hours=2),
         )
 
         execution.finish_execution()
@@ -488,11 +441,7 @@ class TestServiceExecution:
 
     def test_execution_add_material(self):
         """Test adding material."""
-        execution = ServiceExecution(
-            id=uuid4(),
-            execution_number="EX-2026-0008",
-            order_id=uuid4()
-        )
+        execution = ServiceExecution(id=uuid4(), execution_number="EX-2026-0008", order_id=uuid4())
 
         execution.add_material("Parafusos", 10, Decimal("0.50"))
 
@@ -508,8 +457,8 @@ class TestServiceExecution:
             order_id=uuid4(),
             checklist_items=[
                 {"index": 0, "name": "Item 1", "completed": False},
-                {"index": 1, "name": "Item 2", "completed": False}
-            ]
+                {"index": 1, "name": "Item 2", "completed": False},
+            ],
         )
 
         execution.update_checklist_item(0, True, "Concluído")
@@ -519,11 +468,7 @@ class TestServiceExecution:
 
     def test_execution_add_signature(self):
         """Test adding signature."""
-        execution = ServiceExecution(
-            id=uuid4(),
-            execution_number="EX-2026-0010",
-            order_id=uuid4()
-        )
+        execution = ServiceExecution(id=uuid4(), execution_number="EX-2026-0010", order_id=uuid4())
 
         execution.add_signature("Cliente", "base64data", "Responsável")
 
@@ -539,7 +484,7 @@ class TestServiceExecution:
             order_id=uuid4(),
             materials_cost=Decimal("100.00"),
             labor_cost=Decimal("200.00"),
-            travel_cost=Decimal("50.00")
+            travel_cost=Decimal("50.00"),
         )
 
         execution._calculate_total_cost()
@@ -557,7 +502,7 @@ class TestServiceReport:
             report_number="REL-2026-0001",
             order_id=uuid4(),
             report_type=ReportType.EXECUCAO,
-            title="Relatório de Execução"
+            title="Relatório de Execução",
         )
 
         assert report.report_number == "REL-2026-0001"
@@ -567,11 +512,7 @@ class TestServiceReport:
     def test_report_finalize(self):
         """Test finalizing a report."""
         report = ServiceReport(
-            id=uuid4(),
-            report_number="REL-2026-0002",
-            order_id=uuid4(),
-            title="Laudo Técnico",
-            is_draft=True
+            id=uuid4(), report_number="REL-2026-0002", order_id=uuid4(), title="Laudo Técnico", is_draft=True
         )
 
         report.finalize()
@@ -581,11 +522,7 @@ class TestServiceReport:
     def test_report_review(self):
         """Test reviewing a report."""
         report = ServiceReport(
-            id=uuid4(),
-            report_number="REL-2026-0003",
-            order_id=uuid4(),
-            title="Vistoria",
-            is_draft=False
+            id=uuid4(), report_number="REL-2026-0003", order_id=uuid4(), title="Vistoria", is_draft=False
         )
 
         reviewer_id = uuid4()
@@ -599,11 +536,7 @@ class TestServiceReport:
     def test_report_approve(self):
         """Test approving a report."""
         report = ServiceReport(
-            id=uuid4(),
-            report_number="REL-2026-0004",
-            order_id=uuid4(),
-            title="Inspeção",
-            is_reviewed=True
+            id=uuid4(), report_number="REL-2026-0004", order_id=uuid4(), title="Inspeção", is_reviewed=True
         )
 
         approver_id = uuid4()
@@ -617,11 +550,7 @@ class TestServiceReport:
     def test_report_send(self):
         """Test sending a report."""
         report = ServiceReport(
-            id=uuid4(),
-            report_number="REL-2026-0005",
-            order_id=uuid4(),
-            title="Orçamento",
-            is_approved=True
+            id=uuid4(), report_number="REL-2026-0005", order_id=uuid4(), title="Orçamento", is_approved=True
         )
 
         report.send("cliente@email.com")
@@ -632,12 +561,7 @@ class TestServiceReport:
 
     def test_report_add_section(self):
         """Test adding a section."""
-        report = ServiceReport(
-            id=uuid4(),
-            report_number="REL-2026-0006",
-            order_id=uuid4(),
-            title="Relatório Técnico"
-        )
+        report = ServiceReport(id=uuid4(), report_number="REL-2026-0006", order_id=uuid4(), title="Relatório Técnico")
 
         report.add_section("Introdução", "Texto da introdução", 1)
 
@@ -646,12 +570,7 @@ class TestServiceReport:
 
     def test_report_add_photo(self):
         """Test adding a photo."""
-        report = ServiceReport(
-            id=uuid4(),
-            report_number="REL-2026-0007",
-            order_id=uuid4(),
-            title="Auditoria"
-        )
+        report = ServiceReport(id=uuid4(), report_number="REL-2026-0007", order_id=uuid4(), title="Auditoria")
 
         report.add_photo("http://example.com/foto.jpg", "Foto do local")
 
@@ -661,12 +580,7 @@ class TestServiceReport:
 
     def test_report_add_non_conformity(self):
         """Test adding non-conformity."""
-        report = ServiceReport(
-            id=uuid4(),
-            report_number="REL-2026-0008",
-            order_id=uuid4(),
-            title="Preventivo"
-        )
+        report = ServiceReport(id=uuid4(), report_number="REL-2026-0008", order_id=uuid4(), title="Preventivo")
 
         report.add_non_conformity("Equipamento danificado", "alta")
 
@@ -683,7 +597,7 @@ class TestServiceReport:
             title="Relatório Final",
             summary="Resumo",
             conclusions="Conclusões",
-            is_approved=True
+            is_approved=True,
         )
 
         assert report.is_complete is True
@@ -695,10 +609,7 @@ class TestSLAConfig:
     def test_create_sla_config(self):
         """Test creating an SLA config."""
         sla = SLAConfig(
-            id=uuid4(),
-            name="SLA Padrão",
-            metric_type=SLAMetricType.TEMPO_RESOLUCAO,
-            resolution_time_minutes=480
+            id=uuid4(), name="SLA Padrão", metric_type=SLAMetricType.TEMPO_RESOLUCAO, resolution_time_minutes=480
         )
 
         assert sla.name == "SLA Padrão"
@@ -707,11 +618,7 @@ class TestSLAConfig:
 
     def test_sla_activate(self):
         """Test activating an SLA."""
-        sla = SLAConfig(
-            id=uuid4(),
-            name="SLA Premium",
-            is_active=False
-        )
+        sla = SLAConfig(id=uuid4(), name="SLA Premium", is_active=False)
 
         sla.activate()
 
@@ -719,11 +626,7 @@ class TestSLAConfig:
 
     def test_sla_deactivate(self):
         """Test deactivating an SLA."""
-        sla = SLAConfig(
-            id=uuid4(),
-            name="SLA Básico",
-            is_active=True
-        )
+        sla = SLAConfig(id=uuid4(), name="SLA Básico", is_active=True)
 
         sla.deactivate()
 
@@ -731,11 +634,7 @@ class TestSLAConfig:
 
     def test_sla_set_as_default(self):
         """Test setting SLA as default."""
-        sla = SLAConfig(
-            id=uuid4(),
-            name="SLA Geral",
-            is_default=False
-        )
+        sla = SLAConfig(id=uuid4(), name="SLA Geral", is_default=False)
 
         sla.set_as_default()
 
@@ -743,13 +642,7 @@ class TestSLAConfig:
 
     def test_sla_update_metrics(self):
         """Test updating SLA metrics."""
-        sla = SLAConfig(
-            id=uuid4(),
-            name="SLA Corporativo",
-            total_orders=10,
-            orders_within_sla=8,
-            orders_breached=2
-        )
+        sla = SLAConfig(id=uuid4(), name="SLA Corporativo", total_orders=10, orders_within_sla=8, orders_breached=2)
 
         sla.update_metrics(within_sla=True)
 
@@ -759,11 +652,7 @@ class TestSLAConfig:
 
     def test_sla_calculate_deadline(self):
         """Test calculating deadline."""
-        sla = SLAConfig(
-            id=uuid4(),
-            name="SLA Express",
-            resolution_time_minutes=240
-        )
+        sla = SLAConfig(id=uuid4(), name="SLA Express", resolution_time_minutes=240)
 
         start = datetime.utcnow()
         deadline = sla.calculate_deadline(start)
@@ -778,7 +667,7 @@ class TestSLAConfig:
             name="SLA com Penalidade",
             penalty_enabled=True,
             penalty_percent_per_breach=Decimal("5.00"),
-            max_penalty_percent=Decimal("30.00")
+            max_penalty_percent=Decimal("30.00"),
         )
 
         penalty = sla.calculate_penalty(3)
@@ -792,7 +681,7 @@ class TestSLAConfig:
             name="SLA com Bônus",
             bonus_enabled=True,
             bonus_percent_on_exceed=Decimal("2.00"),
-            max_bonus_percent=Decimal("10.00")
+            max_bonus_percent=Decimal("10.00"),
         )
 
         bonus = sla.calculate_bonus(300)
@@ -805,19 +694,14 @@ class TestSLAConfig:
             id=uuid4(),
             name="SLA Status",
             current_compliance_percent=Decimal("99.5"),
-            target_availability_percent=Decimal("99.0")
+            target_availability_percent=Decimal("99.0"),
         )
 
         assert sla.compliance_status == "dentro_meta"
 
     def test_sla_breach_rate(self):
         """Test breach rate calculation."""
-        sla = SLAConfig(
-            id=uuid4(),
-            name="SLA Breach",
-            total_orders=100,
-            orders_breached=5
-        )
+        sla = SLAConfig(id=uuid4(), name="SLA Breach", total_orders=100, orders_breached=5)
 
         assert sla.breach_rate == 5.0
 
@@ -828,27 +712,19 @@ class TestSLAConfig:
             name="SLA Válido",
             is_active=True,
             valid_from=datetime.utcnow() - timedelta(days=30),
-            valid_until=datetime.utcnow() + timedelta(days=30)
+            valid_until=datetime.utcnow() + timedelta(days=30),
         )
 
         assert sla.is_valid() is True
 
     def test_sla_get_response_time_hours(self):
         """Test get_response_time_hours method."""
-        sla = SLAConfig(
-            id=uuid4(),
-            name="SLA Tempo",
-            response_time_minutes=120
-        )
+        sla = SLAConfig(id=uuid4(), name="SLA Tempo", response_time_minutes=120)
 
         assert sla.get_response_time_hours() == 2.0
 
     def test_sla_get_resolution_time_hours(self):
         """Test get_resolution_time_hours method."""
-        sla = SLAConfig(
-            id=uuid4(),
-            name="SLA Resolução",
-            resolution_time_minutes=480
-        )
+        sla = SLAConfig(id=uuid4(), name="SLA Resolução", resolution_time_minutes=480)
 
         assert sla.get_resolution_time_hours() == 8.0

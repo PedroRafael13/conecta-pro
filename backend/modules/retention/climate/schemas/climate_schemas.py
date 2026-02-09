@@ -6,18 +6,16 @@ seguindo padroes de API REST e documentacao OpenAPI.
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from modules.retention.climate.models.climate_models import (
-    AlertSeverity,
     ClimateDimension,
     EntityType,
     QuestionType,
     SurveyFrequency,
 )
-
 
 # =============================================================================
 # Question Schemas
@@ -51,7 +49,7 @@ class SurveyBase(BaseModel):
         description="Nome da pesquisa",
         examples=["Pesquisa de Clima Q1 2025"],
     )
-    descricao: Optional[str] = Field(
+    descricao: str | None = Field(
         None,
         max_length=2000,
         description="Descricao detalhada da pesquisa",
@@ -65,20 +63,20 @@ class SurveyBase(BaseModel):
 class SurveyCreate(SurveyBase):
     """Schema para criacao de pesquisa."""
 
-    perguntas: List[QuestionSchema] = Field(
+    perguntas: list[QuestionSchema] = Field(
         default_factory=list,
         min_length=1,
         description="Lista de perguntas",
     )
-    data_inicio: Optional[datetime] = Field(
+    data_inicio: datetime | None = Field(
         None,
         description="Data de inicio (default: agora)",
     )
-    data_fim: Optional[datetime] = Field(
+    data_fim: datetime | None = Field(
         None,
         description="Data de termino (opcional)",
     )
-    empresa_id: Optional[str] = Field(
+    empresa_id: str | None = Field(
         None,
         description="ID da empresa",
     )
@@ -99,12 +97,12 @@ class SurveyCreate(SurveyBase):
 class SurveyUpdate(BaseModel):
     """Schema para atualizacao de pesquisa."""
 
-    nome: Optional[str] = Field(None, min_length=3, max_length=200)
-    descricao: Optional[str] = Field(None, max_length=2000)
-    frequencia: Optional[SurveyFrequency] = None
-    perguntas: Optional[List[QuestionSchema]] = None
-    ativo: Optional[bool] = None
-    data_fim: Optional[datetime] = None
+    nome: str | None = Field(None, min_length=3, max_length=200)
+    descricao: str | None = Field(None, max_length=2000)
+    frequencia: SurveyFrequency | None = None
+    perguntas: list[QuestionSchema] | None = None
+    ativo: bool | None = None
+    data_fim: datetime | None = None
 
 
 class SurveyResponse(SurveyBase):
@@ -113,24 +111,24 @@ class SurveyResponse(SurveyBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: str
-    perguntas: List[Dict[str, Any]]
+    perguntas: list[dict[str, Any]]
     ativo: bool
     data_inicio: datetime
-    data_fim: Optional[datetime]
-    empresa_id: Optional[str]
+    data_fim: datetime | None
+    empresa_id: str | None
     total_respostas: int
     score_medio: float
     total_perguntas: int
     is_active: bool
     created_at: datetime
     updated_at: datetime
-    created_by: Optional[str]
+    created_by: str | None
 
 
 class SurveyListResponse(BaseModel):
     """Schema para listagem paginada de pesquisas."""
 
-    items: List[SurveyResponse]
+    items: list[SurveyResponse]
     total: int
     page: int
     page_size: int
@@ -144,8 +142,8 @@ class SurveyActiveResponse(BaseModel):
 
     id: str
     nome: str
-    descricao: Optional[str]
-    perguntas: List[QuestionSchema]
+    descricao: str | None
+    perguntas: list[QuestionSchema]
     total_perguntas: int
     tempo_estimado_minutos: int = Field(
         default=5,
@@ -170,16 +168,16 @@ class ResponseCreate(BaseModel):
         ...,
         description="ID do funcionario (sera anonimizado)",
     )
-    posto_id: Optional[str] = Field(None, description="ID do posto")
-    equipe_id: Optional[str] = Field(None, description="ID da equipe")
-    empresa_id: Optional[str] = Field(None, description="ID da empresa")
-    cliente_id: Optional[str] = Field(None, description="ID do cliente")
-    respostas: Dict[str, int] = Field(
+    posto_id: str | None = Field(None, description="ID do posto")
+    equipe_id: str | None = Field(None, description="ID da equipe")
+    empresa_id: str | None = Field(None, description="ID da empresa")
+    cliente_id: str | None = Field(None, description="ID do cliente")
+    respostas: dict[str, int] = Field(
         ...,
         description="Respostas: {pergunta_id: valor 1-4}",
         examples=[{"sat_posto": 3, "rel_supervisor": 4, "carga_trabalho": 2}],
     )
-    comentarios: Optional[Dict[str, str]] = Field(
+    comentarios: dict[str, str] | None = Field(
         None,
         description="Comentarios opcionais por pergunta",
     )
@@ -194,9 +192,7 @@ class ResponseCreate(BaseModel):
         """Valida que respostas estao na escala 1-4."""
         for pergunta_id, valor in self.respostas.items():
             if not isinstance(valor, int) or valor < 1 or valor > 4:
-                raise ValueError(
-                    f"Resposta para '{pergunta_id}' deve ser entre 1 e 4, recebido: {valor}"
-                )
+                raise ValueError(f"Resposta para '{pergunta_id}' deve ser entre 1 e 4, recebido: {valor}")
         return self
 
 
@@ -210,7 +206,7 @@ class ResponseSummary(BaseModel):
     periodo: str
     data_resposta: datetime
     score_calculado: float
-    scores_por_dimensao: Dict[str, float]
+    scores_por_dimensao: dict[str, float]
     is_complete: bool
     tempo_resposta_segundos: int
 
@@ -218,11 +214,11 @@ class ResponseSummary(BaseModel):
 class ResponseDetail(ResponseSummary):
     """Schema detalhado de resposta."""
 
-    posto_id: Optional[str]
-    equipe_id: Optional[str]
-    empresa_id: Optional[str]
-    respostas: Dict[str, Any]
-    comentarios: Optional[Dict[str, str]]
+    posto_id: str | None
+    equipe_id: str | None
+    empresa_id: str | None
+    respostas: dict[str, Any]
+    comentarios: dict[str, str] | None
 
 
 class ResponseConfirmation(BaseModel):
@@ -259,21 +255,21 @@ class ClimateScoreResponse(ClimateScoreBase):
 
     id: str
     entidade_id: str
-    entidade_nome: Optional[str]
-    empresa_id: Optional[str]
-    scores_dimensao: Dict[str, float]
+    entidade_nome: str | None
+    empresa_id: str | None
+    scores_dimensao: dict[str, float]
     tendencia: float
     total_respostas: int
     taxa_participacao: float
-    fatores_positivos: List[str]
-    fatores_negativos: List[str]
+    fatores_positivos: list[str]
+    fatores_negativos: list[str]
     enps_score: float
     enps_promotores: int
     enps_neutros: int
     enps_detratores: int
     classificacao: str
     has_alert: bool
-    alertas: List[Dict[str, Any]]
+    alertas: list[dict[str, Any]]
     created_at: datetime
     updated_at: datetime
 
@@ -281,7 +277,7 @@ class ClimateScoreResponse(ClimateScoreBase):
 class ClimateScoreListResponse(BaseModel):
     """Schema para listagem de scores."""
 
-    items: List[ClimateScoreResponse]
+    items: list[ClimateScoreResponse]
     total: int
 
 
@@ -304,12 +300,12 @@ class ClimateTrend(BaseModel):
 
     entidade_tipo: EntityType
     entidade_id: str
-    entidade_nome: Optional[str]
-    periodos: List[TrendPoint]
+    entidade_nome: str | None
+    periodos: list[TrendPoint]
     score_atual: float
     score_medio: float
-    melhor_periodo: Optional[str]
-    pior_periodo: Optional[str]
+    melhor_periodo: str | None
+    pior_periodo: str | None
     tendencia_geral: str = Field(
         ...,
         description="alta, estavel, queda",
@@ -321,7 +317,7 @@ class DimensionTrend(BaseModel):
     """Schema para tendencia por dimensao."""
 
     dimensao: ClimateDimension
-    periodos: List[TrendPoint]
+    periodos: list[TrendPoint]
     score_atual: float
     tendencia: str
 
@@ -363,13 +359,13 @@ class ClimateDashboard(BaseModel):
     total_respostas: int
     taxa_participacao: float
     enps_score: float
-    scores_por_dimensao: List[ScoreByDimension]
-    top_postos: List[EntityScore]
-    bottom_postos: List[EntityScore]
-    top_equipes: List[EntityScore]
-    bottom_equipes: List[EntityScore]
+    scores_por_dimensao: list[ScoreByDimension]
+    top_postos: list[EntityScore]
+    bottom_postos: list[EntityScore]
+    top_equipes: list[EntityScore]
+    bottom_equipes: list[EntityScore]
     alertas_ativos: int
-    tendencia_6_meses: List[TrendPoint]
+    tendencia_6_meses: list[TrendPoint]
     ultima_atualizacao: datetime
 
 
@@ -378,7 +374,7 @@ class ClimateByPosto(BaseModel):
 
     posto_id: str
     posto_nome: str
-    cliente_nome: Optional[str]
+    cliente_nome: str | None
     periodo: str
     score: float
     score_anterior: float
@@ -387,11 +383,11 @@ class ClimateByPosto(BaseModel):
     total_respostas: int
     total_funcionarios: int
     taxa_participacao: float
-    scores_dimensao: Dict[str, float]
+    scores_dimensao: dict[str, float]
     enps_score: float
-    fatores_positivos: List[str]
-    fatores_negativos: List[str]
-    alertas: List[Dict[str, Any]]
+    fatores_positivos: list[str]
+    fatores_negativos: list[str]
+    alertas: list[dict[str, Any]]
 
 
 class ClimateByEquipe(BaseModel):
@@ -399,7 +395,7 @@ class ClimateByEquipe(BaseModel):
 
     equipe_id: str
     equipe_nome: str
-    supervisor_nome: Optional[str]
+    supervisor_nome: str | None
     periodo: str
     score: float
     score_anterior: float
@@ -408,7 +404,7 @@ class ClimateByEquipe(BaseModel):
     total_respostas: int
     total_funcionarios: int
     taxa_participacao: float
-    scores_dimensao: Dict[str, float]
+    scores_dimensao: dict[str, float]
     enps_score: float
     postos_vinculados: int
 
@@ -426,7 +422,7 @@ class ClimateByEmpresa(BaseModel):
     total_respostas: int
     total_funcionarios: int
     taxa_participacao: float
-    scores_dimensao: Dict[str, float]
+    scores_dimensao: dict[str, float]
     enps_score: float
     total_postos: int
     total_equipes: int
@@ -445,29 +441,29 @@ class AlertResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: str
-    empresa_id: Optional[str]
+    empresa_id: str | None
     entidade_tipo: str
     entidade_id: str
-    entidade_nome: Optional[str]
+    entidade_nome: str | None
     periodo: str
     tipo_alerta: str
-    dimensao: Optional[str]
+    dimensao: str | None
     severidade: str
     mensagem: str
     score_atual: float
-    score_anterior: Optional[float]
+    score_anterior: float | None
     variacao: float
     resolvido: bool
-    resolvido_em: Optional[datetime]
-    resolvido_por: Optional[str]
-    notas_resolucao: Optional[str]
+    resolvido_em: datetime | None
+    resolvido_por: str | None
+    notas_resolucao: str | None
     created_at: datetime
 
 
 class AlertListResponse(BaseModel):
     """Schema para listagem de alertas."""
 
-    items: List[AlertResponse]
+    items: list[AlertResponse]
     total: int
     total_criticos: int
     total_altos: int
@@ -478,7 +474,7 @@ class AlertListResponse(BaseModel):
 class AlertResolve(BaseModel):
     """Schema para resolver alerta."""
 
-    notas_resolucao: Optional[str] = Field(
+    notas_resolucao: str | None = Field(
         None,
         max_length=1000,
         description="Notas sobre a resolucao",
@@ -493,23 +489,23 @@ class AlertResolve(BaseModel):
 class ClimateFilter(BaseModel):
     """Schema para filtros de busca."""
 
-    empresa_id: Optional[str] = None
-    posto_id: Optional[str] = None
-    equipe_id: Optional[str] = None
-    cliente_id: Optional[str] = None
-    periodo_inicio: Optional[str] = Field(
+    empresa_id: str | None = None
+    posto_id: str | None = None
+    equipe_id: str | None = None
+    cliente_id: str | None = None
+    periodo_inicio: str | None = Field(
         None,
         pattern=r"^\d{4}-\d{2}$",
         description="Periodo inicial YYYY-MM",
     )
-    periodo_fim: Optional[str] = Field(
+    periodo_fim: str | None = Field(
         None,
         pattern=r"^\d{4}-\d{2}$",
         description="Periodo final YYYY-MM",
     )
-    score_min: Optional[float] = Field(None, ge=0, le=100)
-    score_max: Optional[float] = Field(None, ge=0, le=100)
-    dimensao: Optional[ClimateDimension] = None
+    score_min: float | None = Field(None, ge=0, le=100)
+    score_max: float | None = Field(None, ge=0, le=100)
+    dimensao: ClimateDimension | None = None
     apenas_alertas: bool = False
 
     @model_validator(mode="after")
@@ -534,7 +530,7 @@ class CalculationRequest(BaseModel):
         pattern=r"^\d{4}-\d{2}$",
         description="Periodo para calculo YYYY-MM",
     )
-    empresa_id: Optional[str] = None
+    empresa_id: str | None = None
     recalcular: bool = Field(
         default=False,
         description="Recalcular mesmo se ja existir",
@@ -549,7 +545,7 @@ class CalculationResult(BaseModel):
     alertas_gerados: int
     tempo_processamento_ms: int
     sucesso: bool
-    erros: List[str] = []
+    erros: list[str] = []
 
 
 # =============================================================================
@@ -566,21 +562,21 @@ class DimensionAnalysis(BaseModel):
     variacao: float
     classificacao: str
     tendencia_3_meses: str
-    perguntas_mais_positivas: List[str]
-    perguntas_mais_negativas: List[str]
-    recomendacoes: List[str]
+    perguntas_mais_positivas: list[str]
+    perguntas_mais_negativas: list[str]
+    recomendacoes: list[str]
 
 
 class ClimateAnalytics(BaseModel):
     """Schema para analytics de clima."""
 
     periodo: str
-    empresa_id: Optional[str]
+    empresa_id: str | None
     score_geral: float
-    analise_dimensoes: List[DimensionAnalysis]
-    correlacoes: Dict[str, float]
-    insights: List[str]
-    recomendacoes_prioritarias: List[str]
+    analise_dimensoes: list[DimensionAnalysis]
+    correlacoes: dict[str, float]
+    insights: list[str]
+    recomendacoes_prioritarias: list[str]
     risco_turnover: str = Field(
         ...,
         description="baixo, medio, alto, critico",

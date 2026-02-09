@@ -4,12 +4,13 @@ AIWorkflow Executor Service - Sprint 55.
 Servico para execucao de workflows.
 """
 
-import logging
 import asyncio
-from typing import Dict, Any, List, Optional, Callable
-from datetime import datetime
-from uuid import UUID, uuid4
 import json
+import logging
+from collections.abc import Callable
+from datetime import datetime
+from typing import Any
+from uuid import UUID, uuid4
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +20,7 @@ class StepExecutor:
 
     def __init__(self):
         """Inicializa o executor de steps."""
-        self._handlers: Dict[str, Callable] = {}
+        self._handlers: dict[str, Callable] = {}
         self._register_default_handlers()
 
     def _register_default_handlers(self):
@@ -47,9 +48,9 @@ class StepExecutor:
 
     async def execute_step(
         self,
-        step: Dict[str, Any],
-        context: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        step: dict[str, Any],
+        context: dict[str, Any],
+    ) -> dict[str, Any]:
         """
         Executa um step.
 
@@ -73,9 +74,7 @@ class StepExecutor:
 
         try:
             result = await handler(step, context)
-            execution_time = int(
-                (datetime.utcnow() - start_time).total_seconds() * 1000
-            )
+            execution_time = int((datetime.utcnow() - start_time).total_seconds() * 1000)
 
             return {
                 "status": "completed",
@@ -84,9 +83,7 @@ class StepExecutor:
             }
 
         except Exception as e:
-            execution_time = int(
-                (datetime.utcnow() - start_time).total_seconds() * 1000
-            )
+            execution_time = int((datetime.utcnow() - start_time).total_seconds() * 1000)
             logger.error(f"Erro executando step {step.get('id')}: {e}")
 
             return {
@@ -97,9 +94,9 @@ class StepExecutor:
 
     async def _execute_action(
         self,
-        step: Dict[str, Any],
-        context: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        step: dict[str, Any],
+        context: dict[str, Any],
+    ) -> dict[str, Any]:
         """Executa acao generica."""
         config = step.get("config", {})
         action_type = config.get("action_type", "noop")
@@ -119,9 +116,9 @@ class StepExecutor:
 
     async def _execute_condition(
         self,
-        step: Dict[str, Any],
-        context: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        step: dict[str, Any],
+        context: dict[str, Any],
+    ) -> dict[str, Any]:
         """Executa condicao."""
         config = step.get("config", {})
         condition = config.get("condition", "true")
@@ -138,7 +135,7 @@ class StepExecutor:
     def _evaluate_condition(
         self,
         condition: str,
-        context: Dict[str, Any],
+        context: dict[str, Any],
     ) -> bool:
         """Avalia condicao."""
         try:
@@ -175,9 +172,9 @@ class StepExecutor:
 
     async def _execute_wait(
         self,
-        step: Dict[str, Any],
-        context: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        step: dict[str, Any],
+        context: dict[str, Any],
+    ) -> dict[str, Any]:
         """Executa espera."""
         config = step.get("config", {})
         wait_seconds = config.get("seconds", 1)
@@ -189,9 +186,9 @@ class StepExecutor:
 
     async def _execute_notification(
         self,
-        step: Dict[str, Any],
-        context: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        step: dict[str, Any],
+        context: dict[str, Any],
+    ) -> dict[str, Any]:
         """Executa notificacao."""
         config = step.get("config", {})
         channels = config.get("channels", ["log"])
@@ -218,9 +215,9 @@ class StepExecutor:
 
     async def _execute_data_transform(
         self,
-        step: Dict[str, Any],
-        context: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        step: dict[str, Any],
+        context: dict[str, Any],
+    ) -> dict[str, Any]:
         """Executa transformacao de dados."""
         config = step.get("config", {})
         transform_type = config.get("type", "copy")
@@ -251,14 +248,14 @@ class StepExecutor:
 
     async def _execute_api_call(
         self,
-        step: Dict[str, Any],
-        context: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        step: dict[str, Any],
+        context: dict[str, Any],
+    ) -> dict[str, Any]:
         """Executa chamada de API."""
         config = step.get("config", {})
         url = config.get("url", "")
         method = config.get("method", "GET")
-        headers = config.get("headers", {})
+        config.get("headers", {})
         body = config.get("body")
 
         # Substitui variaveis
@@ -280,13 +277,13 @@ class StepExecutor:
 
     async def _execute_script(
         self,
-        step: Dict[str, Any],
-        context: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        step: dict[str, Any],
+        context: dict[str, Any],
+    ) -> dict[str, Any]:
         """Executa script."""
         config = step.get("config", {})
         script_type = config.get("type", "python")
-        code = config.get("code", "")
+        config.get("code", "")
 
         # Por seguranca, apenas log
         logger.info(f"Script execution requested: {script_type}")
@@ -298,9 +295,9 @@ class StepExecutor:
 
     async def _execute_loop(
         self,
-        step: Dict[str, Any],
-        context: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        step: dict[str, Any],
+        context: dict[str, Any],
+    ) -> dict[str, Any]:
         """Executa loop."""
         config = step.get("config", {})
         iterations = config.get("iterations", 1)
@@ -315,9 +312,9 @@ class StepExecutor:
 
     async def _execute_parallel(
         self,
-        step: Dict[str, Any],
-        context: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        step: dict[str, Any],
+        context: dict[str, Any],
+    ) -> dict[str, Any]:
         """Executa steps em paralelo."""
         config = step.get("config", {})
         parallel_steps = config.get("steps", [])
@@ -330,9 +327,9 @@ class StepExecutor:
 
     async def _execute_approval(
         self,
-        step: Dict[str, Any],
-        context: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        step: dict[str, Any],
+        context: dict[str, Any],
+    ) -> dict[str, Any]:
         """Executa step de aprovacao."""
         config = step.get("config", {})
 
@@ -366,10 +363,10 @@ class WorkflowExecutor:
 
     async def execute_workflow(
         self,
-        workflow: Dict[str, Any],
-        input_data: Dict[str, Any],
-        execution_id: Optional[UUID] = None,
-    ) -> Dict[str, Any]:
+        workflow: dict[str, Any],
+        input_data: dict[str, Any],
+        execution_id: UUID | None = None,
+    ) -> dict[str, Any]:
         """
         Executa workflow completo.
 
@@ -422,7 +419,7 @@ class WorkflowExecutor:
                         self._step_executor.execute_step(step, context),
                         timeout=timeout,
                     )
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     result = {
                         "status": "timeout",
                         "error": f"Step timeout apos {timeout}s",
@@ -476,9 +473,7 @@ class WorkflowExecutor:
             error_message = str(e)
 
         # Calcula tempo
-        execution_time = int(
-            (datetime.utcnow() - start_time).total_seconds() * 1000
-        )
+        execution_time = int((datetime.utcnow() - start_time).total_seconds() * 1000)
 
         return {
             "id": str(execution_id),
@@ -501,18 +496,20 @@ class WorkflowExecutor:
 
     def _add_log(
         self,
-        context: Dict[str, Any],
+        context: dict[str, Any],
         level: str,
         message: str,
-        step: Optional[str] = None,
+        step: str | None = None,
     ):
         """Adiciona log ao contexto."""
-        context.setdefault("logs", []).append({
-            "timestamp": datetime.utcnow().isoformat(),
-            "level": level,
-            "message": message,
-            "step": step,
-        })
+        context.setdefault("logs", []).append(
+            {
+                "timestamp": datetime.utcnow().isoformat(),
+                "level": level,
+                "message": message,
+                "step": step,
+            }
+        )
 
     async def cancel_execution(
         self,
@@ -534,8 +531,8 @@ class WorkflowExecutor:
     async def resume_execution(
         self,
         execution_id: UUID,
-        context: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        context: dict[str, Any],
+    ) -> dict[str, Any]:
         """Retoma execucao pausada."""
         logger.info(f"Resume requested for execution: {execution_id}")
         return {"status": "resumed"}

@@ -16,8 +16,8 @@ Estrutura:
 """
 
 from .controllers import (
-    device_router,
     checkin_router,
+    device_router,
     geofence_router,
     offline_router,
 )

@@ -5,16 +5,15 @@ Monitora metricas do sistema e gera alertas quando
 thresholds sao ultrapassados.
 """
 
-import asyncio
-from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
+from datetime import datetime
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logging import logger
-from core.monitoring import get_metrics, set_gauge
+from core.monitoring import set_gauge
 
 from ..models.alert import Alert, AlertLevel, AlertStatus
 from ..models.metric_threshold import MetricThreshold, ThresholdType
@@ -154,8 +153,8 @@ class EarlyWarningService:
         self.db = db
         self._running = False
         self._check_interval = 30  # segundos
-        self._consecutive_breaches: Dict[str, int] = {}
-        self._last_alert_times: Dict[str, datetime] = {}
+        self._consecutive_breaches: dict[str, int] = {}
+        self._last_alert_times: dict[str, datetime] = {}
 
     async def initialize_thresholds(self) -> int:
         """
@@ -168,9 +167,7 @@ class EarlyWarningService:
 
         for threshold_data in self.DEFAULT_THRESHOLDS:
             # Verificar se ja existe
-            stmt = select(MetricThreshold).where(
-                MetricThreshold.metric_name == threshold_data["metric_name"]
-            )
+            stmt = select(MetricThreshold).where(MetricThreshold.metric_name == threshold_data["metric_name"])
             result = await self.db.execute(stmt)
             existing = result.scalar_one_or_none()
 
@@ -189,7 +186,7 @@ class EarlyWarningService:
         metric_name: str,
         value: float,
         source: str = "system",
-    ) -> Optional[Alert]:
+    ) -> Alert | None:
         """
         Verifica uma metrica contra seu threshold.
 
@@ -204,8 +201,8 @@ class EarlyWarningService:
         # Buscar threshold
         stmt = select(MetricThreshold).where(
             MetricThreshold.metric_name == metric_name,
-            MetricThreshold.enabled == True,
-            MetricThreshold.is_active == True,
+            MetricThreshold.enabled,
+            MetricThreshold.is_active,
         )
         result = await self.db.execute(stmt)
         threshold = result.scalar_one_or_none()
@@ -223,9 +220,7 @@ class EarlyWarningService:
             return None
 
         # Incrementar contador de breaches
-        self._consecutive_breaches[metric_name] = (
-            self._consecutive_breaches.get(metric_name, 0) + 1
-        )
+        self._consecutive_breaches[metric_name] = self._consecutive_breaches.get(metric_name, 0) + 1
 
         # Verificar se atingiu numero minimo de breaches
         if self._consecutive_breaches[metric_name] < threshold.consecutive_breaches:
@@ -337,7 +332,7 @@ class EarlyWarningService:
             f"{severity_messages.get(level, '')}"
         )
 
-    async def get_system_health(self) -> Dict[str, Any]:
+    async def get_system_health(self) -> dict[str, Any]:
         """
         Retorna status de saude geral do sistema.
 
@@ -347,7 +342,7 @@ class EarlyWarningService:
         # Buscar alertas ativos
         stmt = select(Alert).where(
             Alert.status == AlertStatus.ACTIVE,
-            Alert.is_active == True,
+            Alert.is_active,
         )
         result = await self.db.execute(stmt)
         active_alerts = result.scalars().all()
@@ -385,14 +380,14 @@ class EarlyWarningService:
 
     async def get_active_alerts(
         self,
-        level: Optional[AlertLevel] = None,
-        category: Optional[str] = None,
+        level: AlertLevel | None = None,
+        category: str | None = None,
         limit: int = 100,
-    ) -> List[Alert]:
+    ) -> list[Alert]:
         """Retorna alertas ativos."""
         stmt = select(Alert).where(
             Alert.status == AlertStatus.ACTIVE,
-            Alert.is_active == True,
+            Alert.is_active,
         )
 
         if level:
@@ -405,10 +400,7 @@ class EarlyWarningService:
 
         # Filtrar por categoria se especificado
         if category:
-            alerts = [
-                a for a in alerts
-                if a.details and a.details.get("category") == category
-            ]
+            alerts = [a for a in alerts if a.details and a.details.get("category") == category]
 
         return list(alerts)
 
@@ -416,8 +408,8 @@ class EarlyWarningService:
         self,
         alert_id: UUID,
         user_id: UUID,
-        notes: Optional[str] = None,
-    ) -> Optional[Alert]:
+        notes: str | None = None,
+    ) -> Alert | None:
         """Reconhece um alerta."""
         stmt = select(Alert).where(Alert.id == alert_id)
         result = await self.db.execute(stmt)
@@ -441,8 +433,8 @@ class EarlyWarningService:
         self,
         alert_id: UUID,
         user_id: UUID,
-        notes: Optional[str] = None,
-    ) -> Optional[Alert]:
+        notes: str | None = None,
+    ) -> Alert | None:
         """Resolve um alerta."""
         stmt = select(Alert).where(Alert.id == alert_id)
         result = await self.db.execute(stmt)
@@ -461,7 +453,7 @@ class EarlyWarningService:
         logger.info(f"Alerta {alert_id} resolvido por {user_id}")
         return alert
 
-    async def escalate_alert(self, alert_id: UUID) -> Optional[Alert]:
+    async def escalate_alert(self, alert_id: UUID) -> Alert | None:
         """Escala um alerta."""
         stmt = select(Alert).where(Alert.id == alert_id)
         result = await self.db.execute(stmt)

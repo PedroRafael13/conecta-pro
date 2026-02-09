@@ -1,26 +1,25 @@
 """Controller para gerenciamento de dispositivos mobile."""
 
 import logging
-from typing import List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.database import get_db
 from core.auth.dependencies import get_current_user, require_roles
+from core.database import get_db
+from modules.hr.mobile_time_clock.repositories import MobileDeviceRepository
 from modules.hr.mobile_time_clock.schemas import (
-    MobileDeviceRegister,
+    DeviceHeartbeat,
     MobileDeviceApprove,
     MobileDeviceBlock,
-    MobileDeviceResponse,
-    MobileDeviceList,
     MobileDeviceFilter,
+    MobileDeviceList,
+    MobileDeviceRegister,
+    MobileDeviceResponse,
     MobileDeviceStats,
-    DeviceHeartbeat,
 )
 from modules.hr.mobile_time_clock.services import DeviceService
-from modules.hr.mobile_time_clock.repositories import MobileDeviceRepository
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +54,7 @@ async def register_device(
 
 @router.get(
     "/my-devices",
-    response_model=List[MobileDeviceResponse],
+    response_model=list[MobileDeviceResponse],
     summary="Meus dispositivos",
 )
 async def get_my_devices(
@@ -163,7 +162,7 @@ async def validate_device(
 
 @router.get(
     "/pending",
-    response_model=List[MobileDeviceResponse],
+    response_model=list[MobileDeviceResponse],
     summary="Dispositivos pendentes de aprovação",
     dependencies=[Depends(require_roles(["admin", "rh", "gestor"]))],
 )

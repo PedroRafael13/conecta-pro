@@ -7,12 +7,12 @@ Endpoints para health checks, métricas e status do sistema.
 
 import logging
 from datetime import datetime
-from typing import Dict
+
 import psutil
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
 
@@ -25,8 +25,10 @@ router = APIRouter(prefix="/monitoring", tags=["System Monitoring"])
 # Timestamp de quando o sistema iniciou
 STARTUP_TIME = datetime.utcnow()
 
+
 class HealthStatus(BaseModel):
     """Status de saúde do sistema."""
+
     status: str
     timestamp: datetime
     uptime: str
@@ -35,16 +37,20 @@ class HealthStatus(BaseModel):
     memory_usage: float
     cpu_usage: float
 
+
 class ReadinessStatus(BaseModel):
     """Status de prontidão do sistema."""
+
     ready: bool
     timestamp: datetime
-    services: Dict[str, str]
+    services: dict[str, str]
     checks_passed: int
     checks_total: int
 
+
 class SystemMetrics(BaseModel):
     """Métricas do sistema."""
+
     timestamp: datetime
     uptime_seconds: int
     memory_usage_mb: float
@@ -64,20 +70,20 @@ async def check_database_health(session: AsyncSession) -> bool:
         return False
 
 
-async def check_guardian_tables(session: AsyncSession) -> Dict[str, bool]:
+async def check_guardian_tables(session: AsyncSession) -> dict[str, bool]:
     """Verifica se as tabelas principais do Guardian existem."""
     tables_to_check = [
         "guardian.access_logs",
         "guardian.guardian_occurrences",
         "guardian.guardian_syncs",
         "guardian.equipment_status",
-        "guardian.campo_tecnicos"
+        "guardian.campo_tecnicos",
     ]
 
     results = {}
     for table in tables_to_check:
         try:
-            schema, table_name = table.split('.')
+            schema, table_name = table.split(".")
             query = text("""
                 SELECT EXISTS (
                     SELECT FROM information_schema.tables
@@ -141,15 +147,12 @@ async def health_check(session: AsyncSession = Depends(get_db)):
             version="3.0.0",
             database=db_status,
             memory_usage=memory.percent,
-            cpu_usage=cpu_percent
+            cpu_usage=cpu_percent,
         )
 
     except Exception as e:
         logger.error(f"Health check failed: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=f"Health check failed: {str(e)}"
-        )
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=f"Health check failed: {str(e)}")
 
 
 @router.get("/ready", response_model=ReadinessStatus)
@@ -187,10 +190,7 @@ async def readiness_check(session: AsyncSession = Depends(get_db)):
 
         # Check 3: CAMPO service
         checks_total += 1
-        campo_ready = (
-            "campo_tecnicos" in tables_status
-            and tables_status.get("guardian.campo_tecnicos", False)
-        )
+        campo_ready = "campo_tecnicos" in tables_status and tables_status.get("guardian.campo_tecnicos", False)
         services["campo_service"] = "ok" if campo_ready else "not_ready"
         if campo_ready:
             checks_passed += 1
@@ -203,15 +203,12 @@ async def readiness_check(session: AsyncSession = Depends(get_db)):
             timestamp=datetime.utcnow(),
             services=services,
             checks_passed=checks_passed,
-            checks_total=checks_total
+            checks_total=checks_total,
         )
 
     except Exception as e:
         logger.error(f"Readiness check failed: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=f"Readiness check failed: {str(e)}"
-        )
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=f"Readiness check failed: {str(e)}")
 
 
 @router.get("/metrics", response_model=SystemMetrics)
@@ -228,7 +225,7 @@ async def get_metrics(
         # Métricas de sistema
         memory = psutil.virtual_memory()
         cpu_percent = psutil.cpu_percent(interval=1)
-        disk_usage = psutil.disk_usage('/')
+        disk_usage = psutil.disk_usage("/")
 
         # Calcular uptime em segundos
         uptime_seconds = int((datetime.utcnow() - STARTUP_TIME).total_seconds())
@@ -243,14 +240,13 @@ async def get_metrics(
             memory_percent=memory.percent,
             cpu_percent=cpu_percent,
             disk_usage_percent=(disk_usage.used / disk_usage.total) * 100,
-            active_connections=connections
+            active_connections=connections,
         )
 
     except Exception as e:
         logger.error(f"Metrics collection failed: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Metrics collection failed: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Metrics collection failed: {str(e)}"
         )
 
 
@@ -262,11 +258,7 @@ async def ping():
     Returns:
         Pong com timestamp
     """
-    return {
-        "message": "pong",
-        "timestamp": datetime.utcnow(),
-        "service": "Guardian Unified v3.0.0"
-    }
+    return {"message": "pong", "timestamp": datetime.utcnow(), "service": "Guardian Unified v3.0.0"}
 
 
 @router.get("/status")
@@ -294,13 +286,9 @@ async def system_status(session: AsyncSession = Depends(get_db)):
             "message": message,
             "timestamp": datetime.utcnow(),
             "uptime": get_uptime(),
-            "version": "Guardian Unified v3.0.0"
+            "version": "Guardian Unified v3.0.0",
         }
 
     except Exception as e:  # pylint: disable=broad-exception-caught
         logger.error(f"Status check failed: {e}")
-        return {
-            "status": "ERROR",
-            "message": f"Status check failed: {str(e)}",
-            "timestamp": datetime.utcnow()
-        }
+        return {"status": "ERROR", "message": f"Status check failed: {str(e)}", "timestamp": datetime.utcnow()}

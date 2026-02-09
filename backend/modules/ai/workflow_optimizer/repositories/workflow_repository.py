@@ -4,22 +4,23 @@ AIWorkflow Repository - Sprint 55.
 Repositorio para persistencia de workflows e entidades relacionadas.
 """
 
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, and_, or_, desc, update
-from sqlalchemy.orm import selectinload
-from typing import List, Optional, Dict, Any, Tuple
+from datetime import datetime
+from typing import Any
 from uuid import UUID
-from datetime import datetime, timedelta
+
+from sqlalchemy import and_, desc, func, or_, select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from modules.ai.workflow_optimizer.models import (
     AIWorkflow,
     AIWorkflowExecution,
-    WorkflowTemplate,
-    WorkflowOptimization,
-    WorkflowMetrics,
-    WorkflowStatusEnum,
-    WorkflowTypeEnum,
     ExecutionStatusEnum,
+    WorkflowMetrics,
+    WorkflowOptimization,
+    WorkflowStatusEnum,
+    WorkflowTemplate,
+    WorkflowTypeEnum,
 )
 
 
@@ -34,7 +35,7 @@ class WorkflowRepository:
     # AIWorkflow CRUD
     # =========================================================================
 
-    async def create_workflow(self, workflow_data: Dict[str, Any]) -> AIWorkflow:
+    async def create_workflow(self, workflow_data: dict[str, Any]) -> AIWorkflow:
         """Cria novo workflow."""
         workflow = AIWorkflow(**workflow_data)
         self.session.add(workflow)
@@ -46,11 +47,9 @@ class WorkflowRepository:
         self,
         workflow_id: UUID,
         include_executions: bool = False,
-    ) -> Optional[AIWorkflow]:
+    ) -> AIWorkflow | None:
         """Busca workflow por ID."""
-        query = select(AIWorkflow).where(
-            and_(AIWorkflow.id == workflow_id, AIWorkflow.ativo == True)
-        )
+        query = select(AIWorkflow).where(and_(AIWorkflow.id == workflow_id, AIWorkflow.ativo))
 
         if include_executions:
             query = query.options(selectinload(AIWorkflow.executions))
@@ -58,11 +57,9 @@ class WorkflowRepository:
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
-    async def get_workflow_by_code(self, code: str) -> Optional[AIWorkflow]:
+    async def get_workflow_by_code(self, code: str) -> AIWorkflow | None:
         """Busca workflow por codigo."""
-        query = select(AIWorkflow).where(
-            and_(AIWorkflow.code == code, AIWorkflow.ativo == True)
-        )
+        query = select(AIWorkflow).where(and_(AIWorkflow.code == code, AIWorkflow.ativo))
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
@@ -70,13 +67,13 @@ class WorkflowRepository:
         self,
         skip: int = 0,
         limit: int = 100,
-        status: Optional[WorkflowStatusEnum] = None,
-        workflow_type: Optional[WorkflowTypeEnum] = None,
-        condominio_id: Optional[UUID] = None,
-        search: Optional[str] = None,
-    ) -> Tuple[List[AIWorkflow], int]:
+        status: WorkflowStatusEnum | None = None,
+        workflow_type: WorkflowTypeEnum | None = None,
+        condominio_id: UUID | None = None,
+        search: str | None = None,
+    ) -> tuple[list[AIWorkflow], int]:
         """Lista workflows com filtros."""
-        query = select(AIWorkflow).where(AIWorkflow.ativo == True)
+        query = select(AIWorkflow).where(AIWorkflow.ativo)
 
         if status:
             query = query.where(AIWorkflow.status == status)
@@ -106,8 +103,8 @@ class WorkflowRepository:
     async def update_workflow(
         self,
         workflow_id: UUID,
-        update_data: Dict[str, Any],
-    ) -> Optional[AIWorkflow]:
+        update_data: dict[str, Any],
+    ) -> AIWorkflow | None:
         """Atualiza workflow."""
         workflow = await self.get_workflow_by_id(workflow_id)
         if not workflow:
@@ -141,9 +138,7 @@ class WorkflowRepository:
         else:
             workflow.failure_count += 1
 
-        workflow.avg_execution_time = (
-            workflow.total_execution_time / workflow.execution_count
-        )
+        workflow.avg_execution_time = workflow.total_execution_time / workflow.execution_count
         workflow.success_rate = workflow.success_count / workflow.execution_count
         workflow.last_run_at = datetime.utcnow()
 
@@ -152,10 +147,13 @@ class WorkflowRepository:
     async def delete_workflow(self, workflow_id: UUID, soft: bool = True) -> bool:
         """Deleta workflow."""
         if soft:
-            workflow = await self.update_workflow(workflow_id, {
-                "ativo": False,
-                "status": WorkflowStatusEnum.DISABLED,
-            })
+            workflow = await self.update_workflow(
+                workflow_id,
+                {
+                    "ativo": False,
+                    "status": WorkflowStatusEnum.DISABLED,
+                },
+            )
             return workflow is not None
         else:
             workflow = await self.get_workflow_by_id(workflow_id)
@@ -171,7 +169,7 @@ class WorkflowRepository:
 
     async def create_execution(
         self,
-        execution_data: Dict[str, Any],
+        execution_data: dict[str, Any],
     ) -> AIWorkflowExecution:
         """Cria execucao."""
         execution = AIWorkflowExecution(**execution_data)
@@ -183,23 +181,21 @@ class WorkflowRepository:
     async def get_execution_by_id(
         self,
         execution_id: UUID,
-    ) -> Optional[AIWorkflowExecution]:
+    ) -> AIWorkflowExecution | None:
         """Busca execucao por ID."""
-        query = select(AIWorkflowExecution).where(
-            AIWorkflowExecution.id == execution_id
-        )
+        query = select(AIWorkflowExecution).where(AIWorkflowExecution.id == execution_id)
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
     async def list_executions(
         self,
-        workflow_id: Optional[UUID] = None,
-        status: Optional[ExecutionStatusEnum] = None,
-        from_date: Optional[datetime] = None,
-        to_date: Optional[datetime] = None,
+        workflow_id: UUID | None = None,
+        status: ExecutionStatusEnum | None = None,
+        from_date: datetime | None = None,
+        to_date: datetime | None = None,
         skip: int = 0,
         limit: int = 100,
-    ) -> Tuple[List[AIWorkflowExecution], int]:
+    ) -> tuple[list[AIWorkflowExecution], int]:
         """Lista execucoes."""
         query = select(AIWorkflowExecution)
 
@@ -226,8 +222,8 @@ class WorkflowRepository:
     async def update_execution(
         self,
         execution_id: UUID,
-        update_data: Dict[str, Any],
-    ) -> Optional[AIWorkflowExecution]:
+        update_data: dict[str, Any],
+    ) -> AIWorkflowExecution | None:
         """Atualiza execucao."""
         execution = await self.get_execution_by_id(execution_id)
         if not execution:
@@ -246,7 +242,7 @@ class WorkflowRepository:
         self,
         workflow_id: UUID,
         limit: int = 100,
-    ) -> List[AIWorkflowExecution]:
+    ) -> list[AIWorkflowExecution]:
         """Busca execucoes recentes."""
         query = (
             select(AIWorkflowExecution)
@@ -263,7 +259,7 @@ class WorkflowRepository:
 
     async def create_template(
         self,
-        template_data: Dict[str, Any],
+        template_data: dict[str, Any],
     ) -> WorkflowTemplate:
         """Cria template."""
         template = WorkflowTemplate(**template_data)
@@ -275,19 +271,15 @@ class WorkflowRepository:
     async def get_template_by_id(
         self,
         template_id: UUID,
-    ) -> Optional[WorkflowTemplate]:
+    ) -> WorkflowTemplate | None:
         """Busca template por ID."""
-        query = select(WorkflowTemplate).where(
-            and_(WorkflowTemplate.id == template_id, WorkflowTemplate.ativo == True)
-        )
+        query = select(WorkflowTemplate).where(and_(WorkflowTemplate.id == template_id, WorkflowTemplate.ativo))
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
-    async def get_template_by_code(self, code: str) -> Optional[WorkflowTemplate]:
+    async def get_template_by_code(self, code: str) -> WorkflowTemplate | None:
         """Busca template por codigo."""
-        query = select(WorkflowTemplate).where(
-            and_(WorkflowTemplate.code == code, WorkflowTemplate.ativo == True)
-        )
+        query = select(WorkflowTemplate).where(and_(WorkflowTemplate.code == code, WorkflowTemplate.ativo))
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
@@ -295,12 +287,12 @@ class WorkflowRepository:
         self,
         skip: int = 0,
         limit: int = 100,
-        workflow_type: Optional[WorkflowTypeEnum] = None,
-        is_active: Optional[bool] = None,
-        ai_recommended: Optional[bool] = None,
-    ) -> Tuple[List[WorkflowTemplate], int]:
+        workflow_type: WorkflowTypeEnum | None = None,
+        is_active: bool | None = None,
+        ai_recommended: bool | None = None,
+    ) -> tuple[list[WorkflowTemplate], int]:
         """Lista templates."""
-        query = select(WorkflowTemplate).where(WorkflowTemplate.ativo == True)
+        query = select(WorkflowTemplate).where(WorkflowTemplate.ativo)
 
         if workflow_type:
             query = query.where(WorkflowTemplate.workflow_type == workflow_type)
@@ -323,8 +315,8 @@ class WorkflowRepository:
     async def update_template(
         self,
         template_id: UUID,
-        update_data: Dict[str, Any],
-    ) -> Optional[WorkflowTemplate]:
+        update_data: dict[str, Any],
+    ) -> WorkflowTemplate | None:
         """Atualiza template."""
         template = await self.get_template_by_id(template_id)
         if not template:
@@ -352,7 +344,7 @@ class WorkflowRepository:
 
     async def create_optimization(
         self,
-        optimization_data: Dict[str, Any],
+        optimization_data: dict[str, Any],
     ) -> WorkflowOptimization:
         """Cria otimizacao."""
         optimization = WorkflowOptimization(**optimization_data)
@@ -364,21 +356,19 @@ class WorkflowRepository:
     async def get_optimization_by_id(
         self,
         optimization_id: UUID,
-    ) -> Optional[WorkflowOptimization]:
+    ) -> WorkflowOptimization | None:
         """Busca otimizacao por ID."""
-        query = select(WorkflowOptimization).where(
-            WorkflowOptimization.id == optimization_id
-        )
+        query = select(WorkflowOptimization).where(WorkflowOptimization.id == optimization_id)
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
     async def list_optimizations(
         self,
-        workflow_id: Optional[UUID] = None,
-        status: Optional[str] = None,
+        workflow_id: UUID | None = None,
+        status: str | None = None,
         skip: int = 0,
         limit: int = 100,
-    ) -> Tuple[List[WorkflowOptimization], int]:
+    ) -> tuple[list[WorkflowOptimization], int]:
         """Lista otimizacoes."""
         query = select(WorkflowOptimization)
 
@@ -402,9 +392,9 @@ class WorkflowRepository:
         self,
         optimization_id: UUID,
         status: str,
-        applied_by: Optional[UUID] = None,
-        actual_improvement: Optional[float] = None,
-    ) -> Optional[WorkflowOptimization]:
+        applied_by: UUID | None = None,
+        actual_improvement: float | None = None,
+    ) -> WorkflowOptimization | None:
         """Atualiza status de otimizacao."""
         optimization = await self.get_optimization_by_id(optimization_id)
         if not optimization:
@@ -427,7 +417,7 @@ class WorkflowRepository:
 
     async def save_metrics(
         self,
-        metrics_data: Dict[str, Any],
+        metrics_data: dict[str, Any],
     ) -> WorkflowMetrics:
         """Salva metricas."""
         metrics = WorkflowMetrics(**metrics_data)
@@ -440,17 +430,14 @@ class WorkflowRepository:
         self,
         workflow_id: UUID,
         period_type: str = "daily",
-        from_date: Optional[datetime] = None,
-        to_date: Optional[datetime] = None,
-    ) -> List[WorkflowMetrics]:
+        from_date: datetime | None = None,
+        to_date: datetime | None = None,
+    ) -> list[WorkflowMetrics]:
         """Busca metricas."""
-        query = (
-            select(WorkflowMetrics)
-            .where(
-                and_(
-                    WorkflowMetrics.workflow_id == workflow_id,
-                    WorkflowMetrics.period_type == period_type,
-                )
+        query = select(WorkflowMetrics).where(
+            and_(
+                WorkflowMetrics.workflow_id == workflow_id,
+                WorkflowMetrics.period_type == period_type,
             )
         )
 
@@ -470,29 +457,25 @@ class WorkflowRepository:
 
     async def get_dashboard_stats(
         self,
-        condominio_id: Optional[UUID] = None,
-    ) -> Dict[str, Any]:
+        condominio_id: UUID | None = None,
+    ) -> dict[str, Any]:
         """Obtem estatisticas para dashboard."""
         # Total de workflows
-        wf_query = select(func.count()).where(AIWorkflow.ativo == True)
+        wf_query = select(func.count()).where(AIWorkflow.ativo)
         if condominio_id:
             wf_query = wf_query.where(AIWorkflow.condominio_id == condominio_id)
         total_wf = (await self.session.execute(wf_query)).scalar()
 
         # Workflows ativos
         active_query = select(func.count()).where(
-            and_(AIWorkflow.ativo == True, AIWorkflow.status == WorkflowStatusEnum.ACTIVE)
+            and_(AIWorkflow.ativo, AIWorkflow.status == WorkflowStatusEnum.ACTIVE)
         )
         if condominio_id:
             active_query = active_query.where(AIWorkflow.condominio_id == condominio_id)
         active_wf = (await self.session.execute(active_query)).scalar()
 
         # Por status
-        status_query = (
-            select(AIWorkflow.status, func.count())
-            .where(AIWorkflow.ativo == True)
-            .group_by(AIWorkflow.status)
-        )
+        status_query = select(AIWorkflow.status, func.count()).where(AIWorkflow.ativo).group_by(AIWorkflow.status)
         if condominio_id:
             status_query = status_query.where(AIWorkflow.condominio_id == condominio_id)
         status_result = await self.session.execute(status_query)
@@ -500,9 +483,7 @@ class WorkflowRepository:
 
         # Por tipo
         type_query = (
-            select(AIWorkflow.workflow_type, func.count())
-            .where(AIWorkflow.ativo == True)
-            .group_by(AIWorkflow.workflow_type)
+            select(AIWorkflow.workflow_type, func.count()).where(AIWorkflow.ativo).group_by(AIWorkflow.workflow_type)
         )
         if condominio_id:
             type_query = type_query.where(AIWorkflow.condominio_id == condominio_id)
@@ -511,14 +492,12 @@ class WorkflowRepository:
 
         # Execucoes hoje
         today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
-        exec_today_query = select(func.count()).where(
-            AIWorkflowExecution.created_at >= today_start
-        )
+        exec_today_query = select(func.count()).where(AIWorkflowExecution.created_at >= today_start)
         exec_today = (await self.session.execute(exec_today_query)).scalar()
 
         # Media de sucesso
         avg_success_query = select(func.avg(AIWorkflow.success_rate)).where(
-            and_(AIWorkflow.ativo == True, AIWorkflow.execution_count > 0)
+            and_(AIWorkflow.ativo, AIWorkflow.execution_count > 0)
         )
         if condominio_id:
             avg_success_query = avg_success_query.where(AIWorkflow.condominio_id == condominio_id)
@@ -526,9 +505,7 @@ class WorkflowRepository:
 
         # Otimizacoes pendentes
         pending_opt = (
-            await self.session.execute(
-                select(func.count()).where(WorkflowOptimization.status == "pending")
-            )
+            await self.session.execute(select(func.count()).where(WorkflowOptimization.status == "pending"))
         ).scalar()
 
         return {

@@ -1,8 +1,8 @@
 """Accounting Account model - Conta Contábil."""
 
-import enum
 from datetime import datetime
 from decimal import Decimal
+from enum import StrEnum
 from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import (
@@ -28,7 +28,7 @@ if TYPE_CHECKING:
     from modules.financial.models.journal_entry import JournalEntryLine
 
 
-class AccountType(str, enum.Enum):
+class AccountType(StrEnum):
     """Tipo da conta contábil."""
 
     ASSET = "ASSET"  # Ativo
@@ -39,21 +39,21 @@ class AccountType(str, enum.Enum):
     COST = "COST"  # Custo
 
 
-class AccountNature(str, enum.Enum):
+class AccountNature(StrEnum):
     """Natureza da conta (saldo normal)."""
 
     DEBIT = "DEBIT"  # Saldo devedor (Ativo, Despesa, Custo)
     CREDIT = "CREDIT"  # Saldo credor (Passivo, PL, Receita)
 
 
-class AccountClassification(str, enum.Enum):
+class AccountClassification(StrEnum):
     """Classificação da conta."""
 
     SYNTHETIC = "SYNTHETIC"  # Sintética (agrupadora)
     ANALYTICAL = "ANALYTICAL"  # Analítica (recebe lançamentos)
 
 
-class AccountStatus(str, enum.Enum):
+class AccountStatus(StrEnum):
     """Status da conta."""
 
     ACTIVE = "ACTIVE"  # Ativa
@@ -62,7 +62,7 @@ class AccountStatus(str, enum.Enum):
     CLOSED = "CLOSED"  # Encerrada
 
 
-class SpedAccountNature(str, enum.Enum):
+class SpedAccountNature(StrEnum):
     """Natureza da conta SPED."""
 
     # Contas de Ativo
@@ -202,9 +202,7 @@ class AccountingAccount(Base):
 
     # Timestamps
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
-    updated_at = Column(
-        DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
-    )
+    updated_at = Column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     deleted_at = Column(DateTime(timezone=True), nullable=True)
 
     # Audit
@@ -264,12 +262,7 @@ class AccountingAccount(Base):
     @property
     def can_receive_entries(self) -> bool:
         """Verifica se a conta pode receber lançamentos."""
-        return (
-            self.is_analytical
-            and self.status == AccountStatus.ACTIVE
-            and self.allows_manual_entry
-            and self.active
-        )
+        return self.is_analytical and self.status == AccountStatus.ACTIVE and self.allows_manual_entry and self.active
 
     def calculate_balance(self) -> Decimal:
         """Calcula o saldo da conta baseado na natureza."""

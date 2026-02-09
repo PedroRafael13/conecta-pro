@@ -4,20 +4,23 @@ Controller de Propostas - Licitacoes
 """
 
 import logging
-from typing import Optional
-from uuid import UUID
 from decimal import Decimal
+from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from core.database import get_db
-from modules.bidding.services.proposal_service import ProposalService
 from modules.bidding.schemas.proposal import (
-    ProposalCreate, ProposalUpdate, ProposalResponse,
-    ProposalListResponse, ProposalCalculateBDI, ProposalBDIResponse,
-    ProposalLanceCreate
+    ProposalBDIResponse,
+    ProposalCalculateBDI,
+    ProposalCreate,
+    ProposalLanceCreate,
+    ProposalListResponse,
+    ProposalResponse,
+    ProposalUpdate,
 )
+from modules.bidding.services.proposal_service import ProposalService
 
 logger = logging.getLogger(__name__)
 
@@ -26,11 +29,11 @@ router = APIRouter(prefix="/proposals", tags=["Licitacoes - Propostas"])
 
 @router.get("/", response_model=ProposalListResponse)
 async def list_proposals(
-    tender_id: Optional[UUID] = None,
-    status: Optional[str] = None,
+    tender_id: UUID | None = None,
+    status: str | None = None,
     page: int = Query(default=1, ge=1),
     size: int = Query(default=50, ge=1, le=100),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """Lista propostas com filtros."""
     service = ProposalService(db)
@@ -52,106 +55,70 @@ async def list_vencedoras(db: Session = Depends(get_db)):
 
 
 @router.get("/tender/{tender_id}")
-async def list_by_tender(
-    tender_id: UUID,
-    db: Session = Depends(get_db)
-):
+async def list_by_tender(tender_id: UUID, db: Session = Depends(get_db)):
     """Lista propostas de um edital especifico."""
     service = ProposalService(db)
     return await service.get_by_tender(tender_id)
 
 
 @router.get("/{proposal_id}", response_model=ProposalResponse)
-async def get_proposal(
-    proposal_id: UUID,
-    db: Session = Depends(get_db)
-):
+async def get_proposal(proposal_id: UUID, db: Session = Depends(get_db)):
     """Busca proposta por ID."""
     service = ProposalService(db)
     proposal = await service.get(proposal_id)
     if not proposal:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Proposta nao encontrada"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Proposta nao encontrada")
     return proposal
 
 
 @router.post("/", response_model=ProposalResponse, status_code=status.HTTP_201_CREATED)
-async def create_proposal(
-    data: ProposalCreate,
-    db: Session = Depends(get_db)
-):
+async def create_proposal(data: ProposalCreate, db: Session = Depends(get_db)):
     """Cria nova proposta."""
     service = ProposalService(db)
     return await service.create(data)
 
 
 @router.put("/{proposal_id}", response_model=ProposalResponse)
-async def update_proposal(
-    proposal_id: UUID,
-    data: ProposalUpdate,
-    db: Session = Depends(get_db)
-):
+async def update_proposal(proposal_id: UUID, data: ProposalUpdate, db: Session = Depends(get_db)):
     """Atualiza proposta."""
     service = ProposalService(db)
     proposal = await service.update(proposal_id, data)
     if not proposal:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Proposta nao encontrada ou nao pode ser editada"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Proposta nao encontrada ou nao pode ser editada"
         )
     return proposal
 
 
 @router.delete("/{proposal_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_proposal(
-    proposal_id: UUID,
-    db: Session = Depends(get_db)
-):
+async def delete_proposal(proposal_id: UUID, db: Session = Depends(get_db)):
     """Remove proposta."""
     service = ProposalService(db)
     if not await service.delete(proposal_id):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Proposta nao encontrada"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Proposta nao encontrada")
 
 
 @router.post("/{proposal_id}/pronta", response_model=ProposalResponse)
-async def marcar_pronta(
-    proposal_id: UUID,
-    db: Session = Depends(get_db)
-):
+async def marcar_pronta(proposal_id: UUID, db: Session = Depends(get_db)):
     """Marca proposta como pronta para envio."""
     service = ProposalService(db)
     try:
         proposal = await service.marcar_pronta(proposal_id)
         if not proposal:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Proposta nao encontrada"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Proposta nao encontrada")
         return proposal
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.post("/{proposal_id}/enviar", response_model=ProposalResponse)
-async def enviar_proposta(
-    proposal_id: UUID,
-    db: Session = Depends(get_db)
-):
+async def enviar_proposta(proposal_id: UUID, db: Session = Depends(get_db)):
     """Envia proposta."""
     service = ProposalService(db)
     proposal = await service.enviar(proposal_id)
     if not proposal:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Proposta nao pode ser enviada (verifique status)"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Proposta nao pode ser enviada (verifique status)"
         )
     return proposal
 
@@ -160,44 +127,31 @@ async def enviar_proposta(
 async def registrar_resultado(
     proposal_id: UUID,
     vencedora: bool,
-    posicao: Optional[int] = None,
-    valor_final: Optional[float] = None,
-    db: Session = Depends(get_db)
+    posicao: int | None = None,
+    valor_final: float | None = None,
+    db: Session = Depends(get_db),
 ):
     """Registra resultado da proposta."""
     service = ProposalService(db)
     valor = Decimal(str(valor_final)) if valor_final else None
     proposal = await service.registrar_resultado(proposal_id, vencedora, posicao, valor)
     if not proposal:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Proposta nao encontrada"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Proposta nao encontrada")
     return proposal
 
 
 @router.post("/{proposal_id}/lance", response_model=ProposalResponse)
-async def registrar_lance(
-    proposal_id: UUID,
-    data: ProposalLanceCreate,
-    db: Session = Depends(get_db)
-):
+async def registrar_lance(proposal_id: UUID, data: ProposalLanceCreate, db: Session = Depends(get_db)):
     """Registra lance em pregao."""
     service = ProposalService(db)
     proposal = await service.registrar_lance(proposal_id, data.valor)
     if not proposal:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Proposta nao encontrada"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Proposta nao encontrada")
     return proposal
 
 
 @router.post("/calcular-bdi", response_model=ProposalBDIResponse)
-async def calcular_bdi(
-    data: ProposalCalculateBDI,
-    db: Session = Depends(get_db)
-):
+async def calcular_bdi(data: ProposalCalculateBDI, db: Session = Depends(get_db)):
     """Calcula BDI da proposta."""
     service = ProposalService(db)
     return await service.calcular_bdi(data)

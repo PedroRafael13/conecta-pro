@@ -3,10 +3,10 @@ Sistema de auditoria para acessos a dados sensiveis.
 Registra todas as operacoes criticas para conformidade LGPD.
 """
 
+from collections.abc import Callable
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from functools import wraps
-from typing import Callable, Optional
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 from core.logging import logger
 
 
-class AuditAction(str, Enum):
+class AuditAction(StrEnum):
     """Tipos de acoes auditaveis."""
 
     # Dados pessoais
@@ -32,8 +32,8 @@ class AuditAction(str, Enum):
     LOGIN_SUCCESS = "login_success"
     LOGIN_FAILURE = "login_failure"
     LOGOUT = "logout"
-    PASSWORD_CHANGE = "password_change"
-    PASSWORD_RESET = "password_reset"
+    PASSWORD_CHANGE = "password_change"  # noqa: S105
+    PASSWORD_RESET = "password_reset"  # noqa: S105
 
     # Permissoes
     ROLE_CHANGE = "role_change"
@@ -53,20 +53,20 @@ class AuditLog(BaseModel):
     timestamp: datetime = Field(default_factory=datetime.utcnow)
 
     # Quem
-    user_id: Optional[str] = None
-    user_email: Optional[str] = None
-    ip_address: Optional[str] = None
-    user_agent: Optional[str] = None
+    user_id: str | None = None
+    user_email: str | None = None
+    ip_address: str | None = None
+    user_agent: str | None = None
 
     # O que
     action: AuditAction
     resource_type: str  # Ex: "user", "employee", "contract"
-    resource_id: Optional[str] = None
+    resource_id: str | None = None
 
     # Contexto
-    details: Optional[dict] = None
+    details: dict | None = None
     success: bool = True
-    error_message: Optional[str] = None
+    error_message: str | None = None
 
 
 # Storage em memoria (substituir por banco em producao)
@@ -76,14 +76,14 @@ _audit_logs: list[AuditLog] = []
 async def log_audit(
     action: AuditAction,
     resource_type: str,
-    resource_id: Optional[str] = None,
-    user_id: Optional[str] = None,
-    user_email: Optional[str] = None,
-    ip_address: Optional[str] = None,
-    user_agent: Optional[str] = None,
-    details: Optional[dict] = None,
+    resource_id: str | None = None,
+    user_id: str | None = None,
+    user_email: str | None = None,
+    ip_address: str | None = None,
+    user_agent: str | None = None,
+    details: dict | None = None,
     success: bool = True,
-    error_message: Optional[str] = None,
+    error_message: str | None = None,
 ) -> AuditLog:
     """
     Registra evento de auditoria.
@@ -140,7 +140,7 @@ async def log_audit(
 def audit_sensitive_access(
     action: AuditAction,
     resource_type: str,
-    resource_id_param: Optional[str] = None,
+    resource_id_param: str | None = None,
 ):
     """
     Decorator para auditar acessos a dados sensiveis.
@@ -215,11 +215,11 @@ def _matches_filters(log: AuditLog, filters: dict) -> bool:
 
 
 async def get_audit_logs(
-    user_id: Optional[str] = None,
-    action: Optional[AuditAction] = None,
-    resource_type: Optional[str] = None,
-    start_date: Optional[datetime] = None,
-    end_date: Optional[datetime] = None,
+    user_id: str | None = None,
+    action: AuditAction | None = None,
+    resource_type: str | None = None,
+    start_date: datetime | None = None,
+    end_date: datetime | None = None,
     limit: int = 100,
 ) -> list[AuditLog]:
     """

@@ -2,7 +2,6 @@
 
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -31,39 +30,39 @@ class WarehouseBase(BaseModel):
 
     code: str = Field(..., min_length=1, max_length=20)
     name: str = Field(..., min_length=1, max_length=100)
-    short_name: Optional[str] = Field(None, max_length=30)
-    description: Optional[str] = None
+    short_name: str | None = Field(None, max_length=30)
+    description: str | None = None
     warehouse_type: WarehouseType = WarehouseType.PRINCIPAL
     storage_type: StorageType = StorageType.NORMAL
 
     # Localização
-    address: Optional[str] = Field(None, max_length=300)
-    city: Optional[str] = Field(None, max_length=100)
-    state: Optional[str] = Field(None, max_length=2)
-    zip_code: Optional[str] = Field(None, max_length=10)
-    latitude: Optional[Decimal] = None
-    longitude: Optional[Decimal] = None
+    address: str | None = Field(None, max_length=300)
+    city: str | None = Field(None, max_length=100)
+    state: str | None = Field(None, max_length=2)
+    zip_code: str | None = Field(None, max_length=10)
+    latitude: Decimal | None = None
+    longitude: Decimal | None = None
 
     # Contato
-    manager_name: Optional[str] = Field(None, max_length=100)
-    manager_email: Optional[str] = Field(None, max_length=200)
-    manager_phone: Optional[str] = Field(None, max_length=20)
-    phone: Optional[str] = Field(None, max_length=20)
-    email: Optional[str] = Field(None, max_length=200)
+    manager_name: str | None = Field(None, max_length=100)
+    manager_email: str | None = Field(None, max_length=200)
+    manager_phone: str | None = Field(None, max_length=20)
+    phone: str | None = Field(None, max_length=20)
+    email: str | None = Field(None, max_length=200)
 
     # Capacidade
-    total_area_m2: Optional[Decimal] = None
-    storage_area_m2: Optional[Decimal] = None
-    total_positions: Optional[str] = "0"
-    max_weight_kg: Optional[Decimal] = None
+    total_area_m2: Decimal | None = None
+    storage_area_m2: Decimal | None = None
+    total_positions: str | None = "0"
+    max_weight_kg: Decimal | None = None
 
     # Estrutura de endereçamento
     has_addressing: bool = False
-    addressing_format: Optional[str] = None
+    addressing_format: str | None = None
 
     # Configurações de temperatura
-    min_temperature: Optional[Decimal] = None
-    max_temperature: Optional[Decimal] = None
+    min_temperature: Decimal | None = None
+    max_temperature: Decimal | None = None
 
     # Segurança
     has_cctv: bool = False
@@ -71,13 +70,13 @@ class WarehouseBase(BaseModel):
     has_fire_system: bool = False
 
     # Horários
-    opening_time: Optional[str] = None
-    closing_time: Optional[str] = None
+    opening_time: str | None = None
+    closing_time: str | None = None
     works_24h: bool = False
 
     # Custos
-    monthly_cost: Optional[Decimal] = Field(default=Decimal("0"))
-    cost_center: Optional[str] = None
+    monthly_cost: Decimal | None = Field(default=Decimal("0"))
+    cost_center: str | None = None
 
     # Configurações
     allows_negative_stock: bool = False
@@ -85,7 +84,7 @@ class WarehouseBase(BaseModel):
     auto_reorder: bool = False
 
     # Observações
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class WarehouseCreate(WarehouseBase):
@@ -95,36 +94,36 @@ class WarehouseCreate(WarehouseBase):
 class WarehouseUpdate(BaseModel):
     """Schema para atualizar Warehouse."""
 
-    name: Optional[str] = Field(None, max_length=100)
-    short_name: Optional[str] = Field(None, max_length=30)
-    description: Optional[str] = None
-    warehouse_type: Optional[WarehouseType] = None
-    storage_type: Optional[StorageType] = None
-    address: Optional[str] = None
-    city: Optional[str] = None
-    state: Optional[str] = None
-    zip_code: Optional[str] = None
-    manager_name: Optional[str] = None
-    manager_email: Optional[str] = None
-    manager_phone: Optional[str] = None
-    phone: Optional[str] = None
-    email: Optional[str] = None
-    total_area_m2: Optional[Decimal] = None
-    storage_area_m2: Optional[Decimal] = None
-    total_positions: Optional[str] = None
-    has_addressing: Optional[bool] = None
-    addressing_format: Optional[str] = None
-    min_temperature: Optional[Decimal] = None
-    max_temperature: Optional[Decimal] = None
-    opening_time: Optional[str] = None
-    closing_time: Optional[str] = None
-    works_24h: Optional[bool] = None
-    monthly_cost: Optional[Decimal] = None
-    cost_center: Optional[str] = None
-    allows_negative_stock: Optional[bool] = None
-    fifo_enabled: Optional[bool] = None
-    auto_reorder: Optional[bool] = None
-    notes: Optional[str] = None
+    name: str | None = Field(None, max_length=100)
+    short_name: str | None = Field(None, max_length=30)
+    description: str | None = None
+    warehouse_type: WarehouseType | None = None
+    storage_type: StorageType | None = None
+    address: str | None = None
+    city: str | None = None
+    state: str | None = None
+    zip_code: str | None = None
+    manager_name: str | None = None
+    manager_email: str | None = None
+    manager_phone: str | None = None
+    phone: str | None = None
+    email: str | None = None
+    total_area_m2: Decimal | None = None
+    storage_area_m2: Decimal | None = None
+    total_positions: str | None = None
+    has_addressing: bool | None = None
+    addressing_format: str | None = None
+    min_temperature: Decimal | None = None
+    max_temperature: Decimal | None = None
+    opening_time: str | None = None
+    closing_time: str | None = None
+    works_24h: bool | None = None
+    monthly_cost: Decimal | None = None
+    cost_center: str | None = None
+    allows_negative_stock: bool | None = None
+    fifo_enabled: bool | None = None
+    auto_reorder: bool | None = None
+    notes: str | None = None
 
 
 class WarehouseResponse(WarehouseBase):
@@ -133,24 +132,24 @@ class WarehouseResponse(WarehouseBase):
     id: UUID
     condominio_id: UUID
     status: WarehouseStatus
-    occupied_positions: Optional[str] = "0"
-    current_weight_kg: Optional[Decimal] = None
-    current_temperature: Optional[Decimal] = None
-    total_items: Optional[str] = "0"
-    total_quantity: Optional[Decimal] = None
-    total_value: Optional[Decimal] = None
-    last_movement_at: Optional[datetime] = None
-    last_inventory_at: Optional[datetime] = None
+    occupied_positions: str | None = "0"
+    current_weight_kg: Decimal | None = None
+    current_temperature: Decimal | None = None
+    total_items: str | None = "0"
+    total_quantity: Decimal | None = None
+    total_value: Decimal | None = None
+    last_movement_at: datetime | None = None
+    last_inventory_at: datetime | None = None
     is_blocked: bool = False
-    blocked_reason: Optional[str] = None
+    blocked_reason: str | None = None
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
     ativo: bool = True
 
     # Propriedades calculadas
     is_active: bool = True
     is_main: bool = False
-    occupancy_rate: Optional[float] = None
+    occupancy_rate: float | None = None
     is_full: bool = False
     available_positions: int = 0
     is_climate_controlled: bool = False
@@ -170,10 +169,10 @@ class WarehouseListResponse(BaseModel):
     warehouse_type: str
     status: str
     storage_type: str
-    city: Optional[str] = None
-    total_items: Optional[str] = "0"
-    total_value: Optional[Decimal] = None
-    occupancy_rate: Optional[float] = None
+    city: str | None = None
+    total_items: str | None = "0"
+    total_value: Decimal | None = None
+    occupancy_rate: float | None = None
     is_active: bool = True
 
     class Config:  # pylint: disable=too-few-public-methods
@@ -192,33 +191,33 @@ class StockItemBase(BaseModel):
 
     product_id: UUID
     warehouse_id: UUID
-    batch_number: Optional[str] = Field(None, max_length=50)
-    manufacturing_date: Optional[date] = None
-    expiry_date: Optional[date] = None
-    serial_number: Optional[str] = Field(None, max_length=100)
+    batch_number: str | None = Field(None, max_length=50)
+    manufacturing_date: date | None = None
+    expiry_date: date | None = None
+    serial_number: str | None = Field(None, max_length=100)
 
     # Localização
-    location_code: Optional[str] = Field(None, max_length=50)
-    aisle: Optional[str] = Field(None, max_length=10)
-    rack: Optional[str] = Field(None, max_length=10)
-    shelf: Optional[str] = Field(None, max_length=10)
-    bin: Optional[str] = Field(None, max_length=10)
+    location_code: str | None = Field(None, max_length=50)
+    aisle: str | None = Field(None, max_length=10)
+    rack: str | None = Field(None, max_length=10)
+    shelf: str | None = Field(None, max_length=10)
+    bin: str | None = Field(None, max_length=10)
 
     # Parâmetros de estoque
-    min_quantity: Optional[Decimal] = None
-    max_quantity: Optional[Decimal] = None
-    reorder_point: Optional[Decimal] = None
-    reorder_quantity: Optional[Decimal] = None
-    safety_stock: Optional[Decimal] = None
+    min_quantity: Decimal | None = None
+    max_quantity: Decimal | None = None
+    reorder_point: Decimal | None = None
+    reorder_quantity: Decimal | None = None
+    safety_stock: Decimal | None = None
 
     # Custeio
     costing_method: CostingMethod = CostingMethod.CUSTO_MEDIO
 
     # Classificação
-    abc_class: Optional[str] = Field(None, max_length=1)
-    xyz_class: Optional[str] = Field(None, max_length=1)
+    abc_class: str | None = Field(None, max_length=1)
+    xyz_class: str | None = Field(None, max_length=1)
 
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class StockItemCreate(StockItemBase):
@@ -231,21 +230,21 @@ class StockItemCreate(StockItemBase):
 class StockItemUpdate(BaseModel):
     """Schema para atualizar StockItem."""
 
-    batch_number: Optional[str] = None
-    expiry_date: Optional[date] = None
-    location_code: Optional[str] = None
-    aisle: Optional[str] = None
-    rack: Optional[str] = None
-    shelf: Optional[str] = None
-    bin: Optional[str] = None
-    min_quantity: Optional[Decimal] = None
-    max_quantity: Optional[Decimal] = None
-    reorder_point: Optional[Decimal] = None
-    reorder_quantity: Optional[Decimal] = None
-    safety_stock: Optional[Decimal] = None
-    abc_class: Optional[str] = None
-    xyz_class: Optional[str] = None
-    notes: Optional[str] = None
+    batch_number: str | None = None
+    expiry_date: date | None = None
+    location_code: str | None = None
+    aisle: str | None = None
+    rack: str | None = None
+    shelf: str | None = None
+    bin: str | None = None
+    min_quantity: Decimal | None = None
+    max_quantity: Decimal | None = None
+    reorder_point: Decimal | None = None
+    reorder_quantity: Decimal | None = None
+    safety_stock: Decimal | None = None
+    abc_class: str | None = None
+    xyz_class: str | None = None
+    notes: str | None = None
 
 
 class StockItemResponse(StockItemBase):
@@ -263,15 +262,15 @@ class StockItemResponse(StockItemBase):
     average_cost: Decimal
     last_cost: Decimal
     total_cost: Decimal
-    last_receipt_date: Optional[datetime] = None
-    last_issue_date: Optional[datetime] = None
-    last_count_date: Optional[datetime] = None
-    receipt_count: Optional[str] = "0"
-    issue_count: Optional[str] = "0"
+    last_receipt_date: datetime | None = None
+    last_issue_date: datetime | None = None
+    last_count_date: datetime | None = None
+    receipt_count: str | None = "0"
+    issue_count: str | None = "0"
     is_blocked: bool = False
-    blocked_reason: Optional[str] = None
+    blocked_reason: str | None = None
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
     ativo: bool = True
 
     # Propriedades calculadas
@@ -281,7 +280,7 @@ class StockItemResponse(StockItemBase):
     is_below_reorder_point: bool = False
     is_overstocked: bool = False
     is_expired: bool = False
-    days_to_expiry: Optional[int] = None
+    days_to_expiry: int | None = None
     is_expiring_soon: bool = False
     full_location: str = ""
     classification: str = "--"
@@ -298,13 +297,13 @@ class StockItemListResponse(BaseModel):
     id: UUID
     product_id: UUID
     warehouse_id: UUID
-    batch_number: Optional[str] = None
+    batch_number: str | None = None
     status: str
     quantity_on_hand: float
     quantity_available: float
     unit_cost: float
     total_cost: float
-    expiry_date: Optional[date] = None
+    expiry_date: date | None = None
     full_location: str = ""
     is_low_stock: bool = False
     is_expired: bool = False
@@ -327,44 +326,44 @@ class StockMovementBase(BaseModel):
     reason: MovementReason = MovementReason.OUTRO
     product_id: UUID
     warehouse_id: UUID
-    destination_warehouse_id: Optional[UUID] = None
+    destination_warehouse_id: UUID | None = None
     movement_date: date
-    batch_number: Optional[str] = Field(None, max_length=50)
-    expiry_date: Optional[date] = None
-    serial_number: Optional[str] = Field(None, max_length=100)
+    batch_number: str | None = Field(None, max_length=50)
+    expiry_date: date | None = None
+    serial_number: str | None = Field(None, max_length=100)
     quantity: Decimal = Field(..., gt=0)
     unit_of_measure: str = Field(default="un", max_length=10)
     unit_cost: Decimal = Field(default=Decimal("0"))
 
     # Localização origem
-    source_location: Optional[str] = None
-    source_aisle: Optional[str] = None
-    source_rack: Optional[str] = None
-    source_shelf: Optional[str] = None
-    source_bin: Optional[str] = None
+    source_location: str | None = None
+    source_aisle: str | None = None
+    source_rack: str | None = None
+    source_shelf: str | None = None
+    source_bin: str | None = None
 
     # Localização destino
-    dest_location: Optional[str] = None
-    dest_aisle: Optional[str] = None
-    dest_rack: Optional[str] = None
-    dest_shelf: Optional[str] = None
-    dest_bin: Optional[str] = None
+    dest_location: str | None = None
+    dest_aisle: str | None = None
+    dest_rack: str | None = None
+    dest_shelf: str | None = None
+    dest_bin: str | None = None
 
     # Referências
-    reference_type: Optional[str] = None
-    reference_id: Optional[UUID] = None
-    reference_number: Optional[str] = None
-    invoice_number: Optional[str] = None
-    invoice_series: Optional[str] = None
-    invoice_key: Optional[str] = None
+    reference_type: str | None = None
+    reference_id: UUID | None = None
+    reference_number: str | None = None
+    invoice_number: str | None = None
+    invoice_series: str | None = None
+    invoice_key: str | None = None
 
-    supplier_id: Optional[UUID] = None
-    customer_id: Optional[UUID] = None
-    requisition_number: Optional[str] = None
+    supplier_id: UUID | None = None
+    customer_id: UUID | None = None
+    requisition_number: str | None = None
 
     requires_approval: bool = False
-    description: Optional[str] = None
-    notes: Optional[str] = None
+    description: str | None = None
+    notes: str | None = None
 
 
 class StockMovementCreate(StockMovementBase):
@@ -374,12 +373,12 @@ class StockMovementCreate(StockMovementBase):
 class StockMovementUpdate(BaseModel):
     """Schema para atualizar StockMovement."""
 
-    movement_date: Optional[date] = None
-    batch_number: Optional[str] = None
-    quantity: Optional[Decimal] = None
-    unit_cost: Optional[Decimal] = None
-    description: Optional[str] = None
-    notes: Optional[str] = None
+    movement_date: date | None = None
+    batch_number: str | None = None
+    quantity: Decimal | None = None
+    unit_cost: Decimal | None = None
+    description: str | None = None
+    notes: str | None = None
 
 
 class StockMovementResponse(StockMovementBase):
@@ -390,18 +389,18 @@ class StockMovementResponse(StockMovementBase):
     number: str
     status: MovementStatus
     total_cost: Decimal
-    balance_before: Optional[Decimal] = None
-    balance_after: Optional[Decimal] = None
-    approved_by: Optional[UUID] = None
-    approved_at: Optional[datetime] = None
-    confirmed_by: Optional[UUID] = None
-    confirmed_at: Optional[datetime] = None
+    balance_before: Decimal | None = None
+    balance_after: Decimal | None = None
+    approved_by: UUID | None = None
+    approved_at: datetime | None = None
+    confirmed_by: UUID | None = None
+    confirmed_at: datetime | None = None
     is_reversal: bool = False
-    reversal_of: Optional[UUID] = None
-    reversed_by: Optional[UUID] = None
+    reversal_of: UUID | None = None
+    reversed_by: UUID | None = None
     created_at: datetime
-    updated_at: Optional[datetime] = None
-    created_by: Optional[UUID] = None
+    updated_at: datetime | None = None
+    created_by: UUID | None = None
     ativo: bool = True
 
     # Propriedades calculadas
@@ -438,7 +437,7 @@ class StockMovementListResponse(BaseModel):
     quantity: float
     unit_cost: float
     total_cost: float
-    reference_number: Optional[str] = None
+    reference_number: str | None = None
     is_confirmed: bool = False
 
     class Config:  # pylint: disable=too-few-public-methods
@@ -456,20 +455,20 @@ class StockInventoryBase(BaseModel):
     """Base schema para StockInventory."""
 
     warehouse_id: UUID
-    description: Optional[str] = Field(None, max_length=200)
+    description: str | None = Field(None, max_length=200)
     inventory_type: InventoryType = InventoryType.GERAL
-    planned_date: Optional[date] = None
-    deadline: Optional[datetime] = None
+    planned_date: date | None = None
+    deadline: datetime | None = None
 
     # Filtros
-    filter_categories: Optional[list] = None
-    filter_locations: Optional[list] = None
-    filter_abc_class: Optional[list] = None
-    filter_products: Optional[list] = None
+    filter_categories: list | None = None
+    filter_locations: list | None = None
+    filter_abc_class: list | None = None
+    filter_products: list | None = None
 
     # Responsável
-    supervisor_id: Optional[UUID] = None
-    team_members: Optional[list] = None
+    supervisor_id: UUID | None = None
+    team_members: list | None = None
 
     # Configurações
     requires_approval: bool = True
@@ -478,7 +477,7 @@ class StockInventoryBase(BaseModel):
     blind_count: bool = False
     auto_adjust: bool = False
 
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class StockInventoryCreate(StockInventoryBase):
@@ -488,12 +487,12 @@ class StockInventoryCreate(StockInventoryBase):
 class StockInventoryUpdate(BaseModel):
     """Schema para atualizar StockInventory."""
 
-    description: Optional[str] = None
-    planned_date: Optional[date] = None
-    deadline: Optional[datetime] = None
-    supervisor_id: Optional[UUID] = None
-    team_members: Optional[list] = None
-    notes: Optional[str] = None
+    description: str | None = None
+    planned_date: date | None = None
+    deadline: datetime | None = None
+    supervisor_id: UUID | None = None
+    team_members: list | None = None
+    notes: str | None = None
 
 
 class StockInventoryResponse(StockInventoryBase):
@@ -503,8 +502,8 @@ class StockInventoryResponse(StockInventoryBase):
     condominio_id: UUID
     number: str
     status: InventoryStatus
-    start_date: Optional[datetime] = None
-    end_date: Optional[datetime] = None
+    start_date: datetime | None = None
+    end_date: datetime | None = None
     total_items: int = 0
     counted_items: int = 0
     verified_items: int = 0
@@ -516,13 +515,13 @@ class StockInventoryResponse(StockInventoryBase):
     expected_quantity: Decimal = Decimal("0")
     counted_quantity: Decimal = Decimal("0")
     difference_quantity: Decimal = Decimal("0")
-    accuracy_rate: Optional[Decimal] = None
-    hit_rate: Optional[Decimal] = None
-    approved_by: Optional[UUID] = None
-    approved_at: Optional[datetime] = None
+    accuracy_rate: Decimal | None = None
+    hit_rate: Decimal | None = None
+    approved_by: UUID | None = None
+    approved_at: datetime | None = None
     created_at: datetime
-    updated_at: Optional[datetime] = None
-    created_by: Optional[UUID] = None
+    updated_at: datetime | None = None
+    created_by: UUID | None = None
     ativo: bool = True
 
     # Propriedades calculadas
@@ -545,16 +544,16 @@ class StockInventoryListResponse(BaseModel):
 
     id: UUID
     number: str
-    description: Optional[str] = None
+    description: str | None = None
     inventory_type: str
     status: str
     warehouse_id: UUID
-    planned_date: Optional[date] = None
+    planned_date: date | None = None
     total_items: int = 0
     counted_items: int = 0
     divergent_items: int = 0
     progress_percentage: float = 0
-    accuracy_rate: Optional[float] = None
+    accuracy_rate: float | None = None
 
     class Config:  # pylint: disable=too-few-public-methods
         """Configuracao do schema."""
@@ -571,14 +570,14 @@ class StockInventoryItemBase(BaseModel):
     """Base schema para StockInventoryItem."""
 
     product_id: UUID
-    stock_item_id: Optional[UUID] = None
-    batch_number: Optional[str] = None
-    expiry_date: Optional[date] = None
-    location_code: Optional[str] = None
-    aisle: Optional[str] = None
-    rack: Optional[str] = None
-    shelf: Optional[str] = None
-    bin_loc: Optional[str] = None
+    stock_item_id: UUID | None = None
+    batch_number: str | None = None
+    expiry_date: date | None = None
+    location_code: str | None = None
+    aisle: str | None = None
+    rack: str | None = None
+    shelf: str | None = None
+    bin_loc: str | None = None
     expected_quantity: Decimal = Decimal("0")
     unit_cost: Decimal = Decimal("0")
 
@@ -593,7 +592,7 @@ class StockInventoryItemCount(BaseModel):
     """Schema para registrar contagem."""
 
     counted_quantity: Decimal = Field(..., ge=0)
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class StockInventoryItemResponse(StockInventoryItemBase):
@@ -603,22 +602,22 @@ class StockInventoryItemResponse(StockInventoryItemBase):
     inventory_id: UUID
     status: InventoryItemStatus
     expected_value: Decimal = Decimal("0")
-    counted_quantity: Optional[Decimal] = None
-    recount_quantity: Optional[Decimal] = None
-    difference_quantity: Optional[Decimal] = None
-    adjusted_quantity: Optional[Decimal] = None
-    counted_value: Optional[Decimal] = None
-    difference_value: Optional[Decimal] = None
-    counted_at: Optional[datetime] = None
-    counted_by: Optional[UUID] = None
-    recounted_at: Optional[datetime] = None
-    recounted_by: Optional[UUID] = None
-    verified_at: Optional[datetime] = None
-    verified_by: Optional[UUID] = None
-    adjustment_reason: Optional[str] = None
-    adjusted_at: Optional[datetime] = None
-    adjusted_by: Optional[UUID] = None
-    notes: Optional[str] = None
+    counted_quantity: Decimal | None = None
+    recount_quantity: Decimal | None = None
+    difference_quantity: Decimal | None = None
+    adjusted_quantity: Decimal | None = None
+    counted_value: Decimal | None = None
+    difference_value: Decimal | None = None
+    counted_at: datetime | None = None
+    counted_by: UUID | None = None
+    recounted_at: datetime | None = None
+    recounted_by: UUID | None = None
+    verified_at: datetime | None = None
+    verified_by: UUID | None = None
+    adjustment_reason: str | None = None
+    adjusted_at: datetime | None = None
+    adjusted_by: UUID | None = None
+    notes: str | None = None
     created_at: datetime
     ativo: bool = True
 
@@ -628,7 +627,7 @@ class StockInventoryItemResponse(StockInventoryItemBase):
     is_verified: bool = False
     is_adjusted: bool = False
     has_divergence: bool = False
-    divergence_percentage: Optional[float] = None
+    divergence_percentage: float | None = None
     full_location: str = ""
 
     class Config:  # pylint: disable=too-few-public-methods
@@ -645,28 +644,28 @@ class StockInventoryItemResponse(StockInventoryItemBase):
 class StockReservationBase(BaseModel):
     """Base schema para StockReservation."""
 
-    description: Optional[str] = Field(None, max_length=200)
+    description: str | None = Field(None, max_length=200)
     reservation_type: ReservationType
     priority: ReservationPriority = ReservationPriority.MEDIA
     product_id: UUID
     warehouse_id: UUID
-    stock_item_id: Optional[UUID] = None
-    batch_number: Optional[str] = None
+    stock_item_id: UUID | None = None
+    batch_number: str | None = None
     quantity_requested: Decimal = Field(..., gt=0)
     unit_of_measure: str = Field(default="un", max_length=10)
-    required_date: Optional[datetime] = None
-    expiry_date: Optional[datetime] = None
+    required_date: datetime | None = None
+    expiry_date: datetime | None = None
 
     # Referência
-    reference_type: Optional[str] = None
-    reference_id: Optional[UUID] = None
-    reference_number: Optional[str] = None
+    reference_type: str | None = None
+    reference_id: UUID | None = None
+    reference_number: str | None = None
 
     # Solicitante
-    requester_id: Optional[UUID] = None
-    requester_name: Optional[str] = None
-    department: Optional[str] = None
-    cost_center: Optional[str] = None
+    requester_id: UUID | None = None
+    requester_name: str | None = None
+    department: str | None = None
+    cost_center: str | None = None
 
     # Configurações
     requires_approval: bool = False
@@ -674,7 +673,7 @@ class StockReservationBase(BaseModel):
     auto_expire: bool = True
     allow_partial: bool = True
 
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class StockReservationCreate(StockReservationBase):
@@ -684,18 +683,18 @@ class StockReservationCreate(StockReservationBase):
 class StockReservationUpdate(BaseModel):
     """Schema para atualizar StockReservation."""
 
-    description: Optional[str] = None
-    priority: Optional[ReservationPriority] = None
-    required_date: Optional[datetime] = None
-    expiry_date: Optional[datetime] = None
-    notes: Optional[str] = None
+    description: str | None = None
+    priority: ReservationPriority | None = None
+    required_date: datetime | None = None
+    expiry_date: datetime | None = None
+    notes: str | None = None
 
 
 class StockReservationRelease(BaseModel):
     """Schema para liberar reserva."""
 
     quantity: Decimal = Field(..., gt=0)
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class StockReservationResponse(StockReservationBase):
@@ -709,17 +708,17 @@ class StockReservationResponse(StockReservationBase):
     quantity_released: Decimal = Decimal("0")
     quantity_pending: Decimal = Decimal("0")
     reservation_date: datetime
-    approved_by: Optional[UUID] = None
-    approved_at: Optional[datetime] = None
-    released_by: Optional[UUID] = None
-    released_at: Optional[datetime] = None
-    release_notes: Optional[str] = None
-    cancelled_by: Optional[UUID] = None
-    cancelled_at: Optional[datetime] = None
-    cancellation_reason: Optional[str] = None
+    approved_by: UUID | None = None
+    approved_at: datetime | None = None
+    released_by: UUID | None = None
+    released_at: datetime | None = None
+    release_notes: str | None = None
+    cancelled_by: UUID | None = None
+    cancelled_at: datetime | None = None
+    cancellation_reason: str | None = None
     created_at: datetime
-    updated_at: Optional[datetime] = None
-    created_by: Optional[UUID] = None
+    updated_at: datetime | None = None
+    created_by: UUID | None = None
     ativo: bool = True
 
     # Propriedades calculadas
@@ -731,8 +730,8 @@ class StockReservationResponse(StockReservationBase):
     is_released: bool = False
     fulfillment_percentage: float = 0
     is_overdue: bool = False
-    days_until_required: Optional[int] = None
-    days_until_expiry: Optional[int] = None
+    days_until_required: int | None = None
+    days_until_expiry: int | None = None
     is_high_priority: bool = False
 
     class Config:  # pylint: disable=too-few-public-methods
@@ -754,8 +753,8 @@ class StockReservationListResponse(BaseModel):
     quantity_requested: float
     quantity_reserved: float
     quantity_pending: float
-    required_date: Optional[datetime] = None
-    reference_number: Optional[str] = None
+    required_date: datetime | None = None
+    reference_number: str | None = None
     is_overdue: bool = False
 
     class Config:  # pylint: disable=too-few-public-methods
@@ -830,30 +829,30 @@ class ReservationStats(BaseModel):
 class StockFilter(BaseModel):
     """Filtros para consulta de estoque."""
 
-    warehouse_id: Optional[UUID] = None
-    product_id: Optional[UUID] = None
-    category_id: Optional[UUID] = None
-    status: Optional[StockItemStatus] = None
-    batch_number: Optional[str] = None
-    location_code: Optional[str] = None
-    abc_class: Optional[str] = None
-    is_low_stock: Optional[bool] = None
-    is_expired: Optional[bool] = None
-    is_expiring_soon: Optional[bool] = None
-    min_quantity: Optional[Decimal] = None
-    max_quantity: Optional[Decimal] = None
+    warehouse_id: UUID | None = None
+    product_id: UUID | None = None
+    category_id: UUID | None = None
+    status: StockItemStatus | None = None
+    batch_number: str | None = None
+    location_code: str | None = None
+    abc_class: str | None = None
+    is_low_stock: bool | None = None
+    is_expired: bool | None = None
+    is_expiring_soon: bool | None = None
+    min_quantity: Decimal | None = None
+    max_quantity: Decimal | None = None
 
 
 class MovementFilter(BaseModel):
     """Filtros para consulta de movimentações."""
 
-    warehouse_id: Optional[UUID] = None
-    product_id: Optional[UUID] = None
-    movement_type: Optional[MovementType] = None
-    reason: Optional[MovementReason] = None
-    status: Optional[MovementStatus] = None
-    reference_type: Optional[str] = None
-    reference_number: Optional[str] = None
-    date_from: Optional[date] = None
-    date_to: Optional[date] = None
-    batch_number: Optional[str] = None
+    warehouse_id: UUID | None = None
+    product_id: UUID | None = None
+    movement_type: MovementType | None = None
+    reason: MovementReason | None = None
+    status: MovementStatus | None = None
+    reference_type: str | None = None
+    reference_number: str | None = None
+    date_from: date | None = None
+    date_to: date | None = None
+    batch_number: str | None = None

@@ -9,8 +9,8 @@ Quality Score: 99+/100
 from __future__ import annotations
 
 from datetime import datetime
-from enum import Enum
-from typing import TYPE_CHECKING, Optional
+from enum import StrEnum
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text, func
@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     from .occurrence import Occurrence
 
 
-class AttachmentType(str, Enum):
+class AttachmentType(StrEnum):
     """Tipo de anexo.
 
     Attributes:
@@ -90,31 +90,31 @@ class OccurrenceAttachment(Base):
         String(255),
         nullable=False,
     )
-    file_size: Mapped[Optional[int]] = mapped_column(
+    file_size: Mapped[int | None] = mapped_column(
         Integer,
         nullable=True,
     )
-    mime_type: Mapped[Optional[str]] = mapped_column(
+    mime_type: Mapped[str | None] = mapped_column(
         String(100),
         nullable=True,
     )
 
     # === Descricao ===
-    description: Mapped[Optional[str]] = mapped_column(
+    description: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
     )
 
     # === Captura (para fotos/videos) ===
-    captured_at: Mapped[Optional[datetime]] = mapped_column(
+    captured_at: Mapped[datetime | None] = mapped_column(
         DateTime,
         nullable=True,
     )
-    latitude: Mapped[Optional[float]] = mapped_column(
+    latitude: Mapped[float | None] = mapped_column(
         Float,
         nullable=True,
     )
-    longitude: Mapped[Optional[float]] = mapped_column(
+    longitude: Mapped[float | None] = mapped_column(
         Float,
         nullable=True,
     )
@@ -139,7 +139,7 @@ class OccurrenceAttachment(Base):
     )
 
     # === Relacionamento ===
-    occurrence: Mapped["Occurrence"] = relationship(
+    occurrence: Mapped[Occurrence] = relationship(
         "Occurrence",
         back_populates="attachments",
     )
@@ -164,14 +164,14 @@ class OccurrenceAttachment(Base):
         return self.latitude is not None and self.longitude is not None
 
     @property
-    def file_size_kb(self) -> Optional[float]:
+    def file_size_kb(self) -> float | None:
         """Retorna tamanho em KB."""
         if self.file_size:
             return round(self.file_size / 1024, 2)
         return None
 
     @property
-    def file_size_mb(self) -> Optional[float]:
+    def file_size_mb(self) -> float | None:
         """Retorna tamanho em MB."""
         if self.file_size:
             return round(self.file_size / (1024 * 1024), 2)

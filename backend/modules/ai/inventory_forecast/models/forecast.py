@@ -4,10 +4,9 @@ Forecast Models - AI Inventory Forecasting
 Models para previsao de demanda e estoque.
 """
 
-import enum
 import uuid
 from datetime import datetime
-from typing import Optional
+from enum import StrEnum
 
 from sqlalchemy import (
     Boolean,
@@ -27,7 +26,7 @@ from sqlalchemy.orm import relationship
 from core.database import Base
 
 
-class ForecastStatus(str, enum.Enum):
+class ForecastStatus(StrEnum):
     """Status da previsao."""
 
     PENDING = "pending"
@@ -37,7 +36,7 @@ class ForecastStatus(str, enum.Enum):
     EXPIRED = "expired"
 
 
-class ForecastType(str, enum.Enum):
+class ForecastType(StrEnum):
     """Tipo de previsao."""
 
     DEMAND = "demand"  # Previsao de demanda
@@ -63,17 +62,8 @@ class Forecast(Base):
     product_name = Column(String(200), nullable=False)
 
     # Configuracao da previsao
-    forecast_type = Column(
-        Enum(ForecastType),
-        default=ForecastType.DEMAND,
-        nullable=False
-    )
-    status = Column(
-        Enum(ForecastStatus),
-        default=ForecastStatus.PENDING,
-        nullable=False,
-        index=True
-    )
+    forecast_type = Column(Enum(ForecastType), default=ForecastType.DEMAND, nullable=False)
+    status = Column(Enum(ForecastStatus), default=ForecastStatus.PENDING, nullable=False, index=True)
 
     # Periodo da previsao
     start_date = Column(Date, nullable=False)
@@ -123,11 +113,7 @@ class Forecast(Base):
     error_message = Column(Text)
 
     # Relacionamentos
-    results = relationship(
-        "ForecastResult",
-        back_populates="forecast",
-        cascade="all, delete-orphan"
-    )
+    results = relationship("ForecastResult", back_populates="forecast", cascade="all, delete-orphan")
 
     def __repr__(self) -> str:
         return f"<Forecast {self.product_code} ({self.start_date} - {self.end_date})>"
@@ -146,10 +132,7 @@ class ForecastResult(Base):
 
     # Relacionamento com previsao
     forecast_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("inventory_forecasts.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True
+        UUID(as_uuid=True), ForeignKey("inventory_forecasts.id", ondelete="CASCADE"), nullable=False, index=True
     )
 
     # Periodo

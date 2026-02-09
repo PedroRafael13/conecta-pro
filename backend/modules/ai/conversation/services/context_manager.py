@@ -3,9 +3,8 @@
 import json
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, UTC
-from typing import Any, Optional
-from uuid import UUID
+from datetime import UTC, datetime
+from typing import Any
 
 import redis.asyncio as redis
 
@@ -20,7 +19,7 @@ class ConversationContext:
     session_id: str
     messages: list[dict[str, Any]] = field(default_factory=list)
     metadata: dict[str, Any] = field(default_factory=dict)
-    module: Optional[str] = None
+    module: str | None = None
     entities: dict[str, Any] = field(default_factory=dict)
     preferences: dict[str, Any] = field(default_factory=dict)
     created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
@@ -40,7 +39,7 @@ class ContextManager:
 
     def __init__(
         self,
-        redis_client: Optional[redis.Redis] = None,
+        redis_client: redis.Redis | None = None,
         max_context_messages: int = 20,
         context_ttl_hours: int = 24,
     ) -> None:
@@ -71,9 +70,7 @@ class ContextManager:
         """Gera chave para entidades extraidas."""
         return f"chat_entities:{user_id}:{session_id}"
 
-    async def get_context(
-        self, user_id: int, session_id: str
-    ) -> ConversationContext:
+    async def get_context(self, user_id: int, session_id: str) -> ConversationContext:
         """
         Recupera contexto da conversa.
 
@@ -132,9 +129,7 @@ class ContextManager:
         # Salva no Redis
         if self.redis:
             try:
-                await self.redis.setex(
-                    key, self.context_ttl, json.dumps(context_dict)
-                )
+                await self.redis.setex(key, self.context_ttl, json.dumps(context_dict))
             except Exception as e:
                 logger.warning(f"Erro ao salvar contexto no Redis: {e}")
 
@@ -147,7 +142,7 @@ class ContextManager:
         session_id: str,
         role: str,  # "user" ou "assistant"
         content: str,
-        metadata: Optional[dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> ConversationContext:
         """
         Adiciona mensagem ao contexto.
@@ -199,9 +194,7 @@ class ContextManager:
         context.entities.update(entities)
         await self.save_context(context)
 
-    async def set_module(
-        self, user_id: int, session_id: str, module: str
-    ) -> None:
+    async def set_module(self, user_id: int, session_id: str, module: str) -> None:
         """
         Define o modulo ativo na conversa.
 
@@ -236,9 +229,7 @@ class ContextManager:
 
         return {}
 
-    async def save_user_preferences(
-        self, user_id: int, preferences: dict[str, Any]
-    ) -> None:
+    async def save_user_preferences(self, user_id: int, preferences: dict[str, Any]) -> None:
         """
         Salva preferencias do usuario.
 
@@ -299,16 +290,14 @@ class ContextManager:
         # Converte para formato do LLM
         llm_messages = []
         for msg in context.messages[-max_messages:]:
-            llm_messages.append(
-                {"role": msg["role"], "content": msg["content"]}
-            )
+            llm_messages.append({"role": msg["role"], "content": msg["content"]})
 
         return llm_messages
 
     def get_system_prompt(
         self,
         context: ConversationContext,
-        user_name: Optional[str] = None,
+        user_name: str | None = None,
     ) -> str:
         """
         Gera prompt de sistema baseado no contexto.
@@ -340,8 +329,6 @@ class ContextManager:
                 parts.append(module_descriptions[context.module])
 
         if context.entities:
-            parts.append(
-                f"Entidades identificadas na conversa: {json.dumps(context.entities, ensure_ascii=False)}"
-            )
+            parts.append(f"Entidades identificadas na conversa: {json.dumps(context.entities, ensure_ascii=False)}")
 
         return "\n".join(parts)

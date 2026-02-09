@@ -6,23 +6,20 @@ Endpoints REST para gestao de EPIs.
 """
 
 import logging
-from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
-from sqlalchemy.orm import Session
 
 from modules.health_occupational.schemas.common import StandardResponse
 from modules.health_occupational.schemas.epi import (
     EPICreateRequest,
-    EPIUpdateRequest,
-    EPIResponse,
     EPIDeliveryRequest,
-    EPIDeliveryUpdateRequest,
     EPIDeliveryResponse,
-    EPIInventoryUpdateRequest,
+    EPIDeliveryUpdateRequest,
     EPIInventoryResponse,
-    EPIRecordResponse,
+    EPIInventoryUpdateRequest,
+    EPIResponse,
+    EPIUpdateRequest,
 )
 from modules.health_occupational.services.epi_service import EPIService
 
@@ -179,8 +176,8 @@ async def update_epi(
     summary="Lista EPIs cadastrados",
 )
 async def list_epis(
-    categoria: Optional[str] = Query(None, description="Filtrar por categoria"),
-    ativo: Optional[bool] = Query(True, description="Filtrar por status"),
+    categoria: str | None = Query(None, description="Filtrar por categoria"),
+    ativo: bool | None = Query(True, description="Filtrar por status"),
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
     service: EPIService = Depends(get_epi_service),
@@ -454,10 +451,7 @@ async def get_epi_record(
             message="Ficha de EPI do funcionario",
             data={
                 "funcionario_id": str(funcionario_id),
-                "entregas": [
-                    EPIDeliveryResponse.model_validate(d).model_dump()
-                    for d in record["entregas"]
-                ],
+                "entregas": [EPIDeliveryResponse.model_validate(d).model_dump() for d in record["entregas"]],
                 "total_entregas": record["total_entregas"],
                 "epis_ativos": len(record["epis_ativos"]),
                 "epis_vencidos": len(record["epis_vencidos"]),
@@ -486,7 +480,7 @@ async def get_epi_record(
     description="Retorna estoque atual de todos os EPIs.",
 )
 async def get_epi_inventory(
-    categoria: Optional[str] = Query(None, description="Filtrar por categoria"),
+    categoria: str | None = Query(None, description="Filtrar por categoria"),
     baixo_estoque: bool = Query(False, description="Apenas com estoque baixo"),
     service: EPIService = Depends(get_epi_service),
 ) -> StandardResponse:
@@ -563,7 +557,7 @@ async def update_inventory(
 async def add_to_inventory(
     epi_id: UUID,
     quantidade: int = Query(..., ge=1, description="Quantidade a adicionar"),
-    lote: Optional[str] = Query(None, description="Numero do lote"),
+    lote: str | None = Query(None, description="Numero do lote"),
     service: EPIService = Depends(get_epi_service),
 ) -> StandardResponse:
     """Registra entrada de itens no estoque."""

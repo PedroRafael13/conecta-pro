@@ -3,16 +3,13 @@ IntegrationSettings Model - Configurações de Integração
 Sprint 30: Cadastro de Clientes/Condomínios
 """
 
-import enum
 from datetime import datetime
-from typing import Optional, TYPE_CHECKING
+from enum import StrEnum
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
-from sqlalchemy import (
-    Column, String, Text, Boolean, DateTime,
-    Integer, Enum, ForeignKey, Index
-)
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, Index, Integer, String, Text
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 
 from core.database import Base
@@ -21,8 +18,9 @@ if TYPE_CHECKING:
     from modules.clients.models.client import Client
 
 
-class IntegrationType(str, enum.Enum):
+class IntegrationType(StrEnum):
     """Tipo de integração."""
+
     GUARDIAN = "guardian"
     PLUS = "plus"
     ERP_EXTERNO = "erp_externo"
@@ -34,8 +32,9 @@ class IntegrationType(str, enum.Enum):
     OUTRO = "outro"
 
 
-class SyncStatus(str, enum.Enum):
+class SyncStatus(StrEnum):
     """Status de sincronização."""
+
     PENDENTE = "pendente"
     SINCRONIZANDO = "sincronizando"
     SINCRONIZADO = "sincronizado"
@@ -43,8 +42,9 @@ class SyncStatus(str, enum.Enum):
     DESABILITADO = "desabilitado"
 
 
-class SyncDirection(str, enum.Enum):
+class SyncDirection(StrEnum):
     """Direção da sincronização."""
+
     ERP_TO_EXTERNAL = "erp_to_external"
     EXTERNAL_TO_ERP = "external_to_erp"
     BIDIRECTIONAL = "bidirectional"
@@ -62,29 +62,16 @@ class IntegrationSettings(Base):
 
     # Identificação
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    client_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("clients.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True
-    )
+    client_id = Column(UUID(as_uuid=True), ForeignKey("clients.id", ondelete="CASCADE"), nullable=False, index=True)
 
     # Tipo de integração
-    integration_type = Column(
-        Enum(IntegrationType),
-        nullable=False,
-        default=IntegrationType.GUARDIAN
-    )
+    integration_type = Column(Enum(IntegrationType), nullable=False, default=IntegrationType.GUARDIAN)
     name = Column(String(100), nullable=False)
     description = Column(String(500), nullable=True)
 
     # Status
     sync_status = Column(Enum(SyncStatus), nullable=False, default=SyncStatus.PENDENTE)
-    sync_direction = Column(
-        Enum(SyncDirection),
-        nullable=False,
-        default=SyncDirection.BIDIRECTIONAL
-    )
+    sync_direction = Column(Enum(SyncDirection), nullable=False, default=SyncDirection.BIDIRECTIONAL)
 
     # Credenciais (criptografadas)
     api_url = Column(String(500), nullable=True)
@@ -155,10 +142,7 @@ class IntegrationSettings(Base):
     )
 
     def __repr__(self) -> str:
-        return (
-            f"<IntegrationSettings(id={self.id}, "
-            f"type={self.integration_type}, client_id={self.client_id})>"
-        )
+        return f"<IntegrationSettings(id={self.id}, type={self.integration_type}, client_id={self.client_id})>"
 
     @property
     def is_guardian(self) -> bool:
@@ -243,10 +227,7 @@ class IntegrationSettings(Base):
         self.updated_at = datetime.utcnow()
 
     def set_credentials(
-        self,
-        api_url: Optional[str] = None,
-        api_key: Optional[str] = None,
-        api_secret: Optional[str] = None
+        self, api_url: str | None = None, api_key: str | None = None, api_secret: str | None = None
     ) -> None:
         """Define credenciais."""
         if api_url:
@@ -257,29 +238,20 @@ class IntegrationSettings(Base):
             self.api_secret = api_secret
         self.updated_at = datetime.utcnow()
 
-    def set_token(self, token: str, expires_at: Optional[datetime] = None) -> None:
+    def set_token(self, token: str, expires_at: datetime | None = None) -> None:
         """Define token de autenticação."""
         self.token = token
         self.token_expires_at = expires_at
         self.updated_at = datetime.utcnow()
 
-    def set_webhook(
-        self,
-        url: str,
-        secret: Optional[str] = None,
-        events: Optional[list] = None
-    ) -> None:
+    def set_webhook(self, url: str, secret: str | None = None, events: list | None = None) -> None:
         """Configura webhook."""
         self.webhook_url = url
         self.webhook_secret = secret
         self.webhook_events = events or []
         self.updated_at = datetime.utcnow()
 
-    def set_external_ids(
-        self,
-        client_id: Optional[str] = None,
-        tenant_id: Optional[str] = None
-    ) -> None:
+    def set_external_ids(self, client_id: str | None = None, tenant_id: str | None = None) -> None:
         """Define IDs externos."""
         if client_id:
             self.external_client_id = client_id
@@ -299,10 +271,10 @@ class IntegrationSettings(Base):
 
     def update_sync_config(
         self,
-        interval_minutes: Optional[int] = None,
-        batch_size: Optional[int] = None,
-        retry_attempts: Optional[int] = None,
-        retry_delay: Optional[int] = None
+        interval_minutes: int | None = None,
+        batch_size: int | None = None,
+        retry_attempts: int | None = None,
+        retry_delay: int | None = None,
     ) -> None:
         """Atualiza configurações de sincronização."""
         if interval_minutes is not None:

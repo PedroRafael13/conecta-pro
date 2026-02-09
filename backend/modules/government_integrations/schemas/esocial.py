@@ -2,7 +2,7 @@
 Schemas para integrações com eSocial.
 """
 
-from typing import Any, Dict
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -24,7 +24,7 @@ class ESocialEventRequest(BaseModel):
         pattern=r"^S-(2200|2299|2220|2230|2240|2210)$",
     )
     funcionario_id: UUID = Field(..., description="ID do funcionario")
-    dados: Dict[str, Any] = Field(..., description="Dados do evento")
+    dados: dict[str, Any] = Field(..., description="Dados do evento")
     ambiente: str = Field(
         default="homologacao",
         description="Ambiente",

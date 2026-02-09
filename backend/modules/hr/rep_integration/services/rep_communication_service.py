@@ -11,13 +11,13 @@ import base64
 import logging
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import List, Dict, Any
+from typing import Any
 
 import httpx
 
 from modules.hr.rep_integration.models import (
-    REPDevice,
     DeviceManufacturer,
+    REPDevice,
 )
 
 logger = logging.getLogger(__name__)
@@ -32,12 +32,12 @@ class REPDriverBase(ABC):
         self.base_url = device.connection_url
 
     @abstractmethod
-    async def test_connection(self) -> Dict[str, Any]:
+    async def test_connection(self) -> dict[str, Any]:
         """Testa conexão com o dispositivo."""
         raise NotImplementedError
 
     @abstractmethod
-    async def get_device_info(self) -> Dict[str, Any]:
+    async def get_device_info(self) -> dict[str, Any]:
         """Obtém informações do dispositivo."""
         raise NotImplementedError
 
@@ -47,17 +47,17 @@ class REPDriverBase(ABC):
         from_nsr: int = None,
         from_datetime: datetime = None,
         limit: int = 1000,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Obtém eventos do dispositivo."""
         raise NotImplementedError
 
     @abstractmethod
-    async def get_users(self) -> List[Dict[str, Any]]:
+    async def get_users(self) -> list[dict[str, Any]]:
         """Obtém usuários cadastrados."""
         raise NotImplementedError
 
     @abstractmethod
-    async def add_user(self, user_data: Dict[str, Any]) -> bool:
+    async def add_user(self, user_data: dict[str, Any]) -> bool:
         """Adiciona usuário ao dispositivo."""
         raise NotImplementedError
 
@@ -75,7 +75,7 @@ class REPDriverBase(ABC):
 class ControlIDDriver(REPDriverBase):
     """Driver para dispositivos Control iD."""
 
-    async def _get_auth_headers(self) -> Dict[str, str]:
+    async def _get_auth_headers(self) -> dict[str, str]:
         """Retorna headers de autenticação."""
         headers = {"Content-Type": "application/json"}
 
@@ -97,7 +97,7 @@ class ControlIDDriver(REPDriverBase):
         """Descriptografa senha."""
         return self.device.auth_password_encrypted or ""
 
-    async def test_connection(self) -> Dict[str, Any]:
+    async def test_connection(self) -> dict[str, Any]:
         """Testa conexão com Control iD."""
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
@@ -123,7 +123,7 @@ class ControlIDDriver(REPDriverBase):
         except (httpx.HTTPError, OSError, ValueError) as e:
             return {"success": False, "error_message": str(e)}
 
-    async def get_device_info(self) -> Dict[str, Any]:
+    async def get_device_info(self) -> dict[str, Any]:
         """Obtém informações do Control iD."""
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
@@ -154,7 +154,7 @@ class ControlIDDriver(REPDriverBase):
         from_nsr: int = None,
         from_datetime: datetime = None,
         limit: int = 1000,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Obtém eventos do Control iD."""
         events = []
 
@@ -173,23 +173,25 @@ class ControlIDDriver(REPDriverBase):
                 if response.status_code == 200:
                     data = response.json()
                     for event in data.get("events", []):
-                        events.append({
-                            "nsr": event.get("id"),
-                            "datetime": datetime.fromisoformat(event.get("time")),
-                            "pis": event.get("pis"),
-                            "user_id": event.get("user_id"),
-                            "user_name": event.get("user_name"),
-                            "event_type": self._map_event_type(event.get("event")),
-                            "method": self._map_method(event.get("way")),
-                            "score": event.get("score"),
-                        })
+                        events.append(
+                            {
+                                "nsr": event.get("id"),
+                                "datetime": datetime.fromisoformat(event.get("time")),
+                                "pis": event.get("pis"),
+                                "user_id": event.get("user_id"),
+                                "user_name": event.get("user_name"),
+                                "event_type": self._map_event_type(event.get("event")),
+                                "method": self._map_method(event.get("way")),
+                                "score": event.get("score"),
+                            }
+                        )
 
         except (httpx.HTTPError, OSError, ValueError, KeyError) as e:
             logger.error(f"Erro ao obter eventos do Control iD: {e}")
 
         return events
 
-    async def get_users(self) -> List[Dict[str, Any]]:
+    async def get_users(self) -> list[dict[str, Any]]:
         """Obtém usuários do Control iD."""
         users = []
 
@@ -204,22 +206,24 @@ class ControlIDDriver(REPDriverBase):
                 if response.status_code == 200:
                     data = response.json()
                     for user in data.get("users", []):
-                        users.append({
-                            "id": user.get("id"),
-                            "name": user.get("name"),
-                            "pis": user.get("pis"),
-                            "registration": user.get("registration"),
-                            "has_fingerprint": user.get("templates", 0) > 0,
-                            "has_face": user.get("faces", 0) > 0,
-                            "has_card": user.get("cards", 0) > 0,
-                        })
+                        users.append(
+                            {
+                                "id": user.get("id"),
+                                "name": user.get("name"),
+                                "pis": user.get("pis"),
+                                "registration": user.get("registration"),
+                                "has_fingerprint": user.get("templates", 0) > 0,
+                                "has_face": user.get("faces", 0) > 0,
+                                "has_card": user.get("cards", 0) > 0,
+                            }
+                        )
 
         except (httpx.HTTPError, OSError, ValueError, KeyError) as e:
             logger.error(f"Erro ao obter usuários do Control iD: {e}")
 
         return users
 
-    async def add_user(self, user_data: Dict[str, Any]) -> bool:
+    async def add_user(self, user_data: dict[str, Any]) -> bool:
         """Adiciona usuário ao Control iD."""
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
@@ -228,11 +232,13 @@ class ControlIDDriver(REPDriverBase):
                     headers=await self._get_auth_headers(),
                     json={
                         "object": "users",
-                        "values": [{
-                            "name": user_data.get("name"),
-                            "registration": user_data.get("registration"),
-                            "pis": user_data.get("pis"),
-                        }],
+                        "values": [
+                            {
+                                "name": user_data.get("name"),
+                                "registration": user_data.get("registration"),
+                                "pis": user_data.get("pis"),
+                            }
+                        ],
                     },
                 )
 
@@ -304,7 +310,7 @@ class ControlIDDriver(REPDriverBase):
 class IntelbrasDriver(REPDriverBase):
     """Driver para dispositivos Intelbras."""
 
-    async def test_connection(self) -> Dict[str, Any]:
+    async def test_connection(self) -> dict[str, Any]:
         """Testa conexão com Intelbras."""
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
@@ -331,7 +337,7 @@ class IntelbrasDriver(REPDriverBase):
         """Obtém senha descriptografada."""
         return self.device.auth_password_encrypted or "admin"
 
-    async def get_device_info(self) -> Dict[str, Any]:
+    async def get_device_info(self) -> dict[str, Any]:
         """Obtém informações do Intelbras."""
         return {}
 
@@ -340,15 +346,15 @@ class IntelbrasDriver(REPDriverBase):
         from_nsr: int = None,
         from_datetime: datetime = None,
         limit: int = 1000,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Obtém eventos do Intelbras."""
         return []
 
-    async def get_users(self) -> List[Dict[str, Any]]:
+    async def get_users(self) -> list[dict[str, Any]]:
         """Obtém usuários do Intelbras."""
         return []
 
-    async def add_user(self, user_data: Dict[str, Any]) -> bool:
+    async def add_user(self, user_data: dict[str, Any]) -> bool:
         """Adiciona usuário ao Intelbras."""
         return False
 
@@ -364,7 +370,7 @@ class IntelbrasDriver(REPDriverBase):
 class GenericDriver(REPDriverBase):
     """Driver genérico para dispositivos não suportados."""
 
-    async def test_connection(self) -> Dict[str, Any]:
+    async def test_connection(self) -> dict[str, Any]:
         """Testa conexão básica."""
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
@@ -376,7 +382,7 @@ class GenericDriver(REPDriverBase):
         except (httpx.HTTPError, OSError, ValueError) as e:
             return {"success": False, "error_message": str(e)}
 
-    async def get_device_info(self) -> Dict[str, Any]:
+    async def get_device_info(self) -> dict[str, Any]:
         return {}
 
     async def get_events(
@@ -384,13 +390,13 @@ class GenericDriver(REPDriverBase):
         from_nsr: int = None,
         from_datetime: datetime = None,
         limit: int = 1000,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         return []
 
-    async def get_users(self) -> List[Dict[str, Any]]:
+    async def get_users(self) -> list[dict[str, Any]]:
         return []
 
-    async def add_user(self, user_data: Dict[str, Any]) -> bool:
+    async def add_user(self, user_data: dict[str, Any]) -> bool:
         return False
 
     async def remove_user(self, user_id: str) -> bool:
@@ -404,7 +410,7 @@ class REPCommunicationService:
     """Serviço de comunicação com REPs."""
 
     def __init__(self):
-        self.drivers: Dict[str, type] = {
+        self.drivers: dict[str, type] = {
             DeviceManufacturer.CONTROL_ID.value: ControlIDDriver,
             DeviceManufacturer.INTELBRAS.value: IntelbrasDriver,
         }
@@ -414,12 +420,12 @@ class REPCommunicationService:
         driver_class = self.drivers.get(device.manufacturer, GenericDriver)
         return driver_class(device)
 
-    async def test_connection(self, device: REPDevice) -> Dict[str, Any]:
+    async def test_connection(self, device: REPDevice) -> dict[str, Any]:
         """Testa conexão com dispositivo."""
         driver = self.get_driver(device)
         return await driver.test_connection()
 
-    async def get_device_info(self, device: REPDevice) -> Dict[str, Any]:
+    async def get_device_info(self, device: REPDevice) -> dict[str, Any]:
         """Obtém informações do dispositivo."""
         driver = self.get_driver(device)
         return await driver.get_device_info()
@@ -430,12 +436,12 @@ class REPCommunicationService:
         from_nsr: int = None,
         from_datetime: datetime = None,
         limit: int = 1000,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Obtém eventos do dispositivo."""
         driver = self.get_driver(device)
         return await driver.get_events(from_nsr, from_datetime, limit)
 
-    async def get_users(self, device: REPDevice) -> List[Dict[str, Any]]:
+    async def get_users(self, device: REPDevice) -> list[dict[str, Any]]:
         """Obtém usuários do dispositivo."""
         driver = self.get_driver(device)
         return await driver.get_users()
@@ -443,7 +449,7 @@ class REPCommunicationService:
     async def add_user(
         self,
         device: REPDevice,
-        user_data: Dict[str, Any],
+        user_data: dict[str, Any],
     ) -> bool:
         """Adiciona usuário ao dispositivo."""
         driver = self.get_driver(device)

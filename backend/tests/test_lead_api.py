@@ -28,7 +28,7 @@ from modules.crm.schemas.lead import (
     LeadStatusUpdate,
     LeadUpdate,
 )
-from tests.factories import LeadFactory, TEST_LEAD_DATA
+from tests.factories import TEST_LEAD_DATA, LeadFactory
 
 
 class TestCreateLeadEndpoint:
@@ -55,8 +55,8 @@ class TestCreateLeadEndpoint:
 
         mock_db = AsyncMock()
 
-        with patch("modules.crm.controllers.lead_controller.LeadRepository") as MockRepo:
-            mock_repo = MockRepo.return_value
+        with patch("modules.crm.controllers.lead_controller.LeadRepository") as mock_repo_cls:
+            mock_repo = mock_repo_cls.return_value
             mock_repo.get_by_email = AsyncMock(return_value=None)
             mock_repo.create = AsyncMock(return_value=mock_lead)
 
@@ -79,8 +79,8 @@ class TestCreateLeadEndpoint:
         mock_user = MagicMock()
         mock_db = AsyncMock()
 
-        with patch("modules.crm.controllers.lead_controller.LeadRepository") as MockRepo:
-            mock_repo = MockRepo.return_value
+        with patch("modules.crm.controllers.lead_controller.LeadRepository") as mock_repo_cls:
+            mock_repo = mock_repo_cls.return_value
             mock_repo.get_by_email = AsyncMock(return_value=mock_existing)
 
             with pytest.raises(HTTPException) as exc_info:
@@ -101,8 +101,8 @@ class TestListLeadsEndpoint:
         mock_user = MagicMock()
         mock_db = AsyncMock()
 
-        with patch("modules.crm.controllers.lead_controller.LeadRepository") as MockRepo:
-            mock_repo = MockRepo.return_value
+        with patch("modules.crm.controllers.lead_controller.LeadRepository") as mock_repo_cls:
+            mock_repo = mock_repo_cls.return_value
             mock_repo.list = AsyncMock(return_value=(mock_leads, 3))
 
             result = await list_leads(
@@ -131,8 +131,8 @@ class TestListLeadsEndpoint:
         mock_user = MagicMock()
         mock_db = AsyncMock()
 
-        with patch("modules.crm.controllers.lead_controller.LeadRepository") as MockRepo:
-            mock_repo = MockRepo.return_value
+        with patch("modules.crm.controllers.lead_controller.LeadRepository") as mock_repo_cls:
+            mock_repo = mock_repo_cls.return_value
             mock_repo.list = AsyncMock(return_value=(mock_leads, 1))
 
             result = await list_leads(
@@ -161,8 +161,8 @@ class TestListLeadsEndpoint:
         mock_user = MagicMock()
         mock_db = AsyncMock()
 
-        with patch("modules.crm.controllers.lead_controller.LeadRepository") as MockRepo:
-            mock_repo = MockRepo.return_value
+        with patch("modules.crm.controllers.lead_controller.LeadRepository") as mock_repo_cls:
+            mock_repo = mock_repo_cls.return_value
             mock_repo.list = AsyncMock(return_value=(mock_leads, 25))
 
             result = await list_leads(
@@ -197,8 +197,8 @@ class TestGetLeadEndpoint:
         mock_user = MagicMock()
         mock_db = AsyncMock()
 
-        with patch("modules.crm.controllers.lead_controller.LeadRepository") as MockRepo:
-            mock_repo = MockRepo.return_value
+        with patch("modules.crm.controllers.lead_controller.LeadRepository") as mock_repo_cls:
+            mock_repo = mock_repo_cls.return_value
             mock_repo.get_by_id = AsyncMock(return_value=mock_lead)
 
             result = await get_lead(lead_id, mock_user, mock_db)
@@ -213,8 +213,8 @@ class TestGetLeadEndpoint:
         mock_user = MagicMock()
         mock_db = AsyncMock()
 
-        with patch("modules.crm.controllers.lead_controller.LeadRepository") as MockRepo:
-            mock_repo = MockRepo.return_value
+        with patch("modules.crm.controllers.lead_controller.LeadRepository") as mock_repo_cls:
+            mock_repo = mock_repo_cls.return_value
             mock_repo.get_by_id = AsyncMock(return_value=None)
 
             with pytest.raises(HTTPException) as exc_info:
@@ -238,8 +238,8 @@ class TestUpdateLeadEndpoint:
         mock_user.email = "admin@test.com"
         mock_db = AsyncMock()
 
-        with patch("modules.crm.controllers.lead_controller.LeadRepository") as MockRepo:
-            mock_repo = MockRepo.return_value
+        with patch("modules.crm.controllers.lead_controller.LeadRepository") as mock_repo_cls:
+            mock_repo = mock_repo_cls.return_value
             mock_repo.update = AsyncMock(return_value=mock_lead)
 
             result = await update_lead(lead_id, update_data, mock_user, mock_db)
@@ -255,8 +255,8 @@ class TestUpdateLeadEndpoint:
         mock_user = MagicMock()
         mock_db = AsyncMock()
 
-        with patch("modules.crm.controllers.lead_controller.LeadRepository") as MockRepo:
-            mock_repo = MockRepo.return_value
+        with patch("modules.crm.controllers.lead_controller.LeadRepository") as mock_repo_cls:
+            mock_repo = mock_repo_cls.return_value
             mock_repo.update = AsyncMock(return_value=None)
 
             with pytest.raises(HTTPException) as exc_info:
@@ -283,8 +283,8 @@ class TestUpdateLeadStatusEndpoint:
         mock_user.email = "admin@test.com"
         mock_db = AsyncMock()
 
-        with patch("modules.crm.controllers.lead_controller.LeadRepository") as MockRepo:
-            mock_repo = MockRepo.return_value
+        with patch("modules.crm.controllers.lead_controller.LeadRepository") as mock_repo_cls:
+            mock_repo = mock_repo_cls.return_value
             mock_repo.update_status = AsyncMock(return_value=mock_lead)
 
             result = await update_lead_status(lead_id, status_data, mock_user, mock_db)
@@ -305,8 +305,8 @@ class TestUpdateLeadStatusEndpoint:
         mock_user = MagicMock()
         mock_db = AsyncMock()
 
-        with patch("modules.crm.controllers.lead_controller.LeadRepository") as MockRepo:
-            mock_repo = MockRepo.return_value
+        with patch("modules.crm.controllers.lead_controller.LeadRepository") as mock_repo_cls:
+            mock_repo = mock_repo_cls.return_value
             mock_repo.update_status = AsyncMock(return_value=None)
 
             with pytest.raises(HTTPException) as exc_info:
@@ -327,8 +327,8 @@ class TestRecalculateScoreEndpoint:
         mock_user = MagicMock()
         mock_db = AsyncMock()
 
-        with patch("modules.crm.controllers.lead_controller.LeadRepository") as MockRepo:
-            mock_repo = MockRepo.return_value
+        with patch("modules.crm.controllers.lead_controller.LeadRepository") as mock_repo_cls:
+            mock_repo = mock_repo_cls.return_value
             mock_repo.update_score = AsyncMock(return_value=mock_lead)
 
             result = await recalculate_lead_score(lead_id, mock_user, mock_db)
@@ -343,8 +343,8 @@ class TestRecalculateScoreEndpoint:
         mock_user = MagicMock()
         mock_db = AsyncMock()
 
-        with patch("modules.crm.controllers.lead_controller.LeadRepository") as MockRepo:
-            mock_repo = MockRepo.return_value
+        with patch("modules.crm.controllers.lead_controller.LeadRepository") as mock_repo_cls:
+            mock_repo = mock_repo_cls.return_value
             mock_repo.update_score = AsyncMock(return_value=None)
 
             with pytest.raises(HTTPException) as exc_info:
@@ -365,8 +365,8 @@ class TestGetRecommendedActionEndpoint:
         mock_user = MagicMock()
         mock_db = AsyncMock()
 
-        with patch("modules.crm.controllers.lead_controller.LeadRepository") as MockRepo:
-            mock_repo = MockRepo.return_value
+        with patch("modules.crm.controllers.lead_controller.LeadRepository") as mock_repo_cls:
+            mock_repo = mock_repo_cls.return_value
             mock_repo.get_by_id = AsyncMock(return_value=mock_lead)
 
             result = await get_recommended_action(lead_id, mock_user, mock_db)
@@ -383,8 +383,8 @@ class TestGetRecommendedActionEndpoint:
         mock_user = MagicMock()
         mock_db = AsyncMock()
 
-        with patch("modules.crm.controllers.lead_controller.LeadRepository") as MockRepo:
-            mock_repo = MockRepo.return_value
+        with patch("modules.crm.controllers.lead_controller.LeadRepository") as mock_repo_cls:
+            mock_repo = mock_repo_cls.return_value
             mock_repo.get_by_id = AsyncMock(return_value=None)
 
             with pytest.raises(HTTPException) as exc_info:
@@ -405,8 +405,8 @@ class TestDeleteLeadEndpoint:
         mock_user.email = "admin@test.com"
         mock_db = AsyncMock()
 
-        with patch("modules.crm.controllers.lead_controller.LeadRepository") as MockRepo:
-            mock_repo = MockRepo.return_value
+        with patch("modules.crm.controllers.lead_controller.LeadRepository") as mock_repo_cls:
+            mock_repo = mock_repo_cls.return_value
             mock_repo.delete = AsyncMock(return_value=True)
 
             # Não deve lançar exceção
@@ -422,8 +422,8 @@ class TestDeleteLeadEndpoint:
         mock_user = MagicMock()
         mock_db = AsyncMock()
 
-        with patch("modules.crm.controllers.lead_controller.LeadRepository") as MockRepo:
-            mock_repo = MockRepo.return_value
+        with patch("modules.crm.controllers.lead_controller.LeadRepository") as mock_repo_cls:
+            mock_repo = mock_repo_cls.return_value
             mock_repo.delete = AsyncMock(return_value=False)
 
             with pytest.raises(HTTPException) as exc_info:
@@ -451,8 +451,8 @@ class TestGetLeadStatsEndpoint:
         mock_user = MagicMock()
         mock_db = AsyncMock()
 
-        with patch("modules.crm.controllers.lead_controller.LeadRepository") as MockRepo:
-            mock_repo = MockRepo.return_value
+        with patch("modules.crm.controllers.lead_controller.LeadRepository") as mock_repo_cls:
+            mock_repo = mock_repo_cls.return_value
             mock_repo.get_stats = AsyncMock(return_value=mock_stats)
 
             result = await get_lead_stats(mock_user, mock_db)
@@ -477,11 +477,11 @@ class TestGetLeadStatsEndpoint:
         mock_user = MagicMock()
         mock_db = AsyncMock()
 
-        with patch("modules.crm.controllers.lead_controller.LeadRepository") as MockRepo:
-            mock_repo = MockRepo.return_value
+        with patch("modules.crm.controllers.lead_controller.LeadRepository") as mock_repo_cls:
+            mock_repo = mock_repo_cls.return_value
             mock_repo.get_stats = AsyncMock(return_value=mock_stats)
 
-            result = await get_lead_stats(mock_user, mock_db, assigned_to_id=user_id)
+            await get_lead_stats(mock_user, mock_db, assigned_to_id=user_id)
 
             mock_repo.get_stats.assert_called_once_with(assigned_to_id=user_id)
 

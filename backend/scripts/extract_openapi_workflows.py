@@ -14,8 +14,8 @@ from pathlib import Path
 backend_path = Path(__file__).parent.parent
 sys.path.insert(0, str(backend_path))
 
-from fastapi import FastAPI
-from fastapi.openapi.utils import get_openapi
+from fastapi import FastAPI  # noqa: E402
+from fastapi.openapi.utils import get_openapi  # noqa: E402
 
 
 def extract_workflows_openapi():
@@ -32,13 +32,9 @@ def extract_workflows_openapi():
 
     # Importa e registra router de workflows
     try:
-        from modules.automation.workflow.controllers.workflow_controller import router
+        from modules.automation.workflow.controllers.workflow_controller import router  # noqa: E402
 
-        app.include_router(
-            router,
-            prefix="/api/v1/workflows",
-            tags=["Automation - Workflows"]
-        )
+        app.include_router(router, prefix="/api/v1/workflows", tags=["Automation - Workflows"])
 
         print(f"✅ Router importado: {len(router.routes)} rotas encontradas")
 

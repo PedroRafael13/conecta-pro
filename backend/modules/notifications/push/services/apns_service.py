@@ -5,8 +5,7 @@ Sprint 37 - Push Notifications Mobile.
 
 import logging
 from datetime import datetime
-from typing import Any, Dict, List, Optional
-from uuid import UUID
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -16,17 +15,17 @@ class APNsPayload:
 
     def __init__(
         self,
-        alert: Optional[Dict[str, Any]] = None,
-        badge: Optional[int] = None,
-        sound: Optional[str] = None,
+        alert: dict[str, Any] | None = None,
+        badge: int | None = None,
+        sound: str | None = None,
         content_available: bool = False,
         mutable_content: bool = False,
-        category: Optional[str] = None,
-        thread_id: Optional[str] = None,
-        target_content_id: Optional[str] = None,
+        category: str | None = None,
+        thread_id: str | None = None,
+        target_content_id: str | None = None,
         interruption_level: str = "active",
-        relevance_score: Optional[float] = None,
-        custom_data: Optional[Dict[str, Any]] = None,
+        relevance_score: float | None = None,
+        custom_data: dict[str, Any] | None = None,
     ):
         self.alert = alert
         self.badge = badge
@@ -40,9 +39,9 @@ class APNsPayload:
         self.relevance_score = relevance_score
         self.custom_data = custom_data or {}
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Converte para dicionário APNs."""
-        aps: Dict[str, Any] = {}
+        aps: dict[str, Any] = {}
 
         if self.alert:
             aps["alert"] = self.alert
@@ -84,16 +83,16 @@ class APNsPayload:
         cls,
         title: str,
         body: str,
-        subtitle: Optional[str] = None,
-        title_loc_key: Optional[str] = None,
-        title_loc_args: Optional[List[str]] = None,
-        body_loc_key: Optional[str] = None,
-        body_loc_args: Optional[List[str]] = None,
-        action_loc_key: Optional[str] = None,
-        launch_image: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        subtitle: str | None = None,
+        title_loc_key: str | None = None,
+        title_loc_args: list[str] | None = None,
+        body_loc_key: str | None = None,
+        body_loc_args: list[str] | None = None,
+        action_loc_key: str | None = None,
+        launch_image: str | None = None,
+    ) -> dict[str, Any]:
         """Cria estrutura de alert APNs."""
-        alert: Dict[str, Any] = {
+        alert: dict[str, Any] = {
             "title": title,
             "body": body,
         }
@@ -122,16 +121,16 @@ class APNsPayload:
         return alert
 
 
-class APNsResponse:
+class APNsResponse:  # noqa: B903
     """Resposta do APNs."""
 
     def __init__(
         self,
         success: bool,
-        apns_id: Optional[str] = None,
-        status_code: Optional[int] = None,
-        reason: Optional[str] = None,
-        timestamp: Optional[int] = None,
+        apns_id: str | None = None,
+        status_code: int | None = None,
+        reason: str | None = None,
+        timestamp: int | None = None,
     ):
         self.success = success
         self.apns_id = apns_id
@@ -163,8 +162,8 @@ class APNsService:
         self,
         team_id: str,
         key_id: str,
-        key_path: Optional[str] = None,
-        key_content: Optional[str] = None,
+        key_path: str | None = None,
+        key_content: str | None = None,
         bundle_id: str = "",
         use_sandbox: bool = False,
     ):
@@ -240,10 +239,10 @@ class APNsService:
         self,
         device_token: str,
         payload: APNsPayload,
-        topic: Optional[str] = None,
+        topic: str | None = None,
         priority: int = 10,
         expiration: int = 0,
-        collapse_id: Optional[str] = None,
+        collapse_id: str | None = None,
         push_type: str = "alert",
     ) -> APNsResponse:
         """Envia uma notificação via APNs.
@@ -328,11 +327,11 @@ class APNsService:
 
     def send_batch(
         self,
-        device_tokens: List[str],
+        device_tokens: list[str],
         payload: APNsPayload,
-        topic: Optional[str] = None,
+        topic: str | None = None,
         priority: int = 10,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Envia notificações para múltiplos dispositivos.
 
         Args:
@@ -363,12 +362,14 @@ class APNsService:
             else:
                 results["failure_count"] += 1
 
-            results["responses"].append({
-                "token": token,
-                "success": response.success,
-                "apns_id": response.apns_id,
-                "reason": response.reason,
-            })
+            results["responses"].append(
+                {
+                    "token": token,
+                    "success": response.success,
+                    "apns_id": response.apns_id,
+                    "reason": response.reason,
+                }
+            )
 
         logger.info(
             "APNs batch: %d success, %d failed",
@@ -381,8 +382,8 @@ class APNsService:
     def send_silent(
         self,
         device_token: str,
-        data: Dict[str, Any],
-        topic: Optional[str] = None,
+        data: dict[str, Any],
+        topic: str | None = None,
     ) -> APNsResponse:
         """Envia notificação silenciosa (background).
 
@@ -410,8 +411,8 @@ class APNsService:
     def send_voip(
         self,
         device_token: str,
-        data: Dict[str, Any],
-        topic: Optional[str] = None,
+        data: dict[str, Any],
+        topic: str | None = None,
     ) -> APNsResponse:
         """Envia notificação VoIP.
 
@@ -438,14 +439,14 @@ class APNsService:
         self,
         title: str,
         body: str,
-        subtitle: Optional[str] = None,
-        badge: Optional[int] = None,
+        subtitle: str | None = None,
+        badge: int | None = None,
         sound: str = "default",
-        category: Optional[str] = None,
-        thread_id: Optional[str] = None,
+        category: str | None = None,
+        thread_id: str | None = None,
         mutable_content: bool = False,
         interruption_level: str = "active",
-        custom_data: Optional[Dict[str, Any]] = None,
+        custom_data: dict[str, Any] | None = None,
     ) -> APNsPayload:
         """Constrói payload APNs conveniente.
 

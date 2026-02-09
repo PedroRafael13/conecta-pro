@@ -7,23 +7,21 @@ baseado em previsoes de demanda.
 
 import logging
 import math
-from datetime import date, datetime, timedelta
-from typing import Optional
+from datetime import date, timedelta
 from uuid import UUID
 
 from sqlalchemy.orm import Session
 
 from modules.ai.inventory_forecast.models.forecast import (
     Forecast,
-    ForecastStatus,
     ForecastType,
 )
 from modules.ai.inventory_forecast.repositories.forecast_repository import (
     ForecastRepository,
 )
 from modules.ai.inventory_forecast.schemas.forecast_schemas import (
-    ReorderSuggestion,
     ReorderListResponse,
+    ReorderSuggestion,
 )
 
 logger = logging.getLogger(__name__)
@@ -120,13 +118,10 @@ class ReorderService:
         lead_time_days: int,
         service_level: float,
         product_info: dict,
-    ) -> Optional[ReorderSuggestion]:
+    ) -> ReorderSuggestion | None:
         """Gera sugestao para um produto."""
         # Buscar previsao mais recente
-        forecast = self.repository.get_latest_forecast(
-            product_id,
-            ForecastType.DEMAND
-        )
+        forecast = self.repository.get_latest_forecast(product_id, ForecastType.DEMAND)
 
         if not forecast:
             logger.warning(f"Sem previsao para produto {product_id}")
@@ -148,9 +143,7 @@ class ReorderService:
             )
 
         # Calcular ponto de reposicao
-        reorder_point = forecast.suggested_reorder_point or (
-            (avg_daily_demand * lead_time_days) + safety_stock
-        )
+        reorder_point = forecast.suggested_reorder_point or ((avg_daily_demand * lead_time_days) + safety_stock)
 
         # Calcular dias de estoque restante
         days_remaining = int(current_stock / avg_daily_demand) if avg_daily_demand > 0 else 999
@@ -175,9 +168,7 @@ class ReorderService:
             suggested_quantity = max(suggested_quantity, deficit + (avg_daily_demand * 14))
 
         # Gerar nota baseada na urgencia
-        notes = self._generate_notes(
-            urgency, days_remaining, lead_time_days, forecast
-        )
+        notes = self._generate_notes(urgency, days_remaining, lead_time_days, forecast)
 
         return ReorderSuggestion(
             product_id=product_id,
@@ -224,11 +215,7 @@ class ReorderService:
         # Safety stock = z * std * sqrt(lead_time)
         return z * std_demand * math.sqrt(lead_time_days)
 
-    def _determine_urgency(
-        self,
-        days_remaining: int,
-        lead_time_days: int
-    ) -> str:
+    def _determine_urgency(self, days_remaining: int, lead_time_days: int) -> str:
         """Determina nivel de urgencia."""
         # Considerar lead time na analise
         buffer_days = days_remaining - lead_time_days
@@ -242,13 +229,7 @@ class ReorderService:
         else:
             return self.URGENCY_LOW
 
-    def _generate_notes(
-        self,
-        urgency: str,
-        days_remaining: int,
-        lead_time_days: int,
-        forecast: Forecast
-    ) -> str:
+    def _generate_notes(self, urgency: str, days_remaining: int, lead_time_days: int, forecast: Forecast) -> str:
         """Gera notas explicativas."""
         notes = []
 
@@ -285,10 +266,7 @@ class ReorderService:
             default_lead_time,
         )
 
-        return [
-            s for s in all_suggestions.items
-            if s.urgency in (self.URGENCY_CRITICAL, self.URGENCY_HIGH)
-        ]
+        return [s for s in all_suggestions.items if s.urgency in (self.URGENCY_CRITICAL, self.URGENCY_HIGH)]
 
     def calculate_optimal_order(
         self,
@@ -313,10 +291,7 @@ class ReorderService:
         Returns:
             Dict com EOQ, custo total estimado e frequencia de pedidos
         """
-        forecast = self.repository.get_latest_forecast(
-            product_id,
-            ForecastType.DEMAND
-        )
+        forecast = self.repository.get_latest_forecast(product_id, ForecastType.DEMAND)
 
         if not forecast:
             return {"error": "Sem previsao disponivel"}
@@ -373,10 +348,7 @@ class ReorderService:
         Returns:
             Lista de {date, stock_level, reorder_triggered, delivery_received}
         """
-        forecast = self.repository.get_latest_forecast(
-            product_id,
-            ForecastType.DEMAND
-        )
+        forecast = self.repository.get_latest_forecast(product_id, ForecastType.DEMAND)
 
         if not forecast:
             return []
@@ -402,11 +374,7 @@ class ReorderService:
 
         for i, result in enumerate(results):
             sim_date = result.date if hasattr(result, "date") else result["date"]
-            demand = (
-                result.predicted_demand
-                if hasattr(result, "predicted_demand")
-                else result["predicted_demand"]
-            )
+            demand = result.predicted_demand if hasattr(result, "predicted_demand") else result["predicted_demand"]
 
             # Verificar entregas
             delivery_received = 0
@@ -422,23 +390,25 @@ class ReorderService:
 
             # Verificar necessidade de pedido
             reorder_triggered = False
-            if stock <= reorder_point and not any(
-                o["arrival_date"] > sim_date for o in pending_orders
-            ):
+            if stock <= reorder_point and not any(o["arrival_date"] > sim_date for o in pending_orders):
                 reorder_triggered = True
-                pending_orders.append({
-                    "arrival_date": sim_date + timedelta(days=lead_time_days),
-                    "quantity": reorder_quantity,
-                })
+                pending_orders.append(
+                    {
+                        "arrival_date": sim_date + timedelta(days=lead_time_days),
+                        "quantity": reorder_quantity,
+                    }
+                )
 
-            simulation.append({
-                "date": sim_date.isoformat() if hasattr(sim_date, "isoformat") else str(sim_date),
-                "day": i + 1,
-                "stock_level": round(stock, 2),
-                "demand": round(demand, 2),
-                "reorder_triggered": reorder_triggered,
-                "delivery_received": round(delivery_received, 2),
-                "pending_orders": len(pending_orders),
-            })
+            simulation.append(
+                {
+                    "date": sim_date.isoformat() if hasattr(sim_date, "isoformat") else str(sim_date),
+                    "day": i + 1,
+                    "stock_level": round(stock, 2),
+                    "demand": round(demand, 2),
+                    "reorder_triggered": reorder_triggered,
+                    "delivery_received": round(delivery_received, 2),
+                    "pending_orders": len(pending_orders),
+                }
+            )
 
         return simulation

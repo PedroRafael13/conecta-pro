@@ -5,18 +5,18 @@ Gerencia agendamentos e execução automática de relatórios.
 """
 
 import logging
-from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
+from datetime import datetime
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy.orm import Session
 
 from modules.ai.report_generator.models import AIReportSchedule, ReportExecution
-from modules.ai.report_generator.models.report_schedule import (
-    ScheduleStatusEnum,
-    ScheduleFrequencyEnum,
-)
 from modules.ai.report_generator.models.report_execution import ExecutionTriggerEnum
+from modules.ai.report_generator.models.report_schedule import (
+    ScheduleFrequencyEnum,
+    ScheduleStatusEnum,
+)
 from modules.ai.report_generator.repositories import ReportRepository
 
 logger = logging.getLogger(__name__)
@@ -35,23 +35,23 @@ class ReportScheduler:
         name: str,
         template_id: UUID,
         frequency: ScheduleFrequencyEnum,
-        run_time: Optional[str] = None,
+        run_time: str | None = None,
         timezone: str = "America/Sao_Paulo",
-        days_of_week: Optional[List[int]] = None,
-        days_of_month: Optional[List[int]] = None,
-        period_type: Optional[str] = None,
-        parameters: Optional[Dict[str, Any]] = None,
-        filters: Optional[Dict[str, Any]] = None,
-        output_formats: Optional[List[str]] = None,
-        email_recipients: Optional[List[str]] = None,
-        email_subject: Optional[str] = None,
-        email_body: Optional[str] = None,
-        webhook_url: Optional[str] = None,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
-        max_runs: Optional[int] = None,
-        created_by: Optional[UUID] = None,
-        organization_id: Optional[UUID] = None,
+        days_of_week: list[int] | None = None,
+        days_of_month: list[int] | None = None,
+        period_type: str | None = None,
+        parameters: dict[str, Any] | None = None,
+        filters: dict[str, Any] | None = None,
+        output_formats: list[str] | None = None,
+        email_recipients: list[str] | None = None,
+        email_subject: str | None = None,
+        email_body: str | None = None,
+        webhook_url: str | None = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
+        max_runs: int | None = None,
+        created_by: UUID | None = None,
+        organization_id: UUID | None = None,
     ) -> AIReportSchedule:
         """Cria novo agendamento."""
         from datetime import time as dt_time
@@ -89,11 +89,7 @@ class ReportScheduler:
 
         return self.repository.create_schedule(schedule)
 
-    def update_schedule(
-        self,
-        schedule_id: UUID,
-        **kwargs
-    ) -> Optional[AIReportSchedule]:
+    def update_schedule(self, schedule_id: UUID, **kwargs) -> AIReportSchedule | None:
         """Atualiza agendamento."""
         schedule = self.repository.get_schedule(schedule_id)
         if not schedule:
@@ -109,7 +105,7 @@ class ReportScheduler:
 
         return self.repository.update_schedule(schedule)
 
-    def pause_schedule(self, schedule_id: UUID) -> Optional[AIReportSchedule]:
+    def pause_schedule(self, schedule_id: UUID) -> AIReportSchedule | None:
         """Pausa agendamento."""
         schedule = self.repository.get_schedule(schedule_id)
         if schedule:
@@ -117,7 +113,7 @@ class ReportScheduler:
             return self.repository.update_schedule(schedule)
         return None
 
-    def resume_schedule(self, schedule_id: UUID) -> Optional[AIReportSchedule]:
+    def resume_schedule(self, schedule_id: UUID) -> AIReportSchedule | None:
         """Retoma agendamento."""
         schedule = self.repository.get_schedule(schedule_id)
         if schedule:
@@ -125,7 +121,7 @@ class ReportScheduler:
             return self.repository.update_schedule(schedule)
         return None
 
-    def cancel_schedule(self, schedule_id: UUID) -> Optional[AIReportSchedule]:
+    def cancel_schedule(self, schedule_id: UUID) -> AIReportSchedule | None:
         """Cancela agendamento."""
         schedule = self.repository.get_schedule(schedule_id)
         if schedule:
@@ -133,11 +129,11 @@ class ReportScheduler:
             return self.repository.update_schedule(schedule)
         return None
 
-    def get_due_schedules(self) -> List[AIReportSchedule]:
+    def get_due_schedules(self) -> list[AIReportSchedule]:
         """Busca agendamentos prontos para execução."""
         return self.repository.get_due_schedules()
 
-    def process_due_schedules(self) -> List[Dict[str, Any]]:
+    def process_due_schedules(self) -> list[dict[str, Any]]:
         """Processa todos os agendamentos pendentes."""
         results = []
         due_schedules = self.get_due_schedules()
@@ -145,24 +141,28 @@ class ReportScheduler:
         for schedule in due_schedules:
             try:
                 result = self._execute_schedule(schedule)
-                results.append({
-                    "schedule_id": str(schedule.id),
-                    "schedule_name": schedule.name,
-                    "status": "success",
-                    "execution_id": result.get("execution_id"),
-                })
+                results.append(
+                    {
+                        "schedule_id": str(schedule.id),
+                        "schedule_name": schedule.name,
+                        "status": "success",
+                        "execution_id": result.get("execution_id"),
+                    }
+                )
             except Exception as e:
                 logger.error(f"Erro ao executar agendamento {schedule.id}: {e}")
-                results.append({
-                    "schedule_id": str(schedule.id),
-                    "schedule_name": schedule.name,
-                    "status": "error",
-                    "error": str(e),
-                })
+                results.append(
+                    {
+                        "schedule_id": str(schedule.id),
+                        "schedule_name": schedule.name,
+                        "status": "error",
+                        "error": str(e),
+                    }
+                )
 
         return results
 
-    def _execute_schedule(self, schedule: AIReportSchedule) -> Dict[str, Any]:
+    def _execute_schedule(self, schedule: AIReportSchedule) -> dict[str, Any]:
         """Executa um agendamento específico."""
         # Calcula período
         period_start, period_end = schedule.get_report_period()
@@ -194,15 +194,9 @@ class ReportScheduler:
             "period_end": period_end.isoformat() if period_end else None,
         }
 
-    def get_schedule_summary(
-        self,
-        organization_id: Optional[UUID] = None
-    ) -> Dict[str, Any]:
+    def get_schedule_summary(self, organization_id: UUID | None = None) -> dict[str, Any]:
         """Retorna resumo dos agendamentos."""
-        schedules, total = self.repository.list_schedules(
-            organization_id=organization_id,
-            limit=1000
-        )
+        schedules, total = self.repository.list_schedules(organization_id=organization_id, limit=1000)
 
         active = sum(1 for s in schedules if s.status == ScheduleStatusEnum.ACTIVE)
         paused = sum(1 for s in schedules if s.status == ScheduleStatusEnum.PAUSED)
@@ -219,7 +213,7 @@ class ReportScheduler:
         # Próximas execuções
         upcoming = sorted(
             [s for s in schedules if s.next_run_at and s.status == ScheduleStatusEnum.ACTIVE],
-            key=lambda x: x.next_run_at
+            key=lambda x: x.next_run_at,
         )[:5]
 
         return {
@@ -239,7 +233,7 @@ class ReportScheduler:
             ],
         }
 
-    def retry_failed_schedules(self) -> List[Dict[str, Any]]:
+    def retry_failed_schedules(self) -> list[dict[str, Any]]:
         """Tenta reexecutar agendamentos com falha."""
         results = []
         failed_schedules = self.repository.get_failed_schedules()
@@ -248,15 +242,19 @@ class ReportScheduler:
             if schedule.consecutive_failures < schedule.max_consecutive_failures:
                 schedule.resume()
                 self.repository.update_schedule(schedule)
-                results.append({
-                    "schedule_id": str(schedule.id),
-                    "action": "resumed",
-                })
+                results.append(
+                    {
+                        "schedule_id": str(schedule.id),
+                        "action": "resumed",
+                    }
+                )
             else:
-                results.append({
-                    "schedule_id": str(schedule.id),
-                    "action": "skipped",
-                    "reason": "Max consecutive failures reached",
-                })
+                results.append(
+                    {
+                        "schedule_id": str(schedule.id),
+                        "action": "skipped",
+                        "reason": "Max consecutive failures reached",
+                    }
+                )
 
         return results

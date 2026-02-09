@@ -4,7 +4,6 @@ import { UserX, Search, Plus, Eye, Check, X, ArrowLeft, ChevronLeft, ChevronRigh
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-;
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Modal, ModalFooter } from '@/components/ui/modal';
@@ -17,21 +16,33 @@ import {
   useRejectSubstitution,
 } from '@/hooks/operacional/useSubstitutions';
 import {
-  type Substitution,
   type SubstitutionStatus,
   type SubstitutionReason,
-  type SubstituteSuggestion,
   SUBSTITUTION_STATUS_LABELS,
   SUBSTITUTION_REASON_LABELS,
   SUBSTITUTION_STATUS_COLORS,
   SUBSTITUTION_REASON_COLORS,
 } from '@/lib/services/substitutions';
+import type {
+  SubstitutionResponse,
+  SubstituteSuggestion,
+} from '@/types/generated/operacional/conectaPROMóduloOPERACIONAL.schemas';
+
+/** Extensão do SubstitutionResponse com campos denormalizados retornados pelo backend */
+interface SubstitutionWithDenormalized extends SubstitutionResponse {
+  original_employee_name?: string;
+  substitute_employee_name?: string;
+  post_name?: string;
+  shift_date?: string;
+  shift_time?: string;
+}
 
 export default function SubstituicoesPage() {
   const router = useRouter();
   const { isLoading: authLoading, isAuthenticated } = useAuth();
 
-  const { data: substitutions = [], isLoading, error, refetch } = useSubstitutions();
+  const { data: substitutionsData, isLoading, error, refetch } = useSubstitutions();
+  const substitutions = (substitutionsData?.items ?? []) as SubstitutionWithDenormalized[];
   const { data: pendingSubstitutions = [] } = usePendingSubstitutions();
   const suggestMutation = useSuggestSubstitutes();
   const confirmMutation = useConfirmSubstitution();
@@ -49,7 +60,7 @@ export default function SubstituicoesPage() {
 
   // Modal states
   const [showSuggestionsModal, setShowSuggestionsModal] = useState(false);
-  const [selectedSubstitution, setSelectedSubstitution] = useState<Substitution | null>(null);
+  const [selectedSubstitution, setSelectedSubstitution] = useState<SubstitutionWithDenormalized | null>(null);
   const [suggestions, setSuggestions] = useState<SubstituteSuggestion[]>([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
 
@@ -78,7 +89,7 @@ export default function SubstituicoesPage() {
     }
   }, [isAuthenticated, refetch, loadPending]);
 
-  const handleGetSuggestions = async (substitution: Substitution) => {
+  const handleGetSuggestions = async (substitution: SubstitutionWithDenormalized) => {
     setSelectedSubstitution(substitution);
     setShowSuggestionsModal(true);
     setLoadingSuggestions(true);
@@ -101,7 +112,7 @@ export default function SubstituicoesPage() {
     }
   };
 
-  const handleConfirm = async (substitution: Substitution, employeeId: string) => {
+  const handleConfirm = async (substitution: SubstitutionWithDenormalized, employeeId: string) => {
     try {
       await confirmMutation.mutateAsync({
         substitutionId: substitution.id,
@@ -114,7 +125,7 @@ export default function SubstituicoesPage() {
     }
   };
 
-  const handleReject = async (substitution: Substitution) => {
+  const handleReject = async (substitution: SubstitutionWithDenormalized) => {
     const reason = prompt('Motivo da rejeicao:');
     if (!reason) return;
 
@@ -180,7 +191,7 @@ export default function SubstituicoesPage() {
     if (selectedReason && sub.reason !== selectedReason) return false;
     // Filtro de data
     if (selectedDate) {
-      const subDate = new Date(sub.shift_date).toISOString().split('T')[0];
+      const subDate = new Date(sub.shift_date ?? sub.substitution_date).toISOString().split('T')[0];
       if (subDate !== selectedDate) return false;
     }
     return true;
@@ -224,7 +235,7 @@ export default function SubstituicoesPage() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={refetch} disabled={isLoading}>
+              <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isLoading}>
                 <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
                 Atualizar
               </Button>
@@ -374,8 +385,8 @@ export default function SubstituicoesPage() {
         {error && (
           <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-6 flex items-center gap-3">
             <XCircle className="w-5 h-5 text-red-500" />
-            <p className="text-red-500">{error}</p>
-            <Button variant="outline" size="sm" onClick={refetch} className="ml-auto">
+            <p className="text-red-500">{error.detail?.[0]?.msg ?? 'Erro ao carregar substituições'}</p>
+            <Button variant="outline" size="sm" onClick={() => refetch()} className="ml-auto">
               Tentar novamente
             </Button>
           </div>
@@ -467,14 +478,14 @@ export default function SubstituicoesPage() {
                           )}
                         </td>
                         <td className="px-4 py-3">
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${SUBSTITUTION_REASON_COLORS[sub.reason]}`}>
-                            {SUBSTITUTION_REASON_LABELS[sub.reason]}
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${SUBSTITUTION_REASON_COLORS[sub.reason as SubstitutionReason]}`}>
+                            {SUBSTITUTION_REASON_LABELS[sub.reason as SubstitutionReason]}
                           </span>
                         </td>
                         <td className="px-4 py-3">
-                          <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${SUBSTITUTION_STATUS_COLORS[sub.status]}`}>
-                            {getStatusIcon(sub.status)}
-                            {SUBSTITUTION_STATUS_LABELS[sub.status]}
+                          <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${SUBSTITUTION_STATUS_COLORS[sub.status as SubstitutionStatus]}`}>
+                            {getStatusIcon(sub.status as SubstitutionStatus)}
+                            {SUBSTITUTION_STATUS_LABELS[sub.status as SubstitutionStatus]}
                           </span>
                         </td>
                         <td className="px-4 py-3">

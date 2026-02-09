@@ -8,10 +8,11 @@ validadores builtin e customizados.
 import logging
 import re
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime, date
+from datetime import date, datetime
 from decimal import Decimal
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any
 
 from ..models.extracted_field import ExtractedField, FieldType
 from ..models.validation_result import (
@@ -22,11 +23,6 @@ from ..models.validation_result import (
     ValidationSeverity,
     ValidationStatus,
     ValidationType,
-    validate_cep,
-    validate_cnpj,
-    validate_cpf,
-    validate_email,
-    validate_phone_br,
 )
 
 logger = logging.getLogger(__name__)
@@ -46,7 +42,7 @@ class ValidationConfig:
     timeout_seconds: int = 30
 
     # Correcoes automaticas
-    corrections: Dict[str, bool] = field(
+    corrections: dict[str, bool] = field(
         default_factory=lambda: {
             "trim_whitespace": True,
             "normalize_unicode": True,
@@ -68,7 +64,7 @@ class ValidationEngine:
     """
 
     # Mapeamento de FieldType para ValidationType
-    FIELD_VALIDATORS: Dict[FieldType, ValidationType] = {
+    FIELD_VALIDATORS: dict[FieldType, ValidationType] = {
         FieldType.CPF: ValidationType.CPF,
         FieldType.CNPJ: ValidationType.CNPJ,
         FieldType.EMAIL: ValidationType.EMAIL,
@@ -79,7 +75,7 @@ class ValidationEngine:
         FieldType.BOLETO_LINE: ValidationType.BOLETO_LINE,
     }
 
-    def __init__(self, config: Optional[ValidationConfig] = None):
+    def __init__(self, config: ValidationConfig | None = None):
         """
         Inicializa motor de validacao.
 
@@ -87,14 +83,14 @@ class ValidationEngine:
             config: Configuracao do motor
         """
         self.config = config or ValidationConfig()
-        self._custom_validators: Dict[str, Callable] = {}
-        self._rules_by_field: Dict[str, List[ValidationRule]] = {}
+        self._custom_validators: dict[str, Callable] = {}
+        self._rules_by_field: dict[str, list[ValidationRule]] = {}
 
     async def validate(
         self,
-        fields: List[ExtractedField],
-        rules: Optional[List[ValidationRule]] = None,
-        document_id: Optional[str] = None,
+        fields: list[ExtractedField],
+        rules: list[ValidationRule] | None = None,
+        document_id: str | None = None,
     ) -> ValidationResult:
         """
         Valida lista de campos extraidos.
@@ -115,7 +111,7 @@ class ValidationEngine:
         )
 
         # Indexar regras por campo
-        rules_map: Dict[str, List[ValidationRule]] = {}
+        rules_map: dict[str, list[ValidationRule]] = {}
         if rules:
             for rule in rules:
                 if rule.is_active:
@@ -125,17 +121,14 @@ class ValidationEngine:
                     rules_map[field_name].append(rule)
 
         # Validar cada campo
-        for field in fields:
+        for val_field in fields:
             field_result = await self._validate_field(
-                field,
-                rules_map.get(field.field_name, []),
+                val_field,
+                rules_map.get(val_field.field_name, []),
             )
             result.add_field_result(field_result)
 
-            if (
-                self.config.stop_on_first_error
-                and field_result.status == ValidationStatus.FAILED
-            ):
+            if self.config.stop_on_first_error and field_result.status == ValidationStatus.FAILED:
                 break
 
         # Cross-field validations
@@ -153,7 +146,7 @@ class ValidationEngine:
     async def _validate_field(
         self,
         field: ExtractedField,
-        rules: List[ValidationRule],
+        rules: list[ValidationRule],
     ) -> FieldValidationResult:
         """Valida um campo individual."""
         result = FieldValidationResult(
@@ -189,10 +182,7 @@ class ValidationEngine:
         # Aplicar regras customizadas
         for rule in rules:
             self._apply_rule(result, field, rule)
-            if (
-                self.config.stop_on_first_error
-                and result.status == ValidationStatus.FAILED
-            ):
+            if self.config.stop_on_first_error and result.status == ValidationStatus.FAILED:
                 break
 
         # Auto-correcoes
@@ -281,15 +271,15 @@ class ValidationEngine:
     def _validate_cross_field(
         self,
         result: ValidationResult,
-        fields: List[ExtractedField],
+        fields: list[ExtractedField],
         rule: ValidationRule,
     ) -> None:
         """Valida regra cross-field."""
         # Obter campos envolvidos
         field_values = {}
-        for field in fields:
-            if field.field_name in rule.field_names:
-                field_values[field.field_name] = field.normalized_value or field.raw_value
+        for cf_field in fields:
+            if cf_field.field_name in rule.field_names:
+                field_values[cf_field.field_name] = cf_field.normalized_value or cf_field.raw_value
 
         # Verificar se todos os campos existem
         if len(field_values) != len(rule.field_names):
@@ -323,7 +313,7 @@ class ValidationEngine:
 
     def _default_cross_validation(
         self,
-        field_values: Dict[str, Any],
+        field_values: dict[str, Any],
         rule: ValidationRule,
     ) -> bool:
         """Validacao cross-field padrao."""
@@ -422,7 +412,7 @@ class ValidationEngine:
     def register_validator(
         self,
         name: str,
-        validator: Callable[[str, ExtractedField, Dict], bool],
+        validator: Callable[[str, ExtractedField, dict], bool],
     ) -> None:
         """
         Registra validador customizado.
@@ -433,9 +423,7 @@ class ValidationEngine:
         """
         self._custom_validators[name] = validator
 
-    def add_field_rules(
-        self, field_name: str, rules: List[ValidationRule]
-    ) -> None:
+    def add_field_rules(self, field_name: str, rules: list[ValidationRule]) -> None:
         """
         Adiciona regras para um campo.
 
@@ -502,7 +490,7 @@ class ValidationEngine:
             return BUILTIN_VALIDATORS[validation_type](value)
         return False
 
-    def get_supported_validations(self) -> List[str]:
+    def get_supported_validations(self) -> list[str]:
         """Retorna validacoes suportadas."""
         builtin = [v.value for v in ValidationType]
         custom = list(self._custom_validators.keys())
@@ -518,7 +506,7 @@ def validate_nfe_key(value: str) -> bool:
 
     # Validar digito verificador
     weights = [2, 3, 4, 5, 6, 7, 8, 9] * 6
-    total = sum(int(d) * w for d, w in zip(reversed(digits[:43]), weights))
+    total = sum(int(d) * w for d, w in zip(reversed(digits[:43]), weights, strict=False))
     remainder = total % 11
     dv = 0 if remainder < 2 else 11 - remainder
 

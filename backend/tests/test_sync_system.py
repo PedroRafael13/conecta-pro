@@ -7,11 +7,12 @@ Testa:
 - Modelos de dados
 """
 
-import pytest
-from datetime import datetime, date, timedelta
-from unittest.mock import AsyncMock, MagicMock, patch
-from decimal import Decimal
 import uuid
+from datetime import date, datetime, timedelta
+from decimal import Decimal
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 # Módulos sob teste
 from modules.government_integrations.sync.base_sync import (
@@ -20,16 +21,16 @@ from modules.government_integrations.sync.base_sync import (
     SyncResult,
     SyncStatus,
 )
-from modules.government_integrations.sync.sync_manager import SyncManager, ServicoGov
+from modules.government_integrations.sync.estadual.nfe_sync import NFeSynchronizer
 from modules.government_integrations.sync.federal.esocial_sync import ESocialSynchronizer
 from modules.government_integrations.sync.federal.receita_sync import ReceitaFederalSynchronizer
-from modules.government_integrations.sync.estadual.nfe_sync import NFeSynchronizer
 from modules.government_integrations.sync.municipal.nfse_manaus_sync import NFSeManausSynchronizer
-
+from modules.government_integrations.sync.sync_manager import ServicoGov, SyncManager
 
 # =============================================================================
 # FIXTURES
 # =============================================================================
+
 
 @pytest.fixture
 def mock_db():
@@ -69,30 +70,36 @@ def sync_config():
 def mock_esocial_transmitter():
     """Mock do transmissor eSocial."""
     transmitter = MagicMock()
-    transmitter.consultar_eventos = AsyncMock(return_value=[
-        {
-            "id_evento": "ID1234567890",
-            "tipo": "S-1200",
-            "data_evento": "2024-06-15",
-            "cpf": "12345678901",
-            "matricula": "EMP001",
-            "periodo": "2024-06",
+    transmitter.consultar_eventos = AsyncMock(
+        return_value=[
+            {
+                "id_evento": "ID1234567890",
+                "tipo": "S-1200",
+                "data_evento": "2024-06-15",
+                "cpf": "12345678901",
+                "matricula": "EMP001",
+                "periodo": "2024-06",
+                "status": "aceito",
+                "protocolo": "PROT123",
+                "recibo": "REC456",
+                "dados": {"valor": 5000.00},
+            }
+        ]
+    )
+    transmitter.consultar_totalizadores = AsyncMock(
+        return_value=[
+            {
+                "tipo": "S-5001",
+                "valores": {"total_contribuicoes": 1500.00},
+            }
+        ]
+    )
+    transmitter.consultar_protocolo = AsyncMock(
+        return_value={
             "status": "aceito",
-            "protocolo": "PROT123",
-            "recibo": "REC456",
-            "dados": {"valor": 5000.00},
+            "recibo": "REC789",
         }
-    ])
-    transmitter.consultar_totalizadores = AsyncMock(return_value=[
-        {
-            "tipo": "S-5001",
-            "valores": {"total_contribuicoes": 1500.00},
-        }
-    ])
-    transmitter.consultar_protocolo = AsyncMock(return_value={
-        "status": "aceito",
-        "recibo": "REC789",
-    })
+    )
     return transmitter
 
 
@@ -100,24 +107,28 @@ def mock_esocial_transmitter():
 def mock_sefaz_service():
     """Mock do serviço SEFAZ."""
     sefaz = MagicMock()
-    sefaz.consultar_distribuicao_dfe = AsyncMock(return_value={
-        "notas": [
-            {
-                "chave": "35240612345678000190550010000000011234567890",
-                "numero": "1",
-                "serie": "1",
-                "data_emissao": "2024-06-15",
-                "cnpj_emitente": "98765432000110",
-                "nome_emitente": "Fornecedor Teste",
-                "valor_total": 1500.00,
-                "situacao": "autorizada",
-            }
-        ],
-        "ultima_nsu": "000000001234",
-    })
-    sefaz.consultar_nfe_chave = AsyncMock(return_value={
-        "xml": "<nfeProc><NFe></NFe></nfeProc>",
-    })
+    sefaz.consultar_distribuicao_dfe = AsyncMock(
+        return_value={
+            "notas": [
+                {
+                    "chave": "35240612345678000190550010000000011234567890",
+                    "numero": "1",
+                    "serie": "1",
+                    "data_emissao": "2024-06-15",
+                    "cnpj_emitente": "98765432000110",
+                    "nome_emitente": "Fornecedor Teste",
+                    "valor_total": 1500.00,
+                    "situacao": "autorizada",
+                }
+            ],
+            "ultima_nsu": "000000001234",
+        }
+    )
+    sefaz.consultar_nfe_chave = AsyncMock(
+        return_value={
+            "xml": "<nfeProc><NFe></NFe></nfeProc>",
+        }
+    )
     return sefaz
 
 
@@ -125,21 +136,23 @@ def mock_sefaz_service():
 def mock_nfse_transmitter():
     """Mock do transmissor NFS-e."""
     transmitter = MagicMock()
-    transmitter.consultar_nfse_prestador = AsyncMock(return_value=[
-        {
-            "numero": "123",
-            "codigo_verificacao": "ABC123",
-            "data_emissao": "2024-06-15",
-            "cnpj_prestador": "12345678000190",
-            "razao_social_prestador": "Empresa Teste",
-            "cnpj_tomador": "98765432000110",
-            "razao_social_tomador": "Cliente Teste",
-            "valor_servicos": 5000.00,
-            "valor_iss": 100.00,
-            "codigo_servico": "01.01",
-            "status": "normal",
-        }
-    ])
+    transmitter.consultar_nfse_prestador = AsyncMock(
+        return_value=[
+            {
+                "numero": "123",
+                "codigo_verificacao": "ABC123",
+                "data_emissao": "2024-06-15",
+                "cnpj_prestador": "12345678000190",
+                "razao_social_prestador": "Empresa Teste",
+                "cnpj_tomador": "98765432000110",
+                "razao_social_tomador": "Cliente Teste",
+                "valor_servicos": 5000.00,
+                "valor_iss": 100.00,
+                "codigo_servico": "01.01",
+                "status": "normal",
+            }
+        ]
+    )
     transmitter.consultar_nfse_tomador = AsyncMock(return_value=[])
     return transmitter
 
@@ -147,6 +160,7 @@ def mock_nfse_transmitter():
 # =============================================================================
 # TESTES - SYNC CONFIG E RESULT
 # =============================================================================
+
 
 class TestSyncConfig:
     """Testes para SyncConfig."""
@@ -211,6 +225,7 @@ class TestSyncResult:
 # TESTES - ESOCIAL SYNCHRONIZER
 # =============================================================================
 
+
 class TestESocialSynchronizer:
     """Testes para ESocialSynchronizer."""
 
@@ -223,9 +238,7 @@ class TestESocialSynchronizer:
         )
 
         eventos = []
-        async for evento in sync._consultar_eventos_enviados(
-            "12345678000190", sync_config
-        ):
+        async for evento in sync._consultar_eventos_enviados("12345678000190", sync_config):
             eventos.append(evento)
 
         assert len(eventos) >= 1
@@ -241,9 +254,7 @@ class TestESocialSynchronizer:
         )
 
         totalizadores = []
-        async for tot in sync._consultar_totalizadores(
-            "12345678000190", sync_config
-        ):
+        async for tot in sync._consultar_totalizadores("12345678000190", sync_config):
             totalizadores.append(tot)
 
         assert len(totalizadores) >= 1
@@ -262,6 +273,7 @@ class TestESocialSynchronizer:
 # =============================================================================
 # TESTES - NFE SYNCHRONIZER
 # =============================================================================
+
 
 class TestNFeSynchronizer:
     """Testes para NFeSynchronizer."""
@@ -286,6 +298,7 @@ class TestNFeSynchronizer:
 # TESTES - RECEITA FEDERAL SYNCHRONIZER
 # =============================================================================
 
+
 class TestReceitaFederalSynchronizer:
     """Testes para ReceitaFederalSynchronizer."""
 
@@ -304,6 +317,7 @@ class TestReceitaFederalSynchronizer:
 # TESTES - NFSE MANAUS SYNCHRONIZER
 # =============================================================================
 
+
 class TestNFSeManausSynchronizer:
     """Testes para NFSeManausSynchronizer."""
 
@@ -316,9 +330,7 @@ class TestNFSeManausSynchronizer:
         )
 
         notas = []
-        async for nota in sync._consultar_nfse_emitidas(
-            "12345678000190", "123456", sync_config
-        ):
+        async for nota in sync._consultar_nfse_emitidas("12345678000190", "123456", sync_config):
             notas.append(nota)
 
         assert len(notas) >= 1
@@ -383,6 +395,7 @@ class TestNFSeManausSynchronizer:
 # TESTES - SYNC MANAGER
 # =============================================================================
 
+
 class TestSyncManager:
     """Testes para SyncManager."""
 
@@ -421,6 +434,7 @@ class TestSyncManager:
 # =============================================================================
 # TESTES - BASE SYNCHRONIZER UTILITIES
 # =============================================================================
+
 
 class TestBaseSynchronizerUtilities:
     """Testes para utilitários do BaseSynchronizer."""
@@ -496,6 +510,7 @@ class TestBaseSynchronizerUtilities:
 # TESTES - MODELOS
 # =============================================================================
 
+
 class TestSyncModels:
     """Testes para modelos de sincronização."""
 
@@ -541,6 +556,7 @@ class TestSyncModels:
 # =============================================================================
 # TESTES DE INTEGRAÇÃO
 # =============================================================================
+
 
 class TestIntegracaoSyncSystem:
     """Testes de integração do sistema de sincronização."""
@@ -605,6 +621,7 @@ class TestIntegracaoSyncSystem:
 # =============================================================================
 # TESTES DE EDGE CASES
 # =============================================================================
+
 
 class TestEdgeCases:
     """Testes de casos de borda."""
@@ -688,6 +705,7 @@ class TestEdgeCases:
 # TESTES DE PERFORMANCE
 # =============================================================================
 
+
 class TestPerformance:
     """Testes básicos de performance."""
 
@@ -696,7 +714,7 @@ class TestPerformance:
         import time
 
         start = time.time()
-        manager = SyncManager(mock_db)
+        SyncManager(mock_db)
         elapsed = time.time() - start
 
         assert elapsed < 1.0  # Menos de 1 segundo
@@ -707,7 +725,7 @@ class TestPerformance:
 
         start = time.time()
         for _ in range(1000):
-            config = SyncConfig(
+            SyncConfig(
                 cnpj_empresa="12345678000190",
                 servico="esocial",
             )

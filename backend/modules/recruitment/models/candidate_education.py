@@ -1,22 +1,22 @@
 """Model CandidateEducation - Formação acadêmica."""
 
-import enum
-from datetime import datetime, date
-from typing import Optional, List, TYPE_CHECKING
+from datetime import date, datetime
+from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
-    String,
-    Text,
     Boolean,
-    DateTime,
     Date,
-    Integer,
+    DateTime,
     Enum,
     ForeignKey,
+    Integer,
     Numeric,
+    String,
+    Text,
 )
-from sqlalchemy.dialects.postgresql import UUID, ARRAY
-from sqlalchemy.orm import relationship, Mapped, mapped_column
+from sqlalchemy.dialects.postgresql import ARRAY, UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from core.database import Base
 from core.models import TimestampMixin
@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from .candidate import Candidate
 
 
-class EducationLevel(str, enum.Enum):
+class EducationLevel(StrEnum):
     """Nível de formação."""
 
     FUNDAMENTAL = "fundamental"
@@ -41,7 +41,7 @@ class EducationLevel(str, enum.Enum):
     CURSO_LIVRE = "curso_livre"
 
 
-class EducationStatus(str, enum.Enum):
+class EducationStatus(StrEnum):
     """Status da formação."""
 
     CURSANDO = "cursando"
@@ -51,7 +51,7 @@ class EducationStatus(str, enum.Enum):
     PREVISTO = "previsto"
 
 
-class StudyPeriod(str, enum.Enum):
+class StudyPeriod(StrEnum):
     """Período de estudo."""
 
     MATUTINO = "matutino"
@@ -82,59 +82,53 @@ class CandidateEducation(Base, TimestampMixin):
 
     # Instituição
     institution_name: Mapped[str] = mapped_column(String(200), nullable=False)
-    institution_type: Mapped[Optional[str]] = mapped_column(String(50))
-    institution_location: Mapped[Optional[str]] = mapped_column(String(200))
+    institution_type: Mapped[str | None] = mapped_column(String(50))
+    institution_location: Mapped[str | None] = mapped_column(String(200))
     institution_country: Mapped[str] = mapped_column(String(100), default="Brasil")
 
     # Curso
     course_name: Mapped[str] = mapped_column(String(200), nullable=False)
-    level: Mapped[EducationLevel] = mapped_column(
-        Enum(EducationLevel), default=EducationLevel.GRADUACAO
-    )
-    area: Mapped[Optional[str]] = mapped_column(String(100))
-    status: Mapped[EducationStatus] = mapped_column(
-        Enum(EducationStatus), default=EducationStatus.COMPLETO
-    )
+    level: Mapped[EducationLevel] = mapped_column(Enum(EducationLevel), default=EducationLevel.GRADUACAO)
+    area: Mapped[str | None] = mapped_column(String(100))
+    status: Mapped[EducationStatus] = mapped_column(Enum(EducationStatus), default=EducationStatus.COMPLETO)
 
     # Período
-    start_date: Mapped[Optional[date]] = mapped_column(Date)
-    end_date: Mapped[Optional[date]] = mapped_column(Date)
-    expected_end_date: Mapped[Optional[date]] = mapped_column(Date)
-    study_period: Mapped[Optional[StudyPeriod]] = mapped_column(Enum(StudyPeriod))
+    start_date: Mapped[date | None] = mapped_column(Date)
+    end_date: Mapped[date | None] = mapped_column(Date)
+    expected_end_date: Mapped[date | None] = mapped_column(Date)
+    study_period: Mapped[StudyPeriod | None] = mapped_column(Enum(StudyPeriod))
 
     # Desempenho
-    gpa: Mapped[Optional[float]] = mapped_column(Numeric(4, 2))
+    gpa: Mapped[float | None] = mapped_column(Numeric(4, 2))
     gpa_max: Mapped[float] = mapped_column(Numeric(4, 2), default=10.0)
-    class_rank: Mapped[Optional[int]] = mapped_column(Integer)
-    class_size: Mapped[Optional[int]] = mapped_column(Integer)
+    class_rank: Mapped[int | None] = mapped_column(Integer)
+    class_size: Mapped[int | None] = mapped_column(Integer)
 
     # TCC/Tese
-    thesis_title: Mapped[Optional[str]] = mapped_column(String(500))
-    thesis_advisor: Mapped[Optional[str]] = mapped_column(String(200))
-    thesis_abstract: Mapped[Optional[str]] = mapped_column(Text)
+    thesis_title: Mapped[str | None] = mapped_column(String(500))
+    thesis_advisor: Mapped[str | None] = mapped_column(String(200))
+    thesis_abstract: Mapped[str | None] = mapped_column(Text)
 
     # Atividades
-    activities: Mapped[Optional[List[str]]] = mapped_column(ARRAY(String), default=list)
-    honors: Mapped[Optional[List[str]]] = mapped_column(ARRAY(String), default=list)
-    scholarships: Mapped[Optional[List[str]]] = mapped_column(
-        ARRAY(String), default=list
-    )
+    activities: Mapped[list[str] | None] = mapped_column(ARRAY(String), default=list)
+    honors: Mapped[list[str] | None] = mapped_column(ARRAY(String), default=list)
+    scholarships: Mapped[list[str] | None] = mapped_column(ARRAY(String), default=list)
 
     # Intercâmbio
     has_exchange: Mapped[bool] = mapped_column(Boolean, default=False)
-    exchange_institution: Mapped[Optional[str]] = mapped_column(String(200))
-    exchange_country: Mapped[Optional[str]] = mapped_column(String(100))
-    exchange_duration_months: Mapped[Optional[int]] = mapped_column(Integer)
+    exchange_institution: Mapped[str | None] = mapped_column(String(200))
+    exchange_country: Mapped[str | None] = mapped_column(String(100))
+    exchange_duration_months: Mapped[int | None] = mapped_column(Integer)
 
     # Diploma
-    diploma_number: Mapped[Optional[str]] = mapped_column(String(100))
-    diploma_date: Mapped[Optional[date]] = mapped_column(Date)
+    diploma_number: Mapped[str | None] = mapped_column(String(100))
+    diploma_date: Mapped[date | None] = mapped_column(Date)
     diploma_verified: Mapped[bool] = mapped_column(Boolean, default=False)
 
     # Verificação
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
-    verified_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    verified_by: Mapped[Optional[str]] = mapped_column(UUID(as_uuid=False))
+    verified_at: Mapped[datetime | None] = mapped_column(DateTime)
+    verified_by: Mapped[str | None] = mapped_column(UUID(as_uuid=False))
 
     # Status
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
@@ -142,9 +136,7 @@ class CandidateEducation(Base, TimestampMixin):
     order: Mapped[int] = mapped_column(Integer, default=0)
 
     # Relationship
-    candidate: Mapped["Candidate"] = relationship(
-        "Candidate", back_populates="educations"
-    )
+    candidate: Mapped["Candidate"] = relationship("Candidate", back_populates="educations")
 
     def __repr__(self) -> str:
         return f"<CandidateEducation {self.course_name} at {self.institution_name}>"
@@ -160,7 +152,7 @@ class CandidateEducation(Base, TimestampMixin):
         return self.status == EducationStatus.CURSANDO
 
     @property
-    def duration_months(self) -> Optional[int]:
+    def duration_months(self) -> int | None:
         """Retorna duração em meses."""
         if not self.start_date:
             return None
@@ -184,7 +176,7 @@ class CandidateEducation(Base, TimestampMixin):
         return start
 
     @property
-    def gpa_normalized(self) -> Optional[float]:
+    def gpa_normalized(self) -> float | None:
         """Retorna GPA normalizado (0-10)."""
         if self.gpa is None:
             return None

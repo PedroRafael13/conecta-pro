@@ -4,70 +4,64 @@ Validador XSD para documentos fiscais.
 Valida XMLs contra schemas oficiais.
 """
 
-from pathlib import Path
-from typing import Dict, List, Optional, Tuple
-from dataclasses import dataclass
-from functools import lru_cache
+from __future__ import annotations
+
 import logging
 import os
+from dataclasses import dataclass
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
 # Tentar importar lxml (preferido) ou usar ElementTree
 try:
-    from lxml import etree
+    from lxml import etree  # noqa: N817
+
     LXML_DISPONIVEL = True
 except ImportError:
     LXML_DISPONIVEL = False
-    import xml.etree.ElementTree as etree
+
     logger.warning("lxml não disponível. Validação XSD limitada.")
 
 
 @dataclass
 class ResultadoValidacao:
     """Resultado de validação XSD."""
+
     valido: bool
-    erros: List[str]
-    avisos: List[str]
-    schema_usado: Optional[str] = None
+    erros: list[str]
+    avisos: list[str]
+    schema_usado: str | None = None
 
 
 class ValidadorXSD:
     """Valida XMLs contra schemas XSD oficiais."""
 
     # Diretório base dos schemas
-    SCHEMAS_DIR = os.environ.get(
-        "GOV_SCHEMAS_DIR",
-        "/opt/conecta-pro/schemas"
-    )
+    SCHEMAS_DIR = os.environ.get("GOV_SCHEMAS_DIR", "/opt/conecta-pro/schemas")
 
     # Mapeamento de tipos para arquivos XSD
-    XSD_PATHS: Dict[str, str] = {
+    XSD_PATHS: dict[str, str] = {
         # NF-e
         "nfe_4.00": "nfe/nfe_v4.00.xsd",
         "nfe_proc_4.00": "nfe/procNFe_v4.00.xsd",
         "nfe_evento_4.00": "nfe/procEventoNFe_v1.00.xsd",
         "nfe_inut_4.00": "nfe/procInutNFe_v4.00.xsd",
-
         # CT-e
         "cte_4.00": "cte/cte_v4.00.xsd",
         "cte_proc_4.00": "cte/procCTe_v4.00.xsd",
-
         # MDF-e
         "mdfe_3.00": "mdfe/mdfe_v3.00.xsd",
         "mdfe_proc_3.00": "mdfe/procMDFe_v3.00.xsd",
-
         # NFS-e
         "nfse_abrasf_2.04": "nfse/nfse_v2.04.xsd",
         "nfse_nacional": "nfse/nfse_nacional_v1.00.xsd",
-
         # eSocial
         "esocial_s1000": "esocial/evtInfoEmpregador_v_S_01_02_00.xsd",
         "esocial_s1200": "esocial/evtRemun_v_S_01_02_00.xsd",
         "esocial_s2200": "esocial/evtAdmissao_v_S_01_02_00.xsd",
         "esocial_s2299": "esocial/evtDeslig_v_S_01_02_00.xsd",
         "esocial_lote": "esocial/loteEventos_v_S_01_02_00.xsd",
-
         # EFD-Reinf
         "reinf_r1000": "reinf/R1000_v2_01_02.xsd",
         "reinf_r2010": "reinf/R2010_v2_01_02.xsd",
@@ -76,15 +70,10 @@ class ValidadorXSD:
     }
 
     # Cache de schemas carregados
-    _schemas_cache: Dict[str, any] = {}
+    _schemas_cache: dict[str, any] = {}
 
     @classmethod
-    def validar(
-        cls,
-        xml_content: bytes,
-        tipo_schema: str,
-        ignorar_avisos: bool = False
-    ) -> ResultadoValidacao:
+    def validar(cls, xml_content: bytes, tipo_schema: str, ignorar_avisos: bool = False) -> ResultadoValidacao:
         """
         Valida XML contra XSD.
 
@@ -156,7 +145,7 @@ class ValidadorXSD:
             )
 
     @classmethod
-    def _carregar_schema(cls, tipo_schema: str) -> Optional[any]:
+    def _carregar_schema(cls, tipo_schema: str) -> any | None:
         """Carrega e cacheia schema XSD."""
         if tipo_schema in cls._schemas_cache:
             return cls._schemas_cache[tipo_schema]
@@ -185,11 +174,7 @@ class ValidadorXSD:
             return None
 
     @classmethod
-    def _validar_basico(
-        cls,
-        xml_content: bytes,
-        tipo_schema: str
-    ) -> ResultadoValidacao:
+    def _validar_basico(cls, xml_content: bytes, tipo_schema: str) -> ResultadoValidacao:
         """
         Validação básica sem lxml (apenas verifica se é XML bem formado).
         """
@@ -225,22 +210,14 @@ class ValidadorXSD:
         return cls.validar(xml_content, "mdfe_3.00")
 
     @classmethod
-    def validar_nfse(
-        cls,
-        xml_content: bytes,
-        padrao: str = "abrasf"
-    ) -> ResultadoValidacao:
+    def validar_nfse(cls, xml_content: bytes, padrao: str = "abrasf") -> ResultadoValidacao:
         """Atalho para validar NFS-e."""
         if padrao == "nacional":
             return cls.validar(xml_content, "nfse_nacional")
         return cls.validar(xml_content, "nfse_abrasf_2.04")
 
     @classmethod
-    def validar_esocial(
-        cls,
-        xml_content: bytes,
-        tipo_evento: str
-    ) -> ResultadoValidacao:
+    def validar_esocial(cls, xml_content: bytes, tipo_evento: str) -> ResultadoValidacao:
         """
         Valida evento eSocial.
 
@@ -266,7 +243,7 @@ class ValidadorXSD:
         logger.info("Cache de schemas XSD limpo")
 
     @classmethod
-    def listar_schemas_disponiveis(cls) -> List[str]:
+    def listar_schemas_disponiveis(cls) -> list[str]:
         """Lista schemas disponíveis no diretório."""
         disponiveis = []
 
@@ -278,7 +255,7 @@ class ValidadorXSD:
         return disponiveis
 
     @classmethod
-    def detectar_tipo_documento(cls, xml_content: bytes) -> Optional[str]:
+    def detectar_tipo_documento(cls, xml_content: bytes) -> str | None:
         """
         Detecta tipo de documento a partir do XML.
 

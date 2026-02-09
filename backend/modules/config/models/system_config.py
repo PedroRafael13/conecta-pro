@@ -4,30 +4,29 @@ Sprint 35: Configurações e Multi-tenant
 """
 # pylint: disable=too-many-instance-attributes
 
-import enum
 from datetime import datetime
+from enum import StrEnum
 from typing import Any
 from uuid import uuid4
 
-from sqlalchemy import (
-    Column, String, Text, Boolean, DateTime,
-    Integer, Enum, Index
-)
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy import Boolean, Column, DateTime, Enum, Index, Integer, String, Text
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 from core.database import Base
 
 
-class ConfigScope(str, enum.Enum):
+class ConfigScope(StrEnum):
     """Escopo da configuração."""
+
     GLOBAL = "global"  # Aplica a todo o sistema
     DEFAULT = "default"  # Valor padrão para novos tenants
     SYSTEM = "system"  # Configuração interna do sistema
     SECURITY = "security"  # Configurações de segurança
 
 
-class ConfigPriority(str, enum.Enum):
+class ConfigPriority(StrEnum):
     """Prioridade da configuração."""
+
     LOW = "low"
     NORMAL = "normal"
     HIGH = "high"
@@ -47,16 +46,8 @@ class SystemConfig(Base):
     descricao = Column(Text, nullable=True)
 
     # Escopo e prioridade
-    scope = Column(
-        Enum(ConfigScope),
-        nullable=False,
-        default=ConfigScope.GLOBAL
-    )
-    priority = Column(
-        Enum(ConfigPriority),
-        nullable=False,
-        default=ConfigPriority.NORMAL
-    )
+    scope = Column(Enum(ConfigScope), nullable=False, default=ConfigScope.GLOBAL)
+    priority = Column(Enum(ConfigPriority), nullable=False, default=ConfigPriority.NORMAL)
 
     # Valor
     valor = Column(Text, nullable=True)
@@ -174,12 +165,7 @@ class SystemConfig(Base):
         self.last_modified_at = datetime.utcnow()
         self.updated_at = datetime.utcnow()
 
-    def _add_to_history(
-        self,
-        old_value: str,
-        new_value: str,
-        modified_by: UUID = None
-    ) -> None:
+    def _add_to_history(self, old_value: str, new_value: str, modified_by: UUID = None) -> None:
         """Adiciona entrada ao histórico."""
         if not self.audit_changes:
             return
@@ -192,7 +178,7 @@ class SystemConfig(Base):
             "timestamp": datetime.utcnow().isoformat(),
             "old_value": old_value if not self.sensitive else "***",
             "new_value": new_value if not self.sensitive else "***",
-            "modified_by": str(modified_by) if modified_by else None
+            "modified_by": str(modified_by) if modified_by else None,
         }
         self.history = [*self.history[-99:], entry]  # Mantém últimas 100
 
@@ -267,18 +253,7 @@ class SystemConfig(Base):
 
     @classmethod
     def create_config(
-        cls,
-        chave: str,
-        nome: str,
-        valor_type: str = "string",
-        scope: ConfigScope = ConfigScope.GLOBAL,
-        **kwargs
+        cls, chave: str, nome: str, valor_type: str = "string", scope: ConfigScope = ConfigScope.GLOBAL, **kwargs
     ) -> "SystemConfig":
         """Factory method para criar configuração."""
-        return cls(
-            chave=chave,
-            nome=nome,
-            valor_type=valor_type,
-            scope=scope,
-            **kwargs
-        )
+        return cls(chave=chave, nome=nome, valor_type=valor_type, scope=scope, **kwargs)

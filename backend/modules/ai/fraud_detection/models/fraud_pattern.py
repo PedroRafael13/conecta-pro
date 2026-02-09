@@ -4,28 +4,28 @@ Fraud Pattern Model - AI Fraud Detection
 Modelo para padroes de fraude conhecidos e detectados.
 """
 
-import enum
 import uuid
 from datetime import datetime
-from typing import Optional, List, Dict, Any
+from enum import StrEnum
+from typing import Any
 
 from sqlalchemy import (
-    Column,
-    String,
-    Text,
     Boolean,
-    Integer,
-    Float,
+    Column,
     DateTime,
     Enum,
+    Float,
+    Integer,
+    String,
+    Text,
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import relationship
 
 from core.database import Base
 
 
-class PatternType(str, enum.Enum):
+class PatternType(StrEnum):
     """Tipo de padrao de fraude."""
 
     # Financeiros
@@ -73,7 +73,7 @@ class PatternType(str, enum.Enum):
     CUSTOM = "custom"
 
 
-class PatternStatus(str, enum.Enum):
+class PatternStatus(StrEnum):
     """Status do padrao."""
 
     ACTIVE = "active"
@@ -243,11 +243,7 @@ class FraudPattern(Base):
     @property
     def is_effective(self) -> bool:
         """Verifica se padrao e efetivo."""
-        return (
-            self.total_detections >= 10
-            and self.detection_rate >= 70.0
-            and self.false_positive_rate <= 30.0
-        )
+        return self.total_detections >= 10 and self.detection_rate >= 70.0 and self.false_positive_rate <= 30.0
 
     def record_detection(
         self,
@@ -268,13 +264,11 @@ class FraudPattern(Base):
         # Atualizar media de tempo
         if detection_time_seconds > 0:
             if self.avg_detection_time_seconds:
-                self.avg_detection_time_seconds = (
-                    self.avg_detection_time_seconds + detection_time_seconds
-                ) / 2
+                self.avg_detection_time_seconds = (self.avg_detection_time_seconds + detection_time_seconds) / 2
             else:
                 self.avg_detection_time_seconds = detection_time_seconds
 
-    def match(self, data: Dict[str, Any]) -> tuple[bool, float, List[str]]:
+    def match(self, data: dict[str, Any]) -> tuple[bool, float, list[str]]:
         """
         Verifica se dados correspondem ao padrao.
 

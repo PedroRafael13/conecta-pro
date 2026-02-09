@@ -3,37 +3,37 @@ Meeting Assistant Schemas - Sprint 49.
 """
 
 from .meeting_assistant_schemas import (
+    MeetingActionItem,
+    MeetingAgendaItem,
+    # Dashboard
+    MeetingAssistantDashboard,
     # Meeting schemas
     MeetingCreate,
-    MeetingUpdate,
-    MeetingResponse,
     MeetingListResponse,
-    MeetingAgendaItem,
-    MeetingActionItem,
-    # Participant schemas
-    ParticipantCreate,
-    ParticipantUpdate,
-    ParticipantResponse,
-    # Task schemas
-    TaskCreate,
-    TaskUpdate,
-    TaskResponse,
-    TaskListResponse,
-    TaskChecklistItem,
     # Note/Summary schemas
     MeetingNoteCreate,
     MeetingNoteResponse,
+    MeetingResponse,
     MeetingSummaryResponse,
+    MeetingUpdate,
+    # Participant schemas
+    ParticipantCreate,
+    ParticipantResponse,
+    ParticipantUpdate,
+    PrioritizationRequest,
+    PrioritizationResponse,
     # Schedule suggestion schemas
     ScheduleSuggestionRequest,
     ScheduleSuggestionResponse,
-    TimeSlot,
+    TaskChecklistItem,
+    # Task schemas
+    TaskCreate,
+    TaskListResponse,
     # Priority schemas
     TaskPrioritySuggestion,
-    PrioritizationRequest,
-    PrioritizationResponse,
-    # Dashboard
-    MeetingAssistantDashboard,
+    TaskResponse,
+    TaskUpdate,
+    TimeSlot,
 )
 
 __all__ = [

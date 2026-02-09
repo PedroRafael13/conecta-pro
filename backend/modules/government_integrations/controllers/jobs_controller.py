@@ -12,19 +12,17 @@ Endpoints:
 """
 
 import logging
-from typing import Optional, List
 from uuid import UUID
-from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from core.database import get_db
 from modules.government_integrations.jobs import (
+    SYNC_JOBS_CONFIG,
     GovSyncJobManager,
     SyncJobType,
-    SYNC_JOBS_CONFIG,
 )
 
 logger = logging.getLogger(__name__)
@@ -36,70 +34,79 @@ router = APIRouter(prefix="/jobs", tags=["Government Sync Jobs"])
 # SCHEMAS
 # =========================================================================
 
+
 class JobRegistroResponse(BaseModel):
     """Resposta do registro de jobs."""
-    sucesso: List[str]
-    erros: List[dict]
+
+    sucesso: list[str]
+    erros: list[dict]
     total: int
 
 
 class JobInfo(BaseModel):
     """Informacoes de um job."""
+
     id: str
     nome: str
     tipo: str
     cron: str
     status: str
-    ultima_execucao: Optional[str]
-    proxima_execucao: Optional[str]
+    ultima_execucao: str | None
+    proxima_execucao: str | None
     total_execucoes: int = 0
     falhas: int = 0
-    tags: List[str] = []
+    tags: list[str] = []
 
 
 class JobListResponse(BaseModel):
     """Lista de jobs."""
-    jobs: List[JobInfo]
+
+    jobs: list[JobInfo]
     total: int
 
 
 class JobStatusResponse(BaseModel):
     """Status da sincronizacao."""
-    federal: List[dict]
-    estadual: List[dict]
-    municipal: List[dict]
+
+    federal: list[dict]
+    estadual: list[dict]
+    municipal: list[dict]
     resumo: dict
 
 
 class JobUpdateRequest(BaseModel):
     """Requisicao de atualizacao de job."""
-    cron_expression: Optional[str] = Field(None, description="Nova expressao cron")
-    ativo: Optional[bool] = Field(None, description="Ativar/desativar job")
-    prioridade: Optional[int] = Field(None, ge=1, le=10, description="Prioridade (1-10)")
+
+    cron_expression: str | None = Field(None, description="Nova expressao cron")
+    ativo: bool | None = Field(None, description="Ativar/desativar job")
+    prioridade: int | None = Field(None, ge=1, le=10, description="Prioridade (1-10)")
 
 
 class JobExecResponse(BaseModel):
     """Resposta de execucao de job."""
+
     sucesso: bool
     mensagem: str
-    job_id: Optional[str] = None
+    job_id: str | None = None
 
 
 class JobConfigInfo(BaseModel):
     """Configuracao disponivel de job."""
+
     tipo: str
     nome: str
     descricao: str
     cron_padrao: str
     prioridade: int
-    tags: List[str]
+    tags: list[str]
 
 
 # =========================================================================
 # ENDPOINTS
 # =========================================================================
 
-@router.get("/configuracoes", response_model=List[JobConfigInfo])
+
+@router.get("/configuracoes", response_model=list[JobConfigInfo])
 async def listar_configuracoes_disponiveis():
     """
     Lista todas as configuracoes de jobs disponiveis.
@@ -406,6 +413,7 @@ async def retomar_job(
 # =========================================================================
 # HELPERS
 # =========================================================================
+
 
 def _extrair_tipo_job(job: dict) -> str:
     """Extrai tipo do job a partir das tags ou nome."""

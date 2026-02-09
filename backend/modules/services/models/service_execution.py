@@ -3,17 +3,14 @@ ServiceExecution Model - Execução de Serviços
 Sprint 31: Gestão de Serviços
 """
 
-import enum
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional, TYPE_CHECKING
+from enum import StrEnum
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
-from sqlalchemy import (
-    Column, String, Text, Boolean, DateTime,
-    Numeric, Integer, Enum, ForeignKey, Index
-)
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, Index, Integer, Numeric, String, Text
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 
 from core.database import Base
@@ -22,8 +19,9 @@ if TYPE_CHECKING:
     from modules.services.models.service_order import ServiceOrder
 
 
-class ExecutionStatus(str, enum.Enum):
+class ExecutionStatus(StrEnum):
     """Status da execução."""
+
     AGENDADA = "agendada"
     EM_DESLOCAMENTO = "em_deslocamento"
     NO_LOCAL = "no_local"
@@ -40,26 +38,21 @@ class ServiceExecution(Base):
     Model para execução de serviços.
     Registra cada etapa da execução de uma ordem.
     """
+
     __tablename__ = "service_executions"
 
     # Primary key
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
 
     # Foreign key
-    order_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("service_orders.id", ondelete="CASCADE"),
-        nullable=False
-    )
+    order_id = Column(UUID(as_uuid=True), ForeignKey("service_orders.id", ondelete="CASCADE"), nullable=False)
 
     # Identificação
     execution_number = Column(String(30), nullable=False)
     sequence = Column(Integer, nullable=False, default=1)
 
     # Status
-    status = Column(
-        Enum(ExecutionStatus), nullable=False, default=ExecutionStatus.AGENDADA
-    )
+    status = Column(Enum(ExecutionStatus), nullable=False, default=ExecutionStatus.AGENDADA)
 
     # Técnico/Equipe
     technician_id = Column(UUID(as_uuid=True), nullable=True)
@@ -132,16 +125,12 @@ class ServiceExecution(Base):
     # Auditoria
     ativo = Column(Boolean, nullable=False, default=True)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(
-        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
     created_by = Column(UUID(as_uuid=True), nullable=True)
     updated_by = Column(UUID(as_uuid=True), nullable=True)
 
     # Relacionamentos
-    order: "ServiceOrder" = relationship(
-        "ServiceOrder", back_populates="executions"
-    )
+    order: "ServiceOrder" = relationship("ServiceOrder", back_populates="executions")
 
     # Índices
     __table_args__ = (
@@ -161,9 +150,7 @@ class ServiceExecution(Base):
         self.travel_start = datetime.utcnow()
         self.updated_at = datetime.utcnow()
 
-    def arrive_at_location(
-        self, latitude: Optional[float] = None, longitude: Optional[float] = None
-    ) -> None:
+    def arrive_at_location(self, latitude: float | None = None, longitude: float | None = None) -> None:
         """Registra chegada no local."""
         self.status = ExecutionStatus.NO_LOCAL
         self.travel_end = datetime.utcnow()
@@ -187,11 +174,7 @@ class ServiceExecution(Base):
         """Pausa a execução."""
         self.status = ExecutionStatus.PAUSADA
         self.pause_count += 1
-        pause_entry = {
-            "pause_number": self.pause_count,
-            "paused_at": datetime.utcnow().isoformat(),
-            "reason": reason
-        }
+        pause_entry = {"pause_number": self.pause_count, "paused_at": datetime.utcnow().isoformat(), "reason": reason}
         if self.pause_history is None:
             self.pause_history = []
         self.pause_history.append(pause_entry)
@@ -207,17 +190,11 @@ class ServiceExecution(Base):
     def wait_for_material(self, material_description: str) -> None:
         """Aguarda material."""
         self.status = ExecutionStatus.AGUARDANDO_MATERIAL
-        self.internal_notes = (
-            f"{self.internal_notes or ''}\n"
-            f"[AGUARDANDO MATERIAL]: {material_description}"
-        ).strip()
+        self.internal_notes = (f"{self.internal_notes or ''}\n[AGUARDANDO MATERIAL]: {material_description}").strip()
         self.updated_at = datetime.utcnow()
 
     def finish_execution(
-        self,
-        work_description: str,
-        latitude: Optional[float] = None,
-        longitude: Optional[float] = None
+        self, work_description: str, latitude: float | None = None, longitude: float | None = None
     ) -> None:
         """Finaliza a execução."""
         self.status = ExecutionStatus.FINALIZADA
@@ -238,26 +215,17 @@ class ServiceExecution(Base):
     def cancel_execution(self, reason: str) -> None:
         """Cancela a execução."""
         self.status = ExecutionStatus.CANCELADA
-        self.internal_notes = (
-            f"{self.internal_notes or ''}\n[CANCELADA]: {reason}"
-        ).strip()
+        self.internal_notes = (f"{self.internal_notes or ''}\n[CANCELADA]: {reason}").strip()
         self.updated_at = datetime.utcnow()
 
-    def add_material(
-        self, name: str, quantity: float, unit_cost: float
-    ) -> None:
+    def add_material(self, name: str, quantity: float, unit_cost: float) -> None:
         """Adiciona material utilizado."""
         if self.materials_used is None:
             self.materials_used = []
-        self.materials_used.append({
-            "name": name,
-            "quantity": quantity,
-            "unit_cost": unit_cost,
-            "total_cost": quantity * unit_cost
-        })
-        self.materials_cost = Decimal(
-            str(sum(m["total_cost"] for m in self.materials_used))
+        self.materials_used.append(
+            {"name": name, "quantity": quantity, "unit_cost": unit_cost, "total_cost": quantity * unit_cost}
         )
+        self.materials_cost = Decimal(str(sum(m["total_cost"] for m in self.materials_used)))
         self._calculate_total_cost()
         self.updated_at = datetime.utcnow()
 
@@ -267,23 +235,15 @@ class ServiceExecution(Base):
             for item in self.checklist_items:
                 if item.get("id") == item_id:
                     item["completed"] = completed
-                    item["completed_at"] = (
-                        datetime.utcnow().isoformat() if completed else None
-                    )
+                    item["completed_at"] = datetime.utcnow().isoformat() if completed else None
                     break
-            completed_count = sum(
-                1 for item in self.checklist_items if item.get("completed")
-            )
+            completed_count = sum(1 for item in self.checklist_items if item.get("completed"))
             total_count = len(self.checklist_items)
-            self.checklist_completion_percent = Decimal(
-                str(round((completed_count / total_count) * 100, 2))
-            )
+            self.checklist_completion_percent = Decimal(str(round((completed_count / total_count) * 100, 2)))
             self.checklist_completed = completed_count == total_count
         self.updated_at = datetime.utcnow()
 
-    def add_signature(
-        self, signature_type: str, signature: str, name: str
-    ) -> None:
+    def add_signature(self, signature_type: str, signature: str, name: str) -> None:
         """Adiciona assinatura."""
         now = datetime.utcnow()
         if signature_type == "client":

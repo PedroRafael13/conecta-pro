@@ -6,8 +6,8 @@ Sprint 33: Integration Framework
 
 from fastapi import APIRouter
 
-from modules.integrations.controllers.integration_controller import router as integration_router
 from modules.integrations.controllers.connector_controller import router as connector_router
+from modules.integrations.controllers.integration_controller import router as integration_router
 from modules.integrations.controllers.solides_controller import router as solides_router
 
 # Router principal que agrega os sub-routers

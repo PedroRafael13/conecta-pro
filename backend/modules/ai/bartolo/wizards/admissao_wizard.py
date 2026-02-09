@@ -5,11 +5,7 @@ Guia o usuario no processo de admissao, coletando todos os dados
 necessarios e validando conforme CLT.
 """
 
-from datetime import datetime
-from typing import Any
-from modules.ai.bartolo.wizards.base_wizard import (
-    BaseWizard, WizardStep, StepType
-)
+from modules.ai.bartolo.wizards.base_wizard import BaseWizard, StepType, WizardStep
 
 
 class AdmissaoWizard(BaseWizard):
@@ -37,7 +33,6 @@ class AdmissaoWizard(BaseWizard):
                 required=True,
                 validation_rules={"min_length": 5, "max_length": 200},
             ),
-
             WizardStep(
                 id="cpf",
                 name="CPF",
@@ -48,7 +43,6 @@ class AdmissaoWizard(BaseWizard):
                 help_text="Digite apenas os 11 numeros do CPF.",
                 validation_rules={"min_length": 11, "max_length": 14},
             ),
-
             WizardStep(
                 id="data_nascimento",
                 name="Data de Nascimento",
@@ -57,7 +51,6 @@ class AdmissaoWizard(BaseWizard):
                 question="Qual a data de nascimento? (DD/MM/AAAA)",
                 required=True,
             ),
-
             # Dados do Contrato
             WizardStep(
                 id="cargo",
@@ -79,7 +72,6 @@ class AdmissaoWizard(BaseWizard):
                     "Outro",
                 ],
             ),
-
             WizardStep(
                 id="salario",
                 name="Salario",
@@ -90,7 +82,6 @@ class AdmissaoWizard(BaseWizard):
                 help_text="O sistema validara se esta acima do piso da categoria conforme CCT.",
                 validation_rules={"min_value": 1412.00},  # Salario minimo 2024
             ),
-
             WizardStep(
                 id="data_admissao",
                 name="Data de Admissao",
@@ -100,7 +91,6 @@ class AdmissaoWizard(BaseWizard):
                 required=True,
                 help_text="Data em que o funcionario comecara a trabalhar.",
             ),
-
             WizardStep(
                 id="tipo_contrato",
                 name="Tipo de Contrato",
@@ -114,7 +104,6 @@ class AdmissaoWizard(BaseWizard):
                     "Experiencia (45+45 dias)",
                 ],
             ),
-
             WizardStep(
                 id="escala",
                 name="Escala de Trabalho",
@@ -129,7 +118,6 @@ class AdmissaoWizard(BaseWizard):
                     "6x1 (Folga rotativa)",
                 ],
             ),
-
             WizardStep(
                 id="posto_trabalho",
                 name="Posto de Trabalho",
@@ -138,7 +126,6 @@ class AdmissaoWizard(BaseWizard):
                 question="Qual o posto/cliente onde o funcionario ira trabalhar?",
                 required=True,
             ),
-
             # Documentos
             WizardStep(
                 id="documentos_ok",
@@ -150,7 +137,6 @@ class AdmissaoWizard(BaseWizard):
                 options=["Sim, todos entregues", "Nao, faltam documentos"],
                 help_text="A admissao so pode ser finalizada com todos os documentos.",
             ),
-
             WizardStep(
                 id="exame_admissional",
                 name="Exame Admissional",
@@ -199,16 +185,20 @@ class AdmissaoWizard(BaseWizard):
         alerts = []
 
         if not data.get("documentos_ok"):
-            alerts.append({
-                "tipo": "warning",
-                "mensagem": "Documentos pendentes - aguardar entrega antes de finalizar admissao",
-            })
+            alerts.append(
+                {
+                    "tipo": "warning",
+                    "mensagem": "Documentos pendentes - aguardar entrega antes de finalizar admissao",
+                }
+            )
 
         if not data.get("exame_admissional"):
-            alerts.append({
-                "tipo": "error",
-                "mensagem": "Exame admissional pendente - OBRIGATORIO antes do inicio das atividades",
-            })
+            alerts.append(
+                {
+                    "tipo": "error",
+                    "mensagem": "Exame admissional pendente - OBRIGATORIO antes do inicio das atividades",
+                }
+            )
 
         # Valida piso salarial
         salario = data.get("salario", 0)
@@ -228,9 +218,11 @@ class AdmissaoWizard(BaseWizard):
 
         piso = pisos.get(cargo, 1412.00)
         if salario and salario < piso:
-            alerts.append({
-                "tipo": "error",
-                "mensagem": f"Salario abaixo do piso da categoria ({cargo}). Minimo: R$ {piso:,.2f}",
-            })
+            alerts.append(
+                {
+                    "tipo": "error",
+                    "mensagem": f"Salario abaixo do piso da categoria ({cargo}). Minimo: R$ {piso:,.2f}",
+                }
+            )
 
         return alerts

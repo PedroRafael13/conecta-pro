@@ -4,43 +4,49 @@ Testes de API - Report Generator (Sprint 47)
 Testes de integracao para os endpoints de geracao de relatorios.
 """
 
-import pytest
 from datetime import datetime, timedelta
+from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
-from unittest.mock import AsyncMock, patch, MagicMock
 
+import pytest
 from fastapi.testclient import TestClient
 
 from modules.ai.report_generator.models import (
+    AIReportSchedule,
+    AIReportTemplate,
     Report,
-    ReportTemplate,
-    ReportSchedule,
     ReportExecution,
 )
 from modules.ai.report_generator.models.report import (
-    ReportTypeEnum,
-    ReportStatusEnum,
     ReportFormatEnum,
     ReportPriorityEnum,
-)
-from modules.ai.report_generator.models.report_template import (
-    TemplateCategoryEnum,
-    TemplateStatusEnum,
+    ReportStatusEnum,
+    ReportTypeEnum,
 )
 from modules.ai.report_generator.models.report_schedule import (
     ScheduleFrequencyEnum,
     ScheduleStatusEnum,
 )
+from modules.ai.report_generator.models.report_template import (
+    TemplateCategoryEnum,
+    TemplateStatusEnum,
+)
+from modules.ai.report_generator.repositories import ReportRepository
 from modules.ai.report_generator.schemas import (
     GenerateReportRequest,
-    ReportTemplateCreate,
     ReportScheduleCreate,
+    ReportTemplateCreate,
 )
-
+from modules.ai.report_generator.services import (
+    ReportExporter,
+    ReportGeneratorService,
+    TemplateEngine,
+)
 
 # ============================================================
 # Fixtures
 # ============================================================
+
 
 @pytest.fixture
 def mock_report():
@@ -60,12 +66,8 @@ def mock_report():
     report.data = {"sales": {"total": 150000, "count": 450}}
     report.summary = {"total_revenue": 150000, "total_orders": 450}
     report.metrics = {"avg_ticket": 333.33, "growth": 15.5}
-    report.insights = [
-        {"type": "trend", "title": "Crescimento consistente", "description": "Vendas cresceram 15%"}
-    ]
-    report.recommendations = [
-        {"action": "Expandir equipe de vendas", "priority": "high"}
-    ]
+    report.insights = [{"type": "trend", "title": "Crescimento consistente", "description": "Vendas cresceram 15%"}]
+    report.recommendations = [{"action": "Expandir equipe de vendas", "priority": "high"}]
     report.anomalies = []
     report.insights_count = 1
     report.has_anomalies = False
@@ -97,7 +99,7 @@ def mock_report():
 @pytest.fixture
 def mock_template():
     """Cria template mock."""
-    template = MagicMock(spec=ReportTemplate)
+    template = MagicMock(spec=AIReportTemplate)
     template.id = uuid4()
     template.code = "TMPL-SALES-MONTHLY"
     template.name = "Template Vendas Mensal"
@@ -152,7 +154,7 @@ def mock_template():
 @pytest.fixture
 def mock_schedule():
     """Cria agendamento mock."""
-    schedule = MagicMock(spec=ReportSchedule)
+    schedule = MagicMock(spec=AIReportSchedule)
     schedule.id = uuid4()
     schedule.name = "Relatorio Diario de Vendas"
     schedule.template_id = uuid4()
@@ -211,6 +213,7 @@ def mock_execution():
 # Tests - Report Generation Endpoints
 # ============================================================
 
+
 class TestReportGenerationEndpoints:
     """Testes para endpoints de geracao de relatorios."""
 
@@ -226,14 +229,12 @@ class TestReportGenerationEndpoints:
             },
         )
 
-        with patch(
-            "modules.ai.report_generator.services.ReportGeneratorService"
-        ) as MockService:
+        with patch("modules.ai.report_generator.services.ReportGeneratorService") as mock_service_cls:
             mock_instance = AsyncMock()
             mock_instance.generate_report.return_value = mock_report
-            MockService.return_value = mock_instance
+            mock_service_cls.return_value = mock_instance
 
-            service = MockService(None)
+            service = ReportGeneratorService(None)
             result = await service.generate_report(request_data)
 
             assert result.status == ReportStatusEnum.COMPLETED
@@ -250,15 +251,13 @@ class TestReportGenerationEndpoints:
             "period_end": "2024-12-31",
         }
 
-        with patch(
-            "modules.ai.report_generator.services.ReportGeneratorService"
-        ) as MockService:
+        with patch("modules.ai.report_generator.services.ReportGeneratorService") as mock_service_cls:
             mock_instance = AsyncMock()
             mock_report.report_type = ReportTypeEnum.AD_HOC
             mock_instance.generate_adhoc_report.return_value = mock_report
-            MockService.return_value = mock_instance
+            mock_service_cls.return_value = mock_instance
 
-            service = MockService(None)
+            service = ReportGeneratorService(None)
             result = await service.generate_adhoc_report(request_data)
 
             assert result.report_type == ReportTypeEnum.AD_HOC
@@ -266,14 +265,12 @@ class TestReportGenerationEndpoints:
     @pytest.mark.asyncio
     async def test_list_reports(self, mock_report):
         """Testa listagem de relatorios."""
-        with patch(
-            "modules.ai.report_generator.repositories.ReportRepository"
-        ) as MockRepo:
+        with patch("modules.ai.report_generator.repositories.ReportRepository") as mock_repo_cls:
             mock_instance = AsyncMock()
             mock_instance.list_reports.return_value = ([mock_report], 1)
-            MockRepo.return_value = mock_instance
+            mock_repo_cls.return_value = mock_instance
 
-            repo = MockRepo(None)
+            repo = ReportRepository(None)
             items, total = await repo.list_reports(page=1, page_size=50)
 
             assert total == 1
@@ -283,14 +280,12 @@ class TestReportGenerationEndpoints:
     @pytest.mark.asyncio
     async def test_get_report(self, mock_report):
         """Testa obtencao de relatorio."""
-        with patch(
-            "modules.ai.report_generator.repositories.ReportRepository"
-        ) as MockRepo:
+        with patch("modules.ai.report_generator.repositories.ReportRepository") as mock_repo_cls:
             mock_instance = AsyncMock()
             mock_instance.get_report.return_value = mock_report
-            MockRepo.return_value = mock_instance
+            mock_repo_cls.return_value = mock_instance
 
-            repo = MockRepo(None)
+            repo = ReportRepository(None)
             result = await repo.get_report(mock_report.id)
 
             assert result.id == mock_report.id
@@ -299,23 +294,19 @@ class TestReportGenerationEndpoints:
     @pytest.mark.asyncio
     async def test_export_report_pdf(self, mock_report):
         """Testa exportacao de relatorio para PDF."""
-        with patch(
-            "modules.ai.report_generator.services.ReportExporter"
-        ) as MockExporter:
+        with patch("modules.ai.report_generator.services.ReportExporter") as mock_exporter_cls:
             mock_instance = AsyncMock()
             mock_instance.export_report.return_value = {
                 "format": "pdf",
                 "filename": "REP-2025-001_20250105.pdf",
-                "file_path": "/tmp/reports/REP-2025-001_20250105.pdf",
+                "file_path": "/tmp/reports/REP-2025-001_20250105.pdf",  # noqa: S108
                 "file_size_bytes": 125000,
                 "pages": 5,
             }
-            MockExporter.return_value = mock_instance
+            mock_exporter_cls.return_value = mock_instance
 
-            exporter = MockExporter(None)
-            result = await exporter.export_report(
-                mock_report.id, ReportFormatEnum.PDF
-            )
+            exporter = ReportExporter(None)
+            result = await exporter.export_report(mock_report.id, ReportFormatEnum.PDF)
 
             assert result["format"] == "pdf"
             assert "file_path" in result
@@ -323,23 +314,19 @@ class TestReportGenerationEndpoints:
     @pytest.mark.asyncio
     async def test_export_report_excel(self, mock_report):
         """Testa exportacao de relatorio para Excel."""
-        with patch(
-            "modules.ai.report_generator.services.ReportExporter"
-        ) as MockExporter:
+        with patch("modules.ai.report_generator.services.ReportExporter") as mock_exporter_cls:
             mock_instance = AsyncMock()
             mock_instance.export_report.return_value = {
                 "format": "excel",
                 "filename": "REP-2025-001_20250105.xlsx",
-                "file_path": "/tmp/reports/REP-2025-001_20250105.xlsx",
+                "file_path": "/tmp/reports/REP-2025-001_20250105.xlsx",  # noqa: S108
                 "file_size_bytes": 85000,
                 "sheets": 4,
             }
-            MockExporter.return_value = mock_instance
+            mock_exporter_cls.return_value = mock_instance
 
-            exporter = MockExporter(None)
-            result = await exporter.export_report(
-                mock_report.id, ReportFormatEnum.EXCEL
-            )
+            exporter = ReportExporter(None)
+            result = await exporter.export_report(mock_report.id, ReportFormatEnum.EXCEL)
 
             assert result["format"] == "excel"
             assert result["sheets"] == 4
@@ -348,6 +335,7 @@ class TestReportGenerationEndpoints:
 # ============================================================
 # Tests - Template Endpoints
 # ============================================================
+
 
 class TestTemplateEndpoints:
     """Testes para endpoints de templates."""
@@ -362,14 +350,12 @@ class TestTemplateEndpoints:
             data_sources=["invoices", "payments"],
         )
 
-        with patch(
-            "modules.ai.report_generator.services.TemplateEngine"
-        ) as MockEngine:
+        with patch("modules.ai.report_generator.services.TemplateEngine") as mock_engine_cls:
             mock_instance = AsyncMock()
             mock_instance.create_template.return_value = mock_template
-            MockEngine.return_value = mock_instance
+            mock_engine_cls.return_value = mock_instance
 
-            engine = MockEngine(None)
+            engine = TemplateEngine(None)
             result = await engine.create_template(template_data)
 
             assert result.code == "TMPL-SALES-MONTHLY"
@@ -377,14 +363,12 @@ class TestTemplateEndpoints:
     @pytest.mark.asyncio
     async def test_list_templates(self, mock_template):
         """Testa listagem de templates."""
-        with patch(
-            "modules.ai.report_generator.repositories.ReportRepository"
-        ) as MockRepo:
+        with patch("modules.ai.report_generator.repositories.ReportRepository") as mock_repo_cls:
             mock_instance = AsyncMock()
             mock_instance.list_templates.return_value = ([mock_template], 1)
-            MockRepo.return_value = mock_instance
+            mock_repo_cls.return_value = mock_instance
 
-            repo = MockRepo(None)
+            repo = ReportRepository(None)
             items, total = await repo.list_templates()
 
             assert total == 1
@@ -393,40 +377,34 @@ class TestTemplateEndpoints:
     @pytest.mark.asyncio
     async def test_clone_template(self, mock_template):
         """Testa clonagem de template."""
-        with patch(
-            "modules.ai.report_generator.services.TemplateEngine"
-        ) as MockEngine:
-            cloned = MagicMock(spec=ReportTemplate)
+        with patch("modules.ai.report_generator.services.TemplateEngine") as mock_engine_cls:
+            cloned = MagicMock(spec=AIReportTemplate)
             cloned.code = "TMPL-SALES-MONTHLY-CLONE"
             cloned.name = "Template Vendas Mensal (Clone)"
             cloned.parent_template_id = mock_template.id
 
             mock_instance = AsyncMock()
             mock_instance.clone_template.return_value = cloned
-            MockEngine.return_value = mock_instance
+            mock_engine_cls.return_value = mock_instance
 
-            engine = MockEngine(None)
-            result = await engine.clone_template(
-                mock_template.id, "TMPL-SALES-MONTHLY-CLONE", "Template Clone"
-            )
+            engine = TemplateEngine(None)
+            result = await engine.clone_template(mock_template.id, "TMPL-SALES-MONTHLY-CLONE", "Template Clone")
 
             assert result.parent_template_id == mock_template.id
 
     @pytest.mark.asyncio
     async def test_validate_template(self, mock_template):
         """Testa validacao de template."""
-        with patch(
-            "modules.ai.report_generator.services.TemplateEngine"
-        ) as MockEngine:
+        with patch("modules.ai.report_generator.services.TemplateEngine") as mock_engine_cls:
             mock_instance = AsyncMock()
             mock_instance.validate_template.return_value = {
                 "is_valid": True,
                 "errors": [],
                 "warnings": [],
             }
-            MockEngine.return_value = mock_instance
+            mock_engine_cls.return_value = mock_instance
 
-            engine = MockEngine(None)
+            engine = TemplateEngine(None)
             result = await engine.validate_template(mock_template.id)
 
             assert result["is_valid"] is True
@@ -435,17 +413,15 @@ class TestTemplateEndpoints:
     @pytest.mark.asyncio
     async def test_publish_template(self, mock_template):
         """Testa publicacao de template."""
-        with patch(
-            "modules.ai.report_generator.services.TemplateEngine"
-        ) as MockEngine:
+        with patch("modules.ai.report_generator.services.TemplateEngine") as mock_engine_cls:
             mock_template.status = TemplateStatusEnum.ACTIVE
             mock_template.published_at = datetime.utcnow()
 
             mock_instance = AsyncMock()
             mock_instance.publish_template.return_value = mock_template
-            MockEngine.return_value = mock_instance
+            mock_engine_cls.return_value = mock_instance
 
-            engine = MockEngine(None)
+            engine = TemplateEngine(None)
             result = await engine.publish_template(mock_template.id)
 
             assert result.status == TemplateStatusEnum.ACTIVE
@@ -453,14 +429,12 @@ class TestTemplateEndpoints:
     @pytest.mark.asyncio
     async def test_initialize_default_templates(self, mock_template):
         """Testa inicializacao de templates padrao."""
-        with patch(
-            "modules.ai.report_generator.services.TemplateEngine"
-        ) as MockEngine:
+        with patch("modules.ai.report_generator.services.TemplateEngine") as mock_engine_cls:
             mock_instance = AsyncMock()
             mock_instance.initialize_default_templates.return_value = [mock_template]
-            MockEngine.return_value = mock_instance
+            mock_engine_cls.return_value = mock_instance
 
-            engine = MockEngine(None)
+            engine = TemplateEngine(None)
             result = await engine.initialize_default_templates()
 
             assert len(result) >= 1
@@ -469,6 +443,7 @@ class TestTemplateEndpoints:
 # ============================================================
 # Tests - Schedule Endpoints
 # ============================================================
+
 
 class TestScheduleEndpoints:
     """Testes para endpoints de agendamentos."""
@@ -484,14 +459,12 @@ class TestScheduleEndpoints:
             email_recipients=["user@empresa.com"],
         )
 
-        with patch(
-            "modules.ai.report_generator.services.ReportScheduler"
-        ) as MockScheduler:
+        with patch("modules.ai.report_generator.services.ReportScheduler") as mock_scheduler:
             mock_instance = AsyncMock()
             mock_instance.create_schedule.return_value = mock_schedule
-            MockScheduler.return_value = mock_instance
+            mock_scheduler.return_value = mock_instance
 
-            scheduler = MockScheduler(None)
+            scheduler = mock_scheduler(None)
             result = await scheduler.create_schedule(schedule_data)
 
             assert result.frequency == ScheduleFrequencyEnum.DAILY
@@ -499,14 +472,12 @@ class TestScheduleEndpoints:
     @pytest.mark.asyncio
     async def test_list_schedules(self, mock_schedule):
         """Testa listagem de agendamentos."""
-        with patch(
-            "modules.ai.report_generator.repositories.ReportRepository"
-        ) as MockRepo:
+        with patch("modules.ai.report_generator.repositories.ReportRepository") as mock_repo_cls:
             mock_instance = AsyncMock()
             mock_instance.list_schedules.return_value = ([mock_schedule], 1)
-            MockRepo.return_value = mock_instance
+            mock_repo_cls.return_value = mock_instance
 
-            repo = MockRepo(None)
+            repo = ReportRepository(None)
             items, total = await repo.list_schedules()
 
             assert total == 1
@@ -515,16 +486,14 @@ class TestScheduleEndpoints:
     @pytest.mark.asyncio
     async def test_pause_schedule(self, mock_schedule):
         """Testa pausa de agendamento."""
-        with patch(
-            "modules.ai.report_generator.services.ReportScheduler"
-        ) as MockScheduler:
+        with patch("modules.ai.report_generator.services.ReportScheduler") as mock_scheduler:
             mock_schedule.status = ScheduleStatusEnum.PAUSED
 
             mock_instance = AsyncMock()
             mock_instance.pause_schedule.return_value = mock_schedule
-            MockScheduler.return_value = mock_instance
+            mock_scheduler.return_value = mock_instance
 
-            scheduler = MockScheduler(None)
+            scheduler = mock_scheduler(None)
             result = await scheduler.pause_schedule(mock_schedule.id)
 
             assert result.status == ScheduleStatusEnum.PAUSED
@@ -532,16 +501,14 @@ class TestScheduleEndpoints:
     @pytest.mark.asyncio
     async def test_resume_schedule(self, mock_schedule):
         """Testa retomada de agendamento."""
-        with patch(
-            "modules.ai.report_generator.services.ReportScheduler"
-        ) as MockScheduler:
+        with patch("modules.ai.report_generator.services.ReportScheduler") as mock_scheduler:
             mock_schedule.status = ScheduleStatusEnum.ACTIVE
 
             mock_instance = AsyncMock()
             mock_instance.resume_schedule.return_value = mock_schedule
-            MockScheduler.return_value = mock_instance
+            mock_scheduler.return_value = mock_instance
 
-            scheduler = MockScheduler(None)
+            scheduler = mock_scheduler(None)
             result = await scheduler.resume_schedule(mock_schedule.id)
 
             assert result.status == ScheduleStatusEnum.ACTIVE
@@ -549,9 +516,7 @@ class TestScheduleEndpoints:
     @pytest.mark.asyncio
     async def test_process_due_schedules(self, mock_schedule, mock_report):
         """Testa processamento de agendamentos pendentes."""
-        with patch(
-            "modules.ai.report_generator.services.ReportScheduler"
-        ) as MockScheduler:
+        with patch("modules.ai.report_generator.services.ReportScheduler") as mock_scheduler:
             mock_instance = AsyncMock()
             mock_instance.process_due_schedules.return_value = {
                 "processed": 5,
@@ -559,9 +524,9 @@ class TestScheduleEndpoints:
                 "failed": 1,
                 "reports_generated": [str(mock_report.id)],
             }
-            MockScheduler.return_value = mock_instance
+            mock_scheduler.return_value = mock_instance
 
-            scheduler = MockScheduler(None)
+            scheduler = mock_scheduler(None)
             result = await scheduler.process_due_schedules()
 
             assert result["processed"] == 5
@@ -572,20 +537,19 @@ class TestScheduleEndpoints:
 # Tests - Execution Endpoints
 # ============================================================
 
+
 class TestExecutionEndpoints:
     """Testes para endpoints de execucoes."""
 
     @pytest.mark.asyncio
     async def test_list_executions(self, mock_execution):
         """Testa listagem de execucoes."""
-        with patch(
-            "modules.ai.report_generator.repositories.ReportRepository"
-        ) as MockRepo:
+        with patch("modules.ai.report_generator.repositories.ReportRepository") as mock_repo_cls:
             mock_instance = AsyncMock()
             mock_instance.list_executions.return_value = ([mock_execution], 1)
-            MockRepo.return_value = mock_instance
+            mock_repo_cls.return_value = mock_instance
 
-            repo = MockRepo(None)
+            repo = ReportRepository(None)
             items, total = await repo.list_executions()
 
             assert total == 1
@@ -594,14 +558,12 @@ class TestExecutionEndpoints:
     @pytest.mark.asyncio
     async def test_get_execution(self, mock_execution):
         """Testa obtencao de execucao."""
-        with patch(
-            "modules.ai.report_generator.repositories.ReportRepository"
-        ) as MockRepo:
+        with patch("modules.ai.report_generator.repositories.ReportRepository") as mock_repo_cls:
             mock_instance = AsyncMock()
             mock_instance.get_execution.return_value = mock_execution
-            MockRepo.return_value = mock_instance
+            mock_repo_cls.return_value = mock_instance
 
-            repo = MockRepo(None)
+            repo = ReportRepository(None)
             result = await repo.get_execution(mock_execution.id)
 
             assert result.progress_percent == 100
@@ -612,15 +574,14 @@ class TestExecutionEndpoints:
 # Tests - Dashboard & Stats Endpoints
 # ============================================================
 
+
 class TestDashboardEndpoints:
     """Testes para endpoints de dashboard e estatisticas."""
 
     @pytest.mark.asyncio
     async def test_get_dashboard_data(self):
         """Testa obtencao de dados do dashboard."""
-        with patch(
-            "modules.ai.report_generator.repositories.ReportRepository"
-        ) as MockRepo:
+        with patch("modules.ai.report_generator.repositories.ReportRepository") as mock_repo_cls:
             mock_instance = AsyncMock()
             mock_instance.get_dashboard_data.return_value = {
                 "total_reports": 150,
@@ -641,9 +602,9 @@ class TestDashboardEndpoints:
                 "recent_reports": [],
                 "upcoming_schedules": [],
             }
-            MockRepo.return_value = mock_instance
+            mock_repo_cls.return_value = mock_instance
 
-            repo = MockRepo(None)
+            repo = ReportRepository(None)
             result = await repo.get_dashboard_data()
 
             assert result["total_reports"] == 150
@@ -652,9 +613,7 @@ class TestDashboardEndpoints:
     @pytest.mark.asyncio
     async def test_get_report_stats(self):
         """Testa estatisticas de relatorios."""
-        with patch(
-            "modules.ai.report_generator.repositories.ReportRepository"
-        ) as MockRepo:
+        with patch("modules.ai.report_generator.repositories.ReportRepository") as mock_repo_cls:
             mock_instance = AsyncMock()
             mock_instance.get_report_stats.return_value = {
                 "total": 150,
@@ -666,9 +625,9 @@ class TestDashboardEndpoints:
                     "financial": 40,
                 },
             }
-            MockRepo.return_value = mock_instance
+            mock_repo_cls.return_value = mock_instance
 
-            repo = MockRepo(None)
+            repo = ReportRepository(None)
             stats = await repo.get_report_stats()
 
             assert stats["total"] == 150
@@ -677,9 +636,7 @@ class TestDashboardEndpoints:
     @pytest.mark.asyncio
     async def test_get_schedule_stats(self):
         """Testa estatisticas de agendamentos."""
-        with patch(
-            "modules.ai.report_generator.repositories.ReportRepository"
-        ) as MockRepo:
+        with patch("modules.ai.report_generator.repositories.ReportRepository") as mock_repo_cls:
             mock_instance = AsyncMock()
             mock_instance.get_schedule_stats.return_value = {
                 "total": 25,
@@ -693,9 +650,9 @@ class TestDashboardEndpoints:
                     "monthly": 7,
                 },
             }
-            MockRepo.return_value = mock_instance
+            mock_repo_cls.return_value = mock_instance
 
-            repo = MockRepo(None)
+            repo = ReportRepository(None)
             stats = await repo.get_schedule_stats()
 
             assert stats["total"] == 25
@@ -704,9 +661,7 @@ class TestDashboardEndpoints:
     @pytest.mark.asyncio
     async def test_get_execution_metrics(self):
         """Testa metricas de execucoes."""
-        with patch(
-            "modules.ai.report_generator.repositories.ReportRepository"
-        ) as MockRepo:
+        with patch("modules.ai.report_generator.repositories.ReportRepository") as mock_repo_cls:
             mock_instance = AsyncMock()
             mock_instance.get_execution_metrics.return_value = {
                 "total_executions": 500,
@@ -716,9 +671,9 @@ class TestDashboardEndpoints:
                 "avg_duration_ms": 3500,
                 "avg_records_processed": 8500,
             }
-            MockRepo.return_value = mock_instance
+            mock_repo_cls.return_value = mock_instance
 
-            repo = MockRepo(None)
+            repo = ReportRepository(None)
             metrics = await repo.get_execution_metrics()
 
             assert metrics["success_rate"] == 95.0
@@ -729,15 +684,14 @@ class TestDashboardEndpoints:
 # Tests - Insight Extraction
 # ============================================================
 
+
 class TestInsightExtractionEndpoints:
     """Testes para endpoints de extracao de insights."""
 
     @pytest.mark.asyncio
     async def test_extract_insights(self, mock_report):
         """Testa extracao de insights."""
-        with patch(
-            "modules.ai.report_generator.services.InsightExtractor"
-        ) as MockExtractor:
+        with patch("modules.ai.report_generator.services.InsightExtractor") as mock_extractor:
             mock_instance = AsyncMock()
             mock_instance.extract_insights.return_value = [
                 {
@@ -753,9 +707,9 @@ class TestInsightExtractionEndpoints:
                     "confidence": 0.92,
                 },
             ]
-            MockExtractor.return_value = mock_instance
+            mock_extractor.return_value = mock_instance
 
-            extractor = MockExtractor(None)
+            extractor = mock_extractor(None)
             result = await extractor.extract_insights(mock_report.data)
 
             assert len(result) == 2
@@ -764,9 +718,7 @@ class TestInsightExtractionEndpoints:
     @pytest.mark.asyncio
     async def test_generate_recommendations(self, mock_report):
         """Testa geracao de recomendacoes."""
-        with patch(
-            "modules.ai.report_generator.services.InsightExtractor"
-        ) as MockExtractor:
+        with patch("modules.ai.report_generator.services.InsightExtractor") as mock_extractor:
             mock_instance = AsyncMock()
             mock_instance.generate_recommendations.return_value = [
                 {
@@ -776,12 +728,10 @@ class TestInsightExtractionEndpoints:
                     "effort": "medium",
                 },
             ]
-            MockExtractor.return_value = mock_instance
+            mock_extractor.return_value = mock_instance
 
-            extractor = MockExtractor(None)
-            result = await extractor.generate_recommendations(
-                mock_report.insights, mock_report.metrics
-            )
+            extractor = mock_extractor(None)
+            result = await extractor.generate_recommendations(mock_report.insights, mock_report.metrics)
 
             assert len(result) == 1
             assert result[0]["priority"] == "high"
@@ -789,9 +739,7 @@ class TestInsightExtractionEndpoints:
     @pytest.mark.asyncio
     async def test_detect_anomalies(self, mock_report):
         """Testa deteccao de anomalias."""
-        with patch(
-            "modules.ai.report_generator.services.InsightExtractor"
-        ) as MockExtractor:
+        with patch("modules.ai.report_generator.services.InsightExtractor") as mock_extractor:
             mock_instance = AsyncMock()
             mock_instance.detect_anomalies.return_value = [
                 {
@@ -803,9 +751,9 @@ class TestInsightExtractionEndpoints:
                     "severity": "high",
                 },
             ]
-            MockExtractor.return_value = mock_instance
+            mock_extractor.return_value = mock_instance
 
-            extractor = MockExtractor(None)
+            extractor = mock_extractor(None)
             result = await extractor.detect_anomalies(mock_report.data)
 
             assert len(result) == 1
@@ -814,9 +762,7 @@ class TestInsightExtractionEndpoints:
     @pytest.mark.asyncio
     async def test_analyze_trends(self, mock_report):
         """Testa analise de tendencias."""
-        with patch(
-            "modules.ai.report_generator.services.InsightExtractor"
-        ) as MockExtractor:
+        with patch("modules.ai.report_generator.services.InsightExtractor") as mock_extractor:
             mock_instance = AsyncMock()
             mock_instance.analyze_trends.return_value = [
                 {
@@ -827,9 +773,9 @@ class TestInsightExtractionEndpoints:
                     "confidence": 0.78,
                 },
             ]
-            MockExtractor.return_value = mock_instance
+            mock_extractor.return_value = mock_instance
 
-            extractor = MockExtractor(None)
+            extractor = mock_extractor(None)
             result = await extractor.analyze_trends(mock_report.data)
 
             assert len(result) == 1
@@ -840,24 +786,23 @@ class TestInsightExtractionEndpoints:
 # Tests - Metadata Endpoints
 # ============================================================
 
+
 class TestMetadataEndpoints:
     """Testes para endpoints de metadados."""
 
     @pytest.mark.asyncio
     async def test_get_available_data_sources(self):
         """Testa obtencao de fontes de dados disponiveis."""
-        with patch(
-            "modules.ai.report_generator.services.TemplateEngine"
-        ) as MockEngine:
+        with patch("modules.ai.report_generator.services.TemplateEngine") as mock_engine_cls:
             mock_instance = AsyncMock()
             mock_instance.get_available_data_sources.return_value = [
                 {"code": "leads", "name": "Leads", "category": "crm"},
                 {"code": "opportunities", "name": "Oportunidades", "category": "crm"},
                 {"code": "invoices", "name": "Faturas", "category": "financial"},
             ]
-            MockEngine.return_value = mock_instance
+            mock_engine_cls.return_value = mock_instance
 
-            engine = MockEngine(None)
+            engine = TemplateEngine(None)
             result = await engine.get_available_data_sources()
 
             assert len(result) == 3
@@ -866,9 +811,7 @@ class TestMetadataEndpoints:
     @pytest.mark.asyncio
     async def test_get_available_section_types(self):
         """Testa obtencao de tipos de secao disponiveis."""
-        with patch(
-            "modules.ai.report_generator.services.TemplateEngine"
-        ) as MockEngine:
+        with patch("modules.ai.report_generator.services.TemplateEngine") as mock_engine_cls:
             mock_instance = AsyncMock()
             mock_instance.get_available_section_types.return_value = [
                 {"type": "header", "name": "Cabecalho"},
@@ -876,9 +819,9 @@ class TestMetadataEndpoints:
                 {"type": "chart", "name": "Grafico"},
                 {"type": "table", "name": "Tabela"},
             ]
-            MockEngine.return_value = mock_instance
+            mock_engine_cls.return_value = mock_instance
 
-            engine = MockEngine(None)
+            engine = TemplateEngine(None)
             result = await engine.get_available_section_types()
 
             assert len(result) == 4
@@ -887,9 +830,7 @@ class TestMetadataEndpoints:
     @pytest.mark.asyncio
     async def test_get_supported_export_formats(self):
         """Testa obtencao de formatos de exportacao."""
-        with patch(
-            "modules.ai.report_generator.services.ReportExporter"
-        ) as MockExporter:
+        with patch("modules.ai.report_generator.services.ReportExporter") as mock_exporter_cls:
             mock_instance = AsyncMock()
             mock_instance.get_supported_formats.return_value = [
                 {"format": "pdf", "name": "PDF", "supports_charts": True},
@@ -898,9 +839,9 @@ class TestMetadataEndpoints:
                 {"format": "json", "name": "JSON", "supports_charts": False},
                 {"format": "html", "name": "HTML", "supports_charts": True},
             ]
-            MockExporter.return_value = mock_instance
+            mock_exporter_cls.return_value = mock_instance
 
-            exporter = MockExporter(None)
+            exporter = ReportExporter(None)
             result = await exporter.get_supported_formats()
 
             assert len(result) == 5

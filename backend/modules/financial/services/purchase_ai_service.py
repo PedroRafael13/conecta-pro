@@ -3,7 +3,7 @@
 import logging
 from datetime import datetime, timedelta
 from decimal import Decimal
-from typing import Any, Dict, List, Optional
+from typing import Any
 from uuid import UUID
 
 logger = logging.getLogger(__name__)
@@ -18,9 +18,9 @@ class PurchaseAIService:
     def analyze_supplier_performance(  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
         self,
         supplier_id: UUID,
-        orders: List[Dict[str, Any]],
-        receipts: List[Dict[str, Any]],
-    ) -> Dict[str, Any]:
+        orders: list[dict[str, Any]],
+        receipts: list[dict[str, Any]],
+    ) -> dict[str, Any]:
         """
         Analisa performance do fornecedor.
 
@@ -57,9 +57,7 @@ class PurchaseAIService:
                     delay = (actual - expected).days
                     total_delay_days += delay
 
-        delivery_rate = (
-            on_time_deliveries / len(orders) * 100 if orders else 0
-        )
+        delivery_rate = on_time_deliveries / len(orders) * 100 if orders else 0
 
         # Métricas de qualidade (baseado em recebimentos)
         total_accepted = Decimal("0")
@@ -73,11 +71,7 @@ class PurchaseAIService:
                 divergence_count += 1
 
         total_received = total_accepted + total_rejected
-        quality_rate = (
-            float(total_accepted / total_received * 100)
-            if total_received > 0
-            else 100
-        )
+        quality_rate = float(total_accepted / total_received * 100) if total_received > 0 else 100
 
         # Métricas de preço
         price_variations = []
@@ -91,9 +85,7 @@ class PurchaseAIService:
         if price_variations:
             avg_price = sum(price_variations) / len(price_variations)
             # Ajuste baseado em variação (menor variação = melhor)
-            variance = sum((p - avg_price) ** 2 for p in price_variations) / len(
-                price_variations
-            )
+            variance = sum((p - avg_price) ** 2 for p in price_variations) / len(price_variations)
             if variance < 100:
                 avg_price_score = 90
             elif variance < 500:
@@ -103,9 +95,7 @@ class PurchaseAIService:
 
         # Score geral ponderado
         # Entrega: 40%, Qualidade: 35%, Preço: 25%
-        overall_score = (
-            delivery_rate * 0.40 + quality_rate * 0.35 + avg_price_score * 0.25
-        )
+        overall_score = delivery_rate * 0.40 + quality_rate * 0.35 + avg_price_score * 0.25
 
         # Determinar nível
         if overall_score >= 85:
@@ -131,13 +121,10 @@ class PurchaseAIService:
             )
         if divergence_count > len(receipts) * 0.1:
             recommendations.append(
-                f"{divergence_count} recebimentos com divergência. "
-                "Alinhe processo de conferência e documentação."
+                f"{divergence_count} recebimentos com divergência. Alinhe processo de conferência e documentação."
             )
         if not recommendations:
-            recommendations.append(
-                "Fornecedor com bom desempenho. Considere para parcerias estratégicas."
-            )
+            recommendations.append("Fornecedor com bom desempenho. Considere para parcerias estratégicas.")
 
         return {
             "supplier_id": str(supplier_id),
@@ -150,9 +137,7 @@ class PurchaseAIService:
                 "total_orders": len(orders),
                 "on_time_deliveries": on_time_deliveries,
                 "late_deliveries": late_deliveries,
-                "average_delay_days": (
-                    total_delay_days / late_deliveries if late_deliveries > 0 else 0
-                ),
+                "average_delay_days": (total_delay_days / late_deliveries if late_deliveries > 0 else 0),
                 "divergence_count": divergence_count,
             },
             "recommendations": recommendations,
@@ -162,9 +147,9 @@ class PurchaseAIService:
         self,
         product_id: UUID,  # pylint: disable=unused-argument
         quantity: Decimal,  # pylint: disable=unused-argument
-        historical_purchases: List[Dict[str, Any]],
-        supplier_performances: Dict[str, Dict[str, Any]],
-    ) -> List[Dict[str, Any]]:
+        historical_purchases: list[dict[str, Any]],
+        supplier_performances: dict[str, dict[str, Any]],
+    ) -> list[dict[str, Any]]:
         """
         Sugere fornecedores para um produto.
 
@@ -192,16 +177,10 @@ class PurchaseAIService:
                         "prices": [],
                     }
                 supplier_history[supplier_id]["purchases"].append(purchase)
-                supplier_history[supplier_id]["total_quantity"] += Decimal(
-                    str(purchase.get("quantity", 0))
-                )
-                supplier_history[supplier_id]["total_value"] += Decimal(
-                    str(purchase.get("total", 0))
-                )
+                supplier_history[supplier_id]["total_quantity"] += Decimal(str(purchase.get("quantity", 0)))
+                supplier_history[supplier_id]["total_value"] += Decimal(str(purchase.get("total", 0)))
                 if purchase.get("unit_price"):
-                    supplier_history[supplier_id]["prices"].append(
-                        float(purchase.get("unit_price"))
-                    )
+                    supplier_history[supplier_id]["prices"].append(float(purchase.get("unit_price")))
 
         for supplier_id, history in supplier_history.items():
             performance = supplier_performances.get(supplier_id, {})
@@ -222,9 +201,7 @@ class PurchaseAIService:
 
             # Score geral
             # Performance: 40%, Preço: 35%, Experiência: 25%
-            overall_score = (
-                performance_score * 0.40 + price_score * 0.35 + experience_score * 0.25
-            )
+            overall_score = performance_score * 0.40 + price_score * 0.35 + experience_score * 0.25
 
             suggestions.append(
                 {
@@ -232,9 +209,7 @@ class PurchaseAIService:
                     "score": round(overall_score, 1),
                     "last_price": history["prices"][-1] if history["prices"] else None,
                     "average_price": (
-                        round(sum(history["prices"]) / len(history["prices"]), 2)
-                        if history["prices"]
-                        else None
+                        round(sum(history["prices"]) / len(history["prices"]), 2) if history["prices"] else None
                     ),
                     "purchase_count": len(history["purchases"]),
                     "total_quantity": float(history["total_quantity"]),
@@ -264,9 +239,9 @@ class PurchaseAIService:
 
     def optimize_quotation_selection(  # pylint: disable=too-many-locals,too-many-branches
         self,
-        quotations: List[Dict[str, Any]],
-        weights: Optional[Dict[str, float]] = None,
-    ) -> Dict[str, Any]:
+        quotations: list[dict[str, Any]],
+        weights: dict[str, float] | None = None,
+    ) -> dict[str, Any]:
         """
         Otimiza seleção de cotação.
 
@@ -292,9 +267,7 @@ class PurchaseAIService:
 
         # Encontrar min/max para normalização
         prices = [float(q.get("total", 0)) for q in quotations if q.get("total")]
-        deliveries = [
-            q.get("delivery_days", 30) for q in quotations if q.get("delivery_days")
-        ]
+        deliveries = [q.get("delivery_days", 30) for q in quotations if q.get("delivery_days")]
 
         min_price = min(prices) if prices else 0
         max_price = max(prices) if prices else 1
@@ -310,17 +283,13 @@ class PurchaseAIService:
 
             # Normalizar preço (menor = melhor, então invertemos)
             if max_price > min_price:
-                price_normalized = 100 - (
-                    (total - min_price) / (max_price - min_price) * 100
-                )
+                price_normalized = 100 - ((total - min_price) / (max_price - min_price) * 100)
             else:
                 price_normalized = 100
 
             # Normalizar prazo (menor = melhor, então invertemos)
             if max_delivery > min_delivery:
-                delivery_normalized = 100 - (
-                    (delivery_days - min_delivery) / (max_delivery - min_delivery) * 100
-                )
+                delivery_normalized = 100 - ((delivery_days - min_delivery) / (max_delivery - min_delivery) * 100)
             else:
                 delivery_normalized = 100
 
@@ -389,9 +358,9 @@ class PurchaseAIService:
     def predict_demand(  # pylint: disable=too-many-locals
         self,
         product_id: UUID,
-        historical_consumption: List[Dict[str, Any]],
+        historical_consumption: list[dict[str, Any]],
         forecast_months: int = 3,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Prevê demanda de um produto.
 
@@ -412,9 +381,7 @@ class PurchaseAIService:
             }
 
         # Ordenar por data
-        sorted_data = sorted(
-            historical_consumption, key=lambda x: x.get("month", "")
-        )
+        sorted_data = sorted(historical_consumption, key=lambda x: x.get("month", ""))
 
         # Extrair quantidades
         quantities = [float(d.get("quantity", 0)) for d in sorted_data]
@@ -484,42 +451,32 @@ class PurchaseAIService:
                 "trend_percentage": round(trend * 100, 1),
                 "data_points": len(quantities),
             },
-            "recommendations": self._generate_demand_recommendations(
-                avg, trend, forecast
-            ),
+            "recommendations": self._generate_demand_recommendations(avg, trend, forecast),
         }
 
     def _generate_demand_recommendations(
         self,
         avg: float,
         trend: float,
-        forecast: List[Dict[str, Any]],
-    ) -> List[str]:
+        forecast: list[dict[str, Any]],
+    ) -> list[str]:
         """Gera recomendações baseadas na previsão de demanda."""
         recommendations = []
 
         if trend > 0.1:
-            recommendations.append(
-                f"Demanda crescente ({trend*100:.1f}%). "
-                "Considere aumentar estoque de segurança."
-            )
+            recommendations.append(f"Demanda crescente ({trend * 100:.1f}%). Considere aumentar estoque de segurança.")
         elif trend < -0.1:
             recommendations.append(
-                f"Demanda decrescente ({trend*100:.1f}%). "
-                "Revise níveis de estoque para evitar excesso."
+                f"Demanda decrescente ({trend * 100:.1f}%). Revise níveis de estoque para evitar excesso."
             )
 
         if forecast:
             max_forecast = max(f["realistic"] for f in forecast)
             if max_forecast > avg * 1.5:
-                recommendations.append(
-                    "Pico de demanda previsto. Antecipe compras para garantir estoque."
-                )
+                recommendations.append("Pico de demanda previsto. Antecipe compras para garantir estoque.")
 
         if not recommendations:
-            recommendations.append(
-                "Demanda estável. Mantenha política atual de reposição."
-            )
+            recommendations.append("Demanda estável. Mantenha política atual de reposição.")
 
         return recommendations
 
@@ -529,7 +486,7 @@ class PurchaseAIService:
         lead_time_days: int,
         safety_stock_days: int = 7,
         service_level: float = 0.95,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Calcula ponto de pedido.
 
@@ -546,9 +503,7 @@ class PurchaseAIService:
         safety_stock = average_daily_consumption * Decimal(str(safety_stock_days))
 
         # Ponto de pedido
-        reorder_point = (
-            average_daily_consumption * Decimal(str(lead_time_days)) + safety_stock
-        )
+        reorder_point = average_daily_consumption * Decimal(str(lead_time_days)) + safety_stock
 
         # Quantidade econômica de pedido (EOQ simplificado)
         # Assumindo custo de pedido = 50 e custo de manutenção = 20% do valor
@@ -558,9 +513,7 @@ class PurchaseAIService:
 
         # EOQ = sqrt(2 * D * S / H)
         # Simplificado para evitar complexidade
-        eoq = (
-            annual_demand * 2 * order_cost / (annual_demand * holding_cost_rate)
-        ) ** Decimal("0.5")
+        eoq = (annual_demand * 2 * order_cost / (annual_demand * holding_cost_rate)) ** Decimal("0.5")
 
         return {
             "reorder_point": round(float(reorder_point), 0),
@@ -577,9 +530,9 @@ class PurchaseAIService:
 
     def analyze_purchase_risks(  # pylint: disable=too-many-branches
         self,
-        requisition: Dict[str, Any],
-        supplier_performances: Dict[str, Dict[str, Any]],
-    ) -> Dict[str, Any]:
+        requisition: dict[str, Any],
+        supplier_performances: dict[str, dict[str, Any]],
+    ) -> dict[str, Any]:
         """
         Analisa riscos de uma compra.
 
@@ -643,9 +596,7 @@ class PurchaseAIService:
                 {
                     "type": "valor_alto",
                     "level": "medio",
-                    "description": (
-                        f"Valor estimado considerável (R$ {float(estimated_total):,.2f})"
-                    ),
+                    "description": (f"Valor estimado considerável (R$ {float(estimated_total):,.2f})"),
                     "mitigation": "Obtenha pelo menos 3 cotações",
                 }
             )

@@ -6,8 +6,8 @@ Este modulo contem os services de logica de negocio para:
 - ProfileMatcher: Calculo de match funcionario-posto
 """
 
-from .profile_service import ProfileService
 from .profile_matcher import ProfileMatcher
+from .profile_service import ProfileService
 
 __all__ = [
     "ProfileService",

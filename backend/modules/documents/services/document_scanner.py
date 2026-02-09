@@ -12,9 +12,11 @@ import os
 import shutil
 from dataclasses import dataclass, field
 from datetime import datetime
-from pathlib import Path
-from typing import Any, BinaryIO, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, BinaryIO, Optional
 from uuid import uuid4
+
+if TYPE_CHECKING:
+    from .ocr_engine import OCREngine
 
 from PIL import Image, ImageEnhance, ImageFilter
 
@@ -22,10 +24,8 @@ from ..models.document import (
     Document,
     DocumentSource,
     DocumentStatus,
-    DocumentType,
     ImageMetadata,
 )
-from ..models.ocr_result import OCRResult
 
 logger = logging.getLogger(__name__)
 
@@ -36,14 +36,12 @@ class ScanConfig:
 
     # Diretorio de armazenamento
     storage_path: str = "/opt/conecta-pro/data/documents"
-    temp_path: str = "/tmp/conecta-documents"
+    temp_path: str = "/tmp/conecta-documents"  # noqa: S108
 
     # Limites
     max_file_size_mb: int = 50
     max_pages: int = 100
-    allowed_formats: List[str] = field(
-        default_factory=lambda: ["pdf", "png", "jpg", "jpeg", "tiff", "bmp", "gif"]
-    )
+    allowed_formats: list[str] = field(default_factory=lambda: ["pdf", "png", "jpg", "jpeg", "tiff", "bmp", "gif"])
 
     # Pre-processamento
     auto_deskew: bool = True
@@ -54,11 +52,11 @@ class ScanConfig:
 
     # Thumbnails
     generate_thumbnail: bool = True
-    thumbnail_size: Tuple[int, int] = (200, 200)
+    thumbnail_size: tuple[int, int] = (200, 200)
 
     # OCR
     auto_ocr: bool = True
-    ocr_languages: List[str] = field(default_factory=lambda: ["por", "eng"])
+    ocr_languages: list[str] = field(default_factory=lambda: ["por", "eng"])
 
 
 @dataclass
@@ -66,9 +64,9 @@ class ScanResult:
     """Resultado do scan de documento."""
 
     success: bool
-    document: Optional[Document] = None
-    error: Optional[str] = None
-    warnings: List[str] = field(default_factory=list)
+    document: Document | None = None
+    error: str | None = None
+    warnings: list[str] = field(default_factory=list)
 
 
 class DocumentScanner:
@@ -81,7 +79,7 @@ class DocumentScanner:
 
     def __init__(
         self,
-        config: Optional[ScanConfig] = None,
+        config: ScanConfig | None = None,
         ocr_engine: Optional["OCREngine"] = None,
     ):
         """
@@ -104,7 +102,7 @@ class DocumentScanner:
         filename: str,
         tenant_id: str,
         source: DocumentSource = DocumentSource.UPLOAD,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> ScanResult:
         """
         Processa um arquivo de documento.
@@ -155,16 +153,12 @@ class DocumentScanner:
 
             # Pre-processamento
             document.start_step("preprocessing")
-            preprocessed_path, warnings = await self._preprocess_document(
-                file_path, document
-            )
+            preprocessed_path, warnings = await self._preprocess_document(file_path, document)
             document.preprocessed_path = preprocessed_path
 
             # Gerar thumbnail
             if self.config.generate_thumbnail:
-                document.thumbnail_path = await self._generate_thumbnail(
-                    preprocessed_path or file_path, document
-                )
+                document.thumbnail_path = await self._generate_thumbnail(preprocessed_path or file_path, document)
 
             document.complete_step("preprocessing")
 
@@ -172,9 +166,7 @@ class DocumentScanner:
             if self.config.auto_ocr and self.ocr_engine:
                 document.start_step("ocr")
                 try:
-                    ocr_result = await self.ocr_engine.process(
-                        preprocessed_path or file_path
-                    )
+                    ocr_result = await self.ocr_engine.process(preprocessed_path or file_path)
                     document.ocr_result_id = ocr_result.id
                     document.confidence_score = ocr_result.confidence * 100
                     document.complete_step(
@@ -208,10 +200,10 @@ class DocumentScanner:
 
     async def scan_batch(
         self,
-        files: List[Tuple[BinaryIO, str]],
+        files: list[tuple[BinaryIO, str]],
         tenant_id: str,
         source: DocumentSource = DocumentSource.UPLOAD,
-    ) -> List[ScanResult]:
+    ) -> list[ScanResult]:
         """
         Processa multiplos documentos.
 
@@ -249,28 +241,25 @@ class DocumentScanner:
         import aiohttp
 
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url, timeout=60) as response:
-                    if response.status != 200:
-                        return ScanResult(
-                            success=False,
-                            error=f"Erro ao baixar: HTTP {response.status}",
-                        )
-
-                    # Extrair nome do arquivo
-                    content_disp = response.headers.get("Content-Disposition", "")
-                    if "filename=" in content_disp:
-                        filename = content_disp.split("filename=")[1].strip('"')
-                    else:
-                        filename = url.split("/")[-1].split("?")[0]
-
-                    # Baixar conteudo
-                    content = await response.read()
-                    file = io.BytesIO(content)
-
-                    return await self.scan_file(
-                        file, filename, tenant_id, source, {"source_url": url}
+            async with aiohttp.ClientSession() as session, session.get(url, timeout=60) as response:
+                if response.status != 200:
+                    return ScanResult(
+                        success=False,
+                        error=f"Erro ao baixar: HTTP {response.status}",
                     )
+
+                # Extrair nome do arquivo
+                content_disp = response.headers.get("Content-Disposition", "")
+                if "filename=" in content_disp:
+                    filename = content_disp.split("filename=")[1].strip('"')
+                else:
+                    filename = url.split("/")[-1].split("?")[0]
+
+                # Baixar conteudo
+                content = await response.read()
+                file = io.BytesIO(content)
+
+                return await self.scan_file(file, filename, tenant_id, source, {"source_url": url})
 
         except Exception as e:
             logger.error(f"Erro ao baixar documento: {e}")
@@ -307,17 +296,13 @@ class DocumentScanner:
 
             # Reprocessar
             document.start_step("preprocessing")
-            preprocessed_path, warnings = await self._preprocess_document(
-                document.file_path, document
-            )
+            preprocessed_path, warnings = await self._preprocess_document(document.file_path, document)
             document.preprocessed_path = preprocessed_path
             document.complete_step("preprocessing")
 
             if self.config.auto_ocr and self.ocr_engine:
                 document.start_step("ocr")
-                ocr_result = await self.ocr_engine.process(
-                    preprocessed_path or document.file_path
-                )
+                ocr_result = await self.ocr_engine.process(preprocessed_path or document.file_path)
                 document.ocr_result_id = ocr_result.id
                 document.confidence_score = ocr_result.confidence * 100
                 document.complete_step("ocr")
@@ -328,9 +313,7 @@ class DocumentScanner:
             logger.error(f"Erro no rescan: {e}")
             return ScanResult(success=False, error=str(e))
 
-    def _validate_file(
-        self, file: BinaryIO, filename: str
-    ) -> Dict[str, Any]:
+    def _validate_file(self, file: BinaryIO, filename: str) -> dict[str, Any]:
         """Valida arquivo de entrada."""
         result = {"valid": True, "error": None}
 
@@ -464,9 +447,7 @@ class DocumentScanner:
                 size_bytes=os.path.getsize(file_path),
             )
 
-    async def _preprocess_document(
-        self, file_path: str, document: Document
-    ) -> Tuple[Optional[str], List[str]]:
+    async def _preprocess_document(self, file_path: str, document: Document) -> tuple[str | None, list[str]]:
         """
         Pre-processa documento para OCR.
 
@@ -519,9 +500,7 @@ class DocumentScanner:
             warnings.append(f"Pre-processamento parcial: {str(e)}")
             return None, warnings
 
-    async def _preprocess_pdf(
-        self, file_path: str, document: Document
-    ) -> Tuple[Optional[str], List[str]]:
+    async def _preprocess_pdf(self, file_path: str, document: Document) -> tuple[str | None, list[str]]:
         """Pre-processa PDF convertendo para imagens."""
         warnings = []
 
@@ -531,9 +510,7 @@ class DocumentScanner:
             doc = fitz.open(file_path)
 
             if len(doc) > self.config.max_pages:
-                warnings.append(
-                    f"PDF tem {len(doc)} paginas, processando apenas {self.config.max_pages}"
-                )
+                warnings.append(f"PDF tem {len(doc)} paginas, processando apenas {self.config.max_pages}")
 
             # Diretorio para paginas
             pages_dir = file_path.rsplit(".", 1)[0] + "_pages"
@@ -548,7 +525,7 @@ class DocumentScanner:
                 pix = page.get_pixmap(matrix=mat)
 
                 # Salvar pagina
-                page_path = os.path.join(pages_dir, f"page_{i+1:04d}.png")
+                page_path = os.path.join(pages_dir, f"page_{i + 1:04d}.png")
                 pix.save(page_path)
 
             doc.close()
@@ -575,13 +552,13 @@ class DocumentScanner:
         # Aplicar filtro mediano para reduzir ruido
         return image.filter(ImageFilter.MedianFilter(size=3))
 
-    def _deskew_image(self, image: Image.Image) -> Tuple[Image.Image, float]:
+    def _deskew_image(self, image: Image.Image) -> tuple[Image.Image, float]:
         """Corrige inclinacao da imagem."""
         try:
             import numpy as np
 
             # Converter para array numpy
-            img_array = np.array(image.convert("L"))
+            np.array(image.convert("L"))
 
             # Detectar angulo usando projecao de perfil
             angles = np.arange(-5, 5.5, 0.5)
@@ -605,9 +582,7 @@ class DocumentScanner:
         except Exception:
             return image, 0.0
 
-    async def _generate_thumbnail(
-        self, file_path: str, document: Document
-    ) -> Optional[str]:
+    async def _generate_thumbnail(self, file_path: str, document: Document) -> str | None:
         """Gera thumbnail do documento."""
         try:
             # Se for diretorio de paginas PDF, usar primeira pagina
@@ -630,9 +605,7 @@ class DocumentScanner:
             logger.warning(f"Erro ao gerar thumbnail: {e}")
             return None
 
-    async def get_document_preview(
-        self, document: Document, page: int = 1
-    ) -> Optional[bytes]:
+    async def get_document_preview(self, document: Document, page: int = 1) -> bytes | None:
         """
         Obtem preview do documento.
 
@@ -699,7 +672,7 @@ class DocumentScanner:
             logger.error(f"Erro ao deletar arquivos: {e}")
             return False
 
-    def get_storage_stats(self, tenant_id: str) -> Dict[str, Any]:
+    def get_storage_stats(self, tenant_id: str) -> dict[str, Any]:
         """
         Obtem estatisticas de armazenamento.
 

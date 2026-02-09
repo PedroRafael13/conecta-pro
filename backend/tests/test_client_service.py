@@ -3,26 +3,39 @@ Testes para os Services do módulo Clients.
 Sprint 30 - Cadastro de Clientes/Condomínios
 """
 
-import pytest
 from datetime import date, datetime, timedelta
 from decimal import Decimal
-from uuid import uuid4
 from unittest.mock import AsyncMock, MagicMock, patch
+from uuid import uuid4
+
+import pytest
 
 from modules.clients.models import (
-    Client, Condominium, Unit, ClientContract, IntegrationSettings,
-    ClientType, ClientStatus, ClientSegment, DocumentType,
-    CondominiumType, CondominiumStatus,
-    UnitType, UnitStatus,
-    ContractServiceType, ServiceStatus,
-    IntegrationType, SyncStatus, SyncDirection,
+    Client,
+    ClientContract,
+    ClientSegment,
+    ClientStatus,
+    ClientType,
+    Condominium,
+    CondominiumStatus,
+    CondominiumType,
+    ContractServiceType,
+    DocumentType,
+    IntegrationSettings,
+    IntegrationType,
+    ServiceStatus,
+    SyncDirection,
+    SyncStatus,
+    Unit,
+    UnitStatus,
+    UnitType,
 )
-from modules.clients.services import ClientService, ClientAIService
-
+from modules.clients.services import ClientAIService, ClientService
 
 # ============================================================
 # FIXTURES
 # ============================================================
+
 
 @pytest.fixture
 def mock_repository():
@@ -152,51 +165,50 @@ def sample_contract(sample_client, sample_condominium):
 # TESTES DO CLIENT SERVICE
 # ============================================================
 
+
 class TestClientService:
     """Testes para o ClientService."""
 
     def test_create_client_success(self, client_service, mock_repository):
         """Testa criação de cliente com sucesso."""
-        with patch.object(
-            client_service, "repository", mock_repository
-        ):
+        with patch.object(client_service, "repository", mock_repository):
             mock_repository.create_client.return_value = MagicMock(
                 id=uuid4(),
                 code="CLI-001",
                 name="Novo Cliente",
             )
 
-            result = client_service.create_client({
-                "name": "Novo Cliente",
-                "client_type": "pj",
-                "document_type": "cnpj",
-                "document_number": "11.222.333/0001-44",
-                "email": "novo@cliente.com",
-            })
+            result = client_service.create_client(
+                {
+                    "name": "Novo Cliente",
+                    "client_type": "pj",
+                    "document_type": "cnpj",
+                    "document_number": "11.222.333/0001-44",
+                    "email": "novo@cliente.com",
+                }
+            )
 
         assert result is not None
         mock_repository.create_client.assert_called_once()
 
     def test_create_client_duplicate_document(self, client_service, mock_repository):
         """Testa criação de cliente com documento duplicado."""
-        with patch.object(
-            client_service, "repository", mock_repository
-        ):
+        with patch.object(client_service, "repository", mock_repository):
             mock_repository.get_client_by_document.return_value = MagicMock()
 
             with pytest.raises(ValueError) as exc_info:
-                client_service.create_client({
-                    "name": "Cliente Duplicado",
-                    "document_number": "11.111.111/0001-11",
-                })
+                client_service.create_client(
+                    {
+                        "name": "Cliente Duplicado",
+                        "document_number": "11.111.111/0001-11",
+                    }
+                )
 
         assert "Documento já cadastrado" in str(exc_info.value)
 
     def test_get_client_by_id(self, client_service, mock_repository, sample_client):
         """Testa busca de cliente por ID."""
-        with patch.object(
-            client_service, "repository", mock_repository
-        ):
+        with patch.object(client_service, "repository", mock_repository):
             mock_repository.get_client.return_value = sample_client
 
             result = client_service.get_client(sample_client.id)
@@ -206,9 +218,7 @@ class TestClientService:
 
     def test_get_client_not_found(self, client_service, mock_repository):
         """Testa busca de cliente não encontrado."""
-        with patch.object(
-            client_service, "repository", mock_repository
-        ):
+        with patch.object(client_service, "repository", mock_repository):
             mock_repository.get_client.return_value = None
 
             result = client_service.get_client(uuid4())
@@ -217,12 +227,8 @@ class TestClientService:
 
     def test_list_clients_with_pagination(self, client_service, mock_repository):
         """Testa listagem de clientes com paginação."""
-        with patch.object(
-            client_service, "repository", mock_repository
-        ):
-            mock_repository.list_clients.return_value = (
-                [MagicMock()], 10
-            )
+        with patch.object(client_service, "repository", mock_repository):
+            mock_repository.list_clients.return_value = ([MagicMock()], 10)
 
             result = client_service.list_clients(skip=0, limit=50)
 
@@ -230,13 +236,9 @@ class TestClientService:
         assert "total" in result
         mock_repository.list_clients.assert_called_once()
 
-    def test_update_client_success(
-        self, client_service, mock_repository, sample_client
-    ):
+    def test_update_client_success(self, client_service, mock_repository, sample_client):
         """Testa atualização de cliente."""
-        with patch.object(
-            client_service, "repository", mock_repository
-        ):
+        with patch.object(client_service, "repository", mock_repository):
             mock_repository.get_client.return_value = sample_client
             updated_client = MagicMock()
             updated_client.name = "Empresa Atualizada"
@@ -249,13 +251,9 @@ class TestClientService:
 
         assert result.name == "Empresa Atualizada"
 
-    def test_delete_client_success(
-        self, client_service, mock_repository, sample_client
-    ):
+    def test_delete_client_success(self, client_service, mock_repository, sample_client):
         """Testa exclusão de cliente."""
-        with patch.object(
-            client_service, "repository", mock_repository
-        ):
+        with patch.object(client_service, "repository", mock_repository):
             mock_repository.get_client.return_value = sample_client
             mock_repository.delete_client.return_value = True
 
@@ -263,15 +261,11 @@ class TestClientService:
 
         assert result is True
 
-    def test_activate_client(
-        self, client_service, mock_repository, sample_client
-    ):
+    def test_activate_client(self, client_service, mock_repository, sample_client):
         """Testa ativação de cliente."""
         sample_client.status = ClientStatus.PROSPECT
 
-        with patch.object(
-            client_service, "repository", mock_repository
-        ):
+        with patch.object(client_service, "repository", mock_repository):
             mock_repository.get_client.return_value = sample_client
             mock_repository.update_client.return_value = sample_client
 
@@ -279,13 +273,9 @@ class TestClientService:
 
         assert result.status == ClientStatus.ACTIVE
 
-    def test_suspend_client(
-        self, client_service, mock_repository, sample_client
-    ):
+    def test_suspend_client(self, client_service, mock_repository, sample_client):
         """Testa suspensão de cliente."""
-        with patch.object(
-            client_service, "repository", mock_repository
-        ):
+        with patch.object(client_service, "repository", mock_repository):
             mock_repository.get_client.return_value = sample_client
             mock_repository.update_client.return_value = sample_client
 
@@ -293,13 +283,9 @@ class TestClientService:
 
         assert result.status == ClientStatus.SUSPENDED
 
-    def test_block_client(
-        self, client_service, mock_repository, sample_client
-    ):
+    def test_block_client(self, client_service, mock_repository, sample_client):
         """Testa bloqueio de cliente."""
-        with patch.object(
-            client_service, "repository", mock_repository
-        ):
+        with patch.object(client_service, "repository", mock_repository):
             mock_repository.get_client.return_value = sample_client
             mock_repository.update_client.return_value = sample_client
 
@@ -307,49 +293,33 @@ class TestClientService:
 
         assert result.status == ClientStatus.BLOCKED
 
-    def test_set_client_defaulter(
-        self, client_service, mock_repository, sample_client
-    ):
+    def test_set_client_defaulter(self, client_service, mock_repository, sample_client):
         """Testa marcação de cliente como inadimplente."""
-        with patch.object(
-            client_service, "repository", mock_repository
-        ):
+        with patch.object(client_service, "repository", mock_repository):
             mock_repository.get_client.return_value = sample_client
             mock_repository.update_client.return_value = sample_client
 
-            result = client_service.set_client_defaulter(
-                sample_client.id, Decimal("5000.00")
-            )
+            result = client_service.set_client_defaulter(sample_client.id, Decimal("5000.00"))
 
         assert result.status == ClientStatus.DEFAULTER
         assert result.total_debt == Decimal("5000.00")
 
-    def test_enable_guardian(
-        self, client_service, mock_repository, sample_client
-    ):
+    def test_enable_guardian(self, client_service, mock_repository, sample_client):
         """Testa habilitação do Guardian."""
         sample_client.guardian_enabled = False
 
-        with patch.object(
-            client_service, "repository", mock_repository
-        ):
+        with patch.object(client_service, "repository", mock_repository):
             mock_repository.get_client.return_value = sample_client
             mock_repository.update_client.return_value = sample_client
 
-            result = client_service.enable_guardian(
-                sample_client.id, "GRD-12345"
-            )
+            result = client_service.enable_guardian(sample_client.id, "GRD-12345")
 
         assert result.guardian_enabled is True
         assert result.guardian_client_id == "GRD-12345"
 
-    def test_enable_plus(
-        self, client_service, mock_repository, sample_client
-    ):
+    def test_enable_plus(self, client_service, mock_repository, sample_client):
         """Testa habilitação do Plus."""
-        with patch.object(
-            client_service, "repository", mock_repository
-        ):
+        with patch.object(client_service, "repository", mock_repository):
             mock_repository.get_client.return_value = sample_client
             mock_repository.update_client.return_value = sample_client
 
@@ -363,16 +333,13 @@ class TestClientService:
 # TESTES DO CONDOMINIUM SERVICE
 # ============================================================
 
+
 class TestCondominiumService:
     """Testes para operações de condomínio no ClientService."""
 
-    def test_create_condominium_success(
-        self, client_service, mock_repository, sample_client
-    ):
+    def test_create_condominium_success(self, client_service, mock_repository, sample_client):
         """Testa criação de condomínio."""
-        with patch.object(
-            client_service, "repository", mock_repository
-        ):
+        with patch.object(client_service, "repository", mock_repository):
             mock_repository.get_client.return_value = sample_client
             mock_repository.create_condominium.return_value = MagicMock(
                 id=uuid4(),
@@ -380,66 +347,54 @@ class TestCondominiumService:
                 name="Novo Residencial",
             )
 
-            result = client_service.create_condominium({
-                "client_id": sample_client.id,
-                "name": "Novo Residencial",
-                "condominium_type": "residential",
-            })
+            result = client_service.create_condominium(
+                {
+                    "client_id": sample_client.id,
+                    "name": "Novo Residencial",
+                    "condominium_type": "residential",
+                }
+            )
 
         assert result is not None
         mock_repository.create_condominium.assert_called_once()
 
-    def test_create_condominium_client_not_found(
-        self, client_service, mock_repository
-    ):
+    def test_create_condominium_client_not_found(self, client_service, mock_repository):
         """Testa criação de condomínio com cliente inexistente."""
-        with patch.object(
-            client_service, "repository", mock_repository
-        ):
+        with patch.object(client_service, "repository", mock_repository):
             mock_repository.get_client.return_value = None
 
             with pytest.raises(ValueError) as exc_info:
-                client_service.create_condominium({
-                    "client_id": uuid4(),
-                    "name": "Teste",
-                })
+                client_service.create_condominium(
+                    {
+                        "client_id": uuid4(),
+                        "name": "Teste",
+                    }
+                )
 
         assert "Cliente não encontrado" in str(exc_info.value)
 
-    def test_start_condominium_implantation(
-        self, client_service, mock_repository, sample_condominium
-    ):
+    def test_start_condominium_implantation(self, client_service, mock_repository, sample_condominium):
         """Testa início de implantação de condomínio."""
         sample_condominium.status = CondominiumStatus.PROSPECT
 
-        with patch.object(
-            client_service, "repository", mock_repository
-        ):
+        with patch.object(client_service, "repository", mock_repository):
             mock_repository.get_condominium.return_value = sample_condominium
             mock_repository.update_condominium.return_value = sample_condominium
 
-            result = client_service.start_condominium_implantation(
-                sample_condominium.id
-            )
+            result = client_service.start_condominium_implantation(sample_condominium.id)
 
         assert result.status == CondominiumStatus.IMPLANTATION
         assert result.implantation_start_date is not None
 
-    def test_finish_condominium_implantation(
-        self, client_service, mock_repository, sample_condominium
-    ):
+    def test_finish_condominium_implantation(self, client_service, mock_repository, sample_condominium):
         """Testa finalização de implantação de condomínio."""
         sample_condominium.status = CondominiumStatus.IMPLANTATION
 
-        with patch.object(
-            client_service, "repository", mock_repository
-        ):
+        with patch.object(client_service, "repository", mock_repository):
             mock_repository.get_condominium.return_value = sample_condominium
             mock_repository.update_condominium.return_value = sample_condominium
 
-            result = client_service.finish_condominium_implantation(
-                sample_condominium.id
-            )
+            result = client_service.finish_condominium_implantation(sample_condominium.id)
 
         assert result.status == CondominiumStatus.ACTIVE
         assert result.activation_date is not None
@@ -449,16 +404,13 @@ class TestCondominiumService:
 # TESTES DO UNIT SERVICE
 # ============================================================
 
+
 class TestUnitService:
     """Testes para operações de unidade no ClientService."""
 
-    def test_create_unit_success(
-        self, client_service, mock_repository, sample_condominium
-    ):
+    def test_create_unit_success(self, client_service, mock_repository, sample_condominium):
         """Testa criação de unidade."""
-        with patch.object(
-            client_service, "repository", mock_repository
-        ):
+        with patch.object(client_service, "repository", mock_repository):
             mock_repository.get_condominium.return_value = sample_condominium
             mock_repository.create_unit.return_value = MagicMock(
                 id=uuid4(),
@@ -466,23 +418,21 @@ class TestUnitService:
                 unit_number="201",
             )
 
-            result = client_service.create_unit({
-                "condominium_id": sample_condominium.id,
-                "unit_number": "201",
-                "block": "B",
-                "unit_type": "apartment",
-            })
+            result = client_service.create_unit(
+                {
+                    "condominium_id": sample_condominium.id,
+                    "unit_number": "201",
+                    "block": "B",
+                    "unit_type": "apartment",
+                }
+            )
 
         assert result is not None
         mock_repository.create_unit.assert_called_once()
 
-    def test_set_unit_owner(
-        self, client_service, mock_repository, sample_unit
-    ):
+    def test_set_unit_owner(self, client_service, mock_repository, sample_unit):
         """Testa definição de proprietário da unidade."""
-        with patch.object(
-            client_service, "repository", mock_repository
-        ):
+        with patch.object(client_service, "repository", mock_repository):
             mock_repository.get_unit.return_value = sample_unit
             mock_repository.update_unit.return_value = sample_unit
 
@@ -496,13 +446,9 @@ class TestUnitService:
         assert result.owner_name == "Novo Proprietário"
         assert result.owner_document == "999.888.777-66"
 
-    def test_set_unit_resident(
-        self, client_service, mock_repository, sample_unit
-    ):
+    def test_set_unit_resident(self, client_service, mock_repository, sample_unit):
         """Testa definição de morador da unidade."""
-        with patch.object(
-            client_service, "repository", mock_repository
-        ):
+        with patch.object(client_service, "repository", mock_repository):
             mock_repository.get_unit.return_value = sample_unit
             mock_repository.update_unit.return_value = sample_unit
 
@@ -517,35 +463,25 @@ class TestUnitService:
         assert result.resident_type == "tenant"
         assert result.status == UnitStatus.OCCUPIED
 
-    def test_set_unit_defaulter(
-        self, client_service, mock_repository, sample_unit
-    ):
+    def test_set_unit_defaulter(self, client_service, mock_repository, sample_unit):
         """Testa marcação de unidade como inadimplente."""
-        with patch.object(
-            client_service, "repository", mock_repository
-        ):
+        with patch.object(client_service, "repository", mock_repository):
             mock_repository.get_unit.return_value = sample_unit
             mock_repository.update_unit.return_value = sample_unit
 
-            result = client_service.set_unit_defaulter(
-                sample_unit.id, Decimal("1500.00")
-            )
+            result = client_service.set_unit_defaulter(sample_unit.id, Decimal("1500.00"))
 
         assert result.is_defaulter is True
         assert result.debt_amount == Decimal("1500.00")
         assert result.status == UnitStatus.DEFAULTER
 
-    def test_clear_unit_debt(
-        self, client_service, mock_repository, sample_unit
-    ):
+    def test_clear_unit_debt(self, client_service, mock_repository, sample_unit):
         """Testa quitação de dívida da unidade."""
         sample_unit.is_defaulter = True
         sample_unit.debt_amount = Decimal("1500.00")
         sample_unit.status = UnitStatus.DEFAULTER
 
-        with patch.object(
-            client_service, "repository", mock_repository
-        ):
+        with patch.object(client_service, "repository", mock_repository):
             mock_repository.get_unit.return_value = sample_unit
             mock_repository.update_unit.return_value = sample_unit
 
@@ -559,16 +495,13 @@ class TestUnitService:
 # TESTES DO CONTRACT SERVICE
 # ============================================================
 
+
 class TestContractService:
     """Testes para operações de contrato no ClientService."""
 
-    def test_create_contract_success(
-        self, client_service, mock_repository, sample_client
-    ):
+    def test_create_contract_success(self, client_service, mock_repository, sample_client):
         """Testa criação de contrato."""
-        with patch.object(
-            client_service, "repository", mock_repository
-        ):
+        with patch.object(client_service, "repository", mock_repository):
             mock_repository.get_client.return_value = sample_client
             mock_repository.create_contract.return_value = MagicMock(
                 id=uuid4(),
@@ -576,24 +509,22 @@ class TestContractService:
                 service_type=ContractServiceType.CFTV,
             )
 
-            result = client_service.create_contract({
-                "client_id": sample_client.id,
-                "service_type": "cftv",
-                "monthly_value": 3000.00,
-            })
+            result = client_service.create_contract(
+                {
+                    "client_id": sample_client.id,
+                    "service_type": "cftv",
+                    "monthly_value": 3000.00,
+                }
+            )
 
         assert result is not None
         mock_repository.create_contract.assert_called_once()
 
-    def test_activate_contract(
-        self, client_service, mock_repository, sample_contract
-    ):
+    def test_activate_contract(self, client_service, mock_repository, sample_contract):
         """Testa ativação de contrato."""
         sample_contract.status = ServiceStatus.IMPLANTATION
 
-        with patch.object(
-            client_service, "repository", mock_repository
-        ):
+        with patch.object(client_service, "repository", mock_repository):
             mock_repository.get_contract.return_value = sample_contract
             mock_repository.update_contract.return_value = sample_contract
 
@@ -602,13 +533,9 @@ class TestContractService:
         assert result.status == ServiceStatus.ACTIVE
         assert result.activation_date is not None
 
-    def test_suspend_contract(
-        self, client_service, mock_repository, sample_contract
-    ):
+    def test_suspend_contract(self, client_service, mock_repository, sample_contract):
         """Testa suspensão de contrato."""
-        with patch.object(
-            client_service, "repository", mock_repository
-        ):
+        with patch.object(client_service, "repository", mock_repository):
             mock_repository.get_contract.return_value = sample_contract
             mock_repository.update_contract.return_value = sample_contract
 
@@ -616,13 +543,9 @@ class TestContractService:
 
         assert result.status == ServiceStatus.SUSPENDED
 
-    def test_cancel_contract(
-        self, client_service, mock_repository, sample_contract
-    ):
+    def test_cancel_contract(self, client_service, mock_repository, sample_contract):
         """Testa cancelamento de contrato."""
-        with patch.object(
-            client_service, "repository", mock_repository
-        ):
+        with patch.object(client_service, "repository", mock_repository):
             mock_repository.get_contract.return_value = sample_contract
             mock_repository.update_contract.return_value = sample_contract
 
@@ -636,16 +559,13 @@ class TestContractService:
 # TESTES DO CLIENT AI SERVICE
 # ============================================================
 
+
 class TestClientAIService:
     """Testes para o ClientAIService."""
 
-    def test_analyze_client_profile(
-        self, client_ai_service, mock_repository, sample_client
-    ):
+    def test_analyze_client_profile(self, client_ai_service, mock_repository, sample_client):
         """Testa análise de perfil do cliente."""
-        with patch.object(
-            client_ai_service, "repository", mock_repository
-        ):
+        with patch.object(client_ai_service, "repository", mock_repository):
             mock_repository.get_client.return_value = sample_client
             mock_repository.get_client_contracts.return_value = [MagicMock()]
             mock_repository.get_client_condominiums.return_value = [MagicMock()]
@@ -657,13 +577,9 @@ class TestClientAIService:
         assert "value_score" in result
         assert "risk_level" in result
 
-    def test_suggest_segmentation(
-        self, client_ai_service, mock_repository, sample_client
-    ):
+    def test_suggest_segmentation(self, client_ai_service, mock_repository, sample_client):
         """Testa sugestão de segmentação."""
-        with patch.object(
-            client_ai_service, "repository", mock_repository
-        ):
+        with patch.object(client_ai_service, "repository", mock_repository):
             mock_repository.get_client.return_value = sample_client
 
             result = client_ai_service.suggest_segmentation(sample_client.id)
@@ -672,13 +588,9 @@ class TestClientAIService:
         assert "confidence" in result
         assert "justification" in result
 
-    def test_predict_churn_risk(
-        self, client_ai_service, mock_repository, sample_client
-    ):
+    def test_predict_churn_risk(self, client_ai_service, mock_repository, sample_client):
         """Testa predição de risco de churn."""
-        with patch.object(
-            client_ai_service, "repository", mock_repository
-        ):
+        with patch.object(client_ai_service, "repository", mock_repository):
             mock_repository.get_client.return_value = sample_client
 
             result = client_ai_service.predict_churn_risk(sample_client.id)
@@ -688,17 +600,13 @@ class TestClientAIService:
         assert "risk_factors" in result
         assert "retention_actions" in result
 
-    def test_predict_churn_risk_high(
-        self, client_ai_service, mock_repository, sample_client
-    ):
+    def test_predict_churn_risk_high(self, client_ai_service, mock_repository, sample_client):
         """Testa predição de alto risco de churn."""
         sample_client.health_score = 30.0
         sample_client.engagement_score = 0.2
         sample_client.satisfaction_score = 2.0
 
-        with patch.object(
-            client_ai_service, "repository", mock_repository
-        ):
+        with patch.object(client_ai_service, "repository", mock_repository):
             mock_repository.get_client.return_value = sample_client
 
             result = client_ai_service.predict_churn_risk(sample_client.id)
@@ -706,13 +614,9 @@ class TestClientAIService:
         assert result["churn_probability"] > 0.5
         assert result["risk_level"] in ["medium", "high", "critical"]
 
-    def test_recommend_services(
-        self, client_ai_service, mock_repository, sample_client
-    ):
+    def test_recommend_services(self, client_ai_service, mock_repository, sample_client):
         """Testa recomendação de serviços."""
-        with patch.object(
-            client_ai_service, "repository", mock_repository
-        ):
+        with patch.object(client_ai_service, "repository", mock_repository):
             mock_repository.get_client.return_value = sample_client
             mock_repository.get_client_contracts.return_value = []
             mock_repository.get_client_condominiums.return_value = [
@@ -729,9 +633,7 @@ class TestClientAIService:
         assert "potential_revenue" in result
         assert len(result["recommendations"]) > 0
 
-    def test_analyze_condominium_health(
-        self, client_ai_service, mock_repository, sample_condominium
-    ):
+    def test_analyze_condominium_health(self, client_ai_service, mock_repository, sample_condominium):
         """Testa análise de saúde do condomínio."""
         mock_units = [
             MagicMock(status=UnitStatus.OCCUPIED, is_defaulter=False),
@@ -740,15 +642,11 @@ class TestClientAIService:
             MagicMock(status=UnitStatus.DEFAULTER, is_defaulter=True),
         ]
 
-        with patch.object(
-            client_ai_service, "repository", mock_repository
-        ):
+        with patch.object(client_ai_service, "repository", mock_repository):
             mock_repository.get_condominium.return_value = sample_condominium
             mock_repository.get_condominium_units.return_value = mock_units
 
-            result = client_ai_service.analyze_condominium_health(
-                sample_condominium.id
-            )
+            result = client_ai_service.analyze_condominium_health(sample_condominium.id)
 
         assert "overall_score" in result
         assert "occupancy_rate" in result
@@ -756,13 +654,9 @@ class TestClientAIService:
         assert 0 <= result["occupancy_rate"] <= 1
         assert 0 <= result["defaulter_rate"] <= 1
 
-    def test_get_dashboard_insights(
-        self, client_ai_service, mock_repository
-    ):
+    def test_get_dashboard_insights(self, client_ai_service, mock_repository):
         """Testa geração de insights do dashboard."""
-        with patch.object(
-            client_ai_service, "repository", mock_repository
-        ):
+        with patch.object(client_ai_service, "repository", mock_repository):
             mock_repository.get_client_stats.return_value = {
                 "total": 100,
                 "active": 85,
@@ -771,9 +665,7 @@ class TestClientAIService:
                 "total": 150,
                 "total_units": 12000,
             }
-            mock_repository.get_at_risk_clients.return_value = [
-                MagicMock() for _ in range(5)
-            ]
+            mock_repository.get_at_risk_clients.return_value = [MagicMock() for _ in range(5)]
 
             result = client_ai_service.get_dashboard_insights()
 
@@ -787,72 +679,60 @@ class TestClientAIService:
 # TESTES DE VALIDAÇÃO
 # ============================================================
 
+
 class TestServiceValidations:
     """Testes de validação nos services."""
 
-    def test_validate_cnpj_on_create(
-        self, client_service, mock_repository
-    ):
+    def test_validate_cnpj_on_create(self, client_service, mock_repository):
         """Testa validação de CNPJ na criação."""
-        with patch.object(
-            client_service, "repository", mock_repository
-        ):
-            with pytest.raises(ValueError) as exc_info:
-                client_service.create_client({
+        with patch.object(client_service, "repository", mock_repository), pytest.raises(ValueError) as exc_info:
+            client_service.create_client(
+                {
                     "name": "Teste",
                     "client_type": "pj",
                     "document_type": "cnpj",
                     "document_number": "11.111.111/1111-11",  # CNPJ inválido
                     "email": "teste@teste.com",
-                })
+                }
+            )
 
         assert "CNPJ inválido" in str(exc_info.value)
 
-    def test_validate_cpf_on_create(
-        self, client_service, mock_repository
-    ):
+    def test_validate_cpf_on_create(self, client_service, mock_repository):
         """Testa validação de CPF na criação."""
-        with patch.object(
-            client_service, "repository", mock_repository
-        ):
-            with pytest.raises(ValueError) as exc_info:
-                client_service.create_client({
+        with patch.object(client_service, "repository", mock_repository), pytest.raises(ValueError) as exc_info:
+            client_service.create_client(
+                {
                     "name": "Teste",
                     "client_type": "pf",
                     "document_type": "cpf",
                     "document_number": "111.111.111-11",  # CPF inválido
                     "email": "teste@teste.com",
-                })
+                }
+            )
 
         assert "CPF inválido" in str(exc_info.value)
 
-    def test_validate_email_format(
-        self, client_service, mock_repository
-    ):
+    def test_validate_email_format(self, client_service, mock_repository):
         """Testa validação de formato de email."""
-        with patch.object(
-            client_service, "repository", mock_repository
-        ):
-            with pytest.raises(ValueError) as exc_info:
-                client_service.create_client({
+        with patch.object(client_service, "repository", mock_repository), pytest.raises(ValueError) as exc_info:
+            client_service.create_client(
+                {
                     "name": "Teste",
                     "client_type": "pj",
                     "document_type": "cnpj",
                     "document_number": "11.222.333/0001-81",
                     "email": "email-invalido",  # Email inválido
-                })
+                }
+            )
 
         assert "Email inválido" in str(exc_info.value)
 
-    def test_cannot_activate_blocked_client(
-        self, client_service, mock_repository, sample_client
-    ):
+    def test_cannot_activate_blocked_client(self, client_service, mock_repository, sample_client):
         """Testa que não pode ativar cliente bloqueado diretamente."""
         sample_client.status = ClientStatus.BLOCKED
 
-        with patch.object(
-            client_service, "repository", mock_repository
-        ):
+        with patch.object(client_service, "repository", mock_repository):
             mock_repository.get_client.return_value = sample_client
 
             with pytest.raises(ValueError) as exc_info:
@@ -865,16 +745,13 @@ class TestServiceValidations:
 # TESTES DE INTEGRAÇÃO
 # ============================================================
 
+
 class TestIntegrationService:
     """Testes para operações de integração no ClientService."""
 
-    def test_create_integration_success(
-        self, client_service, mock_repository, sample_client
-    ):
+    def test_create_integration_success(self, client_service, mock_repository, sample_client):
         """Testa criação de integração."""
-        with patch.object(
-            client_service, "repository", mock_repository
-        ):
+        with patch.object(client_service, "repository", mock_repository):
             mock_repository.get_client.return_value = sample_client
             mock_repository.create_integration.return_value = MagicMock(
                 id=uuid4(),
@@ -882,25 +759,23 @@ class TestIntegrationService:
                 enabled=False,
             )
 
-            result = client_service.create_integration({
-                "client_id": sample_client.id,
-                "integration_type": "guardian",
-                "name": "Guardian Integration",
-            })
+            result = client_service.create_integration(
+                {
+                    "client_id": sample_client.id,
+                    "integration_type": "guardian",
+                    "name": "Guardian Integration",
+                }
+            )
 
         assert result is not None
         mock_repository.create_integration.assert_called_once()
 
-    def test_enable_integration(
-        self, client_service, mock_repository
-    ):
+    def test_enable_integration(self, client_service, mock_repository):
         """Testa habilitação de integração."""
         integration = MagicMock()
         integration.enabled = False
 
-        with patch.object(
-            client_service, "repository", mock_repository
-        ):
+        with patch.object(client_service, "repository", mock_repository):
             mock_repository.get_integration.return_value = integration
             mock_repository.update_integration.return_value = integration
 
@@ -908,16 +783,12 @@ class TestIntegrationService:
 
         assert result.enabled is True
 
-    def test_disable_integration(
-        self, client_service, mock_repository
-    ):
+    def test_disable_integration(self, client_service, mock_repository):
         """Testa desabilitação de integração."""
         integration = MagicMock()
         integration.enabled = True
 
-        with patch.object(
-            client_service, "repository", mock_repository
-        ):
+        with patch.object(client_service, "repository", mock_repository):
             mock_repository.get_integration.return_value = integration
             mock_repository.update_integration.return_value = integration
 
@@ -926,17 +797,13 @@ class TestIntegrationService:
         assert result.enabled is False
         assert result.sync_status == SyncStatus.DISABLED
 
-    def test_trigger_sync(
-        self, client_service, mock_repository
-    ):
+    def test_trigger_sync(self, client_service, mock_repository):
         """Testa disparo de sincronização."""
         integration = MagicMock()
         integration.enabled = True
         integration.sync_status = SyncStatus.SYNCED
 
-        with patch.object(
-            client_service, "repository", mock_repository
-        ):
+        with patch.object(client_service, "repository", mock_repository):
             mock_repository.get_integration.return_value = integration
             mock_repository.update_integration.return_value = integration
 
@@ -944,16 +811,12 @@ class TestIntegrationService:
 
         assert result.sync_status == SyncStatus.SYNCING
 
-    def test_trigger_sync_disabled_integration(
-        self, client_service, mock_repository
-    ):
+    def test_trigger_sync_disabled_integration(self, client_service, mock_repository):
         """Testa disparo de sync em integração desabilitada."""
         integration = MagicMock()
         integration.enabled = False
 
-        with patch.object(
-            client_service, "repository", mock_repository
-        ):
+        with patch.object(client_service, "repository", mock_repository):
             mock_repository.get_integration.return_value = integration
 
             with pytest.raises(ValueError) as exc_info:

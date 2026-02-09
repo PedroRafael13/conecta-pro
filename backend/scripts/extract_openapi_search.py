@@ -21,6 +21,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from fastapi.openapi.utils import get_openapi
+
 from main_production import app
 
 
@@ -85,9 +86,7 @@ def extract_search_openapi():
     filtered_schemas = {}
     for schema_name in expanded_refs:
         if schema_name in full_spec.get("components", {}).get("schemas", {}):
-            filtered_schemas[schema_name] = full_spec["components"]["schemas"][
-                schema_name
-            ]
+            filtered_schemas[schema_name] = full_spec["components"]["schemas"][schema_name]
 
     # Construir spec filtrado
     search_spec = {
@@ -108,7 +107,7 @@ def extract_search_openapi():
 
     # Estatísticas
     total_endpoints = sum(len(methods) for methods in filtered_paths.values())
-    print(f"✓ OpenAPI SEARCH extraído com sucesso!")
+    print("✓ OpenAPI SEARCH extraído com sucesso!")
     print(f"  - Arquivo: {output_file}")
     print(f"  - Endpoints: {total_endpoints}")
     print(f"  - Schemas: {len(filtered_schemas)}")

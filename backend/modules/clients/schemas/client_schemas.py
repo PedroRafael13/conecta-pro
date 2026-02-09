@@ -4,79 +4,73 @@ Sprint 30: Cadastro de Clientes/Condomínios
 """
 
 import re
-from datetime import datetime, date
+from datetime import date, datetime
 from decimal import Decimal
-from typing import Optional, List
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
-from modules.clients.models.client import (
-    ClientType, ClientStatus, ClientSegment, DocumentType
-)
-from modules.clients.models.condominium import (
-    CondominiumType, CondominiumStatus, AdministrationType
-)
-from modules.clients.models.unit import UnitType, UnitStatus
+from modules.clients.models.client import ClientSegment, ClientStatus, ClientType, DocumentType
 from modules.clients.models.client_contract import ContractServiceType, ServiceStatus
-from modules.clients.models.integration_settings import (
-    IntegrationType, SyncStatus, SyncDirection
-)
-
+from modules.clients.models.condominium import AdministrationType, CondominiumStatus, CondominiumType
+from modules.clients.models.integration_settings import IntegrationType, SyncDirection, SyncStatus
+from modules.clients.models.unit import UnitStatus, UnitType
 
 # =============================================================================
 # CLIENT SCHEMAS
 # =============================================================================
 
+
 class ClientBase(BaseModel):
     """Base schema for Client."""
+
     type: ClientType = Field(default=ClientType.CONDOMINIO)
-    segment: Optional[ClientSegment] = None
+    segment: ClientSegment | None = None
     legal_name: str = Field(..., min_length=2, max_length=200)
-    trade_name: Optional[str] = Field(None, max_length=200)
+    trade_name: str | None = Field(None, max_length=200)
     document_type: DocumentType = Field(default=DocumentType.CNPJ)
     document_number: str = Field(..., min_length=11, max_length=20)
-    state_registration: Optional[str] = Field(None, max_length=20)
-    municipal_registration: Optional[str] = Field(None, max_length=20)
+    state_registration: str | None = Field(None, max_length=20)
+    municipal_registration: str | None = Field(None, max_length=20)
 
     # Endereço
-    address_street: Optional[str] = Field(None, max_length=200)
-    address_number: Optional[str] = Field(None, max_length=20)
-    address_complement: Optional[str] = Field(None, max_length=100)
-    address_neighborhood: Optional[str] = Field(None, max_length=100)
-    address_city: Optional[str] = Field(None, max_length=100)
-    address_state: Optional[str] = Field(None, max_length=2)
-    address_zipcode: Optional[str] = Field(None, max_length=10)
-    latitude: Optional[Decimal] = None
-    longitude: Optional[Decimal] = None
+    address_street: str | None = Field(None, max_length=200)
+    address_number: str | None = Field(None, max_length=20)
+    address_complement: str | None = Field(None, max_length=100)
+    address_neighborhood: str | None = Field(None, max_length=100)
+    address_city: str | None = Field(None, max_length=100)
+    address_state: str | None = Field(None, max_length=2)
+    address_zipcode: str | None = Field(None, max_length=10)
+    latitude: Decimal | None = None
+    longitude: Decimal | None = None
 
     # Contatos
-    phone: Optional[str] = Field(None, max_length=20)
-    phone_secondary: Optional[str] = Field(None, max_length=20)
-    whatsapp: Optional[str] = Field(None, max_length=20)
-    email: Optional[str] = Field(None, max_length=200)
-    email_billing: Optional[str] = Field(None, max_length=200)
-    website: Optional[str] = Field(None, max_length=200)
+    phone: str | None = Field(None, max_length=20)
+    phone_secondary: str | None = Field(None, max_length=20)
+    whatsapp: str | None = Field(None, max_length=20)
+    email: str | None = Field(None, max_length=200)
+    email_billing: str | None = Field(None, max_length=200)
+    website: str | None = Field(None, max_length=200)
 
     # Contato principal
-    contact_name: Optional[str] = Field(None, max_length=100)
-    contact_phone: Optional[str] = Field(None, max_length=20)
-    contact_email: Optional[str] = Field(None, max_length=200)
-    contact_role: Optional[str] = Field(None, max_length=50)
+    contact_name: str | None = Field(None, max_length=100)
+    contact_phone: str | None = Field(None, max_length=20)
+    contact_email: str | None = Field(None, max_length=200)
+    contact_role: str | None = Field(None, max_length=50)
 
     # Dados financeiros
-    payment_terms: Optional[int] = Field(None, ge=0, le=365)
-    credit_limit: Optional[Decimal] = Field(None, ge=0)
+    payment_terms: int | None = Field(None, ge=0, le=365)
+    credit_limit: Decimal | None = Field(None, ge=0)
 
     # Dados comerciais
-    sales_rep_id: Optional[UUID] = None
-    sales_rep_name: Optional[str] = Field(None, max_length=100)
-    acquisition_source: Optional[str] = Field(None, max_length=50)
+    sales_rep_id: UUID | None = None
+    sales_rep_name: str | None = Field(None, max_length=100)
+    acquisition_source: str | None = Field(None, max_length=50)
 
     # Configurações
-    settings: Optional[dict] = None
-    tags: Optional[List[str]] = None
-    notes: Optional[str] = None
+    settings: dict | None = None
+    tags: list[str] | None = None
+    notes: str | None = None
     is_vip: bool = False
 
     @field_validator("document_number")
@@ -87,7 +81,7 @@ class ClientBase(BaseModel):
 
     @field_validator("address_zipcode")
     @classmethod
-    def validate_zipcode(cls, v: Optional[str]) -> Optional[str]:
+    def validate_zipcode(cls, v: str | None) -> str | None:
         """Valida CEP."""
         if v:
             return re.sub(r"\D", "", v)
@@ -100,86 +94,88 @@ class ClientCreate(ClientBase):
 
 class ClientUpdate(BaseModel):
     """Schema for updating a client."""
-    type: Optional[ClientType] = None
-    status: Optional[ClientStatus] = None
-    segment: Optional[ClientSegment] = None
-    legal_name: Optional[str] = Field(None, min_length=2, max_length=200)
-    trade_name: Optional[str] = Field(None, max_length=200)
-    document_number: Optional[str] = Field(None, max_length=20)
-    state_registration: Optional[str] = Field(None, max_length=20)
-    municipal_registration: Optional[str] = Field(None, max_length=20)
 
-    address_street: Optional[str] = Field(None, max_length=200)
-    address_number: Optional[str] = Field(None, max_length=20)
-    address_complement: Optional[str] = Field(None, max_length=100)
-    address_neighborhood: Optional[str] = Field(None, max_length=100)
-    address_city: Optional[str] = Field(None, max_length=100)
-    address_state: Optional[str] = Field(None, max_length=2)
-    address_zipcode: Optional[str] = Field(None, max_length=10)
-    latitude: Optional[Decimal] = None
-    longitude: Optional[Decimal] = None
+    type: ClientType | None = None
+    status: ClientStatus | None = None
+    segment: ClientSegment | None = None
+    legal_name: str | None = Field(None, min_length=2, max_length=200)
+    trade_name: str | None = Field(None, max_length=200)
+    document_number: str | None = Field(None, max_length=20)
+    state_registration: str | None = Field(None, max_length=20)
+    municipal_registration: str | None = Field(None, max_length=20)
 
-    phone: Optional[str] = Field(None, max_length=20)
-    phone_secondary: Optional[str] = Field(None, max_length=20)
-    whatsapp: Optional[str] = Field(None, max_length=20)
-    email: Optional[str] = Field(None, max_length=200)
-    email_billing: Optional[str] = Field(None, max_length=200)
-    website: Optional[str] = Field(None, max_length=200)
+    address_street: str | None = Field(None, max_length=200)
+    address_number: str | None = Field(None, max_length=20)
+    address_complement: str | None = Field(None, max_length=100)
+    address_neighborhood: str | None = Field(None, max_length=100)
+    address_city: str | None = Field(None, max_length=100)
+    address_state: str | None = Field(None, max_length=2)
+    address_zipcode: str | None = Field(None, max_length=10)
+    latitude: Decimal | None = None
+    longitude: Decimal | None = None
 
-    contact_name: Optional[str] = Field(None, max_length=100)
-    contact_phone: Optional[str] = Field(None, max_length=20)
-    contact_email: Optional[str] = Field(None, max_length=200)
-    contact_role: Optional[str] = Field(None, max_length=50)
+    phone: str | None = Field(None, max_length=20)
+    phone_secondary: str | None = Field(None, max_length=20)
+    whatsapp: str | None = Field(None, max_length=20)
+    email: str | None = Field(None, max_length=200)
+    email_billing: str | None = Field(None, max_length=200)
+    website: str | None = Field(None, max_length=200)
 
-    payment_terms: Optional[int] = Field(None, ge=0, le=365)
-    credit_limit: Optional[Decimal] = Field(None, ge=0)
+    contact_name: str | None = Field(None, max_length=100)
+    contact_phone: str | None = Field(None, max_length=20)
+    contact_email: str | None = Field(None, max_length=200)
+    contact_role: str | None = Field(None, max_length=50)
 
-    sales_rep_id: Optional[UUID] = None
-    sales_rep_name: Optional[str] = Field(None, max_length=100)
+    payment_terms: int | None = Field(None, ge=0, le=365)
+    credit_limit: Decimal | None = Field(None, ge=0)
 
-    settings: Optional[dict] = None
-    tags: Optional[List[str]] = None
-    notes: Optional[str] = None
-    is_vip: Optional[bool] = None
+    sales_rep_id: UUID | None = None
+    sales_rep_name: str | None = Field(None, max_length=100)
+
+    settings: dict | None = None
+    tags: list[str] | None = None
+    notes: str | None = None
+    is_vip: bool | None = None
 
 
 class ClientResponse(BaseModel):
     """Schema for client response."""
+
     id: UUID
     code: str
     type: ClientType
     status: ClientStatus
-    segment: Optional[ClientSegment]
+    segment: ClientSegment | None
     legal_name: str
-    trade_name: Optional[str]
+    trade_name: str | None
     document_type: DocumentType
     document_number: str
     formatted_document: str
     display_name: str
     full_address: str
 
-    address_street: Optional[str]
-    address_number: Optional[str]
-    address_complement: Optional[str]
-    address_neighborhood: Optional[str]
-    address_city: Optional[str]
-    address_state: Optional[str]
-    address_zipcode: Optional[str]
+    address_street: str | None
+    address_number: str | None
+    address_complement: str | None
+    address_neighborhood: str | None
+    address_city: str | None
+    address_state: str | None
+    address_zipcode: str | None
 
-    phone: Optional[str]
-    email: Optional[str]
-    contact_name: Optional[str]
+    phone: str | None
+    email: str | None
+    contact_name: str | None
 
-    payment_terms: Optional[int]
-    credit_limit: Optional[Decimal]
-    current_balance: Optional[Decimal]
+    payment_terms: int | None
+    credit_limit: Decimal | None
+    current_balance: Decimal | None
     is_defaulter: bool
-    total_debt: Optional[Decimal]
+    total_debt: Decimal | None
 
     total_contracts: int
     active_contracts: int
-    total_revenue: Optional[Decimal]
-    satisfaction_score: Optional[Decimal]
+    total_revenue: Decimal | None
+    satisfaction_score: Decimal | None
     health_score: int
 
     guardian_enabled: bool
@@ -187,7 +183,7 @@ class ClientResponse(BaseModel):
 
     is_active: bool
     is_vip: bool
-    tags: Optional[List[str]]
+    tags: list[str] | None
 
     created_at: datetime
     updated_at: datetime
@@ -197,18 +193,19 @@ class ClientResponse(BaseModel):
 
 class ClientListResponse(BaseModel):
     """Schema for client list response."""
+
     id: UUID
     code: str
     type: ClientType
     status: ClientStatus
     legal_name: str
-    trade_name: Optional[str]
+    trade_name: str | None
     display_name: str
     document_number: str
-    address_city: Optional[str]
-    address_state: Optional[str]
-    phone: Optional[str]
-    email: Optional[str]
+    address_city: str | None
+    address_state: str | None
+    phone: str | None
+    email: str | None
     is_defaulter: bool
     active_contracts: int
     health_score: int
@@ -220,6 +217,7 @@ class ClientListResponse(BaseModel):
 
 class ClientStats(BaseModel):
     """Schema for client statistics."""
+
     total_clients: int = 0
     active_clients: int = 0
     inactive_clients: int = 0
@@ -234,54 +232,57 @@ class ClientStats(BaseModel):
 
 class ClientFilter(BaseModel):
     """Schema for filtering clients."""
-    type: Optional[ClientType] = None
-    status: Optional[ClientStatus] = None
-    segment: Optional[ClientSegment] = None
-    is_defaulter: Optional[bool] = None
-    is_vip: Optional[bool] = None
-    guardian_enabled: Optional[bool] = None
-    plus_enabled: Optional[bool] = None
-    city: Optional[str] = None
-    state: Optional[str] = None
-    sales_rep_id: Optional[UUID] = None
-    search: Optional[str] = None
+
+    type: ClientType | None = None
+    status: ClientStatus | None = None
+    segment: ClientSegment | None = None
+    is_defaulter: bool | None = None
+    is_vip: bool | None = None
+    guardian_enabled: bool | None = None
+    plus_enabled: bool | None = None
+    city: str | None = None
+    state: str | None = None
+    sales_rep_id: UUID | None = None
+    search: str | None = None
 
 
 # =============================================================================
 # CONDOMINIUM SCHEMAS
 # =============================================================================
 
+
 class CondominiumBase(BaseModel):
     """Base schema for Condominium."""
+
     name: str = Field(..., min_length=2, max_length=200)
     type: CondominiumType = Field(default=CondominiumType.RESIDENTIAL)
-    administration_type: Optional[AdministrationType] = None
-    cnpj: Optional[str] = Field(None, max_length=20)
+    administration_type: AdministrationType | None = None
+    cnpj: str | None = Field(None, max_length=20)
 
     address_street: str = Field(..., min_length=2, max_length=200)
-    address_number: Optional[str] = Field(None, max_length=20)
-    address_complement: Optional[str] = Field(None, max_length=100)
-    address_neighborhood: Optional[str] = Field(None, max_length=100)
+    address_number: str | None = Field(None, max_length=20)
+    address_complement: str | None = Field(None, max_length=100)
+    address_neighborhood: str | None = Field(None, max_length=100)
     address_city: str = Field(..., min_length=2, max_length=100)
     address_state: str = Field(..., min_length=2, max_length=2)
-    address_zipcode: Optional[str] = Field(None, max_length=10)
-    latitude: Optional[Decimal] = None
-    longitude: Optional[Decimal] = None
+    address_zipcode: str | None = Field(None, max_length=10)
+    latitude: Decimal | None = None
+    longitude: Decimal | None = None
 
-    phone: Optional[str] = Field(None, max_length=20)
-    phone_portaria: Optional[str] = Field(None, max_length=20)
-    email: Optional[str] = Field(None, max_length=200)
+    phone: str | None = Field(None, max_length=20)
+    phone_portaria: str | None = Field(None, max_length=20)
+    email: str | None = Field(None, max_length=200)
 
-    syndic_name: Optional[str] = Field(None, max_length=100)
-    syndic_phone: Optional[str] = Field(None, max_length=20)
-    syndic_email: Optional[str] = Field(None, max_length=200)
+    syndic_name: str | None = Field(None, max_length=100)
+    syndic_phone: str | None = Field(None, max_length=20)
+    syndic_email: str | None = Field(None, max_length=200)
 
     total_units: int = Field(default=0, ge=0)
-    total_towers: Optional[int] = Field(None, ge=0)
-    total_floors: Optional[int] = Field(None, ge=0)
-    total_elevators: Optional[int] = Field(None, ge=0)
-    total_parking_spots: Optional[int] = Field(None, ge=0)
-    total_area_m2: Optional[Decimal] = Field(None, ge=0)
+    total_towers: int | None = Field(None, ge=0)
+    total_floors: int | None = Field(None, ge=0)
+    total_elevators: int | None = Field(None, ge=0)
+    total_parking_spots: int | None = Field(None, ge=0)
+    total_area_m2: Decimal | None = Field(None, ge=0)
 
     has_pool: bool = False
     has_gym: bool = False
@@ -291,79 +292,82 @@ class CondominiumBase(BaseModel):
     has_cctv: bool = False
     has_access_control: bool = False
 
-    settings: Optional[dict] = None
-    tags: Optional[List[str]] = None
-    notes: Optional[str] = None
+    settings: dict | None = None
+    tags: list[str] | None = None
+    notes: str | None = None
 
 
 class CondominiumCreate(CondominiumBase):
     """Schema for creating a condominium."""
+
     client_id: UUID
 
 
 class CondominiumUpdate(BaseModel):
     """Schema for updating a condominium."""
-    name: Optional[str] = Field(None, min_length=2, max_length=200)
-    type: Optional[CondominiumType] = None
-    status: Optional[CondominiumStatus] = None
-    administration_type: Optional[AdministrationType] = None
-    cnpj: Optional[str] = Field(None, max_length=20)
 
-    address_street: Optional[str] = Field(None, max_length=200)
-    address_number: Optional[str] = Field(None, max_length=20)
-    address_complement: Optional[str] = Field(None, max_length=100)
-    address_neighborhood: Optional[str] = Field(None, max_length=100)
-    address_city: Optional[str] = Field(None, max_length=100)
-    address_state: Optional[str] = Field(None, max_length=2)
-    address_zipcode: Optional[str] = Field(None, max_length=10)
+    name: str | None = Field(None, min_length=2, max_length=200)
+    type: CondominiumType | None = None
+    status: CondominiumStatus | None = None
+    administration_type: AdministrationType | None = None
+    cnpj: str | None = Field(None, max_length=20)
 
-    phone: Optional[str] = Field(None, max_length=20)
-    email: Optional[str] = Field(None, max_length=200)
+    address_street: str | None = Field(None, max_length=200)
+    address_number: str | None = Field(None, max_length=20)
+    address_complement: str | None = Field(None, max_length=100)
+    address_neighborhood: str | None = Field(None, max_length=100)
+    address_city: str | None = Field(None, max_length=100)
+    address_state: str | None = Field(None, max_length=2)
+    address_zipcode: str | None = Field(None, max_length=10)
 
-    syndic_name: Optional[str] = Field(None, max_length=100)
-    syndic_phone: Optional[str] = Field(None, max_length=20)
-    syndic_email: Optional[str] = Field(None, max_length=200)
-    syndic_start_date: Optional[date] = None
-    syndic_end_date: Optional[date] = None
+    phone: str | None = Field(None, max_length=20)
+    email: str | None = Field(None, max_length=200)
 
-    total_units: Optional[int] = Field(None, ge=0)
-    total_towers: Optional[int] = Field(None, ge=0)
+    syndic_name: str | None = Field(None, max_length=100)
+    syndic_phone: str | None = Field(None, max_length=20)
+    syndic_email: str | None = Field(None, max_length=200)
+    syndic_start_date: date | None = None
+    syndic_end_date: date | None = None
 
-    has_pool: Optional[bool] = None
-    has_gym: Optional[bool] = None
-    has_party_room: Optional[bool] = None
-    has_24h_security: Optional[bool] = None
-    has_cctv: Optional[bool] = None
-    has_access_control: Optional[bool] = None
+    total_units: int | None = Field(None, ge=0)
+    total_towers: int | None = Field(None, ge=0)
 
-    settings: Optional[dict] = None
-    tags: Optional[List[str]] = None
-    notes: Optional[str] = None
-    is_premium: Optional[bool] = None
+    has_pool: bool | None = None
+    has_gym: bool | None = None
+    has_party_room: bool | None = None
+    has_24h_security: bool | None = None
+    has_cctv: bool | None = None
+    has_access_control: bool | None = None
+
+    settings: dict | None = None
+    tags: list[str] | None = None
+    notes: str | None = None
+    is_premium: bool | None = None
 
 
 class CondominiumResponse(BaseModel):
     """Schema for condominium response."""
+
     id: UUID
     code: str
     client_id: UUID
     name: str
     type: CondominiumType
     status: CondominiumStatus
-    administration_type: Optional[AdministrationType]
-    cnpj: Optional[str]
+    administration_type: AdministrationType | None
+    cnpj: str | None
     full_address: str
     address_city: str
     address_state: str
 
-    syndic_name: Optional[str]
-    syndic_phone: Optional[str]
+    syndic_name: str | None
+    syndic_phone: str | None
     syndic_mandate_active: bool
 
     total_units: int
     occupied_units: int
     occupancy_rate: float
-    total_towers: Optional[int]
+    total_towers: int | None
 
     security_level: str
     amenities_count: int
@@ -381,6 +385,7 @@ class CondominiumResponse(BaseModel):
 
 class CondominiumListResponse(BaseModel):
     """Schema for condominium list response."""
+
     id: UUID
     code: str
     client_id: UUID
@@ -400,6 +405,7 @@ class CondominiumListResponse(BaseModel):
 
 class CondominiumStats(BaseModel):
     """Schema for condominium statistics."""
+
     total_condominiums: int = 0
     active_condominiums: int = 0
     total_units: int = 0
@@ -414,93 +420,98 @@ class CondominiumStats(BaseModel):
 # UNIT SCHEMAS
 # =============================================================================
 
+
 class UnitBase(BaseModel):
     """Base schema for Unit."""
+
     number: str = Field(..., min_length=1, max_length=20)
-    block: Optional[str] = Field(None, max_length=20)
-    tower: Optional[str] = Field(None, max_length=50)
-    floor: Optional[int] = None
+    block: str | None = Field(None, max_length=20)
+    tower: str | None = Field(None, max_length=50)
+    floor: int | None = None
     type: UnitType = Field(default=UnitType.APARTAMENTO)
 
-    area_m2: Optional[Decimal] = Field(None, ge=0)
-    bedrooms: Optional[int] = Field(None, ge=0)
-    bathrooms: Optional[int] = Field(None, ge=0)
-    parking_spots: Optional[int] = Field(None, ge=0)
+    area_m2: Decimal | None = Field(None, ge=0)
+    bedrooms: int | None = Field(None, ge=0)
+    bathrooms: int | None = Field(None, ge=0)
+    parking_spots: int | None = Field(None, ge=0)
 
-    owner_name: Optional[str] = Field(None, max_length=200)
-    owner_document: Optional[str] = Field(None, max_length=20)
-    owner_phone: Optional[str] = Field(None, max_length=20)
-    owner_email: Optional[str] = Field(None, max_length=200)
+    owner_name: str | None = Field(None, max_length=200)
+    owner_document: str | None = Field(None, max_length=20)
+    owner_phone: str | None = Field(None, max_length=20)
+    owner_email: str | None = Field(None, max_length=200)
 
-    monthly_fee: Optional[Decimal] = Field(None, ge=0)
-    fraction: Optional[Decimal] = Field(None, ge=0, le=1)
+    monthly_fee: Decimal | None = Field(None, ge=0)
+    fraction: Decimal | None = Field(None, ge=0, le=1)
 
-    notes: Optional[str] = None
-    tags: Optional[List[str]] = None
+    notes: str | None = None
+    tags: list[str] | None = None
 
 
 class UnitCreate(UnitBase):
     """Schema for creating a unit."""
+
     condominium_id: UUID
 
 
 class UnitUpdate(BaseModel):
     """Schema for updating a unit."""
-    number: Optional[str] = Field(None, max_length=20)
-    block: Optional[str] = Field(None, max_length=20)
-    tower: Optional[str] = Field(None, max_length=50)
-    floor: Optional[int] = None
-    type: Optional[UnitType] = None
-    status: Optional[UnitStatus] = None
 
-    area_m2: Optional[Decimal] = Field(None, ge=0)
-    bedrooms: Optional[int] = Field(None, ge=0)
-    bathrooms: Optional[int] = Field(None, ge=0)
-    parking_spots: Optional[int] = Field(None, ge=0)
+    number: str | None = Field(None, max_length=20)
+    block: str | None = Field(None, max_length=20)
+    tower: str | None = Field(None, max_length=50)
+    floor: int | None = None
+    type: UnitType | None = None
+    status: UnitStatus | None = None
 
-    owner_name: Optional[str] = Field(None, max_length=200)
-    owner_document: Optional[str] = Field(None, max_length=20)
-    owner_phone: Optional[str] = Field(None, max_length=20)
-    owner_email: Optional[str] = Field(None, max_length=200)
+    area_m2: Decimal | None = Field(None, ge=0)
+    bedrooms: int | None = Field(None, ge=0)
+    bathrooms: int | None = Field(None, ge=0)
+    parking_spots: int | None = Field(None, ge=0)
 
-    resident_name: Optional[str] = Field(None, max_length=200)
-    resident_phone: Optional[str] = Field(None, max_length=20)
-    resident_email: Optional[str] = Field(None, max_length=200)
-    is_tenant: Optional[bool] = None
+    owner_name: str | None = Field(None, max_length=200)
+    owner_document: str | None = Field(None, max_length=20)
+    owner_phone: str | None = Field(None, max_length=20)
+    owner_email: str | None = Field(None, max_length=200)
 
-    monthly_fee: Optional[Decimal] = Field(None, ge=0)
-    notes: Optional[str] = None
-    tags: Optional[List[str]] = None
+    resident_name: str | None = Field(None, max_length=200)
+    resident_phone: str | None = Field(None, max_length=20)
+    resident_email: str | None = Field(None, max_length=200)
+    is_tenant: bool | None = None
+
+    monthly_fee: Decimal | None = Field(None, ge=0)
+    notes: str | None = None
+    tags: list[str] | None = None
 
 
 class UnitResponse(BaseModel):
     """Schema for unit response."""
+
     id: UUID
     code: str
     condominium_id: UUID
     number: str
-    block: Optional[str]
-    tower: Optional[str]
-    floor: Optional[int]
+    block: str | None
+    tower: str | None
+    floor: int | None
     type: UnitType
     status: UnitStatus
     display_name: str
     short_name: str
 
-    area_m2: Optional[Decimal]
-    bedrooms: Optional[int]
-    parking_spots: Optional[int]
+    area_m2: Decimal | None
+    bedrooms: int | None
+    parking_spots: int | None
 
-    owner_name: Optional[str]
-    resident_name: Optional[str]
-    current_resident: Optional[str]
+    owner_name: str | None
+    resident_name: str | None
+    current_resident: str | None
     is_tenant: bool
     is_occupied: bool
 
-    monthly_fee: Optional[Decimal]
+    monthly_fee: Decimal | None
     total_fee: Decimal
     is_defaulter: bool
-    debt_amount: Optional[Decimal]
+    debt_amount: Decimal | None
 
     has_access_credentials: bool
     total_authorized_persons: int
@@ -514,24 +525,26 @@ class UnitResponse(BaseModel):
 
 class UnitListResponse(BaseModel):
     """Schema for unit list response."""
+
     id: UUID
     code: str
     number: str
-    block: Optional[str]
-    tower: Optional[str]
+    block: str | None
+    tower: str | None
     type: UnitType
     status: UnitStatus
     display_name: str
-    current_resident: Optional[str]
+    current_resident: str | None
     is_occupied: bool
     is_defaulter: bool
-    monthly_fee: Optional[Decimal]
+    monthly_fee: Decimal | None
 
     model_config = {"from_attributes": True}
 
 
 class UnitStats(BaseModel):
     """Schema for unit statistics."""
+
     total_units: int = 0
     occupied_units: int = 0
     available_units: int = 0
@@ -546,63 +559,68 @@ class UnitStats(BaseModel):
 # CLIENT CONTRACT SCHEMAS
 # =============================================================================
 
+
 class ClientContractBase(BaseModel):
     """Base schema for ClientContract."""
+
     service_type: ContractServiceType
-    description: Optional[str] = Field(None, max_length=500)
-    scope: Optional[str] = None
-    monthly_value: Optional[Decimal] = Field(None, ge=0)
-    setup_fee: Optional[Decimal] = Field(None, ge=0)
-    discount_percentage: Optional[Decimal] = Field(None, ge=0, le=100)
-    start_date: Optional[date] = None
-    end_date: Optional[date] = None
-    sla_response_time_minutes: Optional[int] = Field(None, ge=0)
-    sla_resolution_time_hours: Optional[int] = Field(None, ge=0)
+    description: str | None = Field(None, max_length=500)
+    scope: str | None = None
+    monthly_value: Decimal | None = Field(None, ge=0)
+    setup_fee: Decimal | None = Field(None, ge=0)
+    discount_percentage: Decimal | None = Field(None, ge=0, le=100)
+    start_date: date | None = None
+    end_date: date | None = None
+    sla_response_time_minutes: int | None = Field(None, ge=0)
+    sla_resolution_time_hours: int | None = Field(None, ge=0)
     is_24h: bool = False
     auto_renew: bool = True
-    settings: Optional[dict] = None
-    features: Optional[List[str]] = None
-    notes: Optional[str] = None
+    settings: dict | None = None
+    features: list[str] | None = None
+    notes: str | None = None
 
 
 class ClientContractCreate(ClientContractBase):
     """Schema for creating a client contract."""
+
     client_id: UUID
-    contract_id: Optional[UUID] = None
-    condominium_id: Optional[UUID] = None
+    contract_id: UUID | None = None
+    condominium_id: UUID | None = None
 
 
 class ClientContractUpdate(BaseModel):
     """Schema for updating a client contract."""
-    service_type: Optional[ContractServiceType] = None
-    status: Optional[ServiceStatus] = None
-    description: Optional[str] = Field(None, max_length=500)
-    scope: Optional[str] = None
-    monthly_value: Optional[Decimal] = Field(None, ge=0)
-    discount_percentage: Optional[Decimal] = Field(None, ge=0, le=100)
-    end_date: Optional[date] = None
-    sla_response_time_minutes: Optional[int] = Field(None, ge=0)
-    sla_resolution_time_hours: Optional[int] = Field(None, ge=0)
-    settings: Optional[dict] = None
-    features: Optional[List[str]] = None
-    notes: Optional[str] = None
-    auto_renew: Optional[bool] = None
+
+    service_type: ContractServiceType | None = None
+    status: ServiceStatus | None = None
+    description: str | None = Field(None, max_length=500)
+    scope: str | None = None
+    monthly_value: Decimal | None = Field(None, ge=0)
+    discount_percentage: Decimal | None = Field(None, ge=0, le=100)
+    end_date: date | None = None
+    sla_response_time_minutes: int | None = Field(None, ge=0)
+    sla_resolution_time_hours: int | None = Field(None, ge=0)
+    settings: dict | None = None
+    features: list[str] | None = None
+    notes: str | None = None
+    auto_renew: bool | None = None
 
 
 class ClientContractResponse(BaseModel):
     """Schema for client contract response."""
+
     id: UUID
     client_id: UUID
-    contract_id: Optional[UUID]
-    condominium_id: Optional[UUID]
+    contract_id: UUID | None
+    condominium_id: UUID | None
     service_type: ContractServiceType
     status: ServiceStatus
-    description: Optional[str]
-    monthly_value: Optional[Decimal]
-    final_value: Optional[Decimal]
-    start_date: Optional[date]
-    end_date: Optional[date]
-    days_until_end: Optional[int]
+    description: str | None
+    monthly_value: Decimal | None
+    final_value: Decimal | None
+    start_date: date | None
+    end_date: date | None
+    days_until_end: int | None
     is_expiring_soon: bool
     is_guardian_service: bool
     is_plus_service: bool
@@ -617,62 +635,67 @@ class ClientContractResponse(BaseModel):
 # INTEGRATION SETTINGS SCHEMAS
 # =============================================================================
 
+
 class IntegrationSettingsBase(BaseModel):
     """Base schema for IntegrationSettings."""
+
     integration_type: IntegrationType
     name: str = Field(..., min_length=2, max_length=100)
-    description: Optional[str] = Field(None, max_length=500)
+    description: str | None = Field(None, max_length=500)
     sync_direction: SyncDirection = Field(default=SyncDirection.BIDIRECTIONAL)
-    api_url: Optional[str] = Field(None, max_length=500)
-    sync_interval_minutes: Optional[int] = Field(None, ge=1)
+    api_url: str | None = Field(None, max_length=500)
+    sync_interval_minutes: int | None = Field(None, ge=1)
     auto_sync: bool = True
     sync_on_change: bool = True
-    settings: Optional[dict] = None
-    notes: Optional[str] = None
+    settings: dict | None = None
+    notes: str | None = None
 
 
 class IntegrationSettingsCreate(IntegrationSettingsBase):
     """Schema for creating integration settings."""
+
     client_id: UUID
-    api_key: Optional[str] = Field(None, max_length=500)
-    api_secret: Optional[str] = Field(None, max_length=500)
-    webhook_url: Optional[str] = Field(None, max_length=500)
-    webhook_secret: Optional[str] = Field(None, max_length=200)
+    api_key: str | None = Field(None, max_length=500)
+    api_secret: str | None = Field(None, max_length=500)
+    webhook_url: str | None = Field(None, max_length=500)
+    webhook_secret: str | None = Field(None, max_length=200)
 
 
 class IntegrationSettingsUpdate(BaseModel):
     """Schema for updating integration settings."""
-    name: Optional[str] = Field(None, max_length=100)
-    description: Optional[str] = Field(None, max_length=500)
-    sync_direction: Optional[SyncDirection] = None
-    api_url: Optional[str] = Field(None, max_length=500)
-    api_key: Optional[str] = Field(None, max_length=500)
-    api_secret: Optional[str] = Field(None, max_length=500)
-    webhook_url: Optional[str] = Field(None, max_length=500)
-    sync_interval_minutes: Optional[int] = Field(None, ge=1)
-    auto_sync: Optional[bool] = None
-    sync_on_change: Optional[bool] = None
-    settings: Optional[dict] = None
-    notes: Optional[str] = None
-    is_enabled: Optional[bool] = None
+
+    name: str | None = Field(None, max_length=100)
+    description: str | None = Field(None, max_length=500)
+    sync_direction: SyncDirection | None = None
+    api_url: str | None = Field(None, max_length=500)
+    api_key: str | None = Field(None, max_length=500)
+    api_secret: str | None = Field(None, max_length=500)
+    webhook_url: str | None = Field(None, max_length=500)
+    sync_interval_minutes: int | None = Field(None, ge=1)
+    auto_sync: bool | None = None
+    sync_on_change: bool | None = None
+    settings: dict | None = None
+    notes: str | None = None
+    is_enabled: bool | None = None
 
 
 class IntegrationSettingsResponse(BaseModel):
     """Schema for integration settings response."""
+
     id: UUID
     client_id: UUID
     integration_type: IntegrationType
     name: str
-    description: Optional[str]
+    description: str | None
     sync_status: SyncStatus
     sync_direction: SyncDirection
-    api_url: Optional[str]
-    external_client_id: Optional[str]
-    webhook_url: Optional[str]
-    sync_interval_minutes: Optional[int]
-    last_sync_at: Optional[datetime]
-    last_sync_success_at: Optional[datetime]
-    last_sync_error: Optional[str]
+    api_url: str | None
+    external_client_id: str | None
+    webhook_url: str | None
+    sync_interval_minutes: int | None
+    last_sync_at: datetime | None
+    last_sync_success_at: datetime | None
+    last_sync_error: str | None
     success_rate: float
     total_syncs: int
     records_synced: int

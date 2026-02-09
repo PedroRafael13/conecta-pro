@@ -4,12 +4,12 @@ Serviço para validação de arquivos de anexo.
 Implementa validações de tamanho, tipo e conteúdo de arquivos.
 """
 
-from typing import Optional
-from fastapi import HTTPException, status, UploadFile
+from fastapi import HTTPException, UploadFile, status
 
 
 class FileValidationError(Exception):
     """Erro de validação de arquivo."""
+
     pass
 
 
@@ -40,7 +40,7 @@ class FileValidator:
     def __init__(
         self,
         max_size: int = DEFAULT_MAX_SIZE,
-        allowed_types: Optional[list[str]] = None,
+        allowed_types: list[str] | None = None,
     ):
         """
         Inicializa o validador.
@@ -71,7 +71,7 @@ class FileValidator:
                 detail=f"Arquivo muito grande ({current_mb:.2f}MB). Máximo permitido: {max_mb:.0f}MB",
             )
 
-    def validate_type(self, content_type: Optional[str]) -> None:
+    def validate_type(self, content_type: str | None) -> None:
         """
         Valida tipo MIME do arquivo.
 
@@ -91,7 +91,7 @@ class FileValidator:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Tipo de arquivo não permitido: {content_type}. "
-                       f"Tipos aceitos: imagens (JPEG, PNG, GIF, WebP), PDF, Word, Excel",
+                f"Tipos aceitos: imagens (JPEG, PNG, GIF, WebP), PDF, Word, Excel",
             )
 
     async def validate_file(self, file: UploadFile) -> bytes:
@@ -133,11 +133,11 @@ class FileValidator:
             Extensão do arquivo (com ponto). Ex: ".pdf", ".jpg"
         """
         if "." in filename:
-            return filename[filename.rfind("."):].lower()
+            return filename[filename.rfind(".") :].lower()
         return ""
 
     @staticmethod
-    def is_image(content_type: Optional[str]) -> bool:
+    def is_image(content_type: str | None) -> bool:
         """
         Verifica se arquivo é uma imagem.
 
@@ -152,7 +152,7 @@ class FileValidator:
         return content_type.startswith("image/")
 
     @staticmethod
-    def is_pdf(content_type: Optional[str]) -> bool:
+    def is_pdf(content_type: str | None) -> bool:
         """
         Verifica se arquivo é um PDF.
 

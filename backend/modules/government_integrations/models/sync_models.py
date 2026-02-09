@@ -10,20 +10,27 @@ Este modulo define as tabelas para armazenar:
 - Logs de sincronizacao
 """
 
-from datetime import datetime, date
-from decimal import Decimal
-from enum import Enum
-from typing import Optional, List
+from datetime import datetime
+from enum import StrEnum
 from uuid import uuid4
-import json
 
 from sqlalchemy import (
-    Column, String, DateTime, Date, Boolean, Text,
-    ForeignKey, Index, Numeric, Integer, LargeBinary,
-    Enum as SQLEnum, JSON, UniqueConstraint
+    Boolean,
+    Column,
+    Date,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    LargeBinary,
+    Numeric,
+    String,
+    Text,
+    UniqueConstraint,
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB
-from sqlalchemy.orm import relationship, declarative_base
+from sqlalchemy import Enum as SQLEnum
+from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
 
@@ -32,8 +39,10 @@ Base = declarative_base()
 # ENUMS
 # =============================================================================
 
-class TipoDocumentoFiscal(str, Enum):
+
+class TipoDocumentoFiscal(StrEnum):
     """Tipos de documentos fiscais."""
+
     NFE = "nfe"
     NFCE = "nfce"
     NFSE = "nfse"
@@ -41,8 +50,9 @@ class TipoDocumentoFiscal(str, Enum):
     MDFE = "mdfe"
 
 
-class StatusDocumentoFiscal(str, Enum):
+class StatusDocumentoFiscal(StrEnum):
     """Status de documentos fiscais."""
+
     AUTORIZADO = "autorizado"
     AUTORIZADA = "autorizada"
     CANCELADO = "cancelado"
@@ -55,23 +65,26 @@ class StatusDocumentoFiscal(str, Enum):
     ENCERRADO = "encerrado"
 
 
-class StatusEventoReinf(str, Enum):
+class StatusEventoReinf(StrEnum):
     """Status de eventos EFD-Reinf."""
+
     PENDENTE = "pendente"
     ENVIADO = "enviado"
     ACEITO = "aceito"
     REJEITADO = "rejeitado"
 
 
-class TipoParticipacao(str, Enum):
+class TipoParticipacao(StrEnum):
     """Tipo de participacao em documento fiscal."""
+
     EMITENTE = "emitente"
     DESTINATARIO = "destinatario"
     TRANSPORTADOR = "transportador"
 
 
-class TipoEventoESocial(str, Enum):
+class TipoEventoESocial(StrEnum):
     """Tipos de eventos eSocial."""
+
     S1000 = "S-1000"  # Empregador
     S1200 = "S-1200"  # Remuneracao
     S1210 = "S-1210"  # Pagamentos
@@ -88,8 +101,9 @@ class TipoEventoESocial(str, Enum):
     S3000 = "S-3000"  # Exclusao
 
 
-class StatusEventoESocial(str, Enum):
+class StatusEventoESocial(StrEnum):
     """Status de eventos eSocial."""
+
     PENDENTE = "pendente"
     ENVIADO = "enviado"
     PROCESSANDO = "processando"
@@ -98,8 +112,9 @@ class StatusEventoESocial(str, Enum):
     ERRO = "erro"
 
 
-class TipoGuia(str, Enum):
+class TipoGuia(StrEnum):
     """Tipos de guias de recolhimento."""
+
     FGTS = "fgts"
     FGTS_RESCISORIO = "fgts_rescisorio"
     INSS = "inss"
@@ -110,16 +125,18 @@ class TipoGuia(str, Enum):
     GFIP = "gfip"
 
 
-class StatusGuia(str, Enum):
+class StatusGuia(StrEnum):
     """Status de guias."""
+
     GERADA = "gerada"
     PAGA = "paga"
     VENCIDA = "vencida"
     CANCELADA = "cancelada"
 
 
-class StatusSincronizacao(str, Enum):
+class StatusSincronizacao(StrEnum):
     """Status de sincronizacao."""
+
     SUCESSO = "sucesso"
     ERRO = "erro"
     PARCIAL = "parcial"
@@ -127,8 +144,9 @@ class StatusSincronizacao(str, Enum):
     EXECUTANDO = "executando"
 
 
-class TipoSincronizacao(str, Enum):
+class TipoSincronizacao(StrEnum):
     """Tipos de sincronizacao."""
+
     COMPLETA = "completa"
     INCREMENTAL = "incremental"
     MANUAL = "manual"
@@ -139,8 +157,10 @@ class TipoSincronizacao(str, Enum):
 # MODELO BASE
 # =============================================================================
 
+
 class BaseModel:
     """Modelo base com campos comuns."""
+
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -151,8 +171,10 @@ class BaseModel:
 # DOCUMENTOS FISCAIS
 # =============================================================================
 
+
 class DocumentoFiscal(Base, BaseModel):
     """Documento fiscal (NF-e, NFC-e, NFS-e, CT-e, MDF-e)."""
+
     __tablename__ = "gov_documentos_fiscais"
 
     # Identificacao
@@ -236,6 +258,7 @@ class DocumentoFiscal(Base, BaseModel):
 
 class EventoDocumentoFiscal(Base, BaseModel):
     """Eventos de documentos fiscais (carta correcao, cancelamento, etc)."""
+
     __tablename__ = "gov_eventos_documentos_fiscais"
 
     documento_id = Column(UUID(as_uuid=True), ForeignKey("gov_documentos_fiscais.id"), nullable=False)
@@ -254,8 +277,10 @@ class EventoDocumentoFiscal(Base, BaseModel):
 # eSocial
 # =============================================================================
 
+
 class EventoESocial(Base, BaseModel):
     """Evento eSocial enviado/recebido."""
+
     __tablename__ = "gov_eventos_esocial"
 
     # Identificacao
@@ -304,8 +329,10 @@ class EventoESocial(Base, BaseModel):
 # GUIAS DE RECOLHIMENTO
 # =============================================================================
 
+
 class GuiaRecolhimento(Base, BaseModel):
     """Guias de recolhimento (FGTS, INSS, DARF, DAS, etc)."""
+
     __tablename__ = "gov_guias_recolhimento"
 
     # Identificacao
@@ -352,8 +379,10 @@ class GuiaRecolhimento(Base, BaseModel):
 # CERTIDOES
 # =============================================================================
 
+
 class Certidao(Base, BaseModel):
     """Certidoes obtidas (CND, CNDT, etc)."""
+
     __tablename__ = "gov_certidoes"
 
     cnpj_empresa = Column(String(14), nullable=False, index=True)
@@ -374,17 +403,17 @@ class Certidao(Base, BaseModel):
     # Sincronizacao
     sync_id = Column(UUID(as_uuid=True), ForeignKey("gov_sync_logs.id"))
 
-    __table_args__ = (
-        Index("ix_certidao_validade", "cnpj_empresa", "data_validade"),
-    )
+    __table_args__ = (Index("ix_certidao_validade", "cnpj_empresa", "data_validade"),)
 
 
 # =============================================================================
 # DADOS CADASTRAIS
 # =============================================================================
 
+
 class DadosCadastraisEmpresa(Base, BaseModel):
     """Dados cadastrais da empresa na Receita Federal."""
+
     __tablename__ = "gov_dados_cadastrais_empresa"
 
     cnpj = Column(String(14), unique=True, nullable=False, index=True)
@@ -441,6 +470,7 @@ class DadosCadastraisEmpresa(Base, BaseModel):
 
 class DadosCadastraisPessoa(Base, BaseModel):
     """Dados cadastrais de pessoa fisica."""
+
     __tablename__ = "gov_dados_cadastrais_pessoa"
 
     cpf = Column(String(11), unique=True, nullable=False, index=True)
@@ -456,8 +486,10 @@ class DadosCadastraisPessoa(Base, BaseModel):
 # SIMPLES NACIONAL
 # =============================================================================
 
+
 class ApuracaoSimplesNacional(Base, BaseModel):
     """Apuracoes do Simples Nacional (PGDAS-D)."""
+
     __tablename__ = "gov_apuracoes_simples"
 
     cnpj_empresa = Column(String(14), nullable=False, index=True)
@@ -482,17 +514,17 @@ class ApuracaoSimplesNacional(Base, BaseModel):
     # Sincronizacao
     sync_id = Column(UUID(as_uuid=True), ForeignKey("gov_sync_logs.id"))
 
-    __table_args__ = (
-        UniqueConstraint("cnpj_empresa", "competencia", name="uq_apuracao_simples"),
-    )
+    __table_args__ = (UniqueConstraint("cnpj_empresa", "competencia", name="uq_apuracao_simples"),)
 
 
 # =============================================================================
 # SPED
 # =============================================================================
 
+
 class ArquivoSPED(Base, BaseModel):
     """Arquivos SPED enviados/recebidos."""
+
     __tablename__ = "gov_arquivos_sped"
 
     cnpj_empresa = Column(String(14), nullable=False, index=True)
@@ -518,17 +550,17 @@ class ArquivoSPED(Base, BaseModel):
     # Sincronizacao
     sync_id = Column(UUID(as_uuid=True), ForeignKey("gov_sync_logs.id"))
 
-    __table_args__ = (
-        Index("ix_sped_cnpj_ano", "cnpj_empresa", "ano"),
-    )
+    __table_args__ = (Index("ix_sped_cnpj_ano", "cnpj_empresa", "ano"),)
 
 
 # =============================================================================
 # LOGS DE SINCRONIZACAO
 # =============================================================================
 
+
 class SyncLog(Base, BaseModel):
     """Log de sincronizacao com portais governamentais."""
+
     __tablename__ = "gov_sync_logs"
 
     # Identificacao
@@ -571,6 +603,7 @@ class SyncLog(Base, BaseModel):
 
 class SyncAgendamento(Base, BaseModel):
     """Agendamentos de sincronizacao."""
+
     __tablename__ = "gov_sync_agendamentos"
 
     cnpj_empresa = Column(String(14), nullable=False, index=True)
@@ -590,17 +623,17 @@ class SyncAgendamento(Base, BaseModel):
     tipo_sync = Column(SQLEnum(TipoSincronizacao), default=TipoSincronizacao.INCREMENTAL)
     dias_retroativos = Column(Integer, default=30)
 
-    __table_args__ = (
-        UniqueConstraint("cnpj_empresa", "servico", name="uq_sync_agendamento"),
-    )
+    __table_args__ = (UniqueConstraint("cnpj_empresa", "servico", name="uq_sync_agendamento"),)
 
 
 # =============================================================================
 # CONFIGURACOES
 # =============================================================================
 
+
 class ConfiguracaoIntegracao(Base, BaseModel):
     """Configuracoes de integracao por empresa."""
+
     __tablename__ = "gov_configuracoes_integracao"
 
     cnpj_empresa = Column(String(14), unique=True, nullable=False, index=True)
@@ -633,8 +666,10 @@ class ConfiguracaoIntegracao(Base, BaseModel):
 # FGTS DIGITAL
 # =============================================================================
 
+
 class ExtratoFGTS(Base, BaseModel):
     """Extrato de conta vinculada FGTS."""
+
     __tablename__ = "gov_extratos_fgts"
 
     cnpj_empresa = Column(String(14), nullable=False, index=True)
@@ -656,13 +691,12 @@ class ExtratoFGTS(Base, BaseModel):
 
     sync_id = Column(UUID(as_uuid=True), ForeignKey("gov_sync_logs.id"))
 
-    __table_args__ = (
-        Index("ix_extrato_fgts_cnpj_cpf", "cnpj_empresa", "cpf_funcionario"),
-    )
+    __table_args__ = (Index("ix_extrato_fgts_cnpj_cpf", "cnpj_empresa", "cpf_funcionario"),)
 
 
 class DebitoFGTS(Base, BaseModel):
     """Debitos pendentes de FGTS."""
+
     __tablename__ = "gov_debitos_fgts"
 
     cnpj_empresa = Column(String(14), nullable=False, index=True)
@@ -682,6 +716,7 @@ class DebitoFGTS(Base, BaseModel):
 
 class MovimentacaoFGTS(Base, BaseModel):
     """Movimentacoes de funcionarios no FGTS."""
+
     __tablename__ = "gov_movimentacoes_fgts"
 
     cnpj_empresa = Column(String(14), nullable=False, index=True)
@@ -703,8 +738,10 @@ class MovimentacaoFGTS(Base, BaseModel):
 # EFD-REINF
 # =============================================================================
 
+
 class EventoReinf(Base, BaseModel):
     """Eventos EFD-Reinf enviados."""
+
     __tablename__ = "gov_eventos_reinf"
 
     cnpj_empresa = Column(String(14), nullable=False, index=True)
@@ -723,13 +760,12 @@ class EventoReinf(Base, BaseModel):
 
     sync_id = Column(UUID(as_uuid=True), ForeignKey("gov_sync_logs.id"))
 
-    __table_args__ = (
-        Index("ix_reinf_cnpj_periodo", "cnpj_empresa", "periodo_apuracao"),
-    )
+    __table_args__ = (Index("ix_reinf_cnpj_periodo", "cnpj_empresa", "periodo_apuracao"),)
 
 
 class TotalizadorReinf(Base, BaseModel):
     """Totalizadores EFD-Reinf (R-9001, R-9005, etc)."""
+
     __tablename__ = "gov_totalizadores_reinf"
 
     cnpj_empresa = Column(String(14), nullable=False, index=True)
@@ -753,13 +789,12 @@ class TotalizadorReinf(Base, BaseModel):
 
     sync_id = Column(UUID(as_uuid=True), ForeignKey("gov_sync_logs.id"))
 
-    __table_args__ = (
-        UniqueConstraint("cnpj_empresa", "tipo_evento", "periodo_apuracao", name="uq_totalizador_reinf"),
-    )
+    __table_args__ = (UniqueConstraint("cnpj_empresa", "tipo_evento", "periodo_apuracao", name="uq_totalizador_reinf"),)
 
 
 class RetencaoReinf(Base, BaseModel):
     """Retencoes na fonte EFD-Reinf."""
+
     __tablename__ = "gov_retencoes_reinf"
 
     cnpj_empresa = Column(String(14), nullable=False, index=True)
@@ -787,8 +822,10 @@ class RetencaoReinf(Base, BaseModel):
 # DCTFWeb
 # =============================================================================
 
+
 class DeclaracaoDCTFWeb(Base, BaseModel):
     """Declaracoes DCTFWeb transmitidas."""
+
     __tablename__ = "gov_declaracoes_dctfweb"
 
     cnpj_empresa = Column(String(14), nullable=False, index=True)
@@ -808,13 +845,12 @@ class DeclaracaoDCTFWeb(Base, BaseModel):
 
     sync_id = Column(UUID(as_uuid=True), ForeignKey("gov_sync_logs.id"))
 
-    __table_args__ = (
-        Index("ix_dctfweb_cnpj_periodo", "cnpj_empresa", "periodo_apuracao"),
-    )
+    __table_args__ = (Index("ix_dctfweb_cnpj_periodo", "cnpj_empresa", "periodo_apuracao"),)
 
 
 class DebitoDCTFWeb(Base, BaseModel):
     """Debitos apurados na DCTFWeb."""
+
     __tablename__ = "gov_debitos_dctfweb"
 
     cnpj_empresa = Column(String(14), nullable=False, index=True)
@@ -834,13 +870,12 @@ class DebitoDCTFWeb(Base, BaseModel):
 
     sync_id = Column(UUID(as_uuid=True), ForeignKey("gov_sync_logs.id"))
 
-    __table_args__ = (
-        Index("ix_debito_dctfweb_periodo", "cnpj_empresa", "periodo_apuracao"),
-    )
+    __table_args__ = (Index("ix_debito_dctfweb_periodo", "cnpj_empresa", "periodo_apuracao"),)
 
 
 class CreditoDCTFWeb(Base, BaseModel):
     """Creditos vinculados na DCTFWeb."""
+
     __tablename__ = "gov_creditos_dctfweb"
 
     cnpj_empresa = Column(String(14), nullable=False, index=True)
@@ -862,8 +897,10 @@ class CreditoDCTFWeb(Base, BaseModel):
 # SPED FISCAL E CONTABIL
 # =============================================================================
 
+
 class EscrituracaoSPED(Base, BaseModel):
     """Escrituracoes SPED Fiscal e Contabil."""
+
     __tablename__ = "gov_escrituracoes_sped"
 
     cnpj_empresa = Column(String(14), nullable=False, index=True)
@@ -893,13 +930,12 @@ class EscrituracaoSPED(Base, BaseModel):
 
     sync_id = Column(UUID(as_uuid=True), ForeignKey("gov_sync_logs.id"))
 
-    __table_args__ = (
-        Index("ix_escrituracao_sped_cnpj", "cnpj_empresa", "tipo_sped"),
-    )
+    __table_args__ = (Index("ix_escrituracao_sped_cnpj", "cnpj_empresa", "tipo_sped"),)
 
 
 class ContaContabil(Base, BaseModel):
     """Plano de contas SPED Contabil."""
+
     __tablename__ = "gov_contas_contabeis"
 
     cnpj_empresa = Column(String(14), nullable=False, index=True)
@@ -914,13 +950,12 @@ class ContaContabil(Base, BaseModel):
 
     sync_id = Column(UUID(as_uuid=True), ForeignKey("gov_sync_logs.id"))
 
-    __table_args__ = (
-        Index("ix_conta_contabil_cnpj", "cnpj_empresa", "codigo_conta"),
-    )
+    __table_args__ = (Index("ix_conta_contabil_cnpj", "cnpj_empresa", "codigo_conta"),)
 
 
 class SaldoContabil(Base, BaseModel):
     """Saldos contabeis por periodo."""
+
     __tablename__ = "gov_saldos_contabeis"
 
     cnpj_empresa = Column(String(14), nullable=False, index=True)
@@ -936,13 +971,12 @@ class SaldoContabil(Base, BaseModel):
 
     sync_id = Column(UUID(as_uuid=True), ForeignKey("gov_sync_logs.id"))
 
-    __table_args__ = (
-        UniqueConstraint("cnpj_empresa", "codigo_conta", "periodo", name="uq_saldo_contabil"),
-    )
+    __table_args__ = (UniqueConstraint("cnpj_empresa", "codigo_conta", "periodo", name="uq_saldo_contabil"),)
 
 
 class ApuracaoICMS(Base, BaseModel):
     """Apuracao ICMS do SPED Fiscal."""
+
     __tablename__ = "gov_apuracoes_icms"
 
     cnpj_empresa = Column(String(14), nullable=False, index=True)
@@ -962,13 +996,12 @@ class ApuracaoICMS(Base, BaseModel):
 
     sync_id = Column(UUID(as_uuid=True), ForeignKey("gov_sync_logs.id"))
 
-    __table_args__ = (
-        UniqueConstraint("cnpj_empresa", "periodo_apuracao", name="uq_apuracao_icms"),
-    )
+    __table_args__ = (UniqueConstraint("cnpj_empresa", "periodo_apuracao", name="uq_apuracao_icms"),)
 
 
 class ApuracaoIPI(Base, BaseModel):
     """Apuracao IPI do SPED Fiscal."""
+
     __tablename__ = "gov_apuracoes_ipi"
 
     cnpj_empresa = Column(String(14), nullable=False, index=True)
@@ -982,17 +1015,17 @@ class ApuracaoIPI(Base, BaseModel):
 
     sync_id = Column(UUID(as_uuid=True), ForeignKey("gov_sync_logs.id"))
 
-    __table_args__ = (
-        UniqueConstraint("cnpj_empresa", "periodo_apuracao", name="uq_apuracao_ipi"),
-    )
+    __table_args__ = (UniqueConstraint("cnpj_empresa", "periodo_apuracao", name="uq_apuracao_ipi"),)
 
 
 # =============================================================================
 # NFS-E NACIONAL
 # =============================================================================
 
+
 class DPSPendente(Base, BaseModel):
     """DPS (Declaracao Prestacao Servicos) pendentes."""
+
     __tablename__ = "gov_dps_pendentes"
 
     cnpj_empresa = Column(String(14), nullable=False, index=True)
@@ -1011,6 +1044,7 @@ class DPSPendente(Base, BaseModel):
 # =============================================================================
 # FUNCOES AUXILIARES
 # =============================================================================
+
 
 def criar_todas_tabelas(engine):
     """Cria todas as tabelas no banco de dados."""

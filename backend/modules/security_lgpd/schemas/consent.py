@@ -2,7 +2,7 @@
 Schemas de consentimento do modulo de seguranca LGPD.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
@@ -81,5 +81,5 @@ class ConsentListResponse(BaseModel):
     """Response com lista de consentimentos."""
 
     titular_id: str = Field(..., description="ID do titular")
-    consents: List[Dict[str, Any]] = Field(..., description="Lista de consentimentos")
+    consents: list[dict[str, Any]] = Field(..., description="Lista de consentimentos")
     total: int = Field(..., description="Total de consentimentos")

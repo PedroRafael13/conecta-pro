@@ -1,18 +1,17 @@
 """Service de IA para Kits Documentais - Versão Async."""
 
 from datetime import datetime, timedelta
-from typing import List
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.document_kits.models.document_kit import (
+    AssignmentStatus,
     DocumentKit,
     DocumentKitAssignment,
-    KitType,
-    KitStatus,
-    AssignmentStatus,
     EntityType,
+    KitStatus,
+    KitType,
 )
 from modules.document_kits.repositories.kit_repository import DocumentKitRepository
 
@@ -30,7 +29,7 @@ class DocumentKitAIService:
         condominio_id: UUID,
         entity_type: EntityType,
         entity_data: dict,
-    ) -> List[dict]:
+    ) -> list[dict]:
         """Sugere kits para uma entidade baseado em seu perfil."""
         kits = await self.repository.list_kits(
             condominio_id=condominio_id,
@@ -41,15 +40,17 @@ class DocumentKitAIService:
         for kit in kits:
             score = self._calculate_relevance_score(kit, entity_type, entity_data)
             if score > 0:
-                suggestions.append({
-                    "kit_id": str(kit.id),
-                    "kit_nome": kit.nome,
-                    "kit_tipo": kit.tipo.value,
-                    "relevancia_score": round(score, 2),
-                    "motivo": self._get_suggestion_reason(kit, entity_type),
-                    "itens_count": kit.total_itens,
-                    "prazo_sugerido_dias": kit.prazo_dias or 30,
-                })
+                suggestions.append(
+                    {
+                        "kit_id": str(kit.id),
+                        "kit_nome": kit.nome,
+                        "kit_tipo": kit.tipo.value,
+                        "relevancia_score": round(score, 2),
+                        "motivo": self._get_suggestion_reason(kit, entity_type),
+                        "itens_count": kit.total_itens,
+                        "prazo_sugerido_dias": kit.prazo_dias or 30,
+                    }
+                )
 
         suggestions.sort(key=lambda x: x["relevancia_score"], reverse=True)
         return suggestions[:10]
@@ -66,9 +67,12 @@ class DocumentKitAIService:
         if entity_type.value in (kit.entity_types or []):
             score += 40.0
 
-        if kit.tipo == KitType.ADMISSAO and entity_type == EntityType.FUNCIONARIO:
-            score += 30.0
-        elif kit.tipo == KitType.CONTRATO_CLIENTE and entity_type == EntityType.CONTRATO:
+        if (
+            kit.tipo == KitType.ADMISSAO
+            and entity_type == EntityType.FUNCIONARIO
+            or kit.tipo == KitType.CONTRATO_CLIENTE
+            and entity_type == EntityType.CONTRATO
+        ):
             score += 30.0
         elif kit.tipo == KitType.VIGILANTE and entity_type == EntityType.FUNCIONARIO:
             cargo = entity_data.get("cargo", "").lower()
@@ -97,24 +101,12 @@ class DocumentKitAIService:
     ) -> str:
         """Retorna motivo da sugestao."""
         reasons = {
-            (KitType.ADMISSAO, EntityType.FUNCIONARIO): (
-                "Kit obrigatorio para admissao de funcionarios"
-            ),
-            (KitType.DEMISSAO, EntityType.FUNCIONARIO): (
-                "Kit necessario para processo de desligamento"
-            ),
-            (KitType.CONTRATO_CLIENTE, EntityType.CONTRATO): (
-                "Documentacao essencial para formalizacao do contrato"
-            ),
-            (KitType.VIGILANTE, EntityType.FUNCIONARIO): (
-                "Documentos especificos para funcao de vigilante"
-            ),
-            (KitType.TREINAMENTO, EntityType.TREINAMENTO): (
-                "Comprovantes necessarios para registro de treinamento"
-            ),
-            (KitType.EQUIPAMENTO, EntityType.EQUIPAMENTO): (
-                "Termos e registros para controle de equipamentos"
-            ),
+            (KitType.ADMISSAO, EntityType.FUNCIONARIO): ("Kit obrigatorio para admissao de funcionarios"),
+            (KitType.DEMISSAO, EntityType.FUNCIONARIO): ("Kit necessario para processo de desligamento"),
+            (KitType.CONTRATO_CLIENTE, EntityType.CONTRATO): ("Documentacao essencial para formalizacao do contrato"),
+            (KitType.VIGILANTE, EntityType.FUNCIONARIO): ("Documentos especificos para funcao de vigilante"),
+            (KitType.TREINAMENTO, EntityType.TREINAMENTO): ("Comprovantes necessarios para registro de treinamento"),
+            (KitType.EQUIPAMENTO, EntityType.EQUIPAMENTO): ("Termos e registros para controle de equipamentos"),
         }
 
         key = (kit.tipo, entity_type)
@@ -155,8 +147,10 @@ class DocumentKitAIService:
             issues.append(f"{len(vencidos)} kit(s) com prazo vencido")
 
         incompletos = [
-            a for a in assignments
-            if a.status in (
+            a
+            for a in assignments
+            if a.status
+            in (
                 AssignmentStatus.PENDENTE,
                 AssignmentStatus.EM_ANDAMENTO,
                 AssignmentStatus.AGUARDANDO_DOCUMENTOS,
@@ -166,19 +160,15 @@ class DocumentKitAIService:
             risk_score += 20
             issues.append(f"{len(incompletos)} kit(s) incompleto(s)")
 
-        reprovados = [
-            a for a in assignments
-            if a.status == AssignmentStatus.REPROVADO
-        ]
+        reprovados = [a for a in assignments if a.status == AssignmentStatus.REPROVADO]
         if reprovados:
             risk_score += 30
             issues.append(f"{len(reprovados)} kit(s) reprovado(s)")
 
         proximos_vencer = [
-            a for a in assignments
-            if a.data_limite
-            and a.data_limite < datetime.utcnow() + timedelta(days=7)
-            and not a.is_completo
+            a
+            for a in assignments
+            if a.data_limite and a.data_limite < datetime.utcnow() + timedelta(days=7) and not a.is_completo
         ]
         if proximos_vencer:
             risk_score += 10
@@ -186,17 +176,13 @@ class DocumentKitAIService:
 
         risk_level = self._get_risk_level(risk_score)
 
-        recommendations = self._generate_recommendations(
-            vencidos, incompletos, reprovados, proximos_vencer
-        )
+        recommendations = self._generate_recommendations(vencidos, incompletos, reprovados, proximos_vencer)
 
         return {
             "risk_level": risk_level,
             "risk_score": min(risk_score, 100),
             "total_kits": len(assignments),
-            "kits_completos": sum(
-                1 for a in assignments if a.status == AssignmentStatus.COMPLETO
-            ),
+            "kits_completos": sum(1 for a in assignments if a.status == AssignmentStatus.COMPLETO),
             "kits_vencidos": len(vencidos),
             "kits_incompletos": len(incompletos),
             "kits_reprovados": len(reprovados),
@@ -218,34 +204,24 @@ class DocumentKitAIService:
 
     def _generate_recommendations(
         self,
-        vencidos: List[DocumentKitAssignment],
-        incompletos: List[DocumentKitAssignment],
-        reprovados: List[DocumentKitAssignment],
-        proximos_vencer: List[DocumentKitAssignment],
-    ) -> List[str]:
+        vencidos: list[DocumentKitAssignment],
+        incompletos: list[DocumentKitAssignment],
+        reprovados: list[DocumentKitAssignment],
+        proximos_vencer: list[DocumentKitAssignment],
+    ) -> list[str]:
         """Gera recomendacoes baseadas na analise."""
         recommendations = []
 
         if vencidos:
-            recommendations.append(
-                "Priorizar regularizacao dos kits vencidos imediatamente"
-            )
+            recommendations.append("Priorizar regularizacao dos kits vencidos imediatamente")
         if reprovados:
-            recommendations.append(
-                "Revisar e reenviar documentos reprovados"
-            )
+            recommendations.append("Revisar e reenviar documentos reprovados")
         if proximos_vencer:
-            recommendations.append(
-                "Agilizar conclusao dos kits proximos do vencimento"
-            )
+            recommendations.append("Agilizar conclusao dos kits proximos do vencimento")
         if incompletos and not vencidos:
-            recommendations.append(
-                "Dar continuidade aos kits em andamento"
-            )
+            recommendations.append("Dar continuidade aos kits em andamento")
         if not recommendations:
-            recommendations.append(
-                "Manter acompanhamento regular dos kits"
-            )
+            recommendations.append("Manter acompanhamento regular dos kits")
 
         return recommendations
 
@@ -310,7 +286,7 @@ class DocumentKitAIService:
         self,
         condominio_id: UUID,
         limit: int = 10,
-    ) -> List[dict]:
+    ) -> list[dict]:
         """Retorna atribuicoes prioritarias baseado em analise."""
         assignments = await self.repository.list_assignments(
             condominio_id=condominio_id,
@@ -319,8 +295,10 @@ class DocumentKitAIService:
         )
 
         active_assignments = [
-            a for a in assignments
-            if a.status not in (
+            a
+            for a in assignments
+            if a.status
+            not in (
                 AssignmentStatus.COMPLETO,
                 AssignmentStatus.CANCELADO,
             )
@@ -329,17 +307,19 @@ class DocumentKitAIService:
         scored = []
         for assignment in active_assignments:
             score = self._calculate_priority_score(assignment)
-            scored.append({
-                "assignment_id": str(assignment.id),
-                "kit_id": str(assignment.kit_id),
-                "entity_type": assignment.entity_type.value,
-                "entity_nome": assignment.entity_nome,
-                "status": assignment.status.value,
-                "priority_score": score,
-                "dias_restantes": assignment.dias_restantes,
-                "percentual_completo": assignment.percentual_completo,
-                "is_vencido": assignment.is_vencido,
-            })
+            scored.append(
+                {
+                    "assignment_id": str(assignment.id),
+                    "kit_id": str(assignment.kit_id),
+                    "entity_type": assignment.entity_type.value,
+                    "entity_nome": assignment.entity_nome,
+                    "status": assignment.status.value,
+                    "priority_score": score,
+                    "dias_restantes": assignment.dias_restantes,
+                    "percentual_completo": assignment.percentual_completo,
+                    "is_vencido": assignment.is_vencido,
+                }
+            )
 
         scored.sort(key=lambda x: x["priority_score"], reverse=True)
         return scored[:limit]
@@ -399,39 +379,34 @@ class DocumentKitAIService:
             )
 
             total = len(assignments)
-            completos = sum(
-                1 for a in assignments if a.status == AssignmentStatus.COMPLETO
-            )
+            completos = sum(1 for a in assignments if a.status == AssignmentStatus.COMPLETO)
             taxa = (completos / total * 100) if total > 0 else 0
 
-            usage.append({
-                "kit_id": str(kit.id),
-                "kit_nome": kit.nome,
-                "kit_tipo": kit.tipo.value,
-                "total_atribuicoes": total,
-                "atribuicoes_completas": completos,
-                "taxa_conclusao": round(taxa, 2),
-                "uso_count": kit.uso_count,
-            })
+            usage.append(
+                {
+                    "kit_id": str(kit.id),
+                    "kit_nome": kit.nome,
+                    "kit_tipo": kit.tipo.value,
+                    "total_atribuicoes": total,
+                    "atribuicoes_completas": completos,
+                    "taxa_conclusao": round(taxa, 2),
+                    "uso_count": kit.uso_count,
+                }
+            )
 
         usage.sort(key=lambda x: x["taxa_conclusao"])
 
         recommendations = []
-        low_completion = [
-            u for u in usage
-            if u["taxa_conclusao"] < 50 and u["total_atribuicoes"] > 0
-        ]
+        low_completion = [u for u in usage if u["taxa_conclusao"] < 50 and u["total_atribuicoes"] > 0]
         if low_completion:
             recommendations.append(
-                f"Revisar kits com baixa taxa de conclusao: "
-                f"{', '.join(u['kit_nome'] for u in low_completion[:3])}"
+                f"Revisar kits com baixa taxa de conclusao: {', '.join(u['kit_nome'] for u in low_completion[:3])}"
             )
 
         unused = [u for u in usage if u["uso_count"] == 0]
         if unused:
             recommendations.append(
-                f"Considerar remover kits nao utilizados: "
-                f"{', '.join(u['kit_nome'] for u in unused[:3])}"
+                f"Considerar remover kits nao utilizados: {', '.join(u['kit_nome'] for u in unused[:3])}"
             )
 
         return {
@@ -444,7 +419,7 @@ class DocumentKitAIService:
         self,
         condominio_id: UUID,
         days_ahead: int = 30,
-    ) -> List[dict]:
+    ) -> list[dict]:
         """Lista documentos proximos do vencimento."""
         assignments = await self.repository.list_assignments(
             condominio_id=condominio_id,
@@ -463,16 +438,18 @@ class DocumentKitAIService:
             for item_status in item_statuses:
                 if item_status.data_validade and item_status.data_validade < threshold:
                     days_until = (item_status.data_validade - datetime.utcnow()).days
-                    expiring.append({
-                        "item_status_id": str(item_status.id),
-                        "assignment_id": str(assignment.id),
-                        "entity_nome": assignment.entity_nome,
-                        "entity_type": assignment.entity_type.value,
-                        "arquivo_nome": item_status.arquivo_nome,
-                        "data_validade": item_status.data_validade.isoformat(),
-                        "dias_restantes": max(0, days_until),
-                        "is_expired": days_until < 0,
-                    })
+                    expiring.append(
+                        {
+                            "item_status_id": str(item_status.id),
+                            "assignment_id": str(assignment.id),
+                            "entity_nome": assignment.entity_nome,
+                            "entity_type": assignment.entity_type.value,
+                            "arquivo_nome": item_status.arquivo_nome,
+                            "data_validade": item_status.data_validade.isoformat(),
+                            "dias_restantes": max(0, days_until),
+                            "is_expired": days_until < 0,
+                        }
+                    )
 
         expiring.sort(key=lambda x: x["dias_restantes"])
         return expiring

@@ -3,35 +3,52 @@ Testes para as APIs do módulo Clients.
 Sprint 30 - Cadastro de Clientes/Condomínios
 """
 
-import pytest
 from datetime import date, datetime
 from decimal import Decimal
-from uuid import uuid4
 from unittest.mock import AsyncMock, MagicMock, patch
+from uuid import uuid4
 
+import pytest
 from fastapi import status
 from httpx import AsyncClient
 
 from modules.clients.models import (
-    Client, Condominium, Unit, ClientContract, IntegrationSettings,
-    ClientType, ClientStatus, ClientSegment, DocumentType,
-    CondominiumType, CondominiumStatus,
-    UnitType, UnitStatus,
-    ContractServiceType, ServiceStatus,
-    IntegrationType, SyncStatus,
+    Client,
+    ClientContract,
+    ClientSegment,
+    ClientStatus,
+    ClientType,
+    Condominium,
+    CondominiumStatus,
+    CondominiumType,
+    ContractServiceType,
+    DocumentType,
+    IntegrationSettings,
+    IntegrationType,
+    ServiceStatus,
+    SyncStatus,
+    Unit,
+    UnitStatus,
+    UnitType,
 )
 from modules.clients.schemas import (
-    ClientCreate, ClientUpdate, ClientResponse,
-    CondominiumCreate, CondominiumResponse,
-    UnitCreate, UnitResponse,
-    ContractCreate, ContractResponse,
-    IntegrationCreate, IntegrationResponse,
+    ClientContractCreate,
+    ClientContractResponse,
+    ClientCreate,
+    ClientResponse,
+    ClientUpdate,
+    CondominiumCreate,
+    CondominiumResponse,
+    IntegrationSettingsCreate,
+    IntegrationSettingsResponse,
+    UnitCreate,
+    UnitResponse,
 )
-
 
 # ============================================================
 # FIXTURES
 # ============================================================
+
 
 @pytest.fixture
 def mock_db():
@@ -160,13 +177,12 @@ def sample_unit_create_data():
 # TESTES DE CLIENTES
 # ============================================================
 
+
 class TestClientAPI:
     """Testes para endpoints de clientes."""
 
     @pytest.mark.asyncio
-    async def test_list_clients_success(
-        self, mock_client_service, sample_client_response
-    ):
+    async def test_list_clients_success(self, mock_client_service, sample_client_response):
         """Testa listagem de clientes com sucesso."""
         mock_client_service.list_clients.return_value = {
             "items": [sample_client_response],
@@ -213,9 +229,7 @@ class TestClientAPI:
         mock_client_service.list_clients.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_get_client_success(
-        self, mock_client_service, sample_client_response
-    ):
+    async def test_get_client_success(self, mock_client_service, sample_client_response):
         """Testa obtenção de cliente por ID."""
         client_id = sample_client_response["id"]
         mock_client_service.get_client.return_value = sample_client_response
@@ -243,9 +257,7 @@ class TestClientAPI:
         assert result is None
 
     @pytest.mark.asyncio
-    async def test_create_client_success(
-        self, mock_client_service, sample_client_create_data, sample_client_response
-    ):
+    async def test_create_client_success(self, mock_client_service, sample_client_create_data, sample_client_response):
         """Testa criação de cliente com sucesso."""
         mock_client_service.create_client.return_value = sample_client_response
 
@@ -261,26 +273,26 @@ class TestClientAPI:
     @pytest.mark.asyncio
     async def test_create_client_duplicate_document(self, mock_client_service):
         """Testa criação de cliente com documento duplicado."""
-        mock_client_service.create_client.side_effect = ValueError(
-            "Documento já cadastrado"
-        )
+        mock_client_service.create_client.side_effect = ValueError("Documento já cadastrado")
 
-        with patch(
-            "modules.clients.controllers.client_controller.ClientService",
-            return_value=mock_client_service,
+        with (
+            patch(
+                "modules.clients.controllers.client_controller.ClientService",
+                return_value=mock_client_service,
+            ),
+            pytest.raises(ValueError) as exc_info,
         ):
-            with pytest.raises(ValueError) as exc_info:
-                await mock_client_service.create_client({
+            await mock_client_service.create_client(
+                {
                     "name": "Teste",
                     "document_number": "11.111.111/0001-11",
-                })
+                }
+            )
 
         assert "Documento já cadastrado" in str(exc_info.value)
 
     @pytest.mark.asyncio
-    async def test_update_client_success(
-        self, mock_client_service, sample_client_response
-    ):
+    async def test_update_client_success(self, mock_client_service, sample_client_response):
         """Testa atualização de cliente."""
         client_id = sample_client_response["id"]
         updated_data = {"name": "Empresa Atualizada Ltda"}
@@ -310,9 +322,7 @@ class TestClientAPI:
         assert result is True
 
     @pytest.mark.asyncio
-    async def test_activate_client(
-        self, mock_client_service, sample_client_response
-    ):
+    async def test_activate_client(self, mock_client_service, sample_client_response):
         """Testa ativação de cliente."""
         client_id = sample_client_response["id"]
         sample_client_response["status"] = "active"
@@ -327,9 +337,7 @@ class TestClientAPI:
         assert result["status"] == "active"
 
     @pytest.mark.asyncio
-    async def test_suspend_client(
-        self, mock_client_service, sample_client_response
-    ):
+    async def test_suspend_client(self, mock_client_service, sample_client_response):
         """Testa suspensão de cliente."""
         client_id = sample_client_response["id"]
         sample_client_response["status"] = "suspended"
@@ -344,9 +352,7 @@ class TestClientAPI:
         assert result["status"] == "suspended"
 
     @pytest.mark.asyncio
-    async def test_enable_guardian(
-        self, mock_client_service, sample_client_response
-    ):
+    async def test_enable_guardian(self, mock_client_service, sample_client_response):
         """Testa habilitação do Guardian."""
         client_id = sample_client_response["id"]
         sample_client_response["guardian_enabled"] = True
@@ -357,17 +363,13 @@ class TestClientAPI:
             "modules.clients.controllers.client_controller.ClientService",
             return_value=mock_client_service,
         ):
-            result = await mock_client_service.enable_guardian(
-                client_id, "GRD-12345"
-            )
+            result = await mock_client_service.enable_guardian(client_id, "GRD-12345")
 
         assert result["guardian_enabled"] is True
         assert result["guardian_client_id"] == "GRD-12345"
 
     @pytest.mark.asyncio
-    async def test_enable_plus(
-        self, mock_client_service, sample_client_response
-    ):
+    async def test_enable_plus(self, mock_client_service, sample_client_response):
         """Testa habilitação do Plus."""
         client_id = sample_client_response["id"]
         sample_client_response["plus_enabled"] = True
@@ -388,13 +390,12 @@ class TestClientAPI:
 # TESTES DE CONDOMÍNIOS
 # ============================================================
 
+
 class TestCondominiumAPI:
     """Testes para endpoints de condomínios."""
 
     @pytest.mark.asyncio
-    async def test_list_condominiums_success(
-        self, mock_client_service, sample_condominium_response
-    ):
+    async def test_list_condominiums_success(self, mock_client_service, sample_condominium_response):
         """Testa listagem de condomínios."""
         mock_client_service.list_condominiums.return_value = {
             "items": [sample_condominium_response],
@@ -414,9 +415,7 @@ class TestCondominiumAPI:
         assert result["items"][0]["code"] == "COND-001"
 
     @pytest.mark.asyncio
-    async def test_list_condominiums_by_client(
-        self, mock_client_service, sample_condominium_response
-    ):
+    async def test_list_condominiums_by_client(self, mock_client_service, sample_condominium_response):
         """Testa listagem de condomínios por cliente."""
         client_id = sample_condominium_response["client_id"]
         mock_client_service.list_condominiums.return_value = {
@@ -431,17 +430,13 @@ class TestCondominiumAPI:
             "modules.clients.controllers.client_controller.ClientService",
             return_value=mock_client_service,
         ):
-            result = await mock_client_service.list_condominiums(
-                client_id=client_id, skip=0, limit=50
-            )
+            result = await mock_client_service.list_condominiums(client_id=client_id, skip=0, limit=50)
 
         assert result["total"] == 1
         assert result["items"][0]["client_id"] == client_id
 
     @pytest.mark.asyncio
-    async def test_get_condominium_success(
-        self, mock_client_service, sample_condominium_response
-    ):
+    async def test_get_condominium_success(self, mock_client_service, sample_condominium_response):
         """Testa obtenção de condomínio por ID."""
         condo_id = sample_condominium_response["id"]
         mock_client_service.get_condominium.return_value = sample_condominium_response
@@ -457,8 +452,7 @@ class TestCondominiumAPI:
 
     @pytest.mark.asyncio
     async def test_create_condominium_success(
-        self, mock_client_service, sample_condominium_create_data,
-        sample_condominium_response
+        self, mock_client_service, sample_condominium_create_data, sample_condominium_response
     ):
         """Testa criação de condomínio."""
         mock_client_service.create_condominium.return_value = sample_condominium_response
@@ -467,51 +461,37 @@ class TestCondominiumAPI:
             "modules.clients.controllers.client_controller.ClientService",
             return_value=mock_client_service,
         ):
-            result = await mock_client_service.create_condominium(
-                sample_condominium_create_data
-            )
+            result = await mock_client_service.create_condominium(sample_condominium_create_data)
 
         assert result["code"] is not None
 
     @pytest.mark.asyncio
-    async def test_start_condominium_implantation(
-        self, mock_client_service, sample_condominium_response
-    ):
+    async def test_start_condominium_implantation(self, mock_client_service, sample_condominium_response):
         """Testa início de implantação de condomínio."""
         condo_id = sample_condominium_response["id"]
         sample_condominium_response["status"] = "implantation"
-        mock_client_service.start_condominium_implantation.return_value = (
-            sample_condominium_response
-        )
+        mock_client_service.start_condominium_implantation.return_value = sample_condominium_response
 
         with patch(
             "modules.clients.controllers.client_controller.ClientService",
             return_value=mock_client_service,
         ):
-            result = await mock_client_service.start_condominium_implantation(
-                condo_id
-            )
+            result = await mock_client_service.start_condominium_implantation(condo_id)
 
         assert result["status"] == "implantation"
 
     @pytest.mark.asyncio
-    async def test_finish_condominium_implantation(
-        self, mock_client_service, sample_condominium_response
-    ):
+    async def test_finish_condominium_implantation(self, mock_client_service, sample_condominium_response):
         """Testa finalização de implantação de condomínio."""
         condo_id = sample_condominium_response["id"]
         sample_condominium_response["status"] = "active"
-        mock_client_service.finish_condominium_implantation.return_value = (
-            sample_condominium_response
-        )
+        mock_client_service.finish_condominium_implantation.return_value = sample_condominium_response
 
         with patch(
             "modules.clients.controllers.client_controller.ClientService",
             return_value=mock_client_service,
         ):
-            result = await mock_client_service.finish_condominium_implantation(
-                condo_id
-            )
+            result = await mock_client_service.finish_condominium_implantation(condo_id)
 
         assert result["status"] == "active"
 
@@ -520,13 +500,12 @@ class TestCondominiumAPI:
 # TESTES DE UNIDADES
 # ============================================================
 
+
 class TestUnitAPI:
     """Testes para endpoints de unidades."""
 
     @pytest.mark.asyncio
-    async def test_list_units_success(
-        self, mock_client_service, sample_unit_response
-    ):
+    async def test_list_units_success(self, mock_client_service, sample_unit_response):
         """Testa listagem de unidades."""
         mock_client_service.list_units.return_value = {
             "items": [sample_unit_response],
@@ -546,9 +525,7 @@ class TestUnitAPI:
         assert result["items"][0]["unit_number"] == "101"
 
     @pytest.mark.asyncio
-    async def test_list_units_by_condominium(
-        self, mock_client_service, sample_unit_response
-    ):
+    async def test_list_units_by_condominium(self, mock_client_service, sample_unit_response):
         """Testa listagem de unidades por condomínio."""
         condo_id = sample_unit_response["condominium_id"]
         mock_client_service.list_units.return_value = {
@@ -563,17 +540,13 @@ class TestUnitAPI:
             "modules.clients.controllers.client_controller.ClientService",
             return_value=mock_client_service,
         ):
-            result = await mock_client_service.list_units(
-                condominium_id=condo_id, skip=0, limit=50
-            )
+            result = await mock_client_service.list_units(condominium_id=condo_id, skip=0, limit=50)
 
         assert result["total"] == 1
         assert result["items"][0]["condominium_id"] == condo_id
 
     @pytest.mark.asyncio
-    async def test_get_unit_success(
-        self, mock_client_service, sample_unit_response
-    ):
+    async def test_get_unit_success(self, mock_client_service, sample_unit_response):
         """Testa obtenção de unidade por ID."""
         unit_id = sample_unit_response["id"]
         mock_client_service.get_unit.return_value = sample_unit_response
@@ -588,9 +561,7 @@ class TestUnitAPI:
         assert result["code"] == "COND-001-A101"
 
     @pytest.mark.asyncio
-    async def test_create_unit_success(
-        self, mock_client_service, sample_unit_create_data, sample_unit_response
-    ):
+    async def test_create_unit_success(self, mock_client_service, sample_unit_create_data, sample_unit_response):
         """Testa criação de unidade."""
         mock_client_service.create_unit.return_value = sample_unit_response
 
@@ -603,9 +574,7 @@ class TestUnitAPI:
         assert result["code"] is not None
 
     @pytest.mark.asyncio
-    async def test_set_unit_owner(
-        self, mock_client_service, sample_unit_response
-    ):
+    async def test_set_unit_owner(self, mock_client_service, sample_unit_response):
         """Testa definição de proprietário."""
         unit_id = sample_unit_response["id"]
         sample_unit_response["owner_name"] = "Novo Proprietário"
@@ -627,9 +596,7 @@ class TestUnitAPI:
         assert result["owner_name"] == "Novo Proprietário"
 
     @pytest.mark.asyncio
-    async def test_set_unit_resident(
-        self, mock_client_service, sample_unit_response
-    ):
+    async def test_set_unit_resident(self, mock_client_service, sample_unit_response):
         """Testa definição de morador."""
         unit_id = sample_unit_response["id"]
         sample_unit_response["resident_name"] = "Inquilino"
@@ -653,9 +620,7 @@ class TestUnitAPI:
         assert result["status"] == "occupied"
 
     @pytest.mark.asyncio
-    async def test_set_unit_defaulter(
-        self, mock_client_service, sample_unit_response
-    ):
+    async def test_set_unit_defaulter(self, mock_client_service, sample_unit_response):
         """Testa marcação de unidade como inadimplente."""
         unit_id = sample_unit_response["id"]
         sample_unit_response["is_defaulter"] = True
@@ -666,9 +631,7 @@ class TestUnitAPI:
             "modules.clients.controllers.client_controller.ClientService",
             return_value=mock_client_service,
         ):
-            result = await mock_client_service.set_unit_defaulter(
-                unit_id, {"debt_amount": 1500.00}
-            )
+            result = await mock_client_service.set_unit_defaulter(unit_id, {"debt_amount": 1500.00})
 
         assert result["is_defaulter"] is True
         assert result["status"] == "defaulter"
@@ -677,6 +640,7 @@ class TestUnitAPI:
 # ============================================================
 # TESTES DE CONTRATOS
 # ============================================================
+
 
 class TestContractAPI:
     """Testes para endpoints de contratos."""
@@ -726,11 +690,13 @@ class TestContractAPI:
             "modules.clients.controllers.client_controller.ClientService",
             return_value=mock_client_service,
         ):
-            result = await mock_client_service.create_contract({
-                "client_id": str(uuid4()),
-                "service_type": "cftv",
-                "monthly_value": 3000.00,
-            })
+            result = await mock_client_service.create_contract(
+                {
+                    "client_id": str(uuid4()),
+                    "service_type": "cftv",
+                    "monthly_value": 3000.00,
+                }
+            )
 
         assert result["contract_number"] is not None
 
@@ -774,6 +740,7 @@ class TestContractAPI:
 # ============================================================
 # TESTES DE INTEGRAÇÕES
 # ============================================================
+
 
 class TestIntegrationAPI:
     """Testes para endpoints de integrações."""
@@ -823,11 +790,13 @@ class TestIntegrationAPI:
             "modules.clients.controllers.client_controller.ClientService",
             return_value=mock_client_service,
         ):
-            result = await mock_client_service.create_integration({
-                "client_id": str(uuid4()),
-                "integration_type": "plus",
-                "name": "Plus Integration",
-            })
+            result = await mock_client_service.create_integration(
+                {
+                    "client_id": str(uuid4()),
+                    "integration_type": "plus",
+                    "name": "Plus Integration",
+                }
+            )
 
         assert result["integration_type"] == "plus"
 
@@ -891,6 +860,7 @@ class TestIntegrationAPI:
 # ============================================================
 # TESTES DE IA
 # ============================================================
+
 
 class TestClientAIAPI:
     """Testes para endpoints de IA."""
@@ -1061,6 +1031,7 @@ class TestClientAIAPI:
 # ============================================================
 # TESTES DE ESTATÍSTICAS
 # ============================================================
+
 
 class TestClientStatisticsAPI:
     """Testes para endpoints de estatísticas."""
