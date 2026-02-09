@@ -3,10 +3,9 @@
 Sprint 36 - Notification Hub.
 """
 
-import enum
 import uuid
 from datetime import datetime
-from typing import Optional
+from enum import StrEnum
 
 from sqlalchemy import Boolean, Column, DateTime, Enum, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
@@ -15,7 +14,7 @@ from sqlalchemy.orm import relationship
 from core.models.base import Base
 
 
-class TemplateStatus(str, enum.Enum):
+class TemplateStatus(StrEnum):
     """Status do template."""
 
     DRAFT = "draft"
@@ -27,7 +26,7 @@ class TemplateStatus(str, enum.Enum):
     ARCHIVED = "archived"
 
 
-class TemplateCategory(str, enum.Enum):
+class TemplateCategory(StrEnum):
     """Categoria do template."""
 
     TRANSACTIONAL = "transactional"
@@ -46,7 +45,7 @@ class NotificationTemplate(Base):
     """Modelo de template de notificação multi-canal."""
 
     __tablename__ = "notification_templates"
-    __table_args__ = {'extend_existing': True}
+    __table_args__ = {"extend_existing": True}
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
@@ -166,12 +165,8 @@ class NotificationTemplate(Base):
     created_by = Column(UUID(as_uuid=True))
     updated_by = Column(UUID(as_uuid=True))
 
-    # Relacionamentos
-    channel = relationship(
-        "NotificationChannel",
-        back_populates="templates",
-        foreign_keys=[channel_id],
-    )
+    # channel: removido — conflito com ConfigNotificationTemplate (extend_existing na mesma tabela).
+    # Acesse channel via query: session.query(NotificationChannel).get(template.channel_id)
     queue_items = relationship(
         "NotificationQueue",
         back_populates="template",

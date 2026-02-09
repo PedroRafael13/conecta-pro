@@ -6,7 +6,7 @@ Usa mocks para evitar dependência de banco de dados real.
 """
 
 import asyncio
-from typing import AsyncGenerator, Generator
+from collections.abc import AsyncGenerator, Generator
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
@@ -14,13 +14,23 @@ import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 
-# Importa app apenas se disponivel (evita erros de dependencia)
-try:
-    from main import app
-    _main_app_available = True
-except ImportError:
-    app = None
-    _main_app_available = False
+# Lazy-load: app é importada apenas quando fixtures que a usam são requisitadas.
+# Importar no topo do módulo carrega todos os models e corrompe o mapper registry
+# (conflitos: NotificationTemplate, EmailTemplate, etc. com extend_existing=True).
+_app_cache = None
+
+
+def _get_app():
+    """Importa main.app sob demanda, cacheando o resultado."""
+    global _app_cache
+    if _app_cache is None:
+        try:
+            from main import app
+
+            _app_cache = app
+        except ImportError:
+            _app_cache = False  # sentinela: tentou mas falhou
+    return _app_cache if _app_cache is not False else None
 
 
 # ==========================================================================
@@ -41,7 +51,9 @@ def event_loop() -> Generator:
 def mock_db_session():
     """Mock database session."""
     session = AsyncMock()
-    session.execute = AsyncMock(return_value=MagicMock(scalars=MagicMock(return_value=MagicMock(all=MagicMock(return_value=[])))))
+    session.execute = AsyncMock(
+        return_value=MagicMock(scalars=MagicMock(return_value=MagicMock(all=MagicMock(return_value=[]))))
+    )
     session.commit = AsyncMock()
     session.rollback = AsyncMock()
     session.close = AsyncMock()
@@ -56,7 +68,8 @@ def mock_db_session():
 @pytest_asyncio.fixture
 async def client() -> AsyncGenerator[AsyncClient, None]:
     """Create async HTTP client for testing."""
-    if not _main_app_available or app is None:
+    app = _get_app()
+    if app is None:
         pytest.skip("main app not available")
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
@@ -143,9 +156,13 @@ def test_client_data():
 # ==========================================================================
 def assert_response_ok(response, expected_status=200):
     """Assert response is successful."""
-    assert response.status_code == expected_status, f"Expected {expected_status}, got {response.status_code}: {response.text}"
+    assert response.status_code == expected_status, (
+        f"Expected {expected_status}, got {response.status_code}: {response.text}"
+    )
 
 
 def assert_response_error(response, expected_status=400):
     """Assert response is an error."""
-    assert response.status_code == expected_status, f"Expected {expected_status}, got {response.status_code}: {response.text}"
+    assert response.status_code == expected_status, (
+        f"Expected {expected_status}, got {response.status_code}: {response.text}"
+    )
