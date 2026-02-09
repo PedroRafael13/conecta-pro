@@ -25,9 +25,9 @@ class TestEmployeeSchemas:
     def test_employee_create_valid(self):
         """Testa criação de employee com dados válidos."""
         data = {
-            "full_name": "João da Silva",
+            "nome": "João da Silva",
             "email": "joao.silva@teste.com",
-            "registration": "EMP-001",
+            "matricula": "EMP-001",
             "cargo": "Vigilante",
             "departamento": "Operações",
             "telefone": "(11) 98765-4321",
@@ -37,29 +37,30 @@ class TestEmployeeSchemas:
 
         employee = EmployeeCreate(**data)
 
-        assert employee.full_name == "João da Silva"
+        assert employee.nome == "João da Silva"
         assert employee.email == "joao.silva@teste.com"
-        assert employee.registration == "EMP-001"
+        assert employee.matricula == "EMP-001"
         assert employee.cargo == "Vigilante"
 
     def test_employee_create_minimal(self):
         """Testa criação com campos mínimos obrigatórios."""
         data = {
-            "full_name": "Maria Santos",
+            "nome": "Maria Santos",
             "email": "maria@teste.com",
+            "matricula": "EMP-002",
         }
 
         employee = EmployeeCreate(**data)
 
-        assert employee.full_name == "Maria Santos"
+        assert employee.nome == "Maria Santos"
         assert employee.email == "maria@teste.com"
-        assert employee.registration is None  # Campo opcional
+        assert employee.matricula == "EMP-002"
 
     def test_employee_email_validation(self):
         """Testa validação de email inválido."""
         with pytest.raises(ValidationError) as exc_info:
             EmployeeCreate(
-                full_name="Teste",
+                nome="Teste",
                 email="email-invalido",  # Email sem @
             )
 
@@ -70,19 +71,20 @@ class TestEmployeeSchemas:
         """Testa validação de nome muito curto."""
         with pytest.raises(ValidationError) as exc_info:
             EmployeeCreate(
-                full_name="A",  # Apenas 1 caractere
+                nome="A",  # Apenas 1 caractere
                 email="teste@teste.com",
             )
 
         errors = exc_info.value.errors()
-        assert any("full_name" in str(e).lower() for e in errors)
+        assert any("nome" in str(e).lower() for e in errors)
 
     def test_employee_cpf_format(self):
         """Testa validação de formato de CPF."""
         # CPF válido deve aceitar
         employee = EmployeeCreate(
-            full_name="Teste",
+            nome="Teste",
             email="teste@teste.com",
+            matricula="EMP-003",
             cpf="123.456.789-00",
         )
         assert employee.cpf == "123.456.789-00"
@@ -97,16 +99,16 @@ class TestEmployeeSchemas:
         employee_update = EmployeeUpdate(**update_data)
 
         assert employee_update.cargo == "Supervisor"
-        assert employee_update.telefone == "(11) 91234-5678"
+        assert employee_update.telefone == "11912345678"  # Normalizado pelo validator
         assert employee_update.email is None  # Não atualizado
 
     def test_employee_response_structure(self):
         """Testa estrutura do schema de resposta."""
         response_data = {
             "id": str(uuid4()),
-            "full_name": "Teste Silva",
+            "nome": "Teste Silva",
             "email": "teste@teste.com",
-            "registration": "EMP-001",
+            "matricula": "EMP-001",
             "cargo": "Vigilante",
             "departamento": "Operações",
             "telefone": "(11) 98765-4321",
@@ -120,7 +122,7 @@ class TestEmployeeSchemas:
 
         # Verifica que schema aceita os campos
         assert "id" in response_data
-        assert "full_name" in response_data
+        assert "nome" in response_data
         assert "status" in response_data
 
 
@@ -132,32 +134,32 @@ class TestEmployeeBusinessRules:
         # Este teste seria implementado no repository/service
         # Aqui apenas validamos que o schema aceita email
         employee1 = EmployeeCreate(
-            full_name="Funcionário 1",
+            nome="Funcionário 1",
             email="mesmo.email@teste.com",
         )
         employee2 = EmployeeCreate(
-            full_name="Funcionário 2",
+            nome="Funcionário 2",
             email="mesmo.email@teste.com",
         )
 
         # Schemas aceitam, mas repository deve rejeitar duplicatas
         assert employee1.email == employee2.email
 
-    def test_employee_unique_registration(self):
+    def test_employee_unique_matricula(self):
         """Testa que matrícula deve ser única."""
         employee1 = EmployeeCreate(
-            full_name="Funcionário 1",
+            nome="Funcionário 1",
             email="func1@teste.com",
-            registration="EMP-001",
+            matricula="EMP-001",
         )
         employee2 = EmployeeCreate(
-            full_name="Funcionário 2",
+            nome="Funcionário 2",
             email="func2@teste.com",
-            registration="EMP-001",  # Mesma matrícula
+            matricula="EMP-001",  # Mesma matrícula
         )
 
         # Schemas aceitam, mas repository deve rejeitar duplicatas
-        assert employee1.registration == employee2.registration
+        assert employee1.matricula == employee2.matricula
 
     def test_employee_status_transitions(self):
         """Testa transições válidas de status."""
@@ -167,7 +169,7 @@ class TestEmployeeBusinessRules:
 
         for status in valid_statuses:
             employee = EmployeeCreate(
-                full_name="Teste",
+                nome="Teste",
                 email="teste@teste.com",
                 status=status,
             )
@@ -179,7 +181,7 @@ class TestEmployeeBusinessRules:
         future_date = date.today() + timedelta(days=30)
 
         employee = EmployeeCreate(
-            full_name="Teste",
+            nome="Teste",
             email="teste@teste.com",
             data_admissao=future_date.isoformat(),
         )
@@ -195,9 +197,9 @@ class TestEmployeeIntegrations:
         """Testa schema de resposta da integração Solides."""
         solides_data = {
             "id": str(uuid4()),
-            "full_name": "Funcionário Solides",
+            "nome": "Funcionário Solides",
             "email": "func@solides.com",
-            "registration": "SOL-001",
+            "matricula": "SOL-001",
             "cargo": "Vigilante",
             "departamento": "Operações",
             "data_admissao": "2024-01-01",
@@ -215,7 +217,7 @@ class TestEmployeeIntegrations:
     def test_employee_without_cpf(self):
         """Testa que CPF é opcional."""
         employee = EmployeeCreate(
-            full_name="Funcionário Sem CPF",
+            nome="Funcionário Sem CPF",
             email="sempf@teste.com",
             # CPF não fornecido
         )
@@ -233,7 +235,7 @@ class TestEmployeeIntegrations:
 
         for phone in phone_formats:
             employee = EmployeeCreate(
-                full_name="Teste",
+                nome="Teste",
                 email=f"teste{phone}@teste.com",
                 telefone=phone,
             )
@@ -269,13 +271,13 @@ class TestEmployeeAPI:
     async def test_create_employee_schema(self):
         """Testa criação de employee via schema."""
         employee_data = {
-            "full_name": "Novo Funcionário",
+            "nome": "Novo Funcionário",
             "email": "novo@teste.com",
-            "registration": "EMP-999",
+            "matricula": "EMP-999",
             "cargo": "Vigilante",
         }
 
         employee = EmployeeCreate(**employee_data)
 
-        assert employee.full_name == "Novo Funcionário"
+        assert employee.nome == "Novo Funcionário"
         assert employee.email == "novo@teste.com"
