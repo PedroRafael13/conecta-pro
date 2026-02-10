@@ -55,7 +55,7 @@ class TestFinancialDashboard:
             descricao="Dashboard para diretoria",
             tipo=DashboardType.EXECUTIVE,
             status=DashboardStatus.DRAFT,
-            layout=DashboardLayout.GRID,
+            layout=DashboardLayout.GRID_3X2,
             refresh_interval=RefreshInterval.MINUTE_5,
         )
         assert dashboard.nome == "Dashboard Executivo"
@@ -69,15 +69,15 @@ class TestFinancialDashboard:
             condominio_id=uuid4(),
             nome="Test",
             tipo=DashboardType.CUSTOM,
-            status=DashboardStatus.PUBLISHED,
-            ativo=True,
+            status=DashboardStatus.ACTIVE,
+            is_active=True,
         )
         assert dashboard.is_active is True
 
         dashboard.status = DashboardStatus.ARCHIVED
         assert dashboard.is_active is False
 
-        dashboard.status = DashboardStatus.PUBLISHED
+        dashboard.status = DashboardStatus.ACTIVE
         dashboard.ativo = False
         assert dashboard.is_active is False
 
@@ -105,10 +105,10 @@ class TestFinancialDashboard:
             condominio_id=uuid4(),
             nome="Test",
             tipo=DashboardType.CUSTOM,
-            visualizacoes=0,
+            
         )
-        dashboard.increment_view()
-        assert dashboard.visualizacoes == 1
+        dashboard.view_count = 0  # Initialize first\n        dashboard.increment_view()
+        assert dashboard.view_count == 1
         assert dashboard.ultima_visualizacao is not None
 
     def test_dashboard_publish(self):
@@ -121,8 +121,8 @@ class TestFinancialDashboard:
             tipo=DashboardType.CUSTOM,
             status=DashboardStatus.DRAFT,
         )
-        dashboard.publish(user_id)
-        assert dashboard.status == DashboardStatus.PUBLISHED
+        dashboard.publish()
+        assert dashboard.status == DashboardStatus.ACTIVE
         assert dashboard.published_by == user_id
         assert dashboard.published_at is not None
 
@@ -133,7 +133,7 @@ class TestFinancialDashboard:
             condominio_id=uuid4(),
             nome="Test",
             tipo=DashboardType.CUSTOM,
-            status=DashboardStatus.PUBLISHED,
+            status=DashboardStatus.ACTIVE,
         )
         dashboard.archive()
         assert dashboard.status == DashboardStatus.ARCHIVED
@@ -146,7 +146,7 @@ class TestFinancialDashboard:
             nome="Original Dashboard",
             descricao="Descricao original",
             tipo=DashboardType.EXECUTIVE,
-            status=DashboardStatus.PUBLISHED,
+            status=DashboardStatus.ACTIVE,
             configuracoes={"theme": "dark"},
         )
         duplicated = original.duplicate("Copia Dashboard")
