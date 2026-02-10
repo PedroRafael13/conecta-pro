@@ -84,7 +84,7 @@ class TestAPIStructure:
         response = await client.get("/openapi.json")
         data = response.json()
         paths = data.get("paths", {})
-        ops_routes = [p for p in paths if "/operations/" in p]
+        ops_routes = [p for p in paths if "/operacional/" in p]
         assert len(ops_routes) > 10, f"Esperado >10 rotas operações, encontradas: {len(ops_routes)}"
 
     async def test_invalid_endpoint_returns_404(self, client: AsyncClient):
