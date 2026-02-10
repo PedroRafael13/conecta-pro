@@ -44,14 +44,14 @@ class TestWarehouseModel:
         assert warehouse.code == "DEP-001"
         assert warehouse.name == "Depósito Central"
         assert warehouse.condominio_id == condo_id
-        assert warehouse.warehouse_type == WarehouseType.CENTRAL
-        assert warehouse.status == WarehouseStatus.ACTIVE
-        assert warehouse.storage_type == StorageType.GENERAL
+        assert warehouse.warehouse_type == WarehouseType.PRINCIPAL
+        assert warehouse.status == WarehouseStatus.ATIVO
+        assert warehouse.storage_type == StorageType.NORMAL
         assert warehouse.active is True
 
     def test_warehouse_type_enum(self) -> None:
         """Test WarehouseType enum values."""
-        assert WarehouseType.CENTRAL.value == "CENTRAL"
+        assert WarehouseType.PRINCIPAL.value == "CENTRAL"
         assert WarehouseType.REGIONAL.value == "REGIONAL"
         assert WarehouseType.TRANSIT.value == "TRANSIT"
         assert WarehouseType.RESERVED.value == "RESERVED"
@@ -62,7 +62,7 @@ class TestWarehouseModel:
 
     def test_warehouse_status_enum(self) -> None:
         """Test WarehouseStatus enum values."""
-        assert WarehouseStatus.ACTIVE.value == "ACTIVE"
+        assert WarehouseStatus.ATIVO.value == "ACTIVE"
         assert WarehouseStatus.INACTIVE.value == "INACTIVE"
         assert WarehouseStatus.MAINTENANCE.value == "MAINTENANCE"
         assert WarehouseStatus.BLOCKED.value == "BLOCKED"
@@ -70,7 +70,7 @@ class TestWarehouseModel:
 
     def test_storage_type_enum(self) -> None:
         """Test StorageType enum values."""
-        assert StorageType.GENERAL.value == "GENERAL"
+        assert StorageType.NORMAL.value == "GENERAL"
         assert StorageType.REFRIGERATED.value == "REFRIGERATED"
         assert StorageType.FROZEN.value == "FROZEN"
         assert StorageType.HAZARDOUS.value == "HAZARDOUS"
@@ -486,14 +486,14 @@ class TestStockReservationModel:
             reservation_date=datetime.now(),
         )
         assert reservation.reservation_number == "RES-2024-00001"
-        assert reservation.reservation_type == ReservationType.SALE
-        assert reservation.status == ReservationStatus.PENDING
-        assert reservation.priority == ReservationPriority.NORMAL
+        assert reservation.reservation_type == ReservationType.VENDA
+        assert reservation.status == ReservationStatus.ATIVA
+        assert reservation.priority == ReservationPriority.MEDIA
         assert reservation.quantity_reserved == Decimal("50.0000")
 
     def test_reservation_type_enum(self) -> None:
         """Test ReservationType enum values."""
-        assert ReservationType.SALE.value == "SALE"
+        assert ReservationType.VENDA.value == "venda"
         assert ReservationType.PRODUCTION.value == "PRODUCTION"
         assert ReservationType.TRANSFER.value == "TRANSFER"
         assert ReservationType.PROJECT.value == "PROJECT"
@@ -504,17 +504,17 @@ class TestStockReservationModel:
 
     def test_reservation_status_enum(self) -> None:
         """Test ReservationStatus enum values."""
-        assert ReservationStatus.PENDING.value == "PENDING"
-        assert ReservationStatus.CONFIRMED.value == "CONFIRMED"
-        assert ReservationStatus.PARTIAL.value == "PARTIAL"
-        assert ReservationStatus.CONSUMED.value == "CONSUMED"
-        assert ReservationStatus.RELEASED.value == "RELEASED"
-        assert ReservationStatus.EXPIRED.value == "EXPIRED"
+        assert ReservationStatus.ATIVA.value == "ativa"
+        assert ReservationStatus.ATENDIDA.value == "atendida"
+        assert ReservationStatus.PARCIALMENTE_ATENDIDA.value == "parcialmente_atendida"
+        assert ReservationStatus.LIBERADA.value == "liberada"
+        assert ReservationStatus.CANCELADA.value == "cancelada"
+        assert ReservationStatus.EXPIRADA.value == "expirada"
 
     def test_reservation_priority_enum(self) -> None:
         """Test ReservationPriority enum values."""
         assert ReservationPriority.LOW.value == "LOW"
-        assert ReservationPriority.NORMAL.value == "NORMAL"
+        assert ReservationPriority.MEDIA.value == "media"
         assert ReservationPriority.HIGH.value == "HIGH"
         assert ReservationPriority.URGENT.value == "URGENT"
         assert ReservationPriority.CRITICAL.value == "CRITICAL"
