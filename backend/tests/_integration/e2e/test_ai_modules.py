@@ -15,7 +15,7 @@ class TestAIChatbot:
 
     async def test_chatbot_endpoint_exists(self, client: AsyncClient):
         """Verifica que o endpoint do chatbot existe."""
-        response = await client.get("/api/v1/ai/chatbot/chatbot/")
+        response = await client.get("/api/v1/ai/bartolo/modules")
         assert response.status_code in [200, 401, 403, 422]
 
 
