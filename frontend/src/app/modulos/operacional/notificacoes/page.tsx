@@ -95,11 +95,11 @@ export default function NotificacoesPage() {
   // Debounce search e filtros
   useEffect(() => {
     const timer = setTimeout(() => {
-      setFilters({
-        ...filters,
+      setFilters(prev => ({
+        ...prev,
         type: selectedType || undefined,
         is_read: showOnlyUnread ? false : undefined,
-      });
+      }));
     }, 300);
     return () => clearTimeout(timer);
   }, [selectedType, showOnlyUnread]);

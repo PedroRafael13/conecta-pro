@@ -1,7 +1,7 @@
 'use client';
 
 import { Search, X, Loader2, User, MapPin, Calendar, FileText, Users } from 'lucide-react';
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 ;
 import { useGlobalSearch } from '@/hooks/search/useGlobalSearch';
@@ -43,7 +43,7 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
     { enabled: debouncedQuery.length >= 1 }
   );
 
-  const results = data?.results || [];
+  const results = useMemo(() => data?.results || [], [data?.results]);
   const tookMs = data?.took_ms || 0;
 
   // Navegação com teclado

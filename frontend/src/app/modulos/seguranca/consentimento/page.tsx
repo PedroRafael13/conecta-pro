@@ -94,8 +94,10 @@ export default function ConsentimentoPage() {
 
   // Extrair dados - cast data para shape esperado
   const responseData = consentsResponse?.data as ConsentsData | undefined;
-  const rawConsents = responseData?.consents || (Array.isArray(responseData) ? responseData : []);
-  const allConsents = Array.isArray(rawConsents) ? rawConsents : [];
+  const allConsents = useMemo(() => {
+    const rawConsents = responseData?.consents || (Array.isArray(responseData) ? responseData : []);
+    return Array.isArray(rawConsents) ? rawConsents : [];
+  }, [responseData]);
 
   // Filtrar localmente
   const filteredConsents = useMemo(() => {

@@ -60,7 +60,7 @@ export default function ReembolsoPage() {
   // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => {
-      setFilters({ ...filters, search: searchTerm || undefined });
+      setFilters(prev => ({ ...prev, search: searchTerm || undefined }));
     }, 300);
     return () => clearTimeout(timer);
   }, [searchTerm]);

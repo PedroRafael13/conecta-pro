@@ -98,13 +98,13 @@ export default function OcorrenciasPage() {
   // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => {
-      setFilters({
-        ...filters,
+      setFilters(prev => ({
+        ...prev,
         search: searchTerm || undefined,
         status: selectedStatus || undefined,
         severity: selectedSeverity || undefined,
         category: selectedCategory || undefined,
-      });
+      }));
     }, 300);
     return () => clearTimeout(timer);
   }, [searchTerm, selectedStatus, selectedSeverity, selectedCategory]);

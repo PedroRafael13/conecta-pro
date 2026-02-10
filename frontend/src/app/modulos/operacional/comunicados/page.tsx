@@ -97,13 +97,13 @@ export default function ComunicadosPage() {
   // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => {
-      setFilters({
-        ...filters,
+      setFilters(prev => ({
+        ...prev,
         search: searchTerm || undefined,
         status: selectedStatus || undefined,
         priority: selectedPriority || undefined,
         category: selectedCategory || undefined,
-      });
+      }));
     }, 300);
     return () => clearTimeout(timer);
   }, [searchTerm, selectedStatus, selectedPriority, selectedCategory]);

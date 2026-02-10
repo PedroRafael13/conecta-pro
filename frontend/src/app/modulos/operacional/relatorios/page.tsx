@@ -30,9 +30,9 @@ export default function RelatoriosPage() {
   const router = useRouter();
   const { isLoading: authLoading, isAuthenticated } = useAuth();
   const { data: postsData } = usePosts();
-  const posts = postsData?.items ?? [];
+  const posts = useMemo(() => postsData?.items ?? [], [postsData?.items]);
   const { data: employeesData } = useEmployees();
-  const employees = employeesData?.items ?? [];
+  const employees = useMemo(() => employeesData?.items ?? [], [employeesData?.items]);
 
   const now = useMemo(() => new Date(), []);
   const [startDate, setStartDate] = useState(

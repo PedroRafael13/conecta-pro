@@ -35,9 +35,9 @@ export default function TurnosPage() {
   const { data: employeesData } = useEmployees();
   const { data: scalesData } = useScales();
 
-  const posts: PostResponse[] = postsData?.items ?? [];
-  const employees: EmployeeResponse[] = employeesData?.items ?? [];
-  const scales: ScaleResponse[] = scalesData?.items ?? [];
+  const posts: PostResponse[] = useMemo(() => postsData?.items ?? [], [postsData?.items]);
+  const employees: EmployeeResponse[] = useMemo(() => employeesData?.items ?? [], [employeesData?.items]);
+  const scales: ScaleResponse[] = useMemo(() => scalesData?.items ?? [], [scalesData?.items]);
 
   const { mutate: checkIn } = useCheckInShift();
   const { mutate: checkOut } = useCheckOutShift();
@@ -85,7 +85,7 @@ export default function TurnosPage() {
     refetch: refresh,
   } = useShifts(shiftParams);
 
-  const shifts = (shiftsData?.items ?? []) as unknown as Shift[];
+  const shifts = useMemo(() => (shiftsData?.items ?? []) as unknown as Shift[], [shiftsData?.items]);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {

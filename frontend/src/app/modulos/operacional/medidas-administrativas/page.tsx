@@ -71,12 +71,12 @@ export default function MedidasAdministrativasPage() {
   // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => {
-      setFilters({
-        ...filters,
+      setFilters(prev => ({
+        ...prev,
         search: searchTerm || undefined,
         status: selectedStatus || undefined,
         action_type: selectedType || undefined,
-      });
+      }));
     }, 300);
     return () => clearTimeout(timer);
   }, [searchTerm, selectedStatus, selectedType]);

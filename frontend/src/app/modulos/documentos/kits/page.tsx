@@ -73,7 +73,7 @@ export default function KitsPage() {
   const updateMutation = useUpdateDocumentKit();
   const deleteMutation = useDeleteDocumentKit();
 
-  const kits = kitsData?.items ?? [];
+  const kits = useMemo(() => kitsData?.items ?? [], [kitsData?.items]);
   const error = queryError ? 'Erro ao carregar kits. Tente novamente.' : null;
 
   // Filtrar kits por busca (categoria ja filtrada na API)

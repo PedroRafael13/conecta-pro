@@ -35,9 +35,9 @@ export default function AlocacoesPage() {
   const totalPages = Math.ceil(total / pageSize);
   const [filters, setFilters] = useState<AllocationFilter>({});
   const { data: postsData } = usePosts();
-  const posts = (postsData?.items ?? []) as Post[];
+  const posts = useMemo(() => (postsData?.items ?? []) as Post[], [postsData?.items]);
   const { data: employeesData } = useEmployees();
-  const employees = (employeesData?.items ?? []) as Employee[];
+  const employees = useMemo(() => (employeesData?.items ?? []) as Employee[], [employeesData?.items]);
   const terminateAllocationMutation = useTerminateAllocation();
   const createAllocationMutation = useCreateAllocation();
 

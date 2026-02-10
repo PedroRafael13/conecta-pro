@@ -118,7 +118,7 @@ export function BartoloChatWidget({
         },
       ]);
     }
-  }, [greeting]);
+  }, [greeting, messages.length]);
 
   // Adiciona resposta do Bartolo quando recebe
   useEffect(() => {

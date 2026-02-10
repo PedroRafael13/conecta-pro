@@ -75,11 +75,11 @@ export default function RondasPage() {
   // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => {
-      setFilters({
-        ...filters,
+      setFilters(prev => ({
+        ...prev,
         status: selectedStatus || undefined,
         inspector_role: selectedRole || undefined,
-      });
+      }));
     }, 300);
     return () => clearTimeout(timer);
   }, [searchTerm, selectedStatus, selectedRole]);
