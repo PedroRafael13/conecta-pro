@@ -37,6 +37,7 @@ export function DocumentVersionHistory({
     if (open && documentId) {
       loadVersions();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentional deps
   }, [open, documentId]);
 
   const loadVersions = async () => {

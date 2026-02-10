@@ -46,6 +46,7 @@ export function EditTemplateDialog({
 
     if (shouldLoadData) {
       const rafId = requestAnimationFrame(() => {
+
         setFormData({
           name: template.name,
           description: template.description || '',

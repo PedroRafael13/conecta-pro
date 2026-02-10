@@ -25,6 +25,7 @@ export function FolderTree({ onFolderSelect, selectedFolderId }: FolderTreeProps
 
   useEffect(() => {
     loadTree();
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentional deps
   }, []);
 
   const loadTree = async () => {

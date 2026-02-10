@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,6 +22,18 @@ interface ContratoFormModalProps {
   isLoading?: boolean;
 }
 
+// Initial form state factory
+const createInitialForm = (contrato?: any | null) => ({
+  numero: contrato?.numero || '',
+  titulo: contrato?.titulo || contrato?.title || '',
+  client_id: contrato?.client_id || '',
+  contract_type: contrato?.contract_type || 'servico_vigilancia',
+  valor_mensal: contrato?.valor_mensal || contrato?.monthly_value || 0,
+  data_inicio: contrato?.data_inicio || contrato?.start_date || '',
+  data_fim: contrato?.data_fim || contrato?.end_date || '',
+  observacoes: contrato?.observacoes || contrato?.notes || '',
+});
+
 export function ContratoFormModal({
   isOpen,
   onClose,
@@ -30,42 +42,20 @@ export function ContratoFormModal({
   isLoading,
 }: ContratoFormModalProps) {
   const isEditing = !!contrato;
-  const [form, setForm] = useState({
-    numero: '',
-    titulo: '',
-    client_id: '',
-    contract_type: 'servico_vigilancia',
-    valor_mensal: 0,
-    data_inicio: '',
-    data_fim: '',
-    observacoes: '',
-  });
+
+  const formKey = useMemo(() => {
+    return contrato?.id || contrato?.codigo || 'new';
+  }, [contrato]);
+
+  const [form, setForm] = useState(createInitialForm(contrato));
 
   useEffect(() => {
-    if (contrato) {
-      setForm({
-        numero: contrato.numero || '',
-        titulo: contrato.titulo || contrato.title || '',
-        client_id: contrato.client_id || '',
-        contract_type: contrato.contract_type || 'servico_vigilancia',
-        valor_mensal: contrato.valor_mensal || contrato.monthly_value || 0,
-        data_inicio: contrato.data_inicio || contrato.start_date || '',
-        data_fim: contrato.data_fim || contrato.end_date || '',
-        observacoes: contrato.observacoes || contrato.notes || '',
-      });
-    } else {
-      setForm({
-        numero: '',
-        titulo: '',
-        client_id: '',
-        contract_type: 'servico_vigilancia',
-        valor_mensal: 0,
-        data_inicio: '',
-        data_fim: '',
-        observacoes: '',
-      });
+    if (isOpen) {
+
+      setForm(createInitialForm(contrato));
     }
-  }, [contrato, isOpen]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentional deps
+  }, [isOpen, formKey]);
 
   const handleSubmit = async () => {
     await onSubmit(form);

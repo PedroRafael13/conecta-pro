@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,6 +22,17 @@ interface ComunicadoFormModalProps {
   isLoading?: boolean;
 }
 
+// Initial form state factory
+const createInitialForm = (comunicado?: any) => ({
+  titulo: comunicado?.titulo || '',
+  mensagem: comunicado?.mensagem || '',
+  tipo: comunicado?.tipo || 'informativo',
+  destinatarios: comunicado?.destinatarios || '',
+  data_envio: comunicado?.data_envio
+    ? comunicado.data_envio.substring(0, 10)
+    : new Date().toISOString().substring(0, 10),
+});
+
 export function ComunicadoFormModal({
   isOpen,
   onClose,
@@ -31,35 +42,21 @@ export function ComunicadoFormModal({
 }: ComunicadoFormModalProps) {
   const isEditing = !!comunicado;
 
-  const [form, setForm] = useState({
-    titulo: '',
-    mensagem: '',
-    tipo: 'informativo' as string,
-    destinatarios: '',
-    data_envio: new Date().toISOString().substring(0, 10),
-  });
+  // Use memoized key to force reset when comunicado changes
+  const formKey = useMemo(() => {
+    return comunicado?.id || comunicado?.codigo || 'new';
+  }, [comunicado]);
 
+  const [form, setForm] = useState(createInitialForm(comunicado));
+
+  // Reset form when comunicado changes or modal opens with different data
   useEffect(() => {
-    if (comunicado) {
-      setForm({
-        titulo: comunicado.titulo || '',
-        mensagem: comunicado.mensagem || '',
-        tipo: comunicado.tipo || 'informativo',
-        destinatarios: comunicado.destinatarios || '',
-        data_envio: comunicado.data_envio
-          ? comunicado.data_envio.substring(0, 10)
-          : new Date().toISOString().substring(0, 10),
-      });
-    } else {
-      setForm({
-        titulo: '',
-        mensagem: '',
-        tipo: 'informativo',
-        destinatarios: '',
-        data_envio: new Date().toISOString().substring(0, 10),
-      });
+    if (isOpen) {
+
+      setForm(createInitialForm(comunicado));
     }
-  }, [comunicado, isOpen]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentional deps
+  }, [isOpen, formKey]);
 
   const handleSubmit = () => {
     if (!form.titulo.trim() || !form.mensagem.trim()) return;

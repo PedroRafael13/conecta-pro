@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,6 +21,16 @@ interface ClienteFormModalProps {
   isLoading?: boolean;
 }
 
+// Initial form state factory
+const createInitialForm = (cliente?: any | null) => ({
+  nome: cliente?.nome || '',
+  cnpj: cliente?.cnpj || '',
+  email: cliente?.email || '',
+  telefone: cliente?.telefone || '',
+  tipo: cliente?.tipo || 'condominio',
+  endereco: cliente?.endereco || '',
+});
+
 export function ClienteFormModal({
   isOpen,
   onClose,
@@ -29,36 +39,20 @@ export function ClienteFormModal({
   isLoading,
 }: ClienteFormModalProps) {
   const isEditing = !!cliente;
-  const [form, setForm] = useState({
-    nome: '',
-    cnpj: '',
-    email: '',
-    telefone: '',
-    tipo: 'condominio',
-    endereco: '',
-  });
+
+  const formKey = useMemo(() => {
+    return cliente?.id || cliente?.codigo || 'new';
+  }, [cliente]);
+
+  const [form, setForm] = useState(createInitialForm(cliente));
 
   useEffect(() => {
-    if (cliente) {
-      setForm({
-        nome: cliente.nome || '',
-        cnpj: cliente.cnpj || '',
-        email: cliente.email || '',
-        telefone: cliente.telefone || '',
-        tipo: cliente.tipo || 'condominio',
-        endereco: cliente.endereco || '',
-      });
-    } else {
-      setForm({
-        nome: '',
-        cnpj: '',
-        email: '',
-        telefone: '',
-        tipo: 'condominio',
-        endereco: '',
-      });
+    if (isOpen) {
+
+      setForm(createInitialForm(cliente));
     }
-  }, [cliente, isOpen]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentional deps
+  }, [isOpen, formKey]);
 
   const handleSubmit = async () => {
     await onSubmit(form);

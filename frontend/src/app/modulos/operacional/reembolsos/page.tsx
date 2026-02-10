@@ -60,9 +60,10 @@ export default function ReembolsosOperacionalPage() {
   // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => {
-      setFilters(prev => ({ ...prev, search: searchTerm || undefined }));
+      setFilters({ ...filters, search: searchTerm || undefined });
     }, 300);
     return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- debounce filter sync
   }, [searchTerm]);
 
   // Handlers

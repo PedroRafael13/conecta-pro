@@ -50,8 +50,11 @@ export function CreateTemplateDialog({
     if (prevIsOpen && !isOpen) {
       // Use requestAnimationFrame to defer state update to next render cycle
       const rafId = requestAnimationFrame(() => {
+
         setFormData(createInitialFormData());
+
         setSelectedScale(null);
+
         setErrors({});
       });
       return () => cancelAnimationFrame(rafId);
@@ -67,6 +70,7 @@ export function CreateTemplateDialog({
   useEffect(() => {
     if (currentScale?.id !== selectedScale?.id) {
       const rafId = requestAnimationFrame(() => {
+
         setSelectedScale(currentScale);
       });
       return () => cancelAnimationFrame(rafId);

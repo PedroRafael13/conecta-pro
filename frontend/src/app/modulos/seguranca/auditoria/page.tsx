@@ -99,6 +99,7 @@ export default function AuditoriaLGPDPage() {
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   // Debounce para filtros
+
   useEffect(() => {
     const timer = setTimeout(() => {
       const params: any = {
@@ -112,14 +113,17 @@ export default function AuditoriaLGPDPage() {
       if (startDate) params.start_date = new Date(startDate).toISOString();
       if (endDate) params.end_date = new Date(endDate).toISOString();
 
+
       setQueryParams(params);
     }, 300);
 
     return () => clearTimeout(timer);
   }, [searchTerm, selectedAction, selectedResource, startDate, endDate, page]);
 
+
   // Reset pagina ao alterar filtros
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Form sync
     setPage(1);
   }, [searchTerm, selectedAction, selectedResource, startDate, endDate]);
 

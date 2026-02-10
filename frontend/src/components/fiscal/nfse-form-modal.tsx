@@ -1,11 +1,10 @@
 'use client';
 
 import { AlertCircle, Loader2 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-;
 
 interface NfseFormData {
   numero_rps: string;
@@ -25,34 +24,33 @@ interface NfseFormModalProps {
   isLoading?: boolean;
 }
 
+const defaultFormData: NfseFormData = {
+  numero_rps: '',
+  serie_rps: '',
+  tomador_cnpj: '',
+  tomador_nome: '',
+  descricao_servico: '',
+  valor_servico: 0,
+  aliquota_iss: 0,
+  codigo_servico: '',
+};
+
 export function NfseFormModal({ isOpen, onClose, onSubmit, isLoading = false }: NfseFormModalProps) {
   const [error, setError] = useState<string | null>(null);
-  const [formData, setFormData] = useState<NfseFormData>({
-    numero_rps: '',
-    serie_rps: '',
-    tomador_cnpj: '',
-    tomador_nome: '',
-    descricao_servico: '',
-    valor_servico: 0,
-    aliquota_iss: 0,
-    codigo_servico: '',
-  });
+  const [formData, setFormData] = useState<NfseFormData>(defaultFormData);
+
+  // Reset form when modal opens
+  const resetForm = useCallback(() => {
+    setFormData(defaultFormData);
+    setError(null);
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
-      setFormData({
-        numero_rps: '',
-        serie_rps: '',
-        tomador_cnpj: '',
-        tomador_nome: '',
-        descricao_servico: '',
-        valor_servico: 0,
-        aliquota_iss: 0,
-        codigo_servico: '',
-      });
-      setError(null);
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Form sync
+      resetForm();
     }
-  }, [isOpen]);
+  }, [isOpen, resetForm]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>

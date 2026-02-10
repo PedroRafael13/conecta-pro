@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,6 +22,17 @@ interface AgendamentoFormModalProps {
   isLoading?: boolean;
 }
 
+// Initial form state factory
+const createInitialForm = (agendamento?: any | null) => ({
+  titulo: agendamento?.titulo || '',
+  descricao: agendamento?.descricao || '',
+  data: agendamento?.data || '',
+  hora_inicio: agendamento?.hora_inicio || '',
+  hora_fim: agendamento?.hora_fim || '',
+  tipo: agendamento?.tipo || 'visita',
+  responsavel: agendamento?.responsavel || '',
+});
+
 export function AgendamentoFormModal({
   isOpen,
   onClose,
@@ -30,39 +41,20 @@ export function AgendamentoFormModal({
   isLoading,
 }: AgendamentoFormModalProps) {
   const isEditing = !!agendamento;
-  const [form, setForm] = useState({
-    titulo: '',
-    descricao: '',
-    data: '',
-    hora_inicio: '',
-    hora_fim: '',
-    tipo: 'visita',
-    responsavel: '',
-  });
+
+  const formKey = useMemo(() => {
+    return agendamento?.id || agendamento?.codigo || 'new';
+  }, [agendamento]);
+
+  const [form, setForm] = useState(createInitialForm(agendamento));
 
   useEffect(() => {
-    if (agendamento) {
-      setForm({
-        titulo: agendamento.titulo || '',
-        descricao: agendamento.descricao || '',
-        data: agendamento.data || '',
-        hora_inicio: agendamento.hora_inicio || '',
-        hora_fim: agendamento.hora_fim || '',
-        tipo: agendamento.tipo || 'visita',
-        responsavel: agendamento.responsavel || '',
-      });
-    } else {
-      setForm({
-        titulo: '',
-        descricao: '',
-        data: '',
-        hora_inicio: '',
-        hora_fim: '',
-        tipo: 'visita',
-        responsavel: '',
-      });
+    if (isOpen) {
+
+      setForm(createInitialForm(agendamento));
     }
-  }, [agendamento, isOpen]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentional deps
+  }, [isOpen, formKey]);
 
   const handleSubmit = async () => {
     await onSubmit(form);

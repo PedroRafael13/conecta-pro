@@ -1,11 +1,10 @@
 'use client';
 
 import { AlertCircle, Loader2 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-;
 
 interface CustomerFormModalProps {
   isOpen: boolean;
@@ -23,6 +22,14 @@ interface CustomerFormData {
   address: string;
 }
 
+const defaultFormData: CustomerFormData = {
+  name: '',
+  email: '',
+  phone: '',
+  document: '',
+  address: '',
+};
+
 export function CustomerFormModal({
   isOpen,
   onClose,
@@ -32,37 +39,30 @@ export function CustomerFormModal({
 }: CustomerFormModalProps) {
   const isEditing = !!customer;
   const [error, setError] = useState<string | null>(null);
-  const [formData, setFormData] = useState<CustomerFormData>({
-    name: '',
-    email: '',
-    phone: '',
-    document: '',
-    address: '',
-  });
+  const [formData, setFormData] = useState<CustomerFormData>(defaultFormData);
 
-  // Populate form when editing or reset when creating
+  // Create form data from customer
+  const createFormData = useCallback((cust?: any): CustomerFormData => ({
+    name: cust?.name || '',
+    email: cust?.email || '',
+    phone: cust?.phone || '',
+    document: cust?.document || '',
+    address: cust?.address || '',
+  }), []);
+
   useEffect(() => {
     if (isOpen) {
       if (customer) {
-        setFormData({
-          name: customer.name || '',
-          email: customer.email || '',
-          phone: customer.phone || '',
-          document: customer.document || '',
-          address: customer.address || '',
-        });
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- Form sync
+        setFormData(createFormData(customer));
       } else {
-        setFormData({
-          name: '',
-          email: '',
-          phone: '',
-          document: '',
-          address: '',
-        });
+
+        setFormData(defaultFormData);
       }
+
       setError(null);
     }
-  }, [isOpen, customer]);
+  }, [isOpen, customer, createFormData]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;

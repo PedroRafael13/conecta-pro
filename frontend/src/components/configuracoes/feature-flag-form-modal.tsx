@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,6 +23,16 @@ interface FeatureFlagFormModalProps {
   isLoading?: boolean;
 }
 
+// Initial form state factory
+const createInitialForm = (flag?: FeatureFlagResponse | null) => ({
+  codigo: flag?.codigo || '',
+  nome: flag?.nome || '',
+  descricao: flag?.descricao || '',
+  flag_type: flag?.flag_type || 'boolean',
+  category: flag?.category || 'features',
+  owner_team: flag?.owner_team || '',
+});
+
 export function FeatureFlagFormModal({
   isOpen,
   onClose,
@@ -31,36 +41,20 @@ export function FeatureFlagFormModal({
   isLoading,
 }: FeatureFlagFormModalProps) {
   const isEditing = !!flag;
-  const [form, setForm] = useState({
-    codigo: '',
-    nome: '',
-    descricao: '',
-    flag_type: 'boolean',
-    category: 'features',
-    owner_team: '',
-  });
+
+  const formKey = useMemo(() => {
+    return flag?.id || flag?.codigo || 'new';
+  }, [flag]);
+
+  const [form, setForm] = useState(createInitialForm(flag));
 
   useEffect(() => {
-    if (flag) {
-      setForm({
-        codigo: flag.codigo || '',
-        nome: flag.nome || '',
-        descricao: flag.descricao || '',
-        flag_type: flag.flag_type || 'boolean',
-        category: flag.category || 'features',
-        owner_team: flag.owner_team || '',
-      });
-    } else {
-      setForm({
-        codigo: '',
-        nome: '',
-        descricao: '',
-        flag_type: 'boolean',
-        category: 'features',
-        owner_team: '',
-      });
+    if (isOpen) {
+
+      setForm(createInitialForm(flag));
     }
-  }, [flag, isOpen]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentional deps
+  }, [isOpen, formKey]);
 
   const handleSubmit = async () => {
     await onSubmit(form);

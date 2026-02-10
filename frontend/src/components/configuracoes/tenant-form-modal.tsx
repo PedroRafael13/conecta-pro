@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,6 +22,19 @@ interface TenantFormModalProps {
   isLoading?: boolean;
 }
 
+// Initial form state factory
+const createInitialForm = (tenant?: TenantResponse | null) => ({
+  codigo: tenant?.codigo || '',
+  nome: tenant?.nome || '',
+  email: tenant?.email || '',
+  cnpj: tenant?.cnpj || '',
+  telefone: tenant?.telefone || '',
+  plan: tenant?.plan || 'free',
+  tenant_type: tenant?.tenant_type || '',
+  max_users: tenant?.max_users || 10,
+  max_units: tenant?.max_units || 5,
+});
+
 export function TenantFormModal({
   isOpen,
   onClose,
@@ -30,45 +43,20 @@ export function TenantFormModal({
   isLoading,
 }: TenantFormModalProps) {
   const isEditing = !!tenant;
-  const [form, setForm] = useState({
-    codigo: '',
-    nome: '',
-    email: '',
-    cnpj: '',
-    telefone: '',
-    plan: 'free',
-    tenant_type: '',
-    max_users: 10,
-    max_units: 5,
-  });
+
+  const formKey = useMemo(() => {
+    return tenant?.id || tenant?.codigo || 'new';
+  }, [tenant]);
+
+  const [form, setForm] = useState(createInitialForm(tenant));
 
   useEffect(() => {
-    if (tenant) {
-      setForm({
-        codigo: tenant.codigo || '',
-        nome: tenant.nome || '',
-        email: tenant.email || '',
-        cnpj: tenant.cnpj || '',
-        telefone: tenant.telefone || '',
-        plan: tenant.plan || 'free',
-        tenant_type: tenant.tenant_type || '',
-        max_users: tenant.max_users || 10,
-        max_units: tenant.max_units || 5,
-      });
-    } else {
-      setForm({
-        codigo: '',
-        nome: '',
-        email: '',
-        cnpj: '',
-        telefone: '',
-        plan: 'free',
-        tenant_type: '',
-        max_users: 10,
-        max_units: 5,
-      });
+    if (isOpen) {
+
+      setForm(createInitialForm(tenant));
     }
-  }, [tenant, isOpen]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentional deps
+  }, [isOpen, formKey]);
 
   const handleSubmit = async () => {
     await onSubmit(form);

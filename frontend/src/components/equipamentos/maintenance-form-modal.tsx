@@ -1,14 +1,13 @@
 'use client';
 
 import { AlertCircle, Loader2, Save } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-;
 
 interface MaintenanceFormModalProps {
   isOpen: boolean;
@@ -28,7 +27,7 @@ interface FormData {
   observacoes: string;
 }
 
-const initialFormData: FormData = {
+const defaultFormData: FormData = {
   equipment_name: '',
   maintenance_type: 'preventiva',
   priority: 'medium',
@@ -38,6 +37,19 @@ const initialFormData: FormData = {
   observacoes: '',
 };
 
+// Form state factory
+const createFormData = (maintenance?: any): FormData => ({
+  equipment_name: maintenance?.equipment_name || '',
+  maintenance_type: maintenance?.maintenance_type || 'preventiva',
+  priority: maintenance?.priority || 'medium',
+  technician_name: maintenance?.technician_name || '',
+  scheduled_date: maintenance?.scheduled_date
+    ? maintenance.scheduled_date.split('T')[0]
+    : '',
+  description: maintenance?.description || '',
+  observacoes: maintenance?.observacoes || '',
+});
+
 export function MaintenanceFormModal({
   isOpen,
   onClose,
@@ -45,29 +57,29 @@ export function MaintenanceFormModal({
   onSubmit,
   isLoading = false,
 }: MaintenanceFormModalProps) {
-  const [formData, setFormData] = useState<FormData>(initialFormData);
+  const [formData, setFormData] = useState<FormData>(defaultFormData);
   const [error, setError] = useState<string | null>(null);
 
   const isEditing = !!maintenance;
 
+  const formKey = useMemo(() => {
+    return maintenance?.id || maintenance?.codigo || 'new';
+  }, [maintenance]);
+
   useEffect(() => {
-    if (maintenance) {
-      setFormData({
-        equipment_name: maintenance.equipment_name || '',
-        maintenance_type: maintenance.maintenance_type || 'preventiva',
-        priority: maintenance.priority || 'medium',
-        technician_name: maintenance.technician_name || '',
-        scheduled_date: maintenance.scheduled_date
-          ? maintenance.scheduled_date.split('T')[0]
-          : '',
-        description: maintenance.description || '',
-        observacoes: maintenance.observacoes || '',
-      });
-    } else {
-      setFormData(initialFormData);
+    if (isOpen) {
+      if (maintenance) {
+
+        setFormData(createFormData(maintenance));
+      } else {
+
+        setFormData(defaultFormData);
+      }
+
+      setError(null);
     }
-    setError(null);
-  }, [maintenance, isOpen]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentional deps
+  }, [isOpen, formKey]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>

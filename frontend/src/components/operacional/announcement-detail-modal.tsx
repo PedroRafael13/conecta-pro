@@ -49,6 +49,7 @@ export function AnnouncementDetailModal({
     if (isOpen && announcement?.id) {
       refreshStats();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentional deps
   }, [isOpen, announcement?.id]);
 
   if (!isOpen || !announcement) return null;

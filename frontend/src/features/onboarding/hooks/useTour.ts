@@ -122,6 +122,7 @@ export const useShouldShowTour = (): boolean => {
   useEffect(() => {
     const currentValue = !isTourCompleted();
     if (currentValue !== shouldShow) {
+
       setShouldShow(currentValue);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -172,6 +173,7 @@ export const useTourProgress = () => {
       storedProgress.completed !== progress.completed ||
       storedProgress.cancelCount !== progress.cancelCount
     ) {
+
       setProgress(storedProgress);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

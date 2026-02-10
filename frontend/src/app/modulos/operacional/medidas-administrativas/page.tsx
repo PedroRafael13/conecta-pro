@@ -71,14 +71,15 @@ export default function MedidasAdministrativasPage() {
   // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => {
-      setFilters(prev => ({
-        ...prev,
+      setFilters({
+        ...filters,
         search: searchTerm || undefined,
         status: selectedStatus || undefined,
         action_type: selectedType || undefined,
-      }));
+      });
     }, 300);
     return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- debounce filter sync
   }, [searchTerm, selectedStatus, selectedType]);
 
   // Handlers

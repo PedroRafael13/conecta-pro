@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,6 +21,16 @@ interface OportunidadeFormModalProps {
   isLoading?: boolean;
 }
 
+// Initial form state factory
+const createInitialForm = (oportunidade?: any | null) => ({
+  nome: oportunidade?.nome || '',
+  cliente: oportunidade?.cliente || '',
+  valor_estimado: oportunidade?.valor_estimado || 0,
+  status: oportunidade?.status || 'novo',
+  responsavel: oportunidade?.responsavel || '',
+  observacoes: oportunidade?.observacoes || '',
+});
+
 export function OportunidadeFormModal({
   isOpen,
   onClose,
@@ -29,36 +39,20 @@ export function OportunidadeFormModal({
   isLoading,
 }: OportunidadeFormModalProps) {
   const isEditing = !!oportunidade;
-  const [form, setForm] = useState({
-    nome: '',
-    cliente: '',
-    valor_estimado: 0,
-    status: 'novo',
-    responsavel: '',
-    observacoes: '',
-  });
+
+  const formKey = useMemo(() => {
+    return oportunidade?.id || oportunidade?.codigo || 'new';
+  }, [oportunidade]);
+
+  const [form, setForm] = useState(createInitialForm(oportunidade));
 
   useEffect(() => {
-    if (oportunidade) {
-      setForm({
-        nome: oportunidade.nome || '',
-        cliente: oportunidade.cliente || '',
-        valor_estimado: oportunidade.valor_estimado || 0,
-        status: oportunidade.status || 'novo',
-        responsavel: oportunidade.responsavel || '',
-        observacoes: oportunidade.observacoes || '',
-      });
-    } else {
-      setForm({
-        nome: '',
-        cliente: '',
-        valor_estimado: 0,
-        status: 'novo',
-        responsavel: '',
-        observacoes: '',
-      });
+    if (isOpen) {
+
+      setForm(createInitialForm(oportunidade));
     }
-  }, [oportunidade, isOpen]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentional deps
+  }, [isOpen, formKey]);
 
   const handleSubmit = async () => {
     await onSubmit(form);

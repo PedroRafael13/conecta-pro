@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,6 +22,16 @@ interface OrdemFormModalProps {
   isLoading?: boolean;
 }
 
+// Initial form state factory
+const createInitialForm = (ordem?: any | null) => ({
+  titulo: ordem?.titulo || '',
+  descricao: ordem?.descricao || '',
+  cliente: ordem?.cliente || '',
+  prioridade: ordem?.prioridade || 'media',
+  tipo: ordem?.tipo || 'corretiva',
+  data_prevista: ordem?.data_prevista || '',
+});
+
 export function OrdemFormModal({
   isOpen,
   onClose,
@@ -30,36 +40,20 @@ export function OrdemFormModal({
   isLoading,
 }: OrdemFormModalProps) {
   const isEditing = !!ordem;
-  const [form, setForm] = useState({
-    titulo: '',
-    descricao: '',
-    cliente: '',
-    prioridade: 'media',
-    tipo: 'corretiva',
-    data_prevista: '',
-  });
+
+  const formKey = useMemo(() => {
+    return ordem?.id || ordem?.codigo || 'new';
+  }, [ordem]);
+
+  const [form, setForm] = useState(createInitialForm(ordem));
 
   useEffect(() => {
-    if (ordem) {
-      setForm({
-        titulo: ordem.titulo || '',
-        descricao: ordem.descricao || '',
-        cliente: ordem.cliente || '',
-        prioridade: ordem.prioridade || 'media',
-        tipo: ordem.tipo || 'corretiva',
-        data_prevista: ordem.data_prevista || '',
-      });
-    } else {
-      setForm({
-        titulo: '',
-        descricao: '',
-        cliente: '',
-        prioridade: 'media',
-        tipo: 'corretiva',
-        data_prevista: '',
-      });
+    if (isOpen) {
+
+      setForm(createInitialForm(ordem));
     }
-  }, [ordem, isOpen]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentional deps
+  }, [isOpen, formKey]);
 
   const handleSubmit = async () => {
     await onSubmit(form);

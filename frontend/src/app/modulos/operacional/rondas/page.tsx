@@ -75,13 +75,14 @@ export default function RondasPage() {
   // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => {
-      setFilters(prev => ({
-        ...prev,
+      setFilters({
+        ...filters,
         status: selectedStatus || undefined,
         inspector_role: selectedRole || undefined,
-      }));
+      });
     }, 300);
     return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- debounce filter sync
   }, [searchTerm, selectedStatus, selectedRole]);
 
   // Handlers

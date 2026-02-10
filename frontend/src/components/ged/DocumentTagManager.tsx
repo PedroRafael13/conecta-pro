@@ -83,6 +83,7 @@ export function DocumentTagManager({
         loadDocumentTags();
       }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentional deps
   }, [open, documentId]);
 
   const loadTags = async () => {

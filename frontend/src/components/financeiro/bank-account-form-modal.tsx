@@ -1,11 +1,10 @@
 'use client';
 
 import { AlertCircle, Loader2 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-;
 
 interface BankAccountFormModalProps {
   isOpen: boolean;
@@ -41,6 +40,15 @@ const BANKS = [
   'Outro',
 ];
 
+const defaultFormData: BankAccountFormData = {
+  name: '',
+  bank_name: '',
+  agency: '',
+  account_number: '',
+  account_type: 'checking',
+  initial_balance: 0,
+};
+
 export function BankAccountFormModal({
   isOpen,
   onClose,
@@ -48,29 +56,20 @@ export function BankAccountFormModal({
   isLoading = false,
 }: BankAccountFormModalProps) {
   const [error, setError] = useState<string | null>(null);
-  const [formData, setFormData] = useState<BankAccountFormData>({
-    name: '',
-    bank_name: '',
-    agency: '',
-    account_number: '',
-    account_type: 'checking',
-    initial_balance: 0,
-  });
+  const [formData, setFormData] = useState<BankAccountFormData>(defaultFormData);
 
-  // Reset form ao abrir/fechar
+  // Reset form when modal opens
+  const resetForm = useCallback(() => {
+    setFormData(defaultFormData);
+    setError(null);
+  }, []);
+
   useEffect(() => {
     if (isOpen) {
-      setFormData({
-        name: '',
-        bank_name: '',
-        agency: '',
-        account_number: '',
-        account_type: 'checking',
-        initial_balance: 0,
-      });
-      setError(null);
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Form sync
+      resetForm();
     }
-  }, [isOpen]);
+  }, [isOpen, resetForm]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>

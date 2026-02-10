@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { X, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,33 +27,34 @@ interface CertificateUploadModalProps {
   isLoading?: boolean;
 }
 
+const defaultFormData = {
+  cnpj: '',
+  tipo_certidao: 'federal_receita',
+  numero_certidao: '',
+  data_emissao: '',
+  data_validade: '',
+  arquivo_url: '',
+};
+
 export function CertificateUploadModal({
   isOpen,
   onClose,
   onSubmit,
   isLoading,
 }: CertificateUploadModalProps) {
-  const [formData, setFormData] = useState({
-    cnpj: '',
-    tipo_certidao: 'federal_receita',
-    numero_certidao: '',
-    data_emissao: '',
-    data_validade: '',
-    arquivo_url: '',
-  });
+  const [formData, setFormData] = useState(defaultFormData);
+
+  // Reset form when modal closes
+  const resetForm = useCallback(() => {
+    setFormData(defaultFormData);
+  }, []);
 
   useEffect(() => {
     if (!isOpen) {
-      setFormData({
-        cnpj: '',
-        tipo_certidao: 'federal_receita',
-        numero_certidao: '',
-        data_emissao: '',
-        data_validade: '',
-        arquivo_url: '',
-      });
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Form sync
+      resetForm();
     }
-  }, [isOpen]);
+  }, [isOpen, resetForm]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

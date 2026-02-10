@@ -97,15 +97,16 @@ export default function ComunicadosPage() {
   // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => {
-      setFilters(prev => ({
-        ...prev,
+      setFilters({
+        ...filters,
         search: searchTerm || undefined,
         status: selectedStatus || undefined,
         priority: selectedPriority || undefined,
         category: selectedCategory || undefined,
-      }));
+      });
     }, 300);
     return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- debounce filter sync
   }, [searchTerm, selectedStatus, selectedPriority, selectedCategory]);
 
   // Handlers

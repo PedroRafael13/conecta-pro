@@ -95,13 +95,14 @@ export default function NotificacoesPage() {
   // Debounce search e filtros
   useEffect(() => {
     const timer = setTimeout(() => {
-      setFilters(prev => ({
-        ...prev,
+      setFilters({
+        ...filters,
         type: selectedType || undefined,
         is_read: showOnlyUnread ? false : undefined,
-      }));
+      });
     }, 300);
     return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- debounce filter sync
   }, [selectedType, showOnlyUnread]);
 
   const handleRefresh = () => {

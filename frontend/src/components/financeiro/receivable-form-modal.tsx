@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,6 +30,16 @@ const CATEGORIES = [
   { value: 'other', label: 'Outros' },
 ];
 
+// Initial form state factory
+const createInitialForm = (receivable?: any) => ({
+  description: receivable?.description || '',
+  customer_name: receivable?.customer_name || '',
+  amount: receivable?.amount ? String(receivable.amount) : '',
+  due_date: receivable?.due_date ? receivable.due_date.split('T')[0] : '',
+  category: receivable?.category || '',
+  observacoes: receivable?.observacoes || '',
+});
+
 export function ReceivableFormModal({
   isOpen,
   onClose,
@@ -39,36 +49,19 @@ export function ReceivableFormModal({
 }: ReceivableFormModalProps) {
   const isEditing = !!receivable?.id;
 
-  const [form, setForm] = useState({
-    description: '',
-    customer_name: '',
-    amount: '',
-    due_date: '',
-    category: '',
-    observacoes: '',
-  });
+  const formKey = useMemo(() => {
+    return receivable?.id || 'new';
+  }, [receivable]);
+
+  const [form, setForm] = useState(createInitialForm(receivable));
 
   useEffect(() => {
-    if (receivable) {
-      setForm({
-        description: receivable.description || '',
-        customer_name: receivable.customer_name || '',
-        amount: receivable.amount ? String(receivable.amount) : '',
-        due_date: receivable.due_date ? receivable.due_date.split('T')[0] : '',
-        category: receivable.category || '',
-        observacoes: receivable.observacoes || '',
-      });
-    } else {
-      setForm({
-        description: '',
-        customer_name: '',
-        amount: '',
-        due_date: '',
-        category: '',
-        observacoes: '',
-      });
+    if (isOpen) {
+
+      setForm(createInitialForm(receivable));
     }
-  }, [receivable, isOpen]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentional deps
+  }, [isOpen, formKey]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

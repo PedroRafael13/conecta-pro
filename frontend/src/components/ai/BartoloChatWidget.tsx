@@ -118,7 +118,8 @@ export function BartoloChatWidget({
         },
       ]);
     }
-  }, [greeting, messages.length]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentional deps
+  }, [greeting]);
 
   // Adiciona resposta do Bartolo quando recebe
   useEffect(() => {

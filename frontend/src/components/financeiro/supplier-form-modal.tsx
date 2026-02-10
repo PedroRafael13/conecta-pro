@@ -1,11 +1,10 @@
 'use client';
 
 import { AlertCircle, Loader2 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-;
 
 interface SupplierFormModalProps {
   isOpen: boolean;
@@ -39,6 +38,16 @@ const SUPPLIER_CATEGORIES = [
   'Outros',
 ];
 
+const defaultFormData: SupplierFormData = {
+  name: '',
+  document: '',
+  email: '',
+  phone: '',
+  address: '',
+  category: '',
+  observacoes: '',
+};
+
 export function SupplierFormModal({
   isOpen,
   onClose,
@@ -48,43 +57,32 @@ export function SupplierFormModal({
 }: SupplierFormModalProps) {
   const isEditing = !!supplier;
   const [error, setError] = useState<string | null>(null);
-  const [formData, setFormData] = useState<SupplierFormData>({
-    name: '',
-    document: '',
-    email: '',
-    phone: '',
-    address: '',
-    category: '',
-    observacoes: '',
-  });
+  const [formData, setFormData] = useState<SupplierFormData>(defaultFormData);
 
-  // Populate form when editing or reset when creating
+  // Create form data from supplier
+  const createFormData = useCallback((sup?: any): SupplierFormData => ({
+    name: sup?.name || '',
+    document: sup?.document || '',
+    email: sup?.email || '',
+    phone: sup?.phone || '',
+    address: sup?.address || '',
+    category: sup?.category || '',
+    observacoes: sup?.observacoes || sup?.notes || '',
+  }), []);
+
   useEffect(() => {
     if (isOpen) {
       if (supplier) {
-        setFormData({
-          name: supplier.name || '',
-          document: supplier.document || '',
-          email: supplier.email || '',
-          phone: supplier.phone || '',
-          address: supplier.address || '',
-          category: supplier.category || '',
-          observacoes: supplier.observacoes || supplier.notes || '',
-        });
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- Form sync
+        setFormData(createFormData(supplier));
       } else {
-        setFormData({
-          name: '',
-          document: '',
-          email: '',
-          phone: '',
-          address: '',
-          category: '',
-          observacoes: '',
-        });
+
+        setFormData(defaultFormData);
       }
+
       setError(null);
     }
-  }, [isOpen, supplier]);
+  }, [isOpen, supplier, createFormData]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>

@@ -40,12 +40,15 @@ export default function AgentesPage() {
   const [showDetailModal, setShowDetailModal] = useState(false);
 
   // Debounce search
+
   useEffect(() => {
     const timer = setTimeout(() => {
+
       setDebouncedSearchTerm(searchTerm);
     }, 300);
     return () => clearTimeout(timer);
   }, [searchTerm]);
+
 
   // Redirecionar se nao autenticado
   useEffect(() => {
@@ -62,6 +65,7 @@ export default function AgentesPage() {
 
   useEffect(() => {
     if (queryError) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Form sync
       setError(String(queryError));
     }
   }, [queryError]);

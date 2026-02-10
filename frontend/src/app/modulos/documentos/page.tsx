@@ -99,6 +99,9 @@ export default function DocumentosPage() {
     );
   }
 
+  // eslint-disable-next-line react-hooks/purity -- Date.now() needed for expiry calculation
+  const now = Date.now();
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -512,7 +515,7 @@ export default function DocumentosPage() {
                 <div className="space-y-3">
                   {expiringDocs.map((doc) => {
                     const daysUntilExpiry = doc.valid_until
-                      ? Math.ceil((new Date(doc.valid_until).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+                      ? Math.ceil((new Date(doc.valid_until).getTime() - now) / (1000 * 60 * 60 * 24))
                       : null;
 
                     return (

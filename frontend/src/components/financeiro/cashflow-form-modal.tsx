@@ -1,11 +1,10 @@
 'use client';
 
 import { AlertCircle, Loader2 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-;
 
 interface CashflowFormModalProps {
   isOpen: boolean;
@@ -36,6 +35,15 @@ const CATEGORIES = [
   'Outros',
 ];
 
+const getDefaultFormData = (): CashflowFormData => ({
+  description: '',
+  entry_type: 'income',
+  amount: 0,
+  date: new Date().toISOString().split('T')[0] ?? '',
+  category: '',
+  observacoes: '',
+});
+
 export function CashflowFormModal({
   isOpen,
   onClose,
@@ -43,29 +51,20 @@ export function CashflowFormModal({
   isLoading = false,
 }: CashflowFormModalProps) {
   const [error, setError] = useState<string | null>(null);
-  const [formData, setFormData] = useState<CashflowFormData>({
-    description: '',
-    entry_type: 'income',
-    amount: 0,
-    date: new Date().toISOString().split('T')[0] ?? '',
-    category: '',
-    observacoes: '',
-  });
+  const [formData, setFormData] = useState<CashflowFormData>(getDefaultFormData());
 
-  // Reset form ao abrir/fechar
+  // Reset form when modal opens
+  const resetForm = useCallback(() => {
+    setFormData(getDefaultFormData());
+    setError(null);
+  }, []);
+
   useEffect(() => {
     if (isOpen) {
-      setFormData({
-        description: '',
-        entry_type: 'income',
-        amount: 0,
-        date: new Date().toISOString().split('T')[0] ?? '',
-        category: '',
-        observacoes: '',
-      });
-      setError(null);
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Form sync
+      resetForm();
     }
-  }, [isOpen]);
+  }, [isOpen, resetForm]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
