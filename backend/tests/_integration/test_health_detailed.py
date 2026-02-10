@@ -18,24 +18,29 @@ class TestHealthDetailed:
         """Testa health detailed quando todos servicos estao ok."""
         from main_production import health_check_detailed
 
-        # Mock das dependencias
+        # Mock das dependencias reais usadas pela funcao
         with (
-            patch("main_production.get_redis") as mock_redis,
-            patch("main_production.get_db_session") as mock_db,
+            patch("core.cache.get_redis") as mock_get_redis,
+            patch("core.database.session.async_session_factory") as mock_session_factory,
             patch("redis.from_url") as mock_celery_redis,
         ):
-            # Setup mocks
+            # Setup Redis mock
             mock_redis_client = AsyncMock()
             mock_redis_client.ping = AsyncMock(return_value=True)
-            mock_redis.return_value = mock_redis_client
+            mock_get_redis.return_value = mock_redis_client
 
-            mock_session = MagicMock()
+            # Setup DB mock (async context manager)
+            mock_session = AsyncMock()
             mock_session.execute = AsyncMock(return_value=True)
-            mock_db.return_value.__aenter__ = AsyncMock(return_value=mock_session)
-            mock_db.return_value.__aexit__ = AsyncMock(return_value=None)
+            mock_cm = AsyncMock()
+            mock_cm.__aenter__ = AsyncMock(return_value=mock_session)
+            mock_cm.__aexit__ = AsyncMock(return_value=None)
+            mock_session_factory.return_value = mock_cm
 
+            # Setup Celery/Redis sync mock
             mock_celery = MagicMock()
             mock_celery.ping.return_value = True
+            mock_celery.close = MagicMock()
             mock_celery_redis.return_value = mock_celery
 
             result = await health_check_detailed()
@@ -53,14 +58,14 @@ class TestHealthDetailed:
         from main_production import health_check_detailed
 
         with (
-            patch("main_production.get_redis") as mock_redis,
-            patch("main_production.get_db_session") as mock_db,
+            patch("core.cache.get_redis") as mock_get_redis,
+            patch("core.database.session.async_session_factory") as mock_session_factory,
             patch("redis.from_url") as mock_celery_redis,
         ):
-            # Setup basico - pode falhar, queremos testar estrutura
-            mock_redis.return_value = None
-            mock_db.side_effect = Exception("DB Error")
-            mock_celery_redis.side_effect = Exception("Redis Error")
+            # Setup - tudo falha para testar estrutura
+            mock_get_redis.side_effect = Exception("Redis Error")
+            mock_session_factory.side_effect = Exception("DB Error")
+            mock_celery_redis.side_effect = Exception("Celery Error")
 
             result = await health_check_detailed()
 
@@ -78,21 +83,22 @@ class TestHealthDetailed:
         from main_production import health_check_detailed
 
         with (
-            patch("main_production.get_redis") as mock_redis,
-            patch("main_production.get_db_session") as mock_db,
+            patch("core.cache.get_redis") as mock_get_redis,
+            patch("core.database.session.async_session_factory") as mock_session_factory,
             patch("redis.from_url") as mock_celery_redis,
         ):
             # Redis OK
             mock_redis_client = AsyncMock()
             mock_redis_client.ping = AsyncMock(return_value=True)
-            mock_redis.return_value = mock_redis_client
+            mock_get_redis.return_value = mock_redis_client
 
             # DB falha
-            mock_db.side_effect = Exception("Connection refused")
+            mock_session_factory.side_effect = Exception("Connection refused")
 
             # Celery OK
             mock_celery = MagicMock()
             mock_celery.ping.return_value = True
+            mock_celery.close = MagicMock()
             mock_celery_redis.return_value = mock_celery
 
             result = await health_check_detailed()
@@ -106,22 +112,25 @@ class TestHealthDetailed:
         from main_production import health_check_detailed
 
         with (
-            patch("main_production.get_redis") as mock_redis,
-            patch("main_production.get_db_session") as mock_db,
+            patch("core.cache.get_redis") as mock_get_redis,
+            patch("core.database.session.async_session_factory") as mock_session_factory,
             patch("redis.from_url") as mock_celery_redis,
         ):
             # Todos os servicos OK
             mock_redis_client = AsyncMock()
             mock_redis_client.ping = AsyncMock(return_value=True)
-            mock_redis.return_value = mock_redis_client
+            mock_get_redis.return_value = mock_redis_client
 
-            mock_session = MagicMock()
+            mock_session = AsyncMock()
             mock_session.execute = AsyncMock(return_value=True)
-            mock_db.return_value.__aenter__ = AsyncMock(return_value=mock_session)
-            mock_db.return_value.__aexit__ = AsyncMock(return_value=None)
+            mock_cm = AsyncMock()
+            mock_cm.__aenter__ = AsyncMock(return_value=mock_session)
+            mock_cm.__aexit__ = AsyncMock(return_value=None)
+            mock_session_factory.return_value = mock_cm
 
             mock_celery = MagicMock()
             mock_celery.ping.return_value = True
+            mock_celery.close = MagicMock()
             mock_celery_redis.return_value = mock_celery
 
             result = await health_check_detailed()
