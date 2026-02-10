@@ -18,6 +18,22 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T 
     return initialValue;
   });
 
+  // Sincroniza quando a key muda (ex: rerender com storageKey diferente)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    try {
+      const item = window.localStorage.getItem(key);
+      if (item) {
+        setStoredValue(JSON.parse(item));
+      } else {
+        setStoredValue(initialValue);
+      }
+    } catch (error) {
+      console.warn(`Error reading localStorage key "${key}" on key change:`, error);
+    }
+  }, [key, initialValue]);
+
   // Função para atualizar o valor no localStorage e no estado
   const setValue = useCallback((value: T | ((val: T) => T)) => {
     try {
