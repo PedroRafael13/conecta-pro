@@ -166,3 +166,17 @@ def assert_response_error(response, expected_status=400):
     assert response.status_code == expected_status, (
         f"Expected {expected_status}, got {response.status_code}: {response.text}"
     )
+
+
+# ==========================================================================
+# async_client — Usa lazy-load para evitar mapper corruption
+# ==========================================================================
+@pytest_asyncio.fixture
+async def async_client() -> AsyncGenerator[AsyncClient, None]:
+    """Async HTTP client (alias para compatibilidade com testes que usam async_client)."""
+    app = _get_app()
+    if app is None:
+        pytest.skip("main app not available")
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        yield ac

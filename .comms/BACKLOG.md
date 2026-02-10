@@ -1,140 +1,121 @@
-# BACKLOG — Tarefas Pendentes
+# BACKLOG — Tarefas Pendentes (v3)
 
-**Atualizado:** 2026-02-09 21:30 UTC por Claude Opus 4.6
-
----
-
-## OBRIGATÓRIO: Antes de cada tarefa
-```bash
-/opt/conecta-pro/scripts/verify-all.sh 2>&1 | tee /tmp/verify-ANTES.txt
-```
-
-## OBRIGATÓRIO: Depois de cada tarefa
-```bash
-/opt/conecta-pro/scripts/verify-all.sh 2>&1 | tee /tmp/verify-DEPOIS.txt
-diff /tmp/verify-ANTES.txt /tmp/verify-DEPOIS.txt
-```
+**Atualizado:** 2026-02-10 02:20 UTC por Claude Opus 4.6
 
 ---
 
-## Tarefa 1: PushNotification Mapper Collision [P0 — CRÍTICA]
+## Estado Atual: ~84.7% (5315 passed, 718 failed, 218 errors)
 
-**Impacto:** Resolve 1068 de 1307 failures (82%)
+## META: 100% pass rate (0 failures, 0 errors)
 
-**Problema:** Dois modelos SQLAlchemy com mesmo registry path para `PushNotification`.
-- Erro: `Multiple classes found for path "PushNotification" in the registry`
-- Triggering mapper: `Mapper[PushCampaign(push_campaigns)]`
+## REVERTIDOS: commits 394e051d e 7aab7abb (causaram regressão de -365 testes)
 
-**Como investigar:**
+---
+
+## ⚠️ REGRA ABSOLUTA: NUNCA usar --fix em scripts de automação sem testar ANTES
+
+O commit 394e051d usou `validate-enums.py --fix` cegamente em 104 arquivos (4235 mudanças).
+Resultado: **regressão de 84.7% → 78.8%** porque enums com mesmo nome existem em módulos diferentes.
+
+**PROIBIDO:**
+- `validate-enums.py --fix` (troca enums corretos por errados)
+- `auto-fix-fields.py --fix` em massa (sem verificar cada mudança)
+- Qualquer script que modifique mais de 5 arquivos sem verificação intermediária
+
+**OBRIGATÓRIO:**
+- Corrigir 1 arquivo de teste por vez
+- Rodar pytest nesse arquivo após correção
+- Só ir para o próximo arquivo se o anterior passou
+
+---
+
+## ✅ CONCLUÍDAS
+
+### ~~Tarefa 1: PushNotification Mapper Collision~~ ✅
+### ~~Tarefa 2: Table push_notifications Metadata Duplicate~~ ✅
+### ~~Tarefa 3: Enums EN vs PT (parcial)~~ ✅
+### ~~Tarefa 6: ESLint 29 Errors~~ ✅
+### ~~Tarefa 4: Fixture async_client~~ ✅ (Claude corrigiu com lazy-load)
+
+---
+
+## PENDENTES — ARQUIVO POR ARQUIVO
+
+### Tarefa 7: Corrigir Top 15 Arquivos de Teste [MANUAL — OBRIGATÓRIO]
+
+**Impacto:** ~560 failures (~78% do total)
+
+**Método OBRIGATÓRIO para CADA arquivo:**
+
 ```bash
 cd /opt/conecta-pro/backend && source venv/bin/activate
-grep -r "class PushNotification" modules/ --include="*.py" -l
-grep -r "class PushCampaign" modules/ --include="*.py" -l
-grep -r "push_notifications" modules/ --include="*.py" -l | grep "__tablename__"
+
+# PASSO 1: Rodar o teste e ver EXATAMENTE quais erros tem
+python -m pytest tests/test_client_model.py --tb=short -q 2>&1 | head -60
+
+# PASSO 2: Para cada erro de enum — verificar valor REAL no módulo:
+grep -r "class AccountType" modules/ --include="*.py" -A 15
+
+# PASSO 3: Para cada erro de campo — ver campos reais:
+python /opt/conecta-pro/scripts/required-fields.py modules/clients/models/client.py Client
+
+# PASSO 4: Corrigir no teste (NÃO no código de produção)
+
+# PASSO 5: Rodar o teste novamente para confirmar
+python -m pytest tests/test_client_model.py --tb=short -q
+
+# PASSO 6: Se passou, commitar e ir para o próximo
+# PASSO 7: Se falhou, investigar mais antes de seguir
 ```
 
-**Solução provável:** Renomear um dos modelos duplicados (como fizemos com EmailTemplate → AIEmailTemplate).
+**Ordem dos arquivos (por impacto):**
 
-**Verificação:** Após fix, rodar:
+| # | Arquivo | Failures | Tipo Principal |
+|---|---|---:|---|
+| 1 | test_client_model.py | 55 | Campos inválidos (name→legal_name) |
+| 2 | test_accounting_model.py | 45 | Enums (AccountType.CHECKING) |
+| 3 | test_reports_model.py | 45 | Enums (ReportType, KPICategory) |
+| 4 | test_client_service.py | 41 | Campos + mocks |
+| 5 | test_config_model.py | 39 | Enums + campos |
+| 6 | test_bi_dashboard_models.py | 34 | Campos inválidos |
+| 7 | test_inventory_model.py | 34 | Enums (ProductType) |
+| 8 | test_config_service.py | 31 | ERRORs (import/mock) |
+| 9 | test_config_api.py | 29 | Fixture + campos |
+| 10 | test_sync_system.py | 28 | Enums (SyncStatus) |
+| 11 | test_diarist_api.py | 27 | ERRORs |
+| 12 | test_purchase_models.py | 26 | Enums + campos |
+| 13 | test_time_tracking_model.py | 26 | Enums (ShiftType) |
+| 14 | test_recruitment_models.py | 25 | Enums + campos |
+| 15 | test_cashflow_api.py | 24 | ERRORs |
+
+---
+
+### Tarefa 8: Collection Errors [218 errors]
+
+**Depois de corrigir a Tarefa 7**, investigar os 218 errors:
 ```bash
-python -m pytest --tb=no -q 2>&1 | tail -5
-```
-Esperar: ~1068 failures a menos.
-
----
-
-## Tarefa 2: Table push_notifications Metadata Duplicate [P1]
-
-**Impacto:** ~94 failures
-
-**Problema:** `Table 'push_notifications' is already defined for this MetaData instance`
-
-**Solução:** Adicionar `__table_args__ = {'extend_existing': True}` ou remover definição duplicada.
-
-**Como investigar:**
-```bash
-grep -r "__tablename__ = .push_notifications" modules/ --include="*.py"
+python -m pytest --collect-only -q 2>&1 | grep "ERROR"
 ```
 
 ---
 
-## Tarefa 3: Enums EN vs PT [P2]
+### Tarefa 5: Pydantic ValidationError [~40 failures]
 
-**Impacto:** ~77 failures
-
-**Problema:** Testes usam valores em inglês, código usa português.
-
-**Exemplos:**
-- `ClientType.PJ` → verificar valor correto
-- `TenantStatus.ACTIVE` → deveria ser `TenantStatus.ATIVO`
-- `FlagStatus.ACTIVE` → deveria ser `FlagStatus.ATIVO`
-- `SettingCategory.NOTIFICATIONS` → deveria ser `SettingCategory.NOTIFICACAO`
-- `DashboardStatus.PUBLISHED` → verificar valor correto
-
-**Como investigar:**
-```bash
-grep -r "class ClientType" modules/ --include="*.py"
-grep -r "class TenantStatus" modules/ --include="*.py"
-grep -r "class FlagStatus" modules/ --include="*.py"
-```
-
-**Correção:** Nos TESTES (não no código), trocar para os valores corretos em português.
+Usar `schema-validator.py --scan` para identificar.
 
 ---
 
-## Tarefa 4: Fixture async_client [P3]
+## Ferramentas Disponíveis em /opt/conecta-pro/scripts/
 
-**Impacto:** ~27 failures
+| Script | Uso | MODO |
+|---|---|---|
+| `verify-instant.sh` | Ruff + collection + alembic | RODAR |
+| `required-fields.py <arquivo> <Model>` | Ver campos corretos | CONSULTA |
+| `validate-enums.py` | Ver enums errados (SEM --fix) | CONSULTA |
+| `pre-flight.sh <arquivo>` | Impacto antes de editar | CONSULTA |
+| `schema-validator.py --model X` | Validar schemas | CONSULTA |
+| `diagnose-failures.py` | Categorizar failures | CONSULTA |
+| ~~validate-enums.py --fix~~ | **PROIBIDO** | NUNCA |
+| ~~auto-fix-fields.py --fix~~ | **PROIBIDO em massa** | NUNCA |
 
-**Problema:** `fixture 'async_client' not found`
-
-**Solução:** Adicionar fixture `async_client` no conftest.py raiz ou nos conftest.py dos módulos afetados.
-
-**Como investigar:**
-```bash
-grep -r "async_client" tests/ --include="*.py" -l
-grep -r "def async_client" tests/ --include="*.py"
-```
-
----
-
-## Tarefa 5: Pydantic Missing Fields [P4]
-
-**Impacto:** ~46 failures por schema
-
-**Problema:** Testes criam objetos sem campos obrigatórios.
-
-**Como investigar:** Ler mensagens de erro — indicam qual field está faltando em qual model.
-
----
-
-## Tarefa 6: ESLint 29 Errors [P5 — Frontend]
-
-**Impacto:** 29 errors em 3 arquivos
-
-**Arquivos:**
-- `docs/ORVAL_USAGE_EXAMPLES.tsx` — componentes não importados (jsx-no-undef)
-- `e2e/fixtures.ts` — rules-of-hooks
-- `e2e/seguranca/seguranca-lgpd.spec.ts` — no-assign-module-variable
-
-**Solução mais simples:** Adicionar estes paths ao `ignores` do `eslint.config.mjs`:
-```javascript
-ignores: ['.next/**', 'node_modules/**', 'public/**', 'src/types/generated/**', 'docs/**', 'e2e/**'],
-```
-
----
-
-## Ordem de Execução
-
-1. **Tarefa 1** (P0) — maior impacto, 82% dos failures
-2. **Tarefa 2** (P1) — relacionada à Tarefa 1
-3. **Tarefa 3** (P2) — enums, muitos arquivos mas fix simples
-4. **Tarefa 4** (P3) — fixture, fix localizado
-5. **Tarefa 5** (P4) — schemas, mais trabalhoso
-6. **Tarefa 6** (P5) — ESLint, 1 linha no config
-
-**META FINAL: 100% pass rate.** Todos os testes devem passar. Sem exceção.
-- Após Tarefas 1-4: ~95%+
-- Tarefas 5-6 + correções restantes: 100%
-- Se um teste não pode ser corrigido: `@pytest.mark.xfail(reason="motivo")` com justificativa
-- 0 failures, 0 errors é o objetivo final
+**REGRA: Scripts de --fix são PROIBIDOS. Usar apenas como CONSULTA.**

@@ -64,6 +64,32 @@
 **Causa raiz:** Path manipulation perigosa.
 **Lição:** NUNCA usar `sys.path.insert`. Se imports não funcionam, usar `pythonpath = .` no pytest.ini.
 
+## Erro 13: Não usar as ferramentas de produtividade
+
+**Regra:** ANTES de qualquer modificação:
+1. Rodar: `pre-flight arquivo.py` — ver impacto cruzado
+2. Durante: `safe-edit "comando"` — previne regressão automática
+3. Depois: `verify-instant` (rápido) ou `verify-all.sh` (completo)
+
+**Se encontrar enum errado:**
+- Rodar: `validate-enums.py` (SEM --fix) → CONSULTAR valores corretos → corrigir manualmente
+
+**Se TypeError em teste:**
+- Rodar: `required-fields.py caminho/do/model.py NomeModel`
+
+**Se quiser validar schemas nos testes:**
+- Rodar: `schema-validator.py --model NomeModel` ou `--scan`
+
+## Erro 14: Usar --fix automatico em massa sem verificar (GRAVE)
+**O que aconteceu:** validate-enums.py --fix rodou em 104 arquivos, 4235 mudanças. Resultado: regressão de 84.7% → 78.8% (-365 testes).
+**Causa raiz:** Enums com mesmo nome existem em módulos diferentes (AccountType em accounting ≠ AccountType em banking). O --fix trocou valores corretos por valores de OUTROS módulos.
+**Lição:** NUNCA usar --fix em scripts de automação. Scripts são para CONSULTA. Corrigir manualmente, 1 arquivo por vez, rodando pytest após cada arquivo.
+
+## Erro 15: Não ler instruções do BACKLOG antes de executar
+**O que aconteceu:** BACKLOG dizia explicitamente "NÃO usar --fix cegamente". Kimi ignorou e usou --fix.
+**Causa raiz:** Não leu ou ignorou as instruções.
+**Lição:** Ler BACKLOG.md INTEIRO antes de executar qualquer tarefa. Cada instrução existe por uma razão.
+
 ---
 
 **Regra geral:** Se você está prestes a fazer algo parecido com qualquer erro acima, PARE e reconsidere.
