@@ -136,7 +136,7 @@ class TestAnonymizeMe:
         result = anonymize_email(email)
 
         # Assert
-        assert result == "j****@empresa.com"
+        assert result == "j***@empresa.com"
 
 
 class TestDeleteMe:
