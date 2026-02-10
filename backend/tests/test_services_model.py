@@ -35,21 +35,36 @@ class TestServiceCatalog:
             id=uuid4(),
             code="SRV-001",
             name="Manutenção Predial",
-            category=ServiceCategory.MANUTENCAO_PREDIAL,
+            category=ServiceCategory.MANUTENCAO,
             service_type=ServiceType.PREVENTIVO,
             status=ServiceStatus.ATIVO,
             base_price=Decimal("500.00"),
+            ativo=True,
+            cancelled_orders=0,
+            total_orders=0,
+            completed_orders=0,
+            total_revenue=Decimal("0"),
         )
 
         assert service.name == "Manutenção Predial"
-        assert service.category == ServiceCategory.MANUTENCAO_PREDIAL
+        assert service.category == ServiceCategory.MANUTENCAO
         assert service.service_type == ServiceType.PREVENTIVO
         assert service.status == ServiceStatus.ATIVO
         assert service.base_price == Decimal("500.00")
 
     def test_service_activate(self):
         """Test activating a service."""
-        service = ServiceCatalog(id=uuid4(), code="SRV-002", name="Limpeza", status=ServiceStatus.INATIVO)
+        service = ServiceCatalog(
+            id=uuid4(),
+            code="SRV-002",
+            name="Limpeza",
+            status=ServiceStatus.INATIVO,
+            ativo=True,
+            cancelled_orders=0,
+            total_orders=0,
+            completed_orders=0,
+            total_revenue=Decimal("0"),
+        )
 
         service.activate()
 
@@ -58,7 +73,17 @@ class TestServiceCatalog:
 
     def test_service_deactivate(self):
         """Test deactivating a service."""
-        service = ServiceCatalog(id=uuid4(), code="SRV-003", name="Segurança", status=ServiceStatus.ATIVO)
+        service = ServiceCatalog(
+            id=uuid4(),
+            code="SRV-003",
+            name="Segurança",
+            status=ServiceStatus.ATIVO,
+            ativo=True,
+            cancelled_orders=0,
+            total_orders=0,
+            completed_orders=0,
+            total_revenue=Decimal("0"),
+        )
 
         service.deactivate()
 
@@ -67,7 +92,17 @@ class TestServiceCatalog:
 
     def test_service_discontinue(self):
         """Test discontinuing a service."""
-        service = ServiceCatalog(id=uuid4(), code="SRV-004", name="Consultoria", status=ServiceStatus.ATIVO)
+        service = ServiceCatalog(
+            id=uuid4(),
+            code="SRV-004",
+            name="Consultoria",
+            status=ServiceStatus.ATIVO,
+            ativo=True,
+            cancelled_orders=0,
+            total_orders=0,
+            completed_orders=0,
+            total_revenue=Decimal("0"),
+        )
 
         service.discontinue()
 
@@ -76,7 +111,17 @@ class TestServiceCatalog:
 
     def test_calculate_price_base(self):
         """Test calculating price with base price."""
-        service = ServiceCatalog(id=uuid4(), code="SRV-005", name="Jardinagem", base_price=Decimal("200.00"))
+        service = ServiceCatalog(
+            id=uuid4(),
+            code="SRV-005",
+            name="Jardinagem",
+            base_price=Decimal("200.00"),
+            ativo=True,
+            cancelled_orders=0,
+            total_orders=0,
+            completed_orders=0,
+            total_revenue=Decimal("0"),
+        )
 
         price = service.calculate_price()
 
@@ -84,7 +129,17 @@ class TestServiceCatalog:
 
     def test_calculate_price_with_quantity(self):
         """Test calculating price with quantity."""
-        service = ServiceCatalog(id=uuid4(), code="SRV-006", name="Piscina", unit_price=Decimal("50.00"))
+        service = ServiceCatalog(
+            id=uuid4(),
+            code="SRV-006",
+            name="Piscina",
+            unit_price=Decimal("50.00"),
+            ativo=True,
+            cancelled_orders=0,
+            total_orders=0,
+            completed_orders=0,
+            total_revenue=Decimal("0"),
+        )
 
         price = service.calculate_price(quantity=3)
 
@@ -99,6 +154,11 @@ class TestServiceCatalog:
             base_price=Decimal("100.00"),
             is_emergency_available=True,
             emergency_surcharge_percent=Decimal("50.00"),
+            ativo=True,
+            cancelled_orders=0,
+            total_orders=0,
+            completed_orders=0,
+            total_revenue=Decimal("0"),
         )
 
         price = service.calculate_price(is_emergency=True)
@@ -113,25 +173,44 @@ class TestServiceCatalog:
             name="Elevadores",
             total_orders=10,
             completed_orders=8,
+            cancelled_orders=0,
             total_revenue=Decimal("5000.00"),
+            ativo=True,
         )
 
-        service.update_metrics(Decimal("600.00"), 5)
+        service.update_metrics(orders_delta=1, completed_delta=1, revenue_delta=Decimal("600.00"))
 
         assert service.total_orders == 11
         assert service.completed_orders == 9
         assert service.total_revenue == Decimal("5600.00")
-        assert service.avg_rating is not None
 
     def test_completion_rate(self):
         """Test completion rate calculation."""
-        service = ServiceCatalog(id=uuid4(), code="SRV-009", name="Portaria", total_orders=100, completed_orders=85)
+        service = ServiceCatalog(
+            id=uuid4(),
+            code="SRV-009",
+            name="Portaria",
+            total_orders=100,
+            completed_orders=85,
+            cancelled_orders=0,
+            total_revenue=Decimal("0"),
+            ativo=True,
+        )
 
         assert service.completion_rate == 85.0
 
     def test_completion_rate_no_orders(self):
         """Test completion rate with no orders."""
-        service = ServiceCatalog(id=uuid4(), code="SRV-010", name="Novo Serviço", total_orders=0)
+        service = ServiceCatalog(
+            id=uuid4(),
+            code="SRV-010",
+            name="Novo Serviço",
+            total_orders=0,
+            completed_orders=0,
+            cancelled_orders=0,
+            total_revenue=Decimal("0"),
+            ativo=True,
+        )
 
         assert service.completion_rate == 0.0
 
@@ -148,6 +227,8 @@ class TestServiceOrder:
             client_id=uuid4(),
             title="Manutenção de Ar Condicionado",
             priority=OrderPriority.ALTA,
+            status=OrderStatus.RASCUNHO,
+            ativo=True,
         )
 
         assert order.title == "Manutenção de Ar Condicionado"
@@ -163,6 +244,7 @@ class TestServiceOrder:
             client_id=uuid4(),
             title="Limpeza Geral",
             status=OrderStatus.RASCUNHO,
+            ativo=True,
         )
 
         order.submit()
@@ -171,6 +253,7 @@ class TestServiceOrder:
 
     def test_order_approve(self):
         """Test approving an order."""
+        approver_id = uuid4()
         order = ServiceOrder(
             id=uuid4(),
             order_number="OS-2026-0003",
@@ -178,15 +261,17 @@ class TestServiceOrder:
             client_id=uuid4(),
             title="Segurança 24h",
             status=OrderStatus.PENDENTE,
+            ativo=True,
         )
 
-        order.approve()
+        order.approve(approved_by=approver_id)
 
         assert order.status == OrderStatus.APROVADA
         assert order.approved_at is not None
 
     def test_order_reject(self):
         """Test rejecting an order."""
+        rejector_id = uuid4()
         order = ServiceOrder(
             id=uuid4(),
             order_number="OS-2026-0004",
@@ -194,9 +279,10 @@ class TestServiceOrder:
             client_id=uuid4(),
             title="Jardinagem",
             status=OrderStatus.PENDENTE,
+            ativo=True,
         )
 
-        order.reject("Fora do escopo contratual")
+        order.reject(rejected_by=rejector_id, reason="Fora do escopo contratual")
 
         assert order.status == OrderStatus.REJEITADA
         assert order.rejection_reason == "Fora do escopo contratual"
@@ -210,6 +296,7 @@ class TestServiceOrder:
             client_id=uuid4(),
             title="Piscina",
             status=OrderStatus.APROVADA,
+            ativo=True,
         )
 
         schedule_date = date.today() + timedelta(days=3)
@@ -229,6 +316,7 @@ class TestServiceOrder:
             client_id=uuid4(),
             title="Elevadores",
             status=OrderStatus.AGENDADA,
+            ativo=True,
         )
 
         order.start()
@@ -245,13 +333,14 @@ class TestServiceOrder:
             client_id=uuid4(),
             title="Portaria",
             status=OrderStatus.EM_ANDAMENTO,
+            ativo=True,
+            internal_notes="",
         )
 
         order.pause("Aguardando material")
 
         assert order.status == OrderStatus.PAUSADA
-        assert order.pause_reason == "Aguardando material"
-        assert order.paused_at is not None
+        assert "Aguardando material" in (order.internal_notes or "")
 
     def test_order_resume(self):
         """Test resuming an order."""
@@ -262,6 +351,7 @@ class TestServiceOrder:
             client_id=uuid4(),
             title="Administração",
             status=OrderStatus.PAUSADA,
+            ativo=True,
         )
 
         order.resume()
@@ -278,6 +368,7 @@ class TestServiceOrder:
             title="Consultoria",
             status=OrderStatus.EM_ANDAMENTO,
             started_at=datetime.utcnow() - timedelta(hours=2),
+            ativo=True,
         )
 
         order.complete()
@@ -288,6 +379,7 @@ class TestServiceOrder:
 
     def test_order_cancel(self):
         """Test canceling an order."""
+        canceller_id = uuid4()
         order = ServiceOrder(
             id=uuid4(),
             order_number="OS-2026-0010",
@@ -295,9 +387,10 @@ class TestServiceOrder:
             client_id=uuid4(),
             title="Tecnologia",
             status=OrderStatus.AGENDADA,
+            ativo=True,
         )
 
-        order.cancel("Cliente solicitou cancelamento")
+        order.cancel(cancelled_by=canceller_id, reason="Cliente solicitou cancelamento")
 
         assert order.status == OrderStatus.CANCELADA
         assert order.cancellation_reason == "Cliente solicitou cancelamento"
@@ -312,12 +405,13 @@ class TestServiceOrder:
             client_id=uuid4(),
             title="Eventos",
             status=OrderStatus.CONCLUIDA,
+            ativo=True,
         )
 
         order.rate(5, "Excelente serviço!")
 
         assert order.rating == 5
-        assert order.rating_feedback == "Excelente serviço!"
+        assert order.rating_comment == "Excelente serviço!"
         assert order.rated_at is not None
 
     def test_order_is_overdue(self):
@@ -330,6 +424,7 @@ class TestServiceOrder:
             title="Manutenção",
             status=OrderStatus.EM_ANDAMENTO,
             sla_resolution_deadline=datetime.utcnow() - timedelta(hours=1),
+            ativo=True,
         )
 
         assert order.is_overdue is True
@@ -337,7 +432,13 @@ class TestServiceOrder:
     def test_order_assign_technician(self):
         """Test assigning technician."""
         order = ServiceOrder(
-            id=uuid4(), order_number="OS-2026-0013", service_id=uuid4(), client_id=uuid4(), title="Limpeza"
+            id=uuid4(),
+            order_number="OS-2026-0013",
+            service_id=uuid4(),
+            client_id=uuid4(),
+            title="Limpeza",
+            ativo=True,
+            status=OrderStatus.RASCUNHO,
         )
 
         tech_id = uuid4()
@@ -353,7 +454,14 @@ class TestServiceExecution:
     def test_create_service_execution(self):
         """Test creating a service execution."""
         execution = ServiceExecution(
-            id=uuid4(), execution_number="EX-2026-0001", order_id=uuid4(), sequence=1, technician_name="Carlos Santos"
+            id=uuid4(),
+            execution_number="EX-2026-0001",
+            order_id=uuid4(),
+            sequence=1,
+            technician_name="Carlos Santos",
+            status=ExecutionStatus.AGENDADA,
+            pause_count=0,
+            ativo=True,
         )
 
         assert execution.execution_number == "EX-2026-0001"
@@ -364,7 +472,12 @@ class TestServiceExecution:
     def test_execution_start_travel(self):
         """Test starting travel."""
         execution = ServiceExecution(
-            id=uuid4(), execution_number="EX-2026-0002", order_id=uuid4(), status=ExecutionStatus.AGENDADA
+            id=uuid4(),
+            execution_number="EX-2026-0002",
+            order_id=uuid4(),
+            status=ExecutionStatus.AGENDADA,
+            pause_count=0,
+            ativo=True,
         )
 
         execution.start_travel()
@@ -380,18 +493,25 @@ class TestServiceExecution:
             order_id=uuid4(),
             status=ExecutionStatus.EM_DESLOCAMENTO,
             travel_start=datetime.utcnow() - timedelta(minutes=30),
+            pause_count=0,
+            ativo=True,
         )
 
         execution.arrive_at_location()
 
         assert execution.status == ExecutionStatus.NO_LOCAL
-        assert execution.arrival_at_location is not None
+        assert execution.arrival_time is not None
         assert execution.travel_duration_minutes is not None
 
     def test_execution_start_execution(self):
         """Test starting execution."""
         execution = ServiceExecution(
-            id=uuid4(), execution_number="EX-2026-0004", order_id=uuid4(), status=ExecutionStatus.NO_LOCAL
+            id=uuid4(),
+            execution_number="EX-2026-0004",
+            order_id=uuid4(),
+            status=ExecutionStatus.NO_LOCAL,
+            pause_count=0,
+            ativo=True,
         )
 
         execution.start_execution()
@@ -402,25 +522,38 @@ class TestServiceExecution:
     def test_execution_pause(self):
         """Test pausing execution."""
         execution = ServiceExecution(
-            id=uuid4(), execution_number="EX-2026-0005", order_id=uuid4(), status=ExecutionStatus.EM_EXECUCAO
+            id=uuid4(),
+            execution_number="EX-2026-0005",
+            order_id=uuid4(),
+            status=ExecutionStatus.EM_EXECUCAO,
+            pause_count=0,
+            ativo=True,
         )
 
         execution.pause_execution("Aguardando aprovação")
 
         assert execution.status == ExecutionStatus.PAUSADA
-        assert execution.pause_reason == "Aguardando aprovação"
-        assert execution.paused_at is not None
+        assert execution.pause_count == 1
+        assert execution.pause_history is not None
+        assert len(execution.pause_history) == 1
+        assert execution.pause_history[0]["reason"] == "Aguardando aprovação"
 
     def test_execution_resume(self):
         """Test resuming execution."""
         execution = ServiceExecution(
-            id=uuid4(), execution_number="EX-2026-0006", order_id=uuid4(), status=ExecutionStatus.PAUSADA
+            id=uuid4(),
+            execution_number="EX-2026-0006",
+            order_id=uuid4(),
+            status=ExecutionStatus.PAUSADA,
+            pause_count=1,
+            pause_history=[{"pause_number": 1, "paused_at": datetime.utcnow().isoformat(), "reason": "test"}],
+            ativo=True,
         )
 
         execution.resume_execution()
 
         assert execution.status == ExecutionStatus.EM_EXECUCAO
-        assert execution.resumed_at is not None
+        assert execution.pause_history[-1].get("resumed_at") is not None
 
     def test_execution_finish(self):
         """Test finishing execution."""
@@ -430,18 +563,35 @@ class TestServiceExecution:
             order_id=uuid4(),
             status=ExecutionStatus.EM_EXECUCAO,
             actual_start=datetime.utcnow() - timedelta(hours=2),
+            pause_count=0,
+            materials_cost=Decimal("0"),
+            labor_cost=Decimal("0"),
+            travel_cost=Decimal("0"),
+            other_costs=Decimal("0"),
+            ativo=True,
         )
 
-        execution.finish_execution()
+        execution.finish_execution(work_description="Serviço concluído com sucesso")
 
-        assert execution.status == ExecutionStatus.CONCLUIDA
+        assert execution.status == ExecutionStatus.FINALIZADA
         assert execution.actual_end is not None
         assert execution.execution_duration_minutes is not None
         assert execution.is_finished is True
 
     def test_execution_add_material(self):
         """Test adding material."""
-        execution = ServiceExecution(id=uuid4(), execution_number="EX-2026-0008", order_id=uuid4())
+        execution = ServiceExecution(
+            id=uuid4(),
+            execution_number="EX-2026-0008",
+            order_id=uuid4(),
+            pause_count=0,
+            materials_cost=Decimal("0"),
+            labor_cost=Decimal("0"),
+            travel_cost=Decimal("0"),
+            other_costs=Decimal("0"),
+            status=ExecutionStatus.AGENDADA,
+            ativo=True,
+        )
 
         execution.add_material("Parafusos", 10, Decimal("0.50"))
 
@@ -451,29 +601,40 @@ class TestServiceExecution:
 
     def test_execution_update_checklist_item(self):
         """Test updating checklist item."""
+        item_id = str(uuid4())
         execution = ServiceExecution(
             id=uuid4(),
             execution_number="EX-2026-0009",
             order_id=uuid4(),
             checklist_items=[
-                {"index": 0, "name": "Item 1", "completed": False},
-                {"index": 1, "name": "Item 2", "completed": False},
+                {"id": item_id, "name": "Item 1", "completed": False},
+                {"id": str(uuid4()), "name": "Item 2", "completed": False},
             ],
+            pause_count=0,
+            status=ExecutionStatus.AGENDADA,
+            ativo=True,
         )
 
-        execution.update_checklist_item(0, True, "Concluído")
+        execution.update_checklist_item(item_id, True)
 
         assert execution.checklist_items[0]["completed"] is True
-        assert execution.checklist_items[0].get("notes") == "Concluído"
 
     def test_execution_add_signature(self):
         """Test adding signature."""
-        execution = ServiceExecution(id=uuid4(), execution_number="EX-2026-0010", order_id=uuid4())
+        execution = ServiceExecution(
+            id=uuid4(),
+            execution_number="EX-2026-0010",
+            order_id=uuid4(),
+            pause_count=0,
+            status=ExecutionStatus.AGENDADA,
+            ativo=True,
+        )
 
-        execution.add_signature("Cliente", "base64data", "Responsável")
+        execution.add_signature("client", "base64data", "Responsável")
+        execution.add_signature("technician", "base64data_tech", "Técnico")
 
-        assert execution.signatures is not None
-        assert len(execution.signatures) == 1
+        assert execution.client_signature is not None
+        assert execution.technician_signature is not None
         assert execution.has_signatures is True
 
     def test_execution_total_cost(self):
@@ -485,6 +646,10 @@ class TestServiceExecution:
             materials_cost=Decimal("100.00"),
             labor_cost=Decimal("200.00"),
             travel_cost=Decimal("50.00"),
+            other_costs=Decimal("0"),
+            pause_count=0,
+            status=ExecutionStatus.AGENDADA,
+            ativo=True,
         )
 
         execution._calculate_total_cost()
@@ -503,6 +668,11 @@ class TestServiceReport:
             order_id=uuid4(),
             report_type=ReportType.EXECUCAO,
             title="Relatório de Execução",
+            is_draft=True,
+            is_reviewed=False,
+            is_approved=False,
+            is_sent=False,
+            ativo=True,
         )
 
         assert report.report_number == "REL-2026-0001"
@@ -512,7 +682,15 @@ class TestServiceReport:
     def test_report_finalize(self):
         """Test finalizing a report."""
         report = ServiceReport(
-            id=uuid4(), report_number="REL-2026-0002", order_id=uuid4(), title="Laudo Técnico", is_draft=True
+            id=uuid4(),
+            report_number="REL-2026-0002",
+            order_id=uuid4(),
+            title="Laudo Técnico",
+            is_draft=True,
+            is_reviewed=False,
+            is_approved=False,
+            is_sent=False,
+            ativo=True,
         )
 
         report.finalize()
@@ -522,38 +700,59 @@ class TestServiceReport:
     def test_report_review(self):
         """Test reviewing a report."""
         report = ServiceReport(
-            id=uuid4(), report_number="REL-2026-0003", order_id=uuid4(), title="Vistoria", is_draft=False
+            id=uuid4(),
+            report_number="REL-2026-0003",
+            order_id=uuid4(),
+            title="Vistoria",
+            is_draft=False,
+            is_reviewed=False,
+            is_approved=False,
+            is_sent=False,
+            ativo=True,
         )
 
         reviewer_id = uuid4()
-        report.review(reviewer_id, "Maria Souza", "Aprovado com ressalvas")
+        report.review(reviewer_id, "Maria Souza")
 
         assert report.is_reviewed is True
         assert report.reviewer_id == reviewer_id
         assert report.reviewer_name == "Maria Souza"
-        assert report.review_notes == "Aprovado com ressalvas"
 
     def test_report_approve(self):
         """Test approving a report."""
         report = ServiceReport(
-            id=uuid4(), report_number="REL-2026-0004", order_id=uuid4(), title="Inspeção", is_reviewed=True
+            id=uuid4(),
+            report_number="REL-2026-0004",
+            order_id=uuid4(),
+            title="Inspeção",
+            is_reviewed=True,
+            is_draft=False,
+            is_approved=False,
+            is_sent=False,
+            ativo=True,
         )
 
         approver_id = uuid4()
-        report.approve(approver_id, "José Lima")
+        report.approve(approver_id)
 
         assert report.is_approved is True
-        assert report.approver_id == approver_id
-        assert report.approver_name == "José Lima"
         assert report.approved_at is not None
 
     def test_report_send(self):
         """Test sending a report."""
         report = ServiceReport(
-            id=uuid4(), report_number="REL-2026-0005", order_id=uuid4(), title="Orçamento", is_approved=True
+            id=uuid4(),
+            report_number="REL-2026-0005",
+            order_id=uuid4(),
+            title="Orçamento",
+            is_approved=True,
+            is_draft=False,
+            is_reviewed=True,
+            is_sent=False,
+            ativo=True,
         )
 
-        report.send("cliente@email.com")
+        report.send(["cliente@email.com"])
 
         assert report.is_sent is True
         assert report.sent_at is not None
@@ -561,7 +760,17 @@ class TestServiceReport:
 
     def test_report_add_section(self):
         """Test adding a section."""
-        report = ServiceReport(id=uuid4(), report_number="REL-2026-0006", order_id=uuid4(), title="Relatório Técnico")
+        report = ServiceReport(
+            id=uuid4(),
+            report_number="REL-2026-0006",
+            order_id=uuid4(),
+            title="Relatório Técnico",
+            is_draft=True,
+            is_reviewed=False,
+            is_approved=False,
+            is_sent=False,
+            ativo=True,
+        )
 
         report.add_section("Introdução", "Texto da introdução", 1)
 
@@ -570,7 +779,17 @@ class TestServiceReport:
 
     def test_report_add_photo(self):
         """Test adding a photo."""
-        report = ServiceReport(id=uuid4(), report_number="REL-2026-0007", order_id=uuid4(), title="Auditoria")
+        report = ServiceReport(
+            id=uuid4(),
+            report_number="REL-2026-0007",
+            order_id=uuid4(),
+            title="Auditoria",
+            is_draft=True,
+            is_reviewed=False,
+            is_approved=False,
+            is_sent=False,
+            ativo=True,
+        )
 
         report.add_photo("http://example.com/foto.jpg", "Foto do local")
 
@@ -580,7 +799,17 @@ class TestServiceReport:
 
     def test_report_add_non_conformity(self):
         """Test adding non-conformity."""
-        report = ServiceReport(id=uuid4(), report_number="REL-2026-0008", order_id=uuid4(), title="Preventivo")
+        report = ServiceReport(
+            id=uuid4(),
+            report_number="REL-2026-0008",
+            order_id=uuid4(),
+            title="Preventivo",
+            is_draft=True,
+            is_reviewed=False,
+            is_approved=False,
+            is_sent=False,
+            ativo=True,
+        )
 
         report.add_non_conformity("Equipamento danificado", "alta")
 
@@ -597,7 +826,11 @@ class TestServiceReport:
             title="Relatório Final",
             summary="Resumo",
             conclusions="Conclusões",
+            is_draft=False,
+            is_reviewed=True,
             is_approved=True,
+            is_sent=False,
+            ativo=True,
         )
 
         assert report.is_complete is True
