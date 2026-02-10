@@ -50,7 +50,7 @@ class TestReportTemplate:
             codigo="RPT001",
             nome="Relatório Financeiro Mensal",
             descricao="Relatório financeiro consolidado",
-            category=ReportCategory.FINANCEIRO,
+            category=ReportCategory.FINANCIAL,
             report_type=ReportType.CONSOLIDADO,
             default_format=ReportFormat.PDF,
             supported_formats=["pdf", "excel", "csv"],
@@ -58,7 +58,7 @@ class TestReportTemplate:
         )
         assert template.codigo == "RPT001"
         assert template.nome == "Relatório Financeiro Mensal"
-        assert template.category == ReportCategory.FINANCEIRO
+        assert template.category == ReportCategory.FINANCIAL
         assert template.is_active
 
     def test_template_activate(self):
@@ -67,7 +67,7 @@ class TestReportTemplate:
             id=uuid.uuid4(),
             codigo="RPT002",
             nome="Template Teste",
-            category=ReportCategory.OPERACIONAL,
+            category=ReportCategory.OPERATIONAL,
             report_type=ReportType.DETALHADO,
             default_format=ReportFormat.EXCEL,
             supported_formats=["excel"],
@@ -82,7 +82,7 @@ class TestReportTemplate:
             id=uuid.uuid4(),
             codigo="RPT003",
             nome="Template Teste",
-            category=ReportCategory.VENDAS,
+            category=ReportCategory.COMMERCIAL,
             report_type=ReportType.RESUMIDO,
             default_format=ReportFormat.PDF,
             supported_formats=["pdf"],
@@ -97,7 +97,7 @@ class TestReportTemplate:
             id=uuid.uuid4(),
             codigo="RPT004",
             nome="Template Antigo",
-            category=ReportCategory.COMERCIAL,
+            category=ReportCategory.COMMERCIAL,
             report_type=ReportType.ANALITICO,
             default_format=ReportFormat.CSV,
             supported_formats=["csv"],
@@ -112,7 +112,7 @@ class TestReportTemplate:
             id=uuid.uuid4(),
             codigo="RPT005",
             nome="Template Arquivado",
-            category=ReportCategory.RH,
+            category=ReportCategory.HR,
             report_type=ReportType.DASHBOARD,
             default_format=ReportFormat.HTML,
             supported_formats=["html"],
@@ -127,7 +127,7 @@ class TestReportTemplate:
             id=uuid.uuid4(),
             codigo="RPT006",
             nome="Template Versionado",
-            category=ReportCategory.ESTOQUE,
+            category=ReportCategory.OPERATIONAL,
             report_type=ReportType.COMPARATIVO,
             default_format=ReportFormat.PDF,
             supported_formats=["pdf"],
@@ -143,7 +143,7 @@ class TestReportTemplate:
             id=uuid.uuid4(),
             codigo="RPT007",
             nome="Template Usado",
-            category=ReportCategory.PRODUCAO,
+            category=ReportCategory.OPERATIONAL,
             report_type=ReportType.CUSTOMIZADO,
             default_format=ReportFormat.JSON,
             supported_formats=["json"],
@@ -160,7 +160,7 @@ class TestReportTemplate:
             id=uuid.uuid4(),
             codigo="RPT008",
             nome="Template com Seções",
-            category=ReportCategory.EXECUTIVO,
+            category=ReportCategory.EXECUTIVE,
             report_type=ReportType.CONSOLIDADO,
             default_format=ReportFormat.PDF,
             supported_formats=["pdf"],
@@ -177,7 +177,7 @@ class TestReportTemplate:
             id=uuid.uuid4(),
             codigo="RPT009",
             nome="Template com Gráficos",
-            category=ReportCategory.FINANCEIRO,
+            category=ReportCategory.FINANCIAL,
             report_type=ReportType.ANALITICO,
             default_format=ReportFormat.PDF,
             supported_formats=["pdf"],
@@ -199,7 +199,7 @@ class TestReportTemplate:
             id=uuid.uuid4(),
             codigo="RPT010",
             nome="Template com Parâmetros",
-            category=ReportCategory.OPERACIONAL,
+            category=ReportCategory.OPERATIONAL,
             report_type=ReportType.DETALHADO,
             default_format=ReportFormat.EXCEL,
             supported_formats=["excel"],
@@ -790,9 +790,9 @@ class TestEnums:
 
     def test_report_category_values(self):
         """Testa valores de ReportCategory."""
-        assert ReportCategory.FINANCEIRO.value == "financeiro"
-        assert ReportCategory.OPERACIONAL.value == "operacional"
-        assert ReportCategory.VENDAS.value == "vendas"
+        assert ReportCategory.FINANCIAL.value == "financial"
+        assert ReportCategory.OPERATIONAL.value == "operational"
+        assert ReportCategory.COMMERCIAL.value == "commercial"
 
     def test_report_format_values(self):
         """Testa valores de ReportFormat."""
@@ -802,18 +802,18 @@ class TestEnums:
 
     def test_schedule_frequency_values(self):
         """Testa valores de ScheduleFrequency."""
-        assert ScheduleFrequency.DIARIO.value == "diario"
-        assert ScheduleFrequency.SEMANAL.value == "semanal"
-        assert ScheduleFrequency.MENSAL.value == "mensal"
+        assert ScheduleFrequency.DAILY.value == "daily"
+        assert ScheduleFrequency.WEEKLY.value == "weekly"
+        assert ScheduleFrequency.MONTHLY.value == "monthly"
 
     def test_kpi_direction_values(self):
         """Testa valores de KPIDirection."""
-        assert KPIDirection.MAIOR_MELHOR.value == "maior_melhor"
-        assert KPIDirection.MENOR_MELHOR.value == "menor_melhor"
-        assert KPIDirection.ALVO.value == "alvo"
+        assert KPIDirection.INCREASE.value == "increase"
+        assert KPIDirection.DECREASE.value == "decrease"
+        assert KPIDirection.MAINTAIN.value == "maintain"
 
     def test_comparison_result_values(self):
         """Testa valores de ComparisonResult."""
-        assert ComparisonResult.ACIMA.value == "acima"
-        assert ComparisonResult.ABAIXO.value == "abaixo"
-        assert ComparisonResult.NA_MEDIA.value == "na_media"
+        assert ComparisonResult.ABOVE.value == "above"
+        assert ComparisonResult.BELOW.value == "below"
+        assert ComparisonResult.AT_PAR.value == "at_par"
