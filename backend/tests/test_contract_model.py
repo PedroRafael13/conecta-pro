@@ -27,8 +27,8 @@ class TestContractEnums:
 
     def test_contract_type_values(self):
         """Testa valores do ContractType."""
-        assert ContractType.SERVICE.value == "recurring"
-        assert ContractType.SERVICE.value == "one_time"
+        assert ContractType.RECURRING.value == "recurring"
+        assert ContractType.ONE_TIME.value == "one_time"
 
     def test_contract_status_values(self):
         """Testa valores do ContractStatus."""
@@ -36,7 +36,7 @@ class TestContractEnums:
         assert ContractStatus.PENDING_SIGNATURE.value == "pending_signature"
         assert ContractStatus.ACTIVE.value == "active"
         assert ContractStatus.SUSPENDED.value == "suspended"
-        assert ContractStatus.DRAFT.value == "cancelled"
+        assert ContractStatus.CANCELLED.value == "cancelled"
         assert ContractStatus.TERMINATED.value == "terminated"
 
     def test_adjustment_index_values(self):
@@ -44,7 +44,7 @@ class TestContractEnums:
         assert AdjustmentIndex.IGPM.value == "igpm"
         assert AdjustmentIndex.IPCA.value == "ipca"
         assert AdjustmentIndex.INPC.value == "inpc"
-        assert AdjustmentIndex.IGPM.value == "fixed"
+        assert AdjustmentIndex.FIXED.value == "fixed"
         assert AdjustmentIndex.CUSTOM.value == "custom"
 
     def test_addendum_type_values(self):
@@ -58,14 +58,14 @@ class TestContractEnums:
 
     def test_service_type_values(self):
         """Testa valores do ServiceType."""
-        assert ServiceType.RECORRENTE.value == "security"
-        assert ServiceType.RECORRENTE.value == "remote_gatehouse"
-        assert ServiceType.RECORRENTE.value == "electronic_security"
-        assert ServiceType.RECORRENTE.value == "monitoring_24h"
-        assert ServiceType.RECORRENTE.value == "cleaning"
-        assert ServiceType.RECORRENTE.value == "gardening"
-        assert ServiceType.RECORRENTE.value == "maintenance"
-        assert ServiceType.RECORRENTE.value == "facilities"
+        assert ServiceType.SECURITY.value == "security"
+        assert ServiceType.REMOTE_GATEHOUSE.value == "remote_gatehouse"
+        assert ServiceType.ELECTRONIC_SECURITY.value == "electronic_security"
+        assert ServiceType.MONITORING_24H.value == "monitoring_24h"
+        assert ServiceType.CLEANING.value == "cleaning"
+        assert ServiceType.GARDENING.value == "gardening"
+        assert ServiceType.MAINTENANCE.value == "maintenance"
+        assert ServiceType.FACILITIES.value == "facilities"
 
 
 class TestContractModel:
@@ -78,7 +78,7 @@ class TestContractModel:
             id=uuid.uuid4(),
             contract_number="CONT-2025-00001",
             client_id=uuid.uuid4(),
-            contract_type=ContractType.SERVICE,
+            contract_type=ContractType.RECURRING,
             status=ContractStatus.DRAFT,
             name="Contrato de Vigilância",
             monthly_value=Decimal("10000.00"),
@@ -126,7 +126,7 @@ class TestContractModel:
     def test_is_terminated(self, contract):
         """Testa propriedade is_terminated."""
         assert contract.is_terminated is False
-        contract.status = ContractStatus.DRAFT
+        contract.status = ContractStatus.CANCELLED
         assert contract.is_terminated is True
         contract.status = ContractStatus.TERMINATED
         assert contract.is_terminated is True
@@ -146,7 +146,7 @@ class TestContractModel:
 
         # Pontual não é renovável
         contract.auto_renewal = True
-        contract.contract_type = ContractType.SERVICE
+        contract.contract_type = ContractType.ONE_TIME
         assert contract.is_renewable is False
 
     def test_days_until_end(self, contract):
@@ -256,7 +256,7 @@ class TestContractTemplateModel:
             id=uuid.uuid4(),
             name="Template Vigilância",
             description="Template padrão para contratos de vigilância",
-            service_type=ServiceType.RECORRENTE,
+            service_type=ServiceType.SECURITY,
             content_template="Contrato de {{client_name}} com valor {{value}}",
             variables=["client_name", "value"],
             version=1,
@@ -291,7 +291,7 @@ class TestContractItemModel:
         return ContractItem(
             id=uuid.uuid4(),
             contract_id=uuid.uuid4(),
-            service_type=ServiceType.RECORRENTE,
+            service_type=ServiceType.SECURITY,
             service_name="Vigilância Patrimonial",
             quantity=4,
             unit_price=Decimal("2500.00"),

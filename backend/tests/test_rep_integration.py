@@ -37,7 +37,7 @@ class TestREPDeviceModel:
             device_name="REP Portaria Principal",
             ip_address="192.168.1.100",
             port=80,
-            status=DeviceStatus.ACTIVE.value,
+            status=DeviceStatus.OFFLINE.value,
         )
 
         assert device.manufacturer == "control_id"
@@ -68,12 +68,12 @@ class TestREPDeviceModel:
             condominio_id=uuid4(),
             serial_number="TEST123",
             device_name="Test REP",
-            status=DeviceStatus.ACTIVE.value,
+            status=DeviceStatus.ONLINE.value,
         )
 
         assert device.is_online is True
 
-        device.status = DeviceStatus.ACTIVE.value
+        device.status = DeviceStatus.OFFLINE.value
         assert device.is_online is False
 
     def test_device_needs_sync(self):
@@ -102,7 +102,7 @@ class TestREPDeviceModel:
             manufacturer=DeviceManufacturer.CONTROL_ID.value,
             serial_number="TEST123",
             device_name="Test REP",
-            status=DeviceStatus.ACTIVE.value,
+            status=DeviceStatus.ONLINE.value,
             is_active=True,
         )
 
@@ -130,7 +130,7 @@ class TestREPEventModel:
             event_datetime=now,
             event_date=now.date(),
             event_time=now.time(),
-            event_type=EventType.S1000_EMPREGADOR.value,
+            event_type=EventType.ENTRY.value,
             pis_number="12345678901",
             identification_method=IdentificationMethod.BIOMETRIC.value,
             status=EventStatus.RECEIVED.value,
@@ -151,7 +151,7 @@ class TestREPEventModel:
             event_datetime=datetime(2025, 12, 31, 8, 30),
             event_date=date(2025, 12, 31),
             event_time=time(8, 30),
-            event_type=EventType.S1000_EMPREGADOR.value,
+            event_type=EventType.ENTRY.value,
             pis_number="12345678901",
         )
 
@@ -210,7 +210,7 @@ class TestREPSyncModel:
             device_id=uuid4(),
             condominio_id=uuid4(),
             sync_type=SyncType.EVENTS_PULL.value,
-            status=SyncStatus.IDLE.value,
+            status=SyncStatus.PENDING.value,
         )
 
         assert sync.sync_type == "events_pull"
@@ -239,18 +239,18 @@ class TestREPSyncModel:
             device_id=uuid4(),
             condominio_id=uuid4(),
             sync_type=SyncType.EVENTS_PULL.value,
-            status=SyncStatus.IDLE.value,
+            status=SyncStatus.PENDING.value,
         )
 
         # Start
         sync.start()
-        assert sync.status == SyncStatus.IDLE.value
+        assert sync.status == SyncStatus.IN_PROGRESS.value
         assert sync.started_at is not None
         assert sync.is_running is True
 
         # Complete
         sync.complete()
-        assert sync.status == SyncStatus.IDLE.value
+        assert sync.status == SyncStatus.COMPLETED.value
         assert sync.completed_at is not None
         assert sync.is_finished is True
 
@@ -266,7 +266,7 @@ class TestREPSyncModel:
         sync.start()
         sync.fail("Connection timeout", "TIMEOUT")
 
-        assert sync.status == SyncStatus.IDLE.value
+        assert sync.status == SyncStatus.FAILED.value
         assert sync.error_message == "Connection timeout"
         assert sync.error_code == "TIMEOUT"
 
@@ -351,17 +351,17 @@ class TestEnums:
 
     def test_device_status_values(self):
         """Testa valores de status."""
-        assert DeviceStatus.ACTIVE.value == "online"
-        assert DeviceStatus.ACTIVE.value == "offline"
-        assert DeviceStatus.ACTIVE.value == "syncing"
-        assert DeviceStatus.ACTIVE.value == "error"
+        assert DeviceStatus.ONLINE.value == "online"
+        assert DeviceStatus.OFFLINE.value == "offline"
+        assert DeviceStatus.SYNCING.value == "syncing"
+        assert DeviceStatus.ERROR.value == "error"
 
     def test_event_type_values(self):
         """Testa valores de tipos de evento."""
-        assert EventType.S1000_EMPREGADOR.value == "entry"
-        assert EventType.S1000_EMPREGADOR.value == "exit"
-        assert EventType.S1000_EMPREGADOR.value == "break_start"
-        assert EventType.S1000_EMPREGADOR.value == "break_end"
+        assert EventType.ENTRY.value == "entry"
+        assert EventType.EXIT.value == "exit"
+        assert EventType.BREAK_START.value == "break_start"
+        assert EventType.BREAK_END.value == "break_end"
 
     def test_sync_type_values(self):
         """Testa valores de tipos de sync."""

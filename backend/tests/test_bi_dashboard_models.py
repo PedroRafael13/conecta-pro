@@ -55,7 +55,7 @@ class TestFinancialDashboard:
             descricao="Dashboard para diretoria",
             tipo=DashboardType.EXECUTIVE,
             status=DashboardStatus.DRAFT,
-            layout=DashboardLayout.GRID_2X2,
+            layout=DashboardLayout.GRID,
             refresh_interval=RefreshInterval.MINUTE_5,
         )
         assert dashboard.nome == "Dashboard Executivo"
@@ -69,7 +69,7 @@ class TestFinancialDashboard:
             condominio_id=uuid4(),
             nome="Test",
             tipo=DashboardType.CUSTOM,
-            status=DashboardStatus.ACTIVE,
+            status=DashboardStatus.PUBLISHED,
             ativo=True,
         )
         assert dashboard.is_active is True
@@ -77,7 +77,7 @@ class TestFinancialDashboard:
         dashboard.status = DashboardStatus.ARCHIVED
         assert dashboard.is_active is False
 
-        dashboard.status = DashboardStatus.ACTIVE
+        dashboard.status = DashboardStatus.PUBLISHED
         dashboard.ativo = False
         assert dashboard.is_active is False
 
@@ -122,7 +122,7 @@ class TestFinancialDashboard:
             status=DashboardStatus.DRAFT,
         )
         dashboard.publish(user_id)
-        assert dashboard.status == DashboardStatus.ACTIVE
+        assert dashboard.status == DashboardStatus.PUBLISHED
         assert dashboard.published_by == user_id
         assert dashboard.published_at is not None
 
@@ -133,7 +133,7 @@ class TestFinancialDashboard:
             condominio_id=uuid4(),
             nome="Test",
             tipo=DashboardType.CUSTOM,
-            status=DashboardStatus.ACTIVE,
+            status=DashboardStatus.PUBLISHED,
         )
         dashboard.archive()
         assert dashboard.status == DashboardStatus.ARCHIVED
@@ -146,7 +146,7 @@ class TestFinancialDashboard:
             nome="Original Dashboard",
             descricao="Descricao original",
             tipo=DashboardType.EXECUTIVE,
-            status=DashboardStatus.ACTIVE,
+            status=DashboardStatus.PUBLISHED,
             configuracoes={"theme": "dark"},
         )
         duplicated = original.duplicate("Copia Dashboard")
@@ -165,13 +165,13 @@ class TestFinancialWidget:
             id=uuid4(),
             dashboard_id=uuid4(),
             titulo="Receita Mensal",
-            tipo=WidgetType.LINE_CHART,
+            tipo=WidgetType.CHART,
             tamanho=WidgetSize.LARGE,
             tipo_grafico=ChartType.BAR,
-            fonte_dados=DataSource.TIME_ENTRIES,
+            fonte_dados=DataSource.CASH_FLOW,
         )
         assert widget.titulo == "Receita Mensal"
-        assert widget.tipo == WidgetType.LINE_CHART
+        assert widget.tipo == WidgetType.CHART
         assert widget.tipo_grafico == ChartType.BAR
 
     def test_widget_move_to(self):
@@ -180,7 +180,7 @@ class TestFinancialWidget:
             id=uuid4(),
             dashboard_id=uuid4(),
             titulo="Test",
-            tipo=WidgetType.LINE_CHART,
+            tipo=WidgetType.CARD,
             posicao_x=0,
             posicao_y=0,
         )
@@ -194,7 +194,7 @@ class TestFinancialWidget:
             id=uuid4(),
             dashboard_id=uuid4(),
             titulo="Test",
-            tipo=WidgetType.LINE_CHART,
+            tipo=WidgetType.CARD,
             largura=4,
             altura=3,
         )
@@ -208,7 +208,7 @@ class TestFinancialWidget:
             id=uuid4(),
             dashboard_id=uuid4(),
             titulo="Test",
-            tipo=WidgetType.LINE_CHART,
+            tipo=WidgetType.CARD,
         )
         widget.set_error("Erro de conexao")
         assert widget.ultimo_erro == "Erro de conexao"
@@ -220,7 +220,7 @@ class TestFinancialWidget:
             id=uuid4(),
             dashboard_id=uuid4(),
             titulo="Test",
-            tipo=WidgetType.LINE_CHART,
+            tipo=WidgetType.CARD,
             ultimo_erro="Erro anterior",
         )
         widget.set_loaded()
@@ -256,12 +256,12 @@ class TestFinancialKPI:
             condominio_id=uuid4(),
             codigo="LIQ_001",
             nome="Indice de Liquidez Corrente",
-            categoria=KPICategory.FINANCIAL,
+            categoria=KPICategory.LIQUIDITY,
             formula="{ativo_circulante} / {passivo_circulante}",
             unidade="ratio",
         )
         assert kpi.codigo == "LIQ_001"
-        assert kpi.categoria == KPICategory.FINANCIAL
+        assert kpi.categoria == KPICategory.LIQUIDITY
         assert "{ativo_circulante}" in kpi.formula
 
     def test_kpi_update_value(self):
@@ -271,7 +271,7 @@ class TestFinancialKPI:
             condominio_id=uuid4(),
             codigo="TEST_001",
             nome="Test KPI",
-            categoria=KPICategory.FINANCIAL,
+            categoria=KPICategory.CUSTOM,
             formula="1",
             valor_atual=Decimal("100"),
         )
@@ -288,7 +288,7 @@ class TestFinancialKPI:
             condominio_id=uuid4(),
             codigo="TEST_002",
             nome="Test KPI",
-            categoria=KPICategory.FINANCIAL,
+            categoria=KPICategory.CUSTOM,
             formula="1",
             valor_atual=Decimal("100"),
         )
@@ -303,7 +303,7 @@ class TestFinancialKPI:
             condominio_id=uuid4(),
             codigo="TEST_003",
             nome="Test KPI",
-            categoria=KPICategory.FINANCIAL,
+            categoria=KPICategory.CUSTOM,
             formula="1",
             historico=[],
             historico_max_registros=5,
@@ -321,7 +321,7 @@ class TestFinancialKPI:
             condominio_id=uuid4(),
             codigo="TEST_004",
             nome="Test KPI",
-            categoria=KPICategory.FINANCIAL,
+            categoria=KPICategory.CUSTOM,
             formula="1",
             formato="percent",
             casas_decimais=2,
@@ -336,7 +336,7 @@ class TestFinancialKPI:
             condominio_id=uuid4(),
             codigo="TEST_005",
             nome="Test KPI",
-            categoria=KPICategory.FINANCIAL,
+            categoria=KPICategory.CUSTOM,
             formula="1",
             formato="currency",
             casas_decimais=2,
@@ -351,20 +351,20 @@ class TestFinancialKPI:
             condominio_id=uuid4(),
             codigo="TEST_006",
             nome="Test KPI",
-            categoria=KPICategory.FINANCIAL,
+            categoria=KPICategory.CUSTOM,
             formula="1",
             threshold_warning=Decimal("50"),
             threshold_critical=Decimal("30"),
             threshold_success=Decimal("80"),
         )
         kpi.update_value(Decimal("90"))
-        assert kpi.alert_level == AlertLevel.GREEN
+        assert kpi.alert_level == AlertLevel.NONE
 
         kpi.update_value(Decimal("40"))
-        assert kpi.alert_level == AlertLevel.GREEN
+        assert kpi.alert_level == AlertLevel.WARNING
 
         kpi.update_value(Decimal("20"))
-        assert kpi.alert_level == AlertLevel.GREEN
+        assert kpi.alert_level == AlertLevel.CRITICAL
 
 
 class TestScheduledReport:
@@ -376,14 +376,14 @@ class TestScheduledReport:
             id=uuid4(),
             condominio_id=uuid4(),
             nome="Relatorio Mensal",
-            tipo=ReportType.EXECUCAO,
+            tipo=ReportType.FINANCIAL_SUMMARY,
             formato=ReportFormat.PDF,
             frequencia=ReportFrequency.MONTHLY,
             metodo_entrega=DeliveryMethod.EMAIL,
             destinatarios_email=["admin@test.com"],
         )
         assert report.nome == "Relatorio Mensal"
-        assert report.tipo == ReportType.EXECUCAO
+        assert report.tipo == ReportType.FINANCIAL_SUMMARY
         assert report.formato == ReportFormat.PDF
 
     def test_report_calculate_next_execution_daily(self):
@@ -392,7 +392,7 @@ class TestScheduledReport:
             id=uuid4(),
             condominio_id=uuid4(),
             nome="Test",
-            tipo=ReportType.EXECUCAO,
+            tipo=ReportType.KPI_REPORT,
             formato=ReportFormat.PDF,
             frequencia=ReportFrequency.DAILY,
             metodo_entrega=DeliveryMethod.EMAIL,
@@ -407,7 +407,7 @@ class TestScheduledReport:
             id=uuid4(),
             condominio_id=uuid4(),
             nome="Test",
-            tipo=ReportType.EXECUCAO,
+            tipo=ReportType.KPI_REPORT,
             formato=ReportFormat.PDF,
             frequencia=ReportFrequency.WEEKLY,
             metodo_entrega=DeliveryMethod.EMAIL,
@@ -421,7 +421,7 @@ class TestScheduledReport:
             id=uuid4(),
             condominio_id=uuid4(),
             nome="Test",
-            tipo=ReportType.EXECUCAO,
+            tipo=ReportType.KPI_REPORT,
             formato=ReportFormat.PDF,
             frequencia=ReportFrequency.DAILY,
             metodo_entrega=DeliveryMethod.EMAIL,
@@ -440,7 +440,7 @@ class TestScheduledReport:
             id=uuid4(),
             condominio_id=uuid4(),
             nome="Test",
-            tipo=ReportType.EXECUCAO,
+            tipo=ReportType.KPI_REPORT,
             formato=ReportFormat.PDF,
             frequencia=ReportFrequency.DAILY,
             metodo_entrega=DeliveryMethod.EMAIL,
@@ -458,7 +458,7 @@ class TestScheduledReport:
             id=uuid4(),
             condominio_id=uuid4(),
             nome="Test",
-            tipo=ReportType.EXECUCAO,
+            tipo=ReportType.KPI_REPORT,
             formato=ReportFormat.PDF,
             frequencia=ReportFrequency.DAILY,
             metodo_entrega=DeliveryMethod.EMAIL,
@@ -477,14 +477,14 @@ class TestScheduledReport:
             id=uuid4(),
             condominio_id=uuid4(),
             nome="Test",
-            tipo=ReportType.EXECUCAO,
+            tipo=ReportType.KPI_REPORT,
             formato=ReportFormat.PDF,
             frequencia=ReportFrequency.DAILY,
             metodo_entrega=DeliveryMethod.EMAIL,
             status=ReportStatus.ACTIVE,
         )
         report.cancel()
-        assert report.status == ReportStatus.ACTIVE
+        assert report.status == ReportStatus.CANCELLED
         assert report.proxima_execucao is None
 
 
@@ -496,12 +496,12 @@ class TestAnalyticsCache:
         cache = AnalyticsCache(
             id=uuid4(),
             cache_key="widget_123_data",
-            cache_type=CacheType.KPI,
+            cache_type=CacheType.WIDGET_DATA,
             condominio_id=uuid4(),
             ttl_segundos=300,
         )
         assert cache.cache_key == "widget_123_data"
-        assert cache.cache_type == CacheType.KPI
+        assert cache.cache_type == CacheType.WIDGET_DATA
         assert cache.ttl_segundos == 300
 
     def test_cache_is_expired(self):
@@ -509,7 +509,7 @@ class TestAnalyticsCache:
         cache = AnalyticsCache(
             id=uuid4(),
             cache_key="test_key",
-            cache_type=CacheType.KPI,
+            cache_type=CacheType.KPI_VALUE,
             expira_em=datetime.utcnow() - timedelta(hours=1),
         )
         assert cache.is_expired is True
@@ -522,13 +522,13 @@ class TestAnalyticsCache:
         cache = AnalyticsCache(
             id=uuid4(),
             cache_key="test_key",
-            cache_type=CacheType.KPI,
+            cache_type=CacheType.KPI_VALUE,
             status=CacheStatus.VALID,
             expira_em=datetime.utcnow() + timedelta(hours=1),
         )
         assert cache.is_valid is True
 
-        cache.status = CacheStatus.VALID
+        cache.status = CacheStatus.INVALIDATED
         assert cache.is_valid is False
 
     def test_cache_hit_rate(self):
@@ -536,7 +536,7 @@ class TestAnalyticsCache:
         cache = AnalyticsCache(
             id=uuid4(),
             cache_key="test_key",
-            cache_type=CacheType.KPI,
+            cache_type=CacheType.KPI_VALUE,
             hits=80,
             misses=20,
         )
@@ -551,7 +551,7 @@ class TestAnalyticsCache:
         cache = AnalyticsCache(
             id=uuid4(),
             cache_key="test_key",
-            cache_type=CacheType.KPI,
+            cache_type=CacheType.WIDGET_DATA,
             ttl_segundos=300,
         )
         data = {"value": 100, "labels": ["A", "B", "C"]}
@@ -567,7 +567,7 @@ class TestAnalyticsCache:
         cache = AnalyticsCache(
             id=uuid4(),
             cache_key="test_key",
-            cache_type=CacheType.KPI,
+            cache_type=CacheType.KPI_VALUE,
             hits=0,
         )
         cache.record_hit()
@@ -579,7 +579,7 @@ class TestAnalyticsCache:
         cache = AnalyticsCache(
             id=uuid4(),
             cache_key="test_key",
-            cache_type=CacheType.KPI,
+            cache_type=CacheType.KPI_VALUE,
             misses=0,
         )
         cache.record_miss()
@@ -590,18 +590,18 @@ class TestAnalyticsCache:
         cache = AnalyticsCache(
             id=uuid4(),
             cache_key="test_key",
-            cache_type=CacheType.KPI,
+            cache_type=CacheType.KPI_VALUE,
             status=CacheStatus.VALID,
         )
         cache.invalidate()
-        assert cache.status == CacheStatus.VALID
+        assert cache.status == CacheStatus.INVALIDATED
 
     def test_cache_extend_ttl(self):
         """Testa extensao de TTL."""
         cache = AnalyticsCache(
             id=uuid4(),
             cache_key="test_key",
-            cache_type=CacheType.KPI,
+            cache_type=CacheType.KPI_VALUE,
             status=CacheStatus.VALID,
             expira_em=datetime.utcnow() + timedelta(seconds=60),
         )

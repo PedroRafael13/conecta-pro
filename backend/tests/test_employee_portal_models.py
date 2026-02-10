@@ -300,13 +300,13 @@ class TestEmployeeDocumentModel:
             id=uuid4(),
             condominio_id=uuid4(),
             employee_id=uuid4(),
-            document_type=DocumentType.CND_FEDERAL,
+            document_type=DocumentType.PAYSLIP,
             title="Contracheque Janeiro 2024",
-            status=DocumentStatus.VALID,
+            status=DocumentStatus.DRAFT,
         )
 
         assert doc.title == "Contracheque Janeiro 2024"
-        assert doc.document_type == DocumentType.CND_FEDERAL
+        assert doc.document_type == DocumentType.PAYSLIP
 
     def test_document_requires_acknowledgement(self):
         """Testa documento que requer ciência."""
@@ -314,10 +314,10 @@ class TestEmployeeDocumentModel:
             id=uuid4(),
             condominio_id=uuid4(),
             employee_id=uuid4(),
-            document_type=DocumentType.CND_FEDERAL,
+            document_type=DocumentType.INTERNAL_POLICY,
             title="Nova Política de Segurança",
             requires_acknowledgement=True,
-            status=DocumentStatus.VALID,
+            status=DocumentStatus.PUBLISHED,
         )
 
         assert doc.requires_acknowledgement is True
@@ -329,11 +329,11 @@ class TestEmployeeDocumentModel:
             id=uuid4(),
             condominio_id=uuid4(),
             employee_id=uuid4(),
-            document_type=DocumentType.CND_FEDERAL,
+            document_type=DocumentType.MEDICAL_CERTIFICATE,
             title="Atestado Médico",
             valid_from=date.today(),
             valid_until=date.today() + timedelta(days=30),
-            status=DocumentStatus.VALID,
+            status=DocumentStatus.PUBLISHED,
         )
 
         assert doc.valid_until > date.today()
@@ -348,15 +348,15 @@ class TestEmployeeNotificationModel:
             id=uuid4(),
             condominio_id=uuid4(),
             employee_id=uuid4(),
-            notification_type=NotificationType.MEETING_REMINDER,
+            notification_type=NotificationType.PAYSLIP_AVAILABLE,
             priority=NotificationPriority.NORMAL,
             title="Novo Contracheque",
             message="Seu contracheque de janeiro está disponível.",
-            channels=[NotificationChannel.EMAIL, NotificationChannel.EMAIL],
+            channels=[NotificationChannel.PORTAL, NotificationChannel.EMAIL],
         )
 
         assert notification.title == "Novo Contracheque"
-        assert NotificationChannel.EMAIL in notification.channels
+        assert NotificationChannel.PORTAL in notification.channels
 
     def test_notification_priority(self):
         """Testa prioridades de notificação."""
@@ -364,11 +364,11 @@ class TestEmployeeNotificationModel:
             id=uuid4(),
             condominio_id=uuid4(),
             employee_id=uuid4(),
-            notification_type=NotificationType.MEETING_REMINDER,
+            notification_type=NotificationType.VACATION_APPROVED,
             priority=NotificationPriority.HIGH,
             title="Férias Aprovadas",
             message="Suas férias foram aprovadas!",
-            channels=[NotificationChannel.EMAIL],
+            channels=[NotificationChannel.PORTAL],
         )
 
         assert notification.priority == NotificationPriority.HIGH
@@ -379,11 +379,11 @@ class TestEmployeeNotificationModel:
             id=uuid4(),
             condominio_id=uuid4(),
             employee_id=uuid4(),
-            notification_type=NotificationType.MEETING_REMINDER,
+            notification_type=NotificationType.DOCUMENT_AVAILABLE,
             priority=NotificationPriority.NORMAL,
             title="Novo Documento",
             message="Um novo documento está disponível.",
-            channels=[NotificationChannel.EMAIL],
+            channels=[NotificationChannel.PORTAL],
             is_read=False,
         )
 

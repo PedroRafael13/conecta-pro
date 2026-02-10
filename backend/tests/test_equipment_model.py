@@ -24,23 +24,23 @@ class TestEquipmentModel:
         """Testa criação de equipamento."""
         equipment = Equipment(
             equipment_type=EquipmentType.CAMERA_IP,
-            category=EquipmentCategory.ELETRONICO,
+            category=EquipmentCategory.CFTV,
             brand="Hikvision",
             model="DS-2CD2143G2-IS",
             name="Câmera IP 4MP",
         )
 
         assert equipment.equipment_type == EquipmentType.CAMERA_IP
-        assert equipment.category == EquipmentCategory.ELETRONICO
+        assert equipment.category == EquipmentCategory.CFTV
         assert equipment.brand == "Hikvision"
-        assert equipment.status == EquipmentStatus.NOVO
+        assert equipment.status == EquipmentStatus.ESTOQUE
         assert equipment.is_active is True
 
     def test_equipment_code_generation(self):
         """Testa geração de código do equipamento."""
         equipment = Equipment(
             equipment_type=EquipmentType.CAMERA_IP,
-            category=EquipmentCategory.ELETRONICO,
+            category=EquipmentCategory.CFTV,
             brand="Hikvision",
             model="DS-2CD2143G2-IS",
             name="Câmera IP 4MP",
@@ -53,7 +53,7 @@ class TestEquipmentModel:
         """Testa instalação de equipamento."""
         equipment = Equipment(
             equipment_type=EquipmentType.CAMERA_IP,
-            category=EquipmentCategory.ELETRONICO,
+            category=EquipmentCategory.CFTV,
             brand="Hikvision",
             model="Test",
             name="Test Camera",
@@ -67,7 +67,7 @@ class TestEquipmentModel:
             longitude=-46.6333,
         )
 
-        assert equipment.status == EquipmentStatus.NOVO
+        assert equipment.status == EquipmentStatus.INSTALADO
         assert equipment.client_id == "client-001"
         assert equipment.installed_at is not None
         assert equipment.is_installed is True
@@ -76,7 +76,7 @@ class TestEquipmentModel:
         """Testa desinstalação de equipamento."""
         equipment = Equipment(
             equipment_type=EquipmentType.CAMERA_IP,
-            category=EquipmentCategory.ELETRONICO,
+            category=EquipmentCategory.CFTV,
             brand="Hikvision",
             model="Test",
             name="Test Camera",
@@ -85,7 +85,7 @@ class TestEquipmentModel:
         equipment.install(client_id="client-001", client_name="Cliente Teste")
         equipment.uninstall()
 
-        assert equipment.status == EquipmentStatus.NOVO
+        assert equipment.status == EquipmentStatus.ESTOQUE
         assert equipment.client_id is None
         assert equipment.is_installed is False
 
@@ -93,7 +93,7 @@ class TestEquipmentModel:
         """Testa atualização de status online/offline."""
         equipment = Equipment(
             equipment_type=EquipmentType.CAMERA_IP,
-            category=EquipmentCategory.ELETRONICO,
+            category=EquipmentCategory.CFTV,
             brand="Hikvision",
             model="Test",
             name="Test Camera",
@@ -111,7 +111,7 @@ class TestEquipmentModel:
         """Testa envio para manutenção."""
         equipment = Equipment(
             equipment_type=EquipmentType.CAMERA_IP,
-            category=EquipmentCategory.ELETRONICO,
+            category=EquipmentCategory.CFTV,
             brand="Hikvision",
             model="Test",
             name="Test Camera",
@@ -124,7 +124,7 @@ class TestEquipmentModel:
         """Testa retorno de manutenção."""
         equipment = Equipment(
             equipment_type=EquipmentType.CAMERA_IP,
-            category=EquipmentCategory.ELETRONICO,
+            category=EquipmentCategory.CFTV,
             brand="Hikvision",
             model="Test",
             name="Test Camera",
@@ -133,26 +133,26 @@ class TestEquipmentModel:
         equipment.send_to_maintenance()
         equipment.return_from_maintenance()
 
-        assert equipment.status == EquipmentStatus.NOVO
+        assert equipment.status == EquipmentStatus.ESTOQUE
 
     def test_mark_defective(self):
         """Testa marcação como defeituoso."""
         equipment = Equipment(
             equipment_type=EquipmentType.CAMERA_IP,
-            category=EquipmentCategory.ELETRONICO,
+            category=EquipmentCategory.CFTV,
             brand="Hikvision",
             model="Test",
             name="Test Camera",
         )
 
         equipment.mark_defective()
-        assert equipment.status == EquipmentStatus.NOVO
+        assert equipment.status == EquipmentStatus.DEFEITO
 
     def test_decommission(self):
         """Testa baixa de equipamento."""
         equipment = Equipment(
             equipment_type=EquipmentType.CAMERA_IP,
-            category=EquipmentCategory.ELETRONICO,
+            category=EquipmentCategory.CFTV,
             brand="Hikvision",
             model="Test",
             name="Test Camera",
@@ -160,14 +160,14 @@ class TestEquipmentModel:
 
         equipment.decommission()
 
-        assert equipment.status == EquipmentStatus.NOVO
+        assert equipment.status == EquipmentStatus.BAIXA
         assert equipment.is_active is False
 
     def test_is_in_warranty(self):
         """Testa verificação de garantia."""
         equipment = Equipment(
             equipment_type=EquipmentType.CAMERA_IP,
-            category=EquipmentCategory.ELETRONICO,
+            category=EquipmentCategory.CFTV,
             brand="Hikvision",
             model="Test",
             name="Test Camera",
@@ -184,7 +184,7 @@ class TestEquipmentModel:
         """Testa verificação de necessidade de manutenção."""
         equipment = Equipment(
             equipment_type=EquipmentType.CAMERA_IP,
-            category=EquipmentCategory.ELETRONICO,
+            category=EquipmentCategory.CFTV,
             brand="Hikvision",
             model="Test",
             name="Test Camera",
@@ -201,7 +201,7 @@ class TestEquipmentModel:
         """Testa cálculo de depreciação."""
         equipment = Equipment(
             equipment_type=EquipmentType.CAMERA_IP,
-            category=EquipmentCategory.ELETRONICO,
+            category=EquipmentCategory.CFTV,
             brand="Hikvision",
             model="Test",
             name="Test Camera",
@@ -220,7 +220,7 @@ class TestEquipmentModel:
         """Testa dias até fim da garantia."""
         equipment = Equipment(
             equipment_type=EquipmentType.CAMERA_IP,
-            category=EquipmentCategory.ELETRONICO,
+            category=EquipmentCategory.CFTV,
             brand="Hikvision",
             model="Test",
             name="Test Camera",
@@ -239,21 +239,21 @@ class TestEquipmentModel:
             EquipmentType.NVR,
             EquipmentType.ALARME_CENTRAL,
             EquipmentType.SENSOR_MOVIMENTO,
-            EquipmentType.CAMERA_IP,
+            EquipmentType.SENSOR_PORTA,
             EquipmentType.SENSOR_FUMACA,
             EquipmentType.CATRACA,
             EquipmentType.PORTAO_AUTOMATICO,
             EquipmentType.LEITOR_BIOMETRICO,
-            EquipmentType.CAMERA_IP,
-            EquipmentType.CAMERA_IP,
-            EquipmentType.CAMERA_IP,
-            EquipmentType.CAMERA_IP,
+            EquipmentType.LEITOR_FACIAL,
+            EquipmentType.LEITOR_CARTAO,
+            EquipmentType.CONTROLADOR_ACESSO,
+            EquipmentType.SIRENE,
             EquipmentType.CERCA_ELETRICA,
             EquipmentType.CONCERTINA,
-            EquipmentType.CAMERA_IP,
+            EquipmentType.SENSOR_BARREIRA,
             EquipmentType.INTERFONE,
             EquipmentType.VIDEOPORTEIRO,
-            EquipmentType.CAMERA_IP,
+            EquipmentType.SWITCH,
             EquipmentType.ROTEADOR,
             EquipmentType.NOBREAK,
             EquipmentType.OUTRO,
@@ -262,7 +262,7 @@ class TestEquipmentModel:
         for eq_type in types:
             equipment = Equipment(
                 equipment_type=eq_type,
-                category=EquipmentCategory.ELETRONICO,
+                category=EquipmentCategory.OUTRO,
                 brand="Test",
                 model="Test",
                 name=f"Equipment {eq_type.value}",
@@ -272,13 +272,13 @@ class TestEquipmentModel:
     def test_all_categories(self):
         """Testa todas as categorias."""
         categories = [
-            EquipmentCategory.ELETRONICO,
-            EquipmentCategory.ELETRONICO,
-            EquipmentCategory.ELETRONICO,
-            EquipmentCategory.ELETRONICO,
-            EquipmentCategory.ELETRONICO,
+            EquipmentCategory.CFTV,
+            EquipmentCategory.ALARME,
+            EquipmentCategory.CONTROLE_ACESSO,
+            EquipmentCategory.REDE,
+            EquipmentCategory.PERIMETRAL,
             EquipmentCategory.COMUNICACAO,
-            EquipmentCategory.ELETRONICO,
+            EquipmentCategory.OUTRO,
         ]
 
         for category in categories:

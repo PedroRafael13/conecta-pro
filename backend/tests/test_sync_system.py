@@ -548,9 +548,9 @@ class TestSyncModels:
         """Testa enum de tipos de guia."""
         from modules.government_integrations.models.sync_models import TipoGuia
 
-        assert TipoGuia.GRF.value == "fgts"
+        assert TipoGuia.FGTS.value == "fgts"
         assert TipoGuia.DARF.value == "darf"
-        assert TipoGuia.GRF.value == "das"
+        assert TipoGuia.DAS.value == "das"
 
 
 # =============================================================================

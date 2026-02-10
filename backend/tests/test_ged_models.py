@@ -56,7 +56,7 @@ class TestFolderModel:
         )
         assert folder.name == "Contratos"
         assert folder.folder_type == FolderType.CONTRATO
-        assert folder.status == FolderStatus.ATIVA
+        assert folder.status == FolderStatus.ATIVO
 
     def test_folder_update_path(self):
         """Testa atualização de path."""
@@ -78,7 +78,7 @@ class TestFolderModel:
         )
         user_id = str(uuid4())
         folder.archive(user_id)
-        assert folder.status == FolderStatus.ATIVA
+        assert folder.status == FolderStatus.ARQUIVADO
         assert folder.archived_by == user_id
         assert folder.archived_at is not None
 
@@ -87,11 +87,11 @@ class TestFolderModel:
         folder = Folder(
             name="Pasta",
             folder_type=FolderType.DEPARTAMENTO,
-            status=FolderStatus.ATIVA,
+            status=FolderStatus.ARQUIVADO,
             created_by=str(uuid4()),
         )
         folder.unarchive()
-        assert folder.status == FolderStatus.ATIVA
+        assert folder.status == FolderStatus.ATIVO
         assert folder.archived_by is None
         assert folder.archived_at is None
 
@@ -103,7 +103,7 @@ class TestFolderModel:
             created_by=str(uuid4()),
         )
         folder.block()
-        assert folder.status == FolderStatus.ATIVA
+        assert folder.status == FolderStatus.BLOQUEADO
 
     def test_folder_grant_permission(self):
         """Testa concessão de permissão."""
@@ -160,7 +160,7 @@ class TestDocumentModel:
         doc = Document(
             title="Contrato de Serviço",
             folder_id=str(uuid4()),
-            document_type=DocumentType.CND_FEDERAL,
+            document_type=DocumentType.CONTRATO,
             category=DocumentCategory.ADMINISTRATIVO,
             file_name="contrato.pdf",
             file_path="/docs/contrato.pdf",
@@ -172,18 +172,18 @@ class TestDocumentModel:
             created_by=str(uuid4()),
         )
         assert doc.title == "Contrato de Serviço"
-        assert doc.status == DocumentStatus.VALID
+        assert doc.status == DocumentStatus.RASCUNHO
 
     def test_document_publish(self):
         """Testa publicação de documento."""
         doc = Document(
             title="Documento",
             folder_id=str(uuid4()),
-            status=DocumentStatus.VALID,
+            status=DocumentStatus.APROVADO,
             created_by=str(uuid4()),
         )
         doc.publish()
-        assert doc.status == DocumentStatus.VALID
+        assert doc.status == DocumentStatus.PUBLICADO
         assert doc.published_at is not None
 
     def test_document_approve(self):
@@ -191,12 +191,12 @@ class TestDocumentModel:
         doc = Document(
             title="Documento",
             folder_id=str(uuid4()),
-            status=DocumentStatus.VALID,
+            status=DocumentStatus.PENDENTE_APROVACAO,
             created_by=str(uuid4()),
         )
         user_id = str(uuid4())
         doc.approve(user_id)
-        assert doc.status == DocumentStatus.VALID
+        assert doc.status == DocumentStatus.APROVADO
         assert doc.approved_by == user_id
 
     def test_document_reject(self):
@@ -204,11 +204,11 @@ class TestDocumentModel:
         doc = Document(
             title="Documento",
             folder_id=str(uuid4()),
-            status=DocumentStatus.VALID,
+            status=DocumentStatus.PENDENTE_APROVACAO,
             created_by=str(uuid4()),
         )
         doc.reject("Motivo da rejeição")
-        assert doc.status == DocumentStatus.VALID
+        assert doc.status == DocumentStatus.REJEITADO
         assert doc.rejection_reason == "Motivo da rejeição"
 
     def test_document_archive(self):
@@ -220,7 +220,7 @@ class TestDocumentModel:
         )
         user_id = str(uuid4())
         doc.archive(user_id)
-        assert doc.status == DocumentStatus.VALID
+        assert doc.status == DocumentStatus.ARQUIVADO
         assert doc.archived_by == user_id
 
     def test_document_set_ocr_result(self):
@@ -256,7 +256,7 @@ class TestDocumentModel:
             created_by=str(uuid4()),
         )
         assert doc.check_expiry()
-        assert doc.status == DocumentStatus.VALID
+        assert doc.status == DocumentStatus.EXPIRADO
 
     def test_document_verify_checksum(self):
         """Testa verificação de checksum."""
@@ -307,7 +307,7 @@ class TestDocumentVersionModel:
             created_by=str(uuid4()),
         )
         version.archive()
-        assert version.status == VersionStatus.ATIVA
+        assert version.status == VersionStatus.ARQUIVADO
 
 
 class TestDocumentShareModel:
@@ -329,7 +329,7 @@ class TestDocumentShareModel:
         """Testa geração de token."""
         share = DocumentShare(
             document_id=str(uuid4()),
-            share_type=ShareType.USUARIO,
+            share_type=ShareType.LINK,
             shared_by=str(uuid4()),
         )
         token = share.generate_token()
@@ -350,7 +350,7 @@ class TestDocumentShareModel:
         """Testa contagem de acessos."""
         share = DocumentShare(
             document_id=str(uuid4()),
-            share_type=ShareType.USUARIO,
+            share_type=ShareType.LINK,
             max_access_count=5,
             access_count=5,
             shared_by=str(uuid4()),
@@ -361,7 +361,7 @@ class TestDocumentShareModel:
         """Testa verificação de expiração."""
         share = DocumentShare(
             document_id=str(uuid4()),
-            share_type=ShareType.USUARIO,
+            share_type=ShareType.LINK,
             expires_at=datetime.utcnow() - timedelta(hours=1),
             shared_by=str(uuid4()),
         )
@@ -395,7 +395,7 @@ class TestDocumentTagModel:
         """Testa incremento de contagem."""
         tag = DocumentTag(
             name="Tag",
-            tag_type=TagType.SISTEMA,
+            tag_type=TagType.PERSONALIZADA,
             document_count=5,
             created_by=str(uuid4()),
         )
@@ -406,7 +406,7 @@ class TestDocumentTagModel:
         """Testa decremento de contagem."""
         tag = DocumentTag(
             name="Tag",
-            tag_type=TagType.SISTEMA,
+            tag_type=TagType.PERSONALIZADA,
             document_count=5,
             created_by=str(uuid4()),
         )
@@ -424,10 +424,10 @@ class TestDocumentSignatureModel:
             signer_email="user@example.com",
             signer_name="João Silva",
             signer_role=SignatureRole.PARTE,
-            signature_type=SignatureType.HANDWRITTEN,
+            signature_type=SignatureType.ELETRONICA,
             created_by=str(uuid4()),
         )
-        assert signature.status == SignatureStatus.PENDING
+        assert signature.status == SignatureStatus.PENDENTE
 
     def test_signature_generate_token(self):
         """Testa geração de token."""
@@ -452,7 +452,7 @@ class TestDocumentSignatureModel:
             signature_hash="hash123",
             ip_address="127.0.0.1",
         )
-        assert signature.status == SignatureStatus.PENDING
+        assert signature.status == SignatureStatus.ASSINADO
         assert signature.signed_at is not None
 
     def test_signature_refuse(self):
@@ -463,7 +463,7 @@ class TestDocumentSignatureModel:
             created_by=str(uuid4()),
         )
         signature.refuse("Motivo da recusa")
-        assert signature.status == SignatureStatus.PENDING
+        assert signature.status == SignatureStatus.RECUSADO
         assert signature.refusal_reason == "Motivo da recusa"
 
     def test_signature_cancel(self):
@@ -474,14 +474,14 @@ class TestDocumentSignatureModel:
             created_by=str(uuid4()),
         )
         signature.cancel()
-        assert signature.status == SignatureStatus.PENDING
+        assert signature.status == SignatureStatus.CANCELADO
 
     def test_signature_verify(self):
         """Testa verificação."""
         signature = DocumentSignature(
             document_id=str(uuid4()),
             signer_email="user@example.com",
-            status=SignatureStatus.PENDING,
+            status=SignatureStatus.ASSINADO,
             created_by=str(uuid4()),
         )
         signature.verify("hash_validation")
@@ -497,4 +497,4 @@ class TestDocumentSignatureModel:
             created_by=str(uuid4()),
         )
         assert signature.check_and_expire()
-        assert signature.status == SignatureStatus.PENDING
+        assert signature.status == SignatureStatus.EXPIRADO

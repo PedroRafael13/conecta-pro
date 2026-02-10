@@ -111,28 +111,28 @@ class TestProposalService:
         # Draft -> Pending Approval
         valid, msg = service.can_transition_status(
             ProposalStatus.DRAFT,
-            ProposalStatus.DRAFT,
+            ProposalStatus.PENDING_APPROVAL,
         )
         assert valid is True
 
         # Pending -> Approved
         valid, msg = service.can_transition_status(
-            ProposalStatus.DRAFT,
-            ProposalStatus.DRAFT,
+            ProposalStatus.PENDING_APPROVAL,
+            ProposalStatus.APPROVED,
         )
         assert valid is True
 
         # Approved -> Sent
         valid, msg = service.can_transition_status(
-            ProposalStatus.DRAFT,
-            ProposalStatus.DRAFT,
+            ProposalStatus.APPROVED,
+            ProposalStatus.SENT,
         )
         assert valid is True
 
         # Sent -> Accepted
         valid, msg = service.can_transition_status(
-            ProposalStatus.DRAFT,
-            ProposalStatus.DRAFT,
+            ProposalStatus.SENT,
+            ProposalStatus.ACCEPTED,
         )
         assert valid is True
 
@@ -141,14 +141,14 @@ class TestProposalService:
         # Draft -> Sent (pula aprovacao)
         valid, msg = service.can_transition_status(
             ProposalStatus.DRAFT,
-            ProposalStatus.DRAFT,
+            ProposalStatus.SENT,
         )
         assert valid is False
         assert "nao permitida" in msg.lower()
 
         # Accepted -> Draft (estado final)
         valid, msg = service.can_transition_status(
-            ProposalStatus.DRAFT,
+            ProposalStatus.ACCEPTED,
             ProposalStatus.DRAFT,
         )
         assert valid is False
@@ -156,29 +156,29 @@ class TestProposalService:
     def test_process_approval_approve(self, service):
         """Testa aprovacao de proposta."""
         new_status, msg = service.process_approval(
-            ProposalStatus.DRAFT,
+            ProposalStatus.PENDING_APPROVAL,
             ApprovalAction.APPROVE,
             "gerente",
         )
 
-        assert new_status == ProposalStatus.DRAFT
+        assert new_status == ProposalStatus.APPROVED
         assert "aprovada" in msg.lower()
 
     def test_process_approval_reject(self, service):
         """Testa rejeicao de proposta."""
         new_status, msg = service.process_approval(
-            ProposalStatus.DRAFT,
+            ProposalStatus.PENDING_APPROVAL,
             ApprovalAction.REJECT,
             "diretor",
         )
 
-        assert new_status == ProposalStatus.DRAFT
+        assert new_status == ProposalStatus.REJECTED
         assert "rejeitada" in msg.lower()
 
     def test_process_approval_request_changes(self, service):
         """Testa solicitacao de mudancas."""
         new_status, msg = service.process_approval(
-            ProposalStatus.DRAFT,
+            ProposalStatus.PENDING_APPROVAL,
             ApprovalAction.REQUEST_CHANGES,
             "gerente",
         )
@@ -200,12 +200,12 @@ class TestProposalService:
     def test_process_approval_insufficient_permission(self, service):
         """Testa aprovacao sem permissao."""
         new_status, msg = service.process_approval(
-            ProposalStatus.DRAFT,
+            ProposalStatus.PENDING_APPROVAL,
             ApprovalAction.APPROVE,
             "vendedor",  # Nao pode aprovar
         )
 
-        assert new_status == ProposalStatus.DRAFT
+        assert new_status == ProposalStatus.PENDING_APPROVAL
         assert "permissao" in msg.lower()
 
     def test_calculate_items_totals(self, service):
@@ -320,11 +320,11 @@ class TestProposalServiceIntegration:
 
         # 5. Aprovar (gerente)
         new_status, _ = service.process_approval(
-            ProposalStatus.DRAFT,
+            ProposalStatus.PENDING_APPROVAL,
             ApprovalAction.APPROVE,
             "gerente",
         )
-        assert new_status == ProposalStatus.DRAFT
+        assert new_status == ProposalStatus.APPROVED
 
         # 6. Verificar expiracao
         expired, days = service.check_expiration(validity)

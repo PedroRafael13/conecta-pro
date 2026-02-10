@@ -230,7 +230,7 @@ class TestPayableAccountAPI:
                 net_value=sample_payable_account.net_value,
                 issue_date=sample_payable_account.issue_date,
                 due_date=sample_payable_account.due_date,
-                status=PayableStatus.PENDENTE.value,
+                status=PayableStatus.APROVADO.value,
                 approved_by=uuid.UUID(sample_user["id"]),
                 ativo=True,
             )
@@ -241,7 +241,7 @@ class TestPayableAccountAPI:
                 uuid.UUID(sample_user["id"]),
             )
 
-            assert result.status == PayableStatus.PENDENTE.value
+            assert result.status == PayableStatus.APROVADO.value
             assert result.approved_by is not None
 
     @pytest.mark.asyncio
@@ -317,7 +317,7 @@ class TestPaymentAPI:
                 amount=Decimal("1000.00"),
                 net_amount=Decimal("1000.00"),
                 payment_date=date.today(),
-                status=PaymentStatus.PENDING.value,
+                status=PaymentStatus.CONFIRMADO.value,
                 ativo=True,
             )
             mock_instance.register_payment.return_value = created_payment
@@ -329,7 +329,7 @@ class TestPaymentAPI:
             )
 
             assert result.amount == Decimal("1000.00")
-            assert result.status == PaymentStatus.PENDING.value
+            assert result.status == PaymentStatus.CONFIRMADO.value
 
     @pytest.mark.asyncio
     async def test_bulk_payment(self, sample_user):
@@ -370,7 +370,7 @@ class TestPaymentAPI:
                 amount=Decimal("500.00"),
                 net_amount=Decimal("500.00"),
                 payment_date=date.today(),
-                status=PaymentStatus.PENDING.value,
+                status=PaymentStatus.ESTORNADO.value,
                 is_reversed=True,
                 reverse_reason="Pagamento incorreto",
                 ativo=True,
@@ -384,7 +384,7 @@ class TestPaymentAPI:
             )
 
             assert result.is_reversed is True
-            assert result.status == PaymentStatus.PENDING.value
+            assert result.status == PaymentStatus.ESTORNADO.value
 
 
 class TestCashFlowAPI:

@@ -115,12 +115,12 @@ class TestDashboardService:
         proposals = []
         statuses_totals = [
             (ProposalStatus.DRAFT.value, 5000),
-            (ProposalStatus.DRAFT.value, 8000),
-            (ProposalStatus.DRAFT.value, 12000),
-            (ProposalStatus.DRAFT.value, 15000),
-            (ProposalStatus.DRAFT.value, 20000),
-            (ProposalStatus.DRAFT.value, 25000),
-            (ProposalStatus.DRAFT.value, 10000),
+            (ProposalStatus.PENDING_APPROVAL.value, 8000),
+            (ProposalStatus.SENT.value, 12000),
+            (ProposalStatus.VIEWED.value, 15000),
+            (ProposalStatus.ACCEPTED.value, 20000),
+            (ProposalStatus.ACCEPTED.value, 25000),
+            (ProposalStatus.REJECTED.value, 10000),
         ]
 
         for i, (status, total) in enumerate(statuses_totals):

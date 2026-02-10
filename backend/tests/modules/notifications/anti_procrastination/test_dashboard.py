@@ -67,8 +67,8 @@ class TestUnifiedDashboard:
             Mock(
                 id="task-1",
                 title="Coletar documento",
-                priority=TaskPriority.CRITICA,
-                department=Department.DIRETORIA,
+                priority=TaskPriority.HIGH,
+                department=Department.HR,
                 created_at=datetime.utcnow() - timedelta(days=2),
             )
         ]
@@ -76,7 +76,7 @@ class TestUnifiedDashboard:
         dashboard.db.query.return_value.filter.return_value.count.return_value = 1
 
         # Act
-        result = await dashboard.get_department_dashboard(Department.DIRETORIA)
+        result = await dashboard.get_department_dashboard(Department.HR)
 
         # Assert
         assert result["department"] == "hr"
@@ -94,9 +94,9 @@ class TestUnifiedDashboard:
         mock_task.source_module = "hr"
         mock_task.source_id = "hr-001"
         mock_task.category = TaskCategory.HR
-        mock_task.priority = TaskPriority.CRITICA
+        mock_task.priority = TaskPriority.HIGH
         mock_task.status = TaskStatus.PENDING
-        mock_task.department = Department.DIRETORIA
+        mock_task.department = Department.HR
         mock_task.assigned_to = None
         mock_task.assigned_to_name = "João Silva"
         mock_task.created_at = datetime.utcnow()
@@ -116,7 +116,7 @@ class TestUnifiedDashboard:
         assert isinstance(task_data, PendingTaskData)
         assert task_data.title == "Tarefa Teste"
         assert task_data.category == TaskCategory.HR
-        assert task_data.priority == TaskPriority.CRITICA
+        assert task_data.priority == TaskPriority.HIGH
         assert task_data.days_pending >= 0
         assert task_data.urgency_score > 0
 
@@ -125,7 +125,7 @@ class TestUnifiedDashboard:
         # Arrange
         task = PendingTaskData(
             title="Tarefa Crítica",
-            priority=TaskPriority.CRITICA,
+            priority=TaskPriority.CRITICAL,
             created_at=datetime.utcnow() - timedelta(days=5),
             compliance_risk="critical",
             business_impact="high",
@@ -145,14 +145,14 @@ class TestTaskFilters:
     def test_priority_filter(self):
         """Testa filtro por prioridade."""
         # Test mock - em implementação real testaria query SQL
-        assert TaskPriority.CRITICA.value == "critical"
-        assert TaskPriority.CRITICA.value == "high"
+        assert TaskPriority.CRITICAL.value == "critical"
+        assert TaskPriority.HIGH.value == "high"
 
     def test_department_filter(self):
         """Testa filtro por departamento."""
         # Test mock - em implementação real testaria query SQL
-        assert Department.DIRETORIA.value == "hr"
-        assert Department.DIRETORIA.value == "commercial"
+        assert Department.HR.value == "hr"
+        assert Department.COMMERCIAL.value == "commercial"
 
 
 @pytest.mark.integration

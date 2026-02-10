@@ -50,15 +50,15 @@ class TestReportTemplate:
             codigo="RPT001",
             nome="Relatório Financeiro Mensal",
             descricao="Relatório financeiro consolidado",
-            category=ReportCategory.FINANCIAL,
-            report_type=ReportType.EXECUCAO,
+            category=ReportCategory.FINANCEIRO,
+            report_type=ReportType.CONSOLIDADO,
             default_format=ReportFormat.PDF,
             supported_formats=["pdf", "excel", "csv"],
-            status=TemplateStatus.DRAFT,
+            status=TemplateStatus.ATIVO,
         )
         assert template.codigo == "RPT001"
         assert template.nome == "Relatório Financeiro Mensal"
-        assert template.category == ReportCategory.FINANCIAL
+        assert template.category == ReportCategory.FINANCEIRO
         assert template.is_active
 
     def test_template_activate(self):
@@ -67,14 +67,14 @@ class TestReportTemplate:
             id=uuid.uuid4(),
             codigo="RPT002",
             nome="Template Teste",
-            category=ReportCategory.FINANCIAL,
-            report_type=ReportType.EXECUCAO,
+            category=ReportCategory.OPERACIONAL,
+            report_type=ReportType.DETALHADO,
             default_format=ReportFormat.EXCEL,
             supported_formats=["excel"],
-            status=TemplateStatus.DRAFT,
+            status=TemplateStatus.RASCUNHO,
         )
         template.activate()
-        assert template.status == TemplateStatus.DRAFT
+        assert template.status == TemplateStatus.ATIVO
 
     def test_template_deactivate(self):
         """Testa desativação de template."""
@@ -82,14 +82,14 @@ class TestReportTemplate:
             id=uuid.uuid4(),
             codigo="RPT003",
             nome="Template Teste",
-            category=ReportCategory.FINANCIAL,
-            report_type=ReportType.EXECUCAO,
+            category=ReportCategory.VENDAS,
+            report_type=ReportType.RESUMIDO,
             default_format=ReportFormat.PDF,
             supported_formats=["pdf"],
-            status=TemplateStatus.DRAFT,
+            status=TemplateStatus.ATIVO,
         )
         template.deactivate()
-        assert template.status == TemplateStatus.DRAFT
+        assert template.status == TemplateStatus.INATIVO
 
     def test_template_deprecate(self):
         """Testa depreciação de template."""
@@ -97,14 +97,14 @@ class TestReportTemplate:
             id=uuid.uuid4(),
             codigo="RPT004",
             nome="Template Antigo",
-            category=ReportCategory.FINANCIAL,
-            report_type=ReportType.EXECUCAO,
+            category=ReportCategory.COMERCIAL,
+            report_type=ReportType.ANALITICO,
             default_format=ReportFormat.CSV,
             supported_formats=["csv"],
-            status=TemplateStatus.DRAFT,
+            status=TemplateStatus.ATIVO,
         )
         template.deprecate()
-        assert template.status == TemplateStatus.DRAFT
+        assert template.status == TemplateStatus.DESCONTINUADO
 
     def test_template_archive(self):
         """Testa arquivamento de template."""
@@ -112,14 +112,14 @@ class TestReportTemplate:
             id=uuid.uuid4(),
             codigo="RPT005",
             nome="Template Arquivado",
-            category=ReportCategory.FINANCIAL,
-            report_type=ReportType.EXECUCAO,
-            default_format=ReportFormat.PDF,
+            category=ReportCategory.RH,
+            report_type=ReportType.DASHBOARD,
+            default_format=ReportFormat.HTML,
             supported_formats=["html"],
-            status=TemplateStatus.DRAFT,
+            status=TemplateStatus.INATIVO,
         )
         template.archive()
-        assert template.status == TemplateStatus.DRAFT
+        assert template.status == TemplateStatus.ARQUIVADO
 
     def test_template_increment_version(self):
         """Testa incremento de versão."""
@@ -127,11 +127,11 @@ class TestReportTemplate:
             id=uuid.uuid4(),
             codigo="RPT006",
             nome="Template Versionado",
-            category=ReportCategory.FINANCIAL,
-            report_type=ReportType.EXECUCAO,
+            category=ReportCategory.ESTOQUE,
+            report_type=ReportType.COMPARATIVO,
             default_format=ReportFormat.PDF,
             supported_formats=["pdf"],
-            status=TemplateStatus.DRAFT,
+            status=TemplateStatus.ATIVO,
             version=1,
         )
         template.increment_version()
@@ -143,11 +143,11 @@ class TestReportTemplate:
             id=uuid.uuid4(),
             codigo="RPT007",
             nome="Template Usado",
-            category=ReportCategory.FINANCIAL,
-            report_type=ReportType.EXECUCAO,
+            category=ReportCategory.PRODUCAO,
+            report_type=ReportType.CUSTOMIZADO,
             default_format=ReportFormat.JSON,
             supported_formats=["json"],
-            status=TemplateStatus.DRAFT,
+            status=TemplateStatus.ATIVO,
             usage_count=0,
         )
         template.record_usage()
@@ -160,11 +160,11 @@ class TestReportTemplate:
             id=uuid.uuid4(),
             codigo="RPT008",
             nome="Template com Seções",
-            category=ReportCategory.FINANCIAL,
-            report_type=ReportType.EXECUCAO,
+            category=ReportCategory.EXECUTIVO,
+            report_type=ReportType.CONSOLIDADO,
             default_format=ReportFormat.PDF,
             supported_formats=["pdf"],
-            status=TemplateStatus.DRAFT,
+            status=TemplateStatus.ATIVO,
             sections=[],
         )
         template.add_section("header", "Cabeçalho", {"show_logo": True})
@@ -177,16 +177,16 @@ class TestReportTemplate:
             id=uuid.uuid4(),
             codigo="RPT009",
             nome="Template com Gráficos",
-            category=ReportCategory.FINANCIAL,
-            report_type=ReportType.EXECUCAO,
+            category=ReportCategory.FINANCEIRO,
+            report_type=ReportType.ANALITICO,
             default_format=ReportFormat.PDF,
             supported_formats=["pdf"],
-            status=TemplateStatus.DRAFT,
+            status=TemplateStatus.ATIVO,
             charts=[],
         )
         template.add_chart(
             "receitas_chart",
-            ChartType.BAR,
+            ChartType.BARRA,
             "Receitas por Mês",
             {"x_axis": "mes", "y_axis": "valor"},
         )
@@ -199,11 +199,11 @@ class TestReportTemplate:
             id=uuid.uuid4(),
             codigo="RPT010",
             nome="Template com Parâmetros",
-            category=ReportCategory.FINANCIAL,
-            report_type=ReportType.EXECUCAO,
+            category=ReportCategory.OPERACIONAL,
+            report_type=ReportType.DETALHADO,
             default_format=ReportFormat.EXCEL,
             supported_formats=["excel"],
-            status=TemplateStatus.DRAFT,
+            status=TemplateStatus.ATIVO,
             parameters=[],
         )
         template.add_parameter("data_inicio", "date", "Data Início", required=True)
@@ -221,15 +221,15 @@ class TestReportSchedule:
             codigo="SCH001",
             nome="Agendamento Diário",
             template_id=uuid.uuid4(),
-            frequency=ScheduleFrequency.ONCE,
+            frequency=ScheduleFrequency.DIARIO,
             timezone="America/Sao_Paulo",
-            status=ScheduleStatus.ACTIVE,
+            status=ScheduleStatus.ATIVO,
             start_date=datetime.now(UTC),
             output_format="pdf",
             delivery_method=DeliveryMethod.EMAIL,
         )
         assert schedule.codigo == "SCH001"
-        assert schedule.frequency == ScheduleFrequency.ONCE
+        assert schedule.frequency == ScheduleFrequency.DIARIO
         assert schedule.is_active
 
     def test_schedule_activate(self):
@@ -239,15 +239,15 @@ class TestReportSchedule:
             codigo="SCH002",
             nome="Agendamento Teste",
             template_id=uuid.uuid4(),
-            frequency=ScheduleFrequency.ONCE,
+            frequency=ScheduleFrequency.SEMANAL,
             timezone="America/Sao_Paulo",
-            status=ScheduleStatus.ACTIVE,
+            status=ScheduleStatus.RASCUNHO,
             start_date=datetime.now(UTC),
             output_format="excel",
-            delivery_method=DeliveryMethod.EMAIL,
+            delivery_method=DeliveryMethod.STORAGE,
         )
         schedule.activate()
-        assert schedule.status == ScheduleStatus.ACTIVE
+        assert schedule.status == ScheduleStatus.ATIVO
 
     def test_schedule_pause(self):
         """Testa pausa de agendamento."""
@@ -256,15 +256,15 @@ class TestReportSchedule:
             codigo="SCH003",
             nome="Agendamento Pausado",
             template_id=uuid.uuid4(),
-            frequency=ScheduleFrequency.ONCE,
+            frequency=ScheduleFrequency.MENSAL,
             timezone="America/Sao_Paulo",
-            status=ScheduleStatus.ACTIVE,
+            status=ScheduleStatus.ATIVO,
             start_date=datetime.now(UTC),
             output_format="csv",
             delivery_method=DeliveryMethod.WEBHOOK,
         )
         schedule.pause()
-        assert schedule.status == ScheduleStatus.ACTIVE
+        assert schedule.status == ScheduleStatus.PAUSADO
 
     def test_schedule_resume(self):
         """Testa retomada de agendamento."""
@@ -273,15 +273,15 @@ class TestReportSchedule:
             codigo="SCH004",
             nome="Agendamento Retomado",
             template_id=uuid.uuid4(),
-            frequency=ScheduleFrequency.ONCE,
+            frequency=ScheduleFrequency.TRIMESTRAL,
             timezone="America/Sao_Paulo",
-            status=ScheduleStatus.ACTIVE,
+            status=ScheduleStatus.PAUSADO,
             start_date=datetime.now(UTC),
             output_format="pdf",
             delivery_method=DeliveryMethod.EMAIL,
         )
         schedule.resume()
-        assert schedule.status == ScheduleStatus.ACTIVE
+        assert schedule.status == ScheduleStatus.ATIVO
 
     def test_schedule_cancel(self):
         """Testa cancelamento de agendamento."""
@@ -290,15 +290,15 @@ class TestReportSchedule:
             codigo="SCH005",
             nome="Agendamento Cancelado",
             template_id=uuid.uuid4(),
-            frequency=ScheduleFrequency.ONCE,
+            frequency=ScheduleFrequency.ANUAL,
             timezone="America/Sao_Paulo",
-            status=ScheduleStatus.ACTIVE,
+            status=ScheduleStatus.ATIVO,
             start_date=datetime.now(UTC),
             output_format="pdf",
             delivery_method=DeliveryMethod.EMAIL,
         )
         schedule.cancel()
-        assert schedule.status == ScheduleStatus.ACTIVE
+        assert schedule.status == ScheduleStatus.CANCELADO
 
     def test_schedule_record_execution(self):
         """Testa registro de execução."""
@@ -307,9 +307,9 @@ class TestReportSchedule:
             codigo="SCH006",
             nome="Agendamento Executado",
             template_id=uuid.uuid4(),
-            frequency=ScheduleFrequency.ONCE,
+            frequency=ScheduleFrequency.DIARIO,
             timezone="America/Sao_Paulo",
-            status=ScheduleStatus.ACTIVE,
+            status=ScheduleStatus.ATIVO,
             start_date=datetime.now(UTC),
             output_format="pdf",
             delivery_method=DeliveryMethod.EMAIL,
@@ -327,9 +327,9 @@ class TestReportSchedule:
             codigo="SCH007",
             nome="Agendamento com Destinatários",
             template_id=uuid.uuid4(),
-            frequency=ScheduleFrequency.ONCE,
+            frequency=ScheduleFrequency.SEMANAL,
             timezone="America/Sao_Paulo",
-            status=ScheduleStatus.ACTIVE,
+            status=ScheduleStatus.ATIVO,
             start_date=datetime.now(UTC),
             output_format="pdf",
             delivery_method=DeliveryMethod.EMAIL,
@@ -345,9 +345,9 @@ class TestReportSchedule:
             codigo="SCH008",
             nome="Agendamento Métricas",
             template_id=uuid.uuid4(),
-            frequency=ScheduleFrequency.ONCE,
+            frequency=ScheduleFrequency.DIARIO,
             timezone="America/Sao_Paulo",
-            status=ScheduleStatus.ACTIVE,
+            status=ScheduleStatus.ATIVO,
             start_date=datetime.now(UTC),
             output_format="pdf",
             delivery_method=DeliveryMethod.EMAIL,
@@ -368,7 +368,7 @@ class TestReportExport:
             trigger=ExportTrigger.MANUAL,
             requested_by=uuid.uuid4(),
         )
-        assert export.status == ExportStatus.PENDING
+        assert export.status == ExportStatus.PENDENTE
         assert export.trigger == ExportTrigger.MANUAL
         assert export.format == ExportFormat.PDF
 
@@ -378,12 +378,12 @@ class TestReportExport:
             id=uuid.uuid4(),
             export_id="EXP001",
             template_id=uuid.uuid4(),
-            status=ExportStatus.PENDING,
+            status=ExportStatus.PENDENTE,
             trigger=ExportTrigger.MANUAL,
             format=ExportFormat.EXCEL,
         )
         export.start_processing()
-        assert export.status == ExportStatus.PENDING
+        assert export.status == ExportStatus.PROCESSANDO
         assert export.started_at is not None
 
     def test_export_complete(self):
@@ -392,8 +392,8 @@ class TestReportExport:
             id=uuid.uuid4(),
             export_id="EXP002",
             template_id=uuid.uuid4(),
-            status=ExportStatus.PENDING,
-            trigger=ExportTrigger.MANUAL,
+            status=ExportStatus.PROCESSANDO,
+            trigger=ExportTrigger.AGENDADO,
             format=ExportFormat.CSV,
             started_at=datetime.now(UTC),
         )
@@ -402,7 +402,7 @@ class TestReportExport:
             file_size=1024,
             row_count=100,
         )
-        assert export.status == ExportStatus.PENDING
+        assert export.status == ExportStatus.CONCLUIDO
         assert export.file_path == "/exports/report.csv"
         assert export.file_size == 1024
         assert export.is_completed
@@ -413,13 +413,13 @@ class TestReportExport:
             id=uuid.uuid4(),
             export_id="EXP003",
             template_id=uuid.uuid4(),
-            status=ExportStatus.PENDING,
+            status=ExportStatus.PROCESSANDO,
             trigger=ExportTrigger.API,
             format=ExportFormat.PDF,
             started_at=datetime.now(UTC),
         )
         export.fail("Erro de conexão", {"code": "CONN_ERROR"})
-        assert export.status == ExportStatus.PENDING
+        assert export.status == ExportStatus.ERRO
         assert export.error_message == "Erro de conexão"
 
     def test_export_cancel(self):
@@ -428,12 +428,12 @@ class TestReportExport:
             id=uuid.uuid4(),
             export_id="EXP004",
             template_id=uuid.uuid4(),
-            status=ExportStatus.PENDING,
+            status=ExportStatus.PENDENTE,
             trigger=ExportTrigger.MANUAL,
             format=ExportFormat.JSON,
         )
         export.cancel()
-        assert export.status == ExportStatus.PENDING
+        assert export.status == ExportStatus.CANCELADO
 
     def test_export_record_download(self):
         """Testa registro de download."""
@@ -441,7 +441,7 @@ class TestReportExport:
             id=uuid.uuid4(),
             export_id="EXP005",
             template_id=uuid.uuid4(),
-            status=ExportStatus.PENDING,
+            status=ExportStatus.CONCLUIDO,
             trigger=ExportTrigger.MANUAL,
             format=ExportFormat.PDF,
             download_count=0,
@@ -456,8 +456,8 @@ class TestReportExport:
             id=uuid.uuid4(),
             export_id="EXP006",
             template_id=uuid.uuid4(),
-            status=ExportStatus.PENDING,
-            trigger=ExportTrigger.MANUAL,
+            status=ExportStatus.CONCLUIDO,
+            trigger=ExportTrigger.AGENDADO,
             format=ExportFormat.EXCEL,
             file_size=1536000,  # ~1.5 MB
         )
@@ -474,19 +474,19 @@ class TestExecutiveKPI:
             codigo="KPI001",
             nome="Receita Mensal",
             descricao="Receita total do mês",
-            category=KPICategory.FINANCIAL,
-            kpi_type=KPIType.ABSOLUTE,
-            direction=KPIDirection.INCREASE,
-            status=KPIStatus.ACTIVE,
+            category=KPICategory.FINANCEIRO,
+            kpi_type=KPIType.RECEITA,
+            direction=KPIDirection.MAIOR_MELHOR,
+            status=KPIStatus.ATIVO,
             unit="currency",
             current_value=Decimal("100000.00"),
             target_value=Decimal("120000.00"),
             alert_level=KPIAlertLevel.NORMAL,
-            aggregation_period=AggregationPeriod.DAILY,
+            aggregation_period=AggregationPeriod.MENSAL,
             visibility="public",
         )
         assert kpi.codigo == "KPI001"
-        assert kpi.category == KPICategory.FINANCIAL
+        assert kpi.category == KPICategory.FINANCEIRO
         assert kpi.is_active
 
     def test_kpi_update_value(self):
@@ -495,15 +495,15 @@ class TestExecutiveKPI:
             id=uuid.uuid4(),
             codigo="KPI002",
             nome="Margem de Lucro",
-            category=KPICategory.FINANCIAL,
-            kpi_type=KPIType.ABSOLUTE,
-            direction=KPIDirection.INCREASE,
-            status=KPIStatus.ACTIVE,
+            category=KPICategory.FINANCEIRO,
+            kpi_type=KPIType.MARGEM,
+            direction=KPIDirection.MAIOR_MELHOR,
+            status=KPIStatus.ATIVO,
             unit="percentage",
             current_value=Decimal("15.00"),
             target_value=Decimal("20.00"),
             alert_level=KPIAlertLevel.NORMAL,
-            aggregation_period=AggregationPeriod.DAILY,
+            aggregation_period=AggregationPeriod.MENSAL,
             visibility="public",
             history=[],
         )
@@ -517,14 +517,14 @@ class TestExecutiveKPI:
             id=uuid.uuid4(),
             codigo="KPI003",
             nome="Satisfação Cliente",
-            category=KPICategory.FINANCIAL,
-            kpi_type=KPIType.ABSOLUTE,
-            direction=KPIDirection.INCREASE,
-            status=KPIStatus.ACTIVE,
+            category=KPICategory.CLIENTE,
+            kpi_type=KPIType.SATISFACAO,
+            direction=KPIDirection.MAIOR_MELHOR,
+            status=KPIStatus.ATIVO,
             unit="score",
             current_value=Decimal("4.2"),
             alert_level=KPIAlertLevel.NORMAL,
-            aggregation_period=AggregationPeriod.DAILY,
+            aggregation_period=AggregationPeriod.MENSAL,
             visibility="public",
         )
         kpi.set_target(Decimal("4.5"))
@@ -536,14 +536,14 @@ class TestExecutiveKPI:
             id=uuid.uuid4(),
             codigo="KPI004",
             nome="Taxa de Conversão",
-            category=KPICategory.FINANCIAL,
-            kpi_type=KPIType.ABSOLUTE,
-            direction=KPIDirection.INCREASE,
-            status=KPIStatus.ACTIVE,
+            category=KPICategory.VENDAS,
+            kpi_type=KPIType.CONVERSAO,
+            direction=KPIDirection.MAIOR_MELHOR,
+            status=KPIStatus.ATIVO,
             unit="percentage",
             current_value=Decimal("25.00"),
             alert_level=KPIAlertLevel.NORMAL,
-            aggregation_period=AggregationPeriod.DAILY,
+            aggregation_period=AggregationPeriod.SEMANAL,
             visibility="public",
         )
         kpi.set_thresholds(
@@ -561,17 +561,17 @@ class TestExecutiveKPI:
             id=uuid.uuid4(),
             codigo="KPI005",
             nome="KPI Teste",
-            category=KPICategory.FINANCIAL,
-            kpi_type=KPIType.ABSOLUTE,
-            direction=KPIDirection.INCREASE,
-            status=KPIStatus.ACTIVE,
+            category=KPICategory.OPERACIONAL,
+            kpi_type=KPIType.EFICIENCIA,
+            direction=KPIDirection.MAIOR_MELHOR,
+            status=KPIStatus.RASCUNHO,
             unit="percentage",
             alert_level=KPIAlertLevel.NORMAL,
-            aggregation_period=AggregationPeriod.DAILY,
+            aggregation_period=AggregationPeriod.DIARIO,
             visibility="private",
         )
         kpi.activate()
-        assert kpi.status == KPIStatus.ACTIVE
+        assert kpi.status == KPIStatus.ATIVO
 
     def test_kpi_deactivate(self):
         """Testa desativação de KPI."""
@@ -579,17 +579,17 @@ class TestExecutiveKPI:
             id=uuid.uuid4(),
             codigo="KPI006",
             nome="KPI Inativo",
-            category=KPICategory.FINANCIAL,
-            kpi_type=KPIType.ABSOLUTE,
-            direction=KPIDirection.INCREASE,
-            status=KPIStatus.ACTIVE,
+            category=KPICategory.QUALIDADE,
+            kpi_type=KPIType.QUALIDADE,
+            direction=KPIDirection.MAIOR_MELHOR,
+            status=KPIStatus.ATIVO,
             unit="percentage",
             alert_level=KPIAlertLevel.NORMAL,
-            aggregation_period=AggregationPeriod.DAILY,
+            aggregation_period=AggregationPeriod.MENSAL,
             visibility="public",
         )
         kpi.deactivate()
-        assert kpi.status == KPIStatus.ACTIVE
+        assert kpi.status == KPIStatus.INATIVO
 
     def test_kpi_target_achievement(self):
         """Testa cálculo de atingimento de meta."""
@@ -597,15 +597,15 @@ class TestExecutiveKPI:
             id=uuid.uuid4(),
             codigo="KPI007",
             nome="Meta Teste",
-            category=KPICategory.FINANCIAL,
-            kpi_type=KPIType.ABSOLUTE,
-            direction=KPIDirection.INCREASE,
-            status=KPIStatus.ACTIVE,
+            category=KPICategory.FINANCEIRO,
+            kpi_type=KPIType.RECEITA,
+            direction=KPIDirection.MAIOR_MELHOR,
+            status=KPIStatus.ATIVO,
             unit="currency",
             current_value=Decimal("90000.00"),
             target_value=Decimal("100000.00"),
             alert_level=KPIAlertLevel.NORMAL,
-            aggregation_period=AggregationPeriod.DAILY,
+            aggregation_period=AggregationPeriod.MENSAL,
             visibility="public",
         )
         assert kpi.target_achievement == Decimal("90.00")
@@ -621,17 +621,17 @@ class TestBenchmark:
             codigo="BMK001",
             nome="Margem EBITDA Setor",
             descricao="Benchmark de margem EBITDA do setor",
-            category=BenchmarkCategory.FINANCIAL,
-            benchmark_type=BenchmarkType.INTERNAL,
-            source=BenchmarkSource.INTERNAL_DATA,
-            status=BenchmarkStatus.ACTIVE,
+            category=BenchmarkCategory.FINANCEIRO,
+            benchmark_type=BenchmarkType.INDUSTRIA,
+            source=BenchmarkSource.PESQUISA_MERCADO,
+            status=BenchmarkStatus.ATIVO,
             industry="Tecnologia",
             unit="percentage",
             reference_value=Decimal("25.00"),
             visibility="public",
         )
         assert benchmark.codigo == "BMK001"
-        assert benchmark.category == BenchmarkCategory.FINANCIAL
+        assert benchmark.category == BenchmarkCategory.FINANCEIRO
         assert benchmark.is_active
 
     def test_benchmark_update_reference_value(self):
@@ -640,10 +640,10 @@ class TestBenchmark:
             id=uuid.uuid4(),
             codigo="BMK002",
             nome="NPS Setor",
-            category=BenchmarkCategory.FINANCIAL,
-            benchmark_type=BenchmarkType.INTERNAL,
-            source=BenchmarkSource.INTERNAL_DATA,
-            status=BenchmarkStatus.ACTIVE,
+            category=BenchmarkCategory.SATISFACAO,
+            benchmark_type=BenchmarkType.SETOR,
+            source=BenchmarkSource.ASSOCIACAO,
+            status=BenchmarkStatus.ATIVO,
             unit="score",
             reference_value=Decimal("50.00"),
             visibility="public",
@@ -658,17 +658,17 @@ class TestBenchmark:
             id=uuid.uuid4(),
             codigo="BMK003",
             nome="Ticket Médio",
-            category=BenchmarkCategory.FINANCIAL,
-            benchmark_type=BenchmarkType.INTERNAL,
-            source=BenchmarkSource.INTERNAL_DATA,
-            status=BenchmarkStatus.ACTIVE,
+            category=BenchmarkCategory.COMERCIAL,
+            benchmark_type=BenchmarkType.CONCORRENTE,
+            source=BenchmarkSource.DADOS_INTERNOS,
+            status=BenchmarkStatus.ATIVO,
             unit="currency",
             reference_value=Decimal("150.00"),
             visibility="public",
         )
         benchmark.update_company_value(Decimal("180.00"))
         assert benchmark.company_value == Decimal("180.00")
-        assert benchmark.comparison_result == ComparisonResult.ABOVE
+        assert benchmark.comparison_result == ComparisonResult.ACIMA
 
     def test_benchmark_set_distribution(self):
         """Testa definição de distribuição estatística."""
@@ -676,10 +676,10 @@ class TestBenchmark:
             id=uuid.uuid4(),
             codigo="BMK004",
             nome="Tempo de Entrega",
-            category=BenchmarkCategory.FINANCIAL,
-            benchmark_type=BenchmarkType.INTERNAL,
-            source=BenchmarkSource.INTERNAL_DATA,
-            status=BenchmarkStatus.ACTIVE,
+            category=BenchmarkCategory.OPERACIONAL,
+            benchmark_type=BenchmarkType.INDUSTRIA,
+            source=BenchmarkSource.CONSULTORIA,
+            status=BenchmarkStatus.ATIVO,
             unit="days",
             reference_value=Decimal("5.00"),
             visibility="public",
@@ -705,15 +705,15 @@ class TestBenchmark:
             id=uuid.uuid4(),
             codigo="BMK005",
             nome="Benchmark Teste",
-            category=BenchmarkCategory.FINANCIAL,
+            category=BenchmarkCategory.QUALIDADE,
             benchmark_type=BenchmarkType.BEST_PRACTICE,
-            source=BenchmarkSource.INTERNAL_DATA,
-            status=BenchmarkStatus.ACTIVE,
+            source=BenchmarkSource.ACADEMIA,
+            status=BenchmarkStatus.RASCUNHO,
             unit="percentage",
             visibility="private",
         )
         benchmark.activate()
-        assert benchmark.status == BenchmarkStatus.ACTIVE
+        assert benchmark.status == BenchmarkStatus.ATIVO
 
     def test_benchmark_deactivate(self):
         """Testa desativação de benchmark."""
@@ -721,15 +721,15 @@ class TestBenchmark:
             id=uuid.uuid4(),
             codigo="BMK006",
             nome="Benchmark Inativo",
-            category=BenchmarkCategory.FINANCIAL,
-            benchmark_type=BenchmarkType.INTERNAL,
-            source=BenchmarkSource.INTERNAL_DATA,
-            status=BenchmarkStatus.ACTIVE,
+            category=BenchmarkCategory.INOVACAO,
+            benchmark_type=BenchmarkType.CUSTOMIZADO,
+            source=BenchmarkSource.GOVERNO,
+            status=BenchmarkStatus.ATIVO,
             unit="count",
             visibility="public",
         )
         benchmark.deactivate()
-        assert benchmark.status == BenchmarkStatus.ACTIVE
+        assert benchmark.status == BenchmarkStatus.INATIVO
 
     def test_benchmark_mark_outdated(self):
         """Testa marcação como desatualizado."""
@@ -737,15 +737,15 @@ class TestBenchmark:
             id=uuid.uuid4(),
             codigo="BMK007",
             nome="Benchmark Desatualizado",
-            category=BenchmarkCategory.FINANCIAL,
-            benchmark_type=BenchmarkType.INTERNAL,
-            source=BenchmarkSource.INTERNAL_DATA,
-            status=BenchmarkStatus.ACTIVE,
+            category=BenchmarkCategory.SUSTENTABILIDADE,
+            benchmark_type=BenchmarkType.REGULATORIO,
+            source=BenchmarkSource.PESQUISA_MERCADO,
+            status=BenchmarkStatus.ATIVO,
             unit="index",
             visibility="public",
         )
         benchmark.mark_outdated()
-        assert benchmark.status == BenchmarkStatus.ACTIVE
+        assert benchmark.status == BenchmarkStatus.DESATUALIZADO
 
     def test_benchmark_is_above_below(self):
         """Testa comparação com benchmark."""
@@ -753,14 +753,14 @@ class TestBenchmark:
             id=uuid.uuid4(),
             codigo="BMK008",
             nome="Benchmark Comparação",
-            category=BenchmarkCategory.FINANCIAL,
-            benchmark_type=BenchmarkType.INTERNAL,
-            source=BenchmarkSource.INTERNAL_DATA,
-            status=BenchmarkStatus.ACTIVE,
+            category=BenchmarkCategory.FINANCEIRO,
+            benchmark_type=BenchmarkType.INDUSTRIA,
+            source=BenchmarkSource.DADOS_INTERNOS,
+            status=BenchmarkStatus.ATIVO,
             unit="percentage",
             reference_value=Decimal("20.00"),
             company_value=Decimal("25.00"),
-            comparison_result=ComparisonResult.ABOVE,
+            comparison_result=ComparisonResult.ACIMA,
             visibility="public",
         )
         assert benchmark.is_above_benchmark
@@ -772,10 +772,10 @@ class TestBenchmark:
             id=uuid.uuid4(),
             codigo="BMK009",
             nome="Benchmark Gap",
-            category=BenchmarkCategory.FINANCIAL,
-            benchmark_type=BenchmarkType.INTERNAL,
-            source=BenchmarkSource.INTERNAL_DATA,
-            status=BenchmarkStatus.ACTIVE,
+            category=BenchmarkCategory.COMERCIAL,
+            benchmark_type=BenchmarkType.CONCORRENTE,
+            source=BenchmarkSource.CONSULTORIA,
+            status=BenchmarkStatus.ATIVO,
             unit="currency",
             reference_value=Decimal("100.00"),
             company_value=Decimal("80.00"),
@@ -790,9 +790,9 @@ class TestEnums:
 
     def test_report_category_values(self):
         """Testa valores de ReportCategory."""
-        assert ReportCategory.FINANCIAL.value == "financeiro"
-        assert ReportCategory.FINANCIAL.value == "operacional"
-        assert ReportCategory.FINANCIAL.value == "vendas"
+        assert ReportCategory.FINANCEIRO.value == "financeiro"
+        assert ReportCategory.OPERACIONAL.value == "operacional"
+        assert ReportCategory.VENDAS.value == "vendas"
 
     def test_report_format_values(self):
         """Testa valores de ReportFormat."""
@@ -802,18 +802,18 @@ class TestEnums:
 
     def test_schedule_frequency_values(self):
         """Testa valores de ScheduleFrequency."""
-        assert ScheduleFrequency.ONCE.value == "diario"
-        assert ScheduleFrequency.ONCE.value == "semanal"
-        assert ScheduleFrequency.ONCE.value == "mensal"
+        assert ScheduleFrequency.DIARIO.value == "diario"
+        assert ScheduleFrequency.SEMANAL.value == "semanal"
+        assert ScheduleFrequency.MENSAL.value == "mensal"
 
     def test_kpi_direction_values(self):
         """Testa valores de KPIDirection."""
-        assert KPIDirection.INCREASE.value == "maior_melhor"
-        assert KPIDirection.INCREASE.value == "menor_melhor"
-        assert KPIDirection.INCREASE.value == "alvo"
+        assert KPIDirection.MAIOR_MELHOR.value == "maior_melhor"
+        assert KPIDirection.MENOR_MELHOR.value == "menor_melhor"
+        assert KPIDirection.ALVO.value == "alvo"
 
     def test_comparison_result_values(self):
         """Testa valores de ComparisonResult."""
-        assert ComparisonResult.ABOVE.value == "acima"
-        assert ComparisonResult.ABOVE.value == "abaixo"
-        assert ComparisonResult.ABOVE.value == "na_media"
+        assert ComparisonResult.ACIMA.value == "acima"
+        assert ComparisonResult.ABAIXO.value == "abaixo"
+        assert ComparisonResult.NA_MEDIA.value == "na_media"

@@ -51,14 +51,14 @@ class TestDocument:
         doc = Document(
             tenant_id="tenant1",
             name="boleto.pdf",
-            document_type=DocumentType.CND_FEDERAL,
+            document_type=DocumentType.BOLETO,
         )
 
         assert doc.id is not None
         assert doc.tenant_id == "tenant1"
         assert doc.name == "boleto.pdf"
-        assert doc.document_type == DocumentType.CND_FEDERAL
-        assert doc.status == DocumentStatus.VALID
+        assert doc.document_type == DocumentType.BOLETO
+        assert doc.status == DocumentStatus.UPLOADED
         assert len(doc.processing_steps) == 6  # Etapas padrao
 
     def test_processing_steps(self):
@@ -89,7 +89,7 @@ class TestDocument:
         step = doc.get_step("ocr")
         assert step.status == ProcessingStatus.FAILED
         assert step.error == "Erro de OCR"
-        assert doc.status == DocumentStatus.VALID
+        assert doc.status == DocumentStatus.FAILED
 
     def test_mark_for_review(self):
         """Testa marcacao para revisao."""
@@ -98,7 +98,7 @@ class TestDocument:
 
         assert doc.needs_review is True
         assert doc.review_reason == "Baixa confianca"
-        assert doc.status == DocumentStatus.VALID
+        assert doc.status == DocumentStatus.REVIEW_NEEDED
 
     def test_complete_review(self):
         """Testa conclusao de revisao."""
@@ -110,7 +110,7 @@ class TestDocument:
         assert doc.needs_review is False
         assert doc.reviewed_by == "user123"
         assert doc.reviewed_at is not None
-        assert doc.status == DocumentStatus.VALID
+        assert doc.status == DocumentStatus.COMPLETED
 
     def test_tags(self):
         """Testa gerenciamento de tags."""
@@ -129,7 +129,7 @@ class TestDocument:
         """Testa conversao para dicionario."""
         doc = Document(
             name="test.pdf",
-            document_type=DocumentType.CND_FEDERAL,
+            document_type=DocumentType.NFE,
             tenant_id="t1",
         )
 
@@ -316,7 +316,7 @@ class TestExtractionTemplate:
         template = ExtractionTemplate(
             name="Template Boleto",
             document_type="boleto",
-            category=TemplateCategory.TRANSACTIONAL,
+            category=TemplateCategory.FINANCIAL,
         )
 
         assert template.id is not None
@@ -414,7 +414,7 @@ class TestTemplateRule:
     def test_regex_rule(self):
         """Testa regra regex."""
         rule = TemplateRule(
-            rule_type=RuleType.THRESHOLD,
+            rule_type=RuleType.REGEX,
             pattern=r"\d{11}",
         )
 

@@ -31,24 +31,24 @@ class TestGuardianSyncModel:
         """Testa criação de sincronização."""
         sync = GuardianSync(
             sync_code="SYNC-20241230-ABC12345",
-            direction=SyncDirection.SOLIDES_TO_CONECTA.value,
+            direction=SyncDirection.ERP_TO_GUARDIAN.value,
             entity_type=SyncEntityType.CONTRACT.value,
             entity_id="contract-123",
         )
 
         assert sync.sync_code == "SYNC-20241230-ABC12345"
-        assert sync.direction == SyncDirection.SOLIDES_TO_CONECTA.value
+        assert sync.direction == SyncDirection.ERP_TO_GUARDIAN.value
         assert sync.entity_type == SyncEntityType.CONTRACT.value
-        assert sync.status == SyncStatus.IDLE.value
+        assert sync.status == SyncStatus.PENDING.value
 
     def test_sync_is_completed(self) -> None:
         """Testa verificação de sincronização concluída."""
         sync = GuardianSync(
             sync_code="SYNC-001",
-            direction=SyncDirection.SOLIDES_TO_CONECTA.value,
+            direction=SyncDirection.ERP_TO_GUARDIAN.value,
             entity_type=SyncEntityType.CONTRACT.value,
             entity_id="contract-123",
-            status=SyncStatus.IDLE.value,
+            status=SyncStatus.COMPLETED.value,
         )
 
         assert sync.is_completed is True
@@ -58,10 +58,10 @@ class TestGuardianSyncModel:
         """Testa verificação de sincronização falha."""
         sync = GuardianSync(
             sync_code="SYNC-002",
-            direction=SyncDirection.SOLIDES_TO_CONECTA.value,
+            direction=SyncDirection.ERP_TO_GUARDIAN.value,
             entity_type=SyncEntityType.CONTRACT.value,
             entity_id="contract-123",
-            status=SyncStatus.IDLE.value,
+            status=SyncStatus.FAILED.value,
             retry_count=1,
             max_retries=3,
         )
@@ -73,10 +73,10 @@ class TestGuardianSyncModel:
         """Testa que não pode tentar após máximo."""
         sync = GuardianSync(
             sync_code="SYNC-003",
-            direction=SyncDirection.SOLIDES_TO_CONECTA.value,
+            direction=SyncDirection.ERP_TO_GUARDIAN.value,
             entity_type=SyncEntityType.CONTRACT.value,
             entity_id="contract-123",
-            status=SyncStatus.IDLE.value,
+            status=SyncStatus.FAILED.value,
             retry_count=3,
             max_retries=3,
         )
@@ -87,7 +87,7 @@ class TestGuardianSyncModel:
         """Testa verificação de sincronização de saída."""
         sync = GuardianSync(
             sync_code="SYNC-004",
-            direction=SyncDirection.SOLIDES_TO_CONECTA.value,
+            direction=SyncDirection.ERP_TO_GUARDIAN.value,
             entity_type=SyncEntityType.CONTRACT.value,
             entity_id="contract-123",
         )
@@ -99,8 +99,8 @@ class TestGuardianSyncModel:
         """Testa verificação de sincronização de entrada."""
         sync = GuardianSync(
             sync_code="SYNC-005",
-            direction=SyncDirection.SOLIDES_TO_CONECTA.value,
-            entity_type=SyncEntityType.CLIENT.value,
+            direction=SyncDirection.GUARDIAN_TO_ERP.value,
+            entity_type=SyncEntityType.OCCURRENCE.value,
             entity_id="occurrence-123",
         )
 
@@ -111,15 +111,15 @@ class TestGuardianSyncModel:
         """Testa marcar sincronização como concluída."""
         sync = GuardianSync(
             sync_code="SYNC-006",
-            direction=SyncDirection.SOLIDES_TO_CONECTA.value,
+            direction=SyncDirection.ERP_TO_GUARDIAN.value,
             entity_type=SyncEntityType.CONTRACT.value,
             entity_id="contract-123",
-            status=SyncStatus.IDLE.value,
+            status=SyncStatus.IN_PROGRESS.value,
         )
 
         sync.mark_completed({"success": True})
 
-        assert sync.status == SyncStatus.IDLE.value
+        assert sync.status == SyncStatus.COMPLETED.value
         assert sync.synced_at is not None
         assert sync.response == {"success": True}
 
@@ -127,15 +127,15 @@ class TestGuardianSyncModel:
         """Testa marcar sincronização como falha."""
         sync = GuardianSync(
             sync_code="SYNC-007",
-            direction=SyncDirection.SOLIDES_TO_CONECTA.value,
+            direction=SyncDirection.ERP_TO_GUARDIAN.value,
             entity_type=SyncEntityType.CONTRACT.value,
             entity_id="contract-123",
-            status=SyncStatus.IDLE.value,
+            status=SyncStatus.IN_PROGRESS.value,
         )
 
         sync.mark_failed("Connection timeout", {"code": 504})
 
-        assert sync.status == SyncStatus.IDLE.value
+        assert sync.status == SyncStatus.FAILED.value
         assert sync.error_message == "Connection timeout"
         assert sync.error_details == {"code": 504}
 
@@ -143,17 +143,17 @@ class TestGuardianSyncModel:
         """Testa incrementar contador de retentativas."""
         sync = GuardianSync(
             sync_code="SYNC-008",
-            direction=SyncDirection.SOLIDES_TO_CONECTA.value,
+            direction=SyncDirection.ERP_TO_GUARDIAN.value,
             entity_type=SyncEntityType.CONTRACT.value,
             entity_id="contract-123",
-            status=SyncStatus.IDLE.value,
+            status=SyncStatus.FAILED.value,
             retry_count=0,
         )
 
         sync.increment_retry()
 
         assert sync.retry_count == 1
-        assert sync.status == SyncStatus.IDLE.value
+        assert sync.status == SyncStatus.IN_PROGRESS.value
         assert sync.last_retry_at is not None
 
 
@@ -512,15 +512,15 @@ class TestEnums:
 
     def test_sync_status_values(self) -> None:
         """Testa valores de SyncStatus."""
-        assert SyncStatus.IDLE.value == "pending"
-        assert SyncStatus.IDLE.value == "in_progress"
-        assert SyncStatus.IDLE.value == "completed"
-        assert SyncStatus.IDLE.value == "failed"
+        assert SyncStatus.PENDING.value == "pending"
+        assert SyncStatus.IN_PROGRESS.value == "in_progress"
+        assert SyncStatus.COMPLETED.value == "completed"
+        assert SyncStatus.FAILED.value == "failed"
 
     def test_sync_direction_values(self) -> None:
         """Testa valores de SyncDirection."""
-        assert SyncDirection.SOLIDES_TO_CONECTA.value == "erp_to_guardian"
-        assert SyncDirection.SOLIDES_TO_CONECTA.value == "guardian_to_erp"
+        assert SyncDirection.ERP_TO_GUARDIAN.value == "erp_to_guardian"
+        assert SyncDirection.GUARDIAN_TO_ERP.value == "guardian_to_erp"
 
     def test_access_log_type_values(self) -> None:
         """Testa valores de AccessLogType."""

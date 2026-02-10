@@ -34,7 +34,7 @@ def mock_diarist():
         telefone="11999999999",
         email="maria@email.com",
         tipos_servico=[DiaristType.LIMPEZA],
-        dias_disponiveis=[Weekday.SEGUNDA, Weekday.SEGUNDA],
+        dias_disponiveis=[Weekday.MONDAY, Weekday.WEDNESDAY],
         valor_hora=Decimal("25.00"),
         valor_diaria=Decimal("180.00"),
         status=DiaristStatus.ATIVO,
@@ -53,8 +53,8 @@ def mock_assignment(mock_diarist):
         tipo="CONDOMINIO",
         data_inicio=date.today(),
         recorrencia="SEMANAL",
-        dias_semana=[Weekday.SEGUNDA],
-        status=AssignmentStatus.PENDENTE,
+        dias_semana=[Weekday.MONDAY],
+        status=AssignmentStatus.ATIVO,
     )
 
 
@@ -69,7 +69,7 @@ def mock_schedule(mock_diarist):
         hora_inicio=time(8, 0),
         hora_fim=time(16, 0),
         valor_previsto=Decimal("180.00"),
-        status=ScheduleStatus.ACTIVE,
+        status=ScheduleStatus.AGENDADO,
     )
 
 
@@ -96,7 +96,7 @@ class TestDiaristEndpoints:
             mock.return_value = MagicMock(
                 id=uuid4(),
                 **payload,
-                status=DiaristStatus.ATIVO,
+                status=DiaristStatus.PENDENTE,
             )
 
             response = await async_client.post(
@@ -295,7 +295,7 @@ class TestScheduleEndpoints:
     async def test_confirm_schedule(self, async_client: AsyncClient, admin_token, mock_schedule):
         """Testa confirmação de agendamento."""
         with patch("modules.diarists.services.diarist_service.DiaristService.confirm_schedule") as mock:
-            mock_schedule.status = ScheduleStatus.ACTIVE
+            mock_schedule.status = ScheduleStatus.CONFIRMADO
             mock.return_value = mock_schedule
 
             response = await async_client.post(
@@ -316,7 +316,7 @@ class TestScheduleEndpoints:
         }
 
         with patch("modules.diarists.services.diarist_service.DiaristService.register_checkin") as mock:
-            mock_schedule.status = ScheduleStatus.ACTIVE
+            mock_schedule.status = ScheduleStatus.EM_ANDAMENTO
             mock.return_value = mock_schedule
 
             response = await async_client.post(
@@ -336,7 +336,7 @@ class TestScheduleEndpoints:
         }
 
         with patch("modules.diarists.services.diarist_service.DiaristService.register_checkout") as mock:
-            mock_schedule.status = ScheduleStatus.ACTIVE
+            mock_schedule.status = ScheduleStatus.CONCLUIDO
             mock.return_value = mock_schedule
 
             response = await async_client.post(
@@ -374,7 +374,7 @@ class TestPaymentEndpoints:
             data_referencia=date.today(),
             valor_bruto=Decimal("500.00"),
             valor_liquido=Decimal("445.00"),
-            status=PaymentStatus.PENDING,
+            status=PaymentStatus.PENDENTE,
         )
 
         with patch("modules.diarists.services.diarist_service.DiaristService.create_payment") as mock:
@@ -413,7 +413,7 @@ class TestPaymentEndpoints:
             data_referencia=date.today(),
             valor_bruto=Decimal("500.00"),
             valor_liquido=Decimal("445.00"),
-            status=PaymentStatus.PENDING,
+            status=PaymentStatus.PAGO,
             data_pagamento=date.today(),
         )
 

@@ -21,7 +21,7 @@ class TestAlertModel:
             metric_name="cpu_usage",
             source="system",
             level=AlertLevel.YELLOW,
-            status=AlertStatus.NEW,
+            status=AlertStatus.ACTIVE,
             current_value=75.0,
             threshold_value=70.0,
             title="CPU Usage em nivel YELLOW",
@@ -30,7 +30,7 @@ class TestAlertModel:
 
         assert alert.metric_name == "cpu_usage"
         assert alert.level == AlertLevel.YELLOW
-        assert alert.status == AlertStatus.NEW
+        assert alert.status == AlertStatus.ACTIVE
         assert alert.current_value == 75.0
 
     def test_alert_is_critical(self):
@@ -39,7 +39,7 @@ class TestAlertModel:
             id=uuid4(),
             metric_name="test",
             level=AlertLevel.YELLOW,
-            status=AlertStatus.NEW,
+            status=AlertStatus.ACTIVE,
             current_value=50,
             threshold_value=40,
             title="Test",
@@ -50,7 +50,7 @@ class TestAlertModel:
             id=uuid4(),
             metric_name="test",
             level=AlertLevel.ORANGE,
-            status=AlertStatus.NEW,
+            status=AlertStatus.ACTIVE,
             current_value=60,
             threshold_value=50,
             title="Test",
@@ -61,7 +61,7 @@ class TestAlertModel:
             id=uuid4(),
             metric_name="test",
             level=AlertLevel.RED,
-            status=AlertStatus.NEW,
+            status=AlertStatus.ACTIVE,
             current_value=70,
             threshold_value=60,
             title="Test",
@@ -74,7 +74,7 @@ class TestAlertModel:
             id=uuid4(),
             metric_name="test",
             level=AlertLevel.YELLOW,
-            status=AlertStatus.NEW,
+            status=AlertStatus.ACTIVE,
             current_value=50,
             threshold_value=40,
             title="Test",
@@ -83,7 +83,7 @@ class TestAlertModel:
         user_id = uuid4()
         alert.acknowledge(user_id)
 
-        assert alert.status == AlertStatus.NEW
+        assert alert.status == AlertStatus.ACKNOWLEDGED
         assert alert.acknowledged_by == user_id
         assert alert.acknowledged_at is not None
 
@@ -93,7 +93,7 @@ class TestAlertModel:
             id=uuid4(),
             metric_name="test",
             level=AlertLevel.YELLOW,
-            status=AlertStatus.NEW,
+            status=AlertStatus.ACTIVE,
             current_value=50,
             threshold_value=40,
             title="Test",
@@ -234,11 +234,11 @@ class TestAlertLevels:
 
     def test_alert_status_values(self):
         """Testa valores dos status de alerta."""
-        assert AlertStatus.NEW.value == "active"
-        assert AlertStatus.NEW.value == "acknowledged"
+        assert AlertStatus.ACTIVE.value == "active"
+        assert AlertStatus.ACKNOWLEDGED.value == "acknowledged"
         assert AlertStatus.RESOLVED.value == "resolved"
         assert AlertStatus.ESCALATED.value == "escalated"
-        assert AlertStatus.NEW.value == "suppressed"
+        assert AlertStatus.SUPPRESSED.value == "suppressed"
 
 
 class TestMetricCollector:

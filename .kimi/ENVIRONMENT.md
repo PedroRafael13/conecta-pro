@@ -94,48 +94,12 @@ FULL_TEST=true /opt/conecta-pro/scripts/verify-all.sh  # Com test run (~15min)
 
 ### Atalhos disponíveis (se `.bashrc` carregado)
 ```bash
-cpb             # cd backend + ativa venv automaticamente
-cpro            # cd /opt/conecta-pro
-cpf             # cd frontend
-verify          # verify-all.sh
-verify-full     # verify-all.sh com test run completo
-verify-instant  # verify-instant.sh (ruff + collection + alembic, ~45s)
-pre-flight      # pre-flight.sh <arquivo> — impacto cruzado antes de editar
-validate-enums  # validate-enums.py — detecta enums EN vs PT nos testes
-safe-edit       # safe-edit.sh "comando" — edição com verificação de regressão
+cpb        # cd backend + ativa venv automaticamente
+cpro       # cd /opt/conecta-pro
+cpf        # cd frontend
+verify     # verify-all.sh
+verify-full # verify-all.sh com test run completo
 ```
-
-### Ferramentas de Produtividade (scripts/)
-
-```bash
-# Verificação rápida (~45s) — ruff + collection + alembic
-/opt/conecta-pro/scripts/verify-instant.sh
-
-# Pre-flight antes de editar — mostra arquivos afetados
-/opt/conecta-pro/scripts/pre-flight.sh modules/mobile/models/push_notification.py
-
-# Validar enums EN vs PT nos testes
-/opt/conecta-pro/scripts/validate-enums.py          # Lista erros
-/opt/conecta-pro/scripts/validate-enums.py --fix     # Corrige automaticamente
-
-# Campos obrigatórios de um model
-/opt/conecta-pro/scripts/required-fields.py modules/config/models/tenant.py Tenant
-
-# Edição segura com detecção de regressão
-/opt/conecta-pro/scripts/safe-edit.sh "sed -i 's/OLD/NEW/g' arquivo.py"
-
-# Validar schemas Pydantic vs uso nos testes
-/opt/conecta-pro/scripts/schema-validator.py --model TenantCreate
-/opt/conecta-pro/scripts/schema-validator.py --scan   # Escaneia todos
-```
-
-### Workflow OBRIGATÓRIO com ferramentas
-
-1. **ANTES de editar:** `pre-flight <arquivo>` — ver impacto cruzado
-2. **DURANTE edição:** `safe-edit "comando"` — previne regressão
-3. **DEPOIS de editar:** `verify-instant` — check rápido
-4. **Se encontrar enum errado:** `validate-enums --fix`
-5. **Se TypeError em teste:** `required-fields.py <model> <NomeModel>`
 
 ### Auto-venv
 O venv é ativado AUTOMATICAMENTE ao entrar em `/opt/conecta-pro/backend/`.

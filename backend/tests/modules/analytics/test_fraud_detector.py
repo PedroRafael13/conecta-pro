@@ -363,7 +363,7 @@ class TestAlertManagement:
         # Assert
         assert len(open_alerts) > 0
         for alert in open_alerts:
-            assert alert.status in [AlertStatus.NEW, AlertStatus.INVESTIGATING]
+            assert alert.status in [AlertStatus.OPEN, AlertStatus.INVESTIGATING]
 
 
 class TestUserRiskProfile:

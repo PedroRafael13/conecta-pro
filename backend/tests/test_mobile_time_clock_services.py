@@ -365,7 +365,7 @@ class TestDeviceServiceUnit:
             device_name="Test",
             device_uuid="test-uuid",
             platform="android",
-            status=DeviceStatus.ACTIVE.value,
+            status=DeviceStatus.PENDING.value,
             trust_score=0,
         )
 
@@ -436,10 +436,10 @@ class TestPushNotificationServiceUnit:
         """Testa valores de tipos de notificação."""
         from modules.hr.mobile_time_clock.services import NotificationType
 
-        assert NotificationType.MEETING_REMINDER.value == "checkin_reminder"
-        assert NotificationType.MEETING_REMINDER.value == "checkin_confirmed"
-        assert NotificationType.MEETING_REMINDER.value == "device_approved"
-        assert NotificationType.MEETING_REMINDER.value == "geofence_enter"
+        assert NotificationType.CHECKIN_REMINDER.value == "checkin_reminder"
+        assert NotificationType.CHECKIN_CONFIRMED.value == "checkin_confirmed"
+        assert NotificationType.DEVICE_APPROVED.value == "device_approved"
+        assert NotificationType.GEOFENCE_ENTER.value == "geofence_enter"
 
     def test_notification_payload_structure(self):
         """Testa estrutura do payload de notificação."""

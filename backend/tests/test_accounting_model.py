@@ -52,30 +52,30 @@ class TestChartOfAccountsModel:
         assert chart.code == "PC-001"
         assert chart.name == "Plano de Contas Principal"
         assert chart.condominio_id == condo_id
-        assert chart.chart_type == ChartType.BAR
+        assert chart.chart_type == ChartType.ANALYTICAL
         assert chart.status == ChartStatus.ACTIVE
         assert chart.standard == ChartStandard.CUSTOM
         assert chart.active is True
 
     def test_chart_type_enum(self) -> None:
         """Test ChartType enum values."""
-        assert ChartType.BAR.value == "ANALYTICAL"
-        assert ChartType.BAR.value == "SYNTHETIC"
-        assert ChartType.BAR.value == "REFERENTIAL"
+        assert ChartType.ANALYTICAL.value == "ANALYTICAL"
+        assert ChartType.SYNTHETIC.value == "SYNTHETIC"
+        assert ChartType.REFERENTIAL.value == "REFERENTIAL"
 
     def test_chart_status_enum(self) -> None:
         """Test ChartStatus enum values."""
         assert ChartStatus.ACTIVE.value == "ACTIVE"
         assert ChartStatus.INACTIVE.value == "INACTIVE"
         assert ChartStatus.DRAFT.value == "DRAFT"
-        assert ChartStatus.DRAFT.value == "BLOCKED"
+        assert ChartStatus.BLOCKED.value == "BLOCKED"
 
     def test_chart_standard_enum(self) -> None:
         """Test ChartStandard enum values."""
         assert ChartStandard.CUSTOM.value == "CUSTOM"
         assert ChartStandard.SPED_ECD.value == "SPED_ECD"
         assert ChartStandard.SPED_ECF.value == "SPED_ECF"
-        assert ChartStandard.CUSTOM.value == "COSIF"
+        assert ChartStandard.COSIF.value == "COSIF"
         assert ChartStandard.IFRS.value == "IFRS"
         assert ChartStandard.US_GAAP.value == "US_GAAP"
 
@@ -123,42 +123,42 @@ class TestAccountingAccountModel:
         )
         assert account.code == "1"
         assert account.name == "Ativo"
-        assert account.account_type == AccountType.CHECKING
+        assert account.account_type == AccountType.SYNTHETIC
         assert account.nature == AccountNature.DEBIT
-        assert account.classification == AccountClassification.SYNTHETIC
+        assert account.classification == AccountClassification.PATRIMONIAL
         assert account.status == AccountStatus.ACTIVE
         assert account.level == 1
         assert account.allow_entries is False
 
     def test_account_type_enum(self) -> None:
         """Test AccountType enum values."""
-        assert AccountType.CHECKING.value == "SYNTHETIC"
-        assert AccountType.CHECKING.value == "ANALYTICAL"
+        assert AccountType.SYNTHETIC.value == "SYNTHETIC"
+        assert AccountType.ANALYTICAL.value == "ANALYTICAL"
 
     def test_account_nature_enum(self) -> None:
         """Test AccountNature enum values."""
         assert AccountNature.DEBIT.value == "DEBIT"
         assert AccountNature.CREDIT.value == "CREDIT"
-        assert AccountNature.DEBIT.value == "MIXED"
+        assert AccountNature.MIXED.value == "MIXED"
 
     def test_account_classification_enum(self) -> None:
         """Test AccountClassification enum values."""
-        assert AccountClassification.SYNTHETIC.value == "PATRIMONIAL"
-        assert AccountClassification.SYNTHETIC.value == "RESULT"
-        assert AccountClassification.SYNTHETIC.value == "COMPENSATION"
+        assert AccountClassification.PATRIMONIAL.value == "PATRIMONIAL"
+        assert AccountClassification.RESULT.value == "RESULT"
+        assert AccountClassification.COMPENSATION.value == "COMPENSATION"
         assert AccountClassification.ANALYTICAL.value == "ANALYTICAL"
 
     def test_account_status_enum(self) -> None:
         """Test AccountStatus enum values."""
         assert AccountStatus.ACTIVE.value == "ACTIVE"
         assert AccountStatus.INACTIVE.value == "INACTIVE"
-        assert AccountStatus.ACTIVE.value == "BLOCKED"
-        assert AccountStatus.ACTIVE.value == "PENDING"
+        assert AccountStatus.BLOCKED.value == "BLOCKED"
+        assert AccountStatus.PENDING.value == "PENDING"
 
     def test_sped_account_nature_enum(self) -> None:
         """Test SpedAccountNature enum values."""
-        assert SpedAccountNature.ATIVO_CIRCULANTE.value == "D"
-        assert SpedAccountNature.ATIVO_CIRCULANTE.value == "C"
+        assert SpedAccountNature.DEBIT.value == "D"
+        assert SpedAccountNature.CREDIT.value == "C"
 
     def test_account_analytical(self) -> None:
         """Test analytical account creation."""
@@ -168,12 +168,12 @@ class TestAccountingAccountModel:
             chart_id=uuid4(),
             code="1.1.1.01",
             name="Caixa Geral",
-            account_type=AccountType.CHECKING,
+            account_type=AccountType.ANALYTICAL,
             parent_id=parent_id,
             level=4,
             allow_entries=True,
         )
-        assert account.account_type == AccountType.CHECKING
+        assert account.account_type == AccountType.ANALYTICAL
         assert account.parent_id == parent_id
         assert account.level == 4
         assert account.allow_entries is True
@@ -186,11 +186,11 @@ class TestAccountingAccountModel:
             code="1.1.1.01",
             name="Caixa",
             sped_account_code="1.1.1.01.0001",
-            sped_account_nature=SpedAccountNature.ATIVO_CIRCULANTE,
+            sped_account_nature=SpedAccountNature.DEBIT,
             sped_reference_date=date(2024, 1, 1),
         )
         assert account.sped_account_code == "1.1.1.01.0001"
-        assert account.sped_account_nature == SpedAccountNature.ATIVO_CIRCULANTE
+        assert account.sped_account_nature == SpedAccountNature.DEBIT
         assert account.sped_reference_date == date(2024, 1, 1)
 
     def test_account_with_balances(self) -> None:
@@ -200,7 +200,7 @@ class TestAccountingAccountModel:
             chart_id=uuid4(),
             code="1.1.1.01",
             name="Caixa",
-            account_type=AccountType.CHECKING,
+            account_type=AccountType.ANALYTICAL,
             allow_entries=True,
             initial_balance=Decimal("10000.00"),
             current_balance=Decimal("15500.00"),
@@ -220,7 +220,7 @@ class TestAccountingAccountModel:
             chart_id=uuid4(),
             code="4.1.1.01",
             name="Despesas com Pessoal",
-            classification=AccountClassification.SYNTHETIC,
+            classification=AccountClassification.RESULT,
             requires_cost_center=True,
             default_cost_center_id=cost_center_id,
         )
@@ -244,7 +244,7 @@ class TestCostCenterModel:
         assert cost_center.condominio_id == condo_id
         assert cost_center.cost_center_type == CostCenterType.ADMINISTRATIVE
         assert cost_center.status == CostCenterStatus.ACTIVE
-        assert cost_center.allocation_method == AllocationMethod.DRIVER_BASED
+        assert cost_center.allocation_method == AllocationMethod.DIRECT
         assert cost_center.level == 1
         assert cost_center.active is True
 
@@ -253,27 +253,27 @@ class TestCostCenterModel:
         assert CostCenterType.ADMINISTRATIVE.value == "ADMINISTRATIVE"
         assert CostCenterType.OPERATIONAL.value == "OPERATIONAL"
         assert CostCenterType.COMMERCIAL.value == "COMMERCIAL"
-        assert CostCenterType.PRODUCTIVE.value == "PRODUCTION"
+        assert CostCenterType.PRODUCTION.value == "PRODUCTION"
         assert CostCenterType.PROJECT.value == "PROJECT"
         assert CostCenterType.SUPPORT.value == "SUPPORT"
-        assert CostCenterType.PRODUCTIVE.value == "SHARED"
+        assert CostCenterType.SHARED.value == "SHARED"
 
     def test_cost_center_status_enum(self) -> None:
         """Test CostCenterStatus enum values."""
         assert CostCenterStatus.ACTIVE.value == "ACTIVE"
         assert CostCenterStatus.INACTIVE.value == "INACTIVE"
         assert CostCenterStatus.BLOCKED.value == "BLOCKED"
-        assert CostCenterStatus.ACTIVE.value == "PENDING"
+        assert CostCenterStatus.PENDING.value == "PENDING"
 
     def test_allocation_method_enum(self) -> None:
         """Test AllocationMethod enum values."""
-        assert AllocationMethod.DRIVER_BASED.value == "DIRECT"
+        assert AllocationMethod.DIRECT.value == "DIRECT"
         assert AllocationMethod.PROPORTIONAL.value == "PROPORTIONAL"
-        assert AllocationMethod.DRIVER_BASED.value == "HEADCOUNT"
-        assert AllocationMethod.DRIVER_BASED.value == "AREA"
-        assert AllocationMethod.DRIVER_BASED.value == "REVENUE"
-        assert AllocationMethod.DRIVER_BASED.value == "PRODUCTION"
-        assert AllocationMethod.DRIVER_BASED.value == "CUSTOM"
+        assert AllocationMethod.HEADCOUNT.value == "HEADCOUNT"
+        assert AllocationMethod.AREA.value == "AREA"
+        assert AllocationMethod.REVENUE.value == "REVENUE"
+        assert AllocationMethod.PRODUCTION.value == "PRODUCTION"
+        assert AllocationMethod.CUSTOM.value == "CUSTOM"
 
     def test_cost_center_hierarchical(self) -> None:
         """Test cost center with hierarchy."""
@@ -314,12 +314,12 @@ class TestCostCenterModel:
             code="CC-003",
             name="TI",
             cost_center_type=CostCenterType.SUPPORT,
-            allocation_method=AllocationMethod.DRIVER_BASED,
+            allocation_method=AllocationMethod.HEADCOUNT,
             allocation_percent=Decimal("100.00"),
             accepts_allocation=True,
             distributes_costs=True,
         )
-        assert cost_center.allocation_method == AllocationMethod.DRIVER_BASED
+        assert cost_center.allocation_method == AllocationMethod.HEADCOUNT
         assert cost_center.allocation_percent == Decimal("100.00")
         assert cost_center.accepts_allocation is True
         assert cost_center.distributes_costs is True
@@ -349,24 +349,24 @@ class TestAccountingPeriodModel:
     def test_period_type_enum(self) -> None:
         """Test PeriodType enum values."""
         assert PeriodType.MONTHLY.value == "MONTHLY"
-        assert PeriodType.MONTHLY.value == "QUARTERLY"
-        assert PeriodType.MONTHLY.value == "SEMIANNUAL"
-        assert PeriodType.MONTHLY.value == "ANNUAL"
-        assert PeriodType.MONTHLY.value == "SPECIAL"
+        assert PeriodType.QUARTERLY.value == "QUARTERLY"
+        assert PeriodType.SEMIANNUAL.value == "SEMIANNUAL"
+        assert PeriodType.ANNUAL.value == "ANNUAL"
+        assert PeriodType.SPECIAL.value == "SPECIAL"
 
     def test_period_status_enum(self) -> None:
         """Test PeriodStatus enum values."""
         assert PeriodStatus.OPEN.value == "OPEN"
-        assert PeriodStatus.DRAFT.value == "FROZEN"
+        assert PeriodStatus.FROZEN.value == "FROZEN"
         assert PeriodStatus.CLOSED.value == "CLOSED"
-        assert PeriodStatus.DRAFT.value == "LOCKED"
-        assert PeriodStatus.DRAFT.value == "REOPENED"
+        assert PeriodStatus.LOCKED.value == "LOCKED"
+        assert PeriodStatus.REOPENED.value == "REOPENED"
 
     def test_closing_type_enum(self) -> None:
         """Test ClosingType enum values."""
-        assert ClosingType.PROVISIONAL.value == "TEMPORARY"
+        assert ClosingType.TEMPORARY.value == "TEMPORARY"
         assert ClosingType.DEFINITIVE.value == "DEFINITIVE"
-        assert ClosingType.PROVISIONAL.value == "FISCAL"
+        assert ClosingType.FISCAL.value == "FISCAL"
 
     def test_period_quarterly(self) -> None:
         """Test quarterly period creation."""
@@ -374,13 +374,13 @@ class TestAccountingPeriodModel:
             condominio_id=uuid4(),
             code="2024-Q1",
             name="1o Trimestre 2024",
-            period_type=PeriodType.MONTHLY,
+            period_type=PeriodType.QUARTERLY,
             start_date=date(2024, 1, 1),
             end_date=date(2024, 3, 31),
             fiscal_year=2024,
             quarter=1,
         )
-        assert period.period_type == PeriodType.MONTHLY
+        assert period.period_type == PeriodType.QUARTERLY
         assert period.fiscal_year == 2024
         assert period.quarter == 1
 
@@ -439,36 +439,36 @@ class TestJournalEntryModel:
         )
         assert entry.entry_number == "LC-2024-00001"
         assert entry.entry_date == date(2024, 1, 15)
-        assert entry.entry_type == EntryType.ENTRADA
-        assert entry.status == EntryStatus.CONFIRMADO
+        assert entry.entry_type == EntryType.STANDARD
+        assert entry.status == EntryStatus.DRAFT
         assert entry.origin == EntryOrigin.MANUAL
         assert entry.active is True
 
     def test_entry_type_enum(self) -> None:
         """Test EntryType enum values."""
-        assert EntryType.ENTRADA.value == "STANDARD"
-        assert EntryType.ENTRADA.value == "OPENING"
-        assert EntryType.ENTRADA.value == "CLOSING"
-        assert EntryType.ENTRADA.value == "ADJUSTMENT"
-        assert EntryType.ENTRADA.value == "REVERSAL"
-        assert EntryType.ENTRADA.value == "TRANSFER"
+        assert EntryType.STANDARD.value == "STANDARD"
+        assert EntryType.OPENING.value == "OPENING"
+        assert EntryType.CLOSING.value == "CLOSING"
+        assert EntryType.ADJUSTMENT.value == "ADJUSTMENT"
+        assert EntryType.REVERSAL.value == "REVERSAL"
+        assert EntryType.TRANSFER.value == "TRANSFER"
 
     def test_entry_status_enum(self) -> None:
         """Test EntryStatus enum values."""
-        assert EntryStatus.CONFIRMADO.value == "DRAFT"
-        assert EntryStatus.PENDENTE.value == "PENDING"
-        assert EntryStatus.CONFIRMADO.value == "APPROVED"
-        assert EntryStatus.CONFIRMADO.value == "POSTED"
-        assert EntryStatus.CONFIRMADO.value == "REVERSED"
-        assert EntryStatus.CONFIRMADO.value == "CANCELLED"
+        assert EntryStatus.DRAFT.value == "DRAFT"
+        assert EntryStatus.PENDING.value == "PENDING"
+        assert EntryStatus.APPROVED.value == "APPROVED"
+        assert EntryStatus.POSTED.value == "POSTED"
+        assert EntryStatus.REVERSED.value == "REVERSED"
+        assert EntryStatus.CANCELLED.value == "CANCELLED"
 
     def test_entry_origin_enum(self) -> None:
         """Test EntryOrigin enum values."""
         assert EntryOrigin.MANUAL.value == "MANUAL"
-        assert EntryOrigin.ACCOUNTS_PAYABLE.value == "AUTOMATIC"
-        assert EntryOrigin.ACCOUNTS_PAYABLE.value == "IMPORT"
-        assert EntryOrigin.ACCOUNTS_PAYABLE.value == "INTEGRATION"
-        assert EntryOrigin.ACCOUNTS_PAYABLE.value == "SYSTEM"
+        assert EntryOrigin.AUTOMATIC.value == "AUTOMATIC"
+        assert EntryOrigin.IMPORT.value == "IMPORT"
+        assert EntryOrigin.INTEGRATION.value == "INTEGRATION"
+        assert EntryOrigin.SYSTEM.value == "SYSTEM"
 
     def test_entry_with_amounts(self) -> None:
         """Test entry with amounts."""
@@ -496,13 +496,13 @@ class TestJournalEntryModel:
             entry_date=date(2024, 1, 25),
             period_id=uuid4(),
             description="Despesa operacional",
-            status=EntryStatus.CONFIRMADO,
+            status=EntryStatus.POSTED,
             approved_at=datetime(2024, 1, 25, 10, 0, 0),
             approved_by_id=approved_by,
             posted_at=datetime(2024, 1, 25, 14, 0, 0),
             posted_by_id=posted_by,
         )
-        assert entry.status == EntryStatus.CONFIRMADO
+        assert entry.status == EntryStatus.POSTED
         assert entry.approved_by_id == approved_by
         assert entry.posted_by_id == posted_by
 
@@ -515,11 +515,11 @@ class TestJournalEntryModel:
             entry_date=date(2024, 1, 30),
             period_id=uuid4(),
             description="Estorno de lancamento",
-            entry_type=EntryType.ENTRADA,
+            entry_type=EntryType.REVERSAL,
             reversed_entry_id=original_entry,
             reversal_reason="Lancamento incorreto",
         )
-        assert entry.entry_type == EntryType.ENTRADA
+        assert entry.entry_type == EntryType.REVERSAL
         assert entry.reversed_entry_id == original_entry
         assert entry.reversal_reason == "Lancamento incorreto"
 
@@ -616,18 +616,18 @@ class TestTrialBalanceModel:
     def test_balance_type_enum(self) -> None:
         """Test BalanceType enum values."""
         assert BalanceType.VERIFICATION.value == "VERIFICATION"
-        assert BalanceType.VERIFICATION.value == "OPENING"
-        assert BalanceType.VERIFICATION.value == "CLOSING"
-        assert BalanceType.VERIFICATION.value == "ADJUSTED"
+        assert BalanceType.OPENING.value == "OPENING"
+        assert BalanceType.CLOSING.value == "CLOSING"
+        assert BalanceType.ADJUSTED.value == "ADJUSTED"
         assert BalanceType.CONSOLIDATED.value == "CONSOLIDATED"
 
     def test_balance_status_enum(self) -> None:
         """Test BalanceStatus enum values."""
         assert BalanceStatus.DRAFT.value == "DRAFT"
         assert BalanceStatus.GENERATED.value == "GENERATED"
-        assert BalanceStatus.DRAFT.value == "VERIFIED"
+        assert BalanceStatus.VERIFIED.value == "VERIFIED"
         assert BalanceStatus.APPROVED.value == "APPROVED"
-        assert BalanceStatus.DRAFT.value == "CLOSED"
+        assert BalanceStatus.CLOSED.value == "CLOSED"
 
     def test_balance_period_enum(self) -> None:
         """Test BalancePeriod enum values."""

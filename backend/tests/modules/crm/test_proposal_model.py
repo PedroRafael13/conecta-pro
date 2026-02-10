@@ -56,21 +56,21 @@ class TestProposal:
         assert proposal.is_closed is False
 
         # Pending approval
-        proposal.status = ProposalStatus.DRAFT.value
+        proposal.status = ProposalStatus.PENDING_APPROVAL.value
         assert proposal.is_draft is False
         assert proposal.is_pending is True
 
         # Approved
-        proposal.status = ProposalStatus.DRAFT.value
+        proposal.status = ProposalStatus.APPROVED.value
         assert proposal.is_approved is True
         assert proposal.is_closed is False
 
         # Sent
-        proposal.status = ProposalStatus.DRAFT.value
+        proposal.status = ProposalStatus.SENT.value
         assert proposal.is_sent is True
 
         # Accepted (closed)
-        proposal.status = ProposalStatus.DRAFT.value
+        proposal.status = ProposalStatus.ACCEPTED.value
         assert proposal.is_accepted is True
         assert proposal.is_closed is True
 
@@ -289,13 +289,13 @@ class TestProposalEnums:
     def test_proposal_status_values(self):
         """Testa valores dos status."""
         assert ProposalStatus.DRAFT.value == "draft"
-        assert ProposalStatus.DRAFT.value == "pending_approval"
-        assert ProposalStatus.DRAFT.value == "approved"
-        assert ProposalStatus.DRAFT.value == "sent"
-        assert ProposalStatus.DRAFT.value == "accepted"
-        assert ProposalStatus.DRAFT.value == "rejected"
-        assert ProposalStatus.DRAFT.value == "expired"
-        assert ProposalStatus.DRAFT.value == "cancelled"
+        assert ProposalStatus.PENDING_APPROVAL.value == "pending_approval"
+        assert ProposalStatus.APPROVED.value == "approved"
+        assert ProposalStatus.SENT.value == "sent"
+        assert ProposalStatus.ACCEPTED.value == "accepted"
+        assert ProposalStatus.REJECTED.value == "rejected"
+        assert ProposalStatus.EXPIRED.value == "expired"
+        assert ProposalStatus.CANCELLED.value == "cancelled"
 
     def test_proposal_type_values(self):
         """Testa valores dos tipos."""

@@ -492,7 +492,7 @@ class TestPurchaseOrderModel:
 
         order.submit_for_approval()
 
-        assert order.status == OrderStatus.RASCUNHO.value
+        assert order.status == OrderStatus.PENDENTE_APROVACAO.value
 
     def test_approve_order(self):
         """Testa aprovação de ordem."""
@@ -500,7 +500,7 @@ class TestPurchaseOrderModel:
             condominio_id=uuid.uuid4(),
             number="OC-2024-001",
             supplier_id=uuid.uuid4(),
-            status=OrderStatus.RASCUNHO.value,
+            status=OrderStatus.PENDENTE_APROVACAO.value,
             order_date=date.today(),
         )
         approver_id = uuid.uuid4()
@@ -523,7 +523,7 @@ class TestPurchaseOrderModel:
 
         order.send_to_supplier()
 
-        assert order.status == OrderStatus.RASCUNHO.value
+        assert order.status == OrderStatus.ENVIADA.value
         assert order.sent_date is not None
 
     def test_confirm_by_supplier(self):
@@ -532,13 +532,13 @@ class TestPurchaseOrderModel:
             condominio_id=uuid.uuid4(),
             number="OC-2024-001",
             supplier_id=uuid.uuid4(),
-            status=OrderStatus.RASCUNHO.value,
+            status=OrderStatus.ENVIADA.value,
             order_date=date.today(),
         )
 
         order.confirm_by_supplier("Pedido confirmado")
 
-        assert order.status == OrderStatus.RASCUNHO.value
+        assert order.status == OrderStatus.CONFIRMADA.value
         assert order.confirmed_date is not None
         assert order.supplier_notes == "Pedido confirmado"
 
@@ -561,18 +561,18 @@ class TestPurchaseOrderModel:
         """Testa todos os status de ordem."""
         statuses = [
             OrderStatus.RASCUNHO,
-            OrderStatus.RASCUNHO,
+            OrderStatus.PENDENTE_APROVACAO,
             OrderStatus.APROVADA,
             OrderStatus.REJEITADA,
-            OrderStatus.RASCUNHO,
-            OrderStatus.RASCUNHO,
-            OrderStatus.RASCUNHO,
-            OrderStatus.RASCUNHO,
-            OrderStatus.RASCUNHO,
-            OrderStatus.RASCUNHO,
-            OrderStatus.RASCUNHO,
+            OrderStatus.ENVIADA,
+            OrderStatus.CONFIRMADA,
+            OrderStatus.PARCIALMENTE_RECEBIDA,
+            OrderStatus.RECEBIDA,
+            OrderStatus.FATURADA,
+            OrderStatus.PAGA,
+            OrderStatus.RECEBIDA,
             OrderStatus.CANCELADA,
-            OrderStatus.RASCUNHO,
+            OrderStatus.DEVOLVIDA,
         ]
 
         for s in statuses:
@@ -730,14 +730,14 @@ class TestPurchaseApprovalModel:
             approval_type=ApprovalType.REQUISICAO.value,
             document_id=uuid.uuid4(),
             document_number="REQ-001",
-            approval_level=ApprovalLevel.SUPERVISOR.value,
+            approval_level=ApprovalLevel.OPERACIONAL.value,
             status=ApprovalStatus.PENDENTE.value,
             approver_id=uuid.uuid4(),
             requested_at=datetime.utcnow(),
         )
 
         assert approval.approval_type == ApprovalType.REQUISICAO.value
-        assert approval.approval_level == ApprovalLevel.SUPERVISOR.value
+        assert approval.approval_level == ApprovalLevel.OPERACIONAL.value
         assert approval.status == ApprovalStatus.PENDENTE.value
 
     def test_approve_request(self):
@@ -746,7 +746,7 @@ class TestPurchaseApprovalModel:
             condominio_id=uuid.uuid4(),
             approval_type=ApprovalType.REQUISICAO.value,
             document_id=uuid.uuid4(),
-            approval_level=ApprovalLevel.SUPERVISOR.value,
+            approval_level=ApprovalLevel.OPERACIONAL.value,
             status=ApprovalStatus.PENDENTE.value,
             approver_id=uuid.uuid4(),
             requested_at=datetime.utcnow(),
@@ -756,7 +756,7 @@ class TestPurchaseApprovalModel:
         approval.approve("Aprovado conforme orçamento")
 
         assert approval.status == ApprovalStatus.APROVADO.value
-        assert approval.action == ApprovalAction.APPROVE.value
+        assert approval.action == ApprovalAction.APROVAR.value
         assert approval.comments == "Aprovado conforme orçamento"
         assert approval.responded_at is not None
         assert len(approval.action_history) == 1
@@ -767,7 +767,7 @@ class TestPurchaseApprovalModel:
             condominio_id=uuid.uuid4(),
             approval_type=ApprovalType.REQUISICAO.value,
             document_id=uuid.uuid4(),
-            approval_level=ApprovalLevel.SUPERVISOR.value,
+            approval_level=ApprovalLevel.OPERACIONAL.value,
             status=ApprovalStatus.PENDENTE.value,
             approver_id=uuid.uuid4(),
             requested_at=datetime.utcnow(),
@@ -777,7 +777,7 @@ class TestPurchaseApprovalModel:
         approval.reject("Orçamento insuficiente")
 
         assert approval.status == ApprovalStatus.REJEITADO.value
-        assert approval.action == ApprovalAction.APPROVE.value
+        assert approval.action == ApprovalAction.REJEITAR.value
         assert approval.rejection_reason == "Orçamento insuficiente"
 
     def test_delegate_approval(self):
@@ -790,7 +790,7 @@ class TestPurchaseApprovalModel:
             condominio_id=uuid.uuid4(),
             approval_type=ApprovalType.REQUISICAO.value,
             document_id=uuid.uuid4(),
-            approval_level=ApprovalLevel.SUPERVISOR.value,
+            approval_level=ApprovalLevel.OPERACIONAL.value,
             status=ApprovalStatus.PENDENTE.value,
             approver_id=original_approver,
             requested_at=datetime.utcnow(),
@@ -811,7 +811,7 @@ class TestPurchaseApprovalModel:
             condominio_id=uuid.uuid4(),
             approval_type=ApprovalType.REQUISICAO.value,
             document_id=uuid.uuid4(),
-            approval_level=ApprovalLevel.SUPERVISOR.value,
+            approval_level=ApprovalLevel.OPERACIONAL.value,
             status=ApprovalStatus.PENDENTE.value,
             approver_id=uuid.uuid4(),
             requested_at=datetime.utcnow(),
@@ -829,7 +829,7 @@ class TestPurchaseApprovalModel:
             condominio_id=uuid.uuid4(),
             approval_type=ApprovalType.REQUISICAO.value,
             document_id=uuid.uuid4(),
-            approval_level=ApprovalLevel.SUPERVISOR.value,
+            approval_level=ApprovalLevel.OPERACIONAL.value,
             status=ApprovalStatus.PENDENTE.value,
             approver_id=uuid.uuid4(),
             requested_at=datetime.utcnow(),
@@ -844,11 +844,11 @@ class TestPurchaseApprovalModel:
 
     def test_get_required_level(self):
         """Testa determinação de nível de aprovação."""
-        assert PurchaseApproval.get_required_level(Decimal("500")) == ApprovalLevel.SUPERVISOR
-        assert PurchaseApproval.get_required_level(Decimal("3000")) == ApprovalLevel.SUPERVISOR
-        assert PurchaseApproval.get_required_level(Decimal("15000")) == ApprovalLevel.SUPERVISOR
-        assert PurchaseApproval.get_required_level(Decimal("60000")) == ApprovalLevel.SUPERVISOR
-        assert PurchaseApproval.get_required_level(Decimal("150000")) == ApprovalLevel.SUPERVISOR
+        assert PurchaseApproval.get_required_level(Decimal("500")) == ApprovalLevel.OPERACIONAL
+        assert PurchaseApproval.get_required_level(Decimal("3000")) == ApprovalLevel.GERENCIAL
+        assert PurchaseApproval.get_required_level(Decimal("15000")) == ApprovalLevel.DIRETORIA
+        assert PurchaseApproval.get_required_level(Decimal("60000")) == ApprovalLevel.CONSELHO
+        assert PurchaseApproval.get_required_level(Decimal("150000")) == ApprovalLevel.CONSELHO
 
     def test_approval_types(self):
         """Testa todos os tipos de aprovação."""
@@ -865,7 +865,7 @@ class TestPurchaseApprovalModel:
                 condominio_id=uuid.uuid4(),
                 approval_type=t.value,
                 document_id=uuid.uuid4(),
-                approval_level=ApprovalLevel.SUPERVISOR.value,
+                approval_level=ApprovalLevel.OPERACIONAL.value,
                 approver_id=uuid.uuid4(),
                 requested_at=datetime.utcnow(),
             )

@@ -168,7 +168,7 @@ class TestActionExecutor:
         """Testa action de log."""
         action = Action(
             name="Log",
-            action_type=ActionType.CREATE_SCALE,
+            action_type=ActionType.LOG_MESSAGE,
             message_template="Processando {{item_id}}",
         )
 
@@ -182,7 +182,7 @@ class TestActionExecutor:
         """Testa action de set variable."""
         action = Action(
             name="Set Var",
-            action_type=ActionType.CREATE_SCALE,
+            action_type=ActionType.SET_VARIABLE,
             input_mapping={
                 "total": "{{amount * 1.1}}",
             },
@@ -196,7 +196,7 @@ class TestActionExecutor:
         """Testa action invalida."""
         action = Action(
             name="",  # Nome vazio
-            action_type=ActionType.CREATE_SCALE,
+            action_type=ActionType.SEND_EMAIL,
             # Sem email_config
         )
 
@@ -219,7 +219,7 @@ class TestWorkflowDesigner:
         workflow = designer.create_workflow(
             name="Novo Workflow",
             description="Descricao",
-            category=WorkflowCategory.CRM,
+            category=WorkflowCategory.FINANCIAL,
             tenant_id="tenant1",
         )
 
@@ -235,7 +235,7 @@ class TestWorkflowDesigner:
         step = designer.add_step(
             workflow=workflow,
             name="Novo Step",
-            step_type=StepType.TEXT_INPUT,
+            step_type=StepType.ACTION,
         )
 
         assert step.id is not None
@@ -248,7 +248,7 @@ class TestWorkflowDesigner:
         step = designer.add_step(
             workflow=workflow,
             name="Step Removivel",
-            step_type=StepType.TEXT_INPUT,
+            step_type=StepType.ACTION,
         )
 
         # Pode remover step de action
@@ -262,8 +262,8 @@ class TestWorkflowDesigner:
         """Testa conexao entre steps."""
         workflow = designer.create_workflow("Test")
 
-        step1 = designer.add_step(workflow, "Step 1", StepType.TEXT_INPUT)
-        step2 = designer.add_step(workflow, "Step 2", StepType.TEXT_INPUT)
+        step1 = designer.add_step(workflow, "Step 1", StepType.ACTION)
+        step2 = designer.add_step(workflow, "Step 2", StepType.ACTION)
 
         connection = designer.connect_steps(
             workflow.id,
@@ -286,7 +286,7 @@ class TestWorkflowDesigner:
     def test_export_import_workflow(self, designer):
         """Testa exportacao e importacao."""
         workflow = designer.create_workflow("Original")
-        designer.add_step(workflow, "Action Step", StepType.TEXT_INPUT)
+        designer.add_step(workflow, "Action Step", StepType.ACTION)
 
         # Exportar
         data = designer.export_workflow(workflow)
@@ -309,8 +309,8 @@ class TestWorkflowDesigner:
         workflow = designer.create_workflow("Test")
 
         # Adiciona alguns steps
-        designer.add_step(workflow, "Step 1", StepType.TEXT_INPUT)
-        designer.add_step(workflow, "Step 2", StepType.TEXT_INPUT)
+        designer.add_step(workflow, "Step 1", StepType.ACTION)
+        designer.add_step(workflow, "Step 2", StepType.ACTION)
 
         layout = designer.auto_layout(workflow)
 
@@ -322,13 +322,13 @@ class TestWorkflowDesigner:
 
         step, action = designer.add_action_step(
             workflow=workflow,
-            action_type=ActionType.CREATE_SCALE,
+            action_type=ActionType.SEND_EMAIL,
             name="Enviar Notificacao",
         )
 
-        assert step.step_type == StepType.TEXT_INPUT
+        assert step.step_type == StepType.ACTION
         assert step.action_id == action.id
-        assert action.action_type == ActionType.CREATE_SCALE
+        assert action.action_type == ActionType.SEND_EMAIL
 
     def test_add_condition_step(self, designer):
         """Testa adicao de step de condicao."""
@@ -340,7 +340,7 @@ class TestWorkflowDesigner:
             name="Valor Alto?",
         )
 
-        assert step.step_type == StepType.TEXT_INPUT
+        assert step.step_type == StepType.CONDITION
         assert step.condition_id == condition.id
         assert condition.expression == "amount > 1000"
 

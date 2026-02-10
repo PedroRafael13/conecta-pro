@@ -52,7 +52,7 @@ class TestPostModel:
         assert col_defaults.get("is_active") is True
         assert col_defaults.get("post_type") == PostType.VIGILANTE.value
         assert col_defaults.get("status") == PostStatus.ACTIVE.value
-        assert col_defaults.get("shift_type") == ShiftType.MORNING.value
+        assert col_defaults.get("shift_type") == ShiftType.DIURNO.value
         assert col_defaults.get("required_headcount") == 1
         assert col_defaults.get("current_headcount") == 0
         assert col_defaults.get("break_duration_minutes") == 60
@@ -81,9 +81,9 @@ class TestPostModel:
         assert PostType.SUPERVISOR == "supervisor"
         assert PostStatus.ACTIVE == "active"
         assert PostStatus.INACTIVE == "inactive"
-        assert ShiftType.MORNING == "diurno"
-        assert ShiftType.MORNING == "noturno"
-        assert ShiftType.MORNING == "12x36"
+        assert ShiftType.DIURNO == "diurno"
+        assert ShiftType.NOTURNO == "noturno"
+        assert ShiftType.ESCALA_12X36 == "12x36"
 
     def test_post_vacancy_count(self):
         """Testa cálculo de vagas disponíveis."""
@@ -111,9 +111,9 @@ class TestPostModel:
 
     def test_post_daily_hours(self):
         """Testa cálculo de horas diárias por tipo de turno."""
-        post_diurno = Post(code="POST-D", name="Diurno", shift_type=ShiftType.MORNING.value)
-        post_admin = Post(code="POST-A", name="Admin", shift_type=ShiftType.MORNING.value)
-        post_integral = Post(code="POST-I", name="Integral", shift_type=ShiftType.MORNING.value)
+        post_diurno = Post(code="POST-D", name="Diurno", shift_type=ShiftType.DIURNO.value)
+        post_admin = Post(code="POST-A", name="Admin", shift_type=ShiftType.ADMINISTRATIVO.value)
+        post_integral = Post(code="POST-I", name="Integral", shift_type=ShiftType.INTEGRAL.value)
 
         assert post_diurno.daily_hours == 12.0
         assert post_admin.daily_hours == 8.0
@@ -289,7 +289,7 @@ class TestAllocationModel:
             if col.default is not None:
                 col_defaults[col.key] = col.default.arg
 
-        assert col_defaults.get("status") == AllocationStatus.DRAFT.value
+        assert col_defaults.get("status") == AllocationStatus.ACTIVE.value
         assert col_defaults.get("is_active") is True
         assert col_defaults.get("is_primary") is True
         assert col_defaults.get("is_temporary") is False
@@ -301,33 +301,33 @@ class TestAllocationModel:
         allocation = self._make_allocation(
             start_date=date.today() - timedelta(days=30),
             end_date=date.today(),
-            status=AllocationStatus.DRAFT.value,
+            status=AllocationStatus.TERMINATED.value,
             is_active=False,
         )
 
         assert allocation.end_date == date.today()
         assert allocation.is_active is False
-        assert allocation.status == AllocationStatus.DRAFT.value
+        assert allocation.status == AllocationStatus.TERMINATED.value
 
     def test_allocation_enums(self):
         """Testa enums da Allocation."""
-        assert AllocationStatus.DRAFT == "active"
-        assert AllocationStatus.DRAFT == "inactive"
+        assert AllocationStatus.ACTIVE == "active"
+        assert AllocationStatus.INACTIVE == "inactive"
         assert AllocationStatus.PENDING == "pending"
-        assert AllocationStatus.DRAFT == "suspended"
-        assert AllocationStatus.DRAFT == "terminated"
+        assert AllocationStatus.SUSPENDED == "suspended"
+        assert AllocationStatus.TERMINATED == "terminated"
 
     def test_allocation_is_current(self):
         """Testa verificação de alocação corrente."""
         active = self._make_allocation(
             start_date=date.today() - timedelta(days=10),
-            status=AllocationStatus.DRAFT.value,
+            status=AllocationStatus.ACTIVE.value,
         )
         assert active.is_current is True
 
         terminated = self._make_allocation(
             start_date=date.today() - timedelta(days=10),
-            status=AllocationStatus.DRAFT.value,
+            status=AllocationStatus.TERMINATED.value,
         )
         assert terminated.is_current is False
 

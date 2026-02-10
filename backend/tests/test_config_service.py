@@ -61,7 +61,7 @@ def sample_tenant():
         email="teste@empresa.com",
         status=TenantStatus.ATIVO,
         plano=TenantPlan.PROFESSIONAL,
-        tipo=TenantType.EMPRESA,
+        tipo=TenantType.COMPANY,
         limite_usuarios=50,
         limite_storage_gb=100,
         features_habilitadas=["reports"],
@@ -131,7 +131,7 @@ def sample_template():
         codigo="ALERT_EMAIL",
         nome="Email de Alerta",
         canal=NotificationChannel.EMAIL,
-        tipo=NotificationType.MEETING_REMINDER,
+        tipo=NotificationType.ALERT,
         status=TemplateStatus.ACTIVE,
         assunto="Alerta: {{tipo}}",
         corpo="Atenção: {{mensagem}}",
@@ -251,12 +251,12 @@ class TestConfigServiceTenant:
             patch.object(config_service.repository, "update_tenant") as mock_update,
         ):
             mock_get.return_value = sample_tenant
-            sample_tenant.status = TenantStatus.CANCELADO
+            sample_tenant.status = TenantStatus.CANCELLED
             mock_update.return_value = sample_tenant
 
             result = await config_service.cancel_tenant(sample_tenant.id)
 
-            assert result.status == TenantStatus.CANCELADO
+            assert result.status == TenantStatus.CANCELLED
 
 
 class TestConfigServiceSettings:

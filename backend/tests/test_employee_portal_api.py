@@ -171,7 +171,7 @@ class TestDocumentAPI:
     def test_document_list_filters(self):
         """Testa filtros de listagem de documentos."""
         filters = {
-            "type": DocumentType.CND_FEDERAL.value,
+            "type": DocumentType.PAYSLIP.value,
             "category": "folha_pagamento",
             "search": "janeiro",
             "pending_ack": False,
@@ -216,7 +216,7 @@ class TestNotificationAPI:
         """Testa filtros de listagem de notificações."""
         filters = {
             "is_read": False,
-            "type": NotificationType.MEETING_REMINDER.value,
+            "type": NotificationType.PAYSLIP_AVAILABLE.value,
             "page": 1,
             "page_size": 20,
         }

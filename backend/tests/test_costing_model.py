@@ -55,17 +55,17 @@ class TestCostDriverModel:
             condominio_id=uuid4(),
             codigo="DRV-001",
             nome="Horas de Mão de Obra",
-            tipo=DriverType.TRANSACTION,
-            categoria=DriverCategory.RESOURCE,
+            tipo=DriverType.RESOURCE,
+            categoria=DriverCategory.LABOR,
             status=DriverStatus.ACTIVE,
-            unidade_medida=DriverMeasureUnit.QUANTITY,
+            unidade_medida=DriverMeasureUnit.HOUR,
             capacidade_pratica=Decimal("1000"),
             quantidade_usada=Decimal("800"),
             custo_total=Decimal("50000.00"),
         )
 
         assert driver.codigo == "DRV-001"
-        assert driver.tipo == DriverType.TRANSACTION
+        assert driver.tipo == DriverType.RESOURCE
         assert driver.status == DriverStatus.ACTIVE
 
     def test_capacity_usage_percent(self):
@@ -74,7 +74,7 @@ class TestCostDriverModel:
             condominio_id=uuid4(),
             codigo="DRV-002",
             nome="Horas Máquina",
-            tipo=DriverType.TRANSACTION,
+            tipo=DriverType.RESOURCE,
             capacidade_pratica=Decimal("1000"),
             quantidade_usada=Decimal("800"),
             custo_total=Decimal("50000.00"),
@@ -88,7 +88,7 @@ class TestCostDriverModel:
             condominio_id=uuid4(),
             codigo="DRV-003",
             nome="Horas Máquina",
-            tipo=DriverType.TRANSACTION,
+            tipo=DriverType.RESOURCE,
             capacidade_pratica=Decimal("1000"),
             quantidade_usada=Decimal("800"),
             custo_total=Decimal("50000.00"),
@@ -102,7 +102,7 @@ class TestCostDriverModel:
             condominio_id=uuid4(),
             codigo="DRV-004",
             nome="Horas Máquina",
-            tipo=DriverType.TRANSACTION,
+            tipo=DriverType.RESOURCE,
             capacidade_pratica=Decimal("1000"),
             quantidade_usada=Decimal("800"),
             custo_total=Decimal("50000.00"),
@@ -121,7 +121,7 @@ class TestCostActivityModel:
             condominio_id=uuid4(),
             codigo="ACT-001",
             nome="Atendimento ao Cliente",
-            tipo=ActivityType.PRIMARY,
+            tipo=ActivityType.OPERATIONAL,
             nivel=ActivityLevel.UNIT,
             status=ActivityStatus.ACTIVE,
             tipo_valor_agregado=ValueAddedType.VALUE_ADDED,
@@ -164,7 +164,7 @@ class TestCostPoolModel:
             nome="Custos Administrativos",
             tipo=PoolType.OVERHEAD,
             status=PoolStatus.ACTIVE,
-            base_alocacao=AllocationBasis.DIRECT_LABOR_HOURS,
+            base_alocacao=AllocationBasis.DRIVER,
             valor_total=Decimal("100000.00"),
             valor_alocado=Decimal("80000.00"),
         )
@@ -286,7 +286,7 @@ class TestCostObjectModel:
             receita=Decimal("100000.00"),
         )
 
-        assert obj.profitability_level == ProfitabilityLevel.HIGHLY_PROFITABLELY_PROFITABLE
+        assert obj.profitability_level == ProfitabilityLevel.HIGH
 
     def test_profitability_level_negative(self):
         """Testa classificação de lucratividade negativa."""
@@ -299,7 +299,7 @@ class TestCostObjectModel:
             receita=Decimal("100000.00"),
         )
 
-        assert obj.profitability_level == ProfitabilityLevel.HIGHLY_PROFITABLELY_PROFITABLE
+        assert obj.profitability_level == ProfitabilityLevel.NEGATIVE
 
 
 class TestCostAllocationModel:
@@ -366,7 +366,7 @@ class TestCostAnalysisModel:
             condominio_id=uuid4(),
             codigo="ANAL-001",
             nome="Análise ABC Janeiro 2025",
-            tipo=AnalysisType.TREND,
+            tipo=AnalysisType.ABC_COSTING,
             status=AnalysisStatus.PENDING,
             periodo_inicio=date(2025, 1, 1),
             periodo_fim=date(2025, 1, 31),
@@ -374,19 +374,19 @@ class TestCostAnalysisModel:
         )
 
         assert analysis.codigo == "ANAL-001"
-        assert analysis.tipo == AnalysisType.TREND
+        assert analysis.tipo == AnalysisType.ABC_COSTING
         assert analysis.status == AnalysisStatus.PENDING
 
     def test_analysis_types(self):
         """Testa todos os tipos de análise."""
         types = [
-            AnalysisType.TREND,
-            AnalysisType.TREND,
+            AnalysisType.ABC_COSTING,
+            AnalysisType.PROFITABILITY,
             AnalysisType.VARIANCE,
-            AnalysisType.TREND,
+            AnalysisType.BREAK_EVEN,
             AnalysisType.TREND,
             AnalysisType.FORECAST,
-            AnalysisType.TREND,
+            AnalysisType.OPTIMIZATION,
         ]
 
         for analysis_type in types:
@@ -404,8 +404,8 @@ class TestEnums:
 
     def test_driver_types(self):
         """Testa tipos de driver."""
-        assert DriverType.TRANSACTION.value == "RESOURCE"
-        assert DriverType.TRANSACTION.value == "ACTIVITY"
+        assert DriverType.RESOURCE.value == "RESOURCE"
+        assert DriverType.ACTIVITY.value == "ACTIVITY"
 
     def test_activity_levels(self):
         """Testa níveis de atividade ABC."""
@@ -434,13 +434,13 @@ class TestEnums:
         assert AllocationMethod.DRIVER_BASED.value == "DRIVER_BASED"
         assert AllocationMethod.PERCENTAGE.value == "PERCENTAGE"
         assert AllocationMethod.PROPORTIONAL.value == "PROPORTIONAL"
-        assert AllocationMethod.DRIVER_BASED.value == "EQUAL"
-        assert AllocationMethod.DRIVER_BASED.value == "STEP_DOWN"
+        assert AllocationMethod.EQUAL.value == "EQUAL"
+        assert AllocationMethod.STEP_DOWN.value == "STEP_DOWN"
 
     def test_profitability_levels(self):
         """Testa níveis de lucratividade."""
-        assert ProfitabilityLevel.HIGHLY_PROFITABLELY_PROFITABLE.value == "HIGH"
-        assert ProfitabilityLevel.HIGHLY_PROFITABLE.value == "MEDIUM"
-        assert ProfitabilityLevel.HIGHLY_PROFITABLE.value == "LOW"
+        assert ProfitabilityLevel.HIGH.value == "HIGH"
+        assert ProfitabilityLevel.MEDIUM.value == "MEDIUM"
+        assert ProfitabilityLevel.LOW.value == "LOW"
         assert ProfitabilityLevel.BREAK_EVEN.value == "BREAK_EVEN"
-        assert ProfitabilityLevel.HIGHLY_PROFITABLELY_PROFITABLE.value == "NEGATIVE"
+        assert ProfitabilityLevel.NEGATIVE.value == "NEGATIVE"

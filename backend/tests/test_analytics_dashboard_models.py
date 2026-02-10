@@ -62,7 +62,7 @@ class TestDashboardConfig:
     def test_dashboard_visibility_enum(self):
         """Testa enum DashboardVisibility."""
         assert DashboardVisibility.PRIVATE.value == "private"
-        assert DashboardVisibility.PRIVATE.value == "department"
+        assert DashboardVisibility.DEPARTMENT.value == "department"
         assert DashboardVisibility.ORGANIZATION.value == "organization"
         assert DashboardVisibility.PUBLIC.value == "public"
 
@@ -176,24 +176,24 @@ class TestKPIDefinition:
             code="ABSENTEEISM_RATE",
             name="Taxa de Absenteísmo",
             description="Percentual de ausências não justificadas",
-            category=KPICategory.FINANCIAL,
+            category=KPICategory.ATTENDANCE,
             unit=KPIUnit.PERCENTAGE,
-            direction=KPIDirection.INCREASE,
+            direction=KPIDirection.DOWN,
             target_value=Decimal("3.0"),
         )
 
         assert kpi.code == "ABSENTEEISM_RATE"
-        assert kpi.category == KPICategory.FINANCIAL
+        assert kpi.category == KPICategory.ATTENDANCE
         assert kpi.unit == KPIUnit.PERCENTAGE
-        assert kpi.direction == KPIDirection.INCREASE
+        assert kpi.direction == KPIDirection.DOWN
         assert kpi.target_value == Decimal("3.0")
 
     def test_kpi_category_enum(self):
         """Testa enum KPICategory."""
-        assert KPICategory.FINANCIAL.value == "attendance"
-        assert KPICategory.FINANCIAL.value == "punctuality"
-        assert KPICategory.FINANCIAL.value == "overtime"
-        assert KPICategory.FINANCIAL.value == "productivity"
+        assert KPICategory.ATTENDANCE.value == "attendance"
+        assert KPICategory.PUNCTUALITY.value == "punctuality"
+        assert KPICategory.OVERTIME.value == "overtime"
+        assert KPICategory.PRODUCTIVITY.value == "productivity"
         assert KPICategory.COMPLIANCE.value == "compliance"
 
     def test_kpi_unit_enum(self):
@@ -201,15 +201,15 @@ class TestKPIDefinition:
         assert KPIUnit.PERCENTAGE.value == "percentage"
         assert KPIUnit.HOURS.value == "hours"
         assert KPIUnit.CURRENCY.value == "currency"
-        assert KPIUnit.PERCENTAGE.value == "number"
+        assert KPIUnit.NUMBER.value == "number"
         assert KPIUnit.DAYS.value == "days"
 
     def test_kpi_direction_enum(self):
         """Testa enum KPIDirection."""
-        assert KPIDirection.INCREASE.value == "up"
-        assert KPIDirection.INCREASE.value == "down"
-        assert KPIDirection.INCREASE.value == "target"
-        assert KPIDirection.INCREASE.value == "neutral"
+        assert KPIDirection.UP.value == "up"
+        assert KPIDirection.DOWN.value == "down"
+        assert KPIDirection.TARGET.value == "target"
+        assert KPIDirection.NEUTRAL.value == "neutral"
 
     def test_kpi_with_thresholds(self):
         """Testa KPI com thresholds."""
@@ -217,9 +217,9 @@ class TestKPIDefinition:
             id=uuid4(),
             code="OVERTIME_HOURS",
             name="Horas Extra",
-            category=KPICategory.FINANCIAL,
+            category=KPICategory.OVERTIME,
             unit=KPIUnit.HOURS,
-            direction=KPIDirection.INCREASE,
+            direction=KPIDirection.TARGET,
             target_value=Decimal("20.0"),
             threshold_warning=Decimal("30.0"),
             threshold_critical=Decimal("50.0"),
@@ -236,7 +236,7 @@ class TestKPIDefinition:
             id=uuid4(),
             code="WORKED_HOURS_EFFICIENCY",
             name="Eficiência de Horas Trabalhadas",
-            category=KPICategory.FINANCIAL,
+            category=KPICategory.PRODUCTIVITY,
             unit=KPIUnit.PERCENTAGE,
             formula="(worked_hours / expected_hours) * 100",
             formula_description="Horas trabalhadas dividido por horas esperadas",
@@ -258,30 +258,30 @@ class TestAnalyticsCache:
         cache = AnalyticsCache(
             id=uuid4(),
             cache_key="kpi:ABSENTEEISM_RATE:condo123:2024-12",
-            cache_type=CacheType.KPI,
+            cache_type=CacheType.KPI_VALUE,
             data={"value": 2.5, "trend": "down"},
             ttl_seconds=3600,
             expires_at=expires,
             status=CacheStatus.VALID,
         )
 
-        assert cache.cache_type == CacheType.KPI
+        assert cache.cache_type == CacheType.KPI_VALUE
         assert cache.status == CacheStatus.VALID
         assert cache.ttl_seconds == 3600
 
     def test_cache_type_enum(self):
         """Testa enum CacheType."""
-        assert CacheType.KPI.value == "kpi_value"
-        assert CacheType.KPI.value == "dashboard_data"
-        assert CacheType.KPI.value == "widget_data"
+        assert CacheType.KPI_VALUE.value == "kpi_value"
+        assert CacheType.DASHBOARD_DATA.value == "dashboard_data"
+        assert CacheType.WIDGET_DATA.value == "widget_data"
         assert CacheType.AGGREGATION.value == "aggregation"
-        assert CacheType.KPI.value == "report_data"
+        assert CacheType.REPORT_DATA.value == "report_data"
 
     def test_cache_status_enum(self):
         """Testa enum CacheStatus."""
         assert CacheStatus.VALID.value == "valid"
         assert CacheStatus.EXPIRED.value == "expired"
-        assert CacheStatus.VALID.value == "invalidated"
+        assert CacheStatus.INVALIDATED.value == "invalidated"
         assert CacheStatus.STALE.value == "stale"
 
     def test_cache_with_compression(self):
@@ -289,7 +289,7 @@ class TestAnalyticsCache:
         cache = AnalyticsCache(
             id=uuid4(),
             cache_key="report:monthly:2024-12",
-            cache_type=CacheType.KPI,
+            cache_type=CacheType.REPORT_DATA,
             data={"large": "dataset"},
             compressed=True,
             data_size=1024,
@@ -310,7 +310,7 @@ class TestScheduledReport:
             id=uuid4(),
             name="Relatório Mensal de Ponto",
             description="Relatório mensal de frequência",
-            report_type=ReportType.EXECUCAO,
+            report_type=ReportType.TIME_ATTENDANCE,
             output_format=ReportFormat.PDF,
             schedule_frequency=ScheduleFrequency.MONTHLY,
             delivery_method=DeliveryMethod.EMAIL,
@@ -319,17 +319,17 @@ class TestScheduledReport:
         )
 
         assert report.name == "Relatório Mensal de Ponto"
-        assert report.report_type == ReportType.EXECUCAO
+        assert report.report_type == ReportType.TIME_ATTENDANCE
         assert report.output_format == ReportFormat.PDF
         assert report.schedule_frequency == ScheduleFrequency.MONTHLY
 
     def test_report_type_enum(self):
         """Testa enum ReportType."""
-        assert ReportType.EXECUCAO.value == "time_attendance"
-        assert ReportType.EXECUCAO.value == "overtime_summary"
-        assert ReportType.EXECUCAO.value == "absence_report"
-        assert ReportType.EXECUCAO.value == "kpi_summary"
-        assert ReportType.EXECUCAO.value == "compliance_audit"
+        assert ReportType.TIME_ATTENDANCE.value == "time_attendance"
+        assert ReportType.OVERTIME_SUMMARY.value == "overtime_summary"
+        assert ReportType.ABSENCE_REPORT.value == "absence_report"
+        assert ReportType.KPI_SUMMARY.value == "kpi_summary"
+        assert ReportType.COMPLIANCE_AUDIT.value == "compliance_audit"
 
     def test_report_format_enum(self):
         """Testa enum ReportFormat."""
@@ -337,7 +337,7 @@ class TestScheduledReport:
         assert ReportFormat.EXCEL.value == "excel"
         assert ReportFormat.CSV.value == "csv"
         assert ReportFormat.JSON.value == "json"
-        assert ReportFormat.PDF.value == "html"
+        assert ReportFormat.HTML.value == "html"
 
     def test_schedule_frequency_enum(self):
         """Testa enum ScheduleFrequency."""
@@ -350,7 +350,7 @@ class TestScheduledReport:
         """Testa enum DeliveryMethod."""
         assert DeliveryMethod.EMAIL.value == "email"
         assert DeliveryMethod.DOWNLOAD.value == "download"
-        assert DeliveryMethod.EMAIL.value == "sftp"
+        assert DeliveryMethod.SFTP.value == "sftp"
         assert DeliveryMethod.WEBHOOK.value == "webhook"
 
     def test_report_status_enum(self):
@@ -358,14 +358,14 @@ class TestScheduledReport:
         assert ReportStatus.ACTIVE.value == "active"
         assert ReportStatus.PAUSED.value == "paused"
         assert ReportStatus.DISABLED.value == "disabled"
-        assert ReportStatus.ACTIVE.value == "error"
+        assert ReportStatus.ERROR.value == "error"
 
     def test_report_with_recipients(self):
         """Testa relatório com destinatários."""
         report = ScheduledReport(
             id=uuid4(),
             name="Relatório Semanal",
-            report_type=ReportType.EXECUCAO,
+            report_type=ReportType.OVERTIME_SUMMARY,
             output_format=ReportFormat.EXCEL,
             schedule_frequency=ScheduleFrequency.WEEKLY,
             delivery_method=DeliveryMethod.EMAIL,
@@ -388,7 +388,7 @@ class TestScheduledReport:
         report = ScheduledReport(
             id=uuid4(),
             name="Relatório por Departamento",
-            report_type=ReportType.EXECUCAO,
+            report_type=ReportType.TIME_ATTENDANCE,
             output_format=ReportFormat.PDF,
             schedule_frequency=ScheduleFrequency.MONTHLY,
             delivery_method=DeliveryMethod.EMAIL,

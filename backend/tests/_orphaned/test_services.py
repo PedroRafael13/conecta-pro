@@ -84,7 +84,7 @@ class TestDocumentClassifier:
         """Testa classificacao de boleto."""
         result = await classifier.classify(ocr_boleto)
 
-        assert result.document_type == DocumentType.CND_FEDERAL
+        assert result.document_type == DocumentType.BOLETO
         assert result.confidence > 0.5
         assert len(result.matched_keywords) > 0
         assert "boleto" in [k.lower() for k in result.matched_keywords]
@@ -94,7 +94,7 @@ class TestDocumentClassifier:
         """Testa classificacao de NFe."""
         result = await classifier.classify(ocr_nfe)
 
-        assert result.document_type == DocumentType.CND_FEDERAL
+        assert result.document_type == DocumentType.NFE
         assert result.confidence > 0.5
         assert len(result.matched_keywords) > 0
 
@@ -110,12 +110,12 @@ class TestDocumentClassifier:
 
         result = await classifier.classify(ocr)
 
-        assert result.confidence < 0.5 or result.document_type == DocumentType.CND_FEDERAL
+        assert result.confidence < 0.5 or result.document_type == DocumentType.DESCONHECIDO
 
     def test_add_custom_rule(self, classifier):
         """Testa adicao de regra customizada."""
         rule = ClassificationRule(
-            document_type=DocumentType.CND_FEDERAL,
+            document_type=DocumentType.OUTRO,
             keywords=["palavra_especifica"],
             min_keyword_matches=1,
         )
@@ -127,7 +127,7 @@ class TestDocumentClassifier:
     def test_explain_classification(self, classifier):
         """Testa explicacao de classificacao."""
         result = ClassificationResult(
-            document_type=DocumentType.CND_FEDERAL,
+            document_type=DocumentType.BOLETO,
             confidence=0.85,
             matched_keywords=["boleto", "vencimento"],
             matched_patterns=[r"\d{47}"],
@@ -256,10 +256,10 @@ class TestTemplateManager:
 
     def test_get_templates_by_category(self, manager):
         """Testa busca por categoria."""
-        templates = manager.get_templates_by_category(TemplateCategory.TRANSACTIONAL)
+        templates = manager.get_templates_by_category(TemplateCategory.FINANCIAL)
 
         assert len(templates) > 0
-        assert all(t.category == TemplateCategory.TRANSACTIONAL for t in templates)
+        assert all(t.category == TemplateCategory.FINANCIAL for t in templates)
 
     def test_list_templates(self, manager):
         """Testa listagem de templates."""
@@ -359,4 +359,4 @@ class TestClassifierConfig:
 
         assert config.min_confidence == 0.5
         assert config.use_ml_model is False
-        assert config.fallback_type == DocumentType.CND_FEDERAL
+        assert config.fallback_type == DocumentType.DESCONHECIDO

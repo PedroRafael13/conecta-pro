@@ -25,8 +25,8 @@ class TestAlertSeverity:
 
     def test_severity_values_exist(self) -> None:
         """Testa que valores de severidade existem."""
-        assert AlertSeverity.LOW.value == "INFO"
-        assert AlertSeverity.LOW.value == "WARNING"
+        assert AlertSeverity.INFO.value == "INFO"
+        assert AlertSeverity.WARNING.value == "WARNING"
         assert AlertSeverity.CRITICAL.value == "CRITICAL"
 
     def test_severity_count(self) -> None:
@@ -35,7 +35,7 @@ class TestAlertSeverity:
 
     def test_severity_is_string(self) -> None:
         """Testa que severidade e string enum."""
-        assert isinstance(AlertSeverity.LOW.value, str)
+        assert isinstance(AlertSeverity.INFO.value, str)
 
 
 class TestAlertType:
@@ -43,12 +43,12 @@ class TestAlertType:
 
     def test_alert_type_values(self) -> None:
         """Testa valores de tipo de alerta."""
-        assert AlertType.EXPIRY.value == "OVER_BUDGET"
-        assert AlertType.EXPIRY.value == "NEAR_LIMIT"
-        assert AlertType.EXPIRY.value == "TREND_NEGATIVE"
-        assert AlertType.EXPIRY.value == "VARIANCE_HIGH"
-        assert AlertType.EXPIRY.value == "NO_BUDGET"
-        assert AlertType.EXPIRY.value == "PROJECTION_EXCEEDED"
+        assert AlertType.OVER_BUDGET.value == "OVER_BUDGET"
+        assert AlertType.NEAR_LIMIT.value == "NEAR_LIMIT"
+        assert AlertType.TREND_NEGATIVE.value == "TREND_NEGATIVE"
+        assert AlertType.VARIANCE_HIGH.value == "VARIANCE_HIGH"
+        assert AlertType.NO_BUDGET.value == "NO_BUDGET"
+        assert AlertType.PROJECTION_EXCEEDED.value == "PROJECTION_EXCEEDED"
 
     def test_alert_type_count(self) -> None:
         """Testa contagem de tipos."""
@@ -56,7 +56,7 @@ class TestAlertType:
 
     def test_alert_type_is_string(self) -> None:
         """Testa que tipo e string enum."""
-        assert isinstance(AlertType.EXPIRY.value, str)
+        assert isinstance(AlertType.OVER_BUDGET.value, str)
 
 
 class TestForecastMethod:
@@ -84,12 +84,12 @@ class TestBudgetAlert:  # pylint: disable=too-many-public-methods
     def test_create_alert(self) -> None:
         """Testa criacao de alerta."""
         alert = BudgetAlert(
-            alert_type=AlertType.EXPIRY,
+            alert_type=AlertType.OVER_BUDGET,
             severity=AlertSeverity.CRITICAL,
             message="Centro de custo CC001 excedeu orcamento",
         )
 
-        assert alert.alert_type == AlertType.EXPIRY
+        assert alert.alert_type == AlertType.OVER_BUDGET
         assert alert.severity == AlertSeverity.CRITICAL
         assert "CC001" in alert.message
 
@@ -97,8 +97,8 @@ class TestBudgetAlert:  # pylint: disable=too-many-public-methods
         """Testa alerta com centro de custo."""
         cc_id = uuid4()
         alert = BudgetAlert(
-            alert_type=AlertType.EXPIRY,
-            severity=AlertSeverity.LOW,
+            alert_type=AlertType.NEAR_LIMIT,
+            severity=AlertSeverity.WARNING,
             message="Proximo do limite",
             cost_center_id=cc_id,
             cost_center_code="ADM-001",
@@ -112,7 +112,7 @@ class TestBudgetAlert:  # pylint: disable=too-many-public-methods
     def test_alert_with_values(self) -> None:
         """Testa alerta com valores orcamentarios."""
         alert = BudgetAlert(
-            alert_type=AlertType.EXPIRY,
+            alert_type=AlertType.OVER_BUDGET,
             severity=AlertSeverity.CRITICAL,
             message="Orcamento excedido",
             budgeted=Decimal("10000"),
@@ -129,7 +129,7 @@ class TestBudgetAlert:  # pylint: disable=too-many-public-methods
     def test_alert_to_dict(self) -> None:
         """Testa conversao para dicionario."""
         alert = BudgetAlert(
-            alert_type=AlertType.EXPIRY,
+            alert_type=AlertType.OVER_BUDGET,
             severity=AlertSeverity.CRITICAL,
             message="Teste",
             budgeted=Decimal("10000"),
@@ -147,8 +147,8 @@ class TestBudgetAlert:  # pylint: disable=too-many-public-methods
     def test_alert_default_created_at(self) -> None:
         """Testa data de criacao padrao."""
         alert = BudgetAlert(
-            alert_type=AlertType.EXPIRY,
-            severity=AlertSeverity.LOW,
+            alert_type=AlertType.NO_BUDGET,
+            severity=AlertSeverity.INFO,
             message="Info",
         )
 
@@ -157,8 +157,8 @@ class TestBudgetAlert:  # pylint: disable=too-many-public-methods
     def test_alert_no_cost_center(self) -> None:
         """Testa alerta sem centro de custo."""
         alert = BudgetAlert(
-            alert_type=AlertType.EXPIRY,
-            severity=AlertSeverity.LOW,
+            alert_type=AlertType.NO_BUDGET,
+            severity=AlertSeverity.INFO,
             message="Sem orcamento",
         )
 
@@ -295,7 +295,7 @@ class TestForecastReport:
         )
 
         alert = BudgetAlert(
-            alert_type=AlertType.EXPIRY,
+            alert_type=AlertType.OVER_BUDGET,
             severity=AlertSeverity.CRITICAL,
             message="Teste",
         )
@@ -499,12 +499,12 @@ class TestAlertGeneration:
         """Testa ordem de severidade."""
         severity_order = {
             AlertSeverity.CRITICAL: 0,
-            AlertSeverity.LOW: 1,
-            AlertSeverity.LOW: 2,
+            AlertSeverity.WARNING: 1,
+            AlertSeverity.INFO: 2,
         }
 
-        assert severity_order[AlertSeverity.CRITICAL] < severity_order[AlertSeverity.LOW]
-        assert severity_order[AlertSeverity.LOW] < severity_order[AlertSeverity.LOW]
+        assert severity_order[AlertSeverity.CRITICAL] < severity_order[AlertSeverity.WARNING]
+        assert severity_order[AlertSeverity.WARNING] < severity_order[AlertSeverity.INFO]
 
 
 class TestConfidenceLevel:

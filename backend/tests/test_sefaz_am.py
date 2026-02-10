@@ -83,9 +83,9 @@ class TestEnums:
 
     def test_tipo_evento(self):
         """Verifica enum TipoEvento."""
-        assert TipoEvento.NFE_EMITIDA.value == "110111"
-        assert TipoEvento.NFE_EMITIDA.value == "110110"
-        assert TipoEvento.NFE_EMITIDA.value == "210210"
+        assert TipoEvento.CANCELAMENTO.value == "110111"
+        assert TipoEvento.CARTA_CORRECAO.value == "110110"
+        assert TipoEvento.CIENCIA_OPERACAO.value == "210210"
 
     def test_status_servico(self):
         """Verifica enum StatusServico."""

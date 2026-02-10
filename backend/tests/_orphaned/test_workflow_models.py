@@ -60,12 +60,12 @@ class TestWorkflow:
             tenant_id="tenant1",
             name="Meu Workflow",
             description="Descricao do workflow",
-            category=WorkflowCategory.CRM,
+            category=WorkflowCategory.FINANCIAL,
         )
 
         assert workflow.id is not None
         assert workflow.name == "Meu Workflow"
-        assert workflow.category == WorkflowCategory.CRM
+        assert workflow.category == WorkflowCategory.FINANCIAL
         assert workflow.status == WorkflowStatus.DRAFT
         assert workflow.is_enabled is True
 
@@ -134,7 +134,7 @@ class TestWorkflow:
         original = Workflow(
             name="Original",
             description="Descricao",
-            category=WorkflowCategory.CRM,
+            category=WorkflowCategory.OPERATIONAL,
         )
         original.add_tag("test")
 
@@ -168,13 +168,13 @@ class TestWorkflowStep:
         step = WorkflowStep(
             workflow_id="wf1",
             name="Enviar Email",
-            step_type=StepType.TEXT_INPUT,
+            step_type=StepType.ACTION,
             action_id="action1",
         )
 
         assert step.id is not None
         assert step.name == "Enviar Email"
-        assert step.step_type == StepType.TEXT_INPUT
+        assert step.step_type == StepType.ACTION
         assert step.is_enabled is True
 
     def test_step_connections(self):
@@ -206,7 +206,7 @@ class TestWorkflowStep:
         """Testa clonagem de step."""
         original = WorkflowStep(
             name="Original",
-            step_type=StepType.TEXT_INPUT,
+            step_type=StepType.ACTION,
             action_id="act1",
         )
 
@@ -308,7 +308,7 @@ class TestAction:
         """Testa criacao de action."""
         action = Action(
             name="Enviar Email",
-            action_type=ActionType.CREATE_SCALE,
+            action_type=ActionType.SEND_EMAIL,
             email_config=EmailConfig(
                 to=["user@example.com"],
                 subject="Assunto",
@@ -316,7 +316,7 @@ class TestAction:
             ),
         )
 
-        assert action.action_type == ActionType.CREATE_SCALE
+        assert action.action_type == ActionType.SEND_EMAIL
         assert action.email_config is not None
         assert "user@example.com" in action.email_config.to
 
@@ -325,7 +325,7 @@ class TestAction:
         # Action sem configuracao
         action = Action(
             name="",
-            action_type=ActionType.CREATE_SCALE,
+            action_type=ActionType.SEND_EMAIL,
         )
 
         errors = action.validate()

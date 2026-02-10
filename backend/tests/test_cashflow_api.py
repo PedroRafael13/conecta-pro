@@ -76,12 +76,12 @@ def sample_bank_transaction(sample_bank_account):
     return BankTransaction(
         id=uuid4(),
         bank_account_id=sample_bank_account.id,
-        transaction_type=TransactionType.CREDIT,
-        category=TransactionCategory.TAXA_CONDOMINIAL,
+        transaction_type=TransactionType.CREDITO,
+        category=TransactionCategory.TAXA_CONDOMINIO,
         amount=Decimal("500.00"),
         description="Recebimento taxa",
         transaction_date=date.today(),
-        status=TransactionStatus.PENDENTE,
+        status=TransactionStatus.EFETIVADA,
     )
 
 
@@ -124,7 +124,7 @@ def sample_forecast():
         period_type=ForecastPeriodType.MENSAL,
         period_start=date(2024, 1, 1),
         period_end=date(2024, 1, 31),
-        status=ForecastStatus.PENDING,
+        status=ForecastStatus.ATIVO,
         confidence=ForecastConfidence.ALTA,
         expected_inflows=Decimal("50000.00"),
         expected_outflows=Decimal("35000.00"),
@@ -205,8 +205,8 @@ class TestBankTransactionController:
 
             data = BankTransactionCreate(
                 bank_account_id=sample_bank_account.id,
-                transaction_type=TransactionType.CREDIT,
-                category=TransactionCategory.TAXA_CONDOMINIAL,
+                transaction_type=TransactionType.CREDITO,
+                category=TransactionCategory.TAXA_CONDOMINIO,
                 amount=Decimal("500.00"),
                 description="Recebimento taxa",
                 transaction_date=date.today(),
@@ -214,7 +214,7 @@ class TestBankTransactionController:
 
             result = await mock_instance.create(data.model_dump())
             assert result.amount == Decimal("500.00")
-            assert result.transaction_type == TransactionType.CREDIT
+            assert result.transaction_type == TransactionType.CREDITO
 
     @pytest.mark.asyncio
     async def test_get_pending_reconciliation(self, mock_current_user, sample_bank_account, sample_bank_transaction):
@@ -271,11 +271,11 @@ class TestBankReconciliationController:
         """Testa obtenção de conciliação em andamento."""
         with patch("modules.financial.repositories.BankReconciliationRepository") as mock_repo:
             mock_instance = mock_repo.return_value
-            sample_reconciliation.status = ReconciliationStatus.PENDENTE
+            sample_reconciliation.status = ReconciliationStatus.EM_ANDAMENTO
             mock_instance.get_in_progress = AsyncMock(return_value=sample_reconciliation)
 
             result = await mock_instance.get_in_progress(sample_bank_account.id)
-            assert result.status == ReconciliationStatus.PENDENTE
+            assert result.status == ReconciliationStatus.EM_ANDAMENTO
 
 
 # ==================== TESTES CASHFLOW ENTRY ====================
@@ -371,7 +371,7 @@ class TestCashFlowForecastController:
 
             result = await mock_instance.get_active(sample_forecast.condominio_id)
             assert len(result) == 1
-            assert result[0].status == ForecastStatus.PENDING
+            assert result[0].status == ForecastStatus.ATIVO
 
 
 # ==================== TESTES AI SERVICE ====================
@@ -537,7 +537,7 @@ class TestCashFlowIntegration:
         recon.closing_balance = Decimal("15000.00")
         recon.complete()
 
-        assert recon.status == ReconciliationStatus.PENDENTE
+        assert recon.status == ReconciliationStatus.CONCLUIDA
         assert recon.difference == Decimal("0.00")
 
     @pytest.mark.asyncio
@@ -609,8 +609,8 @@ class TestCashFlowValidation:
         """Testa validação de criação de transação."""
         data = BankTransactionCreate(
             bank_account_id=uuid4(),
-            transaction_type=TransactionType.CREDIT,
-            category=TransactionCategory.TAXA_CONDOMINIAL,
+            transaction_type=TransactionType.CREDITO,
+            category=TransactionCategory.TAXA_CONDOMINIO,
             amount=Decimal("500.00"),
             description="Teste",
             transaction_date=date.today(),

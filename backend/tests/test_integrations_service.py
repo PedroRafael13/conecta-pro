@@ -155,7 +155,7 @@ class TestIntegrationService:
             id=uuid4(),
             entity_type=SyncEntityType.CLIENT,
             external_system=ExternalSystem.OMIE,
-            status=SyncStatus.IDLE,
+            status=SyncStatus.PROCESSING,
         )
 
         with patch.object(service, "get_sync_item", new_callable=AsyncMock) as mock_get:
@@ -167,7 +167,7 @@ class TestIntegrationService:
                 with patch.object(service.repository, "create_log", new_callable=AsyncMock):
                     result = await service.complete_sync_success(item.id, external_id="ext-123")
 
-                    assert result.status == SyncStatus.IDLE
+                    assert result.status == SyncStatus.COMPLETED
 
 
 class TestWebhookService:

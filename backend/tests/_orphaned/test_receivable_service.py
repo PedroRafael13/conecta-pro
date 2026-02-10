@@ -273,7 +273,7 @@ class TestReceivableService:
                 installment_id=sample_installment.id,
                 paid_value=data.paid_value,
                 payment_date=data.payment_date,
-                status=PaymentStatus.PENDING.value,
+                status=PaymentStatus.CONFIRMADO.value,
                 payment_origin=PaymentOrigin.MANUAL.value,
             )
             mock_create.return_value = mock_payment
@@ -309,7 +309,7 @@ class TestReceivableService:
             installment_id=sample_installment.id,
             paid_value=Decimal("850.00"),
             payment_date=date.today(),
-            status=PaymentStatus.PENDING.value,
+            status=PaymentStatus.CONFIRMADO.value,
             payment_origin=PaymentOrigin.MANUAL.value,
         )
         sample_installment.paid_value = Decimal("850.00")
@@ -341,7 +341,7 @@ class TestReceivableService:
 
             result = await service.reverse_payment(payment.id, data, user_id)
 
-            assert result.status == PaymentStatus.PENDING.value
+            assert result.status == PaymentStatus.ESTORNADO.value
 
     @pytest.mark.asyncio
     async def test_renegotiate_installment(self, service, mock_session, sample_installment):

@@ -256,7 +256,7 @@ class TestProposalWorkflow:
 
             result = await mock_send(
                 approved_proposal.id,
-                ProposalStatus.DRAFT,
+                ProposalStatus.SENT,
                 user_id=str(uuid4()),
             )
             assert result.status == "sent"
@@ -276,7 +276,7 @@ class TestProposalWorkflow:
         ) as mock_accept:
             mock_accept.return_value = accepted_proposal
 
-            result = await mock_accept(sent_proposal.id, ProposalStatus.DRAFT)
+            result = await mock_accept(sent_proposal.id, ProposalStatus.ACCEPTED)
             assert result.status == "accepted"
 
     @pytest.mark.asyncio

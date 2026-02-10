@@ -39,7 +39,7 @@ class TestMobileDevice:
             platform=DevicePlatform.IOS.value,
             os_version="17.0",
             app_version="1.0.0",
-            status=DeviceStatus.ACTIVE.value,
+            status=DeviceStatus.PENDING.value,
         )
 
         assert device.device_name == "iPhone 15"
@@ -239,7 +239,7 @@ class TestGeofenceZone:
             condominio_id=uuid4(),
             name="Sede Principal",
             zone_type=ZoneType.CIRCLE.value,
-            category=ZoneCategory.HEADQUARTERS.value,
+            category=ZoneCategory.WORK.value,
             center_latitude=-23.5505,
             center_longitude=-46.6333,
             radius_meters=100,
@@ -442,7 +442,7 @@ class TestOfflineQueue:
         checkin_id = uuid4()
         item.mark_synced(checkin_id)
 
-        assert item.status == QueueStatus.PENDING.value
+        assert item.status == QueueStatus.SYNCED.value
         assert item.checkin_id == checkin_id
         assert item.synced_at is not None
 
@@ -504,11 +504,11 @@ class TestEnums:
 
     def test_device_status_values(self):
         """Testa valores de DeviceStatus."""
-        assert DeviceStatus.ACTIVE.value == "pending"
+        assert DeviceStatus.PENDING.value == "pending"
         assert DeviceStatus.ACTIVE.value == "active"
         assert DeviceStatus.BLOCKED.value == "blocked"
-        assert DeviceStatus.ACTIVE.value == "revoked"
-        assert DeviceStatus.ACTIVE.value == "lost"
+        assert DeviceStatus.REVOKED.value == "revoked"
+        assert DeviceStatus.LOST.value == "lost"
 
     def test_checkin_type_values(self):
         """Testa valores de CheckInType."""
@@ -531,6 +531,6 @@ class TestEnums:
         """Testa valores de QueueStatus."""
         assert QueueStatus.PENDING.value == "pending"
         assert QueueStatus.PROCESSING.value == "processing"
-        assert QueueStatus.PENDING.value == "synced"
+        assert QueueStatus.SYNCED.value == "synced"
         assert QueueStatus.FAILED.value == "failed"
         assert QueueStatus.EXPIRED.value == "expired"

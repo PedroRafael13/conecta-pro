@@ -60,11 +60,11 @@ def sample_template():
         codigo="RPT001",
         nome="Relatório Financeiro",
         descricao="Relatório financeiro mensal",
-        category=ReportCategory.FINANCIAL,
-        report_type=ReportType.EXECUCAO,
+        category=ReportCategory.FINANCEIRO,
+        report_type=ReportType.CONSOLIDADO,
         default_format=ReportFormat.PDF,
         supported_formats=["pdf", "excel"],
-        status=TemplateStatus.DRAFT,
+        status=TemplateStatus.ATIVO,
         version=1,
         visibility="public",
         usage_count=0,
@@ -81,9 +81,9 @@ def sample_schedule(sample_template):
         codigo="SCH001",
         nome="Agendamento Diário",
         template_id=sample_template.id,
-        frequency=ScheduleFrequency.ONCE,
+        frequency=ScheduleFrequency.DIARIO,
         timezone="America/Sao_Paulo",
-        status=ScheduleStatus.ACTIVE,
+        status=ScheduleStatus.ATIVO,
         start_date=datetime.now(UTC),
         output_format="pdf",
         delivery_method=DeliveryMethod.EMAIL,
@@ -103,7 +103,7 @@ def sample_export(sample_template):
         id=uuid.uuid4(),
         export_id="EXP001",
         template_id=sample_template.id,
-        status=ExportStatus.PENDING,
+        status=ExportStatus.CONCLUIDO,
         trigger=ExportTrigger.MANUAL,
         format=ExportFormat.PDF,
         file_name="report.pdf",
@@ -123,16 +123,16 @@ def sample_kpi():
         codigo="KPI001",
         nome="Receita Mensal",
         descricao="Receita total do mês",
-        category=KPICategory.FINANCIAL,
-        kpi_type=KPIType.ABSOLUTE,
-        direction=KPIDirection.INCREASE,
-        status=KPIStatus.ACTIVE,
+        category=KPICategory.FINANCEIRO,
+        kpi_type=KPIType.RECEITA,
+        direction=KPIDirection.MAIOR_MELHOR,
+        status=KPIStatus.ATIVO,
         unit="currency",
         precision=2,
         current_value=Decimal("100000.00"),
         target_value=Decimal("120000.00"),
         alert_level=KPIAlertLevel.NORMAL,
-        aggregation_period=AggregationPeriod.DAILY,
+        aggregation_period=AggregationPeriod.MENSAL,
         visibility="public",
         display_order=1,
         ativo=True,
@@ -148,10 +148,10 @@ def sample_benchmark():
         codigo="BMK001",
         nome="Margem EBITDA",
         descricao="Benchmark de margem EBITDA do setor",
-        category=BenchmarkCategory.FINANCIAL,
-        benchmark_type=BenchmarkType.INTERNAL,
-        source=BenchmarkSource.INTERNAL_DATA,
-        status=BenchmarkStatus.ACTIVE,
+        category=BenchmarkCategory.FINANCEIRO,
+        benchmark_type=BenchmarkType.INDUSTRIA,
+        source=BenchmarkSource.PESQUISA_MERCADO,
+        status=BenchmarkStatus.ATIVO,
         industry="Tecnologia",
         unit="percentage",
         precision=2,
@@ -233,7 +233,7 @@ class TestReportTemplateService:
 
     def test_activate_template(self, report_service, sample_template):
         """Testa ativação de template."""
-        sample_template.status = TemplateStatus.DRAFT
+        sample_template.status = TemplateStatus.RASCUNHO
         with (
             patch.object(report_service.repository, "get_template_by_id") as mock_get,
             patch.object(report_service.repository, "update_template") as mock_update,
@@ -310,7 +310,7 @@ class TestReportScheduleService:
 
     def test_resume_schedule(self, report_service, sample_schedule):
         """Testa retomada de agendamento."""
-        sample_schedule.status = ScheduleStatus.ACTIVE
+        sample_schedule.status = ScheduleStatus.PAUSADO
         with (
             patch.object(report_service.repository, "get_schedule_by_id") as mock_get,
             patch.object(report_service.repository, "update_schedule") as mock_update,
@@ -345,7 +345,7 @@ class TestReportExportService:
             mock_create.return_value = MagicMock(
                 id=uuid.uuid4(),
                 export_id="EXP001",
-                status=ExportStatus.PENDING,
+                status=ExportStatus.PENDENTE,
             )
             data = MagicMock(
                 template_id=sample_template.id,
@@ -371,7 +371,7 @@ class TestReportExportService:
 
     def test_cancel_export(self, report_service, sample_export):
         """Testa cancelamento de exportação."""
-        sample_export.status = ExportStatus.PENDING
+        sample_export.status = ExportStatus.PENDENTE
         with (
             patch.object(report_service.repository, "get_export_by_id") as mock_get,
             patch.object(report_service.repository, "update_export") as mock_update,
@@ -435,7 +435,7 @@ class TestExecutiveKPIService:
 
     def test_activate_kpi(self, report_service, sample_kpi):
         """Testa ativação de KPI."""
-        sample_kpi.status = KPIStatus.ACTIVE
+        sample_kpi.status = KPIStatus.RASCUNHO
         with (
             patch.object(report_service.repository, "get_kpi_by_id") as mock_get,
             patch.object(report_service.repository, "update_kpi") as mock_update,
@@ -520,7 +520,7 @@ class TestBenchmarkService:
 
     def test_activate_benchmark(self, report_service, sample_benchmark):
         """Testa ativação de benchmark."""
-        sample_benchmark.status = BenchmarkStatus.ACTIVE
+        sample_benchmark.status = BenchmarkStatus.RASCUNHO
         with (
             patch.object(report_service.repository, "get_benchmark_by_id") as mock_get,
             patch.object(report_service.repository, "update_benchmark") as mock_update,

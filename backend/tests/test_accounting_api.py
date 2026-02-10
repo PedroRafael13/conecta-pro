@@ -157,7 +157,7 @@ class TestChartOfAccountsEndpoints:
             mock_chart.id = chart_id
             mock_chart.code = sample_chart_data["code"]
             mock_chart.name = sample_chart_data["name"]
-            mock_chart.chart_type = ChartType.BAR
+            mock_chart.chart_type = ChartType.ANALYTICAL
             mock_chart.status = ChartStatus.ACTIVE
 
             with patch("modules.financial.controllers.accounting_controller.ChartOfAccountsRepository") as mock_repo:

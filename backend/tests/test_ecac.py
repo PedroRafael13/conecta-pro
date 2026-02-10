@@ -77,13 +77,13 @@ class TestSchemas:
 
     def test_consulta_declaracoes_request_valid(self):
         """Testa ConsultaDeclaracoesRequest valido."""
-        request = ConsultaDeclaracoesRequest(tipo=TipoDeclaracaoEnum.MENSAL, exercicio_inicio=2025, exercicio_fim=2026)
-        assert request.tipo == TipoDeclaracaoEnum.MENSAL
+        request = ConsultaDeclaracoesRequest(tipo=TipoDeclaracaoEnum.DCTFWEB, exercicio_inicio=2025, exercicio_fim=2026)
+        assert request.tipo == TipoDeclaracaoEnum.DCTFWEB
         assert request.exercicio_inicio == 2025
 
     def test_consulta_declaracoes_request_sem_fim(self):
         """Testa request sem exercicio final."""
-        request = ConsultaDeclaracoesRequest(tipo=TipoDeclaracaoEnum.MENSAL, exercicio_inicio=2025)
+        request = ConsultaDeclaracoesRequest(tipo=TipoDeclaracaoEnum.IRPF, exercicio_inicio=2025)
         assert request.exercicio_fim is None
 
     def test_emitir_certidao_request_valid(self):
@@ -129,8 +129,8 @@ class TestSchemas:
         assert SituacaoFiscalEnum.PENDENTE.value == "pendente"
         assert SituacaoFiscalEnum.IRREGULAR.value == "irregular"
 
-        assert TipoDeclaracaoEnum.MENSAL.value == "dctfweb"
-        assert TipoDeclaracaoEnum.MENSAL.value == "irpf"
+        assert TipoDeclaracaoEnum.DCTFWEB.value == "dctfweb"
+        assert TipoDeclaracaoEnum.IRPF.value == "irpf"
 
 
 class TestEcacManager:
@@ -197,7 +197,7 @@ class TestEcacManager:
         """Testa emissao de certidao."""
         certidao = manager.emitir_certidao(finalidade="Licitacao")
 
-        assert certidao.tipo == TipoCertidao.CRF
+        assert certidao.tipo == TipoCertidao.CND
         assert certidao.contribuinte_cpf_cnpj == "35710481000103"
         assert certidao.finalidade == "Licitacao"
 

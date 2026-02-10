@@ -137,7 +137,7 @@ class TestCandidate:
             name="João Silva",
             email="joao@example.com",
             phone="11999999999",
-            source=CandidateSource.SITE,
+            source=CandidateSource.SITE_CARREIRAS,
             city="São Paulo",
             state="SP",
         )
@@ -237,10 +237,10 @@ class TestApplication:
             job_position_id="pos-456",
         )
 
-        application.reject(RejectionReason.PERFIL_INADEQUADO, "Falta experiência", "recruiter-789")
+        application.reject(RejectionReason.PERFIL_NAO_ADEQUADO, "Falta experiência", "recruiter-789")
 
         assert application.status == ApplicationStatus.REPROVADO
-        assert application.rejection_reason == RejectionReason.PERFIL_INADEQUADO
+        assert application.rejection_reason == RejectionReason.PERFIL_NAO_ADEQUADO
         assert application.rejected_at is not None
 
     def test_hire(self):
@@ -279,14 +279,14 @@ class TestInterview:
         """Testa criação de entrevista."""
         interview = Interview(
             application_id="app-123",
-            interview_type=InterviewType.TELEFONE,
+            interview_type=InterviewType.ENTREVISTA_RH,
             scheduled_date=date.today() + timedelta(days=7),
             scheduled_time=time(14, 0),
             duration_minutes=60,
             interviewer_ids=["int-001", "int-002"],
         )
 
-        assert interview.interview_type == InterviewType.TELEFONE
+        assert interview.interview_type == InterviewType.ENTREVISTA_RH
         assert interview.status == InterviewStatus.AGENDADA
         assert interview.duration_minutes == 60
 
@@ -294,7 +294,7 @@ class TestInterview:
         """Testa confirmação do candidato."""
         interview = Interview(
             application_id="app-123",
-            interview_type=InterviewType.TELEFONE,
+            interview_type=InterviewType.ENTREVISTA_RH,
             scheduled_date=date.today() + timedelta(days=7),
             scheduled_time=time(14, 0),
         )
@@ -311,7 +311,7 @@ class TestInterview:
         """Testa conclusão de entrevista."""
         interview = Interview(
             application_id="app-123",
-            interview_type=InterviewType.TELEFONE,
+            interview_type=InterviewType.ENTREVISTA_TECNICA,
             scheduled_date=date.today(),
             scheduled_time=time(14, 0),
         )
@@ -327,7 +327,7 @@ class TestInterview:
         """Testa cancelamento de entrevista."""
         interview = Interview(
             application_id="app-123",
-            interview_type=InterviewType.TELEFONE,
+            interview_type=InterviewType.ENTREVISTA_RH,
             scheduled_date=date.today() + timedelta(days=7),
             scheduled_time=time(14, 0),
         )
@@ -341,7 +341,7 @@ class TestInterview:
         """Testa reagendamento."""
         interview = Interview(
             application_id="app-123",
-            interview_type=InterviewType.TELEFONE,
+            interview_type=InterviewType.ENTREVISTA_RH,
             scheduled_date=date.today() + timedelta(days=7),
             scheduled_time=time(14, 0),
         )
@@ -434,7 +434,7 @@ class TestCandidateEducation:
             institution="USP",
             course="Ciência da Computação",
             level=EducationLevel.GRADUACAO,
-            status=EducationStatus.CURSANDO,
+            status=EducationStatus.CONCLUIDO,
             start_date=date(2015, 2, 1),
             end_date=date(2019, 12, 1),
         )
@@ -468,7 +468,7 @@ class TestEnums:
 
     def test_candidate_source_values(self):
         """Testa valores de CandidateSource."""
-        assert CandidateSource.SITE.value == "site_carreiras"
+        assert CandidateSource.SITE_CARREIRAS.value == "site_carreiras"
         assert CandidateSource.LINKEDIN.value == "linkedin"
         assert CandidateSource.INDICACAO.value == "indicacao"
 
@@ -480,6 +480,6 @@ class TestEnums:
 
     def test_interview_type_values(self):
         """Testa valores de InterviewType."""
-        assert InterviewType.TELEFONE.value == "entrevista_rh"
-        assert InterviewType.TELEFONE.value == "entrevista_tecnica"
+        assert InterviewType.ENTREVISTA_RH.value == "entrevista_rh"
+        assert InterviewType.ENTREVISTA_TECNICA.value == "entrevista_tecnica"
         assert len(InterviewType) == 8

@@ -97,7 +97,7 @@ class TestPayrollExportModel:
             period_id=uuid4(),
             export_code="ESOCIAL-S1200-20241231",
             name="eSocial S-1200 Dezembro 2024",
-            export_format=ExportFormat.PDF.value,
+            export_format=ExportFormat.ESOCIAL_XML.value,
             export_type="S-1200",
             status=ExportStatus.COMPLETED.value,
             transmission_id="PROTO-20241231120000",
@@ -105,7 +105,7 @@ class TestPayrollExportModel:
             transmitted_at=datetime.utcnow(),
         )
 
-        assert export.export_format == ExportFormat.PDF.value
+        assert export.export_format == ExportFormat.ESOCIAL_XML.value
         assert export.export_type == "S-1200"
         assert export.transmission_id is not None
 
@@ -117,16 +117,16 @@ class TestExportFormat:
         """Testa formatos de exportação."""
         assert ExportFormat.CSV.value == "csv"
         assert ExportFormat.JSON.value == "json"
-        assert ExportFormat.PDF.value == "txt"
-        assert ExportFormat.PDF.value == "xlsx"
+        assert ExportFormat.TXT.value == "txt"
+        assert ExportFormat.XLSX.value == "xlsx"
         assert ExportFormat.XML.value == "xml"
-        assert ExportFormat.PDF.value == "cnab240"
-        assert ExportFormat.PDF.value == "cnab400"
-        assert ExportFormat.PDF.value == "esocial_xml"
-        assert ExportFormat.PDF.value == "sefip"
-        assert ExportFormat.PDF.value == "caged"
-        assert ExportFormat.PDF.value == "rais"
-        assert ExportFormat.PDF.value == "dirf"
+        assert ExportFormat.CNAB240.value == "cnab240"
+        assert ExportFormat.CNAB400.value == "cnab400"
+        assert ExportFormat.ESOCIAL_XML.value == "esocial_xml"
+        assert ExportFormat.SEFIP.value == "sefip"
+        assert ExportFormat.CAGED.value == "caged"
+        assert ExportFormat.RAIS.value == "rais"
+        assert ExportFormat.DIRF.value == "dirf"
 
 
 class TestExportStatus:

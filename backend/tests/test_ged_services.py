@@ -45,7 +45,7 @@ class TestDocumentAIService:
 
         result = await service.classify_document(text, "contrato_servicos.pdf")
 
-        assert result["suggested_type"] == DocumentType.CND_FEDERAL.value
+        assert result["suggested_type"] == DocumentType.CONTRATO.value
         assert result["type_confidence"] >= 0.5
         assert "contrato" in result["keywords"]
 
@@ -68,7 +68,7 @@ class TestDocumentAIService:
 
         result = await service.classify_document(text, "ata_assembleia.pdf")
 
-        assert result["suggested_type"] == DocumentType.CND_FEDERAL.value
+        assert result["suggested_type"] == DocumentType.ATA.value
 
     @pytest.mark.asyncio
     async def test_classify_nota_fiscal(self, service):
@@ -86,7 +86,7 @@ class TestDocumentAIService:
 
         result = await service.classify_document(text, "nf_12345.pdf")
 
-        assert result["suggested_type"] == DocumentType.CND_FEDERAL.value
+        assert result["suggested_type"] == DocumentType.NOTA_FISCAL.value
 
     @pytest.mark.asyncio
     async def test_extract_keywords(self, service):
@@ -311,7 +311,7 @@ class TestDocumentClassificationPatterns:
         """
 
         result = await service.classify_document(text)
-        assert result["suggested_type"] == DocumentType.CND_FEDERAL.value
+        assert result["suggested_type"] == DocumentType.REGULAMENTO.value
 
     @pytest.mark.asyncio
     async def test_classify_laudo(self, service):
@@ -327,7 +327,7 @@ class TestDocumentClassificationPatterns:
         """
 
         result = await service.classify_document(text)
-        assert result["suggested_type"] == DocumentType.CND_FEDERAL.value
+        assert result["suggested_type"] == DocumentType.LAUDO.value
 
     @pytest.mark.asyncio
     async def test_classify_procuracao(self, service):
@@ -357,7 +357,7 @@ class TestDocumentClassificationPatterns:
         """
 
         result = await service.classify_document(text)
-        assert result["suggested_type"] == DocumentType.CND_FEDERAL.value
+        assert result["suggested_type"] == DocumentType.COMUNICADO.value
 
     @pytest.mark.asyncio
     async def test_classify_unknown(self, service):

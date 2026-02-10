@@ -27,14 +27,14 @@ class TestPayrollEventModel:
             employee_id=uuid4(),
             event_code="001",
             event_name="Salário Base",
-            event_type=EventType.S1000_EMPREGADOR.value,
+            event_type=EventType.EARNING.value,
             event_category=EventCategory.SALARY.value,
             value=Decimal("3000.00"),
         )
 
         assert event.event_code == "001"
         assert event.event_name == "Salário Base"
-        assert event.event_type == EventType.S1000_EMPREGADOR.value
+        assert event.event_type == EventType.EARNING.value
         assert event.event_category == EventCategory.SALARY.value
         assert event.value == Decimal("3000.00")
 
@@ -47,14 +47,14 @@ class TestPayrollEventModel:
             employee_id=uuid4(),
             event_code="101",
             event_name="INSS",
-            event_type=EventType.S1000_EMPREGADOR.value,
+            event_type=EventType.DEDUCTION.value,
             event_category=EventCategory.INSS.value,
             value=Decimal("330.00"),
             esocial_code="1101",
         )
 
         assert event.event_code == "101"
-        assert event.event_type == EventType.S1000_EMPREGADOR.value
+        assert event.event_type == EventType.DEDUCTION.value
         assert event.event_category == EventCategory.INSS.value
         assert event.value == Decimal("330.00")
         assert event.esocial_code == "1101"
@@ -68,7 +68,7 @@ class TestPayrollEventModel:
             employee_id=uuid4(),
             event_code="003",
             event_name="Hora Extra 50%",
-            event_type=EventType.S1000_EMPREGADOR.value,
+            event_type=EventType.EARNING.value,
             event_category=EventCategory.OVERTIME_50.value,
             reference=Decimal("10.00"),
             value=Decimal("204.55"),
@@ -86,7 +86,7 @@ class TestPayrollEventModel:
             employee_id=uuid4(),
             event_code="001",
             event_name="Salário Base",
-            event_type=EventType.S1000_EMPREGADOR.value,
+            event_type=EventType.EARNING.value,
             event_category=EventCategory.SALARY.value,
             value=Decimal("3000.00"),
             esocial_incidences={"inss": True, "irrf": True, "fgts": True},
@@ -105,7 +105,7 @@ class TestPayrollEventModel:
             employee_id=uuid4(),
             event_code="001",
             event_name="Salário Base",
-            event_type=EventType.S1000_EMPREGADOR.value,
+            event_type=EventType.EARNING.value,
             event_category=EventCategory.SALARY.value,
             value=Decimal("1500.00"),
             is_proportional=True,
@@ -124,7 +124,7 @@ class TestPayrollEventModel:
             employee_id=uuid4(),
             event_code="001",
             event_name="Salário Base",
-            event_type=EventType.S1000_EMPREGADOR.value,
+            event_type=EventType.EARNING.value,
             event_category=EventCategory.SALARY.value,
             value=Decimal("3500.00"),
             original_value=Decimal("3000.00"),
@@ -143,10 +143,10 @@ class TestEventType:
 
     def test_event_types(self):
         """Testa tipos de evento."""
-        assert EventType.S1000_EMPREGADOR.value == "earning"
-        assert EventType.S1000_EMPREGADOR.value == "deduction"
-        assert EventType.S1000_EMPREGADOR.value == "informative"
-        assert EventType.S1000_EMPREGADOR.value == "employer"
+        assert EventType.EARNING.value == "earning"
+        assert EventType.DEDUCTION.value == "deduction"
+        assert EventType.INFORMATIVE.value == "informative"
+        assert EventType.EMPLOYER.value == "employer"
 
 
 class TestEventCategory:
@@ -158,7 +158,7 @@ class TestEventCategory:
         assert EventCategory.OVERTIME_50.value == "overtime_50"
         assert EventCategory.OVERTIME_100.value == "overtime_100"
         assert EventCategory.NIGHT_SHIFT.value == "night_shift"
-        assert EventCategory.SALARY.value == "dsr"
+        assert EventCategory.DSR.value == "dsr"
         assert EventCategory.COMMISSION.value == "commission"
         assert EventCategory.BONUS.value == "bonus"
         assert EventCategory.VACATION.value == "vacation"
@@ -169,11 +169,11 @@ class TestEventCategory:
         assert EventCategory.INSS.value == "inss"
         assert EventCategory.IRRF.value == "irrf"
         assert EventCategory.FGTS.value == "fgts"
-        assert EventCategory.SALARY.value == "transport_voucher"
-        assert EventCategory.SALARY.value == "meal_voucher"
+        assert EventCategory.TRANSPORT_VOUCHER.value == "transport_voucher"
+        assert EventCategory.MEAL_VOUCHER.value == "meal_voucher"
         assert EventCategory.ABSENCE.value == "absence"
         assert EventCategory.LOAN.value == "loan"
-        assert EventCategory.SALARY.value == "alimony"
+        assert EventCategory.ALIMONY.value == "alimony"
         assert EventCategory.UNION_FEE.value == "union_fee"
 
 
@@ -182,10 +182,10 @@ class TestEventStatus:
 
     def test_event_statuses(self):
         """Testa status de evento."""
-        assert EventStatus.RECEIVED.value == "active"
-        assert EventStatus.RECEIVED.value == "cancelled"
-        assert EventStatus.RECEIVED.value == "adjusted"
-        assert EventStatus.RECEIVED.value == "pending"
+        assert EventStatus.ACTIVE.value == "active"
+        assert EventStatus.CANCELLED.value == "cancelled"
+        assert EventStatus.ADJUSTED.value == "adjusted"
+        assert EventStatus.PENDING.value == "pending"
 
 
 class TestDefaultRubricas:
