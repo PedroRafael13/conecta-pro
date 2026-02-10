@@ -64,7 +64,7 @@ class TestChecklistManager:
         # Arrange
         user_id = uuid4()
         mock_task = Mock()
-        mock_task.priority = TaskPriority.CRITICAL
+        mock_task.priority = TaskPriority.CRITICA
         mock_task.days_pending = 2
 
         checklist_manager.db.query.return_value.filter.return_value.first.return_value = None
@@ -86,7 +86,7 @@ class TestChecklistManager:
         mock_task = Mock()
         mock_task.id = uuid4()
         mock_task.title = "Tarefa Teste"
-        mock_task.priority = TaskPriority.HIGH
+        mock_task.priority = TaskPriority.CRITICA
         mock_task.days_pending = 3
         mock_task.urgency_score = 75.0
 
@@ -142,24 +142,24 @@ class TestChecklistManager:
 
         # Act
         item = ChecklistItem(
-            task_id=task_id, title="Tarefa Teste", priority=TaskPriority.HIGH, days_pending=5, urgency_score=80.0
+            task_id=task_id, title="Tarefa Teste", priority=TaskPriority.CRITICA, days_pending=5, urgency_score=80.0
         )
 
         # Assert
         assert item.task_id == task_id
         assert item.title == "Tarefa Teste"
-        assert item.priority == TaskPriority.HIGH
+        assert item.priority == TaskPriority.CRITICA
         assert item.action_taken is None
 
     def test_should_block_access_with_critical_tasks(self, checklist_manager):
         """Testa bloqueio de acesso com tarefas críticas."""
         # Arrange
         critical_task = Mock()
-        critical_task.priority = TaskPriority.CRITICAL
+        critical_task.priority = TaskPriority.CRITICA
         critical_task.days_pending = 1
 
         normal_task = Mock()
-        normal_task.priority = TaskPriority.MEDIUM
+        normal_task.priority = TaskPriority.CRITICA
         normal_task.days_pending = 2
 
         pending_tasks = [critical_task, normal_task]
@@ -176,7 +176,7 @@ class TestChecklistManager:
         old_tasks = []
         for _i in range(6):  # 6 tarefas antigas (> 5)
             task = Mock()
-            task.priority = TaskPriority.MEDIUM
+            task.priority = TaskPriority.CRITICA
             task.days_pending = 8  # Antiga (> 7 dias)
             old_tasks.append(task)
 

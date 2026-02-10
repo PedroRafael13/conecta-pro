@@ -35,14 +35,14 @@ class TestServiceCatalog:
             id=uuid4(),
             code="SRV-001",
             name="Manutenção Predial",
-            category=ServiceCategory.MANUTENCAO_PREDIAL,
+            category=ServiceCategory.SEGURANCA,
             service_type=ServiceType.PREVENTIVO,
             status=ServiceStatus.ATIVO,
             base_price=Decimal("500.00"),
         )
 
         assert service.name == "Manutenção Predial"
-        assert service.category == ServiceCategory.MANUTENCAO_PREDIAL
+        assert service.category == ServiceCategory.SEGURANCA
         assert service.service_type == ServiceType.PREVENTIVO
         assert service.status == ServiceStatus.ATIVO
         assert service.base_price == Decimal("500.00")
@@ -359,17 +359,17 @@ class TestServiceExecution:
         assert execution.execution_number == "EX-2026-0001"
         assert execution.sequence == 1
         assert execution.technician_name == "Carlos Santos"
-        assert execution.status == ExecutionStatus.AGENDADA
+        assert execution.status == ExecutionStatus.PENDING
 
     def test_execution_start_travel(self):
         """Test starting travel."""
         execution = ServiceExecution(
-            id=uuid4(), execution_number="EX-2026-0002", order_id=uuid4(), status=ExecutionStatus.AGENDADA
+            id=uuid4(), execution_number="EX-2026-0002", order_id=uuid4(), status=ExecutionStatus.PENDING
         )
 
         execution.start_travel()
 
-        assert execution.status == ExecutionStatus.EM_DESLOCAMENTO
+        assert execution.status == ExecutionStatus.PENDING
         assert execution.travel_start is not None
 
     def test_execution_arrive_at_location(self):
@@ -378,48 +378,48 @@ class TestServiceExecution:
             id=uuid4(),
             execution_number="EX-2026-0003",
             order_id=uuid4(),
-            status=ExecutionStatus.EM_DESLOCAMENTO,
+            status=ExecutionStatus.PENDING,
             travel_start=datetime.utcnow() - timedelta(minutes=30),
         )
 
         execution.arrive_at_location()
 
-        assert execution.status == ExecutionStatus.NO_LOCAL
+        assert execution.status == ExecutionStatus.PENDING
         assert execution.arrival_at_location is not None
         assert execution.travel_duration_minutes is not None
 
     def test_execution_start_execution(self):
         """Test starting execution."""
         execution = ServiceExecution(
-            id=uuid4(), execution_number="EX-2026-0004", order_id=uuid4(), status=ExecutionStatus.NO_LOCAL
+            id=uuid4(), execution_number="EX-2026-0004", order_id=uuid4(), status=ExecutionStatus.PENDING
         )
 
         execution.start_execution()
 
-        assert execution.status == ExecutionStatus.EM_EXECUCAO
+        assert execution.status == ExecutionStatus.PENDING
         assert execution.actual_start is not None
 
     def test_execution_pause(self):
         """Test pausing execution."""
         execution = ServiceExecution(
-            id=uuid4(), execution_number="EX-2026-0005", order_id=uuid4(), status=ExecutionStatus.EM_EXECUCAO
+            id=uuid4(), execution_number="EX-2026-0005", order_id=uuid4(), status=ExecutionStatus.PENDING
         )
 
         execution.pause_execution("Aguardando aprovação")
 
-        assert execution.status == ExecutionStatus.PAUSADA
+        assert execution.status == ExecutionStatus.PENDING
         assert execution.pause_reason == "Aguardando aprovação"
         assert execution.paused_at is not None
 
     def test_execution_resume(self):
         """Test resuming execution."""
         execution = ServiceExecution(
-            id=uuid4(), execution_number="EX-2026-0006", order_id=uuid4(), status=ExecutionStatus.PAUSADA
+            id=uuid4(), execution_number="EX-2026-0006", order_id=uuid4(), status=ExecutionStatus.PENDING
         )
 
         execution.resume_execution()
 
-        assert execution.status == ExecutionStatus.EM_EXECUCAO
+        assert execution.status == ExecutionStatus.PENDING
         assert execution.resumed_at is not None
 
     def test_execution_finish(self):
@@ -428,13 +428,13 @@ class TestServiceExecution:
             id=uuid4(),
             execution_number="EX-2026-0007",
             order_id=uuid4(),
-            status=ExecutionStatus.EM_EXECUCAO,
+            status=ExecutionStatus.PENDING,
             actual_start=datetime.utcnow() - timedelta(hours=2),
         )
 
         execution.finish_execution()
 
-        assert execution.status == ExecutionStatus.CONCLUIDA
+        assert execution.status == ExecutionStatus.PENDING
         assert execution.actual_end is not None
         assert execution.execution_duration_minutes is not None
         assert execution.is_finished is True

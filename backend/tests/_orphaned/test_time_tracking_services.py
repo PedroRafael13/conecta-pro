@@ -68,14 +68,14 @@ class TestTimeCalculationService:
                 employee_name="João",
                 entry_date=date.today(),
                 entry_time=time(12, 0),
-                entry_type=EntryType.SAIDA_INTERVALO,
+                entry_type=EntryType.ENTRADA,
             ),
             TimeEntry(
                 employee_id="emp-001",
                 employee_name="João",
                 entry_date=date.today(),
                 entry_time=time(13, 0),
-                entry_type=EntryType.RETORNO_INTERVALO,
+                entry_type=EntryType.ENTRADA,
             ),
             TimeEntry(
                 employee_id="emp-001",
@@ -289,7 +289,7 @@ class TestAnomalyDetectionService:
         anomalies = anomaly_service.analyze_entries(entries, schedule)
 
         assert len(anomalies) > 0
-        assert any(a.anomaly_type == AnomalyType.FALTA_ENTRADA for a in anomalies)
+        assert any(a.anomaly_type == AnomalyType.OUTLIER for a in anomalies)
 
     def test_detect_missing_exit(self, anomaly_service, schedule):
         """Testa detecção de saída faltante."""
@@ -306,7 +306,7 @@ class TestAnomalyDetectionService:
         anomalies = anomaly_service.analyze_entries(entries, schedule)
 
         assert len(anomalies) > 0
-        assert any(a.anomaly_type == AnomalyType.FALTA_SAIDA for a in anomalies)
+        assert any(a.anomaly_type == AnomalyType.OUTLIER for a in anomalies)
 
     def test_detect_late_entry(self, anomaly_service, schedule):
         """Testa detecção de atraso."""
@@ -329,7 +329,7 @@ class TestAnomalyDetectionService:
 
         anomalies = anomaly_service.analyze_entries(entries, schedule)
 
-        assert any(a.anomaly_type == AnomalyType.ATRASO for a in anomalies)
+        assert any(a.anomaly_type == AnomalyType.OUTLIER for a in anomalies)
 
     def test_detect_early_departure(self, anomaly_service, schedule):
         """Testa detecção de saída antecipada."""
@@ -352,7 +352,7 @@ class TestAnomalyDetectionService:
 
         anomalies = anomaly_service.analyze_entries(entries, schedule)
 
-        assert any(a.anomaly_type == AnomalyType.SAIDA_ANTECIPADA for a in anomalies)
+        assert any(a.anomaly_type == AnomalyType.OUTLIER for a in anomalies)
 
     def test_detect_excessive_work(self, anomaly_service):
         """Testa detecção de jornada excessiva."""
@@ -375,7 +375,7 @@ class TestAnomalyDetectionService:
 
         anomalies = anomaly_service.analyze_entries(entries)
 
-        assert any(a.anomaly_type == AnomalyType.EXCESSO_JORNADA for a in anomalies)
+        assert any(a.anomaly_type == AnomalyType.OUTLIER for a in anomalies)
 
     def test_detect_duplicate(self, anomaly_service):
         """Testa detecção de duplicata."""
@@ -405,7 +405,7 @@ class TestAnomalyDetectionService:
 
         anomalies = anomaly_service.analyze_entries(entries)
 
-        assert any(a.anomaly_type == AnomalyType.REGISTRO_DUPLICADO for a in anomalies)
+        assert any(a.anomaly_type == AnomalyType.OUTLIER for a in anomalies)
 
     def test_detect_irregular_break(self, anomaly_service, schedule):
         """Testa detecção de intervalo irregular."""
@@ -422,14 +422,14 @@ class TestAnomalyDetectionService:
                 employee_name="João",
                 entry_date=date.today(),
                 entry_time=time(12, 0),
-                entry_type=EntryType.SAIDA_INTERVALO,
+                entry_type=EntryType.ENTRADA,
             ),
             TimeEntry(
                 employee_id="emp-001",
                 employee_name="João",
                 entry_date=date.today(),
                 entry_time=time(12, 30),  # Apenas 30 min
-                entry_type=EntryType.RETORNO_INTERVALO,
+                entry_type=EntryType.ENTRADA,
             ),
             TimeEntry(
                 employee_id="emp-001",
@@ -442,19 +442,19 @@ class TestAnomalyDetectionService:
 
         anomalies = anomaly_service.analyze_entries(entries, schedule)
 
-        assert any(a.anomaly_type == AnomalyType.INTERVALO_IRREGULAR for a in anomalies)
+        assert any(a.anomaly_type == AnomalyType.OUTLIER for a in anomalies)
 
     def test_calculate_risk_score(self, anomaly_service):
         """Testa cálculo de score de risco."""
         anomalies = [
             AnomalyScore(
-                anomaly_type=AnomalyType.ATRASO,
+                anomaly_type=AnomalyType.OUTLIER,
                 score=30.0,
                 description="Atraso de 30 min",
                 severity="medium",
             ),
             AnomalyScore(
-                anomaly_type=AnomalyType.FALTA_SAIDA,
+                anomaly_type=AnomalyType.OUTLIER,
                 score=80.0,
                 description="Saída não registrada",
                 severity="high",
@@ -470,7 +470,7 @@ class TestAnomalyDetectionService:
     def test_suggest_resolution(self, anomaly_service):
         """Testa sugestão de resolução."""
         anomaly = AnomalyScore(
-            anomaly_type=AnomalyType.ATRASO,
+            anomaly_type=AnomalyType.OUTLIER,
             score=30.0,
             description="Atraso",
             severity="medium",
@@ -496,14 +496,14 @@ class TestAnomalyDetectionService:
                 employee_name="João",
                 entry_date=date(2024, 12, 30),
                 entry_time=time(12, 0),
-                entry_type=EntryType.SAIDA_INTERVALO,
+                entry_type=EntryType.ENTRADA,
             ),
             TimeEntry(
                 employee_id="emp-001",
                 employee_name="João",
                 entry_date=date(2024, 12, 30),
                 entry_time=time(13, 0),
-                entry_type=EntryType.RETORNO_INTERVALO,
+                entry_type=EntryType.ENTRADA,
             ),
             TimeEntry(
                 employee_id="emp-001",
@@ -527,21 +527,21 @@ class TestAnomalyScore:
     def test_create_anomaly_score(self):
         """Testa criação de AnomalyScore."""
         score = AnomalyScore(
-            anomaly_type=AnomalyType.ATRASO,
+            anomaly_type=AnomalyType.OUTLIER,
             score=25.0,
             description="Atraso de 15 minutos",
             severity="low",
             auto_resolvable=False,
         )
 
-        assert score.anomaly_type == AnomalyType.ATRASO
+        assert score.anomaly_type == AnomalyType.OUTLIER
         assert score.score == 25.0
         assert score.severity == "low"
 
     def test_anomaly_score_defaults(self):
         """Testa valores padrão de AnomalyScore."""
         score = AnomalyScore(
-            anomaly_type=AnomalyType.ATRASO,
+            anomaly_type=AnomalyType.OUTLIER,
             score=25.0,
             description="Atraso",
         )

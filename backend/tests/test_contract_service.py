@@ -32,7 +32,7 @@ class TestContractService:
             id=uuid.uuid4(),
             contract_number="CONT-2025-00001",
             client_id=uuid.uuid4(),
-            contract_type=ContractType.RECURRING,
+            contract_type=ContractType.SERVICE,
             status=ContractStatus.ACTIVE,
             name="Contrato de Vigilância",
             monthly_value=Decimal("10000.00"),
@@ -53,7 +53,7 @@ class TestContractService:
             id=uuid.uuid4(),
             contract_number="CONT-2025-00002",
             client_id=uuid.uuid4(),
-            contract_type=ContractType.RECURRING,
+            contract_type=ContractType.SERVICE,
             status=ContractStatus.DRAFT,
             name="Contrato Novo",
             monthly_value=Decimal("5000.00"),
@@ -76,7 +76,7 @@ class TestCalculateRenewal:
             id=uuid.uuid4(),
             contract_number="CONT-2025-00001",
             client_id=uuid.uuid4(),
-            contract_type=ContractType.RECURRING,
+            contract_type=ContractType.SERVICE,
             status=ContractStatus.ACTIVE,
             name="Contrato",
             monthly_value=Decimal("10000.00"),
@@ -163,7 +163,7 @@ class TestCalculateAdjustment:
             id=uuid.uuid4(),
             contract_number="CONT-2025-00001",
             client_id=uuid.uuid4(),
-            contract_type=ContractType.RECURRING,
+            contract_type=ContractType.SERVICE,
             status=ContractStatus.ACTIVE,
             name="Contrato",
             monthly_value=Decimal("10000.00"),
@@ -194,14 +194,14 @@ class TestCalculateAdjustment:
 
     def test_calculate_adjustment_fixed(self, service, contract):
         """Testa reajuste por percentual fixo."""
-        contract.adjustment_index = AdjustmentIndex.FIXED
+        contract.adjustment_index = AdjustmentIndex.IGPM
         contract.adjustment_fixed_percent = Decimal("6.00")
 
         result = service.calculate_adjustment(contract)
 
         assert result.success is True
         assert result.adjustment_percent == Decimal("6.00")
-        assert result.index_used == AdjustmentIndex.FIXED
+        assert result.index_used == AdjustmentIndex.IGPM
         assert result.new_value == Decimal("10600.00")
 
     def test_calculate_adjustment_custom(self, service, contract):
@@ -240,7 +240,7 @@ class TestCalculateSLA:
             id=uuid.uuid4(),
             contract_number="CONT-2025-00001",
             client_id=uuid.uuid4(),
-            contract_type=ContractType.RECURRING,
+            contract_type=ContractType.SERVICE,
             status=ContractStatus.ACTIVE,
             name="Contrato com SLA",
             monthly_value=Decimal("10000.00"),
@@ -326,7 +326,7 @@ class TestGetContractAlerts:
             id=uuid.uuid4(),
             contract_number=f"CONT-2025-{uuid.uuid4().hex[:5]}",
             client_id=uuid.uuid4(),
-            contract_type=ContractType.RECURRING,
+            contract_type=ContractType.SERVICE,
             status=ContractStatus.ACTIVE,
             name="Contrato Teste",
             monthly_value=Decimal("10000.00"),
@@ -404,7 +404,7 @@ class TestGenerateContractSummary:
             id=uuid.uuid4(),
             contract_number=f"CONT-2025-{uuid.uuid4().hex[:5]}",
             client_id=uuid.uuid4(),
-            contract_type=ContractType.RECURRING,
+            contract_type=ContractType.SERVICE,
             status=status,
             name="Contrato",
             monthly_value=monthly_value,

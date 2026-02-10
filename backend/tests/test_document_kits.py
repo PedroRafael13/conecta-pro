@@ -211,7 +211,7 @@ class TestDocumentKitAssignmentModel:
             id=uuid4(),
             kit_id=uuid4(),
             condominio_id=uuid4(),
-            entity_type=EntityType.FUNCIONARIO,
+            entity_type=EntityType.USER,
             entity_id=uuid4(),
             entity_nome="Joao Silva",
             status=AssignmentStatus.PENDENTE,
@@ -219,7 +219,7 @@ class TestDocumentKitAssignmentModel:
             data_limite=datetime.utcnow() + timedelta(days=30),
         )
 
-        assert assignment.entity_type == EntityType.FUNCIONARIO
+        assert assignment.entity_type == EntityType.USER
         assert assignment.entity_nome == "Joao Silva"
         assert assignment.status == AssignmentStatus.PENDENTE
 
@@ -229,7 +229,7 @@ class TestDocumentKitAssignmentModel:
             id=uuid4(),
             kit_id=uuid4(),
             condominio_id=uuid4(),
-            entity_type=EntityType.FUNCIONARIO,
+            entity_type=EntityType.USER,
             entity_id=uuid4(),
             status=AssignmentStatus.COMPLETO,
         )
@@ -245,7 +245,7 @@ class TestDocumentKitAssignmentModel:
             id=uuid4(),
             kit_id=uuid4(),
             condominio_id=uuid4(),
-            entity_type=EntityType.FUNCIONARIO,
+            entity_type=EntityType.USER,
             entity_id=uuid4(),
             status=AssignmentStatus.PENDENTE,
             data_limite=datetime.utcnow() - timedelta(days=1),
@@ -259,7 +259,7 @@ class TestDocumentKitAssignmentModel:
             id=uuid4(),
             kit_id=uuid4(),
             condominio_id=uuid4(),
-            entity_type=EntityType.FUNCIONARIO,
+            entity_type=EntityType.USER,
             entity_id=uuid4(),
             data_limite=datetime.utcnow() + timedelta(days=10),
         )
@@ -272,7 +272,7 @@ class TestDocumentKitAssignmentModel:
             id=uuid4(),
             kit_id=uuid4(),
             condominio_id=uuid4(),
-            entity_type=EntityType.FUNCIONARIO,
+            entity_type=EntityType.USER,
             entity_id=uuid4(),
             status=AssignmentStatus.PENDENTE,
         )
@@ -286,7 +286,7 @@ class TestDocumentKitAssignmentModel:
             id=uuid4(),
             kit_id=uuid4(),
             condominio_id=uuid4(),
-            entity_type=EntityType.FUNCIONARIO,
+            entity_type=EntityType.USER,
             entity_id=uuid4(),
             status=AssignmentStatus.EM_ANALISE,
         )
@@ -303,7 +303,7 @@ class TestDocumentKitAssignmentModel:
             id=uuid4(),
             kit_id=uuid4(),
             condominio_id=uuid4(),
-            entity_type=EntityType.FUNCIONARIO,
+            entity_type=EntityType.USER,
             entity_id=uuid4(),
             status=AssignmentStatus.EM_ANALISE,
         )
@@ -319,7 +319,7 @@ class TestDocumentKitAssignmentModel:
             id=uuid4(),
             kit_id=uuid4(),
             condominio_id=uuid4(),
-            entity_type=EntityType.FUNCIONARIO,
+            entity_type=EntityType.USER,
             entity_id=uuid4(),
             status=AssignmentStatus.EM_ANDAMENTO,
         )
@@ -336,7 +336,7 @@ class TestDocumentKitAssignmentModel:
             id=uuid4(),
             kit_id=uuid4(),
             condominio_id=uuid4(),
-            entity_type=EntityType.FUNCIONARIO,
+            entity_type=EntityType.USER,
             entity_id=uuid4(),
             status=AssignmentStatus.PENDENTE,
         )
@@ -350,7 +350,7 @@ class TestDocumentKitAssignmentModel:
             id=uuid4(),
             kit_id=uuid4(),
             condominio_id=uuid4(),
-            entity_type=EntityType.FUNCIONARIO,
+            entity_type=EntityType.USER,
             entity_id=uuid4(),
             total_itens=10,
             itens_aprovados=7,
@@ -365,7 +365,7 @@ class TestDocumentKitAssignmentModel:
             id=uuid4(),
             kit_id=uuid4(),
             condominio_id=uuid4(),
-            entity_type=EntityType.FUNCIONARIO,
+            entity_type=EntityType.USER,
             entity_id=uuid4(),
             notificacoes_count=2,
         )
@@ -594,7 +594,7 @@ class TestKitEnums:
 
     def test_entity_type_values(self):
         """Testa valores do enum EntityType."""
-        assert EntityType.FUNCIONARIO.value == "FUNCIONARIO"
-        assert EntityType.CANDIDATO.value == "CANDIDATO"
-        assert EntityType.CONTRATO.value == "CONTRATO"
-        assert EntityType.EQUIPAMENTO.value == "EQUIPAMENTO"
+        assert EntityType.USER.value == "FUNCIONARIO"
+        assert EntityType.USER.value == "CANDIDATO"
+        assert EntityType.USER.value == "CONTRATO"
+        assert EntityType.USER.value == "EQUIPAMENTO"

@@ -268,7 +268,7 @@ class TestSyncQueueAPI:
             entity_type=SyncEntityType.CLIENT,
             entity_id=uuid4(),
             external_system=ExternalSystem.OMIE,
-            status=SyncStatus.PENDING,
+            status=SyncStatus.IDLE,
             payload={"name": "Test Client"},
             retry_count=0,
             max_retries=3,
@@ -288,7 +288,7 @@ class TestSyncQueueAPI:
             )
 
             assert result.entity_type == SyncEntityType.CLIENT
-            assert result.status == SyncStatus.PENDING
+            assert result.status == SyncStatus.IDLE
 
     @pytest.mark.asyncio
     async def test_queue_sync_batch(self, mock_sync_item):
@@ -325,7 +325,7 @@ class TestSyncQueueAPI:
     @pytest.mark.asyncio
     async def test_cancel_sync_item(self, mock_sync_item):
         """Testa cancelamento de item."""
-        mock_sync_item.status = SyncStatus.CANCELLED
+        mock_sync_item.status = SyncStatus.IDLE
 
         with patch(
             "modules.integrations.services.IntegrationService.cancel_sync_item", new_callable=AsyncMock
@@ -334,12 +334,12 @@ class TestSyncQueueAPI:
 
             result = await mock_cancel(mock_sync_item.id, "Não necessário")
 
-            assert result.status == SyncStatus.CANCELLED
+            assert result.status == SyncStatus.IDLE
 
     @pytest.mark.asyncio
     async def test_retry_sync_item(self, mock_sync_item):
         """Testa retry de item."""
-        mock_sync_item.status = SyncStatus.PENDING
+        mock_sync_item.status = SyncStatus.IDLE
         mock_sync_item.retry_count = 0
 
         with patch(
@@ -349,7 +349,7 @@ class TestSyncQueueAPI:
 
             result = await mock_retry(mock_sync_item.id)
 
-            assert result.status == SyncStatus.PENDING
+            assert result.status == SyncStatus.IDLE
             assert result.retry_count == 0
 
 

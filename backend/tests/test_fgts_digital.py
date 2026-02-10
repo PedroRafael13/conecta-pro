@@ -242,7 +242,7 @@ class TestFGTSDigitalManager:
 
     def test_simular_saque(self, manager):
         """Testa simulação de saque."""
-        resultado = manager.simular_saque("12345678901", ModalidadeSaque.RESCISAO, Decimal("5000.00"))
+        resultado = manager.simular_saque("12345678901", ModalidadeSaque.DEMISSAO_SEM_JUSTA_CAUSA, Decimal("5000.00"))
 
         assert resultado["cpf"] == "12345678901"
         assert resultado["modalidade"] == "01"

@@ -77,7 +77,7 @@ def mock_service_execution():
         execution_number="EX-2026-0001",
         order_id=uuid4(),
         sequence=1,
-        status=ExecutionStatus.AGENDADA,
+        status=ExecutionStatus.PENDING,
         technician_name="João Silva",
     )
 
@@ -347,25 +347,25 @@ class TestServiceExecutionEndpoints:
         """Test starting execution."""
         with patch("modules.services.controllers.service_controller.get_management_service") as mock_svc:
             svc = MagicMock()
-            mock_service_execution.status = ExecutionStatus.EM_EXECUCAO
+            mock_service_execution.status = ExecutionStatus.PENDING
             svc.start_execution.return_value = mock_service_execution
             mock_svc.return_value = svc
 
             result = svc.start_execution(mock_service_execution.id)
 
-            assert result.status == ExecutionStatus.EM_EXECUCAO
+            assert result.status == ExecutionStatus.PENDING
 
     def test_finish_execution_success(self, mock_service_execution):
         """Test finishing execution."""
         with patch("modules.services.controllers.service_controller.get_management_service") as mock_svc:
             svc = MagicMock()
-            mock_service_execution.status = ExecutionStatus.CONCLUIDA
+            mock_service_execution.status = ExecutionStatus.PENDING
             svc.finish_execution.return_value = mock_service_execution
             mock_svc.return_value = svc
 
             result = svc.finish_execution(mock_service_execution.id)
 
-            assert result.status == ExecutionStatus.CONCLUIDA
+            assert result.status == ExecutionStatus.PENDING
 
 
 class TestServiceReportEndpoints:

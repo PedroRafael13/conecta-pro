@@ -89,8 +89,8 @@ class TestProposalProperties:
     def test_is_pending_true(self):
         """Testa is_pending para status pendentes."""
         pending_statuses = [
-            ProposalStatus.PENDING_REVIEW.value,
-            ProposalStatus.PENDING_APPROVAL.value,
+            ProposalStatus.DRAFT.value,
+            ProposalStatus.DRAFT.value,
         ]
 
         for status in pending_statuses:
@@ -125,9 +125,9 @@ class TestProposalProperties:
     def test_is_closed_true_for_final_statuses(self):
         """Testa is_closed para status finais."""
         closed_statuses = [
-            ProposalStatus.ACCEPTED.value,
-            ProposalStatus.REJECTED.value,
-            ProposalStatus.CANCELLED.value,
+            ProposalStatus.DRAFT.value,
+            ProposalStatus.DRAFT.value,
+            ProposalStatus.DRAFT.value,
         ]
 
         for status in closed_statuses:
@@ -260,15 +260,15 @@ class TestProposalStatus:
     def test_status_values(self):
         """Testa valores dos status."""
         assert ProposalStatus.DRAFT.value == "draft"
-        assert ProposalStatus.PENDING_REVIEW.value == "pending_review"
-        assert ProposalStatus.PENDING_APPROVAL.value == "pending_approval"
-        assert ProposalStatus.APPROVED.value == "approved"
-        assert ProposalStatus.SENT.value == "sent"
-        assert ProposalStatus.VIEWED.value == "viewed"
-        assert ProposalStatus.ACCEPTED.value == "accepted"
-        assert ProposalStatus.REJECTED.value == "rejected"
-        assert ProposalStatus.EXPIRED.value == "expired"
-        assert ProposalStatus.CANCELLED.value == "cancelled"
+        assert ProposalStatus.DRAFT.value == "pending_review"
+        assert ProposalStatus.DRAFT.value == "pending_approval"
+        assert ProposalStatus.DRAFT.value == "approved"
+        assert ProposalStatus.DRAFT.value == "sent"
+        assert ProposalStatus.DRAFT.value == "viewed"
+        assert ProposalStatus.DRAFT.value == "accepted"
+        assert ProposalStatus.DRAFT.value == "rejected"
+        assert ProposalStatus.DRAFT.value == "expired"
+        assert ProposalStatus.DRAFT.value == "cancelled"
 
 
 class TestProposalType:

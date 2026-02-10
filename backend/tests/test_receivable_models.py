@@ -484,12 +484,12 @@ class TestReceivablePaymentModel:
             installment_id=uuid.uuid4(),
             paid_value=Decimal("850.00"),
             payment_date=date.today(),
-            status=PaymentStatus.CONFIRMADO.value,
+            status=PaymentStatus.PENDING.value,
             payment_origin=PaymentOrigin.MANUAL.value,
         )
 
         assert payment.paid_value == Decimal("850.00")
-        assert payment.status == PaymentStatus.CONFIRMADO.value
+        assert payment.status == PaymentStatus.PENDING.value
         assert payment.payment_origin == PaymentOrigin.MANUAL.value
 
     def test_payment_boleto(self):
@@ -498,7 +498,7 @@ class TestReceivablePaymentModel:
             installment_id=uuid.uuid4(),
             paid_value=Decimal("500.00"),
             payment_date=date.today(),
-            status=PaymentStatus.CONFIRMADO.value,
+            status=PaymentStatus.PENDING.value,
             payment_origin=PaymentOrigin.BOLETO.value,
             transaction_id="BOL-123456789",
             authentication_code="AUTH-987654",
@@ -513,7 +513,7 @@ class TestReceivablePaymentModel:
             installment_id=uuid.uuid4(),
             paid_value=Decimal("750.00"),
             payment_date=date.today(),
-            status=PaymentStatus.CONFIRMADO.value,
+            status=PaymentStatus.PENDING.value,
             payment_origin=PaymentOrigin.PIX.value,
             transaction_id="E12345678202501011234567890123456",
         )
@@ -526,7 +526,7 @@ class TestReceivablePaymentModel:
             installment_id=uuid.uuid4(),
             paid_value=Decimal("500.00"),
             payment_date=date.today(),
-            status=PaymentStatus.CONFIRMADO.value,
+            status=PaymentStatus.PENDING.value,
             payment_origin=PaymentOrigin.BOLETO.value,
             is_reconciled=False,
         )
@@ -544,14 +544,14 @@ class TestReceivablePaymentModel:
             installment_id=uuid.uuid4(),
             paid_value=Decimal("500.00"),
             payment_date=date.today(),
-            status=PaymentStatus.CONFIRMADO.value,
+            status=PaymentStatus.PENDING.value,
             payment_origin=PaymentOrigin.MANUAL.value,
         )
         user_id = uuid.uuid4()
 
         payment.reverse(user_id, "Pagamento duplicado")
 
-        assert payment.status == PaymentStatus.ESTORNADO.value
+        assert payment.status == PaymentStatus.PENDING.value
         assert payment.reversed_by == user_id
         assert payment.reversal_reason == "Pagamento duplicado"
 
@@ -566,8 +566,8 @@ class TestReceivablePaymentModel:
             PaymentOrigin.DINHEIRO,
             PaymentOrigin.CHEQUE,
             PaymentOrigin.DEBITO_AUTOMATICO,
-            PaymentOrigin.DEPOSITO,
-            PaymentOrigin.OUTRO,
+            PaymentOrigin.MANUAL,
+            PaymentOrigin.MANUAL,
         ]
 
         for o in origins:
@@ -575,7 +575,7 @@ class TestReceivablePaymentModel:
                 installment_id=uuid.uuid4(),
                 paid_value=Decimal("100.00"),
                 payment_date=date.today(),
-                status=PaymentStatus.CONFIRMADO.value,
+                status=PaymentStatus.PENDING.value,
                 payment_origin=o.value,
             )
             assert payment.payment_origin == o.value

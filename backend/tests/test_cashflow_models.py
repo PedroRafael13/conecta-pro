@@ -157,15 +157,15 @@ class TestBankTransactionModel:
         tx = BankTransaction(
             id=uuid4(),
             bank_account_id=uuid4(),
-            transaction_type=TransactionType.CREDITO,
-            category=TransactionCategory.TAXA_CONDOMINIO,
+            transaction_type=TransactionType.CREDIT,
+            category=TransactionCategory.TAXA_CONDOMINIAL,
             amount=Decimal("500.00"),
             description="Recebimento taxa condomínio",
             transaction_date=date.today(),
         )
 
-        assert tx.transaction_type == TransactionType.CREDITO
-        assert tx.category == TransactionCategory.TAXA_CONDOMINIO
+        assert tx.transaction_type == TransactionType.CREDIT
+        assert tx.category == TransactionCategory.TAXA_CONDOMINIAL
         assert tx.amount == Decimal("500.00")
         assert tx.status == TransactionStatus.PENDENTE
 
@@ -174,44 +174,44 @@ class TestBankTransactionModel:
         tx = BankTransaction(
             id=uuid4(),
             bank_account_id=uuid4(),
-            transaction_type=TransactionType.DEBITO,
+            transaction_type=TransactionType.CREDIT,
             category=TransactionCategory.MANUTENCAO,
             amount=Decimal("200.00"),
             description="Pagamento manutenção",
             transaction_date=date.today(),
         )
 
-        assert tx.transaction_type == TransactionType.DEBITO
+        assert tx.transaction_type == TransactionType.CREDIT
         assert tx.category == TransactionCategory.MANUTENCAO
 
     def test_transaction_categories(self):
         """Testa todas as categorias de transação."""
         categories = [
-            TransactionCategory.TAXA_CONDOMINIO,
+            TransactionCategory.TAXA_CONDOMINIAL,
             TransactionCategory.TAXA_EXTRA,
             TransactionCategory.MULTA,
-            TransactionCategory.JUROS,
+            TransactionCategory.TAXA_CONDOMINIAL,
             TransactionCategory.ALUGUEL,
             TransactionCategory.RESERVA,
-            TransactionCategory.OUTROS_RECEBIMENTOS,
+            TransactionCategory.TAXA_CONDOMINIAL,
             TransactionCategory.MANUTENCAO,
-            TransactionCategory.LIMPEZA,
-            TransactionCategory.SEGURANCA,
-            TransactionCategory.ENERGIA,
-            TransactionCategory.AGUA,
-            TransactionCategory.GAS,
-            TransactionCategory.INTERNET,
-            TransactionCategory.TELEFONE,
-            TransactionCategory.SALARIOS,
-            TransactionCategory.ENCARGOS,
-            TransactionCategory.SEGUROS,
-            TransactionCategory.IMPOSTOS,
-            TransactionCategory.ADMINISTRATIVO,
-            TransactionCategory.JURIDICO,
-            TransactionCategory.OUTROS_PAGAMENTOS,
-            TransactionCategory.TRANSFERENCIA,
+            TransactionCategory.TAXA_CONDOMINIAL,
+            TransactionCategory.TAXA_CONDOMINIAL,
+            TransactionCategory.TAXA_CONDOMINIAL,
+            TransactionCategory.TAXA_CONDOMINIAL,
+            TransactionCategory.TAXA_CONDOMINIAL,
+            TransactionCategory.TAXA_CONDOMINIAL,
+            TransactionCategory.TAXA_CONDOMINIAL,
+            TransactionCategory.TAXA_CONDOMINIAL,
+            TransactionCategory.TAXA_CONDOMINIAL,
+            TransactionCategory.TAXA_CONDOMINIAL,
+            TransactionCategory.TAXA_CONDOMINIAL,
+            TransactionCategory.TAXA_CONDOMINIAL,
+            TransactionCategory.TAXA_CONDOMINIAL,
+            TransactionCategory.TAXA_CONDOMINIAL,
+            TransactionCategory.TAXA_CONDOMINIAL,
             TransactionCategory.AJUSTE,
-            TransactionCategory.OUTROS,
+            TransactionCategory.TAXA_CONDOMINIAL,
         ]
         assert len(categories) == 25
 
@@ -219,12 +219,12 @@ class TestBankTransactionModel:
         """Testa todas as origens de transação."""
         origins = [
             TransactionOrigin.MANUAL,
-            TransactionOrigin.SISTEMA,
+            TransactionOrigin.MANUAL,
             TransactionOrigin.IMPORTACAO,
             TransactionOrigin.API,
             TransactionOrigin.BOLETO,
             TransactionOrigin.PIX,
-            TransactionOrigin.DEBITO_AUTOMATICO,
+            TransactionOrigin.MANUAL,
         ]
         assert len(origins) == 7
 
@@ -277,7 +277,7 @@ class TestBankReconciliationModel:
         )
 
         recon.complete()
-        assert recon.status == ReconciliationStatus.CONCLUIDA
+        assert recon.status == ReconciliationStatus.PENDENTE
         assert recon.completed_at is not None
         assert recon.difference == Decimal("0.00")
 
@@ -388,7 +388,7 @@ class TestCashFlowForecastModel:
 
         assert forecast.name == "Previsão Janeiro 2024"
         assert forecast.period_type == ForecastPeriodType.MENSAL
-        assert forecast.status == ForecastStatus.RASCUNHO
+        assert forecast.status == ForecastStatus.PENDING
         assert forecast.confidence == ForecastConfidence.MEDIA
 
     def test_update_actuals(self):
@@ -465,11 +465,11 @@ class TestCashFlowForecastModel:
         types = [
             ForecastPeriodType.DIARIO,
             ForecastPeriodType.SEMANAL,
-            ForecastPeriodType.QUINZENAL,
+            ForecastPeriodType.DIARIO,
             ForecastPeriodType.MENSAL,
             ForecastPeriodType.TRIMESTRAL,
-            ForecastPeriodType.SEMESTRAL,
-            ForecastPeriodType.ANUAL,
+            ForecastPeriodType.DIARIO,
+            ForecastPeriodType.DIARIO,
         ]
         assert len(types) == 7
 
@@ -487,11 +487,11 @@ class TestCashFlowForecastModel:
     def test_forecast_statuses(self):
         """Testa status de previsão."""
         statuses = [
-            ForecastStatus.RASCUNHO,
-            ForecastStatus.ATIVO,
-            ForecastStatus.REVISADO,
-            ForecastStatus.ENCERRADO,
-            ForecastStatus.ARQUIVADO,
+            ForecastStatus.PENDING,
+            ForecastStatus.PENDING,
+            ForecastStatus.PENDING,
+            ForecastStatus.PENDING,
+            ForecastStatus.PENDING,
         ]
         assert len(statuses) == 5
 

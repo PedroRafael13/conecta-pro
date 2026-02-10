@@ -374,7 +374,7 @@ class TestInterviewAPI:
             with patch("modules.recruitment.controllers.interview_controller.InterviewService") as mock_service:
                 interview = Interview(
                     application_id="app-123",
-                    interview_type=InterviewType.ENTREVISTA_RH,
+                    interview_type=InterviewType.TELEFONE,
                     scheduled_date=date.today() + timedelta(days=7),
                     scheduled_time=time(14, 0),
                 )
@@ -420,7 +420,7 @@ class TestInterviewAPI:
             with patch("modules.recruitment.controllers.interview_controller.InterviewService") as mock_service:
                 interview = Interview(
                     application_id="app-123",
-                    interview_type=InterviewType.ENTREVISTA_RH,
+                    interview_type=InterviewType.TELEFONE,
                     scheduled_date=date.today(),
                     scheduled_time=time(14, 0),
                 )
@@ -453,7 +453,7 @@ class TestInterviewAPI:
             with patch("modules.recruitment.controllers.interview_controller.InterviewService") as mock_service:
                 interview = Interview(
                     application_id="app-123",
-                    interview_type=InterviewType.ENTREVISTA_RH,
+                    interview_type=InterviewType.TELEFONE,
                     scheduled_date=date.today() + timedelta(days=14),
                     scheduled_time=time(10, 0),
                 )

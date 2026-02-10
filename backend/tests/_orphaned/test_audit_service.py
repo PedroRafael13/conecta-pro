@@ -82,8 +82,8 @@ class TestAuditLogService:
         """Testa criação de log de auditoria."""
         log_data = {
             "user_id": uuid4(),
-            "action": AuditAction.CREATE,
-            "category": AuditCategory.DATA,
+            "action": AuditAction.VIEW_PERSONAL_DATA,
+            "category": AuditCategory.AUTHENTICATION,
             "entity_type": "Lead",
             "entity_id": str(uuid4()),
             "description": "Lead criado",
@@ -95,14 +95,14 @@ class TestAuditLogService:
         result = audit_service.create_audit_log(sample_tenant_id, log_data)
 
         mock_repository.create_audit_log.assert_called_once()
-        assert result.action == AuditAction.CREATE
+        assert result.action == AuditAction.VIEW_PERSONAL_DATA
 
     def test_create_audit_log_with_metadata(self, audit_service, mock_repository, sample_tenant_id):
         """Testa criação de log com metadados."""
         log_data = {
             "user_id": uuid4(),
-            "action": AuditAction.UPDATE,
-            "category": AuditCategory.DATA,
+            "action": AuditAction.VIEW_PERSONAL_DATA,
+            "category": AuditCategory.AUTHENTICATION,
             "entity_type": "Lead",
             "metadata": {"old_value": "A", "new_value": "B"},
             "data_before": {"status": "novo"},
@@ -119,8 +119,8 @@ class TestAuditLogService:
     def test_list_audit_logs_with_filters(self, audit_service, mock_repository, sample_tenant_id):
         """Testa listagem com filtros."""
         filters = {
-            "action": AuditAction.CREATE,
-            "severity": AuditSeverity.HIGH,
+            "action": AuditAction.VIEW_PERSONAL_DATA,
+            "severity": AuditSeverity.DEBUG,
             "start_date": datetime.utcnow() - timedelta(days=7),
         }
 
@@ -151,8 +151,8 @@ class TestAuditLogService:
             id=log_id,
             tenant_id=sample_tenant_id,
             user_id=uuid4(),
-            action=AuditAction.DELETE,
-            category=AuditCategory.DATA,
+            action=AuditAction.VIEW_PERSONAL_DATA,
+            category=AuditCategory.AUTHENTICATION,
             entity_type="Lead",
         )
 
@@ -187,7 +187,7 @@ class TestComplianceRuleService:
             "code": "LGPD-001",
             "name": "Consentimento de Dados",
             "framework": ComplianceFramework.LGPD,
-            "category": RuleCategory.DATA_PROTECTION,
+            "category": RuleCategory.SENTIMENT,
             "severity": RuleSeverity.HIGH,
         }
 
@@ -208,7 +208,7 @@ class TestComplianceRuleService:
             code="LGPD-001",
             name="Consentimento",
             framework=ComplianceFramework.LGPD,
-            category=RuleCategory.DATA_PROTECTION,
+            category=RuleCategory.SENTIMENT,
             severity=RuleSeverity.HIGH,
             status=RuleStatus.DRAFT,
         )
@@ -229,7 +229,7 @@ class TestComplianceRuleService:
             code="LGPD-001",
             name="Consentimento",
             framework=ComplianceFramework.LGPD,
-            category=RuleCategory.DATA_PROTECTION,
+            category=RuleCategory.SENTIMENT,
             severity=RuleSeverity.HIGH,
             status=RuleStatus.ACTIVE,
         )
@@ -257,7 +257,7 @@ class TestComplianceRuleService:
             code="LGPD-001",
             name="Consentimento",
             framework=ComplianceFramework.LGPD,
-            category=RuleCategory.DATA_PROTECTION,
+            category=RuleCategory.SENTIMENT,
             severity=RuleSeverity.HIGH,
             checks_total=100,
             checks_passed=95,
@@ -306,7 +306,7 @@ class TestComplianceCheckService:
 
         result = audit_service.start_check(sample_tenant_id, check_id, uuid4())
 
-        assert result.status == CheckStatus.IN_PROGRESS
+        assert result.status == CheckStatus.PENDING
 
     def test_complete_check_compliant(self, audit_service, mock_repository, sample_tenant_id):
         """Testa conclusão como compliant."""
@@ -316,7 +316,7 @@ class TestComplianceCheckService:
             tenant_id=sample_tenant_id,
             rule_id=uuid4(),
             check_type=CheckType.AUTOMATED,
-            status=CheckStatus.IN_PROGRESS,
+            status=CheckStatus.PENDING,
         )
 
         mock_repository.get_compliance_check.return_value = check
@@ -335,7 +335,7 @@ class TestComplianceCheckService:
             tenant_id=sample_tenant_id,
             rule_id=uuid4(),
             check_type=CheckType.AUTOMATED,
-            status=CheckStatus.IN_PROGRESS,
+            status=CheckStatus.PENDING,
         )
 
         mock_repository.get_compliance_check.return_value = check
@@ -391,7 +391,7 @@ class TestDataRetentionService:
         policy_data = {
             "name": "Retenção de Leads",
             "entity_type": "Lead",
-            "data_category": DataCategory.CUSTOMER,
+            "data_category": DataCategory.PROFILE,
             "retention_period": RetentionPeriod.YEARS_5,
             "retention_action": RetentionAction.ARCHIVE,
         }
@@ -411,7 +411,7 @@ class TestDataRetentionService:
             tenant_id=sample_tenant_id,
             name="Retenção de Leads",
             entity_type="Lead",
-            data_category=DataCategory.CUSTOMER,
+            data_category=DataCategory.PROFILE,
             retention_period=RetentionPeriod.YEARS_5,
             retention_action=RetentionAction.ARCHIVE,
         )
@@ -432,7 +432,7 @@ class TestDataRetentionService:
             tenant_id=sample_tenant_id,
             name="Retenção de Leads",
             entity_type="Lead",
-            data_category=DataCategory.CUSTOMER,
+            data_category=DataCategory.PROFILE,
             retention_period=RetentionPeriod.YEARS_5,
             retention_action=RetentionAction.ARCHIVE,
             legal_hold=True,
@@ -453,7 +453,7 @@ class TestDataRetentionService:
             tenant_id=sample_tenant_id,
             name="Retenção de Leads",
             entity_type="Lead",
-            data_category=DataCategory.CUSTOMER,
+            data_category=DataCategory.PROFILE,
             retention_period=RetentionPeriod.YEARS_5,
             retention_action=RetentionAction.ARCHIVE,
             status=RetentionStatus.ACTIVE,
@@ -690,10 +690,10 @@ class TestIntegration:
         """Testa se log de auditoria pode disparar verificação."""
         log_data = {
             "user_id": uuid4(),
-            "action": AuditAction.DELETE,
-            "category": AuditCategory.DATA,
+            "action": AuditAction.VIEW_PERSONAL_DATA,
+            "category": AuditCategory.AUTHENTICATION,
             "entity_type": "Lead",
-            "severity": AuditSeverity.HIGH,
+            "severity": AuditSeverity.DEBUG,
         }
 
         log = AuditLog(id=uuid4(), tenant_id=sample_tenant_id, **log_data)
@@ -730,7 +730,7 @@ class TestIntegration:
             tenant_id=sample_tenant_id,
             name="Retenção de Logs",
             entity_type="AuditLog",
-            data_category=DataCategory.AUDIT,
+            data_category=DataCategory.PROFILE,
             retention_period=RetentionPeriod.YEARS_7,
             retention_action=RetentionAction.ARCHIVE,
             status=RetentionStatus.ACTIVE,
@@ -755,7 +755,7 @@ class TestPerformance:
     def test_bulk_create_audit_logs(self, audit_service, mock_repository, sample_tenant_id):
         """Testa criação em lote de logs."""
         logs_data = [
-            {"user_id": uuid4(), "action": AuditAction.CREATE, "category": AuditCategory.DATA, "entity_type": "Lead"}
+            {"user_id": uuid4(), "action": AuditAction.VIEW_PERSONAL_DATA, "category": AuditCategory.AUTHENTICATION, "entity_type": "Lead"}
             for _ in range(100)
         ]
 

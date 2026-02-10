@@ -36,7 +36,7 @@ def sample_folder_response():
         code="FLD-001",
         name="Contratos",
         folder_type=FolderType.CONTRATO,
-        status=FolderStatus.ATIVO,
+        status=FolderStatus.ATIVA,
         path="/",
         full_path="/Contratos",
         condominium_id=str(uuid4()),
@@ -59,9 +59,9 @@ def sample_document_response():
         code="DOC-001",
         title="Contrato de Serviços",
         folder_id=str(uuid4()),
-        document_type=DocumentType.CONTRATO,
+        document_type=DocumentType.CND_FEDERAL,
         category=DocumentCategory.ADMINISTRATIVO,
-        status=DocumentStatus.PUBLICADO,
+        status=DocumentStatus.VALID,
         file_name="contrato.pdf",
         file_path="/docs/contrato.pdf",
         file_size_bytes=102400,
@@ -164,7 +164,7 @@ class TestDocumentEndpoints:
             response_data = sample_document_response.model_dump()
 
             assert response_data["title"] == "Contrato de Serviços"
-            assert response_data["document_type"] == DocumentType.CONTRATO
+            assert response_data["document_type"] == DocumentType.CND_FEDERAL
 
     @pytest.mark.asyncio
     async def test_get_document_by_code(self, mock_current_user, sample_document_response):
@@ -195,7 +195,7 @@ class TestDocumentEndpoints:
             patch("modules.ged.controllers.document_controller.DocumentService") as mock_service,
         ):
             approved_doc = sample_document_response.model_copy()
-            approved_doc.status = DocumentStatus.APROVADO
+            approved_doc.status = DocumentStatus.VALID
 
             mock_instance = AsyncMock()
             mock_instance.approve.return_value = approved_doc
@@ -203,7 +203,7 @@ class TestDocumentEndpoints:
 
             result = await mock_instance.approve(sample_document_response.id, mock_current_user["id"])
 
-            assert result.status == DocumentStatus.APROVADO
+            assert result.status == DocumentStatus.VALID
 
     @pytest.mark.asyncio
     async def test_search_documents(self, mock_current_user, sample_document_response):

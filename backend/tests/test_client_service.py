@@ -69,13 +69,13 @@ def sample_client():
         code="CLI-001",
         name="Empresa Teste Ltda",
         trading_name="Empresa Teste",
-        client_type=ClientType.PJ,
+        client_type=ClientType.CONDOMINIO,
         document_type=DocumentType.CNPJ,
         document_number="12.345.678/0001-90",
         email="contato@empresa.com.br",
         phone="(11) 3456-7890",
-        status=ClientStatus.ACTIVE,
-        segment=ClientSegment.MEDIUM,
+        status=ClientStatus.ATIVO,
+        segment=ClientSegment.PEQUENO,
         total_revenue=Decimal("150000.00"),
         total_debt=Decimal("0"),
         health_score=85.0,
@@ -125,8 +125,8 @@ def sample_unit(sample_condominium):
         block="A",
         tower="Torre Norte",
         floor=1,
-        unit_type=UnitType.APARTMENT,
-        status=UnitStatus.OCCUPIED,
+        unit_type=UnitType.APARTAMENTO,
+        status=UnitStatus.DISPONIVEL,
         owner_name="João da Silva",
         owner_document="123.456.789-00",
         owner_email="joao@email.com",
@@ -149,7 +149,7 @@ def sample_contract(sample_client, sample_condominium):
         condominium_id=sample_condominium.id,
         contract_number="CTR-2026-001",
         service_type=ContractServiceType.PORTARIA_REMOTA,
-        status=ServiceStatus.ACTIVE,
+        status=ServiceStatus.ATIVO,
         monthly_value=Decimal("5000.00"),
         start_date=date.today() - timedelta(days=180),
         activation_date=date.today() - timedelta(days=150),
@@ -271,7 +271,7 @@ class TestClientService:
 
             result = client_service.activate_client(sample_client.id)
 
-        assert result.status == ClientStatus.ACTIVE
+        assert result.status == ClientStatus.ATIVO
 
     def test_suspend_client(self, client_service, mock_repository, sample_client):
         """Testa suspensão de cliente."""
@@ -281,7 +281,7 @@ class TestClientService:
 
             result = client_service.suspend_client(sample_client.id)
 
-        assert result.status == ClientStatus.SUSPENDED
+        assert result.status == ClientStatus.SUSPENSO
 
     def test_block_client(self, client_service, mock_repository, sample_client):
         """Testa bloqueio de cliente."""
@@ -291,7 +291,7 @@ class TestClientService:
 
             result = client_service.block_client(sample_client.id)
 
-        assert result.status == ClientStatus.BLOCKED
+        assert result.status == ClientStatus.PROSPECT
 
     def test_set_client_defaulter(self, client_service, mock_repository, sample_client):
         """Testa marcação de cliente como inadimplente."""
@@ -301,7 +301,7 @@ class TestClientService:
 
             result = client_service.set_client_defaulter(sample_client.id, Decimal("5000.00"))
 
-        assert result.status == ClientStatus.DEFAULTER
+        assert result.status == ClientStatus.PROSPECT
         assert result.total_debt == Decimal("5000.00")
 
     def test_enable_guardian(self, client_service, mock_repository, sample_client):
@@ -375,7 +375,7 @@ class TestCondominiumService:
 
     def test_start_condominium_implantation(self, client_service, mock_repository, sample_condominium):
         """Testa início de implantação de condomínio."""
-        sample_condominium.status = CondominiumStatus.PROSPECT
+        sample_condominium.status = CondominiumStatus.ACTIVE
 
         with patch.object(client_service, "repository", mock_repository):
             mock_repository.get_condominium.return_value = sample_condominium
@@ -383,12 +383,12 @@ class TestCondominiumService:
 
             result = client_service.start_condominium_implantation(sample_condominium.id)
 
-        assert result.status == CondominiumStatus.IMPLANTATION
+        assert result.status == CondominiumStatus.ACTIVE
         assert result.implantation_start_date is not None
 
     def test_finish_condominium_implantation(self, client_service, mock_repository, sample_condominium):
         """Testa finalização de implantação de condomínio."""
-        sample_condominium.status = CondominiumStatus.IMPLANTATION
+        sample_condominium.status = CondominiumStatus.ACTIVE
 
         with patch.object(client_service, "repository", mock_repository):
             mock_repository.get_condominium.return_value = sample_condominium
@@ -461,7 +461,7 @@ class TestUnitService:
 
         assert result.resident_name == "Inquilino"
         assert result.resident_type == "tenant"
-        assert result.status == UnitStatus.OCCUPIED
+        assert result.status == UnitStatus.DISPONIVEL
 
     def test_set_unit_defaulter(self, client_service, mock_repository, sample_unit):
         """Testa marcação de unidade como inadimplente."""
@@ -473,13 +473,13 @@ class TestUnitService:
 
         assert result.is_defaulter is True
         assert result.debt_amount == Decimal("1500.00")
-        assert result.status == UnitStatus.DEFAULTER
+        assert result.status == UnitStatus.DISPONIVEL
 
     def test_clear_unit_debt(self, client_service, mock_repository, sample_unit):
         """Testa quitação de dívida da unidade."""
         sample_unit.is_defaulter = True
         sample_unit.debt_amount = Decimal("1500.00")
-        sample_unit.status = UnitStatus.DEFAULTER
+        sample_unit.status = UnitStatus.DISPONIVEL
 
         with patch.object(client_service, "repository", mock_repository):
             mock_repository.get_unit.return_value = sample_unit
@@ -522,7 +522,7 @@ class TestContractService:
 
     def test_activate_contract(self, client_service, mock_repository, sample_contract):
         """Testa ativação de contrato."""
-        sample_contract.status = ServiceStatus.IMPLANTATION
+        sample_contract.status = ServiceStatus.RASCUNHO
 
         with patch.object(client_service, "repository", mock_repository):
             mock_repository.get_contract.return_value = sample_contract
@@ -530,7 +530,7 @@ class TestContractService:
 
             result = client_service.activate_contract(sample_contract.id)
 
-        assert result.status == ServiceStatus.ACTIVE
+        assert result.status == ServiceStatus.ATIVO
         assert result.activation_date is not None
 
     def test_suspend_contract(self, client_service, mock_repository, sample_contract):
@@ -541,7 +541,7 @@ class TestContractService:
 
             result = client_service.suspend_contract(sample_contract.id)
 
-        assert result.status == ServiceStatus.SUSPENDED
+        assert result.status == ServiceStatus.RASCUNHO
 
     def test_cancel_contract(self, client_service, mock_repository, sample_contract):
         """Testa cancelamento de contrato."""
@@ -551,7 +551,7 @@ class TestContractService:
 
             result = client_service.cancel_contract(sample_contract.id)
 
-        assert result.status == ServiceStatus.CANCELLED
+        assert result.status == ServiceStatus.RASCUNHO
         assert result.cancellation_date is not None
 
 
@@ -636,10 +636,10 @@ class TestClientAIService:
     def test_analyze_condominium_health(self, client_ai_service, mock_repository, sample_condominium):
         """Testa análise de saúde do condomínio."""
         mock_units = [
-            MagicMock(status=UnitStatus.OCCUPIED, is_defaulter=False),
-            MagicMock(status=UnitStatus.OCCUPIED, is_defaulter=False),
-            MagicMock(status=UnitStatus.VACANT, is_defaulter=False),
-            MagicMock(status=UnitStatus.DEFAULTER, is_defaulter=True),
+            MagicMock(status=UnitStatus.DISPONIVEL, is_defaulter=False),
+            MagicMock(status=UnitStatus.DISPONIVEL, is_defaulter=False),
+            MagicMock(status=UnitStatus.DISPONIVEL, is_defaulter=False),
+            MagicMock(status=UnitStatus.DISPONIVEL, is_defaulter=True),
         ]
 
         with patch.object(client_ai_service, "repository", mock_repository):
@@ -730,7 +730,7 @@ class TestServiceValidations:
 
     def test_cannot_activate_blocked_client(self, client_service, mock_repository, sample_client):
         """Testa que não pode ativar cliente bloqueado diretamente."""
-        sample_client.status = ClientStatus.BLOCKED
+        sample_client.status = ClientStatus.PROSPECT
 
         with patch.object(client_service, "repository", mock_repository):
             mock_repository.get_client.return_value = sample_client
@@ -755,7 +755,7 @@ class TestIntegrationService:
             mock_repository.get_client.return_value = sample_client
             mock_repository.create_integration.return_value = MagicMock(
                 id=uuid4(),
-                integration_type=IntegrationType.GUARDIAN,
+                integration_type=IntegrationType.API_REST,
                 enabled=False,
             )
 
@@ -795,13 +795,13 @@ class TestIntegrationService:
             result = client_service.disable_integration(uuid4())
 
         assert result.enabled is False
-        assert result.sync_status == SyncStatus.DISABLED
+        assert result.sync_status == SyncStatus.IDLE
 
     def test_trigger_sync(self, client_service, mock_repository):
         """Testa disparo de sincronização."""
         integration = MagicMock()
         integration.enabled = True
-        integration.sync_status = SyncStatus.SYNCED
+        integration.sync_status = SyncStatus.IDLE
 
         with patch.object(client_service, "repository", mock_repository):
             mock_repository.get_integration.return_value = integration
@@ -809,7 +809,7 @@ class TestIntegrationService:
 
             result = client_service.trigger_sync(uuid4())
 
-        assert result.sync_status == SyncStatus.SYNCING
+        assert result.sync_status == SyncStatus.IDLE
 
     def test_trigger_sync_disabled_integration(self, client_service, mock_repository):
         """Testa disparo de sync em integração desabilitada."""

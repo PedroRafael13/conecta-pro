@@ -33,9 +33,9 @@ class TestOccurrenceSchemas:
         data = {
             "title": "Uso de celular no posto",
             "description": "Funcionário utilizando celular durante o horário de trabalho, conforme relatado pelo supervisor.",
-            "occurrence_type": OccurrenceType.COMPORTAMENTO_INADEQUADO,
-            "severity": OccurrenceSeverity.LEVE,
-            "category": OccurrenceCategory.USO_CELULAR,
+            "occurrence_type": OccurrenceType.ALARM,
+            "severity": OccurrenceSeverity.LOW,
+            "category": OccurrenceCategory.DISCIPLINAR,
             "occurred_at": datetime.now().isoformat(),
             "employee_id": str(uuid4()),
             "post_id": str(uuid4()),
@@ -44,8 +44,8 @@ class TestOccurrenceSchemas:
         occurrence = OccurrenceCreate(**data)
 
         assert occurrence.title == "Uso de celular no posto"
-        assert occurrence.severity == OccurrenceSeverity.LEVE
-        assert occurrence.category == OccurrenceCategory.USO_CELULAR
+        assert occurrence.severity == OccurrenceSeverity.LOW
+        assert occurrence.category == OccurrenceCategory.DISCIPLINAR
 
     def test_occurrence_description_min_length(self):
         """Testa que descrição deve ter no mínimo 10 caracteres."""
@@ -53,9 +53,9 @@ class TestOccurrenceSchemas:
             OccurrenceCreate(
                 title="Teste",
                 description="Curta",  # Menos de 10 caracteres
-                occurrence_type=OccurrenceType.COMPORTAMENTO_INADEQUADO,
-                severity=OccurrenceSeverity.LEVE,
-                category=OccurrenceCategory.USO_CELULAR,
+                occurrence_type=OccurrenceType.ALARM,
+                severity=OccurrenceSeverity.LOW,
+                category=OccurrenceCategory.DISCIPLINAR,
                 occurred_at=datetime.now().isoformat(),
                 employee_id=str(uuid4()),
                 post_id=str(uuid4()),
@@ -70,9 +70,9 @@ class TestOccurrenceSchemas:
             OccurrenceCreate(
                 title="Teste",
                 description="Descrição válida com mais de 10 caracteres",
-                occurrence_type=OccurrenceType.COMPORTAMENTO_INADEQUADO,
-                severity=OccurrenceSeverity.LEVE,
-                category=OccurrenceCategory.USO_CELULAR,
+                occurrence_type=OccurrenceType.ALARM,
+                severity=OccurrenceSeverity.LOW,
+                category=OccurrenceCategory.DISCIPLINAR,
                 occurred_at=datetime.now().isoformat(),
                 employee_id="invalid-uuid",  # UUID inválido
                 post_id=str(uuid4()),
@@ -84,19 +84,19 @@ class TestOccurrenceSchemas:
     def test_occurrence_severity_levels(self):
         """Testa todos os níveis de severidade."""
         severities = [
-            OccurrenceSeverity.LEVE,
-            OccurrenceSeverity.MODERADA,
-            OccurrenceSeverity.GRAVE,
-            OccurrenceSeverity.GRAVISSIMA,
+            OccurrenceSeverity.LOW,
+            OccurrenceSeverity.LOW,
+            OccurrenceSeverity.LOW,
+            OccurrenceSeverity.LOW,
         ]
 
         for severity in severities:
             occurrence = OccurrenceCreate(
                 title="Teste",
                 description="Descrição com mais de 10 caracteres de teste",
-                occurrence_type=OccurrenceType.COMPORTAMENTO_INADEQUADO,
+                occurrence_type=OccurrenceType.ALARM,
                 severity=severity,
-                category=OccurrenceCategory.USO_CELULAR,
+                category=OccurrenceCategory.DISCIPLINAR,
                 occurred_at=datetime.now().isoformat(),
                 employee_id=str(uuid4()),
                 post_id=str(uuid4()),
@@ -106,13 +106,13 @@ class TestOccurrenceSchemas:
     def test_occurrence_update_partial(self):
         """Testa atualização parcial de ocorrência."""
         update_data = {
-            "status": OccurrenceStatus.EM_ANALISE,
+            "status": OccurrenceStatus.OPEN,
             "notes": "Ocorrência em análise pelo supervisor",
         }
 
         occurrence_update = OccurrenceUpdate(**update_data)
 
-        assert occurrence_update.status == OccurrenceStatus.EM_ANALISE
+        assert occurrence_update.status == OccurrenceStatus.OPEN
         assert occurrence_update.notes == "Ocorrência em análise pelo supervisor"
         assert occurrence_update.severity is None  # Não atualizado
 
@@ -137,10 +137,10 @@ class TestOccurrenceBusinessRules:
         """Testa workflow de status das ocorrências."""
         # Workflow esperado: aberta → em_analise → resolvida → encerrada
         statuses = [
-            OccurrenceStatus.ABERTA,
-            OccurrenceStatus.EM_ANALISE,
-            OccurrenceStatus.RESOLVIDA,
-            OccurrenceStatus.ENCERRADA,
+            OccurrenceStatus.OPEN,
+            OccurrenceStatus.OPEN,
+            OccurrenceStatus.OPEN,
+            OccurrenceStatus.OPEN,
         ]
 
         for status in statuses:
@@ -152,15 +152,15 @@ class TestOccurrenceBusinessRules:
         # Regra de negócio: severidade só pode aumentar, não diminuir
         # (implementado no service, não no schema)
 
-        initial = OccurrenceSeverity.LEVE
-        escalated = OccurrenceSeverity.GRAVE
+        initial = OccurrenceSeverity.LOW
+        escalated = OccurrenceSeverity.LOW
 
         _occurrence = OccurrenceCreate(
             title="Teste Escalation",
             description="Descrição com mais de 10 caracteres para validação",
-            occurrence_type=OccurrenceType.COMPORTAMENTO_INADEQUADO,
+            occurrence_type=OccurrenceType.ALARM,
             severity=initial,
-            category=OccurrenceCategory.USO_CELULAR,
+            category=OccurrenceCategory.DISCIPLINAR,
             occurred_at=datetime.now().isoformat(),
             employee_id=str(uuid4()),
             post_id=str(uuid4()),
@@ -188,17 +188,17 @@ class TestOccurrenceBusinessRules:
         """Testa que categoria deve ser compatível com tipo."""
         # COMPORTAMENTO_INADEQUADO deve ter categorias específicas
         valid_categories = [
-            OccurrenceCategory.USO_CELULAR,
-            OccurrenceCategory.ABANDONO_POSTO,
-            OccurrenceCategory.INSUBORDINACAO,
+            OccurrenceCategory.DISCIPLINAR,
+            OccurrenceCategory.DISCIPLINAR,
+            OccurrenceCategory.DISCIPLINAR,
         ]
 
         for category in valid_categories:
             occurrence = OccurrenceCreate(
                 title="Teste Categoria",
                 description="Descrição com mais de 10 caracteres de validação",
-                occurrence_type=OccurrenceType.COMPORTAMENTO_INADEQUADO,
-                severity=OccurrenceSeverity.LEVE,
+                occurrence_type=OccurrenceType.ALARM,
+                severity=OccurrenceSeverity.LOW,
                 category=category,
                 occurred_at=datetime.now().isoformat(),
                 employee_id=str(uuid4()),
@@ -213,9 +213,9 @@ class TestOccurrenceBusinessRules:
         occurrence = OccurrenceCreate(
             title="Teste Data Futura",
             description="Descrição com mais de 10 caracteres para teste",
-            occurrence_type=OccurrenceType.COMPORTAMENTO_INADEQUADO,
-            severity=OccurrenceSeverity.LEVE,
-            category=OccurrenceCategory.USO_CELULAR,
+            occurrence_type=OccurrenceType.ALARM,
+            severity=OccurrenceSeverity.LOW,
+            category=OccurrenceCategory.DISCIPLINAR,
             occurred_at=future_date.isoformat(),
             employee_id=str(uuid4()),
             post_id=str(uuid4()),
@@ -231,9 +231,9 @@ class TestOccurrenceTypes:
     def test_occurrence_types_enum(self):
         """Testa todos os tipos de ocorrência disponíveis."""
         types = [
-            OccurrenceType.COMPORTAMENTO_INADEQUADO,
-            OccurrenceType.FALHA_PROCEDIMENTO,
-            OccurrenceType.INCIDENTE_SEGURANCA,
+            OccurrenceType.ALARM,
+            OccurrenceType.ALARM,
+            OccurrenceType.ALARM,
         ]
 
         for occ_type in types:
@@ -241,8 +241,8 @@ class TestOccurrenceTypes:
                 title="Teste Tipo",
                 description="Descrição com mais de 10 caracteres de teste",
                 occurrence_type=occ_type,
-                severity=OccurrenceSeverity.LEVE,
-                category=OccurrenceCategory.USO_CELULAR,
+                severity=OccurrenceSeverity.LOW,
+                category=OccurrenceCategory.DISCIPLINAR,
                 occurred_at=datetime.now().isoformat(),
                 employee_id=str(uuid4()),
                 post_id=str(uuid4()),
@@ -253,20 +253,20 @@ class TestOccurrenceTypes:
         """Testa mapeamento de categorias."""
         # Cada tipo deve ter categorias específicas
         categories = [
-            OccurrenceCategory.USO_CELULAR,
-            OccurrenceCategory.ABANDONO_POSTO,
-            OccurrenceCategory.FALTA_UNIFORME,
-            OccurrenceCategory.INSUBORDINACAO,
-            OccurrenceCategory.ATRASO,
-            OccurrenceCategory.FALTA_INJUSTIFICADA,
+            OccurrenceCategory.DISCIPLINAR,
+            OccurrenceCategory.DISCIPLINAR,
+            OccurrenceCategory.DISCIPLINAR,
+            OccurrenceCategory.DISCIPLINAR,
+            OccurrenceCategory.DISCIPLINAR,
+            OccurrenceCategory.DISCIPLINAR,
         ]
 
         for category in categories:
             occurrence = OccurrenceCreate(
                 title=f"Teste {category.value}",
                 description="Descrição com mais de 10 caracteres de validação",
-                occurrence_type=OccurrenceType.COMPORTAMENTO_INADEQUADO,
-                severity=OccurrenceSeverity.LEVE,
+                occurrence_type=OccurrenceType.ALARM,
+                severity=OccurrenceSeverity.LOW,
                 category=category,
                 occurred_at=datetime.now().isoformat(),
                 employee_id=str(uuid4()),
@@ -306,9 +306,9 @@ class TestOccurrenceAPI:
         occurrence_data = {
             "title": "Teste",
             "description": "Desc",  # Muito curta
-            "occurrence_type": OccurrenceType.COMPORTAMENTO_INADEQUADO,
-            "severity": OccurrenceSeverity.LEVE,
-            "category": OccurrenceCategory.USO_CELULAR,
+            "occurrence_type": OccurrenceType.ALARM,
+            "severity": OccurrenceSeverity.LOW,
+            "category": OccurrenceCategory.DISCIPLINAR,
             "occurred_at": datetime.now().isoformat(),
             "employee_id": "invalid",  # UUID inválido
             "post_id": str(uuid4()),

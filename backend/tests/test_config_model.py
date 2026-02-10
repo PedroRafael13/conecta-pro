@@ -48,7 +48,7 @@ class TestTenantModel:
         assert tenant.email == "contato@empresa.com"
         assert tenant.status == TenantStatus.TRIAL
         assert tenant.plano == TenantPlan.FREE
-        assert tenant.tipo == TenantType.COMPANY
+        assert tenant.tipo == TenantType.EMPRESA
 
     def test_tenant_is_active(self):
         """Testa propriedade is_active."""
@@ -116,7 +116,7 @@ class TestTenantModel:
             status=TenantStatus.ATIVO,
         )
         tenant.cancel()
-        assert tenant.status == TenantStatus.CANCELLED
+        assert tenant.status == TenantStatus.CANCELADO
         assert tenant.data_cancelamento is not None
 
     def test_tenant_upgrade_plan(self):
@@ -440,13 +440,13 @@ class TestNotificationTemplateModel:
             codigo="WELCOME_EMAIL",
             nome="Email de Boas-vindas",
             canal=NotificationChannel.EMAIL,
-            tipo=NotificationType.WELCOME,
+            tipo=NotificationType.MEETING_REMINDER,
             assunto="Bem-vindo ao Sistema!",
             corpo="Olá {{nome}}, bem-vindo!",
         )
         assert template.codigo == "WELCOME_EMAIL"
         assert template.canal == NotificationChannel.EMAIL
-        assert template.tipo == NotificationType.WELCOME
+        assert template.tipo == NotificationType.MEETING_REMINDER
         assert template.status == TemplateStatus.DRAFT
 
     def test_template_activate_deactivate(self):
@@ -496,7 +496,7 @@ class TestNotificationTemplateModel:
             codigo="ORIGINAL",
             nome="Template Original",
             canal=NotificationChannel.EMAIL,
-            tipo=NotificationType.TRANSACTIONAL,
+            tipo=NotificationType.MEETING_REMINDER,
             assunto="Assunto Original",
             corpo="Corpo original",
             status=TemplateStatus.ACTIVE,
@@ -557,12 +557,12 @@ class TestEnums:
         assert TenantStatus.SUSPENSO.value == "suspenso"
         assert TenantStatus.BLOQUEADO.value == "bloqueado"
         assert TenantStatus.TRIAL.value == "trial"
-        assert TenantStatus.CANCELLED.value == "cancelled"
+        assert TenantStatus.CANCELADO.value == "cancelled"
 
     def test_tenant_plan_values(self):
         """Testa valores de TenantPlan."""
         assert TenantPlan.FREE.value == "free"
-        assert TenantPlan.BASIC.value == "basic"
+        assert TenantPlan.FREE.value == "basic"
         assert TenantPlan.PROFESSIONAL.value == "professional"
         assert TenantPlan.ENTERPRISE.value == "enterprise"
         assert TenantPlan.CUSTOM.value == "custom"
@@ -575,7 +575,7 @@ class TestEnums:
         assert RolloutStrategy.GRADUAL.value == "gradual"
         assert RolloutStrategy.TENANT_LIST.value == "tenant_list"
         assert RolloutStrategy.USER_LIST.value == "user_list"
-        assert RolloutStrategy.ATTRIBUTE_BASED.value == "attribute_based"
+        assert RolloutStrategy.ALL.value == "attribute_based"
 
     def test_notification_channel_values(self):
         """Testa valores de NotificationChannel."""

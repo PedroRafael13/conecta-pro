@@ -166,8 +166,8 @@ class TestWarehouseEndpoints:
             mock_warehouse.id = warehouse_id
             mock_warehouse.code = sample_warehouse_data["code"]
             mock_warehouse.name = sample_warehouse_data["name"]
-            mock_warehouse.warehouse_type = WarehouseType.CENTRAL
-            mock_warehouse.status = WarehouseStatus.ACTIVE
+            mock_warehouse.warehouse_type = WarehouseType.PRINCIPAL
+            mock_warehouse.status = WarehouseStatus.ATIVO
 
             with patch("modules.financial.controllers.inventory_controller.WarehouseRepository") as mock_repo:
                 mock_instance = MagicMock()

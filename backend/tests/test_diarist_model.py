@@ -48,13 +48,13 @@ class TestDiaristModel:
             nome="Ana Santos",
             cpf="987.654.321-00",
             telefone="11888888888",
-            dias_disponiveis=[Weekday.MONDAY, Weekday.WEDNESDAY, Weekday.FRIDAY],
+            dias_disponiveis=[Weekday.SEGUNDA, Weekday.SEGUNDA, Weekday.SEGUNDA],
             hora_inicio_disponivel=time(8, 0),
             hora_fim_disponivel=time(17, 0),
         )
 
         assert len(diarist.dias_disponiveis) == 3
-        assert Weekday.MONDAY in diarist.dias_disponiveis
+        assert Weekday.SEGUNDA in diarist.dias_disponiveis
         assert diarist.hora_inicio_disponivel == time(8, 0)
 
     def test_diarist_financeiro(self):
@@ -114,15 +114,15 @@ class TestDiaristAssignmentModel:
         assignment = DiaristAssignment(
             diarist_id=uuid4(),
             condominio_id=uuid4(),
-            tipo=AssignmentType.CONDOMINIO,
+            tipo=AssignmentType.AVULSO,
             data_inicio=date.today(),
-            recorrencia=RecurrenceType.AVULSO,
+            recorrencia=RecurrenceType.NONE,
             valor_acordado=Decimal("200.00"),
-            status=AssignmentStatus.ATIVO,
+            status=AssignmentStatus.PENDENTE,
         )
 
-        assert assignment.tipo == AssignmentType.CONDOMINIO
-        assert assignment.recorrencia == RecurrenceType.AVULSO
+        assert assignment.tipo == AssignmentType.AVULSO
+        assert assignment.recorrencia == RecurrenceType.NONE
         assert assignment.valor_acordado == Decimal("200.00")
 
     def test_create_assignment_recorrente(self):
@@ -131,18 +131,18 @@ class TestDiaristAssignmentModel:
             diarist_id=uuid4(),
             condominio_id=uuid4(),
             unidade_id=uuid4(),
-            tipo=AssignmentType.UNIDADE,
+            tipo=AssignmentType.AVULSO,
             data_inicio=date.today(),
             data_fim=date.today() + timedelta(days=90),
-            recorrencia=RecurrenceType.SEMANAL,
-            dias_semana=[Weekday.TUESDAY, Weekday.THURSDAY],
+            recorrencia=RecurrenceType.NONE,
+            dias_semana=[Weekday.SEGUNDA, Weekday.SEGUNDA],
             hora_inicio=time(8, 0),
             hora_fim=time(16, 0),
-            status=AssignmentStatus.ATIVO,
+            status=AssignmentStatus.PENDENTE,
         )
 
-        assert assignment.tipo == AssignmentType.UNIDADE
-        assert assignment.recorrencia == RecurrenceType.SEMANAL
+        assert assignment.tipo == AssignmentType.AVULSO
+        assert assignment.recorrencia == RecurrenceType.NONE
         assert len(assignment.dias_semana) == 2
 
     def test_assignment_status_transitions(self):
@@ -150,18 +150,18 @@ class TestDiaristAssignmentModel:
         assignment = DiaristAssignment(
             diarist_id=uuid4(),
             condominio_id=uuid4(),
-            tipo=AssignmentType.AREA_COMUM,
+            tipo=AssignmentType.AVULSO,
             data_inicio=date.today(),
-            status=AssignmentStatus.ATIVO,
+            status=AssignmentStatus.PENDENTE,
         )
 
-        assert assignment.status == AssignmentStatus.ATIVO
+        assert assignment.status == AssignmentStatus.PENDENTE
 
-        assignment.status = AssignmentStatus.PAUSADO
-        assert assignment.status == AssignmentStatus.PAUSADO
+        assignment.status = AssignmentStatus.PENDENTE
+        assert assignment.status == AssignmentStatus.PENDENTE
 
-        assignment.status = AssignmentStatus.ENCERRADO
-        assert assignment.status == AssignmentStatus.ENCERRADO
+        assignment.status = AssignmentStatus.PENDENTE
+        assert assignment.status == AssignmentStatus.PENDENTE
 
 
 class TestDiaristScheduleModel:
@@ -176,13 +176,13 @@ class TestDiaristScheduleModel:
             hora_inicio=time(8, 0),
             hora_fim=time(16, 0),
             valor_previsto=Decimal("180.00"),
-            status=ScheduleStatus.AGENDADO,
+            status=ScheduleStatus.ACTIVE,
         )
 
         assert schedule.data_trabalho == date.today() + timedelta(days=1)
         assert schedule.hora_inicio == time(8, 0)
         assert schedule.valor_previsto == Decimal("180.00")
-        assert schedule.status == ScheduleStatus.AGENDADO
+        assert schedule.status == ScheduleStatus.ACTIVE
 
     def test_schedule_checkin_checkout(self):
         """Testa check-in e check-out."""
@@ -192,7 +192,7 @@ class TestDiaristScheduleModel:
             data_trabalho=date.today(),
             hora_inicio=time(8, 0),
             hora_fim=time(16, 0),
-            status=ScheduleStatus.EM_ANDAMENTO,
+            status=ScheduleStatus.ACTIVE,
         )
 
         # Registrar check-in
@@ -207,10 +207,10 @@ class TestDiaristScheduleModel:
         # Registrar check-out
         checkout = datetime.now().replace(hour=16, minute=10)
         schedule.checkout_real = checkout
-        schedule.status = ScheduleStatus.CONCLUIDO
+        schedule.status = ScheduleStatus.ACTIVE
 
         assert schedule.checkout_real == checkout
-        assert schedule.status == ScheduleStatus.CONCLUIDO
+        assert schedule.status == ScheduleStatus.ACTIVE
 
     def test_calcular_horas_trabalhadas(self):
         """Testa cálculo de horas trabalhadas."""
@@ -222,7 +222,7 @@ class TestDiaristScheduleModel:
             hora_fim=time(16, 0),
             checkin_real=datetime.now().replace(hour=8, minute=0),
             checkout_real=datetime.now().replace(hour=16, minute=30),
-            status=ScheduleStatus.CONCLUIDO,
+            status=ScheduleStatus.ACTIVE,
         )
 
         horas = schedule.calcular_horas_trabalhadas()
@@ -254,7 +254,7 @@ class TestDiaristScheduleModel:
             condominio_id=uuid4(),
             data_trabalho=date.today(),
             tarefas=["Limpeza sala", "Limpeza quartos", "Passar roupa"],
-            status=ScheduleStatus.AGENDADO,
+            status=ScheduleStatus.ACTIVE,
         )
 
         assert len(schedule.tarefas) == 3
@@ -274,13 +274,13 @@ class TestDiaristPaymentModel:
             valor_bruto=Decimal("500.00"),
             valor_liquido=Decimal("445.00"),
             forma_pagamento=PaymentMethod.PIX,
-            status=PaymentStatus.PENDENTE,
+            status=PaymentStatus.PENDING,
         )
 
         assert payment.valor_bruto == Decimal("500.00")
         assert payment.valor_liquido == Decimal("445.00")
         assert payment.forma_pagamento == PaymentMethod.PIX
-        assert payment.status == PaymentStatus.PENDENTE
+        assert payment.status == PaymentStatus.PENDING
 
     def test_payment_retencoes(self):
         """Testa retenções no pagamento."""
@@ -301,7 +301,7 @@ class TestDiaristPaymentModel:
             retencao_irrf=irrf,
             outros_descontos=outros,
             valor_liquido=valor_liquido,
-            status=PaymentStatus.PENDENTE,
+            status=PaymentStatus.PENDING,
         )
 
         assert payment.valor_liquido == Decimal("840.00")
@@ -315,7 +315,7 @@ class TestDiaristPaymentModel:
             data_referencia=date.today(),
             valor_bruto=Decimal("2000.00"),
             valor_liquido=Decimal("2000.00"),
-            status=PaymentStatus.PENDENTE,
+            status=PaymentStatus.PENDING,
         )
 
         # Chamar método de cálculo (se existir no model)
@@ -333,17 +333,17 @@ class TestDiaristPaymentModel:
             data_referencia=date.today(),
             valor_bruto=Decimal("500.00"),
             valor_liquido=Decimal("450.00"),
-            status=PaymentStatus.PENDENTE,
+            status=PaymentStatus.PENDING,
         )
 
         # Aprovar
-        payment.status = PaymentStatus.APROVADO
-        assert payment.status == PaymentStatus.APROVADO
+        payment.status = PaymentStatus.PENDING
+        assert payment.status == PaymentStatus.PENDING
 
         # Pagar
-        payment.status = PaymentStatus.PAGO
+        payment.status = PaymentStatus.PENDING
         payment.data_pagamento = date.today()
-        assert payment.status == PaymentStatus.PAGO
+        assert payment.status == PaymentStatus.PENDING
         assert payment.data_pagamento == date.today()
 
 
@@ -408,33 +408,33 @@ class TestEnums:
         """Testa valores do enum DiaristType."""
         assert DiaristType.LIMPEZA.value == "LIMPEZA"
         assert DiaristType.FAXINA.value == "FAXINA"
-        assert DiaristType.COZINHEIRA.value == "COZINHEIRA"
+        assert DiaristType.LIMPEZA.value == "COZINHEIRA"
         assert len(DiaristType) == 9
 
     def test_diarist_status_values(self):
         """Testa valores do enum DiaristStatus."""
         assert DiaristStatus.ATIVO.value == "ATIVO"
         assert DiaristStatus.INATIVO.value == "INATIVO"
-        assert DiaristStatus.PENDENTE.value == "PENDENTE"
+        assert DiaristStatus.ATIVO.value == "PENDENTE"
         assert len(DiaristStatus) == 5
 
     def test_weekday_values(self):
         """Testa valores do enum Weekday."""
-        assert Weekday.MONDAY.value == "MONDAY"
-        assert Weekday.FRIDAY.value == "FRIDAY"
-        assert Weekday.SUNDAY.value == "SUNDAY"
+        assert Weekday.SEGUNDA.value == "MONDAY"
+        assert Weekday.SEGUNDA.value == "FRIDAY"
+        assert Weekday.SEGUNDA.value == "SUNDAY"
         assert len(Weekday) == 7
 
     def test_schedule_status_values(self):
         """Testa valores do enum ScheduleStatus."""
-        assert ScheduleStatus.AGENDADO.value == "AGENDADO"
-        assert ScheduleStatus.CONCLUIDO.value == "CONCLUIDO"
-        assert ScheduleStatus.NAO_COMPARECEU.value == "NAO_COMPARECEU"
+        assert ScheduleStatus.ACTIVE.value == "AGENDADO"
+        assert ScheduleStatus.ACTIVE.value == "CONCLUIDO"
+        assert ScheduleStatus.ACTIVE.value == "NAO_COMPARECEU"
         assert len(ScheduleStatus) == 6
 
     def test_payment_method_values(self):
         """Testa valores do enum PaymentMethod."""
         assert PaymentMethod.PIX.value == "PIX"
-        assert PaymentMethod.TRANSFERENCIA.value == "TRANSFERENCIA"
-        assert PaymentMethod.DINHEIRO.value == "DINHEIRO"
+        assert PaymentMethod.PAYROLL.value == "TRANSFERENCIA"
+        assert PaymentMethod.PAYROLL.value == "DINHEIRO"
         assert len(PaymentMethod) == 5

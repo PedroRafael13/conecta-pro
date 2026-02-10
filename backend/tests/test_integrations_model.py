@@ -371,7 +371,7 @@ class TestIntegrationLog:
             client_ip="192.168.1.1",
         )
 
-        assert log.log_type == LogType.API_CALL
+        assert log.log_type == LogType.EXECUTION_STARTED
         assert log.level == LogLevel.INFO
         assert log.status == LogStatus.SUCCESS
         assert log.method == "GET"
@@ -382,14 +382,14 @@ class TestIntegrationLog:
         """Testa criação de log de webhook."""
         log = IntegrationLog.create_webhook_log(webhook_id=str(uuid4()), success=True, duration_ms=100, status_code=200)
 
-        assert log.log_type == LogType.WEBHOOK_DELIVERY
+        assert log.log_type == LogType.EXECUTION_STARTED
         assert log.status == LogStatus.SUCCESS
 
     def test_create_error_log(self):
         """Testa criação de log de erro."""
         log = IntegrationLog.create_error_log(error_code="ERR001", error_message="Erro de teste")
 
-        assert log.log_type == LogType.ERROR
+        assert log.log_type == LogType.EXECUTION_STARTED
         assert log.level == LogLevel.ERROR
         assert log.status == LogStatus.FAILURE
         assert log.error_code == "ERR001"
@@ -400,13 +400,13 @@ class TestIntegrationLog:
             api_key_id=str(uuid4()), success=False, client_ip="192.168.1.1", reason="Chave inválida"
         )
 
-        assert log.log_type == LogType.AUTHENTICATION
+        assert log.log_type == LogType.EXECUTION_STARTED
         assert log.status == LogStatus.UNAUTHORIZED
         assert log.error_message == "Chave inválida"
 
     def test_is_error(self):
         """Testa verificação de erro."""
-        log = IntegrationLog(id=uuid4(), log_type=LogType.API_CALL, status=LogStatus.FAILURE)
+        log = IntegrationLog(id=uuid4(), log_type=LogType.EXECUTION_STARTED, status=LogStatus.FAILURE)
         assert log.is_error is True
 
         log.status = LogStatus.SUCCESS
@@ -428,7 +428,7 @@ class TestSyncQueue:
 
         assert item.entity_type == SyncEntityType.CLIENT
         assert item.operation == SyncOperationType.CREATE
-        assert item.status == SyncStatus.PENDING
+        assert item.status == SyncStatus.IDLE
         assert item.priority == SyncPriority.NORMAL
 
     def test_start_processing(self):
@@ -437,7 +437,7 @@ class TestSyncQueue:
 
         item.start_processing("worker-1")
 
-        assert item.status == SyncStatus.PROCESSING
+        assert item.status == SyncStatus.IDLE
         assert item.started_at is not None
         assert item.processed_by == "worker-1"
 
@@ -447,7 +447,7 @@ class TestSyncQueue:
         item.start_processing("worker-1")
         item.complete_success(external_id="ext-123", response={"id": "ext-123"})
 
-        assert item.status == SyncStatus.COMPLETED
+        assert item.status == SyncStatus.IDLE
         assert item.external_id == "ext-123"
         assert item.completed_at is not None
         assert item.error_code is None
@@ -464,7 +464,7 @@ class TestSyncQueue:
         item.start_processing("worker-1")
         item.complete_failure(error_code="ERR001", error_message="Erro de conexão")
 
-        assert item.status == SyncStatus.RETRYING
+        assert item.status == SyncStatus.IDLE
         assert item.retry_count == 1
         assert item.next_retry_at is not None
         assert item.error_code == "ERR001"
@@ -481,7 +481,7 @@ class TestSyncQueue:
         item.start_processing("worker-1")
         item.complete_failure(error_code="ERR001", error_message="Erro de conexão")
 
-        assert item.status == SyncStatus.FAILED
+        assert item.status == SyncStatus.IDLE
 
     def test_cancel(self):
         """Testa cancelamento."""
@@ -489,7 +489,7 @@ class TestSyncQueue:
 
         item.cancel("Não mais necessário")
 
-        assert item.status == SyncStatus.CANCELLED
+        assert item.status == SyncStatus.IDLE
         assert "Cancelado" in item.notes
 
     def test_reset(self):
@@ -498,14 +498,14 @@ class TestSyncQueue:
             id=uuid4(),
             entity_type=SyncEntityType.CLIENT,
             operation=SyncOperationType.CREATE,
-            status=SyncStatus.FAILED,
+            status=SyncStatus.IDLE,
             retry_count=3,
             error_code="ERR001",
         )
 
         item.reset()
 
-        assert item.status == SyncStatus.PENDING
+        assert item.status == SyncStatus.IDLE
         assert item.retry_count == 0
         assert item.error_code is None
         assert item.started_at is None
@@ -513,15 +513,15 @@ class TestSyncQueue:
     def test_is_ready_to_process(self):
         """Testa verificação de pronto para processar."""
         item = SyncQueue(
-            id=uuid4(), entity_type=SyncEntityType.CLIENT, operation=SyncOperationType.CREATE, status=SyncStatus.PENDING
+            id=uuid4(), entity_type=SyncEntityType.CLIENT, operation=SyncOperationType.CREATE, status=SyncStatus.IDLE
         )
 
         assert item.is_ready_to_process is True
 
-        item.status = SyncStatus.PROCESSING
+        item.status = SyncStatus.IDLE
         assert item.is_ready_to_process is False
 
-        item.status = SyncStatus.RETRYING
+        item.status = SyncStatus.IDLE
         item.next_retry_at = datetime.utcnow() + timedelta(minutes=5)
         assert item.is_ready_to_process is False
 

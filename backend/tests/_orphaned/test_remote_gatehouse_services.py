@@ -231,14 +231,14 @@ class TestGuardianSyncService:
 
         # Ocorrências têm maior prioridade (menor número)
         priority_occ = service.get_sync_priority(
-            SyncEntityType.OCCURRENCE,
-            SyncDirection.GUARDIAN_TO_ERP,
+            SyncEntityType.CLIENT,
+            SyncDirection.SOLIDES_TO_CONECTA,
         )
 
         # Contratos têm prioridade menor
         priority_contract = service.get_sync_priority(
             SyncEntityType.CONTRACT,
-            SyncDirection.ERP_TO_GUARDIAN,
+            SyncDirection.SOLIDES_TO_CONECTA,
         )
 
         assert priority_occ < priority_contract
@@ -248,7 +248,7 @@ class TestGuardianSyncService:
         service = GuardianSyncService()
 
         should = service.should_retry(
-            SyncStatus.FAILED,
+            SyncStatus.IDLE,
             retry_count=1,
             max_retries=3,
             error_message="Connection timeout",
@@ -261,7 +261,7 @@ class TestGuardianSyncService:
         service = GuardianSyncService()
 
         should = service.should_retry(
-            SyncStatus.FAILED,
+            SyncStatus.IDLE,
             retry_count=3,
             max_retries=3,
             error_message="Connection timeout",
@@ -274,7 +274,7 @@ class TestGuardianSyncService:
         service = GuardianSyncService()
 
         should = service.should_retry(
-            SyncStatus.FAILED,
+            SyncStatus.IDLE,
             retry_count=0,
             max_retries=3,
             error_message="Unauthorized - Invalid API key",

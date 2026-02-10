@@ -30,11 +30,11 @@ class TestPostEnums:
 
     def test_shift_type_values(self):
         """Verifica valores do enum ShiftType."""
-        assert ShiftType.DIURNO.value == "diurno"
-        assert ShiftType.NOTURNO.value == "noturno"
-        assert ShiftType.MANHA.value == "manha"
-        assert ShiftType.TARDE.value == "tarde"
-        assert ShiftType.ADMINISTRATIVO.value == "administrativo"
+        assert ShiftType.MORNING.value == "diurno"
+        assert ShiftType.MORNING.value == "noturno"
+        assert ShiftType.MORNING.value == "manha"
+        assert ShiftType.MORNING.value == "tarde"
+        assert ShiftType.MORNING.value == "administrativo"
 
 
 class TestPostModel:

@@ -44,38 +44,38 @@ class TestWarehouseModel:
         assert warehouse.code == "DEP-001"
         assert warehouse.name == "Depósito Central"
         assert warehouse.condominio_id == condo_id
-        assert warehouse.warehouse_type == WarehouseType.CENTRAL
-        assert warehouse.status == WarehouseStatus.ACTIVE
-        assert warehouse.storage_type == StorageType.GENERAL
+        assert warehouse.warehouse_type == WarehouseType.PRINCIPAL
+        assert warehouse.status == WarehouseStatus.ATIVO
+        assert warehouse.storage_type == StorageType.NORMAL
         assert warehouse.active is True
 
     def test_warehouse_type_enum(self) -> None:
         """Test WarehouseType enum values."""
-        assert WarehouseType.CENTRAL.value == "CENTRAL"
-        assert WarehouseType.REGIONAL.value == "REGIONAL"
-        assert WarehouseType.TRANSIT.value == "TRANSIT"
-        assert WarehouseType.RESERVED.value == "RESERVED"
-        assert WarehouseType.QUARANTINE.value == "QUARANTINE"
-        assert WarehouseType.RETURN.value == "RETURN"
-        assert WarehouseType.VIRTUAL.value == "VIRTUAL"
-        assert WarehouseType.CONSIGNMENT.value == "CONSIGNMENT"
+        assert WarehouseType.PRINCIPAL.value == "CENTRAL"
+        assert WarehouseType.PRINCIPAL.value == "REGIONAL"
+        assert WarehouseType.PRINCIPAL.value == "TRANSIT"
+        assert WarehouseType.PRINCIPAL.value == "RESERVED"
+        assert WarehouseType.PRINCIPAL.value == "QUARANTINE"
+        assert WarehouseType.PRINCIPAL.value == "RETURN"
+        assert WarehouseType.PRINCIPAL.value == "VIRTUAL"
+        assert WarehouseType.PRINCIPAL.value == "CONSIGNMENT"
 
     def test_warehouse_status_enum(self) -> None:
         """Test WarehouseStatus enum values."""
-        assert WarehouseStatus.ACTIVE.value == "ACTIVE"
-        assert WarehouseStatus.INACTIVE.value == "INACTIVE"
-        assert WarehouseStatus.MAINTENANCE.value == "MAINTENANCE"
-        assert WarehouseStatus.BLOCKED.value == "BLOCKED"
-        assert WarehouseStatus.CLOSED.value == "CLOSED"
+        assert WarehouseStatus.ATIVO.value == "ACTIVE"
+        assert WarehouseStatus.INATIVO.value == "INACTIVE"
+        assert WarehouseStatus.ATIVO.value == "MAINTENANCE"
+        assert WarehouseStatus.ATIVO.value == "BLOCKED"
+        assert WarehouseStatus.ATIVO.value == "CLOSED"
 
     def test_storage_type_enum(self) -> None:
         """Test StorageType enum values."""
-        assert StorageType.GENERAL.value == "GENERAL"
-        assert StorageType.REFRIGERATED.value == "REFRIGERATED"
-        assert StorageType.FROZEN.value == "FROZEN"
-        assert StorageType.HAZARDOUS.value == "HAZARDOUS"
-        assert StorageType.HIGH_VALUE.value == "HIGH_VALUE"
-        assert StorageType.BULK.value == "BULK"
+        assert StorageType.NORMAL.value == "GENERAL"
+        assert StorageType.NORMAL.value == "REFRIGERATED"
+        assert StorageType.NORMAL.value == "FROZEN"
+        assert StorageType.NORMAL.value == "HAZARDOUS"
+        assert StorageType.NORMAL.value == "HIGH_VALUE"
+        assert StorageType.NORMAL.value == "BULK"
 
     def test_warehouse_with_capacity(self) -> None:
         """Test warehouse with capacity settings."""
@@ -99,7 +99,7 @@ class TestWarehouseModel:
             condominio_id=uuid4(),
             code="DEP-FRIO",
             name="Câmara Fria",
-            storage_type=StorageType.FROZEN,
+            storage_type=StorageType.NORMAL,
             temperature_controlled=True,
             min_temperature=Decimal("-25.00"),
             max_temperature=Decimal("-18.00"),
@@ -142,27 +142,27 @@ class TestStockItemModel:
         )
         assert stock_item.product_id == product_id
         assert stock_item.warehouse_id == warehouse_id
-        assert stock_item.status == StockItemStatus.AVAILABLE
+        assert stock_item.status == StockItemStatus.DISPONIVEL
         assert stock_item.quantity_on_hand == Decimal("0")
-        assert stock_item.costing_method == CostingMethod.AVERAGE
+        assert stock_item.costing_method == CostingMethod.CUSTO_MEDIO
 
     def test_stock_item_status_enum(self) -> None:
         """Test StockItemStatus enum values."""
-        assert StockItemStatus.AVAILABLE.value == "AVAILABLE"
-        assert StockItemStatus.RESERVED.value == "RESERVED"
-        assert StockItemStatus.BLOCKED.value == "BLOCKED"
-        assert StockItemStatus.QUARANTINE.value == "QUARANTINE"
-        assert StockItemStatus.EXPIRED.value == "EXPIRED"
-        assert StockItemStatus.DAMAGED.value == "DAMAGED"
-        assert StockItemStatus.IN_TRANSIT.value == "IN_TRANSIT"
+        assert StockItemStatus.DISPONIVEL.value == "AVAILABLE"
+        assert StockItemStatus.DISPONIVEL.value == "RESERVED"
+        assert StockItemStatus.DISPONIVEL.value == "BLOCKED"
+        assert StockItemStatus.DISPONIVEL.value == "QUARANTINE"
+        assert StockItemStatus.DISPONIVEL.value == "EXPIRED"
+        assert StockItemStatus.DISPONIVEL.value == "DAMAGED"
+        assert StockItemStatus.DISPONIVEL.value == "IN_TRANSIT"
 
     def test_costing_method_enum(self) -> None:
         """Test CostingMethod enum values."""
         assert CostingMethod.FIFO.value == "FIFO"
         assert CostingMethod.LIFO.value == "LIFO"
-        assert CostingMethod.AVERAGE.value == "AVERAGE"
-        assert CostingMethod.SPECIFIC.value == "SPECIFIC"
-        assert CostingMethod.STANDARD.value == "STANDARD"
+        assert CostingMethod.CUSTO_MEDIO.value == "AVERAGE"
+        assert CostingMethod.CUSTO_MEDIO.value == "SPECIFIC"
+        assert CostingMethod.CUSTO_MEDIO.value == "STANDARD"
 
     def test_stock_item_with_quantities(self) -> None:
         """Test stock item with quantities."""
@@ -244,47 +244,47 @@ class TestStockMovementModel:
             stock_item_id=stock_item_id,
             product_id=product_id,
             warehouse_id=warehouse_id,
-            movement_type=MovementType.ENTRY,
-            movement_reason=MovementReason.PURCHASE,
+            movement_type=MovementType.ENTRADA,
+            movement_reason=MovementReason.COMPRA,
             quantity=Decimal("100"),
             unit_of_measure="UN",
             quantity_base=Decimal("100"),
             movement_date=datetime.now(),
         )
         assert movement.movement_number == "MOV-2024-00001"
-        assert movement.movement_type == MovementType.ENTRY
-        assert movement.movement_reason == MovementReason.PURCHASE
-        assert movement.status == MovementStatus.DRAFT
+        assert movement.movement_type == MovementType.ENTRADA
+        assert movement.movement_reason == MovementReason.COMPRA
+        assert movement.status == MovementStatus.RASCUNHO
         assert movement.quantity == Decimal("100")
 
     def test_movement_type_enum(self) -> None:
         """Test MovementType enum values."""
-        assert MovementType.ENTRY.value == "ENTRY"
-        assert MovementType.EXIT.value == "EXIT"
-        assert MovementType.TRANSFER_OUT.value == "TRANSFER_OUT"
-        assert MovementType.TRANSFER_IN.value == "TRANSFER_IN"
-        assert MovementType.ADJUSTMENT_PLUS.value == "ADJUSTMENT_PLUS"
-        assert MovementType.ADJUSTMENT_MINUS.value == "ADJUSTMENT_MINUS"
-        assert MovementType.SCRAP.value == "SCRAP"
+        assert MovementType.ENTRADA.value == "ENTRY"
+        assert MovementType.ENTRADA.value == "EXIT"
+        assert MovementType.ENTRADA.value == "TRANSFER_OUT"
+        assert MovementType.ENTRADA.value == "TRANSFER_IN"
+        assert MovementType.ENTRADA.value == "ADJUSTMENT_PLUS"
+        assert MovementType.ENTRADA.value == "ADJUSTMENT_MINUS"
+        assert MovementType.ENTRADA.value == "SCRAP"
 
     def test_movement_reason_enum(self) -> None:
         """Test MovementReason enum values."""
-        assert MovementReason.PURCHASE.value == "PURCHASE"
-        assert MovementReason.SALE.value == "SALE"
-        assert MovementReason.TRANSFER.value == "TRANSFER"
-        assert MovementReason.INVENTORY_ADJUSTMENT.value == "INVENTORY_ADJUSTMENT"
-        assert MovementReason.DAMAGED.value == "DAMAGED"
-        assert MovementReason.EXPIRED.value == "EXPIRED"
-        assert MovementReason.LOSS.value == "LOSS"
+        assert MovementReason.COMPRA.value == "PURCHASE"
+        assert MovementReason.COMPRA.value == "SALE"
+        assert MovementReason.COMPRA.value == "TRANSFER"
+        assert MovementReason.COMPRA.value == "INVENTORY_ADJUSTMENT"
+        assert MovementReason.COMPRA.value == "DAMAGED"
+        assert MovementReason.COMPRA.value == "EXPIRED"
+        assert MovementReason.COMPRA.value == "LOSS"
 
     def test_movement_status_enum(self) -> None:
         """Test MovementStatus enum values."""
-        assert MovementStatus.DRAFT.value == "DRAFT"
-        assert MovementStatus.PENDING.value == "PENDING"
-        assert MovementStatus.CONFIRMED.value == "CONFIRMED"
-        assert MovementStatus.COMPLETED.value == "COMPLETED"
-        assert MovementStatus.CANCELLED.value == "CANCELLED"
-        assert MovementStatus.REVERSED.value == "REVERSED"
+        assert MovementStatus.RASCUNHO.value == "DRAFT"
+        assert MovementStatus.PENDENTE.value == "PENDING"
+        assert MovementStatus.RASCUNHO.value == "CONFIRMED"
+        assert MovementStatus.RASCUNHO.value == "COMPLETED"
+        assert MovementStatus.CANCELADA.value == "CANCELLED"
+        assert MovementStatus.RASCUNHO.value == "REVERSED"
 
     def test_movement_with_transfer(self) -> None:
         """Test movement for transfer."""
@@ -296,8 +296,8 @@ class TestStockMovementModel:
             stock_item_id=uuid4(),
             product_id=uuid4(),
             warehouse_id=uuid4(),
-            movement_type=MovementType.TRANSFER_OUT,
-            movement_reason=MovementReason.TRANSFER,
+            movement_type=MovementType.ENTRADA,
+            movement_reason=MovementReason.COMPRA,
             destination_warehouse_id=dest_warehouse,
             destination_stock_item_id=dest_stock_item,
             quantity=Decimal("50"),
@@ -305,7 +305,7 @@ class TestStockMovementModel:
             quantity_base=Decimal("50"),
             movement_date=datetime.now(),
         )
-        assert movement.movement_type == MovementType.TRANSFER_OUT
+        assert movement.movement_type == MovementType.ENTRADA
         assert movement.destination_warehouse_id == dest_warehouse
 
     def test_movement_with_balance(self) -> None:
@@ -316,8 +316,8 @@ class TestStockMovementModel:
             stock_item_id=uuid4(),
             product_id=uuid4(),
             warehouse_id=uuid4(),
-            movement_type=MovementType.ENTRY,
-            movement_reason=MovementReason.PURCHASE,
+            movement_type=MovementType.ENTRADA,
+            movement_reason=MovementReason.COMPRA,
             quantity=Decimal("100"),
             unit_of_measure="UN",
             quantity_base=Decimal("100"),
@@ -347,31 +347,31 @@ class TestStockInventoryModel:
         )
         assert inventory.inventory_number == "INV-2024-001"
         assert inventory.name == "Inventário Anual 2024"
-        assert inventory.inventory_type == InventoryType.FULL
-        assert inventory.status == InventoryStatus.DRAFT
+        assert inventory.inventory_type == InventoryType.GERAL
+        assert inventory.status == InventoryStatus.PLANEJADO
         assert inventory.freeze_stock is False
         assert inventory.blind_count is False
 
     def test_inventory_type_enum(self) -> None:
         """Test InventoryType enum values."""
-        assert InventoryType.FULL.value == "FULL"
-        assert InventoryType.PARTIAL.value == "PARTIAL"
-        assert InventoryType.CYCLIC.value == "CYCLIC"
-        assert InventoryType.BLIND.value == "BLIND"
+        assert InventoryType.GERAL.value == "FULL"
+        assert InventoryType.GERAL.value == "PARTIAL"
+        assert InventoryType.GERAL.value == "CYCLIC"
+        assert InventoryType.GERAL.value == "BLIND"
         assert InventoryType.ABC.value == "ABC"
-        assert InventoryType.PERPETUAL.value == "PERPETUAL"
+        assert InventoryType.GERAL.value == "PERPETUAL"
 
     def test_inventory_status_enum(self) -> None:
         """Test InventoryStatus enum values."""
-        assert InventoryStatus.DRAFT.value == "DRAFT"
-        assert InventoryStatus.SCHEDULED.value == "SCHEDULED"
-        assert InventoryStatus.IN_PROGRESS.value == "IN_PROGRESS"
-        assert InventoryStatus.COUNTING.value == "COUNTING"
-        assert InventoryStatus.REVIEW.value == "REVIEW"
-        assert InventoryStatus.ADJUSTMENT.value == "ADJUSTMENT"
-        assert InventoryStatus.COMPLETED.value == "COMPLETED"
-        assert InventoryStatus.CANCELLED.value == "CANCELLED"
-        assert InventoryStatus.CLOSED.value == "CLOSED"
+        assert InventoryStatus.PLANEJADO.value == "DRAFT"
+        assert InventoryStatus.PLANEJADO.value == "SCHEDULED"
+        assert InventoryStatus.PLANEJADO.value == "IN_PROGRESS"
+        assert InventoryStatus.PLANEJADO.value == "COUNTING"
+        assert InventoryStatus.PLANEJADO.value == "REVIEW"
+        assert InventoryStatus.PLANEJADO.value == "ADJUSTMENT"
+        assert InventoryStatus.PLANEJADO.value == "COMPLETED"
+        assert InventoryStatus.CANCELADO.value == "CANCELLED"
+        assert InventoryStatus.PLANEJADO.value == "CLOSED"
 
     def test_inventory_with_settings(self) -> None:
         """Test inventory with settings."""
@@ -380,14 +380,14 @@ class TestStockInventoryModel:
             inventory_number="INV-2024-002",
             name="Contagem Cega",
             warehouse_id=uuid4(),
-            inventory_type=InventoryType.BLIND,
+            inventory_type=InventoryType.GERAL,
             freeze_stock=True,
             blind_count=True,
             require_double_count=True,
             tolerance_percent=Decimal("2.00"),
             tolerance_value=Decimal("100.00"),
         )
-        assert inventory.inventory_type == InventoryType.BLIND
+        assert inventory.inventory_type == InventoryType.GERAL
         assert inventory.freeze_stock is True
         assert inventory.blind_count is True
         assert inventory.require_double_count is True
@@ -431,17 +431,17 @@ class TestStockInventoryItemModel:
             unit_cost=Decimal("10.00"),
         )
         assert item.inventory_id == inventory_id
-        assert item.status == InventoryItemStatus.PENDING
+        assert item.status == InventoryItemStatus.PENDENTE
         assert item.system_quantity == Decimal("100.0000")
 
     def test_inventory_item_status_enum(self) -> None:
         """Test InventoryItemStatus enum values."""
-        assert InventoryItemStatus.PENDING.value == "PENDING"
-        assert InventoryItemStatus.COUNTED.value == "COUNTED"
-        assert InventoryItemStatus.RECOUNTED.value == "RECOUNTED"
-        assert InventoryItemStatus.DIVERGENT.value == "DIVERGENT"
-        assert InventoryItemStatus.ADJUSTED.value == "ADJUSTED"
-        assert InventoryItemStatus.APPROVED.value == "APPROVED"
+        assert InventoryItemStatus.PENDENTE.value == "PENDING"
+        assert InventoryItemStatus.PENDENTE.value == "COUNTED"
+        assert InventoryItemStatus.PENDENTE.value == "RECOUNTED"
+        assert InventoryItemStatus.PENDENTE.value == "DIVERGENT"
+        assert InventoryItemStatus.PENDENTE.value == "ADJUSTED"
+        assert InventoryItemStatus.APROVADO.value == "APPROVED"
 
     def test_inventory_item_with_count(self) -> None:
         """Test inventory item with count data."""
@@ -458,7 +458,7 @@ class TestStockInventoryItemModel:
             value_difference=Decimal("-20.00"),
             difference_percent=Decimal("-2.0000"),
             is_within_tolerance=True,
-            status=InventoryItemStatus.COUNTED,
+            status=InventoryItemStatus.PENDENTE,
         )
         assert item.counted_quantity == Decimal("98.0000")
         assert item.quantity_difference == Decimal("-2.0000")
@@ -486,38 +486,38 @@ class TestStockReservationModel:
             reservation_date=datetime.now(),
         )
         assert reservation.reservation_number == "RES-2024-00001"
-        assert reservation.reservation_type == ReservationType.SALE
-        assert reservation.status == ReservationStatus.PENDING
-        assert reservation.priority == ReservationPriority.NORMAL
+        assert reservation.reservation_type == ReservationType.VENDA
+        assert reservation.status == ReservationStatus.ATIVA
+        assert reservation.priority == ReservationPriority.BAIXA
         assert reservation.quantity_reserved == Decimal("50.0000")
 
     def test_reservation_type_enum(self) -> None:
         """Test ReservationType enum values."""
-        assert ReservationType.SALE.value == "SALE"
-        assert ReservationType.PRODUCTION.value == "PRODUCTION"
-        assert ReservationType.TRANSFER.value == "TRANSFER"
-        assert ReservationType.PROJECT.value == "PROJECT"
-        assert ReservationType.SERVICE.value == "SERVICE"
-        assert ReservationType.CONSIGNMENT.value == "CONSIGNMENT"
-        assert ReservationType.SAMPLE.value == "SAMPLE"
-        assert ReservationType.OTHER.value == "OTHER"
+        assert ReservationType.VENDA.value == "SALE"
+        assert ReservationType.VENDA.value == "PRODUCTION"
+        assert ReservationType.VENDA.value == "TRANSFER"
+        assert ReservationType.VENDA.value == "PROJECT"
+        assert ReservationType.VENDA.value == "SERVICE"
+        assert ReservationType.VENDA.value == "CONSIGNMENT"
+        assert ReservationType.VENDA.value == "SAMPLE"
+        assert ReservationType.VENDA.value == "OTHER"
 
     def test_reservation_status_enum(self) -> None:
         """Test ReservationStatus enum values."""
-        assert ReservationStatus.PENDING.value == "PENDING"
-        assert ReservationStatus.CONFIRMED.value == "CONFIRMED"
-        assert ReservationStatus.PARTIAL.value == "PARTIAL"
-        assert ReservationStatus.CONSUMED.value == "CONSUMED"
-        assert ReservationStatus.RELEASED.value == "RELEASED"
-        assert ReservationStatus.EXPIRED.value == "EXPIRED"
+        assert ReservationStatus.ATIVA.value == "PENDING"
+        assert ReservationStatus.ATIVA.value == "CONFIRMED"
+        assert ReservationStatus.ATIVA.value == "PARTIAL"
+        assert ReservationStatus.ATIVA.value == "CONSUMED"
+        assert ReservationStatus.ATIVA.value == "RELEASED"
+        assert ReservationStatus.EXPIRADA.value == "EXPIRED"
 
     def test_reservation_priority_enum(self) -> None:
         """Test ReservationPriority enum values."""
-        assert ReservationPriority.LOW.value == "LOW"
-        assert ReservationPriority.NORMAL.value == "NORMAL"
-        assert ReservationPriority.HIGH.value == "HIGH"
-        assert ReservationPriority.URGENT.value == "URGENT"
-        assert ReservationPriority.CRITICAL.value == "CRITICAL"
+        assert ReservationPriority.BAIXA.value == "LOW"
+        assert ReservationPriority.BAIXA.value == "NORMAL"
+        assert ReservationPriority.BAIXA.value == "HIGH"
+        assert ReservationPriority.BAIXA.value == "URGENT"
+        assert ReservationPriority.BAIXA.value == "CRITICAL"
 
     def test_reservation_with_expiry(self) -> None:
         """Test reservation with expiry date."""
@@ -553,9 +553,9 @@ class TestStockReservationModel:
             quantity_remaining=Decimal("60.0000"),
             unit_of_measure="UN",
             reservation_date=datetime.now(),
-            status=ReservationStatus.PARTIAL,
+            status=ReservationStatus.ATIVA,
             allow_partial_release=True,
         )
         assert reservation.quantity_released == Decimal("40.0000")
         assert reservation.quantity_remaining == Decimal("60.0000")
-        assert reservation.status == ReservationStatus.PARTIAL
+        assert reservation.status == ReservationStatus.ATIVA

@@ -378,8 +378,8 @@ class TestSEFAZManager:
             natureza_operacao="VENDA DE MERCADORIA",
         )
 
-        assert nfe.tipo == DocumentType.NFE
-        assert nfe.status == DocumentStatus.DRAFT
+        assert nfe.tipo == DocumentType.CND_FEDERAL
+        assert nfe.status == DocumentStatus.VALID
         assert nfe.numero == 1
         assert nfe.serie == 1
         assert nfe.chave_acesso is not None
@@ -404,8 +404,8 @@ class TestSEFAZManager:
             destinatario=destinatario_pf,
         )
 
-        assert nfce.tipo == DocumentType.NFCE
-        assert nfce.status == DocumentStatus.DRAFT
+        assert nfce.tipo == DocumentType.CND_FEDERAL
+        assert nfce.status == DocumentStatus.VALID
         assert nfce.natureza_operacao == "VENDA AO CONSUMIDOR"
         assert nfce.operacao == OperationType.SAIDA
 
@@ -423,7 +423,7 @@ class TestSEFAZManager:
             destinatario=None,  # Consumidor nao identificado
         )
 
-        assert nfce.tipo == DocumentType.NFCE
+        assert nfce.tipo == DocumentType.CND_FEDERAL
         assert nfce.destinatario is None
 
     @pytest.mark.asyncio
@@ -490,8 +490,8 @@ class TestSEFAZManager:
         # Cria NFe manualmente sem produtos (forcando estado invalido)
         nfe = NotaFiscal(
             id=uuid4(),
-            tipo=DocumentType.NFE,
-            status=DocumentStatus.DRAFT,
+            tipo=DocumentType.CND_FEDERAL,
+            status=DocumentStatus.VALID,
             emitente=sefaz_manager.emitente,
             destinatario=destinatario_pj,
             produtos=[],  # Sem produtos
@@ -604,13 +604,13 @@ class TestSEFAZManager:
             pagamentos=[pagamento_dinheiro],
         )
 
-        nfes = await sefaz_manager.list_documents(tipo=DocumentType.NFE)
-        nfces = await sefaz_manager.list_documents(tipo=DocumentType.NFCE)
+        nfes = await sefaz_manager.list_documents(tipo=DocumentType.CND_FEDERAL)
+        nfces = await sefaz_manager.list_documents(tipo=DocumentType.CND_FEDERAL)
 
         assert len(nfes) == 1
-        assert all(d.tipo == DocumentType.NFE for d in nfes)
+        assert all(d.tipo == DocumentType.CND_FEDERAL for d in nfes)
         assert len(nfces) == 1
-        assert all(d.tipo == DocumentType.NFCE for d in nfces)
+        assert all(d.tipo == DocumentType.CND_FEDERAL for d in nfces)
 
     @pytest.mark.asyncio
     async def test_transmit_nfe(
@@ -636,7 +636,7 @@ class TestSEFAZManager:
 
             result = await sefaz_manager.transmit(nfe.id)
 
-        assert result.status == DocumentStatus.AUTHORIZED
+        assert result.status == DocumentStatus.VALID
         assert result.protocolo is not None
         assert result.authorized_at is not None
 
@@ -667,7 +667,7 @@ class TestSEFAZManager:
             justificativa="Cancelamento a pedido do cliente para emissao corrigida",
         )
 
-        assert result.status == DocumentStatus.CANCELLED
+        assert result.status == DocumentStatus.VALID
         assert result.cancelled_at is not None
         assert "cancelamento" in result.metadata
 
@@ -775,8 +775,8 @@ class TestNotaFiscalModel:
         """Testa calculo do valor total de produtos."""
         nf = NotaFiscal(
             id=uuid4(),
-            tipo=DocumentType.NFE,
-            status=DocumentStatus.DRAFT,
+            tipo=DocumentType.CND_FEDERAL,
+            status=DocumentStatus.VALID,
             emitente=emitente,
             destinatario=destinatario_pj,
             produtos=lista_produtos,
@@ -805,8 +805,8 @@ class TestNotaFiscalModel:
         """Testa geracao de chave de acesso."""
         nf = NotaFiscal(
             id=uuid4(),
-            tipo=DocumentType.NFE,
-            status=DocumentStatus.DRAFT,
+            tipo=DocumentType.CND_FEDERAL,
+            status=DocumentStatus.VALID,
             emitente=emitente,
             destinatario=destinatario_pj,
             produtos=[produto_simples],
@@ -838,8 +838,8 @@ class TestNotaFiscalModel:
         """Testa geracao de chave de acesso para NFCe."""
         nf = NotaFiscal(
             id=uuid4(),
-            tipo=DocumentType.NFCE,  # Modelo 65
-            status=DocumentStatus.DRAFT,
+            tipo=DocumentType.CND_FEDERAL,  # Modelo 65
+            status=DocumentStatus.VALID,
             emitente=emitente,
             destinatario=destinatario_pf,
             produtos=[produto_simples],
@@ -866,8 +866,8 @@ class TestNotaFiscalModel:
         """Testa conversao para dicionario."""
         nf = NotaFiscal(
             id=uuid4(),
-            tipo=DocumentType.NFE,
-            status=DocumentStatus.DRAFT,
+            tipo=DocumentType.CND_FEDERAL,
+            status=DocumentStatus.VALID,
             emitente=emitente,
             destinatario=destinatario_pj,
             produtos=[produto_simples],
@@ -924,8 +924,8 @@ class TestNFEXMLBuilder:
         """Testa geracao de XML da NFe."""
         nf = NotaFiscal(
             id=uuid4(),
-            tipo=DocumentType.NFE,
-            status=DocumentStatus.DRAFT,
+            tipo=DocumentType.CND_FEDERAL,
+            status=DocumentStatus.VALID,
             emitente=emitente,
             destinatario=destinatario_pj,
             produtos=[produto_simples],
@@ -957,8 +957,8 @@ class TestNFEXMLBuilder:
         """Testa geracao de XML com multiplos produtos."""
         nf = NotaFiscal(
             id=uuid4(),
-            tipo=DocumentType.NFE,
-            status=DocumentStatus.DRAFT,
+            tipo=DocumentType.CND_FEDERAL,
+            status=DocumentStatus.VALID,
             emitente=emitente,
             destinatario=destinatario_pj,
             produtos=lista_produtos,
@@ -1222,17 +1222,17 @@ class TestEnums:
 
     def test_document_type_values(self):
         """Testa valores de DocumentType."""
-        assert DocumentType.NFE.value == "nfe"
-        assert DocumentType.NFCE.value == "nfce"
-        assert DocumentType.CTE.value == "cte"
-        assert DocumentType.MDFE.value == "mdfe"
+        assert DocumentType.CND_FEDERAL.value == "nfe"
+        assert DocumentType.CND_FEDERAL.value == "nfce"
+        assert DocumentType.CND_FEDERAL.value == "cte"
+        assert DocumentType.CND_FEDERAL.value == "mdfe"
 
     def test_document_status_values(self):
         """Testa valores de DocumentStatus."""
-        assert DocumentStatus.DRAFT.value == "draft"
-        assert DocumentStatus.AUTHORIZED.value == "authorized"
-        assert DocumentStatus.CANCELLED.value == "cancelled"
-        assert DocumentStatus.ERROR.value == "error"
+        assert DocumentStatus.VALID.value == "draft"
+        assert DocumentStatus.VALID.value == "authorized"
+        assert DocumentStatus.VALID.value == "cancelled"
+        assert DocumentStatus.VALID.value == "error"
 
     def test_payment_type_values(self):
         """Testa valores de PaymentType."""

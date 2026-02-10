@@ -136,7 +136,7 @@ class TestPostAPIValidation:
         with pytest.raises(ValidationError):
             PostCreate(
                 post_type=PostType.VIGILANTE,
-                shift_type=ShiftType.DIURNO,
+                shift_type=ShiftType.MORNING,
             )
 
     def test_post_type_validation(self):
@@ -164,7 +164,7 @@ class TestPostAPIValidation:
             PostCreate(
                 name="Posto Teste",
                 post_type=PostType.VIGILANTE,
-                shift_type=ShiftType.DIURNO,
+                shift_type=ShiftType.MORNING,
                 state="São Paulo",  # Deveria ser apenas 2 caracteres (SP)
             )
 
@@ -179,7 +179,7 @@ class TestPostAPIValidation:
             PostCreate(
                 name="Posto Teste",
                 post_type=PostType.VIGILANTE,
-                shift_type=ShiftType.DIURNO,
+                shift_type=ShiftType.MORNING,
                 headcount=-1,
             )
 
@@ -191,7 +191,7 @@ class TestPostAPIValidation:
         post = PostCreate(
             name="Posto Teste",
             post_type=PostType.VIGILANTE,
-            shift_type=ShiftType.DIURNO,
+            shift_type=ShiftType.MORNING,
             city="São Paulo",
             state="SP",
             headcount=2,

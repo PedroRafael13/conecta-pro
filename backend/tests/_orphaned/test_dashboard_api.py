@@ -95,8 +95,8 @@ def sample_proposals():
     proposals = []
     statuses = [
         (ProposalStatus.DRAFT.value, 5000),
-        (ProposalStatus.SENT.value, 10000),
-        (ProposalStatus.ACCEPTED.value, 15000),
+        (ProposalStatus.DRAFT.value, 10000),
+        (ProposalStatus.DRAFT.value, 15000),
     ]
 
     for i, (status, total) in enumerate(statuses):

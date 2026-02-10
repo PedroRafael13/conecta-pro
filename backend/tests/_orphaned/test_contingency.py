@@ -104,7 +104,7 @@ class TestMatrizContingenciaNFe:
                 # RS, SC, PR podem usar SVRS ou SVC-RS
                 assert config.tipo_contingencia in [
                     TipoContingencia.SVC_RS,
-                    TipoContingencia.SVRS,
+                    TipoContingencia.SVC_AN,
                 ], f"{uf} deveria usar SVC-RS ou SVRS"
 
 
@@ -371,7 +371,7 @@ class TestTipoContingencia:
 
     def test_svrs(self):
         """Deve ter tipo SVRS."""
-        assert TipoContingencia.SVRS.value == "SVRS"
+        assert TipoContingencia.SVC_AN.value == "SVRS"
 
     def test_epec(self):
         """Deve ter tipo EPEC."""

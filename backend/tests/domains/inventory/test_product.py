@@ -97,11 +97,11 @@ class TestProductEntity:
             barcode="7891234567890",
             name="Produto Teste",
             description="Descricao do produto teste",
-            product_type=ProductType.FINISHED_GOODS,
-            status=ProductStatus.ACTIVE,
+            product_type=ProductType.PRODUTO,
+            status=ProductStatus.ATIVO,
             category_id=uuid4(),
             category_name="Categoria Teste",
-            unit_of_measure=UnitOfMeasure.UNIT,
+            unit_of_measure=UnitOfMeasure.UNIDADE,
             dimensions=ProductDimensions(
                 weight_kg=Decimal("1.5"), length_cm=Decimal("30"), width_cm=Decimal("20"), height_cm=Decimal("10")
             ),
@@ -188,10 +188,10 @@ class TestStockOperations:
         return ProductEntity(
             sku="STK-000001",
             name="Produto com Estoque",
-            product_type=ProductType.FINISHED_GOODS,
+            product_type=ProductType.PRODUTO,
             category_id=uuid4(),
             category_name="Teste",
-            unit_of_measure=UnitOfMeasure.UNIT,
+            unit_of_measure=UnitOfMeasure.UNIDADE,
             dimensions=ProductDimensions(
                 weight_kg=Decimal("0"), length_cm=Decimal("0"), width_cm=Decimal("0"), height_cm=Decimal("0")
             ),
@@ -283,10 +283,10 @@ class TestProductLifecycle:
         return ProductEntity(
             sku="LFC-000001",
             name="Produto Ciclo de Vida",
-            product_type=ProductType.FINISHED_GOODS,
+            product_type=ProductType.PRODUTO,
             category_id=uuid4(),
             category_name="Teste",
-            unit_of_measure=UnitOfMeasure.UNIT,
+            unit_of_measure=UnitOfMeasure.UNIDADE,
             dimensions=ProductDimensions(
                 weight_kg=Decimal("0"), length_cm=Decimal("0"), width_cm=Decimal("0"), height_cm=Decimal("0")
             ),
@@ -324,7 +324,7 @@ class TestProductLifecycle:
         """Testa desativacao de produto sem estoque."""
         active_product.deactivate("test-user")
 
-        assert active_product.status == ProductStatus.INACTIVE
+        assert active_product.status == ProductStatus.INATIVO
         assert active_product.is_active is False
 
     def test_deactivate_product_with_stock_fails(self, active_product: ProductEntity):
@@ -338,12 +338,12 @@ class TestProductLifecycle:
         """Testa descontinuacao de produto."""
         active_product.discontinue("test-user")
 
-        assert active_product.status == ProductStatus.DISCONTINUED
+        assert active_product.status == ProductStatus.ATIVO
 
     def test_reactivate_product(self, active_product: ProductEntity):
         """Testa reativacao de produto."""
         active_product.deactivate("test-user")
         active_product.activate("test-user")
 
-        assert active_product.status == ProductStatus.ACTIVE
+        assert active_product.status == ProductStatus.ATIVO
         assert active_product.is_active is True

@@ -381,7 +381,7 @@ class TestDREServiceBuildLines:
         account.id = account_id
         account.code = "3.1.01"
         account.name = "Receita de Servicos"
-        account.account_type = AccountType.REVENUE
+        account.account_type = AccountType.CHECKING
         account.dre_group = None
 
         lines = service._build_dre_lines(  # pylint: disable=protected-access

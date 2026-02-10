@@ -48,7 +48,7 @@ def sample_dashboard():
         nome="Dashboard Teste",
         descricao="Dashboard para testes",
         tipo=DashboardType.EXECUTIVE,
-        status=DashboardStatus.PUBLISHED,
+        status=DashboardStatus.ACTIVE,
         ativo=True,
     )
 
@@ -60,7 +60,7 @@ def sample_widget(sample_dashboard):
         id=uuid4(),
         dashboard_id=sample_dashboard.id,
         titulo="Widget Teste",
-        tipo=WidgetType.CARD,
+        tipo=WidgetType.LINE_CHART,
         ativo=True,
     )
 
@@ -73,7 +73,7 @@ def sample_kpi():
         condominio_id=uuid4(),
         codigo="TEST_001",
         nome="KPI Teste",
-        categoria=KPICategory.LIQUIDITY,
+        categoria=KPICategory.FINANCIAL,
         formula="{a} / {b}",
         valor_atual=Decimal("1.5"),
         ativo=True,
@@ -87,7 +87,7 @@ def sample_report():
         id=uuid4(),
         condominio_id=uuid4(),
         nome="Relatorio Teste",
-        tipo=ReportType.FINANCIAL_SUMMARY,
+        tipo=ReportType.EXECUCAO,
         formato=ReportFormat.PDF,
         frequencia=ReportFrequency.MONTHLY,
         metodo_entrega=DeliveryMethod.EMAIL,
@@ -541,9 +541,9 @@ class TestKPIEndpoints:
     def test_list_kpis_by_category(self, mock_db, mock_kpi_repo, sample_kpi):
         """Testa listagem de KPIs por categoria."""
         mock_kpi_repo.list_by_category.return_value = [sample_kpi]
-        result = mock_kpi_repo.list_by_category(sample_kpi.condominio_id, KPICategory.LIQUIDITY)
+        result = mock_kpi_repo.list_by_category(sample_kpi.condominio_id, KPICategory.FINANCIAL)
         assert len(result) == 1
-        assert result[0].categoria == KPICategory.LIQUIDITY
+        assert result[0].categoria == KPICategory.FINANCIAL
 
     def test_calculate_kpi_value(self, mock_db, mock_kpi_repo, sample_kpi):
         """Testa calculo de valor de KPI."""

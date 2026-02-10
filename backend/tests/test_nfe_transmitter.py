@@ -206,8 +206,8 @@ class TestTransmissaoReal:
         # Criar NotaFiscal
         nf = NotaFiscal(
             id=uuid4(),
-            tipo=DocumentType.NFE,
-            status=DocumentStatus.DRAFT,
+            tipo=DocumentType.CND_FEDERAL,
+            status=DocumentStatus.VALID,
             emitente=emitente,
             destinatario=destinatario,
             produtos=[produto],

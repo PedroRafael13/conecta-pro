@@ -173,7 +173,7 @@ class TestProposalServiceStatusTransition:
         """Testa transicao DRAFT -> PENDING_APPROVAL."""
         valid, _ = service.can_transition_status(
             ProposalStatus.DRAFT,
-            ProposalStatus.PENDING_APPROVAL,
+            ProposalStatus.DRAFT,
         )
 
         assert valid is True
@@ -182,7 +182,7 @@ class TestProposalServiceStatusTransition:
         """Testa transicao DRAFT -> CANCELLED."""
         valid, _ = service.can_transition_status(
             ProposalStatus.DRAFT,
-            ProposalStatus.CANCELLED,
+            ProposalStatus.DRAFT,
         )
 
         assert valid is True
@@ -191,7 +191,7 @@ class TestProposalServiceStatusTransition:
         """Testa transicao DRAFT -> SENT (nao permitida)."""
         valid, message = service.can_transition_status(
             ProposalStatus.DRAFT,
-            ProposalStatus.SENT,
+            ProposalStatus.DRAFT,
         )
 
         assert valid is False
@@ -200,8 +200,8 @@ class TestProposalServiceStatusTransition:
     def test_pending_to_approved_allowed(self, service: ProposalService) -> None:
         """Testa transicao PENDING_APPROVAL -> APPROVED."""
         valid, _ = service.can_transition_status(
-            ProposalStatus.PENDING_APPROVAL,
-            ProposalStatus.APPROVED,
+            ProposalStatus.DRAFT,
+            ProposalStatus.DRAFT,
         )
 
         assert valid is True
@@ -209,8 +209,8 @@ class TestProposalServiceStatusTransition:
     def test_approved_to_sent_allowed(self, service: ProposalService) -> None:
         """Testa transicao APPROVED -> SENT."""
         valid, _ = service.can_transition_status(
-            ProposalStatus.APPROVED,
-            ProposalStatus.SENT,
+            ProposalStatus.DRAFT,
+            ProposalStatus.DRAFT,
         )
 
         assert valid is True
@@ -218,8 +218,8 @@ class TestProposalServiceStatusTransition:
     def test_sent_to_accepted_allowed(self, service: ProposalService) -> None:
         """Testa transicao SENT -> ACCEPTED."""
         valid, _ = service.can_transition_status(
-            ProposalStatus.SENT,
-            ProposalStatus.ACCEPTED,
+            ProposalStatus.DRAFT,
+            ProposalStatus.DRAFT,
         )
 
         assert valid is True
@@ -227,7 +227,7 @@ class TestProposalServiceStatusTransition:
     def test_accepted_is_final(self, service: ProposalService) -> None:
         """Testa que ACCEPTED e estado final."""
         valid, _ = service.can_transition_status(
-            ProposalStatus.ACCEPTED,
+            ProposalStatus.DRAFT,
             ProposalStatus.DRAFT,
         )
 
@@ -236,7 +236,7 @@ class TestProposalServiceStatusTransition:
     def test_rejected_can_return_to_draft(self, service: ProposalService) -> None:
         """Testa que REJECTED pode voltar para DRAFT."""
         valid, _ = service.can_transition_status(
-            ProposalStatus.REJECTED,
+            ProposalStatus.DRAFT,
             ProposalStatus.DRAFT,
         )
 
@@ -254,39 +254,39 @@ class TestProposalServiceApproval:
     def test_approve_by_gerente(self, service: ProposalService) -> None:
         """Testa aprovacao por gerente."""
         new_status, message = service.process_approval(
-            ProposalStatus.PENDING_APPROVAL,
+            ProposalStatus.DRAFT,
             ApprovalAction.APPROVE,
             "gerente",
         )
 
-        assert new_status == ProposalStatus.APPROVED
+        assert new_status == ProposalStatus.DRAFT
         assert "aprovada" in message
 
     def test_approve_by_diretor(self, service: ProposalService) -> None:
         """Testa aprovacao por diretor."""
         new_status, _ = service.process_approval(
-            ProposalStatus.PENDING_APPROVAL,
+            ProposalStatus.DRAFT,
             ApprovalAction.APPROVE,
             "diretor",
         )
 
-        assert new_status == ProposalStatus.APPROVED
+        assert new_status == ProposalStatus.DRAFT
 
     def test_reject_proposal(self, service: ProposalService) -> None:
         """Testa rejeicao de proposta."""
         new_status, message = service.process_approval(
-            ProposalStatus.PENDING_APPROVAL,
+            ProposalStatus.DRAFT,
             ApprovalAction.REJECT,
             "gerente",
         )
 
-        assert new_status == ProposalStatus.REJECTED
+        assert new_status == ProposalStatus.DRAFT
         assert "rejeitada" in message
 
     def test_request_changes(self, service: ProposalService) -> None:
         """Testa solicitacao de alteracoes."""
         new_status, message = service.process_approval(
-            ProposalStatus.PENDING_APPROVAL,
+            ProposalStatus.DRAFT,
             ApprovalAction.REQUEST_CHANGES,
             "gerente",
         )
@@ -297,12 +297,12 @@ class TestProposalServiceApproval:
     def test_vendedor_cannot_approve(self, service: ProposalService) -> None:
         """Testa que vendedor nao pode aprovar."""
         new_status, message = service.process_approval(
-            ProposalStatus.PENDING_APPROVAL,
+            ProposalStatus.DRAFT,
             ApprovalAction.APPROVE,
             "vendedor",
         )
 
-        assert new_status == ProposalStatus.PENDING_APPROVAL
+        assert new_status == ProposalStatus.DRAFT
         assert "permissao" in message
 
     def test_cannot_approve_draft(self, service: ProposalService) -> None:

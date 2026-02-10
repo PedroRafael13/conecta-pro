@@ -70,8 +70,8 @@ def sample_audit_log():
         id=uuid4(),
         tenant_id=uuid4(),
         user_id=uuid4(),
-        action=AuditAction.CREATE,
-        category=AuditCategory.DATA,
+        action=AuditAction.VIEW_PERSONAL_DATA,
+        category=AuditCategory.AUTHENTICATION,
         entity_type="Lead",
         entity_id=str(uuid4()),
         description="Lead criado",
@@ -93,7 +93,7 @@ def sample_compliance_rule():
         name="Consentimento de Dados",
         description="Verificar consentimento para coleta de dados",
         framework=ComplianceFramework.LGPD,
-        category=RuleCategory.DATA_PROTECTION,
+        category=RuleCategory.SENTIMENT,
         severity=RuleSeverity.HIGH,
         status=RuleStatus.ACTIVE,
         created_at=datetime.utcnow(),
@@ -124,7 +124,7 @@ def sample_data_retention():
         tenant_id=uuid4(),
         name="Retenção de Leads",
         entity_type="Lead",
-        data_category=DataCategory.CUSTOMER,
+        data_category=DataCategory.PROFILE,
         retention_period=RetentionPeriod.YEARS_5,
         retention_action=RetentionAction.ARCHIVE,
         status=RetentionStatus.ACTIVE,
@@ -178,7 +178,7 @@ class TestAuditLogAPI:
             return_value={"items": [], "total": 0, "page": 1, "page_size": 20}
         )
 
-        filters = {"action": AuditAction.CREATE, "category": AuditCategory.DATA, "severity": AuditSeverity.HIGH}
+        filters = {"action": AuditAction.VIEW_PERSONAL_DATA, "category": AuditCategory.AUTHENTICATION, "severity": AuditSeverity.DEBUG}
 
         result = await mock_audit_service.list_audit_logs(tenant_id=uuid4(), filters=filters, page=1, page_size=20)
 
@@ -195,7 +195,7 @@ class TestAuditLogAPI:
         )
 
         assert result.id == sample_audit_log.id
-        assert result.action == AuditAction.CREATE
+        assert result.action == AuditAction.VIEW_PERSONAL_DATA
 
     @pytest.mark.asyncio
     async def test_get_audit_log_not_found(self, mock_audit_service):
@@ -222,7 +222,7 @@ class TestAuditLogAPI:
             },
         )
 
-        assert result.action == AuditAction.CREATE
+        assert result.action == AuditAction.VIEW_PERSONAL_DATA
 
     @pytest.mark.asyncio
     async def test_get_audit_stats(self, mock_audit_service):
@@ -363,7 +363,7 @@ class TestComplianceCheckAPI:
     @pytest.mark.asyncio
     async def test_complete_compliance_check_compliant(self, mock_audit_service, sample_compliance_check):
         """Testa conclusão de verificação como compliant."""
-        sample_compliance_check.status = CheckStatus.IN_PROGRESS
+        sample_compliance_check.status = CheckStatus.PENDING
         sample_compliance_check.complete_compliant(95.0, {"test": "passed"})
         mock_audit_service.update_compliance_check = AsyncMock(return_value=sample_compliance_check)
 
@@ -373,7 +373,7 @@ class TestComplianceCheckAPI:
     @pytest.mark.asyncio
     async def test_complete_compliance_check_non_compliant(self, mock_audit_service, sample_compliance_check):
         """Testa conclusão de verificação como não compliant."""
-        sample_compliance_check.status = CheckStatus.IN_PROGRESS
+        sample_compliance_check.status = CheckStatus.PENDING
         sample_compliance_check.complete_non_compliant(
             45.0, ["Violação 1", "Violação 2"], {"recommendation": "Corrigir"}
         )
@@ -413,7 +413,7 @@ class TestDataRetentionAPI:
         )
 
         assert result["total"] == 1
-        assert result["items"][0].data_category == DataCategory.CUSTOMER
+        assert result["items"][0].data_category == DataCategory.PROFILE
 
     @pytest.mark.asyncio
     async def test_create_data_retention_policy_success(self, mock_audit_service, sample_data_retention):

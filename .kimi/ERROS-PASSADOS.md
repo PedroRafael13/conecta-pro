@@ -64,6 +64,22 @@
 **Causa raiz:** Path manipulation perigosa.
 **Lição:** NUNCA usar `sys.path.insert`. Se imports não funcionam, usar `pythonpath = .` no pytest.ini.
 
+## Erro 13: Não usar as ferramentas de produtividade
+
+**Regra:** ANTES de qualquer modificação:
+1. Rodar: `pre-flight arquivo.py` — ver impacto cruzado
+2. Durante: `safe-edit "comando"` — previne regressão automática
+3. Depois: `verify-instant` (rápido) ou `verify-all.sh` (completo)
+
+**Se encontrar enum errado:**
+- Rodar: `validate-enums --fix`
+
+**Se TypeError em teste:**
+- Rodar: `required-fields.py caminho/do/model.py NomeModel`
+
+**Se quiser validar schemas nos testes:**
+- Rodar: `schema-validator.py --model NomeModel` ou `--scan`
+
 ---
 
 **Regra geral:** Se você está prestes a fazer algo parecido com qualquer erro acima, PARE e reconsidere.

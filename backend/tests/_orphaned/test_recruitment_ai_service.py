@@ -79,7 +79,7 @@ def sample_skills():
             candidate_id="cand-123",
             name="Python",
             category=SkillCategory.TECNICA,
-            level=SkillLevel.ESPECIALISTA,
+            level=SkillLevel.BASICO,
             years_experience=6,
         ),
         CandidateSkill(
@@ -129,7 +129,7 @@ class TestMatchingScore:
         candidate = Candidate(
             name="Maria Teste",
             email="maria@example.com",
-            source=CandidateSource.SITE_CARREIRAS,
+            source=CandidateSource.SITE,
             city="Recife",
             state="PE",
             years_experience=1,

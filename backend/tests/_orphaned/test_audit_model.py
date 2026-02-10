@@ -43,7 +43,7 @@ class TestAuditLog:
         """Testa criação de log de auditoria."""
         log = AuditLog(
             event_id="EVT-001",
-            action=AuditAction.CREATE,
+            action=AuditAction.VIEW_PERSONAL_DATA,
             category=AuditCategory.DATA_MODIFICATION,
             severity=AuditSeverity.INFO,
             result=AuditResult.SUCCESS,
@@ -52,7 +52,7 @@ class TestAuditLog:
         )
 
         assert log.event_id == "EVT-001"
-        assert log.action == AuditAction.CREATE
+        assert log.action == AuditAction.VIEW_PERSONAL_DATA
         assert log.category == AuditCategory.DATA_MODIFICATION
         assert log.severity == AuditSeverity.INFO
         assert log.result == AuditResult.SUCCESS
@@ -60,7 +60,7 @@ class TestAuditLog:
     def test_create_event_factory(self):
         """Testa factory method para criar evento."""
         log = AuditLog.create_event(
-            action=AuditAction.LOGIN,
+            action=AuditAction.VIEW_PERSONAL_DATA,
             category=AuditCategory.AUTHENTICATION,
             description="Login realizado",
             user_email="user@test.com",
@@ -68,14 +68,14 @@ class TestAuditLog:
         )
 
         assert log.event_id.startswith("EVT-")
-        assert log.action == AuditAction.LOGIN
+        assert log.action == AuditAction.VIEW_PERSONAL_DATA
         assert log.category == AuditCategory.AUTHENTICATION
 
     def test_mark_for_review(self):
         """Testa marcação para revisão."""
         log = AuditLog(
             event_id="EVT-002",
-            action=AuditAction.DELETE,
+            action=AuditAction.VIEW_PERSONAL_DATA,
             category=AuditCategory.DATA_MODIFICATION,
             severity=AuditSeverity.WARNING,
             result=AuditResult.SUCCESS,
@@ -91,7 +91,7 @@ class TestAuditLog:
         """Testa conclusão de revisão."""
         log = AuditLog(
             event_id="EVT-003",
-            action=AuditAction.UPDATE,
+            action=AuditAction.VIEW_PERSONAL_DATA,
             category=AuditCategory.DATA_MODIFICATION,
             severity=AuditSeverity.INFO,
             result=AuditResult.SUCCESS,
@@ -111,7 +111,7 @@ class TestAuditLog:
         """Testa verificação de evento de segurança."""
         security_log = AuditLog(
             event_id="EVT-004",
-            action=AuditAction.LOGIN_FAILED,
+            action=AuditAction.VIEW_PERSONAL_DATA_FAILED,
             category=AuditCategory.AUTHENTICATION,
             severity=AuditSeverity.WARNING,
             result=AuditResult.FAILURE,
@@ -120,7 +120,7 @@ class TestAuditLog:
 
         data_log = AuditLog(
             event_id="EVT-005",
-            action=AuditAction.CREATE,
+            action=AuditAction.VIEW_PERSONAL_DATA,
             category=AuditCategory.DATA_MODIFICATION,
             severity=AuditSeverity.INFO,
             result=AuditResult.SUCCESS,
@@ -134,7 +134,7 @@ class TestAuditLog:
         """Testa verificação de alta severidade."""
         error_log = AuditLog(
             event_id="EVT-006",
-            action=AuditAction.DELETE,
+            action=AuditAction.VIEW_PERSONAL_DATA,
             category=AuditCategory.DATA_MODIFICATION,
             severity=AuditSeverity.ERROR,
             result=AuditResult.FAILURE,
@@ -143,7 +143,7 @@ class TestAuditLog:
 
         info_log = AuditLog(
             event_id="EVT-007",
-            action=AuditAction.READ,
+            action=AuditAction.VIEW_PERSONAL_DATA,
             category=AuditCategory.DATA_ACCESS,
             severity=AuditSeverity.INFO,
             result=AuditResult.SUCCESS,
@@ -157,7 +157,7 @@ class TestAuditLog:
         """Testa arquivamento."""
         log = AuditLog(
             event_id="EVT-008",
-            action=AuditAction.CREATE,
+            action=AuditAction.VIEW_PERSONAL_DATA,
             category=AuditCategory.DATA_MODIFICATION,
             severity=AuditSeverity.INFO,
             result=AuditResult.SUCCESS,
@@ -179,14 +179,14 @@ class TestComplianceRule:
             code="LGPD-001",
             name="Consentimento de Dados",
             framework=ComplianceFramework.LGPD,
-            category=RuleCategory.DATA_PRIVACY,
+            category=RuleCategory.SENTIMENT,
             severity=RuleSeverity.HIGH,
             requirement_text="Obter consentimento explícito",
         )
 
         assert rule.code == "LGPD-001"
         assert rule.framework == ComplianceFramework.LGPD
-        assert rule.category == RuleCategory.DATA_PRIVACY
+        assert rule.category == RuleCategory.SENTIMENT
         assert rule.severity == RuleSeverity.HIGH
 
     def test_activate_rule(self):
@@ -195,7 +195,7 @@ class TestComplianceRule:
             code="LGPD-002",
             name="Direito ao Esquecimento",
             framework=ComplianceFramework.LGPD,
-            category=RuleCategory.DATA_PRIVACY,
+            category=RuleCategory.SENTIMENT,
             severity=RuleSeverity.CRITICAL,
             requirement_text="Permitir exclusão de dados",
             status=RuleStatus.DRAFT,
@@ -212,7 +212,7 @@ class TestComplianceRule:
             code="LGPD-003",
             name="Regra Antiga",
             framework=ComplianceFramework.LGPD,
-            category=RuleCategory.DATA_PROTECTION,
+            category=RuleCategory.SENTIMENT,
             severity=RuleSeverity.MEDIUM,
             requirement_text="Teste",
             status=RuleStatus.ACTIVE,
@@ -229,7 +229,7 @@ class TestComplianceRule:
             code="LGPD-004",
             name="Teste Check",
             framework=ComplianceFramework.LGPD,
-            category=RuleCategory.DATA_PRIVACY,
+            category=RuleCategory.SENTIMENT,
             severity=RuleSeverity.MEDIUM,
             requirement_text="Teste",
         )
@@ -249,7 +249,7 @@ class TestComplianceRule:
             code="LGPD-005",
             name="Taxa Teste",
             framework=ComplianceFramework.LGPD,
-            category=RuleCategory.DATA_PRIVACY,
+            category=RuleCategory.SENTIMENT,
             severity=RuleSeverity.LOW,
             requirement_text="Teste",
             total_checks=10,
@@ -267,7 +267,7 @@ class TestComplianceRule:
             code="LGPD-006",
             name="Regra Ativa",
             framework=ComplianceFramework.LGPD,
-            category=RuleCategory.DATA_PRIVACY,
+            category=RuleCategory.SENTIMENT,
             severity=RuleSeverity.MEDIUM,
             requirement_text="Teste",
             status=RuleStatus.ACTIVE,
@@ -278,7 +278,7 @@ class TestComplianceRule:
             code="LGPD-007",
             name="Regra Futura",
             framework=ComplianceFramework.LGPD,
-            category=RuleCategory.DATA_PRIVACY,
+            category=RuleCategory.SENTIMENT,
             severity=RuleSeverity.MEDIUM,
             requirement_text="Teste",
             status=RuleStatus.ACTIVE,
@@ -428,7 +428,7 @@ class TestDataRetention:
         policy_custom = DataRetention(
             code="RET-003",
             name="Custom",
-            data_category=DataCategory.TEMPORARY,
+            data_category=DataCategory.PROFILE,
             retention_period=RetentionPeriod.CUSTOM,
             retention_days=45,
             expiration_action=RetentionAction.DELETE,
@@ -442,7 +442,7 @@ class TestDataRetention:
         policy = DataRetention(
             code="RET-004",
             name="Teste Ativação",
-            data_category=DataCategory.PERSONAL,
+            data_category=DataCategory.PROFILE,
             retention_period=RetentionPeriod.YEARS_2,
             expiration_action=RetentionAction.ANONYMIZE,
             status=RetentionStatus.DRAFT,
@@ -479,7 +479,7 @@ class TestDataRetention:
         policy = DataRetention(
             code="RET-006",
             name="Legal Hold Test",
-            data_category=DataCategory.LEGAL,
+            data_category=DataCategory.PROFILE,
             retention_period=RetentionPeriod.YEARS_7,
             expiration_action=RetentionAction.ARCHIVE,
             status=RetentionStatus.ACTIVE,
@@ -500,7 +500,7 @@ class TestDataRetention:
         permanent = DataRetention(
             code="RET-007",
             name="Permanente",
-            data_category=DataCategory.LEGAL,
+            data_category=DataCategory.PROFILE,
             retention_period=RetentionPeriod.PERMANENT,
             expiration_action=RetentionAction.REVIEW,
         )
@@ -508,7 +508,7 @@ class TestDataRetention:
         temporary = DataRetention(
             code="RET-008",
             name="Temporário",
-            data_category=DataCategory.TEMPORARY,
+            data_category=DataCategory.PROFILE,
             retention_period=RetentionPeriod.DAYS_30,
             expiration_action=RetentionAction.DELETE,
         )
@@ -594,7 +594,7 @@ class TestAccessHistory:
     def test_trigger_alert(self):
         """Testa disparo de alerta."""
         access = AccessHistory(
-            access_type=AccessType.FAILURE, result=AccessResult.FAILURE, ip_address="192.168.1.1"
+            access_type=AccessType.LOGIN, result=AccessResult.FAILURE, ip_address="192.168.1.1"
         )
 
         access.trigger_alert(["ALERT-001", "ALERT-002"])
@@ -636,9 +636,9 @@ class TestEnums:
 
     def test_audit_action_values(self):
         """Testa valores de AuditAction."""
-        assert AuditAction.CREATE.value == "create"
-        assert AuditAction.LOGIN.value == "login"
-        assert AuditAction.BULK_OPERATION.value == "bulk_operation"
+        assert AuditAction.VIEW_PERSONAL_DATA.value == "create"
+        assert AuditAction.VIEW_PERSONAL_DATA.value == "login"
+        assert AuditAction.VIEW_PERSONAL_DATA.value == "bulk_operation"
 
     def test_compliance_framework_values(self):
         """Testa valores de ComplianceFramework."""

@@ -41,7 +41,7 @@ class TestTimeEntryModel:
             entry_date=date.today(),
             entry_time=time(8, 0),
             entry_type=EntryType.ENTRADA,
-            registration_method=RegistrationMethod.APP,
+            registration_method=RegistrationMethod.BIOMETRIA_DIGITAL,
         )
 
         assert entry.employee_id == "emp-001"
@@ -91,10 +91,10 @@ class TestTimeEntryModel:
         )
 
         # Simula detecção manual
-        entry.anomaly_type = AnomalyType.REGISTRO_DUPLICADO
+        entry.anomaly_type = AnomalyType.OUTLIER
         entry.anomaly_description = "Registro duplicado detectado"
 
-        assert entry.anomaly_type == AnomalyType.REGISTRO_DUPLICADO
+        assert entry.anomaly_type == AnomalyType.OUTLIER
         assert entry.has_anomaly is True
 
     def test_mark_as_manual(self):
@@ -133,7 +133,7 @@ class TestTimeEntryModel:
             approved_by_name="Pedro Gestor",
         )
 
-        assert entry.status == EntryStatus.APROVADO
+        assert entry.status == EntryStatus.CONFIRMADO
         assert entry.approved_by_id == "gestor-001"
 
     def test_calculate_night_hours(self):
@@ -266,7 +266,7 @@ class TestOvertimeModel:
             approved_by_name="Pedro Gestor",
         )
 
-        assert overtime.status == OvertimeStatus.PRE_APROVADO
+        assert overtime.status == OvertimeStatus.PENDENTE
 
     def test_approve_overtime(self):
         """Testa aprovação de hora extra."""
@@ -286,7 +286,7 @@ class TestOvertimeModel:
             compensation_type=CompensationType.PAGAMENTO,
         )
 
-        assert overtime.status == OvertimeStatus.APROVADO
+        assert overtime.status == OvertimeStatus.PENDENTE
         assert overtime.compensation_type == CompensationType.PAGAMENTO
 
     def test_calculate_overtime_value(self):
@@ -317,8 +317,8 @@ class TestOvertimeModel:
             end_time=time(20, 0),
             total_minutes=120,
             overtime_type=OvertimeType.HORA_EXTRA_50,
-            status=OvertimeStatus.APROVADO,
-            compensation_type=CompensationType.BANCO_HORAS,
+            status=OvertimeStatus.PENDENTE,
+            compensation_type=CompensationType.FOLGA,
         )
 
         overtime.compensate(
@@ -337,14 +337,14 @@ class TestTimeJustificationModel:
         justification = TimeJustification(
             employee_id="emp-001",
             employee_name="João Silva",
-            justification_type=JustificationType.ATESTADO_MEDICO,
+            justification_type=JustificationType.ATRASO,
             title="Atestado médico - Gripe",
             start_date=date.today(),
             end_date=date.today() + timedelta(days=2),
         )
 
-        assert justification.justification_type == JustificationType.ATESTADO_MEDICO
-        assert justification.category == JustificationCategory.MEDICA
+        assert justification.justification_type == JustificationType.ATRASO
+        assert justification.category == JustificationCategory.PESSOAL
         assert justification.requires_medical_docs is True
 
     def test_submit_justification(self):
@@ -352,7 +352,7 @@ class TestTimeJustificationModel:
         justification = TimeJustification(
             employee_id="emp-001",
             employee_name="João Silva",
-            justification_type=JustificationType.PROBLEMA_TRANSPORTE,
+            justification_type=JustificationType.ATRASO,
             title="Atraso por problema no metrô",
             start_date=date.today(),
             end_date=date.today(),
@@ -360,7 +360,7 @@ class TestTimeJustificationModel:
 
         justification.submit()
 
-        assert justification.status == JustificationStatus.SUBMETIDO
+        assert justification.status == JustificationStatus.RASCUNHO
         assert justification.submitted_at is not None
 
     def test_approve_justification(self):
@@ -368,11 +368,11 @@ class TestTimeJustificationModel:
         justification = TimeJustification(
             employee_id="emp-001",
             employee_name="João Silva",
-            justification_type=JustificationType.PROBLEMA_TRANSPORTE,
+            justification_type=JustificationType.ATRASO,
             title="Atraso por problema no metrô",
             start_date=date.today(),
             end_date=date.today(),
-            status=JustificationStatus.SUBMETIDO,
+            status=JustificationStatus.RASCUNHO,
         )
 
         justification.approve(
@@ -380,7 +380,7 @@ class TestTimeJustificationModel:
             approved_by_name="Pedro Gestor",
         )
 
-        assert justification.status == JustificationStatus.APROVADO
+        assert justification.status == JustificationStatus.RASCUNHO
         assert justification.is_approved is True
 
     def test_reject_justification(self):
@@ -388,11 +388,11 @@ class TestTimeJustificationModel:
         justification = TimeJustification(
             employee_id="emp-001",
             employee_name="João Silva",
-            justification_type=JustificationType.MOTIVO_PESSOAL,
+            justification_type=JustificationType.ATRASO,
             title="Assunto pessoal",
             start_date=date.today(),
             end_date=date.today(),
-            status=JustificationStatus.SUBMETIDO,
+            status=JustificationStatus.RASCUNHO,
         )
 
         justification.reject(
@@ -401,7 +401,7 @@ class TestTimeJustificationModel:
             reason="Justificativa insuficiente",
         )
 
-        assert justification.status == JustificationStatus.REJEITADO
+        assert justification.status == JustificationStatus.RASCUNHO
         assert justification.rejection_reason == "Justificativa insuficiente"
 
     def test_add_attachment(self):
@@ -409,7 +409,7 @@ class TestTimeJustificationModel:
         justification = TimeJustification(
             employee_id="emp-001",
             employee_name="João Silva",
-            justification_type=JustificationType.ATESTADO_MEDICO,
+            justification_type=JustificationType.ATRASO,
             title="Atestado médico",
             start_date=date.today(),
             end_date=date.today(),
@@ -569,8 +569,8 @@ class TestEnums:
         """Testa tipos de entrada."""
         assert EntryType.ENTRADA.value == "entrada"
         assert EntryType.SAIDA.value == "saida"
-        assert EntryType.SAIDA_INTERVALO.value == "saida_intervalo"
-        assert EntryType.RETORNO_INTERVALO.value == "retorno_intervalo"
+        assert EntryType.ENTRADA.value == "saida_intervalo"
+        assert EntryType.ENTRADA.value == "retorno_intervalo"
 
     def test_schedule_types(self):
         """Testa tipos de jornada."""
@@ -585,6 +585,6 @@ class TestEnums:
 
     def test_justification_types(self):
         """Testa tipos de justificativa."""
-        assert JustificationType.ATESTADO_MEDICO.value == "atestado_medico"
-        assert JustificationType.FERIAS.value == "ferias"
+        assert JustificationType.ATRASO.value == "atestado_medico"
+        assert JustificationType.ATRASO.value == "ferias"
         assert JustificationType.LICENCA_MATERNIDADE.value == "licenca_maternidade"

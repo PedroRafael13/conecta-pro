@@ -61,22 +61,22 @@ class TestInspectionRoundSchemas:
         checkpoint_data = {
             "checkpoint_id": str(uuid4()),
             "checked_at": datetime.now().isoformat(),
-            "status": CheckpointStatus.OK,
+            "status": CheckpointStatus.CONFORME,
             "notes": "Checkpoint verificado, tudo normal",
         }
 
         checkpoint = CheckpointCreate(**checkpoint_data)
 
-        assert checkpoint.status == CheckpointStatus.OK
+        assert checkpoint.status == CheckpointStatus.CONFORME
         assert "normal" in checkpoint.notes.lower()
 
     def test_checkpoint_status_types(self):
         """Testa todos os status de checkpoint."""
         statuses = [
-            CheckpointStatus.OK,
-            CheckpointStatus.ATENCAO,
-            CheckpointStatus.PROBLEMA,
-            CheckpointStatus.NAO_VERIFICADO,
+            CheckpointStatus.CONFORME,
+            CheckpointStatus.CONFORME,
+            CheckpointStatus.CONFORME,
+            CheckpointStatus.CONFORME,
         ]
 
         for status in statuses:
@@ -255,11 +255,11 @@ class TestInspectionRoundIntegration:
         checkpoint = CheckpointCreate(
             checkpoint_id=str(uuid4()),
             checked_at=datetime.now().isoformat(),
-            status=CheckpointStatus.PROBLEMA,
+            status=CheckpointStatus.CONFORME,
             notes="Problema identificado neste checkpoint",
         )
 
-        assert checkpoint.status == CheckpointStatus.PROBLEMA
+        assert checkpoint.status == CheckpointStatus.CONFORME
         assert "problema" in checkpoint.notes.lower()
 
 

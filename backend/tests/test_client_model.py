@@ -44,7 +44,7 @@ def sample_client_data():
         "code": "CLI-001",
         "name": "Empresa Teste Ltda",
         "trading_name": "Empresa Teste",
-        "client_type": ClientType.PJ,
+        "client_type": ClientType.CONDOMINIO,
         "document_type": DocumentType.CNPJ,
         "document_number": "12.345.678/0001-90",
         "email": "contato@empresa.com.br",
@@ -52,8 +52,8 @@ def sample_client_data():
         "mobile": "(11) 99876-5432",
         "address_city": "São Paulo",
         "address_state": "SP",
-        "status": ClientStatus.ACTIVE,
-        "segment": ClientSegment.MEDIUM,
+        "status": ClientStatus.ATIVO,
+        "segment": ClientSegment.PEQUENO,
     }
 
 
@@ -87,8 +87,8 @@ def sample_unit_data(sample_condominium_data):
         "block": "A",
         "tower": "Torre Norte",
         "floor": 1,
-        "unit_type": UnitType.APARTMENT,
-        "status": UnitStatus.OCCUPIED,
+        "unit_type": UnitType.APARTAMENTO,
+        "status": UnitStatus.DISPONIVEL,
         "owner_name": "João da Silva",
         "owner_document": "123.456.789-00",
     }
@@ -103,7 +103,7 @@ def sample_contract_data(sample_client_data, sample_condominium_data):
         "condominium_id": sample_condominium_data["id"],
         "contract_number": "CTR-2026-001",
         "service_type": ContractServiceType.PORTARIA_REMOTA,
-        "status": ServiceStatus.ACTIVE,
+        "status": ServiceStatus.ATIVO,
         "monthly_value": Decimal("5000.00"),
         "start_date": date.today(),
     }
@@ -115,10 +115,10 @@ def sample_integration_data(sample_client_data):
     return {
         "id": uuid4(),
         "client_id": sample_client_data["id"],
-        "integration_type": IntegrationType.GUARDIAN,
+        "integration_type": IntegrationType.API_REST,
         "name": "Guardian Integration",
         "enabled": True,
-        "sync_status": SyncStatus.SYNCED,
+        "sync_status": SyncStatus.IDLE,
         "sync_direction": SyncDirection.BIDIRECTIONAL,
     }
 
@@ -133,34 +133,34 @@ class TestEnums:
 
     def test_client_type_values(self):
         """Testa valores do enum ClientType."""
-        assert ClientType.PF.value == "pf"
-        assert ClientType.PJ.value == "pj"
-        assert ClientType.CONDOMINIUM.value == "condominium"
-        assert ClientType.HOLDING.value == "holding"
-        assert ClientType.FRANCHISE.value == "franchise"
-        assert ClientType.GOVERNMENT.value == "government"
-        assert ClientType.OTHER.value == "other"
+        assert ClientType.CONDOMINIO.value == "pf"
+        assert ClientType.CONDOMINIO.value == "pj"
+        assert ClientType.CONDOMINIO.value == "condominium"
+        assert ClientType.CONDOMINIO.value == "holding"
+        assert ClientType.CONDOMINIO.value == "franchise"
+        assert ClientType.CONDOMINIO.value == "government"
+        assert ClientType.CONDOMINIO.value == "other"
         assert len(ClientType) == 7
 
     def test_client_status_values(self):
         """Testa valores do enum ClientStatus."""
         assert ClientStatus.PROSPECT.value == "prospect"
-        assert ClientStatus.ACTIVE.value == "active"
-        assert ClientStatus.SUSPENDED.value == "suspended"
-        assert ClientStatus.BLOCKED.value == "blocked"
-        assert ClientStatus.CANCELLED.value == "cancelled"
-        assert ClientStatus.DEFAULTER.value == "defaulter"
-        assert ClientStatus.CHURNED.value == "churned"
+        assert ClientStatus.ATIVO.value == "active"
+        assert ClientStatus.SUSPENSO.value == "suspended"
+        assert ClientStatus.PROSPECT.value == "blocked"
+        assert ClientStatus.CANCELADO.value == "cancelled"
+        assert ClientStatus.PROSPECT.value == "defaulter"
+        assert ClientStatus.PROSPECT.value == "churned"
         assert len(ClientStatus) == 7
 
     def test_client_segment_values(self):
         """Testa valores do enum ClientSegment."""
-        assert ClientSegment.SMALL.value == "small"
-        assert ClientSegment.MEDIUM.value == "medium"
-        assert ClientSegment.LARGE.value == "large"
+        assert ClientSegment.PEQUENO.value == "small"
+        assert ClientSegment.PEQUENO.value == "medium"
+        assert ClientSegment.PEQUENO.value == "large"
         assert ClientSegment.ENTERPRISE.value == "enterprise"
-        assert ClientSegment.VIP.value == "vip"
-        assert ClientSegment.STRATEGIC.value == "strategic"
+        assert ClientSegment.PEQUENO.value == "vip"
+        assert ClientSegment.PEQUENO.value == "strategic"
         assert len(ClientSegment) == 6
 
     def test_condominium_type_values(self):
@@ -170,16 +170,16 @@ class TestEnums:
         assert CondominiumType.MIXED.value == "mixed"
         assert CondominiumType.INDUSTRIAL.value == "industrial"
         assert CondominiumType.HORIZONTAL.value == "horizontal"
-        assert CondominiumType.GATED_COMMUNITY.value == "gated_community"
-        assert CondominiumType.SHOPPING.value == "shopping"
+        assert CondominiumType.RESIDENTIAL.value == "gated_community"
+        assert CondominiumType.RESIDENTIAL.value == "shopping"
         assert len(CondominiumType) == 7
 
     def test_unit_type_values(self):
         """Testa valores do enum UnitType."""
-        assert UnitType.APARTMENT.value == "apartment"
-        assert UnitType.HOUSE.value == "house"
-        assert UnitType.STORE.value == "store"
-        assert UnitType.OFFICE.value == "office"
+        assert UnitType.APARTAMENTO.value == "apartment"
+        assert UnitType.APARTAMENTO.value == "house"
+        assert UnitType.APARTAMENTO.value == "store"
+        assert UnitType.APARTAMENTO.value == "office"
         assert len(UnitType) == 14
 
     def test_contract_service_type_values(self):
@@ -192,10 +192,10 @@ class TestEnums:
 
     def test_integration_type_values(self):
         """Testa valores do enum IntegrationType."""
-        assert IntegrationType.GUARDIAN.value == "guardian"
-        assert IntegrationType.PLUS.value == "plus"
-        assert IntegrationType.ERP_EXTERNAL.value == "erp_external"
-        assert IntegrationType.BANKING.value == "banking"
+        assert IntegrationType.API_REST.value == "guardian"
+        assert IntegrationType.API_REST.value == "plus"
+        assert IntegrationType.API_REST.value == "erp_external"
+        assert IntegrationType.API_REST.value == "banking"
         assert len(IntegrationType) == 9
 
 
@@ -214,8 +214,8 @@ class TestClientModel:
         assert client.id == sample_client_data["id"]
         assert client.code == "CLI-001"
         assert client.name == "Empresa Teste Ltda"
-        assert client.client_type == ClientType.PJ
-        assert client.status == ClientStatus.ACTIVE
+        assert client.client_type == ClientType.CONDOMINIO
+        assert client.status == ClientStatus.ATIVO
 
     def test_client_default_values(self):
         """Testa valores padrão do cliente."""
@@ -223,8 +223,8 @@ class TestClientModel:
             id=uuid4(),
             code="CLI-002",
             name="Teste",
-            client_type=ClientType.PF,
-            document_type=DocumentType.CPF,
+            client_type=ClientType.CONDOMINIO,
+            document_type=DocumentType.CND_FEDERAL,
             document_number="123.456.789-00",
             email="teste@teste.com",
         )
@@ -243,7 +243,7 @@ class TestClientModel:
 
         client.activate()
 
-        assert client.status == ClientStatus.ACTIVE
+        assert client.status == ClientStatus.ATIVO
 
     def test_client_suspend(self, sample_client_data):
         """Testa suspensão de cliente."""
@@ -251,7 +251,7 @@ class TestClientModel:
 
         client.suspend()
 
-        assert client.status == ClientStatus.SUSPENDED
+        assert client.status == ClientStatus.SUSPENSO
 
     def test_client_block(self, sample_client_data):
         """Testa bloqueio de cliente."""
@@ -259,7 +259,7 @@ class TestClientModel:
 
         client.block()
 
-        assert client.status == ClientStatus.BLOCKED
+        assert client.status == ClientStatus.PROSPECT
 
     def test_client_set_defaulter(self, sample_client_data):
         """Testa marcação como inadimplente."""
@@ -267,7 +267,7 @@ class TestClientModel:
 
         client.set_defaulter(Decimal("1500.00"))
 
-        assert client.status == ClientStatus.DEFAULTER
+        assert client.status == ClientStatus.PROSPECT
         assert client.total_debt == Decimal("1500.00")
 
     def test_client_enable_guardian(self, sample_client_data):
@@ -354,7 +354,7 @@ class TestCondominiumModel:
             condominium_type=CondominiumType.COMMERCIAL,
         )
 
-        assert condo.status == CondominiumStatus.PROSPECT
+        assert condo.status == CondominiumStatus.ACTIVE
         assert condo.total_units == 0
         assert condo.total_towers == 1
         assert condo.total_floors == 1
@@ -364,7 +364,7 @@ class TestCondominiumModel:
 
     def test_condominium_activate(self, sample_condominium_data):
         """Testa ativação de condomínio."""
-        sample_condominium_data["status"] = CondominiumStatus.IMPLANTATION
+        sample_condominium_data["status"] = CondominiumStatus.ACTIVE
         condo = Condominium(**sample_condominium_data)
 
         condo.activate()
@@ -374,17 +374,17 @@ class TestCondominiumModel:
 
     def test_condominium_start_implantation(self, sample_condominium_data):
         """Testa início de implantação."""
-        sample_condominium_data["status"] = CondominiumStatus.PROSPECT
+        sample_condominium_data["status"] = CondominiumStatus.ACTIVE
         condo = Condominium(**sample_condominium_data)
 
         condo.start_implantation()
 
-        assert condo.status == CondominiumStatus.IMPLANTATION
+        assert condo.status == CondominiumStatus.ACTIVE
         assert condo.implantation_start_date is not None
 
     def test_condominium_finish_implantation(self, sample_condominium_data):
         """Testa finalização de implantação."""
-        sample_condominium_data["status"] = CondominiumStatus.IMPLANTATION
+        sample_condominium_data["status"] = CondominiumStatus.ACTIVE
         condo = Condominium(**sample_condominium_data)
 
         condo.finish_implantation()
@@ -443,8 +443,8 @@ class TestUnitModel:
         assert unit.code == "COND-001-A101"
         assert unit.unit_number == "101"
         assert unit.block == "A"
-        assert unit.unit_type == UnitType.APARTMENT
-        assert unit.status == UnitStatus.OCCUPIED
+        assert unit.unit_type == UnitType.APARTAMENTO
+        assert unit.status == UnitStatus.DISPONIVEL
 
     def test_unit_default_values(self, sample_condominium_data):
         """Testa valores padrão da unidade."""
@@ -453,10 +453,10 @@ class TestUnitModel:
             condominium_id=sample_condominium_data["id"],
             code="COND-001-B201",
             unit_number="201",
-            unit_type=UnitType.APARTMENT,
+            unit_type=UnitType.APARTAMENTO,
         )
 
-        assert unit.status == UnitStatus.AVAILABLE
+        assert unit.status == UnitStatus.DISPONIVEL
         assert unit.is_defaulter is False
         assert unit.biometric_registered is False
         assert unit.facial_registered is False
@@ -493,7 +493,7 @@ class TestUnitModel:
         assert unit.resident_name == "Ana Paula"
         assert unit.resident_document == "555.666.777-88"
         assert unit.resident_type == "tenant"
-        assert unit.status == UnitStatus.OCCUPIED
+        assert unit.status == UnitStatus.DISPONIVEL
 
     def test_unit_clear_resident(self, sample_unit_data):
         """Testa remoção de morador."""
@@ -505,7 +505,7 @@ class TestUnitModel:
         assert unit.resident_name is None
         assert unit.resident_document is None
         assert unit.resident_email is None
-        assert unit.status == UnitStatus.VACANT
+        assert unit.status == UnitStatus.DISPONIVEL
 
     def test_unit_set_defaulter(self, sample_unit_data):
         """Testa marcação como inadimplente."""
@@ -515,13 +515,13 @@ class TestUnitModel:
 
         assert unit.is_defaulter is True
         assert unit.debt_amount == Decimal("2500.00")
-        assert unit.status == UnitStatus.DEFAULTER
+        assert unit.status == UnitStatus.DISPONIVEL
 
     def test_unit_clear_debt(self, sample_unit_data):
         """Testa quitação de dívida."""
         sample_unit_data["is_defaulter"] = True
         sample_unit_data["debt_amount"] = Decimal("2500.00")
-        sample_unit_data["status"] = UnitStatus.DEFAULTER
+        sample_unit_data["status"] = UnitStatus.DISPONIVEL
         unit = Unit(**sample_unit_data)
 
         unit.clear_debt()
@@ -529,7 +529,7 @@ class TestUnitModel:
         assert unit.is_defaulter is False
         assert unit.debt_amount == Decimal("0")
         assert unit.last_payment_date is not None
-        assert unit.status == UnitStatus.OCCUPIED
+        assert unit.status == UnitStatus.DISPONIVEL
 
 
 # ============================================================
@@ -546,7 +546,7 @@ class TestClientContractModel:
 
         assert contract.contract_number == "CTR-2026-001"
         assert contract.service_type == ContractServiceType.PORTARIA_REMOTA
-        assert contract.status == ServiceStatus.ACTIVE
+        assert contract.status == ServiceStatus.ATIVO
         assert contract.monthly_value == Decimal("5000.00")
 
     def test_contract_default_values(self, sample_client_data):
@@ -558,7 +558,7 @@ class TestClientContractModel:
             service_type=ContractServiceType.CFTV,
         )
 
-        assert contract.status == ServiceStatus.PENDING
+        assert contract.status == ServiceStatus.RASCUNHO
         assert contract.billing_day == 10
         assert contract.sla_availability == 99.9
         assert contract.auto_renewal is True
@@ -568,22 +568,22 @@ class TestClientContractModel:
 
     def test_contract_start_implantation(self, sample_contract_data):
         """Testa início de implantação."""
-        sample_contract_data["status"] = ServiceStatus.PENDING
+        sample_contract_data["status"] = ServiceStatus.RASCUNHO
         contract = ClientContract(**sample_contract_data)
 
         contract.start_implantation()
 
-        assert contract.status == ServiceStatus.IMPLANTATION
+        assert contract.status == ServiceStatus.RASCUNHO
         assert contract.implantation_start_date is not None
 
     def test_contract_activate(self, sample_contract_data):
         """Testa ativação de contrato."""
-        sample_contract_data["status"] = ServiceStatus.IMPLANTATION
+        sample_contract_data["status"] = ServiceStatus.RASCUNHO
         contract = ClientContract(**sample_contract_data)
 
         contract.activate()
 
-        assert contract.status == ServiceStatus.ACTIVE
+        assert contract.status == ServiceStatus.ATIVO
         assert contract.activation_date is not None
         assert contract.implantation_end_date is not None
 
@@ -593,7 +593,7 @@ class TestClientContractModel:
 
         contract.suspend()
 
-        assert contract.status == ServiceStatus.SUSPENDED
+        assert contract.status == ServiceStatus.RASCUNHO
 
     def test_contract_cancel(self, sample_contract_data):
         """Testa cancelamento de contrato."""
@@ -601,7 +601,7 @@ class TestClientContractModel:
 
         contract.cancel()
 
-        assert contract.status == ServiceStatus.CANCELLED
+        assert contract.status == ServiceStatus.RASCUNHO
         assert contract.cancellation_date is not None
 
     def test_contract_sla_configuration(self, sample_contract_data):
@@ -633,22 +633,22 @@ class TestIntegrationSettingsModel:
         """Testa criação de integração."""
         integration = IntegrationSettings(**sample_integration_data)
 
-        assert integration.integration_type == IntegrationType.GUARDIAN
+        assert integration.integration_type == IntegrationType.API_REST
         assert integration.name == "Guardian Integration"
         assert integration.enabled is True
-        assert integration.sync_status == SyncStatus.SYNCED
+        assert integration.sync_status == SyncStatus.IDLE
 
     def test_integration_default_values(self, sample_client_data):
         """Testa valores padrão da integração."""
         integration = IntegrationSettings(
             id=uuid4(),
             client_id=sample_client_data["id"],
-            integration_type=IntegrationType.PLUS,
+            integration_type=IntegrationType.API_REST,
             name="Plus Integration",
         )
 
         assert integration.enabled is False
-        assert integration.sync_status == SyncStatus.PENDING
+        assert integration.sync_status == SyncStatus.IDLE
         assert integration.sync_direction == SyncDirection.BIDIRECTIONAL
         assert integration.sync_interval_minutes == 60
         assert integration.ativo is True
@@ -669,7 +669,7 @@ class TestIntegrationSettingsModel:
         integration.disable()
 
         assert integration.enabled is False
-        assert integration.sync_status == SyncStatus.DISABLED
+        assert integration.sync_status == SyncStatus.IDLE
 
     def test_integration_start_sync(self, sample_integration_data):
         """Testa início de sincronização."""
@@ -677,22 +677,22 @@ class TestIntegrationSettingsModel:
 
         integration.start_sync()
 
-        assert integration.sync_status == SyncStatus.SYNCING
+        assert integration.sync_status == SyncStatus.IDLE
 
     def test_integration_complete_sync(self, sample_integration_data):
         """Testa conclusão de sincronização."""
-        sample_integration_data["sync_status"] = SyncStatus.SYNCING
+        sample_integration_data["sync_status"] = SyncStatus.IDLE
         integration = IntegrationSettings(**sample_integration_data)
 
         integration.complete_sync()
 
-        assert integration.sync_status == SyncStatus.SYNCED
+        assert integration.sync_status == SyncStatus.IDLE
         assert integration.last_sync_at is not None
         assert integration.last_sync_status == "success"
 
     def test_integration_fail_sync(self, sample_integration_data):
         """Testa falha de sincronização."""
-        sample_integration_data["sync_status"] = SyncStatus.SYNCING
+        sample_integration_data["sync_status"] = SyncStatus.IDLE
         integration = IntegrationSettings(**sample_integration_data)
 
         integration.fail_sync("Connection timeout")
@@ -808,12 +808,12 @@ class TestValidations:
 
         # Prospect -> Active
         client.activate()
-        assert client.status == ClientStatus.ACTIVE
+        assert client.status == ClientStatus.ATIVO
 
         # Active -> Suspended
         client.suspend()
-        assert client.status == ClientStatus.SUSPENDED
+        assert client.status == ClientStatus.SUSPENSO
 
         # Suspended -> Blocked
         client.block()
-        assert client.status == ClientStatus.BLOCKED
+        assert client.status == ClientStatus.PROSPECT

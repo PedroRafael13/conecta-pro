@@ -280,7 +280,7 @@ class TestReportGeneratorService:
         report = ScheduledReport(
             id=uuid4(),
             name="Relatório de Ponto",
-            report_type=ReportType.TIME_ATTENDANCE,
+            report_type=ReportType.EXECUCAO,
             output_format=ReportFormat.PDF,
             schedule_frequency=ScheduleFrequency.MONTHLY,
             delivery_method=DeliveryMethod.DOWNLOAD,
@@ -305,7 +305,7 @@ class TestReportGeneratorService:
         report = ScheduledReport(
             id=uuid4(),
             name="Relatório de Horas Extra",
-            report_type=ReportType.OVERTIME_SUMMARY,
+            report_type=ReportType.EXECUCAO,
             output_format=ReportFormat.EXCEL,
             schedule_frequency=ScheduleFrequency.WEEKLY,
             delivery_method=DeliveryMethod.EMAIL,
@@ -500,9 +500,9 @@ class TestKPIThresholdEvaluation:
             id=uuid4(),
             code="PUNCTUALITY_RATE",
             name="Taxa de Pontualidade",
-            category=KPICategory.PUNCTUALITY,
+            category=KPICategory.FINANCIAL,
             unit=KPIUnit.PERCENTAGE,
-            direction=KPIDirection.UP,
+            direction=KPIDirection.INCREASE,
             target_value=Decimal("95.0"),
             threshold_warning=Decimal("90.0"),
             threshold_critical=Decimal("85.0"),
@@ -519,9 +519,9 @@ class TestKPIThresholdEvaluation:
             id=uuid4(),
             code="ABSENTEEISM_RATE",
             name="Taxa de Absenteísmo",
-            category=KPICategory.ATTENDANCE,
+            category=KPICategory.FINANCIAL,
             unit=KPIUnit.PERCENTAGE,
-            direction=KPIDirection.DOWN,
+            direction=KPIDirection.INCREASE,
             target_value=Decimal("3.0"),
             threshold_warning=Decimal("5.0"),
             threshold_critical=Decimal("8.0"),
@@ -538,9 +538,9 @@ class TestKPIThresholdEvaluation:
             id=uuid4(),
             code="ABSENTEEISM_RATE",
             name="Taxa de Absenteísmo",
-            category=KPICategory.ATTENDANCE,
+            category=KPICategory.FINANCIAL,
             unit=KPIUnit.PERCENTAGE,
-            direction=KPIDirection.DOWN,
+            direction=KPIDirection.INCREASE,
             target_value=Decimal("3.0"),
             threshold_warning=Decimal("5.0"),
             threshold_critical=Decimal("8.0"),
@@ -557,7 +557,7 @@ def _evaluate_threshold(kpi: KPIDefinition, value: Decimal) -> str:
     if kpi.threshold_critical is None or kpi.threshold_warning is None:
         return "neutral"
 
-    if kpi.direction == KPIDirection.UP:
+    if kpi.direction == KPIDirection.INCREASE:
         # Maior é melhor
         if value >= kpi.target_value:
             return "good"
@@ -565,7 +565,7 @@ def _evaluate_threshold(kpi: KPIDefinition, value: Decimal) -> str:
             return "warning"
         else:
             return "critical"
-    elif kpi.direction == KPIDirection.DOWN:
+    elif kpi.direction == KPIDirection.INCREASE:
         # Menor é melhor
         if value <= kpi.target_value:
             return "good"

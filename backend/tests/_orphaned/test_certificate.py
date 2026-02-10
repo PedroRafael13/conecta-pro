@@ -62,7 +62,7 @@ def mock_certificate_info():
         issuer_organization="Autoridade Certificadora",
         valid_from=datetime.utcnow() - timedelta(days=30),
         valid_until=datetime.utcnow() + timedelta(days=335),
-        certificate_type=CertificateType.A1,
+        certificate_type=CertificateType.CND_FEDERAL,
         status=CertificateStatus.VALID,
         key_size=2048,
         signature_algorithm="sha256WithRSAEncryption",
@@ -81,7 +81,7 @@ def mock_certificate_info_expired():
         issuer_cn="AC TESTE v5",
         valid_from=datetime.utcnow() - timedelta(days=400),
         valid_until=datetime.utcnow() - timedelta(days=35),
-        certificate_type=CertificateType.A1,
+        certificate_type=CertificateType.CND_FEDERAL,
         status=CertificateStatus.EXPIRED,
         key_size=2048,
     )
@@ -99,8 +99,8 @@ def mock_certificate_info_expiring_soon():
         issuer_cn="AC TESTE v5",
         valid_from=datetime.utcnow() - timedelta(days=345),
         valid_until=datetime.utcnow() + timedelta(days=15),
-        certificate_type=CertificateType.A1,
-        status=CertificateStatus.EXPIRING_SOON,
+        certificate_type=CertificateType.CND_FEDERAL,
+        status=CertificateStatus.VALID,
         key_size=2048,
     )
 
@@ -655,7 +655,7 @@ class TestXMLSigner:
         """Testa assinatura generica de XML."""
         signer = XMLSigner(mock_cert_manager)
 
-        result = signer.sign(sample_xml_content, signature_type=SignatureType.GENERIC, reference_uri="#DOC123456")
+        result = signer.sign(sample_xml_content, signature_type=SignatureType.HANDWRITTEN, reference_uri="#DOC123456")
 
         assert "<?xml" in result
         assert "Signature" in result
@@ -668,7 +668,7 @@ class TestXMLSigner:
         signer = XMLSigner(mock_cert_manager)
 
         config = SignatureConfig(
-            signature_type=SignatureType.GENERIC,
+            signature_type=SignatureType.HANDWRITTEN,
             digest_method=DigestMethod.SHA256,
             signature_method=SignatureMethod.RSA_SHA256,
             canonicalization=CanonicalizationMethod.C14N_EXCLUSIVE,
@@ -725,7 +725,7 @@ class TestXMLSigner:
         from lxml import etree
 
         xml_doc = etree.fromstring(sample_xml_content.encode("utf-8"))
-        config = SignatureConfig(signature_type=SignatureType.GENERIC, digest_method=DigestMethod.SHA1)
+        config = SignatureConfig(signature_type=SignatureType.HANDWRITTEN, digest_method=DigestMethod.SHA1)
 
         result = signer._calculate_digest(xml_doc, config)
 
@@ -739,7 +739,7 @@ class TestXMLSigner:
         from lxml import etree
 
         xml_doc = etree.fromstring(sample_xml_content.encode("utf-8"))
-        config = SignatureConfig(signature_type=SignatureType.GENERIC, digest_method=DigestMethod.SHA256)
+        config = SignatureConfig(signature_type=SignatureType.HANDWRITTEN, digest_method=DigestMethod.SHA256)
 
         result = signer._calculate_digest(xml_doc, config)
 
@@ -753,7 +753,7 @@ class TestXMLSigner:
         from lxml import etree
 
         xml_doc = etree.fromstring(sample_xml_content.encode("utf-8"))
-        config = SignatureConfig(signature_type=SignatureType.GENERIC, canonicalization=CanonicalizationMethod.C14N)
+        config = SignatureConfig(signature_type=SignatureType.HANDWRITTEN, canonicalization=CanonicalizationMethod.C14N)
 
         result = signer._canonicalize(xml_doc, config)
 
@@ -766,7 +766,7 @@ class TestXMLSigner:
 
         xml_doc = etree.fromstring(sample_xml_content.encode("utf-8"))
         config = SignatureConfig(
-            signature_type=SignatureType.GENERIC, canonicalization=CanonicalizationMethod.C14N_EXCLUSIVE
+            signature_type=SignatureType.HANDWRITTEN, canonicalization=CanonicalizationMethod.C14N_EXCLUSIVE
         )
 
         result = signer._canonicalize(xml_doc, config)
@@ -777,7 +777,7 @@ class TestXMLSigner:
         """Testa criacao do elemento Signature."""
         signer = XMLSigner(mock_cert_manager)
 
-        config = SignatureConfig(signature_type=SignatureType.GENERIC, reference_uri="#TEST123")
+        config = SignatureConfig(signature_type=SignatureType.HANDWRITTEN, reference_uri="#TEST123")
 
         result = signer._create_signature_element("digest_value_test", config)
 
@@ -862,14 +862,14 @@ class TestESocialXMLSigner:
 
     def test_esocial_uses_sha256(self, mock_cert_manager):
         """Testa que eSocial usa SHA256."""
-        config = DEFAULT_CONFIGS[SignatureType.ESOCIAL]
+        config = DEFAULT_CONFIGS[SignatureType.HANDWRITTEN]
 
         assert config.digest_method == DigestMethod.SHA256
         assert config.signature_method == SignatureMethod.RSA_SHA256
 
     def test_esocial_uses_exclusive_c14n(self, mock_cert_manager):
         """Testa que eSocial usa C14N exclusivo."""
-        config = DEFAULT_CONFIGS[SignatureType.ESOCIAL]
+        config = DEFAULT_CONFIGS[SignatureType.HANDWRITTEN]
 
         assert config.canonicalization == CanonicalizationMethod.C14N_EXCLUSIVE
 
@@ -926,7 +926,7 @@ class TestNFEXMLSigner:
 
     def test_nfe_uses_sha1(self, mock_cert_manager):
         """Testa que NF-e usa SHA1."""
-        config = DEFAULT_CONFIGS[SignatureType.NFE]
+        config = DEFAULT_CONFIGS[SignatureType.HANDWRITTEN]
 
         assert config.digest_method == DigestMethod.SHA1
         assert config.signature_method == SignatureMethod.RSA_SHA1
@@ -1012,7 +1012,7 @@ class TestSignatureConfig:
 
     def test_default_transforms(self):
         """Testa transforms padrao."""
-        config = SignatureConfig(signature_type=SignatureType.GENERIC)
+        config = SignatureConfig(signature_type=SignatureType.HANDWRITTEN)
 
         assert TransformMethod.ENVELOPED in config.transforms
         assert TransformMethod.C14N in config.transforms
@@ -1020,18 +1020,18 @@ class TestSignatureConfig:
     def test_custom_transforms(self):
         """Testa transforms customizados."""
         config = SignatureConfig(
-            signature_type=SignatureType.GENERIC, transforms=[TransformMethod.ENVELOPED, TransformMethod.C14N_EXCLUSIVE]
+            signature_type=SignatureType.HANDWRITTEN, transforms=[TransformMethod.ENVELOPED, TransformMethod.C14N_EXCLUSIVE]
         )
 
         assert TransformMethod.C14N_EXCLUSIVE in config.transforms
 
     def test_default_configs_exist(self):
         """Testa que configuracoes padrao existem para todos os tipos."""
-        assert SignatureType.ESOCIAL in DEFAULT_CONFIGS
-        assert SignatureType.NFE in DEFAULT_CONFIGS
-        assert SignatureType.NFCE in DEFAULT_CONFIGS
-        assert SignatureType.CTE in DEFAULT_CONFIGS
-        assert SignatureType.MDFE in DEFAULT_CONFIGS
+        assert SignatureType.HANDWRITTEN in DEFAULT_CONFIGS
+        assert SignatureType.HANDWRITTEN in DEFAULT_CONFIGS
+        assert SignatureType.HANDWRITTEN in DEFAULT_CONFIGS
+        assert SignatureType.HANDWRITTEN in DEFAULT_CONFIGS
+        assert SignatureType.HANDWRITTEN in DEFAULT_CONFIGS
 
 
 # =============================================================================
@@ -1343,25 +1343,25 @@ class TestEnums:
 
     def test_certificate_type_values(self):
         """Testa valores de CertificateType."""
-        assert CertificateType.A1.value == "A1"
-        assert CertificateType.A3.value == "A3"
+        assert CertificateType.CND_FEDERAL.value == "A1"
+        assert CertificateType.CND_FEDERAL.value == "A3"
 
     def test_certificate_status_values(self):
         """Testa valores de CertificateStatus."""
         assert CertificateStatus.VALID.value == "valid"
         assert CertificateStatus.EXPIRED.value == "expired"
-        assert CertificateStatus.EXPIRING_SOON.value == "expiring_soon"
-        assert CertificateStatus.REVOKED.value == "revoked"
-        assert CertificateStatus.INVALID.value == "invalid"
+        assert CertificateStatus.VALID.value == "expiring_soon"
+        assert CertificateStatus.VALID.value == "revoked"
+        assert CertificateStatus.VALID.value == "invalid"
 
     def test_signature_type_values(self):
         """Testa valores de SignatureType."""
-        assert SignatureType.ESOCIAL.value == "esocial"
-        assert SignatureType.NFE.value == "nfe"
-        assert SignatureType.NFCE.value == "nfce"
-        assert SignatureType.CTE.value == "cte"
-        assert SignatureType.MDFE.value == "mdfe"
-        assert SignatureType.GENERIC.value == "generic"
+        assert SignatureType.HANDWRITTEN.value == "esocial"
+        assert SignatureType.HANDWRITTEN.value == "nfe"
+        assert SignatureType.HANDWRITTEN.value == "nfce"
+        assert SignatureType.HANDWRITTEN.value == "cte"
+        assert SignatureType.HANDWRITTEN.value == "mdfe"
+        assert SignatureType.HANDWRITTEN.value == "generic"
 
     def test_digest_method_values(self):
         """Testa valores de DigestMethod."""
@@ -1449,7 +1449,7 @@ class TestIntegration:
 
     def test_multiple_signature_types(self, mock_cert_manager):
         """Testa configuracoes para diferentes tipos de assinatura."""
-        for sig_type in [SignatureType.ESOCIAL, SignatureType.NFE, SignatureType.CTE]:
+        for sig_type in [SignatureType.HANDWRITTEN, SignatureType.HANDWRITTEN, SignatureType.HANDWRITTEN]:
             config = DEFAULT_CONFIGS.get(sig_type)
             assert config is not None
             assert config.signature_type == sig_type

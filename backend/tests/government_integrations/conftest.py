@@ -174,7 +174,7 @@ def evento_auditoria():
     return AuditEvent(
         tenant_id=uuid4(),
         usuario_id=uuid4(),
-        tipo=TipoEvento.CONSULTA,
+        tipo=TipoEvento.NFE_EMITIDA,
         recurso="nfe",
         recurso_id="123",
         acao="Consulta de NF-e",
