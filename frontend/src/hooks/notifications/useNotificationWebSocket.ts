@@ -41,10 +41,12 @@ export function useNotificationWebSocket(options: WebSocketOptions = {}) {
 
   const [isConnected, setIsConnected] = useState(false);
   const [lastEvent, setLastEvent] = useState<NotificationEvent | null>(null);
+  const [reconnectTrigger, setReconnectTrigger] = useState(0);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectCountRef = useRef(0);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const queryClient = useQueryClient();
+  const handleEventUpdateRef = useRef<((event: NotificationEvent) => void) | undefined>(undefined);
 
   /**
    * Obtém URL do WebSocket baseado no ambiente
@@ -56,74 +58,6 @@ export function useNotificationWebSocket(options: WebSocketOptions = {}) {
 
     return `${protocol}//${host}:${port}/ws/notifications`;
   }, []);
-
-  /**
-   * Conecta ao WebSocket
-   */
-  const connect = useCallback(() => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      return; // Já conectado
-    }
-
-    try {
-      const token = localStorage.getItem('access_token');
-      const url = `${getWebSocketUrl()}?token=${token}`;
-
-      wsRef.current = new WebSocket(url);
-
-      wsRef.current.onopen = () => {
-        setIsConnected(true);
-        reconnectCountRef.current = 0;
-        onConnect?.();
-      };
-
-      wsRef.current.onclose = () => {
-        setIsConnected(false);
-        wsRef.current = null;
-        onDisconnect?.();
-
-        // Tentar reconectar
-        if (
-          autoConnect &&
-          reconnectCountRef.current < maxReconnectAttempts
-        ) {
-          reconnectCountRef.current += 1;
-          reconnectTimeoutRef.current = setTimeout(() => {
-            connect();
-          }, reconnectInterval);
-        }
-      };
-
-      wsRef.current.onerror = (error) => {
-        console.error('[WebSocket] Erro:', error);
-        onError?.(error);
-      };
-
-      wsRef.current.onmessage = (event) => {
-        try {
-          const notificationEvent: NotificationEvent = JSON.parse(event.data);
-          setLastEvent(notificationEvent);
-          onNotification?.(notificationEvent);
-
-          // Invalidar queries relevantes baseado no tipo do evento
-          handleEventUpdate(notificationEvent);
-        } catch (error) {
-          console.error('[WebSocket] Erro ao processar mensagem:', error);
-        }
-      };
-    } catch (error) {
-      console.error('[WebSocket] Erro ao conectar:', error);
-    }
-  }, [
-    getWebSocketUrl,
-    autoConnect,
-    maxReconnectAttempts,
-    reconnectInterval,
-    onConnect,
-    onDisconnect,
-    onError,
-    onNotification,
-  ]);
 
   /**
    * Trata atualização de eventos e invalida cache
@@ -160,6 +94,79 @@ export function useNotificationWebSocket(options: WebSocketOptions = {}) {
     },
     [queryClient]
   );
+
+  // Atualiza refs sempre que callbacks mudam
+  useEffect(() => {
+    handleEventUpdateRef.current = handleEventUpdate;
+  }, [handleEventUpdate]);
+
+  /**
+   * Conecta ao WebSocket
+   */
+  const connect = useCallback(() => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      return; // Já conectado
+    }
+
+    try {
+      const token = localStorage.getItem('access_token');
+      const url = `${getWebSocketUrl()}?token=${token}`;
+
+      wsRef.current = new WebSocket(url);
+
+      wsRef.current.onopen = () => {
+        setIsConnected(true);
+        reconnectCountRef.current = 0;
+        onConnect?.();
+      };
+
+      wsRef.current.onclose = () => {
+        setIsConnected(false);
+        wsRef.current = null;
+        onDisconnect?.();
+
+        // Tentar reconectar
+        if (
+          autoConnect &&
+          reconnectCountRef.current < maxReconnectAttempts
+        ) {
+          reconnectCountRef.current += 1;
+          reconnectTimeoutRef.current = setTimeout(() => {
+            setReconnectTrigger(prev => prev + 1);
+          }, reconnectInterval);
+        }
+      };
+
+      wsRef.current.onerror = (error) => {
+        console.error('[WebSocket] Erro:', error);
+        onError?.(error);
+      };
+
+      wsRef.current.onmessage = (event) => {
+        try {
+          const notificationEvent: NotificationEvent = JSON.parse(event.data);
+          setLastEvent(notificationEvent);
+          onNotification?.(notificationEvent);
+
+          // Invalidar queries relevantes baseado no tipo do evento
+          handleEventUpdateRef.current?.(notificationEvent);
+        } catch (error) {
+          console.error('[WebSocket] Erro ao processar mensagem:', error);
+        }
+      };
+    } catch (error) {
+      console.error('[WebSocket] Erro ao conectar:', error);
+    }
+  }, [
+    getWebSocketUrl,
+    autoConnect,
+    maxReconnectAttempts,
+    reconnectInterval,
+    onConnect,
+    onDisconnect,
+    onError,
+    onNotification,
+  ]);
 
   /**
    * Desconecta do WebSocket
@@ -215,7 +222,7 @@ export function useNotificationWebSocket(options: WebSocketOptions = {}) {
     [send]
   );
 
-  // Conectar automaticamente ao montar
+  // Conectar automaticamente ao montar ou quando reconnectTrigger mudar
   useEffect(() => {
     if (autoConnect) {
       connect();
@@ -224,7 +231,7 @@ export function useNotificationWebSocket(options: WebSocketOptions = {}) {
     return () => {
       disconnect();
     };
-  }, [autoConnect, connect, disconnect]);
+  }, [autoConnect, connect, disconnect, reconnectTrigger]);
 
   return {
     isConnected,

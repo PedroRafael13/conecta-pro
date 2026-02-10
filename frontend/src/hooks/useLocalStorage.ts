@@ -3,24 +3,20 @@
 import { useState, useEffect, useCallback } from 'react';
 
 export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T | ((val: T) => T)) => void, () => void] {
-  // Estado para armazenar o valor
-  const [storedValue, setStoredValue] = useState<T>(initialValue);
-  const [isInitialized, setIsInitialized] = useState(false);
-
-  // Inicializar o estado a partir do localStorage
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
+  // Estado para armazenar o valor - inicializado lazy a partir do localStorage
+  const [storedValue, setStoredValue] = useState<T>(() => {
+    if (typeof window === 'undefined') return initialValue;
 
     try {
       const item = window.localStorage.getItem(key);
       if (item) {
-        setStoredValue(JSON.parse(item));
+        return JSON.parse(item);
       }
     } catch (error) {
       console.warn(`Error reading localStorage key "${key}":`, error);
     }
-    setIsInitialized(true);
-  }, [key]);
+    return initialValue;
+  });
 
   // Função para atualizar o valor no localStorage e no estado
   const setValue = useCallback((value: T | ((val: T) => T)) => {
