@@ -58,7 +58,7 @@ class TestTenantModel:
         tenant = Tenant(
             codigo="TENANT002",
             nome="Empresa Ativa",
-            documento="12345678000100",
+            cnpj="12345678000100",
             email="ativo@empresa.com",
             status=TenantStatus.ATIVO,
             ativo=True,
@@ -73,7 +73,7 @@ class TestTenantModel:
         tenant = Tenant(
             codigo="TENANT003",
             nome="Empresa Trial",
-            documento="12345678000101",
+            cnpj="12345678000101",
             email="trial@empresa.com",
             status=TenantStatus.TRIAL,
             data_fim_trial=datetime.now(UTC) + timedelta(days=14),
@@ -88,7 +88,7 @@ class TestTenantModel:
         tenant = Tenant(
             codigo="TENANT004",
             nome="Empresa Inativa",
-            documento="12345678000102",
+            cnpj="12345678000102",
             email="inativo@empresa.com",
             status=TenantStatus.INATIVO,
         )
@@ -101,7 +101,7 @@ class TestTenantModel:
         tenant = Tenant(
             codigo="TENANT005",
             nome="Empresa a Suspender",
-            documento="12345678000103",
+            cnpj="12345678000103",
             email="suspender@empresa.com",
             status=TenantStatus.ATIVO,
         )
@@ -114,7 +114,7 @@ class TestTenantModel:
         tenant = Tenant(
             codigo="TENANT006",
             nome="Empresa a Cancelar",
-            documento="12345678000104",
+            cnpj="12345678000104",
             email="cancelar@empresa.com",
             status=TenantStatus.ATIVO,
         )
@@ -127,7 +127,7 @@ class TestTenantModel:
         tenant = Tenant(
             codigo="TENANT007",
             nome="Empresa Upgrade",
-            documento="12345678000105",
+            cnpj="12345678000105",
             email="upgrade@empresa.com",
             plano=TenantPlan.FREE,
         )
@@ -139,7 +139,7 @@ class TestTenantModel:
         tenant = Tenant(
             codigo="TENANT008",
             nome="Empresa Features",
-            documento="12345678000106",
+            cnpj="12345678000106",
             email="features@empresa.com",
         )
         tenant.enable_feature("reports")
@@ -153,7 +153,7 @@ class TestTenantModel:
         tenant = Tenant(
             codigo="TENANT009",
             nome="Empresa Storage",
-            documento="12345678000107",
+            cnpj="12345678000107",
             email="storage@empresa.com",
             limite_storage_gb=10,
             uso_storage_bytes=5 * 1024 * 1024 * 1024,  # 5GB
@@ -460,10 +460,10 @@ class TestNotificationTemplateModel:
             sms_body="Mensagem de teste",
         )
         template.activate()
-        assert template.status == TemplateStatus.ACTIVE
+        assert template.status == TemplateStatus.ATIVO
 
         template.deactivate()
-        assert template.status == TemplateStatus.INACTIVE
+        assert template.status == TemplateStatus.INATIVO
 
     def test_template_render_simples(self):
         """Testa renderização simples."""
@@ -471,13 +471,13 @@ class TestNotificationTemplateModel:
             codigo="SIMPLE_TEMPLATE",
             nome="Template Simples",
             notification_type=NotificationType.TRANSACIONAL,
-            assunto="Olá {{nome}}",
+            email_subject="Olá {{nome}}",
             email_body_html="Prezado(a) {{nome}}, seu pedido {{pedido_id}} foi confirmado.",
         )
         result = template.render({"nome": "João", "pedido_id": "12345"})
         assert result["subject"] == "Olá João"
-        assert "João" in result["body"]
-        assert "12345" in result["body"]
+        assert "João" in result["body_html"]
+        assert "12345" in result["body_html"]
 
     def test_template_render_html(self):
         """Testa renderização HTML."""
@@ -485,7 +485,7 @@ class TestNotificationTemplateModel:
             codigo="HTML_TEMPLATE",
             nome="Template HTML",
             notification_type=NotificationType.TRANSACIONAL,
-            assunto="Notificação",
+            email_subject="Notificação",
             email_body_text="Texto simples",
             corpo_html="<h1>Olá {{nome}}</h1><p>Bem-vindo!</p>",
         )
@@ -499,9 +499,9 @@ class TestNotificationTemplateModel:
             nome="Template Original",
             notification_type=NotificationType.TRANSACIONAL,
             tipo=NotificationType.TRANSACIONAL,
-            assunto="Assunto Original",
+            email_subject="Assunto Original",
             email_body_html="Corpo original",
-            status=TemplateStatus.ACTIVE,
+            status=TemplateStatus.ATIVO,
             versao=5,
         )
         clone = original.clone(new_code="CLONE", new_name="Template Clonado")
