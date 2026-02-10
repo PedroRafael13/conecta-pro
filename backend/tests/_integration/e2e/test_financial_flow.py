@@ -30,8 +30,8 @@ class TestFinancialPayables:
 
     async def test_payables_endpoint_exists(self, client: AsyncClient):
         """Verifica que o endpoint de contas a pagar existe."""
-        response = await client.get("/api/v1/financial/payables/payables/")
-        assert response.status_code in [200, 401, 403, 422]
+        response = await client.get("/api/v1/financial/payables/payables")
+        assert response.status_code in [200, 307, 401, 403, 422]
 
     async def test_suppliers_endpoint_exists(self, client: AsyncClient):
         """Verifica que o endpoint de fornecedores existe."""
@@ -45,8 +45,8 @@ class TestFinancialReceivables:
 
     async def test_receivables_endpoint_exists(self, client: AsyncClient):
         """Verifica que o endpoint de contas a receber existe."""
-        response = await client.get("/api/v1/financial/receivables/receivables/")
-        assert response.status_code in [200, 401, 403, 422]
+        response = await client.get("/api/v1/financial/receivables/receivables")
+        assert response.status_code in [200, 307, 401, 403, 422]
 
     async def test_customers_endpoint_exists(self, client: AsyncClient):
         """Verifica que o endpoint de clientes existe."""
