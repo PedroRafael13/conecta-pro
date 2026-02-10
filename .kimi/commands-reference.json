@@ -1,0 +1,140 @@
+{
+  "_description": "Comandos verificados para o projeto Conecta PRO. SEMPRE usar estes comandos exatos.",
+  "_updated": "2026-02-09",
+  "_author": "Claude Opus 4.6",
+
+  "pre_requisite": {
+    "description": "SEMPRE executar antes de qualquer comando Python",
+    "command": "cd /opt/conecta-pro/backend && source venv/bin/activate"
+  },
+
+  "backend": {
+    "ruff_check": {
+      "description": "Verificar linting Python",
+      "command": "cd /opt/conecta-pro/backend && source venv/bin/activate && ruff check .",
+      "success_pattern": "All checks passed",
+      "error_pattern": "Found \\d+ error"
+    },
+    "ruff_fix": {
+      "description": "Auto-fix linting Python",
+      "command": "cd /opt/conecta-pro/backend && source venv/bin/activate && ruff check . --fix",
+      "note": "CUIDADO: verificar diff depois"
+    },
+    "pytest_collect": {
+      "description": "Verificar collection de testes",
+      "command": "cd /opt/conecta-pro/backend && source venv/bin/activate && python -m pytest --collect-only -q",
+      "success_pattern": "\\d+ tests? collected$",
+      "error_pattern": "\\d+ error"
+    },
+    "pytest_run_full": {
+      "description": "Rodar suite completa de testes",
+      "command": "cd /opt/conecta-pro/backend && source venv/bin/activate && python -m pytest --tb=no -q",
+      "timeout_minutes": 15,
+      "success_pattern": "\\d+ passed"
+    },
+    "pytest_run_module": {
+      "description": "Rodar testes de um módulo específico",
+      "command_template": "cd /opt/conecta-pro/backend && source venv/bin/activate && python -m pytest tests/{module}/ -v",
+      "example": "cd /opt/conecta-pro/backend && source venv/bin/activate && python -m pytest tests/domains/financial/ -v"
+    },
+    "pytest_run_file": {
+      "description": "Rodar um arquivo de teste específico",
+      "command_template": "cd /opt/conecta-pro/backend && source venv/bin/activate && python -m pytest tests/{file} -v",
+      "example": "cd /opt/conecta-pro/backend && source venv/bin/activate && python -m pytest tests/test_core_services.py -v"
+    },
+    "alembic_heads": {
+      "description": "Verificar heads do Alembic",
+      "command": "cd /opt/conecta-pro/backend && source venv/bin/activate && alembic heads",
+      "expected": "1 head"
+    },
+    "bandit_check": {
+      "description": "Verificar segurança",
+      "command": "cd /opt/conecta-pro/backend && source venv/bin/activate && bandit -r . -ll -q",
+      "note": "HIGH severity = bloqueador"
+    },
+    "find_usages": {
+      "description": "Encontrar todos os usos de um símbolo",
+      "command_template": "grep -r '{symbol}' /opt/conecta-pro/backend/ --include='*.py' -l",
+      "note": "OBRIGATÓRIO antes de renomear qualquer coisa"
+    }
+  },
+
+  "frontend": {
+    "tsc_check": {
+      "description": "Verificar TypeScript",
+      "command": "cd /opt/conecta-pro/frontend && npx tsc --noEmit",
+      "success_pattern": "(vazio = 0 erros)",
+      "error_pattern": "error TS"
+    },
+    "eslint_check": {
+      "description": "Verificar ESLint - USAR ESTE, NUNCA next lint",
+      "command": "cd /opt/conecta-pro/frontend && npx eslint . --no-error-on-unmatched-pattern",
+      "WRONG_command": "npx next lint (NÃO USAR - só checa src/)",
+      "success_pattern": "0 errors",
+      "error_pattern": "\\d+ errors?"
+    },
+    "eslint_fix": {
+      "description": "Auto-fix ESLint",
+      "command": "cd /opt/conecta-pro/frontend && npx eslint . --fix --no-error-on-unmatched-pattern",
+      "note": "CUIDADO: depois rodar git checkout -- src/api/generated/ para reverter gerados"
+    },
+    "build": {
+      "description": "Build de produção",
+      "command": "cd /opt/conecta-pro/frontend && npm run build",
+      "timeout_minutes": 5
+    }
+  },
+
+  "verification": {
+    "full_check": {
+      "description": "Verificação completa do projeto",
+      "command": "/opt/conecta-pro/scripts/verify-all.sh",
+      "note": "OBRIGATÓRIO antes e depois de qualquer tarefa"
+    },
+    "full_check_with_tests": {
+      "description": "Verificação completa incluindo test run",
+      "command": "FULL_TEST=true /opt/conecta-pro/scripts/verify-all.sh",
+      "timeout_minutes": 20
+    },
+    "update_baseline": {
+      "description": "Atualizar baseline (só com aprovação do Claude)",
+      "command": "/opt/conecta-pro/scripts/update-baseline.sh"
+    }
+  },
+
+  "git": {
+    "status": {
+      "command": "cd /opt/conecta-pro && git status"
+    },
+    "diff": {
+      "command": "cd /opt/conecta-pro && git diff --stat"
+    },
+    "log": {
+      "command": "cd /opt/conecta-pro && git log --oneline -10"
+    }
+  },
+
+  "comms": {
+    "read_claude_messages": {
+      "command": "tail -20 /opt/conecta-pro/.comms/messages/claude-out.jsonl"
+    },
+    "read_handoff": {
+      "command": "cat /opt/conecta-pro/.comms/HANDOFF.md"
+    },
+    "send_message": {
+      "command_template": "echo '{\"ts\":\"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'\",\"from\":\"kimi\",\"to\":\"claude\",\"type\":\"{type}\",\"id\":\"kimi-'$(date +%s)'\",\"reply_to\":null,\"priority\":\"{priority}\",\"subject\":\"{subject}\",\"content\":\"{content}\"}' >> /opt/conecta-pro/.comms/messages/kimi-out.jsonl"
+    }
+  },
+
+  "FORBIDDEN_commands": {
+    "description": "Comandos que NÃO devem ser usados",
+    "list": [
+      "next lint (usar npx eslint . ao invés)",
+      "python3 -m pytest (sem venv — usar source venv/bin/activate && python -m pytest)",
+      "rm -rf tests/ (nunca deletar testes)",
+      "mv tests/*.py tests/_orphaned/ (nunca mover sem aprovação)",
+      "rm conftest.py (nunca deletar configs)",
+      "git checkout -- . (nunca reverter tudo sem aprovação)"
+    ]
+  }
+}

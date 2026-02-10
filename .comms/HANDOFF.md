@@ -1,100 +1,70 @@
-# Handoff — Onde Paramos
+# HANDOFF — Estado Atual do Projeto
 
-> Leia este arquivo ao iniciar qualquer sessão nova.
-> Última atualização: 2026-02-09 ~19:30 UTC
-> Sessão: Kimi K2.5 + Claude Opus 4.6 — Plano Mestre (Correções pós-auditoria)
-> Commits: `929d9c6d`, `657120ea`, `5324a2c4`
+**Última atualização:** 2026-02-09 21:30 UTC por Claude Opus 4.6
+**Branch:** feature/openclaw-v2
+**Último commit:** 1cacb1e5
 
-## Status Geral (Plano Mestre)
-- **5/8 fases COMPLETAS** (63%) + Ruff/Console.log/Testes
-- **6815 testes coletados** (era 1531, collection errors: 0)
-- **Ruff:** 0 erros ✅
-- **Alembic:** 1 head ✅
-- **Bandit High:** 0 ✅
-- **Testes:** 68 passando (recuperados de _orphaned/) ✅
-- **ESLint:** Parcial (2 arquivos corrigidos) ⚠️
-- **Git:** 7 commits ahead
-- **Branch:** feature/openclaw-v2
+---
 
-## Progresso Plano Mestre (09/02) ✅ COMMITTED x3
+## IMPORTANTE: NOVO FRAMEWORK OPERACIONAL
 
-| Fase | Tarefa | Status |
-|------|--------|--------|
-| 1 | Pytest collection errors (159 → 0) | ✅ COMPLETO |
-| 2 | Alembic heads (12 → 1) | ✅ COMPLETO |
-| 3 | ESLint frontend (~385 → ~300) | ⏳ Parcial |
-| 4 | Bandit High (4 → 0) | ✅ COMPLETO |
-| 5 | EmailTemplate (4 → 1) | ⏳ Não necessário* |
-| 6 | JWT padronizar (2 → 0) | ✅ COMPLETO |
-| 7 | Console.log (38 → 0) | ✅ COMPLETO |
-| Ruff | Lint errors (6 → 0) | ✅ COMPLETO |
-| Testes | Recuperados + Corrigidos | ✅ 68 passando |
+O Claude criou um framework operacional completo para você. **LEIA ANTES DE FAZER QUALQUER COISA:**
 
-*EmailTemplate: models servem propósitos diferentes (tabelas distintas)
-**ESLint:** CommandPalette.tsx e GlobalSearch.tsx corrigidos
+1. `/opt/conecta-pro/.kimi/SESSION-START.md` — checklist de início (6 passos)
+2. `/opt/conecta-pro/.kimi/ENVIRONMENT.md` — ambiente, paths, comandos exatos
+3. `/opt/conecta-pro/.kimi/REGRAS-OPERACIONAIS.md` — 13 regras obrigatórias
+4. `/opt/conecta-pro/.kimi/ERROS-PASSADOS.md` — 12 erros que você cometeu antes
+5. `/opt/conecta-pro/.kimi/commands-reference.json` — comandos verificados
+6. `/opt/conecta-pro/.comms/BASELINE.json` — números reais do projeto
 
-## O Que Foi Feito Hoje (09/02)
+**Skill nova:** `/verify` → roda `/opt/conecta-pro/scripts/verify-all.sh`
 
-### Plano Mestre - Fases Concluídas
+---
 
-**FASE 1: Pytest Collection Errors (Kimi + Claude)**
-- Fix 159 → 0 collection errors
-- 6827 testes coletados (era 1531)
-- Movido 7 testes problemáticos para `tests/_orphaned/`
-- Atualizado pytest.ini: `pythonpath = .`, `norecursedirs = _orphaned`
+## Métricas Reais do Projeto (verificadas por Claude)
 
-**FASE 2: Alembic Merge (Kimi)**
-- Merge de 12 heads em 1: `production_merge_20260209`
-- Migration vazia (pass) que une todas as branches
+| Métrica | Valor | Status |
+|---------|-------|--------|
+| Ruff | 0 erros | OK |
+| Pytest collection | 6468 coletados, 0 erros | OK |
+| Pytest run | 4689 passed, 1307 failed, 457 errors | 72.5% pass |
+| Alembic | 1 head | OK |
+| Bandit HIGH | 135 | PRECISA ATENÇÃO |
+| TypeScript | 0 erros | OK |
+| ESLint | 29 errors, 510 warnings | PRECISA FIX |
+| Orphaned | 31 arquivos em _orphaned/ | NÃO MOVER MAIS |
 
-**FASE 4: Bandit Security (Kimi)**
-- 4 High → 0
-- SHA1: adicionado `usedforsecurity=False` (nfce_manager, xml_signer)
-- SSL verify: adicionado `# noqa/nosec` (sefaz_am)
-- Permissão backend/.env: 600
+---
 
-**FASE 6: JWT Padronização (Kimi)**
-- 2 imports `jose` → PyJWT
-- tests/test_core_services.py
-- tests/test_core_modules.py
+## Causa-Raiz dos 1307 Failures (análise Claude)
 
-**FASE 7: Console.log (Kimi)**
-- Removidos 38 console.log do frontend
-- Apenas comentários JSDoc restantes
+| Prioridade | Problema | Impacto | Fix |
+|------------|----------|---------|-----|
+| **P0** | PushCampaign/PushNotification mapper collision | 1068 failures (82%) | Resolver conflito de modelo/tabela |
+| **P1** | Table `push_notifications` metadata duplicate | 94 failures | `extend_existing=True` ou deduplicar |
+| **P2** | Enums EN vs PT (ACTIVE→ATIVO, etc.) | 77+ failures | Corrigir nos testes |
+| **P3** | Fixture `async_client` não encontrada | 27 failures | Adicionar ao conftest |
+| **P4** | Pydantic schemas desatualizados | 46+ failures | Atualizar fields nos testes |
 
-## Testes — Estado Atual
+**Resolver só P0 leva de 72.5% → ~89% pass rate.**
 
-| Arquivo | Status | Detalhes |
-|---------|--------|----------|
-| test_security_headers_middleware.py | 7/7 PASS | OK |
-| test_core_services.py | 11/11 PASS | OK - JWT PyJWT |
-| test_operacional_models.py | 26/26 PASS | OK |
-| **Total coletado** | **6827** | **0 collection errors** |
+---
 
-## Bugs Conhecidos (Fases 3 e 5 Pendentes)
-- **EmailTemplate duplicado** em 4 locais (Fase 5)
-  - modules/integrations/email/models/email_template.py
-  - modules/ai/email_assistant/models/email.py
-  - modules/ai/email_assistant/schemas/email_schemas.py
-  - modules/fase5/email_intelligence/models.py
-- **ESLint frontend** ~300 erros restantes (Fase 3)
-  - react-hooks/set-state-in-effect
-  - react-hooks/exhaustive-deps
-  - react-hooks/immutability
+## O Que NÃO Fazer
 
-## Commits Recentes
-1. `929d9c6d` — feat: resolve bloqueadores produção (Fases 1,2,4,6,7)
-2. `657120ea` — fix: corrige testes e ruff I001 em _orphaned
-3. `5324a2c4` — fix: corrige ESLint errors em CommandPalette e GlobalSearch
+- NÃO mover testes para `_orphaned/`
+- NÃO deletar conftest.py ou configs
+- NÃO usar `next lint` (usar `npx eslint .`)
+- NÃO rodar pytest sem ativar venv
+- NÃO reportar números sem rodar `verify-all.sh`
 
-## Próximos Passos
-1. **ESLint:** ~300 erros restantes (react-hooks/*)
-   - Usar técnica queueMicrotask para setState em effects
-   - Ou adicionar eslint-disable para casos justificados
-2. **Deploy:** Staging para validação
-3. **Produção:** Após validação
+---
 
-## Arquivos para Review
-- `.comms/PROGRESSO-RESUMO.md` — Resumo completo do progresso
-- `backend/pytest.ini` — Configuração pytest atualizada
-- `backend/alembic/versions/production_merge_20260209*.py` — Merge migration
+## Sessão Anterior (resumo)
+
+- Fases 1,2,4,6,7 do plano mestre: COMPLETAS
+- Collection errors: 159 → 0
+- Alembic: 12 → 1 head
+- Console.log: 38 → 0
+- ESLint: Claude corrigiu 383→0 (depois Kimi adicionou 29 em docs/e2e)
+- 12 commits no branch

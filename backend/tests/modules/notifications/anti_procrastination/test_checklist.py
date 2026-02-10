@@ -10,7 +10,7 @@ Data: 2026-01-10
 """
 
 from datetime import date, datetime
-from unittest.mock import AsyncMock, Mock
+from unittest.mock import AsyncMock, Mock, patch
 from uuid import uuid4
 
 import pytest
@@ -100,7 +100,7 @@ class TestChecklistManager:
         checklist_manager.db.refresh = Mock()
 
         # Act
-        with pytest.patch.object(checklist_manager, "db") as mock_db:
+        with patch.object(checklist_manager, "db") as mock_db:
             mock_db.query.return_value.filter.return_value.first.return_value = None
             # Configurar mock para retornar checklist
             result_id = await checklist_manager.generate_daily_checklist(user_id, "João Silva", "hr")

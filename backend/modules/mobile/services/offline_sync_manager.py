@@ -110,10 +110,11 @@ class OfflineSyncManager:
         start_time = datetime.utcnow()
 
         # Obter ou criar sessão mobile
-        session = await self._get_or_create_session(db, user_id, sync_request.device_id)
+        device_id = sync_request.device_info.device_id if sync_request.device_info else None
+        session = await self._get_or_create_session(db, user_id, device_id)
 
         # Validar sync token
-        last_sync = await self._validate_sync_token(session, sync_request.sync_token)
+        last_sync = await self._validate_sync_token(session, sync_request.last_sync_token)
 
         # Processar operações do cliente
         operation_results = []

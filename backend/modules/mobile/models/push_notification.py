@@ -44,15 +44,18 @@ class NotificationPriority(StrEnum):
     CRITICAL = "critical"
 
 
-class MobilePushNotification(Base):
+class MobileNotificationLog(Base):
     """
     Log de notificações push enviadas (módulo mobile).
 
     Armazena histórico de todas as notificações enviadas,
     incluindo status de entrega e leitura.
+
+    Renomeado de MobilePushNotification para evitar conflito com
+    modules.notifications.push.models.push_notification.PushNotification
     """
 
-    __tablename__ = "push_notifications"
+    __tablename__ = "mobile_notification_logs"
     __table_args__ = {"extend_existing": True}
 
     id = Column(
@@ -119,6 +122,11 @@ class MobilePushNotification(Base):
         String(100),
         nullable=True,
         comment="Chave para colapsar notificações similares",
+    )
+    ttl_seconds = Column(
+        Integer,
+        nullable=True,
+        comment="Tempo de vida da notificação em segundos",
     )
     status = Column(
         String(20),

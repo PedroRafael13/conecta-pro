@@ -90,6 +90,7 @@ class TestFinancialKPI:
             unidade="",
             is_percentage=False,
             casas_decimais=2,
+            historico_dias=365,
         )
 
     def test_kpi_repr(self, sample_kpi):
@@ -335,7 +336,7 @@ class TestFinancialDashboard:
 
     def test_widget_count_empty(self, sample_dashboard):
         """Testa contagem de widgets vazio."""
-        sample_dashboard.widgets = None
+        sample_dashboard.widgets = []
         assert sample_dashboard.widget_count == 0
 
     def test_refresh_seconds_mapping(self, sample_dashboard):

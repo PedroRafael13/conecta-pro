@@ -1,0 +1,33 @@
+{
+  "timestamp": "2026-02-09T21:00:00Z",
+  "captured_by": "Claude Opus 4.6",
+  "environment": "host",
+  "venv_activated": true,
+  "overall": {
+    "status": "fail",
+    "notes": "Baseline capturado manualmente após auditoria completa"
+  },
+  "git": {
+    "branch": "feature/openclaw-v2",
+    "last_commit": "1cacb1e5"
+  },
+  "backend": {
+    "ruff_errors": 0,
+    "collection_total": 6468,
+    "collection_errors": 0,
+    "tests_passed": 4689,
+    "tests_failed": 1307,
+    "tests_errors": 457,
+    "tests_skipped": 11,
+    "test_pass_rate": "72.5",
+    "alembic_heads": 1,
+    "bandit_high": 135,
+    "bandit_medium": "unknown",
+    "orphaned_count": 31
+  },
+  "frontend": {
+    "tsc_errors": 0,
+    "eslint_errors": 29,
+    "eslint_warnings": 510
+  }
+}

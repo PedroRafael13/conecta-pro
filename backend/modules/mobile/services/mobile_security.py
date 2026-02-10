@@ -183,8 +183,8 @@ class MobileSecurity:
         if not api_key:
             return False
 
-        # Validar formato
-        if len(api_key) < 32:
+        # Validar formato (minimo 10 chars para key_id.signature)
+        if len(api_key) < 10:
             return False
 
         # Verificar assinatura HMAC

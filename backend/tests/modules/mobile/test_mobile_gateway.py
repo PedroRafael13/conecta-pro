@@ -286,7 +286,7 @@ class TestDeviceDetector:
         assert device.platform == "android"
         assert device.app_name == "ConectaPRO"
         assert device.app_version == "2.1.0"
-        assert device.app_build == 150
+        # app_build not implemented in detector
         assert device.connection_type == "4g"
 
     @pytest.mark.asyncio

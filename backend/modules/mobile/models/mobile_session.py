@@ -34,7 +34,13 @@ class MobileSession(Base):
     device_token_id = Column(
         UUID(as_uuid=True),
         ForeignKey("device_tokens.id", ondelete="CASCADE"),
-        nullable=False,
+        nullable=True,
+    )
+    device_id = Column(
+        String(100),
+        nullable=True,
+        index=True,
+        comment="ID do dispositivo",
     )
     sync_token = Column(
         String(100),

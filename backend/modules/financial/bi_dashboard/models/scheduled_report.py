@@ -215,7 +215,9 @@ class ScheduledReport(Base):
             return False
         if not self.proxima_execucao_at:
             return True
-        return datetime.utcnow() >= self.proxima_execucao_at
+        # Handle both offset-naive and offset-aware datetimes
+        now = datetime.now(self.proxima_execucao_at.tzinfo) if self.proxima_execucao_at.tzinfo else datetime.utcnow()
+        return now >= self.proxima_execucao_at
 
     @property
     def success_rate(self) -> Decimal:

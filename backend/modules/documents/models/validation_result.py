@@ -458,7 +458,8 @@ def validate_email(value: str) -> bool:
 def validate_phone_br(value: str) -> bool:
     """Valida telefone brasileiro."""
     digits = "".join(filter(str.isdigit, value))
-    return len(digits) in [10, 11]
+    # Com ou sem código do país (+55)
+    return len(digits) in [10, 11, 13]
 
 
 def validate_cep(value: str) -> bool:

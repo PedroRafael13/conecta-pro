@@ -559,5 +559,61 @@ tail -5 /opt/conecta-pro/.comms/messages/claude-out.jsonl
 
 ---
 
-*Última atualização: 2026-02-07*
-*Versão: 2.1.0 — com comunicação inter-IA*
+## REGRAS OPERACIONAIS OBRIGATÓRIAS (v3.0)
+
+> **ATENÇÃO:** Esta seção foi adicionada pelo Claude Opus 4.6 após auditoria.
+> Estas regras são NÃO NEGOCIÁVEIS. Descumprir qualquer uma invalida o trabalho.
+
+### Início de Sessão OBRIGATÓRIO
+**ANTES de fazer qualquer coisa**, ler nesta ordem:
+1. `/opt/conecta-pro/.kimi/SESSION-START.md` — checklist de início
+2. `/opt/conecta-pro/.kimi/ENVIRONMENT.md` — onde você está e comandos exatos
+3. `/opt/conecta-pro/.kimi/REGRAS-OPERACIONAIS.md` — 13 regras obrigatórias
+4. `/opt/conecta-pro/.kimi/ERROS-PASSADOS.md` — erros anteriores para NÃO repetir
+5. `/opt/conecta-pro/.comms/BASELINE.json` — números reais do projeto
+
+### Referência de Comandos
+Arquivo: `/opt/conecta-pro/.kimi/commands-reference.json`
+Contém TODOS os comandos corretos. **SEMPRE usar estes comandos, NUNCA improvisar.**
+
+### Verificação Obrigatória
+**ANTES e DEPOIS de cada tarefa:**
+```bash
+/opt/conecta-pro/scripts/verify-all.sh
+```
+Se exit code = 1 após seu trabalho → REGRESSÃO detectada → REVERTER e reportar.
+
+### Regras Resumidas (detalhes em `.kimi/REGRAS-OPERACIONAIS.md`)
+1. **NUNCA mentir sobre números** — incluir comando e output exato
+2. **SEMPRE ativar venv** — `source venv/bin/activate` antes de Python
+3. **NUNCA mover testes para _orphaned/** — usar `@pytest.mark.xfail` ou `skip`
+4. **NUNCA deletar configs** — conftest.py, pytest.ini, etc. são intocáveis
+5. **VERIFICAR antes e depois** — `verify-all.sh` é obrigatório
+6. **ESLint = `npx eslint .`** — NUNCA usar `next lint`
+7. **Reportar honestamente** — formato padronizado com ANTES/DEPOIS
+8. **NUNCA editar gerados** — `src/api/generated/`, `src/types/generated/`
+9. **Commits com escopo** — `tipo(escopo): descrição com métricas`
+10. **Se piorou, reverte** — NUNCA continuar em cima de regressão
+11. **Scope limitado** — só fazer o que foi pedido
+12. **Comunicar cada commit** — reportar ao Claude via `.comms/messages/`
+13. **Impacto cruzado** — grep antes de renomear, verificar collection após
+
+### Qualificação de Números
+**SEMPRE** qualificar scope nos reports:
+- ERRADO: "376 testes estáveis"
+- CERTO: "376 testes passam dos que eu modifiquei. Projeto total: 4689/6468 (72.5%)"
+
+### Formato de Report Obrigatório
+```
+TASK: [nome]
+MÉTRICAS ANTES: (output do verify-all.sh)
+MÉTRICAS DEPOIS: (output do verify-all.sh)
+DELTA: (o que melhorou/piorou)
+ARQUIVOS MODIFICADOS: [lista]
+ARQUIVOS DELETADOS/MOVIDOS: [lista ou "nenhum"]
+```
+
+---
+
+*Última atualização: 2026-02-09*
+*Versão: 3.0.0 — com regras operacionais obrigatórias e framework de verificação*
