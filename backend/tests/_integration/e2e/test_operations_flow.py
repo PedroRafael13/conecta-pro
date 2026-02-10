@@ -2,7 +2,7 @@
 Testes E2E - Fluxo de Operações.
 
 Testa os módulos de Operações: Postos, Escalas, Alocações.
-Rotas usam padrão: /api/v1/operations/{module}/{module}/
+Rotas usam padrão: /api/v1/operacional/{module}/{resource}/
 
 Inclui testes de:
 - Existência de endpoints
@@ -32,7 +32,7 @@ class TestValidations:
             "night_shift_bonus_percent": 150.0,  # Excede máximo de 100%
         }
 
-        response = await client.post("/api/v1/operations/posts/", json=invalid_post, headers=auth_headers)
+        response = await client.post("/api/v1/operacional/postos/", json=invalid_post, headers=auth_headers)
         assert response.status_code == 422
         errors = response.json()["detail"]
         # Deve ter múltiplos erros de validação
@@ -54,7 +54,7 @@ class TestValidations:
         }
 
         response = await client.post(
-            "/api/v1/operations/allocations/",
+            "/api/v1/operacional/alocacoes/",
             json=invalid_allocation,
             headers=auth_headers,
         )
@@ -75,7 +75,7 @@ class TestValidations:
         }
 
         response = await client.post(
-            "/api/v1/operations/shifts/",
+            "/api/v1/operacional/turnos/",
             json=invalid_shift,
             headers=auth_headers,
         )
@@ -88,12 +88,12 @@ class TestOperationsPosts:
 
     async def test_posts_endpoint_exists(self, client: AsyncClient):
         """Verifica que o endpoint de postos existe."""
-        response = await client.get("/api/v1/operations/posts/posts/")
+        response = await client.get("/api/v1/operacional/postos/posts/")
         assert response.status_code in [200, 401, 403, 422]
 
     async def test_posts_stats_endpoint_exists(self, client: AsyncClient):
         """Verifica que o endpoint de stats de postos existe."""
-        response = await client.get("/api/v1/operations/posts/posts/stats")
+        response = await client.get("/api/v1/operacional/postos/posts/stats")
         assert response.status_code in [200, 401, 403, 422]
 
     @pytest.mark.skip(reason="Requer autenticação e permissões configuradas")
@@ -117,7 +117,7 @@ class TestOperationsPosts:
         }
 
         # Criar posto
-        response = await client.post("/api/v1/operations/posts/", json=post_data, headers=auth_headers)
+        response = await client.post("/api/v1/operacional/postos/", json=post_data, headers=auth_headers)
         assert response.status_code == 201
         created_post = response.json()
         assert created_post["name"] == post_data["name"]
@@ -125,7 +125,7 @@ class TestOperationsPosts:
         post_id = created_post["id"]
 
         # Buscar posto criado
-        response = await client.get(f"/api/v1/operations/posts/{post_id}", headers=auth_headers)
+        response = await client.get(f"/api/v1/operacional/postos/{post_id}", headers=auth_headers)
         assert response.status_code == 200
         fetched_post = response.json()
         assert fetched_post["id"] == post_id
@@ -133,7 +133,7 @@ class TestOperationsPosts:
         # Atualizar posto
         update_data = {"monthly_cost": 9000.00}
         response = await client.patch(
-            f"/api/v1/operations/posts/{post_id}",
+            f"/api/v1/operacional/postos/{post_id}",
             json=update_data,
             headers=auth_headers,
         )
@@ -142,7 +142,7 @@ class TestOperationsPosts:
         assert updated_post["monthly_cost"] == 9000.00
 
         # Deletar posto
-        response = await client.delete(f"/api/v1/operations/posts/{post_id}", headers=auth_headers)
+        response = await client.delete(f"/api/v1/operacional/postos/{post_id}", headers=auth_headers)
         assert response.status_code == 204
 
 
@@ -152,7 +152,7 @@ class TestOperationsScales:
 
     async def test_scales_endpoint_exists(self, client: AsyncClient):
         """Verifica que o endpoint de escalas existe."""
-        response = await client.get("/api/v1/operations/scales/scales/")
+        response = await client.get("/api/v1/operacional/escalas/scales/")
         assert response.status_code in [200, 401, 403, 422]
 
     @pytest.mark.skip(reason="Requer posto e funcionários existentes")
@@ -172,7 +172,7 @@ class TestOperationsScales:
         }
 
         # Criar escala
-        response = await client.post("/api/v1/operations/scales/", json=scale_data, headers=auth_headers)
+        response = await client.post("/api/v1/operacional/escalas/", json=scale_data, headers=auth_headers)
         # Pode falhar por post_id não existir ou escala duplicada
         assert response.status_code in [201, 400, 404, 422]
 
@@ -182,11 +182,11 @@ class TestOperationsScales:
             scale_id = created_scale["id"]
 
             # Buscar escala criada
-            response = await client.get(f"/api/v1/operations/scales/{scale_id}", headers=auth_headers)
+            response = await client.get(f"/api/v1/operacional/escalas/{scale_id}", headers=auth_headers)
             assert response.status_code == 200
 
             # Testar stats de escalas
-            response = await client.get("/api/v1/operations/scales/stats", headers=auth_headers)
+            response = await client.get("/api/v1/operacional/escalas/stats", headers=auth_headers)
             assert response.status_code == 200
             stats = response.json()
             assert "total" in stats
@@ -198,12 +198,12 @@ class TestOperationsShifts:
 
     async def test_shifts_endpoint_exists(self, client: AsyncClient):
         """Verifica que o endpoint de turnos existe."""
-        response = await client.get("/api/v1/operations/shifts/shifts/")
+        response = await client.get("/api/v1/operacional/turnos/shifts/")
         assert response.status_code in [200, 401, 403, 422]
 
     async def test_shifts_today_endpoint_exists(self, client: AsyncClient):
         """Verifica que o endpoint de turnos de hoje existe."""
-        response = await client.get("/api/v1/operations/shifts/shifts/today")
+        response = await client.get("/api/v1/operacional/turnos/shifts/today")
         assert response.status_code in [200, 401, 403, 422]
 
 
@@ -213,12 +213,12 @@ class TestOperationsAllocations:
 
     async def test_allocations_endpoint_exists(self, client: AsyncClient):
         """Verifica que o endpoint de alocações existe."""
-        response = await client.get("/api/v1/operations/allocations/allocations/")
+        response = await client.get("/api/v1/operacional/alocacoes/allocations/")
         assert response.status_code in [200, 401, 403, 422]
 
     async def test_allocations_current_endpoint_exists(self, client: AsyncClient):
         """Verifica que o endpoint de alocações atuais existe."""
-        response = await client.get("/api/v1/operations/allocations/allocations/current")
+        response = await client.get("/api/v1/operacional/alocacoes/allocations/current")
         assert response.status_code in [200, 401, 403, 422]
 
 
@@ -240,7 +240,7 @@ class TestOccurrences:
 
     async def test_occurrences_endpoint_exists(self, client: AsyncClient):
         """Verifica que o endpoint de ocorrências existe."""
-        response = await client.get("/api/v1/occurrences/occurrences/")
+        response = await client.get("/api/v1/operacional/occurrences/")
         assert response.status_code in [200, 401, 403, 422]
 
     @pytest.mark.skip(reason="Requer autenticação e dados de teste")
@@ -262,7 +262,7 @@ class TestOccurrences:
 
         # Deve falhar na validação
         response = await client.post(
-            "/api/v1/operations/occurrences/",
+            "/api/v1/operacional/occurrences/",
             json=invalid_data,
             headers=auth_headers,
         )
