@@ -36,7 +36,6 @@ from modules.integrations.models import (
 class TestAPIEndpoint:
     """Testes para o model APIEndpoint."""
 
-    @pytest.mark.skip(reason="Campos obrigatórios não informados")
     def test_create_api_endpoint(self):
         """Testa criação de APIEndpoint."""
         endpoint = APIEndpoint(
@@ -46,6 +45,9 @@ class TestAPIEndpoint:
             method=HTTPMethod.GET,
             category=EndpointCategory.CLIENTS,
             version="v1",
+            status=EndpointStatus.ACTIVE,
+            total_calls=0,
+            requires_auth=True,
         )
 
         assert endpoint.name == "Get Users"
@@ -55,10 +57,18 @@ class TestAPIEndpoint:
         assert endpoint.status == EndpointStatus.ACTIVE
         assert endpoint.requires_auth is True
 
-    @pytest.mark.skip(reason="Campos obrigatórios não informados")
     def test_increment_calls(self):
         """Testa incremento de chamadas."""
-        endpoint = APIEndpoint(id=uuid4(), name="Test", path="/test", method=HTTPMethod.GET)
+        endpoint = APIEndpoint(
+            id=uuid4(),
+            name="Test",
+            path="/test",
+            method=HTTPMethod.GET,
+            status=EndpointStatus.ACTIVE,
+            total_calls=0,
+            successful_calls=0,
+            failed_calls=0,
+        )
 
         endpoint.increment_calls(success=True, response_time_ms=100)
         assert endpoint.total_calls == 1
@@ -120,11 +130,16 @@ class TestAPIEndpoint:
 class TestAPIKey:
     """Testes para o model APIKey."""
 
-    @pytest.mark.skip(reason="Campos obrigatórios não informados")
     def test_create_api_key(self):
         """Testa criação de APIKey."""
         api_key = APIKey(
-            id=uuid4(), name="Production Key", key_prefix="abc123", key_hash="hash123", key_type=APIKeyType.PRODUCTION
+            id=uuid4(),
+            name="Production Key",
+            key_prefix="abc123",
+            key_hash="hash123",
+            key_type=APIKeyType.PRODUCTION,
+            status=APIKeyStatus.ACTIVE,
+            never_expires=False,
         )
 
         assert api_key.name == "Production Key"
@@ -254,7 +269,6 @@ class TestAPIKey:
 class TestWebhookConfig:
     """Testes para o model WebhookConfig."""
 
-    @pytest.mark.skip(reason="Campos obrigatórios não informados")
     def test_create_webhook(self):
         """Testa criação de webhook."""
         webhook = WebhookConfig(
@@ -262,6 +276,23 @@ class TestWebhookConfig:
             name="Order Webhook",
             url="https://example.com/webhook",
             events=[WebhookEvent.SERVICE_ORDER_CREATED.value],
+            status=WebhookStatus.ACTIVE,
+            auth_type=WebhookAuthType.HMAC,
+            total_deliveries=0,
+            successful_deliveries=0,
+            failed_deliveries=0,
+            consecutive_failures=0,
+            method="POST",
+            content_type="application/json",
+            payload_format="json",
+            verify_ssl=True,
+            retry_enabled=True,
+            max_retries=3,
+            retry_delay_seconds=60,
+            retry_backoff_multiplier=2,
+            timeout_seconds=30,
+            connect_timeout_seconds=10,
+            batch_enabled=False,
         )
 
         assert webhook.name == "Order Webhook"
@@ -307,10 +338,31 @@ class TestWebhookConfig:
         assert webhook.is_subscribed_to(WebhookEvent.CLIENT_CREATED.value) is True
         assert webhook.is_subscribed_to(WebhookEvent.CLIENT_DELETED.value) is False
 
-    @pytest.mark.skip(reason="Campos obrigatórios não informados")
     def test_record_delivery(self):
         """Testa registro de entrega."""
-        webhook = WebhookConfig(id=uuid4(), name="Test", url="https://example.com", events=["test"])
+        webhook = WebhookConfig(
+            id=uuid4(),
+            name="Test",
+            url="https://example.com",
+            events=["test"],
+            status=WebhookStatus.ACTIVE,
+            auth_type=WebhookAuthType.HMAC,
+            total_deliveries=0,
+            successful_deliveries=0,
+            failed_deliveries=0,
+            consecutive_failures=0,
+            method="POST",
+            content_type="application/json",
+            payload_format="json",
+            verify_ssl=True,
+            retry_enabled=True,
+            max_retries=3,
+            retry_delay_seconds=60,
+            retry_backoff_multiplier=2,
+            timeout_seconds=30,
+            connect_timeout_seconds=10,
+            batch_enabled=False,
+        )
 
         webhook.record_delivery(success=True, response_time_ms=100)
         assert webhook.total_deliveries == 1
@@ -337,7 +389,6 @@ class TestWebhookConfig:
 
         assert webhook.delivery_rate == 95.0
 
-    @pytest.mark.skip(reason="Campos obrigatórios não informados")
     def test_health_status(self):
         """Testa status de saúde."""
         webhook = WebhookConfig(
@@ -346,8 +397,23 @@ class TestWebhookConfig:
             url="https://example.com",
             events=["test"],
             status=WebhookStatus.ACTIVE,
-            ativo=True,
+            auth_type=WebhookAuthType.HMAC,
+            total_deliveries=10,
+            successful_deliveries=10,
+            failed_deliveries=0,
             consecutive_failures=0,
+            method="POST",
+            content_type="application/json",
+            payload_format="json",
+            verify_ssl=True,
+            retry_enabled=True,
+            max_retries=3,
+            retry_delay_seconds=60,
+            retry_backoff_multiplier=2,
+            timeout_seconds=30,
+            connect_timeout_seconds=10,
+            batch_enabled=False,
+            ativo=True,
         )
 
         assert webhook.health_status == "healthy"
@@ -422,7 +488,6 @@ class TestIntegrationLog:
 class TestSyncQueue:
     """Testes para o model SyncQueue."""
 
-    @pytest.mark.skip(reason="Campos obrigatórios não informados")
     def test_create_sync_item(self):
         """Testa criação de item de sync."""
         item = SyncQueue(
@@ -431,6 +496,11 @@ class TestSyncQueue:
             operation=SyncOperationType.CREATE,
             external_system=ExternalSystem.OMIE,
             payload={"name": "Test Client"},
+            status=SyncStatus.PENDING,
+            retry_count=0,
+            priority=SyncPriority.NORMAL,
+            max_retries=3,
+            retry_delay_seconds=60,
         )
 
         assert item.entity_type == SyncEntityType.CLIENT
@@ -459,7 +529,6 @@ class TestSyncQueue:
         assert item.completed_at is not None
         assert item.error_code is None
 
-    @pytest.mark.skip(reason="Campos obrigatórios não informados")
     def test_complete_failure_with_retry(self):
         """Testa falha com retry."""
         item = SyncQueue(
@@ -468,6 +537,10 @@ class TestSyncQueue:
             operation=SyncOperationType.CREATE,
             max_retries=3,
             retry_delay_seconds=60,
+            status=SyncStatus.PENDING,
+            retry_count=0,
+            priority=SyncPriority.NORMAL,
+            retry_backoff_multiplier=2,
         )
         item.start_processing("worker-1")
         item.complete_failure(error_code="ERR001", error_message="Erro de conexão")
