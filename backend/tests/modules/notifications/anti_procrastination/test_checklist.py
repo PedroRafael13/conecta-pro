@@ -93,20 +93,21 @@ class TestChecklistManager:
         checklist_manager.db.query.return_value.filter.return_value.first.return_value = None
         checklist_manager._get_user_pending_tasks = AsyncMock(return_value=[mock_task])
 
-        mock_checklist = Mock()
-        mock_checklist.id = uuid4()
+        expected_id = uuid4()
+
+        def fake_refresh(obj):
+            obj.id = expected_id
+
         checklist_manager.db.add = Mock()
         checklist_manager.db.commit = Mock()
-        checklist_manager.db.refresh = Mock()
+        checklist_manager.db.refresh = Mock(side_effect=fake_refresh)
 
         # Act
-        with patch.object(checklist_manager, "db") as mock_db:
-            mock_db.query.return_value.filter.return_value.first.return_value = None
-            # Configurar mock para retornar checklist
-            result_id = await checklist_manager.generate_daily_checklist(user_id, "João Silva", "hr")
+        result_id = await checklist_manager.generate_daily_checklist(user_id, "João Silva", "hr")
 
         # Assert
         assert result_id is not None
+        assert result_id == expected_id
 
     @pytest.mark.asyncio
     async def test_update_checklist_item_acknowledge(self, checklist_manager):
