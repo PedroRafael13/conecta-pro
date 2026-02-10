@@ -502,7 +502,7 @@ class ConfigService:
             codigo=data.codigo,
             nome=data.nome,
             descricao=data.descricao,
-            channel=NotificationChannel(data.channel),
+            channel_id=None,
             notification_type=data.notification_type,
             status=TemplateStatus.RASCUNHO,
             email_subject=data.email_subject,

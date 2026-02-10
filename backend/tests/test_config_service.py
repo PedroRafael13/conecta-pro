@@ -152,7 +152,10 @@ def sample_template():
         email_subject="Alerta: {{tipo}}",
         email_body_html="<p>Atenção: {{mensagem}}</p>",
         email_body_text="Atenção: {{mensagem}}",
-        available_variables=["tipo", "mensagem"],
+        available_variables=[
+            {"name": "tipo", "description": "Tipo do alerta", "required": True},
+            {"name": "mensagem", "description": "Mensagem do alerta", "required": True},
+        ],
         language="pt-BR",
         priority=1,
         send_delay_minutes=0,
@@ -547,12 +550,12 @@ class TestConfigServiceNotificationTemplate:
             patch.object(config_service.repository, "update_notification_template") as mock_update,
         ):
             mock_get.return_value = sample_template
-            sample_template.status = TemplateStatus.ACTIVE
+            sample_template.status = TemplateStatus.ATIVO
             mock_update.return_value = sample_template
 
             result = await config_service.activate_template(sample_template.id)
 
-            assert result.status == TemplateStatus.ACTIVE
+            assert result.status == TemplateStatus.ATIVO
 
     @pytest.mark.asyncio
     async def test_deactivate_template(self, config_service, sample_template):
@@ -581,7 +584,7 @@ class TestConfigServiceNotificationTemplate:
             )
 
             assert "Urgente" in result["subject"]
-            assert "Sistema fora do ar" in result["body"]
+            assert "Sistema fora do ar" in result["body_html"]
 
     @pytest.mark.asyncio
     async def test_clone_template(self, config_service, sample_template):
