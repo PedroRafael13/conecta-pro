@@ -50,7 +50,7 @@ def sample_tenant():
         documento="12345678000199",
         email="teste@empresa.com",
         telefone="11999999999",
-        status=TenantStatus.ACTIVE,
+        status=TenantStatus.ATIVO,
         plano=TenantPlan.PROFESSIONAL,
         tipo=TenantType.COMPANY,
         limite_usuarios=50,
@@ -76,7 +76,7 @@ def sample_setting():
         chave="email_notifications",
         valor="true",
         valor_padrao="true",
-        categoria=SettingCategory.NOTIFICATIONS,
+        categoria=SettingCategory.NOTIFICACAO,
         tipo=SettingType.BOOLEAN,
         descricao="Habilita notificações por email",
         is_sensivel=False,
@@ -118,7 +118,7 @@ def sample_flag():
         codigo="NEW_DASHBOARD",
         nome="Novo Dashboard",
         descricao="Ativa o novo dashboard para usuários",
-        status=FlagStatus.ACTIVE,
+        status=FlagStatus.ATIVO,
         tipo=FlagType.RELEASE,
         estrategia=RolloutStrategy.PERCENTAGE,
         percentual=50,
@@ -245,20 +245,20 @@ class TestTenantEndpoints:
         """Testa ativação de tenant."""
         with patch("modules.config.controllers.config_controller.ConfigService") as mock_service:
             mock_instance = AsyncMock()
-            sample_tenant.status = TenantStatus.ACTIVE
+            sample_tenant.status = TenantStatus.ATIVO
             mock_instance.activate_tenant.return_value = sample_tenant
             mock_service.return_value = mock_instance
 
             result = await mock_instance.activate_tenant(sample_tenant.id)
 
-            assert result.status == TenantStatus.ACTIVE
+            assert result.status == TenantStatus.ATIVO
 
     @pytest.mark.asyncio
     async def test_suspender_tenant(self, mock_db, sample_tenant):
         """Testa suspensão de tenant."""
         with patch("modules.config.controllers.config_controller.ConfigService") as mock_service:
             mock_instance = AsyncMock()
-            sample_tenant.status = TenantStatus.SUSPENDED
+            sample_tenant.status = TenantStatus.SUSPENSO
             mock_instance.suspend_tenant.return_value = sample_tenant
             mock_service.return_value = mock_instance
 
@@ -267,7 +267,7 @@ class TestTenantEndpoints:
                 reason="Pagamento pendente",
             )
 
-            assert result.status == TenantStatus.SUSPENDED
+            assert result.status == TenantStatus.SUSPENSO
 
 
 class TestTenantSettingsEndpoints:
@@ -403,14 +403,14 @@ class TestFeatureFlagEndpoints:
         """Testa ativação de flag."""
         with patch("modules.config.controllers.config_controller.ConfigService") as mock_service:
             mock_instance = AsyncMock()
-            sample_flag.status = FlagStatus.ACTIVE
+            sample_flag.status = FlagStatus.ATIVO
             sample_flag.estrategia = RolloutStrategy.ALL
             mock_instance.enable_flag.return_value = sample_flag
             mock_service.return_value = mock_instance
 
             result = await mock_instance.enable_flag(sample_flag.id)
 
-            assert result.status == FlagStatus.ACTIVE
+            assert result.status == FlagStatus.ATIVO
             assert result.estrategia == RolloutStrategy.ALL
 
     @pytest.mark.asyncio
@@ -418,14 +418,14 @@ class TestFeatureFlagEndpoints:
         """Testa desativação de flag."""
         with patch("modules.config.controllers.config_controller.ConfigService") as mock_service:
             mock_instance = AsyncMock()
-            sample_flag.status = FlagStatus.INACTIVE
+            sample_flag.status = FlagStatus.INATIVO
             sample_flag.estrategia = RolloutStrategy.NONE
             mock_instance.disable_flag.return_value = sample_flag
             mock_service.return_value = mock_instance
 
             result = await mock_instance.disable_flag(sample_flag.id)
 
-            assert result.status == FlagStatus.INACTIVE
+            assert result.status == FlagStatus.INATIVO
 
     @pytest.mark.asyncio
     async def test_set_flag_percentage(self, mock_db, sample_flag):

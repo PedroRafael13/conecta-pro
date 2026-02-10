@@ -57,12 +57,12 @@ class TestTenantModel:
             nome="Empresa Ativa",
             documento="12345678000100",
             email="ativo@empresa.com",
-            status=TenantStatus.ACTIVE,
+            status=TenantStatus.ATIVO,
             ativo=True,
         )
         assert tenant.is_active is True
 
-        tenant.status = TenantStatus.SUSPENDED
+        tenant.status = TenantStatus.SUSPENSO
         assert tenant.is_active is False
 
     def test_tenant_is_trial(self):
@@ -87,10 +87,10 @@ class TestTenantModel:
             nome="Empresa Inativa",
             documento="12345678000102",
             email="inativo@empresa.com",
-            status=TenantStatus.INACTIVE,
+            status=TenantStatus.INATIVO,
         )
         tenant.activate()
-        assert tenant.status == TenantStatus.ACTIVE
+        assert tenant.status == TenantStatus.ATIVO
         assert tenant.data_inicio is not None
 
     def test_tenant_suspend(self):
@@ -100,10 +100,10 @@ class TestTenantModel:
             nome="Empresa a Suspender",
             documento="12345678000103",
             email="suspender@empresa.com",
-            status=TenantStatus.ACTIVE,
+            status=TenantStatus.ATIVO,
         )
         tenant.suspend("Pagamento pendente")
-        assert tenant.status == TenantStatus.SUSPENDED
+        assert tenant.status == TenantStatus.SUSPENSO
         assert "Pagamento pendente" in (tenant.notas or "")
 
     def test_tenant_cancel(self):
@@ -113,7 +113,7 @@ class TestTenantModel:
             nome="Empresa a Cancelar",
             documento="12345678000104",
             email="cancelar@empresa.com",
-            status=TenantStatus.ACTIVE,
+            status=TenantStatus.ATIVO,
         )
         tenant.cancel()
         assert tenant.status == TenantStatus.CANCELLED
@@ -167,12 +167,12 @@ class TestTenantSettingsModel:
             tenant_id=uuid.uuid4(),
             chave="notificacoes_email",
             valor="true",
-            categoria=SettingCategory.NOTIFICATIONS,
+            categoria=SettingCategory.NOTIFICACAO,
             tipo=SettingType.BOOLEAN,
         )
         assert setting.chave == "notificacoes_email"
         assert setting.valor == "true"
-        assert setting.categoria == SettingCategory.NOTIFICATIONS
+        assert setting.categoria == SettingCategory.NOTIFICACAO
         assert setting.tipo == SettingType.BOOLEAN
 
     def test_setting_get_typed_value_boolean(self):
@@ -300,7 +300,7 @@ class TestFeatureFlagModel:
         )
         assert flag.codigo == "NEW_DASHBOARD"
         assert flag.nome == "Novo Dashboard"
-        assert flag.status == FlagStatus.INACTIVE
+        assert flag.status == FlagStatus.INATIVO
         assert flag.estrategia == RolloutStrategy.NONE
 
     def test_flag_enable_disable(self):
@@ -308,14 +308,14 @@ class TestFeatureFlagModel:
         flag = FeatureFlag(
             codigo="FEATURE_X",
             nome="Feature X",
-            status=FlagStatus.INACTIVE,
+            status=FlagStatus.INATIVO,
         )
         flag.enable()
-        assert flag.status == FlagStatus.ACTIVE
+        assert flag.status == FlagStatus.ATIVO
         assert flag.estrategia == RolloutStrategy.ALL
 
         flag.disable()
-        assert flag.status == FlagStatus.INACTIVE
+        assert flag.status == FlagStatus.INATIVO
         assert flag.estrategia == RolloutStrategy.NONE
 
     def test_flag_set_percentage(self):
@@ -327,7 +327,7 @@ class TestFeatureFlagModel:
         flag.set_percentage(25)
         assert flag.percentual == 25
         assert flag.estrategia == RolloutStrategy.PERCENTAGE
-        assert flag.status == FlagStatus.ACTIVE
+        assert flag.status == FlagStatus.ATIVO
 
     def test_flag_start_gradual_rollout(self):
         """Testa início de rollout gradual."""
@@ -339,7 +339,7 @@ class TestFeatureFlagModel:
         assert flag.percentual_alvo == 100
         assert flag.incremento_diario == 10
         assert flag.estrategia == RolloutStrategy.GRADUAL
-        assert flag.status == FlagStatus.ACTIVE
+        assert flag.status == FlagStatus.ATIVO
 
     def test_flag_toggle_tenant(self):
         """Testa toggle de tenant."""
@@ -362,7 +362,7 @@ class TestFeatureFlagModel:
         flag = FeatureFlag(
             codigo="ALL_USERS",
             nome="Todos os Usuários",
-            status=FlagStatus.ACTIVE,
+            status=FlagStatus.ATIVO,
             estrategia=RolloutStrategy.ALL,
             ativo=True,
         )
@@ -374,7 +374,7 @@ class TestFeatureFlagModel:
         flag = FeatureFlag(
             codigo="NO_USERS",
             nome="Nenhum Usuário",
-            status=FlagStatus.ACTIVE,
+            status=FlagStatus.ATIVO,
             estrategia=RolloutStrategy.NONE,
             ativo=True,
         )
@@ -387,7 +387,7 @@ class TestFeatureFlagModel:
         flag = FeatureFlag(
             codigo="TENANT_LIST",
             nome="Lista de Tenants",
-            status=FlagStatus.ACTIVE,
+            status=FlagStatus.ATIVO,
             estrategia=RolloutStrategy.TENANT_LIST,
             tenants_habilitados=[tenant_id],
             tenants_desabilitados=[],
@@ -405,7 +405,7 @@ class TestFeatureFlagModel:
         flag = FeatureFlag(
             codigo="INACTIVE_FLAG",
             nome="Flag Inativo",
-            status=FlagStatus.INACTIVE,
+            status=FlagStatus.INATIVO,
             ativo=False,
         )
         result = flag.evaluate()
@@ -416,7 +416,7 @@ class TestFeatureFlagModel:
         flag = FeatureFlag(
             codigo="AB_TEST",
             nome="Teste A/B",
-            status=FlagStatus.ACTIVE,
+            status=FlagStatus.ATIVO,
             estrategia=RolloutStrategy.ALL,
             is_ab_test=True,
             variantes=[
@@ -552,10 +552,10 @@ class TestEnums:
 
     def test_tenant_status_values(self):
         """Testa valores de TenantStatus."""
-        assert TenantStatus.ACTIVE.value == "active"
-        assert TenantStatus.INACTIVE.value == "inactive"
-        assert TenantStatus.SUSPENDED.value == "suspended"
-        assert TenantStatus.BLOCKED.value == "blocked"
+        assert TenantStatus.ATIVO.value == "ativo"
+        assert TenantStatus.INATIVO.value == "inativo"
+        assert TenantStatus.SUSPENSO.value == "suspenso"
+        assert TenantStatus.BLOQUEADO.value == "bloqueado"
         assert TenantStatus.TRIAL.value == "trial"
         assert TenantStatus.CANCELLED.value == "cancelled"
 

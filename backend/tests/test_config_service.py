@@ -59,7 +59,7 @@ def sample_tenant():
         nome="Empresa Teste",
         documento="12345678000199",
         email="teste@empresa.com",
-        status=TenantStatus.ACTIVE,
+        status=TenantStatus.ATIVO,
         plano=TenantPlan.PROFESSIONAL,
         tipo=TenantType.COMPANY,
         limite_usuarios=50,
@@ -79,7 +79,7 @@ def sample_setting():
         tenant_id=uuid.uuid4(),
         chave="notifications_enabled",
         valor="true",
-        categoria=SettingCategory.NOTIFICATIONS,
+        categoria=SettingCategory.NOTIFICACAO,
         tipo=SettingType.BOOLEAN,
         ativo=True,
         historico=[],
@@ -108,7 +108,7 @@ def sample_flag():
         id=uuid.uuid4(),
         codigo="NEW_FEATURE",
         nome="Nova Feature",
-        status=FlagStatus.ACTIVE,
+        status=FlagStatus.ATIVO,
         tipo=FlagType.RELEASE,
         estrategia=RolloutStrategy.PERCENTAGE,
         percentual=50,
@@ -212,18 +212,18 @@ class TestConfigServiceTenant:
     @pytest.mark.asyncio
     async def test_activate_tenant(self, config_service, sample_tenant):
         """Testa ativação de tenant."""
-        sample_tenant.status = TenantStatus.INACTIVE
+        sample_tenant.status = TenantStatus.INATIVO
         with (
             patch.object(config_service.repository, "get_tenant") as mock_get,
             patch.object(config_service.repository, "update_tenant") as mock_update,
         ):
             mock_get.return_value = sample_tenant
-            sample_tenant.status = TenantStatus.ACTIVE
+            sample_tenant.status = TenantStatus.ATIVO
             mock_update.return_value = sample_tenant
 
             result = await config_service.activate_tenant(sample_tenant.id)
 
-            assert result.status == TenantStatus.ACTIVE
+            assert result.status == TenantStatus.ATIVO
 
     @pytest.mark.asyncio
     async def test_suspend_tenant(self, config_service, sample_tenant):
@@ -233,7 +233,7 @@ class TestConfigServiceTenant:
             patch.object(config_service.repository, "update_tenant") as mock_update,
         ):
             mock_get.return_value = sample_tenant
-            sample_tenant.status = TenantStatus.SUSPENDED
+            sample_tenant.status = TenantStatus.SUSPENSO
             mock_update.return_value = sample_tenant
 
             result = await config_service.suspend_tenant(
@@ -241,7 +241,7 @@ class TestConfigServiceTenant:
                 reason="Teste",
             )
 
-            assert result.status == TenantStatus.SUSPENDED
+            assert result.status == TenantStatus.SUSPENSO
 
     @pytest.mark.asyncio
     async def test_cancel_tenant(self, config_service, sample_tenant):
@@ -378,19 +378,19 @@ class TestConfigServiceFeatureFlag:
     @pytest.mark.asyncio
     async def test_enable_flag(self, config_service, sample_flag):
         """Testa ativação de flag."""
-        sample_flag.status = FlagStatus.INACTIVE
+        sample_flag.status = FlagStatus.INATIVO
         with (
             patch.object(config_service.repository, "get_feature_flag") as mock_get,
             patch.object(config_service.repository, "update_feature_flag") as mock_update,
         ):
             mock_get.return_value = sample_flag
-            sample_flag.status = FlagStatus.ACTIVE
+            sample_flag.status = FlagStatus.ATIVO
             sample_flag.estrategia = RolloutStrategy.ALL
             mock_update.return_value = sample_flag
 
             result = await config_service.enable_flag(sample_flag.id)
 
-            assert result.status == FlagStatus.ACTIVE
+            assert result.status == FlagStatus.ATIVO
 
     @pytest.mark.asyncio
     async def test_disable_flag(self, config_service, sample_flag):
@@ -400,13 +400,13 @@ class TestConfigServiceFeatureFlag:
             patch.object(config_service.repository, "update_feature_flag") as mock_update,
         ):
             mock_get.return_value = sample_flag
-            sample_flag.status = FlagStatus.INACTIVE
+            sample_flag.status = FlagStatus.INATIVO
             sample_flag.estrategia = RolloutStrategy.NONE
             mock_update.return_value = sample_flag
 
             result = await config_service.disable_flag(sample_flag.id)
 
-            assert result.status == FlagStatus.INACTIVE
+            assert result.status == FlagStatus.INATIVO
 
     @pytest.mark.asyncio
     async def test_set_flag_percentage(self, config_service, sample_flag):
