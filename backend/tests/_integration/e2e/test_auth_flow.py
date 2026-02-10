@@ -35,14 +35,14 @@ class TestAuthenticationFlow:
 
     async def test_protected_endpoint_without_token(self, client: AsyncClient):
         """Testa acesso a endpoint protegido sem token."""
-        response = await client.get("/api/v1/leads/")
+        response = await client.get("/api/v1/crm/leads")
         # Deve retornar 401 Unauthorized ou 403 Forbidden
         assert response.status_code in [401, 403]
 
     async def test_protected_endpoint_with_invalid_token(self, client: AsyncClient):
         """Testa acesso a endpoint protegido com token inválido."""
         response = await client.get(
-            "/api/v1/leads/",
+            "/api/v1/crm/leads",
             headers={"Authorization": "Bearer invalid_token_here"},
         )
         # Deve retornar 401 ou 403
