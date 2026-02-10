@@ -69,13 +69,13 @@ def sample_client():
         code="CLI-001",
         name="Empresa Teste Ltda",
         trading_name="Empresa Teste",
-        client_type=ClientType.PJ,
+        client_type=ClientType.EMPRESA,
         document_type=DocumentType.CNPJ,
         document_number="12.345.678/0001-90",
         email="contato@empresa.com.br",
         phone="(11) 3456-7890",
-        status=ClientStatus.ACTIVE,
-        segment=ClientSegment.MEDIUM,
+        status=ClientStatus.ATIVO,
+        segment=ClientSegment.MEDIO,
         total_revenue=Decimal("150000.00"),
         total_debt=Decimal("0"),
         health_score=85.0,
@@ -271,7 +271,7 @@ class TestClientService:
 
             result = client_service.activate_client(sample_client.id)
 
-        assert result.status == ClientStatus.ACTIVE
+        assert result.status == ClientStatus.ATIVO
 
     def test_suspend_client(self, client_service, mock_repository, sample_client):
         """Testa suspensão de cliente."""
