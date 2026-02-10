@@ -211,6 +211,7 @@ class TestMetricThreshold:
             orange_threshold=75,
             red_threshold=90,
             cooldown_seconds=300,
+            enabled=True,
         )
 
         # Alerta ha menos de 5 minutos
