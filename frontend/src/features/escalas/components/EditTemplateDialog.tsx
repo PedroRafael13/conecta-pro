@@ -1,7 +1,7 @@
 'use client';
 
 import { AlertCircle } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,6 +16,12 @@ interface EditTemplateDialogProps {
   isLoading?: boolean;
 }
 
+// Initial form state factory
+const createInitialFormData = (): ScaleTemplateUpdate => ({
+  name: '',
+  description: '',
+});
+
 export function EditTemplateDialog({
   isOpen,
   onClose,
@@ -23,20 +29,39 @@ export function EditTemplateDialog({
   onSubmit,
   isLoading = false,
 }: EditTemplateDialogProps) {
-  const [formData, setFormData] = useState<ScaleTemplateUpdate>({
-    name: '',
-    description: '',
-  });
+  const [formData, setFormData] = useState<ScaleTemplateUpdate>(createInitialFormData);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const prevIsOpenRef = useRef(isOpen);
+  const prevTemplateIdRef = useRef<string | null>(null);
 
-  // Load template data when modal opens
+  // Load template data when modal opens (transition from closed to open)
   useEffect(() => {
-    if (isOpen && template) {
-      setFormData({
-        name: template.name,
-        description: template.description || '',
+    const prevIsOpen = prevIsOpenRef.current;
+    const prevTemplateId = prevTemplateIdRef.current;
+    prevIsOpenRef.current = isOpen;
+    prevTemplateIdRef.current = template?.id || null;
+
+    // Load data when opening with a different template
+    const shouldLoadData = isOpen && template && (!prevIsOpen || template.id !== prevTemplateId);
+
+    if (shouldLoadData) {
+      const rafId = requestAnimationFrame(() => {
+        setFormData({
+          name: template.name,
+          description: template.description || '',
+        });
+        setErrors({});
       });
-      setErrors({});
+      return () => cancelAnimationFrame(rafId);
+    }
+
+    // Reset when closing
+    if (prevIsOpen && !isOpen) {
+      const rafId = requestAnimationFrame(() => {
+        setFormData(createInitialFormData());
+        setErrors({});
+      });
+      return () => cancelAnimationFrame(rafId);
     }
   }, [isOpen, template]);
 

@@ -21,6 +21,21 @@ import type {
   ScaleTemplateUpdate,
 } from '@/types/operacional';
 
+// Loading skeleton component - definido fora do componente para evitar recriação durante render
+const SkeletonCard = () => (
+  <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl p-6 animate-pulse">
+    <div className="h-6 bg-[hsl(var(--muted))] rounded w-3/4 mb-2" />
+    <div className="h-4 bg-[hsl(var(--muted))] rounded w-1/2 mb-4" />
+    <div className="h-8 bg-[hsl(var(--muted))] rounded w-1/3 mb-4" />
+    <div className="grid grid-cols-3 gap-3 mb-4">
+      <div className="h-20 bg-[hsl(var(--muted))] rounded" />
+      <div className="h-20 bg-[hsl(var(--muted))] rounded" />
+      <div className="h-20 bg-[hsl(var(--muted))] rounded" />
+    </div>
+    <div className="h-10 bg-[hsl(var(--muted))] rounded" />
+  </div>
+);
+
 export function TemplateManager() {
   const router = useRouter();
   const { templates, total, isLoading, refresh } = useTemplates();
@@ -115,21 +130,6 @@ export function TemplateManager() {
       template.post_name?.toLowerCase().includes(search)
     );
   });
-
-  // Loading skeleton
-  const SkeletonCard = () => (
-    <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl p-6 animate-pulse">
-      <div className="h-6 bg-[hsl(var(--muted))] rounded w-3/4 mb-2" />
-      <div className="h-4 bg-[hsl(var(--muted))] rounded w-1/2 mb-4" />
-      <div className="h-8 bg-[hsl(var(--muted))] rounded w-1/3 mb-4" />
-      <div className="grid grid-cols-3 gap-3 mb-4">
-        <div className="h-20 bg-[hsl(var(--muted))] rounded" />
-        <div className="h-20 bg-[hsl(var(--muted))] rounded" />
-        <div className="h-20 bg-[hsl(var(--muted))] rounded" />
-      </div>
-      <div className="h-10 bg-[hsl(var(--muted))] rounded" />
-    </div>
-  );
 
   return (
     <div className="space-y-6">

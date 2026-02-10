@@ -12,18 +12,19 @@ interface UseTourReturn {
   cancelTour: () => void;
 }
 
+// Lazy initialization function for localStorage
+const getInitialCompletedState = (): boolean => {
+  if (typeof window === 'undefined') return true;
+  return isTourCompleted();
+};
+
 export const useTour = (role: UserRole = 'USUARIO', autoStart = false): UseTourReturn => {
-  const [isCompleted, setIsCompleted] = useState<boolean>(true);
+  // Use lazy initialization to avoid setState in effect
+  const [isCompleted, setIsCompleted] = useState<boolean>(getInitialCompletedState);
   const [isActive, setIsActive] = useState<boolean>(false);
   const [currentStep, setCurrentStep] = useState<number | null>(null);
   const [totalSteps, setTotalSteps] = useState<number>(0);
   const [tourInstance, setTourInstance] = useState<any>(null);
-
-  // Verifica se tour já foi completado
-  useEffect(() => {
-    const completed = isTourCompleted();
-    setIsCompleted(completed);
-  }, []);
 
   // Função para iniciar o tour
   const startTour = useCallback(() => {
@@ -107,43 +108,73 @@ export const useTour = (role: UserRole = 'USUARIO', autoStart = false): UseTourR
   };
 };
 
+// Lazy initialization for useShouldShowTour
+const getInitialShouldShowState = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  return !isTourCompleted();
+};
+
 // Hook simplificado para apenas verificar se deve mostrar tour
 export const useShouldShowTour = (): boolean => {
-  const [shouldShow, setShouldShow] = useState(false);
+  const [shouldShow, setShouldShow] = useState<boolean>(getInitialShouldShowState);
 
+  // Update on mount only if needed
   useEffect(() => {
-    const completed = isTourCompleted();
-    setShouldShow(!completed);
+    const currentValue = !isTourCompleted();
+    if (currentValue !== shouldShow) {
+      setShouldShow(currentValue);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return shouldShow;
 };
 
+// Lazy initialization for tour progress
+const getInitialProgressState = () => ({
+  started: false,
+  completed: false,
+  startedAt: null as string | null,
+  completedAt: null as string | null,
+  cancelCount: 0,
+});
+
+const loadProgressFromStorage = () => {
+  if (typeof window === 'undefined') {
+    return getInitialProgressState();
+  }
+
+  const completed = localStorage.getItem('tour_operacional_completed') === 'true';
+  const completedAt = localStorage.getItem('tour_operacional_completed_at');
+  const startedAt = localStorage.getItem('tour_operacional_started_at');
+  const cancelCount = parseInt(localStorage.getItem('tour_operacional_cancel_count') || '0', 10);
+
+  return {
+    started: !!startedAt,
+    completed,
+    startedAt,
+    completedAt,
+    cancelCount,
+  };
+};
+
 // Hook para tracking de progresso do tour
 export const useTourProgress = () => {
-  const [progress, setProgress] = useState({
-    started: false,
-    completed: false,
-    startedAt: null as string | null,
-    completedAt: null as string | null,
-    cancelCount: 0,
-  });
+  // Use lazy initialization to read from localStorage
+  const [progress, setProgress] = useState(loadProgressFromStorage);
 
+  // Sync with localStorage on mount (in case it changed)
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const completed = localStorage.getItem('tour_operacional_completed') === 'true';
-    const completedAt = localStorage.getItem('tour_operacional_completed_at');
-    const startedAt = localStorage.getItem('tour_operacional_started_at');
-    const cancelCount = parseInt(localStorage.getItem('tour_operacional_cancel_count') || '0', 10);
-
-    setProgress({
-      started: !!startedAt,
-      completed,
-      startedAt,
-      completedAt,
-      cancelCount,
-    });
+    const storedProgress = loadProgressFromStorage();
+    // Only update if different to avoid unnecessary renders
+    if (
+      storedProgress.started !== progress.started ||
+      storedProgress.completed !== progress.completed ||
+      storedProgress.cancelCount !== progress.cancelCount
+    ) {
+      setProgress(storedProgress);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const markStarted = useCallback(() => {

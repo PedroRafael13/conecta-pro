@@ -6,7 +6,7 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { registerServiceWorker, subscribeToPushNotifications } from '../services/registerServiceWorker';
 import { useNotifications } from './useNotifications';
 
@@ -18,32 +18,27 @@ interface UsePushNotificationsReturn {
   unsubscribe: () => Promise<void>;
 }
 
+// Check support synchronously
+const checkSupport = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+};
+
+// Get initial permission state
+const getInitialPermission = (): NotificationPermission => {
+  if (typeof window === 'undefined') return 'default';
+  return Notification.permission;
+};
+
 export function usePushNotifications(): UsePushNotificationsReturn {
-  const [isSupported, setIsSupported] = useState(false);
+  // Use lazy initialization to avoid setState in effect
+  const [isSupported] = useState<boolean>(checkSupport);
   const [isSubscribed, setIsSubscribed] = useState(false);
-  const [permission, setPermission] = useState<NotificationPermission>('default');
+  const [permission, setPermission] = useState<NotificationPermission>(getInitialPermission);
   const { subscribeToPush } = useNotifications();
 
-  useEffect(() => {
-    // Verifica suporte
-    const supported = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
-    setIsSupported(supported);
-
-    if (!supported) {
-      return;
-    }
-
-    // Verifica permissão atual
-    setPermission(Notification.permission);
-
-    // Registra Service Worker
-    registerServiceWorker();
-
-    // Verifica se já está subscrito
-    checkSubscription();
-  }, []);
-
-  const checkSubscription = async () => {
+  // Declarar checkSubscription antes do useEffect usando useCallback
+  const checkSubscription = useCallback(async () => {
     try {
       const registration = await navigator.serviceWorker.ready;
       const subscription = await registration.pushManager.getSubscription();
@@ -51,7 +46,26 @@ export function usePushNotifications(): UsePushNotificationsReturn {
     } catch (error) {
       console.error('Erro ao verificar subscrição:', error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!isSupported) {
+      return;
+    }
+
+    // Registra Service Worker
+    registerServiceWorker();
+
+    // Verifica permissão e subscrição de forma assíncrona
+    const initializePush = async () => {
+      // Atualiza permissão atual
+      setPermission(Notification.permission);
+      // Verifica se já está subscrito
+      await checkSubscription();
+    };
+
+    initializePush();
+  }, [isSupported, checkSubscription]);
 
   const subscribe = async () => {
     try {
