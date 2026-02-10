@@ -42,18 +42,18 @@ def sample_client_data():
     return {
         "id": uuid4(),
         "code": "CLI-001",
-        "name": "Empresa Teste Ltda",
-        "trading_name": "Empresa Teste",
-        "client_type": ClientType.PJ,
+        "legal_name": "Empresa Teste Ltda",
+        "trade_name": "Empresa Teste",
+        "type": ClientType.EMPRESA,
         "document_type": DocumentType.CNPJ,
         "document_number": "12.345.678/0001-90",
         "email": "contato@empresa.com.br",
         "phone": "(11) 3456-7890",
-        "mobile": "(11) 99876-5432",
+        "phone_secondary": "(11) 99876-5432",
         "address_city": "São Paulo",
         "address_state": "SP",
-        "status": ClientStatus.ACTIVE,
-        "segment": ClientSegment.MEDIUM,
+        "status": ClientStatus.ATIVO,
+        "segment": ClientSegment.MEDIO,
     }
 
 
@@ -87,8 +87,8 @@ def sample_unit_data(sample_condominium_data):
         "block": "A",
         "tower": "Torre Norte",
         "floor": 1,
-        "unit_type": UnitType.APARTMENT,
-        "status": UnitStatus.OCCUPIED,
+        "unit_type": UnitType.APARTAMENTO,
+        "status": UnitStatus.OCUPADA,
         "owner_name": "João da Silva",
         "owner_document": "123.456.789-00",
     }
@@ -103,7 +103,7 @@ def sample_contract_data(sample_client_data, sample_condominium_data):
         "condominium_id": sample_condominium_data["id"],
         "contract_number": "CTR-2026-001",
         "service_type": ContractServiceType.PORTARIA_REMOTA,
-        "status": ServiceStatus.ACTIVE,
+        "status": ServiceStatus.ATIVO,
         "monthly_value": Decimal("5000.00"),
         "start_date": date.today(),
     }
@@ -118,7 +118,7 @@ def sample_integration_data(sample_client_data):
         "integration_type": IntegrationType.GUARDIAN,
         "name": "Guardian Integration",
         "enabled": True,
-        "sync_status": SyncStatus.SYNCED,
+        "sync_status": SyncStatus.SINCRONIZADO,
         "sync_direction": SyncDirection.BIDIRECTIONAL,
     }
 
@@ -176,7 +176,7 @@ class TestEnums:
 
     def test_unit_type_values(self):
         """Testa valores do enum UnitType."""
-        assert UnitType.APARTMENT.value == "apartment"
+        assert UnitType.APARTAMENTO.value == "apartment"
         assert UnitType.HOUSE.value == "house"
         assert UnitType.STORE.value == "store"
         assert UnitType.OFFICE.value == "office"
@@ -443,8 +443,8 @@ class TestUnitModel:
         assert unit.code == "COND-001-A101"
         assert unit.unit_number == "101"
         assert unit.block == "A"
-        assert unit.unit_type == UnitType.APARTMENT
-        assert unit.status == UnitStatus.OCCUPIED
+        assert unit.unit_type == UnitType.APARTAMENTO
+        assert unit.status == UnitStatus.OCUPADA
 
     def test_unit_default_values(self, sample_condominium_data):
         """Testa valores padrão da unidade."""
@@ -453,7 +453,7 @@ class TestUnitModel:
             condominium_id=sample_condominium_data["id"],
             code="COND-001-B201",
             unit_number="201",
-            unit_type=UnitType.APARTMENT,
+            unit_type=UnitType.APARTAMENTO,
         )
 
         assert unit.status == UnitStatus.AVAILABLE
@@ -493,7 +493,7 @@ class TestUnitModel:
         assert unit.resident_name == "Ana Paula"
         assert unit.resident_document == "555.666.777-88"
         assert unit.resident_type == "tenant"
-        assert unit.status == UnitStatus.OCCUPIED
+        assert unit.status == UnitStatus.OCUPADA
 
     def test_unit_clear_resident(self, sample_unit_data):
         """Testa remoção de morador."""
@@ -529,7 +529,7 @@ class TestUnitModel:
         assert unit.is_defaulter is False
         assert unit.debt_amount == Decimal("0")
         assert unit.last_payment_date is not None
-        assert unit.status == UnitStatus.OCCUPIED
+        assert unit.status == UnitStatus.OCUPADA
 
 
 # ============================================================
@@ -546,7 +546,7 @@ class TestClientContractModel:
 
         assert contract.contract_number == "CTR-2026-001"
         assert contract.service_type == ContractServiceType.PORTARIA_REMOTA
-        assert contract.status == ServiceStatus.ACTIVE
+        assert contract.status == ServiceStatus.ATIVO
         assert contract.monthly_value == Decimal("5000.00")
 
     def test_contract_default_values(self, sample_client_data):
@@ -583,7 +583,7 @@ class TestClientContractModel:
 
         contract.activate()
 
-        assert contract.status == ServiceStatus.ACTIVE
+        assert contract.status == ServiceStatus.ATIVO
         assert contract.activation_date is not None
         assert contract.implantation_end_date is not None
 
@@ -636,7 +636,7 @@ class TestIntegrationSettingsModel:
         assert integration.integration_type == IntegrationType.GUARDIAN
         assert integration.name == "Guardian Integration"
         assert integration.enabled is True
-        assert integration.sync_status == SyncStatus.SYNCED
+        assert integration.sync_status == SyncStatus.SINCRONIZADO
 
     def test_integration_default_values(self, sample_client_data):
         """Testa valores padrão da integração."""
@@ -686,7 +686,7 @@ class TestIntegrationSettingsModel:
 
         integration.complete_sync()
 
-        assert integration.sync_status == SyncStatus.SYNCED
+        assert integration.sync_status == SyncStatus.SINCRONIZADO
         assert integration.last_sync_at is not None
         assert integration.last_sync_status == "success"
 
