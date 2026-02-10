@@ -150,7 +150,7 @@ class EFDReinfService:
             retencao = RetencaoServico(
                 cnpj_prestador=ret["cnpj_prestador"],
                 valor_bruto=Decimal(str(ret["valor_bruto"])),
-                valor_base_retencao=Decimal(str(ret.get("valor_base_retencao", ret["valor_bruto"]))),
+                valor_base_retencao=Decimal(str(ret.get("valor_base_retencao") or ret["valor_bruto"])),
                 valor_retencao=Decimal(str(ret["valor_retencao"])),
                 valor_retencao_adicional=Decimal(str(ret.get("valor_retencao_adicional", "0"))),
                 valor_nf_retido=Decimal(str(ret.get("valor_nf_retido", "0"))),

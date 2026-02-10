@@ -386,7 +386,7 @@ async def testar_nfse_manaus(creds: CredenciaisGov) -> ResultadoTeste:
     url_ws = URLS_GOV["nfse_manaus_prod"]
 
     try:
-        async with httpx.AsyncClient(timeout=15.0, verify=False) as client:  # noqa: S501
+        async with httpx.AsyncClient(timeout=15.0, verify=False) as client:  # noqa: S501  # nosec B501
             # Testar portal
             response_portal = await client.get(url_portal, follow_redirects=True)
             portal_ok = response_portal.status_code in [200, 302]

@@ -401,7 +401,7 @@ class UnifiedDashboard:
             escalation_level=task.escalation_level,
             escalation_count=task.escalation_count,
             last_escalation=task.last_escalation,
-            metadata=task.metadata or {},
+            task_metadata=task.metadata or {},
             business_impact=task.business_impact,
             compliance_risk=task.compliance_risk,
         )
