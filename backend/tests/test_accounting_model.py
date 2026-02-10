@@ -52,15 +52,15 @@ class TestChartOfAccountsModel:
         assert chart.code == "PC-001"
         assert chart.name == "Plano de Contas Principal"
         assert chart.condominio_id == condo_id
-        assert chart.chart_type == ChartType.ANALYTICAL
+        assert chart.chart_type == ChartType.STANDARD
         assert chart.status == ChartStatus.ACTIVE
         assert chart.standard == ChartStandard.CUSTOM
         assert chart.active is True
 
     def test_chart_type_enum(self) -> None:
         """Test ChartType enum values."""
-        assert ChartType.ANALYTICAL.value == "ANALYTICAL"
-        assert ChartType.SYNTHETIC.value == "SYNTHETIC"
+        assert ChartType.STANDARD.value == "STANDARD"
+        assert ChartType.CUSTOM.value == "CUSTOM"
         assert ChartType.REFERENTIAL.value == "REFERENTIAL"
 
     def test_chart_status_enum(self) -> None:
@@ -68,14 +68,14 @@ class TestChartOfAccountsModel:
         assert ChartStatus.ACTIVE.value == "ACTIVE"
         assert ChartStatus.INACTIVE.value == "INACTIVE"
         assert ChartStatus.DRAFT.value == "DRAFT"
-        assert ChartStatus.BLOCKED.value == "BLOCKED"
+        assert ChartStatus.ARCHIVED.value == "ARCHIVED"
 
     def test_chart_standard_enum(self) -> None:
         """Test ChartStandard enum values."""
         assert ChartStandard.CUSTOM.value == "CUSTOM"
         assert ChartStandard.SPED_ECD.value == "SPED_ECD"
         assert ChartStandard.SPED_ECF.value == "SPED_ECF"
-        assert ChartStandard.COSIF.value == "COSIF"
+        assert ChartStandard.CFC.value == "CFC"
         assert ChartStandard.IFRS.value == "IFRS"
         assert ChartStandard.US_GAAP.value == "US_GAAP"
 
