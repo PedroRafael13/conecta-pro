@@ -537,6 +537,7 @@ class TestDocumentKitItemStatusModel:
             condominio_id=uuid4(),
             status=ItemStatusEnum.PENDENTE,
             historico=[],
+            tentativas=0,
         )
 
         enviado_por = str(uuid4())

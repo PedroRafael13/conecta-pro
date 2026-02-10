@@ -1,15 +1,14 @@
 """
-Testes da API do módulo Config
-Sprint 35: Configurações e Multi-tenant
+Testes da API do modulo Config
+Sprint 35: Configuracoes e Multi-tenant
 """
 
 # pylint: disable=redefined-outer-name,unused-argument,too-many-lines
 import uuid
-from datetime import UTC, datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from httpx import AsyncClient
 
 from modules.config.models import (
     ConfigPriority,
@@ -47,20 +46,20 @@ def sample_tenant():
         codigo="TEST001",
         nome="Empresa Teste",
         nome_fantasia="Teste",
-        documento="12345678000199",
+        cnpj="12345678000199",
         email="teste@empresa.com",
         telefone="11999999999",
-        status=TenantStatus.ATIVO,
-        plano=TenantPlan.PROFESSIONAL,
-        tipo=TenantType.COMPANY,
-        limite_usuarios=50,
-        limite_storage_gb=100,
-        limite_api_calls_mes=100000,
-        uso_usuarios_ativos=10,
-        uso_storage_bytes=10 * 1024 * 1024 * 1024,
-        uso_api_calls_mes=5000,
-        features_habilitadas=["reports", "dashboard"],
-        modulos_habilitados=["crm", "financial"],
+        status=TenantStatus.ATIVO.value,
+        plan=TenantPlan.PROFESSIONAL.value,
+        tenant_type=TenantType.EMPRESA.value,
+        max_usuarios=50,
+        max_storage_gb=100,
+        max_api_calls_month=100000,
+        usuarios_ativos=10,
+        storage_usado_mb=10240,
+        api_calls_mes=5000,
+        features_enabled=["reports", "dashboard"],
+        modules_enabled=["crm", "financial"],
         ativo=True,
         created_at=datetime.now(UTC),
         updated_at=datetime.now(UTC),
@@ -74,14 +73,15 @@ def sample_setting():
         id=uuid.uuid4(),
         tenant_id=uuid.uuid4(),
         chave="email_notifications",
+        nome="Notificacoes por Email",
         valor="true",
-        valor_padrao="true",
-        categoria=SettingCategory.NOTIFICACAO,
-        tipo=SettingType.BOOLEAN,
-        descricao="Habilita notificações por email",
-        is_sensivel=False,
-        is_editavel=True,
-        is_visivel=True,
+        valor_default="true",
+        category=SettingCategory.NOTIFICACAO.value,
+        setting_type=SettingType.BOOLEAN.value,
+        descricao="Habilita notificacoes por email",
+        sensitive=False,
+        editable=True,
+        visible=True,
         ativo=True,
         created_at=datetime.now(UTC),
         updated_at=datetime.now(UTC),
@@ -94,16 +94,16 @@ def sample_config():
     return SystemConfig(
         id=uuid.uuid4(),
         chave="app_name",
+        nome="Nome da Aplicacao",
         valor="ERP Conecta Mais",
-        valor_padrao="ERP",
-        tipo=SettingType.STRING,
-        escopo=ConfigScope.GLOBAL,
-        prioridade=ConfigPriority.NORMAL,
-        descricao="Nome da aplicação",
-        is_sensivel=False,
-        is_editavel=True,
-        is_visivel=True,
-        permite_override=True,
+        valor_type="string",
+        scope=ConfigScope.GLOBAL.value,
+        priority=ConfigPriority.NORMAL.value,
+        descricao="Nome da aplicacao",
+        sensitive=False,
+        editable=True,
+        visible=True,
+        override_allowed=True,
         ativo=True,
         created_at=datetime.now(UTC),
         updated_at=datetime.now(UTC),
@@ -117,16 +117,15 @@ def sample_flag():
         id=uuid.uuid4(),
         codigo="NEW_DASHBOARD",
         nome="Novo Dashboard",
-        descricao="Ativa o novo dashboard para usuários",
-        status=FlagStatus.ATIVO,
-        tipo=FlagType.RELEASE,
-        estrategia=RolloutStrategy.PERCENTAGE,
-        percentual=50,
-        tenants_habilitados=[],
-        tenants_desabilitados=[],
-        usuarios_habilitados=[],
-        usuarios_desabilitados=[],
-        is_ab_test=False,
+        descricao="Ativa o novo dashboard para usuarios",
+        status=FlagStatus.ATIVO.value,
+        flag_type=FlagType.RELEASE.value,
+        rollout_strategy=RolloutStrategy.PERCENTAGE.value,
+        rollout_percentage=50.0,
+        enabled_tenants=[],
+        disabled_tenants=[],
+        enabled_users=[],
+        disabled_users=[],
         tags=["dashboard", "ui"],
         ativo=True,
         created_at=datetime.now(UTC),
@@ -141,19 +140,19 @@ def sample_template():
         id=uuid.uuid4(),
         codigo="WELCOME_EMAIL",
         nome="Email de Boas-vindas",
-        descricao="Template de boas-vindas para novos usuários",
-        canal=NotificationChannel.EMAIL,
-        tipo=NotificationType.WELCOME,
-        status=TemplateStatus.ACTIVE,
-        assunto="Bem-vindo ao {{app_name}}!",
-        corpo="Olá {{nome}}, seja bem-vindo!",
-        corpo_html="<h1>Olá {{nome}}</h1><p>Seja bem-vindo!</p>",
-        variaveis=["nome", "app_name"],
-        variaveis_obrigatorias=["nome"],
-        idioma="pt-BR",
-        prioridade=ConfigPriority.NORMAL,
-        versao=1,
-        metricas={"sent": 100, "opened": 45},
+        descricao="Template de boas-vindas para novos usuarios",
+        notification_type=NotificationType.TRANSACIONAL.value,
+        status=TemplateStatus.ATIVO.value,
+        email_subject="Bem-vindo ao {{app_name}}!",
+        email_body_text="Ola {{nome}}, seja bem-vindo!",
+        email_body_html="<h1>Ola {{nome}}</h1><p>Seja bem-vindo!</p>",
+        available_variables=[
+            {"name": "nome", "required": True},
+            {"name": "app_name", "required": False},
+        ],
+        language="pt-BR",
+        priority=1,
+        version=1,
         tags=["welcome", "onboarding"],
         ativo=True,
         created_at=datetime.now(UTC),
@@ -172,7 +171,6 @@ class TestTenantEndpoints:
             mock_instance.list_tenants.return_value = ([sample_tenant], 1)
             mock_service.return_value = mock_instance
 
-            # Simula chamada bem-sucedida
             result = await mock_instance.list_tenants()
             tenants, total = result
 
@@ -182,7 +180,7 @@ class TestTenantEndpoints:
 
     @pytest.mark.asyncio
     async def test_criar_tenant(self, mock_db, sample_tenant):
-        """Testa criação de tenant."""
+        """Testa criacao de tenant."""
         with patch("modules.config.controllers.config_controller.ConfigService") as mock_service:
             mock_instance = AsyncMock()
             mock_instance.create_tenant.return_value = sample_tenant
@@ -191,7 +189,7 @@ class TestTenantEndpoints:
             result = await mock_instance.create_tenant(
                 codigo="TEST001",
                 nome="Empresa Teste",
-                documento="12345678000199",
+                cnpj="12345678000199",
                 email="teste@empresa.com",
             )
 
@@ -213,7 +211,7 @@ class TestTenantEndpoints:
 
     @pytest.mark.asyncio
     async def test_buscar_tenant_nao_encontrado(self, mock_db):
-        """Testa busca de tenant não encontrado."""
+        """Testa busca de tenant nao encontrado."""
         with patch("modules.config.controllers.config_controller.ConfigService") as mock_service:
             mock_instance = AsyncMock()
             mock_instance.get_tenant.return_value = None
@@ -225,7 +223,7 @@ class TestTenantEndpoints:
 
     @pytest.mark.asyncio
     async def test_atualizar_tenant(self, mock_db, sample_tenant):
-        """Testa atualização de tenant."""
+        """Testa atualizacao de tenant."""
         with patch("modules.config.controllers.config_controller.ConfigService") as mock_service:
             mock_instance = AsyncMock()
             updated_tenant = sample_tenant
@@ -242,23 +240,23 @@ class TestTenantEndpoints:
 
     @pytest.mark.asyncio
     async def test_ativar_tenant(self, mock_db, sample_tenant):
-        """Testa ativação de tenant."""
+        """Testa ativacao de tenant."""
         with patch("modules.config.controllers.config_controller.ConfigService") as mock_service:
             mock_instance = AsyncMock()
-            sample_tenant.status = TenantStatus.ATIVO
+            sample_tenant.status = TenantStatus.ATIVO.value
             mock_instance.activate_tenant.return_value = sample_tenant
             mock_service.return_value = mock_instance
 
             result = await mock_instance.activate_tenant(sample_tenant.id)
 
-            assert result.status == TenantStatus.ATIVO
+            assert result.status == TenantStatus.ATIVO.value
 
     @pytest.mark.asyncio
     async def test_suspender_tenant(self, mock_db, sample_tenant):
-        """Testa suspensão de tenant."""
+        """Testa suspensao de tenant."""
         with patch("modules.config.controllers.config_controller.ConfigService") as mock_service:
             mock_instance = AsyncMock()
-            sample_tenant.status = TenantStatus.SUSPENSO
+            sample_tenant.status = TenantStatus.SUSPENSO.value
             mock_instance.suspend_tenant.return_value = sample_tenant
             mock_service.return_value = mock_instance
 
@@ -267,7 +265,7 @@ class TestTenantEndpoints:
                 reason="Pagamento pendente",
             )
 
-            assert result.status == TenantStatus.SUSPENSO
+            assert result.status == TenantStatus.SUSPENSO.value
 
 
 class TestTenantSettingsEndpoints:
@@ -278,7 +276,10 @@ class TestTenantSettingsEndpoints:
         """Testa listagem de settings."""
         with patch("modules.config.controllers.config_controller.ConfigService") as mock_service:
             mock_instance = AsyncMock()
-            mock_instance.list_tenant_settings.return_value = ([sample_setting], 1)
+            mock_instance.list_tenant_settings.return_value = (
+                [sample_setting],
+                1,
+            )
             mock_service.return_value = mock_instance
 
             result = await mock_instance.list_tenant_settings(sample_setting.tenant_id)
@@ -289,7 +290,7 @@ class TestTenantSettingsEndpoints:
 
     @pytest.mark.asyncio
     async def test_criar_setting(self, mock_db, sample_setting):
-        """Testa criação de setting."""
+        """Testa criacao de setting."""
         with patch("modules.config.controllers.config_controller.ConfigService") as mock_service:
             mock_instance = AsyncMock()
             mock_instance.create_tenant_setting.return_value = sample_setting
@@ -305,7 +306,7 @@ class TestTenantSettingsEndpoints:
 
     @pytest.mark.asyncio
     async def test_atualizar_setting_valor(self, mock_db, sample_setting):
-        """Testa atualização de valor de setting."""
+        """Testa atualizacao de valor de setting."""
         with patch("modules.config.controllers.config_controller.ConfigService") as mock_service:
             mock_instance = AsyncMock()
             sample_setting.valor = "false"
@@ -328,7 +329,10 @@ class TestSystemConfigEndpoints:
         """Testa listagem de configs."""
         with patch("modules.config.controllers.config_controller.ConfigService") as mock_service:
             mock_instance = AsyncMock()
-            mock_instance.list_system_configs.return_value = ([sample_config], 1)
+            mock_instance.list_system_configs.return_value = (
+                [sample_config],
+                1,
+            )
             mock_service.return_value = mock_instance
 
             result = await mock_instance.list_system_configs()
@@ -339,7 +343,7 @@ class TestSystemConfigEndpoints:
 
     @pytest.mark.asyncio
     async def test_criar_config(self, mock_db, sample_config):
-        """Testa criação de config."""
+        """Testa criacao de config."""
         with patch("modules.config.controllers.config_controller.ConfigService") as mock_service:
             mock_instance = AsyncMock()
             mock_instance.create_system_config.return_value = sample_config
@@ -374,7 +378,10 @@ class TestFeatureFlagEndpoints:
         """Testa listagem de flags."""
         with patch("modules.config.controllers.config_controller.ConfigService") as mock_service:
             mock_instance = AsyncMock()
-            mock_instance.list_feature_flags.return_value = ([sample_flag], 1)
+            mock_instance.list_feature_flags.return_value = (
+                [sample_flag],
+                1,
+            )
             mock_service.return_value = mock_instance
 
             result = await mock_instance.list_feature_flags()
@@ -385,7 +392,7 @@ class TestFeatureFlagEndpoints:
 
     @pytest.mark.asyncio
     async def test_criar_flag(self, mock_db, sample_flag):
-        """Testa criação de flag."""
+        """Testa criacao de flag."""
         with patch("modules.config.controllers.config_controller.ConfigService") as mock_service:
             mock_instance = AsyncMock()
             mock_instance.create_feature_flag.return_value = sample_flag
@@ -400,49 +407,49 @@ class TestFeatureFlagEndpoints:
 
     @pytest.mark.asyncio
     async def test_enable_flag(self, mock_db, sample_flag):
-        """Testa ativação de flag."""
+        """Testa ativacao de flag."""
         with patch("modules.config.controllers.config_controller.ConfigService") as mock_service:
             mock_instance = AsyncMock()
-            sample_flag.status = FlagStatus.ATIVO
-            sample_flag.estrategia = RolloutStrategy.ALL
+            sample_flag.status = FlagStatus.ATIVO.value
+            sample_flag.rollout_strategy = RolloutStrategy.ALL.value
             mock_instance.enable_flag.return_value = sample_flag
             mock_service.return_value = mock_instance
 
             result = await mock_instance.enable_flag(sample_flag.id)
 
-            assert result.status == FlagStatus.ATIVO
-            assert result.estrategia == RolloutStrategy.ALL
+            assert result.status == FlagStatus.ATIVO.value
+            assert result.rollout_strategy == RolloutStrategy.ALL.value
 
     @pytest.mark.asyncio
     async def test_disable_flag(self, mock_db, sample_flag):
-        """Testa desativação de flag."""
+        """Testa desativacao de flag."""
         with patch("modules.config.controllers.config_controller.ConfigService") as mock_service:
             mock_instance = AsyncMock()
-            sample_flag.status = FlagStatus.INATIVO
-            sample_flag.estrategia = RolloutStrategy.NONE
+            sample_flag.status = FlagStatus.INATIVO.value
+            sample_flag.rollout_strategy = RolloutStrategy.NONE.value
             mock_instance.disable_flag.return_value = sample_flag
             mock_service.return_value = mock_instance
 
             result = await mock_instance.disable_flag(sample_flag.id)
 
-            assert result.status == FlagStatus.INATIVO
+            assert result.status == FlagStatus.INATIVO.value
 
     @pytest.mark.asyncio
     async def test_set_flag_percentage(self, mock_db, sample_flag):
         """Testa definir percentual de flag."""
         with patch("modules.config.controllers.config_controller.ConfigService") as mock_service:
             mock_instance = AsyncMock()
-            sample_flag.percentual = 75
+            sample_flag.rollout_percentage = 75.0
             mock_instance.set_flag_percentage.return_value = sample_flag
             mock_service.return_value = mock_instance
 
             result = await mock_instance.set_flag_percentage(sample_flag.id, 75)
 
-            assert result.percentual == 75
+            assert result.rollout_percentage == 75.0
 
     @pytest.mark.asyncio
     async def test_evaluate_flag(self, mock_db, sample_flag):
-        """Testa avaliação de flag."""
+        """Testa avaliacao de flag."""
         with patch("modules.config.controllers.config_controller.ConfigService") as mock_service:
             mock_instance = AsyncMock()
             mock_instance.evaluate_flag.return_value = {
@@ -464,12 +471,11 @@ class TestFeatureFlagEndpoints:
 
     @pytest.mark.asyncio
     async def test_start_gradual_rollout(self, mock_db, sample_flag):
-        """Testa início de rollout gradual."""
+        """Testa inicio de rollout gradual."""
         with patch("modules.config.controllers.config_controller.ConfigService") as mock_service:
             mock_instance = AsyncMock()
-            sample_flag.estrategia = RolloutStrategy.GRADUAL
-            sample_flag.percentual_alvo = 100
-            sample_flag.incremento_diario = 10
+            sample_flag.rollout_strategy = RolloutStrategy.GRADUAL.value
+            sample_flag.gradual_end_percentage = 100.0
             mock_instance.start_gradual_rollout.return_value = sample_flag
             mock_service.return_value = mock_instance
 
@@ -479,8 +485,8 @@ class TestFeatureFlagEndpoints:
                 daily_increment=10,
             )
 
-            assert result.estrategia == RolloutStrategy.GRADUAL
-            assert result.percentual_alvo == 100
+            assert result.rollout_strategy == RolloutStrategy.GRADUAL.value
+            assert result.gradual_end_percentage == 100.0
 
 
 class TestNotificationTemplateEndpoints:
@@ -491,7 +497,10 @@ class TestNotificationTemplateEndpoints:
         """Testa listagem de templates."""
         with patch("modules.config.controllers.config_controller.ConfigService") as mock_service:
             mock_instance = AsyncMock()
-            mock_instance.list_notification_templates.return_value = ([sample_template], 1)
+            mock_instance.list_notification_templates.return_value = (
+                [sample_template],
+                1,
+            )
             mock_service.return_value = mock_instance
 
             result = await mock_instance.list_notification_templates()
@@ -502,7 +511,7 @@ class TestNotificationTemplateEndpoints:
 
     @pytest.mark.asyncio
     async def test_criar_template(self, mock_db, sample_template):
-        """Testa criação de template."""
+        """Testa criacao de template."""
         with patch("modules.config.controllers.config_controller.ConfigService") as mock_service:
             mock_instance = AsyncMock()
             mock_instance.create_notification_template.return_value = sample_template
@@ -511,43 +520,43 @@ class TestNotificationTemplateEndpoints:
             result = await mock_instance.create_notification_template(
                 codigo="WELCOME_EMAIL",
                 nome="Email de Boas-vindas",
-                canal=NotificationChannel.EMAIL,
-                corpo="Olá {{nome}}!",
+                notification_type=NotificationType.TRANSACIONAL.value,
+                email_body_text="Ola {{nome}}!",
             )
 
             assert result.codigo == "WELCOME_EMAIL"
 
     @pytest.mark.asyncio
     async def test_ativar_template(self, mock_db, sample_template):
-        """Testa ativação de template."""
+        """Testa ativacao de template."""
         with patch("modules.config.controllers.config_controller.ConfigService") as mock_service:
             mock_instance = AsyncMock()
-            sample_template.status = TemplateStatus.ACTIVE
+            sample_template.status = TemplateStatus.ATIVO.value
             mock_instance.activate_template.return_value = sample_template
             mock_service.return_value = mock_instance
 
             result = await mock_instance.activate_template(sample_template.id)
 
-            assert result.status == TemplateStatus.ACTIVE
+            assert result.status == TemplateStatus.ATIVO.value
 
     @pytest.mark.asyncio
     async def test_render_template(self, mock_db, sample_template):
-        """Testa renderização de template."""
+        """Testa renderizacao de template."""
         with patch("modules.config.controllers.config_controller.ConfigService") as mock_service:
             mock_instance = AsyncMock()
             mock_instance.render_template.return_value = {
                 "subject": "Bem-vindo ao ERP!",
-                "body": "Olá João, seja bem-vindo!",
-                "body_html": "<h1>Olá João</h1><p>Seja bem-vindo!</p>",
+                "body": "Ola Joao, seja bem-vindo!",
+                "body_html": "<h1>Ola Joao</h1><p>Seja bem-vindo!</p>",
             }
             mock_service.return_value = mock_instance
 
             result = await mock_instance.render_template(
                 sample_template.id,
-                variables={"nome": "João", "app_name": "ERP"},
+                variables={"nome": "Joao", "app_name": "ERP"},
             )
 
-            assert "João" in result["body"]
+            assert "Joao" in result["body"]
 
     @pytest.mark.asyncio
     async def test_clonar_template(self, mock_db, sample_template):
@@ -558,11 +567,12 @@ class TestNotificationTemplateEndpoints:
                 id=uuid.uuid4(),
                 codigo="WELCOME_EMAIL_V2",
                 nome="Email de Boas-vindas V2",
-                canal=sample_template.canal,
-                corpo=sample_template.corpo,
-                status=TemplateStatus.DRAFT,
-                versao=1,
-                template_pai_id=sample_template.id,
+                notification_type=sample_template.notification_type,
+                email_body_text=sample_template.email_body_text,
+                status=TemplateStatus.RASCUNHO.value,
+                version=1,
+                parent_template_id=sample_template.id,
+                language="pt-BR",
             )
             mock_instance.clone_template.return_value = cloned
             mock_service.return_value = mock_instance
@@ -574,8 +584,8 @@ class TestNotificationTemplateEndpoints:
             )
 
             assert result.codigo == "WELCOME_EMAIL_V2"
-            assert result.status == TemplateStatus.DRAFT
-            assert result.template_pai_id == sample_template.id
+            assert result.status == TemplateStatus.RASCUNHO.value
+            assert result.parent_template_id == sample_template.id
 
 
 class TestDashboardEndpoints:
@@ -583,7 +593,7 @@ class TestDashboardEndpoints:
 
     @pytest.mark.asyncio
     async def test_config_dashboard(self, mock_db):
-        """Testa dashboard de configurações."""
+        """Testa dashboard de configuracoes."""
         with patch("modules.config.controllers.config_controller.ConfigService") as mock_service:
             mock_instance = AsyncMock()
             mock_instance.get_config_dashboard.return_value = {
@@ -605,7 +615,7 @@ class TestDashboardEndpoints:
 
     @pytest.mark.asyncio
     async def test_tenant_dashboard(self, mock_db, sample_tenant):
-        """Testa dashboard de tenant específico."""
+        """Testa dashboard de tenant especifico."""
         with patch("modules.config.controllers.config_controller.ConfigService") as mock_service:
             mock_instance = AsyncMock()
             mock_instance.get_tenant_dashboard.return_value = {
@@ -625,48 +635,53 @@ class TestDashboardEndpoints:
 
 
 class TestValidation:
-    """Testes de validação de dados."""
+    """Testes de validacao de dados."""
 
-    def test_tenant_documento_valido(self):
-        """Testa documento válido de tenant."""
+    def test_tenant_cnpj_valido(self):
+        """Testa CNPJ valido de tenant."""
         tenant = Tenant(
             codigo="VAL001",
-            nome="Empresa Validação",
-            documento="12345678000199",
+            nome="Empresa Validacao",
+            cnpj="12345678000199",
             email="valid@email.com",
         )
-        assert len(tenant.documento) >= 11
+        assert len(tenant.cnpj) >= 11
 
     def test_tenant_email_formato(self):
         """Testa formato de email."""
         tenant = Tenant(
             codigo="VAL002",
             nome="Empresa Email",
-            documento="12345678000188",
+            cnpj="12345678000188",
             email="test@example.com",
         )
         assert "@" in tenant.email
 
-    def test_feature_flag_percentual_range(self):
+    def test_feature_flag_rollout_percentage_range(self):
         """Testa range de percentual de flag."""
         flag = FeatureFlag(
             codigo="PERCENT_TEST",
             nome="Teste Percentual",
-            percentual=50,
+            rollout_percentage=50.0,
         )
-        assert 0 <= flag.percentual <= 100
+        assert 0 <= flag.rollout_percentage <= 100
 
-    def test_notification_template_variaveis(self):
-        """Testa extração de variáveis de template."""
+    def test_notification_template_available_variables(self):
+        """Testa variaveis disponiveis de template."""
         template = NotificationTemplate(
             codigo="VAR_TEST",
-            nome="Teste Variáveis",
-            canal=NotificationChannel.EMAIL,
-            corpo="Olá {{nome}}, seu código é {{codigo}}",
-            variaveis=["nome", "codigo"],
+            nome="Teste Variaveis",
+            notification_type=NotificationType.TRANSACIONAL.value,
+            email_body_text="Ola {{nome}}, seu codigo e {{codigo}}",
+            available_variables=[
+                {"name": "nome", "required": True},
+                {"name": "codigo", "required": True},
+            ],
+            language="pt-BR",
         )
-        assert "nome" in template.variaveis
-        assert "codigo" in template.variaveis
+        var_names = [v["name"] for v in template.available_variables]
+        assert "nome" in var_names
+        assert "codigo" in var_names
 
 
 class TestErrorHandling:
@@ -674,7 +689,7 @@ class TestErrorHandling:
 
     @pytest.mark.asyncio
     async def test_tenant_nao_encontrado(self, mock_db):
-        """Testa erro quando tenant não é encontrado."""
+        """Testa erro quando tenant nao e encontrado."""
         with patch("modules.config.controllers.config_controller.ConfigService") as mock_service:
             mock_instance = AsyncMock()
             mock_instance.get_tenant.return_value = None
@@ -685,7 +700,7 @@ class TestErrorHandling:
 
     @pytest.mark.asyncio
     async def test_flag_nao_encontrada(self, mock_db):
-        """Testa erro quando flag não é encontrada."""
+        """Testa erro quando flag nao e encontrada."""
         with patch("modules.config.controllers.config_controller.ConfigService") as mock_service:
             mock_instance = AsyncMock()
             mock_instance.get_feature_flag.return_value = None
@@ -696,7 +711,7 @@ class TestErrorHandling:
 
     @pytest.mark.asyncio
     async def test_template_nao_encontrado(self, mock_db):
-        """Testa erro quando template não é encontrado."""
+        """Testa erro quando template nao e encontrado."""
         with patch("modules.config.controllers.config_controller.ConfigService") as mock_service:
             mock_instance = AsyncMock()
             mock_instance.get_notification_template.return_value = None

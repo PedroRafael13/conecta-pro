@@ -100,7 +100,7 @@ class TestPersonalizationEngine:
         assert isinstance(result, PersonalizedNotification)
         assert result.user_id == 1
         assert result.content is not None
-        assert 0 <= result.engagement_prediction <= 1
+        assert 0 <= result.engagement_score <= 1
 
     @pytest.mark.asyncio
     async def test_get_user_profile(
@@ -113,7 +113,7 @@ class TestPersonalizationEngine:
 
         assert isinstance(profile, UserProfile)
         assert profile.user_id == 1
-        assert profile.preferred_channels is not None
+        assert profile.preferences is not None
         assert len(profile.activity_patterns) > 0
 
 
@@ -561,10 +561,10 @@ class TestIntegration:
             context={"evento": "Assembleia"},
         )
 
-        assert result.content.title is not None
-        assert result.timing is not None
-        assert result.channel is not None
-        assert result.engagement_prediction > 0
+        assert result.content["title"] is not None
+        assert result.optimal_time is not None
+        assert result.preferred_channel is not None
+        assert result.engagement_score > 0
 
     @pytest.mark.asyncio
     async def test_behavior_affects_channel(

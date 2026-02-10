@@ -1,12 +1,11 @@
 """Testes de API para Custeio ABC."""
 
-from datetime import date
+from datetime import datetime
 from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
 import pytest
-from httpx import AsyncClient
 
 from modules.financial.costing.schemas import (
     CostActivityCreate,
@@ -25,7 +24,7 @@ from modules.financial.costing.schemas import (
 # Fixtures
 @pytest.fixture
 def mock_user():
-    """Mock de usuário autenticado."""
+    """Mock de usuario autenticado."""
     user = MagicMock()
     user.id = uuid4()
     user.condominio_id = uuid4()
@@ -35,57 +34,63 @@ def mock_user():
 
 
 @pytest.fixture
-def sample_driver_data():
+def condominio_id():
+    """ID de condominio para testes."""
+    return uuid4()
+
+
+@pytest.fixture
+def sample_driver_data(condominio_id):
     """Dados de exemplo para driver."""
     return {
-        "codigo": "DRV-TEST-001",
-        "nome": "Horas de Mão de Obra",
-        "tipo": "RESOURCE",
-        "categoria": "LABOR",
-        "unidade_medida": "HOUR",
-        "capacidade_pratica": 1000,
-        "quantidade_usada": 800,
-        "custo_total": 50000.00,
+        "code": "DRV-TEST-001",
+        "name": "Horas de Mao de Obra",
+        "driver_type": "DURATION",
+        "driver_category": "RESOURCE",
+        "measure_unit": "HOURS",
+        "practical_capacity": 1000,
+        "unit_cost": Decimal("50"),
+        "condominio_id": condominio_id,
     }
 
 
 @pytest.fixture
-def sample_activity_data():
+def sample_activity_data(condominio_id):
     """Dados de exemplo para atividade."""
     return {
-        "codigo": "ACT-TEST-001",
-        "nome": "Atendimento ao Cliente",
-        "tipo": "OPERATIONAL",
-        "nivel": "UNIT",
-        "tipo_valor_agregado": "VALUE_ADDED",
-        "custo_direto": 10000.00,
-        "capacidade_pratica": 500,
-        "capacidade_usada": 400,
+        "code": "ACT-TEST-001",
+        "name": "Atendimento ao Cliente",
+        "activity_type": "CUSTOMER_SERVICE",
+        "activity_level": "UNIT",
+        "value_added_type": "VALUE_ADDED",
+        "practical_capacity": 500,
+        "condominio_id": condominio_id,
     }
 
 
 @pytest.fixture
-def sample_pool_data():
+def sample_pool_data(condominio_id):
     """Dados de exemplo para pool."""
     return {
-        "codigo": "POOL-TEST-001",
-        "nome": "Custos Administrativos",
-        "tipo": "OVERHEAD",
-        "base_alocacao": "DRIVER",
-        "valor_total": 100000.00,
+        "code": "POOL-TEST-001",
+        "name": "Custos Administrativos",
+        "pool_type": "OVERHEAD",
+        "allocation_basis": "ACTIVITY_BASED",
+        "budget_amount": Decimal("100000.00"),
+        "condominio_id": condominio_id,
     }
 
 
 @pytest.fixture
-def sample_object_data():
+def sample_object_data(condominio_id):
     """Dados de exemplo para objeto de custo."""
     return {
-        "codigo": "OBJ-TEST-001",
-        "nome": "Serviço de Vigilância",
-        "tipo": "SERVICE",
-        "custo_direto": 50000.00,
-        "receita": 100000.00,
-        "quantidade": 100,
+        "code": "OBJ-TEST-001",
+        "name": "Servico de Vigilancia",
+        "object_type": "SERVICE",
+        "revenue_budget": Decimal("100000.00"),
+        "quantity": Decimal("100"),
+        "condominio_id": condominio_id,
     }
 
 
@@ -104,23 +109,24 @@ class TestCostDriverAPI:
 
     @pytest.mark.asyncio
     async def test_create_driver_schema(self, sample_driver_data):
-        """Testa validação de schema de criação de driver."""
+        """Testa validacao de schema de criacao de driver."""
         schema = CostDriverCreate(**sample_driver_data)
 
-        assert schema.codigo == "DRV-TEST-001"
-        assert schema.nome == "Horas de Mão de Obra"
-        assert schema.tipo == "RESOURCE"
-        assert schema.custo_total == Decimal("50000.00")
+        assert schema.code == "DRV-TEST-001"
+        assert schema.name == "Horas de Mao de Obra"
+        assert schema.driver_type == "DURATION"
+        assert schema.unit_cost == Decimal("50")
 
     @pytest.mark.asyncio
     async def test_create_driver_invalid_codigo(self):
-        """Testa validação de código inválido."""
+        """Testa validacao de codigo invalido."""
         with pytest.raises(Exception):
             CostDriverCreate(
-                codigo="",  # Código vazio
-                nome="Teste",
-                tipo="RESOURCE",
-                custo_total=1000,
+                code="",
+                name="Teste",
+                driver_type="TRANSACTION",
+                unit_cost=1000,
+                condominio_id=uuid4(),
             )
 
     @pytest.mark.asyncio
@@ -128,16 +134,20 @@ class TestCostDriverAPI:
         """Testa schema de resposta de driver."""
         response_data = {
             **sample_driver_data,
-            "id": str(uuid4()),
-            "condominio_id": str(uuid4()),
+            "id": uuid4(),
             "status": "ACTIVE",
-            "ativo": True,
-            "created_at": "2025-01-20T10:00:00",
-            "updated_at": "2025-01-20T10:00:00",
+            "used_capacity": Decimal("800"),
+            "total_allocations": 5,
+            "total_allocated_amount": Decimal("40000"),
+            "average_rate": Decimal("50"),
+            "is_primary": True,
+            "active": True,
+            "created_at": datetime(2025, 1, 20, 10, 0, 0),
+            "updated_at": datetime(2025, 1, 20, 10, 0, 0),
         }
 
         response = CostDriverResponse(**response_data)
-        assert response.codigo == "DRV-TEST-001"
+        assert response.code == "DRV-TEST-001"
         assert response.status == "ACTIVE"
 
 
@@ -146,25 +156,26 @@ class TestCostActivityAPI:
 
     @pytest.mark.asyncio
     async def test_create_activity_schema(self, sample_activity_data):
-        """Testa validação de schema de criação de atividade."""
+        """Testa validacao de schema de criacao de atividade."""
         schema = CostActivityCreate(**sample_activity_data)
 
-        assert schema.codigo == "ACT-TEST-001"
-        assert schema.nivel == "UNIT"
-        assert schema.tipo_valor_agregado == "VALUE_ADDED"
+        assert schema.code == "ACT-TEST-001"
+        assert schema.activity_level == "UNIT"
+        assert schema.value_added_type == "VALUE_ADDED"
 
     @pytest.mark.asyncio
     async def test_activity_levels_valid(self):
-        """Testa níveis de atividade válidos."""
+        """Testa niveis de atividade validos."""
         valid_levels = ["UNIT", "BATCH", "PRODUCT", "FACILITY"]
 
         for level in valid_levels:
             schema = CostActivityCreate(
-                codigo=f"ACT-{level}",
-                nome=f"Atividade {level}",
-                nivel=level,
+                code=f"ACT-{level}",
+                name=f"Atividade {level}",
+                activity_level=level,
+                condominio_id=uuid4(),
             )
-            assert schema.nivel == level
+            assert schema.activity_level == level
 
     @pytest.mark.asyncio
     async def test_activity_value_added_types(self):
@@ -173,11 +184,12 @@ class TestCostActivityAPI:
 
         for va_type in types:
             schema = CostActivityCreate(
-                codigo=f"ACT-VA-{va_type}",
-                nome=f"Atividade {va_type}",
-                tipo_valor_agregado=va_type,
+                code=f"ACT-{va_type[:5]}",
+                name=f"Atividade {va_type}",
+                value_added_type=va_type,
+                condominio_id=uuid4(),
             )
-            assert schema.tipo_valor_agregado == va_type
+            assert schema.value_added_type == va_type
 
 
 class TestCostPoolAPI:
@@ -185,16 +197,16 @@ class TestCostPoolAPI:
 
     @pytest.mark.asyncio
     async def test_create_pool_schema(self, sample_pool_data):
-        """Testa validação de schema de criação de pool."""
+        """Testa validacao de schema de criacao de pool."""
         schema = CostPoolCreate(**sample_pool_data)
 
-        assert schema.codigo == "POOL-TEST-001"
-        assert schema.tipo == "OVERHEAD"
-        assert schema.valor_total == Decimal("100000.00")
+        assert schema.code == "POOL-TEST-001"
+        assert schema.pool_type == "OVERHEAD"
+        assert schema.budget_amount == Decimal("100000.00")
 
     @pytest.mark.asyncio
     async def test_pool_types_valid(self):
-        """Testa tipos de pool válidos."""
+        """Testa tipos de pool validos."""
         valid_types = [
             "OVERHEAD",
             "LABOR",
@@ -203,32 +215,39 @@ class TestCostPoolAPI:
             "MAINTENANCE",
             "TECHNOLOGY",
             "ADMINISTRATIVE",
-            "OTHER",
+            "CUSTOM",
         ]
 
         for pool_type in valid_types:
             schema = CostPoolCreate(
-                codigo=f"POOL-{pool_type}",
-                nome=f"Pool {pool_type}",
-                tipo=pool_type,
-                valor_total=10000,
+                code=f"PL-{pool_type[:8]}",
+                name=f"Pool {pool_type}",
+                pool_type=pool_type,
+                budget_amount=Decimal("10000"),
+                condominio_id=uuid4(),
             )
-            assert schema.tipo == pool_type
+            assert schema.pool_type == pool_type
 
     @pytest.mark.asyncio
     async def test_pool_allocation_basis(self):
-        """Testa bases de alocação válidas."""
-        valid_bases = ["DRIVER", "PERCENTAGE", "EQUAL", "PROPORTIONAL"]
+        """Testa bases de alocacao validas."""
+        valid_bases = [
+            "ACTIVITY_BASED",
+            "DIRECT_LABOR_HOURS",
+            "MACHINE_HOURS",
+            "REVENUE",
+        ]
 
         for basis in valid_bases:
             schema = CostPoolCreate(
-                codigo=f"POOL-{basis}",
-                nome=f"Pool {basis}",
-                tipo="OVERHEAD",
-                base_alocacao=basis,
-                valor_total=10000,
+                code=f"PL-{basis[:8]}",
+                name=f"Pool {basis}",
+                pool_type="OVERHEAD",
+                allocation_basis=basis,
+                budget_amount=Decimal("10000"),
+                condominio_id=uuid4(),
             )
-            assert schema.base_alocacao == basis
+            assert schema.allocation_basis == basis
 
 
 class TestCostObjectAPI:
@@ -236,45 +255,45 @@ class TestCostObjectAPI:
 
     @pytest.mark.asyncio
     async def test_create_object_schema(self, sample_object_data):
-        """Testa validação de schema de criação de objeto."""
+        """Testa validacao de schema de criacao de objeto."""
         schema = CostObjectCreate(**sample_object_data)
 
-        assert schema.codigo == "OBJ-TEST-001"
-        assert schema.tipo == "SERVICE"
-        assert schema.receita == Decimal("100000.00")
+        assert schema.code == "OBJ-TEST-001"
+        assert schema.object_type == "SERVICE"
+        assert schema.revenue_budget == Decimal("100000.00")
 
     @pytest.mark.asyncio
     async def test_object_types_valid(self):
-        """Testa tipos de objeto válidos."""
+        """Testa tipos de objeto validos."""
         valid_types = ["PRODUCT", "SERVICE", "CUSTOMER", "PROJECT", "CONTRACT"]
 
         for obj_type in valid_types:
             schema = CostObjectCreate(
-                codigo=f"OBJ-{obj_type}",
-                nome=f"Objeto {obj_type}",
-                tipo=obj_type,
+                code=f"OBJ-{obj_type}",
+                name=f"Objeto {obj_type}",
+                object_type=obj_type,
+                condominio_id=uuid4(),
             )
-            assert schema.tipo == obj_type
+            assert schema.object_type == obj_type
 
     @pytest.mark.asyncio
     async def test_object_with_all_costs(self):
-        """Testa objeto com todos os tipos de custo."""
+        """Testa objeto com todos os campos de custo e receita."""
         schema = CostObjectCreate(
-            codigo="OBJ-FULL",
-            nome="Objeto Completo",
-            tipo="SERVICE",
-            custo_direto=Decimal("50000"),
-            custo_indireto=Decimal("20000"),
-            custo_fixo=Decimal("30000"),
-            custo_variavel=Decimal("40000"),
-            receita=Decimal("200000"),
-            quantidade=Decimal("100"),
+            code="OBJ-FULL",
+            name="Objeto Completo",
+            object_type="SERVICE",
+            revenue_budget=Decimal("200000"),
+            cost_budget=Decimal("120000"),
+            quantity=Decimal("100"),
+            unit_price=Decimal("2000"),
+            condominio_id=uuid4(),
         )
 
-        assert schema.custo_direto == Decimal("50000")
-        assert schema.custo_indireto == Decimal("20000")
-        assert schema.custo_fixo == Decimal("30000")
-        assert schema.custo_variavel == Decimal("40000")
+        assert schema.revenue_budget == Decimal("200000")
+        assert schema.cost_budget == Decimal("120000")
+        assert schema.quantity == Decimal("100")
+        assert schema.unit_price == Decimal("2000")
 
 
 class TestCostAllocationAPI:
@@ -282,30 +301,27 @@ class TestCostAllocationAPI:
 
     @pytest.mark.asyncio
     async def test_create_allocation_schema(self):
-        """Testa validação de schema de criação de alocação."""
-        origem_id = uuid4()
-        destino_id = uuid4()
+        """Testa validacao de schema de criacao de alocacao."""
+        source_pool_id = uuid4()
+        activity_id = uuid4()
 
         schema = CostAllocationCreate(
-            codigo="ALLOC-TEST-001",
-            tipo="POOL_TO_ACTIVITY",
-            metodo="DRIVER_BASED",
-            origem_tipo="pool",
-            origem_id=origem_id,
-            destino_tipo="activity",
-            destino_id=destino_id,
-            valor_alocado=Decimal("25000"),
-            percentual_alocado=Decimal("25"),
-            data_alocacao=date.today(),
+            allocation_type="POOL_TO_ACTIVITY",
+            allocation_method="DRIVER_BASED",
+            source_pool_id=source_pool_id,
+            activity_id=activity_id,
+            allocated_amount=Decimal("25000"),
+            allocation_percentage=Decimal("25"),
+            reference_period="2026-02",
+            condominio_id=uuid4(),
         )
 
-        assert schema.codigo == "ALLOC-TEST-001"
-        assert schema.tipo == "POOL_TO_ACTIVITY"
-        assert schema.valor_alocado == Decimal("25000")
+        assert schema.allocation_type == "POOL_TO_ACTIVITY"
+        assert schema.allocated_amount == Decimal("25000")
 
     @pytest.mark.asyncio
     async def test_allocation_types_valid(self):
-        """Testa tipos de alocação válidos."""
+        """Testa tipos de alocacao validos."""
         valid_types = [
             "POOL_TO_ACTIVITY",
             "ACTIVITY_TO_OBJECT",
@@ -315,121 +331,114 @@ class TestCostAllocationAPI:
 
         for alloc_type in valid_types:
             schema = CostAllocationCreate(
-                codigo=f"ALLOC-{alloc_type}",
-                tipo=alloc_type,
-                origem_tipo="pool",
-                origem_id=uuid4(),
-                destino_tipo="activity",
-                destino_id=uuid4(),
-                valor_alocado=Decimal("10000"),
-                data_alocacao=date.today(),
+                allocation_type=alloc_type,
+                allocation_method="DRIVER_BASED",
+                source_pool_id=uuid4(),
+                activity_id=uuid4(),
+                allocated_amount=Decimal("10000"),
+                reference_period="2026-02",
+                condominio_id=uuid4(),
             )
-            assert schema.tipo == alloc_type
+            assert schema.allocation_type == alloc_type
 
     @pytest.mark.asyncio
     async def test_allocation_methods_valid(self):
-        """Testa métodos de alocação válidos."""
+        """Testa metodos de alocacao validos."""
         valid_methods = [
             "DRIVER_BASED",
             "PERCENTAGE",
             "PROPORTIONAL",
-            "EQUAL",
-            "STEP_DOWN",
+            "EQUAL_SHARE",
+            "WEIGHTED",
         ]
 
         for method in valid_methods:
             schema = CostAllocationCreate(
-                codigo=f"ALLOC-{method}",
-                tipo="POOL_TO_ACTIVITY",
-                metodo=method,
-                origem_tipo="pool",
-                origem_id=uuid4(),
-                destino_tipo="activity",
-                destino_id=uuid4(),
-                valor_alocado=Decimal("10000"),
-                data_alocacao=date.today(),
+                allocation_type="POOL_TO_ACTIVITY",
+                allocation_method=method,
+                source_pool_id=uuid4(),
+                activity_id=uuid4(),
+                allocated_amount=Decimal("10000"),
+                reference_period="2026-02",
+                condominio_id=uuid4(),
             )
-            assert schema.metodo == method
+            assert schema.allocation_method == method
 
 
 class TestABCServiceIntegration:
-    """Testes de integração para ABC Service."""
+    """Testes de integracao para ABC Service."""
 
     @pytest.mark.asyncio
     async def test_abc_costing_flow(self):
         """Testa fluxo completo de custeio ABC."""
-        # 1. Criar drivers
-        driver_data = {
-            "codigo": "DRV-INT-001",
-            "nome": "Horas de Atendimento",
-            "tipo": "ACTIVITY",
-            "capacidade_pratica": 1000,
-            "quantidade_usada": 800,
-            "custo_total": 50000,
-        }
-        driver = CostDriverCreate(**driver_data)
-        assert driver.codigo == "DRV-INT-001"
+        cond_id = uuid4()
+
+        # 1. Criar driver
+        driver = CostDriverCreate(
+            code="DRV-INT-001",
+            name="Horas de Atendimento",
+            driver_type="DURATION",
+            driver_category="ACTIVITY",
+            measure_unit="HOURS",
+            practical_capacity=1000,
+            unit_cost=Decimal("50"),
+            condominio_id=cond_id,
+        )
+        assert driver.code == "DRV-INT-001"
 
         # 2. Criar pool
-        pool_data = {
-            "codigo": "POOL-INT-001",
-            "nome": "Pool Administrativo",
-            "tipo": "OVERHEAD",
-            "valor_total": 100000,
-        }
-        pool = CostPoolCreate(**pool_data)
-        assert pool.valor_total == Decimal("100000")
+        pool = CostPoolCreate(
+            code="POOL-INT-001",
+            name="Pool Administrativo",
+            pool_type="OVERHEAD",
+            budget_amount=Decimal("100000"),
+            condominio_id=cond_id,
+        )
+        assert pool.budget_amount == Decimal("100000")
 
         # 3. Criar atividade
-        activity_data = {
-            "codigo": "ACT-INT-001",
-            "nome": "Processamento de Documentos",
-            "nivel": "BATCH",
-            "custo_direto": 20000,
-        }
-        activity = CostActivityCreate(**activity_data)
-        assert activity.nivel == "BATCH"
+        activity = CostActivityCreate(
+            code="ACT-INT-001",
+            name="Processamento de Documentos",
+            activity_level="BATCH",
+            condominio_id=cond_id,
+        )
+        assert activity.activity_level == "BATCH"
 
         # 4. Criar objeto
-        object_data = {
-            "codigo": "OBJ-INT-001",
-            "nome": "Contrato Cliente A",
-            "tipo": "CONTRACT",
-            "receita": 150000,
-        }
-        obj = CostObjectCreate(**object_data)
-        assert obj.tipo == "CONTRACT"
+        obj = CostObjectCreate(
+            code="OBJ-INT-001",
+            name="Contrato Cliente A",
+            object_type="CONTRACT",
+            revenue_budget=Decimal("150000"),
+            condominio_id=cond_id,
+        )
+        assert obj.object_type == "CONTRACT"
 
-        # 5. Criar alocação Pool -> Activity
-        alloc1_data = {
-            "codigo": "ALLOC-INT-001",
-            "tipo": "POOL_TO_ACTIVITY",
-            "metodo": "PERCENTAGE",
-            "origem_tipo": "pool",
-            "origem_id": uuid4(),
-            "destino_tipo": "activity",
-            "destino_id": uuid4(),
-            "valor_alocado": 50000,
-            "percentual_alocado": 50,
-            "data_alocacao": date.today(),
-        }
-        alloc1 = CostAllocationCreate(**alloc1_data)
-        assert alloc1.percentual_alocado == Decimal("50")
+        # 5. Criar alocacao Pool -> Activity
+        alloc1 = CostAllocationCreate(
+            allocation_type="POOL_TO_ACTIVITY",
+            allocation_method="PERCENTAGE",
+            source_pool_id=uuid4(),
+            activity_id=uuid4(),
+            allocated_amount=Decimal("50000"),
+            allocation_percentage=Decimal("50"),
+            reference_period="2026-02",
+            condominio_id=cond_id,
+        )
+        assert alloc1.allocation_percentage == Decimal("50")
 
-        # 6. Criar alocação Activity -> Object
-        alloc2_data = {
-            "codigo": "ALLOC-INT-002",
-            "tipo": "ACTIVITY_TO_OBJECT",
-            "metodo": "DRIVER_BASED",
-            "origem_tipo": "activity",
-            "origem_id": uuid4(),
-            "destino_tipo": "object",
-            "destino_id": uuid4(),
-            "valor_alocado": 35000,
-            "data_alocacao": date.today(),
-        }
-        alloc2 = CostAllocationCreate(**alloc2_data)
-        assert alloc2.tipo == "ACTIVITY_TO_OBJECT"
+        # 6. Criar alocacao Activity -> Object
+        alloc2 = CostAllocationCreate(
+            allocation_type="ACTIVITY_TO_OBJECT",
+            allocation_method="DRIVER_BASED",
+            source_activity_id=uuid4(),
+            cost_object_id=uuid4(),
+            allocated_amount=Decimal("35000"),
+            reference_period="2026-02",
+            condominio_id=cond_id,
+        )
+        assert alloc2.allocation_type == "ACTIVITY_TO_OBJECT"
 
 
 class TestCostAnalysisAPI:
@@ -437,19 +446,18 @@ class TestCostAnalysisAPI:
 
     @pytest.mark.asyncio
     async def test_analysis_types(self):
-        """Testa tipos de análise válidos."""
+        """Testa tipos de analise validos."""
         valid_types = [
             "ABC_COSTING",
             "PROFITABILITY",
             "VARIANCE",
             "BREAK_EVEN",
             "TREND",
-            "FORECAST",
-            "OPTIMIZATION",
+            "IDLE_CAPACITY",
+            "COMPARATIVE",
         ]
 
         for analysis_type in valid_types:
-            # Simulação de criação de análise
             data = {
                 "tipo": analysis_type,
                 "periodo_inicio": "2025-01-01",
@@ -459,7 +467,7 @@ class TestCostAnalysisAPI:
 
     @pytest.mark.asyncio
     async def test_profitability_analysis_response(self):
-        """Testa resposta de análise de lucratividade."""
+        """Testa resposta de analise de lucratividade."""
         expected_response = {
             "periodo": {
                 "inicio": "2025-01-01",
@@ -475,8 +483,8 @@ class TestCostAnalysisAPI:
                 "margem_percentual": 20,
             },
             "insights": [
-                "3 objetos de custo apresentam prejuízo",
-                "Margem média de 20%",
+                "3 objetos de custo apresentam prejuizo",
+                "Margem media de 20%",
             ],
         }
 
@@ -485,7 +493,7 @@ class TestCostAnalysisAPI:
 
     @pytest.mark.asyncio
     async def test_idle_capacity_analysis_response(self):
-        """Testa resposta de análise de capacidade ociosa."""
+        """Testa resposta de analise de capacidade ociosa."""
         expected_response = {
             "total_drivers": 5,
             "drivers_com_ociosidade": 3,
@@ -494,14 +502,14 @@ class TestCostAnalysisAPI:
             "detalhes": [
                 {
                     "driver_id": str(uuid4()),
-                    "nome": "Horas Máquina",
+                    "nome": "Horas Maquina",
                     "capacidade_ociosa": 200,
                     "custo_ociosidade": 10000,
                 },
             ],
             "recomendacoes": [
-                "Reduzir capacidade de Horas Máquina",
-                "Aumentar utilização através de novos contratos",
+                "Reduzir capacidade de Horas Maquina",
+                "Aumentar utilizacao atraves de novos contratos",
             ],
         }
 
@@ -535,7 +543,7 @@ class TestDashboardAPI:
 
     @pytest.mark.asyncio
     async def test_trends_response(self):
-        """Testa resposta de tendências."""
+        """Testa resposta de tendencias."""
         expected_response = [
             {
                 "mes": "2025-01",

@@ -347,7 +347,7 @@ class ConfigNotificationTemplate(Base):
             codigo=new_codigo or f"{self.codigo}_copy",
             nome=f"{self.nome} (Cópia)",
             descricao=self.descricao,
-            channel=self.channel,
+            channel_id=self.channel_id,
             notification_type=self.notification_type,
             status=TemplateStatus.RASCUNHO,
             email_subject=self.email_subject,

@@ -496,6 +496,7 @@ class TestEFDReinfEndpoints:
                 {
                     "cnpj_prestador": "12345678000199",
                     "valor_bruto": "10000.00",
+                    "valor_base_retencao": "10000.00",
                     "valor_retencao": "1100.00",
                     "numero_nf": "123456",
                 }

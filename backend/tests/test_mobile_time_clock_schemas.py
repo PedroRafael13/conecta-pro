@@ -164,11 +164,11 @@ class TestCheckInSchemas:
         data = CheckInBiometric(
             verified=True,
             type="fingerprint",
-            score=0.95,
+            score=95,
         )
 
         assert data.verified is True
-        assert data.score == 0.95
+        assert data.score == 95
 
     def test_biometric_invalid_type(self):
         """Testa tipo biométrico inválido."""
@@ -194,7 +194,7 @@ class TestCheckInSchemas:
         with pytest.raises(ValidationError):
             CheckInPhoto(
                 captured=True,
-                match_score=1.5,  # Máximo é 1
+                match_score=150.0,  # Máximo é 100
             )
 
     def test_checkin_create_valid(self):
@@ -239,18 +239,18 @@ class TestGeofenceSchemas:
     def test_coordinate_valid(self):
         """Testa coordenada válida."""
         data = Coordinate(
-            latitude=-23.5505,
-            longitude=-46.6333,
+            lat=-23.5505,
+            lng=-46.6333,
         )
 
-        assert data.latitude == -23.5505
+        assert data.lat == -23.5505
 
     def test_zone_create_circle(self):
         """Testa criação de zona circular."""
         data = GeofenceZoneCreate(
             name="Sede Principal",
             zone_type="circle",
-            category="work",
+            category="headquarters",
             center_latitude=-23.5505,
             center_longitude=-46.6333,
             radius_meters=100,
@@ -265,15 +265,15 @@ class TestGeofenceSchemas:
         data = GeofenceZoneCreate(
             name="Área de Trabalho",
             zone_type="polygon",
-            category="work",
+            category="branch",
             center_latitude=-23.5505,
             center_longitude=-46.6333,
             radius_meters=100,
             polygon_coordinates=[
-                Coordinate(latitude=-23.55, longitude=-46.63),
-                Coordinate(latitude=-23.55, longitude=-46.64),
-                Coordinate(latitude=-23.56, longitude=-46.64),
-                Coordinate(latitude=-23.56, longitude=-46.63),
+                Coordinate(lat=-23.55, lng=-46.63),
+                Coordinate(lat=-23.55, lng=-46.64),
+                Coordinate(lat=-23.56, lng=-46.64),
+                Coordinate(lat=-23.56, lng=-46.63),
             ],
         )
 
@@ -286,7 +286,7 @@ class TestGeofenceSchemas:
             GeofenceZoneCreate(
                 name="Test",
                 zone_type="circle",
-                category="work",
+                category="headquarters",
                 center_latitude=-23.5505,
                 center_longitude=-46.6333,
                 radius_meters=5,  # Mínimo é 10
@@ -435,14 +435,14 @@ class TestFilters:
         """Testa filtro de zonas."""
         data = GeofenceZoneFilter(
             condominio_id=uuid4(),
-            category="work",
+            category="headquarters",
             is_primary=True,
             near_latitude=-23.5505,
             near_longitude=-46.6333,
             max_distance_km=5,
         )
 
-        assert data.category == "work"
+        assert data.category == "headquarters"
         assert data.max_distance_km == 5
 
     def test_offline_queue_filter(self):

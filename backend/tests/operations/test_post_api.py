@@ -54,7 +54,7 @@ class TestPostAPIEndpoints:
         """Testa criação de posto com sucesso."""
         # Simular resposta do endpoint
         with patch(
-            "modules.operations.repositories.post_repository.PostRepository",
+            "modules.operacional.repositories.post_repository.PostRepository",
             return_value=mock_repo,
         ):
             # Dados de criação
@@ -180,7 +180,7 @@ class TestPostAPIValidation:
                 name="Posto Teste",
                 post_type=PostType.VIGILANTE,
                 shift_type=ShiftType.DIURNO,
-                headcount=-1,
+                required_headcount=-1,
             )
 
     def test_valid_post_create(self):

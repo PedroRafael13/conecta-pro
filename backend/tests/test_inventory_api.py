@@ -43,7 +43,7 @@ def sample_warehouse_data() -> dict[str, Any]:
         "code": "DEP-001",
         "name": "Depósito Central",
         "description": "Depósito principal de materiais",
-        "warehouse_type": "CENTRAL",
+        "warehouse_type": "PRINCIPAL",
         "storage_type": "GENERAL",
         "address": "Rua das Flores, 100",
         "city": "São Paulo",
@@ -166,8 +166,8 @@ class TestWarehouseEndpoints:
             mock_warehouse.id = warehouse_id
             mock_warehouse.code = sample_warehouse_data["code"]
             mock_warehouse.name = sample_warehouse_data["name"]
-            mock_warehouse.warehouse_type = WarehouseType.CENTRAL
-            mock_warehouse.status = WarehouseStatus.ACTIVE
+            mock_warehouse.warehouse_type = WarehouseType.PRINCIPAL
+            mock_warehouse.status = WarehouseStatus.ATIVO
 
             with patch("modules.financial.controllers.inventory_controller.WarehouseRepository") as mock_repo:
                 mock_instance = MagicMock()
@@ -187,20 +187,20 @@ class TestWarehouseEndpoints:
             "total_capacity_m2": Decimal("5000.00"),
             "average_occupancy": Decimal("65.5"),
             "by_type": {
-                "CENTRAL": 1,
+                "PRINCIPAL": 1,
                 "REGIONAL": 2,
                 "TRANSIT": 1,
                 "QUARANTINE": 1,
             },
             "by_status": {
-                "ACTIVE": 4,
+                "ATIVO": 4,
                 "MAINTENANCE": 1,
             },
         }
 
         assert stats_data["total_warehouses"] == 5
         assert stats_data["active_warehouses"] == 4
-        assert stats_data["by_type"]["CENTRAL"] == 1
+        assert stats_data["by_type"]["PRINCIPAL"] == 1
 
 
 class TestStockItemEndpoints:

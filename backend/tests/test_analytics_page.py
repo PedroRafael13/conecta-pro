@@ -142,7 +142,7 @@ class TestAnalyticsAPIIntegration:
     @pytest.mark.asyncio
     async def test_posts_stats_endpoint_called(self):
         """Testa que endpoint de stats de postos eh chamado."""
-        with patch("httpx.AsyncClient.get") as mock_get:
+        with patch("httpx.AsyncClient.get", new_callable=AsyncMock) as mock_get:
             mock_response = MagicMock()
             mock_response.json.return_value = {
                 "total": 20,
@@ -152,7 +152,7 @@ class TestAnalyticsAPIIntegration:
             mock_get.return_value = mock_response
 
             # Simula chamada
-            response = mock_get("/api/v1/operacional/posts/stats")
+            response = await mock_get("/api/v1/operacional/posts/stats")
 
             assert mock_get.called
             data = response.json()

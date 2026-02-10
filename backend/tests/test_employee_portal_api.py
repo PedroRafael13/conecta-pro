@@ -93,10 +93,10 @@ class TestVacationAPI:
         """Testa schema de criação de solicitação."""
         data = VacationRequestCreate(
             start_date=date.today() + timedelta(days=45),
-            end_date=date.today() + timedelta(days=60),
+            end_date=date.today() + timedelta(days=59),
             days_requested=15,
             sell_days=0,
-            advance_13th=False,
+            advance_13th_requested=False,
             employee_notes="Férias programadas",
         )
 
@@ -106,6 +106,7 @@ class TestVacationAPI:
     def test_vacation_calculation_request_schema(self):
         """Testa schema de cálculo de férias."""
         data = VacationCalculationRequest(
+            employee_id=uuid4(),
             start_date=date.today() + timedelta(days=45),
             days_requested=20,
             sell_days=10,

@@ -99,6 +99,7 @@ class TestIntegrationService:
             ativo=True,
             never_expires=True,
             scopes=["read:all"],
+            total_requests=0,
         )
 
         with patch.object(service.repository, "get_api_key_by_hash", new_callable=AsyncMock) as mock_get:

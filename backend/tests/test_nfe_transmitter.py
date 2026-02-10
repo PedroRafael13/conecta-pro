@@ -149,7 +149,7 @@ class TestNFETransmitter:
 
         # Verificar estrutura do envelope
         assert "soap12:Envelope" in envelope
-        assert "nfeAutorizacaoLote" in envelope
+        assert "NFeAutorizacao4" in envelope
         assert "enviNFe" in envelope
         assert "idLote" in envelope
         assert "indSinc" in envelope

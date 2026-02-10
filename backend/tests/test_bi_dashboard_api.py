@@ -1,6 +1,6 @@
 """Testes de API para BI Dashboard - Sprint 30."""
 
-from datetime import datetime
+from datetime import datetime, time
 from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
@@ -45,11 +45,11 @@ def sample_dashboard():
     return FinancialDashboard(
         id=uuid4(),
         condominio_id=uuid4(),
+        codigo="DASH_TEST_001",
         nome="Dashboard Teste",
         descricao="Dashboard para testes",
         tipo=DashboardType.EXECUTIVE,
-        status=DashboardStatus.PUBLISHED,
-        ativo=True,
+        status=DashboardStatus.ACTIVE,
     )
 
 
@@ -59,9 +59,10 @@ def sample_widget(sample_dashboard):
     return FinancialWidget(
         id=uuid4(),
         dashboard_id=sample_dashboard.id,
+        condominio_id=sample_dashboard.condominio_id,
+        codigo="WDG_TEST_001",
         titulo="Widget Teste",
-        tipo=WidgetType.CARD,
-        ativo=True,
+        tipo=WidgetType.KPI_CARD,
     )
 
 
@@ -76,7 +77,6 @@ def sample_kpi():
         categoria=KPICategory.LIQUIDITY,
         formula="{a} / {b}",
         valor_atual=Decimal("1.5"),
-        ativo=True,
     )
 
 
@@ -86,13 +86,16 @@ def sample_report():
     return ScheduledReport(
         id=uuid4(),
         condominio_id=uuid4(),
+        codigo="RPT_TEST_001",
         nome="Relatorio Teste",
-        tipo=ReportType.FINANCIAL_SUMMARY,
+        tipo=ReportType.CASH_FLOW,
         formato=ReportFormat.PDF,
         frequencia=ReportFrequency.MONTHLY,
         metodo_entrega=DeliveryMethod.EMAIL,
         destinatarios_email=["test@example.com"],
-        ativo=True,
+        total_execucoes=0,
+        total_erros=0,
+        hora_execucao=time(8, 0),
     )
 
 
@@ -526,8 +529,8 @@ class TestWidgetEndpoints:
         sample_widget.move_to(5, 10)
         mock_widget_repo.update.return_value = sample_widget
         result = mock_widget_repo.update(sample_widget)
-        assert result.posicao_x == 5
-        assert result.posicao_y == 10
+        assert result.position_x == 5
+        assert result.position_y == 10
 
 
 class TestKPIEndpoints:
@@ -572,12 +575,12 @@ class TestReportEndpoints:
         sample_report.pause()
         mock_report_repo.update.return_value = sample_report
         result = mock_report_repo.update(sample_report)
-        assert result.status.value == "paused"
+        assert result.status.value == "PAUSED"
 
     def test_execute_report(self, mock_db, mock_report_repo, sample_report):
         """Testa execucao de relatorio."""
-        sample_report.mark_executed(success=True, file_path="/reports/test.pdf")
+        sample_report.mark_executed(success=True)
         mock_report_repo.update.return_value = sample_report
         result = mock_report_repo.update(sample_report)
         assert result.total_execucoes == 1
-        assert result.execucoes_sucesso == 1
+        assert result.ultima_execucao_status == "success"

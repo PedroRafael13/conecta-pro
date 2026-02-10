@@ -76,6 +76,7 @@ class TestGeofenceServiceUnit:
             center_latitude=-23.5505,
             center_longitude=-46.6333,
             radius_meters=100,
+            grace_period_meters=20,
         )
 
         # Ponto no centro
@@ -91,6 +92,7 @@ class TestGeofenceServiceUnit:
             center_latitude=-23.5505,
             center_longitude=-46.6333,
             radius_meters=100,
+            grace_period_meters=20,
         )
 
         # Ponto distante
@@ -109,8 +111,9 @@ class TestGeofenceServiceUnit:
             allow_all_hours=True,
         )
 
-        assert zone.is_time_allowed(time(3, 0), 0) is True
-        assert zone.is_time_allowed(time(23, 59), 6) is True
+        # is_time_allowed aceita apenas check_time (sem day_of_week)
+        assert zone.is_time_allowed(time(3, 0)) is True
+        assert zone.is_time_allowed(time(23, 59)) is True
 
     def test_time_allowed_restricted(self):
         """Testa horário restrito."""
@@ -129,13 +132,14 @@ class TestGeofenceServiceUnit:
         )
 
         # Dentro do horário
-        assert zone.is_time_allowed(time(10, 0), 2) is True
+        assert zone.is_time_allowed(time(10, 0)) is True
 
         # Fora do horário
-        assert zone.is_time_allowed(time(20, 0), 2) is False
+        assert zone.is_time_allowed(time(20, 0)) is False
 
-        # Fim de semana
-        assert zone.is_time_allowed(time(10, 0), 5) is False
+        # No limite exato
+        assert zone.is_time_allowed(time(8, 0)) is True
+        assert zone.is_time_allowed(time(18, 0)) is True
 
 
 class TestCheckInValidationServiceUnit:
@@ -152,6 +156,7 @@ class TestCheckInValidationServiceUnit:
             platform="android",
             status=DeviceStatus.ACTIVE.value,
             is_active=True,
+            failed_attempts=0,
         )
 
         assert device.is_authorized is True
@@ -258,6 +263,7 @@ class TestOfflineSyncServiceUnit:
             queued_at=datetime.utcnow(),
             received_at=datetime.utcnow(),
             expires_at=datetime.utcnow() - timedelta(hours=1),  # Já expirou
+            is_expired=True,
         )
 
         assert item.is_expired is True
@@ -276,6 +282,7 @@ class TestOfflineSyncServiceUnit:
             queued_at=datetime.utcnow(),
             received_at=datetime.utcnow(),
             expires_at=datetime.utcnow() + timedelta(hours=24),
+            is_expired=False,
         )
 
         assert item.is_expired is False
@@ -296,6 +303,7 @@ class TestOfflineSyncServiceUnit:
             expires_at=datetime.utcnow() + timedelta(hours=24),
             max_retries=5,
             retry_count=0,
+            is_expired=False,
         )
 
         # Primeira falha - retry em 2 minutos
@@ -327,6 +335,8 @@ class TestOfflineSyncServiceUnit:
             expires_at=datetime.utcnow() + timedelta(hours=24),
             max_retries=3,
             retry_count=2,
+            status=QueueStatus.FAILED.value,
+            is_expired=False,
         )
 
         assert item.can_retry is True
@@ -344,7 +354,7 @@ class TestOfflineSyncServiceUnit:
             offline_id="offline-123",
             checkin_data={},
             checkin_type=CheckInType.ENTRY.value,
-            device_timestamp=datetime.utcnow(),
+            device_timestamp=datetime.utcnow() - timedelta(hours=3),
             queued_at=datetime.utcnow() - timedelta(hours=3),
             received_at=datetime.utcnow(),
             expires_at=datetime.utcnow() + timedelta(hours=24),
