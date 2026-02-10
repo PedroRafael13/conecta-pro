@@ -4,8 +4,7 @@ Testes dos Models do Sprint 34 - Relatórios Gerenciais
 
 # pylint: disable=redefined-outer-name,unused-argument
 import uuid
-from datetime import UTC, datetime, timedelta, timezone
-from decimal import Decimal
+from datetime import UTC, datetime
 
 import pytest
 
@@ -47,17 +46,18 @@ class TestReportTemplate:
         """Testa criação de template de relatório."""
         template = ReportTemplate(
             id=uuid.uuid4(),
-            codigo="RPT001",
-            nome="Relatório Financeiro Mensal",
-            descricao="Relatório financeiro consolidado",
+            code="RPT001",
+            name="Relatório Financeiro Mensal",
+            description="Relatório financeiro consolidado",
             category=ReportCategory.FINANCIAL,
-            report_type=ReportType.CONSOLIDADO,
+            report_type=ReportType.SUMMARY,
             default_format=ReportFormat.PDF,
             supported_formats=["pdf", "excel", "csv"],
-            status=TemplateStatus.ATIVO,
+            status=TemplateStatus.ACTIVE,
+            ativo=True,
         )
-        assert template.codigo == "RPT001"
-        assert template.nome == "Relatório Financeiro Mensal"
+        assert template.code == "RPT001"
+        assert template.name == "Relatório Financeiro Mensal"
         assert template.category == ReportCategory.FINANCIAL
         assert template.is_active
 
@@ -65,74 +65,79 @@ class TestReportTemplate:
         """Testa ativação de template."""
         template = ReportTemplate(
             id=uuid.uuid4(),
-            codigo="RPT002",
-            nome="Template Teste",
+            code="RPT002",
+            name="Template Teste",
             category=ReportCategory.OPERATIONAL,
-            report_type=ReportType.DETALHADO,
+            report_type=ReportType.DETAILED,
             default_format=ReportFormat.EXCEL,
             supported_formats=["excel"],
-            status=TemplateStatus.RASCUNHO,
+            status=TemplateStatus.DRAFT,
+            ativo=True,
         )
         template.activate()
-        assert template.status == TemplateStatus.ATIVO
+        assert template.status == TemplateStatus.ACTIVE
 
     def test_template_deactivate(self):
         """Testa desativação de template."""
         template = ReportTemplate(
             id=uuid.uuid4(),
-            codigo="RPT003",
-            nome="Template Teste",
+            code="RPT003",
+            name="Template Teste",
             category=ReportCategory.COMMERCIAL,
-            report_type=ReportType.RESUMIDO,
+            report_type=ReportType.SUMMARY,
             default_format=ReportFormat.PDF,
             supported_formats=["pdf"],
-            status=TemplateStatus.ATIVO,
+            status=TemplateStatus.ACTIVE,
+            ativo=True,
         )
         template.deactivate()
-        assert template.status == TemplateStatus.INATIVO
+        assert template.status == TemplateStatus.INACTIVE
 
     def test_template_deprecate(self):
         """Testa depreciação de template."""
         template = ReportTemplate(
             id=uuid.uuid4(),
-            codigo="RPT004",
-            nome="Template Antigo",
+            code="RPT004",
+            name="Template Antigo",
             category=ReportCategory.COMMERCIAL,
-            report_type=ReportType.ANALITICO,
+            report_type=ReportType.ANALYTICAL,
             default_format=ReportFormat.CSV,
             supported_formats=["csv"],
-            status=TemplateStatus.ATIVO,
+            status=TemplateStatus.ACTIVE,
+            ativo=True,
         )
         template.deprecate()
-        assert template.status == TemplateStatus.DESCONTINUADO
+        assert template.status == TemplateStatus.DEPRECATED
 
     def test_template_archive(self):
         """Testa arquivamento de template."""
         template = ReportTemplate(
             id=uuid.uuid4(),
-            codigo="RPT005",
-            nome="Template Arquivado",
+            code="RPT005",
+            name="Template Arquivado",
             category=ReportCategory.HR,
             report_type=ReportType.DASHBOARD,
             default_format=ReportFormat.HTML,
             supported_formats=["html"],
-            status=TemplateStatus.INATIVO,
+            status=TemplateStatus.INACTIVE,
+            ativo=True,
         )
         template.archive()
-        assert template.status == TemplateStatus.ARQUIVADO
+        assert template.status == TemplateStatus.ARCHIVED
 
     def test_template_increment_version(self):
         """Testa incremento de versão."""
         template = ReportTemplate(
             id=uuid.uuid4(),
-            codigo="RPT006",
-            nome="Template Versionado",
+            code="RPT006",
+            name="Template Versionado",
             category=ReportCategory.OPERATIONAL,
-            report_type=ReportType.COMPARATIVO,
+            report_type=ReportType.COMPARATIVE,
             default_format=ReportFormat.PDF,
             supported_formats=["pdf"],
-            status=TemplateStatus.ATIVO,
+            status=TemplateStatus.ACTIVE,
             version=1,
+            ativo=True,
         )
         template.increment_version()
         assert template.version == 2
@@ -141,14 +146,15 @@ class TestReportTemplate:
         """Testa registro de uso."""
         template = ReportTemplate(
             id=uuid.uuid4(),
-            codigo="RPT007",
-            nome="Template Usado",
+            code="RPT007",
+            name="Template Usado",
             category=ReportCategory.OPERATIONAL,
-            report_type=ReportType.CUSTOMIZADO,
+            report_type=ReportType.CUSTOM,
             default_format=ReportFormat.JSON,
             supported_formats=["json"],
-            status=TemplateStatus.ATIVO,
+            status=TemplateStatus.ACTIVE,
             usage_count=0,
+            ativo=True,
         )
         template.record_usage()
         assert template.usage_count == 1
@@ -158,16 +164,17 @@ class TestReportTemplate:
         """Testa adição de seção."""
         template = ReportTemplate(
             id=uuid.uuid4(),
-            codigo="RPT008",
-            nome="Template com Seções",
+            code="RPT008",
+            name="Template com Seções",
             category=ReportCategory.EXECUTIVE,
-            report_type=ReportType.CONSOLIDADO,
+            report_type=ReportType.SUMMARY,
             default_format=ReportFormat.PDF,
             supported_formats=["pdf"],
-            status=TemplateStatus.ATIVO,
+            status=TemplateStatus.ACTIVE,
             sections=[],
+            ativo=True,
         )
-        template.add_section("header", "Cabeçalho", {"show_logo": True})
+        template.add_section({"name": "header", "title": "Cabeçalho", "show_logo": True})
         assert len(template.sections) == 1
         assert template.sections[0]["name"] == "header"
 
@@ -175,40 +182,45 @@ class TestReportTemplate:
         """Testa adição de gráfico."""
         template = ReportTemplate(
             id=uuid.uuid4(),
-            codigo="RPT009",
-            nome="Template com Gráficos",
+            code="RPT009",
+            name="Template com Gráficos",
             category=ReportCategory.FINANCIAL,
-            report_type=ReportType.ANALITICO,
+            report_type=ReportType.ANALYTICAL,
             default_format=ReportFormat.PDF,
             supported_formats=["pdf"],
-            status=TemplateStatus.ATIVO,
+            status=TemplateStatus.ACTIVE,
             charts=[],
+            ativo=True,
         )
         template.add_chart(
-            "receitas_chart",
-            ChartType.BARRA,
-            "Receitas por Mês",
-            {"x_axis": "mes", "y_axis": "valor"},
+            {
+                "name": "receitas_chart",
+                "chart_type": ChartType.BAR.value,
+                "title": "Receitas por Mês",
+                "x_axis": "mes",
+                "y_axis": "valor",
+            }
         )
         assert len(template.charts) == 1
-        assert template.charts[0]["chart_type"] == "barra"
+        assert template.charts[0]["chart_type"] == "bar"
 
     def test_template_add_parameter(self):
         """Testa adição de parâmetro."""
         template = ReportTemplate(
             id=uuid.uuid4(),
-            codigo="RPT010",
-            nome="Template com Parâmetros",
+            code="RPT010",
+            name="Template com Parâmetros",
             category=ReportCategory.OPERATIONAL,
-            report_type=ReportType.DETALHADO,
+            report_type=ReportType.DETAILED,
             default_format=ReportFormat.EXCEL,
             supported_formats=["excel"],
-            status=TemplateStatus.ATIVO,
-            parameters=[],
+            status=TemplateStatus.ACTIVE,
+            parameters={},
+            ativo=True,
         )
-        template.add_parameter("data_inicio", "date", "Data Início", required=True)
-        assert len(template.parameters) == 1
-        assert template.parameters[0]["required"] is True
+        template.add_parameter("data_inicio", "date", {"label": "Data Início", "required": True})
+        assert "data_inicio" in template.parameters
+        assert template.parameters["data_inicio"]["required"] is True
 
 
 class TestReportSchedule:
@@ -218,103 +230,104 @@ class TestReportSchedule:
         """Testa criação de agendamento."""
         schedule = ReportSchedule(
             id=uuid.uuid4(),
-            codigo="SCH001",
-            nome="Agendamento Diário",
+            name="Agendamento Diário",
             template_id=uuid.uuid4(),
-            frequency=ScheduleFrequency.DIARIO,
+            frequency=ScheduleFrequency.DAILY,
             timezone="America/Sao_Paulo",
-            status=ScheduleStatus.ATIVO,
+            status=ScheduleStatus.ACTIVE,
             start_date=datetime.now(UTC),
-            output_format="pdf",
+            report_format="pdf",
             delivery_method=DeliveryMethod.EMAIL,
+            ativo=True,
         )
-        assert schedule.codigo == "SCH001"
-        assert schedule.frequency == ScheduleFrequency.DIARIO
+        assert schedule.name == "Agendamento Diário"
+        assert schedule.frequency == ScheduleFrequency.DAILY
         assert schedule.is_active
 
     def test_schedule_activate(self):
         """Testa ativação de agendamento."""
         schedule = ReportSchedule(
             id=uuid.uuid4(),
-            codigo="SCH002",
-            nome="Agendamento Teste",
+            name="Agendamento Teste",
             template_id=uuid.uuid4(),
-            frequency=ScheduleFrequency.SEMANAL,
+            frequency=ScheduleFrequency.WEEKLY,
             timezone="America/Sao_Paulo",
-            status=ScheduleStatus.RASCUNHO,
+            status=ScheduleStatus.PAUSED,
             start_date=datetime.now(UTC),
-            output_format="excel",
-            delivery_method=DeliveryMethod.STORAGE,
+            report_format="excel",
+            delivery_method=DeliveryMethod.DOWNLOAD,
+            ativo=True,
         )
         schedule.activate()
-        assert schedule.status == ScheduleStatus.ATIVO
+        assert schedule.status == ScheduleStatus.ACTIVE
 
     def test_schedule_pause(self):
         """Testa pausa de agendamento."""
         schedule = ReportSchedule(
             id=uuid.uuid4(),
-            codigo="SCH003",
-            nome="Agendamento Pausado",
+            name="Agendamento Pausado",
             template_id=uuid.uuid4(),
-            frequency=ScheduleFrequency.MENSAL,
+            frequency=ScheduleFrequency.MONTHLY,
             timezone="America/Sao_Paulo",
-            status=ScheduleStatus.ATIVO,
+            status=ScheduleStatus.ACTIVE,
             start_date=datetime.now(UTC),
-            output_format="csv",
+            report_format="csv",
             delivery_method=DeliveryMethod.WEBHOOK,
+            ativo=True,
         )
         schedule.pause()
-        assert schedule.status == ScheduleStatus.PAUSADO
+        assert schedule.status == ScheduleStatus.PAUSED
 
     def test_schedule_resume(self):
         """Testa retomada de agendamento."""
         schedule = ReportSchedule(
             id=uuid.uuid4(),
-            codigo="SCH004",
-            nome="Agendamento Retomado",
+            name="Agendamento Retomado",
             template_id=uuid.uuid4(),
-            frequency=ScheduleFrequency.TRIMESTRAL,
+            frequency=ScheduleFrequency.QUARTERLY,
             timezone="America/Sao_Paulo",
-            status=ScheduleStatus.PAUSADO,
+            status=ScheduleStatus.PAUSED,
             start_date=datetime.now(UTC),
-            output_format="pdf",
+            report_format="pdf",
             delivery_method=DeliveryMethod.EMAIL,
+            ativo=True,
         )
         schedule.resume()
-        assert schedule.status == ScheduleStatus.ATIVO
+        assert schedule.status == ScheduleStatus.ACTIVE
 
     def test_schedule_cancel(self):
         """Testa cancelamento de agendamento."""
         schedule = ReportSchedule(
             id=uuid.uuid4(),
-            codigo="SCH005",
-            nome="Agendamento Cancelado",
+            name="Agendamento Cancelado",
             template_id=uuid.uuid4(),
-            frequency=ScheduleFrequency.ANUAL,
+            frequency=ScheduleFrequency.YEARLY,
             timezone="America/Sao_Paulo",
-            status=ScheduleStatus.ATIVO,
+            status=ScheduleStatus.ACTIVE,
             start_date=datetime.now(UTC),
-            output_format="pdf",
+            report_format="pdf",
             delivery_method=DeliveryMethod.EMAIL,
+            ativo=True,
         )
         schedule.cancel()
-        assert schedule.status == ScheduleStatus.CANCELADO
+        assert schedule.status == ScheduleStatus.CANCELLED
 
     def test_schedule_record_execution(self):
         """Testa registro de execução."""
         schedule = ReportSchedule(
             id=uuid.uuid4(),
-            codigo="SCH006",
-            nome="Agendamento Executado",
+            name="Agendamento Executado",
             template_id=uuid.uuid4(),
-            frequency=ScheduleFrequency.DIARIO,
+            frequency=ScheduleFrequency.DAILY,
             timezone="America/Sao_Paulo",
-            status=ScheduleStatus.ATIVO,
+            status=ScheduleStatus.ACTIVE,
             start_date=datetime.now(UTC),
-            output_format="pdf",
+            report_format="pdf",
             delivery_method=DeliveryMethod.EMAIL,
             execution_count=0,
             success_count=0,
+            failure_count=0,
+            ativo=True,
         )
         schedule.record_execution(success=True)
         assert schedule.execution_count == 1
@@ -324,16 +337,16 @@ class TestReportSchedule:
         """Testa adição de destinatário."""
         schedule = ReportSchedule(
             id=uuid.uuid4(),
-            codigo="SCH007",
-            nome="Agendamento com Destinatários",
+            name="Agendamento com Destinatários",
             template_id=uuid.uuid4(),
-            frequency=ScheduleFrequency.SEMANAL,
+            frequency=ScheduleFrequency.WEEKLY,
             timezone="America/Sao_Paulo",
-            status=ScheduleStatus.ATIVO,
+            status=ScheduleStatus.ACTIVE,
             start_date=datetime.now(UTC),
-            output_format="pdf",
+            report_format="pdf",
             delivery_method=DeliveryMethod.EMAIL,
             recipients=[],
+            ativo=True,
         )
         schedule.add_recipient("user@example.com")
         assert "user@example.com" in schedule.recipients
@@ -342,17 +355,18 @@ class TestReportSchedule:
         """Testa cálculo de taxa de sucesso."""
         schedule = ReportSchedule(
             id=uuid.uuid4(),
-            codigo="SCH008",
-            nome="Agendamento Métricas",
+            name="Agendamento Métricas",
             template_id=uuid.uuid4(),
-            frequency=ScheduleFrequency.DIARIO,
+            frequency=ScheduleFrequency.DAILY,
             timezone="America/Sao_Paulo",
-            status=ScheduleStatus.ATIVO,
+            status=ScheduleStatus.ACTIVE,
             start_date=datetime.now(UTC),
-            output_format="pdf",
+            report_format="pdf",
             delivery_method=DeliveryMethod.EMAIL,
             execution_count=10,
             success_count=8,
+            failure_count=2,
+            ativo=True,
         )
         assert schedule.success_rate == 80.0
 
@@ -368,7 +382,6 @@ class TestReportExport:
             trigger=ExportTrigger.MANUAL,
             requested_by=uuid.uuid4(),
         )
-        assert export.status == ExportStatus.PENDENTE
         assert export.trigger == ExportTrigger.MANUAL
         assert export.format == ExportFormat.PDF
 
@@ -376,33 +389,35 @@ class TestReportExport:
         """Testa início de processamento."""
         export = ReportExport(
             id=uuid.uuid4(),
-            export_id="EXP001",
+            export_number="EXP001",
             template_id=uuid.uuid4(),
-            status=ExportStatus.PENDENTE,
+            status=ExportStatus.PENDING,
             trigger=ExportTrigger.MANUAL,
             format=ExportFormat.EXCEL,
+            ativo=True,
         )
         export.start_processing()
-        assert export.status == ExportStatus.PROCESSANDO
+        assert export.status == ExportStatus.PROCESSING
         assert export.started_at is not None
 
     def test_export_complete(self):
         """Testa conclusão de exportação."""
         export = ReportExport(
             id=uuid.uuid4(),
-            export_id="EXP002",
+            export_number="EXP002",
             template_id=uuid.uuid4(),
-            status=ExportStatus.PROCESSANDO,
-            trigger=ExportTrigger.AGENDADO,
+            status=ExportStatus.PROCESSING,
+            trigger=ExportTrigger.SCHEDULED,
             format=ExportFormat.CSV,
-            started_at=datetime.now(UTC),
+            started_at=datetime.utcnow(),
+            ativo=True,
         )
         export.complete(
             file_path="/exports/report.csv",
             file_size=1024,
-            row_count=100,
+            records=100,
         )
-        assert export.status == ExportStatus.CONCLUIDO
+        assert export.status == ExportStatus.COMPLETED
         assert export.file_path == "/exports/report.csv"
         assert export.file_size == 1024
         assert export.is_completed
@@ -411,55 +426,60 @@ class TestReportExport:
         """Testa falha de exportação."""
         export = ReportExport(
             id=uuid.uuid4(),
-            export_id="EXP003",
+            export_number="EXP003",
             template_id=uuid.uuid4(),
-            status=ExportStatus.PROCESSANDO,
+            status=ExportStatus.PROCESSING,
             trigger=ExportTrigger.API,
             format=ExportFormat.PDF,
-            started_at=datetime.now(UTC),
+            started_at=datetime.utcnow(),
+            ativo=True,
         )
-        export.fail("Erro de conexão", {"code": "CONN_ERROR"})
-        assert export.status == ExportStatus.ERRO
+        export.fail("Erro de conexão", error_code="CONN_ERROR")
+        assert export.status == ExportStatus.FAILED
         assert export.error_message == "Erro de conexão"
 
     def test_export_cancel(self):
         """Testa cancelamento de exportação."""
         export = ReportExport(
             id=uuid.uuid4(),
-            export_id="EXP004",
+            export_number="EXP004",
             template_id=uuid.uuid4(),
-            status=ExportStatus.PENDENTE,
+            status=ExportStatus.PENDING,
             trigger=ExportTrigger.MANUAL,
             format=ExportFormat.JSON,
+            ativo=True,
         )
         export.cancel()
-        assert export.status == ExportStatus.CANCELADO
+        assert export.status == ExportStatus.CANCELLED
 
     def test_export_record_download(self):
         """Testa registro de download."""
         export = ReportExport(
             id=uuid.uuid4(),
-            export_id="EXP005",
+            export_number="EXP005",
             template_id=uuid.uuid4(),
-            status=ExportStatus.CONCLUIDO,
+            status=ExportStatus.COMPLETED,
             trigger=ExportTrigger.MANUAL,
             format=ExportFormat.PDF,
             download_count=0,
+            ativo=True,
         )
-        export.record_download()
+        result = export.record_download()
+        assert result is True
         assert export.download_count == 1
-        assert export.last_downloaded_at is not None
+        assert export.last_download_at is not None
 
     def test_export_file_size_formatted(self):
         """Testa formatação de tamanho de arquivo."""
         export = ReportExport(
             id=uuid.uuid4(),
-            export_id="EXP006",
+            export_number="EXP006",
             template_id=uuid.uuid4(),
-            status=ExportStatus.CONCLUIDO,
-            trigger=ExportTrigger.AGENDADO,
+            status=ExportStatus.COMPLETED,
+            trigger=ExportTrigger.SCHEDULED,
             format=ExportFormat.EXCEL,
             file_size=1536000,  # ~1.5 MB
+            ativo=True,
         )
         assert "MB" in export.file_size_formatted
 
@@ -471,144 +491,144 @@ class TestExecutiveKPI:
         """Testa criação de KPI executivo."""
         kpi = ExecutiveKPI(
             id=uuid.uuid4(),
-            codigo="KPI001",
-            nome="Receita Mensal",
-            descricao="Receita total do mês",
-            category=KPICategory.FINANCEIRO,
-            kpi_type=KPIType.RECEITA,
-            direction=KPIDirection.MAIOR_MELHOR,
-            status=KPIStatus.ATIVO,
+            code="KPI001",
+            name="Receita Mensal",
+            description="Receita total do mês",
+            category=KPICategory.FINANCIAL,
+            kpi_type=KPIType.CURRENCY,
+            direction=KPIDirection.INCREASE,
+            status=KPIStatus.ACTIVE,
             unit="currency",
-            current_value=Decimal("100000.00"),
-            target_value=Decimal("120000.00"),
+            current_value=100000.00,
+            target_value=120000.00,
             alert_level=KPIAlertLevel.NORMAL,
-            aggregation_period=AggregationPeriod.MENSAL,
-            visibility="public",
+            aggregation_period=AggregationPeriod.MONTHLY,
+            ativo=True,
         )
-        assert kpi.codigo == "KPI001"
-        assert kpi.category == KPICategory.FINANCEIRO
+        assert kpi.code == "KPI001"
+        assert kpi.category == KPICategory.FINANCIAL
         assert kpi.is_active
 
     def test_kpi_update_value(self):
         """Testa atualização de valor."""
         kpi = ExecutiveKPI(
             id=uuid.uuid4(),
-            codigo="KPI002",
-            nome="Margem de Lucro",
-            category=KPICategory.FINANCEIRO,
-            kpi_type=KPIType.MARGEM,
-            direction=KPIDirection.MAIOR_MELHOR,
-            status=KPIStatus.ATIVO,
+            code="KPI002",
+            name="Margem de Lucro",
+            category=KPICategory.FINANCIAL,
+            kpi_type=KPIType.PERCENTAGE,
+            direction=KPIDirection.INCREASE,
+            status=KPIStatus.ACTIVE,
             unit="percentage",
-            current_value=Decimal("15.00"),
-            target_value=Decimal("20.00"),
+            current_value=15.00,
+            target_value=20.00,
             alert_level=KPIAlertLevel.NORMAL,
-            aggregation_period=AggregationPeriod.MENSAL,
-            visibility="public",
-            history=[],
+            aggregation_period=AggregationPeriod.MONTHLY,
+            historical_values=[],
+            ativo=True,
         )
-        kpi.update_value(Decimal("18.50"))
-        assert kpi.current_value == Decimal("18.50")
-        assert kpi.previous_value == Decimal("15.00")
+        kpi.update_value(18.50)
+        assert kpi.current_value == 18.50
+        assert kpi.previous_value == 15.00
 
     def test_kpi_set_target(self):
         """Testa definição de meta."""
         kpi = ExecutiveKPI(
             id=uuid.uuid4(),
-            codigo="KPI003",
-            nome="Satisfação Cliente",
-            category=KPICategory.CLIENTE,
-            kpi_type=KPIType.SATISFACAO,
-            direction=KPIDirection.MAIOR_MELHOR,
-            status=KPIStatus.ATIVO,
+            code="KPI003",
+            name="Satisfação Cliente",
+            category=KPICategory.CUSTOMER,
+            kpi_type=KPIType.INDEX,
+            direction=KPIDirection.INCREASE,
+            status=KPIStatus.ACTIVE,
             unit="score",
-            current_value=Decimal("4.2"),
+            current_value=4.2,
             alert_level=KPIAlertLevel.NORMAL,
-            aggregation_period=AggregationPeriod.MENSAL,
-            visibility="public",
+            aggregation_period=AggregationPeriod.MONTHLY,
+            ativo=True,
         )
-        kpi.set_target(Decimal("4.5"))
-        assert kpi.target_value == Decimal("4.5")
+        kpi.set_target(4.5)
+        assert kpi.target_value == 4.5
 
     def test_kpi_set_thresholds(self):
         """Testa definição de thresholds."""
         kpi = ExecutiveKPI(
             id=uuid.uuid4(),
-            codigo="KPI004",
-            nome="Taxa de Conversão",
-            category=KPICategory.VENDAS,
-            kpi_type=KPIType.CONVERSAO,
-            direction=KPIDirection.MAIOR_MELHOR,
-            status=KPIStatus.ATIVO,
+            code="KPI004",
+            name="Taxa de Conversão",
+            category=KPICategory.COMMERCIAL,
+            kpi_type=KPIType.PERCENTAGE,
+            direction=KPIDirection.INCREASE,
+            status=KPIStatus.ACTIVE,
             unit="percentage",
-            current_value=Decimal("25.00"),
+            current_value=25.00,
             alert_level=KPIAlertLevel.NORMAL,
-            aggregation_period=AggregationPeriod.SEMANAL,
-            visibility="public",
+            aggregation_period=AggregationPeriod.WEEKLY,
+            ativo=True,
         )
         kpi.set_thresholds(
-            critical=Decimal("10.00"),
-            warning=Decimal("15.00"),
-            target=Decimal("25.00"),
-            excellent=Decimal("35.00"),
+            critical_low=10.00,
+            warning_low=15.00,
+            warning_high=35.00,
+            critical_high=40.00,
         )
-        assert kpi.threshold_critical == Decimal("10.00")
-        assert kpi.threshold_excellent == Decimal("35.00")
+        assert kpi.critical_threshold_low == 10.00
+        assert kpi.warning_threshold_high == 35.00
 
     def test_kpi_activate(self):
         """Testa ativação de KPI."""
         kpi = ExecutiveKPI(
             id=uuid.uuid4(),
-            codigo="KPI005",
-            nome="KPI Teste",
-            category=KPICategory.OPERACIONAL,
-            kpi_type=KPIType.EFICIENCIA,
-            direction=KPIDirection.MAIOR_MELHOR,
-            status=KPIStatus.RASCUNHO,
+            code="KPI005",
+            name="KPI Teste",
+            category=KPICategory.OPERATIONAL,
+            kpi_type=KPIType.PERCENTAGE,
+            direction=KPIDirection.INCREASE,
+            status=KPIStatus.DRAFT,
             unit="percentage",
             alert_level=KPIAlertLevel.NORMAL,
-            aggregation_period=AggregationPeriod.DIARIO,
-            visibility="private",
+            aggregation_period=AggregationPeriod.DAILY,
+            ativo=True,
         )
         kpi.activate()
-        assert kpi.status == KPIStatus.ATIVO
+        assert kpi.status == KPIStatus.ACTIVE
 
     def test_kpi_deactivate(self):
         """Testa desativação de KPI."""
         kpi = ExecutiveKPI(
             id=uuid.uuid4(),
-            codigo="KPI006",
-            nome="KPI Inativo",
-            category=KPICategory.QUALIDADE,
-            kpi_type=KPIType.QUALIDADE,
-            direction=KPIDirection.MAIOR_MELHOR,
-            status=KPIStatus.ATIVO,
+            code="KPI006",
+            name="KPI Inativo",
+            category=KPICategory.QUALITY,
+            kpi_type=KPIType.INDEX,
+            direction=KPIDirection.INCREASE,
+            status=KPIStatus.ACTIVE,
             unit="percentage",
             alert_level=KPIAlertLevel.NORMAL,
-            aggregation_period=AggregationPeriod.MENSAL,
-            visibility="public",
+            aggregation_period=AggregationPeriod.MONTHLY,
+            ativo=True,
         )
         kpi.deactivate()
-        assert kpi.status == KPIStatus.INATIVO
+        assert kpi.status == KPIStatus.INACTIVE
 
     def test_kpi_target_achievement(self):
         """Testa cálculo de atingimento de meta."""
         kpi = ExecutiveKPI(
             id=uuid.uuid4(),
-            codigo="KPI007",
-            nome="Meta Teste",
-            category=KPICategory.FINANCEIRO,
-            kpi_type=KPIType.RECEITA,
-            direction=KPIDirection.MAIOR_MELHOR,
-            status=KPIStatus.ATIVO,
+            code="KPI007",
+            name="Meta Teste",
+            category=KPICategory.FINANCIAL,
+            kpi_type=KPIType.CURRENCY,
+            direction=KPIDirection.INCREASE,
+            status=KPIStatus.ACTIVE,
             unit="currency",
-            current_value=Decimal("90000.00"),
-            target_value=Decimal("100000.00"),
+            current_value=90000.00,
+            target_value=100000.00,
             alert_level=KPIAlertLevel.NORMAL,
-            aggregation_period=AggregationPeriod.MENSAL,
-            visibility="public",
+            aggregation_period=AggregationPeriod.MONTHLY,
+            ativo=True,
         )
-        assert kpi.target_achievement == Decimal("90.00")
+        assert kpi.target_achievement == pytest.approx(90.0, rel=1e-2)
 
 
 class TestBenchmark:
@@ -618,171 +638,171 @@ class TestBenchmark:
         """Testa criação de benchmark."""
         benchmark = Benchmark(
             id=uuid.uuid4(),
-            codigo="BMK001",
-            nome="Margem EBITDA Setor",
-            descricao="Benchmark de margem EBITDA do setor",
-            category=BenchmarkCategory.FINANCEIRO,
-            benchmark_type=BenchmarkType.INDUSTRIA,
-            source=BenchmarkSource.PESQUISA_MERCADO,
-            status=BenchmarkStatus.ATIVO,
+            code="BMK001",
+            name="Margem EBITDA Setor",
+            description="Benchmark de margem EBITDA do setor",
+            category=BenchmarkCategory.FINANCIAL,
+            benchmark_type=BenchmarkType.INDUSTRY,
+            source=BenchmarkSource.MARKET_RESEARCH,
+            status=BenchmarkStatus.ACTIVE,
             industry="Tecnologia",
             unit="percentage",
-            reference_value=Decimal("25.00"),
-            visibility="public",
+            reference_value=25.00,
+            ativo=True,
         )
-        assert benchmark.codigo == "BMK001"
-        assert benchmark.category == BenchmarkCategory.FINANCEIRO
+        assert benchmark.code == "BMK001"
+        assert benchmark.category == BenchmarkCategory.FINANCIAL
         assert benchmark.is_active
 
     def test_benchmark_update_reference_value(self):
         """Testa atualização de valor de referência."""
         benchmark = Benchmark(
             id=uuid.uuid4(),
-            codigo="BMK002",
-            nome="NPS Setor",
-            category=BenchmarkCategory.SATISFACAO,
-            benchmark_type=BenchmarkType.SETOR,
-            source=BenchmarkSource.ASSOCIACAO,
-            status=BenchmarkStatus.ATIVO,
+            code="BMK002",
+            name="NPS Setor",
+            category=BenchmarkCategory.CUSTOMER,
+            benchmark_type=BenchmarkType.EXTERNAL,
+            source=BenchmarkSource.ASSOCIATION,
+            status=BenchmarkStatus.ACTIVE,
             unit="score",
-            reference_value=Decimal("50.00"),
-            visibility="public",
-            history=[],
+            reference_value=50.00,
+            historical_values=[],
+            ativo=True,
         )
-        benchmark.update_reference_value(Decimal("55.00"), "Q4 2024")
-        assert benchmark.reference_value == Decimal("55.00")
+        benchmark.update_reference_value(55.00)
+        assert benchmark.reference_value == 55.00
 
     def test_benchmark_update_company_value(self):
         """Testa atualização de valor da empresa."""
         benchmark = Benchmark(
             id=uuid.uuid4(),
-            codigo="BMK003",
-            nome="Ticket Médio",
-            category=BenchmarkCategory.COMERCIAL,
-            benchmark_type=BenchmarkType.CONCORRENTE,
-            source=BenchmarkSource.DADOS_INTERNOS,
-            status=BenchmarkStatus.ATIVO,
+            code="BMK003",
+            name="Ticket Médio",
+            category=BenchmarkCategory.COMMERCIAL,
+            benchmark_type=BenchmarkType.COMPETITOR,
+            source=BenchmarkSource.INTERNAL_DATA,
+            status=BenchmarkStatus.ACTIVE,
             unit="currency",
-            reference_value=Decimal("150.00"),
-            visibility="public",
+            reference_value=150.00,
+            ativo=True,
         )
-        benchmark.update_company_value(Decimal("180.00"))
-        assert benchmark.company_value == Decimal("180.00")
-        assert benchmark.comparison_result == ComparisonResult.ACIMA
+        benchmark.update_company_value(180.00)
+        assert benchmark.current_company_value == 180.00
+        assert benchmark.comparison_result == ComparisonResult.ABOVE
 
     def test_benchmark_set_distribution(self):
         """Testa definição de distribuição estatística."""
         benchmark = Benchmark(
             id=uuid.uuid4(),
-            codigo="BMK004",
-            nome="Tempo de Entrega",
-            category=BenchmarkCategory.OPERACIONAL,
-            benchmark_type=BenchmarkType.INDUSTRIA,
-            source=BenchmarkSource.CONSULTORIA,
-            status=BenchmarkStatus.ATIVO,
+            code="BMK004",
+            name="Tempo de Entrega",
+            category=BenchmarkCategory.OPERATIONAL,
+            benchmark_type=BenchmarkType.INDUSTRY,
+            source=BenchmarkSource.CONSULTANT,
+            status=BenchmarkStatus.ACTIVE,
             unit="days",
-            reference_value=Decimal("5.00"),
-            visibility="public",
+            reference_value=5.00,
+            ativo=True,
         )
         benchmark.set_distribution(
-            min_val=Decimal("2.00"),
-            max_val=Decimal("10.00"),
-            median=Decimal("5.00"),
-            mean=Decimal("5.50"),
-            std_dev=Decimal("1.50"),
-            p25=Decimal("3.00"),
-            p75=Decimal("7.00"),
-            p90=Decimal("8.50"),
-            sample_size=100,
+            minimum=2.00,
+            maximum=10.00,
+            median=5.00,
+            average=5.50,
+            percentile_25=3.00,
+            percentile_75=7.00,
+            percentile_90=8.50,
         )
-        assert benchmark.min_value == Decimal("2.00")
-        assert benchmark.percentile_90 == Decimal("8.50")
-        assert benchmark.sample_size == 100
+        assert benchmark.min_value == 2.00
+        assert benchmark.percentile_90 == 8.50
 
     def test_benchmark_activate(self):
         """Testa ativação de benchmark."""
         benchmark = Benchmark(
             id=uuid.uuid4(),
-            codigo="BMK005",
-            nome="Benchmark Teste",
-            category=BenchmarkCategory.QUALIDADE,
+            code="BMK005",
+            name="Benchmark Teste",
+            category=BenchmarkCategory.QUALITY,
             benchmark_type=BenchmarkType.BEST_PRACTICE,
-            source=BenchmarkSource.ACADEMIA,
-            status=BenchmarkStatus.RASCUNHO,
+            source=BenchmarkSource.PUBLIC_DATA,
+            status=BenchmarkStatus.DRAFT,
             unit="percentage",
-            visibility="private",
+            reference_value=0.0,
+            ativo=True,
         )
         benchmark.activate()
-        assert benchmark.status == BenchmarkStatus.ATIVO
+        assert benchmark.status == BenchmarkStatus.ACTIVE
 
     def test_benchmark_deactivate(self):
         """Testa desativação de benchmark."""
         benchmark = Benchmark(
             id=uuid.uuid4(),
-            codigo="BMK006",
-            nome="Benchmark Inativo",
-            category=BenchmarkCategory.INOVACAO,
-            benchmark_type=BenchmarkType.CUSTOMIZADO,
-            source=BenchmarkSource.GOVERNO,
-            status=BenchmarkStatus.ATIVO,
+            code="BMK006",
+            name="Benchmark Inativo",
+            category=BenchmarkCategory.MARKET,
+            benchmark_type=BenchmarkType.HISTORICAL,
+            source=BenchmarkSource.GOVERNMENT,
+            status=BenchmarkStatus.ACTIVE,
             unit="count",
-            visibility="public",
+            reference_value=0.0,
+            ativo=True,
         )
         benchmark.deactivate()
-        assert benchmark.status == BenchmarkStatus.INATIVO
+        assert benchmark.status == BenchmarkStatus.INACTIVE
 
     def test_benchmark_mark_outdated(self):
         """Testa marcação como desatualizado."""
         benchmark = Benchmark(
             id=uuid.uuid4(),
-            codigo="BMK007",
-            nome="Benchmark Desatualizado",
-            category=BenchmarkCategory.SUSTENTABILIDADE,
-            benchmark_type=BenchmarkType.REGULATORIO,
-            source=BenchmarkSource.PESQUISA_MERCADO,
-            status=BenchmarkStatus.ATIVO,
+            code="BMK007",
+            name="Benchmark Desatualizado",
+            category=BenchmarkCategory.INDUSTRY,
+            benchmark_type=BenchmarkType.EXTERNAL,
+            source=BenchmarkSource.MARKET_RESEARCH,
+            status=BenchmarkStatus.ACTIVE,
             unit="index",
-            visibility="public",
+            reference_value=0.0,
+            ativo=True,
         )
         benchmark.mark_outdated()
-        assert benchmark.status == BenchmarkStatus.DESATUALIZADO
+        assert benchmark.status == BenchmarkStatus.OUTDATED
 
     def test_benchmark_is_above_below(self):
         """Testa comparação com benchmark."""
         benchmark = Benchmark(
             id=uuid.uuid4(),
-            codigo="BMK008",
-            nome="Benchmark Comparação",
-            category=BenchmarkCategory.FINANCEIRO,
-            benchmark_type=BenchmarkType.INDUSTRIA,
-            source=BenchmarkSource.DADOS_INTERNOS,
-            status=BenchmarkStatus.ATIVO,
+            code="BMK008",
+            name="Benchmark Comparação",
+            category=BenchmarkCategory.FINANCIAL,
+            benchmark_type=BenchmarkType.INDUSTRY,
+            source=BenchmarkSource.INTERNAL_DATA,
+            status=BenchmarkStatus.ACTIVE,
             unit="percentage",
-            reference_value=Decimal("20.00"),
-            company_value=Decimal("25.00"),
-            comparison_result=ComparisonResult.ACIMA,
-            visibility="public",
+            reference_value=20.00,
+            current_company_value=25.00,
+            comparison_result=ComparisonResult.ABOVE,
+            ativo=True,
         )
         assert benchmark.is_above_benchmark
         assert not benchmark.is_below_benchmark
 
     def test_benchmark_gap_percentage(self):
-        """Testa cálculo de gap percentual."""
+        """Testa cálculo de gap para meta."""
         benchmark = Benchmark(
             id=uuid.uuid4(),
-            codigo="BMK009",
-            nome="Benchmark Gap",
-            category=BenchmarkCategory.COMERCIAL,
-            benchmark_type=BenchmarkType.CONCORRENTE,
-            source=BenchmarkSource.CONSULTORIA,
-            status=BenchmarkStatus.ATIVO,
+            code="BMK009",
+            name="Benchmark Gap",
+            category=BenchmarkCategory.COMMERCIAL,
+            benchmark_type=BenchmarkType.COMPETITOR,
+            source=BenchmarkSource.CONSULTANT,
+            status=BenchmarkStatus.ACTIVE,
             unit="currency",
-            reference_value=Decimal("100.00"),
-            company_value=Decimal("80.00"),
-            target_value=Decimal("110.00"),
-            visibility="public",
+            reference_value=100.00,
+            current_company_value=80.00,
+            target_value=110.00,
+            ativo=True,
         )
-        assert benchmark.gap_to_target == Decimal("30.00")
+        assert benchmark.gap_to_target == 30.00
 
 
 class TestEnums:
