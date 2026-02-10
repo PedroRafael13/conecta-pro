@@ -30,7 +30,7 @@ def sample_chart_data() -> dict[str, Any]:
         "code": "PC-001",
         "name": "Plano de Contas Principal",
         "description": "Plano de contas padrao do condominio",
-        "chart_type": "ANALYTICAL",
+        "chart_type": "CUSTOM",
         "standard": "CUSTOM",
         "fiscal_year": 2024,
         "valid_from": date(2024, 1, 1).isoformat(),
@@ -157,7 +157,7 @@ class TestChartOfAccountsEndpoints:
             mock_chart.id = chart_id
             mock_chart.code = sample_chart_data["code"]
             mock_chart.name = sample_chart_data["name"]
-            mock_chart.chart_type = ChartType.ANALYTICAL
+            mock_chart.chart_type = ChartType.CUSTOM
             mock_chart.status = ChartStatus.ACTIVE
 
             with patch("modules.financial.controllers.accounting_controller.ChartOfAccountsRepository") as mock_repo:
