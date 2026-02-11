@@ -40,15 +40,31 @@ route:
 
 receivers:
   - name: 'default-webhook'
-    webhook_configs:
-      - url: '${DISCORD_WEBHOOK:-http://host.docker.internal:9095/webhook}'
+    telegram_configs:
+      - bot_token: '${TELEGRAM_BOT_TOKEN}'
+        chat_id: ${TELEGRAM_CHAT_ID}
+        parse_mode: 'HTML'
+        message: |
+          {{ if eq .Status "firing" }}🔔 <b>ALERTA</b>{{ else }}✅ <b>RESOLVIDO</b>{{ end }}
+          <b>{{ .GroupLabels.alertname }}</b>
+          Severidade: {{ .CommonLabels.severity }}
+          {{ range .Alerts }}
+          {{ .Annotations.summary }}
+          {{ end }}
         send_resolved: true
-        max_alerts: 10
   - name: 'critical-webhook'
-    webhook_configs:
-      - url: '${DISCORD_WEBHOOK_CRITICAL:-http://host.docker.internal:9095/webhook/critical}'
+    telegram_configs:
+      - bot_token: '${TELEGRAM_BOT_TOKEN}'
+        chat_id: ${TELEGRAM_CHAT_ID}
+        parse_mode: 'HTML'
+        message: |
+          {{ if eq .Status "firing" }}🚨 <b>CRÍTICO</b>{{ else }}✅ <b>RESOLVIDO</b>{{ end }}
+          <b>{{ .GroupLabels.alertname }}</b>
+          {{ range .Alerts }}
+          {{ .Annotations.summary }}
+          {{ .Annotations.description }}
+          {{ end }}
         send_resolved: true
-        max_alerts: 5
   - name: 'email-alerts'
     email_configs:
       - to: 'admin@conectamais.pro'

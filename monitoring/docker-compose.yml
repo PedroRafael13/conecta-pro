@@ -127,10 +127,9 @@ services:
       - ./alertmanager/entrypoint.sh:/entrypoint.sh:ro
       - alertmanager_data:/alertmanager
     environment:
-      # Webhooks para notificações (Discord/Slack) - configuráveis via .env
-      # Se vazias, usa placeholder local (funciona mas não envia notificações externas)
-      - DISCORD_WEBHOOK=${DISCORD_WEBHOOK:-http://host.docker.internal:9095/webhook}
-      - DISCORD_WEBHOOK_CRITICAL=${DISCORD_WEBHOOK_CRITICAL:-http://host.docker.internal:9095/webhook/critical}
+      # Telegram para notificações de alertas
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
       - WEB_EXTERNAL_URL=${ALERTMANAGER_EXTERNAL_URL:-http://localhost:9093}
     entrypoint: ["/bin/sh", "/entrypoint.sh"]
     healthcheck:

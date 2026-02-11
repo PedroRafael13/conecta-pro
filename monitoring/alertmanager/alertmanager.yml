@@ -1,84 +1,73 @@
 # AlertManager Configuration - ERP Conecta Mais
 # ==============================================
 # Versão: v0.27.0
-# Configuração de roteamento e notificações de alertas
-# As URLs de webhook usam variáveis de ambiente para configuração flexível
+# NOTA: Este arquivo é um TEMPLATE. A config real é gerada pelo entrypoint.sh
+# usando variáveis de ambiente do .env (TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID).
+# NÃO colocar secrets aqui — usar variáveis de ambiente.
 
 global:
   resolve_timeout: 5m
   smtp_smarthost: 'localhost:587'
   smtp_from: 'alerts@conectamais.pro'
+  telegram_api_url: 'https://api.telegram.org'
 
-# Templates para notificações
 templates:
   - '/etc/alertmanager/templates/*.tmpl'
 
-# Roteamento principal
 route:
   receiver: 'default-webhook'
   group_by: ['alertname', 'severity', 'job']
   group_wait: 30s
   group_interval: 5m
   repeat_interval: 4h
-
-  # Sub-rotas
   routes:
-    # Alertas críticos → notificação imediata
     - match:
         severity: critical
       receiver: 'critical-webhook'
       repeat_interval: 1h
       continue: true
-
-    # Alertas de warning → agrupados
     - match:
         severity: warning
       receiver: 'default-webhook'
       group_wait: 1m
       repeat_interval: 8h
-
-    # Alertas de info → apenas log
     - match:
         severity: info
       receiver: 'default-webhook'
       group_wait: 5m
       repeat_interval: 24h
 
-# Receptores de notificação
 receivers:
-  # Webhook padrão (placeholder para Discord/Slack futuro)
-  # Configurável via variável de ambiente DISCORD_WEBHOOK
-  # Se vazia ou não definida, o AlertManager funciona mas não envia notificações
+  # Telegram - Alertas padrão (warnings, info)
+  # bot_token e chat_id injetados via entrypoint.sh + env vars
   - name: 'default-webhook'
-    webhook_configs:
-      - url: '${DISCORD_WEBHOOK:-http://host.docker.internal:9095/webhook}'
+    telegram_configs:
+      - bot_token: '${TELEGRAM_BOT_TOKEN}'
+        chat_id: ${TELEGRAM_CHAT_ID}
+        parse_mode: 'HTML'
         send_resolved: true
-        max_alerts: 10
 
-  # Webhook para alertas críticos
+  # Telegram - Alertas críticos
   - name: 'critical-webhook'
-    webhook_configs:
-      - url: '${DISCORD_WEBHOOK_CRITICAL:-http://host.docker.internal:9095/webhook/critical}'
+    telegram_configs:
+      - bot_token: '${TELEGRAM_BOT_TOKEN}'
+        chat_id: ${TELEGRAM_CHAT_ID}
+        parse_mode: 'HTML'
         send_resolved: true
-        max_alerts: 5
 
-  # Email (opcional - desabilitado por padrão)
+  # Email (opcional)
   - name: 'email-alerts'
     email_configs:
       - to: 'admin@conectamais.pro'
         headers:
           Subject: '[ALERTA] {{ .GroupLabels.alertname }}'
 
-# Regras de inibição (silenciar alerts menos importantes)
 inhibit_rules:
-  # Se há um critical, suprime warnings do mesmo alertname
   - source_match:
       severity: 'critical'
     target_match:
       severity: 'warning'
     equal: ['alertname', 'job']
-
-  # Se há um down, suprime high latency do mesmo job
   - source_match:
       alertname: 'InstanceDown'
     target_match:

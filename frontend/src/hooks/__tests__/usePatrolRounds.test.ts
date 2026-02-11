@@ -350,5 +350,223 @@ describe('usePatrolRounds', () => {
       expect(typeof result.current.createPatrolRound).toBe('function');
       expect(typeof result.current.startRound).toBe('function');
     });
+
+    // ============================================
+    // TESTES DE BRANCHES (Error Handling)
+    // ============================================
+
+    it('deve retornar mensagem padrão quando erro não é Error instance em create', async () => {
+      mockMutateAsync.mockRejectedValueOnce('erro string');
+
+      const { result } = renderHook(() => usePatrolRoundMutations(), { wrapper });
+
+      await act(async () => {
+        await result.current.createPatrolRound({} as any);
+      });
+
+      await waitFor(() => {
+        expect(result.current.error).toBe('Erro ao criar ronda');
+      });
+    });
+
+    it('deve retornar mensagem padrão quando erro não é Error instance em update', async () => {
+      mockMutateAsync.mockRejectedValueOnce('erro string');
+
+      const { result } = renderHook(() => usePatrolRoundMutations(), { wrapper });
+
+      await act(async () => {
+        await result.current.updatePatrolRound('1', {} as any);
+      });
+
+      await waitFor(() => {
+        expect(result.current.error).toBe('Erro ao atualizar ronda');
+      });
+    });
+
+    it('deve retornar mensagem padrão quando erro não é Error instance em delete', async () => {
+      mockMutateAsync.mockRejectedValueOnce('erro string');
+
+      const { result } = renderHook(() => usePatrolRoundMutations(), { wrapper });
+
+      let deleted: boolean;
+      await act(async () => {
+        deleted = await result.current.deletePatrolRound('1');
+      });
+
+      await waitFor(() => {
+        expect(deleted).toBe(false);
+        expect(result.current.error).toBe('Erro ao deletar ronda');
+      });
+    });
+
+    it('deve retornar mensagem padrão quando erro não é Error instance em start', async () => {
+      mockMutateAsync.mockRejectedValueOnce('erro string');
+
+      const { result } = renderHook(() => usePatrolRoundMutations(), { wrapper });
+
+      await act(async () => {
+        await result.current.startRound('1');
+      });
+
+      await waitFor(() => {
+        expect(result.current.error).toBe('Erro ao iniciar ronda');
+      });
+    });
+
+    it('deve retornar mensagem padrão quando erro não é Error instance em pause', async () => {
+      mockMutateAsync.mockRejectedValueOnce('erro string');
+
+      const { result } = renderHook(() => usePatrolRoundMutations(), { wrapper });
+
+      await act(async () => {
+        await result.current.pauseRound('1');
+      });
+
+      await waitFor(() => {
+        expect(result.current.error).toBe('Erro ao pausar ronda');
+      });
+    });
+
+    it('deve retornar mensagem padrão quando erro não é Error instance em resume', async () => {
+      mockMutateAsync.mockRejectedValueOnce('erro string');
+
+      const { result } = renderHook(() => usePatrolRoundMutations(), { wrapper });
+
+      await act(async () => {
+        await result.current.resumeRound('1');
+      });
+
+      await waitFor(() => {
+        expect(result.current.error).toBe('Erro ao retomar ronda');
+      });
+    });
+
+    it('deve retornar mensagem padrão quando erro não é Error instance em complete', async () => {
+      mockMutateAsync.mockRejectedValueOnce('erro string');
+
+      const { result } = renderHook(() => usePatrolRoundMutations(), { wrapper });
+
+      await act(async () => {
+        await result.current.completeRound('1');
+      });
+
+      await waitFor(() => {
+        expect(result.current.error).toBe('Erro ao concluir ronda');
+      });
+    });
+
+    it('deve retornar mensagem padrão quando erro não é Error instance em cancel', async () => {
+      mockMutateAsync.mockRejectedValueOnce('erro string');
+
+      const { result } = renderHook(() => usePatrolRoundMutations(), { wrapper });
+
+      await act(async () => {
+        await result.current.cancelRound('1');
+      });
+
+      await waitFor(() => {
+        expect(result.current.error).toBe('Erro ao cancelar ronda');
+      });
+    });
+
+    it('deve retornar mensagem padrão quando erro não é Error instance em addCheckpoint', async () => {
+      mockMutateAsync.mockRejectedValueOnce('erro string');
+
+      const { result } = renderHook(() => usePatrolRoundMutations(), { wrapper });
+
+      await act(async () => {
+        await result.current.addCheckpoint('1', {} as any);
+      });
+
+      await waitFor(() => {
+        expect(result.current.error).toBe('Erro ao adicionar checkpoint');
+      });
+    });
+
+    it('deve chamar cancelar sem reason quando reason é undefined', async () => {
+      mockMutateAsync.mockResolvedValueOnce({ id: '1', status: 'cancelled' });
+
+      const { result } = renderHook(() => usePatrolRoundMutations(), { wrapper });
+
+      await act(async () => {
+        await result.current.cancelRound('1');
+      });
+
+      expect(mockMutateAsync).toHaveBeenCalledWith({
+        roundId: '1',
+        params: undefined,
+      });
+    });
+
+    it('deve chamar cancelar com reason quando reason é fornecido', async () => {
+      mockMutateAsync.mockResolvedValueOnce({ id: '1', status: 'cancelled' });
+
+      const { result } = renderHook(() => usePatrolRoundMutations(), { wrapper });
+
+      await act(async () => {
+        await result.current.cancelRound('1', 'Motivo do cancelamento');
+      });
+
+      expect(mockMutateAsync).toHaveBeenCalledWith({
+        roundId: '1',
+        params: { reason: 'Motivo do cancelamento' },
+      });
+    });
+
+    it('deve chamar startRound sem data quando data é undefined', async () => {
+      mockMutateAsync.mockResolvedValueOnce({ id: '1', status: 'in_progress' });
+
+      const { result } = renderHook(() => usePatrolRoundMutations(), { wrapper });
+
+      await act(async () => {
+        await result.current.startRound('1');
+      });
+
+      expect(mockMutateAsync).toHaveBeenCalledWith({
+        roundId: '1',
+        data: null,
+      });
+    });
+
+    it('deve chamar startRound com data quando data é fornecida', async () => {
+      mockMutateAsync.mockResolvedValueOnce({ id: '1', status: 'in_progress' });
+
+      const { result } = renderHook(() => usePatrolRoundMutations(), { wrapper });
+
+      await act(async () => {
+        await result.current.startRound('1', { latitude: -23.5, longitude: -46.6 });
+      });
+
+      expect(mockMutateAsync).toHaveBeenCalledWith({
+        roundId: '1',
+        data: { latitude: -23.5, longitude: -46.6 },
+      });
+    });
+
+    it('deve chamar completeRound sem data quando data é undefined', async () => {
+      mockMutateAsync.mockResolvedValueOnce({ id: '1', status: 'completed' });
+
+      const { result } = renderHook(() => usePatrolRoundMutations(), { wrapper });
+
+      await act(async () => {
+        await result.current.completeRound('1');
+      });
+
+      expect(mockMutateAsync).toHaveBeenCalledWith({
+        roundId: '1',
+        data: null,
+      });
+    });
+  });
+
+  // ============================================
+  // TESTES DE BRANCHES (usePatrolRounds error)
+  // ============================================
+  describe('usePatrolRounds - Error Branches', () => {
+    it('deve retornar null para error quando não há erro', () => {
+      const { result } = renderHook(() => usePatrolRounds(), { wrapper });
+
+      expect(result.current.error).toBeNull();
+    });
   });
 });
