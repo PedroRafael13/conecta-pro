@@ -36,7 +36,7 @@ cd "$PROJECT_DIR"
 if [ ! -f ".env" ]; then
   error ".env não encontrado em $PROJECT_DIR"
 fi
-source .env 2>/dev/null || error "Falha ao carregar .env"
+eval "$(grep -E '^(POSTGRES_PASSWORD|JWT_SECRET_KEY|DISCORD_WEBHOOK)=' .env)" 2>/dev/null || error "Falha ao carregar .env"
 [ -n "${POSTGRES_PASSWORD:-}" ] || error "POSTGRES_PASSWORD não definido"
 [ -n "${JWT_SECRET_KEY:-}" ] || error "JWT_SECRET_KEY não definido"
 

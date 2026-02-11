@@ -13,9 +13,12 @@ BACKUP_FILE="$BACKUP_DIR/backup_$DATE.sql.gz"
 LOG_DIR="$PROJECT_DIR/logs"
 RETENTION_DAYS=30
 
-# Carregar variáveis do .env
+# Carregar variáveis do .env (set +e para tolerar linhas com espaços)
 if [ -f "$PROJECT_DIR/.env" ]; then
-  source "$PROJECT_DIR/.env"
+  set +e
+  # Exportar apenas variáveis necessárias, ignorando linhas problemáticas
+  eval "$(grep -E '^(POSTGRES_USER|POSTGRES_DB|POSTGRES_PASSWORD|S3_BACKUP_BUCKET)=' "$PROJECT_DIR/.env")"
+  set -e
 else
   echo "ERRO: .env não encontrado em $PROJECT_DIR"
   exit 1
