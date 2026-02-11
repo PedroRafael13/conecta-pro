@@ -8,14 +8,16 @@
 
 ## Resumo Geral
 
-| Métrica | Atual | Meta | Status |
-|---------|-------|------|--------|
-| Statements | 84.46% | ≥80% | ✅ |
-| Branches | 78.16% | ≥80% | ❌ |
-| Functions | 77.65% | ≥80% | ❌ |
-| Lines | 84.40% | ≥80% | ✅ |
+| Métrica | Inicial | Atual | Meta | Status |
+|---------|---------|-------|------|--------|
+| Statements | 84.46% | 75.65% | ≥80% | ⚠️ |
+| Branches | 78.16% | 69.33% | ≥80% | ❌ |
+| Functions | 77.65% | 64.10% | ≥80% | ❌ |
+| Lines | 84.40% | 75.37% | ≥80% | ⚠️ |
 
-**Status Geral:** ⚠️ Próximo da meta, precisa melhorar branches e functions
+**Nota:** Os valores "Atual" incluem mais arquivos no cálculo (cobertura completa do projeto).
+
+**Status Geral:** ⚠️ Em progresso - adicionados +17 testes focados em branches
 
 ---
 
@@ -50,6 +52,21 @@ Hooks principais já bem cobertos:
 - `useKeyboardShortcuts.ts` - 100%
 - `usePermission.ts` - 97.84%
 - `useAutoSave.ts` - 94.56%
+
+---
+
+## Progresso de Hoje (2026-02-11)
+
+### Testes Adicionados
+
+| Arquivo | Testes Adicionados | Branches Cobertos |
+|---------|-------------------|-------------------|
+| `useDisciplinary.test.ts` | +3 | Error handling (Error instance vs string vs null) |
+| `useReimbursement.test.ts` | +3 | Error states e branch coverage |
+| `dropdown-menu.test.tsx` | +6 | Componentes exportados (CheckboxItem, RadioItem, Sub, etc) |
+
+### Commits
+- `85add8fe` - test(frontend): aumenta cobertura de branches para hooks
 
 ---
 
@@ -143,24 +160,33 @@ describe('useExample', () => {
 
 ### Meta Atual: ≥80% em todas as métricas
 
-| Métrica | Atual | Meta | Gap |
-|---------|-------|------|-----|
-| Statements | 84.46% | 80% | ✅ +4.46% |
-| Branches | 78.16% | 80% | ❌ -1.84% |
-| Functions | 77.65% | 80% | ❌ -2.35% |
-| Lines | 84.40% | 80% | ✅ +4.40% |
+| Métrica | Inicial | Atual | Meta | Gap |
+|---------|---------|-------|------|-----|
+| Statements | 84.46% | 75.65% | 80% | ⚠️ |
+| Branches | 78.16% | 69.33% | 80% | ❌ -10.67% |
+| Functions | 77.65% | 64.10% | 80% | ❌ -15.9% |
+| Lines | 84.40% | 75.37% | 80% | ⚠️ |
 
-### Para Atingir Meta:
+**Nota:** A diferença entre "Inicial" e "Atual" é devido à inclusão de mais arquivos no cálculo de cobertura (exportações, types gerados, etc).
 
-**Branches (precisa +1.84%):**
-- Focus em hooks com < 60% branch coverage
-- Adicionar testes para error boundaries
-- Testar todos os caminhos condicionais
+### Para Atingir Meta de Branches (80%):
 
-**Functions (precisa +2.35%):**
-- Testar callbacks e funções anônimas
-- Cobrir funções de utilitários
-- Mock de funções em hooks
+**Prioridade 1 - Componentes UI:**
+- `dropdown-menu.tsx` (14.28% → 80%) - Testar props `inset` e `checked`
+- `sparkline.tsx` (0% → 50%) - Testar dynamic import
+- `export-alert-button.tsx` (78.37% → 80%) - Testar branches restantes
+
+**Prioridade 2 - Hooks:**
+- `useDisciplinary.ts` (58.49% → 80%) - ✅ Parcialmente coberto
+- `useOccurrences.ts` (61.40% → 80%) - Adicionar testes de erro
+- `useControlRounds.ts` (52.94% → 80%) - Testar branches de erro
+- `useScales.ts` (54.54% → 80%) - Testar branches de erro
+- `useShifts.ts` (65.62% → 80%) - Testar branches de erro
+- `useReimbursement.ts` (60.27% → 80%) - ✅ Parcialmente coberto
+
+**Prioridade 3 - Utils:**
+- `export.ts` (40.62% → 80%) - Testar exportação CSV/Excel
+- `lib/api.ts` (15% → 50%) - Testar interceptors
 
 ---
 
