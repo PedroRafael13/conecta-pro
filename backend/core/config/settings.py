@@ -86,6 +86,15 @@ class Settings(BaseSettings):
     # Monitoring
     grafana_password: str = Field(default="")
 
+    # SMTP / Email
+    SMTP_HOST: str = Field(default="")
+    SMTP_PORT: int = Field(default=587)
+    SMTP_USERNAME: str = Field(default="")
+    SMTP_PASSWORD: str = Field(default="")
+    SMTP_USE_TLS: bool = Field(default=True)
+    SMTP_FROM_EMAIL: str = Field(default="noreply@conectamais.pro")
+    SMTP_FROM_NAME: str = Field(default="Conecta PRO")
+
     # Encryption
     ENCRYPTION_KEY: str = Field(default="")
 

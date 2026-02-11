@@ -76,6 +76,14 @@ services:
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-https://erp.conectamais.pro/api/v1/auth/google/callback}
       FRONTEND_URL: ${FRONTEND_URL:-https://erp.conectamais.pro}
+      # SMTP / Email
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_USE_TLS: ${SMTP_USE_TLS:-true}
+      SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL:-noreply@conectamais.pro}
+      SMTP_FROM_NAME: ${SMTP_FROM_NAME:-Conecta PRO}
       MAPS_DEFAULT_CENTER_LAT: ${MAPS_DEFAULT_CENTER_LAT:-}
       MAPS_DEFAULT_CENTER_LNG: ${MAPS_DEFAULT_CENTER_LNG:-}
       # Bartolo AI - LLM Configuration

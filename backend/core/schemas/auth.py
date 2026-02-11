@@ -34,6 +34,19 @@ class TokenRefreshRequest(BaseModel):
     refresh_token: str = Field(..., description="Token de refresh")
 
 
+class ForgotPasswordRequest(BaseModel):
+    """Schema para solicitar reset de senha."""
+
+    email: EmailStr = Field(..., description="Email do usuário")
+
+
+class ResetPasswordRequest(BaseModel):
+    """Schema para redefinir senha com token."""
+
+    token: str = Field(..., description="Token de reset recebido por email")
+    new_password: str = Field(..., min_length=8, description="Nova senha (mínimo 8 caracteres)")
+
+
 # Aliases para compatibilidade
 Token = TokenResponse
 TokenRefresh = TokenRefreshRequest

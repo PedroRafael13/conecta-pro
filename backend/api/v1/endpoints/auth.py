@@ -3,7 +3,7 @@ Endpoints de autenticacao.
 """
 
 import secrets
-from datetime import datetime
+from datetime import datetime, timedelta
 from urllib.parse import urlencode
 
 import httpx
@@ -21,7 +21,7 @@ from core.database import get_db
 from core.logging import logger
 from core.models import User
 from core.rate_limit import limiter
-from core.schemas.auth import Token, TokenRefresh
+from core.schemas.auth import ForgotPasswordRequest, ResetPasswordRequest, Token, TokenRefresh
 from core.schemas.user import UserCreate, UserResponse
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -204,6 +204,111 @@ async def get_current_user_info(
 ) -> UserResponse:
     """Retorna informacoes do usuario atual."""
     return UserResponse.model_validate(current_user)
+
+
+# =============================================================================
+# Password Reset Endpoints
+# =============================================================================
+
+
+@router.post("/forgot-password", status_code=status.HTTP_200_OK)
+@limiter.limit("3/minute")
+async def forgot_password(
+    request: Request,
+    body: ForgotPasswordRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """Solicita reset de senha — envia email com token."""
+    # Sempre retorna 200 para nao vazar se email existe
+    result = await db.execute(select(User).where(User.email == body.email))
+    user = result.scalar_one_or_none()
+
+    if user and user.is_active:
+        # Gerar token de reset (JWT curto, 30 min)
+        from core.auth.jwt import create_access_token
+
+        reset_token = create_access_token(
+            subject=str(user.id),
+            extra_data={"type": "password_reset", "email": user.email},
+            expires_delta=timedelta(minutes=30),
+        )
+
+        # Salvar token no Redis para invalidacao unica
+        try:
+            from core.cache.redis import cache_set
+
+            await cache_set(f"password_reset:{reset_token}", str(user.id), ttl=1800)
+        except Exception as e:
+            logger.warning(f"Falha ao salvar reset token no Redis: {e}")
+
+        # Enviar email
+        from core.mailer import build_reset_password_email, send_email
+
+        reset_url = f"{FRONTEND_URL}/reset-password?token={reset_token}"
+        html = build_reset_password_email(user.name or user.email.split("@")[0], reset_url)
+        await send_email(user.email, "Redefinir senha — Conecta PRO", html)
+
+        logger.info(f"Reset de senha solicitado para: {user.email}")
+    else:
+        logger.info(f"Reset solicitado para email inexistente/inativo: {body.email}")
+
+    return {"message": "Se o email estiver cadastrado, você receberá as instruções de recuperação."}
+
+
+@router.post("/reset-password", status_code=status.HTTP_200_OK)
+@limiter.limit("5/minute")
+async def reset_password(
+    request: Request,
+    body: ResetPasswordRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """Redefine senha usando token recebido por email."""
+    from core.auth.jwt import decode_token
+    from core.cache.redis import cache_delete, cache_get
+
+    try:
+        payload = decode_token(body.token)
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Token inválido ou expirado",
+        )
+
+    if payload.get("type") != "password_reset":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Token inválido",
+        )
+
+    # Verificar uso unico via Redis
+    try:
+        stored = await cache_get(f"password_reset:{body.token}")
+        if not stored:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Token já utilizado ou expirado",
+            )
+        await cache_delete(f"password_reset:{body.token}")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.warning(f"Falha ao verificar reset token no Redis: {e}")
+
+    user_id = payload.get("sub")
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+
+    if not user or not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Usuário não encontrado",
+        )
+
+    user.password_hash = get_password_hash(body.new_password)
+    await db.commit()
+
+    logger.info(f"Senha redefinida com sucesso: {user.email}")
+    return {"message": "Senha redefinida com sucesso. Faça login com a nova senha."}
 
 
 # =============================================================================
