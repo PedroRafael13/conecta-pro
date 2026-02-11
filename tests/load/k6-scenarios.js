@@ -108,7 +108,7 @@ export function healthCheck() {
 export function loginFlow() {
   const payload = JSON.stringify({
     email: 'loadtest@conectamais.pro',
-    password: 'LoadTest2024!',
+    password: __ENV.LOAD_TEST_PASSWORD || 'LoadTest2024!',
   });
 
   const params = {

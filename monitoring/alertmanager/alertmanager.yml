@@ -2,6 +2,7 @@
 # ==============================================
 # Versão: v0.27.0
 # Configuração de roteamento e notificações de alertas
+# As URLs de webhook usam variáveis de ambiente para configuração flexível
 
 global:
   resolve_timeout: 5m
@@ -46,16 +47,18 @@ route:
 # Receptores de notificação
 receivers:
   # Webhook padrão (placeholder para Discord/Slack futuro)
+  # Configurável via variável de ambiente DISCORD_WEBHOOK
+  # Se vazia ou não definida, o AlertManager funciona mas não envia notificações
   - name: 'default-webhook'
     webhook_configs:
-      - url: 'http://host.docker.internal:9095/webhook'
+      - url: '${DISCORD_WEBHOOK:-http://host.docker.internal:9095/webhook}'
         send_resolved: true
         max_alerts: 10
 
   # Webhook para alertas críticos
   - name: 'critical-webhook'
     webhook_configs:
-      - url: 'http://host.docker.internal:9095/webhook/critical'
+      - url: '${DISCORD_WEBHOOK_CRITICAL:-http://host.docker.internal:9095/webhook/critical}'
         send_resolved: true
         max_alerts: 5
 
