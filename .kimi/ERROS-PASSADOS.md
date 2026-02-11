@@ -90,6 +90,16 @@
 **Causa raiz:** Não leu ou ignorou as instruções.
 **Lição:** Ler BACKLOG.md INTEIRO antes de executar qualquer tarefa. Cada instrução existe por uma razão.
 
+## Erro 16: useEffect deps com referência instável causa loop infinito
+**O que aconteceu:** `useLocalStorage` useEffect com `[key, initialValue]` — quando initialValue é `[]` ou `{}`, cada render cria nova referência → deps mudam → re-render → loop infinito → timeout nos testes.
+**Causa raiz:** Objetos/arrays como default param criam nova instância a cada render.
+**Lição:** Omitir initialValue dos deps + eslint-disable com comentário explicativo. Ou usar useRef para estabilizar.
+
+## Erro 17: Rodar `next build` em paralelo
+**O que aconteceu:** 3 terminais rodaram `next build` simultaneamente. Cache `.next/` corrompido.
+**Causa raiz:** Lock file do Next.js não suporta builds concorrentes.
+**Lição:** NUNCA rodar `next build` em mais de 1 terminal. Se corrompeu, deletar `.next/` e rebuildar.
+
 ---
 
 **Regra geral:** Se você está prestes a fazer algo parecido com qualquer erro acima, PARE e reconsidere.

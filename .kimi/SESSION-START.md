@@ -2,6 +2,21 @@
 
 **OBRIGATÓRIO:** Leia este arquivo INTEIRO antes de fazer QUALQUER coisa.
 
+## Estado: PLANO MESTRE 100% CONCLUÍDO (2026-02-10)
+
+O baseline atual é estável. Sua prioridade é NÃO regredir.
+
+### Baseline (não aceitar valores piores):
+- Pytest: 6287 passed, 0 failed
+- ESLint: 0 warnings, 0 errors
+- TypeScript: 0 errors
+- Vitest: 1985/1985 passed
+- Bandit: 0 High
+- Alembic: 1 head
+- Next.js build: OK
+
+---
+
 ## Passo 1: Contexto
 ```bash
 cat /opt/conecta-pro/.comms/HANDOFF.md
@@ -13,7 +28,7 @@ tail -20 /opt/conecta-pro/.comms/messages/claude-out.jsonl
 ```bash
 cat /opt/conecta-pro/.comms/BASELINE.json
 ```
-Estes são os números REAIS verificados pelo Claude. Sua meta é melhorá-los.
+Compare com os números acima. Se algo piorou, PARE e reporte.
 
 ## Passo 3: Estado do ambiente
 ```bash

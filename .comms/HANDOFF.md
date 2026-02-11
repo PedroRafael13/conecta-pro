@@ -1,70 +1,71 @@
 # HANDOFF — Estado Atual do Projeto
 
-**Última atualização:** 2026-02-09 21:30 UTC por Claude Opus 4.6
+**Última atualização:** 2026-02-10 por Claude Opus 4.6 (Auditor)
 **Branch:** feature/openclaw-v2
-**Último commit:** 1cacb1e5
+**Último commit:** 899c5ed6
 
 ---
 
-## IMPORTANTE: NOVO FRAMEWORK OPERACIONAL
+## PLANO MESTRE DE PRODUÇÃO — 100% CONCLUÍDO (2026-02-10)
 
-O Claude criou um framework operacional completo para você. **LEIA ANTES DE FAZER QUALQUER COISA:**
+Triple-verified por Claude, Kimi e Opus. Ver detalhes em:
+`/opt/conecta-pro/.comms/tasks/PLANO-MESTRE-PRODUCAO.md`
 
-1. `/opt/conecta-pro/.kimi/SESSION-START.md` — checklist de início (6 passos)
-2. `/opt/conecta-pro/.kimi/ENVIRONMENT.md` — ambiente, paths, comandos exatos
-3. `/opt/conecta-pro/.kimi/REGRAS-OPERACIONAIS.md` — 13 regras obrigatórias
-4. `/opt/conecta-pro/.kimi/ERROS-PASSADOS.md` — 12 erros que você cometeu antes
-5. `/opt/conecta-pro/.kimi/commands-reference.json` — comandos verificados
-6. `/opt/conecta-pro/.comms/BASELINE.json` — números reais do projeto
-
-**Skill nova:** `/verify` → roda `/opt/conecta-pro/scripts/verify-all.sh`
+### Métricas finais:
+- Pytest: 6287 passed, 0 failed | ESLint: 0 warnings | TypeScript: 0 errors
+- Vitest: 1985/1985 | Bandit: 0 High | Alembic: 1 head | Build: OK
 
 ---
 
-## Métricas Reais do Projeto (verificadas por Claude)
+## PRÓXIMO: PLANO DE DEPLOY PARA PRODUÇÃO
 
-| Métrica | Valor | Status |
-|---------|-------|--------|
-| Ruff | 0 erros | OK |
-| Pytest collection | 6468 coletados, 0 erros | OK |
-| Pytest run | 4689 passed, 1307 failed, 457 errors | 72.5% pass |
-| Alembic | 1 head | OK |
-| Bandit HIGH | 135 | PRECISA ATENÇÃO |
-| TypeScript | 0 erros | OK |
-| ESLint | 29 errors, 510 warnings | PRECISA FIX |
-| Orphaned | 31 arquivos em _orphaned/ | NÃO MOVER MAIS |
+**Plano completo:** `/opt/conecta-pro/.comms/tasks/PLANO-DEPLOY-PRODUCAO.md`
+**Status:** PLANEJADO — aguardando execução na próxima sessão
+
+### Distribuição de trabalho:
+
+| Fase | Descrição | Assignee | Deps | Status |
+|------|-----------|----------|------|--------|
+| 1 | Scripts deploy/rollback/health | Opus | — | PENDENTE |
+| 2 | Segurança & secrets | Opus | F1 | PENDENTE |
+| 3 | AlertManager & notificações | Kimi | — | PENDENTE |
+| 4 | Logrotate & manutenção | Kimi | — | PENDENTE |
+| 5 | Backup & DR test | Opus | F2 | PENDENTE |
+| 6 | Load testing (k6) | Kimi | — | PENDENTE |
+| 7 | DNS & SSL | Jordan | — | CONCLUÍDA (já live em erp.conectamais.pro) |
+| 8 | Deploy staging | Todos | F1-7 | PENDENTE |
+| 9 | Validação final (15 checks × 3) | Todos | F8 | PENDENTE |
+
+### Info Produção:
+- **URL:** https://erp.conectamais.pro (LIVE)
+- **DNS:** Configurado
+- **Google Accounts:** Configurado
+
+### Prioridade extra: Cobertura Frontend
+- Vitest coverage report
+- Identificar áreas sem cobertura
+- Aumentar cobertura para ≥80%
+
+### Paralelismo:
+- **Rodada 1:** Opus(F1) + Kimi(F3) — simultâneo
+- **Rodada 2:** Opus(F2) + Kimi(F4+coverage frontend) — simultâneo
+- **Rodada 3:** Opus(F5) + Kimi(F6) — simultâneo
+- **Rodada 4:** Todos(F8) → Todos(F9)
 
 ---
 
-## Causa-Raiz dos 1307 Failures (análise Claude)
+## Instruções por Agente
 
-| Prioridade | Problema | Impacto | Fix |
-|------------|----------|---------|-----|
-| **P0** | PushCampaign/PushNotification mapper collision | 1068 failures (82%) | Resolver conflito de modelo/tabela |
-| **P1** | Table `push_notifications` metadata duplicate | 94 failures | `extend_existing=True` ou deduplicar |
-| **P2** | Enums EN vs PT (ACTIVE→ATIVO, etc.) | 77+ failures | Corrigir nos testes |
-| **P3** | Fixture `async_client` não encontrada | 27 failures | Adicionar ao conftest |
-| **P4** | Pydantic schemas desatualizados | 46+ failures | Atualizar fields nos testes |
-
-**Resolver só P0 leva de 72.5% → ~89% pass rate.**
+- **Kimi:** Leia `/opt/conecta-pro/.comms/INSTRUCOES-KIMI-DEPLOY.md`
+- **Opus:** Leia `/opt/conecta-pro/.comms/INSTRUCOES-OPUS-DEPLOY.md`
+- **Claude:** Leia `/opt/conecta-pro/.comms/INSTRUCOES-CLAUDE-DEPLOY.md`
 
 ---
 
 ## O Que NÃO Fazer
 
-- NÃO mover testes para `_orphaned/`
-- NÃO deletar conftest.py ou configs
-- NÃO usar `next lint` (usar `npx eslint .`)
-- NÃO rodar pytest sem ativar venv
-- NÃO reportar números sem rodar `verify-all.sh`
-
----
-
-## Sessão Anterior (resumo)
-
-- Fases 1,2,4,6,7 do plano mestre: COMPLETAS
-- Collection errors: 159 → 0
-- Alembic: 12 → 1 head
-- Console.log: 38 → 0
-- ESLint: Claude corrigiu 383→0 (depois Kimi adicionou 29 em docs/e2e)
-- 12 commits no branch
+- NÃO toque no código da aplicação (backend/frontend) — só infraestrutura
+- NÃO edite `src/types/generated/` ou `src/api/**/generated/`
+- NÃO suba containers antes da Fase 8
+- NÃO rode load test antes dos containers estarem UP
+- NÃO quebre os testes (verificar com verify-all.sh se tocar em algo)

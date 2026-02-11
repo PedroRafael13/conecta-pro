@@ -1,0 +1,83 @@
+# AlertManager Configuration - ERP Conecta Mais
+# ==============================================
+# Versão: v0.27.0
+# Configuração de roteamento e notificações de alertas
+
+global:
+  resolve_timeout: 5m
+  smtp_smarthost: 'localhost:587'
+  smtp_from: 'alerts@conectamais.pro'
+
+# Templates para notificações
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+# Roteamento principal
+route:
+  receiver: 'default-webhook'
+  group_by: ['alertname', 'severity', 'job']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+
+  # Sub-rotas
+  routes:
+    # Alertas críticos → notificação imediata
+    - match:
+        severity: critical
+      receiver: 'critical-webhook'
+      repeat_interval: 1h
+      continue: true
+
+    # Alertas de warning → agrupados
+    - match:
+        severity: warning
+      receiver: 'default-webhook'
+      group_wait: 1m
+      repeat_interval: 8h
+
+    # Alertas de info → apenas log
+    - match:
+        severity: info
+      receiver: 'default-webhook'
+      group_wait: 5m
+      repeat_interval: 24h
+
+# Receptores de notificação
+receivers:
+  # Webhook padrão (placeholder para Discord/Slack futuro)
+  - name: 'default-webhook'
+    webhook_configs:
+      - url: 'http://host.docker.internal:9095/webhook'
+        send_resolved: true
+        max_alerts: 10
+
+  # Webhook para alertas críticos
+  - name: 'critical-webhook'
+    webhook_configs:
+      - url: 'http://host.docker.internal:9095/webhook/critical'
+        send_resolved: true
+        max_alerts: 5
+
+  # Email (opcional - desabilitado por padrão)
+  - name: 'email-alerts'
+    email_configs:
+      - to: 'admin@conectamais.pro'
+        headers:
+          Subject: '[ALERTA] {{ .GroupLabels.alertname }}'
+
+# Regras de inibição (silenciar alerts menos importantes)
+inhibit_rules:
+  # Se há um critical, suprime warnings do mesmo alertname
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'job']
+
+  # Se há um down, suprime high latency do mesmo job
+  - source_match:
+      alertname: 'InstanceDown'
+    target_match:
+      alertname: 'HighLatency'
+    equal: ['job']
