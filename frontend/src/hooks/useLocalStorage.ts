@@ -32,7 +32,9 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T 
     } catch (error) {
       console.warn(`Error reading localStorage key "${key}" on key change:`, error);
     }
-  }, [key, initialValue]);
+    // initialValue omitido intencionalmente — evita loop infinito com refs instáveis ([], {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
 
   // Função para atualizar o valor no localStorage e no estado
   const setValue = useCallback((value: T | ((val: T) => T)) => {
