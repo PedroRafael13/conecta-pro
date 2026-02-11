@@ -5,6 +5,7 @@ from decimal import Decimal
 from uuid import uuid4
 
 import pytest
+from freezegun import freeze_time
 
 from modules.financial.bi_dashboard.models.analytics_cache import (
     AnalyticsCache,
@@ -401,6 +402,7 @@ class TestScheduledReport:
         assert report.tipo == ReportType.KPI_SUMMARY
         assert report.formato == ReportFormat.PDF
 
+    @freeze_time("2026-01-15 10:00:00")
     def test_report_calculate_next_execution_daily(self):
         """Testa calculo de proxima execucao diaria."""
         report = ScheduledReport(
@@ -415,7 +417,7 @@ class TestScheduledReport:
             hora_execucao=time(8, 0),
         )
         next_exec = report.calculate_next_execution()
-        expected = datetime.utcnow().replace(hour=8, minute=0, second=0, microsecond=0) + timedelta(days=1)
+        expected = datetime(2026, 1, 16, 8, 0, 0)
         assert next_exec.date() == expected.date()
 
     def test_report_calculate_next_execution_weekly(self):

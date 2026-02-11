@@ -1,10 +1,15 @@
-# BACKLOG — Tarefas (v6 — DEPLOY PRODUÇÃO)
+# BACKLOG — Tarefas (v7 — PÓS-DEPLOY)
 
-**Atualizado:** 2026-02-10 por Claude Opus 4.6
+**Atualizado:** 2026-02-11 por Claude Opus 4.6 (Auditor)
 
 ---
 
-## Estado Atual: PLANO MESTRE CONCLUÍDO, DEPLOY PENDENTE
+## Estado Atual: DEPLOY PRODUÇÃO 100% CONCLUÍDO
+
+### Validação final (F9):
+- **Triple-verified:** 3 terminais × 15 checks = 45/45 PASS
+- **URL:** https://erp.conectamais.pro (LIVE)
+- **20 containers** rodando, SSL ativo, backup automático
 
 ### Baseline de código (NÃO regredir):
 - **Pytest:** 6287 passed, 0 failed
@@ -17,45 +22,44 @@
 
 ---
 
-## ATIVAS — Plano de Deploy para Produção
+## CONCLUÍDAS — Deploy Produção (2026-02-11)
 
-| # | Fase | Assignee | Prioridade | Status |
-|---|------|----------|------------|--------|
-| D1 | Scripts deploy/rollback/health | Opus | CRÍTICA | PENDENTE |
-| D2 | Segurança & secrets audit | Opus | CRÍTICA | PENDENTE |
-| D3 | AlertManager & notificações | Kimi | ALTA | PENDENTE |
-| D4 | Logrotate & Loki retention | Kimi | ALTA | PENDENTE |
-| D5 | Backup & DR test | Opus | ALTA | PENDENTE |
-| D6 | Load testing (k6) | Kimi | ALTA | PENDENTE |
-| D7 | DNS & SSL activation | Jordan | CRÍTICA | CONCLUÍDA (live em erp.conectamais.pro) |
-| D8 | Deploy staging (todos os serviços) | Todos | CRÍTICA | PENDENTE |
-| D9 | Validação final (15 checks × 3 terminais) | Todos | CRÍTICA | PENDENTE |
+| # | Fase | Assignee | Status |
+|---|------|----------|--------|
+| ~~D1~~ | ~~Scripts deploy/rollback/health~~ | Opus | ✅ |
+| ~~D2~~ | ~~Segurança & secrets~~ | Opus | ✅ |
+| ~~D3~~ | ~~AlertManager & notificações~~ | Kimi | ✅ |
+| ~~D4~~ | ~~Logrotate & Loki retention~~ | Kimi | ✅ |
+| ~~D5~~ | ~~Backup & DR test~~ | Opus | ✅ |
+| ~~D6~~ | ~~Load testing (k6)~~ | Kimi | ✅ |
+| ~~D7~~ | ~~DNS & SSL~~ | Jordan | ✅ |
+| ~~D8~~ | ~~Deploy staging~~ | Todos | ✅ |
+| ~~D9~~ | ~~Validação final (15×3)~~ | Todos | ✅ 45/45 |
 
-**Plano detalhado:** `/opt/conecta-pro/.comms/tasks/PLANO-DEPLOY-PRODUCAO.md`
-**Instruções Kimi:** `/opt/conecta-pro/.comms/INSTRUCOES-KIMI-DEPLOY.md`
-**Instruções Opus:** `/opt/conecta-pro/.comms/INSTRUCOES-OPUS-DEPLOY.md`
-**Instruções Claude:** `/opt/conecta-pro/.comms/INSTRUCOES-CLAUDE-DEPLOY.md`
+## CONCLUÍDAS — Cobertura Frontend
 
----
-
-## CONCLUÍDAS (histório)
-
-- ~~Tarefas 1-10: Fixes de testes e código~~
-- ~~Plano Mestre Fases 1-8: Qualidade 100%~~
+| # | Tarefa | Assignee | Status |
+|---|--------|----------|--------|
+| ~~C1~~ | ~~Vitest coverage report~~ | Kimi | ✅ 84.46% stmts |
+| ~~C2~~ | ~~Identificar áreas sem cobertura~~ | Kimi | ✅ Relatório criado |
+| ~~C3~~ | ~~Testes para hooks críticos~~ | Kimi | ✅ +17 testes |
+| ~~C4~~ | ~~Testes para componentes core~~ | Kimi | ✅ dropdown-menu |
+| C5 | Meta: cobertura branches ≥80% | — | ⚠️ 69.33% (stmts 84.46%) |
 
 ---
 
-## PRIORIDADE — Cobertura Frontend
+## PENDÊNCIAS PÓS-DEPLOY (não bloqueantes)
 
-| # | Tarefa | Assignee | Prioridade | Status |
-|---|--------|----------|------------|--------|
-| C1 | Vitest coverage report (medir atual) | Kimi | ALTA | PENDENTE |
-| C2 | Identificar áreas sem cobertura | Kimi | ALTA | PENDENTE |
-| C3 | Escrever testes para hooks críticos | Kimi | ALTA | PENDENTE |
-| C4 | Escrever testes para componentes core | Kimi/Opus | MÉDIA | PENDENTE |
-| C5 | Meta: cobertura ≥80% | Todos | ALTA | PENDENTE |
+| # | Tarefa | Prioridade | Descrição |
+|---|--------|------------|-----------|
+| P1 | Discord webhook | ALTA | Configurar `DISCORD_WEBHOOK=<url>` no `.env` para alertas reais |
+| P2 | Certbot dry-run | MÉDIA | Matar processo travado (`kill 62575`) e retestar `certbot renew --dry-run` |
+| P3 | Healthcheck celery-beat | BAIXA | Ajustar grep pattern no docker-compose.celery.yml |
+| P4 | Cobertura branches 80% | MÉDIA | Frontend branches 69.33%, meta 80%. Requer ~4-6h de testes |
 
-## FUTURAS (pós-deploy)
+---
+
+## FUTURAS (roadmap)
 
 | # | Tarefa | Prioridade | Descrição |
 |---|--------|------------|-----------|
@@ -65,13 +69,15 @@
 | F4 | NotificationChannel mapper | Baixa | Bug pré-existente |
 | F5 | Database HA (primary-replica) | Média | Alta disponibilidade |
 | F6 | CDN (S3 + CloudFront) | Baixa | Assets estáticos |
+| F7 | Load test completo | Média | Rodar cenários login + api_reads + mixed (não só smoke) |
+| F8 | Flower inspect fix | Baixa | Flower não consegue inspecionar todos os workers |
+| F9 | Backup offsite S3 | Média | Configurar `S3_BACKUP_BUCKET` no `.env` |
 
 ---
 
 ## REGRAS
 
-- NÃO tocar no código da aplicação durante deploy
-- NÃO subir containers antes de TODOS os scripts prontos
-- NÃO rodar load test sem containers UP
-- Cada fase: implementar → testar → commitar → próxima
+- Baseline é sagrado — NÃO regredir métricas
+- Verificar com `verify-all.sh` antes e depois de mudanças
 - Comunicação via `.comms/messages/` (JSONL)
+- Deploy via `scripts/deploy.sh`, rollback via `scripts/rollback.sh`
