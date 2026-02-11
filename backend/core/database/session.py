@@ -3,7 +3,7 @@ Gerenciamento de sessões do banco de dados.
 """
 
 from collections.abc import AsyncGenerator
-from contextlib import contextmanager
+from contextlib import asynccontextmanager, contextmanager
 
 from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
@@ -63,6 +63,10 @@ async def init_db() -> None:
 async def close_db() -> None:
     """Fecha conexões do banco de dados."""
     await engine.dispose()
+
+
+# Alias para Celery async tasks
+get_async_db_session = asynccontextmanager(get_db)
 
 
 # ============================================================================

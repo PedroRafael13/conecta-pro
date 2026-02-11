@@ -6,7 +6,8 @@ import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-import jwt
+from jose import jwt
+from jose.exceptions import JWTError
 
 from core.config import settings
 
@@ -108,7 +109,7 @@ def decode_token(token: str) -> dict[str, Any]:
             algorithms=[settings.jwt_algorithm],
         )
         return payload
-    except jwt.InvalidTokenError as e:
+    except JWTError as e:
         raise TokenError(f"Token inválido: {str(e)}") from e
 
 
