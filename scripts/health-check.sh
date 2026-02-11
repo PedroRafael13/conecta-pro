@@ -24,10 +24,12 @@ check "PostgreSQL"     docker exec conecta-pro-postgres pg_isready -U postgres
 check "Redis"          docker exec conecta-pro-redis redis-cli ping
 check "Prometheus"     curl -sf http://localhost:9090/-/ready
 check "Grafana"        curl -sf -o /dev/null http://localhost:3000/api/health
+check "AlertManager"   curl -sf http://localhost:9093/-/ready
+check "Loki"           curl -sf http://localhost:3100/ready
 
 echo ""
 if [ $ERRORS -eq 0 ]; then
-  echo "Todos os 6 serviços saudáveis."
+  echo "Todos os 8 serviços saudáveis."
   exit 0
 else
   echo "$ERRORS serviço(s) com problema."
