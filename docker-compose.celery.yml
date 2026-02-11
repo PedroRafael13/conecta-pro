@@ -13,10 +13,10 @@ services:
     restart: unless-stopped
     command: celery -A celery_app worker --hostname=priority@%h --queues=gov.esocial,gov.fgts --concurrency=2 --loglevel=INFO
     environment:
-      CELERY_BROKER_URL: redis://redis:6379/0
-      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD:-conecta_redis_2024}@redis:6379/0
+      CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD:-conecta_redis_2024}@redis:6379/0
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-conecta_pro}
-      REDIS_URL: redis://redis:6379/1
+      REDIS_URL: redis://:${REDIS_PASSWORD:-conecta_redis_2024}@redis:6379/1
       LOG_LEVEL: INFO
     depends_on:
       redis:
@@ -44,10 +44,10 @@ services:
     restart: unless-stopped
     command: celery -A celery_app worker --hostname=sefaz@%h --queues=gov.sefaz.nfe,gov.sefaz.cte,gov.sefaz.mdfe --concurrency=3 --loglevel=INFO
     environment:
-      CELERY_BROKER_URL: redis://redis:6379/0
-      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD:-conecta_redis_2024}@redis:6379/0
+      CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD:-conecta_redis_2024}@redis:6379/0
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-conecta_pro}
-      REDIS_URL: redis://redis:6379/1
+      REDIS_URL: redis://:${REDIS_PASSWORD:-conecta_redis_2024}@redis:6379/1
       LOG_LEVEL: INFO
     depends_on:
       redis:
@@ -75,10 +75,10 @@ services:
     restart: unless-stopped
     command: celery -A celery_app worker --hostname=nfse@%h --queues=gov.nfse --concurrency=2 --loglevel=INFO
     environment:
-      CELERY_BROKER_URL: redis://redis:6379/0
-      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD:-conecta_redis_2024}@redis:6379/0
+      CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD:-conecta_redis_2024}@redis:6379/0
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-conecta_pro}
-      REDIS_URL: redis://redis:6379/1
+      REDIS_URL: redis://:${REDIS_PASSWORD:-conecta_redis_2024}@redis:6379/1
       LOG_LEVEL: INFO
     depends_on:
       redis:
@@ -106,10 +106,10 @@ services:
     restart: unless-stopped
     command: celery -A celery_app worker --hostname=batch@%h --queues=gov.batch --concurrency=2 --loglevel=INFO
     environment:
-      CELERY_BROKER_URL: redis://redis:6379/0
-      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD:-conecta_redis_2024}@redis:6379/0
+      CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD:-conecta_redis_2024}@redis:6379/0
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-conecta_pro}
-      REDIS_URL: redis://redis:6379/1
+      REDIS_URL: redis://:${REDIS_PASSWORD:-conecta_redis_2024}@redis:6379/1
       LOG_LEVEL: INFO
     depends_on:
       redis:
@@ -137,10 +137,10 @@ services:
     restart: unless-stopped
     command: celery -A celery_app worker --hostname=integrations@%h --queues=integrations,webhooks,maintenance --concurrency=2 --loglevel=INFO
     environment:
-      CELERY_BROKER_URL: redis://redis:6379/0
-      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD:-conecta_redis_2024}@redis:6379/0
+      CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD:-conecta_redis_2024}@redis:6379/0
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-conecta_pro}
-      REDIS_URL: redis://redis:6379/1
+      REDIS_URL: redis://:${REDIS_PASSWORD:-conecta_redis_2024}@redis:6379/1
       LOG_LEVEL: INFO
       SOLIDES_API_TOKEN: ${SOLIDES_API_TOKEN}
       SOLIDES_WEBHOOK_SECRET: ${SOLIDES_WEBHOOK_SECRET}
@@ -170,10 +170,10 @@ services:
     restart: unless-stopped
     command: celery -A celery_app worker --hostname=operacional@%h --queues=operacional --concurrency=2 --loglevel=INFO
     environment:
-      CELERY_BROKER_URL: redis://redis:6379/0
-      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD:-conecta_redis_2024}@redis:6379/0
+      CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD:-conecta_redis_2024}@redis:6379/0
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-conecta_pro}
-      REDIS_URL: redis://redis:6379/1
+      REDIS_URL: redis://:${REDIS_PASSWORD:-conecta_redis_2024}@redis:6379/1
       LOG_LEVEL: INFO
     depends_on:
       redis:
@@ -201,10 +201,10 @@ services:
     command: celery -A celery_app beat --loglevel=INFO --schedule=/var/run/celery/celerybeat-schedule
     user: root
     environment:
-      CELERY_BROKER_URL: redis://redis:6379/0
-      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD:-conecta_redis_2024}@redis:6379/0
+      CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD:-conecta_redis_2024}@redis:6379/0
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-conecta_pro}
-      REDIS_URL: redis://redis:6379/1
+      REDIS_URL: redis://:${REDIS_PASSWORD:-conecta_redis_2024}@redis:6379/1
       LOG_LEVEL: INFO
       C_FORCE_ROOT: "true"
     depends_on:
@@ -233,8 +233,8 @@ services:
     restart: unless-stopped
     command: celery -A celery_app flower --port=5555 --basic_auth=${FLOWER_USER:-admin}:${FLOWER_PASSWORD:-admin123}
     environment:
-      CELERY_BROKER_URL: redis://redis:6379/0
-      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD:-conecta_redis_2024}@redis:6379/0
+      CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD:-conecta_redis_2024}@redis:6379/0
     ports:
       - "5555:5555"
     depends_on:
