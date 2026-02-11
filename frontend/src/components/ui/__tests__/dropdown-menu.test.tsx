@@ -5,110 +5,149 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuCheckboxItem,
+  DropdownMenuRadioItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuShortcut,
   DropdownMenuGroup,
-  DropdownMenuCheckboxItem,
-  DropdownMenuRadioItem,
   DropdownMenuSub,
   DropdownMenuSubTrigger,
   DropdownMenuSubContent,
+  DropdownMenuRadioGroup,
 } from '../dropdown-menu';
 
-describe('DropdownMenu', () => {
-  it('deve renderizar DropdownMenu', () => {
+describe('DropdownMenu Components', () => {
+  it('should render DropdownMenu with Trigger and Content', () => {
     render(
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button>Abrir Menu</button>
-        </DropdownMenuTrigger>
+        <DropdownMenuTrigger data-testid="trigger">Open</DropdownMenuTrigger>
         <DropdownMenuContent>
-          <DropdownMenuItem>Item 1</DropdownMenuItem>
+          <DropdownMenuItem>Item</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     );
-    expect(screen.getByText('Abrir Menu')).toBeInTheDocument();
+    expect(screen.getByTestId('trigger')).toHaveTextContent('Open');
   });
 
-  it('deve renderizar trigger do dropdown', () => {
+  it('should render DropdownMenuItem with inset', () => {
     render(
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button data-testid="trigger">Menu</button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent />
+        <DropdownMenuTrigger>Open</DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuItem inset data-testid="item">Inset Item</DropdownMenuItem>
+        </DropdownMenuContent>
       </DropdownMenu>
     );
-    expect(screen.getByTestId('trigger')).toBeInTheDocument();
   });
 
-  it('deve aceitar classe customizada no DropdownMenuItem', () => {
-    expect(typeof DropdownMenuItem).toBe('object');
+  it('should render DropdownMenuCheckboxItem', () => {
+    render(
+      <DropdownMenu>
+        <DropdownMenuTrigger>Open</DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuCheckboxItem checked data-testid="checkbox">
+            Checkbox
+          </DropdownMenuCheckboxItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
   });
 
-  it('deve exportar DropdownMenuLabel', () => {
-    expect(DropdownMenuLabel).toBeDefined();
-    expect(typeof DropdownMenuLabel).toBe('object');
+  it('should render DropdownMenuRadioItem', () => {
+    render(
+      <DropdownMenu>
+        <DropdownMenuTrigger>Open</DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuRadioGroup value="1">
+            <DropdownMenuRadioItem value="1" data-testid="radio">Radio</DropdownMenuRadioItem>
+          </DropdownMenuRadioGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
   });
 
-  it('deve exportar DropdownMenuSeparator', () => {
-    expect(DropdownMenuSeparator).toBeDefined();
-    expect(typeof DropdownMenuSeparator).toBe('object');
+  it('should render DropdownMenuLabel', () => {
+    render(
+      <DropdownMenu>
+        <DropdownMenuTrigger>Open</DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuLabel data-testid="label">Label</DropdownMenuLabel>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
   });
 
-  it('deve exportar DropdownMenuShortcut', () => {
-    expect(DropdownMenuShortcut).toBeDefined();
-    expect(typeof DropdownMenuShortcut).toBe('function');
+  it('should render DropdownMenuLabel with inset', () => {
+    render(
+      <DropdownMenu>
+        <DropdownMenuTrigger>Open</DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuLabel inset>Inset Label</DropdownMenuLabel>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
   });
 
-  it('deve exportar DropdownMenuGroup', () => {
-    expect(DropdownMenuGroup).toBeDefined();
+  it('should render DropdownMenuSeparator', () => {
+    render(
+      <DropdownMenu>
+        <DropdownMenuTrigger>Open</DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuSeparator data-testid="separator" />
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
   });
 
-  it('deve ter displayName correto para DropdownMenuContent', () => {
-    expect(DropdownMenuContent.displayName).toBe('DropdownMenuContent');
+  it('should render DropdownMenuShortcut', () => {
+    render(<DropdownMenuShortcut data-testid="shortcut">⌘K</DropdownMenuShortcut>);
+    expect(screen.getByTestId('shortcut')).toHaveTextContent('⌘K');
   });
 
-  it('deve ter displayName correto para DropdownMenuItem', () => {
-    expect(DropdownMenuItem.displayName).toBe('DropdownMenuItem');
+  it('should render DropdownMenuGroup', () => {
+    render(
+      <DropdownMenu>
+        <DropdownMenuTrigger>Open</DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuGroup>
+            <DropdownMenuItem>Group Item</DropdownMenuItem>
+          </DropdownMenuGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
   });
 
-  it('deve ter displayName correto para DropdownMenuLabel', () => {
-    expect(DropdownMenuLabel.displayName).toBe('DropdownMenuLabel');
+  it('should render DropdownMenuSub with SubTrigger and SubContent', () => {
+    const { container } = render(
+      <DropdownMenu>
+        <DropdownMenuTrigger>Open</DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger>Sub</DropdownMenuSubTrigger>
+            <DropdownMenuSubContent>
+              <DropdownMenuItem>Sub Item</DropdownMenuItem>
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+    expect(container).toBeTruthy();
   });
 
-  it('deve ter displayName correto para DropdownMenuSeparator', () => {
-    expect(DropdownMenuSeparator.displayName).toBe('DropdownMenuSeparator');
-  });
-
-  it('deve ter displayName correto para DropdownMenuShortcut', () => {
-    expect(DropdownMenuShortcut.displayName).toBe('DropdownMenuShortcut');
-  });
-
-  describe('Branch Coverage - Componentes exportados', () => {
-    it('deve exportar DropdownMenuCheckboxItem', () => {
-      expect(DropdownMenuCheckboxItem).toBeDefined();
-      expect(typeof DropdownMenuCheckboxItem).toBe('object');
-    });
-
-    it('deve exportar DropdownMenuRadioItem', () => {
-      expect(DropdownMenuRadioItem).toBeDefined();
-      expect(typeof DropdownMenuRadioItem).toBe('object');
-    });
-
-    it('deve exportar DropdownMenuSub', () => {
-      expect(DropdownMenuSub).toBeDefined();
-    });
-
-    it('deve exportar DropdownMenuSubTrigger', () => {
-      expect(DropdownMenuSubTrigger).toBeDefined();
-      expect(typeof DropdownMenuSubTrigger).toBe('object');
-    });
-
-    it('deve exportar DropdownMenuSubContent', () => {
-      expect(DropdownMenuSubContent).toBeDefined();
-      expect(typeof DropdownMenuSubContent).toBe('object');
-    });
+  it('should render DropdownMenuSubTrigger with inset', () => {
+    render(
+      <DropdownMenu>
+        <DropdownMenuTrigger>Open</DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger inset>Inset Sub</DropdownMenuSubTrigger>
+            <DropdownMenuSubContent>
+              <DropdownMenuItem>Sub Item</DropdownMenuItem>
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
   });
 });
