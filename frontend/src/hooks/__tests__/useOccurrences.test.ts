@@ -294,5 +294,47 @@ describe('useOccurrences', () => {
       expect(typeof result.current.createOccurrence).toBe('function');
       expect(typeof result.current.updateOccurrence).toBe('function');
     });
+
+    it('deve setar erro como string quando não é Error instance', async () => {
+      mockMutateAsync.mockRejectedValueOnce('erro string');
+
+      const { result } = renderHook(() => useOccurrenceMutations(), { wrapper });
+
+      await act(async () => {
+        await result.current.createOccurrence({ title: 'New' } as any);
+      });
+
+      await waitFor(() => {
+        expect(result.current.error).toBe('Erro ao criar ocorrência');
+      });
+    });
+  });
+
+  describe('Error States - Branch Coverage', () => {
+    it('deve setar erro como string quando não é Error instance em mutations', async () => {
+      mockMutateAsync.mockRejectedValueOnce('erro string');
+
+      const { result } = renderHook(() => useOccurrenceMutations(), { wrapper });
+
+      await act(async () => {
+        await result.current.createOccurrence({ title: 'New' } as any);
+      });
+
+      await waitFor(() => {
+        expect(result.current.error).toBe('Erro ao criar ocorrência');
+      });
+    });
+
+    it('deve retornar null para error quando não há erro', () => {
+      const { result } = renderHook(() => useOccurrences(), { wrapper });
+
+      expect(result.current.error).toBeNull();
+    });
+
+    it('deve retornar null para stats quando não há dados', () => {
+      const { result } = renderHook(() => useOccurrenceStats(), { wrapper });
+
+      expect(result.current.stats).not.toBeNull();
+    });
   });
 });
