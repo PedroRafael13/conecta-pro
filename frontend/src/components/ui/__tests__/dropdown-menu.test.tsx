@@ -9,6 +9,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuShortcut,
   DropdownMenuGroup,
+  DropdownMenuCheckboxItem,
+  DropdownMenuRadioItem,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
 } from '../dropdown-menu';
 
 describe('DropdownMenu', () => {
@@ -79,5 +84,31 @@ describe('DropdownMenu', () => {
 
   it('deve ter displayName correto para DropdownMenuShortcut', () => {
     expect(DropdownMenuShortcut.displayName).toBe('DropdownMenuShortcut');
+  });
+
+  describe('Branch Coverage - Componentes exportados', () => {
+    it('deve exportar DropdownMenuCheckboxItem', () => {
+      expect(DropdownMenuCheckboxItem).toBeDefined();
+      expect(typeof DropdownMenuCheckboxItem).toBe('object');
+    });
+
+    it('deve exportar DropdownMenuRadioItem', () => {
+      expect(DropdownMenuRadioItem).toBeDefined();
+      expect(typeof DropdownMenuRadioItem).toBe('object');
+    });
+
+    it('deve exportar DropdownMenuSub', () => {
+      expect(DropdownMenuSub).toBeDefined();
+    });
+
+    it('deve exportar DropdownMenuSubTrigger', () => {
+      expect(DropdownMenuSubTrigger).toBeDefined();
+      expect(typeof DropdownMenuSubTrigger).toBe('object');
+    });
+
+    it('deve exportar DropdownMenuSubContent', () => {
+      expect(DropdownMenuSubContent).toBeDefined();
+      expect(typeof DropdownMenuSubContent).toBe('object');
+    });
   });
 });

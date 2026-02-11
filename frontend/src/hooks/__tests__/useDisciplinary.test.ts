@@ -8,144 +8,153 @@ import {
   usePendingApprovals,
   useEmployeeDisciplinary,
 } from '../useDisciplinary';
+import { useDisciplinaryActions as useOrvalDisciplinaryActions } from '@/hooks/operacional/useDisciplinary';
 import type { DisciplinaryActionStatus, DisciplinaryActionType } from '@/types/disciplinary';
 import React from 'react';
 
 // Mocks
 const mockRefetch = vi.fn();
 
-vi.mock('@/hooks/operacional/useDisciplinary', () => ({
-  useDisciplinaryActions: vi.fn((params, options) => ({
-    data: options?.query?.enabled !== false ? {
-      items: [
-        { id: '1', employee_name: 'John', action_type: 'suspensao' },
-        { id: '2', employee_name: 'Jane', action_type: 'advertencia_verbal' },
-      ],
-      total: 2,
-      total_pages: 1,
-    } : undefined,
-    isLoading: false,
-    error: null,
-    refetch: mockRefetch,
-    isPending: false,
-    isLoadingError: false,
-    isRefetchError: false,
-    isSuccess: true,
-    status: 'success',
-    fetchStatus: 'idle',
-    isFetched: true,
-    isFetching: false,
-    isFetchedAfterMount: true,
-    isInitialLoading: false,
-    isPlaceholderData: false,
-    isStale: false,
-    isRefetching: false,
-    failureCount: 0,
-    failureReason: null,
-    errorUpdateCount: 0,
-    dataUpdatedAt: Date.now(),
-    errorUpdatedAt: 0,
-  })),
-  useDisciplinaryAction: vi.fn((id, options) => ({
-    data: options?.query?.enabled !== false ? { id, employee_name: 'John' } : undefined,
-    isLoading: false,
-    error: null,
-    refetch: mockRefetch,
-    isPending: false,
-    isLoadingError: false,
-    isRefetchError: false,
-    isSuccess: true,
-    status: 'success',
-    fetchStatus: 'idle',
-    isFetched: true,
-    isFetching: false,
-    isFetchedAfterMount: true,
-    isInitialLoading: false,
-    isPlaceholderData: false,
-    isStale: false,
-    isRefetching: false,
-    failureCount: 0,
-    failureReason: null,
-    errorUpdateCount: 0,
-    dataUpdatedAt: Date.now(),
-    errorUpdatedAt: 0,
-  })),
-  useDisciplinaryActionsByEmployee: vi.fn((id, options) => ({
-    data: options?.query?.enabled !== false ? [{ id: '1', action_type: 'advertencia_verbal' }] : [],
-    isLoading: false,
-    error: null,
-    refetch: mockRefetch,
-    isPending: false,
-    isLoadingError: false,
-    isRefetchError: false,
-    isSuccess: true,
-    status: 'success',
-    fetchStatus: 'idle',
-    isFetched: true,
-    isFetching: false,
-    isFetchedAfterMount: true,
-    isInitialLoading: false,
-    isPlaceholderData: false,
-    isStale: false,
-    isRefetching: false,
-    failureCount: 0,
-    failureReason: null,
-    errorUpdateCount: 0,
-    dataUpdatedAt: Date.now(),
-    errorUpdatedAt: 0,
-  })),
-  usePendingDisciplinaryApprovals: vi.fn(() => ({
-    data: [{ id: '1', status: 'pendente_aprovacao' }],
-    isLoading: false,
-    error: null,
-    refetch: mockRefetch,
-    isPending: false,
-    isLoadingError: false,
-    isRefetchError: false,
-    isSuccess: true,
-    status: 'success',
-    fetchStatus: 'idle',
-    isFetched: true,
-    isFetching: false,
-    isFetchedAfterMount: true,
-    isInitialLoading: false,
-    isPlaceholderData: false,
-    isStale: false,
-    isRefetching: false,
-    failureCount: 0,
-    failureReason: null,
-    errorUpdateCount: 0,
-    dataUpdatedAt: Date.now(),
-    errorUpdatedAt: 0,
-  })),
-}));
+vi.mock('@/hooks/operacional/useDisciplinary', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/hooks/operacional/useDisciplinary')>();
+  return {
+    ...actual,
+    useDisciplinaryActions: vi.fn((params, options) => ({
+      data: options?.query?.enabled !== false ? {
+        items: [
+          { id: '1', employee_name: 'John', action_type: 'suspensao' },
+          { id: '2', employee_name: 'Jane', action_type: 'advertencia_verbal' },
+        ],
+        total: 2,
+        total_pages: 1,
+      } : undefined,
+      isLoading: false,
+      error: null,
+      refetch: mockRefetch,
+      isPending: false,
+      isLoadingError: false,
+      isRefetchError: false,
+      isSuccess: true,
+      status: 'success',
+      fetchStatus: 'idle',
+      isFetched: true,
+      isFetching: false,
+      isFetchedAfterMount: true,
+      isInitialLoading: false,
+      isPlaceholderData: false,
+      isStale: false,
+      isRefetching: false,
+      failureCount: 0,
+      failureReason: null,
+      errorUpdateCount: 0,
+      dataUpdatedAt: Date.now(),
+      errorUpdatedAt: 0,
+    })),
+    useDisciplinaryAction: vi.fn((id, options) => ({
+      data: options?.query?.enabled !== false ? { id, employee_name: 'John' } : undefined,
+      isLoading: false,
+      error: null,
+      refetch: mockRefetch,
+      isPending: false,
+      isLoadingError: false,
+      isRefetchError: false,
+      isSuccess: true,
+      status: 'success',
+      fetchStatus: 'idle',
+      isFetched: true,
+      isFetching: false,
+      isFetchedAfterMount: true,
+      isInitialLoading: false,
+      isPlaceholderData: false,
+      isStale: false,
+      isRefetching: false,
+      failureCount: 0,
+      failureReason: null,
+      errorUpdateCount: 0,
+      dataUpdatedAt: Date.now(),
+      errorUpdatedAt: 0,
+    })),
+    useDisciplinaryActionsByEmployee: vi.fn((id, options) => ({
+      data: options?.query?.enabled !== false ? [{ id: '1', action_type: 'advertencia_verbal' }] : [],
+      isLoading: false,
+      error: null,
+      refetch: mockRefetch,
+      isPending: false,
+      isLoadingError: false,
+      isRefetchError: false,
+      isSuccess: true,
+      status: 'success',
+      fetchStatus: 'idle',
+      isFetched: true,
+      isFetching: false,
+      isFetchedAfterMount: true,
+      isInitialLoading: false,
+      isPlaceholderData: false,
+      isStale: false,
+      isRefetching: false,
+      failureCount: 0,
+      failureReason: null,
+      errorUpdateCount: 0,
+      dataUpdatedAt: Date.now(),
+      errorUpdatedAt: 0,
+    })),
+    usePendingDisciplinaryApprovals: vi.fn(() => ({
+      data: [{ id: '1', status: 'pendente_aprovacao' }],
+      isLoading: false,
+      error: null,
+      refetch: mockRefetch,
+      isPending: false,
+      isLoadingError: false,
+      isRefetchError: false,
+      isSuccess: true,
+      status: 'success',
+      fetchStatus: 'idle',
+      isFetched: true,
+      isFetching: false,
+      isFetchedAfterMount: true,
+      isInitialLoading: false,
+      isPlaceholderData: false,
+      isStale: false,
+      isRefetching: false,
+      failureCount: 0,
+      failureReason: null,
+      errorUpdateCount: 0,
+      dataUpdatedAt: Date.now(),
+      errorUpdatedAt: 0,
+    })),
+  };
+});
 
-vi.mock('@/types/generated/operacional/operacional-medidas-administrativas/operacional-medidas-administrativas', () => ({
-  useGetDisciplinaryStatsApiV1OperacionalMedidasAdministrativasEstatisticasGet: vi.fn(() => ({
-    data: { total: 10, by_type: { advertencia_verbal: 5 } },
-    isLoading: false,
-    error: null,
-    refetch: mockRefetch,
-    isPending: false,
-    isLoadingError: false,
-    isRefetchError: false,
-    isSuccess: true,
-    status: 'success',
-    fetchStatus: 'idle',
-    isFetched: true,
-    isFetching: false,
-    isFetchedAfterMount: true,
-    isInitialLoading: false,
-    isPlaceholderData: false,
-    isStale: false,
-    isRefetching: false,
-    failureCount: 0,
-    failureReason: null,
-    errorUpdateCount: 0,
-    dataUpdatedAt: Date.now(),
-    errorUpdatedAt: 0,
-  })),
-}));
+vi.mock('@/types/generated/operacional/operacional-medidas-administrativas/operacional-medidas-administrativas', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/types/generated/operacional/operacional-medidas-administrativas/operacional-medidas-administrativas')>();
+  return {
+    ...actual,
+    useGetDisciplinaryStatsApiV1OperacionalMedidasAdministrativasEstatisticasGet: vi.fn(() => ({
+      data: { total: 10, by_type: { advertencia_verbal: 5 } },
+      isLoading: false,
+      error: null,
+      refetch: mockRefetch,
+      isPending: false,
+      isLoadingError: false,
+      isRefetchError: false,
+      isSuccess: true,
+      status: 'success',
+      fetchStatus: 'idle',
+      isFetched: true,
+      isFetching: false,
+      isFetchedAfterMount: true,
+      isInitialLoading: false,
+      isPlaceholderData: false,
+      isStale: false,
+      isRefetching: false,
+      failureCount: 0,
+      failureReason: null,
+      errorUpdateCount: 0,
+      dataUpdatedAt: Date.now(),
+      errorUpdatedAt: 0,
+    })),
+  };
+});
 
 describe('useDisciplinary', () => {
   let queryClient: QueryClient;
@@ -320,6 +329,101 @@ describe('useDisciplinary', () => {
       expect(result.current).toHaveProperty('actions');
       expect(result.current).toHaveProperty('error');
       expect(Array.isArray(result.current.actions)).toBe(true);
+    });
+  });
+
+  describe('Error States - Branch Coverage', () => {
+    it('deve retornar mensagem de erro quando error é Error instance', () => {
+      vi.mocked(useOrvalDisciplinaryActions).mockImplementationOnce(() => ({
+        data: undefined,
+        isLoading: false,
+        error: new Error('Erro de conexão'),
+        refetch: mockRefetch,
+        isPending: false,
+        isLoadingError: true,
+        isRefetchError: false,
+        isSuccess: false,
+        status: 'error',
+        fetchStatus: 'idle',
+        isFetched: true,
+        isFetching: false,
+        isFetchedAfterMount: true,
+        isInitialLoading: false,
+        isPlaceholderData: false,
+        isStale: false,
+        isRefetching: false,
+        failureCount: 1,
+        failureReason: new Error('Erro de conexão'),
+        errorUpdateCount: 1,
+        dataUpdatedAt: 0,
+        errorUpdatedAt: Date.now(),
+      }));
+
+      const { result } = renderHook(() => useDisciplinary(), { wrapper });
+
+      expect(result.current.error).toBe('Erro de conexão');
+    });
+
+    it('deve retornar mensagem padrão quando error não é Error instance', () => {
+      vi.mocked(useOrvalDisciplinaryActions).mockImplementationOnce(() => ({
+        data: undefined,
+        isLoading: false,
+        error: 'string de erro',
+        refetch: mockRefetch,
+        isPending: false,
+        isLoadingError: true,
+        isRefetchError: false,
+        isSuccess: false,
+        status: 'error',
+        fetchStatus: 'idle',
+        isFetched: true,
+        isFetching: false,
+        isFetchedAfterMount: true,
+        isInitialLoading: false,
+        isPlaceholderData: false,
+        isStale: false,
+        isRefetching: false,
+        failureCount: 1,
+        failureReason: 'string de erro',
+        errorUpdateCount: 1,
+        dataUpdatedAt: 0,
+        errorUpdatedAt: Date.now(),
+      }));
+
+      const { result } = renderHook(() => useDisciplinary(), { wrapper });
+
+      expect(result.current.error).toBe('Erro ao carregar medidas');
+    });
+
+    it('deve retornar null quando não há error', () => {
+      vi.mocked(useOrvalDisciplinaryActions).mockImplementationOnce(() => ({
+        data: { items: [], total: 0, total_pages: 0 },
+        isLoading: false,
+        error: null,
+        refetch: mockRefetch,
+        isPending: false,
+        isLoadingError: false,
+        isRefetchError: false,
+        isSuccess: true,
+        status: 'success',
+        fetchStatus: 'idle',
+        isFetched: true,
+        isFetching: false,
+        isFetchedAfterMount: true,
+        isInitialLoading: false,
+        isPlaceholderData: false,
+        isStale: false,
+        isRefetching: false,
+        failureCount: 0,
+        failureReason: null,
+        errorUpdateCount: 0,
+        dataUpdatedAt: Date.now(),
+        errorUpdatedAt: 0,
+      }));
+
+      const { result } = renderHook(() => useDisciplinary(), { wrapper });
+
+      expect(result.current.error).toBeNull();
     });
   });
 });

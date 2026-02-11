@@ -9,71 +9,76 @@ import {
   useReimbursementCategories,
   useReadyForPayment,
 } from '../useReimbursement';
+import { useReimbursementRequests as useReimbursementRequestsOrval } from '@/hooks/reimbursement';
 import React from 'react';
 
 // Mocks
 const mockRefetch = vi.fn();
 
-vi.mock('@/hooks/reimbursement', () => ({
-  useReimbursementRequests: vi.fn((params, options) => ({
-    data: options?.enabled !== false && params ? {
-      items: [{ id: '1', amount: 100, status: 'pending' }],
-      total: 1,
-      total_pages: 1,
-    } : undefined,
-    isLoading: false,
-    error: null,
-    refetch: mockRefetch,
-  })),
-  useMyReimbursementRequests: vi.fn((params, options) => ({
-    data: options?.enabled !== false && params ? {
-      items: [{ id: '2', amount: 200 }],
-      total: 1,
-      total_pages: 1,
-    } : { items: [], total: 0, total_pages: 0 },
-    isLoading: false,
-    error: null,
-    refetch: mockRefetch,
-  })),
-  useReimbursementRequest: vi.fn((id, options) => ({
-    data: options?.enabled !== false ? { id, amount: 100 } : undefined,
-    isLoading: false,
-    error: null,
-    refetch: mockRefetch,
-  })),
-  useReimbursementStats: vi.fn((myOnly, options) => ({
-    data: options?.enabled !== false ? { total: 10, pending: 3 } : undefined,
-    isLoading: false,
-    error: null,
-    refetch: mockRefetch,
-  })),
-  useExpenseCategories: vi.fn(() => ({
-    data: [{ id: '1', name: 'Transporte' }, { id: '2', name: 'Alimentação' }],
-    isLoading: false,
-    error: null,
-    refetch: mockRefetch,
-  })),
-  usePendingReimbursementApprovals: vi.fn((params, options) => ({
-    data: options?.enabled !== false ? {
-      items: [{ id: '1', status: 'pending_approval' }],
-      total: 1,
-      total_pages: 1,
-    } : undefined,
-    isLoading: false,
-    error: null,
-    refetch: mockRefetch,
-  })),
-  useReadyForPaymentReimbursements: vi.fn((params, options) => ({
-    data: options?.enabled !== false ? {
-      items: [{ id: '1', status: 'approved' }],
-      total: 1,
-      total_pages: 1,
-    } : undefined,
-    isLoading: false,
-    error: null,
-    refetch: mockRefetch,
-  })),
-}));
+vi.mock('@/hooks/reimbursement', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/hooks/reimbursement')>();
+  return {
+    ...actual,
+    useReimbursementRequests: vi.fn((params, options) => ({
+      data: options?.enabled !== false && params ? {
+        items: [{ id: '1', amount: 100, status: 'pending' }],
+        total: 1,
+        total_pages: 1,
+      } : undefined,
+      isLoading: false,
+      error: null,
+      refetch: mockRefetch,
+    })),
+    useMyReimbursementRequests: vi.fn((params, options) => ({
+      data: options?.enabled !== false && params ? {
+        items: [{ id: '2', amount: 200 }],
+        total: 1,
+        total_pages: 1,
+      } : { items: [], total: 0, total_pages: 0 },
+      isLoading: false,
+      error: null,
+      refetch: mockRefetch,
+    })),
+    useReimbursementRequest: vi.fn((id, options) => ({
+      data: options?.enabled !== false ? { id, amount: 100 } : undefined,
+      isLoading: false,
+      error: null,
+      refetch: mockRefetch,
+    })),
+    useReimbursementStats: vi.fn((myOnly, options) => ({
+      data: options?.enabled !== false ? { total: 10, pending: 3 } : undefined,
+      isLoading: false,
+      error: null,
+      refetch: mockRefetch,
+    })),
+    useExpenseCategories: vi.fn(() => ({
+      data: [{ id: '1', name: 'Transporte' }, { id: '2', name: 'Alimentação' }],
+      isLoading: false,
+      error: null,
+      refetch: mockRefetch,
+    })),
+    usePendingReimbursementApprovals: vi.fn((params, options) => ({
+      data: options?.enabled !== false ? {
+        items: [{ id: '1', status: 'pending_approval' }],
+        total: 1,
+        total_pages: 1,
+      } : undefined,
+      isLoading: false,
+      error: null,
+      refetch: mockRefetch,
+    })),
+    useReadyForPaymentReimbursements: vi.fn((params, options) => ({
+      data: options?.enabled !== false ? {
+        items: [{ id: '1', status: 'approved' }],
+        total: 1,
+        total_pages: 1,
+      } : undefined,
+      isLoading: false,
+      error: null,
+      refetch: mockRefetch,
+    })),
+  };
+});
 
 describe('useReimbursement', () => {
   let queryClient: QueryClient;
@@ -312,6 +317,47 @@ describe('useReimbursement', () => {
       expect(result.current).toHaveProperty('requests');
       expect(result.current).toHaveProperty('error');
       expect(Array.isArray(result.current.requests)).toBe(true);
+    });
+  });
+
+  describe('Error States - Branch Coverage', () => {
+    it('deve retornar mensagem de erro quando error é Error instance em useReimbursements', () => {
+      vi.mocked(useReimbursementRequestsOrval).mockImplementationOnce(() => ({
+        data: undefined,
+        isLoading: false,
+        error: new Error('Erro de rede'),
+        refetch: mockRefetch,
+      }));
+
+      const { result } = renderHook(() => useReimbursements(), { wrapper });
+
+      expect(result.current.error).toBe('Erro de rede');
+    });
+
+    it('deve retornar mensagem padrão quando error não é Error instance em useReimbursements', () => {
+      vi.mocked(useReimbursementRequestsOrval).mockImplementationOnce(() => ({
+        data: undefined,
+        isLoading: false,
+        error: 'string de erro',
+        refetch: mockRefetch,
+      }));
+
+      const { result } = renderHook(() => useReimbursements(), { wrapper });
+
+      expect(result.current.error).toBe('Erro ao carregar reembolsos');
+    });
+
+    it('deve retornar null quando não há error em useReimbursements', () => {
+      vi.mocked(useReimbursementRequestsOrval).mockImplementationOnce(() => ({
+        data: { items: [], total: 0, total_pages: 0 },
+        isLoading: false,
+        error: null,
+        refetch: mockRefetch,
+      }));
+
+      const { result } = renderHook(() => useReimbursements(), { wrapper });
+
+      expect(result.current.error).toBeNull();
     });
   });
 });
