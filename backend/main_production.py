@@ -639,11 +639,11 @@ try:
     from modules.notifications.controllers import router as notification_router
     from modules.notifications.push.controllers import router as push_notification_router
 
-    api_router.include_router(notification_router, prefix="/notifications", tags=["Notifications - Hub"])
+    api_router.include_router(notification_router, prefix="", tags=["Notifications - Hub"])
     api_router.include_router(
-        intelligent_notification_router, prefix="/notifications/intelligent", tags=["Notifications - Intelligent"]
+        intelligent_notification_router, prefix="/notifications", tags=["Notifications - Intelligent"]
     )
-    api_router.include_router(push_notification_router, prefix="/notifications/push", tags=["Notifications - Push"])
+    api_router.include_router(push_notification_router, prefix="/notifications", tags=["Notifications - Push"])
     logger.info("Modulo Notifications: OK")
 except Exception as e:
     logger.warning(f"Modulo Notifications: {e}")

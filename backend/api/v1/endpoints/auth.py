@@ -39,6 +39,7 @@ FRONTEND_URL = getattr(settings, "FRONTEND_URL", "https://erp.conectamais.pro")
 @limiter.limit("5/minute")
 async def register(
     request: Request,
+    response: Response,
     user_data: UserCreate,
     db: AsyncSession = Depends(get_db),
 ) -> UserResponse:
@@ -75,6 +76,7 @@ async def register(
 @limiter.limit("5/minute")
 async def login(
     request: Request,
+    response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: AsyncSession = Depends(get_db),
 ) -> Token:
@@ -121,6 +123,7 @@ async def login(
 @limiter.limit("10/minute")
 async def refresh_token(
     request: Request,
+    response: Response,
     token_data: TokenRefresh,
     db: AsyncSession = Depends(get_db),
 ) -> Token:
@@ -171,6 +174,7 @@ async def refresh_token(
 @limiter.limit("10/minute")
 async def logout(
     request: Request,
+    response: Response,
     current_user: User = Depends(get_current_active_user),
 ):
     """Revoga o token JWT atual (logout)."""
