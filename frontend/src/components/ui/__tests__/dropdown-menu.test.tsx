@@ -150,4 +150,47 @@ describe('DropdownMenu Components', () => {
       </DropdownMenu>
     );
   });
+
+  it('should render DropdownMenuCheckboxItem with checked state', () => {
+    const { container } = render(
+      <DropdownMenu open>
+        <DropdownMenuTrigger>Open</DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuCheckboxItem checked={true}>
+            Checked Item
+          </DropdownMenuCheckboxItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+    expect(container).toBeTruthy();
+  });
+
+  it('should render DropdownMenuCheckboxItem with unchecked state', () => {
+    const { container } = render(
+      <DropdownMenu open>
+        <DropdownMenuTrigger>Open</DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuCheckboxItem checked={false}>
+            Unchecked Item
+          </DropdownMenuCheckboxItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+    expect(container).toBeTruthy();
+  });
+
+  it('should render DropdownMenuShortcut inside menu item', () => {
+    const { container } = render(
+      <DropdownMenu open>
+        <DropdownMenuTrigger>Open</DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuItem>
+            Action
+            <DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+    expect(container).toBeTruthy();
+  });
 });

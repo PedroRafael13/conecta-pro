@@ -302,20 +302,10 @@ async def run_ocr(
     - **provider**: Provider de OCR (tesseract, easyocr, google_vision)
     - **languages**: Lista de idiomas para OCR
     """
-    try:
-        # TODO: Buscar documento do banco
-        # Por enquanto, simular
-        raise HTTPException(
-            status_code=status.HTTP_501_NOT_IMPLEMENTED,
-            detail="Endpoint em desenvolvimento - requer integracao com banco de dados",
-        )
-
-    except Exception as e:
-        logger.error(f"Erro no OCR: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e),
-        )
+    raise HTTPException(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        detail="Funcionalidade de OCR em fase de implantacao. Disponivel em breve.",
+    )
 
 
 # ============ Endpoints - Classificacao ============
@@ -337,19 +327,10 @@ async def classify_document(
     Utiliza keywords, padroes e templates para identificar
     automaticamente o tipo do documento.
     """
-    try:
-        # TODO: Buscar documento e resultado OCR do banco
-        raise HTTPException(
-            status_code=status.HTTP_501_NOT_IMPLEMENTED,
-            detail="Endpoint em desenvolvimento - requer integracao com banco de dados",
-        )
-
-    except Exception as e:
-        logger.error(f"Erro na classificacao: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e),
-        )
+    raise HTTPException(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        detail="Classificacao automatica de documentos em fase de implantacao. Disponivel em breve.",
+    )
 
 
 # ============ Endpoints - Extracao ============
@@ -372,19 +353,10 @@ async def extract_data(
     - **document_id**: ID do documento
     - **template_id**: Template especifico (opcional)
     """
-    try:
-        # TODO: Buscar documento e resultado OCR do banco
-        raise HTTPException(
-            status_code=status.HTTP_501_NOT_IMPLEMENTED,
-            detail="Endpoint em desenvolvimento - requer integracao com banco de dados",
-        )
-
-    except Exception as e:
-        logger.error(f"Erro na extracao: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e),
-        )
+    raise HTTPException(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        detail="Extracao de dados em fase de implantacao. Disponivel em breve.",
+    )
 
 
 # ============ Endpoints - Validacao ============
@@ -405,19 +377,10 @@ async def validate_data(
     Aplica validadores de formato, regras de negocio
     e consistencia nos campos extraidos.
     """
-    try:
-        # TODO: Buscar documento e campos extraidos do banco
-        raise HTTPException(
-            status_code=status.HTTP_501_NOT_IMPLEMENTED,
-            detail="Endpoint em desenvolvimento - requer integracao com banco de dados",
-        )
-
-    except Exception as e:
-        logger.error(f"Erro na validacao: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e),
-        )
+    raise HTTPException(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        detail="Validacao automatica em fase de implantacao. Disponivel em breve.",
+    )
 
 
 # ============ Endpoints - Processamento Completo ============
@@ -445,19 +408,10 @@ async def process_document(
     3. Extracao de dados (opcional)
     4. Validacao (opcional)
     """
-    try:
-        # TODO: Implementar pipeline completo
-        raise HTTPException(
-            status_code=status.HTTP_501_NOT_IMPLEMENTED,
-            detail="Endpoint em desenvolvimento - requer integracao com banco de dados",
-        )
-
-    except Exception as e:
-        logger.error(f"Erro no processamento: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e),
-        )
+    raise HTTPException(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        detail="Pipeline de processamento de documentos em fase de implantacao. Disponivel em breve.",
+    )
 
 
 # ============ Endpoints - Templates ============

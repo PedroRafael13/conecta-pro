@@ -13,8 +13,14 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from core.database import Base
 
 
-class NotificationChannel(StrEnum):
-    """Canal de notificação."""
+class ConfigNotificationChannel(StrEnum):
+    """Canal de notificação (usado nos templates de configuração).
+
+    Renomeado de NotificationChannel para evitar colisão de nome com o modelo
+    SQLAlchemy NotificationChannel (modules.notifications.models.notification_channel),
+    que mapeia a tabela 'notification_channels'.  Exportado como 'NotificationChannel'
+    via modules/config/models/__init__.py para compatibilidade retroativa.
+    """
 
     EMAIL = "email"
     SMS = "sms"

@@ -6,11 +6,14 @@ services:
     container_name: conecta-pro-postgres
     restart: always
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: conecta_pro
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required}
+      POSTGRES_DB: ${POSTGRES_DB:-conecta_pro}
+      PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
     networks:
       - conecta-network
     healthcheck:
@@ -23,13 +26,13 @@ services:
     image: redis:7-alpine
     container_name: conecta-pro-redis
     restart: always
-    command: redis-server --requirepass redis_secret_2024
+    command: redis-server --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD required}
     volumes:
       - redis_data:/data
     networks:
       - conecta-network
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "redis_secret_2024", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -41,9 +44,9 @@ services:
     container_name: conecta-pro-backend
     restart: always
     environment:
-      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/conecta_pro
-      - REDIS_URL=redis://:redis_secret_2024@redis:6379/0
-      - JWT_SECRET_KEY=qYKv60fKjmTLQlDQuDcDBL8iqOeNyPNzixbvgrVlthg
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-conecta_pro}
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:?JWT_SECRET_KEY required}
       - ENVIRONMENT=production
     depends_on:
       postgres:

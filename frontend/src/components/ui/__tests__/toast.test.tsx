@@ -143,4 +143,43 @@ describe('Toast', () => {
     const viewport = container.querySelector('[class*="fixed"]');
     expect(viewport).toBeInTheDocument();
   });
+
+  it('deve renderizar ToastAction dentro de toast', () => {
+    render(
+      <ToastProvider>
+        <Toast>
+          <ToastTitle>Ação Requerida</ToastTitle>
+          <ToastDescription>Descrição</ToastDescription>
+          <ToastAction altText="Confirmar ação" data-testid="toast-action">
+            Confirmar
+          </ToastAction>
+        </Toast>
+        <ToastViewport />
+      </ToastProvider>
+    );
+    expect(screen.getByTestId('toast-action')).toBeInTheDocument();
+    expect(screen.getByTestId('toast-action')).toHaveTextContent('Confirmar');
+  });
+
+  it('deve renderizar ToastClose dentro de toast', () => {
+    render(
+      <ToastProvider>
+        <Toast>
+          <ToastTitle>Notificação</ToastTitle>
+          <ToastClose data-testid="toast-close" />
+        </Toast>
+        <ToastViewport />
+      </ToastProvider>
+    );
+    const closeButton = screen.getByTestId('toast-close');
+    expect(closeButton).toBeInTheDocument();
+  });
+
+  it('deve ter displayName correto para ToastAction', () => {
+    expect(ToastAction.displayName).toBeDefined();
+  });
+
+  it('deve ter displayName correto para ToastClose', () => {
+    expect(ToastClose.displayName).toBeDefined();
+  });
 });

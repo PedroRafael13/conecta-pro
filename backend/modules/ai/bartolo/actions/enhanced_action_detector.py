@@ -284,8 +284,6 @@ parameters: {{"param": "value"}}
             ActionType.APPROVE_SCALE: "Aprovar escala pendente",
             ActionType.ALLOCATE_EMPLOYEE: "Alocar funcionário em posto",
             ActionType.GENERATE_REPORT: "Gerar relatório",
-            ActionType.OPENCLAW_RUN_TESTS: "Executar testes de qualidade",
-            ActionType.OPENCLAW_RUN_FULL_CYCLE: "Executar verificação completa OpenClaw",
             # Adicionar mais conforme necessário
         }
         return descriptions.get(action_type, action_type.value.replace("_", " "))

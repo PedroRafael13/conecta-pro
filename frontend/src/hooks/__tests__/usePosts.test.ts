@@ -194,6 +194,19 @@ describe('usePosts', () => {
       expect(result.current.posts).toEqual([]);
     });
 
+    it('deve retornar mensagem padrão quando erro não é Error instance', async () => {
+      mockCustomInstance.mockRejectedValueOnce('erro string');
+
+      const { result } = renderHook(() => usePosts());
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      expect(result.current.error).toBe('Erro ao carregar postos');
+      expect(result.current.posts).toEqual([]);
+    });
+
     it('deve implementar backoff em erros consecutivos', async () => {
       mockCustomInstance.mockRejectedValue(new Error('Network error'));
 
@@ -289,6 +302,59 @@ describe('usePosts', () => {
       rerender({ id: null });
 
       expect(result.current.post).toBeNull();
+    });
+
+    it('deve retornar mensagem padrão quando usePost falha com erro não-Error', async () => {
+      mockCustomInstance.mockRejectedValueOnce('erro string');
+
+      const { result } = renderHook(() => usePost('123'));
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      expect(result.current.error).toBe('Erro ao carregar posto');
+      expect(result.current.post).toBeNull();
+    });
+
+    it('deve retornar mensagem de Error quando usePost falha com Error instance', async () => {
+      mockCustomInstance.mockRejectedValueOnce(new Error('Post not found'));
+
+      const { result } = renderHook(() => usePost('999'));
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      expect(result.current.error).toBe('Post not found');
+      expect(result.current.post).toBeNull();
+    });
+  });
+
+  describe('usePostStats - Error em fetchStats', () => {
+    it('deve capturar erro quando fetchStats falha', async () => {
+      mockCustomInstance.mockRejectedValueOnce(new Error('Stats fetch failed'));
+
+      const { result } = renderHook(() => usePostStats());
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      expect(result.current.error).toBe('Stats fetch failed');
+      expect(result.current.stats).toBeNull();
+    });
+
+    it('deve retornar erro genérico quando erro não é Error instance', async () => {
+      mockCustomInstance.mockRejectedValueOnce('String error');
+
+      const { result } = renderHook(() => usePostStats());
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      expect(result.current.error).toBeTruthy();
     });
   });
 });

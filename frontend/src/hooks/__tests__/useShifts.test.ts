@@ -415,4 +415,232 @@ describe('useShifts', () => {
       expect(result.current.error).toBe('Erro ao carregar turnos');
     });
   });
+
+  describe('buildParams - edge cases', () => {
+    it('deve construir params com filtros contendo valores null e undefined', async () => {
+      mockCustomInstance.mockResolvedValueOnce({ items: [], total: 0, total_pages: 0 });
+
+      renderHook(() =>
+        useShifts({
+          initialFilters: {
+            status: undefined as any,
+            post_id: null as any,
+          },
+        })
+      );
+
+      await waitFor(() => {
+        const url = (mockCustomInstance.mock.calls[0]?.[0] as { url: string })?.url;
+        expect(url).not.toContain('status=');
+        expect(url).not.toContain('post_id=');
+      });
+    });
+
+    it('deve construir params sem filtros (filters undefined)', async () => {
+      mockCustomInstance.mockResolvedValueOnce({ items: [], total: 0, total_pages: 0 });
+
+      // Não passa initialFilters, usa o default {} mas vamos testar sem nenhum filtro
+      renderHook(() =>
+        useShifts({
+          initialPage: 1,
+          initialPageSize: 10,
+        })
+      );
+
+      await waitFor(() => {
+        const url = (mockCustomInstance.mock.calls[0]?.[0] as { url: string })?.url;
+        expect(url).toContain('page=1');
+        expect(url).toContain('page_size=10');
+      });
+    });
+  });
+
+  describe('useTodayShifts - Error Branches', () => {
+    it('deve retornar mensagem padrão quando erro não é Error instance', async () => {
+      mockCustomInstance.mockRejectedValueOnce('some string error');
+
+      const { result } = renderHook(() => useTodayShifts());
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      expect(result.current.error).toBe('Erro ao carregar turnos do dia');
+      expect(result.current.shifts).toEqual([]);
+    });
+
+    it('deve chamar refresh e recarregar dados', async () => {
+      mockCustomInstance.mockResolvedValueOnce({
+        items: [{ id: '1' }],
+        total: 1,
+      });
+
+      const { result } = renderHook(() => useTodayShifts());
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      mockCustomInstance.mockResolvedValueOnce({
+        items: [{ id: '1' }, { id: '2' }],
+        total: 2,
+      });
+
+      await act(async () => {
+        await result.current.refresh();
+      });
+
+      await waitFor(() => {
+        expect(result.current.shifts).toHaveLength(2);
+      });
+    });
+  });
+
+  describe('useShiftOperations - Non-Error Error Branches', () => {
+    it('deve retornar mensagem padrão quando createShift falha com non-Error', async () => {
+      mockCustomInstance.mockRejectedValueOnce('string error');
+
+      const { result } = renderHook(() => useShiftOperations());
+
+      let shift: unknown;
+      await act(async () => {
+        shift = await result.current.createShift({} as any);
+      });
+
+      await waitFor(() => {
+        expect(shift).toBeNull();
+      });
+      expect(result.current.error).toBe('Erro ao criar turno');
+    });
+
+    it('deve retornar mensagem padrão quando updateShift falha com non-Error', async () => {
+      mockCustomInstance.mockRejectedValueOnce('string error');
+
+      const { result } = renderHook(() => useShiftOperations());
+
+      let shift: unknown;
+      await act(async () => {
+        shift = await result.current.updateShift('1', {} as any);
+      });
+
+      await waitFor(() => {
+        expect(shift).toBeNull();
+      });
+      expect(result.current.error).toBe('Erro ao atualizar turno');
+    });
+
+    it('deve retornar mensagem padrão quando deleteShift falha com non-Error', async () => {
+      mockCustomInstance.mockRejectedValueOnce('string error');
+
+      const { result } = renderHook(() => useShiftOperations());
+
+      let deleted: boolean;
+      await act(async () => {
+        deleted = await result.current.deleteShift('1');
+      });
+
+      await waitFor(() => {
+        expect(deleted).toBe(false);
+      });
+      expect(result.current.error).toBe('Erro ao deletar turno');
+    });
+
+    it('deve retornar mensagem padrão quando checkIn falha com non-Error', async () => {
+      mockCustomInstance.mockRejectedValueOnce('string error');
+
+      const { result } = renderHook(() => useShiftOperations());
+
+      let shift: unknown;
+      await act(async () => {
+        shift = await result.current.checkIn('1', {} as any);
+      });
+
+      await waitFor(() => {
+        expect(shift).toBeNull();
+      });
+      expect(result.current.error).toBe('Erro ao registrar entrada');
+    });
+
+    it('deve retornar mensagem padrão quando checkOut falha com non-Error', async () => {
+      mockCustomInstance.mockRejectedValueOnce('string error');
+
+      const { result } = renderHook(() => useShiftOperations());
+
+      let shift: unknown;
+      await act(async () => {
+        shift = await result.current.checkOut('1', {} as any);
+      });
+
+      await waitFor(() => {
+        expect(shift).toBeNull();
+      });
+      expect(result.current.error).toBe('Erro ao registrar saída');
+    });
+  });
+
+  describe('useShiftOperations - Operações adicionais', () => {
+    it('deve retornar null quando updateShift falha', async () => {
+      mockCustomInstance.mockRejectedValueOnce(new Error('Update failed'));
+
+      const { result } = renderHook(() => useShiftOperations());
+
+      let shift: unknown;
+      await act(async () => {
+        shift = await result.current.updateShift('1', { start_time: '10:00' } as any);
+      });
+
+      await waitFor(() => {
+        expect(shift).toBeNull();
+      });
+      expect(result.current.error).toBe('Update failed');
+    });
+
+    it('deve retornar false quando deleteShift falha', async () => {
+      mockCustomInstance.mockRejectedValueOnce(new Error('Delete failed'));
+
+      const { result } = renderHook(() => useShiftOperations());
+
+      let deleted: boolean;
+      await act(async () => {
+        deleted = await result.current.deleteShift('1');
+      });
+
+      await waitFor(() => {
+        expect(deleted).toBe(false);
+      });
+      expect(result.current.error).toBe('Delete failed');
+    });
+
+    it('deve retornar null quando checkIn falha', async () => {
+      mockCustomInstance.mockRejectedValueOnce(new Error('CheckIn failed'));
+
+      const { result } = renderHook(() => useShiftOperations());
+
+      let shift: unknown;
+      await act(async () => {
+        shift = await result.current.checkIn('1', { latitude: -23.5, longitude: -46.6 } as any);
+      });
+
+      await waitFor(() => {
+        expect(shift).toBeNull();
+      });
+      expect(result.current.error).toBe('CheckIn failed');
+    });
+
+    it('deve retornar null quando checkOut falha', async () => {
+      mockCustomInstance.mockRejectedValueOnce(new Error('CheckOut failed'));
+
+      const { result } = renderHook(() => useShiftOperations());
+
+      let shift: unknown;
+      await act(async () => {
+        shift = await result.current.checkOut('1', { latitude: -23.5, longitude: -46.6 } as any);
+      });
+
+      await waitFor(() => {
+        expect(shift).toBeNull();
+      });
+      expect(result.current.error).toBe('CheckOut failed');
+    });
+  });
 });

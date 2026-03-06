@@ -220,5 +220,80 @@ describe('useEmployees', () => {
       expect(result.current.employees).toEqual([]);
       expect(result.current.total).toBe(0);
     });
+
+    it('deve lidar com resposta vazia/undefined', async () => {
+      mockCustomInstance.mockResolvedValueOnce(undefined);
+
+      const { result } = renderHook(() => useEmployees());
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      expect(result.current.employees).toEqual([]);
+      expect(result.current.total).toBe(0);
+    });
+
+    it('deve mapear employee com nome vazio como undefined', async () => {
+      mockCustomInstance.mockResolvedValueOnce({
+        items: [
+          { id: '1', nome: '', email: '', matricula: '', status: '' },
+        ],
+        total: 1,
+        page: 1,
+        page_size: 100,
+        total_pages: 1,
+      });
+
+      const { result } = renderHook(() => useEmployees());
+
+      await waitFor(() => {
+        expect(result.current.employees).toHaveLength(1);
+      });
+
+      // nome falsy ('') => || undefined
+      expect(result.current.employees[0]?.full_name).toBeUndefined();
+      expect(result.current.employees[0]?.name).toBeUndefined();
+      expect(result.current.employees[0]?.email).toBeUndefined();
+      expect(result.current.employees[0]?.registration).toBeUndefined();
+      expect(result.current.employees[0]?.status).toBeUndefined();
+    });
+
+    it('deve usar fallback quando response.items é undefined', async () => {
+      mockCustomInstance.mockResolvedValueOnce({
+        total: 5,
+        page: 1,
+        page_size: 100,
+        total_pages: 1,
+        // items ausente
+      });
+
+      const { result } = renderHook(() => useEmployees());
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      // normalizeEmployeesResponse vai entrar no fallback pois payload.items não é array
+      expect(result.current.employees).toEqual([]);
+      expect(result.current.total).toBe(0);
+    });
+
+    it('deve lidar com resposta em array direto sem paginação', async () => {
+      mockCustomInstance.mockResolvedValueOnce([
+        { id: '1', nome: 'John' },
+        { id: '2', nome: 'Jane' },
+      ]);
+
+      const { result } = renderHook(() => useEmployees());
+
+      await waitFor(() => {
+        expect(result.current.employees).toHaveLength(2);
+      });
+
+      expect(result.current.total).toBe(2);
+      expect(result.current.totalPages).toBe(1);
+      expect(result.current.employees[0]?.full_name).toBe('John');
+    });
   });
 });

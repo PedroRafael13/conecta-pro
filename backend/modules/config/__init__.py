@@ -12,6 +12,7 @@ Este módulo fornece:
 
 from modules.config.controllers import router
 from modules.config.models import (
+    ConfigNotificationChannel,
     ConfigPriority,
     ConfigScope,
     FeatureFlag,
@@ -52,7 +53,8 @@ __all__ = [
     "FlagStatus",
     "FlagType",
     "RolloutStrategy",
-    "NotificationChannel",
+    "ConfigNotificationChannel",  # nome canônico (StrEnum)
+    "NotificationChannel",  # alias retroativo de ConfigNotificationChannel
     "NotificationType",
     "TemplateStatus",
     # Repository & Service

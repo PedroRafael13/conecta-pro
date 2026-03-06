@@ -91,6 +91,9 @@ export const rolePermissions: Record<UserRole, string[]> = {
 export function hasPermission(userRole: UserRole, requiredPermissions: string[]): boolean {
   const userPermissions = rolePermissions[userRole];
 
+  // Role desconhecida (ex: "pending") — sem acesso
+  if (!userPermissions) return false;
+
   // Admin tem acesso total
   if (userPermissions.includes('*')) return true;
 

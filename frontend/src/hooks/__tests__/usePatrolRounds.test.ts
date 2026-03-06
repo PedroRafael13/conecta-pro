@@ -8,6 +8,12 @@ import {
   usePatrolRoundMutations,
 } from '../usePatrolRounds';
 import React from 'react';
+import {
+  usePatrolRound as useOrvalPatrolRound,
+} from '@/hooks/operacional/usePatrolRounds';
+import {
+  useGetStatsApiV1OperacionalRondasStatsGet,
+} from '@/types/generated/operacional/operacional-rondas-de-inspecao/operacional-rondas-de-inspecao';
 
 // Mocks
 const mockRefetch = vi.fn();
@@ -567,6 +573,112 @@ describe('usePatrolRounds', () => {
       const { result } = renderHook(() => usePatrolRounds(), { wrapper });
 
       expect(result.current.error).toBeNull();
+    });
+  });
+
+  describe('usePatrolRoundStats - Error and Refresh Branches', () => {
+    it('deve retornar mensagem de erro quando erro é Error instance', () => {
+      vi.mocked(useGetStatsApiV1OperacionalRondasStatsGet).mockReturnValueOnce({
+        data: undefined,
+        isLoading: false,
+        error: new Error('Stats error'),
+        refetch: mockRefetch,
+      } as any);
+
+      const { result } = renderHook(() => usePatrolRoundStats(), { wrapper });
+      expect(result.current.error).toBe('Stats error');
+    });
+
+    it('deve retornar mensagem padrão quando erro não é Error instance em stats', () => {
+      vi.mocked(useGetStatsApiV1OperacionalRondasStatsGet).mockReturnValueOnce({
+        data: undefined,
+        isLoading: false,
+        error: 'string error' as any,
+        refetch: mockRefetch,
+      } as any);
+
+      const { result } = renderHook(() => usePatrolRoundStats(), { wrapper });
+      expect(result.current.error).toBe('Erro ao carregar estatísticas');
+    });
+
+    it('deve chamar refetch ao chamar refresh em stats', async () => {
+      const { result } = renderHook(() => usePatrolRoundStats(), { wrapper });
+
+      await act(async () => {
+        await result.current.refresh();
+      });
+
+      expect(mockRefetch).toHaveBeenCalled();
+    });
+  });
+
+  describe('usePatrolRoundDetail - Error and Refresh Branches', () => {
+    it('deve retornar mensagem de erro quando erro é Error instance em detail', () => {
+      vi.mocked(useOrvalPatrolRound).mockReturnValueOnce({
+        data: undefined,
+        isLoading: false,
+        error: new Error('Detail error'),
+        refetch: mockRefetch,
+      } as any);
+
+      const { result } = renderHook(() => usePatrolRoundDetail('123'), { wrapper });
+      expect(result.current.error).toBe('Detail error');
+    });
+
+    it('deve retornar mensagem padrão quando erro não é Error instance em detail', () => {
+      vi.mocked(useOrvalPatrolRound).mockReturnValueOnce({
+        data: undefined,
+        isLoading: false,
+        error: 'string error' as any,
+        refetch: mockRefetch,
+      } as any);
+
+      const { result } = renderHook(() => usePatrolRoundDetail('123'), { wrapper });
+      expect(result.current.error).toBe('Erro ao carregar ronda');
+    });
+
+    it('deve chamar refetch ao chamar refresh em detail', async () => {
+      const { result } = renderHook(() => usePatrolRoundDetail('123'), { wrapper });
+
+      await act(async () => {
+        await result.current.refresh();
+      });
+
+      expect(mockRefetch).toHaveBeenCalled();
+    });
+  });
+
+  describe('usePatrolRoundMutations - Error Branches Additional', () => {
+    it('deve retornar null e setar erro quando startRound falha com Error instance', async () => {
+      mockMutateAsync.mockRejectedValueOnce(new Error('Start failed'));
+
+      const { result } = renderHook(() => usePatrolRoundMutations(), { wrapper });
+
+      let started: unknown;
+      await act(async () => {
+        started = await result.current.startRound('1');
+      });
+
+      await waitFor(() => {
+        expect(started).toBeNull();
+        expect(result.current.error).toBe('Start failed');
+      });
+    });
+
+    it('deve retornar null e setar erro quando completeRound falha com Error instance', async () => {
+      mockMutateAsync.mockRejectedValueOnce(new Error('Complete failed'));
+
+      const { result } = renderHook(() => usePatrolRoundMutations(), { wrapper });
+
+      let completed: unknown;
+      await act(async () => {
+        completed = await result.current.completeRound('1');
+      });
+
+      await waitFor(() => {
+        expect(completed).toBeNull();
+        expect(result.current.error).toBe('Complete failed');
+      });
     });
   });
 });

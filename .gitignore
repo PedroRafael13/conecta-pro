@@ -72,3 +72,14 @@ backend/coverage.json
 backend/htmlcov/
 backend/.env.*
 backend/fix_strenum_imports.py
+
+# Credentials and secrets (P0 security)
+credentials/
+*.pem
+*.key
+*.pfx
+*.p12
+.env.secrets
+.env.credentials
+.env.mcp
+*.crt.key

@@ -98,6 +98,10 @@ class Settings(BaseSettings):
     # Encryption
     ENCRYPTION_KEY: str = Field(default="")
 
+    # Discord / Slack Webhooks (opcional - CI/CD e alertas)
+    DISCORD_WEBHOOK: str | None = Field(default=None)
+    SLACK_WEBHOOK: str | None = Field(default=None)
+
     @property
     def cors_origins(self) -> list[str]:
         """Retorna lista de CORS origins parseada."""

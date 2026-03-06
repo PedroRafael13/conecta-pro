@@ -310,4 +310,322 @@ describe('usePermission', () => {
       expect(result.current.hasPermission(Permission.POSTS_VIEW)).toBe(false);
     });
   });
+
+  describe('Edge Cases - Branch Coverage', () => {
+    it('deve retornar false quando hasMinimumRole e role do usuário é menor que requerido', () => {
+      mockUseAuth.mockReturnValue({
+        user: createTestUser({ id: '1', role: OperacionalRole.AGENTE }),
+        isAuthenticated: true,
+        isLoading: false,
+        login: vi.fn(),
+        logout: vi.fn(),
+      });
+
+      const { result } = renderHook(() => usePermission());
+
+      // Agente (10) < Supervisor (60)
+      expect(result.current.hasMinimumRole(OperacionalRole.SUPERVISOR)).toBe(false);
+    });
+
+    it('deve verificar hasRole com array de roles', () => {
+      mockUseAuth.mockReturnValue({
+        user: createTestUser({ id: '1', role: OperacionalRole.LIDER }),
+        isAuthenticated: true,
+        isLoading: false,
+        login: vi.fn(),
+        logout: vi.fn(),
+      });
+
+      const { result } = renderHook(() => usePermission());
+
+      expect(result.current.hasRole([OperacionalRole.LIDER, OperacionalRole.SUPERVISOR])).toBe(true);
+      expect(result.current.hasRole([OperacionalRole.AGENTE, OperacionalRole.SUPERVISOR])).toBe(false);
+    });
+
+    it('deve retornar true para isAdmin quando é super_admin', () => {
+      mockUseAuth.mockReturnValue({
+        user: createTestUser({ id: '1', role: 'super_admin' }),
+        isAuthenticated: true,
+        isLoading: false,
+        login: vi.fn(),
+        logout: vi.fn(),
+      });
+
+      const { result } = renderHook(() => usePermission());
+
+      expect(result.current.isAdmin).toBe(true);
+    });
+
+    it('deve retornar false para isAdmin quando é agente', () => {
+      mockUseAuth.mockReturnValue({
+        user: createTestUser({ id: '1', role: OperacionalRole.AGENTE }),
+        isAuthenticated: true,
+        isLoading: false,
+        login: vi.fn(),
+        logout: vi.fn(),
+      });
+
+      const { result } = renderHook(() => usePermission());
+
+      expect(result.current.isAdmin).toBe(false);
+    });
+
+    it('deve retornar false para hasRole quando não está autenticado', () => {
+      mockUseAuth.mockReturnValue({
+        user: null,
+        isAuthenticated: false,
+        isLoading: false,
+        login: vi.fn(),
+        logout: vi.fn(),
+      });
+
+      const { result } = renderHook(() => usePermission());
+
+      expect(result.current.hasRole('admin')).toBe(false);
+      expect(result.current.hasRole([OperacionalRole.SUPERVISOR, OperacionalRole.AGENTE])).toBe(false);
+    });
+
+    it('deve retornar false para hasMinimumRole quando não está autenticado', () => {
+      mockUseAuth.mockReturnValue({
+        user: null,
+        isAuthenticated: false,
+        isLoading: false,
+        login: vi.fn(),
+        logout: vi.fn(),
+      });
+
+      const { result } = renderHook(() => usePermission());
+
+      expect(result.current.hasMinimumRole(OperacionalRole.AGENTE)).toBe(false);
+    });
+
+    it('deve usar fallback 0 para ROLE_POWER de role desconhecido em hasMinimumRole', () => {
+      mockUseAuth.mockReturnValue({
+        user: createTestUser({ id: '1', role: 'role_desconhecido' }),
+        isAuthenticated: true,
+        isLoading: false,
+        login: vi.fn(),
+        logout: vi.fn(),
+      });
+
+      const { result } = renderHook(() => usePermission());
+
+      // role_desconhecido tem power 0, AGENTE tem power 10 => false
+      expect(result.current.hasMinimumRole(OperacionalRole.AGENTE)).toBe(false);
+    });
+
+    it('deve retornar false para permissões quando usuário não tem role definido', () => {
+      mockUseAuth.mockReturnValue({
+        user: createTestUser({ id: '1', role: '' }),
+        isAuthenticated: true,
+        isLoading: false,
+        login: vi.fn(),
+        logout: vi.fn(),
+      });
+
+      const { result } = renderHook(() => usePermission());
+
+      expect(result.current.hasPermission(Permission.POSTS_VIEW)).toBe(false);
+      expect(result.current.hasMinimumRole(OperacionalRole.AGENTE)).toBe(false);
+    });
+
+    it('deve retornar true para hasPermission com array quando admin', () => {
+      mockUseAuth.mockReturnValue({
+        user: createTestUser({ id: '1', role: 'admin' }),
+        isAuthenticated: true,
+        isLoading: false,
+        login: vi.fn(),
+        logout: vi.fn(),
+      });
+
+      const { result } = renderHook(() => usePermission());
+
+      expect(result.current.hasPermission([Permission.POSTS_CREATE, Permission.SCALES_APPROVE])).toBe(true);
+    });
+
+    it('deve retornar false para hasPermission com array quando não autenticado', () => {
+      mockUseAuth.mockReturnValue({
+        user: null,
+        isAuthenticated: false,
+        isLoading: false,
+        login: vi.fn(),
+        logout: vi.fn(),
+      });
+
+      const { result } = renderHook(() => usePermission());
+
+      expect(result.current.hasPermission([Permission.POSTS_VIEW, Permission.SCALES_VIEW_OWN])).toBe(false);
+    });
+
+    it('deve retornar true para isAdmin quando é administrador (OperacionalRole)', () => {
+      mockUseAuth.mockReturnValue({
+        user: createTestUser({ id: '1', role: OperacionalRole.ADMINISTRADOR }),
+        isAuthenticated: true,
+        isLoading: false,
+        login: vi.fn(),
+        logout: vi.fn(),
+      });
+
+      const { result } = renderHook(() => usePermission());
+
+      expect(result.current.isAdmin).toBe(true);
+    });
+  });
+
+  describe('Verificadores Específicos - Casos Negativos', () => {
+    it('canManageAllocations deve ser false para Agente', () => {
+      mockUseAuth.mockReturnValue({
+        user: createTestUser({ id: '1', role: OperacionalRole.AGENTE }),
+        isAuthenticated: true,
+        isLoading: false,
+        login: vi.fn(),
+        logout: vi.fn(),
+      });
+
+      const { result } = renderHook(() => usePermission());
+
+      expect(result.current.canManageAllocations).toBe(false);
+    });
+
+    it('canManageSubstitutions deve ser true para Inspetor', () => {
+      mockUseAuth.mockReturnValue({
+        user: createTestUser({ id: '1', role: OperacionalRole.INSPETOR }),
+        isAuthenticated: true,
+        isLoading: false,
+        login: vi.fn(),
+        logout: vi.fn(),
+      });
+
+      const { result } = renderHook(() => usePermission());
+
+      expect(result.current.canManageSubstitutions).toBe(true);
+    });
+
+    it('canApproveSubstitutions deve ser false para Lider', () => {
+      mockUseAuth.mockReturnValue({
+        user: createTestUser({ id: '1', role: OperacionalRole.LIDER }),
+        isAuthenticated: true,
+        isLoading: false,
+        login: vi.fn(),
+        logout: vi.fn(),
+      });
+
+      const { result } = renderHook(() => usePermission());
+
+      expect(result.current.canApproveSubstitutions).toBe(false);
+    });
+
+    it('canManageTimeBank deve ser false para Agente', () => {
+      mockUseAuth.mockReturnValue({
+        user: createTestUser({ id: '1', role: OperacionalRole.AGENTE }),
+        isAuthenticated: true,
+        isLoading: false,
+        login: vi.fn(),
+        logout: vi.fn(),
+      });
+
+      const { result } = renderHook(() => usePermission());
+
+      expect(result.current.canManageTimeBank).toBe(false);
+    });
+
+    it('canApproveTimeBank deve ser true para Supervisor', () => {
+      mockUseAuth.mockReturnValue({
+        user: createTestUser({ id: '1', role: OperacionalRole.SUPERVISOR }),
+        isAuthenticated: true,
+        isLoading: false,
+        login: vi.fn(),
+        logout: vi.fn(),
+      });
+
+      const { result } = renderHook(() => usePermission());
+
+      expect(result.current.canApproveTimeBank).toBe(true);
+    });
+
+    it('canViewEmployees deve ser false para Agente', () => {
+      mockUseAuth.mockReturnValue({
+        user: createTestUser({ id: '1', role: OperacionalRole.AGENTE }),
+        isAuthenticated: true,
+        isLoading: false,
+        login: vi.fn(),
+        logout: vi.fn(),
+      });
+
+      const { result } = renderHook(() => usePermission());
+
+      expect(result.current.canViewEmployees).toBe(false);
+    });
+
+    it('canViewEmployees deve ser true para Lider', () => {
+      mockUseAuth.mockReturnValue({
+        user: createTestUser({ id: '1', role: OperacionalRole.LIDER }),
+        isAuthenticated: true,
+        isLoading: false,
+        login: vi.fn(),
+        logout: vi.fn(),
+      });
+
+      const { result } = renderHook(() => usePermission());
+
+      expect(result.current.canViewEmployees).toBe(true);
+    });
+
+    it('canMarkMissed deve ser false para Lider', () => {
+      mockUseAuth.mockReturnValue({
+        user: createTestUser({ id: '1', role: OperacionalRole.LIDER }),
+        isAuthenticated: true,
+        isLoading: false,
+        login: vi.fn(),
+        logout: vi.fn(),
+      });
+
+      const { result } = renderHook(() => usePermission());
+
+      expect(result.current.canMarkMissed).toBe(false);
+    });
+
+    it('role deve refletir o role do usuário', () => {
+      mockUseAuth.mockReturnValue({
+        user: createTestUser({ id: '1', role: OperacionalRole.SUPERVISOR }),
+        isAuthenticated: true,
+        isLoading: false,
+        login: vi.fn(),
+        logout: vi.fn(),
+      });
+
+      const { result } = renderHook(() => usePermission());
+
+      expect(result.current.role).toBe(OperacionalRole.SUPERVISOR);
+    });
+
+    it('role deve ser string vazia quando usuário não está autenticado', () => {
+      mockUseAuth.mockReturnValue({
+        user: null,
+        isAuthenticated: false,
+        isLoading: false,
+        login: vi.fn(),
+        logout: vi.fn(),
+      });
+
+      const { result } = renderHook(() => usePermission());
+
+      expect(result.current.role).toBe('');
+    });
+
+    it('user deve estar disponível no retorno do hook', () => {
+      const testUser = createTestUser({ id: '1', role: OperacionalRole.GERENTE_OPERACIONAL });
+      mockUseAuth.mockReturnValue({
+        user: testUser,
+        isAuthenticated: true,
+        isLoading: false,
+        login: vi.fn(),
+        logout: vi.fn(),
+      });
+
+      const { result } = renderHook(() => usePermission());
+
+      expect(result.current.user).toEqual(testUser);
+    });
+  });
 });

@@ -83,24 +83,6 @@ class ActionType(StrEnum):
     # Relatórios
     GENERATE_REPORT = "generate_report"
 
-    # OpenClaw - Quality Checks
-    OPENCLAW_RUN_TESTS = "openclaw_run_tests"
-    OPENCLAW_RUN_LINT = "openclaw_run_lint"
-    OPENCLAW_RUN_SECURITY = "openclaw_run_security"
-    OPENCLAW_RUN_COVERAGE = "openclaw_run_coverage"
-    OPENCLAW_RUN_HEALTH = "openclaw_run_health"
-    OPENCLAW_RUN_FULL_CYCLE = "openclaw_run_full_cycle"
-    OPENCLAW_RUN_E2E = "openclaw_run_e2e"
-    OPENCLAW_RUN_E2E_MODULE = "openclaw_run_e2e_module"
-
-    # OpenClaw - Deploy
-    OPENCLAW_DEPLOY_STAGING = "openclaw_deploy_staging"
-    OPENCLAW_DEPLOY_PRODUCTION = "openclaw_deploy_production"
-
-    # OpenClaw - Daemon
-    OPENCLAW_DAEMON_START = "openclaw_daemon_start"
-    OPENCLAW_DAEMON_STOP = "openclaw_daemon_stop"
-
 
 class ActionCategory(StrEnum):
     """Categorias de ações."""

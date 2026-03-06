@@ -242,7 +242,7 @@ class ScheduledReport(Base):
                 microsecond=0,
             )
             if next_run <= now:
-                next_run = next_run.replace(day=next_run.day + 1)
+                next_run = next_run + timedelta(days=1)
             return next_run
 
         if self.frequencia == ReportFrequency.WEEKLY:

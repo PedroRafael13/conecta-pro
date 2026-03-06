@@ -5,7 +5,7 @@ API v1 - Router principal.
 from fastapi import APIRouter
 
 # Bartolo - Assistente Inteligente (Sessao 4)
-from modules.ai.bartolo.controllers import bartolo_router, openclaw_router
+from modules.ai.bartolo.controllers import bartolo_router
 
 # ===================================================================
 # MÓDULO AI - INTELIGÊNCIA ARTIFICIAL (Sprints 34-55)
@@ -458,8 +458,6 @@ router.include_router(ai_voice_router, prefix="/ai/voice", tags=["AI - Reconheci
 router.include_router(ai_workflow_router, prefix="/ai/workflows", tags=["AI - Otimizador de Workflows"])
 # Bartolo - Assistente Inteligente
 router.include_router(bartolo_router, prefix="/ai", tags=["AI - Bartolo Assistente"])
-# OpenClaw - Code Quality Checker
-router.include_router(openclaw_router, prefix="/ai", tags=["AI - OpenClaw Code Quality"])
 
 # ===================================================================
 # MONITORING - EARLY WARNING SYSTEM (Fase 0)

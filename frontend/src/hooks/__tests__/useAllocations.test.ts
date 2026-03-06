@@ -9,7 +9,7 @@ import React from 'react';
 const mockRefetch = vi.fn();
 
 // Helper para criar mock de UseQueryResult completo
- 
+
 const createMockQueryResult = (overrides: Record<string, any> = {}): ReturnType<typeof useAllocationsOrval> => ({
   data: undefined,
   isLoading: false,
@@ -208,6 +208,40 @@ describe('useAllocations', () => {
 
       const { result } = renderHook(() => useAllocations(), { wrapper });
       expect(result.current.allocations).toEqual([]);
+    });
+  });
+
+  describe('Filtros com Múltiplas Combinações', () => {
+    it('deve aplicar filtros combinados corretamente', async () => {
+      const { result } = renderHook(
+        () => useAllocations({
+          initialFilters: {
+            status: 'active',
+            post_id: 'post-1',
+            employee_id: 'emp-1',
+          }
+        }),
+        { wrapper }
+      );
+
+      await waitFor(() => {
+        expect(result.current.filters).toEqual({
+          status: 'active',
+          post_id: 'post-1',
+          employee_id: 'emp-1',
+        });
+      });
+    });
+
+    it('deve filtrar apenas por status', async () => {
+      const { result } = renderHook(
+        () => useAllocations({ initialFilters: { status: 'inactive' } }),
+        { wrapper }
+      );
+
+      await waitFor(() => {
+        expect(result.current.filters).toEqual({ status: 'inactive' });
+      });
     });
   });
 });

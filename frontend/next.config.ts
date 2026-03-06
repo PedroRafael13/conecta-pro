@@ -79,6 +79,7 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
+        // Headers de segurança para todas as rotas
         source: '/:path*',
         headers: [
           { key: 'X-Frame-Options', value: 'DENY' },
@@ -86,15 +87,24 @@ const nextConfig: NextConfig = {
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           { key: 'Permissions-Policy', value: 'geolocation=(), microphone=(), camera=()' },
           { key: 'X-DNS-Prefetch-Control', value: 'off' },
-          // Cache para assets estáticos
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
         ],
       },
       {
-        // API routes não devem ter cache longo
+        // Cache longo APENAS para assets estáticos (JS/CSS com hash no nome)
+        source: '/_next/static/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        ],
+      },
+      {
+        // Páginas HTML: sem cache agressivo
+        source: '/((?!_next/static|_next/image|favicon.ico|api/).*)',
+        headers: [
+          { key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' },
+        ],
+      },
+      {
+        // API routes sem cache
         source: '/api/:path*',
         headers: [
           { key: 'Cache-Control', value: 'no-store, max-age=0' },

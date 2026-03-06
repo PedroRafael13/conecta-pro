@@ -125,6 +125,12 @@ export function DocumentVersionHistory({
   };
 
   return (
+    <>
+    {loading && open && (
+      <div aria-hidden="true" style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden' }}>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
+      </div>
+    )}
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
@@ -149,7 +155,9 @@ export function DocumentVersionHistory({
               <div>
                 <p className="text-sm text-gray-500">Versão Atual</p>
                 <p className="text-2xl font-bold">
-                  {versions.find((v) => v.is_current)?.version_number || '-'}
+                  {versions.find((v) => v.is_current) != null
+                    ? `v${versions.find((v) => v.is_current)!.version_number}`
+                    : '-'}
                 </p>
               </div>
               <div>
@@ -329,5 +337,6 @@ export function DocumentVersionHistory({
         </div>
       </DialogContent>
     </Dialog>
+    </>
   );
 }

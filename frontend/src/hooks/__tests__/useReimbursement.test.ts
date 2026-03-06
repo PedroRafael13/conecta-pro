@@ -9,7 +9,14 @@ import {
   useReimbursementCategories,
   useReadyForPayment,
 } from '../useReimbursement';
-import { useReimbursementRequests as useReimbursementRequestsOrval } from '@/hooks/reimbursement';
+import {
+  useReimbursementRequests as useReimbursementRequestsOrval,
+  useReimbursementStats as useReimbursementStatsOrval,
+  useReimbursementRequest as useReimbursementRequestOrval,
+  usePendingReimbursementApprovals,
+  useExpenseCategories,
+  useReadyForPaymentReimbursements,
+} from '@/hooks/reimbursement';
 import React from 'react';
 
 // Mocks
@@ -253,6 +260,18 @@ describe('useReimbursement', () => {
         expect(result.current.page).toBe(2);
       });
     });
+
+    it('deve chamar refresh', async () => {
+      const { result } = renderHook(() => usePendingApprovals(), { wrapper });
+
+      await act(async () => {
+        result.current.refresh();
+      });
+
+      await waitFor(() => {
+        expect(mockRefetch).toHaveBeenCalled();
+      });
+    });
   });
 
   describe('useReimbursementCategories', () => {
@@ -306,6 +325,86 @@ describe('useReimbursement', () => {
         expect(result.current.page).toBe(3);
       });
     });
+
+    it('deve chamar refresh', async () => {
+      const { result } = renderHook(() => useReadyForPayment(), { wrapper });
+
+      await act(async () => {
+        result.current.refresh();
+      });
+
+      await waitFor(() => {
+        expect(mockRefetch).toHaveBeenCalled();
+      });
+    });
+  });
+
+  describe('useReimbursementStats - Error Branches', () => {
+    it('deve retornar mensagem de erro quando error é Error instance em useReimbursementStats', () => {
+      vi.mocked(useReimbursementStatsOrval).mockImplementationOnce(() => ({
+        data: undefined,
+        isLoading: false,
+        error: new Error('Erro de stats'),
+        refetch: mockRefetch,
+      }));
+
+      const { result } = renderHook(() => useReimbursementStats(), { wrapper });
+
+      expect(result.current.error).toBe('Erro de stats');
+    });
+
+    it('deve retornar mensagem padrão quando error não é Error instance em useReimbursementStats', () => {
+      vi.mocked(useReimbursementStatsOrval).mockImplementationOnce(() => ({
+        data: undefined,
+        isLoading: false,
+        error: 'string de erro',
+        refetch: mockRefetch,
+      }));
+
+      const { result } = renderHook(() => useReimbursementStats(), { wrapper });
+
+      expect(result.current.error).toBe('Erro ao carregar estatisticas');
+    });
+
+    it('deve retornar null quando não há error em useReimbursementStats', () => {
+      const { result } = renderHook(() => useReimbursementStats(), { wrapper });
+
+      expect(result.current.error).toBeNull();
+    });
+  });
+
+  describe('useReimbursementDetail - Error Branches', () => {
+    it('deve retornar mensagem de erro quando error é Error instance em useReimbursementDetail', () => {
+      vi.mocked(useReimbursementRequestOrval).mockImplementationOnce(() => ({
+        data: undefined,
+        isLoading: false,
+        error: new Error('Erro de detalhe'),
+        refetch: mockRefetch,
+      }));
+
+      const { result } = renderHook(() => useReimbursementDetail('123'), { wrapper });
+
+      expect(result.current.error).toBe('Erro de detalhe');
+    });
+
+    it('deve retornar mensagem padrão quando error não é Error instance em useReimbursementDetail', () => {
+      vi.mocked(useReimbursementRequestOrval).mockImplementationOnce(() => ({
+        data: undefined,
+        isLoading: false,
+        error: 'string de erro',
+        refetch: mockRefetch,
+      }));
+
+      const { result } = renderHook(() => useReimbursementDetail('123'), { wrapper });
+
+      expect(result.current.error).toBe('Erro ao carregar solicitacao');
+    });
+
+    it('deve retornar null quando não há error em useReimbursementDetail', () => {
+      const { result } = renderHook(() => useReimbursementDetail('123'), { wrapper });
+
+      expect(result.current.error).toBeNull();
+    });
   });
 
   describe('Error Handling', () => {
@@ -358,6 +457,183 @@ describe('useReimbursement', () => {
       const { result } = renderHook(() => useReimbursements(), { wrapper });
 
       expect(result.current.error).toBeNull();
+    });
+  });
+
+  describe('Additional Branch Coverage', () => {
+    it('deve aplicar filtros múltiplos em useReimbursements', () => {
+      const { result } = renderHook(() => useReimbursements(), { wrapper });
+
+      act(() => {
+        result.current.setFilters({
+          status: 'aprovado',
+          approval_level: 'gerente',
+          requester_id: 'user-1',
+          expense_date_start: '2024-01-01',
+          expense_date_end: '2024-12-31',
+          min_amount: 100,
+          max_amount: 1000,
+          search: 'transporte',
+          cost_center: 'TI',
+          project: 'Projeto X',
+        });
+      });
+
+      waitFor(() => {
+        expect(result.current.filters).toHaveProperty('status', 'aprovado');
+        expect(result.current.filters).toHaveProperty('approval_level', 'gerente');
+        expect(result.current.filters).toHaveProperty('search', 'transporte');
+      });
+    });
+  });
+
+  describe('usePendingApprovals - Data Branches', () => {
+    it('deve retornar dados quando query retorna items', () => {
+      const { result } = renderHook(() => usePendingApprovals(), { wrapper });
+
+      expect(result.current.requests).toHaveLength(1);
+      expect(result.current.total).toBe(1);
+      expect(result.current.totalPages).toBe(1);
+    });
+
+    it('deve usar fallback quando query.data é undefined', () => {
+      vi.mocked(usePendingReimbursementApprovals).mockImplementationOnce(() => ({
+        data: undefined,
+        isLoading: false,
+        error: null,
+        refetch: mockRefetch,
+      }));
+
+      const { result } = renderHook(() => usePendingApprovals(), { wrapper });
+
+      expect(result.current.requests).toEqual([]);
+      expect(result.current.total).toBe(0);
+      expect(result.current.totalPages).toBe(0);
+    });
+
+    it('deve retornar erro quando error é Error instance', () => {
+      vi.mocked(usePendingReimbursementApprovals).mockImplementationOnce(() => ({
+        data: undefined,
+        isLoading: false,
+        error: new Error('Falha na aprovação'),
+        refetch: mockRefetch,
+      }));
+
+      const { result } = renderHook(() => usePendingApprovals(), { wrapper });
+
+      expect(result.current.error).toBe('Falha na aprovação');
+    });
+
+    it('deve retornar mensagem padrão quando error não é Error instance', () => {
+      vi.mocked(usePendingReimbursementApprovals).mockImplementationOnce(() => ({
+        data: undefined,
+        isLoading: false,
+        error: 'string de erro',
+        refetch: mockRefetch,
+      }));
+
+      const { result } = renderHook(() => usePendingApprovals(), { wrapper });
+
+      expect(result.current.error).toBe('Erro ao carregar aprovacoes');
+    });
+  });
+
+  describe('useReimbursementCategories - Data Branches', () => {
+    it('deve retornar categorias quando query retorna dados', () => {
+      const { result } = renderHook(() => useReimbursementCategories(), { wrapper });
+
+      expect(result.current.categories).toHaveLength(2);
+      expect(result.current.error).toBeNull();
+    });
+
+    it('deve usar fallback quando query.data é undefined', () => {
+      vi.mocked(useExpenseCategories).mockImplementationOnce(() => ({
+        data: undefined,
+        isLoading: false,
+        error: null,
+        refetch: mockRefetch,
+      }));
+
+      const { result } = renderHook(() => useReimbursementCategories(), { wrapper });
+
+      expect(result.current.categories).toEqual([]);
+    });
+
+    it('deve retornar erro quando error é Error instance', () => {
+      vi.mocked(useExpenseCategories).mockImplementationOnce(() => ({
+        data: undefined,
+        isLoading: false,
+        error: new Error('Falha ao carregar'),
+        refetch: mockRefetch,
+      }));
+
+      const { result } = renderHook(() => useReimbursementCategories(), { wrapper });
+
+      expect(result.current.error).toBe('Falha ao carregar');
+    });
+
+    it('deve retornar mensagem padrão quando error não é Error instance', () => {
+      vi.mocked(useExpenseCategories).mockImplementationOnce(() => ({
+        data: undefined,
+        isLoading: false,
+        error: 'string de erro',
+        refetch: mockRefetch,
+      }));
+
+      const { result } = renderHook(() => useReimbursementCategories(), { wrapper });
+
+      expect(result.current.error).toBe('Erro ao carregar categorias');
+    });
+  });
+
+  describe('useReadyForPayment - Data Branches', () => {
+    it('deve retornar dados quando query retorna items', () => {
+      const { result } = renderHook(() => useReadyForPayment(), { wrapper });
+
+      expect(result.current.requests).toHaveLength(1);
+      expect(result.current.total).toBe(1);
+      expect(result.current.totalPages).toBe(1);
+    });
+
+    it('deve usar fallback quando query.data é undefined', () => {
+      vi.mocked(useReadyForPaymentReimbursements).mockImplementationOnce(() => ({
+        data: undefined,
+        isLoading: false,
+        error: null,
+        refetch: mockRefetch,
+      }));
+
+      const { result } = renderHook(() => useReadyForPayment(), { wrapper });
+
+      expect(result.current.requests).toEqual([]);
+      expect(result.current.total).toBe(0);
+      expect(result.current.totalPages).toBe(0);
+    });
+
+    it('deve retornar erro quando error é Error instance', () => {
+      vi.mocked(useReadyForPaymentReimbursements).mockImplementationOnce(() => ({
+        data: undefined,
+        isLoading: false,
+        error: new Error('Falha no pagamento'),
+        refetch: mockRefetch,
+      }));
+
+      const { result } = renderHook(() => useReadyForPayment(), { wrapper });
+
+      expect(result.current.error).toBe('Falha no pagamento');
+    });
+
+    it('deve retornar mensagem padrão quando error não é Error instance', () => {
+      vi.mocked(useReadyForPaymentReimbursements).mockImplementationOnce(() => ({
+        data: undefined,
+        isLoading: false,
+        error: 'string de erro',
+        refetch: mockRefetch,
+      }));
+
+      const { result } = renderHook(() => useReadyForPayment(), { wrapper });
+
+      expect(result.current.error).toBe('Erro ao carregar pagamentos');
     });
   });
 });

@@ -157,4 +157,64 @@ describe('ExportButton', () => {
     const { container } = render(<ExportButton data={mockData} filename="teste" />);
     expect(container.querySelector('[data-testid="dropdown-menu"]')).toBeInTheDocument();
   });
+
+  it('deve renderizar apenas PDF quando formats=["pdf"]', () => {
+    render(<ExportButton data={mockData} filename="teste" formats={['pdf']} />);
+    const items = screen.getAllByTestId('dropdown-item');
+    expect(items.length).toBe(1);
+    expect(items[0]).toHaveTextContent('PDF (.pdf)');
+  });
+
+  it('deve renderizar apenas CSV quando formats=["csv"]', () => {
+    render(<ExportButton data={mockData} filename="teste" formats={['csv']} />);
+    const items = screen.getAllByTestId('dropdown-item');
+    expect(items.length).toBe(1);
+    expect(items[0]).toHaveTextContent('CSV (.csv)');
+  });
+
+  it('deve chamar exportToPDF quando clicar no item PDF', async () => {
+    render(<ExportButton data={mockData} filename="teste" formats={['pdf']} />);
+
+    const pdfButton = screen.getByTestId('dropdown-item');
+    fireEvent.click(pdfButton);
+
+    await waitFor(() => {
+      expect(exportToPDF).toHaveBeenCalledWith(mockData, 'teste', undefined);
+    });
+  });
+
+  it('deve chamar exportToPDF com pdfTitle quando fornecido', async () => {
+    render(
+      <ExportButton
+        data={mockData}
+        filename="teste"
+        formats={['pdf']}
+        pdfTitle="Relatório de Teste"
+      />
+    );
+
+    const pdfButton = screen.getByTestId('dropdown-item');
+    fireEvent.click(pdfButton);
+
+    await waitFor(() => {
+      expect(exportToPDF).toHaveBeenCalledWith(mockData, 'teste', 'Relatório de Teste');
+    });
+  });
+
+  it('deve chamar exportToCSV quando clicar no item CSV', async () => {
+    render(<ExportButton data={mockData} filename="teste" formats={['csv']} />);
+
+    const csvButton = screen.getByTestId('dropdown-item');
+    fireEvent.click(csvButton);
+
+    await waitFor(() => {
+      expect(exportToCSV).toHaveBeenCalledWith(mockData, 'teste');
+    });
+  });
+
+  it('deve renderizar separador entre excel/pdf e csv', () => {
+    render(<ExportButton data={mockData} filename="teste" formats={['excel', 'csv']} />);
+    const separator = screen.getByTestId('dropdown-separator');
+    expect(separator).toBeInTheDocument();
+  });
 });

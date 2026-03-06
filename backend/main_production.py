@@ -617,10 +617,9 @@ except Exception as e:
 
 # BARTOLO - Assistente Inteligente IA
 try:
-    from modules.ai.bartolo.controllers import bartolo_router, openclaw_router
+    from modules.ai.bartolo.controllers import bartolo_router
 
     api_router.include_router(bartolo_router, prefix="/ai", tags=["AI - Bartolo Assistente"])
-    api_router.include_router(openclaw_router, prefix="/ai/openclaw", tags=["AI - OpenClaw Quality"])
     logger.info("Modulo Bartolo: OK")
 except Exception as e:
     logger.warning(f"Modulo Bartolo: {e}")

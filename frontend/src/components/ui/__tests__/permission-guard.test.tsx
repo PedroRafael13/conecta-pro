@@ -149,6 +149,34 @@ describe('PermissionGuard', () => {
     );
     expect(mockState.hasPermission).toHaveBeenCalledWith(Permission.POSTS_CREATE);
   });
+
+  it('deve renderizar fallback quando role check falha', () => {
+    mockState.hasRole.mockReturnValue(false);
+    render(
+      <PermissionGuard
+        role={OperacionalRole.ADMINISTRADOR}
+        fallback={<div data-testid="role-denied">Sem acesso de admin</div>}
+      >
+        <div data-testid="admin-content">Conteúdo Admin</div>
+      </PermissionGuard>
+    );
+    expect(screen.getByTestId('role-denied')).toBeInTheDocument();
+    expect(screen.queryByTestId('admin-content')).not.toBeInTheDocument();
+  });
+
+  it('deve renderizar fallback quando minimumRole check falha', () => {
+    mockState.hasMinimumRole.mockReturnValue(false);
+    render(
+      <PermissionGuard
+        minimumRole={OperacionalRole.SUPERVISOR}
+        fallback={<div data-testid="min-role-denied">Nível insuficiente</div>}
+      >
+        <div data-testid="supervisor-content">Conteúdo Supervisor</div>
+      </PermissionGuard>
+    );
+    expect(screen.getByTestId('min-role-denied')).toBeInTheDocument();
+    expect(screen.queryByTestId('supervisor-content')).not.toBeInTheDocument();
+  });
 });
 
 describe('PageGuard', () => {

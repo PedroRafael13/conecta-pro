@@ -155,4 +155,37 @@ describe('Select', () => {
     );
     expect(container.querySelector('svg')).toBeInTheDocument();
   });
+
+  it('deve renderizar SelectLabel dentro de SelectGroup', () => {
+    render(
+      <Select open>
+        <SelectTrigger>
+          <SelectValue placeholder="Selecione" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectGroup>
+            <SelectLabel data-testid="select-label">Frutas</SelectLabel>
+            <SelectItem value="apple">Maçã</SelectItem>
+          </SelectGroup>
+        </SelectContent>
+      </Select>
+    );
+    expect(screen.getByTestId('select-label')).toBeInTheDocument();
+  });
+
+  it('deve renderizar SelectSeparator entre items', () => {
+    const { container } = render(
+      <Select open>
+        <SelectTrigger>
+          <SelectValue placeholder="Selecione" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="1">Opção 1</SelectItem>
+          <SelectSeparator data-testid="select-separator" />
+          <SelectItem value="2">Opção 2</SelectItem>
+        </SelectContent>
+      </Select>
+    );
+    expect(screen.getByTestId('select-separator')).toBeInTheDocument();
+  });
 });

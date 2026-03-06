@@ -44,7 +44,7 @@ export function FolderTree({ onFolderSelect, selectedFolderId }: FolderTreeProps
 
   const buildTree = (folders: Folder[]): TreeNode[] => {
     const map = new Map<string, TreeNode>();
-    const roots: TreeNode[] = [];
+    const rootIds: string[] = [];
 
     // Criar nodes
     folders.forEach((folder) => {
@@ -55,22 +55,18 @@ export function FolderTree({ onFolderSelect, selectedFolderId }: FolderTreeProps
       });
     });
 
-    // Construir hierarquia - usando Map para imutabilidade
-    const updatedMap = new Map(map);
+    // Construir hierarquia
     folders.forEach((folder) => {
-      const node = updatedMap.get(folder.id)!;
-      if (folder.parent_id && updatedMap.has(folder.parent_id)) {
-        const parentNode = updatedMap.get(folder.parent_id)!;
-        updatedMap.set(folder.parent_id, {
-          ...parentNode,
-          children: [...parentNode.children, node],
-        });
+      if (folder.parent_id && map.has(folder.parent_id)) {
+        const parentNode = map.get(folder.parent_id)!;
+        const childNode = map.get(folder.id)!;
+        parentNode.children.push(childNode);
       } else {
-        roots.push(node);
+        rootIds.push(folder.id);
       }
     });
 
-    return roots;
+    return rootIds.map((id) => map.get(id)!);
   };
 
   const toggleExpand = (nodeId: string) => {

@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from urllib.parse import urlencode
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from fastapi.responses import RedirectResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import select
@@ -215,6 +215,7 @@ async def get_current_user_info(
 @limiter.limit("3/minute")
 async def forgot_password(
     request: Request,
+    response: Response,
     body: ForgotPasswordRequest,
     db: AsyncSession = Depends(get_db),
 ):
@@ -259,6 +260,7 @@ async def forgot_password(
 @limiter.limit("5/minute")
 async def reset_password(
     request: Request,
+    response: Response,
     body: ResetPasswordRequest,
     db: AsyncSession = Depends(get_db),
 ):

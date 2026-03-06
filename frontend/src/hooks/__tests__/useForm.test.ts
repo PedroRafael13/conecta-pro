@@ -90,6 +90,23 @@ describe('useForm', () => {
       expect(result.current.errors.age).toBe('Deve ser maior de idade');
     });
 
+    it('deve retornar "Valor inválido" quando validate retorna false (não string)', () => {
+      const { result } = renderHook(() =>
+        useForm({
+          initialValues: { code: 'abc' },
+          validationRules: {
+            code: { validate: () => false },
+          },
+        })
+      );
+
+      act(() => {
+        result.current.validateField('code');
+      });
+
+      expect(result.current.errors.code).toBe('Valor inválido');
+    });
+
     it('deve passar na validação quando todos os campos são válidos', () => {
       const { result } = renderHook(() =>
         useForm({
@@ -191,6 +208,25 @@ describe('useForm', () => {
       });
 
       expect(result.current.isSubmitting).toBe(true);
+    });
+
+    it('deve chamar preventDefault quando evento é passado ao handleSubmit', async () => {
+      const onSubmit = vi.fn();
+      const { result } = renderHook(() =>
+        useForm({
+          initialValues: { name: 'John' },
+          onSubmit,
+        })
+      );
+
+      const mockEvent = { preventDefault: vi.fn() } as unknown as React.FormEvent;
+
+      await act(async () => {
+        await result.current.handleSubmit(mockEvent);
+      });
+
+      expect(mockEvent.preventDefault).toHaveBeenCalled();
+      expect(onSubmit).toHaveBeenCalled();
     });
 
     it('deve suportar submit assíncrono', async () => {
@@ -479,6 +515,41 @@ describe('useForm', () => {
       expect(result.current.errors.name).toBeUndefined();
     });
 
+    it('não deve validar on change quando desabilitado', () => {
+      const { result } = renderHook(() =>
+        useForm({
+          initialValues: { name: '' },
+          validationRules: { name: { required: true } },
+          validateOnChange: false,
+        })
+      );
+
+      act(() => {
+        result.current.setValue('name', 'John');
+      });
+
+      // Não deve ter disparado validação automática
+      expect(result.current.errors.name).toBeUndefined();
+    });
+
+    it('não deve validar on blur quando desabilitado', () => {
+      const { result } = renderHook(() =>
+        useForm({
+          initialValues: { name: '' },
+          validationRules: { name: { required: true } },
+          validateOnBlur: false,
+        })
+      );
+
+      act(() => {
+        result.current.handleBlur('name')();
+      });
+
+      // Campo marcado como touched, mas sem erro de validação
+      expect(result.current.touched.name).toBe(true);
+      expect(result.current.errors.name).toBeUndefined();
+    });
+
     it('deve validar on blur quando habilitado', () => {
       const { result } = renderHook(() =>
         useForm({
@@ -493,6 +564,84 @@ describe('useForm', () => {
       });
 
       expect(result.current.errors.name).toBe('Campo obrigatório');
+    });
+  });
+
+  describe('Validações Adicionais', () => {
+    it('deve validar min', () => {
+      const { result } = renderHook(() =>
+        useForm({
+          initialValues: { age: 10 },
+          validationRules: {
+            age: { min: 18 },
+          },
+        })
+      );
+
+      act(() => {
+        result.current.validateField('age');
+      });
+
+      expect(result.current.errors.age).toBe('Valor mínimo: 18');
+    });
+
+    it('deve validar max', () => {
+      const { result } = renderHook(() =>
+        useForm({
+          initialValues: { score: 150 },
+          validationRules: {
+            score: { max: 100 },
+          },
+        })
+      );
+
+      act(() => {
+        result.current.validateField('score');
+      });
+
+      expect(result.current.errors.score).toBe('Valor máximo: 100');
+    });
+
+    it('deve validar pattern e usar mensagem padrão', () => {
+      const { result } = renderHook(() =>
+        useForm({
+          initialValues: { cpf: '123' },
+          validationRules: {
+            cpf: {
+              pattern: /^\d{3}\.\d{3}\.\d{3}-\d{2}$/,
+            },
+          },
+        })
+      );
+
+      act(() => {
+        result.current.validateField('cpf');
+      });
+
+      expect(result.current.errors.cpf).toBe('Formato inválido');
+    });
+
+    it('deve chamar reset function corretamente', () => {
+      const { result } = renderHook(() =>
+        useForm({
+          initialValues: { name: 'John', email: 'john@test.com' },
+        })
+      );
+
+      act(() => {
+        result.current.setValue('name', 'Jane');
+        result.current.setValue('email', 'jane@test.com');
+      });
+
+      expect(result.current.values).toEqual({ name: 'Jane', email: 'jane@test.com' });
+
+      act(() => {
+        result.current.reset();
+      });
+
+      expect(result.current.values).toEqual({ name: 'John', email: 'john@test.com' });
+      expect(result.current.errors).toEqual({});
+      expect(result.current.touched).toEqual({});
     });
   });
 });

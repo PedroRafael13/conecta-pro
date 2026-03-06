@@ -178,6 +178,19 @@ describe('useScales', () => {
 
       expect(result.current.scale).toBeNull();
     });
+
+    it('deve capturar erro ao carregar escala individual', async () => {
+      mockCustomInstance.mockRejectedValueOnce(new Error('Not found'));
+
+      const { result } = renderHook(() => useScale('999'));
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      expect(result.current.error).toBe('Erro ao carregar escala');
+      expect(result.current.scale).toBeNull();
+    });
   });
 
   describe('useScaleOperations', () => {
@@ -286,6 +299,54 @@ describe('useScales', () => {
       expect(result.current.error).toBe('Failed');
     });
 
+    it('deve usar mensagem padrão quando generateScale falha com erro não-Error', async () => {
+      mockCustomInstance.mockRejectedValueOnce('erro string');
+
+      const { result } = renderHook(() => useScaleOperations());
+
+      let scale: unknown;
+      await act(async () => {
+        scale = await result.current.generateScale({} as any);
+      });
+
+      await waitFor(() => {
+        expect(scale).toBeNull();
+      });
+      expect(result.current.error).toBe('Erro ao gerar escala');
+    });
+
+    it('deve retornar null quando submitForApproval falha com Error', async () => {
+      mockCustomInstance.mockRejectedValueOnce(new Error('Submit failed'));
+
+      const { result } = renderHook(() => useScaleOperations());
+
+      let scale: unknown;
+      await act(async () => {
+        scale = await result.current.submitForApproval('1');
+      });
+
+      await waitFor(() => {
+        expect(scale).toBeNull();
+      });
+      expect(result.current.error).toBe('Submit failed');
+    });
+
+    it('deve usar mensagem padrão quando submitForApproval falha com erro não-Error', async () => {
+      mockCustomInstance.mockRejectedValueOnce('erro string');
+
+      const { result } = renderHook(() => useScaleOperations());
+
+      let scale: unknown;
+      await act(async () => {
+        scale = await result.current.submitForApproval('1');
+      });
+
+      await waitFor(() => {
+        expect(scale).toBeNull();
+      });
+      expect(result.current.error).toBe('Erro ao enviar para aprovação');
+    });
+
     it('deve refletir estado de loading', async () => {
       mockCustomInstance.mockImplementation(() => new Promise(() => {}));
 
@@ -318,6 +379,21 @@ describe('useScales', () => {
           url: expect.stringContaining('is_current_month'),
         })
       );
+    });
+  });
+
+  describe('useCurrentMonthScales - Error Handling', () => {
+    it('deve capturar erro ao carregar escalas do mês', async () => {
+      mockCustomInstance.mockRejectedValueOnce(new Error('Month fetch failed'));
+
+      const { result } = renderHook(() => useCurrentMonthScales());
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      expect(result.current.error).toBe('Erro ao carregar escalas');
+      expect(result.current.scales).toEqual([]);
     });
   });
 
@@ -361,6 +437,118 @@ describe('useScales', () => {
       });
 
       expect(result.current.error).toBe('Erro ao carregar escalas');
+    });
+  });
+
+  describe('useScaleOperations - Operações adicionais', () => {
+    it('deve retornar null quando approveScale falha', async () => {
+      mockCustomInstance.mockRejectedValueOnce(new Error('Failed'));
+
+      const { result } = renderHook(() => useScaleOperations());
+
+      let scale: unknown;
+      await act(async () => {
+        scale = await result.current.approveScale('1', 'Notas');
+      });
+
+      await waitFor(() => {
+        expect(scale).toBeNull();
+      });
+      expect(result.current.error).toBe('Failed');
+    });
+
+    it('deve retornar null quando publishScale falha', async () => {
+      mockCustomInstance.mockRejectedValueOnce(new Error('Publish failed'));
+
+      const { result } = renderHook(() => useScaleOperations());
+
+      let scale: unknown;
+      await act(async () => {
+        scale = await result.current.publishScale('1', false);
+      });
+
+      await waitFor(() => {
+        expect(scale).toBeNull();
+      });
+      expect(result.current.error).toBe('Publish failed');
+    });
+
+    it('deve retornar false quando deleteScale falha', async () => {
+      mockCustomInstance.mockRejectedValueOnce(new Error('Delete failed'));
+
+      const { result } = renderHook(() => useScaleOperations());
+
+      let deleted: boolean;
+      await act(async () => {
+        deleted = await result.current.deleteScale('1');
+      });
+
+      await waitFor(() => {
+        expect(deleted).toBe(false);
+      });
+      expect(result.current.error).toBe('Delete failed');
+    });
+
+    it('deve retornar null e usar mensagem padrão quando approveScale falha com erro não-Error', async () => {
+      mockCustomInstance.mockRejectedValueOnce('erro string');
+
+      const { result } = renderHook(() => useScaleOperations());
+
+      let scale: unknown;
+      await act(async () => {
+        scale = await result.current.approveScale('1', 'Notas');
+      });
+
+      await waitFor(() => {
+        expect(scale).toBeNull();
+      });
+      expect(result.current.error).toBe('Erro ao aprovar escala');
+    });
+
+    it('deve retornar null e usar mensagem padrão quando publishScale falha com erro não-Error', async () => {
+      mockCustomInstance.mockRejectedValueOnce('erro string');
+
+      const { result } = renderHook(() => useScaleOperations());
+
+      let scale: unknown;
+      await act(async () => {
+        scale = await result.current.publishScale('1', true);
+      });
+
+      await waitFor(() => {
+        expect(scale).toBeNull();
+      });
+      expect(result.current.error).toBe('Erro ao publicar escala');
+    });
+
+    it('deve retornar false e usar mensagem padrão quando deleteScale falha com erro não-Error', async () => {
+      mockCustomInstance.mockRejectedValueOnce('erro string');
+
+      const { result } = renderHook(() => useScaleOperations());
+
+      let deleted: boolean;
+      await act(async () => {
+        deleted = await result.current.deleteScale('1');
+      });
+
+      await waitFor(() => {
+        expect(deleted).toBe(false);
+      });
+      expect(result.current.error).toBe('Erro ao deletar escala');
+    });
+  });
+
+  describe('useScaleStats - Error Handling', () => {
+    it('deve retornar mensagem padrão quando erro não é Error instance', async () => {
+      mockCustomInstance.mockRejectedValueOnce('erro string');
+
+      const { result } = renderHook(() => useScaleStats());
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      expect(result.current.error).toBe('Erro ao carregar estatísticas');
     });
   });
 });

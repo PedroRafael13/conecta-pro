@@ -213,7 +213,7 @@ services:
       celery-batch:
         condition: service_started
     healthcheck:
-      test: ["CMD-SHELL", "test -f /var/run/celery/celerybeat-schedule"]
+      test: ["CMD-SHELL", "ps aux | grep 'celery.*beat' | grep -v grep || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -231,7 +231,18 @@ services:
     image: conecta-pro-backend:latest
     container_name: conecta-pro-flower
     restart: unless-stopped
-    command: celery -A celery_app flower --port=5555 --basic_auth=${FLOWER_USER:-admin}:${FLOWER_PASSWORD:-admin123} --broker_api=redis://:${REDIS_PASSWORD:-conecta_redis_2024}@redis:6379/0
+    # CORRECAO F8: Removido --broker_api (flag exclusiva de RabbitMQ, invalida para Redis
+    # e causa falha silenciosa de inspecao). Adicionado --timeout=10 para workers lentos,
+    # --purge_offline_workers=60 para limpar workers mortos e --persistent=True para
+    # manter estado entre restarts. O broker URL e passado via variavel de ambiente.
+    command: >
+      celery -A celery_app flower
+      --port=5555
+      --basic_auth=${FLOWER_USER:-admin}:${FLOWER_PASSWORD:-admin123}
+      --timeout=10
+      --purge_offline_workers=60
+      --persistent=True
+      --db=/tmp/flower.db
     environment:
       CELERY_BROKER_URL: redis://:${REDIS_PASSWORD:-conecta_redis_2024}@redis:6379/0
       CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD:-conecta_redis_2024}@redis:6379/0
@@ -240,6 +251,14 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+      celery-batch:
+        condition: service_started
+      celery-priority:
+        condition: service_started
+      celery-integrations:
+        condition: service_started
+      celery-operacional:
+        condition: service_started
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:5555/healthcheck > /dev/null || exit 1"]
       interval: 30s

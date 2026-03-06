@@ -48,5 +48,15 @@ describe('reimbursementPaymentService', () => {
       expect(mockPost).toHaveBeenCalledWith('/api/v1/reimbursements/req-1/process', { notes: 'Pagamento via transferência' });
       expect(result).toEqual(mockData);
     });
+
+    it('deve processar pagamento sem data opcional', async () => {
+      const mockData = { id: 'req-1', status: 'paid' };
+      mockPost.mockResolvedValueOnce({ data: mockData });
+
+      const result = await reimbursementPaymentService.process('req-1');
+
+      expect(mockPost).toHaveBeenCalledWith('/api/v1/reimbursements/req-1/process', {});
+      expect(result).toEqual(mockData);
+    });
   });
 });

@@ -8,7 +8,13 @@ import {
   usePendingApprovals,
   useEmployeeDisciplinary,
 } from '../useDisciplinary';
-import { useDisciplinaryActions as useOrvalDisciplinaryActions } from '@/hooks/operacional/useDisciplinary';
+import {
+  useDisciplinaryActions as useOrvalDisciplinaryActions,
+  useDisciplinaryAction as useOrvalDisciplinaryAction,
+  useDisciplinaryActionsByEmployee as useOrvalDisciplinaryActionsByEmployee,
+  usePendingDisciplinaryApprovals as useOrvalPendingApprovals,
+} from '@/hooks/operacional/useDisciplinary';
+import { useGetDisciplinaryStatsApiV1OperacionalMedidasAdministrativasEstatisticasGet } from '@/types/generated/operacional/operacional-medidas-administrativas/operacional-medidas-administrativas';
 import type { DisciplinaryActionStatus, DisciplinaryActionType } from '@/types/disciplinary';
 import React from 'react';
 
@@ -224,6 +230,32 @@ describe('useDisciplinary', () => {
       });
     });
 
+    it('deve usar todos os filtros disponíveis', async () => {
+      const { result } = renderHook(() => useDisciplinary(), { wrapper });
+
+      await act(async () => {
+        result.current.setFilters({
+          search: 'teste',
+          status: 'aprovada' as DisciplinaryActionStatus,
+          action_type: 'advertencia_verbal' as DisciplinaryActionType,
+          employee_id: 'emp-123',
+          date_from: '2024-01-01',
+          date_to: '2024-12-31',
+        });
+      });
+
+      await waitFor(() => {
+        expect(result.current.filters).toEqual({
+          search: 'teste',
+          status: 'aprovada',
+          action_type: 'advertencia_verbal',
+          employee_id: 'emp-123',
+          date_from: '2024-01-01',
+          date_to: '2024-12-31',
+        });
+      });
+    });
+
     it('deve atualizar página', async () => {
       const { result } = renderHook(() => useDisciplinary(), { wrapper });
 
@@ -249,6 +281,16 @@ describe('useDisciplinary', () => {
         expect(mockRefetch).toHaveBeenCalled();
       });
     });
+
+    it('deve chamar refresh function corretamente', async () => {
+      const { result } = renderHook(() => useDisciplinary(), { wrapper });
+
+      await act(async () => {
+        const refreshResult = await result.current.refresh();
+      });
+
+      expect(mockRefetch).toHaveBeenCalled();
+    });
   });
 
   describe('useDisciplinaryStats', () => {
@@ -270,6 +312,99 @@ describe('useDisciplinary', () => {
       await waitFor(() => {
         expect(mockRefetch).toHaveBeenCalled();
       });
+    });
+
+    it('deve retornar null quando data é undefined', () => {
+      vi.mocked(useGetDisciplinaryStatsApiV1OperacionalMedidasAdministrativasEstatisticasGet).mockImplementationOnce(() => ({
+        data: undefined,
+        isLoading: false,
+        error: null,
+        refetch: mockRefetch,
+        isPending: false,
+        isLoadingError: false,
+        isRefetchError: false,
+        isSuccess: true,
+        status: 'success',
+        fetchStatus: 'idle',
+        isFetched: true,
+        isFetching: false,
+        isFetchedAfterMount: true,
+        isInitialLoading: false,
+        isPlaceholderData: false,
+        isStale: false,
+        isRefetching: false,
+        failureCount: 0,
+        failureReason: null,
+        errorUpdateCount: 0,
+        dataUpdatedAt: Date.now(),
+        errorUpdatedAt: 0,
+      }));
+
+      const { result } = renderHook(() => useDisciplinaryStats(), { wrapper });
+
+      expect(result.current.stats).toBeNull();
+    });
+
+    it('deve retornar erro quando error é Error instance', () => {
+      vi.mocked(useGetDisciplinaryStatsApiV1OperacionalMedidasAdministrativasEstatisticasGet).mockImplementationOnce(() => ({
+        data: undefined,
+        isLoading: false,
+        error: new Error('Erro nas estatísticas'),
+        refetch: mockRefetch,
+        isPending: false,
+        isLoadingError: true,
+        isRefetchError: false,
+        isSuccess: false,
+        status: 'error',
+        fetchStatus: 'idle',
+        isFetched: true,
+        isFetching: false,
+        isFetchedAfterMount: true,
+        isInitialLoading: false,
+        isPlaceholderData: false,
+        isStale: false,
+        isRefetching: false,
+        failureCount: 1,
+        failureReason: new Error('Erro nas estatísticas'),
+        errorUpdateCount: 1,
+        dataUpdatedAt: 0,
+        errorUpdatedAt: Date.now(),
+      }));
+
+      const { result } = renderHook(() => useDisciplinaryStats(), { wrapper });
+
+      expect(result.current.error).toBe('Erro nas estatísticas');
+    });
+
+    it('deve retornar mensagem padrão quando error não é Error instance', () => {
+      vi.mocked(useGetDisciplinaryStatsApiV1OperacionalMedidasAdministrativasEstatisticasGet).mockImplementationOnce(() => ({
+        data: undefined,
+        isLoading: false,
+        error: 'erro string',
+        refetch: mockRefetch,
+        isPending: false,
+        isLoadingError: true,
+        isRefetchError: false,
+        isSuccess: false,
+        status: 'error',
+        fetchStatus: 'idle',
+        isFetched: true,
+        isFetching: false,
+        isFetchedAfterMount: true,
+        isInitialLoading: false,
+        isPlaceholderData: false,
+        isStale: false,
+        isRefetching: false,
+        failureCount: 1,
+        failureReason: 'erro string',
+        errorUpdateCount: 1,
+        dataUpdatedAt: 0,
+        errorUpdatedAt: Date.now(),
+      }));
+
+      const { result } = renderHook(() => useDisciplinaryStats(), { wrapper });
+
+      expect(result.current.error).toBe('Erro ao carregar estatísticas');
     });
   });
 
@@ -424,6 +559,216 @@ describe('useDisciplinary', () => {
       const { result } = renderHook(() => useDisciplinary(), { wrapper });
 
       expect(result.current.error).toBeNull();
+    });
+  });
+
+  describe('useDisciplinaryDetail - Error Branches', () => {
+    it('deve retornar mensagem de erro quando error é Error instance', async () => {
+      vi.mocked(useOrvalDisciplinaryAction).mockImplementationOnce(() => ({
+        data: undefined,
+        isLoading: false,
+        error: new Error('Erro ao carregar detalhes'),
+        refetch: mockRefetch,
+        isPending: false,
+        isLoadingError: true,
+        isRefetchError: false,
+        isSuccess: false,
+        status: 'error',
+        fetchStatus: 'idle',
+        isFetched: true,
+        isFetching: false,
+        isFetchedAfterMount: true,
+        isInitialLoading: false,
+        isPlaceholderData: false,
+        isStale: false,
+        isRefetching: false,
+        failureCount: 1,
+        failureReason: new Error('Erro ao carregar detalhes'),
+        errorUpdateCount: 1,
+        dataUpdatedAt: 0,
+        errorUpdatedAt: Date.now(),
+      }));
+
+      const { result } = renderHook(() => useDisciplinaryDetail('123'), { wrapper });
+
+      expect(result.current.error).toBe('Erro ao carregar detalhes');
+
+      await act(async () => {
+        await result.current.refresh();
+      });
+
+      expect(mockRefetch).toHaveBeenCalled();
+    });
+
+    it('deve retornar mensagem padrão quando error não é Error instance', () => {
+      vi.mocked(useOrvalDisciplinaryAction).mockImplementationOnce(() => ({
+        data: undefined,
+        isLoading: false,
+        error: 'string de erro',
+        refetch: mockRefetch,
+        isPending: false,
+        isLoadingError: true,
+        isRefetchError: false,
+        isSuccess: false,
+        status: 'error',
+        fetchStatus: 'idle',
+        isFetched: true,
+        isFetching: false,
+        isFetchedAfterMount: true,
+        isInitialLoading: false,
+        isPlaceholderData: false,
+        isStale: false,
+        isRefetching: false,
+        failureCount: 1,
+        failureReason: 'string de erro',
+        errorUpdateCount: 1,
+        dataUpdatedAt: 0,
+        errorUpdatedAt: Date.now(),
+      }));
+
+      const { result } = renderHook(() => useDisciplinaryDetail('123'), { wrapper });
+
+      expect(result.current.error).toBe('Erro ao carregar medida');
+    });
+  });
+
+  describe('usePendingApprovals - Error Branches', () => {
+    it('deve retornar mensagem de erro quando error é Error instance', async () => {
+      vi.mocked(useOrvalPendingApprovals).mockImplementationOnce(() => ({
+        data: undefined,
+        isLoading: false,
+        error: new Error('Erro ao carregar pendentes'),
+        refetch: mockRefetch,
+        isPending: false,
+        isLoadingError: true,
+        isRefetchError: false,
+        isSuccess: false,
+        status: 'error',
+        fetchStatus: 'idle',
+        isFetched: true,
+        isFetching: false,
+        isFetchedAfterMount: true,
+        isInitialLoading: false,
+        isPlaceholderData: false,
+        isStale: false,
+        isRefetching: false,
+        failureCount: 1,
+        failureReason: new Error('Erro ao carregar pendentes'),
+        errorUpdateCount: 1,
+        dataUpdatedAt: 0,
+        errorUpdatedAt: Date.now(),
+      }));
+
+      const { result } = renderHook(() => usePendingApprovals(), { wrapper });
+
+      expect(result.current.error).toBe('Erro ao carregar pendentes');
+
+      await act(async () => {
+        await result.current.refresh();
+      });
+
+      expect(mockRefetch).toHaveBeenCalled();
+    });
+
+    it('deve retornar mensagem padrão quando error não é Error instance', () => {
+      vi.mocked(useOrvalPendingApprovals).mockImplementationOnce(() => ({
+        data: undefined,
+        isLoading: false,
+        error: { message: 'erro object' },
+        refetch: mockRefetch,
+        isPending: false,
+        isLoadingError: true,
+        isRefetchError: false,
+        isSuccess: false,
+        status: 'error',
+        fetchStatus: 'idle',
+        isFetched: true,
+        isFetching: false,
+        isFetchedAfterMount: true,
+        isInitialLoading: false,
+        isPlaceholderData: false,
+        isStale: false,
+        isRefetching: false,
+        failureCount: 1,
+        failureReason: { message: 'erro object' },
+        errorUpdateCount: 1,
+        dataUpdatedAt: 0,
+        errorUpdatedAt: Date.now(),
+      }));
+
+      const { result } = renderHook(() => usePendingApprovals(), { wrapper });
+
+      expect(result.current.error).toBe('Erro ao carregar pendentes');
+    });
+  });
+
+  describe('useEmployeeDisciplinary - Error Branches', () => {
+    it('deve retornar mensagem de erro quando error é Error instance', async () => {
+      vi.mocked(useOrvalDisciplinaryActionsByEmployee).mockImplementationOnce(() => ({
+        data: undefined,
+        isLoading: false,
+        error: new Error('Erro específico do funcionário'),
+        refetch: mockRefetch,
+        isPending: false,
+        isLoadingError: true,
+        isRefetchError: false,
+        isSuccess: false,
+        status: 'error',
+        fetchStatus: 'idle',
+        isFetched: true,
+        isFetching: false,
+        isFetchedAfterMount: true,
+        isInitialLoading: false,
+        isPlaceholderData: false,
+        isStale: false,
+        isRefetching: false,
+        failureCount: 1,
+        failureReason: new Error('Erro específico do funcionário'),
+        errorUpdateCount: 1,
+        dataUpdatedAt: 0,
+        errorUpdatedAt: Date.now(),
+      }));
+
+      const { result } = renderHook(() => useEmployeeDisciplinary('emp-1'), { wrapper });
+
+      expect(result.current.error).toBe('Erro específico do funcionário');
+
+      await act(async () => {
+        await result.current.refresh();
+      });
+
+      expect(mockRefetch).toHaveBeenCalled();
+    });
+
+    it('deve retornar mensagem padrão quando error não é Error instance', () => {
+      vi.mocked(useOrvalDisciplinaryActionsByEmployee).mockImplementationOnce(() => ({
+        data: undefined,
+        isLoading: false,
+        error: 123,
+        refetch: mockRefetch,
+        isPending: false,
+        isLoadingError: true,
+        isRefetchError: false,
+        isSuccess: false,
+        status: 'error',
+        fetchStatus: 'idle',
+        isFetched: true,
+        isFetching: false,
+        isFetchedAfterMount: true,
+        isInitialLoading: false,
+        isPlaceholderData: false,
+        isStale: false,
+        isRefetching: false,
+        failureCount: 1,
+        failureReason: 123,
+        errorUpdateCount: 1,
+        dataUpdatedAt: 0,
+        errorUpdatedAt: Date.now(),
+      }));
+
+      const { result } = renderHook(() => useEmployeeDisciplinary('emp-1'), { wrapper });
+
+      expect(result.current.error).toBe('Erro ao carregar medidas do funcionário');
     });
   });
 });

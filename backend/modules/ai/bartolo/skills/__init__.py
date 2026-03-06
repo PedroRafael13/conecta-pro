@@ -13,7 +13,6 @@ from .diarista_skill import DiaristaSkill
 from .disciplinar_skill import DisciplinarSkill
 from .escala_skill import EscalaSkill
 from .ocorrencia_skill import OcorrenciaSkill
-from .openclaw_skill import OpenClawSkill
 from .posto_skill import PostoSkill
 from .ronda_skill import RondaSkill
 from .substituto_skill import SubstitutoSkill
@@ -34,7 +33,6 @@ __all__ = [
     "ComunicadoSkill",
     "BancoHorasSkill",
     "PostoSkill",
-    "OpenClawSkill",
 ]
 
 # Registry de skills disponiveis
@@ -50,7 +48,6 @@ SKILL_REGISTRY = {
     "comunicado": ComunicadoSkill,
     "banco_horas": BancoHorasSkill,
     "posto": PostoSkill,
-    "openclaw": OpenClawSkill,
 }
 
 

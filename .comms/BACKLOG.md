@@ -71,7 +71,8 @@
 | F6 | CDN (S3 + CloudFront) | Baixa | Assets estáticos |
 | F7 | Load test completo | Média | Rodar cenários login + api_reads + mixed (não só smoke) |
 | F8 | Flower inspect fix | Baixa | Flower não consegue inspecionar todos os workers |
-| F9 | Backup offsite S3 | Média | Configurar `S3_BACKUP_BUCKET` no `.env` |
+| F9 | Backup offsite | Média | Backup externo (Backblaze B2 ou segunda VPS Hostinger) |
+| F10 | Bot Telegram interativo | Média | Bot conversacional via API Kimi K2.5 — receber alertas e interagir por conversa natural (diagnosticar problemas, ver status, executar ações) |
 
 ---
 

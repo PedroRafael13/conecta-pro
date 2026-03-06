@@ -134,6 +134,24 @@ describe('useAnalyticsData', () => {
       // Deve retornar dados mesmo com falhas
       expect(result.current.data).not.toBeNull();
     });
+
+    it('deve lidar com erro em uma das requisições paralelas', async () => {
+      mockCustomInstance
+        .mockResolvedValueOnce({ total: 10, filled: 8, by_type: {} })
+        .mockRejectedValueOnce(new Error('Employees failed'))
+        .mockResolvedValueOnce({ total: 20, by_status: {} })
+        .mockResolvedValueOnce({ total_active: 15 });
+
+      const { result } = renderHook(() => useAnalyticsData());
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      // Deve retornar dados processados apesar do erro parcial
+      expect(result.current.data).not.toBeNull();
+      expect(result.current.data?.summary.totalPosts).toBe(10);
+    });
   });
 
   describe('Refresh', () => {

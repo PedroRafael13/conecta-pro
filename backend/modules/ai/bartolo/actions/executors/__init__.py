@@ -10,7 +10,6 @@ from .disciplinary_executor import DisciplinaryActionExecutor
 from .inspection_executor import InspectionActionExecutor
 from .notification_executor import NotificationActionExecutor
 from .occurrence_executor import OccurrenceActionExecutor
-from .openclaw_executor import OpenClawActionExecutor
 from .post_executor import PostActionExecutor
 from .report_executor import ReportActionExecutor
 from .scale_executor import ScaleActionExecutor
@@ -33,5 +32,4 @@ __all__ = [
     "SubstitutionActionExecutor",
     "NotificationActionExecutor",
     "ReportActionExecutor",
-    "OpenClawActionExecutor",
 ]

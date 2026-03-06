@@ -258,6 +258,54 @@ describe('use-toast', () => {
     });
   });
 
+  describe('onOpenChange - branch open=true', () => {
+    it('não deve dismiss quando onOpenChange é chamado com true', async () => {
+      const { result } = renderHook(() => useToast());
+
+      act(() => {
+        result.current.toast({ title: 'Teste Open True' });
+      });
+
+      await waitFor(() => {
+        expect(result.current.toasts).toHaveLength(1);
+      });
+
+      // Chamar onOpenChange com true - NÃO deve fechar o toast
+      const toastComponent = result.current.toasts[0];
+      act(() => {
+        toastComponent?.onOpenChange?.(true);
+      });
+
+      // O toast deve permanecer aberto
+      await waitFor(() => {
+        expect(result.current.toasts[0]?.open).toBe(true);
+      });
+    });
+  });
+
+  describe('useToast cleanup', () => {
+    it('deve remover listener ao desmontar o hook', async () => {
+      const { result, unmount } = renderHook(() => useToast());
+
+      act(() => {
+        result.current.toast({ title: 'Antes de desmontar' });
+      });
+
+      await waitFor(() => {
+        expect(result.current.toasts).toHaveLength(1);
+      });
+
+      // Desmontar o hook - deve executar cleanup do useEffect
+      unmount();
+
+      // Após desmontar, o listener foi removido (sem crash)
+      // Criar outro toast não deve causar erro
+      act(() => {
+        toast({ title: 'Após desmontar' });
+      });
+    });
+  });
+
   describe('addToRemoveQueue', () => {
     it('deve remover toast após delay', async () => {
       const { result } = renderHook(() => useToast());
@@ -283,6 +331,85 @@ describe('use-toast', () => {
       // O toast deve ser removido
       await waitFor(() => {
         expect(result.current.toasts).toHaveLength(0);
+      });
+    });
+  });
+
+  describe('addToRemoveQueue - duplicate call', () => {
+    it('não deve duplicar timeout ao chamar dismiss duas vezes no mesmo toast', async () => {
+      const { result } = renderHook(() => useToast());
+      let toastId: string;
+
+      act(() => {
+        const t = result.current.toast({ title: 'Teste Duplicado' });
+        toastId = t.id;
+      });
+
+      await waitFor(() => {
+        expect(result.current.toasts).toHaveLength(1);
+      });
+
+      // Dismiss o mesmo toast duas vezes - segunda chamada deve ser ignorada (early return)
+      act(() => {
+        result.current.dismiss(toastId!);
+      });
+
+      act(() => {
+        result.current.dismiss(toastId!);
+      });
+
+      // O toast deve ainda existir (marcado como fechado, mas não removido até timeout)
+      expect(result.current.toasts[0]?.open).toBe(false);
+    });
+  });
+
+  describe('toast update function', () => {
+    it('deve atualizar toast usando função update retornada', async () => {
+      const { result } = renderHook(() => useToast());
+      let updateFn: ((props: { title?: string }) => void) | undefined;
+
+      act(() => {
+        const toastResult = result.current.toast({ title: 'Título Original' });
+        updateFn = toastResult.update;
+      });
+
+      await waitFor(() => {
+        expect(result.current.toasts).toHaveLength(1);
+        expect(result.current.toasts[0]?.title).toBe('Título Original');
+      });
+
+      // Chamar update para alterar o título
+      act(() => {
+        updateFn?.({ title: 'Título Atualizado' });
+      });
+
+      await waitFor(() => {
+        expect(result.current.toasts[0]?.title).toBe('Título Atualizado');
+      });
+    });
+
+    it('deve preservar id ao atualizar toast', async () => {
+      const { result } = renderHook(() => useToast());
+      let toastId: string;
+      let updateFn: ((props: { description?: string }) => void) | undefined;
+
+      act(() => {
+        const toastResult = result.current.toast({ title: 'Teste' });
+        toastId = toastResult.id;
+        updateFn = toastResult.update;
+      });
+
+      await waitFor(() => {
+        expect(result.current.toasts).toHaveLength(1);
+      });
+
+      act(() => {
+        updateFn?.({ description: 'Nova descrição' });
+      });
+
+      await waitFor(() => {
+        expect(result.current.toasts[0]?.id).toBe(toastId!);
+        expect(result.current.toasts[0]?.description).toBe('Nova descrição');
       });
     });
   });

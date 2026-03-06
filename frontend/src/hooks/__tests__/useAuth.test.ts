@@ -100,9 +100,8 @@ describe('useAuth', () => {
         token_type: 'bearer',
       };
 
-      vi.mocked(api.post)
-        .mockResolvedValueOnce({ data: loginResponse })
-        .mockResolvedValueOnce({ data: mockUser });
+      vi.mocked(api.post).mockResolvedValueOnce({ data: loginResponse });
+      vi.mocked(api.get).mockResolvedValueOnce({ data: mockUser });
 
       const { result } = renderHook(() => useAuth());
       await waitFor(() => expect(result.current.isLoading).toBe(false));
@@ -147,6 +146,103 @@ describe('useAuth', () => {
       expect(loginResult.success).toBe(false);
       expect(loginResult.error).toBeDefined();
       expect(result.current.isAuthenticated).toBe(false);
+    });
+
+    it('deve armazenar tokens no localStorage após login bem-sucedido', async () => {
+      const loginResponse = {
+        access_token: 'new-access-token',
+        refresh_token: 'new-refresh-token',
+        token_type: 'bearer',
+      };
+
+      vi.mocked(api.post).mockResolvedValueOnce({ data: loginResponse });
+      vi.mocked(api.get).mockResolvedValueOnce({ data: mockUser });
+
+      const { result } = renderHook(() => useAuth());
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+      await act(async () => {
+        await result.current.login({ email: 'test@example.com', password: 'pass' });
+      });
+
+      expect(localStorage.getItem('access_token')).toBe('new-access-token');
+      expect(localStorage.getItem('refresh_token')).toBe('new-refresh-token');
+    });
+
+    it('deve falhar e retornar erro quando busca do usuário após login falhar', async () => {
+      const loginResponse = {
+        access_token: 'token',
+        refresh_token: 'refresh',
+        token_type: 'bearer',
+      };
+
+      vi.mocked(api.post).mockResolvedValueOnce({ data: loginResponse });
+      vi.mocked(api.get).mockRejectedValueOnce(new Error('Failed to fetch user'));
+
+      const { result } = renderHook(() => useAuth());
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+      let loginResult: { success: boolean; error?: string } = { success: true };
+
+      await act(async () => {
+        loginResult = await result.current.login({
+          email: 'test@example.com',
+          password: 'password123',
+        });
+      });
+
+      expect(loginResult.success).toBe(false);
+      expect(loginResult.error).toBeDefined();
+      expect(result.current.isLoading).toBe(false);
+      expect(result.current.isAuthenticated).toBe(false);
+    });
+
+    it('deve definir isLoading como true durante o processo de login', async () => {
+      let resolvePost!: (value: unknown) => void;
+      const postPromise = new Promise((resolve) => { resolvePost = resolve; });
+
+      vi.mocked(api.post).mockReturnValueOnce(postPromise as ReturnType<typeof api.post>);
+
+      const { result } = renderHook(() => useAuth());
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+      act(() => {
+        result.current.login({ email: 'test@example.com', password: 'pass' });
+      });
+
+      // isLoading deve ser true enquanto aguarda
+      expect(result.current.isLoading).toBe(true);
+
+      // Resolve a promise para não deixar pending
+      await act(async () => {
+        resolvePost(new Error('cancel'));
+      });
+    });
+
+    it('deve atualizar o estado do usuário após login bem-sucedido', async () => {
+      const loginResponse = {
+        access_token: 'token',
+        refresh_token: 'refresh',
+        token_type: 'bearer',
+      };
+
+      vi.mocked(api.post).mockResolvedValueOnce({ data: loginResponse });
+      vi.mocked(api.get).mockResolvedValueOnce({ data: mockUser });
+
+      const { result } = renderHook(() => useAuth());
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+      await act(async () => {
+        const loginResult = await result.current.login({
+          email: 'test@example.com',
+          password: 'password123',
+        });
+        expect(loginResult.success).toBe(true);
+      });
+
+      expect(result.current.user).toEqual(mockUser);
+      expect(result.current.isAuthenticated).toBe(true);
+      expect(result.current.isLoading).toBe(false);
     });
   });
 

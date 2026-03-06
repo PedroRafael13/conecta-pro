@@ -251,4 +251,55 @@ describe('ModuleCard', () => {
     const arrow = container.querySelector('svg');
     expect(arrow).toBeInTheDocument();
   });
+
+  it('não deve renderizar badge quando badge prop não é fornecido', () => {
+    const { container } = render(
+      <ModuleCard
+        id="test"
+        title="Módulo Simples"
+        description="Sem badge"
+        icon={Home}
+        href="/simple"
+        color="blue"
+      />
+    );
+    // Verificar que não há badge renderizado
+    const badge = container.querySelector('.absolute.top-2.right-2');
+    expect(badge).not.toBeInTheDocument();
+  });
+
+  it('não deve navegar ao clicar quando desabilitado', () => {
+    render(
+      <ModuleCard
+        id="test"
+        title="Dashboard"
+        description="Teste"
+        icon={Home}
+        href="/dashboard"
+        color="blue"
+        disabled
+      />
+    );
+    const card = screen.getByText('Dashboard').closest('[class*="cursor-not-allowed"]');
+    if (card) {
+      fireEvent.click(card);
+      expect(mockPush).not.toHaveBeenCalled();
+    }
+  });
+
+  it('deve renderizar sem badge quando badge é undefined', () => {
+    render(
+      <ModuleCard
+        id="test-no-badge"
+        title="Sem Badge"
+        description="Este card não tem badge"
+        icon={Settings}
+        href="/no-badge"
+        color="purple"
+        badge={undefined}
+      />
+    );
+    expect(screen.getByText('Sem Badge')).toBeInTheDocument();
+    expect(screen.queryByText(/[0-9]/)).not.toBeInTheDocument();
+  });
 });

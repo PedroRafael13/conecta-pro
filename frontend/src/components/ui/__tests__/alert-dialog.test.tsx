@@ -181,4 +181,44 @@ describe('AlertDialog', () => {
   it('deve ter displayName correto para AlertDialogFooter', () => {
     expect(AlertDialogFooter.displayName).toBe('AlertDialogFooter');
   });
+
+  it('deve renderizar AlertDialogAction com variant destructive', () => {
+    render(
+      <AlertDialog open>
+        <AlertDialogContent>
+          <AlertDialogTitle>Excluir Item</AlertDialogTitle>
+          <AlertDialogDescription>
+            Esta ação é irreversível.
+          </AlertDialogDescription>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" data-testid="destructive-action">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    );
+    const actionButton = screen.getByTestId('destructive-action');
+    expect(actionButton).toBeInTheDocument();
+    expect(actionButton.className).toContain('bg-destructive');
+  });
+
+  it('deve renderizar AlertDialogAction com variant default', () => {
+    render(
+      <AlertDialog open>
+        <AlertDialogContent>
+          <AlertDialogTitle>Confirmar</AlertDialogTitle>
+          <AlertDialogFooter>
+            <AlertDialogAction variant="default" data-testid="default-action">
+              OK
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    );
+    const actionButton = screen.getByTestId('default-action');
+    expect(actionButton).toBeInTheDocument();
+    expect(actionButton.className).toContain('bg-primary');
+  });
 });

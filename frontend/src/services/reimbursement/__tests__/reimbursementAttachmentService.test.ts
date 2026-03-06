@@ -105,4 +105,21 @@ describe('reimbursementAttachmentService', () => {
       expect(result).toEqual(mockBlob);
     });
   });
+
+  describe('Branch Coverage - Upload Validation', () => {
+    it('deve fazer upload sem opções adicionais', async () => {
+      const mockData = { id: 'att-1', filename: 'receipt.pdf' };
+      mockPost.mockResolvedValueOnce({ data: mockData });
+
+      const file = new File(['content'], 'receipt.pdf', { type: 'application/pdf' });
+      const result = await reimbursementAttachmentService.upload('req-1', file);
+
+      expect(mockPost).toHaveBeenCalledWith(
+        '/api/v1/reimbursements/req-1/attachments',
+        expect.any(FormData),
+        expect.objectContaining({ headers: expect.objectContaining({ 'Content-Type': 'multipart/form-data' }) })
+      );
+      expect(result).toEqual(mockData);
+    });
+  });
 });

@@ -40,11 +40,20 @@ select = [
     "B",   # flake8-bugbear
     "C4",  # flake8-comprehensions
     "SIM", # flake8-simplify
+    "A",   # flake8-builtins (shadowing)
 ]
 ignore = [
     "E501",  # Line too long (handled by formatter)
     "B008",  # Do not perform function calls in argument defaults
 ]
+
+[tool.mypy]
+python_version = "3.12"
+explicit_package_bases = true
+mypy_path = "."
+exclude = ["tests/", "alembic/"]
+ignore_missing_imports = true
+check_untyped_defs = false
 
 [tool.ruff.pydocstyle]
 convention = "google"

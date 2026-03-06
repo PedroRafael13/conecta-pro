@@ -216,6 +216,16 @@ describe('useAnnouncements', () => {
       expect(updated).toEqual({ id: '1', title: 'Updated' });
     });
 
+    it('deve retornar null quando update falha', async () => {
+      mockCustomInstance.mockRejectedValueOnce(new Error('Update failed'));
+
+      const { result } = renderHook(() => useAnnouncementMutations(), { wrapper });
+
+      const updated = await result.current.updateAnnouncement('1', { title: 'Updated' } as any);
+
+      expect(updated).toBeNull();
+    });
+
     it('deve publicar comunicado', async () => {
       mockCustomInstance.mockResolvedValueOnce({ id: '1', status: 'published' });
 
@@ -224,6 +234,16 @@ describe('useAnnouncements', () => {
       const published = await result.current.publishAnnouncement('1');
 
       expect(published).toEqual({ id: '1', status: 'published' });
+    });
+
+    it('deve retornar null quando publish falha', async () => {
+      mockCustomInstance.mockRejectedValueOnce(new Error('Publish failed'));
+
+      const { result } = renderHook(() => useAnnouncementMutations(), { wrapper });
+
+      const published = await result.current.publishAnnouncement('1');
+
+      expect(published).toBeNull();
     });
 
     it('deve agendar publicação', async () => {
@@ -246,6 +266,16 @@ describe('useAnnouncements', () => {
       expect(confirmed).toBe(true);
     });
 
+    it('deve retornar false quando confirm falha', async () => {
+      mockCustomInstance.mockRejectedValueOnce(new Error('Confirm failed'));
+
+      const { result } = renderHook(() => useAnnouncementMutations(), { wrapper });
+
+      const confirmed = await result.current.acknowledgeAnnouncement('1');
+
+      expect(confirmed).toBe(false);
+    });
+
     it('deve deletar comunicado', async () => {
       mockCustomInstance.mockResolvedValueOnce(undefined);
 
@@ -254,6 +284,16 @@ describe('useAnnouncements', () => {
       const deleted = await result.current.deleteAnnouncement('1');
 
       expect(deleted).toBe(true);
+    });
+
+    it('deve retornar false quando delete falha', async () => {
+      mockCustomInstance.mockRejectedValueOnce(new Error('Delete failed'));
+
+      const { result } = renderHook(() => useAnnouncementMutations(), { wrapper });
+
+      const deleted = await result.current.deleteAnnouncement('1');
+
+      expect(deleted).toBe(false);
     });
 
     it('deve refletir loading state', async () => {
@@ -266,6 +306,72 @@ describe('useAnnouncements', () => {
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(true);
+      });
+    });
+  });
+
+  describe('useUnreadAnnouncements - Error Handling', () => {
+    it('deve retornar mensagem de erro quando falha', async () => {
+      mockCustomInstance.mockRejectedValueOnce(new Error('Erro ao carregar não lidos'));
+
+      const { result } = renderHook(() => useUnreadAnnouncements(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.error).toBe('Erro ao carregar não lidos');
+      });
+    });
+
+    it('deve retornar mensagem padrão quando erro não é Error instance', async () => {
+      mockCustomInstance.mockRejectedValueOnce('erro string');
+
+      const { result } = renderHook(() => useUnreadAnnouncements(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.error).toBe('Erro ao carregar comunicados');
+      });
+    });
+  });
+
+  describe('useAnnouncementDetail - Error Handling', () => {
+    it('deve retornar mensagem de erro quando falha', async () => {
+      mockCustomInstance.mockRejectedValueOnce(new Error('Erro ao carregar detalhe'));
+
+      const { result } = renderHook(() => useAnnouncementDetail('1'), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.error).toBe('Erro ao carregar detalhe');
+      });
+    });
+
+    it('deve retornar mensagem padrão quando erro não é Error instance', async () => {
+      mockCustomInstance.mockRejectedValueOnce('erro string');
+
+      const { result } = renderHook(() => useAnnouncementDetail('1'), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.error).toBe('Erro ao carregar comunicado');
+      });
+    });
+  });
+
+  describe('useAnnouncementReadStats - Error Handling', () => {
+    it('deve retornar mensagem de erro quando falha', async () => {
+      mockCustomInstance.mockRejectedValueOnce(new Error('Erro ao carregar stats'));
+
+      const { result } = renderHook(() => useAnnouncementReadStats('1'), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.error).toBe('Erro ao carregar stats');
+      });
+    });
+
+    it('deve retornar mensagem padrão quando erro não é Error instance', async () => {
+      mockCustomInstance.mockRejectedValueOnce('erro string');
+
+      const { result } = renderHook(() => useAnnouncementReadStats('1'), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.error).toBe('Erro ao carregar estatisticas');
       });
     });
   });

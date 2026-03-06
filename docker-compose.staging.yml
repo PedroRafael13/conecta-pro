@@ -1,7 +1,6 @@
 # ==========================================================================
-# Conecta PRO - Staging Environment (OpenClaw Workspace)
+# Conecta PRO - Staging Environment
 # ==========================================================================
-# Ambiente separado para OpenClaw trabalhar 24/7 sem afetar produção
 #
 # Uso:
 #   docker compose -f docker-compose.staging.yml up -d
@@ -25,7 +24,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD_STAGING:-postgres}
       POSTGRES_DB: ${POSTGRES_DB_STAGING:-conecta_pro_staging}
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
@@ -48,11 +47,11 @@ services:
     image: redis:7-alpine
     container_name: conecta-pro-redis-staging
     restart: unless-stopped
-    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru --requirepass ${REDIS_PASSWORD_STAGING}
     volumes:
       - redis_staging_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD_STAGING}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -76,18 +75,17 @@ services:
       HOST: 0.0.0.0
       PORT: 8081
       # Database
-      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres-staging:5432/${POSTGRES_DB_STAGING:-conecta_pro_staging}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD_STAGING:-postgres}@postgres-staging:5432/${POSTGRES_DB_STAGING:-conecta_pro_staging}
       # Redis
-      REDIS_URL: redis://redis-staging:6379/1
+      REDIS_URL: redis://:${REDIS_PASSWORD_STAGING}@redis-staging:6379/1
       REDIS_TTL: ${REDIS_TTL:-3600}
       # Celery
-      CELERY_BROKER_URL: redis://redis-staging:6379/0
-      CELERY_RESULT_BACKEND: redis://redis-staging:6379/0
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD_STAGING}@redis-staging:6379/0
+      CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD_STAGING}@redis-staging:6379/0
       # JWT
       JWT_SECRET_KEY: ${JWT_SECRET_KEY_STAGING:-STAGING_SECRET_KEY_NOT_FOR_PROD}
       JWT_ALGORITHM: HS256
       JWT_ACCESS_TOKEN_EXPIRE_MINUTES: 60
-      # CORS (Allow OpenClaw)
       CORS_ORIGINS: http://localhost:3002,http://localhost:8081,http://localhost:8080
       # Logging
       LOG_LEVEL: DEBUG
@@ -99,9 +97,6 @@ services:
       LLM_MAX_TOKENS: ${LLM_MAX_TOKENS:-2000}
       LLM_TEMPERATURE: ${LLM_TEMPERATURE:-0.7}
       LLM_FALLBACK_ENABLED: ${LLM_FALLBACK_ENABLED:-true}
-      # OpenClaw Flags
-      OPENCLAW_MODE: "true"
-      OPENCLAW_FULL_ACCESS: "true"
     ports:
       - "8081:8081"
     depends_on:
@@ -121,7 +116,6 @@ services:
       - ./logs/staging:/app/logs
       - ./uploads/staging:/app/uploads
       - ./reports:/opt/conecta-pro/reports
-      # OpenClaw precisa acessar o código fonte
       - ./backend:/app:ro
       # Testes
       - ./backend/tests:/app/tests
@@ -155,7 +149,6 @@ services:
       backend-staging:
         condition: service_healthy
     volumes:
-      # OpenClaw precisa acessar o código fonte
       - ./frontend:/app:ro
 
   # ==========================================================================
@@ -170,10 +163,10 @@ services:
     command: celery -A backend.infrastructure.celery_app worker -Q operacional -n operacional@%h --loglevel=info --concurrency=2
     environment:
       # Database
-      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres-staging:5432/${POSTGRES_DB_STAGING:-conecta_pro_staging}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD_STAGING:-postgres}@postgres-staging:5432/${POSTGRES_DB_STAGING:-conecta_pro_staging}
       # Celery
-      CELERY_BROKER_URL: redis://redis-staging:6379/0
-      CELERY_RESULT_BACKEND: redis://redis-staging:6379/0
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD_STAGING}@redis-staging:6379/0
+      CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD_STAGING}@redis-staging:6379/0
       ENVIRONMENT: staging
       LOG_LEVEL: INFO
     depends_on:
@@ -197,9 +190,9 @@ services:
     restart: unless-stopped
     command: celery -A backend.infrastructure.celery_app beat --loglevel=info
     environment:
-      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres-staging:5432/${POSTGRES_DB_STAGING:-conecta_pro_staging}
-      CELERY_BROKER_URL: redis://redis-staging:6379/0
-      CELERY_RESULT_BACKEND: redis://redis-staging:6379/0
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD_STAGING:-postgres}@postgres-staging:5432/${POSTGRES_DB_STAGING:-conecta_pro_staging}
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD_STAGING}@redis-staging:6379/0
+      CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD_STAGING}@redis-staging:6379/0
       ENVIRONMENT: staging
       LOG_LEVEL: INFO
     depends_on:
