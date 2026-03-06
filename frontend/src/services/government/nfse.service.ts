@@ -117,7 +117,7 @@ export async function consultarNFSePorRPS(params: {
   serie_rps: string;
 }): Promise<StandardResponse> {
   const { data } = await api.get<StandardResponse>(
-    `/api/v1/government/nfse-manaus/consultar-rps/${params.numero_rps}`,
+    `/api/v1/government/nfse-manaus/consultar/rps/${params.numero_rps}`,
     { params: { serie: params.serie_rps } }
   );
   return data;
@@ -148,6 +148,38 @@ export async function listarNFSe(
   return data;
 }
 
+/**
+ * Consulta NFS-e Manaus por número
+ */
+export async function consultarNFSeManausPorNumero(params: {
+  numero_nfse: string;
+}): Promise<StandardResponse> {
+  const { data } = await api.get<StandardResponse>(
+    `/api/v1/government/nfse-manaus/consultar/numero/${params.numero_nfse}`
+  );
+  return data;
+}
+
+/**
+ * Verifica status da conexão NFS-e Manaus
+ */
+export async function validarConexaoNFSe(): Promise<StandardResponse> {
+  const { data } = await api.get<StandardResponse>(
+    '/api/v1/government/nfse-manaus/status'
+  );
+  return data;
+}
+
+/**
+ * Lista códigos de serviço NFS-e Manaus
+ */
+export async function listarCodigosServico(): Promise<StandardResponse> {
+  const { data } = await api.get<StandardResponse>(
+    '/api/v1/government/nfse-manaus/codigos-servico'
+  );
+  return data;
+}
+
 const nfseService = {
   emitirNFSeNacional,
   emitirNFSeManaus,
@@ -156,6 +188,9 @@ const nfseService = {
   consultarNFSePorRPS,
   consultarLoteNFSe,
   listarNFSe,
+  consultarNFSeManausPorNumero,
+  validarConexaoNFSe,
+  listarCodigosServico,
 };
 
 export default nfseService;

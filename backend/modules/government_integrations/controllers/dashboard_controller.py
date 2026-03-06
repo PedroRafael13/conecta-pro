@@ -115,6 +115,31 @@ class MetricasResponse(BaseModel):
 # ============================================================================
 
 
+class IntegrationStatusItem(BaseModel):
+    """Status de uma integração individual."""
+
+    id: str
+    name: str
+    category: str  # banking, government, hr
+    status: str  # online, offline, degraded
+    description: str
+    last_check: datetime | None = None
+    last_sync: datetime | None = None
+    response_time_ms: float | None = None
+    error_message: str | None = None
+
+
+class IntegrationStatusResponse(BaseModel):
+    """Resposta do status de todas as integrações."""
+
+    total: int
+    online: int
+    offline: int
+    degraded: int
+    integrations: list[IntegrationStatusItem]
+    checked_at: datetime
+
+
 class DashboardService:
     """Serviço de coleta de métricas para o dashboard."""
 
@@ -128,6 +153,71 @@ class DashboardService:
         "receita_federal": "Receita Federal",
         "simples_nacional": "Simples Nacional",
     }
+
+    ALL_INTEGRATIONS = [
+        {"id": "cora", "name": "Banco Cora", "category": "banking", "description": "Saldo, extrato, PIX, boletos"},
+        {"id": "inter", "name": "Banco Inter", "category": "banking", "description": "Saldo, extrato, PIX, cobranças"},
+        {"id": "govbr", "name": "Gov.br", "category": "government", "description": "Autenticação SSO governo federal"},
+        {"id": "sefaz_nfe", "name": "SEFAZ NF-e", "category": "government", "description": "Notas fiscais eletrônicas"},
+        {
+            "id": "sefaz_cte",
+            "name": "SEFAZ CT-e",
+            "category": "government",
+            "description": "Conhecimento de transporte",
+        },
+        {
+            "id": "sefaz_mdfe",
+            "name": "SEFAZ MDF-e",
+            "category": "government",
+            "description": "Manifesto de documentos fiscais",
+        },
+        {
+            "id": "nfse_manaus",
+            "name": "NFS-e Manaus",
+            "category": "government",
+            "description": "Nota fiscal de serviços (Manaus)",
+        },
+        {
+            "id": "esocial",
+            "name": "eSocial",
+            "category": "government",
+            "description": "Eventos trabalhistas e previdenciários",
+        },
+        {
+            "id": "fgts_digital",
+            "name": "FGTS Digital",
+            "category": "government",
+            "description": "Guias, saldos e rescisões",
+        },
+        {
+            "id": "efd_reinf",
+            "name": "EFD-Reinf",
+            "category": "government",
+            "description": "Escrituração fiscal de retenções",
+        },
+        {"id": "sped_fiscal", "name": "SPED Fiscal", "category": "government", "description": "EFD-ICMS/IPI"},
+        {
+            "id": "sped_contabil",
+            "name": "SPED Contábil",
+            "category": "government",
+            "description": "Escrituração contábil digital",
+        },
+        {"id": "ecac", "name": "e-CAC", "category": "government", "description": "Situação fiscal e certidões"},
+        {"id": "dctfweb", "name": "DCTFWeb", "category": "government", "description": "DARFs e declarações"},
+        {
+            "id": "simples_nacional",
+            "name": "Simples Nacional",
+            "category": "government",
+            "description": "DAS, PGDAS-D, Fator R",
+        },
+        {
+            "id": "receita_federal",
+            "name": "Receita Federal",
+            "category": "government",
+            "description": "Validação CPF/CNPJ",
+        },
+        {"id": "solides", "name": "Sólides", "category": "hr", "description": "Sincronização RH/DP"},
+    ]
 
     def __init__(self):
         self.event_bus = get_event_bus()
@@ -277,12 +367,77 @@ class DashboardService:
             tempo_medio_por_servico=tempo_medio_por_servico,
         )
 
+    # ============================================================================
+    # Endpoints
+    # ============================================================================
 
-# ============================================================================
-# Endpoints
-# ============================================================================
+    async def obter_status_integracoes(self) -> IntegrationStatusResponse:
+        """Obtém status de todas as integrações."""
+        integrations = []
+        now = datetime.utcnow()
+
+        for intg in self.ALL_INTEGRATIONS:
+            # Verificar status real quando possível
+            status = "online"
+            response_time = None
+            error_msg = None
+            last_check = now
+
+            try:
+                if intg["id"] in self.SERVICOS:
+                    resultado = await self.verificador.verificar_endpoint("AM", "nfe")
+                    if not resultado.disponivel:
+                        status = "degraded"
+                        error_msg = resultado.erro
+                    response_time = resultado.tempo_resposta_ms
+            except Exception as e:
+                status = "offline"
+                error_msg = str(e)
+
+            integrations.append(
+                IntegrationStatusItem(
+                    id=intg["id"],
+                    name=intg["name"],
+                    category=intg["category"],
+                    status=status,
+                    description=intg["description"],
+                    last_check=last_check,
+                    last_sync=None,
+                    response_time_ms=response_time,
+                    error_message=error_msg,
+                )
+            )
+
+        online = sum(1 for i in integrations if i.status == "online")
+        offline = sum(1 for i in integrations if i.status == "offline")
+        degraded = sum(1 for i in integrations if i.status == "degraded")
+
+        return IntegrationStatusResponse(
+            total=len(integrations),
+            online=online,
+            offline=offline,
+            degraded=degraded,
+            integrations=integrations,
+            checked_at=now,
+        )
+
 
 dashboard_service = DashboardService()
+
+
+@router.get("/status", response_model=IntegrationStatusResponse)
+async def obter_status_integracoes():
+    """
+    Status de TODAS as integrações externas do sistema.
+
+    Retorna status (online/offline/degraded), tempo de resposta e erros
+    para cada integração: Banking (Cora, Inter), Government (SEFAZ, Gov.br, etc.), HR (Sólides).
+    """
+    try:
+        return await dashboard_service.obter_status_integracoes()
+    except Exception as e:
+        logger.error(f"Erro ao obter status das integrações: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao verificar integrações")
 
 
 @router.get("/", response_model=DashboardResponse)

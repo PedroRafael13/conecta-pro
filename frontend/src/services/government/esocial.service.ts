@@ -41,10 +41,10 @@ export async function enviarEvento(
   params: EventoESocialParams
 ): Promise<EventoResponse> {
   const { data } = await api.post<EventoResponse>(
-    '/api/v1/government/esocial/eventos',
+    '/api/v1/government/esocial/evento',
     {
       tipo_evento: params.tipo_evento,
-      dados_evento: params.dados_evento,
+      dados: params.dados_evento,
       validar_apenas: params.validar_apenas,
     }
   );
@@ -58,7 +58,7 @@ export async function consultarEvento(params: {
   evento_id: string;
 }): Promise<EventoResponse> {
   const { data } = await api.get<EventoResponse>(
-    `/api/v1/government/esocial/eventos/${params.evento_id}`
+    `/api/v1/government/esocial/consultar/${params.evento_id}`
   );
   return data;
 }
@@ -136,7 +136,7 @@ export async function validarEvento(params: {
  */
 export async function consultarTabelaEventos(): Promise<StandardResponse> {
   const { data } = await api.get<StandardResponse>(
-    '/api/v1/government/esocial/tabela-eventos'
+    '/api/v1/government/esocial/eventos-suportados'
   );
   return data;
 }

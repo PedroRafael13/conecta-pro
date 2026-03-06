@@ -1,7 +1,7 @@
 'use client';
 
-import { Users, Briefcase, Shield, Smartphone, DollarSign, Landmark, FolderOpen, Wrench, Plug, BarChart3, Settings, Bell, Search, LogOut, User, TrendingUp, TrendingDown } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Users, Briefcase, Shield, Smartphone, DollarSign, Landmark, FolderOpen, Wrench, Plug, BarChart3, Settings, Bell, Search, LogOut, User, TrendingUp, TrendingDown, Wifi, WifiOff, Loader2 } from 'lucide-react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { format } from 'date-fns';
@@ -13,6 +13,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { moduleCategories, modules } from '@/config/modules';
 import { hasPermission, UserRole } from '@/types/modules';
 import { cn } from '@/lib/utils';
+import { fetchAllDashboardStats, fetchIntegrationSummary, type DashboardStats, type IntegrationSummary } from '@/services/dashboard/dashboardStatsService';
 
 // Mapeamento de ícones
 const iconMap: Record<string, React.ElementType> = {
@@ -24,6 +25,28 @@ export default function DashboardPage() {
   const router = useRouter();
   const { user, isLoading, isAuthenticated, logout } = useAuth();
   const [search, setSearch] = useState('');
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [integrations, setIntegrations] = useState<IntegrationSummary | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+
+  // Buscar dados reais do backend
+  const loadRealData = useCallback(async () => {
+    setStatsLoading(true);
+    const [statsData, intgData] = await Promise.all([
+      fetchAllDashboardStats(),
+      fetchIntegrationSummary(),
+    ]);
+    setStats(statsData);
+    setIntegrations(intgData);
+    setStatsLoading(false);
+  }, []);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadRealData();
+    }
+  }, [isAuthenticated, loadRealData]);
+
   const greeting = (() => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Bom dia';
@@ -150,69 +173,68 @@ export default function DashboardPage() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8 animate-slide-up">
-          <div className="card-shine bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-2xl p-3.5 sm:p-5 transition-shadow hover:shadow-sm">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-[#111b57]/10 flex items-center justify-center">
-                <Users className="w-5 h-5 text-[#111b57]" />
-              </div>
-              <div>
-                <p className="text-2xl sm:text-3xl font-extrabold text-[hsl(var(--foreground))]">44</p>
-                <p className="text-xs text-[hsl(var(--muted-foreground))]">Colaboradores</p>
+          {[
+            { key: 'employees', label: 'Colaboradores', icon: Users, color: '#111b57', value: stats?.employees },
+            { key: 'posts', label: 'Postos Ativos', icon: Shield, color: '#f97707', value: stats?.active_posts },
+            { key: 'clients', label: 'Clientes', icon: Briefcase, color: '#10b981', value: stats?.clients },
+            { key: 'scales', label: 'Escalas', icon: BarChart3, color: '#8b5cf6', value: stats?.scales },
+          ].map((stat) => (
+            <div key={stat.key} className="card-shine bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-2xl p-3.5 sm:p-5 transition-shadow hover:shadow-sm">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${stat.color}15` }}>
+                  <stat.icon className="w-5 h-5" style={{ color: stat.color }} />
+                </div>
+                <div>
+                  {statsLoading ? (
+                    <div className="w-12 h-8 rounded animate-shimmer" />
+                  ) : (
+                    <p className="text-2xl sm:text-3xl font-extrabold text-[hsl(var(--foreground))]">
+                      {stat.value ?? '—'}
+                    </p>
+                  )}
+                  <p className="text-xs text-[hsl(var(--muted-foreground))]">{stat.label}</p>
+                </div>
               </div>
             </div>
-            <div className="flex items-center gap-1 mt-3 text-emerald-500 text-xs font-medium">
-              <TrendingUp className="w-3.5 h-3.5" />
-              <span>+12%</span>
-            </div>
-          </div>
+          ))}
 
-          <div className="card-shine bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-2xl p-3.5 sm:p-5 transition-shadow hover:shadow-sm">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-[#f97707]/10 flex items-center justify-center">
-                <Shield className="w-5 h-5 text-[#f97707]" />
-              </div>
-              <div>
-                <p className="text-2xl sm:text-3xl font-extrabold text-[hsl(var(--foreground))]">9</p>
-                <p className="text-xs text-[hsl(var(--muted-foreground))]">Postos Ativos</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-1 mt-3 text-emerald-500 text-xs font-medium">
-              <TrendingUp className="w-3.5 h-3.5" />
-              <span>+5%</span>
-            </div>
-          </div>
-
-          <div className="card-shine bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-2xl p-3.5 sm:p-5 transition-shadow hover:shadow-sm">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-                <Briefcase className="w-5 h-5 text-emerald-500" />
-              </div>
-              <div>
-                <p className="text-2xl sm:text-3xl font-extrabold text-[hsl(var(--foreground))]">4</p>
-                <p className="text-xs text-[hsl(var(--muted-foreground))]">Clientes</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-1 mt-3 text-emerald-500 text-xs font-medium">
-              <TrendingUp className="w-3.5 h-3.5" />
-              <span>+8%</span>
-            </div>
-          </div>
-
-          <div className="card-shine bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-2xl p-3.5 sm:p-5 transition-shadow hover:shadow-sm">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-purple-500/10 flex items-center justify-center">
-                <BarChart3 className="w-5 h-5 text-purple-500" />
-              </div>
-              <div>
-                <p className="text-2xl sm:text-3xl font-extrabold text-[hsl(var(--foreground))]">28</p>
-                <p className="text-xs text-[hsl(var(--muted-foreground))]">Escalas</p>
+          {/* Integration Status Card */}
+          {integrations && integrations.total > 0 && (
+            <div className="col-span-2 lg:col-span-4 card-shine bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-2xl p-3.5 sm:p-5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-navy-600/10 flex items-center justify-center">
+                    <Plug className="w-5 h-5 text-navy-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-[hsl(var(--foreground))]">Integrações Externas</p>
+                    <p className="text-xs text-[hsl(var(--muted-foreground))]">{integrations.total} integrações configuradas</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-1.5">
+                    <Wifi className="w-3.5 h-3.5 text-emerald-500" />
+                    <span className="text-sm font-bold text-emerald-500">{integrations.online}</span>
+                    <span className="text-xs text-[hsl(var(--muted-foreground))]">online</span>
+                  </div>
+                  {integrations.offline > 0 && (
+                    <div className="flex items-center gap-1.5">
+                      <WifiOff className="w-3.5 h-3.5 text-red-500" />
+                      <span className="text-sm font-bold text-red-500">{integrations.offline}</span>
+                      <span className="text-xs text-[hsl(var(--muted-foreground))]">offline</span>
+                    </div>
+                  )}
+                  {integrations.degraded > 0 && (
+                    <div className="flex items-center gap-1.5">
+                      <Wifi className="w-3.5 h-3.5 text-amber-500" />
+                      <span className="text-sm font-bold text-amber-500">{integrations.degraded}</span>
+                      <span className="text-xs text-[hsl(var(--muted-foreground))]">instável</span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-            <div className="flex items-center gap-1 mt-3 text-red-500 text-xs font-medium">
-              <TrendingDown className="w-3.5 h-3.5" />
-              <span>-3%</span>
-            </div>
-          </div>
+          )}
         </div>
 
         {/* Search - Mobile */}

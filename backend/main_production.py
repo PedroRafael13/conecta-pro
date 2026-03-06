@@ -480,11 +480,12 @@ except Exception as e:
 
 # Integrations (Sprint 32: API Gateway + Sprint 33: Conectores Externos + Sólides)
 try:
-    from modules.integrations.controllers import connector_router, integration_router, solides_router
+    from modules.integrations.controllers import banking_router, connector_router, integration_router, solides_router
 
     api_router.include_router(integration_router, prefix="/integrations", tags=["Integrations - API Gateway"])
     api_router.include_router(connector_router, tags=["Integrations - Conectores"])
     api_router.include_router(solides_router, prefix="/integrations", tags=["Integrations - Sólides RH/DP"])
+    api_router.include_router(banking_router, prefix="/integrations", tags=["Integrations - Banking"])
     logger.info("Modulo Integrations: OK")
 except Exception as e:
     logger.warning(f"Modulo Integrations: {e}")

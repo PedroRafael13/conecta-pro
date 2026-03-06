@@ -86,7 +86,7 @@ export async function sincronizarNFeRapido(params: {
   }
 
   const { data } = await api.post<StandardResponse>(
-    '/api/v1/government/extracao/sync-nfe',
+    '/api/v1/government/extracao/sync/nfe',
     formData
   );
   return data;
@@ -104,7 +104,7 @@ export async function sincronizarFGTSRapido(params: {
   }
 
   const { data } = await api.post<StandardResponse>(
-    '/api/v1/government/extracao/sync-fgts',
+    '/api/v1/government/extracao/sync/fgts',
     formData
   );
   return data;
@@ -115,7 +115,7 @@ export async function sincronizarFGTSRapido(params: {
  */
 export async function sincronizarTodosRapido(): Promise<StandardResponse> {
   const { data } = await api.post<StandardResponse>(
-    '/api/v1/government/extracao/sync-todos',
+    '/api/v1/government/extracao/sync/todos',
     {}
   );
   return data;
@@ -155,7 +155,7 @@ export async function agendarSincronizacao(
   params: AgendamentoSyncParams
 ): Promise<StandardResponse> {
   const { data } = await api.post<StandardResponse>(
-    '/api/v1/government/sync/agendar',
+    '/api/v1/government/sync/agendamento',
     {
       servico: params.servico,
       periodicidade: params.periodicidade,
@@ -288,7 +288,7 @@ export async function testarAssinaturaCertificado(params: {
  */
 export async function listarAlertasCertificados(): Promise<AlertaCertificado[]> {
   const { data } = await api.get<AlertaCertificado[]>(
-    '/api/v1/government/certificates/alertas'
+    '/api/v1/government/dashboard/certificados/alertas'
   );
   return data;
 }
@@ -330,7 +330,7 @@ export async function consultarHistoricoJob(params: {
  */
 export async function obterDashboardMonitoramento(): Promise<DashboardResponse> {
   const { data } = await api.get<DashboardResponse>(
-    '/api/v1/government/dashboard/monitoramento'
+    '/api/v1/government/dashboard/'
   );
   return data;
 }
@@ -342,7 +342,7 @@ export async function listarEventosRecentes(params?: {
   limite?: number;
 }): Promise<EventoRecente[]> {
   const { data } = await api.get<EventoRecente[]>(
-    '/api/v1/government/dashboard/eventos-recentes',
+    '/api/v1/government/dashboard/eventos',
     { params }
   );
   return data;

@@ -66,7 +66,7 @@ export async function consultarNFe(
   params: ConsultaNFeParams
 ): Promise<ConsultaNFeResponse> {
   const { data } = await api.get<ConsultaNFeResponse>(
-    `/api/v1/government/sefaz/nfe/${params.chave_acesso}`
+    `/api/v1/government/sefaz/nfe/consultar/${params.chave_acesso}`
   );
   return data;
 }
