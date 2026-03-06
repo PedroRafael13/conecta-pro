@@ -3,7 +3,7 @@
 import { Shield, ShieldCheck, ChevronLeft, ChevronRight, Menu, X, UserPlus, Target, Building2, Contact, FileText, FileSignature, ClipboardList, Calendar, CalendarDays, MapPin, UserCheck, AlertTriangle, Route, LogIn, Monitor, Bell, TrendingDown, TrendingUp, Activity, Receipt, CheckCircle2, FileSpreadsheet, FileCode, Award, File, Folder, Package, Repeat, Settings, Camera, Fingerprint, Video, Webhook, LayoutDashboard, ClipboardCheck, PieChart, Users, Lock, Building, Eye, Database, Clock, Megaphone, ShoppingCart, Calculator, Trash2, Key, RefreshCw, ToggleRight, Landmark, DollarSign, CreditCard, Wallet, Server, Zap, Plug, Truck } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-;
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { getModuleByPath, modules } from '@/config/modules';
@@ -35,7 +35,7 @@ export default function ModulosLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -72,94 +72,150 @@ export default function ModulosLayout({
       >
         {/* Header */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-[hsl(var(--border))]">
-          {sidebarOpen && (
+          {sidebarOpen ? (
             <button
               onClick={() => router.push('/dashboard')}
-              className="flex items-center gap-2 text-[hsl(var(--foreground))] hover:text-[hsl(var(--primary))] transition-colors"
+              className="flex items-center gap-2.5 text-[hsl(var(--foreground))] hover:text-[hsl(var(--primary))] transition-colors duration-200"
             >
-              <ChevronLeft className="w-4 h-4" />
-              <span className="text-sm font-medium">Dashboard</span>
+              <Image
+                src="/images/logo-icon.png"
+                alt="Conecta PRO"
+                width={28}
+                height={28}
+                className="flex-shrink-0"
+              />
+              <span className="text-sm font-semibold tracking-tight">Conecta PRO</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="mx-auto hover:opacity-80 transition-opacity duration-200"
+              title="Expandir menu"
+            >
+              <Image
+                src="/images/logo-icon.png"
+                alt="Conecta PRO"
+                width={28}
+                height={28}
+              />
             </button>
           )}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className={cn(!sidebarOpen && 'mx-auto')}
-          >
-            {sidebarOpen ? (
+          {sidebarOpen && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSidebarOpen(false)}
+              className="transition-colors duration-200"
+            >
               <ChevronLeft className="w-4 h-4" />
-            ) : (
-              <ChevronRight className="w-4 h-4" />
-            )}
-          </Button>
+            </Button>
+          )}
         </div>
 
         {/* Module title */}
         <div className={cn(
-          'px-4 py-4 border-b border-[hsl(var(--border))]',
-          !sidebarOpen && 'px-2'
+          'border-b border-[hsl(var(--border))]',
+          sidebarOpen ? 'px-4 py-4 gradient-brand-subtle' : 'px-2 py-4'
         )}>
           {sidebarOpen ? (
-            <>
-              <h2 className="font-semibold text-[hsl(var(--foreground))]">
-                {currentModule.title}
-              </h2>
-              <p className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5 line-clamp-1">
-                {currentModule.description}
-              </p>
-            </>
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-brand-500/10 flex items-center justify-center flex-shrink-0">
+                <Shield className="w-[18px] h-[18px] text-brand-500" />
+              </div>
+              <div className="min-w-0">
+                <h2 className="font-semibold text-[hsl(var(--foreground))] text-sm">
+                  {currentModule.title}
+                </h2>
+                <p className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5 line-clamp-1">
+                  {currentModule.description}
+                </p>
+              </div>
+            </div>
           ) : (
-            <div className="w-8 h-8 mx-auto rounded-lg bg-[hsl(var(--primary))]/10 flex items-center justify-center">
-              <Shield className="w-4 h-4 text-[hsl(var(--primary))]" />
+            <div className="w-9 h-9 mx-auto rounded-xl bg-brand-500/10 flex items-center justify-center">
+              <Shield className="w-[18px] h-[18px] text-brand-500" />
             </div>
           )}
         </div>
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto py-4" data-tour="sidebar-nav">
-          <ul className="space-y-1 px-2">
+          <div className={cn('flex flex-col gap-1 px-2', sidebarOpen ? 'gap-1' : 'gap-3')}>
             {currentModule.subModules.map((subModule) => {
               const Icon = iconMap[subModule.icon] || FileText;
               const isActive = pathname === subModule.href;
 
-              return (
-                <li key={subModule.id}>
-                  <button
-                    onClick={() => router.push(subModule.href)}
-                    className={cn(
-                      'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg',
-                      'text-sm font-medium transition-all duration-200',
-                      isActive
-                        ? 'bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))] border border-[hsl(var(--primary))]/30'
-                        : 'text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--secondary))] hover:text-[hsl(var(--foreground))]',
-                      !sidebarOpen && 'justify-center px-0'
-                    )}
-                    title={!sidebarOpen ? subModule.title : undefined}
-                  >
-                    <Icon className="w-4 h-4 flex-shrink-0" />
-                    {sidebarOpen && (
-                      <>
-                        <span className="flex-1 text-left">{subModule.title}</span>
-                        {subModule.badge !== undefined && (
-                          <span className="px-1.5 py-0.5 text-xs bg-[hsl(var(--primary))]/20 text-[hsl(var(--primary))] rounded">
-                            {subModule.badge}
-                          </span>
-                        )}
-                      </>
-                    )}
-                  </button>
-                </li>
+              return sidebarOpen ? (
+                <button
+                  key={subModule.id}
+                  onClick={() => router.push(subModule.href)}
+                  className={cn(
+                    'relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl',
+                    'text-sm font-medium transition-all duration-200',
+                    isActive
+                      ? 'bg-[hsl(var(--primary))]/5 text-[hsl(var(--primary))]'
+                      : 'text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--secondary))]/80 hover:text-[hsl(var(--foreground))]'
+                  )}
+                >
+                  {isActive && (
+                    <span
+                      className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full"
+                      style={{ background: 'linear-gradient(180deg, hsl(var(--primary)), #f97707)' }}
+                    />
+                  )}
+                  <Icon className="w-[18px] h-[18px] flex-shrink-0" />
+                  <span className="flex-1 text-left">{subModule.title}</span>
+                  {subModule.badge !== undefined && (
+                    <span className="px-1.5 py-0.5 text-xs bg-brand-500/15 text-brand-500 rounded-md font-semibold">
+                      {subModule.badge}
+                    </span>
+                  )}
+                </button>
+              ) : (
+                <button
+                  key={subModule.id}
+                  onClick={() => router.push(subModule.href)}
+                  className={cn(
+                    'relative w-full flex flex-col items-center justify-center py-2.5 rounded-xl',
+                    'transition-all duration-200',
+                    isActive
+                      ? 'text-[hsl(var(--primary))] bg-[hsl(var(--primary))]/5'
+                      : 'text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--secondary))]/80 hover:text-[hsl(var(--foreground))]'
+                  )}
+                  title={subModule.title}
+                >
+                  <Icon className="w-[18px] h-[18px]" />
+                  {isActive && (
+                    <span className="absolute bottom-1 w-1 h-1 rounded-full bg-brand-500" />
+                  )}
+                </button>
               );
             })}
-          </ul>
+          </div>
         </nav>
 
-        {/* Footer com ThemeToggle */}
+        {/* Footer with user info + ThemeToggle */}
         <div className={cn(
-          'p-4 border-t border-[hsl(var(--border))]',
-          !sidebarOpen && 'flex justify-center'
+          'p-3 border-t border-[hsl(var(--border))]',
+          sidebarOpen ? 'flex items-center gap-3' : 'flex flex-col items-center gap-2'
         )}>
+          <div
+            className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-semibold text-white"
+            style={{ background: 'linear-gradient(135deg, hsl(var(--primary)), #f97707)' }}
+            title={user?.name || ''}
+          >
+            {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+          </div>
+          {sidebarOpen && (
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-[hsl(var(--foreground))] truncate">
+                {user?.name || 'Usuario'}
+              </p>
+              <p className="text-xs text-[hsl(var(--muted-foreground))] truncate">
+                {user?.role || ''}
+              </p>
+            </div>
+          )}
           <ThemeToggle />
         </div>
       </aside>
@@ -175,72 +231,92 @@ export default function ModulosLayout({
       {/* Sidebar - Mobile */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-50 w-64 lg:hidden',
+          'fixed inset-y-0 left-0 z-50 w-72 lg:hidden',
           'bg-[hsl(var(--card))] border-r border-[hsl(var(--border))]',
-          'transform transition-transform duration-300 ease-in-out',
+          'transform transition-transform duration-200 ease-out',
           mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
+        {/* Subtle gradient overlay at top */}
+        <div className="absolute top-0 left-0 right-0 h-32 pointer-events-none opacity-[0.05] gradient-brand rounded-none" />
+
         {/* Header mobile */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-[hsl(var(--border))]">
+        <div className="relative h-16 flex items-center justify-between px-4 border-b border-[hsl(var(--border))]">
           <button
             onClick={() => {
               setMobileMenuOpen(false);
               router.push('/dashboard');
             }}
-            className="flex items-center gap-2 text-[hsl(var(--foreground))]"
+            className="flex items-center gap-2.5 text-[hsl(var(--foreground))] hover:text-[hsl(var(--primary))] transition-colors duration-200"
           >
-            <ChevronLeft className="w-4 h-4" />
-            <span className="text-sm font-medium">Dashboard</span>
+            <Image
+              src="/images/logo-icon.png"
+              alt="Conecta PRO"
+              width={24}
+              height={24}
+              className="flex-shrink-0"
+            />
+            <span className="text-sm font-semibold tracking-tight">Conecta PRO</span>
           </button>
-          <Button
-            variant="ghost"
-            size="sm"
+          <button
             onClick={() => setMobileMenuOpen(false)}
+            className="w-8 h-8 flex items-center justify-center rounded-lg bg-brand-500 text-white transition-colors duration-200 hover:bg-brand-500/90"
           >
             <X className="w-4 h-4" />
-          </Button>
+          </button>
         </div>
 
         {/* Module title mobile */}
-        <div className="px-4 py-4 border-b border-[hsl(var(--border))]">
-          <h2 className="font-semibold text-[hsl(var(--foreground))]">
-            {currentModule.title}
-          </h2>
-          <p className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5">
-            {currentModule.description}
-          </p>
+        <div className="relative px-4 py-4 border-b border-[hsl(var(--border))] gradient-brand-subtle">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-brand-500/10 flex items-center justify-center flex-shrink-0">
+              <Shield className="w-[18px] h-[18px] text-brand-500" />
+            </div>
+            <div className="min-w-0">
+              <h2 className="font-semibold text-[hsl(var(--foreground))] text-sm">
+                {currentModule.title}
+              </h2>
+              <p className="text-xs text-[hsl(var(--muted-foreground))] mt-0.5 line-clamp-1">
+                {currentModule.description}
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Navigation mobile */}
-        <nav className="flex-1 overflow-y-auto py-4">
-          <ul className="space-y-1 px-2">
+        <nav className="relative flex-1 overflow-y-auto py-4">
+          <div className="flex flex-col gap-1 px-2">
             {currentModule.subModules.map((subModule) => {
               const Icon = iconMap[subModule.icon] || FileText;
               const isActive = pathname === subModule.href;
 
               return (
-                <li key={subModule.id}>
-                  <button
-                    onClick={() => {
-                      router.push(subModule.href);
-                      setMobileMenuOpen(false);
-                    }}
-                    className={cn(
-                      'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg',
-                      'text-sm font-medium transition-all duration-200',
-                      isActive
-                        ? 'bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))]'
-                        : 'text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--secondary))]'
-                    )}
-                  >
-                    <Icon className="w-4 h-4" />
-                    <span>{subModule.title}</span>
-                  </button>
-                </li>
+                <button
+                  key={subModule.id}
+                  onClick={() => {
+                    router.push(subModule.href);
+                    setMobileMenuOpen(false);
+                  }}
+                  className={cn(
+                    'relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl',
+                    'text-sm font-medium transition-all duration-200',
+                    isActive
+                      ? 'bg-[hsl(var(--primary))]/5 text-[hsl(var(--primary))]'
+                      : 'text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--secondary))]/80 hover:text-[hsl(var(--foreground))]'
+                  )}
+                >
+                  {isActive && (
+                    <span
+                      className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full"
+                      style={{ background: 'linear-gradient(180deg, hsl(var(--primary)), #f97707)' }}
+                    />
+                  )}
+                  <Icon className="w-[18px] h-[18px] flex-shrink-0" />
+                  <span>{subModule.title}</span>
+                </button>
               );
             })}
-          </ul>
+          </div>
         </nav>
       </aside>
 
@@ -252,7 +328,7 @@ export default function ModulosLayout({
         )}
       >
         {/* Header - Desktop e Mobile */}
-        <header className="sticky top-0 z-30 h-14 flex items-center gap-3 px-4 bg-[hsl(var(--background))]/80 backdrop-blur-xl border-b border-[hsl(var(--border))]">
+        <header className="sticky top-0 z-30 h-14 flex items-center gap-3 px-4 bg-[hsl(var(--background))]/80 backdrop-blur-2xl shadow-sm">
           {/* Mobile menu toggle */}
           <Button
             variant="ghost"
@@ -263,18 +339,24 @@ export default function ModulosLayout({
             <Menu className="w-5 h-5" />
           </Button>
 
-          {/* Title mobile */}
-          <span className="font-medium text-[hsl(var(--foreground))] flex-1 lg:hidden">
-            {currentModule.title}
-          </span>
-
-          {/* Search trigger - sempre visível */}
-          <div className="hidden sm:block flex-1 max-w-md" data-tour="global-search">
-            <SearchTrigger />
+          {/* Logo + Title mobile */}
+          <div className="flex items-center gap-2 flex-1 lg:hidden">
+            <Image
+              src="/images/logo-icon.png"
+              alt="Conecta PRO"
+              width={24}
+              height={24}
+              className="flex-shrink-0"
+            />
+            <span className="font-medium text-[hsl(var(--foreground))]">
+              {currentModule.title}
+            </span>
           </div>
 
-          {/* Spacer para desktop */}
-          <div className="hidden lg:block flex-1" />
+          {/* Search trigger */}
+          <div className="flex-1 max-w-md" data-tour="global-search">
+            <SearchTrigger />
+          </div>
 
           {/* Actions */}
           <div className="flex items-center gap-2">

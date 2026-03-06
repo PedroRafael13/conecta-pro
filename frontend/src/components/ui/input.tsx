@@ -18,21 +18,22 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             {label}
           </label>
         )}
-        <div className="relative">
+        <div className="relative group">
           {icon && (
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[hsl(var(--muted-foreground))]">
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[hsl(var(--muted-foreground))] transition-colors duration-200 group-focus-within:text-[hsl(var(--primary))]">
               {icon}
             </div>
           )}
           <input
             type={type}
             className={cn(
-              `w-full h-10 px-3 text-sm
+              `w-full h-11 px-3 text-sm
               bg-[hsl(var(--input))] text-[hsl(var(--foreground))]
-              border border-[hsl(var(--border))] rounded-lg
+              border border-[hsl(var(--border))] rounded-xl
               placeholder:text-[hsl(var(--muted-foreground))]
               transition-all duration-200
               focus:border-[hsl(var(--primary))]
+              focus:bg-[hsl(var(--input)/0.8)]
               disabled:opacity-50 disabled:cursor-not-allowed`,
               icon && 'pl-10',
               error && 'border-[hsl(var(--destructive))]',

@@ -7,7 +7,7 @@ setup('autenticar e salvar estado', async ({ page, context }) => {
   console.log('Iniciando autenticação...');
 
   // Navega para login
-  await page.goto('/login', { waitUntil: 'networkidle' });
+  await page.goto('/login', { waitUntil: 'load' });
   await page.waitForTimeout(2000);
 
   console.log('Página de login carregada');
@@ -104,7 +104,7 @@ setup('autenticar e salvar estado', async ({ page, context }) => {
   console.log('Navegando para /modulos...');
 
   // Navega para módulos
-  await page.goto('/modulos', { waitUntil: 'networkidle' });
+  await page.goto('/modulos', { waitUntil: 'load' });
   await page.waitForTimeout(2000);
 
   const currentUrl = page.url();

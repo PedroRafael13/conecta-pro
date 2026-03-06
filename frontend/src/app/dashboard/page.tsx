@@ -1,10 +1,11 @@
 'use client';
 
-import { Users, Briefcase, Shield, Smartphone, DollarSign, Landmark, FolderOpen, Wrench, Plug, BarChart3, Settings, Bell, Search, LogOut, User, ChevronRight } from 'lucide-react';
+import { Users, Briefcase, Shield, Smartphone, DollarSign, Landmark, FolderOpen, Wrench, Plug, BarChart3, Settings, Bell, Search, LogOut, User, TrendingUp, TrendingDown } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-;
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { ModuleCard } from '@/components/ui/module-card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -64,22 +65,27 @@ export default function DashboardPage() {
     );
   }
 
+  const todayFormatted = format(new Date(), "EEEE, d 'de' MMMM 'de' yyyy", { locale: ptBR });
+
   return (
-    <div className="min-h-screen bg-grid">
+    <div className="min-h-screen bg-grid noise" style={{ backgroundSize: '60px 60px', opacity: undefined }}>
+      {/* Top gradient accent line */}
+      <div className="h-[2px] w-full gradient-brand" />
+
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-[hsl(var(--background))]/80 backdrop-blur-xl border-b border-[hsl(var(--border))]">
+      <header className="sticky top-0 z-50 bg-[hsl(var(--background))]/60 backdrop-blur-2xl shadow-sm border-b border-[hsl(var(--border))]/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5">
               <Image
-                src="/images/logo-icon.png"
+                src="/images/logo.png"
                 alt="Conecta PRO"
-                width={36}
-                height={36}
+                width={32}
+                height={32}
                 className="rounded-lg"
               />
-              <span className="font-semibold text-[hsl(var(--foreground))]">
+              <span className="font-semibold text-[hsl(var(--foreground))] tracking-tight">
                 Conecta PRO
               </span>
             </div>
@@ -128,64 +134,83 @@ export default function DashboardPage() {
       </header>
 
       {/* Main content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Welcome */}
-        <div className="mb-8 animate-slide-up">
-          <h1 className="text-2xl font-bold text-[hsl(var(--foreground))]">
-            {greeting}, {user?.name?.split(' ')[0] || 'Usuário'}
+        <div className="mb-6 sm:mb-8 animate-slide-up gradient-brand-subtle rounded-2xl p-4 sm:p-6">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-[hsl(var(--foreground))]">
+            {greeting}, <span className="text-[hsl(var(--primary))]">{user?.name?.split(' ')[0] || 'Usuário'}</span>
           </h1>
+          <p className="text-sm text-[hsl(var(--muted-foreground))] mt-1.5 capitalize">
+            {todayFormatted}
+          </p>
           <p className="text-[hsl(var(--muted-foreground))] mt-1">
             Selecione um módulo para começar
           </p>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 animate-slide-up">
-          <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-cyan-500/10 flex items-center justify-center">
-                <Users className="w-5 h-5 text-cyan-500" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8 animate-slide-up">
+          <div className="card-shine bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-2xl p-3.5 sm:p-5 transition-shadow hover:shadow-sm">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-[#111b57]/10 flex items-center justify-center">
+                <Users className="w-5 h-5 text-[#111b57]" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-[hsl(var(--foreground))]">44</p>
+                <p className="text-2xl sm:text-3xl font-extrabold text-[hsl(var(--foreground))]">44</p>
                 <p className="text-xs text-[hsl(var(--muted-foreground))]">Colaboradores</p>
               </div>
             </div>
+            <div className="flex items-center gap-1 mt-3 text-emerald-500 text-xs font-medium">
+              <TrendingUp className="w-3.5 h-3.5" />
+              <span>+12%</span>
+            </div>
           </div>
 
-          <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center">
-                <Shield className="w-5 h-5 text-green-500" />
+          <div className="card-shine bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-2xl p-3.5 sm:p-5 transition-shadow hover:shadow-sm">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-[#f97707]/10 flex items-center justify-center">
+                <Shield className="w-5 h-5 text-[#f97707]" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-[hsl(var(--foreground))]">9</p>
+                <p className="text-2xl sm:text-3xl font-extrabold text-[hsl(var(--foreground))]">9</p>
                 <p className="text-xs text-[hsl(var(--muted-foreground))]">Postos Ativos</p>
               </div>
             </div>
-          </div>
-
-          <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                <Briefcase className="w-5 h-5 text-blue-500" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-[hsl(var(--foreground))]">4</p>
-                <p className="text-xs text-[hsl(var(--muted-foreground))]">Clientes</p>
-              </div>
+            <div className="flex items-center gap-1 mt-3 text-emerald-500 text-xs font-medium">
+              <TrendingUp className="w-3.5 h-3.5" />
+              <span>+5%</span>
             </div>
           </div>
 
-          <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-orange-500/10 flex items-center justify-center">
-                <BarChart3 className="w-5 h-5 text-orange-500" />
+          <div className="card-shine bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-2xl p-3.5 sm:p-5 transition-shadow hover:shadow-sm">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+                <Briefcase className="w-5 h-5 text-emerald-500" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-[hsl(var(--foreground))]">28</p>
+                <p className="text-2xl sm:text-3xl font-extrabold text-[hsl(var(--foreground))]">4</p>
+                <p className="text-xs text-[hsl(var(--muted-foreground))]">Clientes</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1 mt-3 text-emerald-500 text-xs font-medium">
+              <TrendingUp className="w-3.5 h-3.5" />
+              <span>+8%</span>
+            </div>
+          </div>
+
+          <div className="card-shine bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-2xl p-3.5 sm:p-5 transition-shadow hover:shadow-sm">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-purple-500/10 flex items-center justify-center">
+                <BarChart3 className="w-5 h-5 text-purple-500" />
+              </div>
+              <div>
+                <p className="text-2xl sm:text-3xl font-extrabold text-[hsl(var(--foreground))]">28</p>
                 <p className="text-xs text-[hsl(var(--muted-foreground))]">Escalas</p>
               </div>
+            </div>
+            <div className="flex items-center gap-1 mt-3 text-red-500 text-xs font-medium">
+              <TrendingDown className="w-3.5 h-3.5" />
+              <span>-3%</span>
             </div>
           </div>
         </div>
@@ -198,21 +223,22 @@ export default function DashboardPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             icon={<Search className="w-4 h-4" />}
+            className="rounded-2xl h-12"
           />
         </div>
 
         {/* Module categories */}
-        <div className="space-y-10 stagger">
+        <div className="space-y-8 sm:space-y-10 stagger">
           {filteredCategories.map((category) => (
             <section key={category.id} className="animate-slide-up">
-              <div className="flex items-center gap-2 mb-4">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-[3px] h-6 rounded-full gradient-brand" />
                 <h2 className="text-lg font-semibold text-[hsl(var(--foreground))]">
                   {category.title}
                 </h2>
-                <ChevronRight className="w-4 h-4 text-[hsl(var(--muted-foreground))]" />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5">
                 {category.modules.map((module) => {
                   const Icon = iconMap[module.icon] || Shield;
                   return (
@@ -249,11 +275,11 @@ export default function DashboardPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-[hsl(var(--border))] mt-auto">
+      <footer className="mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-[hsl(var(--muted-foreground))]">
+          <div className="border-t border-[hsl(var(--border))]/50 pt-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-[hsl(var(--muted-foreground))]/60">
             <span>Conecta PRO v2.0.0</span>
-            <span>erp.conectamais.pro</span>
+            <span>{new Date().getFullYear()} erp.conectamais.pro</span>
           </div>
         </div>
       </footer>

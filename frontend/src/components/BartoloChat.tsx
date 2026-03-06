@@ -362,15 +362,15 @@ export function BartoloChat() {
         onClick={toggleChat}
         className={cn(
           'fixed bottom-6 right-6 z-50 group',
-          'w-16 h-16 rounded-full',
-          'bg-gradient-to-br from-amber-500 via-amber-600 to-orange-600',
-          'hover:from-amber-400 hover:via-amber-500 hover:to-orange-500',
-          'shadow-2xl shadow-amber-500/40',
-          'hover:shadow-amber-400/50',
+          'w-14 h-14 sm:w-16 sm:h-16 rounded-full',
+          'bg-gradient-to-br from-brand-500 via-brand-600 to-brand-700',
+          'hover:from-brand-400 hover:via-brand-500 hover:to-brand-600',
+          'shadow-2xl shadow-brand-500/40',
+          'hover:shadow-brand-400/50',
           'flex items-center justify-center',
           'transition-all duration-300 ease-out',
           'hover:scale-110 active:scale-95',
-          'ring-4 ring-amber-400/20 hover:ring-amber-300/30',
+          'ring-4 ring-brand-400/20 hover:ring-brand-300/30',
           isOpen && 'scale-0 opacity-0 pointer-events-none'
         )}
         aria-label="Abrir chat com Bartolo"
@@ -384,27 +384,31 @@ export function BartoloChat() {
       {/* Janela do Chat */}
       <div
         className={cn(
-          'fixed bottom-6 right-6 z-50',
+          'fixed z-50',
           'transition-all duration-500 ease-out',
+          // Mobile: fullscreen | Desktop: bottom-right corner
+          'inset-0 sm:inset-auto sm:bottom-6 sm:right-6',
           isOpen
             ? 'opacity-100 translate-y-0 scale-100'
             : 'opacity-0 translate-y-8 scale-95 pointer-events-none',
-          isMinimized ? 'w-80' : 'w-[26rem]'
+          isMinimized ? 'sm:w-80' : 'sm:w-[26rem]'
         )}
       >
         <div
           className={cn(
             'bg-gradient-to-br from-slate-900/95 via-slate-900/98 to-slate-950/95',
-            'backdrop-blur-xl rounded-3xl shadow-2xl',
-            'border border-amber-500/20 hover:border-amber-400/30',
+            'backdrop-blur-xl shadow-2xl',
+            // Mobile: full height, no rounded corners | Desktop: rounded + fixed height
+            'rounded-none sm:rounded-3xl',
+            'border-0 sm:border sm:border-navy-700/40 sm:hover:border-brand-500/30',
             'transition-all duration-300',
             'overflow-hidden',
             'flex flex-col',
-            isMinimized ? 'h-16' : 'h-[36rem]'
+            isMinimized ? 'h-16' : 'h-full sm:h-[36rem]'
           )}
         >
           {/* Header */}
-          <div className="relative flex items-center justify-between px-5 py-4 bg-gradient-to-r from-amber-600 via-amber-500 to-orange-500 overflow-hidden">
+          <div className="relative flex items-center justify-between px-5 py-4 bg-gradient-to-r from-navy-800 via-navy-700 to-brand-600 overflow-hidden">
             {/* Background pattern */}
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.1),transparent)] pointer-events-none" />
 
@@ -490,7 +494,7 @@ export function BartoloChat() {
                           'max-w-[82%] rounded-2xl px-4 py-3 shadow-lg',
                           'transition-all duration-200 hover:shadow-xl',
                           msg.role === 'user'
-                            ? 'bg-gradient-to-br from-amber-500 to-amber-600 text-white rounded-br-sm'
+                            ? 'bg-gradient-to-br from-navy-600 to-navy-700 text-white rounded-br-sm'
                             : 'bg-slate-800/80 backdrop-blur-sm text-slate-100 rounded-bl-sm border border-slate-700/50'
                         )}
                       >
@@ -601,7 +605,7 @@ export function BartoloChat() {
                       'flex-1 bg-slate-800/80 backdrop-blur-sm rounded-2xl px-4 py-3',
                       'text-sm text-slate-100 placeholder:text-slate-500',
                       'border border-slate-700/50',
-                      'focus:outline-none focus:ring-2 focus:ring-amber-500/60 focus:border-amber-500/60 focus:bg-slate-800',
+                      'focus:outline-none focus:ring-2 focus:ring-brand-500/60 focus:border-brand-500/60 focus:bg-slate-800',
                       'transition-all duration-200',
                       'disabled:opacity-50 disabled:cursor-not-allowed'
                     )}
@@ -611,9 +615,9 @@ export function BartoloChat() {
                     disabled={!inputValue.trim() || isSending}
                     className={cn(
                       'w-11 h-11 rounded-2xl',
-                      'bg-gradient-to-br from-amber-500 to-amber-600',
-                      'hover:from-amber-400 hover:to-amber-500',
-                      'shadow-lg shadow-amber-500/25 hover:shadow-amber-400/40',
+                      'bg-gradient-to-br from-brand-500 to-brand-600',
+                      'hover:from-brand-400 hover:to-brand-500',
+                      'shadow-lg shadow-brand-500/25 hover:shadow-brand-400/40',
                       'flex items-center justify-center',
                       'transition-all duration-200',
                       'hover:scale-105 active:scale-95',

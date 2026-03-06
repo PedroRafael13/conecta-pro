@@ -96,12 +96,12 @@ export function ModuleCard({
     <div
       onClick={handleClick}
       className={cn(
-        `group relative overflow-hidden rounded-xl border p-5
-        transition-all duration-300 cursor-pointer
+        `group relative overflow-hidden rounded-2xl border p-5
+        transition-all duration-300 cursor-pointer card-shine
         bg-[hsl(var(--card))]`,
         colors.border,
         colors.glow,
-        !disabled && 'hover:shadow-xl hover:translate-y-[-4px] hover:border-opacity-60',
+        !disabled && 'hover:shadow-xl hover:translate-y-[-4px] active:scale-[0.98] hover:border-opacity-60',
         disabled && 'opacity-50 cursor-not-allowed'
       )}
     >
@@ -120,7 +120,7 @@ export function ModuleCard({
         <div className="flex items-start justify-between mb-4">
           <div
             className={cn(
-              'w-12 h-12 rounded-lg flex items-center justify-center',
+              'w-12 h-12 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110',
               colors.iconBg
             )}
           >
