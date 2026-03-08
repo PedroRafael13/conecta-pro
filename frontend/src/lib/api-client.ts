@@ -24,11 +24,6 @@ export const customInstance = async <T>(
 
   try {
     if (config.url) {
-      // Remove barra final das URLs para evitar redirect 307
-      if (config.url.endsWith('/') && !config.url.endsWith('://')) {
-        config.url = config.url.slice(0, -1);
-      }
-
       // Remove duplicações de path (ex: /suppliers/suppliers -> /suppliers)
       // Padrão: /resource/resource/ ou /resource/resource
       config.url = config.url.replace(/\/([^\/]+)\/\1(?:\/|$)/, '/$1');
