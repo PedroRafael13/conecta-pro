@@ -66,10 +66,14 @@ test.describe('Fluxo de Caixa', () => {
   });
 
   test('deve exibir estado vazio para busca sem resultado', async ({ page }) => {
+    await test.step('Aguardar dados carregarem', async () => {
+      await page.waitForTimeout(2000);
+    });
+
     await test.step('Buscar por termo que não existe', async () => {
       const searchInput = page.locator('input[placeholder*="descricao"]').first();
       await searchInput.fill('xxxxxxxxxxxxxxxxxxx-nao-existe-999');
-      await page.waitForTimeout(600);
+      await page.waitForTimeout(2000);
     });
 
     await test.step('Verificar mensagem de estado vazio', async () => {

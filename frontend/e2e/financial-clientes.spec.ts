@@ -102,7 +102,7 @@ test.describe('Clientes', () => {
     await test.step('Buscar por termo que não existe', async () => {
       const searchInput = page.locator('input[placeholder*="nome"]').first();
       await searchInput.fill('xxxxxxxxxxxxxxxxxxx-nao-existe-999');
-      await page.waitForTimeout(600);
+      await page.waitForTimeout(2000);
     });
 
     await test.step('Verificar mensagem de estado vazio', async () => {

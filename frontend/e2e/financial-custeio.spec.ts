@@ -49,7 +49,7 @@ test.describe('Custeio ABC', () => {
 
   test('deve exibir tabela ou estado vazio na tab ativa', async ({ page }) => {
     await test.step('Aguardar conteúdo carregar', async () => {
-      await page.waitForTimeout(2000);
+      await page.waitForTimeout(4000);
     });
 
     await test.step('Verificar presença de tabela ou mensagem de vazio', async () => {
