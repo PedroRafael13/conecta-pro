@@ -1,56 +1,81 @@
 /**
  * Testes E2E - Fluxo de Caixa
+ *
+ * Validações:
+ * - Carregamento da página com header e botões corretos
+ * - Cards de estatísticas (Entradas, Saidas, Saldo Atual, Projecao 30d)
+ * - Campo de busca funcional
+ * - Modal de criação abre corretamente
+ * - Estado vazio com busca inexistente
  */
 
 import { test, expect } from './fixtures';
 
 test.describe('Fluxo de Caixa', () => {
-  test.beforeEach(async ({ page, context }) => {
-    // Configurar token e autenticação antes de navegar
-    await page.addInitScript(() => {
-      const mockToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkBjb25lY3RhcGx1cy5jb20uYnIiLCJleHAiOjk5OTk5OTk5OTl9.mock';
-      localStorage.setItem('access_token', mockToken);
-      localStorage.setItem('user', JSON.stringify({
-        id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
-        email: 'admin@conectaplus.com.br',
-        name: 'Admin',
-        role: 'admin',
-        is_active: true,
-      }));
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/modulos/financeiro/fluxo-caixa', { waitUntil: 'load' });
+  });
+
+  test('deve carregar página com header correto', async ({ page }) => {
+    await test.step('Verificar título h1 "Fluxo de Caixa"', async () => {
+      await expect(page.locator('h1')).toContainText('Fluxo de Caixa', { timeout: 8000 });
     });
 
-    await page.goto('/modulos/financeiro/fluxo-caixa', { waitUntil: 'domcontentloaded' });
-    await page.waitForTimeout(2000);
+    await test.step('Verificar botão "Novo Lancamento"', async () => {
+      await expect(page.locator('button', { hasText: 'Novo Lancamento' })).toBeVisible({ timeout: 8000 });
+    });
   });
 
-  test('deve carregar a página de fluxo de caixa', async ({ page }) => {
-    const hasContent = await page.locator('h1, button, div').count();
-    expect(hasContent).toBeGreaterThan(0);
+  test('deve exibir 4 cards de estatísticas', async ({ page }) => {
+    const stats = ['Entradas', 'Saidas', 'Saldo Atual', 'Projecao 30d'];
+    for (const stat of stats) {
+      await test.step(`Verificar card "${stat}"`, async () => {
+        await expect(page.locator('text=' + stat).first()).toBeVisible({ timeout: 8000 });
+      });
+    }
   });
 
-  test('deve exibir o título "Fluxo de Caixa"', async ({ page }) => {
-    const title = page.locator('text=Fluxo de Caixa').first();
-    await expect(title).toBeVisible({ timeout: 10000 });
+  test('deve exibir campo de busca', async ({ page }) => {
+    await test.step('Verificar campo de busca principal', async () => {
+      const searchInput = page.locator('input[placeholder*="descricao"]').first();
+      await expect(searchInput).toBeVisible({ timeout: 8000 });
+    });
   });
 
-  test('deve ter cards de estatísticas', async ({ page }) => {
-    const cards = await page.locator('[class*="card"], [class*="Card"]').count();
-    expect(cards).toBeGreaterThan(0);
+  test('deve exibir tabela ou estado vazio', async ({ page }) => {
+    await test.step('Aguardar conteúdo carregar', async () => {
+      await page.waitForTimeout(2000);
+    });
+
+    await test.step('Verificar presença de tabela ou mensagem de vazio', async () => {
+      const hasTable = await page.locator('table').isVisible().catch(() => false);
+      const hasEmpty = await page.locator('text=Nenhum lancamento').isVisible().catch(() => false);
+      expect(hasTable || hasEmpty).toBeTruthy();
+    });
   });
 
-  test('deve ter campo de busca', async ({ page }) => {
-    const searchInputs = page.locator('input[type="search"]');
-    const count = await searchInputs.count();
-    expect(count).toBeGreaterThanOrEqual(0);
+  test('deve abrir modal ao clicar em "Novo Lancamento"', async ({ page }) => {
+    await test.step('Clicar no botão Novo Lancamento', async () => {
+      await page.locator('button', { hasText: 'Novo Lancamento' }).click();
+    });
+
+    await test.step('Verificar que modal abriu', async () => {
+      const dialog = page.locator('[role="dialog"], .fixed.inset-0').first();
+      await expect(dialog).toBeVisible({ timeout: 8000 });
+    });
   });
 
-  test('deve ter botão de novo lançamento', async ({ page }) => {
-    const button = page.locator('text=/Novo Lancamento/i').first();
-    await expect(button).toBeVisible({ timeout: 10000 });
-  });
+  test('deve exibir estado vazio para busca sem resultado', async ({ page }) => {
+    await test.step('Buscar por termo que não existe', async () => {
+      const searchInput = page.locator('input[placeholder*="descricao"]').first();
+      await searchInput.fill('xxxxxxxxxxxxxxxxxxx-nao-existe-999');
+      await page.waitForTimeout(600);
+    });
 
-  test('deve ter estrutura de tabela', async ({ page }) => {
-    const hasTable = await page.locator('table, div[role="table"]').count();
-    expect(hasTable).toBeGreaterThanOrEqual(0);
+    await test.step('Verificar mensagem de estado vazio', async () => {
+      await expect(
+        page.locator('text=Nenhum lancamento').first()
+      ).toBeVisible({ timeout: 8000 });
+    });
   });
 });

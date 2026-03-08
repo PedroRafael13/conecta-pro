@@ -10,7 +10,6 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-;
 import {
   useNFes,
   useNFSes,
@@ -20,6 +19,8 @@ import {
 } from '@/hooks/financial/useFinancial';
 import { NFeFormModal } from '@/components/financeiro/nfe-form-modal';
 import { NFeDetailModal } from '@/components/financeiro/nfe-detail-modal';
+import type { NFeListResponse } from '@/types/generated/financial/models/nFeListResponse';
+import type { NFeCreate } from '@/types/generated/financial/models/nFeCreate';
 
 type TabType = 'nfe' | 'nfse';
 
@@ -64,11 +65,13 @@ export default function FiscalPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [showFormModal, setShowFormModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
-  const [selectedNFe, setSelectedNFe] = useState<any>(null);
+  const [selectedNFe, setSelectedNFe] = useState<NFeListResponse | null>(null);
 
   const { data: nfes = [], isLoading: loadingNFes, refetch: refetchNFes } = useNFes({ condominio_id: '' });
   const { data: nfses = [], isLoading: loadingNFSes, refetch: refetchNFSes } = useNFSes({ condominio_id: '' });
-  const { data: dashboard, isLoading: loadingDashboard } = useFiscalDashboard({ condominio_id: '' });
+  const { data: dashboardRaw, isLoading: loadingDashboard } = useFiscalDashboard({ condominio_id: '' });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const dashboard = dashboardRaw as any;
   const createNFe = useCreateNFe();
   const authorizeNFe = useAuthorizeNFe();
 
@@ -87,25 +90,23 @@ export default function FiscalPage() {
   const handleAuthorize = async (nfe: any) => {
     try {
       await authorizeNFe.mutateAsync({ data: { nfe_id: nfe.id } });
-      // refetch() removido - mutation já invalida queries automaticamente
     } catch (error) {
       console.error('Erro ao autorizar NF-e:', error);
     }
   };
 
-  const handleFormSubmit = async (data: any) => {
+  const handleFormSubmit = async (data: NFeCreate) => {
     try {
       await createNFe.mutateAsync({ data });
       setShowFormModal(false);
-      // refetch() removido - mutation já invalida queries automaticamente
     } catch (error) {
       console.error('Erro ao criar nota fiscal:', error);
     }
   };
 
-  const currentData = activeTab === 'nfe'
-    ? (Array.isArray(nfes) ? nfes : [])
-    : (Array.isArray(nfses) ? nfses : []);
+  const currentData: NFeListResponse[] = activeTab === 'nfe'
+    ? (Array.isArray(nfes) ? (nfes as NFeListResponse[]) : [])
+    : (Array.isArray(nfses) ? (nfses as NFeListResponse[]) : []);
 
   const filteredData = currentData.filter((item: any) => {
     const matchesSearch =

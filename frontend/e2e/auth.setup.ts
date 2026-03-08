@@ -27,7 +27,7 @@ setup('autenticar e salvar estado', async ({ page, context }) => {
     console.log('Preenchendo formulário de login...');
 
     // Preenche credenciais
-    await emailInput.fill('admin@conectaplus.com.br');
+    await emailInput.fill('admin@conectapro.com.br');
     await passwordInput.fill('admin123');
 
     console.log('Enviando formulário...');
@@ -60,10 +60,10 @@ setup('autenticar e salvar estado', async ({ page, context }) => {
 
     await page.evaluate(async () => {
       try {
-        const resp = await fetch('/api/v1/auth/login', {
+        const resp = await fetch('http://localhost:8080/api/v1/auth/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: 'username=admin@conectaplus.com.br&password=admin123',
+          body: 'username=admin@conectapro.com.br&password=admin123',
         });
 
         if (resp.ok) {
@@ -88,7 +88,7 @@ setup('autenticar e salvar estado', async ({ page, context }) => {
         contentType: 'application/json',
         body: JSON.stringify({
           id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
-          email: 'admin@conectaplus.com.br',
+          email: 'admin@conectapro.com.br',
           name: 'Admin',
           role: 'admin',
           is_active: true,
@@ -137,7 +137,7 @@ setup('autenticar e salvar estado', async ({ page, context }) => {
         'user',
         JSON.stringify({
           id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
-          email: 'admin@conectaplus.com.br',
+          email: 'admin@conectapro.com.br',
           name: 'Admin',
           role: 'admin',
           is_active: true,

@@ -18,7 +18,7 @@ test.describe('Operacional - Escalas', () => {
     await loginViaAPI(page);
 
     await page.goto('/modulos/operacional/escalas');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(2000);
   });
 
@@ -130,11 +130,12 @@ test.describe('Operacional - Escalas', () => {
   test('deve exibir métricas da escala', async ({ page }) => {
     await page.waitForTimeout(2000);
 
-    // Procurar cards de métricas (turnos, horas, custo)
-    const metrics = page.locator('text=/turnos/i, text=/horas/i, text=/custo/i').all();
-    const count = (await metrics).length;
+    // Procurar cards de métricas (turnos, horas, custo) - verifica cada um separado
+    const hasTurnos = (await page.locator('text=/turnos/i').count()) > 0;
+    const hasHoras = (await page.locator('text=/horas/i').count()) > 0;
+    const hasCusto = (await page.locator('text=/custo/i').count()) > 0;
 
-    expect(count).toBeGreaterThan(0);
+    expect(hasTurnos || hasHoras || hasCusto).toBeTruthy();
   });
 
   test('deve ter botão de templates', async ({ page }) => {
@@ -257,7 +258,7 @@ test.describe('Operacional - Escalas - Validações', () => {
 
   test('deve validar seleção de posto ao gerar', async ({ page }) => {
     await page.goto('/modulos/operacional/escalas');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(2000);
 
     const generateBtn = page.locator('button:has-text("Gerar")').first();
@@ -269,18 +270,23 @@ test.describe('Operacional - Escalas - Validações', () => {
     const generateButton = page.locator('button:has-text("Gerar"), button[type="submit"]').last();
 
     if (await generateButton.isVisible().catch(() => false)) {
-      await generateButton.click();
-      await page.waitForTimeout(1000);
-
-      // Modal deve continuar aberto ou mostrar erro
-      const modal = page.locator('[role="dialog"]').first();
-      expect(await modal.isVisible()).toBeTruthy();
+      const isDisabled = await generateButton.isDisabled().catch(() => false);
+      if (isDisabled) {
+        // Botão desabilitado = validação funcionando corretamente
+        expect(isDisabled).toBeTruthy();
+      } else {
+        await generateButton.click();
+        await page.waitForTimeout(1000);
+        // Modal deve continuar aberto ou mostrar erro
+        const modal = page.locator('[role="dialog"]').first();
+        expect(await modal.isVisible()).toBeTruthy();
+      }
     }
   });
 
   test('não deve permitir gerar escala duplicada', async ({ page }) => {
     await page.goto('/modulos/operacional/escalas');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(2000);
 
     // Este teste precisa de dados específicos para validar duplicata
@@ -290,7 +296,7 @@ test.describe('Operacional - Escalas - Validações', () => {
 
   test('deve exibir mensagem se não há postos disponíveis', async ({ page }) => {
     await page.goto('/modulos/operacional/escalas');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(2000);
 
     const generateBtn = page.locator('button:has-text("Gerar")').first();

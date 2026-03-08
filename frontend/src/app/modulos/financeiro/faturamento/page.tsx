@@ -10,7 +10,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ConfirmModal } from '@/components/ui/modal';
-;
 import { BillingRuleFormModal } from '@/components/financeiro/billing-rule-form-modal';
 import {
   useBillingRules,
@@ -20,6 +19,8 @@ import {
   useActivateBillingRule,
   usePauseBillingRule,
 } from '@/hooks/financial/useFinancial';
+import type { BillingRuleResponse } from '@/types/generated/financial/models/billingRuleResponse';
+import type { BillingRuleCreate } from '@/types/generated/financial/models/billingRuleCreate';
 
 const formatCurrency = (value: number | undefined | null) => {
   if (value == null) return 'R$ 0,00';
@@ -55,7 +56,7 @@ export default function FaturamentoPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [showFormModal, setShowFormModal] = useState(false);
-  const [selectedRule, setSelectedRule] = useState<any | null>(null);
+  const [selectedRule, setSelectedRule] = useState<BillingRuleResponse | null>(null);
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState<{
@@ -66,9 +67,10 @@ export default function FaturamentoPage() {
   } | null>(null);
 
   const { data: rulesData, isLoading, error, refetch } = useBillingRules({
+    condominio_id: '',
     status: statusFilter !== 'all' ? statusFilter : undefined,
     search: searchTerm || undefined,
-  } as any);
+  });
 
   const createMutation = useCreateBillingRule();
   const updateMutation = useUpdateBillingRule();
@@ -76,7 +78,7 @@ export default function FaturamentoPage() {
   const activateMutation = useActivateBillingRule();
   const pauseMutation = usePauseBillingRule();
 
-  const rules = (rulesData as any)?.items || (Array.isArray(rulesData) ? rulesData : []);
+  const rules: any[] = Array.isArray(rulesData) ? (rulesData as any[]) : ((rulesData as any)?.items ?? []);
 
   const handleCreate = () => {
     setSelectedRule(null);
@@ -101,14 +103,14 @@ export default function FaturamentoPage() {
   };
 
   const handleToggleStatus = async (rule: any) => {
-    if (rule.status === 'active') {
-      await pauseMutation.mutateAsync({ ruleId: rule.id } as any);
+    if (rule.is_active) {
+      await pauseMutation.mutateAsync({ ruleId: rule.id });
     } else {
       await activateMutation.mutateAsync({ ruleId: rule.id });
     }
   };
 
-  const handleFormSubmit = async (data: any) => {
+  const handleFormSubmit = async (data: BillingRuleCreate) => {
     if (selectedRule) {
       await updateMutation.mutateAsync({ ruleId: selectedRule.id, data });
     } else {
@@ -127,7 +129,7 @@ export default function FaturamentoPage() {
     return matchesSearch && matchesStatus;
   });
 
-  const activeRules = rules.filter((r: any) => r.status === 'active');
+  const activeRules = rules.filter((r: any) => r.is_active);
   const totalFixedValue = activeRules
     .filter((r: any) => r.type === 'fixed' || r.rule_type === 'fixed')
     .reduce((sum: number, r: any) => sum + (r.value || r.amount || 0), 0);

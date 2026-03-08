@@ -15,7 +15,7 @@ test.describe('Operacional - Disciplinar', () => {
   test.beforeEach(async ({ page }) => {
     await loginViaAPI(page);
     await page.goto('/modulos/operacional/disciplinar');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(2000);
   });
 

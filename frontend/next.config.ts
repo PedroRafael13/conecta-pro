@@ -176,6 +176,9 @@ const nextConfig: NextConfig = {
     },
   },
 
+  // Build ID fixo para evitar race condition de hash mid-build
+  generateBuildId: async () => 'conecta-pro-build',
+
   // DistDir customizado
   distDir: '.next',
 

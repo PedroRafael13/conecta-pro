@@ -16,7 +16,7 @@ test.describe('Operacional - Diaristas', () => {
   test.beforeEach(async ({ page }) => {
     await loginViaAPI(page);
     await page.goto('/modulos/operacional/diaristas');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(2000);
   });
 
@@ -246,7 +246,7 @@ test.describe('Operacional - Diaristas - Validações', () => {
 
   test('deve validar campos obrigatórios ao criar diarista', async ({ page }) => {
     await page.goto('/modulos/operacional/diaristas');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(2000);
 
     const newButton = page.locator('button:has-text("Novo Diarista")').first();
@@ -269,7 +269,7 @@ test.describe('Operacional - Diaristas - Validações', () => {
 
   test('deve validar formato de CPF', async ({ page }) => {
     await page.goto('/modulos/operacional/diaristas');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(2000);
 
     const newButton = page.locator('button:has-text("Novo Diarista")').first();
@@ -289,7 +289,7 @@ test.describe('Operacional - Diaristas - Validações', () => {
 
   test('deve validar formato de telefone', async ({ page }) => {
     await page.goto('/modulos/operacional/diaristas');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(2000);
 
     const newButton = page.locator('button:has-text("Novo Diarista")').first();

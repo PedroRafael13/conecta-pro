@@ -16,7 +16,7 @@ test.describe('Operacional - Diaristas - Fechamento', () => {
   test.beforeEach(async ({ page }) => {
     await loginViaAPI(page);
     await page.goto('/modulos/operacional/diaristas/fechamento');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(2000);
   });
 

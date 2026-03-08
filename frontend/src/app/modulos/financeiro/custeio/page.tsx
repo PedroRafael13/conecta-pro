@@ -9,7 +9,6 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ConfirmModal } from '@/components/ui/modal';
-;
 import {
   useCostDrivers,
   useCostActivities,
@@ -25,6 +24,10 @@ import {
   useDeleteCostPool,
   useDeleteCostObject,
 } from '@/hooks/financial/useFinancial';
+import type { CostDriverResponse } from '@/types/generated/financial/models/costDriverResponse';
+import type { CostActivityResponse } from '@/types/generated/financial/models/costActivityResponse';
+import type { CostPoolResponse } from '@/types/generated/financial/models/costPoolResponse';
+import type { CostObjectResponse } from '@/types/generated/financial/models/costObjectResponse';
 
 const formatCurrency = (value: number | undefined | null) => {
   if (value == null) return 'R$ 0,00';
@@ -65,11 +68,11 @@ export default function CusteioABCPage() {
   const deletePoolMutation = useDeleteCostPool();
   const deleteObjectMutation = useDeleteCostObject();
 
-  const drivers = (driversData as any)?.items || (Array.isArray(driversData) ? driversData : []);
-  const activities = (activitiesData as any)?.items || (Array.isArray(activitiesData) ? activitiesData : []);
-  const pools = (poolsData as any)?.items || (Array.isArray(poolsData) ? poolsData : []);
-  const objects = (objectsData as any)?.items || (Array.isArray(objectsData) ? objectsData : []);
-  const dashboard = dashboardData as any;
+  const drivers: CostDriverResponse[] = Array.isArray(driversData) ? (driversData as CostDriverResponse[]) : ((driversData as { items?: CostDriverResponse[] })?.items ?? []);
+  const activities: CostActivityResponse[] = Array.isArray(activitiesData) ? (activitiesData as CostActivityResponse[]) : ((activitiesData as { items?: CostActivityResponse[] })?.items ?? []);
+  const pools: CostPoolResponse[] = Array.isArray(poolsData) ? (poolsData as CostPoolResponse[]) : ((poolsData as { items?: CostPoolResponse[] })?.items ?? []);
+  const objects: CostObjectResponse[] = Array.isArray(objectsData) ? (objectsData as CostObjectResponse[]) : ((objectsData as { items?: CostObjectResponse[] })?.items ?? []);
+  const dashboard = dashboardData as Record<string, unknown>;
 
   const isLoading = activeTab === 'drivers' ? driversLoading
     : activeTab === 'activities' ? activitiesLoading
@@ -83,7 +86,7 @@ export default function CusteioABCPage() {
     else refetchObjects();
   };
 
-  const handleDelete = (item: any, type: TabType) => {
+  const handleDelete = (item: CostDriverResponse | CostActivityResponse | CostPoolResponse | CostObjectResponse, type: TabType) => {
     setConfirmAction({
       title: `Excluir ${type === 'drivers' ? 'Direcionador' : type === 'activities' ? 'Atividade' : type === 'pools' ? 'Pool' : 'Objeto'}`,
       message: `Excluir "${item.name}" permanentemente?`,
@@ -98,8 +101,10 @@ export default function CusteioABCPage() {
     setConfirmOpen(true);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const filterItems = (items: any[]) => {
     if (!searchTerm) return items;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return items.filter((item: any) =>
       item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.description?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -122,7 +127,8 @@ export default function CusteioABCPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((item: any) => (
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                {filtered.map((item: any) => (
                 <TableRow key={item.id}>
                   <TableCell>
                     <div>
@@ -169,7 +175,8 @@ export default function CusteioABCPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((item: any) => (
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                {filtered.map((item: any) => (
                 <TableRow key={item.id}>
                   <TableCell>
                     <div>
@@ -216,7 +223,8 @@ export default function CusteioABCPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((item: any) => (
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                {filtered.map((item: any) => (
                 <TableRow key={item.id}>
                   <TableCell>
                     <div>
@@ -264,7 +272,8 @@ export default function CusteioABCPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((item: any) => (
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                {filtered.map((item: any) => (
                 <TableRow key={item.id}>
                   <TableCell>
                     <div>

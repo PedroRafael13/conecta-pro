@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-;
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,6 +18,9 @@ import {
   useBankTransactions,
   useImportOFX,
 } from '@/hooks/financial/useFinancial';
+import type { BankAccountResponse } from '@/types/generated/financial/models/bankAccountResponse';
+import type { BankTransactionResponse } from '@/types/generated/financial/models/bankTransactionResponse';
+import type { BankAccountCreate } from '@/types/generated/financial/models/bankAccountCreate';
 import { BankAccountFormModal } from '@/components/financeiro/bank-account-form-modal';
 import { BankTransactionDetailModal } from '@/components/financeiro/bank-transaction-detail-modal';
 import { cn, formatCurrency, formatDate } from '@/lib/utils';
@@ -59,9 +61,10 @@ export default function ConciliacaoPage() {
   const isError = activeTab === 'accounts' ? accountsError : transactionsError;
   const error = activeTab === 'accounts' ? accountsErr : transactionsErr;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleCreateAccount = async (data: any) => {
     try {
-      await createBankAccount.mutateAsync({ data });
+      await createBankAccount.mutateAsync({ data: data as BankAccountCreate });
       setShowAccountModal(false);
       // refetch() removido - mutation já invalida queries automaticamente
     } catch (err) {
@@ -81,7 +84,7 @@ export default function ConciliacaoPage() {
       try {
         const formData = new FormData();
         formData.append('file', file);
-        await importOFX.mutateAsync({ data: { file } as any, params: { bank_account_id: '' } });
+        await importOFX.mutateAsync({ data: { file } as unknown as Parameters<typeof importOFX.mutateAsync>[0]["data"], params: { bank_account_id: '' } });
         // refetch() removido - mutation já invalida queries automaticamente
       } catch (err) {
         console.error('Erro ao importar OFX:', err);
@@ -90,7 +93,7 @@ export default function ConciliacaoPage() {
     input.click();
   };
 
-  const handleViewTransaction = (transaction: any) => {
+  const handleViewTransaction = (transaction: BankTransactionResponse) => {
     setSelectedTransaction(transaction);
     setShowTransactionDetail(true);
   };
@@ -133,14 +136,14 @@ export default function ConciliacaoPage() {
 
   // Filter by search
   const filteredAccounts = search
-    ? accounts.filter((acc: any) =>
+    ? accounts.filter((acc: BankAccountResponse) =>
         acc.name?.toLowerCase().includes(search.toLowerCase()) ||
         acc.bank_name?.toLowerCase().includes(search.toLowerCase())
       )
     : accounts;
 
   const filteredTransactions = search
-    ? transactions.filter((tx: any) =>
+    ? transactions.filter((tx: BankTransactionResponse) =>
         tx.description?.toLowerCase().includes(search.toLowerCase())
       )
     : transactions;
@@ -302,7 +305,7 @@ export default function ConciliacaoPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[hsl(var(--border))]">
-                    {filteredAccounts.map((account: any) => (
+                    {filteredAccounts.map((account: BankAccountResponse) => (
                       <tr
                         key={account.id}
                         className="hover:bg-[hsl(var(--secondary))]/50 transition-colors"
@@ -339,7 +342,7 @@ export default function ConciliacaoPage() {
                         </td>
                         <td className="p-4 text-right">
                           <span className="font-mono text-sm font-medium text-[hsl(var(--foreground))]">
-                            {formatCurrency(account.balance || 0)}
+                            {formatCurrency(account.current_balance ? parseFloat(account.current_balance) : 0)}
                           </span>
                         </td>
                         <td className="p-4">
@@ -435,7 +438,7 @@ export default function ConciliacaoPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[hsl(var(--border))]">
-                    {filteredTransactions.map((tx: any) => (
+                    {filteredTransactions.map((tx: BankTransactionResponse) => (
                       <tr
                         key={tx.id}
                         className="hover:bg-[hsl(var(--secondary))]/50 transition-colors cursor-pointer"
@@ -443,7 +446,7 @@ export default function ConciliacaoPage() {
                       >
                         <td className="p-4">
                           <span className="text-sm text-[hsl(var(--foreground))]">
-                            {tx.date ? formatDate(tx.date) : '-'}
+                            {tx.transaction_date ? formatDate(tx.transaction_date) : '-'}
                           </span>
                         </td>
                         <td className="p-4">
@@ -459,7 +462,7 @@ export default function ConciliacaoPage() {
                             )}
                           >
                             {tx.transaction_type === 'credit' ? '+' : '-'}
-                            {formatCurrency(Math.abs(tx.amount || 0))}
+                            {formatCurrency(Math.abs(parseFloat(tx.amount) || 0))}
                           </span>
                         </td>
                         <td className="p-4">
@@ -476,10 +479,10 @@ export default function ConciliacaoPage() {
                           <span
                             className={cn(
                               'inline-flex px-2 py-1 text-xs font-medium rounded-full border',
-                              getMatchStatusColor(tx.match_status || 'unmatched')
+                              getMatchStatusColor(tx.reconciliation_status || 'unmatched')
                             )}
                           >
-                            {getMatchStatusLabel(tx.match_status || 'unmatched')}
+                            {getMatchStatusLabel(tx.reconciliation_status || 'unmatched')}
                           </span>
                         </td>
                         <td className="p-4" onClick={(e) => e.stopPropagation()}>
@@ -564,7 +567,7 @@ export default function ConciliacaoPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[hsl(var(--border))]">
-                    {filteredTransactions.map((tx: any) => (
+                    {filteredTransactions.map((tx: BankTransactionResponse) => (
                       <tr
                         key={tx.id}
                         className="hover:bg-[hsl(var(--secondary))]/50 transition-colors"
@@ -575,32 +578,33 @@ export default function ConciliacaoPage() {
                               {tx.description || '-'}
                             </p>
                             <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                              {tx.date ? formatDate(tx.date) : '-'}
+                              {tx.transaction_date ? formatDate(tx.transaction_date) : '-'}
                             </p>
                           </div>
                         </td>
                         <td className="p-4 hidden md:table-cell">
                           <span className="text-sm text-[hsl(var(--muted-foreground))]">
-                            {tx.matched_entry_description || 'Nenhum lancamento vinculado'}
+                            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                            {(tx as any).matched_entry_description || tx.memo || 'Nenhum lancamento vinculado'}
                           </span>
                         </td>
                         <td className="p-4 text-right">
                           <span className="font-mono text-sm font-medium text-[hsl(var(--foreground))]">
-                            {formatCurrency(Math.abs(tx.amount || 0))}
+                            {formatCurrency(Math.abs(parseFloat(tx.amount) || 0))}
                           </span>
                         </td>
                         <td className="p-4">
                           <span
                             className={cn(
                               'inline-flex px-2 py-1 text-xs font-medium rounded-full border',
-                              getMatchStatusColor(tx.match_status || 'pending')
+                              getMatchStatusColor(tx.reconciliation_status || 'pending')
                             )}
                           >
-                            {getMatchStatusLabel(tx.match_status || 'pending')}
+                            {getMatchStatusLabel(tx.reconciliation_status || 'pending')}
                           </span>
                         </td>
                         <td className="p-4">
-                          {(tx.match_status !== 'matched') && (
+                          {(tx.reconciliation_status !== 'matched') && (
                             <Button variant="outline" size="sm">
                               Conciliar
                             </Button>

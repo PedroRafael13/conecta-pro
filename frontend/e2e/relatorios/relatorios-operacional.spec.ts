@@ -111,7 +111,7 @@ test.describe('⚙️ Relatórios - Operacional', () => {
     });
 
     await page.goto('/modulos/relatorios/operacional');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1000);
   });
 

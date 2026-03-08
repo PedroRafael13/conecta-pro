@@ -17,7 +17,7 @@ test.describe('Operacional - Escalas - Detalhes', () => {
     await loginViaAPI(page);
     // Usar uma escala de exemplo (pode não existir, mas testamos a estrutura)
     await page.goto('/modulos/operacional/escalas/123e4567-e89b-12d3-a456-426614174000');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(2000);
   });
 

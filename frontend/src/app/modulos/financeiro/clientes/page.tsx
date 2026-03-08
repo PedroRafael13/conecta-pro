@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-;
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,12 +19,13 @@ import {
 } from '@/hooks/financial/useFinancial';
 import { CustomerFormModal } from '@/components/financeiro/customer-form-modal';
 import { cn, formatCurrency } from '@/lib/utils';
+import type { CustomerResponse } from '@/types/generated/financial/models/customerResponse';
 
 export default function ClientesPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
   const [showFormModal, setShowFormModal] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<CustomerResponse | null>(null);
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
 
@@ -46,20 +46,18 @@ export default function ClientesPage() {
 
   const createCustomer = useCreateCustomer();
 
-  const customers = Array.isArray(customersData) ? customersData : [];
+  const customers: CustomerResponse[] = Array.isArray(customersData) ? (customersData as CustomerResponse[]) : [];
   const total = customers.length;
   const totalPages = Math.ceil(total / pageSize);
 
-  // Stats locais (nao temos hook de stats global para customers, usamos os dados locais)
   const totalCustomers = total;
-  const activeCustomers = customers.filter((c: any) => c.status === 'active').length;
+  const activeCustomers = customers.filter((c) => c.status === 'ativo').length;
 
-  const handleView = (customer: any) => {
+  const handleView = (customer: CustomerResponse) => {
     setSelectedCustomer(customer);
-    // Pode abrir um detail modal futuro
   };
 
-  const handleEdit = (customer: any) => {
+  const handleEdit = (customer: CustomerResponse) => {
     setSelectedCustomer(customer);
     setShowFormModal(true);
   };
@@ -71,7 +69,8 @@ export default function ClientesPage() {
 
   const handleFormSubmit = async (data: any) => {
     try {
-      await createCustomer.mutateAsync({ data });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await createCustomer.mutateAsync({ data: data as any });
       setShowFormModal(false);
       setSelectedCustomer(null);
       refetch();
@@ -108,11 +107,11 @@ export default function ClientesPage() {
   };
 
   // Filter localmente por search
-  const filteredCustomers = search
-    ? customers.filter((c: any) =>
+  const filteredCustomers: CustomerResponse[] = search
+    ? customers.filter((c) =>
         c.name?.toLowerCase().includes(search.toLowerCase()) ||
         c.email?.toLowerCase().includes(search.toLowerCase()) ||
-        c.document?.toLowerCase().includes(search.toLowerCase())
+        c.cpf_cnpj?.toLowerCase().includes(search.toLowerCase())
       )
     : customers;
 
@@ -196,7 +195,7 @@ export default function ClientesPage() {
               <p className="text-2xl font-bold text-[hsl(var(--foreground))]">
                 {isLoading
                   ? '...'
-                  : customers.filter((c: any) => c.status === 'defaulter').length}
+                  : customers.filter((c) => String(c.status) === 'defaulter').length}
               </p>
               <p className="text-xs text-[hsl(var(--muted-foreground))]">Inadimplentes</p>
             </div>
@@ -224,14 +223,14 @@ export default function ClientesPage() {
             Todos
           </Button>
           <Button
-            variant={statusFilter === 'active' ? 'primary' : 'secondary'}
+            variant={statusFilter === ('active' as string) ? 'primary' : 'secondary'}
             size="sm"
             onClick={() => { setStatusFilter('active'); setPage(1); }}
           >
             Ativos
           </Button>
           <Button
-            variant={statusFilter === 'defaulter' ? 'primary' : 'secondary'}
+            variant={statusFilter === ('defaulter' as string) ? 'primary' : 'secondary'}
             size="sm"
             onClick={() => { setStatusFilter('defaulter'); setPage(1); }}
           >
@@ -292,7 +291,7 @@ export default function ClientesPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[hsl(var(--border))]">
-                  {filteredCustomers.map((customer: any) => (
+                  {filteredCustomers.map((customer: CustomerResponse) => (
                     <tr
                       key={customer.id}
                       className="hover:bg-[hsl(var(--secondary))]/50 transition-colors cursor-pointer"
@@ -308,7 +307,7 @@ export default function ClientesPage() {
                               {customer.name}
                             </p>
                             <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                              {customer.document || '-'}
+                              {customer.cpf_cnpj || '-'}
                             </p>
                           </div>
                         </div>
@@ -322,10 +321,10 @@ export default function ClientesPage() {
                         <span
                           className={cn(
                             'font-mono text-sm font-medium',
-                            (customer.total_debt || 0) > 0 ? 'text-red-500' : 'text-[hsl(var(--foreground))]'
+                            (Number(customer.total_debt) || 0) > 0 ? 'text-red-500' : 'text-[hsl(var(--foreground))]'
                           )}
                         >
-                          {formatCurrency(customer.total_debt || 0)}
+                          {formatCurrency(Number(customer.total_debt) || 0)}
                         </span>
                       </td>
                       <td className="p-4">

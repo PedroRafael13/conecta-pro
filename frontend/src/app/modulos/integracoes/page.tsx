@@ -64,8 +64,9 @@ const statusConfig: Record<string, { icon: typeof CheckCircle2; color: string; l
 };
 
 function StatusBadge({ status }: { status: string }) {
-  const config = statusConfig[status] || statusConfig.offline;
-  const Icon = config.icon;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const config = (statusConfig[status] || statusConfig['offline']) as any;
+  const Icon = config.icon as typeof CheckCircle2;
   return (
     <span className={`inline-flex items-center gap-1 text-xs font-medium ${config.color}`}>
       <Icon className="w-3.5 h-3.5" />
@@ -130,7 +131,7 @@ export default function IntegracoesPage() {
   // Agrupar por categoria
   const grouped = data?.integrations.reduce((acc, item) => {
     if (!acc[item.category]) acc[item.category] = [];
-    acc[item.category].push(item);
+    acc[item.category]!.push(item);
     return acc;
   }, {} as Record<string, IntegrationStatusItem[]>) ?? {};
 

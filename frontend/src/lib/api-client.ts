@@ -11,8 +11,17 @@ import type { AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 const DEFAULT_CONDOMINIO_ID = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
 
 export const customInstance = async <T>(
-  config: AxiosRequestConfig,
+  configOrUrl: AxiosRequestConfig | string,
+  options?: RequestInit | AxiosRequestConfig,
 ): Promise<T> => {
+  // Support both (config) and (url, options) calling conventions from orval
+  let config: AxiosRequestConfig;
+  if (typeof configOrUrl === 'string') {
+    config = { url: configOrUrl, ...(options as AxiosRequestConfig) };
+  } else {
+    config = configOrUrl;
+  }
+
   try {
     if (config.url) {
       // Remove barra final das URLs para evitar redirect 307

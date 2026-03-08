@@ -1,10 +1,10 @@
 'use client';
 
 import { DollarSign, TrendingUp, TrendingDown, Activity, ArrowRight, CreditCard, CheckCircle2, Users, ShoppingCart, Package, Landmark, Calculator, Receipt, Wallet } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-;
+import { Card, CardContent } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
 import { useFinancialOverview } from '@/hooks/financial/useFinancial';
+import type { IFinancialOverview } from '@/types/financial';
 
 const formatCurrency = (value: number | undefined | null) => {
   if (value == null) return 'R$ 0,00';
@@ -88,7 +88,10 @@ const navigationCards = [
 
 export default function FinanceiroPage() {
   const router = useRouter();
-  const { data: overview, isLoading } = useFinancialOverview({ condominio_id: '' });
+  const { data: overview, isLoading } = useFinancialOverview({ condominio_id: '' }) as {
+    data: IFinancialOverview | undefined;
+    isLoading: boolean;
+  };
 
   if (isLoading) {
     return (
@@ -139,7 +142,7 @@ export default function FinanceiroPage() {
                   <div className="flex-1 min-w-0">
                     <p className="text-xs text-[hsl(var(--muted-foreground))]">Receita</p>
                     <p className="text-xl font-bold text-green-500 truncate">
-                      {formatCurrency((overview as any)?.receita_total)}
+                      {formatCurrency(overview?.receita_total)}
                     </p>
                   </div>
                 </div>
@@ -156,7 +159,7 @@ export default function FinanceiroPage() {
                   <div className="flex-1 min-w-0">
                     <p className="text-xs text-[hsl(var(--muted-foreground))]">Despesa</p>
                     <p className="text-xl font-bold text-red-500 truncate">
-                      {formatCurrency((overview as any)?.despesa_total)}
+                      {formatCurrency(overview?.despesa_total)}
                     </p>
                   </div>
                 </div>
@@ -173,7 +176,7 @@ export default function FinanceiroPage() {
                   <div className="flex-1 min-w-0">
                     <p className="text-xs text-[hsl(var(--muted-foreground))]">Saldo</p>
                     <p className="text-xl font-bold text-blue-500 truncate">
-                      {formatCurrency((overview as any)?.saldo)}
+                      {formatCurrency(overview?.saldo)}
                     </p>
                   </div>
                 </div>
@@ -190,7 +193,7 @@ export default function FinanceiroPage() {
                   <div className="flex-1 min-w-0">
                     <p className="text-xs text-[hsl(var(--muted-foreground))]">Inadimplência</p>
                     <p className="text-xl font-bold text-yellow-500 truncate">
-                      {formatCurrency((overview as any)?.inadimplencia)}
+                      {formatCurrency(overview?.inadimplencia)}
                     </p>
                   </div>
                 </div>

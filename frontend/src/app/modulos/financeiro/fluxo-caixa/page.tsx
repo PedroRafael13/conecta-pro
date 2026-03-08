@@ -7,7 +7,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useCashflowEntries, useCashflowDashboard, useCreateCashflowEntry } from '@/hooks/financial/useFinancial';
+import type { CashFlowEntryResponse } from '@/types/generated/financial/models/cashFlowEntryResponse';
 import { CashflowFormModal } from '@/components/financeiro/cashflow-form-modal';
+import type { CashFlowEntryCreate } from '@/types/generated/financial/models/cashFlowEntryCreate';
 import { cn, formatCurrency, formatDate } from '@/lib/utils';
 
 export default function FluxoCaixaPage() {
@@ -30,11 +32,12 @@ export default function FluxoCaixaPage() {
     limit: pageSize,
   });
 
-  const { data: dashboard, refetch: refetchDashboard } = useCashflowDashboard({ condominio_id: '' });
+  const { data: dashboardRaw, refetch: refetchDashboard } = useCashflowDashboard({ condominio_id: '' });
+  const dashboard = dashboardRaw as any;
   const createEntry = useCreateCashflowEntry();
 
-  const entries = entriesData ?? [];
-  const total = entries.length;
+  const entries: any[] = (entriesData as any)?.items ?? [];
+  const total = (entriesData as any)?.total ?? entries.length;
   const totalPages = Math.ceil(total / pageSize);
 
   // Debounce search
@@ -88,7 +91,7 @@ export default function FluxoCaixaPage() {
   const filteredEntries = search
     ? entries.filter((entry: any) =>
         entry.description?.toLowerCase().includes(search.toLowerCase()) ||
-        entry.category?.toLowerCase().includes(search.toLowerCase())
+        entry.memo?.toLowerCase().includes(search.toLowerCase())
       )
     : entries;
 
@@ -293,7 +296,7 @@ export default function FluxoCaixaPage() {
                     >
                       <td className="p-4">
                         <span className="text-sm text-[hsl(var(--foreground))]">
-                          {entry.date ? formatDate(entry.date) : '-'}
+                          {entry.entry_date ? formatDate(entry.entry_date) : '-'}
                         </span>
                       </td>
                       <td className="p-4">
@@ -321,17 +324,17 @@ export default function FluxoCaixaPage() {
                           )}
                         >
                           {entry.entry_type === 'income' ? '+' : '-'}
-                          {formatCurrency(Math.abs(entry.amount || 0))}
+                          {formatCurrency(Math.abs(parseFloat(entry.expected_amount || entry.amount || 0)))}
                         </span>
                       </td>
                       <td className="p-4 text-right">
                         <span className="font-mono text-sm text-[hsl(var(--foreground))]">
-                          {formatCurrency(entry.balance || 0)}
+                          {formatCurrency(parseFloat(entry.realized_amount ?? entry.balance ?? 0))}
                         </span>
                       </td>
                       <td className="p-4 hidden md:table-cell">
                         <span className="text-sm text-[hsl(var(--muted-foreground))]">
-                          {entry.category || '-'}
+                          {entry.memo || entry.category || '-'}
                         </span>
                       </td>
                     </tr>

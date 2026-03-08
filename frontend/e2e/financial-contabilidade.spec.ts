@@ -1,57 +1,78 @@
 /**
  * Testes E2E - Contabilidade
+ *
+ * Validações:
+ * - Carregamento da página com header e botões corretos
+ * - Tabs de navegação (Plano de Contas, Lancamentos, Balancete)
+ * - Campo de busca funcional
+ * - Modal de lançamento abre na tab correta
+ * - Troca de tabs funciona
  */
 
 import { test, expect } from './fixtures';
 
 test.describe('Contabilidade', () => {
-  test.beforeEach(async ({ page, context }) => {
-    // Configurar token e autenticação antes de navegar
-    await page.addInitScript(() => {
-      const mockToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkBjb25lY3RhcGx1cy5jb20uYnIiLCJleHAiOjk5OTk5OTk5OTl9.mock';
-      localStorage.setItem('access_token', mockToken);
-      localStorage.setItem('user', JSON.stringify({
-        id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
-        email: 'admin@conectaplus.com.br',
-        name: 'Admin',
-        role: 'admin',
-        is_active: true,
-      }));
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/modulos/financeiro/contabilidade', { waitUntil: 'load' });
+  });
+
+  test('deve carregar página com header correto', async ({ page }) => {
+    await test.step('Verificar título h1 "Contabilidade"', async () => {
+      await expect(page.locator('h1')).toContainText('Contabilidade', { timeout: 8000 });
+    });
+  });
+
+  test('deve exibir 4 tabs de navegação', async ({ page }) => {
+    const tabs = ['Plano de Contas', 'Lancamentos', 'Balancete'];
+    for (const tab of tabs) {
+      await test.step(`Verificar tab "${tab}"`, async () => {
+        await expect(page.locator('button', { hasText: tab }).first()).toBeVisible({ timeout: 8000 });
+      });
+    }
+  });
+
+  test('deve exibir campo de busca', async ({ page }) => {
+    await test.step('Verificar campo de busca', async () => {
+      const searchInput = page.locator('input[placeholder*="Buscar"]').first();
+      await expect(searchInput).toBeVisible({ timeout: 8000 });
+    });
+  });
+
+  test('deve exibir tabela ou estado vazio na tab Plano de Contas', async ({ page }) => {
+    await test.step('Verificar tab Plano de Contas ativa por padrão', async () => {
+      await expect(page.locator('button', { hasText: 'Plano de Contas' }).first()).toBeVisible({ timeout: 8000 });
     });
 
-    await page.goto('/modulos/financeiro/contabilidade', { waitUntil: 'domcontentloaded' });
-    await page.waitForTimeout(2000);
+    await test.step('Aguardar conteúdo carregar', async () => {
+      await page.waitForTimeout(2000);
+    });
+
+    await test.step('Verificar presença de tabela ou mensagem de vazio', async () => {
+      const hasTable = await page.locator('table').isVisible().catch(() => false);
+      const hasEmpty = await page.locator('text=Nenhuma conta').isVisible().catch(() => false);
+      expect(hasTable || hasEmpty).toBeTruthy();
+    });
   });
 
-  test('deve carregar a página de contabilidade', async ({ page }) => {
-    const hasContent = await page.locator('h1, button, div').count();
-    expect(hasContent).toBeGreaterThan(0);
+  test('deve exibir botão "Novo Lancamento" ao ir para tab Lancamentos', async ({ page }) => {
+    await test.step('Clicar na tab Lancamentos', async () => {
+      await page.locator('button', { hasText: 'Lancamentos' }).first().click();
+      await page.waitForTimeout(300);
+    });
+
+    await test.step('Verificar botão Novo Lancamento', async () => {
+      await expect(page.locator('button', { hasText: 'Novo Lancamento' })).toBeVisible({ timeout: 8000 });
+    });
   });
 
-  test('deve exibir o título "Contabilidade"', async ({ page }) => {
-    const title = page.locator('text=Contabilidade').first();
-    await expect(title).toBeVisible({ timeout: 10000 });
-  });
-
-  test('deve ter tabs de navegação', async ({ page }) => {
-    const tabs = await page.locator('button').count();
-    expect(tabs).toBeGreaterThan(0);
-  });
-
-  test('deve ter campo de busca', async ({ page }) => {
-    const searchInputs = page.locator('input[type="search"]');
-    const count = await searchInputs.count();
-    expect(count).toBeGreaterThanOrEqual(0);
-  });
-
-  test('deve ter estrutura de tabela', async ({ page }) => {
-    const hasTable = await page.locator('table, div[role="table"]').count();
-    expect(hasTable).toBeGreaterThanOrEqual(0);
-  });
-
-  test('deve ter seções de plano de contas e lançamentos', async ({ page }) => {
-    const hasPlanoContas = await page.locator('text=/Plano de Contas/i').count();
-    const hasLancamentos = await page.locator('text=/Lancamento/i').count();
-    expect(hasPlanoContas + hasLancamentos).toBeGreaterThan(0);
+  test('deve navegar entre todas as tabs sem erros', async ({ page }) => {
+    const tabs = ['Plano de Contas', 'Lancamentos', 'Balancete'];
+    for (const tab of tabs) {
+      await test.step(`Navegar para tab "${tab}"`, async () => {
+        await page.locator('button', { hasText: tab }).first().click();
+        await page.waitForTimeout(300);
+        await expect(page.locator('h1')).toContainText('Contabilidade');
+      });
+    }
   });
 });

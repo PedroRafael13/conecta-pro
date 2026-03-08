@@ -61,8 +61,12 @@ export default function PostosPage() {
   const totalPages = Math.ceil(total / pageSize);
   const [filters, setFilters] = useState<PostFilters>({});
    
-  const [stats] = useState<PostStats | null>(null);
-  const refreshStats = () => {};
+  const stats: PostStats | null = posts.length > 0 ? {
+    total: total,
+    filled: posts.filter((p: Post) => p.status === 'active').length,
+    with_vacancy: posts.filter((p: Post) => p.status !== 'active').length,
+    total_headcount: posts.reduce((sum: number, p: Post) => sum + (p.required_headcount || 0), 0),
+  } : null;
   const deletePostMutation = useDeletePost();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -142,7 +146,6 @@ export default function PostosPage() {
       setShowDeleteModal(false);
       setSelectedPost(null);
       refresh();
-      refreshStats();
     } catch (err) {
       setDeleteError(getErrorMessage(err));
     } finally {
@@ -152,7 +155,6 @@ export default function PostosPage() {
 
   const handleFormSuccess = () => {
     refresh();
-    refreshStats();
   };
 
   if (authLoading) {
