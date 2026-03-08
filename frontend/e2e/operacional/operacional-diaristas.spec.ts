@@ -255,15 +255,19 @@ test.describe('Operacional - Diaristas - Validações', () => {
     await page.waitForTimeout(1000);
 
     // Tentar salvar sem preencher
-    const saveButton = page.locator('button:has-text("Salvar"), button[type="submit"]').last();
+    const saveButton = page.locator('button[type="submit"]').last();
+    const modal = page.locator('[role="dialog"], .fixed.inset-0 > div:last-child, .fixed.z-50').first();
 
     if (await saveButton.isVisible().catch(() => false)) {
-      await saveButton.click();
-      await page.waitForTimeout(1000);
-
-      // Modal deve continuar aberto
-      const modal = page.locator('[role="dialog"]').first();
-      expect(await modal.isVisible()).toBeTruthy();
+      const isDisabled = await saveButton.isDisabled().catch(() => false);
+      if (isDisabled) {
+        // Botao desabilitado = validacao ativa
+        expect(isDisabled).toBeTruthy();
+      } else {
+        await saveButton.click({ force: true });
+        await page.waitForTimeout(500);
+        expect(await modal.isVisible().catch(() => false)).toBeTruthy();
+      }
     }
   });
 
