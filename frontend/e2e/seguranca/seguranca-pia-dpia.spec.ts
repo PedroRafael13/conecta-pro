@@ -106,7 +106,7 @@ test.describe('Segurança - PIA / DPIA', () => {
     await loginViaAPI(page);
     await setupPIAMocks(page);
     await page.goto('/modulos/seguranca/pia-dpia');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1500);
   });
 

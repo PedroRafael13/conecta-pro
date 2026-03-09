@@ -388,6 +388,37 @@ class CoraAdapter(BaseBankingAdapter):
             "pix_copy_paste": data.get("pix", {}).get("copy_and_paste", ""),
         }
 
+    async def generate_pix_charge(
+        self,
+        amount: Decimal,
+        description: str,
+        payer_name: str | None = None,
+        payer_document: str | None = None,
+        expiracao_segundos: int = 86400,
+    ) -> dict:
+        """Gera cobrança PIX avulsa (QR Code dinâmico) via Cora."""
+        amount_cents = int(amount * 100)
+
+        body: dict = {
+            "amount": amount_cents,
+            "description": description,
+            "payment_options": ["PIX"],
+            "expiration_seconds": expiracao_segundos,
+        }
+        if payer_name:
+            body["customer"] = {"name": payer_name}
+            if payer_document:
+                body["customer"]["document"] = self._format_document(payer_document)
+
+        data = await self._request("POST", "/v1/invoices", json=body)
+
+        return {
+            "charge_id": data.get("id", ""),
+            "pix_qrcode": data.get("pix", {}).get("qr_code", ""),
+            "pix_copy_paste": data.get("pix", {}).get("copy_and_paste", ""),
+            "amount": float(amount),
+        }
+
     async def list_invoices(
         self,
         status: str | None = None,

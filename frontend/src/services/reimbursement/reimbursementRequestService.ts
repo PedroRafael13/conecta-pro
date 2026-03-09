@@ -21,7 +21,7 @@ export const reimbursementRequestService = {
    * Cria nova solicitação de reembolso (status RASCUNHO)
    */
   async create(data: ReimbursementRequestCreate): Promise<ReimbursementRequestResponse> {
-    const response = await apiClient.post<ReimbursementRequestResponse>(BASE_URL, data);
+    const response = await apiClient.post<ReimbursementRequestResponse>(`${BASE_URL}/`, data);
     return response.data;
   },
 
@@ -40,7 +40,7 @@ export const reimbursementRequestService = {
     cost_center?: string;
     project?: string;
   }): Promise<PaginatedReimbursementResponse> {
-    const response = await apiClient.get<PaginatedReimbursementResponse>(BASE_URL, { params });
+    const response = await apiClient.get<PaginatedReimbursementResponse>(`${BASE_URL}/`, { params });
     return response.data;
   },
 

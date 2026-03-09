@@ -74,7 +74,7 @@ test.describe('📅 Serviços - Agendamentos: Calendário e Listagem', () => {
   test.beforeEach(async ({ page }) => {
     await setupAgendamentosPage(page);
     await page.goto('/modulos/servicos/agendamentos');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
   });
 
   // ============================================
@@ -165,7 +165,7 @@ test.describe('⏰ Serviços - Agendamentos: Tipos e Status', () => {
   test.beforeEach(async ({ page }) => {
     await setupAgendamentosPage(page);
     await page.goto('/modulos/servicos/agendamentos');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
   });
 
   // ============================================
@@ -235,7 +235,7 @@ test.describe('⚠️ Serviços - Agendamentos: Conflitos e Notificações', () 
   test.beforeEach(async ({ page }) => {
     await setupAgendamentosPage(page);
     await page.goto('/modulos/servicos/agendamentos');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
   });
 
   // ============================================
@@ -310,7 +310,7 @@ test.describe('🔄 Serviços - Agendamentos: Reagendamento e Ações', () => {
   test.beforeEach(async ({ page }) => {
     await setupAgendamentosPage(page);
     await page.goto('/modulos/servicos/agendamentos');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
   });
 
   // ============================================
@@ -397,7 +397,7 @@ test.describe('🏠 Serviços - Agendamentos: Dashboard e Filtros', () => {
   test.beforeEach(async ({ page }) => {
     await setupAgendamentosPage(page);
     await page.goto('/modulos/servicos');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
   });
 
   test('deve navegar para agendamentos a partir do dashboard', async ({ page }) => {
@@ -432,7 +432,7 @@ test.describe('📊 Serviços - Agendamentos: Formatação e UX', () => {
   test.beforeEach(async ({ page }) => {
     await setupAgendamentosPage(page);
     await page.goto('/modulos/servicos/agendamentos');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
   });
 
   test('deve formatar data no padrão brasileiro', async ({ page }) => {

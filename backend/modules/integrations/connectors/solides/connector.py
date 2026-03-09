@@ -182,6 +182,12 @@ class SolidesConnector(BaseConnector):
             name=f"{self.NAME}-ratelimiter",
         )
 
+    async def _on_setup(self) -> None:
+        """Hook de setup: valida token Sólides."""
+        auth = self._create_auth_strategy()
+        if not auth.api_token:
+            raise ConnectorError("Token Sólides não configurado", connector=self.NAME, error_code="MISSING_TOKEN")
+
     def _create_http_config(self) -> HTTPClientConfig:
         """Cria configuração HTTP customizada."""
         return HTTPClientConfig(

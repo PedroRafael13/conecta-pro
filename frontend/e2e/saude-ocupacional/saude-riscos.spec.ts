@@ -257,7 +257,7 @@ async function gotoRisksPage(page: Page) {
   await setupAuthMock(page);
   await setupRisksMocks(page);
   await page.goto('/modulos/saude-ocupacional/riscos');
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('load');
 }
 
 // ============================================================================
@@ -440,7 +440,7 @@ test.describe('Saúde Ocupacional - Riscos - Cadastro', () => {
     });
 
     await page.goto('/modulos/saude-ocupacional/riscos');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     await expect(page.getByText('Nenhum registro encontrado')).toBeVisible();
     await expect(page.getByText('Tente ajustar os filtros ou crie um novo mapeamento de risco')).toBeVisible();
@@ -742,7 +742,7 @@ test.describe('Saúde Ocupacional - Riscos - Erros', () => {
     });
 
     await page.goto('/modulos/saude-ocupacional/riscos');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     await expect(page.getByText('Erro ao carregar mapeamentos de riscos')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Tentar novamente' })).toBeVisible();
@@ -773,7 +773,7 @@ test.describe('Saúde Ocupacional - Riscos - Erros', () => {
     });
 
     await page.goto('/modulos/saude-ocupacional/riscos');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     await page.getByRole('button', { name: 'Tentar novamente' }).click();
 
@@ -786,7 +786,7 @@ test.describe('Saúde Ocupacional - Riscos - Erros', () => {
     // Testa viewport mobile
     await page.setViewportSize({ width: 375, height: 667 });
     await page.reload();
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     await expect(page.getByText('Riscos Ocupacionais - PPRA/PGR')).toBeVisible();
 
@@ -814,7 +814,7 @@ test.describe('Saúde Ocupacional - Riscos - Erros', () => {
     });
 
     await page.goto('/modulos/saude-ocupacional/riscos');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     await expect(page).toHaveURL(/.*login.*/);
   });

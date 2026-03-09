@@ -24,7 +24,7 @@ test.describe('Fornecedores', () => {
     });
 
     await test.step('Verificar botão "Novo Fornecedor"', async () => {
-      await expect(page.locator('button', { hasText: 'Novo Fornecedor' })).toBeVisible({ timeout: 8000 });
+      await expect(page.locator('button', { hasText: 'Novo Fornecedor' }).first()).toBeVisible({ timeout: 8000 });
     });
   });
 

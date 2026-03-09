@@ -419,21 +419,11 @@ async def list_employees_from_solides(
     except HTTPException:
         raise
     except (httpx.TimeoutException, TimeoutError) as e:
-        logger.error(
-            "Timeout ao conectar com Solides DP",
-            action="list_employees_from_solides",
-            user_id=str(current_user.id),
-            error=str(e),
-        )
+        logger.error(f"Timeout ao conectar com Solides DP [user={current_user.id}]: {e}")
         raise HTTPException(
             status_code=http_status.HTTP_504_GATEWAY_TIMEOUT,
             detail="Timeout ao conectar com Solides DP. A API pode estar lenta ou indisponível. Tente novamente em alguns instantes.",
         )
     except Exception as e:
-        logger.exception(
-            "Erro ao buscar funcionarios do Solides",
-            action="list_employees_from_solides",
-            user_id=str(current_user.id),
-            error=str(e),
-        )
+        logger.exception(f"Erro ao buscar funcionarios do Solides [user={current_user.id}]: {e}")
         raise HTTPException(status_code=500, detail=f"Erro interno: {str(e)}")

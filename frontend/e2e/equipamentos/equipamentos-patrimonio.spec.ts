@@ -105,7 +105,7 @@ test.describe('Equipamentos - Patrimônio - Visualização', () => {
 
     await loginViaAPI(page);
     await page.goto('/modulos/equipamentos/patrimonio');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1500);
   });
 

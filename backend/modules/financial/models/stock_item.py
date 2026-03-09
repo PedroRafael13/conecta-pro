@@ -42,7 +42,7 @@ class CostingMethod(StrEnum):
 class StockItem(Base):
     """Item em estoque (saldo por produto + armazém + lote)."""
 
-    __tablename__ = "stock_items"
+    __tablename__ = "fin_stock_items"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     condominio_id = Column(
@@ -63,7 +63,7 @@ class StockItem(Base):
     # Armazém
     warehouse_id = Column(
         UUID(as_uuid=True),
-        ForeignKey("warehouses.id"),
+        ForeignKey("fin_warehouses.id"),
         nullable=False,
         index=True,
     )

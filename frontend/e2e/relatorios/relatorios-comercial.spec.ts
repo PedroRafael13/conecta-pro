@@ -109,7 +109,7 @@ test.describe('📊 Relatórios - Comercial', () => {
     });
 
     await page.goto('/modulos/relatorios/comercial');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1000);
   });
 

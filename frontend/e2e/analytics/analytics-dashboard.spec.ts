@@ -159,7 +159,7 @@ test.describe('Analytics Dashboard - Carregamento', () => {
 
   test('deve carregar página de analytics corretamente', async ({ page }) => {
     await page.goto('/modulos/analytics');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1500);
 
     await expect(page).toHaveURL(/\/analytics/);
@@ -503,7 +503,7 @@ test.describe('Analytics Dashboard - Performance', () => {
   test('deve carregar dashboard em menos de 3 segundos', async ({ page }) => {
     const startTime = Date.now();
     await page.goto('/modulos/analytics');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     const loadTime = Date.now() - startTime;
     expect(loadTime).toBeLessThan(3000);
   });

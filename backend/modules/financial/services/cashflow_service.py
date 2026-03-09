@@ -5,7 +5,7 @@ from datetime import date, timedelta
 from decimal import Decimal
 from uuid import UUID
 
-from sqlalchemy import and_, func, select
+from sqlalchemy import and_, func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.financial.models.payable_account import PayableAccount, PayableStatus
@@ -253,7 +253,6 @@ class CashFlowService:
             select(
                 PayableCategory.id,
                 PayableCategory.name,
-                PayableCategory.full_name,
                 func.sum(PayableAccount.net_value).label("total"),
                 func.count(PayableAccount.id).label("count"),
             )
@@ -266,7 +265,7 @@ class CashFlowService:
                     PayableAccount.due_date <= end_date,
                 )
             )
-            .group_by(PayableCategory.id, PayableCategory.name, PayableCategory.full_name)
+            .group_by(PayableCategory.id, PayableCategory.name)
             .order_by(func.sum(PayableAccount.net_value).desc())
         )
 
@@ -276,7 +275,7 @@ class CashFlowService:
             {
                 "category_id": str(row.id),
                 "name": row.name,
-                "full_name": row.full_name,
+                "full_name": row.name,
                 "total": float(row.total or 0),
                 "count": row.count,
             }
@@ -342,9 +341,9 @@ class CashFlowService:
 
         query = (
             select(
-                func.date_trunc("month", PayableAccount.due_date).label("month"),
+                func.date_trunc(text("'month'"), PayableAccount.due_date).label("month"),
                 func.sum(PayableAccount.net_value).label("total"),
-                func.sum(PayableAccount.paid_amount).label("paid"),
+                func.sum(PayableAccount.paid_value).label("paid"),
                 func.count(PayableAccount.id).label("count"),
             )
             .where(
@@ -355,8 +354,8 @@ class CashFlowService:
                     PayableAccount.due_date <= today,
                 )
             )
-            .group_by(func.date_trunc("month", PayableAccount.due_date))
-            .order_by(func.date_trunc("month", PayableAccount.due_date))
+            .group_by(text("1"))
+            .order_by(text("1"))
         )
 
         result = await self.session.execute(query)

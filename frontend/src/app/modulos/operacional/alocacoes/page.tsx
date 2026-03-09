@@ -240,6 +240,26 @@ export default function AlocacoesPage() {
     return posts.filter((post) => post.id !== selectedAllocation.post_id);
   }, [posts, selectedAllocation]);
 
+  // Detectar conflitos: colaboradores alocados múltiplas vezes no mesmo dia
+  const conflicts = useMemo(() => {
+    const items = (allocations as any[]) || [];
+    const byEmployeeDate: Record<string, any[]> = {};
+    items.forEach((alloc: any) => {
+      const key = `${alloc.employee_id}_${alloc.date || alloc.start_date || ''}`;
+      if (!byEmployeeDate[key]) byEmployeeDate[key] = [];
+      byEmployeeDate[key].push(alloc);
+    });
+    return Object.entries(byEmployeeDate)
+      .filter(([, allocs]) => allocs.length > 1)
+      .map(([key, allocs]) => ({
+        key,
+        employeeName: allocs[0].employee_name || 'Colaborador',
+        date: allocs[0].date || allocs[0].start_date || '',
+        count: allocs.length,
+        posts: allocs.map((a: any) => a.post_name || a.post_id || 'Posto').join(', '),
+      }));
+  }, [allocations]);
+
   // Preparar dados para exportação
   const exportData = allocations.map((alloc) => ({
     'Colaborador': alloc.employee_name || '-',
@@ -478,6 +498,24 @@ export default function AlocacoesPage() {
           </div>
         ) : (
           <>
+            {conflicts.length > 0 && (
+              <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-6">
+                <div className="flex items-center gap-2 mb-3">
+                  <AlertCircle className="w-5 h-5 text-red-500" />
+                  <h3 className="font-semibold text-red-500">{conflicts.length} Conflito(s) de Alocação Detectado(s)</h3>
+                </div>
+                <div className="space-y-2">
+                  {conflicts.map(c => (
+                    <div key={c.key} className="bg-[hsl(var(--background))]/60 rounded-lg px-3 py-2 text-sm">
+                      <span className="font-medium text-[hsl(var(--foreground))]">{c.employeeName}</span>
+                      <span className="text-[hsl(var(--muted-foreground))]"> alocado {c.count}× em {c.date ? new Date(c.date).toLocaleDateString('pt-BR') : '—'}: </span>
+                      <span className="text-red-500">{c.posts}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full">

@@ -53,7 +53,7 @@ class StorageType(StrEnum):
 class Warehouse(Base):
     """Armazém ou depósito de estoque."""
 
-    __tablename__ = "warehouses"
+    __tablename__ = "fin_warehouses"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     condominio_id = Column(

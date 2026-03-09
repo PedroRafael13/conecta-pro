@@ -54,7 +54,7 @@ test.describe('Custeio ABC', () => {
 
     await test.step('Verificar presença de tabela ou mensagem de vazio', async () => {
       const hasTable = await page.locator('table').isVisible().catch(() => false);
-      const hasEmpty = await page.locator('text=Nenhum').isVisible().catch(() => false);
+      const hasEmpty = await page.locator('text=Nenhum').first().isVisible().catch(() => false);
       expect(hasTable || hasEmpty).toBeTruthy();
     });
   });

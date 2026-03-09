@@ -328,6 +328,8 @@ try:
         billing_rule_router,
         cashflow_router,
         customer_router,
+        financial_ai_router,
+        fiscal_router,
         inventory_router,
         payable_router,
         purchase_router,
@@ -350,6 +352,8 @@ try:
     api_router.include_router(cashflow_router, prefix="/financial", tags=["Financial - Fluxo de Caixa"])
     api_router.include_router(purchase_router, prefix="/financial", tags=["Financial - Compras"])
     api_router.include_router(inventory_router, prefix="/financial", tags=["Financial - Estoque"])
+    api_router.include_router(fiscal_router, prefix="/financial", tags=["Financial - Fiscal/Tributário"])
+    api_router.include_router(financial_ai_router, prefix="/financial", tags=["Financial AI"])
     logger.info("Modulo Financial: OK")
 except Exception as e:
     logger.warning(f"Modulo Financial: {e}")
@@ -607,6 +611,33 @@ try:
 except Exception as e:
     logger.warning(f"Modulo Communication: {e}")
 
+# VACATIONS - Férias e Afastamentos
+try:
+    from modules.operacional.vacations import vacation_router
+
+    api_router.include_router(vacation_router, prefix="/operacional", tags=["Operacional - Férias"])
+    logger.info("Modulo Vacations: OK")
+except Exception as e:
+    logger.warning(f"Modulo Vacations: {e}")
+
+# OPERACIONAL AI - Command Center de IA Operacional
+try:
+    from modules.operacional.ai.controller import ai_router as operacional_ai_router
+
+    api_router.include_router(operacional_ai_router, prefix="/operacional", tags=["Operacional - AI"])
+    logger.info("Modulo Operacional AI: OK")
+except Exception as e:
+    logger.warning(f"Modulo Operacional AI: {e}")
+
+# OPERACIONAL WEBSOCKET - Notificações em Tempo Real
+try:
+    from modules.operacional.websockets import websocket_router as operacional_ws_router
+
+    api_router.include_router(operacional_ws_router, prefix="/operacional", tags=["Operacional - WebSocket"])
+    logger.info("Modulo Operacional WebSocket: OK")
+except Exception as e:
+    logger.warning(f"Modulo Operacional WebSocket: {e}")
+
 # SEARCH - Busca Global
 try:
     from modules.search import search_router
@@ -700,6 +731,16 @@ try:
     logger.info("Modulo Retention: OK")
 except Exception as e:
     logger.warning(f"Modulo Retention: {e}")
+
+
+# EMPRESAS - Multi-CNPJ (Sprint 67)
+try:
+    from modules.empresas.controllers.empresa_controller import router as empresas_router
+
+    api_router.include_router(empresas_router, tags=["Empresas - Multi-CNPJ"])
+    logger.info("Modulo Empresas: OK")
+except Exception as e:
+    logger.warning(f"Modulo Empresas: {e}")
 
 
 # Incluir router principal

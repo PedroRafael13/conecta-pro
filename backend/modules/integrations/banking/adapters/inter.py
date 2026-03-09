@@ -379,6 +379,47 @@ class InterAdapter(BaseBankingAdapter):
             "pix_qrcode": data.get("pixCopiaECola", ""),
         }
 
+    async def generate_pix_charge(
+        self,
+        amount: Decimal,
+        description: str,
+        chave_pix: str = "35710481000103",
+        payer_name: str | None = None,
+        payer_document: str | None = None,
+        expiracao_segundos: int = 86400,
+    ) -> dict:
+        """Gera cobrança PIX imediata (cob) via Banco Inter."""
+        import random
+        import string
+
+        # txid: alfanumérico, max 35 chars
+        suffix = "".join(random.choices(string.ascii_uppercase + string.digits, k=8))
+        txid = f"CON{datetime.now().strftime('%Y%m%d%H%M%S')}{suffix}"
+
+        body: dict = {
+            "calendario": {"expiracao": expiracao_segundos},
+            "valor": {"original": f"{float(amount):.2f}"},
+            "chave": chave_pix,
+            "solicitacaoPagador": description[:140] if description else "Cobrança Conecta Mais",
+        }
+        if payer_name:
+            body["devedor"] = {"nome": payer_name}
+            if payer_document:
+                cpf_cnpj = payer_document.replace(".", "").replace("-", "").replace("/", "")
+                if len(cpf_cnpj) == 11:
+                    body["devedor"]["cpf"] = cpf_cnpj
+                else:
+                    body["devedor"]["cnpj"] = cpf_cnpj
+
+        data = await self._request("PUT", f"/pix/v2/cob/{txid}", json=body)
+
+        return {
+            "charge_id": data.get("txid", txid),
+            "pix_copy_paste": data.get("pixCopiaECola", ""),
+            "pix_qrcode": data.get("location", ""),
+            "amount": float(amount),
+        }
+
     async def close(self) -> None:
         """Fecha conexão."""
         if self._client:

@@ -74,6 +74,11 @@ from modules.financial.schemas.fiscal_schemas import (
     SUFRAMAOperacaoCreate,
     SUFRAMAOperacaoListResponse,
     SUFRAMAOperacaoResponse,
+    CalculoSimplesRequest,
+    CalculoLucroRealRequest,
+    ComparativoRegimesRequest,
+    RetencoesNFSeRequest,
+    VerificacaoLimiteSimplesRequest,
 )
 
 logger = logging.getLogger(__name__)
@@ -1464,4 +1469,151 @@ async def obter_dashboard_fiscal(
         alertas=alertas,
         grafico_impostos=[],  # TODO
         grafico_notas=[],  # TODO
+    )
+
+
+# ── Tax Calculator Multi-Regime ───────────────────────────────────────────────
+
+from modules.financial.agents.tax_calculator import TaxCalculatorAgent
+from decimal import Decimal
+
+_tax_agent = TaxCalculatorAgent()
+
+
+@router.post("/calcular/simples", summary="Calcular DAS Simples Nacional")
+async def calcular_simples_nacional(
+    dados: CalculoSimplesRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Calcula DAS do Simples Nacional (Anexo III - vigilância/serviços).
+    Aplica liminares automaticamente se informadas.
+    """
+    resultado = _tax_agent.calcular_simples(
+        receita_mes=Decimal(str(dados.receita_mes)),
+        rbt12=Decimal(str(dados.rbt12)),
+        liminares=dados.liminares,
+    )
+    return {
+        "regime": "simples_nacional",
+        "anexo": resultado.anexo,
+        "receita_bruta_mes": float(resultado.receita_bruta_mes),
+        "receita_bruta_12_meses": float(resultado.receita_bruta_12_meses),
+        "aliquota_nominal": f"{float(resultado.aliquota_nominal)*100:.2f}%",
+        "aliquota_efetiva": f"{float(resultado.aliquota_efetiva)*100:.2f}%",
+        "valor_das": float(resultado.valor_das),
+        "carga_tributaria": f"{float(resultado.carga_tributaria_percentual):.2f}%",
+        "distribuicao": resultado.distribuicao,
+        "liminares_aplicadas": resultado.liminares_aplicadas,
+        "economia_liminares": float(resultado.economia_liminares),
+    }
+
+
+@router.post("/calcular/lucro-real", summary="Calcular impostos Lucro Real")
+async def calcular_lucro_real(
+    dados: CalculoLucroRealRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Calcula IRPJ, CSLL, PIS (nc), COFINS (nc), ISS no regime Lucro Real.
+    """
+    resultado = _tax_agent.calcular_lucro_real(
+        receita_mes=Decimal(str(dados.receita_mes)),
+        receita_trimestre=Decimal(str(dados.receita_trimestre)),
+        custos_dedutiveis_mes=Decimal(str(dados.custos_dedutiveis_mes)),
+    )
+    return {
+        "regime": "lucro_real",
+        "receita_bruta_mes": float(resultado.receita_bruta_mes),
+        "lucro_presumido_base": float(resultado.lucro_bruto),
+        "irpj": float(resultado.irpj),
+        "irpj_adicional": float(resultado.irpj_adicional),
+        "csll": float(resultado.csll),
+        "pis": float(resultado.pis),
+        "cofins": float(resultado.cofins),
+        "iss": float(resultado.iss),
+        "total_impostos_mes": float(resultado.total_impostos_mes),
+        "carga_tributaria": f"{float(resultado.carga_tributaria_percentual):.2f}%",
+        "detalhamento": [
+            {
+                "nome": d.nome,
+                "aliquota": float(d.aliquota),
+                "base": float(d.base_calculo),
+                "valor": float(d.valor),
+            }
+            for d in resultado.detalhamento
+        ],
+    }
+
+
+@router.post("/calcular/comparativo-regimes", summary="Comparar Simples vs Lucro Real")
+async def comparar_regimes(
+    dados: ComparativoRegimesRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Compara carga tributária anual entre Simples Nacional e Lucro Real.
+    Útil para decisão de mudança de regime.
+    """
+    resultado = _tax_agent.comparar_regimes(
+        receita_anual=Decimal(str(dados.receita_anual)),
+        custos_dedutiveis_anual=Decimal(str(dados.custos_dedutiveis_anual)),
+        liminares=dados.liminares,
+    )
+    return {
+        "receita_bruta_anual": float(resultado.receita_bruta_anual),
+        "simples_nacional": {
+            "total_anual": float(resultado.simples_nacional_total),
+            "percentual": f"{float(resultado.simples_nacional_percentual):.2f}%",
+        },
+        "lucro_real": {
+            "total_anual": float(resultado.lucro_real_total),
+            "percentual": f"{float(resultado.lucro_real_percentual):.2f}%",
+        },
+        "economia_simples_anual": float(resultado.economia_simples),
+        "recomendacao": resultado.recomendacao,
+        "observacoes": resultado.observacoes,
+    }
+
+
+@router.post("/calcular/retencoes-nfse", summary="Calcular retenções na fonte NFS-e")
+async def calcular_retencoes_nfse(
+    dados: RetencoesNFSeRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Calcula INSS, IR, CSLL, PIS, COFINS, ISS retidos na fonte.
+    Aplica liminares automaticamente.
+    """
+    resultado = _tax_agent.calcular_retencoes_nfse(
+        valor_servico=Decimal(str(dados.valor_servico)),
+        regime_empresa=dados.regime_empresa,
+        liminares=dados.liminares,
+    )
+    return {
+        "valor_servico": float(resultado.valor_servico),
+        "retencoes": {
+            "inss_11pct": float(resultado.inss),
+            "ir_1_5pct": float(resultado.ir),
+            "csll_1pct": float(resultado.csll),
+            "pis_0_65pct": float(resultado.pis),
+            "cofins_3pct": float(resultado.cofins),
+            "iss_5pct": float(resultado.iss),
+        },
+        "total_retencoes": float(resultado.total_retencoes),
+        "valor_liquido_receber": float(resultado.valor_liquido),
+        "liminares_aplicadas": resultado.liminares_aplicadas,
+    }
+
+
+@router.post("/calcular/verificar-limite-simples", summary="Verificar limite do Simples Nacional")
+async def verificar_limite_simples(
+    dados: VerificacaoLimiteSimplesRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Verifica se empresa está próxima ou além do limite do Simples Nacional.
+    """
+    return _tax_agent.verificar_limite_simples(
+        rbt12=Decimal(str(dados.rbt12)),
     )

@@ -66,7 +66,7 @@ class InventoryItemStatus(StrEnum):
 class StockInventory(Base):
     """Inventário/Contagem de estoque."""
 
-    __tablename__ = "stock_inventories"
+    __tablename__ = "fin_stock_inventories"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     condominio_id = Column(
@@ -79,7 +79,7 @@ class StockInventory(Base):
     # Armazém
     warehouse_id = Column(
         UUID(as_uuid=True),
-        ForeignKey("warehouses.id"),
+        ForeignKey("fin_warehouses.id"),
         nullable=False,
         index=True,
     )
@@ -316,12 +316,12 @@ class StockInventory(Base):
 class StockInventoryItem(Base):
     """Item do inventário."""
 
-    __tablename__ = "stock_inventory_items"
+    __tablename__ = "fin_stock_inventory_items"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     inventory_id = Column(
         UUID(as_uuid=True),
-        ForeignKey("stock_inventories.id", ondelete="CASCADE"),
+        ForeignKey("fin_stock_inventories.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
@@ -337,7 +337,7 @@ class StockInventoryItem(Base):
     # Stock Item
     stock_item_id = Column(
         UUID(as_uuid=True),
-        ForeignKey("stock_items.id"),
+        ForeignKey("fin_stock_items.id"),
         nullable=True,
         index=True,
     )

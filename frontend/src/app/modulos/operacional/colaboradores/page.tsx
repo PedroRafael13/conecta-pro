@@ -1,7 +1,8 @@
 'use client';
 
-import { Users, Search, RefreshCw, AlertCircle, User, Mail, Building2, Briefcase, Phone, Calendar, Edit, Eye, MoreHorizontal } from 'lucide-react';
-import { useState, useEffect, useCallback } from 'react';
+import { Users, Search, RefreshCw, AlertCircle, User, Mail, Building2, Briefcase, Phone, Calendar, Edit, Eye, MoreHorizontal, Zap, Plus } from 'lucide-react';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -37,44 +38,84 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { ExportButton } from '@/components/ui/export-button';
-import { useEmployees, useUpdateEmployee } from '@/hooks/operacional/useEmployees';
+import { useEmployees, useUpdateEmployee, useEmployeesFromSolides } from '@/hooks/operacional/useEmployees';
+import { customInstance } from '@/lib/api-client';
 
-// Tipo para funcionário
+// Tipo normalizado para exibição
 interface Employee {
   id: string;
-  full_name?: string | null;
-  name?: string | null;
+  nome: string;
   email?: string | null;
-  registration?: string | null;
+  matricula?: string | null;
   status?: string | null;
   cargo?: string | null;
   departamento?: string | null;
   telefone?: string | null;
   data_admissao?: string | null;
+  fonte: 'local' | 'solides';
 }
 
 export default function ColaboradoresPage() {
-  const { data: employeesData, isLoading: loading, error: queryError, refetch } = useEmployees();
-  const employeesRaw = employeesData?.items ?? [];
-  const employees = employeesRaw as unknown as Employee[];
-  const { mutateAsync: updateEmployeeMutation } = useUpdateEmployee();
+  const router = useRouter();
+  const { data: localData, isLoading: localLoading, error: localError, refetch: refetchLocal } = useEmployees();
+  const { data: solidesData, isLoading: solidesLoading, refetch: refetchSolides } = useEmployeesFromSolides(
+    undefined,
+    { query: { retry: 1 } }
+  );
+
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [source, setSource] = useState<string>('local');
-  const total = employeesData?.total ?? employees.length;
-
-  // Estados para edição
+  const [saving, setSaving] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
-  const [editForm, setEditForm] = useState({
-    cargo: '',
-    departamento: '',
-    telefone: '',
-    status: '',
-  });
-  const [saving, setSaving] = useState(false);
+  const [editForm, setEditForm] = useState({ cargo: '', departamento: '', telefone: '', status: '' });
+  const [newDialogOpen, setNewDialogOpen] = useState(false);
+  const [newForm, setNewForm] = useState({ nome: '', email: '', matricula: '', cargo: '', departamento: '', telefone: '' });
+  const [newSaving, setNewSaving] = useState(false);
+  const [newError, setNewError] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const didAutoOpen = useRef(false);
+
+  const loading = localLoading || solidesLoading;
+
+  // Montar mapa de dados do Sólides indexado por nome normalizado
+  const solidesMap = useMemo(() => {
+    const map = new Map<string, Record<string, string | null | undefined>>();
+    const items = (solidesData as any)?.items ?? [];
+    for (const s of items) {
+      const key = (s.nome || s.name || '').toLowerCase().trim();
+      if (key) map.set(key, s);
+    }
+    return map;
+  }, [solidesData]);
+
+  // Combinar dados locais enriquecidos com Sólides
+  const employees: Employee[] = useMemo(() => {
+    const localItems = (localData as any)?.items ?? [];
+    return localItems.map((raw: any): Employee => {
+      const nome = raw.nome || raw.full_name || raw.name || '';
+      const solidesMatch = solidesMap.get(nome.toLowerCase().trim());
+      return {
+        id: raw.id,
+        nome,
+        email: raw.email,
+        matricula: raw.matricula || raw.registration || solidesMatch?.matricula,
+        status: raw.status || solidesMatch?.status,
+        cargo: raw.cargo || solidesMatch?.cargo,
+        departamento: raw.departamento || solidesMatch?.departamento,
+        telefone: raw.telefone || solidesMatch?.telefone,
+        data_admissao: raw.data_admissao || solidesMatch?.data_admissao,
+        fonte: solidesMatch ? 'solides' : 'local',
+      };
+    });
+  }, [localData, solidesMap]);
+
+  const total = (localData as any)?.total ?? employees.length;
+  const solidesTotal = (solidesData as any)?.total ?? 0;
+
+  const { mutateAsync: updateEmployeeMutation } = useUpdateEmployee();
 
   const handleEdit = (employee: Employee) => {
     setSelectedEmployee(employee);
@@ -89,82 +130,84 @@ export default function ColaboradoresPage() {
 
   const handleSaveEdit = async () => {
     if (!selectedEmployee) return;
-
     setSaving(true);
     try {
-      await updateEmployeeMutation({
-        employeeId: selectedEmployee.id,
-        data: editForm,
-      });
+      await updateEmployeeMutation({ employeeId: selectedEmployee.id, data: editForm });
       setEditDialogOpen(false);
-      refetch();
+      refetchLocal();
+      refetchSolides();
     } catch (err: unknown) {
-      console.error('Erro ao salvar:', err);
-      const message = err instanceof Error ? err.message : 'Erro ao salvar alterações';
-      setError(message);
+      setError(err instanceof Error ? err.message : 'Erro ao salvar alterações');
     } finally {
       setSaving(false);
     }
   };
 
-  // Debounce search
+  // Auto-open new dialog when ?novo=1 param is present (from CommandPalette)
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(search);
-    }, 300);
-    return () => clearTimeout(timer);
+    if (!didAutoOpen.current && searchParams?.get('novo') === '1') {
+      didAutoOpen.current = true;
+      setNewDialogOpen(true);
+    }
+  }, [searchParams]);
+
+  const handleCreateEmployee = async () => {
+    if (!newForm.nome.trim()) { setNewError('Nome é obrigatório'); return; }
+    if (!newForm.email.trim()) { setNewError('E-mail é obrigatório'); return; }
+    if (!newForm.matricula.trim()) { setNewError('Matrícula é obrigatória'); return; }
+    setNewSaving(true);
+    setNewError(null);
+    try {
+      await customInstance({ url: '/api/v1/operacional/employees/', method: 'POST', data: { ...newForm, status: 'ativo' } });
+      setNewDialogOpen(false);
+      setNewForm({ nome: '', email: '', matricula: '', cargo: '', departamento: '', telefone: '' });
+      refetchLocal();
+    } catch (err: unknown) {
+      setNewError(err instanceof Error ? err.message : 'Erro ao criar colaborador');
+    } finally {
+      setNewSaving(false);
+    }
+  };
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(t);
   }, [search]);
 
   useEffect(() => {
-    if (queryError) {
-      setError(String(queryError));
-    }
-  }, [queryError]);
+    if (localError) setError(String(localError));
+  }, [localError]);
 
-  // Filtrar localmente se houver busca
   const filteredEmployees = employees.filter((emp) => {
-    if (!debouncedSearch) return true;
-    const searchLower = debouncedSearch.toLowerCase();
-    return (
-      (emp.full_name || emp.name || '').toLowerCase().includes(searchLower) ||
-      (emp.email || '').toLowerCase().includes(searchLower) ||
-      (emp.registration || '').toLowerCase().includes(searchLower) ||
-      (emp.cargo || '').toLowerCase().includes(searchLower) ||
-      (emp.departamento || '').toLowerCase().includes(searchLower)
+    const matchSearch = !debouncedSearch || (
+      emp.nome.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+      (emp.email || '').toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+      (emp.matricula || '').toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+      (emp.cargo || '').toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+      (emp.departamento || '').toLowerCase().includes(debouncedSearch.toLowerCase())
     );
+    const matchStatus = statusFilter === 'all' || (emp.status || '').toLowerCase() === statusFilter;
+    return matchSearch && matchStatus;
   });
 
   const getStatusBadge = (status?: string | null) => {
-    if (!status) return null;
-    const statusLower = status.toLowerCase();
-    if (statusLower === 'ativo' || statusLower === 'active') {
-      return <Badge className="bg-green-100 text-green-800">Ativo</Badge>;
-    }
-    if (statusLower === 'inativo' || statusLower === 'inactive') {
-      return <Badge variant="secondary">Inativo</Badge>;
-    }
-    if (statusLower === 'afastado') {
-      return <Badge className="bg-yellow-100 text-yellow-800">Afastado</Badge>;
-    }
-    if (statusLower === 'ferias') {
-      return <Badge className="bg-blue-100 text-blue-800">Férias</Badge>;
-    }
+    if (!status) return <Badge variant="outline">-</Badge>;
+    const s = status.toLowerCase();
+    if (s === 'ativo' || s === 'active') return <Badge className="bg-green-100 text-green-800">Ativo</Badge>;
+    if (s === 'inativo' || s === 'inactive') return <Badge variant="secondary">Inativo</Badge>;
+    if (s === 'afastado' || s === 'on_leave') return <Badge className="bg-yellow-100 text-yellow-800">Afastado</Badge>;
+    if (s === 'ferias') return <Badge className="bg-blue-100 text-blue-800">Férias</Badge>;
     return <Badge variant="outline">{status}</Badge>;
   };
 
   const formatDate = (dateStr?: string | null) => {
     if (!dateStr) return '-';
-    try {
-      return new Date(dateStr).toLocaleDateString('pt-BR');
-    } catch {
-      return dateStr;
-    }
+    try { return new Date(dateStr).toLocaleDateString('pt-BR'); } catch { return dateStr; }
   };
 
-  // Preparar dados para exportação
   const exportData = filteredEmployees.map((emp) => ({
-    'Matrícula': emp.registration || '-',
-    'Nome': emp.full_name || emp.name || '-',
+    'Matrícula': emp.matricula || '-',
+    'Nome': emp.nome || '-',
     'Email': emp.email || '-',
     'Cargo': emp.cargo || '-',
     'Departamento': emp.departamento || '-',
@@ -183,15 +226,18 @@ export default function ColaboradoresPage() {
             Colaboradores
           </h1>
           <p className="text-muted-foreground">
-            Gestão de funcionários e colaboradores operacionais
+            {total} colaboradores • {solidesTotal > 0 ? `${solidesTotal} no Sólides DP` : 'carregando Sólides...'}
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {source && (
-            <Badge variant="outline" className="text-xs">
-              Fonte: {source === 'solides' ? 'Solides DP' : 'Sistema Local'}
-            </Badge>
-          )}
+          <Badge variant="outline" className="text-xs gap-1">
+            <Zap className="h-3 w-3 text-yellow-500" />
+            Enriquecido com Sólides DP
+          </Badge>
+          <Button onClick={() => setNewDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Novo Colaborador
+          </Button>
           <ExportButton
             data={exportData}
             filename="colaboradores"
@@ -201,7 +247,7 @@ export default function ColaboradoresPage() {
             variant="outline"
             buttonText="Exportar"
           />
-          <Button variant="outline" onClick={() => refetch()} disabled={loading}>
+          <Button variant="outline" onClick={() => { refetchLocal(); refetchSolides(); }} disabled={loading}>
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Atualizar
           </Button>
@@ -237,14 +283,11 @@ export default function ColaboradoresPage() {
         </CardContent>
       </Card>
 
-      {/* Erro */}
       {error && (
         <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 flex items-center gap-3">
           <AlertCircle className="h-5 w-5 text-destructive" />
-          <div className="flex-1">
-            <p className="text-sm text-destructive">{error}</p>
-          </div>
-          <Button variant="outline" size="sm" onClick={() => refetch()}>
+          <p className="text-sm text-destructive flex-1">{error}</p>
+          <Button variant="outline" size="sm" onClick={() => { refetchLocal(); setError(null); }}>
             Tentar novamente
           </Button>
         </div>
@@ -257,9 +300,7 @@ export default function ColaboradoresPage() {
             <CardTitle className="text-sm font-medium">Total</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{total}</div>
-          </CardContent>
+          <CardContent><div className="text-2xl font-bold">{total}</div></CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -268,7 +309,7 @@ export default function ColaboradoresPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {employees.filter((e) => (e.status || '').toLowerCase() === 'ativo').length}
+              {employees.filter((e) => ['ativo', 'active'].includes((e.status || '').toLowerCase())).length}
             </div>
           </CardContent>
         </Card>
@@ -279,7 +320,7 @@ export default function ColaboradoresPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {employees.filter((e) => (e.status || '').toLowerCase() === 'afastado').length}
+              {employees.filter((e) => ['afastado', 'on_leave'].includes((e.status || '').toLowerCase())).length}
             </div>
           </CardContent>
         </Card>
@@ -288,9 +329,7 @@ export default function ColaboradoresPage() {
             <CardTitle className="text-sm font-medium">Exibindo</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{filteredEmployees.length}</div>
-          </CardContent>
+          <CardContent><div className="text-2xl font-bold">{filteredEmployees.length}</div></CardContent>
         </Card>
       </div>
 
@@ -318,19 +357,23 @@ export default function ColaboradoresPage() {
                   <TableHead>Contato</TableHead>
                   <TableHead>Admissão</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="w-[80px]">Ações</TableHead>
+                  <TableHead className="w-[120px]">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredEmployees.map((employee) => (
-                  <TableRow key={employee.id}>
+                  <TableRow
+                    key={employee.id}
+                    className="cursor-pointer hover:bg-muted/50 transition-colors"
+                    onClick={() => router.push(`/modulos/operacional/colaboradores/${employee.id}`)}
+                  >
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
                           <User className="h-4 w-4 text-muted-foreground" />
                         </div>
                         <div>
-                          <div className="font-medium">{employee.full_name || employee.name || '-'}</div>
+                          <div className="font-medium">{employee.nome || '-'}</div>
                           {employee.email && (
                             <div className="text-xs text-muted-foreground flex items-center gap-1">
                               <Mail className="h-3 w-3" />
@@ -342,7 +385,7 @@ export default function ColaboradoresPage() {
                     </TableCell>
                     <TableCell>
                       <code className="text-xs bg-muted px-1.5 py-0.5 rounded">
-                        {employee.registration || '-'}
+                        {employee.matricula || '-'}
                       </code>
                     </TableCell>
                     <TableCell>
@@ -351,9 +394,7 @@ export default function ColaboradoresPage() {
                           <Briefcase className="h-3 w-3 text-muted-foreground" />
                           {employee.cargo}
                         </div>
-                      ) : (
-                        '-'
-                      )}
+                      ) : '-'}
                     </TableCell>
                     <TableCell>
                       {employee.departamento ? (
@@ -361,9 +402,7 @@ export default function ColaboradoresPage() {
                           <Building2 className="h-3 w-3 text-muted-foreground" />
                           {employee.departamento}
                         </div>
-                      ) : (
-                        '-'
-                      )}
+                      ) : '-'}
                     </TableCell>
                     <TableCell>
                       {employee.telefone ? (
@@ -371,9 +410,7 @@ export default function ColaboradoresPage() {
                           <Phone className="h-3 w-3 text-muted-foreground" />
                           {employee.telefone}
                         </div>
-                      ) : (
-                        '-'
-                      )}
+                      ) : '-'}
                     </TableCell>
                     <TableCell>
                       {employee.data_admissao ? (
@@ -381,29 +418,41 @@ export default function ColaboradoresPage() {
                           <Calendar className="h-3 w-3 text-muted-foreground" />
                           {formatDate(employee.data_admissao)}
                         </div>
-                      ) : (
-                        '-'
-                      )}
+                      ) : '-'}
                     </TableCell>
                     <TableCell>{getStatusBadge(employee.status)}</TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleEdit(employee)}>
-                            <Edit className="h-4 w-4 mr-2" />
-                            Editar
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Eye className="h-4 w-4 mr-2" />
-                            Ver detalhes
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          title="Ver Perfil"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/modulos/operacional/colaboradores/${employee.id}`);
+                          }}
+                        >
+                          <User className="h-4 w-4" />
+                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => router.push(`/modulos/operacional/colaboradores/${employee.id}`)}>
+                              <Eye className="h-4 w-4 mr-2" />
+                              Ver Perfil
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleEdit(employee)}>
+                              <Edit className="h-4 w-4 mr-2" />
+                              Editar
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -418,47 +467,31 @@ export default function ColaboradoresPage() {
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Editar Colaborador</DialogTitle>
-            <DialogDescription>
-              {selectedEmployee?.full_name || selectedEmployee?.name}
-            </DialogDescription>
+            <DialogDescription>{selectedEmployee?.nome}</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label htmlFor="cargo">Cargo</Label>
-              <Input
-                id="cargo"
-                value={editForm.cargo}
+              <Input id="cargo" value={editForm.cargo}
                 onChange={(e) => setEditForm({ ...editForm, cargo: e.target.value })}
-                placeholder="Ex: Vigilante, Porteiro..."
-              />
+                placeholder="Ex: Vigilante, Porteiro..." />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="departamento">Departamento</Label>
-              <Input
-                id="departamento"
-                value={editForm.departamento}
+              <Input id="departamento" value={editForm.departamento}
                 onChange={(e) => setEditForm({ ...editForm, departamento: e.target.value })}
-                placeholder="Ex: Operações, Segurança..."
-              />
+                placeholder="Ex: Operações, Segurança..." />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="telefone">Telefone</Label>
-              <Input
-                id="telefone"
-                value={editForm.telefone}
+              <Input id="telefone" value={editForm.telefone}
                 onChange={(e) => setEditForm({ ...editForm, telefone: e.target.value })}
-                placeholder="(11) 99999-9999"
-              />
+                placeholder="(11) 99999-9999" />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="status">Status</Label>
-              <Select
-                value={editForm.status}
-                onValueChange={(value) => setEditForm({ ...editForm, status: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o status" />
-                </SelectTrigger>
+              <Select value={editForm.status} onValueChange={(v) => setEditForm({ ...editForm, status: v })}>
+                <SelectTrigger><SelectValue placeholder="Selecione o status" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="ativo">Ativo</SelectItem>
                   <SelectItem value="inativo">Inativo</SelectItem>
@@ -469,11 +502,71 @@ export default function ColaboradoresPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
-              Cancelar
-            </Button>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Cancelar</Button>
             <Button onClick={handleSaveEdit} disabled={saving}>
               {saving ? 'Salvando...' : 'Salvar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Novo Colaborador */}
+      <Dialog open={newDialogOpen} onOpenChange={setNewDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Novo Colaborador</DialogTitle>
+            <DialogDescription>Preencha os dados para cadastrar um novo colaborador.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="new-nome">Nome completo *</Label>
+              <Input id="new-nome" value={newForm.nome}
+                onChange={(e) => setNewForm({ ...newForm, nome: e.target.value })}
+                placeholder="Nome do colaborador" />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="new-email">E-mail *</Label>
+              <Input id="new-email" type="email" value={newForm.email}
+                onChange={(e) => setNewForm({ ...newForm, email: e.target.value })}
+                placeholder="email@exemplo.com" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="new-matricula">Matrícula *</Label>
+                <Input id="new-matricula" value={newForm.matricula}
+                  onChange={(e) => setNewForm({ ...newForm, matricula: e.target.value })}
+                  placeholder="Ex: 001234" />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="new-telefone">Telefone</Label>
+                <Input id="new-telefone" value={newForm.telefone}
+                  onChange={(e) => setNewForm({ ...newForm, telefone: e.target.value })}
+                  placeholder="(11) 99999-9999" />
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="new-cargo">Cargo</Label>
+              <Input id="new-cargo" value={newForm.cargo}
+                onChange={(e) => setNewForm({ ...newForm, cargo: e.target.value })}
+                placeholder="Ex: Vigilante, Porteiro..." />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="new-departamento">Departamento</Label>
+              <Input id="new-departamento" value={newForm.departamento}
+                onChange={(e) => setNewForm({ ...newForm, departamento: e.target.value })}
+                placeholder="Ex: Operações, Segurança..." />
+            </div>
+            {newError && (
+              <div className="text-sm text-destructive flex items-center gap-2">
+                <AlertCircle className="h-4 w-4" />
+                {newError}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setNewDialogOpen(false); setNewError(null); }}>Cancelar</Button>
+            <Button onClick={handleCreateEmployee} disabled={newSaving}>
+              {newSaving ? 'Salvando...' : 'Cadastrar'}
             </Button>
           </DialogFooter>
         </DialogContent>

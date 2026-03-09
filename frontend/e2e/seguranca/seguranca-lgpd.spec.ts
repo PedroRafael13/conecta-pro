@@ -222,7 +222,7 @@ test.describe('Segurança - LGPD Compliance', () => {
   test.describe('Consentimento', () => {
     test.beforeEach(async ({ page }) => {
       await page.goto('/modulos/seguranca/consentimento');
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('load');
       await page.waitForTimeout(1500);
     });
 
@@ -295,7 +295,7 @@ test.describe('Segurança - LGPD Compliance', () => {
   test.describe('Direito ao Esquecimento', () => {
     test.beforeEach(async ({ page }) => {
       await page.goto('/modulos/seguranca/esquecimento');
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('load');
       await page.waitForTimeout(1500);
     });
 
@@ -370,7 +370,7 @@ test.describe('Segurança - LGPD Compliance', () => {
   test.describe('PIA / DPIA', () => {
     test.beforeEach(async ({ page }) => {
       await page.goto('/modulos/seguranca/pia-dpia');
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('load');
       await page.waitForTimeout(1500);
     });
 
@@ -450,7 +450,7 @@ test.describe('Segurança - LGPD Compliance', () => {
   test.describe('Mascaramento de Dados', () => {
     test.beforeEach(async ({ page }) => {
       await page.goto('/modulos/seguranca/mascaramento');
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('load');
       await page.waitForTimeout(1500);
     });
 
@@ -544,7 +544,7 @@ test.describe('Segurança - LGPD Compliance', () => {
   test.describe('Página Principal de Segurança', () => {
     test.beforeEach(async ({ page }) => {
       await page.goto('/modulos/seguranca');
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('load');
       await page.waitForTimeout(1500);
     });
 

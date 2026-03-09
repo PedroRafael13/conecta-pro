@@ -86,8 +86,9 @@ class BankAccountRepository:
                 query = query.where(BankAccount.account_type == filters.account_type)
             if filters.bank_code:
                 query = query.where(BankAccount.bank_code == filters.bank_code)
-            if filters.is_main_account is not None:
-                query = query.where(BankAccount.is_main_account == filters.is_main_account)
+            is_main_val = filters.is_main_account if filters.is_main_account is not None else filters.is_main
+            if is_main_val is not None:
+                query = query.where(BankAccount.is_main_account == is_main_val)
             if filters.pix_enabled is not None:
                 query = query.where(BankAccount.pix_enabled == filters.pix_enabled)
             if filters.boleto_enabled is not None:
@@ -126,6 +127,20 @@ class BankAccountRepository:
         await self.session.flush()
         await self.session.refresh(account)
         return account
+
+    async def list_with_filters(
+        self,
+        filters: BankAccountFilter,
+        skip: int = 0,
+        limit: int = 100,
+    ) -> builtins.list[BankAccount]:
+        """Lista contas usando objeto de filtro (inclui condominio_id)."""
+        return await self.list(
+            condominio_id=filters.condominio_id,
+            filters=filters,
+            skip=skip,
+            limit=limit,
+        )
 
     async def delete(self, account_id: UUID) -> bool:
         """Deleta conta (soft delete)."""
@@ -475,6 +490,20 @@ class CashFlowEntryRepository:
         await self.session.refresh(entry)
         return entry
 
+    async def list_with_filters(
+        self,
+        filters: CashFlowEntryFilter,
+        skip: int = 0,
+        limit: int = 100,
+    ) -> builtins.list[CashFlowEntry]:
+        """Lista lancamentos usando objeto de filtro (inclui condominio_id)."""
+        return await self.list(
+            condominio_id=filters.condominio_id,
+            filters=filters,
+            skip=skip,
+            limit=limit,
+        )
+
     async def delete(self, entry_id: UUID) -> bool:
         """Deleta lancamento (soft delete)."""
         entry = await self.get_by_id(entry_id)
@@ -651,6 +680,20 @@ class CashFlowForecastRepository:
         await self.session.flush()
         await self.session.refresh(forecast)
         return forecast
+
+    async def list_with_filters(
+        self,
+        filters: CashFlowForecastFilter,
+        skip: int = 0,
+        limit: int = 100,
+    ) -> builtins.list[CashFlowForecast]:
+        """Lista previsoes usando objeto de filtro (inclui condominio_id)."""
+        return await self.list(
+            condominio_id=filters.condominio_id,
+            filters=filters,
+            skip=skip,
+            limit=limit,
+        )
 
     async def delete(self, forecast_id: UUID) -> bool:
         """Deleta previsao (soft delete)."""

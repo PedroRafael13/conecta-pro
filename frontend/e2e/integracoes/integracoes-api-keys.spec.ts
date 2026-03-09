@@ -5,7 +5,7 @@ test.describe("🔗 Módulo Integrações - API Keys", () => {
   test.beforeEach(async ({ page }) => {
     await loginViaAPI(page);
     await page.goto("/modulos/integracoes/api-keys");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
   });
 
   test.describe("📋 Lista de API Keys", () => {

@@ -88,7 +88,7 @@ test.describe('Segurança - Consentimento LGPD', () => {
     await loginViaAPI(page);
     await setupConsentMocks(page);
     await page.goto('/modulos/seguranca/consentimento');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1500);
   });
 

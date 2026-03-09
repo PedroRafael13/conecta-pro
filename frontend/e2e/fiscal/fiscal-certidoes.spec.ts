@@ -207,7 +207,7 @@ async function gotoCertidoesPage(page: Page) {
   await setupAuthMock(page);
   await setupCertidoesMocks(page);
   await page.goto('/modulos/fiscal/certidoes');
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('load');
   await page.waitForTimeout(1000);
 }
 
@@ -494,7 +494,7 @@ test.describe('Certidões - Gestão de Certidões e Certificados', () => {
     });
 
     await page.goto('/modulos/fiscal/certidoes');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1000);
 
     await expect(page.getByText('Nenhuma certidao encontrada')).toBeVisible();
@@ -512,7 +512,7 @@ test.describe('Certidões - Gestão de Certidões e Certificados', () => {
     });
 
     await page.goto('/modulos/fiscal/certidoes');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1000);
 
     // Verifica mensagem de erro
@@ -541,7 +541,7 @@ test.describe('Certidões - Gestão de Certidões e Certificados', () => {
     });
 
     await page.goto('/modulos/fiscal/certidoes');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1000);
 
     // Clica em tentar novamente

@@ -80,7 +80,7 @@ test.describe('Segurança - Direito ao Esquecimento', () => {
     await loginViaAPI(page);
     await setupErasureMocks(page);
     await page.goto('/modulos/seguranca/esquecimento');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1500);
   });
 

@@ -189,7 +189,7 @@ async function gotoSpedPage(page: Page) {
   await setupAuthMock(page);
   await setupSpedMocks(page);
   await page.goto('/modulos/fiscal/sped');
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('load');
   await page.waitForTimeout(1000);
 }
 
@@ -439,7 +439,7 @@ test.describe('SPED - Sistema Publico de Escrituracao Digital', () => {
     });
 
     await page.goto('/modulos/fiscal/sped');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1000);
 
     // Verifica mensagem de empty state

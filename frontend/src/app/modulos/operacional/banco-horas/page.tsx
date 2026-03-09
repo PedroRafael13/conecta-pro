@@ -1,7 +1,7 @@
 'use client';
 
 import { Clock, Search, Plus, Eye, Check, X, ArrowLeft, ChevronLeft, ChevronRight, RefreshCw, AlertTriangle, CheckCircle, XCircle, Calendar, User, TrendingUp, TrendingDown, Bell, ArrowUpRight, ArrowDownRight, Timer, Sparkles } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -28,6 +28,7 @@ import {
   TIME_BANK_STATUS_COLORS,
   ALERT_SEVERITY_COLORS,
 } from '@/lib/services/time-bank';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 export default function BancoHorasPage() {
   const router = useRouter();
@@ -61,10 +62,16 @@ export default function BancoHorasPage() {
   const approveMutation = useApproveTimeBankEntry();
   const rejectMutation = useRejectTimeBankEntry();
 
-  // Modal states
+  // Modal states — Approve
   const [showApproveModal, setShowApproveModal] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<TimeBankEntry | null>(null);
   const [approving, setApproving] = useState(false);
+
+  // Modal states — Reject
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectTarget, setRejectTarget] = useState<TimeBankEntry | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
+  const [isRejecting, setIsRejecting] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -87,15 +94,24 @@ export default function BancoHorasPage() {
     }
   };
 
-  const handleReject = async (entry: TimeBankEntry) => {
-    const reason = prompt('Motivo da rejeicao:');
-    if (!reason) return;
+  const handleReject = (entry: TimeBankEntry) => {
+    setRejectTarget(entry);
+    setRejectReason('');
+    setShowRejectModal(true);
+  };
 
+  const handleConfirmReject = async () => {
+    if (!rejectTarget || !rejectReason.trim()) return;
+    setIsRejecting(true);
     try {
-      await rejectMutation.mutateAsync({ entryId: entry.id, data: { rejection_reason: reason } });
+      await rejectMutation.mutateAsync({ entryId: rejectTarget.id, data: { rejection_reason: rejectReason.trim() } });
+      setShowRejectModal(false);
+      setRejectTarget(null);
       refetch();
     } catch (err) {
       console.error('Erro ao rejeitar:', err);
+    } finally {
+      setIsRejecting(false);
     }
   };
 
@@ -131,6 +147,19 @@ export default function BancoHorasPage() {
         return <Clock className="w-4 h-4" />;
     }
   };
+
+  // Compute top 8 employees by absolute balance from entries
+  const balanceChartData = useMemo(() => {
+    const byEmployee: Record<string, { name: string; balance: number }> = {};
+    entries.forEach(e => {
+      const name = e.employee_name || 'N/A';
+      if (!byEmployee[name]) byEmployee[name] = { name: name.split(' ')[0] ?? name, balance: 0 };
+      byEmployee[name].balance += e.hours;
+    });
+    return Object.values(byEmployee)
+      .sort((a, b) => Math.abs(b.balance) - Math.abs(a.balance))
+      .slice(0, 8);
+  }, [entries]);
 
   if (authLoading) {
     return (
@@ -292,6 +321,26 @@ export default function BancoHorasPage() {
             </div>
           </div>
         </div>
+
+        {/* Balance Chart */}
+        {balanceChartData.length > 0 && (
+          <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl p-4 mb-6">
+            <h2 className="text-sm font-semibold text-[hsl(var(--foreground))] mb-4">Saldo por Colaborador</h2>
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={balanceChartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `${v}h`} />
+                <Tooltip formatter={(v: any) => [`${Number(v).toFixed(1)}h`, 'Saldo']} />
+                <Bar dataKey="balance" radius={[4, 4, 0, 0]}>
+                  {balanceChartData.map((entry, i) => (
+                    <Cell key={i} fill={entry.balance >= 0 ? '#22c55e' : '#ef4444'} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
 
         {/* Pending Section */}
         {pendingEntries.length > 0 && (
@@ -651,6 +700,43 @@ export default function BancoHorasPage() {
               <Check className="w-4 h-4 mr-2" />
             )}
             Aprovar
+          </Button>
+        </ModalFooter>
+      </Modal>
+
+      {/* Reject Modal */}
+      <Modal
+        isOpen={showRejectModal}
+        onClose={() => { setShowRejectModal(false); setRejectTarget(null); setRejectReason(''); }}
+        title="Rejeitar Lancamento"
+        description="Informe o motivo da rejeicao"
+        size="sm"
+      >
+        <div className="space-y-3">
+          <div>
+            <p className="text-sm text-[hsl(var(--muted-foreground))]">
+              {rejectTarget?.employee_name} — {formatHours(rejectTarget?.hours ?? 0)}
+            </p>
+          </div>
+          <div>
+            <label className="text-sm font-medium block mb-1">Motivo <span className="text-red-500">*</span></label>
+            <textarea
+              value={rejectReason}
+              onChange={e => setRejectReason(e.target.value)}
+              rows={3}
+              className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]/20"
+              placeholder="Descreva o motivo..."
+            />
+          </div>
+        </div>
+        <ModalFooter>
+          <Button variant="outline" onClick={() => setShowRejectModal(false)} disabled={isRejecting}>Cancelar</Button>
+          <Button
+            onClick={handleConfirmReject}
+            disabled={!rejectReason.trim() || isRejecting}
+            className="bg-red-500 hover:bg-red-600 text-white border-red-500"
+          >
+            {isRejecting ? 'Rejeitando...' : 'Confirmar Rejeicao'}
           </Button>
         </ModalFooter>
       </Modal>

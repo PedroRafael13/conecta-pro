@@ -139,7 +139,7 @@ test.describe('Configurações - Configurações do Sistema', () => {
     await loginViaAPI(page);
     await setupConfigMocks(page);
     await page.goto('/modulos/configuracoes/configuracoes-sistema');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1500);
   });
 

@@ -267,7 +267,7 @@ async function gotoExamsPage(page: Page) {
   await setupAuthMock(page);
   await setupExamsMocks(page);
   await page.goto('/modulos/saude-ocupacional/exames');
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('load');
 }
 
 // ============================================================================
@@ -649,7 +649,7 @@ test.describe('Saúde Ocupacional - Exames - Histórico', () => {
     });
 
     await page.goto('/modulos/saude-ocupacional/exames');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     await expect(page.getByText('Nenhum registro encontrado')).toBeVisible();
   });
@@ -666,7 +666,7 @@ test.describe('Saúde Ocupacional - Exames - Histórico', () => {
     });
 
     await page.goto('/modulos/saude-ocupacional/exames');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     await expect(page.getByText('Erro ao carregar ASOs')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Tentar novamente' })).toBeVisible();
@@ -707,7 +707,7 @@ test.describe('Saúde Ocupacional - Exames - Histórico', () => {
     // Testa viewport mobile
     await page.setViewportSize({ width: 375, height: 667 });
     await page.reload();
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     await expect(page.getByText('Exames Médicos - PCMSO')).toBeVisible();
 
@@ -732,7 +732,7 @@ test.describe('Saúde Ocupacional - Exames - Integração', () => {
     });
 
     await page.goto('/modulos/saude-ocupacional/exames');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     await expect(page).toHaveURL(/.*login.*/);
   });

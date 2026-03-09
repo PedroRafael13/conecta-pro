@@ -123,7 +123,7 @@ test.describe('Campo - Check-in / Check-out', () => {
     await loginViaAPI(page);
     await setupCheckinMocks(page);
     await page.goto('/modulos/campo/checkin');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1500);
   });
 

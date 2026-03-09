@@ -37,6 +37,9 @@ from modules.financial.controllers.receivable_category_controller import (
 from modules.financial.controllers.receivable_controller import router as receivable_router
 from modules.financial.controllers.supplier_controller import router as supplier_router
 
+# AI Command Center
+from modules.financial.controllers.ai_controller import router as financial_ai_router
+
 __all__ = [
     # Contas a Pagar
     "supplier_router",
@@ -59,4 +62,6 @@ __all__ = [
     "accounting_router",
     # Fiscal
     "fiscal_router",
+    # AI Command Center
+    "financial_ai_router",
 ]

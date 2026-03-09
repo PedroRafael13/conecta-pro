@@ -15,7 +15,7 @@ test.describe('Recrutamento - Entrevistas - Listagem', () => {
   test.beforeEach(async ({ page }) => {
     await loginViaAPI(page);
     await page.goto('/modulos/recrutamento/entrevistas');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(2000);
   });
 

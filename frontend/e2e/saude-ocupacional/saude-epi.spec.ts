@@ -293,7 +293,7 @@ async function gotoEPIPage(page: Page) {
   await setupAuthMock(page);
   await setupEPIMocks(page);
   await page.goto('/modulos/saude-ocupacional/epi');
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('load');
 }
 
 // ============================================================================
@@ -490,7 +490,7 @@ test.describe('Saúde Ocupacional - EPI - Controle', () => {
 
     await setupEPIMocks(page);
     await page.goto('/modulos/saude-ocupacional/epi');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     await expect(page.getByText('Nenhum registro encontrado')).toBeVisible();
     await expect(page.getByText('Tente ajustar os filtros ou cadastre um novo EPI')).toBeVisible();
@@ -573,7 +573,7 @@ test.describe('Saúde Ocupacional - EPI - Entregas', () => {
     });
 
     await page.goto('/modulos/saude-ocupacional/epi');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     // Verifica página carregada
     await expect(page.getByText('Equipamentos de Proteção - EPI')).toBeVisible();
@@ -657,7 +657,7 @@ test.describe('Saúde Ocupacional - EPI - Validade', () => {
     });
 
     await page.goto('/modulos/saude-ocupacional/epi');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     await expect(page.getByText('CAs Vencendo')).toBeVisible();
   });
@@ -845,7 +845,7 @@ test.describe('Saúde Ocupacional - EPI - Fluxo Completo', () => {
     });
 
     await page.goto('/modulos/saude-ocupacional/epi');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     // Verifica mensagem de erro
     await expect(page.getByText('Erro ao carregar EPIs')).toBeVisible();
@@ -858,7 +858,7 @@ test.describe('Saúde Ocupacional - EPI - Fluxo Completo', () => {
     // Testa viewport mobile
     await page.setViewportSize({ width: 375, height: 667 });
     await page.reload();
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     await expect(page.getByText('Equipamentos de Proteção - EPI')).toBeVisible();
 

@@ -211,7 +211,7 @@ async function gotoApprovalsPage(page: Page) {
   await setupAuthMock(page);
   await setupReimbursementMocks(page);
   await page.goto('/modulos/reembolso/aprovacoes');
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('load');
 }
 
 // ============================================================================
@@ -449,7 +449,7 @@ test.describe('Reembolso - Aprovações', () => {
     });
 
     await page.goto('/modulos/reembolso/aprovacoes');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     // Verifica mensagem de estado vazio
     await expect(page.getByText('Nenhuma aprovação pendente')).toBeVisible();
@@ -628,7 +628,7 @@ test.describe('Reembolso - Aprovações', () => {
     });
 
     await page.goto('/modulos/reembolso/aprovacoes');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     // Verifica mensagem de erro
     await expect(page.getByText('Erro ao carregar aprovações')).toBeVisible();
@@ -662,7 +662,7 @@ test.describe('Reembolso - Aprovações', () => {
     });
 
     await page.goto('/modulos/reembolso/aprovacoes');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     // Clica em tentar novamente
     await page.getByRole('button', { name: 'Tentar novamente' }).click();
@@ -707,7 +707,7 @@ test.describe('Reembolso - Aprovações', () => {
     });
 
     await page.goto('/modulos/reembolso/aprovacoes');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     // Verifica controles de paginação
     await expect(page.getByText('Página 1 de 3')).toBeVisible();
@@ -732,7 +732,7 @@ test.describe('Reembolso - Aprovações', () => {
     });
 
     await page.goto('/modulos/reembolso/aprovacoes');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     // Clica em próxima página
     const nextButton = page.locator('button').filter({ has: page.locator('svg[class*="ChevronRight"]') });
@@ -767,7 +767,7 @@ test.describe('Reembolso - Aprovações', () => {
     });
 
     await page.goto('/modulos/reembolso/aprovacoes');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     // Verifica redirecionamento
     await expect(page).toHaveURL(/.*login.*/);
@@ -797,7 +797,7 @@ test.describe('Reembolso - Aprovações', () => {
     // Testa viewport mobile
     await page.setViewportSize({ width: 375, height: 667 });
     await page.reload();
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     // Verifica se conteúdo ainda é visível
     await expect(page.getByText('Aprovações Pendentes')).toBeVisible();
@@ -830,7 +830,7 @@ test.describe('Reembolso - Aprovações', () => {
     // Verifica loading
     await expect(page.locator('.animate-spin, .animate-pulse').first()).toBeVisible();
 
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
   });
 
   test('deve permitir refresh manual da lista', async ({ page }) => {
@@ -885,11 +885,11 @@ test.describe('Reembolso - Aprovações', () => {
 
     // Navega para outra página
     await page.goto('/modulos');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     // Volta para aprovações
     await page.goto('/modulos/reembolso/aprovacoes');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     // Verifica que dados foram recarregados
     await expect(page.getByText('Aprovações Pendentes')).toBeVisible();

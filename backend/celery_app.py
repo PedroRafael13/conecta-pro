@@ -82,6 +82,10 @@ app.conf.task_routes = {
     # Operacional - Notificações Push
     "operacional.check_late_employees": {"queue": "operacional"},
     "operacional.check_pending_approvals": {"queue": "operacional"},
+    # Operacional - Banco de Horas / Relatórios
+    "operacional.expire_time_bank_entries": {"queue": "operacional"},
+    "operacional.send_shift_reminders": {"queue": "operacional"},
+    "operacional.daily_coverage_report": {"queue": "operacional"},
 }
 
 # Configurações gerais
@@ -195,6 +199,24 @@ app.conf.beat_schedule = {
     "operacional-check-pending-approvals": {
         "task": "operacional.check_pending_approvals",
         "schedule": 3600.0,  # 1 hora
+        "options": {"queue": "operacional"},
+    },
+    # Expira banco de horas vencidos todo dia às 00:30h
+    "operacional-expire-time-bank-daily": {
+        "task": "operacional.expire_time_bank_entries",
+        "schedule": 86400.0,  # 24 horas (00:30 via crontab no deploy)
+        "options": {"queue": "operacional"},
+    },
+    # Lembretes de turno a cada 30 minutos
+    "operacional-shift-reminders-30min": {
+        "task": "operacional.send_shift_reminders",
+        "schedule": 1800.0,  # 30 minutos
+        "options": {"queue": "operacional"},
+    },
+    # Relatório de cobertura diário às 23:55h
+    "operacional-daily-coverage-report": {
+        "task": "operacional.daily_coverage_report",
+        "schedule": 86400.0,  # 24 horas
         "options": {"queue": "operacional"},
     },
 }

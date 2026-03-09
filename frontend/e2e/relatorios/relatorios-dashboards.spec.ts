@@ -67,7 +67,7 @@ test.describe('Relatórios - Dashboards Executivos', () => {
     await loginViaAPI(page);
     await setupDashboardsMocks(page);
     await page.goto('/modulos/relatorios/dashboards');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1500);
   });
 

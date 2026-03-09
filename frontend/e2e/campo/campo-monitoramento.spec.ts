@@ -138,7 +138,7 @@ test.describe('Campo - Monitoramento', () => {
     await loginViaAPI(page);
     await setupMonitoringMocks(page);
     await page.goto('/modulos/campo/monitoramento');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1500);
   });
 

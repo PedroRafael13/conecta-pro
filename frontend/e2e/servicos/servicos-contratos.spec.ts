@@ -86,7 +86,7 @@ test.describe('📄 Serviços - Contratos: Listagem e Dashboard', () => {
   test.beforeEach(async ({ page }) => {
     await setupContratosPage(page);
     await page.goto('/modulos/servicos/contratos');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
   });
 
   // ============================================
@@ -225,7 +225,7 @@ test.describe('🔄 Serviços - Contratos: Status e Workflow', () => {
   test.beforeEach(async ({ page }) => {
     await setupContratosPage(page);
     await page.goto('/modulos/servicos/contratos');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
   });
 
   // ============================================
@@ -308,7 +308,7 @@ test.describe('⚙️ Serviços - Contratos: Renovação e Histórico', () => {
   test.beforeEach(async ({ page }) => {
     await setupContratosPage(page);
     await page.goto('/modulos/servicos/contratos');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
   });
 
   // ============================================
@@ -395,7 +395,7 @@ test.describe('🏠 Serviços - Contratos: Dashboard de Serviços', () => {
   test.beforeEach(async ({ page }) => {
     await setupContratosPage(page);
     await page.goto('/modulos/servicos');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
   });
 
   test('deve navegar para contratos a partir do dashboard', async ({ page }) => {

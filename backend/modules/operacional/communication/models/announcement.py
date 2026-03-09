@@ -123,3 +123,88 @@ class Announcement(Base):
 
     def __repr__(self) -> str:
         return f"<Announcement {self.titulo[:50]}>"
+
+    # ── Property aliases for Pydantic schema (expects English field names) ──
+
+    @property
+    def title(self) -> str:
+        return self.titulo
+
+    @property
+    def content(self) -> str:
+        return self.conteudo
+
+    @property
+    def priority(self) -> str:
+        return self.prioridade
+
+    @property
+    def category(self) -> str:
+        return self.tipo
+
+    @property
+    def target_type(self) -> str:
+        return self.destinatarios_tipo
+
+    @property
+    def target_ids(self) -> list[str] | None:
+        ids: list[str] = []
+        if self.destinatarios_postos:
+            ids.extend(self.destinatarios_postos)
+        if self.destinatarios_funcionarios:
+            ids.extend(self.destinatarios_funcionarios)
+        return ids or None
+
+    @property
+    def target_roles(self) -> list[str] | None:
+        return None
+
+    @property
+    def publish_at(self) -> datetime | None:
+        return self.data_publicacao
+
+    @property
+    def expires_at(self) -> datetime | None:
+        return self.data_expiracao
+
+    @property
+    def requires_acknowledgment(self) -> bool:
+        return self.requer_confirmacao
+
+    @property
+    def attachments(self) -> list[dict[str, Any]] | None:
+        return self.anexos
+
+    @property
+    def published_by(self) -> str | None:
+        return self.created_by
+
+    @property
+    def published_at(self) -> datetime | None:
+        return self.data_publicacao
+
+    @property
+    def is_published(self) -> bool:
+        return self.status in (AnnouncementStatus.PUBLISHED.value, AnnouncementStatus.PUBLICADO.value)
+
+    @property
+    def is_expired(self) -> bool:
+        return self.status in (AnnouncementStatus.EXPIRED.value, AnnouncementStatus.ARQUIVADO.value)
+
+    @property
+    def is_scheduled(self) -> bool:
+        return self.status in (AnnouncementStatus.SCHEDULED.value, AnnouncementStatus.AGENDADO.value)
+
+    @property
+    def read_count(self) -> int:
+        return self.total_visualizacoes
+
+    @property
+    def acknowledgment_count(self) -> int:
+        return self.total_confirmacoes
+
+    @property
+    def read_percentage(self) -> float:
+        if self.total_destinatarios == 0:
+            return 0.0
+        return round((self.total_visualizacoes / self.total_destinatarios) * 100, 2)

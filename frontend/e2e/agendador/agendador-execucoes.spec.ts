@@ -121,7 +121,7 @@ test.describe('Agendador - Execuções - Listagem', () => {
     });
 
     await page.goto('/modulos/agendador/execucoes');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1000);
   });
 
@@ -255,7 +255,7 @@ test.describe('Agendador - Execuções - Status Detalhados', () => {
     });
 
     await page.goto('/modulos/agendador/execucoes');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1000);
   });
 
@@ -308,7 +308,7 @@ test.describe('Agendador - Execuções - Resultados e Logs', () => {
     });
 
     await page.goto('/modulos/agendador/execucoes');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1000);
   });
 
@@ -381,7 +381,7 @@ test.describe('Agendador - Execuções - Ações', () => {
     });
 
     await page.goto('/modulos/agendador/execucoes');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1000);
   });
 
@@ -506,7 +506,7 @@ test.describe('Agendador - Execuções - Estados Vazios e Erros', () => {
     });
 
     await page.goto('/modulos/agendador/execucoes');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1000);
 
     const emptyState = page.locator('text=/Nenhum registro encontrado/i');
@@ -538,7 +538,7 @@ test.describe('Agendador - Execuções - Estados Vazios e Erros', () => {
     });
 
     await page.goto('/modulos/agendador/execucoes');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1000);
 
     const totalCount = page.locator('text=Total').locator('xpath=../..').locator('.text-2xl');

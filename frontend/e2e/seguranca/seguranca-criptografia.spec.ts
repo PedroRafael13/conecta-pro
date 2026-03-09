@@ -56,7 +56,7 @@ test.describe('Segurança - Criptografia', () => {
     await loginViaAPI(page);
     await setupCryptoMocks(page);
     await page.goto('/modulos/seguranca/criptografia');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1500);
   });
 

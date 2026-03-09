@@ -188,7 +188,7 @@ async function gotoDctfWebPage(page: Page) {
   await setupAuthMock(page);
   await setupDctfWebMocks(page);
   await page.goto('/modulos/fiscal/dctfweb');
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('load');
   await page.waitForTimeout(1000);
 }
 
@@ -407,7 +407,7 @@ test.describe('DCTFWeb - Declarações Fiscais', () => {
     });
 
     await page.goto('/modulos/fiscal/dctfweb');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1000);
 
     // Verifica mensagem de empty state
@@ -427,7 +427,7 @@ test.describe('DCTFWeb - Declarações Fiscais', () => {
     });
 
     await page.goto('/modulos/fiscal/dctfweb');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     // Verifica se página continua funcional mesmo com erro
     await expect(page.getByText('DCTFWeb')).toBeVisible();

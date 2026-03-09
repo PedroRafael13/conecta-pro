@@ -71,7 +71,7 @@ test.describe('📋 Serviços - Ordens de Serviço', () => {
   test.beforeEach(async ({ page }) => {
     await setupOrdensPage(page);
     await page.goto('/modulos/servicos/ordens');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
   });
 
   // ============================================
@@ -236,7 +236,7 @@ test.describe('🔧 Serviços - Ordens: Funcionalidades Avançadas', () => {
   test.beforeEach(async ({ page }) => {
     await setupOrdensPage(page);
     await page.goto('/modulos/servicos/ordens');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
   });
 
   // ============================================
@@ -331,7 +331,7 @@ test.describe('🎨 Serviços - Ordens: Dashboard e Navegação', () => {
   test.beforeEach(async ({ page }) => {
     await setupOrdensPage(page);
     await page.goto('/modulos/servicos');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
   });
 
   test('deve navegar para ordens a partir do dashboard de serviços', async ({ page }) => {

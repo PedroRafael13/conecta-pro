@@ -116,7 +116,7 @@ test.describe('Integrações - Sincronização', () => {
     await loginViaAPI(page);
     await setupSyncMocks(page);
     await page.goto('/modulos/integracoes/sync');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1500);
   });
 

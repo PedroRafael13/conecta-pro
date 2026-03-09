@@ -64,6 +64,12 @@ export default function SubstituicoesPage() {
   const [suggestions, setSuggestions] = useState<SubstituteSuggestion[]>([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
 
+  // Rejection modal states
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectTarget, setRejectTarget] = useState<SubstitutionWithDenormalized | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
+  const [isRejecting, setIsRejecting] = useState(false);
+
   const loadPending = useCallback(() => {
     // Dados pendentes agora vêm do hook usePendingSubstitutions
   }, []);
@@ -125,18 +131,28 @@ export default function SubstituicoesPage() {
     }
   };
 
-  const handleReject = async (substitution: SubstitutionWithDenormalized) => {
-    const reason = prompt('Motivo da rejeicao:');
-    if (!reason) return;
+  const handleReject = (substitution: SubstitutionWithDenormalized) => {
+    setRejectTarget(substitution);
+    setRejectReason('');
+    setShowRejectModal(true);
+  };
 
+  const handleConfirmReject = async () => {
+    if (!rejectTarget || !rejectReason.trim()) return;
+    setIsRejecting(true);
     try {
       await rejectMutation.mutateAsync({
-        substitutionId: substitution.id,
-        data: { rejection_reason: reason },
+        substitutionId: rejectTarget.id,
+        data: { rejection_reason: rejectReason.trim() },
       });
+      setShowRejectModal(false);
+      setRejectTarget(null);
+      setRejectReason('');
       refetch();
     } catch (err) {
       console.error('Erro ao rejeitar substituicao:', err);
+    } finally {
+      setIsRejecting(false);
     }
   };
 
@@ -260,7 +276,9 @@ export default function SubstituicoesPage() {
                   {pendingSubstitutions.length} substituicoes pendentes
                 </p>
                 <p className="text-sm text-yellow-500/80">
-                  Clique em &quot;Sugerir IA&quot; para obter recomendacoes automaticas de substitutos
+                  {pendingSubstitutions.slice(0, 3).map((s: any) => s.original_employee_name || 'N/A').join(', ')}
+                  {pendingSubstitutions.length > 3 ? ` e mais ${pendingSubstitutions.length - 3}` : ''}
+                  {' '}— Clique em &quot;Sugerir IA&quot; para obter recomendacoes
                 </p>
               </div>
             </div>
@@ -616,8 +634,24 @@ export default function SubstituicoesPage() {
                           {suggestion.distance_km.toFixed(1)} km
                         </span>
                       )}
-                      <span className="text-xs text-[hsl(var(--muted-foreground))]">
-                        Score: {suggestion.score.toFixed(0)}
+                    </div>
+                    {/* Score bar */}
+                    <div className="mt-2 flex items-center gap-2">
+                      <div className="flex-1 h-1.5 bg-[hsl(var(--muted))] rounded-full overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all"
+                          style={{
+                            width: `${Math.min(suggestion.score, 100)}%`,
+                            background: suggestion.score >= 70
+                              ? '#22c55e'
+                              : suggestion.score >= 40
+                              ? '#f97707'
+                              : '#ef4444',
+                          }}
+                        />
+                      </div>
+                      <span className="text-xs text-[hsl(var(--muted-foreground))] w-10 text-right">
+                        {suggestion.score.toFixed(0)}pts
                       </span>
                     </div>
                     <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">
@@ -659,6 +693,63 @@ export default function SubstituicoesPage() {
         <ModalFooter>
           <Button variant="outline" onClick={() => setShowSuggestionsModal(false)}>
             Fechar
+          </Button>
+        </ModalFooter>
+      </Modal>
+
+      {/* Rejection Modal */}
+      <Modal
+        isOpen={showRejectModal}
+        onClose={() => {
+          setShowRejectModal(false);
+          setRejectTarget(null);
+          setRejectReason('');
+        }}
+        title="Rejeitar Substituição"
+        description="Informe o motivo da rejeição para registrar no histórico"
+        size="md"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="text-sm font-medium text-[hsl(var(--foreground))] block mb-1">
+              Funcionário original
+            </label>
+            <p className="text-sm text-[hsl(var(--muted-foreground))]">
+              {rejectTarget?.original_employee_name || 'N/A'} — {rejectTarget?.post_name || 'Posto N/A'}
+            </p>
+          </div>
+          <div>
+            <label className="text-sm font-medium text-[hsl(var(--foreground))] block mb-1">
+              Motivo da rejeição <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              placeholder="Descreva o motivo da rejeição..."
+              rows={3}
+              className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))] text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]/20"
+            />
+          </div>
+        </div>
+        <ModalFooter>
+          <Button
+            variant="outline"
+            onClick={() => {
+              setShowRejectModal(false);
+              setRejectTarget(null);
+              setRejectReason('');
+            }}
+            disabled={isRejecting}
+          >
+            Cancelar
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleConfirmReject}
+            disabled={!rejectReason.trim() || isRejecting}
+            className="bg-red-500 hover:bg-red-600 text-white border-red-500"
+          >
+            {isRejecting ? 'Rejeitando...' : 'Confirmar Rejeição'}
           </Button>
         </ModalFooter>
       </Modal>

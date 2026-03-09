@@ -128,7 +128,7 @@ test.describe('Segurança - Auditoria LGPD', () => {
     await loginViaAPI(page);
     await setupAuditMocks(page);
     await page.goto('/modulos/seguranca/auditoria');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1500);
   });
 

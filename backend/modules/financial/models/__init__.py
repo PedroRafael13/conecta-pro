@@ -3,6 +3,16 @@
 Contas a Pagar, Contas a Receber, Fluxo de Caixa, Compras, Estoque e Contabilidade.
 """
 
+# Custeio por contrato
+from modules.financial.models.contract_cost import ContractCost, ServiceType
+
+# Custeio detalhado por tipo de serviço (Phase 3)
+from modules.financial.models.custo_posto_portaria import CustoPostoPortaria
+from modules.financial.models.custo_posto_limpeza import CustoPostoLimpeza
+from modules.financial.models.custo_posto_jardinagem import CustoPostoJardinagem
+from modules.financial.models.custo_contrato_seg_eletronica import CustoContratoSegEletronica
+from modules.financial.models.custo_contrato_portaria_remota import CustoContratoPortariaRemota
+
 # Contas a Pagar
 # Fluxo de Caixa
 from modules.financial.models.accounting_account import (
@@ -264,6 +274,15 @@ from modules.financial.models.warehouse import (
 )
 
 __all__ = [
+    # === Custeio por Contrato ===
+    "ContractCost",
+    "ServiceType",
+    # === Custeio Detalhado por Tipo (Phase 3) ===
+    "CustoPostoPortaria",
+    "CustoPostoLimpeza",
+    "CustoPostoJardinagem",
+    "CustoContratoSegEletronica",
+    "CustoContratoPortariaRemota",
     # === Contas a Pagar ===
     # Supplier
     "Supplier",

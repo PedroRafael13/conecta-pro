@@ -159,7 +159,7 @@ test.describe('Documentos - Arquivos', () => {
     });
 
     await page.goto('/modulos/documentos/arquivos');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1500);
   });
 

@@ -20,6 +20,8 @@ from ..adapters import (
     BaseBankingAdapter,
     BBAdapter,
     BradescoAdapter,
+    CoraAdapter,
+    InterAdapter,
     ItauAdapter,
     PaymentRequest,
     PaymentResponse,
@@ -40,6 +42,8 @@ class BankingService:
         BankCode.BB: BBAdapter,
         BankCode.ITAU: ItauAdapter,
         BankCode.BRADESCO: BradescoAdapter,
+        BankCode.CORA: CoraAdapter,
+        BankCode.INTER: InterAdapter,
     }
 
     def __init__(self) -> None:

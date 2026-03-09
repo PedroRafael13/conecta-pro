@@ -45,6 +45,11 @@ from .ai import (
     AbsencePrediction,
     ActionSuggestion,
     AnomalyPattern,
+    AutomaticFeedback,
+    ContingencyPlan,
+    CoveragePredictorAgent,
+    CoverageRisk,
+    EmployeeAbsenceRisk,
     EmployeeAvailability,
     EmployeePreference,
     OccurrenceAnalysis,
@@ -53,6 +58,10 @@ from .ai import (
     OptimizationConstraints,
     OptimizationResult,
     OvertimeForecast,
+    PerformanceAlert,
+    PerformanceAnalyzerAgent,
+    PerformanceDimension,
+    PerformanceScore,
     PredictiveAnalyzer,
     ScaleOptimizer,
     ShiftSlot,
@@ -60,7 +69,10 @@ from .ai import (
     SubstituteSuggestion,
     SubstitutionOptimizer,
     SubstitutionRequest,
+    TopPerformer,
     TurnoverRisk,
+    WeeklyRiskMap,
+    ai_router,
 )
 
 # COMMUNICATION SUBMODULE
@@ -256,6 +268,15 @@ from .services import (
     time_bank_service,
 )
 
+# VACATIONS SUBMODULE
+from .vacations import (
+    vacation_router,
+)
+
+# WEBSOCKET SUBMODULE
+from .websockets import manager
+from .websockets import websocket_router as ws_router
+
 # =============================================================================
 # ROUTER PRINCIPAL
 # =============================================================================
@@ -287,6 +308,9 @@ operacional_router.include_router(
 )
 operacional_router.include_router(communication_router, tags=["Operacional - Comunicacao"])
 operacional_router.include_router(inspection_round_router, prefix="/rondas", tags=["Operacional - Rondas de Inspecao"])
+operacional_router.include_router(vacation_router, tags=["Operacional - Férias"])
+operacional_router.include_router(ai_router, tags=["Operacional - AI"])
+operacional_router.include_router(ws_router, tags=["Operacional - WebSocket"])
 
 # Alias para compatibilidade
 router = operacional_router
@@ -320,6 +344,10 @@ __all__ = [
     "disciplinary_router",
     "communication_router",
     "inspection_round_router",
+    "vacation_router",
+    "ai_router",
+    "ws_router",
+    "manager",
     # =========================================================================
     # CORE MODELS
     # =========================================================================
@@ -476,6 +504,19 @@ __all__ = [
     "OccurrenceClassification",
     "ActionSuggestion",
     "SimilarOccurrence",
+    # Coverage Predictor
+    "CoveragePredictorAgent",
+    "CoverageRisk",
+    "EmployeeAbsenceRisk",
+    "WeeklyRiskMap",
+    "ContingencyPlan",
+    # Performance Analyzer
+    "PerformanceAnalyzerAgent",
+    "PerformanceScore",
+    "PerformanceDimension",
+    "TopPerformer",
+    "PerformanceAlert",
+    "AutomaticFeedback",
     # =========================================================================
     # REPORTS
     # =========================================================================

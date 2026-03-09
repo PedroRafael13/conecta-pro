@@ -180,7 +180,7 @@ test.describe('Documentos - Assinatura Digital', () => {
 
   test('deve carregar página de documentos com seção de assinaturas', async ({ page }) => {
     await page.goto('/modulos/documentos');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1500);
 
     await expect(page).toHaveURL(/\/documentos/);
@@ -192,7 +192,7 @@ test.describe('Documentos - Assinatura Digital', () => {
 
   test('deve exibir contador de assinaturas pendentes', async ({ page }) => {
     await page.goto('/modulos/documentos');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1500);
 
     // Verificar card de estatísticas
@@ -202,7 +202,7 @@ test.describe('Documentos - Assinatura Digital', () => {
 
   test('deve exibir lista de documentos pendentes de assinatura', async ({ page }) => {
     await page.goto('/modulos/documentos');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1500);
 
     // Clicar na tab de assinaturas
@@ -217,7 +217,7 @@ test.describe('Documentos - Assinatura Digital', () => {
 
   test('deve exibir prazo para assinatura', async ({ page }) => {
     await page.goto('/modulos/documentos');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1500);
 
     const signaturesTab = page.locator('[role="tab"]:has-text("Assinaturas")');
@@ -232,7 +232,7 @@ test.describe('Documentos - Assinatura Digital', () => {
 
   test('deve exibir botão de assinar para documentos pendentes', async ({ page }) => {
     await page.goto('/modulos/documentos');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1500);
 
     const signaturesTab = page.locator('[role="tab"]:has-text("Assinaturas")');
@@ -247,7 +247,7 @@ test.describe('Documentos - Assinatura Digital', () => {
 
   test('deve abrir dialog de assinatura ao clicar em assinar', async ({ page }) => {
     await page.goto('/modulos/documentos');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1500);
 
     const signaturesTab = page.locator('[role="tab"]:has-text("Assinaturas")');
@@ -269,7 +269,7 @@ test.describe('Documentos - Assinatura Digital', () => {
 
   test('deve exibir canvas para desenho da assinatura', async ({ page }) => {
     await page.goto('/modulos/documentos');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1500);
 
     const signaturesTab = page.locator('[role="tab"]:has-text("Assinaturas")');
@@ -289,7 +289,7 @@ test.describe('Documentos - Assinatura Digital', () => {
 
   test('deve permitir desenhar assinatura no canvas', async ({ page }) => {
     await page.goto('/modulos/documentos');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1500);
 
     const signaturesTab = page.locator('[role="tab"]:has-text("Assinaturas")');
@@ -321,7 +321,7 @@ test.describe('Documentos - Assinatura Digital', () => {
 
   test('deve exibir botão de limpar assinatura', async ({ page }) => {
     await page.goto('/modulos/documentos');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1500);
 
     const signaturesTab = page.locator('[role="tab"]:has-text("Assinaturas")');
@@ -340,7 +340,7 @@ test.describe('Documentos - Assinatura Digital', () => {
 
   test('deve exibir declaração de concordância', async ({ page }) => {
     await page.goto('/modulos/documentos');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1500);
 
     const signaturesTab = page.locator('[role="tab"]:has-text("Assinaturas")');
@@ -380,7 +380,7 @@ test.describe('Documentos - Assinatura Digital', () => {
     });
 
     await page.goto('/modulos/documentos/arquivos');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1500);
 
     // Clicar em mais opções
@@ -405,7 +405,7 @@ test.describe('Documentos - Assinatura Digital', () => {
   test('deve permitir adicionar múltiplos signatários', async ({ page }) => {
     // Este teste verifica se o componente suporta múltiplos signatários
     await page.goto('/modulos/documentos');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1500);
 
     const signaturesTab = page.locator('[role="tab"]:has-text("Assinaturas")');
@@ -420,7 +420,7 @@ test.describe('Documentos - Assinatura Digital', () => {
 
   test('deve exibir configuração de assinatura sequencial', async ({ page }) => {
     await page.goto('/modulos/documentos');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1500);
 
     // Verificar informações sobre assinaturas na dashboard
@@ -431,7 +431,7 @@ test.describe('Documentos - Assinatura Digital', () => {
 
   test('deve permitir configurar prazo para assinatura', async ({ page }) => {
     await page.goto('/modulos/documentos');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1500);
 
     const signaturesTab = page.locator('[role="tab"]:has-text("Assinaturas")');
@@ -446,7 +446,7 @@ test.describe('Documentos - Assinatura Digital', () => {
 
   test('deve exibir tipos de assinatura disponíveis', async ({ page }) => {
     await page.goto('/modulos/documentos');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1500);
 
     const signaturesTab = page.locator('[role="tab"]:has-text("Assinaturas")');
@@ -466,7 +466,7 @@ test.describe('Documentos - Assinatura Digital', () => {
 
   test('deve exibir funções dos signatários', async ({ page }) => {
     await page.goto('/modulos/documentos');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1500);
 
     const signaturesTab = page.locator('[role="tab"]:has-text("Assinaturas")');
@@ -481,7 +481,7 @@ test.describe('Documentos - Assinatura Digital', () => {
 
   test('deve exibir notificação de assinatura concluída', async ({ page }) => {
     await page.goto('/modulos/documentos');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1500);
 
     const signaturesTab = page.locator('[role="tab"]:has-text("Assinaturas")');
@@ -495,7 +495,7 @@ test.describe('Documentos - Assinatura Digital', () => {
 
   test('deve permitir cancelar processo de assinatura', async ({ page }) => {
     await page.goto('/modulos/documentos');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1500);
 
     const signaturesTab = page.locator('[role="tab"]:has-text("Assinaturas")');
@@ -530,7 +530,7 @@ test.describe('Documentos - Assinatura Digital', () => {
     });
 
     await page.goto('/modulos/documentos');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1500);
 
     const signaturesTab = page.locator('[role="tab"]:has-text("Assinaturas")');
@@ -544,7 +544,7 @@ test.describe('Documentos - Assinatura Digital', () => {
 
   test('deve exibir rastreamento de assinaturas', async ({ page }) => {
     await page.goto('/modulos/documentos');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1500);
 
     // Verificar se há informações de rastreamento

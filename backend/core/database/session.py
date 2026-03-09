@@ -89,6 +89,19 @@ SyncSessionLocal = sessionmaker(
 )
 
 
+def get_sync_db_dependency():
+    """FastAPI dependency para sessão síncrona do banco."""
+    session = SyncSessionLocal()
+    try:
+        yield session
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+
 @contextmanager
 def get_sync_db():
     """Context manager para sessão síncrona do banco (para Celery tasks).

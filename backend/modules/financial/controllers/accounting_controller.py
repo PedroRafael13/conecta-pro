@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from core.auth.dependencies import get_current_user
 from core.database import get_db
+from core.database.session import get_sync_db_dependency
 from modules.financial.models.accounting_account import (
     AccountClassification,
     AccountingAccount,
@@ -92,18 +93,20 @@ router = APIRouter(prefix="/accounting", tags=["Contabilidade"])
 
 @router.get("/charts", response_model=list[ChartOfAccountsListResponse])
 async def list_charts(
+    condominio_id: uuid.UUID | None = Query(None),
     chart_type: ChartType | None = None,
     chart_status: ChartStatus | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> list[ChartOfAccountsListResponse]:
     """Lista planos de contas."""
     try:
         repo = ChartOfAccountsRepository(db)
+        _cond_id = condominio_id or getattr(_current_user, "condominio_id", None)
         charts = repo.list_all(
-            condominio_id=_current_user["condominio_id"],
+            condominio_id=_cond_id,
             chart_type=chart_type,
             status=chart_status,
             skip=skip,
@@ -120,7 +123,7 @@ async def list_charts(
 
 @router.get("/charts/active", response_model=ChartOfAccountsResponse)
 async def get_active_chart(
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> ChartOfAccountsResponse:
     """Retorna plano de contas ativo."""
@@ -138,7 +141,7 @@ async def get_active_chart(
 
 @router.get("/charts/stats", response_model=ChartStats)
 async def get_chart_stats(
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> ChartStats:
     """Retorna estatisticas dos planos de contas."""
@@ -157,7 +160,7 @@ async def get_chart_stats(
 @router.post("/charts", response_model=ChartOfAccountsResponse, status_code=201)
 async def create_chart(
     data: ChartOfAccountsCreate,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> ChartOfAccountsResponse:
     """Cria um novo plano de contas."""
@@ -203,7 +206,7 @@ async def create_chart(
 @router.get("/charts/{chart_id}", response_model=ChartOfAccountsResponse)
 async def get_chart(
     chart_id: uuid.UUID,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> ChartOfAccountsResponse:
     """Busca plano de contas por ID."""
@@ -223,7 +226,7 @@ async def get_chart(
 async def update_chart(
     chart_id: uuid.UUID,
     data: ChartOfAccountsUpdate,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> ChartOfAccountsResponse:
     """Atualiza plano de contas."""
@@ -260,7 +263,7 @@ async def update_chart(
 @router.post("/charts/{chart_id}/activate")
 async def activate_chart(
     chart_id: uuid.UUID,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> dict:
     """Ativa plano de contas."""
@@ -305,7 +308,7 @@ async def activate_chart(
 
 @router.get("/accounts", response_model=list[AccountingAccountListResponse])
 async def list_accounts(
-    chart_id: uuid.UUID,
+    chart_id: uuid.UUID | None = None,
     account_type: AccountType | None = None,
     nature: AccountNature | None = None,
     classification: AccountClassification | None = None,
@@ -314,10 +317,12 @@ async def list_accounts(
     level: int | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> list[AccountingAccountListResponse]:
     """Lista contas contabeis."""
+    if not chart_id:
+        return []
     try:
         repo = AccountingAccountRepository(db)
         accounts = repo.list_all(
@@ -343,7 +348,7 @@ async def list_accounts(
 @router.get("/accounts/tree", response_model=list[AccountTreeResponse])
 async def get_account_tree(
     chart_id: uuid.UUID,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> list[AccountTreeResponse]:
     """Retorna arvore hierarquica de contas."""
@@ -362,7 +367,7 @@ async def get_account_tree(
 @router.get("/accounts/stats", response_model=AccountStats)
 async def get_account_stats(
     chart_id: uuid.UUID,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> AccountStats:
     """Retorna estatisticas das contas."""
@@ -381,7 +386,7 @@ async def get_account_stats(
 @router.post("/accounts", response_model=AccountingAccountResponse, status_code=201)
 async def create_account(
     data: AccountingAccountCreate,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> AccountingAccountResponse:
     """Cria uma nova conta contabil."""
@@ -429,7 +434,7 @@ async def create_account(
 @router.get("/accounts/{account_id}", response_model=AccountingAccountResponse)
 async def get_account(
     account_id: uuid.UUID,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> AccountingAccountResponse:
     """Busca conta contabil por ID."""
@@ -449,7 +454,7 @@ async def get_account(
 async def update_account(
     account_id: uuid.UUID,
     data: AccountingAccountUpdate,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> AccountingAccountResponse:
     """Atualiza conta contabil."""
@@ -488,7 +493,7 @@ async def get_account_balance(
     account_id: uuid.UUID,
     date_from: date | None = None,
     date_to: date | None = None,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> dict:
     """Retorna saldo de uma conta."""
@@ -533,7 +538,7 @@ async def list_cost_centers(
     parent_id: uuid.UUID | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> list[CostCenterListResponse]:
     """Lista centros de custo."""
@@ -558,7 +563,7 @@ async def list_cost_centers(
 
 @router.get("/cost-centers/stats", response_model=CostCenterStats)
 async def get_cost_center_stats(
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> CostCenterStats:
     """Retorna estatisticas dos centros de custo."""
@@ -577,7 +582,7 @@ async def get_cost_center_stats(
 @router.post("/cost-centers", response_model=CostCenterResponse, status_code=201)
 async def create_cost_center(
     data: CostCenterCreate,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> CostCenterResponse:
     """Cria um novo centro de custo."""
@@ -623,7 +628,7 @@ async def create_cost_center(
 @router.get("/cost-centers/{center_id}", response_model=CostCenterResponse)
 async def get_cost_center(
     center_id: uuid.UUID,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> CostCenterResponse:
     """Busca centro de custo por ID."""
@@ -643,7 +648,7 @@ async def get_cost_center(
 async def update_cost_center(
     center_id: uuid.UUID,
     data: CostCenterUpdate,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> CostCenterResponse:
     """Atualiza centro de custo."""
@@ -689,7 +694,7 @@ async def list_periods(
     period_status: PeriodStatus | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> list[AccountingPeriodListResponse]:
     """Lista periodos contabeis."""
@@ -714,7 +719,7 @@ async def list_periods(
 
 @router.get("/periods/current", response_model=AccountingPeriodResponse)
 async def get_current_period(
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> AccountingPeriodResponse:
     """Retorna periodo contabil atual."""
@@ -733,7 +738,7 @@ async def get_current_period(
 @router.get("/periods/stats", response_model=PeriodStats)
 async def get_period_stats(
     year: int | None = None,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> PeriodStats:
     """Retorna estatisticas dos periodos."""
@@ -752,7 +757,7 @@ async def get_period_stats(
 @router.post("/periods", response_model=AccountingPeriodResponse, status_code=201)
 async def create_period(
     data: AccountingPeriodCreate,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> AccountingPeriodResponse:
     """Cria um novo periodo contabil."""
@@ -796,7 +801,7 @@ async def create_period(
 @router.get("/periods/{period_id}", response_model=AccountingPeriodResponse)
 async def get_period(
     period_id: uuid.UUID,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> AccountingPeriodResponse:
     """Busca periodo por ID."""
@@ -815,7 +820,7 @@ async def get_period(
 @router.post("/periods/{period_id}/open")
 async def open_period(
     period_id: uuid.UUID,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> dict:
     """Abre periodo contabil."""
@@ -857,7 +862,7 @@ async def open_period(
 async def close_period(
     period_id: uuid.UUID,
     data: PeriodCloseRequest,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> dict:
     """Fecha periodo contabil."""
@@ -901,7 +906,7 @@ async def close_period(
 async def reopen_period(
     period_id: uuid.UUID,
     data: PeriodReopenRequest,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> dict:
     """Reabre periodo contabil."""
@@ -955,7 +960,7 @@ async def list_journal_entries(
     date_to: date | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> list[JournalEntryListResponse]:
     """Lista lancamentos contabeis."""
@@ -983,7 +988,7 @@ async def list_journal_entries(
 
 @router.get("/journal-entries/pending-approval", response_model=list[JournalEntryListResponse])
 async def list_pending_approval(
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> list[JournalEntryListResponse]:
     """Lista lancamentos pendentes de aprovacao."""
@@ -1002,7 +1007,7 @@ async def list_pending_approval(
 @router.get("/journal-entries/stats", response_model=JournalStats)
 async def get_journal_stats(
     period_id: uuid.UUID | None = None,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> JournalStats:
     """Retorna estatisticas dos lancamentos."""
@@ -1021,7 +1026,7 @@ async def get_journal_stats(
 @router.post("/journal-entries", response_model=JournalEntryResponse, status_code=201)
 async def create_journal_entry(
     data: JournalEntryCreate,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> JournalEntryResponse:
     """Cria um novo lancamento contabil."""
@@ -1096,7 +1101,7 @@ async def create_journal_entry(
 @router.get("/journal-entries/{entry_id}", response_model=JournalEntryResponse)
 async def get_journal_entry(
     entry_id: uuid.UUID,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> JournalEntryResponse:
     """Busca lancamento por ID."""
@@ -1115,7 +1120,7 @@ async def get_journal_entry(
 @router.get("/journal-entries/{entry_id}/lines", response_model=list[JournalEntryLineResponse])
 async def get_entry_lines(
     entry_id: uuid.UUID,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> list[JournalEntryLineResponse]:
     """Lista partidas do lancamento."""
@@ -1136,7 +1141,7 @@ async def get_entry_lines(
 @router.post("/journal-entries/{entry_id}/post")
 async def post_journal_entry(
     entry_id: uuid.UUID,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> dict:
     """Contabiliza lancamento."""
@@ -1175,7 +1180,7 @@ async def post_journal_entry(
 async def approve_journal_entry(
     entry_id: uuid.UUID,
     data: JournalEntryApprovalRequest,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> dict:
     """Aprova lancamento."""
@@ -1214,7 +1219,7 @@ async def approve_journal_entry(
 async def reject_journal_entry(
     entry_id: uuid.UUID,
     reason: str = Query(..., min_length=1),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> dict:
     """Rejeita lancamento."""
@@ -1253,7 +1258,7 @@ async def reject_journal_entry(
 async def reverse_journal_entry(
     entry_id: uuid.UUID,
     data: JournalEntryReversalRequest,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> JournalEntryResponse:
     """Estorna lancamento."""
@@ -1338,7 +1343,7 @@ async def list_trial_balances(
     year: int | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> list[TrialBalanceListResponse]:
     """Lista balancetes."""
@@ -1364,7 +1369,7 @@ async def list_trial_balances(
 
 @router.get("/trial-balances/latest", response_model=TrialBalanceResponse)
 async def get_latest_balance(
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> TrialBalanceResponse:
     """Retorna ultimo balancete."""
@@ -1383,7 +1388,7 @@ async def get_latest_balance(
 @router.get("/trial-balances/stats", response_model=BalanceStats)
 async def get_balance_stats(
     year: int | None = None,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> BalanceStats:
     """Retorna estatisticas dos balancetes."""
@@ -1402,7 +1407,7 @@ async def get_balance_stats(
 @router.post("/trial-balances", response_model=TrialBalanceResponse, status_code=201)
 async def create_trial_balance(
     data: TrialBalanceCreate,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> TrialBalanceResponse:
     """Cria um novo balancete."""
@@ -1459,7 +1464,7 @@ async def create_trial_balance(
 @router.get("/trial-balances/{balance_id}", response_model=TrialBalanceResponse)
 async def get_trial_balance(
     balance_id: uuid.UUID,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> TrialBalanceResponse:
     """Busca balancete por ID."""
@@ -1481,7 +1486,7 @@ async def get_balance_items(
     account_type: str | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(500, ge=1, le=1000),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> list[TrialBalanceItemResponse]:
     """Lista itens do balancete."""
@@ -1502,7 +1507,7 @@ async def get_balance_items(
 @router.post("/trial-balances/{balance_id}/generate")
 async def generate_trial_balance(  # pylint: disable=too-many-locals
     balance_id: uuid.UUID,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> dict:
     """Gera balancete a partir dos lancamentos."""
@@ -1609,7 +1614,7 @@ async def generate_trial_balance(  # pylint: disable=too-many-locals
 async def approve_trial_balance(
     balance_id: uuid.UUID,
     notes: str | None = None,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> dict:
     """Aprova balancete."""
@@ -1647,7 +1652,7 @@ async def approve_trial_balance(
 @router.post("/trial-balances/{balance_id}/publish")
 async def publish_trial_balance(
     balance_id: uuid.UUID,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
 ) -> dict:
     """Publica balancete."""

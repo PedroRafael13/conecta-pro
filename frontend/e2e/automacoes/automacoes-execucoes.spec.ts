@@ -183,7 +183,7 @@ test.describe('Automações - Execuções - Seleção de Workflow', () => {
     });
 
     await page.goto('/modulos/automacoes/execucoes');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1000);
   });
 
@@ -271,7 +271,7 @@ test.describe('Automações - Execuções - Estatísticas', () => {
     });
 
     await page.goto('/modulos/automacoes/execucoes');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1000);
 
     await page.selectOption('select', 'wf-001');
@@ -340,7 +340,7 @@ test.describe('Automações - Execuções - Tabela de Execuções', () => {
     });
 
     await page.goto('/modulos/automacoes/execucoes');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1000);
 
     await page.selectOption('select', 'wf-001');
@@ -438,7 +438,7 @@ test.describe('Automações - Execuções - Status e Cores', () => {
     });
 
     await page.goto('/modulos/automacoes/execucoes');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1000);
 
     await page.selectOption('select', 'wf-001');
@@ -515,7 +515,7 @@ test.describe('Automações - Execuções - Ações de Cancelamento', () => {
     });
 
     await page.goto('/modulos/automacoes/execucoes');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1000);
 
     await page.selectOption('select', 'wf-001');
@@ -612,7 +612,7 @@ test.describe('Automações - Execuções - Logs e Debugging', () => {
     });
 
     await page.goto('/modulos/automacoes/execucoes');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1000);
 
     await page.selectOption('select', 'wf-001');
@@ -669,7 +669,7 @@ test.describe('Automações - Execuções - Estados Vazios e Erros', () => {
     });
 
     await page.goto('/modulos/automacoes/execucoes');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1000);
 
     await page.selectOption('select', 'wf-001');
@@ -689,7 +689,7 @@ test.describe('Automações - Execuções - Estados Vazios e Erros', () => {
     });
 
     await page.goto('/modulos/automacoes/execucoes');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1000);
 
     await page.selectOption('select', 'wf-001');
@@ -708,7 +708,7 @@ test.describe('Automações - Execuções - Estados Vazios e Erros', () => {
     });
 
     await page.goto('/modulos/automacoes/execucoes');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1000);
 
     await page.selectOption('select', 'wf-001');
@@ -728,7 +728,7 @@ test.describe('Automações - Execuções - Estados Vazios e Erros', () => {
     });
 
     await page.goto('/modulos/automacoes/execucoes');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1000);
 
     await page.selectOption('select', 'wf-001');
@@ -748,7 +748,7 @@ test.describe('Automações - Execuções - Estados Vazios e Erros', () => {
     });
 
     await page.goto('/modulos/automacoes/execucoes');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1000);
 
     await page.selectOption('select', 'wf-001');
@@ -768,7 +768,7 @@ test.describe('Automações - Execuções - Estados Vazios e Erros', () => {
     });
 
     await page.goto('/modulos/automacoes/execucoes');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1000);
 
     await page.selectOption('select', 'wf-001');
@@ -787,7 +787,7 @@ test.describe('Automações - Execuções - Estados Vazios e Erros', () => {
     });
 
     await page.goto('/modulos/automacoes/execucoes');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1000);
 
     await page.selectOption('select', 'wf-001');

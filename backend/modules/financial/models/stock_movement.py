@@ -76,7 +76,7 @@ class MovementStatus(StrEnum):
 class StockMovement(Base):
     """Movimentação de estoque."""
 
-    __tablename__ = "stock_movements"
+    __tablename__ = "fin_stock_movements"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     condominio_id = Column(
@@ -103,14 +103,14 @@ class StockMovement(Base):
     # Armazéns
     warehouse_id = Column(
         UUID(as_uuid=True),
-        ForeignKey("warehouses.id"),
+        ForeignKey("fin_warehouses.id"),
         nullable=False,
         index=True,
     )
     # Para transferências
     destination_warehouse_id = Column(
         UUID(as_uuid=True),
-        ForeignKey("warehouses.id"),
+        ForeignKey("fin_warehouses.id"),
         nullable=True,
         index=True,
     )

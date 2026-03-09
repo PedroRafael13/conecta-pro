@@ -98,7 +98,7 @@ test.describe('💰 Relatórios - Financeiro', () => {
     });
 
     await page.goto('/modulos/relatorios/financeiro');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1000);
   });
 

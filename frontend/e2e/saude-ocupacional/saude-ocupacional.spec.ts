@@ -63,7 +63,7 @@ test.describe('Saúde Ocupacional - Dashboard', () => {
     await loginViaAPI(page);
     await setupSaudeOcupacionalMocks(page);
     await page.goto('/modulos/saude-ocupacional');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1500);
   });
 

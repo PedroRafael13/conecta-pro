@@ -5,7 +5,7 @@ test.describe("🔗 Módulo Integrações - Conectores", () => {
   test.beforeEach(async ({ page }) => {
     await loginViaAPI(page);
     await page.goto("/modulos/integracoes/conectores");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
   });
 
   test.describe("📋 Lista de Conectores", () => {

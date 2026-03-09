@@ -193,49 +193,62 @@ async def get_supplier_breakdown(
 )
 async def get_dashboard(
     condominio_id: UUID,
-    cashflow_service: CashFlowService = Depends(get_cashflow_service),
-    ai_service: CashFlowAIService = Depends(get_ai_service),
+    entry_repo: CashFlowEntryRepository = Depends(get_entry_repository),
     account_repo: BankAccountRepository = Depends(get_account_repository),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> CashFlowDashboard:
     """Retorna dados completos para dashboard financeiro."""
-    # Saldo atual
+    today = date.today()
+    period_start = today.replace(day=1)
+
+    # Saldo atual das contas bancarias
     total_balance = await account_repo.get_total_balance(condominio_id)
 
-    # Dados de fluxo
-    summary = await cashflow_service.get_summary(condominio_id)
-    monthly_trend = await cashflow_service.get_monthly_trend(condominio_id, 6)
-    category_breakdown = await cashflow_service.get_category_breakdown(condominio_id)
-    supplier_breakdown = await cashflow_service.get_supplier_breakdown(condominio_id)
-
-    # IA
-    forecast_request = AIForecastRequest(
+    # Agrega entradas e saidas do mes atual
+    entries_filter = CashFlowEntryFilter(
         condominio_id=condominio_id,
-        period_days=90,
+        start_date=period_start,
+        end_date=today,
     )
-    ai_forecast = await ai_service.generate_forecast(forecast_request)
+    month_entries = await entry_repo.list(
+        condominio_id=condominio_id,
+        filters=entries_filter,
+        skip=0,
+        limit=1000,
+    )
+    total_inflows = sum(
+        (e.expected_amount or Decimal("0")) for e in month_entries if e.entry_type == CashFlowEntryType.INCOME.value
+    )
+    total_outflows = sum(
+        (e.expected_amount or Decimal("0")) for e in month_entries if e.entry_type == CashFlowEntryType.EXPENSE.value
+    )
+
+    summary = CashFlowSummary(
+        period_start=period_start,
+        period_end=today,
+        opening_balance=total_balance - (total_inflows - total_outflows),
+        closing_balance=total_balance,
+        total_inflows=total_inflows,
+        total_outflows=total_outflows,
+        net_flow=total_inflows - total_outflows,
+        inflows_by_category={},
+        outflows_by_category={},
+        pending_receivables=Decimal("0"),
+        pending_payables=Decimal("0"),
+        overdue_receivables=Decimal("0"),
+        overdue_payables=Decimal("0"),
+    )
 
     return CashFlowDashboard(
-        current_balance=total_balance,
-        projected_balance_30d=(
-            ai_forecast.projections[29].projected_balance if len(ai_forecast.projections) >= 30 else total_balance
-        ),
-        projected_balance_60d=(
-            ai_forecast.projections[59].projected_balance if len(ai_forecast.projections) >= 60 else total_balance
-        ),
-        projected_balance_90d=(
-            ai_forecast.projections[-1].projected_balance if ai_forecast.projections else total_balance
-        ),
-        total_inflows_30d=summary.get("total_receivables", Decimal("0")),
-        total_outflows_30d=summary.get("total_payables", Decimal("0")),
-        net_flow_30d=summary.get("net_flow", Decimal("0")),
-        monthly_trends=monthly_trend,
-        category_breakdown=category_breakdown[:5],
-        top_suppliers=supplier_breakdown[:5],
-        ai_confidence=ai_forecast.confidence,
-        alerts=ai_forecast.alerts[:5],
-        risks=[r.model_dump() for r in ai_forecast.risks[:3]],
-        opportunities=[o.model_dump() for o in ai_forecast.opportunities[:3]],
+        summary=summary,
+        trends=[],
+        projections=[],
+        accounts=[],
+        alerts=[],
+        upcoming_payables=0,
+        upcoming_receivables=0,
+        overdue_payables=0,
+        overdue_receivables=0,
     )
 
 

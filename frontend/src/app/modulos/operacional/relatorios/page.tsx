@@ -14,6 +14,10 @@ import type {
   Employee,
   Post,
 } from '@/types/operacional';
+import {
+  BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
+} from 'recharts';
 
 const TIMEZONE = 'America/Manaus';
 
@@ -212,6 +216,48 @@ export default function RelatoriosPage() {
     return Math.max(...costsReport.items.map(i => i.total_cost));
   }, [costsReport]);
 
+  // Chart data derived from report data
+  const coverageChartData = useMemo(() => {
+    if (!coverageReport?.items?.length) return [];
+    return coverageReport.items.map((item) => ({
+      name: (postMap[item.post_id]?.name || item.post_name || '').slice(0, 12),
+      coverage_rate: item.coverage_rate,
+    }));
+  }, [coverageReport, postMap]);
+
+  const hoursChartData = useMemo(() => {
+    if (!hoursReport?.items?.length) return [];
+    return hoursReport.items.map((item) => ({
+      name: getEmployeeLabel(item.employee_id).slice(0, 10),
+      total_hours: item.total_hours,
+    }));
+  }, [hoursReport, getEmployeeLabel]);
+
+  const costsChartData = useMemo(() => {
+    if (!costsReport?.items?.length) return [];
+    return costsReport.items.map((item) => ({
+      name: (postMap[item.post_id]?.name || item.post_name || '').slice(0, 12),
+      total_cost: item.total_cost,
+    }));
+  }, [costsReport, postMap]);
+
+  const distributionChartData = useMemo(() => {
+    if (!coverageReport?.items?.length) return [];
+    let full = 0;
+    let good = 0;
+    let low = 0;
+    coverageReport.items.forEach((item) => {
+      if (item.coverage_rate >= 100) full++;
+      else if (item.coverage_rate >= 80) good++;
+      else low++;
+    });
+    return [
+      { name: '≥100%', value: full, color: '#22c55e' },
+      { name: '80-99%', value: good, color: '#f97707' },
+      { name: '<80%', value: low, color: '#ef4444' },
+    ].filter((seg) => seg.value > 0);
+  }, [coverageReport]);
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[hsl(var(--background))]">
@@ -353,6 +399,7 @@ export default function RelatoriosPage() {
           </div>
         )}
 
+        {/* Summary stats cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl p-4">
             <p className="text-xs text-[hsl(var(--muted-foreground))]">Cobertura</p>
@@ -385,6 +432,190 @@ export default function RelatoriosPage() {
           </div>
         </div>
 
+        {/* Visualizações — charts section */}
+        <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl p-4">
+          <h2 className="text-sm font-semibold text-[hsl(var(--foreground))] mb-4">
+            Visualizações
+          </h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+            {/* Chart 1 — Coverage BarChart */}
+            <div>
+              <p className="text-xs text-[hsl(var(--muted-foreground))] mb-2">Cobertura por posto (%)</p>
+              {coverageChartData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart data={coverageChartData} margin={{ top: 4, right: 8, left: -20, bottom: 4 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis
+                      dataKey="name"
+                      tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                    />
+                    <YAxis
+                      domain={[0, 100]}
+                      tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                      tickFormatter={(v: number) => `${v}%`}
+                    />
+                    <Tooltip
+                      formatter={((value: number) => [`${value.toFixed(1)}%`, 'Cobertura']) as any}
+                      contentStyle={{
+                        background: 'hsl(var(--card))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px',
+                        fontSize: '12px',
+                      }}
+                    />
+                    <Bar dataKey="coverage_rate" radius={[4, 4, 0, 0]}>
+                      {coverageChartData.map((entry, index) => (
+                        <Cell
+                          key={`coverage-cell-${index}`}
+                          fill={entry.coverage_rate >= 80 ? '#22c55e' : '#f97707'}
+                        />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-[200px] flex items-center justify-center text-xs text-[hsl(var(--muted-foreground))]">
+                  Sem dados de cobertura
+                </div>
+              )}
+            </div>
+
+            {/* Chart 2 — Hours BarChart */}
+            <div>
+              <p className="text-xs text-[hsl(var(--muted-foreground))] mb-2">Horas por funcionário</p>
+              {hoursChartData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart data={hoursChartData} margin={{ top: 4, right: 8, left: -20, bottom: 4 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis
+                      dataKey="name"
+                      tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                    />
+                    <YAxis
+                      tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                      tickFormatter={(v: number) => `${v}h`}
+                    />
+                    <Tooltip
+                      formatter={((value: number) => [`${value.toFixed(1)}h`, 'Horas']) as any}
+                      contentStyle={{
+                        background: 'hsl(var(--card))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px',
+                        fontSize: '12px',
+                      }}
+                    />
+                    <Bar dataKey="total_hours" fill="#1a47f5" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-[200px] flex items-center justify-center text-xs text-[hsl(var(--muted-foreground))]">
+                  Sem dados de horas
+                </div>
+              )}
+            </div>
+
+            {/* Chart 3 — Costs AreaChart */}
+            <div>
+              <p className="text-xs text-[hsl(var(--muted-foreground))] mb-2">Custos por posto (R$)</p>
+              {costsChartData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={200}>
+                  <AreaChart data={costsChartData} margin={{ top: 4, right: 8, left: -4, bottom: 4 }}>
+                    <defs>
+                      <linearGradient id="costsGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#1a47f5" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#1a47f5" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis
+                      dataKey="name"
+                      tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                    />
+                    <YAxis
+                      tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                      tickFormatter={(v: number) =>
+                        new Intl.NumberFormat('pt-BR', {
+                          notation: 'compact',
+                          style: 'currency',
+                          currency: 'BRL',
+                          maximumFractionDigits: 1,
+                        }).format(v)
+                      }
+                    />
+                    <Tooltip
+                      formatter={((value: number) => [formatCurrency(value), 'Custo']) as any}
+                      contentStyle={{
+                        background: 'hsl(var(--card))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px',
+                        fontSize: '12px',
+                      }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="total_cost"
+                      stroke="#1a47f5"
+                      strokeWidth={2}
+                      fill="url(#costsGradient)"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-[200px] flex items-center justify-center text-xs text-[hsl(var(--muted-foreground))]">
+                  Sem dados de custos
+                </div>
+              )}
+            </div>
+
+            {/* Chart 4 — Distribution PieChart */}
+            <div>
+              <p className="text-xs text-[hsl(var(--muted-foreground))] mb-2">Distribuição de cobertura</p>
+              {distributionChartData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={200}>
+                  <PieChart>
+                    <Pie
+                      data={distributionChartData}
+                      cx="50%"
+                      cy="45%"
+                      innerRadius={40}
+                      outerRadius={70}
+                      paddingAngle={3}
+                      dataKey="value"
+                    >
+                      {distributionChartData.map((entry, index) => (
+                        <Cell key={`dist-cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={((value: number, name: string) => [
+                        `${value} posto${value !== 1 ? 's' : ''}`,
+                        name,
+                      ]) as any}
+                      contentStyle={{
+                        background: 'hsl(var(--card))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px',
+                        fontSize: '12px',
+                      }}
+                    />
+                    <Legend
+                      iconSize={10}
+                      wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-[200px] flex items-center justify-center text-xs text-[hsl(var(--muted-foreground))]">
+                  Sem dados de distribuição
+                </div>
+              )}
+            </div>
+
+          </div>
+        </div>
+
+        {/* Tables section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl p-4">
             <h2 className="text-sm font-semibold text-[hsl(var(--foreground))] mb-3">

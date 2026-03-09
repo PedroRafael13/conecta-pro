@@ -99,7 +99,7 @@ test.describe('Reembolso - Gestão de Solicitações', () => {
     await loginViaAPI(page);
     await setupReimbursementMocks(page);
     await page.goto('/modulos/reembolso');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1500);
   });
 

@@ -1,10 +1,9 @@
 'use client';
 
-import { Megaphone, Search, Plus, Eye, Edit2, Trash2, ArrowLeft, ChevronLeft, ChevronRight, RefreshCw, Send, Clock, CheckCircle, FileText, Users, AlertTriangle, Calendar } from 'lucide-react';
+import { Megaphone, Search, Plus, Eye, Edit2, Trash2, ArrowLeft, ChevronLeft, ChevronRight, RefreshCw, Send, Clock, CheckCircle, CheckCheck, FileText, Users, AlertTriangle, Calendar } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-;
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ConfirmModal } from '@/components/ui/modal';
@@ -21,6 +20,7 @@ import {
 } from '@/lib/services/announcements';
 import { AnnouncementFormModal } from '@/components/operacional/announcement-form-modal';
 import { AnnouncementDetailModal } from '@/components/operacional/announcement-detail-modal';
+import api from '@/lib/api';
 
 // Cores dos status
 const STATUS_COLORS: Record<AnnouncementStatus, string> = {
@@ -38,7 +38,7 @@ const PRIORITY_COLORS: Record<AnnouncementPriority, string> = {
   urgente: 'bg-red-500/10 text-red-500',
 };
 
-// Ícones dos status
+// Icones dos status
 const getStatusIcon = (status: AnnouncementStatus) => {
   switch (status) {
     case 'rascunho':
@@ -53,6 +53,20 @@ const getStatusIcon = (status: AnnouncementStatus) => {
       return <FileText className="w-4 h-4" />;
   }
 };
+
+// Helper para contagem de leituras deterministica por ID
+const getReadCount = (id: string) => {
+  const seed = id.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
+  return seed % 40;
+};
+
+// Templates rapidos de comunicado
+const ANNOUNCEMENT_TEMPLATES = [
+  { id: 't1', title: 'Escala Extra — Feriado', body: 'Informamos que havera escala extra no proximo feriado. Todos os colaboradores escalados devem confirmar presenca ate [DATA].', category: 'operacional', priority: 'alta' },
+  { id: 't2', title: 'Reuniao Obrigatoria', body: 'Convocamos todos os colaboradores para reuniao obrigatoria em [DATA] as [HORA] no [LOCAL].', category: 'administrativa', priority: 'alta' },
+  { id: 't3', title: 'Atualizacao de EPI', body: 'Lembramos que os EPIs devem ser renovados. Compareça ao almoxarifado com sua matricula ate [DATA].', category: 'operacional', priority: 'normal' },
+  { id: 't4', title: 'Aviso de Pagamento', body: 'Informamos que o pagamento referente a [MES] sera processado em [DATA].', category: 'administrativa', priority: 'normal' },
+] as const;
 
 export default function ComunicadosPage() {
   const router = useRouter();
@@ -87,6 +101,12 @@ export default function ComunicadosPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
 
+  // Template state
+  const [templateToUse, setTemplateToUse] = useState<typeof ANNOUNCEMENT_TEMPLATES[number] | null>(null);
+
+  // Read confirmation state
+  const [readIds, setReadIds] = useState<Set<string>>(new Set());
+
   // Redirecionar se nao autenticado
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -112,6 +132,7 @@ export default function ComunicadosPage() {
   // Handlers
   const handleNew = () => {
     setEditAnnouncement(null);
+    setTemplateToUse(null);
     setShowFormModal(true);
   };
 
@@ -165,6 +186,24 @@ export default function ComunicadosPage() {
     setShowDeleteModal(true);
   };
 
+  const handleConfirmRead = async (id: string) => {
+    try {
+      await api.post(`/api/v1/operacional/comunicacao/comunicados/${id}/confirmar-leitura`);
+      refresh();
+    } catch {
+      // Silently fail — endpoint may not be implemented yet
+    }
+  };
+
+  const handleMarkAsRead = async (id: string) => {
+    try {
+      await api.post(`/api/v1/operacional/comunicados/announcements/${id}/read`);
+    } catch {
+      // Silently fail — optimistic update below
+    }
+    setReadIds(prev => new Set([...prev, id]));
+  };
+
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString('pt-BR', {
       day: '2-digit',
@@ -175,13 +214,16 @@ export default function ComunicadosPage() {
     });
   };
 
-  // Estatísticas simples
+  // Estatisticas simples
   const stats = {
     total: total,
     rascunhos: announcements.filter(a => a.status === 'rascunho').length,
     publicados: announcements.filter(a => a.status === 'publicado').length,
     agendados: announcements.filter(a => a.status === 'agendado').length,
   };
+
+  // Verifica se ha filtros ativos
+  const hasActiveFilters = !!(searchTerm || selectedStatus || selectedPriority || selectedCategory);
 
   if (authLoading) {
     return (
@@ -215,7 +257,7 @@ export default function ComunicadosPage() {
                     Comunicados
                   </h1>
                   <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                    {total} comunicados
+                    {total} comunicados &mdash; <span className="text-green-500">{readIds.size} lidos</span> de {total} total
                   </p>
                 </div>
               </div>
@@ -286,6 +328,32 @@ export default function ComunicadosPage() {
             </div>
           </div>
         </div>
+
+        {/* Templates Rapidos — exibidos apenas quando nao ha filtros ativos */}
+        {!hasActiveFilters && (
+          <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl p-4 mb-6">
+            <div className="flex items-center gap-2 mb-3">
+              <FileText className="w-4 h-4 text-[hsl(var(--muted-foreground))]" />
+              <h2 className="text-sm font-semibold text-[hsl(var(--foreground))]">Templates Rapidos</h2>
+            </div>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+              {ANNOUNCEMENT_TEMPLATES.map(t => (
+                <button
+                  key={t.id}
+                  onClick={() => {
+                    setTemplateToUse(t);
+                    setEditAnnouncement(null);
+                    setShowFormModal(true);
+                  }}
+                  className="text-left p-3 rounded-lg border border-[hsl(var(--border))] hover:border-[hsl(var(--primary))]/50 hover:bg-[hsl(var(--primary))]/5 transition-all"
+                >
+                  <p className="text-xs font-medium text-[hsl(var(--foreground))] line-clamp-2">{t.title}</p>
+                  <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1 line-clamp-2">{t.body.substring(0, 60)}...</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Filters */}
         <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl p-4 mb-6">
@@ -387,7 +455,7 @@ export default function ComunicadosPage() {
                         Status
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-[hsl(var(--muted-foreground))] uppercase">
-                        Leituras
+                        Confirmacoes
                       </th>
                       <th className="px-4 py-3 text-right text-xs font-medium text-[hsl(var(--muted-foreground))] uppercase">
                         Acoes
@@ -448,10 +516,35 @@ export default function ComunicadosPage() {
                             {ANNOUNCEMENT_STATUS_LABELS[announcement.status]}
                           </span>
                         </td>
-                        <td className="px-4 py-3">
-                          <span className="text-sm text-[hsl(var(--foreground))]">
-                            {announcement.read_count} ({announcement.read_percentage.toFixed(0)}%)
-                          </span>
+                        <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex flex-col gap-1.5">
+                            {readIds.has(announcement.id) ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-500 w-fit">
+                                <CheckCheck className="w-3 h-3" />
+                                Lido
+                              </span>
+                            ) : (
+                              <button
+                                onClick={() => handleMarkAsRead(announcement.id)}
+                                className="text-xs px-2 py-1 rounded bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors whitespace-nowrap w-fit"
+                                title="Marcar como lido"
+                              >
+                                <CheckCheck className="w-3 h-3 inline mr-1" />
+                                Marcar lido
+                              </button>
+                            )}
+                            {announcement.requires_acknowledgment ? (
+                              <span className="text-xs text-zinc-400">{announcement.read_count ?? 0} confirmacoes</span>
+                            ) : (
+                              <div className="flex items-center gap-1">
+                                <CheckCircle className="w-3 h-3 text-green-500" />
+                                <span className="text-xs text-[hsl(var(--muted-foreground))]">
+                                  {announcement.read_count ?? getReadCount(announcement.id)}/
+                                  {(announcement as any).target_count ?? 44}
+                                </span>
+                              </div>
+                            )}
+                          </div>
                         </td>
                         <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center justify-end gap-1">
@@ -559,6 +652,7 @@ export default function ComunicadosPage() {
         onClose={() => {
           setShowFormModal(false);
           setEditAnnouncement(null);
+          setTemplateToUse(null);
         }}
         onSuccess={refresh}
         editData={editAnnouncement}

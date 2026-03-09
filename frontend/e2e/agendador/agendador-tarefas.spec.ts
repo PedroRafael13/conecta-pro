@@ -113,7 +113,7 @@ test.describe('Agendador - Tarefas - Listagem', () => {
     });
 
     await page.goto('/modulos/agendador/tarefas');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1000);
   });
 
@@ -245,7 +245,7 @@ test.describe('Agendador - Tarefas - Criação', () => {
     });
 
     await page.goto('/modulos/agendador/tarefas');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1000);
   });
 
@@ -441,7 +441,7 @@ test.describe('Agendador - Tarefas - Status e Ações', () => {
     });
 
     await page.goto('/modulos/agendador/tarefas');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1000);
   });
 
@@ -572,7 +572,7 @@ test.describe('Agendador - Tarefas - Estados Vazios e Erros', () => {
     });
 
     await page.goto('/modulos/agendador/tarefas');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1000);
 
     const emptyState = page.locator('text=/Nenhum registro encontrado/i');
@@ -616,7 +616,7 @@ test.describe('Agendador - Tarefas - Estados Vazios e Erros', () => {
     });
 
     await page.goto('/modulos/agendador/tarefas');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1000);
 
     const totalCount = page.locator('text=Total').locator('xpath=../..').locator('.text-2xl');

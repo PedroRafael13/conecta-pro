@@ -24,7 +24,7 @@ test.describe('Clientes', () => {
     });
 
     await test.step('Verificar botão "Novo Cliente"', async () => {
-      await expect(page.locator('button', { hasText: 'Novo Cliente' })).toBeVisible({ timeout: 8000 });
+      await expect(page.locator('button', { hasText: 'Novo Cliente' }).first()).toBeVisible({ timeout: 8000 });
     });
   });
 

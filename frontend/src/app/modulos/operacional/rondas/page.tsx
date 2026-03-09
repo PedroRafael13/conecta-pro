@@ -25,6 +25,7 @@ import {
 } from '@/types/operacional';
 import { PatrolRoundDetailModal } from '@/components/operacional/patrol-round-detail-modal';
 import { ExportButton } from '@/components/ui/export-button';
+import { RondaMonitorCard } from '@/components/operacional/RondaMonitorCard';
 
 // Cores dos status
 const STATUS_COLORS: Record<PatrolRoundStatus, string> = {
@@ -71,6 +72,15 @@ export default function RondasPage() {
       router.push('/login');
     }
   }, [authLoading, isAuthenticated, router]);
+
+  // Auto-refresh every 30 seconds for live monitoring
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const interval = setInterval(() => {
+      refresh();
+    }, 30_000);
+    return () => clearInterval(interval);
+  }, [isAuthenticated, refresh]);
 
   // Debounce search
   useEffect(() => {
@@ -154,6 +164,8 @@ export default function RondasPage() {
         return <Clock className="w-4 h-4" />;
     }
   };
+
+  const activeRounds = patrolRounds.filter(r => r.status === 'em_andamento' || r.status === 'pausada');
 
   // Preparar dados para exportação
   const exportData = patrolRounds.map((round) => ({
@@ -302,6 +314,29 @@ export default function RondasPage() {
             </div>
           </div>
         </div>
+
+        {/* Monitor ao Vivo */}
+        {activeRounds.length > 0 && (
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <span className="inline-block w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                <h2 className="text-sm font-semibold text-[hsl(var(--foreground))]">Monitor ao Vivo</h2>
+                <span className="text-xs text-[hsl(var(--muted-foreground))]">{activeRounds.length} ronda(s) ativa(s)</span>
+              </div>
+              <span className="text-xs text-[hsl(var(--muted-foreground))]">Atualiza a cada 30s</span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {activeRounds.map(round => (
+                <RondaMonitorCard
+                  key={round.id}
+                  round={round as any}
+                  onClick={() => handleView(round)}
+                />
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Filters */}
         <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl p-4 mb-6">

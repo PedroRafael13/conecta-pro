@@ -186,7 +186,7 @@ async function gotoReinfPage(page: Page) {
   await setupAuthMock(page);
   await setupReinfMocks(page);
   await page.goto('/modulos/fiscal/reinf');
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('load');
   await page.waitForTimeout(1000);
 }
 
@@ -437,7 +437,7 @@ test.describe('EFD-Reinf - Eventos Fiscais', () => {
     });
 
     await page.goto('/modulos/fiscal/reinf');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1000);
 
     await expect(page.getByText('Nenhum evento encontrado')).toBeVisible();

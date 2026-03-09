@@ -30,7 +30,7 @@ test.describe('Módulo Campo - Página Principal', () => {
 
   test('deve exibir cards de estatísticas', async ({ page }) => {
     // Aguardar carregamento dos dados
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     // Verificar cards de estatísticas
     await expect(page.locator('text=Check-ins Hoje').first()).toBeVisible();
@@ -55,7 +55,7 @@ test.describe('Módulo Campo - Página Principal', () => {
     });
 
     await page.reload();
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     // Verificar se os dados são exibidos
     await expect(page.locator('text=Check-ins Hoje').first()).toBeVisible();

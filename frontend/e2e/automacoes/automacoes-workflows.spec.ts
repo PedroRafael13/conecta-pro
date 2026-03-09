@@ -136,7 +136,7 @@ test.describe('Automações - Workflows - Listagem', () => {
     });
 
     await page.goto('/modulos/automacoes/workflows');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1000);
   });
 
@@ -277,7 +277,7 @@ test.describe('Automações - Workflows - Menu de Ações', () => {
     });
 
     await page.goto('/modulos/automacoes/workflows');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1000);
   });
 
@@ -363,7 +363,7 @@ test.describe('Automações - Workflows - Criação', () => {
     });
 
     await page.goto('/modulos/automacoes/workflows');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1000);
   });
 
@@ -512,7 +512,7 @@ test.describe('Automações - Workflows - Edição', () => {
     });
 
     await page.goto('/modulos/automacoes/workflows');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1000);
   });
 
@@ -569,7 +569,7 @@ test.describe('Automações - Workflows - Exclusão', () => {
     });
 
     await page.goto('/modulos/automacoes/workflows');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1000);
   });
 
@@ -641,7 +641,7 @@ test.describe('Automações - Workflows - Estados Vazios e Erros', () => {
     });
 
     await page.goto('/modulos/automacoes/workflows');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1000);
 
     const emptyState = page.locator('text=/Nenhum registro encontrado/i');
@@ -661,7 +661,7 @@ test.describe('Automações - Workflows - Estados Vazios e Erros', () => {
     });
 
     await page.goto('/modulos/automacoes/workflows');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1000);
 
     await expect(page.locator('text=Crie um novo workflow para começar')).toBeVisible();
@@ -677,7 +677,7 @@ test.describe('Automações - Workflows - Estados Vazios e Erros', () => {
     });
 
     await page.goto('/modulos/automacoes/workflows');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1000);
 
     const errorMessage = page.locator('text=/Erro ao carregar workflows/i');
@@ -694,7 +694,7 @@ test.describe('Automações - Workflows - Estados Vazios e Erros', () => {
     });
 
     await page.goto('/modulos/automacoes/workflows');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1000);
 
     const retryButton = page.locator('button:has-text("Tentar novamente")');
@@ -711,7 +711,7 @@ test.describe('Automações - Workflows - Estados Vazios e Erros', () => {
     });
 
     await page.goto('/modulos/automacoes/workflows');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1000);
 
     const alertIcon = page.locator('.lucide-alert-circle, .lucide-alert-triangle').first();
@@ -747,7 +747,7 @@ test.describe('Automações - Workflows - Triggers', () => {
     });
 
     await page.goto('/modulos/automacoes/workflows');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1000);
   });
 

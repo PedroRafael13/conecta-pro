@@ -8,6 +8,11 @@ from fastapi import APIRouter
 from modules.ai.bartolo.controllers import bartolo_router
 
 # ===================================================================
+# MÓDULO EMPRESAS - Multi-CNPJ (Sprint 67)
+# ===================================================================
+from modules.empresas.controllers.empresa_controller import router as empresas_router
+
+# ===================================================================
 # MÓDULO AI - INTELIGÊNCIA ARTIFICIAL (Sprints 34-55)
 # ===================================================================
 # Análise de Contratos (Sprint 46)
@@ -119,6 +124,8 @@ from modules.financial.controllers import (
     receivable_router,
     # Contas a Pagar
     supplier_router,
+    # AI Command Center
+    financial_ai_router,
 )
 
 # ===================================================================
@@ -176,6 +183,9 @@ from modules.integrations.controllers import router as integration_router
 
 # Communication - Comunicados, Notificacoes, Alertas
 from modules.operacional.communication import communication_router
+
+# Férias e Afastamentos
+from modules.operacional.vacations import vacation_router
 from modules.operacional.controllers import (
     allocation_router,
     employee_router,
@@ -278,6 +288,7 @@ router.include_router(kpi_trends_router, prefix="/operacional", tags=["Operacion
 router.include_router(disciplinary_router, prefix="/operacional", tags=["Operacional - Medidas Administrativas"])
 router.include_router(communication_router, prefix="/operacional", tags=["Operacional - Comunicacao"])
 router.include_router(inspection_round_router, prefix="/operacional/rondas", tags=["Operacional - Rondas de Inspecao"])
+router.include_router(vacation_router, prefix="/operacional", tags=["Operacional - Férias e Afastamentos"])
 
 # ===================================================================
 # FINANCIAL - GESTÃO FINANCEIRA COMPLETA
@@ -316,6 +327,8 @@ router.include_router(inventory_router, prefix="/financial/inventory", tags=["Fi
 # Fiscal
 router.include_router(fiscal_router, prefix="/financial/fiscal", tags=["Financial - Fiscal/Tributário"])
 
+# AI Command Center
+router.include_router(financial_ai_router, prefix="/financial", tags=["Financial AI"])
 
 # ===================================================================
 # HR - RECURSOS HUMANOS
@@ -620,3 +633,8 @@ router.include_router(onboarding_router, prefix="/retention/onboarding", tags=["
 router.include_router(profile_router, prefix="/retention/profile", tags=["Retention - Operational Profile"])
 router.include_router(climate_router, prefix="/retention/climate", tags=["Retention - Climate Survey"])
 router.include_router(turnover_router, prefix="/retention/turnover", tags=["Retention - Turnover Prediction"])
+
+# ===================================================================
+# EMPRESAS - MULTI-CNPJ (Sprint 67)
+# ===================================================================
+router.include_router(empresas_router, tags=["Empresas - Multi-CNPJ"])

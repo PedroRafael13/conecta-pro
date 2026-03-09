@@ -210,7 +210,7 @@ test.describe('Documentos - Pastas', () => {
     });
 
     await page.goto('/modulos/documentos/pastas');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1500);
   });
 

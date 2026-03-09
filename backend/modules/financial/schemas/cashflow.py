@@ -89,10 +89,12 @@ class BankAccountResponse(BankAccountBase):
 class BankAccountFilter(BaseModel):
     """Filtros para busca de contas bancarias."""
 
+    condominio_id: UUID | None = None
     status: str | None = None
     account_type: str | None = None
     bank_code: str | None = None
     is_main_account: bool | None = None
+    is_main: bool | None = None  # alias usado pelo controller
     pix_enabled: bool | None = None
     boleto_enabled: bool | None = None
 
@@ -360,6 +362,7 @@ class CashFlowEntryResponse(CashFlowEntryBase):
 class CashFlowEntryFilter(BaseModel):
     """Filtros para busca de lancamentos."""
 
+    condominio_id: UUID | None = None
     entry_type: str | None = None
     source_type: str | None = None
     status: str | None = None
@@ -452,12 +455,14 @@ class CashFlowForecastResponse(CashFlowForecastBase):
 class CashFlowForecastFilter(BaseModel):
     """Filtros para busca de previsoes."""
 
+    condominio_id: UUID | None = None
     status: str | None = None
     period_type: str | None = None
     start_date: date | None = None
     end_date: date | None = None
     ai_generated: bool | None = None
     has_alerts: bool | None = None
+    confidence: str | None = None  # campo passado pelo controller
 
 
 class ForecastActualsUpdate(BaseModel):

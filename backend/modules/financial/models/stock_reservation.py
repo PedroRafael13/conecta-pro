@@ -54,7 +54,7 @@ class ReservationPriority(StrEnum):
 class StockReservation(Base):
     """Reserva de estoque."""
 
-    __tablename__ = "stock_reservations"
+    __tablename__ = "fin_stock_reservations"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     condominio_id = Column(
@@ -82,7 +82,7 @@ class StockReservation(Base):
     # Armazém
     warehouse_id = Column(
         UUID(as_uuid=True),
-        ForeignKey("warehouses.id"),
+        ForeignKey("fin_warehouses.id"),
         nullable=False,
         index=True,
     )
@@ -90,7 +90,7 @@ class StockReservation(Base):
     # Stock Item (opcional - para reserva de lote específico)
     stock_item_id = Column(
         UUID(as_uuid=True),
-        ForeignKey("stock_items.id"),
+        ForeignKey("fin_stock_items.id"),
         nullable=True,
         index=True,
     )

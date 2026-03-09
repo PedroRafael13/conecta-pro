@@ -87,7 +87,7 @@ test.describe('Integrações - Dashboard', () => {
     await loginViaAPI(page);
     await setupIntegrationsMocks(page);
     await page.goto('/modulos/integracoes');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1500);
   });
 

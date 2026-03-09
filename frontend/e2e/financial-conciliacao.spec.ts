@@ -3,10 +3,10 @@
  *
  * Validações:
  * - Carregamento da página com header e botões corretos
- * - Tabs de navegação (Contas Bancarias, Transacoes, Conciliacao)
+ * - 4 tabs: Extrato Bancario, Contas Bancarias, Conciliacao, Importar OFX
+ * - Extrato bancário com botão de sincronizar
+ * - Contas bancárias com modal de criação
  * - Campo de busca funcional
- * - Modal de criação de conta bancária abre corretamente
- * - Troca de tabs funciona
  */
 
 import { test, expect } from './fixtures';
@@ -20,14 +20,10 @@ test.describe('Conciliação Bancária', () => {
     await test.step('Verificar título h1 com "Concilia"', async () => {
       await expect(page.locator('h1')).toContainText('Concilia', { timeout: 8000 });
     });
-
-    await test.step('Verificar botão "Nova Conta"', async () => {
-      await expect(page.locator('button', { hasText: 'Nova Conta' })).toBeVisible({ timeout: 8000 });
-    });
   });
 
-  test('deve exibir 3 tabs de navegação', async ({ page }) => {
-    const tabs = ['Contas Bancarias', 'Transacoes', 'Conciliacao'];
+  test('deve exibir 4 tabs de navegação', async ({ page }) => {
+    const tabs = ['Extrato Bancario', 'Contas Bancarias', 'Conciliacao', 'Importar OFX'];
     for (const tab of tabs) {
       await test.step(`Verificar tab "${tab}"`, async () => {
         await expect(page.locator('button', { hasText: tab }).first()).toBeVisible({ timeout: 8000 });
@@ -35,44 +31,51 @@ test.describe('Conciliação Bancária', () => {
     }
   });
 
-  test('deve exibir campo de busca', async ({ page }) => {
+  test('deve exibir campo de busca na tab Extrato Bancário', async ({ page }) => {
     await test.step('Verificar campo de busca', async () => {
-      const searchInput = page.locator('input[placeholder*="contas"]').first();
+      const searchInput = page.locator('input[type="search"], input[placeholder*="uscar"]').first();
       await expect(searchInput).toBeVisible({ timeout: 8000 });
     });
   });
 
-  test('deve exibir tabela ou estado vazio na tab Contas Bancarias', async ({ page }) => {
+  test('deve exibir KPIs ou estado vazio na tab Extrato Bancário', async ({ page }) => {
     await test.step('Aguardar conteúdo carregar', async () => {
       await page.waitForTimeout(2000);
     });
 
+    await test.step('Verificar presença de KPIs ou mensagem de vazio', async () => {
+      const hasKpi = await page.locator('text=Entradas').isVisible().catch(() => false);
+      const hasEmpty = await page.locator('text=Sincronizar').isVisible().catch(() => false);
+      expect(hasKpi || hasEmpty).toBeTruthy();
+    });
+  });
+
+  test('deve navegar para tab Contas Bancárias e exibir tabela ou vazio', async ({ page }) => {
+    await test.step('Clicar na tab Contas Bancarias', async () => {
+      await page.locator('button', { hasText: 'Contas Bancarias' }).first().click();
+      await page.waitForTimeout(500);
+    });
+
     await test.step('Verificar presença de tabela ou mensagem de vazio', async () => {
       const hasTable = await page.locator('table').isVisible().catch(() => false);
-      const hasEmpty = await page.locator('text=Nenhuma conta bancaria encontrada').isVisible().catch(() => false);
+      const hasEmpty = await page.locator('text=Nenhuma conta').isVisible().catch(() => false);
       expect(hasTable || hasEmpty).toBeTruthy();
     });
   });
 
   test('deve abrir modal ao clicar em "Nova Conta"', async ({ page }) => {
+    await test.step('Navegar para tab Contas Bancarias', async () => {
+      await page.locator('button', { hasText: 'Contas Bancarias' }).first().click();
+      await page.waitForTimeout(800);
+    });
+
     await test.step('Clicar no botão Nova Conta', async () => {
-      await page.locator('button', { hasText: 'Nova Conta' }).click();
+      await page.locator('button', { hasText: 'Nova Conta' }).first().click();
     });
 
     await test.step('Verificar que modal abriu', async () => {
       const dialog = page.locator('[role="dialog"], .fixed.inset-0').first();
       await expect(dialog).toBeVisible({ timeout: 8000 });
-    });
-  });
-
-  test('deve navegar para tab Transacoes', async ({ page }) => {
-    await test.step('Clicar na tab Transacoes', async () => {
-      await page.locator('button', { hasText: 'Transacoes' }).first().click();
-      await page.waitForTimeout(300);
-    });
-
-    await test.step('Campo de busca muda para transações', async () => {
-      await expect(page.locator('input[placeholder*="transacoes"]').first()).toBeVisible({ timeout: 8000 });
     });
   });
 });

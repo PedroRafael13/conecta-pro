@@ -4,7 +4,7 @@
  * Validações:
  * - Carregamento da página sem erros
  * - Renderização de 4 KPI cards (Receita, Despesa, Saldo, Inadimplência)
- * - Exibição correta de 12 cards de navegação para submódulos
+ * - Exibição correta de 10 cards de navegação para submódulos
  * - Funcionalidade de navegação para cada submódulo
  */
 
@@ -18,13 +18,11 @@ test.describe('Dashboard Financeiro', () => {
     'Fluxo de Caixa',
     'Conciliação',
     'Fornecedores',
-    'Clientes',
-    'Compras',
-    'Estoque',
-    'Fiscal',
     'Contabilidade',
     'Faturamento',
     'Custeio ABC',
+    'Relatórios',
+    'Cobranças',
   ];
 
   test.beforeEach(async ({ page }) => {
@@ -59,7 +57,7 @@ test.describe('Dashboard Financeiro', () => {
     }
   });
 
-  test('deve exibir 12 cards de navegação para submódulos', async ({ page }) => {
+  test('deve exibir 10 cards de navegação para submódulos', async ({ page }) => {
     for (const module of NAVIGATION_MODULES) {
       await test.step(`Verificar módulo "${module}"`, async () => {
         const moduleCard = page.locator('text=' + module).first();
@@ -86,7 +84,7 @@ test.describe('Dashboard Financeiro', () => {
     const mainContent = page.locator('main');
 
     await test.step('Clicar no card "Fluxo de Caixa" no painel principal', async () => {
-      await mainContent.locator('text=Fluxo de Caixa').first().click();
+      await mainContent.locator('h3:text-is("Fluxo de Caixa")').first().click();
       await page.waitForURL(/\/modulos\/financeiro\/fluxo-caixa/, { timeout: 8000 });
     });
 
@@ -95,16 +93,16 @@ test.describe('Dashboard Financeiro', () => {
     });
   });
 
-  test('deve navegar para Fiscal ao clicar no card', async ({ page }) => {
+  test('deve navegar para Relatórios ao clicar no card', async ({ page }) => {
     const mainContent = page.locator('main');
 
-    await test.step('Clicar no card "Fiscal" no painel principal', async () => {
-      await mainContent.locator('text=Fiscal').first().click();
-      await page.waitForURL(/\/modulos\/financeiro\/fiscal/, { timeout: 8000 });
+    await test.step('Clicar no card "Relatórios" no painel principal', async () => {
+      await mainContent.locator('h3:has-text("Relatórios")').first().click();
+      await page.waitForURL(/\/modulos\/financeiro\/relatorios/, { timeout: 8000 });
     });
 
-    await test.step('Verificar conteúdo da página de Fiscal', async () => {
-      await expect(page.locator('h1')).toContainText('Fiscal', { timeout: 8000 });
+    await test.step('Verificar conteúdo da página de Relatórios', async () => {
+      await expect(page.locator('h1, h2').first()).toBeVisible({ timeout: 8000 });
     });
   });
 

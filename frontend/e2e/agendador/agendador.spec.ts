@@ -30,7 +30,7 @@ test.describe('Módulo Agendador - Página Principal', () => {
 
   test('deve exibir cards de estatísticas', async ({ page }) => {
     // Aguardar carregamento dos dados
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     // Verificar cards de estatísticas
     await expect(page.locator('text=Total Tarefas').first()).toBeVisible();
