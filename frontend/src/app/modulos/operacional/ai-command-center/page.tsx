@@ -3,13 +3,14 @@
 import {
   Brain, Activity, Shield, TrendingUp, TrendingDown, AlertTriangle,
   CheckCircle, Users, MapPin, Clock, Target, Zap, RefreshCw,
-  BarChart2, ArrowLeft, ChevronRight, Eye
+  BarChart2, ArrowLeft, ChevronRight, Eye, Wifi, WifiOff, Bell
 } from 'lucide-react';
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
+import { useOperacionalWebSocket, type OperacionalEvent } from '@/hooks/operacional/useOperacionalWebSocket';
 import api from '@/lib/api';
 
 interface RiskItem {
@@ -125,6 +126,12 @@ export default function AICommandCenterOperacionalPage() {
   const overview = commandData?.overview;
   const coverageScore = overview?.coverage_score ?? 0;
 
+  // WebSocket em tempo real
+  const { isConnected: wsConnected, events: wsEvents, clearEvents } = useOperacionalWebSocket({
+    room: 'operacional',
+    autoConnect: true,
+  });
+
   // Bartolo 3.0 Chat
   const [bartoloChatHistory, setBartoloChatHistory] = useState<Array<{role: 'user'|'assistant', content: string}>>([]);
   const [bartoloInput, setBartoloInput] = useState('');
@@ -176,6 +183,20 @@ export default function AICommandCenterOperacionalPage() {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            {/* Indicador WebSocket */}
+            <div className="flex items-center gap-1.5">
+              {wsConnected ? (
+                <>
+                  <Wifi className="w-3.5 h-3.5 text-green-400" />
+                  <span className="text-xs text-green-400">Tempo real</span>
+                </>
+              ) : (
+                <>
+                  <WifiOff className="w-3.5 h-3.5 text-white/30" />
+                  <span className="text-xs text-white/30">Offline</span>
+                </>
+              )}
+            </div>
             {lastUpdated && (
               <span className="text-xs text-white/40">
                 Atualizado: {lastUpdated.toLocaleTimeString('pt-BR')}
@@ -436,6 +457,56 @@ export default function AICommandCenterOperacionalPage() {
             </Link>
           ))}
         </div>
+
+        {/* Notificações em Tempo Real (WebSocket) */}
+        {wsEvents.length > 0 && (
+          <div className="bg-white/5 border border-white/10 rounded-xl p-5">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Bell className="w-4 h-4 text-yellow-400" />
+                <h2 className="font-semibold text-sm">Notificações em Tempo Real</h2>
+                <span className="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full">
+                  {wsEvents.length}
+                </span>
+              </div>
+              <button
+                onClick={clearEvents}
+                className="text-xs text-white/40 hover:text-white/70 transition-colors"
+              >
+                Limpar
+              </button>
+            </div>
+            <div className="space-y-2 max-h-40 overflow-y-auto">
+              {wsEvents.slice(0, 10).map((ev: OperacionalEvent, idx: number) => (
+                <div
+                  key={idx}
+                  className="flex items-start gap-2 text-xs p-2 bg-black/20 rounded-lg"
+                >
+                  <span className={`mt-0.5 w-2 h-2 rounded-full flex-shrink-0 ${
+                    ev.type === 'coverage_alert' || ev.type === 'absence_alert'
+                      ? 'bg-red-400'
+                      : ev.type === 'anomaly_detected'
+                      ? 'bg-orange-400'
+                      : ev.type === 'shift_reminder'
+                      ? 'bg-blue-400'
+                      : 'bg-green-400'
+                  }`} />
+                  <div className="flex-1 min-w-0">
+                    <span className="text-white/70 capitalize">
+                      {ev.type.replace(/_/g, ' ')}
+                    </span>
+                    {ev.data?.message && (
+                      <span className="text-white/40 ml-1">— {String(ev.data.message)}</span>
+                    )}
+                  </div>
+                  <span className="text-white/20 flex-shrink-0">
+                    {new Date(ev.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Bartolo 3.0 Chat */}
         <div className="bg-white/5 border border-white/10 rounded-xl p-5">

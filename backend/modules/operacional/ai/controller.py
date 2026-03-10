@@ -10,7 +10,7 @@ from datetime import date, timedelta
 from typing import Any
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Body, Depends, Query
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -21,10 +21,15 @@ from .agents import (
     Bartolo3Agent,
     CostPredictorAgent,
     CoveragePredictorAgent,
+    EmployeeAvailability,
     FieldMonitorAgent,
     IncidentClassifierAgent,
+    OptimizationConstraints,
     PerformanceAnalyzerAgent,
     PredictiveAnalyzer,
+    ScaleOptimizer,
+    ShiftSlot,
+    SubstitutionOptimizer,
 )
 
 logger = logging.getLogger(__name__)
@@ -38,6 +43,8 @@ _field_monitor = FieldMonitorAgent()
 _incident_classifier = IncidentClassifierAgent()
 _bartolo = Bartolo3Agent()
 _cost_predictor = CostPredictorAgent()
+_scale_optimizer = ScaleOptimizer()
+_substitution_optimizer = SubstitutionOptimizer()
 
 
 @ai_router.get("/command-center")
@@ -494,3 +501,165 @@ async def trigger_time_bank_expiration(
     except Exception as exc:
         logger.error("Erro na expiração manual: %s", exc)
         return {"expired_count": 0, "error": str(exc)}
+
+
+@ai_router.post("/scale/optimize")
+async def optimize_scale(
+    payload: dict[str, Any] = Body(
+        default={},
+        example={
+            "slots_count": 5,
+            "employees_count": 8,
+            "max_consecutive_days": 6,
+            "max_weekly_hours": 44.0,
+            "balance_weekend_shifts": True,
+        },
+    ),
+) -> dict[str, Any]:
+    """
+    Otimiza a alocação de escalas usando IA.
+
+    Recebe configurações de slots e funcionários (mock para demo)
+    e retorna a escala otimizada com métricas de qualidade.
+    """
+    try:
+        from uuid import uuid4 as _uuid4
+
+        slots_count = int(payload.get("slots_count", 5))
+        employees_count = int(payload.get("employees_count", 8))
+        max_consecutive = int(payload.get("max_consecutive_days", 6))
+        max_hours = float(payload.get("max_weekly_hours", 44.0))
+        balance_weekend = bool(payload.get("balance_weekend_shifts", True))
+
+        today = date.today()
+
+        # Gera slots demo
+        slots = []
+        for i in range(slots_count):
+            d = today + timedelta(days=i)
+            slot = ShiftSlot(
+                id=_uuid4(),
+                post_id=_uuid4(),
+                date=d,
+                start_time=__import__("datetime").time(7, 0),
+                end_time=__import__("datetime").time(19, 0),
+                is_weekend=d.weekday() >= 5,
+                is_night_shift=False,
+                is_holiday=False,
+            )
+            slots.append(slot)
+
+        # Gera funcionários demo
+        employees = []
+        for i in range(employees_count):
+            emp = EmployeeAvailability(
+                employee_id=_uuid4(),
+                employee_name=f"Funcionário {i + 1}",
+                available_dates=[today + timedelta(days=j) for j in range(7)],
+                max_hours_week=max_hours,
+                current_hours_week=float(i * 2),
+                skills=["vigilancia"],
+                hourly_rate=25.0 + i,
+            )
+            employees.append(emp)
+
+        constraints = OptimizationConstraints(
+            max_consecutive_days=max_consecutive,
+            max_weekly_hours=max_hours,
+            balance_weekend_shifts=balance_weekend,
+        )
+
+        result = _scale_optimizer.optimize(
+            slots=slots,
+            employees=employees,
+            constraints=constraints,
+        )
+
+        return {
+            "success": result.success,
+            "coverage_percentage": result.coverage_percentage,
+            "overtime_hours": result.overtime_hours,
+            "estimated_cost": result.estimated_cost,
+            "quality_score": result.quality_score,
+            "warnings": result.warnings,
+            "stats": result.stats,
+            "slots": [
+                {
+                    "date": str(s.date),
+                    "employee_id": str(s.employee_id) if s.employee_id else None,
+                    "is_weekend": s.is_weekend,
+                    "is_night_shift": s.is_night_shift,
+                }
+                for s in result.slots
+            ],
+        }
+    except Exception as exc:
+        logger.error("Erro na otimização de escala: %s", exc)
+        return {"success": False, "error": str(exc), "coverage_percentage": 0}
+
+
+@ai_router.post("/substitute/find")
+async def find_substitute(
+    payload: dict[str, Any] = Body(
+        default={},
+        example={
+            "shift_id": "00000000-0000-0000-0000-000000000001",
+            "post_lat": -3.1019,
+            "post_lon": -60.025,
+            "urgency": "normal",
+            "max_results": 5,
+        },
+    ),
+) -> dict[str, Any]:
+    """
+    Encontra substitutos ideais para um turno usando matching inteligente.
+
+    Considera proximidade geográfica, habilidades, disponibilidade
+    e histórico de aceitação para rankear os melhores candidatos.
+    """
+    try:
+        from datetime import datetime
+        from uuid import UUID
+
+        raw_shift_id = payload.get("shift_id", str(uuid4()))
+        try:
+            shift_id = UUID(str(raw_shift_id))
+        except ValueError:
+            shift_id = uuid4()
+
+        post_lat = float(payload.get("post_lat", -3.1019))
+        post_lon = float(payload.get("post_lon", -60.025))
+        urgency = str(payload.get("urgency", "normal"))
+        max_results = int(payload.get("max_results", 5))
+        shift_date = datetime.now()
+
+        suggestions = await _substitution_optimizer.find_optimal_substitute(
+            shift_id=shift_id,
+            post_location=(post_lat, post_lon),
+            shift_date=shift_date,
+            urgency=urgency,
+            max_results=max_results,
+        )
+
+        return {
+            "shift_id": str(shift_id),
+            "urgency": urgency,
+            "total_found": len(suggestions),
+            "suggestions": [
+                {
+                    "employee_id": str(s.employee_id),
+                    "employee_name": s.employee_name,
+                    "score": round(s.score, 3),
+                    "is_overtime": s.is_overtime,
+                    "estimated_cost": round(s.estimated_cost, 2),
+                    "distance_km": round(s.distance_km, 1) if s.distance_km else None,
+                    "acceptance_probability": round(s.acceptance_probability, 2),
+                    "reasons": s.reasons,
+                    "warnings": s.warnings,
+                }
+                for s in suggestions
+            ],
+        }
+    except Exception as exc:
+        logger.error("Erro no matching de substituto: %s", exc)
+        return {"total_found": 0, "suggestions": [], "error": str(exc)}
