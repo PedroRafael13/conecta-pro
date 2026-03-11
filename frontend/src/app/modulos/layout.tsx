@@ -1,6 +1,6 @@
 'use client';
 
-import { Shield, ShieldCheck, ChevronLeft, ChevronRight, Menu, X, UserPlus, Target, Building2, Contact, FileText, FileSignature, ClipboardList, Calendar, CalendarDays, MapPin, UserCheck, AlertTriangle, Route, LogIn, Monitor, Bell, TrendingDown, TrendingUp, Activity, Receipt, CheckCircle2, FileSpreadsheet, FileCode, Award, File, Folder, Package, Repeat, Settings, Camera, Fingerprint, Video, Webhook, LayoutDashboard, ClipboardCheck, PieChart, Users, Lock, Building, Eye, Database, Clock, Megaphone, ShoppingCart, Calculator, Trash2, Key, RefreshCw, ToggleRight, Landmark, DollarSign, CreditCard, Wallet, Server, Zap, Plug, Truck, Plane } from 'lucide-react';
+import { Shield, ShieldCheck, ChevronLeft, ChevronRight, Menu, X, UserPlus, Target, Building2, Contact, FileText, FileSignature, ClipboardList, Calendar, CalendarDays, MapPin, UserCheck, AlertTriangle, Route, LogIn, Monitor, Bell, TrendingDown, TrendingUp, Activity, Receipt, CheckCircle2, FileSpreadsheet, FileCode, Award, File, Folder, Package, Repeat, Settings, Camera, Fingerprint, Video, Webhook, LayoutDashboard, ClipboardCheck, PieChart, Users, Lock, Building, Eye, Database, Clock, Megaphone, ShoppingCart, Calculator, Trash2, Key, RefreshCw, ToggleRight, Landmark, DollarSign, CreditCard, Wallet, Server, Zap, Plug, Truck, Plane, Handshake, Bot, HardHat, Stethoscope, Tag, BarChart2, BarChart3, Scale, ArrowRightLeft, Play, GitBranch, Mail, FileSearch, FileCheck, Briefcase, FolderOpen, Wrench } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
@@ -14,7 +14,7 @@ import { NotificationBell } from '@/features/notifications';
 import { QuickActions } from '@/components/QuickActions';
 import { WebSocketProvider, useWebSocketContext } from '@/components/WebSocketProvider';
 
-// Mapeamento de ícones para submódulos
+// Mapeamento de icones para modulos e submodulos
 const iconMap: Record<string, React.ElementType> = {
   UserPlus, Target, Building2, Contact, FileText,
   FileSignature, ClipboardList, Calendar, CalendarDays,
@@ -26,7 +26,11 @@ const iconMap: Record<string, React.ElementType> = {
   ClipboardCheck, PieChart, Users, Lock, Building, Eye, Database,
   Clock, Megaphone, ShieldCheck, ShoppingCart, Calculator, Trash2, Key,
   RefreshCw, ToggleRight, Landmark, DollarSign, CreditCard,
-  Wallet, Server, Zap, Plug, Truck, Plane
+  Wallet, Server, Zap, Plug, Truck, Plane,
+  // Novos icones para reorganizacao
+  Handshake, Bot, HardHat, Stethoscope, Tag, BarChart2, BarChart3,
+  Scale, ArrowRightLeft, Play, GitBranch, Mail, FileSearch, FileCheck,
+  Briefcase, FolderOpen, Wrench, Shield,
 };
 
 // ---------------------------------------------------------------------------
@@ -133,6 +137,9 @@ export default function ModulosLayout({
     setWsToken(localStorage.getItem('access_token'));
   }, [isAuthenticated]);
 
+  // Icone dinamico do modulo atual
+  const ModuleIcon = currentModule ? (iconMap[currentModule.icon] || Shield) : Shield;
+
   if (isLoading || !currentModule) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -205,7 +212,7 @@ export default function ModulosLayout({
             {sidebarOpen ? (
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-brand-500/10 flex items-center justify-center flex-shrink-0">
-                  <Shield className="w-[18px] h-[18px] text-brand-500" />
+                  <ModuleIcon className="w-[18px] h-[18px] text-brand-500" />
                 </div>
                 <div className="min-w-0">
                   <h2 className="font-semibold text-[hsl(var(--foreground))] text-sm">
@@ -218,7 +225,7 @@ export default function ModulosLayout({
               </div>
             ) : (
               <div className="w-9 h-9 mx-auto rounded-xl bg-brand-500/10 flex items-center justify-center">
-                <Shield className="w-[18px] h-[18px] text-brand-500" />
+                <ModuleIcon className="w-[18px] h-[18px] text-brand-500" />
               </div>
             )}
           </div>
@@ -355,7 +362,7 @@ export default function ModulosLayout({
           <div className="relative px-4 py-4 border-b border-[hsl(var(--border))] gradient-brand-subtle">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-brand-500/10 flex items-center justify-center flex-shrink-0">
-                <Shield className="w-[18px] h-[18px] text-brand-500" />
+                <ModuleIcon className="w-[18px] h-[18px] text-brand-500" />
               </div>
               <div className="min-w-0">
                 <h2 className="font-semibold text-[hsl(var(--foreground))] text-sm">

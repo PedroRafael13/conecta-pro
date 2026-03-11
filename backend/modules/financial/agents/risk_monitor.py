@@ -1,10 +1,8 @@
 """RiskMonitorAgent — Monitora riscos financeiros e calcula health score."""
 
 from datetime import date, timedelta
-from typing import Any
 
 from sqlalchemy import and_, func, select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.financial.agents.base_agent import BaseAgent
 from modules.financial.models.payable_account import PayableAccount, PayableStatus
@@ -57,33 +55,27 @@ class RiskMonitorAgent(BaseAgent):
 
         try:
             # Taxa de inadimplência
-            total_recv_q = select(
-                func.coalesce(func.sum(ReceivableAccount.net_value), 0)
-            ).where(
+            total_recv_q = select(func.coalesce(func.sum(ReceivableAccount.net_value), 0)).where(
                 and_(
                     ReceivableAccount.due_date >= past_90,
                     ReceivableAccount.due_date <= today,
                     ReceivableAccount.status != ReceivableStatus.CANCELADA.value,
                 )
             )
-            total_recv = float(
-                (await self.session.execute(total_recv_q)).scalar_one() or 0
-            )
+            total_recv = float((await self.session.execute(total_recv_q)).scalar_one() or 0)
 
-            overdue_q = select(
-                func.coalesce(func.sum(ReceivableAccount.net_value), 0)
-            ).where(
+            overdue_q = select(func.coalesce(func.sum(ReceivableAccount.net_value), 0)).where(
                 and_(
                     ReceivableAccount.due_date < today,
-                    ReceivableAccount.status.notin_([
-                        ReceivableStatus.PAGA.value,
-                        ReceivableStatus.CANCELADA.value,
-                    ]),
+                    ReceivableAccount.status.notin_(
+                        [
+                            ReceivableStatus.PAGA.value,
+                            ReceivableStatus.CANCELADA.value,
+                        ]
+                    ),
                 )
             )
-            overdue = float(
-                (await self.session.execute(overdue_q)).scalar_one() or 0
-            )
+            overdue = float((await self.session.execute(overdue_q)).scalar_one() or 0)
 
             default_rate = (overdue / total_recv * 100) if total_recv > 0 else 0.0
 
@@ -91,31 +83,23 @@ class RiskMonitorAgent(BaseAgent):
             past_30 = today - timedelta(days=30)
             past_60 = today - timedelta(days=60)
 
-            recv_recent_q = select(
-                func.coalesce(func.sum(ReceivableAccount.net_value), 0)
-            ).where(
+            recv_recent_q = select(func.coalesce(func.sum(ReceivableAccount.net_value), 0)).where(
                 and_(
                     ReceivableAccount.payment_date >= past_30,
                     ReceivableAccount.payment_date <= today,
                     ReceivableAccount.status == ReceivableStatus.PAGA.value,
                 )
             )
-            recv_recent = float(
-                (await self.session.execute(recv_recent_q)).scalar_one() or 0
-            )
+            recv_recent = float((await self.session.execute(recv_recent_q)).scalar_one() or 0)
 
-            recv_prev_q = select(
-                func.coalesce(func.sum(ReceivableAccount.net_value), 0)
-            ).where(
+            recv_prev_q = select(func.coalesce(func.sum(ReceivableAccount.net_value), 0)).where(
                 and_(
                     ReceivableAccount.payment_date >= past_60,
                     ReceivableAccount.payment_date < past_30,
                     ReceivableAccount.status == ReceivableStatus.PAGA.value,
                 )
             )
-            recv_prev = float(
-                (await self.session.execute(recv_prev_q)).scalar_one() or 0
-            )
+            recv_prev = float((await self.session.execute(recv_prev_q)).scalar_one() or 0)
 
             if recv_recent > recv_prev * 1.02:
                 trend = "positivo"
@@ -125,30 +109,20 @@ class RiskMonitorAgent(BaseAgent):
                 trend = "estavel"
 
             # Margem geral (últimos 30 dias)
-            pay_recent_q = select(
-                func.coalesce(func.sum(PayableAccount.net_value), 0)
-            ).where(
+            pay_recent_q = select(func.coalesce(func.sum(PayableAccount.net_value), 0)).where(
                 and_(
                     PayableAccount.payment_date >= past_30,
                     PayableAccount.payment_date <= today,
                     PayableAccount.status == PayableStatus.PAGA.value,
                 )
             )
-            pay_recent = float(
-                (await self.session.execute(pay_recent_q)).scalar_one() or 0
-            )
+            pay_recent = float((await self.session.execute(pay_recent_q)).scalar_one() or 0)
 
-            margin = (
-                (recv_recent - pay_recent) / recv_recent * 100
-                if recv_recent > 0
-                else 0.0
-            )
+            margin = (recv_recent - pay_recent) / recv_recent * 100 if recv_recent > 0 else 0.0
 
             # Busca alertas críticos
             alerts_raw = await self._execute()
-            critical_count = sum(
-                1 for a in alerts_raw if isinstance(a, dict) and a.get("level") == "critico"
-            )
+            critical_count = sum(1 for a in alerts_raw if isinstance(a, dict) and a.get("level") == "critico")
 
             # Pontuação
             score = 0
@@ -214,7 +188,6 @@ class RiskMonitorAgent(BaseAgent):
 
     async def _execute(self, **kwargs) -> list[dict]:
         today = date.today()
-        past_90 = today - timedelta(days=90)
         alerts: list[dict] = []
 
         # ----------------------------------------------------------------
@@ -229,11 +202,13 @@ class RiskMonitorAgent(BaseAgent):
             ).where(
                 and_(
                     ReceivableAccount.due_date < today,
-                    ReceivableAccount.status.notin_([
-                        ReceivableStatus.PAGA.value,
-                        ReceivableStatus.CANCELADA.value,
-                        ReceivableStatus.BAIXADA.value,
-                    ]),
+                    ReceivableAccount.status.notin_(
+                        [
+                            ReceivableStatus.PAGA.value,
+                            ReceivableStatus.CANCELADA.value,
+                            ReceivableStatus.BAIXADA.value,
+                        ]
+                    ),
                 )
             )
             overdue_rows = (await self.session.execute(overdue_q)).all()
@@ -270,16 +245,16 @@ class RiskMonitorAgent(BaseAgent):
             for level, data in buckets.items():
                 if data["count"] > 0:
                     label, action = label_map[level]
-                    alerts.append(RiskAlert(
-                        level=level,
-                        category="inadimplencia",
-                        title=f"{data['count']} conta(s) em atraso ({label})",
-                        description=(
-                            f"R$ {data['total']:,.2f} em recebíveis com atraso de {label}."
-                        ),
-                        value=round(data["total"], 2),
-                        action=action,
-                    ).to_dict())
+                    alerts.append(
+                        RiskAlert(
+                            level=level,
+                            category="inadimplencia",
+                            title=f"{data['count']} conta(s) em atraso ({label})",
+                            description=(f"R$ {data['total']:,.2f} em recebíveis com atraso de {label}."),
+                            value=round(data["total"], 2),
+                            action=action,
+                        ).to_dict()
+                    )
         except Exception as exc:
             self.logger.debug(f"Erro ao calcular inadimplência: {exc}")
 
@@ -289,64 +264,61 @@ class RiskMonitorAgent(BaseAgent):
         try:
             week_ahead = today + timedelta(days=7)
 
-            upcoming_pay_q = select(
-                func.coalesce(func.sum(PayableAccount.net_value), 0)
-            ).where(
+            upcoming_pay_q = select(func.coalesce(func.sum(PayableAccount.net_value), 0)).where(
                 and_(
                     PayableAccount.due_date >= today,
                     PayableAccount.due_date <= week_ahead,
-                    PayableAccount.status.notin_([
-                        PayableStatus.PAGA.value,
-                        PayableStatus.CANCELADA.value,
-                    ]),
+                    PayableAccount.status.notin_(
+                        [
+                            PayableStatus.PAGA.value,
+                            PayableStatus.CANCELADA.value,
+                        ]
+                    ),
                 )
             )
-            upcoming_pay = float(
-                (await self.session.execute(upcoming_pay_q)).scalar_one() or 0
-            )
+            upcoming_pay = float((await self.session.execute(upcoming_pay_q)).scalar_one() or 0)
 
             # Receita prevista para os próximos 7 dias
-            upcoming_recv_q = select(
-                func.coalesce(func.sum(ReceivableAccount.net_value), 0)
-            ).where(
+            upcoming_recv_q = select(func.coalesce(func.sum(ReceivableAccount.net_value), 0)).where(
                 and_(
                     ReceivableAccount.due_date >= today,
                     ReceivableAccount.due_date <= week_ahead,
-                    ReceivableAccount.status.notin_([
-                        ReceivableStatus.PAGA.value,
-                        ReceivableStatus.CANCELADA.value,
-                    ]),
+                    ReceivableAccount.status.notin_(
+                        [
+                            ReceivableStatus.PAGA.value,
+                            ReceivableStatus.CANCELADA.value,
+                        ]
+                    ),
                 )
             )
-            upcoming_recv = float(
-                (await self.session.execute(upcoming_recv_q)).scalar_one() or 0
-            )
+            upcoming_recv = float((await self.session.execute(upcoming_recv_q)).scalar_one() or 0)
 
             net_7d = upcoming_recv - upcoming_pay
             if net_7d < 0:
-                alerts.append(RiskAlert(
-                    level="vermelho",
-                    category="liquidez",
-                    title=f"Déficit projetado em 7 dias: R$ {abs(net_7d):,.2f}",
-                    description=(
-                        f"Despesas de R$ {upcoming_pay:,.2f} superam receitas previstas "
-                        f"de R$ {upcoming_recv:,.2f} nos próximos 7 dias."
-                    ),
-                    value=round(net_7d, 2),
-                    action="Antecipar recebimentos ou postergar pagamentos não críticos",
-                ).to_dict())
+                alerts.append(
+                    RiskAlert(
+                        level="vermelho",
+                        category="liquidez",
+                        title=f"Déficit projetado em 7 dias: R$ {abs(net_7d):,.2f}",
+                        description=(
+                            f"Despesas de R$ {upcoming_pay:,.2f} superam receitas previstas "
+                            f"de R$ {upcoming_recv:,.2f} nos próximos 7 dias."
+                        ),
+                        value=round(net_7d, 2),
+                        action="Antecipar recebimentos ou postergar pagamentos não críticos",
+                    ).to_dict()
+                )
             elif upcoming_pay > 50000:
-                alerts.append(RiskAlert(
-                    level="amarelo",
-                    category="liquidez",
-                    title=f"Vencimentos próximos: R$ {upcoming_pay:,.2f}",
-                    description=(
-                        "Concentração de pagamentos nos próximos 7 dias. "
-                        "Verifique o saldo disponível."
-                    ),
-                    value=round(upcoming_pay, 2),
-                    action="Verificar saldo bancário e garantir liquidez",
-                ).to_dict())
+                alerts.append(
+                    RiskAlert(
+                        level="amarelo",
+                        category="liquidez",
+                        title=f"Vencimentos próximos: R$ {upcoming_pay:,.2f}",
+                        description=("Concentração de pagamentos nos próximos 7 dias. Verifique o saldo disponível."),
+                        value=round(upcoming_pay, 2),
+                        action="Verificar saldo bancário e garantir liquidez",
+                    ).to_dict()
+                )
         except Exception as exc:
             self.logger.debug(f"Erro ao calcular liquidez: {exc}")
 
@@ -354,14 +326,10 @@ class RiskMonitorAgent(BaseAgent):
         # 3. Alertas de concentração (cliente > 20% da receita)
         # ----------------------------------------------------------------
         try:
-            total_recv_q = select(
-                func.coalesce(func.sum(ReceivableAccount.net_value), 0)
-            ).where(
+            total_recv_q = select(func.coalesce(func.sum(ReceivableAccount.net_value), 0)).where(
                 ReceivableAccount.status != ReceivableStatus.CANCELADA.value
             )
-            total_recv = float(
-                (await self.session.execute(total_recv_q)).scalar_one() or 0
-            )
+            total_recv = float((await self.session.execute(total_recv_q)).scalar_one() or 0)
 
             if total_recv > 0:
                 top_q = (
@@ -380,17 +348,19 @@ class RiskMonitorAgent(BaseAgent):
                     concentration = float(top_result.total / total_recv * 100)
                     if concentration > 20:
                         level = "vermelho" if concentration > 40 else "amarelo"
-                        alerts.append(RiskAlert(
-                            level=level,
-                            category="concentracao",
-                            title=f"Concentração de receita: {concentration:.0f}% em 1 cliente",
-                            description=(
-                                "Alto risco de dependência de um único cliente. "
-                                "Diversifique a base de clientes para reduzir exposição."
-                            ),
-                            value=round(float(top_result.total), 2),
-                            action="Prospectar novos clientes para diluir concentração",
-                        ).to_dict())
+                        alerts.append(
+                            RiskAlert(
+                                level=level,
+                                category="concentracao",
+                                title=f"Concentração de receita: {concentration:.0f}% em 1 cliente",
+                                description=(
+                                    "Alto risco de dependência de um único cliente. "
+                                    "Diversifique a base de clientes para reduzir exposição."
+                                ),
+                                value=round(float(top_result.total), 2),
+                                action="Prospectar novos clientes para diluir concentração",
+                            ).to_dict()
+                        )
         except Exception as exc:
             self.logger.debug(f"Erro ao calcular concentração: {exc}")
 
@@ -400,58 +370,53 @@ class RiskMonitorAgent(BaseAgent):
         try:
             past_30 = today - timedelta(days=30)
 
-            recv_30_q = select(
-                func.coalesce(func.sum(ReceivableAccount.net_value), 0)
-            ).where(
+            recv_30_q = select(func.coalesce(func.sum(ReceivableAccount.net_value), 0)).where(
                 and_(
                     ReceivableAccount.payment_date >= past_30,
                     ReceivableAccount.payment_date <= today,
                     ReceivableAccount.status == ReceivableStatus.PAGA.value,
                 )
             )
-            recv_30 = float(
-                (await self.session.execute(recv_30_q)).scalar_one() or 0
-            )
+            recv_30 = float((await self.session.execute(recv_30_q)).scalar_one() or 0)
 
-            pay_30_q = select(
-                func.coalesce(func.sum(PayableAccount.net_value), 0)
-            ).where(
+            pay_30_q = select(func.coalesce(func.sum(PayableAccount.net_value), 0)).where(
                 and_(
                     PayableAccount.payment_date >= past_30,
                     PayableAccount.payment_date <= today,
                     PayableAccount.status == PayableStatus.PAGA.value,
                 )
             )
-            pay_30 = float(
-                (await self.session.execute(pay_30_q)).scalar_one() or 0
-            )
+            pay_30 = float((await self.session.execute(pay_30_q)).scalar_one() or 0)
 
             if recv_30 > 0:
                 margin = (recv_30 - pay_30) / recv_30 * 100
                 if margin < 5:
-                    alerts.append(RiskAlert(
-                        level="vermelho",
-                        category="margem",
-                        title=f"Margem operacional crítica: {margin:.1f}%",
-                        description=(
-                            f"Receita de R$ {recv_30:,.2f} e despesas de R$ {pay_30:,.2f} "
-                            "nos últimos 30 dias resultam em margem abaixo do mínimo recomendado."
-                        ),
-                        value=round(margin, 2),
-                        action="Revisar custos operacionais e estratégia de precificação",
-                    ).to_dict())
+                    alerts.append(
+                        RiskAlert(
+                            level="vermelho",
+                            category="margem",
+                            title=f"Margem operacional crítica: {margin:.1f}%",
+                            description=(
+                                f"Receita de R$ {recv_30:,.2f} e despesas de R$ {pay_30:,.2f} "
+                                "nos últimos 30 dias resultam em margem abaixo do mínimo recomendado."
+                            ),
+                            value=round(margin, 2),
+                            action="Revisar custos operacionais e estratégia de precificação",
+                        ).to_dict()
+                    )
                 elif margin < 10:
-                    alerts.append(RiskAlert(
-                        level="laranja",
-                        category="margem",
-                        title=f"Margem operacional baixa: {margin:.1f}%",
-                        description=(
-                            f"Margem de {margin:.1f}% está abaixo do ideal (>10%). "
-                            "Monitore a evolução dos custos."
-                        ),
-                        value=round(margin, 2),
-                        action="Analisar contratos com margem negativa ou baixa",
-                    ).to_dict())
+                    alerts.append(
+                        RiskAlert(
+                            level="laranja",
+                            category="margem",
+                            title=f"Margem operacional baixa: {margin:.1f}%",
+                            description=(
+                                f"Margem de {margin:.1f}% está abaixo do ideal (>10%). Monitore a evolução dos custos."
+                            ),
+                            value=round(margin, 2),
+                            action="Analisar contratos com margem negativa ou baixa",
+                        ).to_dict()
+                    )
         except Exception as exc:
             self.logger.debug(f"Erro ao calcular margem: {exc}")
 

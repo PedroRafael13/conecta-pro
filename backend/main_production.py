@@ -335,6 +335,7 @@ try:
         purchase_router,
         receivable_category_router,
         receivable_router,
+        relatorios_router,
         supplier_router,
     )
 
@@ -354,6 +355,7 @@ try:
     api_router.include_router(inventory_router, prefix="/financial", tags=["Financial - Estoque"])
     api_router.include_router(fiscal_router, prefix="/financial", tags=["Financial - Fiscal/Tributário"])
     api_router.include_router(financial_ai_router, prefix="/financial", tags=["Financial AI"])
+    api_router.include_router(relatorios_router, prefix="/financial", tags=["Financial - Relatórios"])
     logger.info("Modulo Financial: OK")
 except Exception as e:
     logger.warning(f"Modulo Financial: {e}")
@@ -741,6 +743,70 @@ try:
     logger.info("Modulo Empresas: OK")
 except Exception as e:
     logger.warning(f"Modulo Empresas: {e}")
+
+
+# FASE 3 - MIGRADOR DE CONTRATOS (Multi-Empresa)
+try:
+    from modules.empresas.controllers.migrador_controller import router as migrador_router
+
+    api_router.include_router(migrador_router, prefix="/empresas", tags=["Migrador de Contratos"])
+    logger.info("Modulo Migrador Contratos: OK")
+except Exception as e:
+    logger.warning(f"Modulo Migrador Contratos: {e}")
+
+# FASE 7 - OBRIGAÇÕES FISCAIS MULTI-EMPRESA
+try:
+    from modules.empresas.controllers.obligations_controller import router as obrigacoes_router
+
+    api_router.include_router(obrigacoes_router, prefix="/empresas", tags=["Obrigações Multi-Empresa"])
+    logger.info("Modulo Obrigacoes Multi-Empresa: OK")
+except Exception as e:
+    logger.warning(f"Modulo Obrigacoes Multi-Empresa: {e}")
+
+# FASE 8 - DASHBOARD MULTI-EMPRESA
+try:
+    from modules.empresas.controllers.dashboard_controller import router as empresas_dashboard_router
+
+    api_router.include_router(empresas_dashboard_router, prefix="/empresas", tags=["Dashboard Multi-Empresa"])
+    logger.info("Modulo Dashboard Multi-Empresa: OK")
+except Exception as e:
+    logger.warning(f"Modulo Dashboard Multi-Empresa: {e}")
+
+# FASE 3 - DOMÍNIO TOTVS EXPORTER
+try:
+    from modules.empresas.controllers.dominio_controller import router as dominio_router
+
+    api_router.include_router(dominio_router, tags=["Domínio TOTVS"])
+    logger.info("Modulo Dominio TOTVS: OK")
+except Exception as e:
+    logger.warning(f"Modulo Dominio TOTVS: {e}")
+
+# FASE 6 - BOOKKEEPER AUTO (Escrituração Contábil Multi-Empresa)
+try:
+    from modules.empresas.controllers.bookkeeper_controller import router as bookkeeper_router
+
+    api_router.include_router(bookkeeper_router, tags=["Escrituração Contábil"])
+    logger.info("Modulo Bookkeeper Auto: OK")
+except Exception as e:
+    logger.warning(f"Modulo Bookkeeper Auto: {e}")
+
+# FASE 7 - DEMONSTRATIVOS FINANCEIROS (DRE / Balanço / DFC)
+try:
+    from modules.empresas.controllers.statements_controller import router as statements_router
+
+    api_router.include_router(statements_router, tags=["Demonstrativos Financeiros"])
+    logger.info("Modulo Demonstrativos Financeiros: OK")
+except Exception as e:
+    logger.warning(f"Modulo Demonstrativos Financeiros: {e}")
+
+# FASE 6 - FISCAL NFS-e MULTI-EMPRESA
+try:
+    from modules.fiscal.controllers.nfse_multi_controller import router as nfse_multi_router
+
+    api_router.include_router(nfse_multi_router, prefix="/fiscal", tags=["Fiscal - NFS-e Multi-Empresa"])
+    logger.info("Modulo NFS-e Multi-Empresa: OK")
+except Exception as e:
+    logger.warning(f"Modulo NFS-e Multi-Empresa: {e}")
 
 
 # Incluir router principal

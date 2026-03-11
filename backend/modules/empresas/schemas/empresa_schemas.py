@@ -1,7 +1,7 @@
 """Schemas Pydantic para o módulo de Empresas (Multi-CNPJ)."""
 
 from datetime import date
-from typing import Any, Dict, List, Optional
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
@@ -14,7 +14,6 @@ from modules.empresas.models.empresa import (
     RegimeTributarioEnum,
 )
 
-
 # ===================================================================
 # LIMINAR SCHEMAS
 # ===================================================================
@@ -23,33 +22,33 @@ from modules.empresas.models.empresa import (
 class LiminarCreate(BaseModel):
     tipo: LiminarTipoEnum
     descricao: str
-    numero_processo: Optional[str] = None
-    vara: Optional[str] = None
-    tribunal: Optional[str] = None
-    advogado: Optional[str] = None
-    data_solicitacao: Optional[date] = None
-    data_concessao: Optional[date] = None
-    data_validade: Optional[date] = None
-    status: Optional[LiminarStatusEnum] = LiminarStatusEnum.A_SOLICITAR
-    efeitos: Optional[Dict[str, Any]] = None
-    fundamento_legal: Optional[str] = None
-    observacoes: Optional[str] = None
+    numero_processo: str | None = None
+    vara: str | None = None
+    tribunal: str | None = None
+    advogado: str | None = None
+    data_solicitacao: date | None = None
+    data_concessao: date | None = None
+    data_validade: date | None = None
+    status: LiminarStatusEnum | None = LiminarStatusEnum.A_SOLICITAR
+    efeitos: dict[str, Any] | None = None
+    fundamento_legal: str | None = None
+    observacoes: str | None = None
 
 
 class LiminarUpdate(BaseModel):
-    tipo: Optional[LiminarTipoEnum] = None
-    descricao: Optional[str] = None
-    numero_processo: Optional[str] = None
-    vara: Optional[str] = None
-    tribunal: Optional[str] = None
-    advogado: Optional[str] = None
-    data_solicitacao: Optional[date] = None
-    data_concessao: Optional[date] = None
-    data_validade: Optional[date] = None
-    status: Optional[LiminarStatusEnum] = None
-    efeitos: Optional[Dict[str, Any]] = None
-    fundamento_legal: Optional[str] = None
-    observacoes: Optional[str] = None
+    tipo: LiminarTipoEnum | None = None
+    descricao: str | None = None
+    numero_processo: str | None = None
+    vara: str | None = None
+    tribunal: str | None = None
+    advogado: str | None = None
+    data_solicitacao: date | None = None
+    data_concessao: date | None = None
+    data_validade: date | None = None
+    status: LiminarStatusEnum | None = None
+    efeitos: dict[str, Any] | None = None
+    fundamento_legal: str | None = None
+    observacoes: str | None = None
 
 
 class LiminarResponse(BaseModel):
@@ -59,19 +58,19 @@ class LiminarResponse(BaseModel):
     empresa_id: UUID
     tipo: str
     descricao: str
-    numero_processo: Optional[str] = None
-    vara: Optional[str] = None
-    tribunal: Optional[str] = None
-    advogado: Optional[str] = None
-    data_solicitacao: Optional[date] = None
-    data_concessao: Optional[date] = None
-    data_validade: Optional[date] = None
+    numero_processo: str | None = None
+    vara: str | None = None
+    tribunal: str | None = None
+    advogado: str | None = None
+    data_solicitacao: date | None = None
+    data_concessao: date | None = None
+    data_validade: date | None = None
     status: str
-    efeitos: Optional[Dict[str, Any]] = None
-    fundamento_legal: Optional[str] = None
-    observacoes: Optional[str] = None
-    created_at: Optional[date] = None
-    updated_at: Optional[date] = None
+    efeitos: dict[str, Any] | None = None
+    fundamento_legal: str | None = None
+    observacoes: str | None = None
+    created_at: date | None = None
+    updated_at: date | None = None
 
 
 # ===================================================================
@@ -82,61 +81,61 @@ class LiminarResponse(BaseModel):
 class EmpresaCreate(BaseModel):
     slug: str
     razao_social: str
-    nome_fantasia: Optional[str] = None
-    cnpj: Optional[str] = None
-    inscricao_municipal: Optional[str] = None
-    inscricao_estadual: Optional[str] = None
-    inscricao_suframa: Optional[str] = None
-    codigo_municipio_ibge: Optional[str] = "1302603"
+    nome_fantasia: str | None = None
+    cnpj: str | None = None
+    inscricao_municipal: str | None = None
+    inscricao_estadual: str | None = None
+    inscricao_suframa: str | None = None
+    codigo_municipio_ibge: str | None = "1302603"
     regime_tributario: RegimeTributarioEnum
-    anexo_simples: Optional[AnexoSimplesEnum] = None
-    data_opcao_simples: Optional[date] = None
-    data_desenquadramento_simples: Optional[date] = None
-    regime_futuro: Optional[RegimeTributarioEnum] = None
-    data_prevista_mudanca_regime: Optional[date] = None
-    certificado_a1_path: Optional[str] = None
-    certificado_a1_senha: Optional[str] = None
-    certificado_validade: Optional[date] = None
-    contador_software: Optional[str] = None
-    contador_email: Optional[str] = None
-    contador_nome: Optional[str] = None
-    tipos_servicos: Optional[List[str]] = None
-    nfse_ambiente: Optional[str] = "homologacao"
-    nfse_serie_rps: Optional[str] = "1"
-    nfse_numero_inicial: Optional[str] = "1"
-    status: Optional[EmpresaStatusEnum] = EmpresaStatusEnum.ATIVA
-    is_principal: Optional[bool] = False
-    observacoes: Optional[str] = None
+    anexo_simples: AnexoSimplesEnum | None = None
+    data_opcao_simples: date | None = None
+    data_desenquadramento_simples: date | None = None
+    regime_futuro: RegimeTributarioEnum | None = None
+    data_prevista_mudanca_regime: date | None = None
+    certificado_a1_path: str | None = None
+    certificado_a1_senha: str | None = None
+    certificado_validade: date | None = None
+    contador_software: str | None = None
+    contador_email: str | None = None
+    contador_nome: str | None = None
+    tipos_servicos: list[str] | None = None
+    nfse_ambiente: str | None = "homologacao"
+    nfse_serie_rps: str | None = "1"
+    nfse_numero_inicial: str | None = "1"
+    status: EmpresaStatusEnum | None = EmpresaStatusEnum.ATIVA
+    is_principal: bool | None = False
+    observacoes: str | None = None
 
 
 class EmpresaUpdate(BaseModel):
-    slug: Optional[str] = None
-    razao_social: Optional[str] = None
-    nome_fantasia: Optional[str] = None
-    cnpj: Optional[str] = None
-    inscricao_municipal: Optional[str] = None
-    inscricao_estadual: Optional[str] = None
-    inscricao_suframa: Optional[str] = None
-    codigo_municipio_ibge: Optional[str] = None
-    regime_tributario: Optional[RegimeTributarioEnum] = None
-    anexo_simples: Optional[AnexoSimplesEnum] = None
-    data_opcao_simples: Optional[date] = None
-    data_desenquadramento_simples: Optional[date] = None
-    regime_futuro: Optional[RegimeTributarioEnum] = None
-    data_prevista_mudanca_regime: Optional[date] = None
-    certificado_a1_path: Optional[str] = None
-    certificado_a1_senha: Optional[str] = None
-    certificado_validade: Optional[date] = None
-    contador_software: Optional[str] = None
-    contador_email: Optional[str] = None
-    contador_nome: Optional[str] = None
-    tipos_servicos: Optional[List[str]] = None
-    nfse_ambiente: Optional[str] = None
-    nfse_serie_rps: Optional[str] = None
-    nfse_numero_inicial: Optional[str] = None
-    status: Optional[EmpresaStatusEnum] = None
-    is_principal: Optional[bool] = None
-    observacoes: Optional[str] = None
+    slug: str | None = None
+    razao_social: str | None = None
+    nome_fantasia: str | None = None
+    cnpj: str | None = None
+    inscricao_municipal: str | None = None
+    inscricao_estadual: str | None = None
+    inscricao_suframa: str | None = None
+    codigo_municipio_ibge: str | None = None
+    regime_tributario: RegimeTributarioEnum | None = None
+    anexo_simples: AnexoSimplesEnum | None = None
+    data_opcao_simples: date | None = None
+    data_desenquadramento_simples: date | None = None
+    regime_futuro: RegimeTributarioEnum | None = None
+    data_prevista_mudanca_regime: date | None = None
+    certificado_a1_path: str | None = None
+    certificado_a1_senha: str | None = None
+    certificado_validade: date | None = None
+    contador_software: str | None = None
+    contador_email: str | None = None
+    contador_nome: str | None = None
+    tipos_servicos: list[str] | None = None
+    nfse_ambiente: str | None = None
+    nfse_serie_rps: str | None = None
+    nfse_numero_inicial: str | None = None
+    status: EmpresaStatusEnum | None = None
+    is_principal: bool | None = None
+    observacoes: str | None = None
 
 
 class EmpresaResponse(BaseModel):
@@ -146,33 +145,33 @@ class EmpresaResponse(BaseModel):
     condominio_id: UUID
     slug: str
     razao_social: str
-    nome_fantasia: Optional[str] = None
-    cnpj: Optional[str] = None
-    inscricao_municipal: Optional[str] = None
-    inscricao_estadual: Optional[str] = None
-    inscricao_suframa: Optional[str] = None
-    codigo_municipio_ibge: Optional[str] = None
+    nome_fantasia: str | None = None
+    cnpj: str | None = None
+    inscricao_municipal: str | None = None
+    inscricao_estadual: str | None = None
+    inscricao_suframa: str | None = None
+    codigo_municipio_ibge: str | None = None
     regime_tributario: str
-    anexo_simples: Optional[str] = None
-    data_opcao_simples: Optional[date] = None
-    data_desenquadramento_simples: Optional[date] = None
-    regime_futuro: Optional[str] = None
-    data_prevista_mudanca_regime: Optional[date] = None
-    certificado_a1_path: Optional[str] = None
-    certificado_validade: Optional[date] = None
-    contador_software: Optional[str] = None
-    contador_email: Optional[str] = None
-    contador_nome: Optional[str] = None
-    tipos_servicos: Optional[List[str]] = None
-    nfse_ambiente: Optional[str] = None
-    nfse_serie_rps: Optional[str] = None
-    nfse_numero_inicial: Optional[str] = None
+    anexo_simples: str | None = None
+    data_opcao_simples: date | None = None
+    data_desenquadramento_simples: date | None = None
+    regime_futuro: str | None = None
+    data_prevista_mudanca_regime: date | None = None
+    certificado_a1_path: str | None = None
+    certificado_validade: date | None = None
+    contador_software: str | None = None
+    contador_email: str | None = None
+    contador_nome: str | None = None
+    tipos_servicos: list[str] | None = None
+    nfse_ambiente: str | None = None
+    nfse_serie_rps: str | None = None
+    nfse_numero_inicial: str | None = None
     status: str
     is_principal: bool
-    observacoes: Optional[str] = None
-    created_at: Optional[date] = None
-    updated_at: Optional[date] = None
-    liminares: List[LiminarResponse] = []
+    observacoes: str | None = None
+    created_at: date | None = None
+    updated_at: date | None = None
+    liminares: list[LiminarResponse] = []
 
 
 class EmpresaListResponse(BaseModel):
@@ -181,7 +180,7 @@ class EmpresaListResponse(BaseModel):
     id: UUID
     slug: str
     razao_social: str
-    cnpj: Optional[str] = None
+    cnpj: str | None = None
     regime_tributario: str
     status: str
     is_principal: bool

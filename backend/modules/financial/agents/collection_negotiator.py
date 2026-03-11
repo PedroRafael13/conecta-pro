@@ -1,15 +1,12 @@
 """CollectionNegotiatorAgent — Analisa inadimplentes e gera estrategias de cobranca."""
 
 from datetime import date
-from typing import Any
 
-from sqlalchemy import and_, func, select
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import and_, select
 
 from modules.financial.agents.base_agent import BaseAgent
 from modules.financial.models.customer import Customer
 from modules.financial.models.receivable_account import ReceivableAccount, ReceivableStatus
-
 
 # Classificacao por faixa de atraso
 _NIVEIS = [
@@ -145,11 +142,13 @@ class CollectionNegotiatorAgent(BaseAgent):
             .where(
                 and_(
                     ReceivableAccount.due_date < today,
-                    ReceivableAccount.status.notin_([
-                        ReceivableStatus.PAGA.value,
-                        ReceivableStatus.CANCELADA.value,
-                        ReceivableStatus.BAIXADA.value,
-                    ]),
+                    ReceivableAccount.status.notin_(
+                        [
+                            ReceivableStatus.PAGA.value,
+                            ReceivableStatus.CANCELADA.value,
+                            ReceivableStatus.BAIXADA.value,
+                        ]
+                    ),
                 )
             )
             .order_by(ReceivableAccount.due_date.asc())
@@ -178,26 +177,26 @@ class CollectionNegotiatorAgent(BaseAgent):
             taxa = _TAXA_RECUPERACAO.get(nivel, 10.0)
             taxa_ponderada += taxa * valor
 
-            acoes.append({
-                "id": str(row.id),
-                "customer_name": customer_name,
-                "valor": round(valor, 2),
-                "dias_atraso": dias,
-                "nivel": nivel,
-                "acao": nivel.replace("_", " ").title(),
-                "mensagem": mensagem,
-                "canal": canal,
-                "prioridade": prioridade,
-                "tentativas_anteriores": row.collection_attempts or 0,
-            })
+            acoes.append(
+                {
+                    "id": str(row.id),
+                    "customer_name": customer_name,
+                    "valor": round(valor, 2),
+                    "dias_atraso": dias,
+                    "nivel": nivel,
+                    "acao": nivel.replace("_", " ").title(),
+                    "mensagem": mensagem,
+                    "canal": canal,
+                    "prioridade": prioridade,
+                    "tentativas_anteriores": row.collection_attempts or 0,
+                }
+            )
 
         # Ordena por prioridade: urgente primeiro, depois alta
         _ordem_prioridade = {"urgente": 0, "alta": 1, "media": 2, "baixa": 3}
         acoes.sort(key=lambda x: (_ordem_prioridade.get(x["prioridade"], 9), -x["valor"]))
 
-        taxa_recuperacao_estimada = (
-            round(taxa_ponderada / total_em_atraso, 2) if total_em_atraso > 0 else 0.0
-        )
+        taxa_recuperacao_estimada = round(taxa_ponderada / total_em_atraso, 2) if total_em_atraso > 0 else 0.0
 
         return {
             "acoes": acoes,

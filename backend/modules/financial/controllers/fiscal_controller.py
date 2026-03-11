@@ -25,12 +25,15 @@ from modules.financial.models.fiscal_obligation import (
 )
 from modules.financial.repositories.fiscal_repository import FiscalRepository
 from modules.financial.schemas.fiscal_schemas import (
+    CalculoLucroRealRequest,
     CalculoRetencaoRequest,
     CalculoRetencaoResponse,
+    CalculoSimplesRequest,
     CFOPCreate,
     CFOPListResponse,
     CFOPResponse,
     CFOPUpdate,
+    ComparativoRegimesRequest,
     DASCalcularRequest,
     DASCalcularResponse,
     FiscalDashboard,
@@ -62,6 +65,7 @@ from modules.financial.schemas.fiscal_schemas import (
     RetencaoFederalListResponse,
     RetencaoFederalResponse,
     RetencaoFederalUpdate,
+    RetencoesNFSeRequest,
     SimplesNacionalDASCreate,
     SimplesNacionalDASResponse,
     SPEDFileCreate,
@@ -74,10 +78,6 @@ from modules.financial.schemas.fiscal_schemas import (
     SUFRAMAOperacaoCreate,
     SUFRAMAOperacaoListResponse,
     SUFRAMAOperacaoResponse,
-    CalculoSimplesRequest,
-    CalculoLucroRealRequest,
-    ComparativoRegimesRequest,
-    RetencoesNFSeRequest,
     VerificacaoLimiteSimplesRequest,
 )
 
@@ -1474,8 +1474,9 @@ async def obter_dashboard_fiscal(
 
 # ── Tax Calculator Multi-Regime ───────────────────────────────────────────────
 
-from modules.financial.agents.tax_calculator import TaxCalculatorAgent
-from decimal import Decimal
+from decimal import Decimal  # noqa: E402
+
+from modules.financial.agents.tax_calculator import TaxCalculatorAgent  # noqa: E402
 
 _tax_agent = TaxCalculatorAgent()
 
@@ -1499,8 +1500,8 @@ async def calcular_simples_nacional(
         "anexo": resultado.anexo,
         "receita_bruta_mes": float(resultado.receita_bruta_mes),
         "receita_bruta_12_meses": float(resultado.receita_bruta_12_meses),
-        "aliquota_nominal": f"{float(resultado.aliquota_nominal)*100:.2f}%",
-        "aliquota_efetiva": f"{float(resultado.aliquota_efetiva)*100:.2f}%",
+        "aliquota_nominal": f"{float(resultado.aliquota_nominal) * 100:.2f}%",
+        "aliquota_efetiva": f"{float(resultado.aliquota_efetiva) * 100:.2f}%",
         "valor_das": float(resultado.valor_das),
         "carga_tributaria": f"{float(resultado.carga_tributaria_percentual):.2f}%",
         "distribuicao": resultado.distribuicao,

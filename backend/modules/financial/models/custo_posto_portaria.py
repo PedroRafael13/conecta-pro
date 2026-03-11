@@ -1,4 +1,5 @@
 """Modelo de custo mensal para postos de portaria."""
+
 import uuid
 from datetime import datetime
 
@@ -19,23 +20,23 @@ class CustoPostoPortaria(Base):
     mes_referencia = Column(Date, nullable=False, index=True)
 
     # Dimensões do posto
-    tipo_escala = Column(String(20), nullable=True)          # 12x36, 44h, 24h, etc.
+    tipo_escala = Column(String(20), nullable=True)  # 12x36, 44h, 24h, etc.
     qtd_funcionarios = Column(Integer, default=1)
 
     # Componentes de custo
     custo_salarios = Column(Numeric(12, 2), default=0)
-    custo_encargos = Column(Numeric(12, 2), default=0)       # INSS, FGTS, férias, 13º
-    custo_beneficios = Column(Numeric(12, 2), default=0)     # VT, VR, VA, plano saúde
+    custo_encargos = Column(Numeric(12, 2), default=0)  # INSS, FGTS, férias, 13º
+    custo_beneficios = Column(Numeric(12, 2), default=0)  # VT, VR, VA, plano saúde
     custo_adicional_noturno = Column(Numeric(12, 2), default=0)
     custo_horas_extras = Column(Numeric(12, 2), default=0)
-    custo_uniformes = Column(Numeric(12, 2), default=0)      # Uniformes e EPIs
-    custo_equipamentos = Column(Numeric(12, 2), default=0)   # Rádio, lanterna, colete
-    custo_supervisao = Column(Numeric(12, 2), default=0)     # Supervisão rateada
-    custo_overhead = Column(Numeric(12, 2), default=0)       # Administrativo rateado
+    custo_uniformes = Column(Numeric(12, 2), default=0)  # Uniformes e EPIs
+    custo_equipamentos = Column(Numeric(12, 2), default=0)  # Rádio, lanterna, colete
+    custo_supervisao = Column(Numeric(12, 2), default=0)  # Supervisão rateada
+    custo_overhead = Column(Numeric(12, 2), default=0)  # Administrativo rateado
 
     # Totais
     custo_total = Column(Numeric(12, 2), default=0)
-    margem_contratual = Column(Numeric(12, 2), default=0)    # Valor faturado - custo total
+    margem_contratual = Column(Numeric(12, 2), default=0)  # Valor faturado - custo total
 
     # Controle
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)

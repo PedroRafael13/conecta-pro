@@ -3,11 +3,12 @@ TaxCalculatorAgent — Calculadora de Impostos Multi-Regime
 Suporta: Lucro Real + Simples Nacional (Anexo III)
 Empresa: Conecta Mais (grupo com 2 CNPJs)
 """
+
 from __future__ import annotations
-from dataclasses import dataclass, field
-from decimal import Decimal, ROUND_HALF_UP
-from typing import Optional, List
+
 import logging
+from dataclasses import dataclass, field
+from decimal import ROUND_HALF_UP, Decimal
 
 logger = logging.getLogger(__name__)
 
@@ -16,37 +17,38 @@ logger = logging.getLogger(__name__)
 
 SIMPLES_ANEXO_III = [
     # (limite_rbt12, aliquota, deducao)
-    (Decimal("180000.00"),   Decimal("0.06"),  Decimal("0.00")),
-    (Decimal("360000.00"),   Decimal("0.112"), Decimal("9360.00")),
-    (Decimal("720000.00"),   Decimal("0.135"), Decimal("17640.00")),
-    (Decimal("1800000.00"),  Decimal("0.16"),  Decimal("35640.00")),
-    (Decimal("3600000.00"),  Decimal("0.21"),  Decimal("125640.00")),
-    (Decimal("4800000.00"),  Decimal("0.33"),  Decimal("648000.00")),
+    (Decimal("180000.00"), Decimal("0.06"), Decimal("0.00")),
+    (Decimal("360000.00"), Decimal("0.112"), Decimal("9360.00")),
+    (Decimal("720000.00"), Decimal("0.135"), Decimal("17640.00")),
+    (Decimal("1800000.00"), Decimal("0.16"), Decimal("35640.00")),
+    (Decimal("3600000.00"), Decimal("0.21"), Decimal("125640.00")),
+    (Decimal("4800000.00"), Decimal("0.33"), Decimal("648000.00")),
 ]
 
 # Distribuição Faixa 3 Anexo III (vigilância/segurança - mais comum)
 DISTRIBUICAO_SIMPLES_III = {
-    "irpj":   Decimal("0.04"),
-    "csll":   Decimal("0.035"),
+    "irpj": Decimal("0.04"),
+    "csll": Decimal("0.035"),
     "cofins": Decimal("0.1282"),
-    "pis":    Decimal("0.0278"),
-    "cpp":    Decimal("0.434"),   # Contribuição Patronal Previdenciária
-    "iss":    Decimal("0.335"),
+    "pis": Decimal("0.0278"),
+    "cpp": Decimal("0.434"),  # Contribuição Patronal Previdenciária
+    "iss": Decimal("0.335"),
 }
 
 LUCRO_REAL = {
-    "irpj_base":       Decimal("0.15"),
-    "irpj_adicional":  Decimal("0.10"),
+    "irpj_base": Decimal("0.15"),
+    "irpj_adicional": Decimal("0.10"),
     "irpj_limite_trimestral": Decimal("60000.00"),
-    "csll":            Decimal("0.09"),
-    "pis_ncum":        Decimal("0.0165"),  # Não cumulativo
-    "cofins_ncum":     Decimal("0.076"),   # Não cumulativo
-    "iss_manaus":      Decimal("0.05"),
+    "csll": Decimal("0.09"),
+    "pis_ncum": Decimal("0.0165"),  # Não cumulativo
+    "cofins_ncum": Decimal("0.076"),  # Não cumulativo
+    "iss_manaus": Decimal("0.05"),
     "presuncao_servicos": Decimal("0.32"),
 }
 
 
 # ─── DATACLASSES DE RESULTADO ─────────────────────────────────────────────────
+
 
 @dataclass
 class DetalhamentoImposto:
@@ -69,7 +71,7 @@ class CalculoSimples:
     aliquota_efetiva: Decimal = Decimal("0")
     valor_das: Decimal = Decimal("0")
     distribuicao: dict = field(default_factory=dict)
-    liminares_aplicadas: List[str] = field(default_factory=list)
+    liminares_aplicadas: list[str] = field(default_factory=list)
     economia_liminares: Decimal = Decimal("0")
 
     @property
@@ -93,7 +95,7 @@ class CalculoLucroReal:
     cofins: Decimal = Decimal("0")
     iss: Decimal = Decimal("0")
     total_impostos_mes: Decimal = Decimal("0")
-    detalhamento: List[DetalhamentoImposto] = field(default_factory=list)
+    detalhamento: list[DetalhamentoImposto] = field(default_factory=list)
 
     @property
     def carga_tributaria_percentual(self) -> Decimal:
@@ -111,12 +113,13 @@ class ComparativoRegimes:
     lucro_real_percentual: Decimal
     economia_simples: Decimal  # Quanto economiza no Simples vs Lucro Real
     recomendacao: str
-    observacoes: List[str] = field(default_factory=list)
+    observacoes: list[str] = field(default_factory=list)
 
 
 @dataclass
 class CalculoRetencoes:
     """Retenções na fonte sobre NFS-e"""
+
     valor_servico: Decimal
     inss: Decimal = Decimal("0")
     ir: Decimal = Decimal("0")
@@ -126,10 +129,11 @@ class CalculoRetencoes:
     iss: Decimal = Decimal("0")
     total_retencoes: Decimal = Decimal("0")
     valor_liquido: Decimal = Decimal("0")
-    liminares_aplicadas: List[str] = field(default_factory=list)
+    liminares_aplicadas: list[str] = field(default_factory=list)
 
 
 # ─── AGENT ────────────────────────────────────────────────────────────────────
+
 
 class TaxCalculatorAgent:
     """
@@ -155,7 +159,7 @@ class TaxCalculatorAgent:
         receita_mes: Decimal,
         rbt12: Decimal,
         anexo: str = "III",
-        liminares: Optional[List[str]] = None,
+        liminares: list[str] | None = None,
     ) -> CalculoSimples:
         """
         Calcula DAS do Simples Nacional.
@@ -291,14 +295,16 @@ class TaxCalculatorAgent:
         resultado.iss = iss
 
         # Total mensal
-        resultado.total_impostos_mes = (
-            irpj_base + irpj_adicional_mes + csll + pis + cofins + iss
-        ).quantize(Decimal("0.01"), ROUND_HALF_UP)
+        resultado.total_impostos_mes = (irpj_base + irpj_adicional_mes + csll + pis + cofins + iss).quantize(
+            Decimal("0.01"), ROUND_HALF_UP
+        )
 
         # Detalhamento
         resultado.detalhamento = [
             DetalhamentoImposto("IRPJ (15%)", LUCRO_REAL["irpj_base"], lucro_presumido_mes, irpj_base),
-            DetalhamentoImposto("IRPJ Adicional (10%)", LUCRO_REAL["irpj_adicional"], excedente / 3, irpj_adicional_mes),
+            DetalhamentoImposto(
+                "IRPJ Adicional (10%)", LUCRO_REAL["irpj_adicional"], excedente / 3, irpj_adicional_mes
+            ),
             DetalhamentoImposto("CSLL (9%)", LUCRO_REAL["csll"], lucro_presumido_mes, csll),
             DetalhamentoImposto("PIS (1,65% nc)", LUCRO_REAL["pis_ncum"], receita_mes, pis),
             DetalhamentoImposto("COFINS (7,6% nc)", LUCRO_REAL["cofins_ncum"], receita_mes, cofins),
@@ -313,7 +319,7 @@ class TaxCalculatorAgent:
         self,
         receita_anual: Decimal,
         custos_dedutiveis_anual: Decimal = Decimal("0"),
-        liminares: Optional[List[str]] = None,
+        liminares: list[str] | None = None,
     ) -> ComparativoRegimes:
         """
         Compara carga tributária entre Simples Nacional e Lucro Real.
@@ -342,8 +348,14 @@ class TaxCalculatorAgent:
         economia = (lr_anual - simples_anual).quantize(Decimal("0.01"), ROUND_HALF_UP)
 
         # Percentuais
-        pct_simples = (simples_anual / receita_anual * 100).quantize(Decimal("0.01"), ROUND_HALF_UP) if receita_anual else Decimal("0")
-        pct_lr = (lr_anual / receita_anual * 100).quantize(Decimal("0.01"), ROUND_HALF_UP) if receita_anual else Decimal("0")
+        pct_simples = (
+            (simples_anual / receita_anual * 100).quantize(Decimal("0.01"), ROUND_HALF_UP)
+            if receita_anual
+            else Decimal("0")
+        )
+        pct_lr = (
+            (lr_anual / receita_anual * 100).quantize(Decimal("0.01"), ROUND_HALF_UP) if receita_anual else Decimal("0")
+        )
 
         if simples_anual < lr_anual:
             recomendacao = f"Simples Nacional e mais vantajoso. Economia anual estimada: R$ {economia:,.2f} ({pct_lr - pct_simples:.1f}pp a menos de impostos)."
@@ -354,7 +366,9 @@ class TaxCalculatorAgent:
 
         observacoes = []
         if receita_anual > Decimal("4800000"):
-            observacoes.append("ATENCAO: Faturamento acima do limite do Simples Nacional (R$ 4,8M). Verificar sublimite AM.")
+            observacoes.append(
+                "ATENCAO: Faturamento acima do limite do Simples Nacional (R$ 4,8M). Verificar sublimite AM."
+            )
         if receita_anual > Decimal("3600000"):
             observacoes.append("Faixa 6 do Simples (33%). Avaliar Lucro Presumido como alternativa.")
 
@@ -375,7 +389,7 @@ class TaxCalculatorAgent:
         self,
         valor_servico: Decimal,
         regime_empresa: str = "simples_nacional",
-        liminares: Optional[List[str]] = None,
+        liminares: list[str] | None = None,
     ) -> CalculoRetencoes:
         """
         Calcula retenções na fonte sobre NFS-e.
@@ -414,8 +428,7 @@ class TaxCalculatorAgent:
         resultado.iss = (valor_servico * Decimal("0.05")).quantize(Decimal("0.01"), ROUND_HALF_UP)
 
         resultado.total_retencoes = (
-            resultado.inss + resultado.ir + resultado.csll +
-            resultado.pis + resultado.cofins + resultado.iss
+            resultado.inss + resultado.ir + resultado.csll + resultado.pis + resultado.cofins + resultado.iss
         ).quantize(Decimal("0.01"), ROUND_HALF_UP)
 
         resultado.valor_liquido = (valor_servico - resultado.total_retencoes).quantize(Decimal("0.01"), ROUND_HALF_UP)

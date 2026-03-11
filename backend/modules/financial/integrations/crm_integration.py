@@ -4,7 +4,7 @@ Quando uma proposta é aprovada, cria estrutura financeira automaticamente.
 """
 
 import logging
-from datetime import date, timedelta
+from datetime import date
 from decimal import Decimal
 
 from sqlalchemy import and_, select
@@ -63,6 +63,7 @@ async def on_contrato_ativado(
         # condominio_id é NOT NULL — usa um UUID placeholder se nulo
         # Na integração real, o contrato passaria o condominio_id
         import uuid
+
         receivable.condominio_id = uuid.UUID("00000000-0000-0000-0000-000000000001")
 
         session.add(receivable)
@@ -89,10 +90,10 @@ async def on_contrato_ativado(
 
     except Exception as exc:
         logger.warning("[crm_integration] on_contrato_ativado erro: %s", exc)
-        try:
+        import contextlib
+
+        with contextlib.suppress(Exception):
             await session.rollback()
-        except Exception:
-            pass
         return {
             "success": False,
             "receivable_id": None,
@@ -126,11 +127,13 @@ async def on_contrato_encerrado(
         ).where(
             and_(
                 ReceivableAccount.description.ilike(pattern),
-                ReceivableAccount.status.notin_([
-                    ReceivableStatus.PAGA.value,
-                    ReceivableStatus.CANCELADA.value,
-                    ReceivableStatus.BAIXADA.value,
-                ]),
+                ReceivableAccount.status.notin_(
+                    [
+                        ReceivableStatus.PAGA.value,
+                        ReceivableStatus.CANCELADA.value,
+                        ReceivableStatus.BAIXADA.value,
+                    ]
+                ),
                 ReceivableAccount.ativo.is_(True),
             )
         )
@@ -159,10 +162,7 @@ async def on_contrato_encerrado(
                 f"(R$ {total_pendente:,.2f}), sendo {len(vencidas)} já vencido(s)."
             )
         else:
-            message = (
-                f"{len(pendencias)} título(s) pendente(s) a vencer "
-                f"(R$ {total_pendente:,.2f})."
-            )
+            message = f"{len(pendencias)} título(s) pendente(s) a vencer (R$ {total_pendente:,.2f})."
 
         return {
             "success": True,

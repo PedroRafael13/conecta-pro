@@ -1,7 +1,6 @@
 """Controller para o módulo de Empresas (Multi-CNPJ)."""
 
 import logging
-from typing import List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -70,15 +69,15 @@ async def criar_empresa(
 
 @router.get(
     "/",
-    response_model=List[EmpresaListResponse],
+    response_model=list[EmpresaListResponse],
     status_code=status.HTTP_200_OK,
     summary="Listar empresas",
 )
 async def listar_empresas(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
-    status_filtro: Optional[str] = Query(None, alias="status", description="Filtrar por status"),
-) -> List[EmpresaListResponse]:
+    status_filtro: str | None = Query(None, alias="status", description="Filtrar por status"),
+) -> list[EmpresaListResponse]:
     """Lista todas as empresas do grupo empresarial."""
     try:
         condominio_id = UUID(get_tenant_id(current_user))
@@ -230,7 +229,7 @@ async def cadastrar_liminar(
 
 @router.get(
     "/{empresa_id}/liminares",
-    response_model=List[LiminarResponse],
+    response_model=list[LiminarResponse],
     status_code=status.HTTP_200_OK,
     summary="Listar liminares",
 )
@@ -238,7 +237,7 @@ async def listar_liminares(
     empresa_id: UUID,
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
-) -> List[LiminarResponse]:
+) -> list[LiminarResponse]:
     """Lista todas as liminares de uma empresa."""
     try:
         condominio_id = UUID(get_tenant_id(current_user))
@@ -255,7 +254,7 @@ async def listar_liminares(
 
 @router.get(
     "/{empresa_id}/liminares/ativas",
-    response_model=List[LiminarResponse],
+    response_model=list[LiminarResponse],
     status_code=status.HTTP_200_OK,
     summary="Verificar liminares ativas",
 )
@@ -263,7 +262,7 @@ async def verificar_liminares_ativas(
     empresa_id: UUID,
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
-) -> List[LiminarResponse]:
+) -> list[LiminarResponse]:
     """Retorna apenas as liminares com status CONCEDIDA (em vigor)."""
     try:
         condominio_id = UUID(get_tenant_id(current_user))

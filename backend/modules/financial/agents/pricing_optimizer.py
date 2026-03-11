@@ -1,13 +1,9 @@
 """PricingOptimizerAgent — Calcula precificacao otima para contratos de seguranca."""
 
-from typing import Any
-
 from sqlalchemy import and_, func, select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.financial.agents.base_agent import BaseAgent
 from modules.financial.models.receivable_account import ReceivableAccount, ReceivableStatus
-
 
 # Benchmarks de custo por tipo de servico
 # Estrutura: tipo -> {custo_por_unidade, unidade, descricao, encargos_pct}
@@ -18,14 +14,14 @@ _BENCHMARKS: dict[str, dict] = {
         "descricao": "Portaria 24h com 2 vigilantes por posto",
         "unidade": "posto",
         "custo_por_unidade": 8500.0,  # R$/posto/mes
-        "encargos_pct": 0.72,          # CLT + beneficios (~72%)
-        "equipamentos_fixos": 500.0,   # R$/mes (uniforme, EPI, radio)
-        "supervisao_pct": 0.08,        # 8% sobre mao de obra
+        "encargos_pct": 0.72,  # CLT + beneficios (~72%)
+        "equipamentos_fixos": 500.0,  # R$/mes (uniforme, EPI, radio)
+        "supervisao_pct": 0.08,  # 8% sobre mao de obra
     },
     "limpeza": {
         "descricao": "Servicos de limpeza e conservacao",
         "unidade": "m2",
-        "custo_por_unidade": 4.5,      # R$/m2/mes
+        "custo_por_unidade": 4.5,  # R$/m2/mes
         "encargos_pct": 0.68,
         "equipamentos_fixos": 800.0,
         "supervisao_pct": 0.07,
@@ -33,7 +29,7 @@ _BENCHMARKS: dict[str, dict] = {
     "jardinagem": {
         "descricao": "Manutencao de areas verdes",
         "unidade": "m2",
-        "custo_por_unidade": 3.0,      # R$/m2/mes
+        "custo_por_unidade": 3.0,  # R$/m2/mes
         "encargos_pct": 0.65,
         "equipamentos_fixos": 400.0,
         "supervisao_pct": 0.06,
@@ -41,15 +37,15 @@ _BENCHMARKS: dict[str, dict] = {
     "seguranca_eletronica": {
         "descricao": "Monitoramento eletronico e CFTV",
         "unidade": "camera",
-        "custo_por_unidade": 350.0,    # R$/camera/mes (monitoramento)
-        "encargos_pct": 0.45,          # Menor — mais tecnologia, menos CLT
+        "custo_por_unidade": 350.0,  # R$/camera/mes (monitoramento)
+        "encargos_pct": 0.45,  # Menor — mais tecnologia, menos CLT
         "equipamentos_fixos": 1500.0,
         "supervisao_pct": 0.05,
     },
     "portaria_remota": {
         "descricao": "Portaria remota com monitoramento 24h",
         "unidade": "ponto",
-        "custo_por_unidade": 1200.0,   # R$/ponto/mes
+        "custo_por_unidade": 1200.0,  # R$/ponto/mes
         "encargos_pct": 0.40,
         "equipamentos_fixos": 2000.0,
         "supervisao_pct": 0.05,
@@ -196,9 +192,7 @@ class PricingOptimizerAgent(BaseAgent):
 
         return resultado
 
-    async def _buscar_contratos_similares(
-        self, tipo: str, qtd_postos: float
-    ) -> dict:
+    async def _buscar_contratos_similares(self, tipo: str, qtd_postos: float) -> dict:
         """Busca contratos existentes para comparacao de preco."""
         try:
             # Busca recebiveis com descricao similar ao tipo de servico
@@ -242,9 +236,7 @@ class PricingOptimizerAgent(BaseAgent):
             "valor_maximo_mercado": 0.0,
         }
 
-    def _gerar_recomendacao(
-        self, custo: float, preco_ideal: float, comparativo: dict
-    ) -> str:
+    def _gerar_recomendacao(self, custo: float, preco_ideal: float, comparativo: dict) -> str:
         """Gera texto de recomendacao baseado nos dados."""
         media_mercado = comparativo.get("valor_medio_mercado", 0)
         if media_mercado > 0:
@@ -255,8 +247,8 @@ class PricingOptimizerAgent(BaseAgent):
                 )
             elif preco_ideal < media_mercado * 0.90:
                 return (
-                    f"Seu custo estimado permite preco abaixo do mercado. "
-                    f"Use isso como vantagem competitiva ou aumente a margem."
+                    "Seu custo estimado permite preco abaixo do mercado. "
+                    "Use isso como vantagem competitiva ou aumente a margem."
                 )
         return (
             f"Recomendamos preco entre R$ {custo * 1.15:,.2f} (margem minima) e "

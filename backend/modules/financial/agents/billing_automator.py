@@ -1,11 +1,8 @@
 """BillingAutomatorAgent — Automação do ciclo de faturamento."""
 
 from datetime import date, timedelta
-from decimal import Decimal
-from typing import Any
 
 from sqlalchemy import and_, func, select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.financial.agents.base_agent import BaseAgent
 from modules.financial.models.receivable_account import ReceivableAccount, ReceivableStatus
@@ -63,10 +60,12 @@ class BillingAutomatorAgent(BaseAgent):
                     and_(
                         ReceivableAccount.due_date >= primeiro_dia,
                         ReceivableAccount.due_date <= ultimo_dia,
-                        ReceivableAccount.status.notin_([
-                            ReceivableStatus.PAGA.value,
-                            ReceivableStatus.CANCELADA.value,
-                        ]),
+                        ReceivableAccount.status.notin_(
+                            [
+                                ReceivableStatus.PAGA.value,
+                                ReceivableStatus.CANCELADA.value,
+                            ]
+                        ),
                         ReceivableAccount.ativo.is_(True),
                     )
                 )
@@ -81,20 +80,20 @@ class BillingAutomatorAgent(BaseAgent):
                 venc_min = row.vencimento_min
                 venc_max = row.vencimento_max
                 venc_medio_delta = (
-                    (venc_max - venc_min).days // 2
-                    if venc_min and venc_max and venc_min != venc_max
-                    else 0
+                    (venc_max - venc_min).days // 2 if venc_min and venc_max and venc_min != venc_max else 0
                 )
                 venc_medio = (venc_min + timedelta(days=venc_medio_delta)).isoformat() if venc_min else None
 
-                result.append({
-                    "customer_id": str(row.customer_id) if row.customer_id else None,
-                    "customer_name": f"Cliente {str(row.customer_id)[:8]}" if row.customer_id else "Sem cliente",
-                    "valor_total": round(float(row.valor_total or 0), 2),
-                    "qtd_titulos": row.qtd_titulos or 0,
-                    "vencimento_medio": venc_medio,
-                    "status": row.status_exemplo or ReceivableStatus.PENDENTE.value,
-                })
+                result.append(
+                    {
+                        "customer_id": str(row.customer_id) if row.customer_id else None,
+                        "customer_name": f"Cliente {str(row.customer_id)[:8]}" if row.customer_id else "Sem cliente",
+                        "valor_total": round(float(row.valor_total or 0), 2),
+                        "qtd_titulos": row.qtd_titulos or 0,
+                        "vencimento_medio": venc_medio,
+                        "status": row.status_exemplo or ReceivableStatus.PENDENTE.value,
+                    }
+                )
 
             return result
 
@@ -120,7 +119,7 @@ class BillingAutomatorAgent(BaseAgent):
         periodo = max(1, periodo_dias)
 
         # Tabela de parâmetros padrão por tipo (valores de referência SP)
-        PARAMS = {
+        params = {
             "portaria": {
                 "custo_diario_posto": 350.0,
                 "he_percentual": 0.08,
@@ -153,7 +152,7 @@ class BillingAutomatorAgent(BaseAgent):
             },
         }
 
-        params = PARAMS.get(tipo_norm, PARAMS["portaria"])
+        params = params.get(tipo_norm, params["portaria"])
         valor_base = round(params["custo_diario_posto"] * periodo, 2)
         adicional_he = round(valor_base * params["he_percentual"], 2)
         adicional_noturno = round(valor_base * params["noturno_percentual"], 2)
@@ -196,9 +195,7 @@ class BillingAutomatorAgent(BaseAgent):
             base_q = select(
                 func.coalesce(func.sum(ReceivableAccount.net_value), 0).label("total"),
                 func.coalesce(func.count(ReceivableAccount.id), 0).label("qtd"),
-                func.coalesce(
-                    func.count(func.distinct(ReceivableAccount.customer_id)), 0
-                ).label("qtd_clientes"),
+                func.coalesce(func.count(func.distinct(ReceivableAccount.customer_id)), 0).label("qtd_clientes"),
             ).where(
                 and_(
                     ReceivableAccount.due_date >= primeiro_dia,
@@ -213,9 +210,7 @@ class BillingAutomatorAgent(BaseAgent):
             qtd_clientes = int(base_row.qtd_clientes or 0)
 
             # Pago
-            pago_q = select(
-                func.coalesce(func.sum(ReceivableAccount.paid_value), 0)
-            ).where(
+            pago_q = select(func.coalesce(func.sum(ReceivableAccount.paid_value), 0)).where(
                 and_(
                     ReceivableAccount.due_date >= primeiro_dia,
                     ReceivableAccount.due_date <= ultimo_dia,
@@ -226,16 +221,16 @@ class BillingAutomatorAgent(BaseAgent):
             total_pago = float((await self.session.execute(pago_q)).scalar_one() or 0)
 
             # Vencido (vencimento anterior a hoje, não pago)
-            vencido_q = select(
-                func.coalesce(func.sum(ReceivableAccount.net_value), 0)
-            ).where(
+            vencido_q = select(func.coalesce(func.sum(ReceivableAccount.net_value), 0)).where(
                 and_(
                     ReceivableAccount.due_date >= primeiro_dia,
                     ReceivableAccount.due_date <= min(ultimo_dia, today - timedelta(days=1)),
-                    ReceivableAccount.status.notin_([
-                        ReceivableStatus.PAGA.value,
-                        ReceivableStatus.CANCELADA.value,
-                    ]),
+                    ReceivableAccount.status.notin_(
+                        [
+                            ReceivableStatus.PAGA.value,
+                            ReceivableStatus.CANCELADA.value,
+                        ]
+                    ),
                     ReceivableAccount.ativo.is_(True),
                 )
             )
@@ -285,9 +280,7 @@ class BillingAutomatorAgent(BaseAgent):
             if not contratos:
                 observacoes.append("Nenhum contrato identificado para faturamento automático neste mês.")
             else:
-                observacoes.append(
-                    f"{len(contratos)} clientes com faturas pendentes identificadas."
-                )
+                observacoes.append(f"{len(contratos)} clientes com faturas pendentes identificadas.")
                 vencidos = [c for c in contratos if c["status"] == ReceivableStatus.VENCIDA.value]
                 if vencidos:
                     observacoes.append(

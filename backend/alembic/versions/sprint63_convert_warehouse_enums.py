@@ -16,18 +16,9 @@ depends_on = None
 
 def upgrade() -> None:
     # Convert PostgreSQL enum columns to VARCHAR so model String types work
-    op.execute(
-        "ALTER TABLE fin_warehouses "
-        "ALTER COLUMN warehouse_type TYPE VARCHAR(20) USING warehouse_type::text"
-    )
-    op.execute(
-        "ALTER TABLE fin_warehouses "
-        "ALTER COLUMN status TYPE VARCHAR(20) USING status::text"
-    )
-    op.execute(
-        "ALTER TABLE fin_warehouses "
-        "ALTER COLUMN storage_type TYPE VARCHAR(20) USING storage_type::text"
-    )
+    op.execute("ALTER TABLE fin_warehouses ALTER COLUMN warehouse_type TYPE VARCHAR(20) USING warehouse_type::text")
+    op.execute("ALTER TABLE fin_warehouses ALTER COLUMN status TYPE VARCHAR(20) USING status::text")
+    op.execute("ALTER TABLE fin_warehouses ALTER COLUMN storage_type TYPE VARCHAR(20) USING storage_type::text")
 
     # Also check fin_stock_items for enum columns
     # Get column types first - do ALTER IF the column is an enum type

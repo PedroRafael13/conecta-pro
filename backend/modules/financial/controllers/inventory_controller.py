@@ -9,7 +9,6 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from core.auth.dependencies import get_current_user
-from core.database import get_db
 from core.database.session import get_sync_db_dependency
 from modules.financial.models.stock_inventory import (
     InventoryStatus,

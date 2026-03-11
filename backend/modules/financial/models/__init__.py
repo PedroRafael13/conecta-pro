@@ -4,15 +4,6 @@ Contas a Pagar, Contas a Receber, Fluxo de Caixa, Compras, Estoque e Contabilida
 """
 
 # Custeio por contrato
-from modules.financial.models.contract_cost import ContractCost, ServiceType
-
-# Custeio detalhado por tipo de serviço (Phase 3)
-from modules.financial.models.custo_posto_portaria import CustoPostoPortaria
-from modules.financial.models.custo_posto_limpeza import CustoPostoLimpeza
-from modules.financial.models.custo_posto_jardinagem import CustoPostoJardinagem
-from modules.financial.models.custo_contrato_seg_eletronica import CustoContratoSegEletronica
-from modules.financial.models.custo_contrato_portaria_remota import CustoContratoPortariaRemota
-
 # Contas a Pagar
 # Fluxo de Caixa
 from modules.financial.models.accounting_account import (
@@ -91,12 +82,20 @@ from modules.financial.models.chart_of_accounts import (
     ChartStatus,
     ChartType,
 )
+from modules.financial.models.contract_cost import ContractCost, ServiceType
 from modules.financial.models.cost_center import (
     AllocationMethod,
     CostCenter,
     CostCenterStatus,
     CostCenterType,
 )
+from modules.financial.models.custo_contrato_portaria_remota import CustoContratoPortariaRemota
+from modules.financial.models.custo_contrato_seg_eletronica import CustoContratoSegEletronica
+from modules.financial.models.custo_posto_jardinagem import CustoPostoJardinagem
+from modules.financial.models.custo_posto_limpeza import CustoPostoLimpeza
+
+# Custeio detalhado por tipo de serviço (Phase 3)
+from modules.financial.models.custo_posto_portaria import CustoPostoPortaria
 from modules.financial.models.customer import Customer, CustomerStatus, CustomerType
 from modules.financial.models.fiscal_obligation import (
     FiscalObligation,

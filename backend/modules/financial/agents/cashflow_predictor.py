@@ -1,11 +1,8 @@
 """CashflowPredictorAgent — Projeção de fluxo de caixa com dados históricos."""
 
 from datetime import date, timedelta
-from decimal import Decimal
-from typing import Any
 
 from sqlalchemy import and_, func, select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.financial.agents.base_agent import BaseAgent
 from modules.financial.models.payable_account import PayableAccount, PayableStatus
@@ -28,34 +25,26 @@ class CashflowPredictorAgent(BaseAgent):
         # ----------------------------------------------------------------
         # 1. Receita histórica dos últimos 90 dias (recebíveis pagos)
         # ----------------------------------------------------------------
-        recv_hist_q = select(
-            func.coalesce(func.sum(ReceivableAccount.net_value), 0)
-        ).where(
+        recv_hist_q = select(func.coalesce(func.sum(ReceivableAccount.net_value), 0)).where(
             and_(
                 ReceivableAccount.payment_date >= past_90,
                 ReceivableAccount.payment_date <= today,
                 ReceivableAccount.status == ReceivableStatus.PAGA.value,
             )
         )
-        total_recv_hist = float(
-            (await self.session.execute(recv_hist_q)).scalar_one() or 0
-        )
+        total_recv_hist = float((await self.session.execute(recv_hist_q)).scalar_one() or 0)
 
         # ----------------------------------------------------------------
         # 2. Despesa histórica dos últimos 90 dias (pagáveis pagos)
         # ----------------------------------------------------------------
-        pay_hist_q = select(
-            func.coalesce(func.sum(PayableAccount.net_value), 0)
-        ).where(
+        pay_hist_q = select(func.coalesce(func.sum(PayableAccount.net_value), 0)).where(
             and_(
                 PayableAccount.payment_date >= past_90,
                 PayableAccount.payment_date <= today,
                 PayableAccount.status == PayableStatus.PAGA.value,
             )
         )
-        total_pay_hist = float(
-            (await self.session.execute(pay_hist_q)).scalar_one() or 0
-        )
+        total_pay_hist = float((await self.session.execute(pay_hist_q)).scalar_one() or 0)
 
         has_history = total_recv_hist > 0 or total_pay_hist > 0
         daily_recv = total_recv_hist / 90 if has_history else 0.0
@@ -64,34 +53,28 @@ class CashflowPredictorAgent(BaseAgent):
         # ----------------------------------------------------------------
         # 3. Taxa de inadimplência histórica (recebíveis que atrasaram)
         # ----------------------------------------------------------------
-        total_recv_due_q = select(
-            func.coalesce(func.count(ReceivableAccount.id), 0)
-        ).where(
+        total_recv_due_q = select(func.coalesce(func.count(ReceivableAccount.id), 0)).where(
             and_(
                 ReceivableAccount.due_date >= past_90,
                 ReceivableAccount.due_date <= today,
             )
         )
-        total_due_count = float(
-            (await self.session.execute(total_recv_due_q)).scalar_one() or 0
-        )
+        total_due_count = float((await self.session.execute(total_recv_due_q)).scalar_one() or 0)
 
-        late_recv_q = select(
-            func.coalesce(func.count(ReceivableAccount.id), 0)
-        ).where(
+        late_recv_q = select(func.coalesce(func.count(ReceivableAccount.id), 0)).where(
             and_(
                 ReceivableAccount.due_date >= past_90,
                 ReceivableAccount.due_date <= today,
-                ReceivableAccount.status.notin_([
-                    ReceivableStatus.PAGA.value,
-                    ReceivableStatus.CANCELADA.value,
-                ]),
+                ReceivableAccount.status.notin_(
+                    [
+                        ReceivableStatus.PAGA.value,
+                        ReceivableStatus.CANCELADA.value,
+                    ]
+                ),
                 ReceivableAccount.due_date < today,
             )
         )
-        late_count = float(
-            (await self.session.execute(late_recv_q)).scalar_one() or 0
-        )
+        late_count = float((await self.session.execute(late_recv_q)).scalar_one() or 0)
 
         default_rate = (late_count / total_due_count) if total_due_count > 0 else 0.0
 
@@ -104,11 +87,13 @@ class CashflowPredictorAgent(BaseAgent):
         ).where(
             and_(
                 ReceivableAccount.due_date >= today,
-                ReceivableAccount.status.notin_([
-                    ReceivableStatus.PAGA.value,
-                    ReceivableStatus.CANCELADA.value,
-                    ReceivableStatus.BAIXADA.value,
-                ]),
+                ReceivableAccount.status.notin_(
+                    [
+                        ReceivableStatus.PAGA.value,
+                        ReceivableStatus.CANCELADA.value,
+                        ReceivableStatus.BAIXADA.value,
+                    ]
+                ),
             )
         )
         pending_recv_rows = (await self.session.execute(pending_recv_q)).all()
@@ -129,10 +114,12 @@ class CashflowPredictorAgent(BaseAgent):
         ).where(
             and_(
                 PayableAccount.due_date >= today,
-                PayableAccount.status.notin_([
-                    PayableStatus.PAGA.value,
-                    PayableStatus.CANCELADA.value,
-                ]),
+                PayableAccount.status.notin_(
+                    [
+                        PayableStatus.PAGA.value,
+                        PayableStatus.CANCELADA.value,
+                    ]
+                ),
             )
         )
         pending_pay_rows = (await self.session.execute(pending_pay_q)).all()
@@ -147,9 +134,7 @@ class CashflowPredictorAgent(BaseAgent):
         # 6. Saldo atual estimado (net histórico dos últimos 30d)
         # ----------------------------------------------------------------
         past_30 = today - timedelta(days=30)
-        recv_30_q = select(
-            func.coalesce(func.sum(ReceivableAccount.net_value), 0)
-        ).where(
+        recv_30_q = select(func.coalesce(func.sum(ReceivableAccount.net_value), 0)).where(
             and_(
                 ReceivableAccount.payment_date >= past_30,
                 ReceivableAccount.payment_date <= today,
@@ -158,9 +143,7 @@ class CashflowPredictorAgent(BaseAgent):
         )
         recv_30 = float((await self.session.execute(recv_30_q)).scalar_one() or 0)
 
-        pay_30_q = select(
-            func.coalesce(func.sum(PayableAccount.net_value), 0)
-        ).where(
+        pay_30_q = select(func.coalesce(func.sum(PayableAccount.net_value), 0)).where(
             and_(
                 PayableAccount.payment_date >= past_30,
                 PayableAccount.payment_date <= today,
@@ -194,17 +177,21 @@ class CashflowPredictorAgent(BaseAgent):
             expected = balance_by_day.get(offset, current_balance)
             optimistic = expected * 1.10 if expected >= 0 else expected * 0.90
             pessimistic = expected * 0.90 if expected >= 0 else expected * 1.10
-            points.append({
-                "date": d.isoformat(),
-                "expected_balance": round(expected, 2),
-                "optimistic_balance": round(optimistic, 2),
-                "pessimistic_balance": round(pessimistic, 2),
-            })
-            if pessimistic < 0:
-                gaps.append({
+            points.append(
+                {
                     "date": d.isoformat(),
-                    "projected_balance": round(pessimistic, 2),
-                })
+                    "expected_balance": round(expected, 2),
+                    "optimistic_balance": round(optimistic, 2),
+                    "pessimistic_balance": round(pessimistic, 2),
+                }
+            )
+            if pessimistic < 0:
+                gaps.append(
+                    {
+                        "date": d.isoformat(),
+                        "projected_balance": round(pessimistic, 2),
+                    }
+                )
 
         predicted_30d = balance_by_day.get(30, current_balance)
         predicted_60d = balance_by_day.get(60, current_balance)
@@ -245,12 +232,14 @@ class CashflowPredictorAgent(BaseAgent):
         points = []
         for offset in range(7, days + 1, 7):
             d = today + timedelta(days=offset)
-            points.append({
-                "date": d.isoformat(),
-                "expected_balance": 0.0,
-                "optimistic_balance": 0.0,
-                "pessimistic_balance": 0.0,
-            })
+            points.append(
+                {
+                    "date": d.isoformat(),
+                    "expected_balance": 0.0,
+                    "optimistic_balance": 0.0,
+                    "pessimistic_balance": 0.0,
+                }
+            )
         return {
             "current_balance": 0.0,
             "predicted_30d": 0.0,

@@ -1,6 +1,6 @@
 'use client';
 
-import { Users, Briefcase, Shield, Smartphone, DollarSign, Landmark, FolderOpen, Wrench, Plug, BarChart3, Settings, Bell, Search, LogOut, User, TrendingUp, TrendingDown, Wifi, WifiOff, Loader2 } from 'lucide-react';
+import { Users, Briefcase, Shield, Smartphone, DollarSign, Landmark, FolderOpen, Wrench, Plug, BarChart3, Settings, Bell, Search, LogOut, User, TrendingUp, TrendingDown, Wifi, WifiOff, Loader2, Handshake } from 'lucide-react';
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
@@ -18,7 +18,7 @@ import { fetchAllDashboardStats, fetchIntegrationSummary, type DashboardStats, t
 // Mapeamento de ícones
 const iconMap: Record<string, React.ElementType> = {
   Users, Briefcase, Shield, Smartphone, DollarSign, Landmark,
-  FolderOpen, Wrench, Plug, BarChart3, Settings,
+  FolderOpen, Wrench, Plug, BarChart3, Settings, Handshake,
 };
 
 export default function DashboardPage() {

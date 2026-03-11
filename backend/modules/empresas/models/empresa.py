@@ -5,43 +5,42 @@ import uuid
 from datetime import date
 
 from sqlalchemy import Boolean, Column, Date, ForeignKey, String, Text
-from sqlalchemy import Enum as SAEnum
 from sqlalchemy.dialects.postgresql import JSON, UUID
 from sqlalchemy.orm import relationship
 
 from core.database import Base
 
 
-class RegimeTributarioEnum(str, enum.Enum):
+class RegimeTributarioEnum(enum.StrEnum):
     SIMPLES_NACIONAL = "simples_nacional"
     LUCRO_PRESUMIDO = "lucro_presumido"
     LUCRO_REAL = "lucro_real"
     MEI = "mei"
 
 
-class AnexoSimplesEnum(str, enum.Enum):
-    ANEXO_I = "I"    # Comércio
+class AnexoSimplesEnum(enum.StrEnum):
+    ANEXO_I = "I"  # Comércio
     ANEXO_II = "II"  # Indústria
     ANEXO_III = "III"  # Serviços (vigilância)
     ANEXO_IV = "IV"  # Construção civil
-    ANEXO_V = "V"    # Serviços (outros)
+    ANEXO_V = "V"  # Serviços (outros)
 
 
-class EmpresaStatusEnum(str, enum.Enum):
+class EmpresaStatusEnum(enum.StrEnum):
     ATIVA = "ativa"
     EM_ABERTURA = "em_abertura"
     INATIVA = "inativa"
     EM_ENCERRAMENTO = "em_encerramento"
 
 
-class LiminarTipoEnum(str, enum.Enum):
+class LiminarTipoEnum(enum.StrEnum):
     PIS_COFINS_ZERO = "pis_cofins_zero"
     INSS_NAO_RETIDO = "inss_nao_retido"
     ISS_ISENTO = "iss_isento"
     OUTROS = "outros"
 
 
-class LiminarStatusEnum(str, enum.Enum):
+class LiminarStatusEnum(enum.StrEnum):
     A_SOLICITAR = "a_solicitar"
     AGUARDANDO = "aguardando"
     CONCEDIDA = "concedida"

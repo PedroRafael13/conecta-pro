@@ -2,7 +2,6 @@
 
 import logging
 from datetime import date
-from typing import List, Optional
 from uuid import UUID
 
 from sqlalchemy import and_, select
@@ -38,8 +37,8 @@ class EmpresaRepository:
     async def listar_empresas(
         self,
         condominio_id: UUID,
-        status: Optional[str] = None,
-    ) -> List[Empresa]:
+        status: str | None = None,
+    ) -> list[Empresa]:
         """Lista empresas do tenant."""
         conditions = [Empresa.condominio_id == condominio_id]
         if status:
@@ -58,7 +57,7 @@ class EmpresaRepository:
         self,
         empresa_id: UUID,
         condominio_id: UUID,
-    ) -> Optional[Empresa]:
+    ) -> Empresa | None:
         """Obtém empresa por ID."""
         stmt = (
             select(Empresa)
@@ -77,7 +76,7 @@ class EmpresaRepository:
         self,
         slug: str,
         condominio_id: UUID,
-    ) -> Optional[Empresa]:
+    ) -> Empresa | None:
         """Obtém empresa pelo slug."""
         stmt = (
             select(Empresa)
@@ -96,7 +95,7 @@ class EmpresaRepository:
         self,
         cnpj: str,
         condominio_id: UUID,
-    ) -> Optional[Empresa]:
+    ) -> Empresa | None:
         """Obtém empresa pelo CNPJ."""
         stmt = (
             select(Empresa)
@@ -116,7 +115,7 @@ class EmpresaRepository:
         empresa_id: UUID,
         dados: dict,
         condominio_id: UUID,
-    ) -> Optional[Empresa]:
+    ) -> Empresa | None:
         """Atualiza dados de uma empresa."""
         empresa = await self.obter_empresa(empresa_id, condominio_id)
         if not empresa:
@@ -153,25 +152,21 @@ class EmpresaRepository:
     async def listar_liminares(
         self,
         empresa_id: UUID,
-        status: Optional[str] = None,
-    ) -> List[Liminar]:
+        status: str | None = None,
+    ) -> list[Liminar]:
         """Lista liminares de uma empresa."""
         conditions = [Liminar.empresa_id == empresa_id]
         if status:
             conditions.append(Liminar.status == status)
 
-        stmt = (
-            select(Liminar)
-            .where(and_(*conditions))
-            .order_by(Liminar.created_at.desc())
-        )
+        stmt = select(Liminar).where(and_(*conditions)).order_by(Liminar.created_at.desc())
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
     async def obter_liminar(
         self,
         liminar_id: UUID,
-    ) -> Optional[Liminar]:
+    ) -> Liminar | None:
         """Obtém liminar por ID."""
         stmt = select(Liminar).where(Liminar.id == liminar_id)
         result = await self.session.execute(stmt)
@@ -181,7 +176,7 @@ class EmpresaRepository:
         self,
         liminar_id: UUID,
         dados: dict,
-    ) -> Optional[Liminar]:
+    ) -> Liminar | None:
         """Atualiza dados de uma liminar."""
         liminar = await self.obter_liminar(liminar_id)
         if not liminar:
@@ -199,15 +194,12 @@ class EmpresaRepository:
     async def liminares_ativas(
         self,
         empresa_id: UUID,
-    ) -> List[Liminar]:
+    ) -> list[Liminar]:
         """Retorna liminares ativas (concedidas) de uma empresa."""
-        stmt = (
-            select(Liminar)
-            .where(
-                and_(
-                    Liminar.empresa_id == empresa_id,
-                    Liminar.status == LiminarStatusEnum.CONCEDIDA.value,
-                )
+        stmt = select(Liminar).where(
+            and_(
+                Liminar.empresa_id == empresa_id,
+                Liminar.status == LiminarStatusEnum.CONCEDIDA.value,
             )
         )
         result = await self.session.execute(stmt)

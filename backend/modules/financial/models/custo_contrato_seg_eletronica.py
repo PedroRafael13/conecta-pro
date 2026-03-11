@@ -1,8 +1,9 @@
 """Modelo de custo mensal para contratos de segurança eletrônica."""
+
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Column, Date, DateTime, Integer, Numeric, String
+from sqlalchemy import Column, Date, DateTime, Integer, Numeric
 from sqlalchemy.dialects.postgresql import UUID
 
 from core.models import Base
@@ -23,16 +24,16 @@ class CustoContratoSegEletronica(Base):
 
     # Componentes de custo
     custo_monitoramento = Column(Numeric(12, 2), default=0)  # Central de monitoramento
-    custo_operadores = Column(Numeric(12, 2), default=0)     # Operadores de CFTV
-    custo_manutencao = Column(Numeric(12, 2), default=0)     # Manutenção preventiva/corretiva
+    custo_operadores = Column(Numeric(12, 2), default=0)  # Operadores de CFTV
+    custo_manutencao = Column(Numeric(12, 2), default=0)  # Manutenção preventiva/corretiva
     custo_conectividade = Column(Numeric(12, 2), default=0)  # Links, internet, VPN
-    custo_software = Column(Numeric(12, 2), default=0)       # Licenças de software/VMS
-    custo_depreciacao = Column(Numeric(12, 2), default=0)    # Depreciação de equipamentos
+    custo_software = Column(Numeric(12, 2), default=0)  # Licenças de software/VMS
+    custo_depreciacao = Column(Numeric(12, 2), default=0)  # Depreciação de equipamentos
     custo_overhead = Column(Numeric(12, 2), default=0)
 
     # Totais e indicadores
     custo_total = Column(Numeric(12, 2), default=0)
-    custo_por_camera = Column(Numeric(10, 4), nullable=True) # Custo por câmera/mês
+    custo_por_camera = Column(Numeric(10, 4), nullable=True)  # Custo por câmera/mês
     margem_contratual = Column(Numeric(12, 2), default=0)
 
     # Controle

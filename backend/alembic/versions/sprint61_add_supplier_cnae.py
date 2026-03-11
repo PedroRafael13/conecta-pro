@@ -7,7 +7,6 @@ Create Date: 2026-03-08
 """
 
 from alembic import op
-import sqlalchemy as sa
 
 revision = "sprint61_add_supplier_cnae"
 down_revision = "sprint60_fix_financial_schema"

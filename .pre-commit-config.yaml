@@ -43,4 +43,4 @@ repos:
     hooks:
       - id: detect-secrets
         args: ['--baseline', '.secrets.baseline']
-        exclude: (backend/venv|frontend/node_modules|\.test\.|\.spec\.)
+        exclude: (backend/venv|frontend/node_modules|\.test\.|\.spec\.|tsconfig\.tsbuildinfo)

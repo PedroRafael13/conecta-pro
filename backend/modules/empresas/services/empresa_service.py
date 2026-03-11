@@ -1,11 +1,11 @@
 """Service para o módulo de Empresas (Multi-CNPJ)."""
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 from uuid import UUID
 
 from fastapi import HTTPException, status
-from sqlalchemy import select, text
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.empresas.models.empresa import RegimeTributarioEnum
@@ -162,8 +162,8 @@ async def criar_empresa(
 async def listar_empresas(
     db: AsyncSession,
     condominio_id: UUID,
-    status_filtro: Optional[str] = None,
-) -> List[EmpresaListResponse]:
+    status_filtro: str | None = None,
+) -> list[EmpresaListResponse]:
     """Lista empresas do tenant."""
     condominio_id = await _resolve_condominio_id(db, condominio_id)
     repo = EmpresaRepository(db)
@@ -233,8 +233,7 @@ async def sugerir_empresa_para_servico(
     elif tipo_servico in _SERVICOS_ELETRONICA:
         slug_alvo = "conecta_eletronica"
         motivo = (
-            f"Serviço '{tipo_servico}' é tecnológico/eletrônico — indicado para a "
-            "Conecta Mais Eletrônica (Lucro Real)."
+            f"Serviço '{tipo_servico}' é tecnológico/eletrônico — indicado para a Conecta Mais Eletrônica (Lucro Real)."
         )
     else:
         # Serviço desconhecido: retorna empresa principal
@@ -361,7 +360,7 @@ async def listar_liminares(
     db: AsyncSession,
     empresa_id: UUID,
     condominio_id: UUID,
-) -> List[LiminarResponse]:
+) -> list[LiminarResponse]:
     """Lista liminares de uma empresa."""
     condominio_id = await _resolve_condominio_id(db, condominio_id)
     repo = EmpresaRepository(db)
@@ -372,7 +371,7 @@ async def listar_liminares(
             detail="Empresa não encontrada",
         )
     liminares = await repo.listar_liminares(empresa_id)
-    return [LiminarResponse.model_validate(l) for l in liminares]
+    return [LiminarResponse.model_validate(lim) for lim in liminares]
 
 
 async def atualizar_liminar(
@@ -414,7 +413,7 @@ async def verificar_liminares_ativas(
     db: AsyncSession,
     empresa_id: UUID,
     condominio_id: UUID,
-) -> List[LiminarResponse]:
+) -> list[LiminarResponse]:
     """Retorna liminares ativas (concedidas) de uma empresa."""
     condominio_id = await _resolve_condominio_id(db, condominio_id)
     repo = EmpresaRepository(db)
@@ -425,15 +424,15 @@ async def verificar_liminares_ativas(
             detail="Empresa não encontrada",
         )
     liminares = await repo.liminares_ativas(empresa_id)
-    return [LiminarResponse.model_validate(l) for l in liminares]
+    return [LiminarResponse.model_validate(lim) for lim in liminares]
 
 
 async def aplicar_liminares_calculo(
     db: AsyncSession,
     empresa_id: UUID,
-    calculo: Dict[str, Any],
+    calculo: dict[str, Any],
     condominio_id: UUID,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Aplica efeitos das liminares ativas a um cálculo fiscal."""
     condominio_id = await _resolve_condominio_id(db, condominio_id)
     repo = EmpresaRepository(db)

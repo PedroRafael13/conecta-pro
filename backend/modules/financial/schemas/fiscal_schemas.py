@@ -4,7 +4,7 @@
 from datetime import date, datetime
 from decimal import Decimal
 from enum import StrEnum
-from typing import Any, List
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -1360,33 +1360,38 @@ class FiscalDashboard(BaseModel):
 
 # ── Multi-Regime Tax Calculator Schemas ──────────────────────────────────────
 
+
 class CalculoSimplesRequest(BaseModel):
     """Calcular DAS do Simples Nacional"""
+
     receita_mes: float = Field(..., description="Receita bruta do mês em R$", example=50000.00)
     rbt12: float = Field(..., description="Receita bruta acumulada 12 meses em R$", example=500000.00)
-    liminares: List[str] = Field(default_factory=list, description="Liminares ativas: pis_cofins_zero, inss_nao_retido")
-    
+    liminares: list[str] = Field(default_factory=list, description="Liminares ativas: pis_cofins_zero, inss_nao_retido")
+
 
 class CalculoLucroRealRequest(BaseModel):
     """Calcular impostos no Lucro Real"""
+
     receita_mes: float = Field(..., description="Receita bruta do mês em R$", example=100000.00)
     receita_trimestre: float = Field(..., description="Receita bruta do trimestre em R$", example=300000.00)
     custos_dedutiveis_mes: float = Field(default=0.0, description="Créditos PIS/COFINS do mês")
-    
+
 
 class ComparativoRegimesRequest(BaseModel):
     """Comparar Simples Nacional vs Lucro Real"""
+
     receita_anual: float = Field(..., description="Receita bruta anual em R$", example=1200000.00)
     custos_dedutiveis_anual: float = Field(default=0.0)
-    liminares: List[str] = Field(default_factory=list)
-    
+    liminares: list[str] = Field(default_factory=list)
+
 
 class RetencoesNFSeRequest(BaseModel):
     """Calcular retenções na fonte para NFS-e"""
+
     valor_servico: float = Field(..., description="Valor da nota de serviço")
     regime_empresa: str = Field(default="simples_nacional", description="simples_nacional ou lucro_real")
-    liminares: List[str] = Field(default_factory=list)
-    
+    liminares: list[str] = Field(default_factory=list)
+
 
 class VerificacaoLimiteSimplesRequest(BaseModel):
     rbt12: float = Field(..., description="Receita bruta 12 meses")

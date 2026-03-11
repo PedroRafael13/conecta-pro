@@ -6,9 +6,7 @@ Create Date: 2026-03-09
 
 """
 
-import sqlalchemy as sa
 from alembic import op
-from sqlalchemy.dialects import postgresql
 
 revision = "sprint66_add_contract_costs"
 down_revision = "sprint65_fix_charts_of_accounts"
@@ -96,8 +94,7 @@ def upgrade() -> None:
 
     # Indexes (IF NOT EXISTS to be idempotent)
     op.execute(
-        "CREATE INDEX IF NOT EXISTS ix_financial_contract_costs_contract_id "
-        "ON financial_contract_costs (contract_id)"
+        "CREATE INDEX IF NOT EXISTS ix_financial_contract_costs_contract_id ON financial_contract_costs (contract_id)"
     )
     op.execute(
         "CREATE INDEX IF NOT EXISTS ix_financial_contract_costs_reference_month "

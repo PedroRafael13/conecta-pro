@@ -48,7 +48,7 @@ interface TipoCusto {
   custo_total: number;
   margem_pct: number;
   breakdown: Record<string, number>;
-  fonte: 'real' | 'benchmark';
+  fonte: 'real' | 'benchmark' | 'sem_dados';
   unidade?: string;
   aviso?: string;
   registros?: Record<string, unknown>[];
@@ -61,7 +61,7 @@ interface ResumoTipo {
   custo_total: number;
   margem_contratual: number;
   margem_pct: number;
-  fonte: 'real' | 'benchmark';
+  fonte: 'real' | 'benchmark' | 'sem_dados';
 }
 
 interface Summary {
@@ -261,23 +261,8 @@ export default function CustosPage() {
       });
       setSummary(res.data);
     } catch (err: any) {
-      setErroSummary('Erro ao carregar resumo. Exibindo benchmarks.');
-      // Fallback to demo data
-      setSummary({
-        mes: `${mes}-01`,
-        resumo_por_tipo: TIPOS.map(t => ({
-          tipo: t.id,
-          label: t.label,
-          cor: t.cor,
-          custo_total: 0,
-          margem_contratual: 0,
-          margem_pct: t.id === 'portaria_remota' ? 40 : t.id === 'seguranca_eletronica' ? 35 : t.id === 'jardinagem' ? 25 : t.id === 'portaria' ? 22 : 18,
-          fonte: 'benchmark',
-        })),
-        total_custo: 0,
-        total_margem: 0,
-        analise_ai: null,
-      });
+      setErroSummary('Erro ao carregar resumo de custos.');
+      setSummary(null);
     } finally {
       setLoadingSummary(false);
     }
@@ -388,6 +373,9 @@ export default function CustosPage() {
                 {resumo?.fonte === 'benchmark' && (
                   <span className="text-xs text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-full">Est.</span>
                 )}
+                {resumo?.fonte === 'sem_dados' && (
+                  <span className="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">—</span>
+                )}
               </div>
               <p className="text-xs font-semibold text-gray-700 leading-tight">{tipo.label}</p>
               <p className="text-lg font-bold mt-1" style={{ color: tipo.cor }}>
@@ -454,6 +442,12 @@ export default function CustosPage() {
           )}
 
           {/* Benchmark badge */}
+          {detalhe?.fonte === 'sem_dados' && (
+            <div className="mt-4 flex items-start gap-2 text-xs text-gray-600 bg-gray-50 rounded-lg p-3">
+              <Info size={14} className="mt-0.5 flex-shrink-0" />
+              <span>{detalhe.aviso ?? 'Sem custos registrados. Use "Registrar Custo" para lançar dados reais.'}</span>
+            </div>
+          )}
           {detalhe?.fonte === 'benchmark' && (
             <div className="mt-4 flex items-start gap-2 text-xs text-amber-700 bg-amber-50 rounded-lg p-3">
               <AlertTriangle size={14} className="mt-0.5 flex-shrink-0" />
@@ -519,11 +513,7 @@ export default function CustosPage() {
               </tr>
             </thead>
             <tbody>
-              {(summary?.resumo_por_tipo ?? TIPOS.map(t => ({
-                tipo: t.id, label: t.label, cor: t.cor,
-                custo_total: 0, margem_contratual: 0,
-                margem_pct: 0, fonte: 'benchmark' as const,
-              }))).map((r, idx) => (
+              {(summary?.resumo_por_tipo ?? []).map((r, idx) => (
                 <tr
                   key={r.tipo}
                   onClick={() => setTipoAtivo(r.tipo)}
@@ -565,15 +555,28 @@ export default function CustosPage() {
                       className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
                         r.fonte === 'real'
                           ? 'bg-green-100 text-green-700'
+                          : r.fonte === 'sem_dados'
+                          ? 'bg-gray-100 text-gray-500'
                           : 'bg-amber-100 text-amber-700'
                       }`}
                     >
-                      {r.fonte === 'real' ? 'Real' : 'Benchmark'}
+                      {r.fonte === 'real' ? 'Real' : r.fonte === 'sem_dados' ? 'Sem dados' : 'Benchmark'}
                     </span>
                   </td>
                 </tr>
               ))}
             </tbody>
+            {(!summary || summary.resumo_por_tipo.length === 0) && (
+              <tbody>
+                <tr>
+                  <td colSpan={5} className="px-6 py-12 text-center text-gray-400">
+                    <Info size={24} className="mx-auto mb-2" />
+                    <p className="text-sm font-medium">Nenhum custo registrado</p>
+                    <p className="text-xs mt-1">Use &quot;Registrar Custo&quot; para lançar dados reais por tipo de serviço.</p>
+                  </td>
+                </tr>
+              </tbody>
+            )}
             {summary && (
               <tfoot>
                 <tr className="border-t-2 border-gray-200 bg-gray-50">

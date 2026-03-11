@@ -1,15 +1,12 @@
 """FinancialAdvisorAgent — Consultor financeiro estrategico com dados reais."""
 
 from datetime import date, datetime, timedelta
-from typing import Any
 
 from sqlalchemy import and_, func, select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.financial.agents.base_agent import BaseAgent
 from modules.financial.models.payable_account import PayableAccount, PayableStatus
 from modules.financial.models.receivable_account import ReceivableAccount, ReceivableStatus
-
 
 # Respostas para perguntas frequentes (keyword -> resposta base)
 _FAQ: dict[str, str] = {
@@ -80,9 +77,7 @@ class FinancialAdvisorAgent(BaseAgent):
             if not resposta_base:
                 resposta_base = self._resposta_generica(pergunta, health)
 
-            resposta_contextualizada = self._contextualizar_resposta(
-                resposta_base, topico, health
-            )
+            resposta_contextualizada = self._contextualizar_resposta(resposta_base, topico, health)
 
             return {
                 "pergunta": pergunta,
@@ -94,9 +89,7 @@ class FinancialAdvisorAgent(BaseAgent):
                     "score_saude": health.get("score", 0),
                     "tendencia": health.get("tendencia_receita", "estavel"),
                 },
-                "recomendacoes_relacionadas": [
-                    r for r in recomendacoes if r.get("categoria") == topico
-                ][:3],
+                "recomendacoes_relacionadas": [r for r in recomendacoes if r.get("categoria") == topico][:3],
                 "fonte": "dados_reais_sistema",
             }
 
@@ -125,9 +118,7 @@ class FinancialAdvisorAgent(BaseAgent):
 
         try:
             # --- Receitas ---
-            recv_30_q = select(
-                func.coalesce(func.sum(ReceivableAccount.net_value), 0)
-            ).where(
+            recv_30_q = select(func.coalesce(func.sum(ReceivableAccount.net_value), 0)).where(
                 and_(
                     ReceivableAccount.payment_date >= past_30,
                     ReceivableAccount.payment_date <= today,
@@ -136,9 +127,7 @@ class FinancialAdvisorAgent(BaseAgent):
             )
             recv_30 = float((await self.session.execute(recv_30_q)).scalar_one() or 0)
 
-            recv_prev_q = select(
-                func.coalesce(func.sum(ReceivableAccount.net_value), 0)
-            ).where(
+            recv_prev_q = select(func.coalesce(func.sum(ReceivableAccount.net_value), 0)).where(
                 and_(
                     ReceivableAccount.payment_date >= past_60,
                     ReceivableAccount.payment_date < past_30,
@@ -148,9 +137,7 @@ class FinancialAdvisorAgent(BaseAgent):
             recv_prev = float((await self.session.execute(recv_prev_q)).scalar_one() or 0)
 
             # --- Despesas ---
-            pay_30_q = select(
-                func.coalesce(func.sum(PayableAccount.net_value), 0)
-            ).where(
+            pay_30_q = select(func.coalesce(func.sum(PayableAccount.net_value), 0)).where(
                 and_(
                     PayableAccount.payment_date >= past_30,
                     PayableAccount.payment_date <= today,
@@ -160,9 +147,7 @@ class FinancialAdvisorAgent(BaseAgent):
             pay_30 = float((await self.session.execute(pay_30_q)).scalar_one() or 0)
 
             # --- Inadimplencia ---
-            total_vencimento_q = select(
-                func.coalesce(func.sum(ReceivableAccount.net_value), 0)
-            ).where(
+            total_vencimento_q = select(func.coalesce(func.sum(ReceivableAccount.net_value), 0)).where(
                 and_(
                     ReceivableAccount.due_date >= past_90,
                     ReceivableAccount.due_date <= today,
@@ -171,46 +156,46 @@ class FinancialAdvisorAgent(BaseAgent):
             )
             total_vencido = float((await self.session.execute(total_vencimento_q)).scalar_one() or 0)
 
-            em_atraso_q = select(
-                func.coalesce(func.sum(ReceivableAccount.net_value), 0)
-            ).where(
+            em_atraso_q = select(func.coalesce(func.sum(ReceivableAccount.net_value), 0)).where(
                 and_(
                     ReceivableAccount.due_date < today,
-                    ReceivableAccount.status.notin_([
-                        ReceivableStatus.PAGA.value,
-                        ReceivableStatus.CANCELADA.value,
-                        ReceivableStatus.BAIXADA.value,
-                    ]),
+                    ReceivableAccount.status.notin_(
+                        [
+                            ReceivableStatus.PAGA.value,
+                            ReceivableStatus.CANCELADA.value,
+                            ReceivableStatus.BAIXADA.value,
+                        ]
+                    ),
                 )
             )
             em_atraso = float((await self.session.execute(em_atraso_q)).scalar_one() or 0)
 
             # Contagem de inadimplentes
-            cnt_inadimplentes_q = select(
-                func.count(ReceivableAccount.id)
-            ).where(
+            cnt_inadimplentes_q = select(func.count(ReceivableAccount.id)).where(
                 and_(
                     ReceivableAccount.due_date < today,
-                    ReceivableAccount.status.notin_([
-                        ReceivableStatus.PAGA.value,
-                        ReceivableStatus.CANCELADA.value,
-                        ReceivableStatus.BAIXADA.value,
-                    ]),
+                    ReceivableAccount.status.notin_(
+                        [
+                            ReceivableStatus.PAGA.value,
+                            ReceivableStatus.CANCELADA.value,
+                            ReceivableStatus.BAIXADA.value,
+                        ]
+                    ),
                 )
             )
             cnt_inadimplentes = int((await self.session.execute(cnt_inadimplentes_q)).scalar_one() or 0)
 
             # --- Proximos vencimentos (7 dias) ---
-            proximos_7d_q = select(
-                func.coalesce(func.sum(PayableAccount.net_value), 0)
-            ).where(
+            proximos_7d_q = select(func.coalesce(func.sum(PayableAccount.net_value), 0)).where(
                 and_(
                     PayableAccount.due_date >= today,
                     PayableAccount.due_date <= today + timedelta(days=7),
-                    PayableAccount.status.notin_([
-                        PayableStatus.PAGA.value,
-                        PayableStatus.CANCELADA.value,
-                    ]),
+                    PayableAccount.status.notin_(
+                        [
+                            PayableStatus.PAGA.value,
+                            PayableStatus.CANCELADA.value,
+                        ]
+                    ),
                 )
             )
             vencimentos_7d = float((await self.session.execute(proximos_7d_q)).scalar_one() or 0)
@@ -294,109 +279,124 @@ class FinancialAdvisorAgent(BaseAgent):
             em_atraso = indicadores.get("total_em_atraso", 0)
             vencimentos_7d = indicadores.get("vencimentos_proximos_7d", 0)
             recv_30 = indicadores.get("receita_30d", 0)
+            pay_30 = indicadores.get("despesas_30d", 0)
 
             # Recomendacao 1: Inadimplencia alta
             if taxa_inad > 5:
-                recomendacoes.append({
-                    "prioridade": 1,
-                    "categoria": "inadimplencia",
-                    "titulo": "Acionar regua de cobranca imediatamente",
-                    "descricao": (
-                        f"Taxa de inadimplencia em {taxa_inad:.1f}% (acima do limite critico de 5%). "
-                        f"Total de R$ {em_atraso:,.2f} em atraso. "
-                        "Ative a regua de cobranca automatica e priorize os maiores devedores."
-                    ),
-                    "impacto_estimado": round(em_atraso * 0.40, 2),
-                    "prazo_sugerido": "Esta semana",
-                    "acao": "Acessar modulo Cobranças > Inadimplentes",
-                })
+                recomendacoes.append(
+                    {
+                        "prioridade": 1,
+                        "categoria": "inadimplencia",
+                        "titulo": "Acionar regua de cobranca imediatamente",
+                        "descricao": (
+                            f"Taxa de inadimplencia em {taxa_inad:.1f}% (acima do limite critico de 5%). "
+                            f"Total de R$ {em_atraso:,.2f} em atraso. "
+                            "Ative a regua de cobranca automatica e priorize os maiores devedores."
+                        ),
+                        "impacto_estimado": round(em_atraso * 0.40, 2),
+                        "prazo_sugerido": "Esta semana",
+                        "acao": "Acessar modulo Cobranças > Inadimplentes",
+                    }
+                )
             elif taxa_inad > 2:
-                recomendacoes.append({
-                    "prioridade": 2,
-                    "categoria": "inadimplencia",
-                    "titulo": "Monitorar inadimplencia crescente",
-                    "descricao": (
-                        f"Taxa de {taxa_inad:.1f}% esta acima do ideal (<2%). "
-                        "Envie lembretes preventivos antes do vencimento."
-                    ),
-                    "impacto_estimado": round(em_atraso * 0.20, 2),
-                    "prazo_sugerido": "Proximos 15 dias",
-                    "acao": "Configurar lembretes automaticos no modulo Cobranças",
-                })
+                recomendacoes.append(
+                    {
+                        "prioridade": 2,
+                        "categoria": "inadimplencia",
+                        "titulo": "Monitorar inadimplencia crescente",
+                        "descricao": (
+                            f"Taxa de {taxa_inad:.1f}% esta acima do ideal (<2%). "
+                            "Envie lembretes preventivos antes do vencimento."
+                        ),
+                        "impacto_estimado": round(em_atraso * 0.20, 2),
+                        "prazo_sugerido": "Proximos 15 dias",
+                        "acao": "Configurar lembretes automaticos no modulo Cobranças",
+                    }
+                )
 
             # Recomendacao 2: Margem baixa
             if margem < 5:
-                recomendacoes.append({
-                    "prioridade": 1,
-                    "categoria": "margem",
-                    "titulo": "Revisar precificacao — margem critica",
-                    "descricao": (
-                        f"Margem operacional de {margem:.1f}% esta criticamente baixa. "
-                        "Revise contratos com menor margem e renegocie fornecedores."
-                    ),
-                    "impacto_estimado": round(recv_30 * 0.10, 2),
-                    "prazo_sugerido": "Este mes",
-                    "acao": "Usar o Otimizador de Precos para recalcular contratos",
-                })
+                recomendacoes.append(
+                    {
+                        "prioridade": 1,
+                        "categoria": "margem",
+                        "titulo": "Revisar precificacao — margem critica",
+                        "descricao": (
+                            f"Margem operacional de {margem:.1f}% esta criticamente baixa. "
+                            "Revise contratos com menor margem e renegocie fornecedores."
+                        ),
+                        "impacto_estimado": round(recv_30 * 0.10, 2),
+                        "prazo_sugerido": "Este mes",
+                        "acao": "Usar o Otimizador de Precos para recalcular contratos",
+                    }
+                )
             elif margem < 10:
-                recomendacoes.append({
-                    "prioridade": 2,
-                    "categoria": "margem",
-                    "titulo": "Aumentar margem operacional",
-                    "descricao": (
-                        f"Margem de {margem:.1f}% esta abaixo do recomendado (15-25%). "
-                        "Identifique contratos deficitarios e aplique reajuste."
-                    ),
-                    "impacto_estimado": round(recv_30 * 0.05, 2),
-                    "prazo_sugerido": "Proximos 30 dias",
-                    "acao": "Revisar precificacao dos contratos mais antigos",
-                })
+                recomendacoes.append(
+                    {
+                        "prioridade": 2,
+                        "categoria": "margem",
+                        "titulo": "Aumentar margem operacional",
+                        "descricao": (
+                            f"Margem de {margem:.1f}% esta abaixo do recomendado (15-25%). "
+                            "Identifique contratos deficitarios e aplique reajuste."
+                        ),
+                        "impacto_estimado": round(recv_30 * 0.05, 2),
+                        "prazo_sugerido": "Proximos 30 dias",
+                        "acao": "Revisar precificacao dos contratos mais antigos",
+                    }
+                )
 
             # Recomendacao 3: Tendencia de queda
             if tendencia == "queda":
-                recomendacoes.append({
-                    "prioridade": 2,
-                    "categoria": "receita",
-                    "titulo": "Tendencia de queda na receita",
-                    "descricao": (
-                        f"Receita caiu {abs(indicadores.get('tendencia_pct', 0)):.1f}% "
-                        "em relacao ao periodo anterior. "
-                        "Verifique cancelamentos de contratos e oportunidades de expansao."
-                    ),
-                    "impacto_estimado": 0.0,
-                    "prazo_sugerido": "Imediato",
-                    "acao": "Analisar historico de contratos e prospectar novos clientes",
-                })
+                recomendacoes.append(
+                    {
+                        "prioridade": 2,
+                        "categoria": "receita",
+                        "titulo": "Tendencia de queda na receita",
+                        "descricao": (
+                            f"Receita caiu {abs(indicadores.get('tendencia_pct', 0)):.1f}% "
+                            "em relacao ao periodo anterior. "
+                            "Verifique cancelamentos de contratos e oportunidades de expansao."
+                        ),
+                        "impacto_estimado": 0.0,
+                        "prazo_sugerido": "Imediato",
+                        "acao": "Analisar historico de contratos e prospectar novos clientes",
+                    }
+                )
 
             # Recomendacao 4: Vencimentos proximos
             if vencimentos_7d > recv_30 * 0.5 and recv_30 > 0:
-                recomendacoes.append({
-                    "prioridade": 1,
-                    "categoria": "fluxo",
-                    "titulo": "Concentracao de pagamentos nos proximos 7 dias",
-                    "descricao": (
-                        f"R$ {vencimentos_7d:,.2f} em pagamentos vencem nos proximos 7 dias, "
-                        f"representando {vencimentos_7d/recv_30*100:.0f}% da receita mensal. "
-                        "Garanta liquidez suficiente no caixa."
-                    ),
-                    "impacto_estimado": vencimentos_7d,
-                    "prazo_sugerido": "Esta semana",
-                    "acao": "Verificar saldo bancario e antecipar recebimentos se necessario",
-                })
+                recomendacoes.append(
+                    {
+                        "prioridade": 1,
+                        "categoria": "fluxo",
+                        "titulo": "Concentracao de pagamentos nos proximos 7 dias",
+                        "descricao": (
+                            f"R$ {vencimentos_7d:,.2f} em pagamentos vencem nos proximos 7 dias, "
+                            f"representando {vencimentos_7d / recv_30 * 100:.0f}% da receita mensal. "
+                            "Garanta liquidez suficiente no caixa."
+                        ),
+                        "impacto_estimado": vencimentos_7d,
+                        "prazo_sugerido": "Esta semana",
+                        "acao": "Verificar saldo bancario e antecipar recebimentos se necessario",
+                    }
+                )
 
             # Recomendacao 5: Boas praticas (sempre presente)
-            recomendacoes.append({
-                "prioridade": 5,
-                "categoria": "provisao",
-                "titulo": "Manter provisoes trabalhistas em dia",
-                "descricao": (
-                    "Provisione mensalmente 27,44% da folha bruta para 13o, ferias e FGTS. "
-                    "Mantenha reserva minima de 2 meses de despesas fixas."
-                ),
-                "impacto_estimado": round(pay_30 * 0.27, 2),
-                "prazo_sugerido": "Todo mes",
-                "acao": "Criar conta de despesa mensal para provisoes trabalhistas",
-            })
+            recomendacoes.append(
+                {
+                    "prioridade": 5,
+                    "categoria": "provisao",
+                    "titulo": "Manter provisoes trabalhistas em dia",
+                    "descricao": (
+                        "Provisione mensalmente 27,44% da folha bruta para 13o, ferias e FGTS. "
+                        "Mantenha reserva minima de 2 meses de despesas fixas."
+                    ),
+                    "impacto_estimado": round(pay_30 * 0.27, 2),
+                    "prazo_sugerido": "Todo mes",
+                    "acao": "Criar conta de despesa mensal para provisoes trabalhistas",
+                }
+            )
 
             # Ordena por prioridade
             recomendacoes.sort(key=lambda x: x["prioridade"])
@@ -427,8 +427,8 @@ class FinancialAdvisorAgent(BaseAgent):
             dict com sumário executivo, KPIs, destaques, pontos de atenção,
             comparativo com período anterior, projeções e recomendações.
         """
-        from calendar import monthrange
         import calendar
+        from calendar import monthrange
 
         today = date.today()
 
@@ -458,16 +458,25 @@ class FinancialAdvisorAgent(BaseAgent):
 
         nome_mes = calendar.month_name[mes]
         nome_mes_pt = {
-            "January": "Janeiro", "February": "Fevereiro", "March": "Março",
-            "April": "Abril", "May": "Maio", "June": "Junho",
-            "July": "Julho", "August": "Agosto", "September": "Setembro",
-            "October": "Outubro", "November": "Novembro", "December": "Dezembro"
+            "January": "Janeiro",
+            "February": "Fevereiro",
+            "March": "Março",
+            "April": "Abril",
+            "May": "Maio",
+            "June": "Junho",
+            "July": "Julho",
+            "August": "Agosto",
+            "September": "Setembro",
+            "October": "Outubro",
+            "November": "Novembro",
+            "December": "Dezembro",
         }.get(nome_mes, nome_mes)
 
         try:
             from sqlalchemy import and_, func, select
-            from modules.financial.models.receivable_account import ReceivableAccount, ReceivableStatus
+
             from modules.financial.models.payable_account import PayableAccount, PayableStatus
+            from modules.financial.models.receivable_account import ReceivableAccount, ReceivableStatus
 
             # === KPIs DO PERÍODO ATUAL ===
             # Receita recebida
@@ -506,11 +515,13 @@ class FinancialAdvisorAgent(BaseAgent):
                     ReceivableAccount.due_date >= inicio_atual,
                     ReceivableAccount.due_date <= fim_atual,
                     ReceivableAccount.due_date < today,
-                    ReceivableAccount.status.notin_([
-                        ReceivableStatus.PAGA.value,
-                        ReceivableStatus.CANCELADA.value,
-                        ReceivableStatus.BAIXADA.value,
-                    ]),
+                    ReceivableAccount.status.notin_(
+                        [
+                            ReceivableStatus.PAGA.value,
+                            ReceivableStatus.CANCELADA.value,
+                            ReceivableStatus.BAIXADA.value,
+                        ]
+                    ),
                 )
             )
             inadimplencia_valor = float((await self.session.execute(inad_q)).scalar_one() or 0)
@@ -521,11 +532,13 @@ class FinancialAdvisorAgent(BaseAgent):
                 and_(
                     ReceivableAccount.due_date >= inicio_atual,
                     ReceivableAccount.due_date < today,
-                    ReceivableAccount.status.notin_([
-                        ReceivableStatus.PAGA.value,
-                        ReceivableStatus.CANCELADA.value,
-                        ReceivableStatus.BAIXADA.value,
-                    ]),
+                    ReceivableAccount.status.notin_(
+                        [
+                            ReceivableStatus.PAGA.value,
+                            ReceivableStatus.CANCELADA.value,
+                            ReceivableStatus.BAIXADA.value,
+                        ]
+                    ),
                 )
             )
             qtd_inadimplentes = int((await self.session.execute(cnt_inad_q)).scalar_one() or 0)
@@ -567,82 +580,102 @@ class FinancialAdvisorAgent(BaseAgent):
             # === DESTAQUES (positivos) ===
             destaques = []
             if var_receita > 5:
-                destaques.append({
-                    "icone": "📈",
-                    "titulo": f"Crescimento de receita: +{var_receita:.1f}%",
-                    "descricao": f"Receita aumentou R$ {receita_atual - receita_anterior:,.2f} em relação ao mês anterior.",
-                })
+                destaques.append(
+                    {
+                        "icone": "📈",
+                        "titulo": f"Crescimento de receita: +{var_receita:.1f}%",
+                        "descricao": f"Receita aumentou R$ {receita_atual - receita_anterior:,.2f} em relação ao mês anterior.",
+                    }
+                )
             if margem > 15:
-                destaques.append({
-                    "icone": "✅",
-                    "titulo": f"Margem operacional saudável: {margem:.1f}%",
-                    "descricao": "Operação manteve boa rentabilidade no período.",
-                })
+                destaques.append(
+                    {
+                        "icone": "✅",
+                        "titulo": f"Margem operacional saudável: {margem:.1f}%",
+                        "descricao": "Operação manteve boa rentabilidade no período.",
+                    }
+                )
             if taxa_inadimplencia < 2 and receita_prevista > 0:
-                destaques.append({
-                    "icone": "💚",
-                    "titulo": f"Inadimplência controlada: {taxa_inadimplencia:.1f}%",
-                    "descricao": "Taxa abaixo do benchmark da indústria (<2%).",
-                })
+                destaques.append(
+                    {
+                        "icone": "💚",
+                        "titulo": f"Inadimplência controlada: {taxa_inadimplencia:.1f}%",
+                        "descricao": "Taxa abaixo do benchmark da indústria (<2%).",
+                    }
+                )
             if saldo_liquido > 0:
-                destaques.append({
-                    "icone": "💰",
-                    "titulo": f"Resultado positivo: R$ {saldo_liquido:,.2f}",
-                    "descricao": "Empresa gerou caixa no período.",
-                })
+                destaques.append(
+                    {
+                        "icone": "💰",
+                        "titulo": f"Resultado positivo: R$ {saldo_liquido:,.2f}",
+                        "descricao": "Empresa gerou caixa no período.",
+                    }
+                )
 
             # === PONTOS DE ATENÇÃO ===
             pontos_atencao = []
             if taxa_inadimplencia > 5:
-                pontos_atencao.append({
-                    "icone": "🚨",
-                    "nivel": "critico",
-                    "titulo": f"Inadimplência em {taxa_inadimplencia:.1f}%",
-                    "descricao": f"{qtd_inadimplentes} cliente(s) em atraso totalizando R$ {inadimplencia_valor:,.2f}.",
-                    "acao": "Acionar régua de cobrança imediatamente",
-                })
+                pontos_atencao.append(
+                    {
+                        "icone": "🚨",
+                        "nivel": "critico",
+                        "titulo": f"Inadimplência em {taxa_inadimplencia:.1f}%",
+                        "descricao": f"{qtd_inadimplentes} cliente(s) em atraso totalizando R$ {inadimplencia_valor:,.2f}.",
+                        "acao": "Acionar régua de cobrança imediatamente",
+                    }
+                )
             elif taxa_inadimplencia > 2:
-                pontos_atencao.append({
-                    "icone": "⚠️",
-                    "nivel": "alerta",
-                    "titulo": f"Inadimplência acima do ideal: {taxa_inadimplencia:.1f}%",
-                    "descricao": f"R$ {inadimplencia_valor:,.2f} em aberto.",
-                    "acao": "Enviar lembretes e ativar cobrança preventiva",
-                })
+                pontos_atencao.append(
+                    {
+                        "icone": "⚠️",
+                        "nivel": "alerta",
+                        "titulo": f"Inadimplência acima do ideal: {taxa_inadimplencia:.1f}%",
+                        "descricao": f"R$ {inadimplencia_valor:,.2f} em aberto.",
+                        "acao": "Enviar lembretes e ativar cobrança preventiva",
+                    }
+                )
             if margem < 5 and receita_atual > 0:
-                pontos_atencao.append({
-                    "icone": "📉",
-                    "nivel": "critico",
-                    "titulo": f"Margem crítica: {margem:.1f}%",
-                    "descricao": "Receitas e despesas muito próximas. Risco de prejuízo.",
-                    "acao": "Revisar contratos e cortar custos desnecessários",
-                })
+                pontos_atencao.append(
+                    {
+                        "icone": "📉",
+                        "nivel": "critico",
+                        "titulo": f"Margem crítica: {margem:.1f}%",
+                        "descricao": "Receitas e despesas muito próximas. Risco de prejuízo.",
+                        "acao": "Revisar contratos e cortar custos desnecessários",
+                    }
+                )
             elif margem < 10 and receita_atual > 0:
-                pontos_atencao.append({
-                    "icone": "📊",
-                    "nivel": "alerta",
-                    "titulo": f"Margem abaixo do recomendado: {margem:.1f}%",
-                    "descricao": "Meta: acima de 15% para empresas de segurança.",
-                    "acao": "Revisar precificação dos contratos mais antigos",
-                })
+                pontos_atencao.append(
+                    {
+                        "icone": "📊",
+                        "nivel": "alerta",
+                        "titulo": f"Margem abaixo do recomendado: {margem:.1f}%",
+                        "descricao": "Meta: acima de 15% para empresas de segurança.",
+                        "acao": "Revisar precificação dos contratos mais antigos",
+                    }
+                )
             if var_receita < -5:
-                pontos_atencao.append({
-                    "icone": "⬇️",
-                    "nivel": "alerta",
-                    "titulo": f"Queda de receita: {var_receita:.1f}%",
-                    "descricao": f"Receita reduziu R$ {abs(receita_atual - receita_anterior):,.2f} vs. período anterior.",
-                    "acao": "Investigar cancelamentos e prospectar novos contratos",
-                })
+                pontos_atencao.append(
+                    {
+                        "icone": "⬇️",
+                        "nivel": "alerta",
+                        "titulo": f"Queda de receita: {var_receita:.1f}%",
+                        "descricao": f"Receita reduziu R$ {abs(receita_atual - receita_anterior):,.2f} vs. período anterior.",
+                        "acao": "Investigar cancelamentos e prospectar novos contratos",
+                    }
+                )
 
             # Se não há pontos de atenção críticos
             if not pontos_atencao:
-                pontos_atencao.append({
-                    "icone": "✅",
-                    "nivel": "ok",
-                    "titulo": "Nenhuma irregularidade crítica identificada",
-                    "descricao": "Todos os indicadores dentro dos parâmetros aceitáveis.",
-                    "acao": "Manter monitoramento contínuo",
-                })
+                pontos_atencao.append(
+                    {
+                        "icone": "✅",
+                        "nivel": "ok",
+                        "titulo": "Nenhuma irregularidade crítica identificada",
+                        "descricao": "Todos os indicadores dentro dos parâmetros aceitáveis.",
+                        "acao": "Manter monitoramento contínuo",
+                    }
+                )
 
             # === SUMÁRIO EXECUTIVO ===
             if score >= 80:
@@ -819,14 +852,10 @@ class FinancialAdvisorAgent(BaseAgent):
         if tendencia == "crescimento":
             partes.append(f"A receita cresceu {tendencia_pct:.1f}% em relacao ao periodo anterior.")
         elif tendencia == "queda":
-            partes.append(
-                f"Atencao: a receita caiu {abs(tendencia_pct):.1f}% em relacao ao periodo anterior."
-            )
+            partes.append(f"Atencao: a receita caiu {abs(tendencia_pct):.1f}% em relacao ao periodo anterior.")
 
         if taxa_inad > 5:
-            partes.append(
-                f"A taxa de inadimplencia de {taxa_inad:.1f}% esta acima do limite recomendado."
-            )
+            partes.append(f"A taxa de inadimplencia de {taxa_inad:.1f}% esta acima do limite recomendado.")
         elif taxa_inad <= 2:
             partes.append(f"A taxa de inadimplencia de {taxa_inad:.1f}% esta dentro do ideal.")
 
@@ -841,20 +870,26 @@ class FinancialAdvisorAgent(BaseAgent):
     ) -> list[dict]:
         alertas = []
         if taxa_inad > 5:
-            alertas.append({
-                "nivel": "critico",
-                "mensagem": f"Taxa de inadimplencia em {taxa_inad:.1f}% — acionar cobranca urgente",
-            })
+            alertas.append(
+                {
+                    "nivel": "critico",
+                    "mensagem": f"Taxa de inadimplencia em {taxa_inad:.1f}% — acionar cobranca urgente",
+                }
+            )
         if margem < 5 and recv_30 > 0:
-            alertas.append({
-                "nivel": "critico",
-                "mensagem": f"Margem operacional em {margem:.1f}% — revisar precificacao",
-            })
+            alertas.append(
+                {
+                    "nivel": "critico",
+                    "mensagem": f"Margem operacional em {margem:.1f}% — revisar precificacao",
+                }
+            )
         if recv_30 > 0 and vencimentos_7d > recv_30 * 0.7:
-            alertas.append({
-                "nivel": "alerta",
-                "mensagem": f"R$ {vencimentos_7d:,.2f} vencem nos proximos 7 dias — verificar liquidez",
-            })
+            alertas.append(
+                {
+                    "nivel": "alerta",
+                    "mensagem": f"R$ {vencimentos_7d:,.2f} vencem nos proximos 7 dias — verificar liquidez",
+                }
+            )
         return alertas
 
     def _resposta_generica(self, pergunta: str, health: dict) -> str:
@@ -874,10 +909,7 @@ class FinancialAdvisorAgent(BaseAgent):
         if topico == "inadimplencia":
             taxa = indicadores.get("taxa_inadimplencia", 0)
             em_atraso = indicadores.get("total_em_atraso", 0)
-            contexto = (
-                f"\n\nSeu cenario atual: taxa de inadimplencia de {taxa:.1f}% "
-                f"com R$ {em_atraso:,.2f} em atraso."
-            )
+            contexto = f"\n\nSeu cenario atual: taxa de inadimplencia de {taxa:.1f}% com R$ {em_atraso:,.2f} em atraso."
         elif topico == "margem":
             margem = indicadores.get("margem_30d", 0)
             contexto = f"\n\nSua margem atual dos ultimos 30 dias: {margem:.1f}%."
@@ -885,8 +917,7 @@ class FinancialAdvisorAgent(BaseAgent):
             venc = indicadores.get("vencimentos_proximos_7d", 0)
             recv = indicadores.get("receita_30d", 0)
             contexto = (
-                f"\n\nSeus proximos 7 dias: R$ {venc:,.2f} em vencimentos. "
-                f"Receita ultimos 30 dias: R$ {recv:,.2f}."
+                f"\n\nSeus proximos 7 dias: R$ {venc:,.2f} em vencimentos. Receita ultimos 30 dias: R$ {recv:,.2f}."
             )
 
         return resposta_base + contexto

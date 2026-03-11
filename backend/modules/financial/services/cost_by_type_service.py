@@ -14,11 +14,11 @@ from typing import Any
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from modules.financial.models.custo_posto_portaria import CustoPostoPortaria
-from modules.financial.models.custo_posto_limpeza import CustoPostoLimpeza
-from modules.financial.models.custo_posto_jardinagem import CustoPostoJardinagem
-from modules.financial.models.custo_contrato_seg_eletronica import CustoContratoSegEletronica
 from modules.financial.models.custo_contrato_portaria_remota import CustoContratoPortariaRemota
+from modules.financial.models.custo_contrato_seg_eletronica import CustoContratoSegEletronica
+from modules.financial.models.custo_posto_jardinagem import CustoPostoJardinagem
+from modules.financial.models.custo_posto_limpeza import CustoPostoLimpeza
+from modules.financial.models.custo_posto_portaria import CustoPostoPortaria
 
 logger = logging.getLogger(__name__)
 
@@ -157,24 +157,23 @@ class CostByTypeService:
                 ),
             }
 
-        # Fallback: benchmark
-        custo_base = benchmark["custo_base"]
-        breakdown_values = {
-            k: round(v * custo_base, 2)
-            for k, v in benchmark["breakdown"].items()
-        }
-
+        # Sem dados reais — retornar zerado com orientação
         return {
             "tipo": tipo,
             "label": benchmark["label"],
             "cor": benchmark["cor"],
             "mes": mes.isoformat(),
-            "fonte": "benchmark",
-            "custo_total": custo_base,
-            "margem_pct": benchmark["margem_benchmark_pct"],
-            "breakdown": breakdown_values,
+            "fonte": "sem_dados",
+            "custo_total": 0.0,
+            "margem_pct": 0.0,
+            "breakdown": {},
             "unidade": benchmark["unidade"],
-            "aviso": "Baseado em benchmarks de mercado. Registre custos reais para análise precisa.",
+            "aviso": "Sem custos registrados para este mês. Use 'Registrar Custo' para lançar dados reais.",
+            "benchmark_referencia": {
+                "custo_base": benchmark["custo_base"],
+                "margem_tipica_pct": benchmark["margem_benchmark_pct"],
+                "unidade": benchmark["unidade"],
+            },
         }
 
     async def _get_real_data(
@@ -416,25 +415,29 @@ class CostByTypeService:
             if tem_dados:
                 receita_total = custo_real + margem_real
                 margem_pct = (margem_real / receita_total * 100) if receita_total > 0 else 0.0
-                resumo.append({
-                    "tipo": tipo,
-                    "label": benchmark["label"],
-                    "cor": benchmark["cor"],
-                    "custo_total": custo_real,
-                    "margem_contratual": margem_real,
-                    "margem_pct": round(margem_pct, 1),
-                    "fonte": "real",
-                })
+                resumo.append(
+                    {
+                        "tipo": tipo,
+                        "label": benchmark["label"],
+                        "cor": benchmark["cor"],
+                        "custo_total": custo_real,
+                        "margem_contratual": margem_real,
+                        "margem_pct": round(margem_pct, 1),
+                        "fonte": "real",
+                    }
+                )
             else:
-                resumo.append({
-                    "tipo": tipo,
-                    "label": benchmark["label"],
-                    "cor": benchmark["cor"],
-                    "custo_total": 0.0,
-                    "margem_contratual": 0.0,
-                    "margem_pct": benchmark["margem_benchmark_pct"],
-                    "fonte": "benchmark",
-                })
+                resumo.append(
+                    {
+                        "tipo": tipo,
+                        "label": benchmark["label"],
+                        "cor": benchmark["cor"],
+                        "custo_total": 0.0,
+                        "margem_contratual": 0.0,
+                        "margem_pct": 0.0,
+                        "fonte": "sem_dados",
+                    }
+                )
 
         return resumo
 

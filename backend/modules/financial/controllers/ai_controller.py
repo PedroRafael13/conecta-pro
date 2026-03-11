@@ -8,19 +8,19 @@ from datetime import date, timedelta
 from decimal import Decimal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.dependencies import get_current_user
 from core.database import get_session as get_db_session
+from modules.financial.agents.billing_automator import BillingAutomatorAgent
 from modules.financial.agents.cashflow_predictor import CashflowPredictorAgent
-from modules.financial.agents.risk_monitor import RiskMonitorAgent
 from modules.financial.agents.collection_negotiator import CollectionNegotiatorAgent
-from modules.financial.agents.pricing_optimizer import PricingOptimizerAgent
 from modules.financial.agents.financial_advisor import FinancialAdvisorAgent
 from modules.financial.agents.orchestrator import run_command_center
-from modules.financial.agents.billing_automator import BillingAutomatorAgent
+from modules.financial.agents.pricing_optimizer import PricingOptimizerAgent
+from modules.financial.agents.risk_monitor import RiskMonitorAgent
 
 logger = logging.getLogger(__name__)
 
@@ -31,9 +31,10 @@ router = APIRouter(prefix="/ai", tags=["Financial AI"])
 # SCHEMAS DE RESPONSE
 # ===================================================================
 
+
 class RiskAlert(BaseModel):
-    level: str       # "verde", "amarelo", "laranja", "vermelho", "critico"
-    category: str    # "inadimplencia", "liquidez", "margem", "concentracao"
+    level: str  # "verde", "amarelo", "laranja", "vermelho", "critico"
+    category: str  # "inadimplencia", "liquidez", "margem", "concentracao"
     title: str
     description: str
     value: float | None = None
@@ -41,11 +42,11 @@ class RiskAlert(BaseModel):
 
 
 class AIInsight(BaseModel):
-    type: str        # "oportunidade", "risco", "informacao"
-    icon: str        # emoji
+    type: str  # "oportunidade", "risco", "informacao"
+    icon: str  # emoji
     title: str
     description: str
-    priority: int    # 1-5
+    priority: int  # 1-5
 
 
 class CashflowPoint(BaseModel):
@@ -60,16 +61,16 @@ class CashflowPrediction(BaseModel):
     predicted_30d: float
     predicted_60d: float
     predicted_90d: float
-    trend: str           # "positivo", "negativo", "estavel"
-    confidence: float    # 0-1
+    trend: str  # "positivo", "negativo", "estavel"
+    confidence: float  # 0-1
     points: list[CashflowPoint]
-    gaps: list[dict]     # datas com saldo negativo projetado
+    gaps: list[dict]  # datas com saldo negativo projetado
     scenario_optimistic: float
     scenario_pessimistic: float
 
 
 class HealthCheck(BaseModel):
-    score: int           # 0-100
+    score: int  # 0-100
     classification: str  # "excelente", "bom", "atencao", "critico"
     liquidity: float
     default_rate: float
@@ -90,11 +91,13 @@ class CommandCenterResponse(BaseModel):
 # HELPERS INTERNOS
 # ===================================================================
 
+
 async def _calculate_default_metrics(session: AsyncSession, condominio_id: str):
     """Calcula métricas de inadimplência e pagamentos futuros."""
     from sqlalchemy import and_, func, select
-    from modules.financial.models.receivable_account import ReceivableAccount, ReceivableStatus
+
     from modules.financial.models.payable_account import PayableAccount
+    from modules.financial.models.receivable_account import ReceivableAccount, ReceivableStatus
 
     today = date.today()
 
@@ -104,7 +107,7 @@ async def _calculate_default_metrics(session: AsyncSession, condominio_id: str):
         try:
             cid = UUID(condominio_id)
             total_recv_q = total_recv_q.where(ReceivableAccount.condominio_id == cid)
-        except Exception:
+        except Exception:  # noqa: S110
             pass
     total_recv = (await session.execute(total_recv_q)).scalar_one() or Decimal("0")
 
@@ -112,10 +115,12 @@ async def _calculate_default_metrics(session: AsyncSession, condominio_id: str):
     overdue_q = select(func.coalesce(func.sum(ReceivableAccount.net_value), 0)).where(
         and_(
             ReceivableAccount.due_date < today,
-            ReceivableAccount.status.notin_([
-                ReceivableStatus.PAGA.value,
-                ReceivableStatus.CANCELADA.value,
-            ]),
+            ReceivableAccount.status.notin_(
+                [
+                    ReceivableStatus.PAGA.value,
+                    ReceivableStatus.CANCELADA.value,
+                ]
+            ),
         )
     )
     overdue_recv = (await session.execute(overdue_q)).scalar_one() or Decimal("0")
@@ -149,42 +154,39 @@ def _build_alerts(metrics: dict) -> list[RiskAlert]:
     upcoming_payables = metrics["upcoming_payables"]
 
     if default_rate > 5:
-        alerts.append(RiskAlert(
-            level="vermelho",
-            category="inadimplencia",
-            title=f"Inadimplência em {default_rate:.1f}%",
-            description=(
-                f"R$ {float(overdue_recv):,.2f} em atraso. "
-                "Taxa acima do limite aceitável de 5%."
-            ),
-            value=float(overdue_recv),
-            action="Acionar régua de cobrança para clientes em atraso",
-        ))
+        alerts.append(
+            RiskAlert(
+                level="vermelho",
+                category="inadimplencia",
+                title=f"Inadimplência em {default_rate:.1f}%",
+                description=(f"R$ {float(overdue_recv):,.2f} em atraso. Taxa acima do limite aceitável de 5%."),
+                value=float(overdue_recv),
+                action="Acionar régua de cobrança para clientes em atraso",
+            )
+        )
     elif default_rate > 3:
-        alerts.append(RiskAlert(
-            level="amarelo",
-            category="inadimplencia",
-            title=f"Inadimplência em {default_rate:.1f}%",
-            description=(
-                f"R$ {float(overdue_recv):,.2f} em atraso. "
-                "Monitorar evolução."
-            ),
-            value=float(overdue_recv),
-            action="Enviar lembretes de cobrança",
-        ))
+        alerts.append(
+            RiskAlert(
+                level="amarelo",
+                category="inadimplencia",
+                title=f"Inadimplência em {default_rate:.1f}%",
+                description=(f"R$ {float(overdue_recv):,.2f} em atraso. Monitorar evolução."),
+                value=float(overdue_recv),
+                action="Enviar lembretes de cobrança",
+            )
+        )
 
     if float(upcoming_payables) > 50000:
-        alerts.append(RiskAlert(
-            level="laranja",
-            category="liquidez",
-            title=f"Vencimentos próximos: R$ {float(upcoming_payables):,.2f}",
-            description=(
-                "Concentração de pagamentos nos próximos 7 dias. "
-                "Verifique o saldo disponível."
-            ),
-            value=float(upcoming_payables),
-            action="Verificar saldo disponível e antecipar recebimentos se necessário",
-        ))
+        alerts.append(
+            RiskAlert(
+                level="laranja",
+                category="liquidez",
+                title=f"Vencimentos próximos: R$ {float(upcoming_payables):,.2f}",
+                description=("Concentração de pagamentos nos próximos 7 dias. Verifique o saldo disponível."),
+                value=float(upcoming_payables),
+                action="Verificar saldo disponível e antecipar recebimentos se necessário",
+            )
+        )
 
     return alerts
 
@@ -196,25 +198,29 @@ def _build_insights(metrics: dict) -> list[AIInsight]:
     upcoming_payables = metrics["upcoming_payables"]
 
     if default_rate < 2:
-        insights.append(AIInsight(
-            type="oportunidade",
-            icon="✅",
-            title="Inadimplência sob controle",
-            description=(
-                f"Taxa de {default_rate:.1f}% está excelente. "
-                "Considere oferecer condições diferenciadas para bons pagadores."
-            ),
-            priority=3,
-        ))
+        insights.append(
+            AIInsight(
+                type="oportunidade",
+                icon="✅",
+                title="Inadimplência sob controle",
+                description=(
+                    f"Taxa de {default_rate:.1f}% está excelente. "
+                    "Considere oferecer condições diferenciadas para bons pagadores."
+                ),
+                priority=3,
+            )
+        )
 
     if float(upcoming_payables) > 0:
-        insights.append(AIInsight(
-            type="informacao",
-            icon="📅",
-            title=f"R$ {float(upcoming_payables):,.2f} a pagar em 7 dias",
-            description="Organize o fluxo de caixa para garantir liquidez nos vencimentos.",
-            priority=2,
-        ))
+        insights.append(
+            AIInsight(
+                type="informacao",
+                icon="📅",
+                title=f"R$ {float(upcoming_payables):,.2f} a pagar em 7 dias",
+                description="Organize o fluxo de caixa para garantir liquidez nos vencimentos.",
+                priority=2,
+            )
+        )
 
     return insights
 
@@ -258,6 +264,7 @@ def _build_health(metrics: dict, alerts: list[RiskAlert]) -> HealthCheck:
 # ENDPOINT 1 — COMMAND CENTER
 # ===================================================================
 
+
 @router.get("/command-center", response_model=CommandCenterResponse)
 async def get_command_center(
     condominio_id: str = Query(default=""),
@@ -268,9 +275,12 @@ async def get_command_center(
     from datetime import datetime
 
     default_health = HealthCheck(
-        score=70, classification="bom",
-        liquidity=0.0, default_rate=0.0,
-        revenue_trend="estavel", margin_avg=0.0,
+        score=70,
+        classification="bom",
+        liquidity=0.0,
+        default_rate=0.0,
+        revenue_trend="estavel",
+        margin_avg=0.0,
         alerts_count=0,
     )
 
@@ -286,14 +296,8 @@ async def get_command_center(
             margin_avg=hd.get("margin_avg", 0.0),
             alerts_count=hd.get("alerts_count", 0),
         )
-        alerts = [
-            RiskAlert(**a) for a in result.get("alerts", [])
-            if isinstance(a, dict)
-        ]
-        insights = [
-            AIInsight(**i) for i in result.get("insights", [])
-            if isinstance(i, dict)
-        ]
+        alerts = [RiskAlert(**a) for a in result.get("alerts", []) if isinstance(a, dict)]
+        insights = [AIInsight(**i) for i in result.get("insights", []) if isinstance(i, dict)]
         cf = result.get("cashflow")
         cashflow = None
         if cf and isinstance(cf, dict):
@@ -349,6 +353,7 @@ async def get_command_center(
 # ENDPOINT 2 — RISKS
 # ===================================================================
 
+
 @router.get("/risks", response_model=list[RiskAlert])
 async def get_risks(
     condominio_id: str = Query(default=""),
@@ -373,8 +378,10 @@ async def get_risks(
         # Fallback com lógica original
         alerts: list[RiskAlert] = []
         try:
-            from sqlalchemy import and_, func, select
+            from sqlalchemy import func, select
+
             from modules.financial.models.receivable_account import ReceivableAccount, ReceivableStatus
+
             metrics = await _calculate_default_metrics(session, condominio_id)
             alerts = _build_alerts(metrics)
             total_recv = metrics["total_recv"]
@@ -393,17 +400,19 @@ async def get_risks(
                 if top_result and top_result.total:
                     concentration = float(top_result.total / total_recv * 100)
                     if concentration > 40:
-                        alerts.append(RiskAlert(
-                            level="amarelo",
-                            category="concentracao",
-                            title=f"Concentração de receita: {concentration:.0f}% em 1 cliente",
-                            description=(
-                                "Alto risco de concentração. "
-                                "Diversifique a base de clientes para reduzir dependência."
-                            ),
-                            value=float(top_result.total),
-                            action="Prospectar novos clientes para diluir concentração de receita",
-                        ))
+                        alerts.append(
+                            RiskAlert(
+                                level="amarelo",
+                                category="concentracao",
+                                title=f"Concentração de receita: {concentration:.0f}% em 1 cliente",
+                                description=(
+                                    "Alto risco de concentração. "
+                                    "Diversifique a base de clientes para reduzir dependência."
+                                ),
+                                value=float(top_result.total),
+                                action="Prospectar novos clientes para diluir concentração de receita",
+                            )
+                        )
         except Exception as exc2:
             logger.warning("Erro no fallback de riscos: %s", exc2)
         return alerts
@@ -412,6 +421,7 @@ async def get_risks(
 # ===================================================================
 # ENDPOINT 3 — ADVISOR (LLM com fallback baseado em regras)
 # ===================================================================
+
 
 @router.post("/advisor")
 async def ask_advisor(
@@ -433,7 +443,8 @@ async def ask_advisor(
     api_key = getattr(settings, "ANTHROPIC_API_KEY", None)
     if api_key:
         try:
-            from modules.ai.conversation.services.llm_provider import LLMProvider, LLMModel
+            from modules.ai.conversation.services.llm_provider import LLMModel, LLMProvider
+
             llm = LLMProvider()
             system_prompt = (
                 "Você é um assistente financeiro especializado em empresas de segurança patrimonial. "
@@ -499,6 +510,7 @@ async def ask_advisor(
 # ENDPOINT 4 — CASHFLOW PREDICTION
 # ===================================================================
 
+
 @router.get("/cashflow-prediction", response_model=CashflowPrediction)
 async def get_cashflow_prediction(
     days: int = Query(default=90, ge=7, le=365),
@@ -512,7 +524,6 @@ async def get_cashflow_prediction(
     Usa CashflowPredictorAgent (Fase 2); com fallback para CashFlowAIService
     e projeção linear simples.
     """
-    from datetime import datetime
 
     today = date.today()
 
@@ -539,6 +550,7 @@ async def get_cashflow_prediction(
     # Fallback: CashFlowAIService
     try:
         from modules.financial.services.cashflow_ai_service import CashFlowAIService
+
         ai_service = CashFlowAIService(session)
         months_ahead = max(1, days // 30)
         forecast = await ai_service.generate_forecast(
@@ -553,8 +565,9 @@ async def get_cashflow_prediction(
     # Fallback: projeção simples baseada em dados históricos
     try:
         from sqlalchemy import and_, func, select
-        from modules.financial.models.receivable_account import ReceivableAccount, ReceivableStatus
+
         from modules.financial.models.payable_account import PayableAccount
+        from modules.financial.models.receivable_account import ReceivableAccount, ReceivableStatus
 
         # Receita média dos últimos 30 dias
         past_30 = today - timedelta(days=30)
@@ -588,12 +601,14 @@ async def get_cashflow_prediction(
             expected = balance
             optimistic = balance * 1.10
             pessimistic = balance * 0.90
-            points.append(CashflowPoint(
-                date=point_date.isoformat(),
-                expected_balance=round(expected, 2),
-                optimistic_balance=round(optimistic, 2),
-                pessimistic_balance=round(pessimistic, 2),
-            ))
+            points.append(
+                CashflowPoint(
+                    date=point_date.isoformat(),
+                    expected_balance=round(expected, 2),
+                    optimistic_balance=round(optimistic, 2),
+                    pessimistic_balance=round(pessimistic, 2),
+                )
+            )
             if pessimistic < 0:
                 gaps.append({"date": point_date.isoformat(), "projected_balance": round(pessimistic, 2)})
 
@@ -642,6 +657,7 @@ async def get_cashflow_prediction(
 # ENDPOINT 5a — COLLECTION: ANÁLISE DE INADIMPLENTES
 # ===================================================================
 
+
 @router.get("/collection/analyze")
 async def get_collection_analysis(
     session: AsyncSession = Depends(get_db_session),
@@ -670,11 +686,12 @@ async def analyze_receivable(
 # ENDPOINT 5b — PRICING: CALCULADORA DE PRECIFICAÇÃO
 # ===================================================================
 
+
 class PricingRequest(BaseModel):
-    tipo: str = "portaria"          # portaria, limpeza, jardinagem, seguranca_eletronica, portaria_remota
-    quantidade: float = 1.0         # Postos / m2 / câmeras / pontos
-    escala: str = "12x36"           # 12x36, 44h, 8h, 24h, 12h_diurno, 12h_noturno
-    localizacao: str = "default"    # sp_capital, rj_capital, grandes_capitais, interior_sp, nordeste, norte
+    tipo: str = "portaria"  # portaria, limpeza, jardinagem, seguranca_eletronica, portaria_remota
+    quantidade: float = 1.0  # Postos / m2 / câmeras / pontos
+    escala: str = "12x36"  # 12x36, 44h, 8h, 24h, 12h_diurno, 12h_noturno
+    localizacao: str = "default"  # sp_capital, rj_capital, grandes_capitais, interior_sp, nordeste, norte
 
 
 @router.post("/pricing/calculate")
@@ -701,6 +718,7 @@ async def calculate_pricing(
 # ===================================================================
 # ENDPOINT 5c — ADVISOR: SAÚDE FINANCEIRA + RECOMENDAÇÕES + CHAT
 # ===================================================================
+
 
 @router.get("/advisor/health")
 async def get_financial_health(
@@ -767,6 +785,7 @@ async def get_relatorio_executivo(
 # ===================================================================
 # ENDPOINT 5d — COSTING: MARGEM POR TIPO DE SERVIÇO
 # ===================================================================
+
 
 @router.get("/costing/margin-by-type")
 async def get_margin_by_service_type(
@@ -908,10 +927,11 @@ async def contrato_ativado(
 # ENDPOINT PHASE 3 — COSTING BY TYPE
 # ===================================================================
 
+
 class RegistrarCustoRequest(BaseModel):
-    tipo: str          # portaria, limpeza, jardinagem, seguranca_eletronica, portaria_remota
+    tipo: str  # portaria, limpeza, jardinagem, seguranca_eletronica, portaria_remota
     contrato_id: int | None = None
-    mes: str           # YYYY-MM  (ex: 2026-03)
+    mes: str  # YYYY-MM  (ex: 2026-03)
     custo_total: float
     margem_contratual: float = 0.0
     breakdown: dict[str, float] = {}
@@ -919,7 +939,9 @@ class RegistrarCustoRequest(BaseModel):
 
 @router.get("/costing/by-type")
 async def get_costing_by_type(
-    tipo: str = Query(..., description="Tipo de serviço: portaria, limpeza, jardinagem, seguranca_eletronica, portaria_remota"),
+    tipo: str = Query(
+        ..., description="Tipo de serviço: portaria, limpeza, jardinagem, seguranca_eletronica, portaria_remota"
+    ),
     mes: str = Query(default="", description="Mês no formato YYYY-MM (padrão: mês atual)"),
     contrato_id: int = Query(default=None),
     session: AsyncSession = Depends(get_db_session),
@@ -961,8 +983,8 @@ async def get_costing_summary(
     Retorna resumo de custos e margens para todos os tipos de serviço no mês.
     Inclui análise AI do CostingAnalyzerAgent.
     """
-    from modules.financial.services.cost_by_type_service import CostByTypeService
     from modules.financial.agents.costing_analyzer import CostingAnalyzerAgent
+    from modules.financial.services.cost_by_type_service import CostByTypeService
 
     if mes:
         try:

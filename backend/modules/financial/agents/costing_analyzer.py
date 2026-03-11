@@ -3,54 +3,28 @@
 from datetime import date
 from typing import Any
 
-from sqlalchemy import func, select, text
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import func, select
 
 from modules.financial.agents.base_agent import BaseAgent
 
-
-# Dados de demonstração quando a tabela não possui registros
-_DEMO_MARGINS: list[dict] = [
+# Resposta vazia quando a tabela não possui registros (zero dados simulados)
+_EMPTY_MARGINS: list[dict] = [
     {
-        "service_type": "portaria",
-        "label": "Portaria",
-        "margin_pct": 22.0,
+        "service_type": t,
+        "label": label,
+        "margin_pct": 0.0,
         "total_cost": 0.0,
         "total_revenue": 0.0,
-        "color": "#3B82F6",
-    },
-    {
-        "service_type": "limpeza",
-        "label": "Limpeza",
-        "margin_pct": 18.0,
-        "total_cost": 0.0,
-        "total_revenue": 0.0,
-        "color": "#10B981",
-    },
-    {
-        "service_type": "jardinagem",
-        "label": "Jardinagem",
-        "margin_pct": 25.0,
-        "total_cost": 0.0,
-        "total_revenue": 0.0,
-        "color": "#84CC16",
-    },
-    {
-        "service_type": "seguranca_eletronica",
-        "label": "Segurança Eletrônica",
-        "margin_pct": 35.0,
-        "total_cost": 0.0,
-        "total_revenue": 0.0,
-        "color": "#F59E0B",
-    },
-    {
-        "service_type": "portaria_remota",
-        "label": "Portaria Remota",
-        "margin_pct": 40.0,
-        "total_cost": 0.0,
-        "total_revenue": 0.0,
-        "color": "#8B5CF6",
-    },
+        "color": c,
+        "fonte": "sem_dados",
+    }
+    for t, label, c in [
+        ("portaria", "Portaria", "#3B82F6"),
+        ("limpeza", "Limpeza", "#10B981"),
+        ("jardinagem", "Jardinagem", "#84CC16"),
+        ("seguranca_eletronica", "Segurança Eletrônica", "#F59E0B"),
+        ("portaria_remota", "Portaria Remota", "#8B5CF6"),
+    ]
 ]
 
 _SERVICE_LABELS: dict[str, str] = {
@@ -92,7 +66,7 @@ class CostingAnalyzerAgent(BaseAgent):
 
     async def _fallback(self, method: str = "get_margin_by_service_type", **kwargs) -> Any:
         if method == "get_margin_by_service_type":
-            return _DEMO_MARGINS
+            return _EMPTY_MARGINS
         return []
 
     # ------------------------------------------------------------------ #
@@ -104,13 +78,12 @@ class CostingAnalyzerAgent(BaseAgent):
         Retorna margem média por tipo de serviço para o mês atual e os
         2 meses anteriores.  Se a tabela estiver vazia, retorna dados demo.
         """
-        from modules.financial.models.contract_cost import ContractCost, ServiceType
+        from modules.financial.models.contract_cost import ContractCost
 
         today = date.today()
         # Primeiro dia do mês atual
-        first_of_current = today.replace(day=1)
+        _first_of_current = today.replace(day=1)
         # Primeiro dia 3 meses atrás
-        import calendar
         month = today.month - 2
         year = today.year
         while month <= 0:
@@ -133,7 +106,7 @@ class CostingAnalyzerAgent(BaseAgent):
 
         if not result:
             self.logger.info("[costing_analyzer] Tabela vazia — retornando dados demo.")
-            return _DEMO_MARGINS
+            return _EMPTY_MARGINS
 
         rows = []
         for row in result:
@@ -160,11 +133,7 @@ class CostingAnalyzerAgent(BaseAgent):
         """
         from modules.financial.models.contract_cost import ContractCost
 
-        q = (
-            select(ContractCost)
-            .order_by(ContractCost.reference_month.desc(), ContractCost.contract_name)
-            .limit(limit)
-        )
+        q = select(ContractCost).order_by(ContractCost.reference_month.desc(), ContractCost.contract_name).limit(limit)
         rows = (await self.session.execute(q)).scalars().all()
 
         if not rows:
@@ -235,9 +204,7 @@ class CostingAnalyzerAgent(BaseAgent):
             contract_ratios.append((r, ratio, stype))
 
         # Média por tipo
-        avg_by_type: dict[str, float] = {
-            k: sum(v) / len(v) for k, v in by_type.items()
-        }
+        avg_by_type: dict[str, float] = {k: sum(v) / len(v) for k, v in by_type.items()}
 
         anomalies = []
         threshold = 0.20  # 20% acima da média

@@ -6,7 +6,6 @@ Create Date: 2026-03-09
 
 """
 
-import sqlalchemy as sa
 from alembic import op
 
 revision = "sprint70_cost_by_type_tables"
@@ -44,15 +43,9 @@ def upgrade() -> None:
         )
         """
     )
-    op.execute(
-        "CREATE INDEX IF NOT EXISTS ix_custos_postos_portaria_posto ON custos_postos_portaria(posto_id)"
-    )
-    op.execute(
-        "CREATE INDEX IF NOT EXISTS ix_custos_postos_portaria_contrato ON custos_postos_portaria(contrato_id)"
-    )
-    op.execute(
-        "CREATE INDEX IF NOT EXISTS ix_custos_postos_portaria_mes ON custos_postos_portaria(mes_referencia)"
-    )
+    op.execute("CREATE INDEX IF NOT EXISTS ix_custos_postos_portaria_posto ON custos_postos_portaria(posto_id)")
+    op.execute("CREATE INDEX IF NOT EXISTS ix_custos_postos_portaria_contrato ON custos_postos_portaria(contrato_id)")
+    op.execute("CREATE INDEX IF NOT EXISTS ix_custos_postos_portaria_mes ON custos_postos_portaria(mes_referencia)")
 
     # ===================================================================
     # TABLE: custos_postos_limpeza
@@ -81,15 +74,9 @@ def upgrade() -> None:
         )
         """
     )
-    op.execute(
-        "CREATE INDEX IF NOT EXISTS ix_custos_postos_limpeza_posto ON custos_postos_limpeza(posto_id)"
-    )
-    op.execute(
-        "CREATE INDEX IF NOT EXISTS ix_custos_postos_limpeza_contrato ON custos_postos_limpeza(contrato_id)"
-    )
-    op.execute(
-        "CREATE INDEX IF NOT EXISTS ix_custos_postos_limpeza_mes ON custos_postos_limpeza(mes_referencia)"
-    )
+    op.execute("CREATE INDEX IF NOT EXISTS ix_custos_postos_limpeza_posto ON custos_postos_limpeza(posto_id)")
+    op.execute("CREATE INDEX IF NOT EXISTS ix_custos_postos_limpeza_contrato ON custos_postos_limpeza(contrato_id)")
+    op.execute("CREATE INDEX IF NOT EXISTS ix_custos_postos_limpeza_mes ON custos_postos_limpeza(mes_referencia)")
 
     # ===================================================================
     # TABLE: custos_postos_jardinagem
@@ -119,12 +106,8 @@ def upgrade() -> None:
         )
         """
     )
-    op.execute(
-        "CREATE INDEX IF NOT EXISTS ix_custos_postos_jardinagem_posto ON custos_postos_jardinagem(posto_id)"
-    )
-    op.execute(
-        "CREATE INDEX IF NOT EXISTS ix_custos_postos_jardinagem_mes ON custos_postos_jardinagem(mes_referencia)"
-    )
+    op.execute("CREATE INDEX IF NOT EXISTS ix_custos_postos_jardinagem_posto ON custos_postos_jardinagem(posto_id)")
+    op.execute("CREATE INDEX IF NOT EXISTS ix_custos_postos_jardinagem_mes ON custos_postos_jardinagem(mes_referencia)")
 
     # ===================================================================
     # TABLE: custos_contratos_seg_eletronica

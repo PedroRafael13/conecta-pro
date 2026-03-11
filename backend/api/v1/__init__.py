@@ -8,11 +8,6 @@ from fastapi import APIRouter
 from modules.ai.bartolo.controllers import bartolo_router
 
 # ===================================================================
-# MÓDULO EMPRESAS - Multi-CNPJ (Sprint 67)
-# ===================================================================
-from modules.empresas.controllers.empresa_controller import router as empresas_router
-
-# ===================================================================
 # MÓDULO AI - INTELIGÊNCIA ARTIFICIAL (Sprints 34-55)
 # ===================================================================
 # Análise de Contratos (Sprint 46)
@@ -88,6 +83,11 @@ from modules.document_kits.controllers import router as document_kit_router
 from modules.documents.controllers import router as documents_router
 
 # ===================================================================
+# MÓDULO EMPRESAS - Multi-CNPJ (Sprint 67)
+# ===================================================================
+from modules.empresas.controllers.empresa_controller import router as empresas_router
+
+# ===================================================================
 # MÓDULO EQUIPMENT_MANAGEMENT - Gestão de Equipamentos
 # ===================================================================
 from modules.equipment_management.controllers import (
@@ -113,6 +113,8 @@ from modules.financial.controllers import (
     cashflow_router,
     # Contas a Receber
     customer_router,
+    # AI Command Center
+    financial_ai_router,
     # Fiscal
     fiscal_router,
     # Estoque
@@ -124,8 +126,6 @@ from modules.financial.controllers import (
     receivable_router,
     # Contas a Pagar
     supplier_router,
-    # AI Command Center
-    financial_ai_router,
 )
 
 # ===================================================================
@@ -183,9 +183,6 @@ from modules.integrations.controllers import router as integration_router
 
 # Communication - Comunicados, Notificacoes, Alertas
 from modules.operacional.communication import communication_router
-
-# Férias e Afastamentos
-from modules.operacional.vacations import vacation_router
 from modules.operacional.controllers import (
     allocation_router,
     employee_router,
@@ -223,6 +220,9 @@ from modules.operacional.inspection_rounds import inspection_round_router
 
 # Occurrence router now comes from occurrences module
 from modules.operacional.occurrences import occurrence_router
+
+# Férias e Afastamentos
+from modules.operacional.vacations import vacation_router
 
 # ===================================================================
 # RECRUITMENT - RECRUTAMENTO E SELEÇÃO

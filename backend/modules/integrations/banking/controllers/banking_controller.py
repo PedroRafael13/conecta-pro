@@ -30,6 +30,7 @@ def _load_credentials_env() -> dict[str, str]:
                 env_vars[key.strip()] = value.strip()
     return env_vars
 
+
 router = APIRouter(prefix="/banking", tags=["Banking"])
 
 
@@ -125,13 +126,13 @@ class BoletoListResponse(BaseModel):
 
 
 class PixChargeRequest(BaseModel):
-    bank_code: str = "403"              # "403" = Cora, "077" = Inter
-    amount: float                       # Valor em R$
+    bank_code: str = "403"  # "403" = Cora, "077" = Inter
+    amount: float  # Valor em R$
     description: str = "Cobrança Conecta Mais Patrimonial"
     payer_name: str | None = None
     payer_document: str | None = None
-    chave_pix: str = "35710481000103"   # CNPJ Conecta Mais como chave PIX padrão
-    expiracao_horas: int = 24           # Validade em horas
+    chave_pix: str = "35710481000103"  # CNPJ Conecta Mais como chave PIX padrão
+    expiracao_horas: int = 24  # Validade em horas
 
 
 class PixChargeResponse(BaseModel):
@@ -597,6 +598,22 @@ async def generate_pix_charge(
 
     except Exception as exc:
         logger.exception("Erro ao gerar PIX para banco %s: %s", req.bank_code, exc)
+        error_msg = str(exc)
+        # Mensagens de erro amigáveis para problemas conhecidos
+        if "401" in error_msg and req.bank_code == "077":
+            error_msg = (
+                "PIX não habilitado na API Banco Inter. "
+                "Acesse developers.inter.co → sua aplicação → habilite os escopos 'pix.read' e 'pix.write', "
+                "depois solicite um novo certificado mTLS com esses escopos."
+            )
+        elif "500" in error_msg and req.bank_code == "403":
+            error_msg = (
+                "Conta Cora não possui PIX configurado. "
+                "Acesse app.cora.com.br → Configurações → Pix → cadastre o CNPJ 35.710.481/0001-03 como chave PIX, "
+                "depois tente novamente."
+            )
+        elif "403" in error_msg:
+            error_msg = "Sem permissão para operação PIX neste banco. Verifique os escopos da aplicação."
         return PixChargeResponse(
             success=False,
             bank_code=req.bank_code,
@@ -605,7 +622,7 @@ async def generate_pix_charge(
             description=req.description,
             chave_pix=req.chave_pix,
             created_at=now_iso,
-            error=str(exc),
+            error=error_msg,
         )
 
 

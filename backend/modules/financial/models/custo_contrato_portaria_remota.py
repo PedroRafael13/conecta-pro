@@ -1,8 +1,9 @@
 """Modelo de custo mensal para contratos de portaria remota."""
+
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Column, Date, DateTime, Integer, Numeric, String
+from sqlalchemy import Column, Date, DateTime, Integer, Numeric
 from sqlalchemy.dialects.postgresql import UUID
 
 from core.models import Base
@@ -18,15 +19,15 @@ class CustoContratoPortariaRemota(Base):
     mes_referencia = Column(Date, nullable=False, index=True)
 
     # Dimensões do contrato
-    qtd_unidades = Column(Integer, default=1)                # Unidades/acessos monitorados
-    qtd_acessos_mes = Column(Integer, default=0)             # Total de acionamentos no mês
+    qtd_unidades = Column(Integer, default=1)  # Unidades/acessos monitorados
+    qtd_acessos_mes = Column(Integer, default=0)  # Total de acionamentos no mês
 
     # Componentes de custo
-    custo_central = Column(Numeric(12, 2), default=0)        # Central de operações (rateio)
-    custo_operadores = Column(Numeric(12, 2), default=0)     # Operadores remotos (rateio)
-    custo_equipamentos = Column(Numeric(12, 2), default=0)   # Equipamentos na portaria
+    custo_central = Column(Numeric(12, 2), default=0)  # Central de operações (rateio)
+    custo_operadores = Column(Numeric(12, 2), default=0)  # Operadores remotos (rateio)
+    custo_equipamentos = Column(Numeric(12, 2), default=0)  # Equipamentos na portaria
     custo_conectividade = Column(Numeric(12, 2), default=0)  # Links de comunicação
-    custo_manutencao = Column(Numeric(12, 2), default=0)     # Manutenção de equipamentos
+    custo_manutencao = Column(Numeric(12, 2), default=0)  # Manutenção de equipamentos
     custo_backup_presencial = Column(Numeric(12, 2), default=0)  # Backup eventual presencial
     custo_overhead = Column(Numeric(12, 2), default=0)
 

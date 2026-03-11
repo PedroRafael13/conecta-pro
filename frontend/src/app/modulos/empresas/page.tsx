@@ -32,7 +32,7 @@ function calcularSimples(
     { limite: 3600000, aliq: 0.21, ded: 125640 },
     { limite: 4800000, aliq: 0.33, ded: 648000 },
   ];
-  const faixa = faixas.find((f) => rbt12 <= f.limite) || faixas[faixas.length - 1];
+  const faixa = faixas.find((f) => rbt12 <= f.limite) ?? { limite: 4800000, aliq: 0.33, ded: 648000 };
   const aliqEfetiva =
     rbt12 > 0 ? (rbt12 * faixa.aliq - faixa.ded) / rbt12 : faixa.aliq;
   let das = receita * aliqEfetiva;

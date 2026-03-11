@@ -1,4 +1,5 @@
 """Modelo de custo mensal para postos de limpeza."""
+
 import uuid
 from datetime import datetime
 
@@ -19,21 +20,21 @@ class CustoPostoLimpeza(Base):
     mes_referencia = Column(Date, nullable=False, index=True)
 
     # Dimensões
-    area_m2 = Column(Numeric(10, 2), nullable=True)          # Área atendida em m²
-    tipo_limpeza = Column(String(30), nullable=True)         # diaria, semanal, quinzenal
+    area_m2 = Column(Numeric(10, 2), nullable=True)  # Área atendida em m²
+    tipo_limpeza = Column(String(30), nullable=True)  # diaria, semanal, quinzenal
 
     # Componentes de custo
-    custo_mao_obra = Column(Numeric(12, 2), default=0)       # Salários base
+    custo_mao_obra = Column(Numeric(12, 2), default=0)  # Salários base
     custo_encargos = Column(Numeric(12, 2), default=0)
     custo_beneficios = Column(Numeric(12, 2), default=0)
-    custo_materiais = Column(Numeric(12, 2), default=0)      # Produtos de limpeza
-    custo_equipamentos = Column(Numeric(12, 2), default=0)   # Máquinas, aspiradores
+    custo_materiais = Column(Numeric(12, 2), default=0)  # Produtos de limpeza
+    custo_equipamentos = Column(Numeric(12, 2), default=0)  # Máquinas, aspiradores
     custo_supervisao = Column(Numeric(12, 2), default=0)
     custo_overhead = Column(Numeric(12, 2), default=0)
 
     # Totais e indicadores
     custo_total = Column(Numeric(12, 2), default=0)
-    custo_m2 = Column(Numeric(10, 4), nullable=True)         # Custo por m² (calculado)
+    custo_m2 = Column(Numeric(10, 4), nullable=True)  # Custo por m² (calculado)
     margem_contratual = Column(Numeric(12, 2), default=0)
 
     # Controle

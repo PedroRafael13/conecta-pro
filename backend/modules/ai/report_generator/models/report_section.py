@@ -89,7 +89,7 @@ class ReportSection(Base):
     __tablename__ = "ai_report_sections"
 
     # Identificação
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)  # noqa: A003
     code = Column(String(100), nullable=False)
     name = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
@@ -200,9 +200,9 @@ class ReportSection(Base):
     children = relationship(
         "ReportSection",
         backref="parent",
-        remote_side=[id],
+        remote_side=[id],  # noqa: A003
         cascade="all, delete-orphan",
-        single_parent=True,  # noqa: A003
+        single_parent=True,
     )
 
     def __repr__(self) -> str:
@@ -294,7 +294,7 @@ class ReportSection(Base):
 
         try:
             # Avaliação segura da condição
-            return eval(self.visibility_condition, {"__builtins__": {}}, context)  # noqa: S307
+            return eval(self.visibility_condition, {"__builtins__": {}}, context)  # noqa: S307  # nosec B307
         except Exception:
             return True
 

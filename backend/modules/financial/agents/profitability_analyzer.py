@@ -2,10 +2,12 @@
 ProfitabilityAnalyzerAgent — Analise de Rentabilidade por Contrato
 Considera regime tributario de cada empresa do grupo.
 """
+
 from __future__ import annotations
+
 from dataclasses import dataclass, field
-from decimal import Decimal, ROUND_HALF_UP
-from typing import Optional, List
+from decimal import ROUND_HALF_UP, Decimal
+
 from modules.financial.agents.tax_calculator import TaxCalculatorAgent
 
 
@@ -21,14 +23,14 @@ class RentabilidadeContrato:
     receita_bruta_mes: Decimal
     impostos_mes: Decimal
     receita_liquida: Decimal
-    custo_direto_mes: Decimal    # Mao de obra + beneficios
+    custo_direto_mes: Decimal  # Mao de obra + beneficios
     custo_indireto_mes: Decimal  # Overhead rateado
     lucro_liquido_mes: Decimal
     margem_liquida_percentual: Decimal
 
     # Detalhes
     detalhamento_impostos: dict = field(default_factory=dict)
-    alertas: List[str] = field(default_factory=list)
+    alertas: list[str] = field(default_factory=list)
 
     @property
     def situacao(self) -> str:
@@ -65,8 +67,8 @@ class ProfitabilityAnalyzerAgent:
         tipo_servico: str,
         empresa_slug: str,
         regime: str,
-        rbt12: Optional[Decimal] = None,
-        liminares: Optional[List[str]] = None,
+        rbt12: Decimal | None = None,
+        liminares: list[str] | None = None,
         cliente_nome: str = "",
         contrato_id: int = 0,
     ) -> RentabilidadeContrato:
@@ -143,7 +145,7 @@ class ProfitabilityAnalyzerAgent:
         tipo_servico: str,
         rbt12_eletronica: Decimal,
         rbt12_patrimonial: Decimal,
-        liminares_patrimonial: Optional[List[str]] = None,
+        liminares_patrimonial: list[str] | None = None,
     ) -> dict:
         """
         Compara rentabilidade do contrato se faturado pela Eletronica vs Patrimonial.
@@ -173,7 +175,11 @@ class ProfitabilityAnalyzerAgent:
             Decimal("0.01"), ROUND_HALF_UP
         )
 
-        melhor = "patrimonial" if result_patrimonial.margem_liquida_percentual > result_eletronica.margem_liquida_percentual else "eletronica"
+        melhor = (
+            "patrimonial"
+            if result_patrimonial.margem_liquida_percentual > result_eletronica.margem_liquida_percentual
+            else "eletronica"
+        )
 
         return {
             "tipo_servico": tipo_servico,

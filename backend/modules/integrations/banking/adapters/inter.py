@@ -393,7 +393,7 @@ class InterAdapter(BaseBankingAdapter):
         import string
 
         # txid: alfanumérico, max 35 chars
-        suffix = "".join(random.choices(string.ascii_uppercase + string.digits, k=8))
+        suffix = "".join(random.choices(string.ascii_uppercase + string.digits, k=8))  # noqa: S311
         txid = f"CON{datetime.now().strftime('%Y%m%d%H%M%S')}{suffix}"
 
         body: dict = {

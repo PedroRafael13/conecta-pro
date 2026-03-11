@@ -6,7 +6,6 @@ Create Date: 2026-03-09
 
 """
 
-import sqlalchemy as sa
 from alembic import op
 
 revision = "sprint67_create_empresas_module"
@@ -76,18 +75,10 @@ def upgrade() -> None:
     )
 
     # Indexes — empresas
-    op.execute(
-        "CREATE INDEX IF NOT EXISTS ix_empresas_condominio_id ON empresas (condominio_id)"
-    )
-    op.execute(
-        "CREATE UNIQUE INDEX IF NOT EXISTS ix_empresas_cnpj ON empresas (cnpj) WHERE cnpj IS NOT NULL"
-    )
-    op.execute(
-        "CREATE INDEX IF NOT EXISTS ix_empresas_slug_condominio ON empresas (slug, condominio_id)"
-    )
-    op.execute(
-        "CREATE INDEX IF NOT EXISTS ix_empresas_status ON empresas (status)"
-    )
+    op.execute("CREATE INDEX IF NOT EXISTS ix_empresas_condominio_id ON empresas (condominio_id)")
+    op.execute("CREATE UNIQUE INDEX IF NOT EXISTS ix_empresas_cnpj ON empresas (cnpj) WHERE cnpj IS NOT NULL")
+    op.execute("CREATE INDEX IF NOT EXISTS ix_empresas_slug_condominio ON empresas (slug, condominio_id)")
+    op.execute("CREATE INDEX IF NOT EXISTS ix_empresas_status ON empresas (status)")
 
     # ===================================================================
     # TABLE: liminares
@@ -126,12 +117,8 @@ def upgrade() -> None:
     )
 
     # Indexes — liminares
-    op.execute(
-        "CREATE INDEX IF NOT EXISTS ix_liminares_empresa_id ON liminares (empresa_id)"
-    )
-    op.execute(
-        "CREATE INDEX IF NOT EXISTS ix_liminares_status ON liminares (status)"
-    )
+    op.execute("CREATE INDEX IF NOT EXISTS ix_liminares_empresa_id ON liminares (empresa_id)")
+    op.execute("CREATE INDEX IF NOT EXISTS ix_liminares_status ON liminares (status)")
 
     # ===================================================================
     # SEED: Conecta Eletrônica (empresa principal — já em operação)
