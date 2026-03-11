@@ -38,7 +38,7 @@ async def create_equipment_status(
     repo = EquipmentStatusRepository(db)
 
     # Verificar se já existe
-    existing = await repo.get_by_guardian_id(data.guardian_id)
+    existing = await repo.get_by_external_id(data.guardian_id)
     if existing:
         # Atualizar ao invés de criar
         update_data = EquipmentStatusUpdate(
@@ -50,7 +50,7 @@ async def create_equipment_status(
             has_alerts=data.has_alerts,
             active_alerts=data.active_alerts,
         )
-        equipment = await repo.update_by_guardian_id(data.guardian_id, update_data)
+        equipment = await repo.update_by_external_id(data.guardian_id, update_data)
         logger.info(f"Status de equipamento atualizado: {equipment.equipment_name}")
         return EquipmentStatusResponse.model_validate(equipment)
 

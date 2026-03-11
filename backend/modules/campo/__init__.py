@@ -1,18 +1,19 @@
 """
 CAMPO v3.0.0 - Modulo de Servico de Campo do ERP Conecta PRO
-============================================================
 
-Sistema de Servico de Campo (estilo Auvo) para:
-- Gestao de Equipes Tecnicas em Campo
-- Visitas Tecnicas e Comerciais
-- Ordens de Servico (OS)
-- Tickets e Atendimentos
-- Monitoramento de Equipamentos Instalados
-- Sincronizacao com Sistemas Externos
-- Checklists Dinamicos
-
-Uso: Equipes externas trabalhando em clientes (condominios/empresas)
+DEPRECATED: Use 'modules.operacoes' instead for router imports.
+Deprecation date: 2026-03-11. Removal target: 2026-05-11.
 """
+
+import warnings
+
+warnings.warn(
+    "Importing from 'modules.campo' is deprecated. "
+    "Use 'modules.operacoes' for router access. "
+    "This module will be removed after 2026-05-11.",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 __version__ = "3.0.0"
 __module_name__ = "Campo"
@@ -20,7 +21,7 @@ __module_number__ = 21
 
 # Imports dos controllers legados
 # Imports dos novos controllers CAMPO
-from modules.campo.controllers import (
+from modules.campo.controllers import (  # noqa: E402
     CAMPO_ROUTERS,
     access_log_router,
     campo_service_router,

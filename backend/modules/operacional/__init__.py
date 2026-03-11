@@ -3,45 +3,25 @@ Module: operacional
 Description: Modulo Operacional Completo - Conecta PRO
 Author: Conecta PRO Team
 Date: 2026-01-18
-Quality Score Target: 99+/100
 
-Este modulo fornece gestao operacional completa:
-
-CORE:
-- Gestao de Postos (criacao, tipos, status)
-- Geracao e gestao de Escalas de trabalho
-- Controle de Turnos (shifts)
-- Alocacao de funcionarios
-- Gestao de Substituicoes
-- Banco de Horas (Time Bank)
-- Gestao de Diaristas (submodulo)
-
-NOVOS SUBMODULOS (v3.0.0):
-- Ocorrencias: Registro e gestao de incidentes operacionais com IA
-- Medidas Administrativas: Workflow disciplinar com assinatura digital
-- Comunicacao: Comunicados, notificacoes e alertas em tempo real
-- IA Operacional: Otimizadores e analisadores inteligentes
-- Relatorios: Cobertura, HE, disciplinar com export PDF/Excel
-- Ponto Avancado: Geolocalizacao, biometria, validacao multi-fator
-
-Estrutura modular:
-- models/: Modelos SQLAlchemy para persistencia
-- schemas/: Schemas Pydantic para validacao
-- services/: Logica de negocio e validacoes
-- controllers/: Endpoints FastAPI
-- repositories/: Acesso a dados
-- diaristas/: Submodulo de Gestao de Diaristas
-- occurrences/: Gestao de Ocorrencias
-- disciplinary/: Medidas Administrativas
-- communication/: Comunicacao Operacional
-- ai/: Inteligencia Artificial Operacional
-- reports/: Relatorios Avancados
+DEPRECATED: Use 'modules.operacoes' instead for router imports.
+Deprecation date: 2026-03-11. Removal target: 2026-05-11.
 """
 
-from fastapi import APIRouter
+import warnings
+
+warnings.warn(
+    "Importing from 'modules.operacional' is deprecated. "
+    "Use 'modules.operacoes' for router access. "
+    "This module will be removed after 2026-05-11.",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
+from fastapi import APIRouter  # noqa: E402
 
 # AI SUBMODULE
-from .ai import (
+from .ai import (  # noqa: E402
     AbsencePrediction,
     ActionSuggestion,
     AnomalyPattern,
@@ -76,7 +56,7 @@ from .ai import (
 )
 
 # COMMUNICATION SUBMODULE
-from .communication import (
+from .communication import (  # noqa: E402
     Alert,
     AlertCreate,
     AlertRepository,
@@ -111,7 +91,7 @@ from .communication import (
 # =============================================================================
 # CORE ROUTERS
 # =============================================================================
-from .controllers import (
+from .controllers import (  # noqa: E402
     allocation_router,
     dashboard_router,
     employee_router,
@@ -124,7 +104,7 @@ from .controllers import (
 )
 
 # DIARISTAS SUBMODULE
-from .diaristas import (
+from .diaristas import (  # noqa: E402
     Diarist,
     DiaristAssignment,
     DiaristEvaluation,
@@ -139,7 +119,7 @@ from .diaristas import (
 )
 
 # DISCIPLINARY SUBMODULE
-from .disciplinary import (
+from .disciplinary import (  # noqa: E402
     DigitalSignature,
     DisciplinaryAction,
     DisciplinaryActionCreate,
@@ -165,7 +145,7 @@ from .disciplinary import (
 )
 
 # INSPECTION ROUNDS SUBMODULE
-from .inspection_rounds import (
+from .inspection_rounds import (  # noqa: E402
     CheckpointStatus,
     CheckpointType,
     InspectionCheckpoint,
@@ -180,7 +160,7 @@ from .inspection_rounds import (
 )
 
 # CORE MODELS
-from .models import (
+from .models import (  # noqa: E402
     Allocation,
     AllocationStatus,
     Post,
@@ -202,7 +182,7 @@ from .models import (
 )
 
 # OCCURRENCES SUBMODULE
-from .occurrences import (
+from .occurrences import (  # noqa: E402
     Occurrence,
     OccurrenceCategory,
     OccurrenceCreate,
@@ -218,7 +198,7 @@ from .occurrences import (
 )
 
 # REPORTS SUBMODULE
-from .reports import (
+from .reports import (  # noqa: E402
     ClientOvertime,
     CoverageReport,
     CoverageReportService,
@@ -235,7 +215,7 @@ from .reports import (
 )
 
 # CORE REPOSITORIES
-from .repositories import (
+from .repositories import (  # noqa: E402
     AllocationRepository,
     PostRepository,
     ScaleRepository,
@@ -246,7 +226,7 @@ from .repositories import (
 )
 
 # CORE SERVICES
-from .services import (
+from .services import (  # noqa: E402
     BiometricService,
     CheckInData,
     CheckInValidator,
@@ -269,13 +249,13 @@ from .services import (
 )
 
 # VACATIONS SUBMODULE
-from .vacations import (
+from .vacations import (  # noqa: E402
     vacation_router,
 )
 
 # WEBSOCKET SUBMODULE
-from .websockets import manager
-from .websockets import websocket_router as ws_router
+from .websockets import manager  # noqa: E402
+from .websockets import websocket_router as ws_router  # noqa: E402
 
 # =============================================================================
 # ROUTER PRINCIPAL

@@ -1,10 +1,8 @@
 """
 Module: government_integrations
-Description: API Controllers para Integracoes Governamentais
-Author: Conecta PRO Team
-Date: 2026-01-10
-Quality Score Target: 99+/100
-Compliance: Legislacao fiscal e trabalhista brasileira
+
+DEPRECATED: Use 'modules.fiscal_contabil' instead for router imports.
+Deprecation date: 2026-03-11. Removal target: 2026-05-11.
 
 Estrutura modular:
 - controllers/: Endpoints REST organizados por domínio
@@ -20,10 +18,20 @@ Domínios:
 - SEFAZ: Emissão de NFe/NFCe
 """
 
-from .controllers import router as government_integrations_router
+import warnings
+
+warnings.warn(
+    "Importing from 'modules.government_integrations' is deprecated. "
+    "Use 'modules.fiscal_contabil' for router access. "
+    "This module will be removed after 2026-05-11.",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
+from .controllers import router as government_integrations_router  # noqa: E402
 
 # Re-export schemas para compatibilidade
-from .schemas import (
+from .schemas import (  # noqa: E402
     CalculoFGTSRequest,
     CalculoINSSRequest,
     ConsultaCNPJRequest,
@@ -35,7 +43,7 @@ from .schemas import (
 )
 
 # Re-export services
-from .services import (
+from .services import (  # noqa: E402
     ESocialService,
     FGTSINSSService,
     ReceitaFederalApiService,

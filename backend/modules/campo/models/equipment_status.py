@@ -35,7 +35,7 @@ class EquipmentStatus(Base):
 
     Attributes:
         id: Identificador único
-        guardian_id: ID externo de integração
+        external_id: ID externo de integração
         equipment_id: ID do equipamento
         equipment_type: Tipo do equipamento
         equipment_name: Nome do equipamento
@@ -57,7 +57,7 @@ class EquipmentStatus(Base):
         primary_key=True,
         default=lambda: str(uuid4()),
     )
-    guardian_id: Mapped[str] = mapped_column(
+    external_id: Mapped[str] = mapped_column(
         String(100),
         unique=True,
         nullable=False,
@@ -175,7 +175,7 @@ class EquipmentStatus(Base):
     )
 
     # Metadados
-    guardian_metadata: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    external_metadata: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     sync_id: Mapped[str | None] = mapped_column(
         String(36),
         nullable=True,

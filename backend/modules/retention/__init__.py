@@ -1,18 +1,20 @@
 """
 Modulo de Retencao de Talentos - Conecta PRO.
 
-Este modulo gerencia estrategias e processos de retencao de funcionarios,
-incluindo onboarding digital, perfil operacional, acompanhamento de novos
-colaboradores e metricas de engajamento.
-
-Submodulos:
-    - onboarding: Gerenciamento do processo de integracao de novos funcionarios
-    - profile: Perfil operacional e match com postos de trabalho
-    - climate: Pesquisa de clima organizacional
-    - turnover: Analise e previsao de turnover
+DEPRECATED: Use 'modules.pessoas' instead for router imports.
+Deprecation date: 2026-03-11. Removal target: 2026-05-11.
 """
 
 import logging
+import warnings
+
+warnings.warn(
+    "Importing from 'modules.retention' is deprecated. "
+    "Use 'modules.pessoas' for router access. "
+    "This module will be removed after 2026-05-11.",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +25,7 @@ __all__ = []
 # ONBOARDING - Modulo principal deste pacote
 # =============================================================================
 try:
-    from .onboarding import (
+    from .onboarding import (  # noqa: E402
         OnboardingChecklist,  # noqa: F401
         OnboardingError,  # noqa: F401
         OnboardingProgress,  # noqa: F401
@@ -55,7 +57,7 @@ except ImportError as e:
 # PROFILE - Import opcional
 # =============================================================================
 try:
-    from .profile import (
+    from .profile import (  # noqa: E402
         OperationalProfile,  # noqa: F401
         PostMatch,  # noqa: F401
         ProfileMatcher,  # noqa: F401
@@ -63,7 +65,7 @@ try:
         ProfileRepository,  # noqa: F401
         ProfileService,  # noqa: F401
     )
-    from .profile import (
+    from .profile import (  # noqa: E402
         router as profile_router,  # noqa: F401
     )
 
@@ -85,7 +87,7 @@ except (ImportError, Exception) as e:
 # CLIMATE - Import opcional
 # =============================================================================
 try:
-    from .climate import (
+    from .climate import (  # noqa: E402
         PERGUNTAS_CLIMA_PADRAO,  # noqa: F401
         ClimateAlert,  # noqa: F401
         ClimateAlertRepository,  # noqa: F401
@@ -122,7 +124,7 @@ except (ImportError, Exception) as e:
 # TURNOVER - Import opcional (pode ter dependencias externas)
 # =============================================================================
 try:
-    from .turnover import (
+    from .turnover import (  # noqa: E402
         CategoriaFator,  # noqa: F401
         NivelRisco,  # noqa: F401
         RiskAlert,  # noqa: F401

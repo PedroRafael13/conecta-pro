@@ -3,28 +3,25 @@ Module: clients
 Description: Modulo de Cadastro de Clientes e Condominios
 Author: Conecta PRO Team
 Date: 2026-01-10
-Sprint: 30 - Cadastro de Clientes/Condominios
-Quality Score Target: 99+/100
 
-Este modulo fornece:
-- Gestao completa de clientes (administradoras, sindicos, empresas)
-- Cadastro de condominios com tipos e configuracoes
-- Gestao de unidades (apartamentos, salas, lojas)
-- Contratos de servicos por cliente
-- Configuracoes de integracao por cliente
-
-Estrutura modular:
-- models/: Modelos SQLAlchemy para persistencia
-- schemas/: Schemas Pydantic para validacao
-- services/: Logica de negocio
-- controllers/: Endpoints FastAPI
-- repositories/: Acesso a dados
+DEPRECATED: Use 'modules.comercial' instead for router imports.
+Deprecation date: 2026-03-11. Removal target: 2026-05-11.
 """
 
-from fastapi import APIRouter
+import warnings
+
+warnings.warn(
+    "Importing from 'modules.clients' is deprecated. "
+    "Use 'modules.comercial' for router access. "
+    "This module will be removed after 2026-05-11.",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
+from fastapi import APIRouter  # noqa: E402
 
 # Importa router do controller
-from modules.clients.controllers import router as client_router
+from modules.clients.controllers import router as client_router  # noqa: E402
 
 # Cria router principal do modulo
 clients_router = APIRouter(prefix="/clients", tags=["Clients - Gestao de Clientes"])

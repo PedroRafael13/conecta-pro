@@ -1,14 +1,8 @@
 """
 Modulo de Monitoramento - Early Warning System.
 
-Este modulo implementa o sistema de alerta antecipado (Early Warning System)
-baseado na analise Pre-Mortem do projeto Conecta PRO.
-
-Componentes:
-- EarlyWarningService: Servico principal de monitoramento
-- MetricCollectorService: Coleta de metricas do sistema
-- AlertManagerService: Gerenciamento de alertas e notificacoes
-- DashboardService: Dashboard de monitoramento
+DEPRECATED: Use 'modules.inteligencia' instead for router imports.
+Deprecation date: 2026-03-11. Removal target: 2026-05-11.
 
 Niveis de Alerta:
 - GREEN: Operacao normal, metricas dentro do esperado
@@ -26,9 +20,19 @@ Uso:
     await service.check_metric("cpu_usage", 85.5)
 """
 
-from .controllers import router
-from .models import Alert, AlertLevel, AlertStatus, MetricThreshold, ThresholdType
-from .services import (
+import warnings
+
+warnings.warn(
+    "Importing from 'modules.monitoring' is deprecated. "
+    "Use 'modules.inteligencia' for router access. "
+    "This module will be removed after 2026-05-11.",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
+from .controllers import router  # noqa: E402
+from .models import Alert, AlertLevel, AlertStatus, MetricThreshold, ThresholdType  # noqa: E402
+from .services import (  # noqa: E402
     AlertManagerService,
     DashboardService,
     EarlyWarningService,

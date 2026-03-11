@@ -233,56 +233,70 @@ export default function ModulosLayout({
           {/* Navigation */}
           <nav className="flex-1 overflow-y-auto py-4" data-tour="sidebar-nav">
             <div className={cn('flex flex-col gap-1 px-2', sidebarOpen ? 'gap-1' : 'gap-3')}>
-              {currentModule.subModules.map((subModule) => {
-                const Icon = iconMap[subModule.icon] || FileText;
-                const isActive = pathname === subModule.href;
+              {(() => {
+                let lastGroup: string | undefined;
+                return currentModule.subModules.map((subModule) => {
+                  const Icon = iconMap[subModule.icon] || FileText;
+                  const isActive = pathname === subModule.href;
+                  const showGroupHeader = sidebarOpen && subModule.group && subModule.group !== lastGroup;
+                  if (subModule.group) lastGroup = subModule.group;
 
-                return sidebarOpen ? (
-                  <button
-                    key={subModule.id}
-                    onClick={() => router.push(subModule.href)}
-                    className={cn(
-                      'relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl',
-                      'text-sm font-medium transition-all duration-200',
-                      isActive
-                        ? 'bg-[hsl(var(--primary))]/5 text-[hsl(var(--primary))]'
-                        : 'text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--secondary))]/80 hover:text-[hsl(var(--foreground))]'
-                    )}
-                  >
-                    {isActive && (
-                      <span
-                        className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full"
-                        style={{ background: 'linear-gradient(180deg, hsl(var(--primary)), #f97707)' }}
-                      />
-                    )}
-                    <Icon className="w-[18px] h-[18px] flex-shrink-0" />
-                    <span className="flex-1 text-left">{subModule.title}</span>
-                    {subModule.badge !== undefined && (
-                      <span className="px-1.5 py-0.5 text-xs bg-brand-500/15 text-brand-500 rounded-md font-semibold">
-                        {subModule.badge}
-                      </span>
-                    )}
-                  </button>
-                ) : (
-                  <button
-                    key={subModule.id}
-                    onClick={() => router.push(subModule.href)}
-                    className={cn(
-                      'relative w-full flex flex-col items-center justify-center py-2.5 rounded-xl',
-                      'transition-all duration-200',
-                      isActive
-                        ? 'text-[hsl(var(--primary))] bg-[hsl(var(--primary))]/5'
-                        : 'text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--secondary))]/80 hover:text-[hsl(var(--foreground))]'
-                    )}
-                    title={subModule.title}
-                  >
-                    <Icon className="w-[18px] h-[18px]" />
-                    {isActive && (
-                      <span className="absolute bottom-1 w-1 h-1 rounded-full bg-brand-500" />
-                    )}
-                  </button>
-                );
-              })}
+                  return (
+                    <div key={subModule.id}>
+                      {showGroupHeader && (
+                        <div className="px-3 pt-3 pb-1 first:pt-0">
+                          <span className="text-[10px] font-semibold uppercase tracking-wider text-[hsl(var(--muted-foreground))]/60">
+                            {subModule.group}
+                          </span>
+                        </div>
+                      )}
+                      {sidebarOpen ? (
+                        <button
+                          onClick={() => router.push(subModule.href)}
+                          className={cn(
+                            'relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl',
+                            'text-sm font-medium transition-all duration-200',
+                            isActive
+                              ? 'bg-[hsl(var(--primary))]/5 text-[hsl(var(--primary))]'
+                              : 'text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--secondary))]/80 hover:text-[hsl(var(--foreground))]'
+                          )}
+                        >
+                          {isActive && (
+                            <span
+                              className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full"
+                              style={{ background: 'linear-gradient(180deg, hsl(var(--primary)), #f97707)' }}
+                            />
+                          )}
+                          <Icon className="w-[18px] h-[18px] flex-shrink-0" />
+                          <span className="flex-1 text-left">{subModule.title}</span>
+                          {subModule.badge !== undefined && (
+                            <span className="px-1.5 py-0.5 text-xs bg-brand-500/15 text-brand-500 rounded-md font-semibold">
+                              {subModule.badge}
+                            </span>
+                          )}
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => router.push(subModule.href)}
+                          className={cn(
+                            'relative w-full flex flex-col items-center justify-center py-2.5 rounded-xl',
+                            'transition-all duration-200',
+                            isActive
+                              ? 'text-[hsl(var(--primary))] bg-[hsl(var(--primary))]/5'
+                              : 'text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--secondary))]/80 hover:text-[hsl(var(--foreground))]'
+                          )}
+                          title={subModule.title}
+                        >
+                          <Icon className="w-[18px] h-[18px]" />
+                          {isActive && (
+                            <span className="absolute bottom-1 w-1 h-1 rounded-full bg-brand-500" />
+                          )}
+                        </button>
+                      )}
+                    </div>
+                  );
+                });
+              })()}
             </div>
           </nav>
 
@@ -378,36 +392,49 @@ export default function ModulosLayout({
           {/* Navigation mobile */}
           <nav className="relative flex-1 overflow-y-auto py-4">
             <div className="flex flex-col gap-1 px-2">
-              {currentModule.subModules.map((subModule) => {
-                const Icon = iconMap[subModule.icon] || FileText;
-                const isActive = pathname === subModule.href;
+              {(() => {
+                let lastGroup: string | undefined;
+                return currentModule.subModules.map((subModule) => {
+                  const Icon = iconMap[subModule.icon] || FileText;
+                  const isActive = pathname === subModule.href;
+                  const showGroupHeader = subModule.group && subModule.group !== lastGroup;
+                  if (subModule.group) lastGroup = subModule.group;
 
-                return (
-                  <button
-                    key={subModule.id}
-                    onClick={() => {
-                      router.push(subModule.href);
-                      setMobileMenuOpen(false);
-                    }}
-                    className={cn(
-                      'relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl',
-                      'text-sm font-medium transition-all duration-200',
-                      isActive
-                        ? 'bg-[hsl(var(--primary))]/5 text-[hsl(var(--primary))]'
-                        : 'text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--secondary))]/80 hover:text-[hsl(var(--foreground))]'
-                    )}
-                  >
-                    {isActive && (
-                      <span
-                        className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full"
-                        style={{ background: 'linear-gradient(180deg, hsl(var(--primary)), #f97707)' }}
-                      />
-                    )}
-                    <Icon className="w-[18px] h-[18px] flex-shrink-0" />
-                    <span>{subModule.title}</span>
-                  </button>
-                );
-              })}
+                  return (
+                    <div key={subModule.id}>
+                      {showGroupHeader && (
+                        <div className="px-3 pt-3 pb-1 first:pt-0">
+                          <span className="text-[10px] font-semibold uppercase tracking-wider text-[hsl(var(--muted-foreground))]/60">
+                            {subModule.group}
+                          </span>
+                        </div>
+                      )}
+                      <button
+                        onClick={() => {
+                          router.push(subModule.href);
+                          setMobileMenuOpen(false);
+                        }}
+                        className={cn(
+                          'relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl',
+                          'text-sm font-medium transition-all duration-200',
+                          isActive
+                            ? 'bg-[hsl(var(--primary))]/5 text-[hsl(var(--primary))]'
+                            : 'text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--secondary))]/80 hover:text-[hsl(var(--foreground))]'
+                        )}
+                      >
+                        {isActive && (
+                          <span
+                            className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full"
+                            style={{ background: 'linear-gradient(180deg, hsl(var(--primary)), #f97707)' }}
+                          />
+                        )}
+                        <Icon className="w-[18px] h-[18px] flex-shrink-0" />
+                        <span>{subModule.title}</span>
+                      </button>
+                    </div>
+                  );
+                });
+              })()}
             </div>
           </nav>
         </aside>

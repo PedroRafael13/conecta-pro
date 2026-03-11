@@ -38,7 +38,7 @@ class AccessLog(Base):
 
     Attributes:
         id: Identificador único
-        guardian_id: ID externo de integração
+        external_id: ID externo de integração
         log_type: Tipo de acesso
         client_id: ID do cliente/condomínio
         post_id: ID do posto de acesso
@@ -63,7 +63,7 @@ class AccessLog(Base):
         primary_key=True,
         default=lambda: str(uuid4()),
     )
-    guardian_id: Mapped[str] = mapped_column(
+    external_id: Mapped[str] = mapped_column(
         String(100),
         unique=True,
         nullable=False,
@@ -181,7 +181,7 @@ class AccessLog(Base):
     )
 
     # Metadados
-    guardian_metadata: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    external_metadata: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     sync_id: Mapped[str | None] = mapped_column(
         String(36),
         nullable=True,

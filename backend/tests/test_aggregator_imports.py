@@ -29,7 +29,6 @@ class TestComercialAggregator:
         "bidding_document_router",
         "bidding_proposal_router",
         "bidding_contract_router",
-        "bidding_certificate_router",
         "service_router",
     ]
 
@@ -227,6 +226,7 @@ class TestFiscalContabilAggregator:
         "statements_router",
         "nfse_multi_router",
         "government_integrations_router",
+        "bidding_certificate_router",
     ]
 
     def test_import(self):

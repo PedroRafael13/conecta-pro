@@ -1,16 +1,20 @@
 """Módulo GED - Gestão Eletrônica de Documentos.
 
-Este módulo fornece funcionalidades para:
-- Gerenciamento de pastas e documentos
-- Controle de versões
-- Compartilhamento com controle de acesso
-- Sistema de tags
-- Assinaturas digitais
-- Classificação por IA
-- OCR e extração de texto
+DEPRECATED: Use 'modules.pessoas' instead for router imports.
+Deprecation date: 2026-03-11. Removal target: 2026-05-11.
 """
 
-from modules.ged.controllers import (
+import warnings
+
+warnings.warn(
+    "Importing from 'modules.ged' is deprecated. "
+    "Use 'modules.pessoas' for router access. "
+    "This module will be removed after 2026-05-11.",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
+from modules.ged.controllers import (  # noqa: E402
     document_router,
     folder_router,
     share_router,
@@ -19,7 +23,7 @@ from modules.ged.controllers import (
     tag_router,
     version_router,
 )
-from modules.ged.models import (
+from modules.ged.models import (  # noqa: E402
     Document,
     DocumentCategory,
     DocumentConfidentiality,
@@ -45,7 +49,7 @@ from modules.ged.models import (
     VersionStatus,
     VersionType,
 )
-from modules.ged.services import (
+from modules.ged.services import (  # noqa: E402
     DocumentAIService,
     DocumentService,
     DocumentShareService,

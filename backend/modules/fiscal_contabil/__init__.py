@@ -1,6 +1,6 @@
 """
 Módulo FISCAL/CONTÁBIL — Agregador
-Unifica: empresas + fiscal + government_integrations
+Unifica: empresas + fiscal + government_integrations + certidões
 
 Routers re-exportados dos módulos de implementação.
 API URLs inalteradas.
@@ -8,6 +8,8 @@ Data migração: 2026-03-11
 """
 
 # --- Empresas (Multi-CNPJ) ---
+# --- Certidões (CNDs) — movido de comercial/bidding ---
+from modules.bidding import certificate_router as bidding_certificate_router
 from modules.empresas.controllers.bookkeeper_controller import router as bookkeeper_router
 from modules.empresas.controllers.dashboard_controller import router as empresas_dashboard_router
 from modules.empresas.controllers.dominio_controller import router as dominio_router
@@ -32,4 +34,5 @@ __all__ = [
     "statements_router",
     "nfse_multi_router",
     "government_integrations_router",
+    "bidding_certificate_router",
 ]

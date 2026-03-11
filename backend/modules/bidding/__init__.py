@@ -1,25 +1,28 @@
 """
 Modulo de Licitacoes - Conecta PRO
-==================================
-Gestao completa de licitacoes publicas com foco no Estado do Amazonas.
 
-Funcionalidades:
-- Gestao de Editais
-- Documentacao Exigida (certidoes, atestados)
-- Propostas Publicas
-- Contratos Publicos
-- Integracao PNCP
-- Compliance Lei 14.133/2021
+DEPRECATED: Use 'modules.comercial' instead for router imports.
+Deprecation date: 2026-03-11. Removal target: 2026-05-11.
 """
 
-from modules.bidding.controllers import (
+import warnings
+
+warnings.warn(
+    "Importing from 'modules.bidding' is deprecated. "
+    "Use 'modules.comercial' for router access. "
+    "This module will be removed after 2026-05-11.",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
+from modules.bidding.controllers import (  # noqa: E402
     certificate_router,
     contract_router,
     document_router,
     proposal_router,
     tender_router,
 )
-from modules.bidding.models import (
+from modules.bidding.models import (  # noqa: E402
     BiddingProposal,
     BiddingProposalItem,
     Certificate,
@@ -37,7 +40,7 @@ from modules.bidding.models import (
     TenderDocument,
     TenderStatus,
 )
-from modules.bidding.services import (
+from modules.bidding.services import (  # noqa: E402
     CertificateService,
     ContractService,
     DocumentService,

@@ -1,18 +1,17 @@
 """
 Módulo COMERCIAL — Agregador
-Unifica: crm + clients + bidding + services
+Unifica: crm + clients + bidding (licitações) + services
 
 Routers re-exportados dos módulos de implementação.
 API URLs inalteradas.
 Data migração: 2026-03-11
 Aliases válidos por 60 dias até 2026-05-10
+
+Nota: bidding_certificate_router movido para fiscal_contabil (2026-03-11)
 """
 
 # --- CRM (leads, oportunidades, propostas, contratos, comissões, dashboard) ---
-# --- Bidding (licitações) ---
-from modules.bidding import (
-    certificate_router as bidding_certificate_router,
-)
+# --- Bidding / Licitações (sem certidões — movidas para fiscal_contabil) ---
 from modules.bidding import contract_router as bidding_contract_router
 from modules.bidding import document_router as bidding_document_router
 from modules.bidding import proposal_router as bidding_proposal_router
@@ -56,6 +55,5 @@ __all__ = [
     "bidding_document_router",
     "bidding_proposal_router",
     "bidding_contract_router",
-    "bidding_certificate_router",
     "service_router",
 ]

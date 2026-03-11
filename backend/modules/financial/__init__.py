@@ -3,37 +3,28 @@ Module: financial
 Description: Modulo Financeiro Completo - Conecta PRO
 Author: Conecta PRO Team
 Date: 2026-01-10
-Quality Score Target: 99+/100
-Compliance: Legislacao fiscal e contabil brasileira
 
-Este modulo fornece gestao financeira completa:
-- Contas a Pagar: Fornecedores, parcelas, pagamentos
-- Contas a Receber: Clientes, cobrancas, recebimentos
-- Fluxo de Caixa: Contas bancarias, transacoes, reconciliacao
-- Compras: Requisicoes, cotacoes, pedidos, recebimento
-- Estoque: Armazens, itens, movimentacoes, inventarios
-- Contabilidade: Plano de contas, lancamentos, balancetes
-- Fiscal: NFe, NFSe, SPED, obrigacoes fiscais
-- BI/Dashboard: KPIs, widgets, relatorios agendados
-- Custeio ABC: Drivers, atividades, pools, alocacoes
-
-Estrutura modular:
-- models/: Modelos SQLAlchemy para persistencia
-- schemas/: Schemas Pydantic para validacao
-- services/: Logica de negocio e IA
-- controllers/: Endpoints FastAPI
-- repositories/: Acesso a dados
-- bi_dashboard/: Submodulo de BI e dashboards
-- costing/: Submodulo de custeio ABC
+DEPRECATED: Use 'modules.financeiro' instead for router imports.
+Deprecation date: 2026-03-11. Removal target: 2026-05-11.
 """
 
-from fastapi import APIRouter
+import warnings
+
+warnings.warn(
+    "Importing from 'modules.financial' is deprecated. "
+    "Use 'modules.financeiro' for router access. "
+    "This module will be removed after 2026-05-11.",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
+from fastapi import APIRouter  # noqa: E402
 
 # Routers dos submodulos
-from modules.financial.bi_dashboard.controllers import router as bi_dashboard_router
+from modules.financial.bi_dashboard.controllers import router as bi_dashboard_router  # noqa: E402
 
 # Models do BI Dashboard
-from modules.financial.bi_dashboard.models import (
+from modules.financial.bi_dashboard.models import (  # noqa: E402
     AnalyticsCache,
     FinancialDashboard,
     FinancialKPI,
@@ -42,7 +33,7 @@ from modules.financial.bi_dashboard.models import (
 )
 
 # Repositories do BI Dashboard
-from modules.financial.bi_dashboard.repositories import (
+from modules.financial.bi_dashboard.repositories import (  # noqa: E402
     CacheRepository,
     DashboardRepository,
     KPIRepository,
@@ -51,7 +42,7 @@ from modules.financial.bi_dashboard.repositories import (
 )
 
 # Services do BI Dashboard
-from modules.financial.bi_dashboard.services import (
+from modules.financial.bi_dashboard.services import (  # noqa: E402
     AnalyticsService,
     BIService,
     ForecastService,
@@ -60,7 +51,7 @@ from modules.financial.bi_dashboard.services import (
 # =============================================================================
 # ROUTERS DOS CONTROLLERS PRINCIPAIS
 # =============================================================================
-from modules.financial.controllers import (
+from modules.financial.controllers import (  # noqa: E402
     # Contabilidade
     accounting_router,
     # Fluxo de Caixa
@@ -83,10 +74,10 @@ from modules.financial.controllers import (
     # Contas a Pagar
     supplier_router,
 )
-from modules.financial.costing import router as costing_router
+from modules.financial.costing import router as costing_router  # noqa: E402
 
 # Models do Custeio
-from modules.financial.costing.models import (
+from modules.financial.costing.models import (  # noqa: E402
     CostActivity,
     CostAllocation,
     CostAnalysis,
@@ -96,7 +87,7 @@ from modules.financial.costing.models import (
 )
 
 # Repositories do Custeio
-from modules.financial.costing.repositories import (
+from modules.financial.costing.repositories import (  # noqa: E402
     CostActivityRepository,
     CostAllocationRepository,
     CostAnalysisRepository,
@@ -106,7 +97,7 @@ from modules.financial.costing.repositories import (
 )
 
 # Services do Custeio
-from modules.financial.costing.services import (
+from modules.financial.costing.services import (  # noqa: E402
     ABCService,
     AllocationService,
     CostAIService,
@@ -115,7 +106,7 @@ from modules.financial.costing.services import (
 # =============================================================================
 # MODELS PRINCIPAIS (Re-exports para acesso direto)
 # =============================================================================
-from modules.financial.models import (
+from modules.financial.models import (  # noqa: E402
     CFOP,
     NCM,
     AccountingAccount,
@@ -179,7 +170,7 @@ from modules.financial.models import (
 # =============================================================================
 # REPOSITORIES PRINCIPAIS (Re-exports para acesso direto)
 # =============================================================================
-from modules.financial.repositories import (
+from modules.financial.repositories import (  # noqa: E402
     AccountingAccountRepository,
     AccountingPeriodRepository,
     # Fluxo de Caixa
@@ -226,7 +217,7 @@ from modules.financial.repositories import (
 # =============================================================================
 # SERVICES PRINCIPAIS (Re-exports para acesso direto)
 # =============================================================================
-from modules.financial.services import (
+from modules.financial.services import (  # noqa: E402
     # Contabilidade
     AccountingAIService,
     CashFlowAIService,

@@ -22,6 +22,7 @@ export interface SubModule {
   icon: string;
   permissions: string[];
   badge?: number;
+  group?: string;
 }
 
 // Configuração de módulos por categoria

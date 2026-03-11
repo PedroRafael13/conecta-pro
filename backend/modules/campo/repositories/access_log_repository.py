@@ -26,7 +26,7 @@ class AccessLogRepository:
     async def create(self, data: AccessLogCreate) -> AccessLog:
         """Cria um novo log de acesso."""
         log = AccessLog(
-            guardian_id=data.guardian_id,
+            external_id=data.guardian_id,
             log_type=data.log_type,
             client_id=data.client_id,
             contract_id=data.contract_id,
@@ -55,7 +55,7 @@ class AccessLogRepository:
             event_timestamp=data.event_timestamp,
             latitude=data.latitude,
             longitude=data.longitude,
-            guardian_metadata=data.guardian_metadata,
+            external_metadata=data.guardian_metadata,
         )
 
         self.db.add(log)
@@ -68,7 +68,7 @@ class AccessLogRepository:
         logs = []
         for data in data_list:
             log = AccessLog(
-                guardian_id=data.guardian_id,
+                external_id=data.guardian_id,
                 log_type=data.log_type,
                 client_id=data.client_id,
                 contract_id=data.contract_id,
@@ -97,7 +97,7 @@ class AccessLogRepository:
                 event_timestamp=data.event_timestamp,
                 latitude=data.latitude,
                 longitude=data.longitude,
-                guardian_metadata=data.guardian_metadata,
+                external_metadata=data.guardian_metadata,
             )
             logs.append(log)
             self.db.add(log)
@@ -117,11 +117,11 @@ class AccessLogRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_by_guardian_id(self, guardian_id: str) -> AccessLog | None:
-        """Busca log por ID do Guardian."""
+    async def get_by_external_id(self, external_id: str) -> AccessLog | None:
+        """Busca log por ID externo."""
         result = await self.db.execute(
             select(AccessLog).where(
-                AccessLog.guardian_id == guardian_id,
+                AccessLog.external_id == external_id,
                 AccessLog.is_active.is_(True),
             )
         )

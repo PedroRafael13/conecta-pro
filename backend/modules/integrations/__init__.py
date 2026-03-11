@@ -1,17 +1,9 @@
 """
 Module: integrations
 Description: Modulo de Integracoes - API Gateway, Webhooks, Banking, Email, WhatsApp, Conectores
-Author: Conecta PRO Team
-Date: 2026-01-10
-Quality Score Target: 99+/100
 
-Este modulo fornece:
-- Gerenciamento de API Keys e Endpoints
-- Configuracao e disparo de Webhooks
-- Fila de sincronizacao com sistemas externos
-- Logs de integracao
-- Conectores externos (Bling, Solides, etc.) - Sprint 33
-- Submodulos: Banking (Open Banking), Email (Campanhas), WhatsApp (Chatbot)
+DEPRECATED: Use 'modules.gestao' instead for router imports.
+Deprecation date: 2026-03-11. Removal target: 2026-05-11.
 
 Estrutura modular:
 - models/: Modelos SQLAlchemy para persistencia
@@ -26,10 +18,20 @@ Estrutura modular:
 - whatsapp/: Automacoes e chatbot WhatsApp
 """
 
-from fastapi import APIRouter
+import warnings
+
+warnings.warn(
+    "Importing from 'modules.integrations' is deprecated. "
+    "Use 'modules.gestao' for router access. "
+    "This module will be removed after 2026-05-11.",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
+from fastapi import APIRouter  # noqa: E402
 
 # Re-export submodulos - Banking (Open Banking)
-from modules.integrations.banking import (
+from modules.integrations.banking import (  # noqa: E402
     AccountBalance,
     AccountType,
     BankCode,
@@ -49,10 +51,10 @@ from modules.integrations.banking import (
 )
 
 # Importa routers dos controllers
-from modules.integrations.controllers import connector_router, integration_router
+from modules.integrations.controllers import connector_router, integration_router  # noqa: E402
 
 # Re-export submodulos - Email
-from modules.integrations.email import (
+from modules.integrations.email import (  # noqa: E402
     ABTestResult,
     BounceType,
     CampaignService,
@@ -77,27 +79,27 @@ from modules.integrations.email import (
     TrackingPixel,
     TriggerType,
 )
-from modules.integrations.email import (
+from modules.integrations.email import (  # noqa: E402
     DailyReport as EmailDailyReport,
 )
-from modules.integrations.email import (
+from modules.integrations.email import (  # noqa: E402
     QueueStats as EmailQueueStats,
 )
-from modules.integrations.email import (
+from modules.integrations.email import (  # noqa: E402
     SendResponse as EmailSendResponse,
 )
-from modules.integrations.email import (
+from modules.integrations.email import (  # noqa: E402
     SendResult as EmailSendResult,
 )
-from modules.integrations.email import (
+from modules.integrations.email import (  # noqa: E402
     TemplateCategory as EmailTemplateCategory,
 )
-from modules.integrations.email import (
+from modules.integrations.email import (  # noqa: E402
     TemplateStatus as EmailTemplateStatus,
 )
 
 # Re-export models
-from modules.integrations.models import (
+from modules.integrations.models import (  # noqa: E402
     AccountStatus,
     APIEndpoint,
     APIKey,
@@ -136,13 +138,13 @@ from modules.integrations.models import (
 )
 
 # Re-export repositories
-from modules.integrations.repositories import (
+from modules.integrations.repositories import (  # noqa: E402
     ConnectorRepository,
     IntegrationRepository,
 )
 
 # Re-export schemas
-from modules.integrations.schemas import (
+from modules.integrations.schemas import (  # noqa: E402
     APIEndpointBase,
     APIEndpointCreate,
     APIEndpointList,
@@ -178,14 +180,14 @@ from modules.integrations.schemas import (
 )
 
 # Re-export services
-from modules.integrations.services import (
+from modules.integrations.services import (  # noqa: E402
     ConnectorService,
     IntegrationService,
     WebhookService,
 )
 
 # Re-export submodulos - WhatsApp
-from modules.integrations.whatsapp import (
+from modules.integrations.whatsapp import (  # noqa: E402
     ChatbotResponse,
     ChatbotService,
     ConversationContext,
@@ -206,22 +208,22 @@ from modules.integrations.whatsapp import (
     WhatsAppService,
     WhatsAppStatus,
 )
-from modules.integrations.whatsapp import (
+from modules.integrations.whatsapp import (  # noqa: E402
     DailyReport as WhatsAppDailyReport,
 )
-from modules.integrations.whatsapp import (
+from modules.integrations.whatsapp import (  # noqa: E402
     QueueStats as WhatsAppQueueStats,
 )
-from modules.integrations.whatsapp import (
+from modules.integrations.whatsapp import (  # noqa: E402
     SendResponse as WhatsAppSendResponse,
 )
-from modules.integrations.whatsapp import (
+from modules.integrations.whatsapp import (  # noqa: E402
     SendResult as WhatsAppSendResult,
 )
-from modules.integrations.whatsapp import (
+from modules.integrations.whatsapp import (  # noqa: E402
     TemplateCategory as WhatsAppTemplateCategory,
 )
-from modules.integrations.whatsapp import (
+from modules.integrations.whatsapp import (  # noqa: E402
     TemplateStatus as WhatsAppTemplateStatus,
 )
 

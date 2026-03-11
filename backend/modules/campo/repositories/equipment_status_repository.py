@@ -30,7 +30,7 @@ class EquipmentStatusRepository:
     async def create(self, data: EquipmentStatusCreate) -> EquipmentStatus:
         """Cria um novo status de equipamento."""
         equipment = EquipmentStatus(
-            guardian_id=data.guardian_id,
+            external_id=data.guardian_id,
             equipment_id=data.equipment_id,
             equipment_type=data.equipment_type,
             equipment_name=data.equipment_name,
@@ -57,7 +57,7 @@ class EquipmentStatusRepository:
             active_alerts=data.active_alerts,
             next_maintenance_at=data.next_maintenance_at,
             maintenance_notes=data.maintenance_notes,
-            guardian_metadata=data.guardian_metadata,
+            external_metadata=data.guardian_metadata,
         )
 
         self.db.add(equipment)
@@ -75,14 +75,14 @@ class EquipmentStatusRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_by_guardian_id(
+    async def get_by_external_id(
         self,
-        guardian_id: str,
+        external_id: str,
     ) -> EquipmentStatus | None:
-        """Busca equipamento por ID do Guardian."""
+        """Busca equipamento por ID externo."""
         result = await self.db.execute(
             select(EquipmentStatus).where(
-                EquipmentStatus.guardian_id == guardian_id,
+                EquipmentStatus.external_id == external_id,
                 EquipmentStatus.is_active.is_(True),
             )
         )
@@ -194,13 +194,13 @@ class EquipmentStatusRepository:
         await self.db.refresh(equipment)
         return equipment
 
-    async def update_by_guardian_id(
+    async def update_by_external_id(
         self,
-        guardian_id: str,
+        external_id: str,
         data: EquipmentStatusUpdate,
     ) -> EquipmentStatus | None:
-        """Atualiza status pelo ID do Guardian."""
-        equipment = await self.get_by_guardian_id(guardian_id)
+        """Atualiza status pelo ID externo."""
+        equipment = await self.get_by_external_id(external_id)
         if not equipment:
             return None
 

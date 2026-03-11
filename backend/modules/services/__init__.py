@@ -1,10 +1,22 @@
 """
 Services Module - Gestão de Serviços
-Sprint 31: Gestão de Serviços
+
+DEPRECATED: Use 'modules.comercial' instead for router imports.
+Deprecation date: 2026-03-11. Removal target: 2026-05-11.
 """
 
-from modules.services.controllers import router
-from modules.services.models import (
+import warnings
+
+warnings.warn(
+    "Importing from 'modules.services' is deprecated. "
+    "Use 'modules.comercial' for router access. "
+    "This module will be removed after 2026-05-11.",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
+from modules.services.controllers import router  # noqa: E402
+from modules.services.models import (  # noqa: E402
     ExecutionStatus,
     OrderPriority,
     OrderStatus,
@@ -19,7 +31,7 @@ from modules.services.models import (
     SLAConfig,
     SLAMetricType,
 )
-from modules.services.services import ServiceAIService, ServiceManagementService
+from modules.services.services import ServiceAIService, ServiceManagementService  # noqa: E402
 
 __all__ = [
     # Models

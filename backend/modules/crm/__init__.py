@@ -3,28 +3,25 @@ Module: crm
 Description: Modulo de CRM - Customer Relationship Management
 Author: Conecta PRO Team
 Date: 2026-01-10
-Quality Score Target: 99+/100
 
-Este modulo fornece:
-- Gestao de Leads e scoring automatizado
-- Pipeline de Oportunidades
-- Geracao e gestao de Propostas
-- Contratos e aditivos
-- Comissoes de vendedores
-- Dashboard e metricas de vendas
-
-Estrutura modular:
-- models/: Modelos SQLAlchemy para persistencia
-- schemas/: Schemas Pydantic para validacao
-- services/: Logica de negocio
-- controllers/: Endpoints FastAPI
-- repositories/: Acesso a dados
+DEPRECATED: Use 'modules.comercial' instead for router imports.
+Deprecation date: 2026-03-11. Removal target: 2026-05-11.
 """
 
-from fastapi import APIRouter
+import warnings
+
+warnings.warn(
+    "Importing from 'modules.crm' is deprecated. "
+    "Use 'modules.comercial' for router access. "
+    "This module will be removed after 2026-05-11.",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
+from fastapi import APIRouter  # noqa: E402
 
 # Importa routers dos controllers
-from .controllers import (
+from .controllers import (  # noqa: E402
     commission_router,
     contract_router,
     dashboard_router,
@@ -34,7 +31,7 @@ from .controllers import (
 )
 
 # Importa models principais
-from .models import (
+from .models import (  # noqa: E402
     AddendumType,
     AdjustmentIndex,
     ApprovalAction,
@@ -77,7 +74,7 @@ from .models import (
 )
 
 # Importa repositories
-from .repositories import (
+from .repositories import (  # noqa: E402
     CommissionRepository,
     ContractRepository,
     LeadRepository,
@@ -86,7 +83,7 @@ from .repositories import (
 )
 
 # Importa services principais
-from .services import (
+from .services import (  # noqa: E402
     CommissionService,
     ContractService,
     DashboardService,

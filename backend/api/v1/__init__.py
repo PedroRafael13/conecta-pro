@@ -26,7 +26,6 @@ router.include_router(auth_router)
 # 1. COMERCIAL (via agregador)
 # =============================================================================
 from modules.comercial import (  # noqa: E402
-    bidding_certificate_router,
     bidding_contract_router,
     bidding_document_router,
     bidding_proposal_router,
@@ -53,7 +52,6 @@ router.include_router(bidding_tender_router, prefix="/bidding", tags=["Bidding -
 router.include_router(bidding_document_router, prefix="/bidding", tags=["Bidding - Documentos"])
 router.include_router(bidding_proposal_router, prefix="/bidding", tags=["Bidding - Propostas"])
 router.include_router(bidding_contract_router, prefix="/bidding", tags=["Bidding - Contratos"])
-router.include_router(bidding_certificate_router, prefix="/bidding", tags=["Bidding - Certidoes"])
 
 # =============================================================================
 # 2. OPERAÇÕES (via agregador)
@@ -207,10 +205,12 @@ router.include_router(financial_ai_router, prefix="/financial", tags=["Financial
 # 6. FISCAL/CONTÁBIL (via agregador)
 # =============================================================================
 from modules.fiscal_contabil import (  # noqa: E402
+    bidding_certificate_router,
     empresas_router,
 )
 
 router.include_router(empresas_router, tags=["Empresas - Multi-CNPJ"])
+router.include_router(bidding_certificate_router, prefix="/bidding", tags=["Certidões - CNDs"])
 
 # =============================================================================
 # 7. INTELIGÊNCIA (via agregador)

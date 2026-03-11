@@ -1,27 +1,23 @@
 """
 Módulo de Recrutamento e Seleção.
 
-Este módulo gerencia todo o processo de recrutamento:
-- Vagas de emprego (JobPosition)
-- Candidatos (Candidate)
-- Candidaturas (Application)
-- Entrevistas (Interview)
-- Habilidades (CandidateSkill)
-- Experiências (CandidateExperience)
-- Formação (CandidateEducation)
-
-Features:
-- Matching de candidatos com vagas usando IA
-- Score de compatibilidade
-- Parsing de currículo
-- Workflow de candidatura
-- Agendamento de entrevistas
-- Geração de perguntas para entrevista
+DEPRECATED: Use 'modules.pessoas' instead for router imports.
+Deprecation date: 2026-03-11. Removal target: 2026-05-11.
 """
 
-from fastapi import APIRouter
+import warnings
 
-from .controllers import (
+warnings.warn(
+    "Importing from 'modules.recruitment' is deprecated. "
+    "Use 'modules.pessoas' for router access. "
+    "This module will be removed after 2026-05-11.",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
+from fastapi import APIRouter  # noqa: E402
+
+from .controllers import (  # noqa: E402
     application_router,
     candidate_router,
     interview_router,

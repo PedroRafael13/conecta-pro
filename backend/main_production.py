@@ -247,7 +247,6 @@ except Exception as e:
 # =============================================================================
 try:
     from modules.comercial import (
-        bidding_certificate_router,
         bidding_contract_router,
         bidding_document_router,
         bidding_proposal_router,
@@ -271,12 +270,11 @@ try:
     api_router.include_router(crm_dashboard_router, prefix="/crm", tags=["CRM - Dashboard"])
     # Clients
     api_router.include_router(client_router, tags=["Clients - Cadastro"])
-    # Bidding
+    # Bidding (Licitações — sem certidões, movidas para fiscal_contabil)
     api_router.include_router(bidding_tender_router, prefix="/bidding", tags=["Bidding - Editais"])
     api_router.include_router(bidding_document_router, prefix="/bidding", tags=["Bidding - Documentos"])
     api_router.include_router(bidding_proposal_router, prefix="/bidding", tags=["Bidding - Propostas"])
     api_router.include_router(bidding_contract_router, prefix="/bidding", tags=["Bidding - Contratos"])
-    api_router.include_router(bidding_certificate_router, prefix="/bidding", tags=["Bidding - Certidoes"])
     # Services
     api_router.include_router(service_router, tags=["Services - Servicos"])
     logger.info("Modulo Comercial: OK (CRM + Clients + Bidding + Services)")
@@ -479,6 +477,7 @@ except Exception as e:
 # =============================================================================
 try:
     from modules.fiscal_contabil import (
+        bidding_certificate_router,
         bookkeeper_router,
         dominio_router,
         empresas_dashboard_router,
@@ -502,7 +501,9 @@ try:
     api_router.include_router(nfse_multi_router, prefix="/fiscal", tags=["Fiscal - NFS-e Multi-Empresa"])
     # Government
     api_router.include_router(government_integrations_router, tags=["Government"])
-    logger.info("Modulo Fiscal/Contabil: OK (Empresas + Fiscal + Government)")
+    # Certidões (CNDs) — movido de comercial/bidding
+    api_router.include_router(bidding_certificate_router, prefix="/bidding", tags=["Certidões - CNDs"])
+    logger.info("Modulo Fiscal/Contabil: OK (Empresas + Fiscal + Government + Certidoes)")
 except Exception as e:
     logger.warning(f"Modulo Fiscal/Contabil: {e}")
 
