@@ -733,8 +733,8 @@ class TestIntegrationAPI:
         integration_response = {
             "id": str(uuid4()),
             "client_id": str(uuid4()),
-            "integration_type": "guardian",
-            "name": "Guardian Integration",
+            "integration_type": "external",
+            "name": "External Integration",
             "enabled": True,
             "sync_status": "synced",
         }
@@ -753,7 +753,7 @@ class TestIntegrationAPI:
             result = await mock_client_service.list_integrations(skip=0, limit=50)
 
         assert result["total"] == 1
-        assert result["items"][0]["integration_type"] == "guardian"
+        assert result["items"][0]["integration_type"] == "external"
 
     @pytest.mark.asyncio
     async def test_create_integration_success(self, mock_client_service):

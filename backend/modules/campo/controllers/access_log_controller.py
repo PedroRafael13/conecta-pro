@@ -37,7 +37,7 @@ async def create_access_log(
     repo = AccessLogRepository(db)
 
     # Verificar se já existe
-    existing = await repo.get_by_external_id(data.guardian_id)
+    existing = await repo.get_by_external_id(data.external_id)
     if existing:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,

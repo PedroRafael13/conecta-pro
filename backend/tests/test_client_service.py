@@ -762,14 +762,14 @@ class TestIntegrationService:
         with patch.object(client_service, "repository", mock_repository):
             mock_repository.create_integration_settings.return_value = MagicMock(
                 id=uuid4(),
-                integration_type=IntegrationType.GUARDIAN,
+                integration_type=IntegrationType.EXTERNAL,
                 is_enabled=False,
             )
 
             data = IntegrationSettingsCreate(
                 client_id=sample_client.id,
-                integration_type=IntegrationType.GUARDIAN,
-                name="Guardian Integration",
+                integration_type=IntegrationType.EXTERNAL,
+                name="External Integration",
             )
 
             result = client_service.create_integration(data)
@@ -782,7 +782,7 @@ class TestIntegrationService:
         integration = IntegrationSettings(
             id=uuid4(),
             client_id=uuid4(),
-            integration_type=IntegrationType.GUARDIAN,
+            integration_type=IntegrationType.EXTERNAL,
             name="Test",
             is_enabled=False,
             sync_status=SyncStatus.DESABILITADO,
@@ -801,7 +801,7 @@ class TestIntegrationService:
         integration = IntegrationSettings(
             id=uuid4(),
             client_id=uuid4(),
-            integration_type=IntegrationType.GUARDIAN,
+            integration_type=IntegrationType.EXTERNAL,
             name="Test",
             is_enabled=True,
             sync_status=SyncStatus.SINCRONIZADO,

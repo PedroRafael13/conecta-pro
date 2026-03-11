@@ -113,8 +113,8 @@ def sample_integration_data(sample_client_data):
     return {
         "id": uuid4(),
         "client_id": sample_client_data["id"],
-        "integration_type": IntegrationType.GUARDIAN,
-        "name": "Guardian Integration",
+        "integration_type": IntegrationType.EXTERNAL,
+        "name": "External Integration",
         "is_enabled": True,
         "sync_status": SyncStatus.SINCRONIZADO,
         "sync_direction": SyncDirection.BIDIRECTIONAL,
@@ -194,7 +194,7 @@ class TestEnums:
 
     def test_integration_type_values(self):
         """Testa valores do enum IntegrationType."""
-        assert IntegrationType.GUARDIAN.value == "guardian"
+        assert IntegrationType.EXTERNAL.value == "external"
         assert IntegrationType.PLUS.value == "plus"
         assert IntegrationType.ERP_EXTERNO.value == "erp_externo"
         assert IntegrationType.BANCO.value == "banco"
@@ -614,8 +614,8 @@ class TestIntegrationSettingsModel:
         """Testa criacao de integracao."""
         integration = IntegrationSettings(**sample_integration_data)
 
-        assert integration.integration_type == IntegrationType.GUARDIAN
-        assert integration.name == "Guardian Integration"
+        assert integration.integration_type == IntegrationType.EXTERNAL
+        assert integration.name == "External Integration"
         assert integration.is_enabled is True
         assert integration.sync_status == SyncStatus.SINCRONIZADO
 
@@ -689,11 +689,11 @@ class TestIntegrationSettingsModel:
     def test_integration_api_configuration(self, sample_integration_data):
         """Testa configuracao de API."""
         integration = IntegrationSettings(**sample_integration_data)
-        integration.api_url = "https://api.guardian.com/v1"
-        integration.api_key = "grd_api_key_12345"  # pragma: allowlist secret
+        integration.api_url = "https://api.external.com/v1"
+        integration.api_key = "ext_api_key_12345"  # pragma: allowlist secret
 
-        assert integration.api_url == "https://api.guardian.com/v1"
-        assert integration.api_key == "grd_api_key_12345"  # pragma: allowlist secret
+        assert integration.api_url == "https://api.external.com/v1"
+        assert integration.api_key == "ext_api_key_12345"  # pragma: allowlist secret
 
     def test_integration_webhook_configuration(self, sample_integration_data):
         """Testa configuracao de webhook."""

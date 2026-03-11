@@ -15,8 +15,6 @@
 -- - access_history (context, headers, risk_factors, metadata, tags, alert_ids)
 -- - scales (config)
 -- - occurrences (attachments)
--- - guardian_occurrences (involved_persons, witnesses, images, videos, audio_recordings,
---                         attachments, guardian_metadata, tags)
 -- - scale_templates (config, template_data)
 -- - posts (required_certifications, metadata)
 -- - allocations (qualifications)
@@ -288,41 +286,7 @@ BEGIN
 END $$;
 
 -- ===============================================================================
--- SEÇÃO 6: TABELA GUARDIAN_OCCURRENCES
--- ===============================================================================
-DO $$
-BEGIN
-    RAISE NOTICE '========================================';
-    RAISE NOTICE 'Processando tabela: guardian_occurrences';
-    RAISE NOTICE '========================================';
-
-    -- involved_persons: array JSONB
-    PERFORM _tmp_normalize_jsonb_array('guardian_occurrences', 'involved_persons');
-
-    -- witnesses: array JSONB
-    PERFORM _tmp_normalize_jsonb_array('guardian_occurrences', 'witnesses');
-
-    -- images: array JSONB
-    PERFORM _tmp_normalize_jsonb_array('guardian_occurrences', 'images');
-
-    -- videos: array JSONB
-    PERFORM _tmp_normalize_jsonb_array('guardian_occurrences', 'videos');
-
-    -- audio_recordings: array JSONB
-    PERFORM _tmp_normalize_jsonb_array('guardian_occurrences', 'audio_recordings');
-
-    -- attachments: array JSONB
-    PERFORM _tmp_normalize_jsonb_array('guardian_occurrences', 'attachments');
-
-    -- guardian_metadata: objeto JSONB
-    PERFORM _tmp_normalize_jsonb_object('guardian_occurrences', 'guardian_metadata');
-
-    -- tags: array JSONB
-    PERFORM _tmp_normalize_jsonb_array('guardian_occurrences', 'tags');
-END $$;
-
--- ===============================================================================
--- SEÇÃO 7: TABELA SCALE_TEMPLATES
+-- SEÇÃO 6: TABELA SCALE_TEMPLATES (was SEÇÃO 7)
 -- ===============================================================================
 DO $$
 BEGIN
@@ -458,15 +422,7 @@ BEGIN
     PERFORM _tmp_normalize_jsonb_object('data_retention_policies', 'metadata');
     PERFORM _tmp_normalize_jsonb_array('data_retention_policies', 'tags');
 
-    -- guardian_syncs (schema guardian)
-    IF _tmp_table_exists('guardian_syncs') THEN
-        PERFORM _tmp_normalize_jsonb_object('guardian_syncs', 'payload');
-        PERFORM _tmp_normalize_jsonb_object('guardian_syncs', 'response');
-        PERFORM _tmp_normalize_jsonb_object('guardian_syncs', 'error_details');
-        PERFORM _tmp_normalize_jsonb_object('guardian_syncs', 'metadata_extra');
-    END IF;
-
-    -- security_audits (schema guardian)
+    -- security_audits
     IF _tmp_table_exists('security_audits') THEN
         PERFORM _tmp_normalize_jsonb_object('security_audits', 'severity_breakdown');
         PERFORM _tmp_normalize_jsonb_object('security_audits', 'scan_results');

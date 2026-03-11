@@ -12,7 +12,7 @@ from modules.campo.models.access_log import AccessLogType
 class AccessLogCreate(BaseModel):
     """Schema para criar log de acesso."""
 
-    guardian_id: str = Field(..., min_length=1, max_length=100)
+    external_id: str = Field(..., min_length=1, max_length=100)
     log_type: AccessLogType = Field(default=AccessLogType.ENTRY)
     client_id: str = Field(..., description="ID do cliente")
     contract_id: str | None = Field(None, description="ID do contrato")
@@ -61,7 +61,7 @@ class AccessLogCreate(BaseModel):
     longitude: float | None = Field(None, ge=-180, le=180)
 
     # Metadados
-    guardian_metadata: dict | None = Field(None)
+    external_metadata: dict | None = Field(None)
 
     model_config = ConfigDict(use_enum_values=True)
 
@@ -86,7 +86,7 @@ class AccessLogResponse(BaseModel):
     """Schema de resposta para log de acesso."""
 
     id: str
-    guardian_id: str
+    external_id: str
     log_type: str
     client_id: str
     contract_id: str | None

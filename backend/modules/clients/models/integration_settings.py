@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 class IntegrationType(StrEnum):
     """Tipo de integração."""
 
-    GUARDIAN = "guardian"  # External integration type (Conecta PLUS system)
+    EXTERNAL = "external"  # External integration type
     PLUS = "plus"
     ERP_EXTERNO = "erp_externo"
     CONTABILIDADE = "contabilidade"
@@ -65,7 +65,7 @@ class IntegrationSettings(Base):
     client_id = Column(UUID(as_uuid=True), ForeignKey("clients.id", ondelete="CASCADE"), nullable=False, index=True)
 
     # Tipo de integração
-    integration_type = Column(Enum(IntegrationType), nullable=False, default=IntegrationType.GUARDIAN)
+    integration_type = Column(Enum(IntegrationType), nullable=False, default=IntegrationType.EXTERNAL)
     name = Column(String(100), nullable=False)
     description = Column(String(500), nullable=True)
 
@@ -152,7 +152,7 @@ class IntegrationSettings(Base):
     @property
     def is_configured(self) -> bool:
         """Verifica se está configurado."""
-        if self.integration_type in (IntegrationType.GUARDIAN, IntegrationType.PLUS):
+        if self.integration_type in (IntegrationType.EXTERNAL, IntegrationType.PLUS):
             return bool(self.api_url and self.api_key)
         if self.integration_type == IntegrationType.WEBHOOK:
             return bool(self.webhook_url)

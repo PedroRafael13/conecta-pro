@@ -26,7 +26,7 @@ class AccessLogRepository:
     async def create(self, data: AccessLogCreate) -> AccessLog:
         """Cria um novo log de acesso."""
         log = AccessLog(
-            external_id=data.guardian_id,
+            external_id=data.external_id,
             log_type=data.log_type,
             client_id=data.client_id,
             contract_id=data.contract_id,
@@ -55,7 +55,7 @@ class AccessLogRepository:
             event_timestamp=data.event_timestamp,
             latitude=data.latitude,
             longitude=data.longitude,
-            external_metadata=data.guardian_metadata,
+            external_metadata=data.external_metadata,
         )
 
         self.db.add(log)
@@ -68,7 +68,7 @@ class AccessLogRepository:
         logs = []
         for data in data_list:
             log = AccessLog(
-                external_id=data.guardian_id,
+                external_id=data.external_id,
                 log_type=data.log_type,
                 client_id=data.client_id,
                 contract_id=data.contract_id,
@@ -97,7 +97,7 @@ class AccessLogRepository:
                 event_timestamp=data.event_timestamp,
                 latitude=data.latitude,
                 longitude=data.longitude,
-                external_metadata=data.guardian_metadata,
+                external_metadata=data.external_metadata,
             )
             logs.append(log)
             self.db.add(log)

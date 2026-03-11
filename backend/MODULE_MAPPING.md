@@ -177,4 +177,3 @@ Estes modulos sao registrados diretamente no `api/v1/__init__.py`:
 | Modulo   | Motivo                                | Data       |
 |----------|---------------------------------------|------------|
 | search   | Funcionalidade nao utilizada          | 2026-03-11 |
-| guardian | Sistema externo (Conecta PLUS)        | 2026-03-11 |

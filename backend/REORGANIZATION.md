@@ -61,7 +61,6 @@ from modules.crm.services import LeadService
 
 | Modulo | Motivo |
 |---|---|
-| `guardian` | Pertencia ao Conecta PLUS (produto separado). Routers, models e services removidos. |
 | `search` | Busca global — funcionalidade nao utilizada. Removido. |
 | `fase5` | Experimental/prototipo — deprecado e removido. |
 
@@ -83,15 +82,7 @@ from modules.crm.controllers import lead_router
 from modules.comercial import crm_lead_router
 ```
 
-## 7. Guardian Cleanup
-
-O modulo `guardian` foi completamente removido:
-- Controllers, models, services, migrations — tudo deletado
-- Referencia em `main.py` removida
-- Pertencia ao produto Conecta PLUS (monitoramento 24h), que tem repositorio proprio
-- Se encontrar imports de `modules.guardian`, remova-os
-
-## 8. Como Adicionar Novo Router
+## 7. Como Adicionar Novo Router
 
 1. Crie o router no modulo de implementacao existente:
    ```python

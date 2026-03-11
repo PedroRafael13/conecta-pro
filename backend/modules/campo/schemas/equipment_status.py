@@ -12,7 +12,7 @@ from modules.campo.models.equipment_status import EquipmentStatusType
 class EquipmentStatusCreate(BaseModel):
     """Schema para criar status de equipamento."""
 
-    guardian_id: str = Field(..., min_length=1, max_length=100)
+    external_id: str = Field(..., min_length=1, max_length=100)
     equipment_id: str = Field(..., min_length=1, max_length=100)
     equipment_type: str = Field(..., min_length=1, max_length=50)
     equipment_name: str = Field(..., min_length=1, max_length=100)
@@ -48,7 +48,7 @@ class EquipmentStatusCreate(BaseModel):
     next_maintenance_at: datetime | None = Field(None)
     maintenance_notes: str | None = Field(None)
 
-    guardian_metadata: dict | None = Field(None)
+    external_metadata: dict | None = Field(None)
 
     model_config = ConfigDict(use_enum_values=True)
 
@@ -104,7 +104,7 @@ class EquipmentStatusResponse(BaseModel):
     """Schema de resposta para status de equipamento."""
 
     id: str
-    guardian_id: str
+    external_id: str
     equipment_id: str
     equipment_type: str
     equipment_name: str

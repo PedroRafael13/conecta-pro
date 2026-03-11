@@ -30,7 +30,7 @@ class EquipmentStatusRepository:
     async def create(self, data: EquipmentStatusCreate) -> EquipmentStatus:
         """Cria um novo status de equipamento."""
         equipment = EquipmentStatus(
-            external_id=data.guardian_id,
+            external_id=data.external_id,
             equipment_id=data.equipment_id,
             equipment_type=data.equipment_type,
             equipment_name=data.equipment_name,
@@ -57,7 +57,7 @@ class EquipmentStatusRepository:
             active_alerts=data.active_alerts,
             next_maintenance_at=data.next_maintenance_at,
             maintenance_notes=data.maintenance_notes,
-            external_metadata=data.guardian_metadata,
+            external_metadata=data.external_metadata,
         )
 
         self.db.add(equipment)

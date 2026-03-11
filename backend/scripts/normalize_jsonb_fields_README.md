@@ -21,7 +21,6 @@ Este script SQL normaliza campos JSONB críticos no banco de dados PostgreSQL do
 | `access_history` | `context`, `headers`, `risk_factors`, `metadata`, `tags`, `alert_ids` |
 | `scales` | `config` |
 | `occurrences` | `attachments` |
-| `guardian_occurrences` | `involved_persons`, `witnesses`, `images`, `videos`, `attachments`, `tags` |
 
 ### Adicionais
 - `scale_templates` (config, template_data)
@@ -59,7 +58,7 @@ conn = psycopg2.connect(
     host="localhost",
     database="conecta_pro",
     user="conecta_user",
-    password="sua_senha"
+    password="sua_senha"  # pragma: allowlist secret
 )
 cursor = conn.cursor()
 cursor.execute(script)
