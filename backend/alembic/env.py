@@ -21,8 +21,6 @@ from modules.campo.models import (  # noqa: F401
     AccessLog,
     CampoTecnico,
     EquipmentStatus,
-    GuardianOccurrence,
-    GuardianSync,
 )
 from modules.campo.models.checklist import (  # noqa: F401
     ChecklistItem,

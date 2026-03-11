@@ -88,7 +88,6 @@ def sample_client():
         total_debt=Decimal("0"),
         satisfaction_score=Decimal("4.50"),
         nps_score=85,
-        guardian_enabled=True,
         plus_enabled=False,
         is_active=True,
         total_contracts=3,
@@ -308,18 +307,6 @@ class TestClientService:
 
         assert result.status == ClientStatus.INADIMPLENTE
         assert result.total_debt == Decimal("5000.00")
-
-    def test_enable_guardian(self, client_service, mock_repository, sample_client):
-        """Testa habilitação do Guardian."""
-        sample_client.guardian_enabled = False
-
-        with patch.object(client_service, "repository", mock_repository):
-            mock_repository.get_client.return_value = sample_client
-
-            result = client_service.enable_guardian(sample_client.id, "GRD-12345")
-
-        assert result.guardian_enabled is True
-        assert result.guardian_client_id == "GRD-12345"
 
     def test_enable_plus(self, client_service, mock_repository, sample_client):
         """Testa habilitação do Plus."""

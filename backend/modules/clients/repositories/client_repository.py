@@ -101,8 +101,6 @@ class ClientRepository:
                 query = query.filter(Client.is_defaulter == filters.is_defaulter)
             if filters.is_vip is not None:
                 query = query.filter(Client.is_vip == filters.is_vip)
-            if filters.guardian_enabled is not None:
-                query = query.filter(Client.guardian_enabled == filters.guardian_enabled)
             if filters.plus_enabled is not None:
                 query = query.filter(Client.plus_enabled == filters.plus_enabled)
             if filters.city:

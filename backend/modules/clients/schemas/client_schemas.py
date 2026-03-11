@@ -178,7 +178,6 @@ class ClientResponse(BaseModel):
     satisfaction_score: Decimal | None
     health_score: int
 
-    guardian_enabled: bool
     plus_enabled: bool
 
     is_active: bool
@@ -238,7 +237,6 @@ class ClientFilter(BaseModel):
     segment: ClientSegment | None = None
     is_defaulter: bool | None = None
     is_vip: bool | None = None
-    guardian_enabled: bool | None = None
     plus_enabled: bool | None = None
     city: str | None = None
     state: str | None = None
@@ -372,7 +370,6 @@ class CondominiumResponse(BaseModel):
     security_level: str
     amenities_count: int
 
-    guardian_enabled: bool
     plus_enabled: bool
     is_active: bool
     is_premium: bool
@@ -622,7 +619,7 @@ class ClientContractResponse(BaseModel):
     end_date: date | None
     days_until_end: int | None
     is_expiring_soon: bool
-    is_guardian_service: bool
+    is_electronic_security_service: bool
     is_plus_service: bool
     is_active: bool
     is_main_service: bool

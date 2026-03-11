@@ -105,7 +105,6 @@ class ClientContract(Base):
     is_24h = Column(Boolean, nullable=False, default=False)
 
     # Integrações
-    guardian_service_id = Column(String(50), nullable=True)
     plus_service_id = Column(String(50), nullable=True)
 
     # Configurações específicas do serviço
@@ -152,9 +151,9 @@ class ClientContract(Base):
         return f"<ClientContract(id={self.id}, service={self.service_type}, status={self.status})>"
 
     @property
-    def is_guardian_service(self) -> bool:
-        """Verifica se é serviço do Guardian."""
-        guardian_services = {
+    def is_electronic_security_service(self) -> bool:
+        """Verifica se é serviço de segurança eletrônica."""
+        electronic_services = {
             ContractServiceType.PORTARIA_REMOTA,
             ContractServiceType.CONTROLE_ACESSO,
             ContractServiceType.CFTV,
@@ -163,7 +162,7 @@ class ClientContract(Base):
             ContractServiceType.MONITORAMENTO_24H,
             ContractServiceType.RONDA_VIRTUAL,
         }
-        return self.service_type in guardian_services
+        return self.service_type in electronic_services
 
     @property
     def is_plus_service(self) -> bool:

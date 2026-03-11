@@ -517,7 +517,6 @@ try:
         executive_dashboard_router,
         monitoring_router,
         report_router,
-        search_router,
     )
 
     api_router.include_router(bartolo_router, prefix="/ai", tags=["AI - Bartolo Assistente"])
@@ -525,7 +524,6 @@ try:
     api_router.include_router(analytics_router, tags=["Analytics - Predictive"])
     api_router.include_router(report_router, tags=["Reports - Relatorios"])
     api_router.include_router(monitoring_router, tags=["Monitoring"])
-    api_router.include_router(search_router, tags=["Search - Busca Global"])
     logger.info("Modulo Inteligencia: OK (AI + Analytics + Reports + Monitoring + Search)")
 except Exception as e:
     logger.warning(f"Modulo Inteligencia: {e}")

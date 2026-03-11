@@ -22,7 +22,7 @@ from modules.campo.schemas.equipment_status import (
     EquipmentStatusUpdate,
 )
 
-router = APIRouter(prefix="/guardian/equipment-status", tags=["EquipmentStatus"])
+router = APIRouter(prefix="/campo/equipment-status", tags=["Campo Equipment"])
 
 
 @router.post(
@@ -34,7 +34,7 @@ async def create_equipment_status(
     data: EquipmentStatusCreate,
     db: AsyncSession = Depends(get_db),
 ) -> EquipmentStatusResponse:
-    """Cria um novo status de equipamento (recebido do Guardian)."""
+    """Cria um novo status de equipamento."""
     repo = EquipmentStatusRepository(db)
 
     # Verificar se já existe

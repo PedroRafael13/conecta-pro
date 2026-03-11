@@ -21,7 +21,7 @@ from modules.campo.schemas.access_log import (
     AccessLogStats,
 )
 
-router = APIRouter(prefix="/guardian/access-logs", tags=["AccessLogs"])
+router = APIRouter(prefix="/campo/access-logs", tags=["Campo Access Logs"])
 
 
 @router.post(
@@ -33,7 +33,7 @@ async def create_access_log(
     data: AccessLogCreate,
     db: AsyncSession = Depends(get_db),
 ) -> AccessLogResponse:
-    """Cria um novo log de acesso (recebido do Guardian)."""
+    """Cria um novo log de acesso."""
     repo = AccessLogRepository(db)
 
     # Verificar se já existe

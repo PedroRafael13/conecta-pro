@@ -10,8 +10,6 @@ from .estoque_integration import (
     TipoMovimentacao,
     get_estoque_integration_service,
 )
-from .guardian_sync_service import GuardianSyncService
-from .occurrence_analyzer import OccurrenceAnalyzer
 
 # =============================================================================
 # CAMPO - Ordens de Servico, Visitas, Checklists
@@ -28,9 +26,6 @@ from .roteirizacao_service import (
 from .visita_service import VisitaService
 
 __all__ = [
-    # Legacy
-    "GuardianSyncService",
-    "OccurrenceAnalyzer",
     # CAMPO
     "OrdemServicoService",
     "VisitaService",

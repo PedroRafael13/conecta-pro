@@ -1,6 +1,6 @@
 """
-Sistema de Logging Estruturado - Guardian Unified v3.0.0
-=======================================================
+Sistema de Logging Estruturado - Conecta PRO v3.0.0
+====================================================
 
 Configuração de logs em formato JSON para facilitar busca e análise.
 """
@@ -13,9 +13,9 @@ from typing import Any
 from pythonjsonlogger import jsonlogger
 
 
-class GuardianJSONFormatter(jsonlogger.JsonFormatter):
+class ConectaJSONFormatter(jsonlogger.JsonFormatter):
     """
-    Formatter personalizado para logs do Guardian Unified.
+    Formatter personalizado para logs do Conecta PRO.
 
     Produz logs estruturados em JSON com campos padronizados.
     """
@@ -27,8 +27,8 @@ class GuardianJSONFormatter(jsonlogger.JsonFormatter):
         # Timestamp padronizado
         log_record["timestamp"] = datetime.utcnow().isoformat()
 
-        # Informações do Guardian
-        log_record["service"] = "Guardian-Unified"
+        # Informações do serviço
+        log_record["service"] = "Conecta-PRO"
         log_record["version"] = "3.0.0"
 
         # Module/Controller info
@@ -56,7 +56,7 @@ def setup_structured_logging():
     Configura logging estruturado para toda a aplicação.
     """
     # Formatter JSON
-    json_formatter = GuardianJSONFormatter(fmt="%(timestamp)s %(level)s %(service)s %(version)s %(module)s %(message)s")
+    json_formatter = ConectaJSONFormatter(fmt="%(timestamp)s %(level)s %(service)s %(version)s %(module)s %(message)s")
 
     # Handler para stdout (para produção)
     stdout_handler = logging.StreamHandler(sys.stdout)
@@ -98,9 +98,9 @@ def setup_structured_logging():
         logger.propagate = True
 
 
-class GuardianLogger:
+class ConectaLogger:
     """
-    Logger específico para operações do Guardian com campos estruturados.
+    Logger específico para operações do Conecta PRO com campos estruturados.
     """
 
     def __init__(self, module_name: str):
@@ -158,7 +158,7 @@ def log_api_request(endpoint: str, method: str, status_code: int, response_time_
     """
     Log estruturado para requisições de API.
     """
-    logger = GuardianLogger("api")
+    logger = ConectaLogger("api")
 
     logger.info(
         f"{method} {endpoint} - {status_code}",
@@ -175,7 +175,7 @@ def log_database_operation(operation: str, table: str, duration_ms: float, **kwa
     """
     Log estruturado para operações de database.
     """
-    logger = GuardianLogger("database")
+    logger = ConectaLogger("database")
 
     logger.info(
         f"Database {operation} on {table}",
@@ -191,7 +191,7 @@ def log_security_event(event_type: str, severity: str, description: str, **kwarg
     """
     Log estruturado para eventos de segurança.
     """
-    logger = GuardianLogger("security")
+    logger = ConectaLogger("security")
 
     log_method = logger.error if severity in ["high", "critical"] else logger.warning
 
@@ -209,7 +209,7 @@ def log_campo_operation(operation: str, technician_id: str = None, **kwargs):
     """
     Log estruturado para operações do CAMPO.
     """
-    logger = GuardianLogger("campo")
+    logger = ConectaLogger("campo")
 
     logger.info(
         f"CAMPO operation: {operation}",
@@ -222,10 +222,10 @@ def log_campo_operation(operation: str, technician_id: str = None, **kwargs):
 
 # Exemplo de uso no código:
 """
-from core.logging import GuardianLogger, log_api_request, log_campo_operation
+from core.logging import ConectaLogger, log_api_request, log_campo_operation
 
 # Logger específico de módulo
-logger = GuardianLogger("campo")
+logger = ConectaLogger("campo")
 logger.info("Técnico criado com sucesso",
            action="create_technician",
            technician_id="123",

@@ -1,6 +1,6 @@
 """
 Modelo SQLAlchemy para Técnicos de Campo - CAMPO Service
-Guardian Unified v3.0.0 - Módulo 9
+Conecta PRO - Módulo Campo
 """
 
 import uuid
@@ -21,7 +21,7 @@ class CampoTecnico(Base):
     """
 
     __tablename__ = "campo_tecnicos"
-    __table_args__ = {"schema": "guardian"}
+    __table_args__ = {"schema": "public"}
 
     # Campos principais
     id: Mapped[str] = mapped_column(

@@ -17,13 +17,6 @@ from .checklist import (
     TipoServico,
 )
 from .equipment_status import EquipmentStatus, EquipmentStatusType
-from .guardian_occurrence import (
-    GuardianOccurrence,
-    OccurrenceSeverity,
-    OccurrenceStatus,
-    OccurrenceType,
-)
-from .guardian_sync import GuardianSync, SyncDirection, SyncEntityType, SyncStatus
 
 # Modelos CAMPO - Ordens de Servico
 from .ordem_servico import (
@@ -46,19 +39,9 @@ from .visita import (
 
 __all__ = [
     # === Legacy (Portaria Remota) ===
-    # GuardianSync
-    "GuardianSync",
-    "SyncStatus",
-    "SyncDirection",
-    "SyncEntityType",
     # AccessLog
     "AccessLog",
     "AccessLogType",
-    # GuardianOccurrence
-    "GuardianOccurrence",
-    "OccurrenceType",
-    "OccurrenceSeverity",
-    "OccurrenceStatus",
     # EquipmentStatus
     "EquipmentStatus",
     "EquipmentStatusType",

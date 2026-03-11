@@ -28,6 +28,7 @@ from modules.integrations.controllers import (
 from modules.mobile import mobile_router
 
 # --- Notifications ---
+from modules.notifications.controllers import compliance_router as notification_compliance_router
 from modules.notifications.controllers import intelligent_router as intelligent_notification_router
 from modules.notifications.controllers import router as notification_router
 from modules.notifications.push.controllers import router as push_notification_router
@@ -39,6 +40,7 @@ __all__ = [
     "audit_router",
     # Notifications
     "notification_router",
+    "notification_compliance_router",
     "intelligent_notification_router",
     "push_notification_router",
     # Mobile

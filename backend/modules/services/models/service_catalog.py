@@ -113,7 +113,6 @@ class ServiceCatalog(Base):
     emergency_surcharge_percent = Column(Numeric(5, 2), nullable=True)
 
     # Integrações
-    guardian_service_code = Column(String(50), nullable=True)
     plus_service_code = Column(String(50), nullable=True)
     external_service_code = Column(String(50), nullable=True)
 

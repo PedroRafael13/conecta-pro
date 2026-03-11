@@ -1,6 +1,6 @@
 """
-Controller SSH Gateway - Guardian Unified v3.0.0
-=================================================
+Controller SSH Gateway - Conecta PRO v3.0.0
+=============================================
 
 Gerencia conexões SSH seguras, monitoramento de sessões
 e controle de acesso remoto.
@@ -17,7 +17,7 @@ from pydantic import BaseModel
 logger = logging.getLogger(__name__)
 
 # Router para SSH Gateway
-router = APIRouter(prefix="/ssh-gateway", tags=["Guardian - SSH Gateway"])
+router = APIRouter(prefix="/ssh-gateway", tags=["SSH Gateway"])
 
 
 class SSHConnectionRequest(BaseModel):

@@ -153,8 +153,8 @@ class OrdemServico(Base):
     # =========================================================================
     # Execucao
     # =========================================================================
-    tecnico_id = Column(UUID(as_uuid=True), ForeignKey("guardian.campo_tecnicos.id"), nullable=True, index=True)
-    tecnico_auxiliar_id = Column(UUID(as_uuid=True), ForeignKey("guardian.campo_tecnicos.id"), nullable=True)
+    tecnico_id = Column(UUID(as_uuid=True), ForeignKey("public.campo_tecnicos.id"), nullable=True, index=True)
+    tecnico_auxiliar_id = Column(UUID(as_uuid=True), ForeignKey("public.campo_tecnicos.id"), nullable=True)
 
     # Timestamps de execucao
     data_inicio_deslocamento = Column(DateTime)
@@ -290,9 +290,7 @@ class OrdemServico(Base):
     # Integracao
     # =========================================================================
     ticket_origem_id = Column(String(100))  # ID do ticket que gerou a OS
-    ticket_sistema = Column(String(50))  # Sistema de origem (guardian, helpdesk, etc)
-    sync_guardian = Column(Boolean, default=False)
-    sync_guardian_at = Column(DateTime)
+    ticket_sistema = Column(String(50))  # Sistema de origem (helpdesk, etc)
 
     # =========================================================================
     # Metadata

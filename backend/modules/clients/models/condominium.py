@@ -142,8 +142,6 @@ class Condominium(Base):
     monthly_fee = Column(Numeric(12, 2), nullable=True)
 
     # Integrações
-    guardian_id = Column(String(50), nullable=True)
-    guardian_enabled = Column(Boolean, nullable=False, default=False)
     plus_id = Column(String(50), nullable=True)
     plus_enabled = Column(Boolean, nullable=False, default=False)
 
@@ -332,12 +330,6 @@ class Condominium(Base):
         self.syndic_cpf = cpf
         self.syndic_start_date = start_date or date.today()
         self.syndic_end_date = end_date
-        self.updated_at = datetime.utcnow()
-
-    def enable_guardian(self, guardian_id: str) -> None:
-        """Habilita integração com Guardian."""
-        self.guardian_enabled = True
-        self.guardian_id = guardian_id
         self.updated_at = datetime.utcnow()
 
     def enable_plus(self, plus_id: str) -> None:

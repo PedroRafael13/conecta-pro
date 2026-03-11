@@ -164,21 +164,6 @@ class ClientService:
         logger.info("Status de inadimplente removido: %s", client.code)
         return client
 
-    def enable_guardian(
-        self, client_id: UUID, guardian_client_id: str, updated_by: UUID | None = None
-    ) -> Client | None:
-        """Enable Guardian integration for client."""
-        client = self.repository.get_client(client_id)
-        if not client:
-            return None
-
-        client.enable_guardian(guardian_client_id)
-        client.updated_by = updated_by
-        self.db.commit()
-        self.db.refresh(client)
-        logger.info("Guardian habilitado para cliente: %s", client.code)
-        return client
-
     def enable_plus(self, client_id: UUID, plus_client_id: str, updated_by: UUID | None = None) -> Client | None:
         """Enable Conecta Plus integration for client."""
         client = self.repository.get_client(client_id)

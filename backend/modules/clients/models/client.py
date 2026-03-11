@@ -146,8 +146,6 @@ class Client(Base):
     nps_score = Column(Integer, nullable=True)
 
     # Integrações
-    guardian_enabled = Column(Boolean, nullable=False, default=False)
-    guardian_client_id = Column(String(50), nullable=True)
     plus_enabled = Column(Boolean, nullable=False, default=False)
     plus_client_id = Column(String(50), nullable=True)
     external_id = Column(String(50), nullable=True)
@@ -335,12 +333,6 @@ class Client(Base):
         self.total_revenue = total_revenue
         if total_contracts > 0:
             self.average_ticket = total_revenue / total_contracts
-        self.updated_at = datetime.utcnow()
-
-    def enable_guardian(self, client_id: str) -> None:
-        """Habilita integração com Guardian."""
-        self.guardian_enabled = True
-        self.guardian_client_id = client_id
         self.updated_at = datetime.utcnow()
 
     def enable_plus(self, client_id: str) -> None:

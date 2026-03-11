@@ -28,11 +28,9 @@ from modules.campo.controllers import (
     equipment_status_router,
     estoque_router,
     monitoring_router,
-    occurrence_router,
     ordem_servico_router,
     roteirizacao_router,
     security_audit_router,
-    sync_router,
     visita_router,
 )
 
@@ -96,9 +94,7 @@ __all__ = [
     # Legado
     "campo_service_router",
     "access_log_router",
-    "occurrence_router",
     "equipment_status_router",
-    "sync_router",
     "security_audit_router",
     "monitoring_router",
     # Novos CAMPO

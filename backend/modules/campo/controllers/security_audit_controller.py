@@ -1,6 +1,6 @@
 """
-Controller de Auditorias de Segurança - Guardian Unified v3.0.0
-================================================================
+Controller de Auditorias de Segurança - Conecta PRO v3.0.0
+============================================================
 
 Gerencia auditorias de segurança cibernética, scans de vulnerabilidade
 e análise de segurança de sistemas.
@@ -18,7 +18,7 @@ from pydantic import BaseModel
 logger = logging.getLogger(__name__)
 
 # Router para auditorias de segurança
-router = APIRouter(prefix="/security-audit", tags=["Guardian - Security Audit"])
+router = APIRouter(prefix="/security-audit", tags=["Security Audit"])
 
 
 class AuditRequest(BaseModel):

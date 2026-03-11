@@ -14,5 +14,5 @@ def configure_application_logging():
     # Log de inicialização
     import logging
 
-    logger = logging.getLogger("guardian.startup")
-    logger.info("Guardian Unified v3.0.0 structured logging initialized")
+    logger = logging.getLogger("conecta.startup")
+    logger.info("Conecta PRO structured logging initialized")

@@ -1,6 +1,6 @@
 """
-Controller de Monitoramento - Guardian Unified v3.0.0
-====================================================
+Controller de Monitoramento - Conecta PRO v3.0.0
+==================================================
 
 Endpoints para health checks, métricas e status do sistema.
 """
@@ -70,14 +70,12 @@ async def check_database_health(session: AsyncSession) -> bool:
         return False
 
 
-async def check_guardian_tables(session: AsyncSession) -> dict[str, bool]:
-    """Verifica se as tabelas principais do Guardian existem."""
+async def check_campo_tables(session: AsyncSession) -> dict[str, bool]:
+    """Verifica se as tabelas principais do CAMPO existem."""
     tables_to_check = [
-        "guardian.access_logs",
-        "guardian.guardian_occurrences",
-        "guardian.guardian_syncs",
-        "guardian.equipment_status",
-        "guardian.campo_tecnicos",
+        "public.access_logs",
+        "public.equipment_status",
+        "public.campo_tecnicos",
     ]
 
     results = {}
@@ -180,17 +178,17 @@ async def readiness_check(session: AsyncSession = Depends(get_db)):
         if db_healthy:
             checks_passed += 1
 
-        # Check 2: Guardian tables
+        # Check 2: Campo tables
         checks_total += 1
-        tables_status = await check_guardian_tables(session)
+        tables_status = await check_campo_tables(session)
         all_tables_exist = all(tables_status.values())
-        services["guardian_tables"] = "ok" if all_tables_exist else "missing"
+        services["campo_tables"] = "ok" if all_tables_exist else "missing"
         if all_tables_exist:
             checks_passed += 1
 
         # Check 3: CAMPO service
         checks_total += 1
-        campo_ready = "campo_tecnicos" in tables_status and tables_status.get("guardian.campo_tecnicos", False)
+        campo_ready = "campo_tecnicos" in tables_status and tables_status.get("public.campo_tecnicos", False)
         services["campo_service"] = "ok" if campo_ready else "not_ready"
         if campo_ready:
             checks_passed += 1
@@ -258,7 +256,7 @@ async def ping():
     Returns:
         Pong com timestamp
     """
-    return {"message": "pong", "timestamp": datetime.utcnow(), "service": "Guardian Unified v3.0.0"}
+    return {"message": "pong", "timestamp": datetime.utcnow(), "service": "Conecta PRO v3.0.0"}
 
 
 @router.get("/status")
@@ -286,7 +284,7 @@ async def system_status(session: AsyncSession = Depends(get_db)):
             "message": message,
             "timestamp": datetime.utcnow(),
             "uptime": get_uptime(),
-            "version": "Guardian Unified v3.0.0",
+            "version": "Conecta PRO v3.0.0",
         }
 
     except Exception as e:  # pylint: disable=broad-exception-caught

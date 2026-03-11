@@ -1,5 +1,5 @@
 """
-Modelo EquipmentStatus para status de equipamentos do Guardian.
+Modelo EquipmentStatus para status de equipamentos do CAMPO.
 """
 
 from __future__ import annotations
@@ -30,12 +30,12 @@ class EquipmentStatus(Base):
     """
     Modelo de Status de Equipamento.
 
-    Armazena status em tempo real de equipamentos monitorados pelo Guardian,
+    Armazena status em tempo real de equipamentos monitorados,
     incluindo câmeras, alarmes, controle de acesso, etc.
 
     Attributes:
         id: Identificador único
-        guardian_id: ID original no Guardian
+        guardian_id: ID externo de integração
         equipment_id: ID do equipamento
         equipment_type: Tipo do equipamento
         equipment_name: Nome do equipamento

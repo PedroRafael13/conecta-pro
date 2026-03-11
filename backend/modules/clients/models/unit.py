@@ -35,7 +35,7 @@ if TYPE_CHECKING:
 class UnitType(StrEnum):
     """Tipo de unidade."""
 
-    APARTAMENTO = "apartamento"
+    APARTAMENTO = "apartamento"  # pragma: allowlist secret
     CASA = "casa"
     SALA_COMERCIAL = "sala_comercial"
     LOJA = "loja"
@@ -141,7 +141,6 @@ class Unit(Base):
     total_pets = Column(Integer, nullable=False, default=0)
 
     # Integrações
-    guardian_unit_id = Column(String(50), nullable=True)
     plus_unit_id = Column(String(50), nullable=True)
 
     # Configurações

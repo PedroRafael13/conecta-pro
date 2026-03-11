@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 class IntegrationType(StrEnum):
     """Tipo de integração."""
 
-    GUARDIAN = "guardian"
+    GUARDIAN = "guardian"  # External integration type (Conecta PLUS system)
     PLUS = "plus"
     ERP_EXTERNO = "erp_externo"
     CONTABILIDADE = "contabilidade"
@@ -55,7 +55,7 @@ class IntegrationSettings(Base):
     Model de Configurações de Integração.
 
     Armazena configurações de integração entre o ERP e sistemas externos
-    (Guardian, Plus, ERPs de terceiros, etc.) para cada cliente.
+    (Plus, ERPs de terceiros, etc.) para cada cliente.
     """
 
     __tablename__ = "integration_settings"
@@ -143,11 +143,6 @@ class IntegrationSettings(Base):
 
     def __repr__(self) -> str:
         return f"<IntegrationSettings(id={self.id}, type={self.integration_type}, client_id={self.client_id})>"
-
-    @property
-    def is_guardian(self) -> bool:
-        """Verifica se é integração Guardian."""
-        return self.integration_type == IntegrationType.GUARDIAN
 
     @property
     def is_plus(self) -> bool:

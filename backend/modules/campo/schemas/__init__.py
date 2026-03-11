@@ -54,24 +54,6 @@ from .equipment_status import (
     EquipmentStatusStats,
     EquipmentStatusUpdate,
 )
-from .guardian_occurrence import (
-    GuardianOccurrenceAcknowledge,
-    GuardianOccurrenceCreate,
-    GuardianOccurrenceEscalate,
-    GuardianOccurrenceFilter,
-    GuardianOccurrenceListResponse,
-    GuardianOccurrenceResolve,
-    GuardianOccurrenceResponse,
-    GuardianOccurrenceStats,
-)
-from .guardian_sync import (
-    GuardianSyncCreate,
-    GuardianSyncFilter,
-    GuardianSyncListResponse,
-    GuardianSyncResponse,
-    GuardianSyncRetry,
-    GuardianSyncStats,
-)
 
 # =============================================================================
 # CAMPO - Ordens de Servico
@@ -139,28 +121,12 @@ from .visita import (
 
 __all__ = [
     # === Legacy (Portaria Remota) ===
-    # GuardianSync
-    "GuardianSyncCreate",
-    "GuardianSyncResponse",
-    "GuardianSyncFilter",
-    "GuardianSyncListResponse",
-    "GuardianSyncRetry",
-    "GuardianSyncStats",
     # AccessLog
     "AccessLogCreate",
     "AccessLogResponse",
     "AccessLogFilter",
     "AccessLogListResponse",
     "AccessLogStats",
-    # GuardianOccurrence
-    "GuardianOccurrenceCreate",
-    "GuardianOccurrenceResponse",
-    "GuardianOccurrenceFilter",
-    "GuardianOccurrenceListResponse",
-    "GuardianOccurrenceAcknowledge",
-    "GuardianOccurrenceResolve",
-    "GuardianOccurrenceEscalate",
-    "GuardianOccurrenceStats",
     # EquipmentStatus
     "EquipmentStatusCreate",
     "EquipmentStatusUpdate",

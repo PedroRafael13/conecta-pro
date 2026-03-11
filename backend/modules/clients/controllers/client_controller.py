@@ -79,7 +79,6 @@ async def list_clients(  # pylint: disable=too-many-locals
     segment: ClientSegment | None = None,
     is_defaulter: bool | None = None,
     is_vip: bool | None = None,
-    guardian_enabled: bool | None = None,
     plus_enabled: bool | None = None,
     city: str | None = None,
     state: str | None = None,
@@ -95,7 +94,6 @@ async def list_clients(  # pylint: disable=too-many-locals
         segment=segment,
         is_defaulter=is_defaulter,
         is_vip=is_vip,
-        guardian_enabled=guardian_enabled,
         plus_enabled=plus_enabled,
         city=city,
         state=state,
@@ -193,17 +191,6 @@ async def set_defaulter(
 async def clear_defaulter(client_id: UUID, service: ClientService = Depends(get_service)) -> ClientResponse:
     """Remove status de inadimplente."""
     client = service.clear_defaulter(client_id)
-    if not client:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cliente não encontrado")
-    return client
-
-
-@router.post("/{client_id}/enable-guardian", response_model=ClientResponse)
-async def enable_guardian(
-    client_id: UUID, guardian_client_id: str = Query(..., min_length=1), service: ClientService = Depends(get_service)
-) -> ClientResponse:
-    """Habilita integração com Guardian."""
-    client = service.enable_guardian(client_id, guardian_client_id)
     if not client:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cliente não encontrado")
     return client

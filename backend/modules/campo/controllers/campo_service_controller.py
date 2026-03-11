@@ -1,6 +1,6 @@
 """
-Controller CAMPO Service - Guardian Unified v3.0.0
-===================================================
+Controller CAMPO Service - Conecta PRO v3.0.0
+===============================================
 
 Gerencia suporte técnico em campo, tickets de atendimento,
 e coordenação de técnicos para instalações e suporte.
@@ -23,7 +23,7 @@ from modules.campo.models.campo_tecnico import CampoTecnico
 logger = logging.getLogger(__name__)
 
 # Router para CAMPO Service
-router = APIRouter(prefix="/campo", tags=["Guardian - CAMPO Service"])
+router = APIRouter(prefix="/campo", tags=["Campo Service"])
 
 
 class TechnicianInfo(BaseModel):

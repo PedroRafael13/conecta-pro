@@ -44,10 +44,10 @@ def extract_campo_openapi():
     # Include all CAMPO routers
     routers = [
         (campo_service_router, "/api/v1/campo", ["Campo Service"]),
-        (access_log_router, "/api/v1/campo/guardian/access-logs", ["Guardian Access Logs"]),
-        (occurrence_router, "/api/v1/campo/guardian/occurrences", ["Guardian Occurrences"]),
-        (equipment_status_router, "/api/v1/campo/guardian/equipment-status", ["Guardian Equipment"]),
-        (sync_router, "/api/v1/campo/guardian/sync", ["Guardian Sync"]),
+        (access_log_router, "/api/v1/campo/access-logs", ["Campo Access Logs"]),
+        (occurrence_router, "/api/v1/campo/occurrences", ["Campo Occurrences"]),
+        (equipment_status_router, "/api/v1/campo/equipment-status", ["Campo Equipment"]),
+        (sync_router, "/api/v1/campo/sync", ["Campo Sync"]),
         (security_audit_router, "/api/v1/campo/security-audit", ["Security Audit"]),
         (monitoring_router, "/api/v1/campo/monitoring", ["Monitoring"]),
         (ordem_servico_router, "/api/v1/campo/ordens-servico", ["Ordens de Serviço"]),
@@ -99,10 +99,10 @@ def extract_campo_openapi():
         "Checklists": [],
         "Roteirização": [],
         "Estoque": [],
-        "Guardian Access Logs": [],
-        "Guardian Occurrences": [],
-        "Guardian Equipment": [],
-        "Guardian Sync": [],
+        "Campo Access Logs": [],
+        "Campo Occurrences": [],
+        "Campo Equipment": [],
+        "Campo Sync": [],
         "Security Audit": [],
         "Monitoring": [],
     }
@@ -120,13 +120,13 @@ def extract_campo_openapi():
         elif "/estoque" in path:
             categories["Estoque"].append((path, list(methods.keys())))
         elif "/access-logs" in path:
-            categories["Guardian Access Logs"].append((path, list(methods.keys())))
+            categories["Campo Access Logs"].append((path, list(methods.keys())))
         elif "/occurrences" in path:
-            categories["Guardian Occurrences"].append((path, list(methods.keys())))
+            categories["Campo Occurrences"].append((path, list(methods.keys())))
         elif "/equipment-status" in path:
-            categories["Guardian Equipment"].append((path, list(methods.keys())))
+            categories["Campo Equipment"].append((path, list(methods.keys())))
         elif "/sync" in path:
-            categories["Guardian Sync"].append((path, list(methods.keys())))
+            categories["Campo Sync"].append((path, list(methods.keys())))
         elif "/security-audit" in path:
             categories["Security Audit"].append((path, list(methods.keys())))
         elif "/monitoring" in path:

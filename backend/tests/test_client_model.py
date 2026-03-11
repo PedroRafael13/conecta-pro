@@ -231,14 +231,12 @@ class TestClientModel:
             email="teste@teste.com",
             status=ClientStatus.PROSPECT,
             is_active=True,
-            guardian_enabled=False,
             plus_enabled=False,
             payment_terms=30,
         )
 
         assert client.status == ClientStatus.PROSPECT
         assert client.is_active is True
-        assert client.guardian_enabled is False
         assert client.plus_enabled is False
         assert client.payment_terms == 30
 
@@ -275,15 +273,6 @@ class TestClientModel:
 
         assert client.status == ClientStatus.INADIMPLENTE
         assert client.total_debt == Decimal("1500.00")
-
-    def test_client_enable_guardian(self, sample_client_data):
-        """Testa habilitacao do Guardian."""
-        client = Client(**sample_client_data)
-
-        client.enable_guardian("GRD-12345")
-
-        assert client.guardian_enabled is True
-        assert client.guardian_client_id == "GRD-12345"
 
     def test_client_enable_plus(self, sample_client_data):
         """Testa habilitacao do Plus."""
@@ -701,16 +690,16 @@ class TestIntegrationSettingsModel:
         """Testa configuracao de API."""
         integration = IntegrationSettings(**sample_integration_data)
         integration.api_url = "https://api.guardian.com/v1"
-        integration.api_key = "grd_api_key_12345"
+        integration.api_key = "grd_api_key_12345"  # pragma: allowlist secret
 
         assert integration.api_url == "https://api.guardian.com/v1"
-        assert integration.api_key == "grd_api_key_12345"
+        assert integration.api_key == "grd_api_key_12345"  # pragma: allowlist secret
 
     def test_integration_webhook_configuration(self, sample_integration_data):
         """Testa configuracao de webhook."""
         integration = IntegrationSettings(**sample_integration_data)
         integration.webhook_url = "https://erp.example.com/webhook"
-        integration.webhook_secret = "whsec_12345"
+        integration.webhook_secret = "whsec_12345"  # pragma: allowlist secret
         integration.webhook_events = ["client.created", "client.updated"]
 
         assert integration.webhook_url == "https://erp.example.com/webhook"

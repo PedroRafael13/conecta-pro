@@ -16,7 +16,7 @@ from fastapi.openapi.utils import get_openapi
 
 # Import dos routers do módulo CAMPO
 from modules.campo.controllers import (
-    # Legacy/Guardian controllers
+    # Campo controllers
     access_log_router,
     campo_service_router,
     checklist_router,
@@ -104,21 +104,21 @@ Sistema de Serviço de Campo - Gestão de Equipes Externas, Visitas, OS e Checkl
     )
 
     # ===================================================================
-    # GUARDIAN ROUTERS (Legacy + Cyber Security + Monitoring)
+    # CAMPO ROUTERS (Security + Cyber Security + Monitoring)
     # ===================================================================
 
-    # Segurança Física (Legacy)
-    app.include_router(sync_router, prefix="/api/v1/campo/guardian/sync", tags=["Physical Sync"])
-    app.include_router(access_log_router, prefix="/api/v1/campo/guardian/access", tags=["Access"])
-    app.include_router(occurrence_router, prefix="/api/v1/campo/guardian/occurrences", tags=["Events"])
-    app.include_router(equipment_status_router, prefix="/api/v1/campo/guardian/equipment", tags=["Equip"])
+    # Segurança Física
+    app.include_router(sync_router, prefix="/api/v1/campo/sync", tags=["Physical Sync"])
+    app.include_router(access_log_router, prefix="/api/v1/campo/access", tags=["Access"])
+    app.include_router(occurrence_router, prefix="/api/v1/campo/occurrences", tags=["Events"])
+    app.include_router(equipment_status_router, prefix="/api/v1/campo/equipment", tags=["Equip"])
 
     # Segurança Cibernética
-    app.include_router(security_audit_router, prefix="/api/v1/campo/guardian/cyber", tags=["Cyber"])
-    app.include_router(ssh_gateway_router, prefix="/api/v1/campo/guardian/cyber", tags=["SSH"])
+    app.include_router(security_audit_router, prefix="/api/v1/campo/cyber", tags=["Cyber"])
+    app.include_router(ssh_gateway_router, prefix="/api/v1/campo/cyber", tags=["SSH"])
 
-    # CAMPO Service (legacy)
-    app.include_router(campo_service_router, prefix="/api/v1/campo/guardian/campo", tags=["Campo"])
+    # CAMPO Service
+    app.include_router(campo_service_router, prefix="/api/v1/campo/service", tags=["Campo"])
 
     # System Monitoring
     app.include_router(monitoring_router, prefix="/api/v1/campo", tags=["Monitoring"])

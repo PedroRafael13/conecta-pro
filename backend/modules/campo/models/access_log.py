@@ -1,5 +1,5 @@
 """
-Modelo AccessLog para logs de acesso do Guardian.
+Modelo AccessLog para logs de acesso do CAMPO.
 """
 
 from __future__ import annotations
@@ -33,12 +33,12 @@ class AccessLog(Base):
     """
     Modelo de Log de Acesso.
 
-    Armazena todos os registros de acesso recebidos do Conecta Guardian,
+    Armazena todos os registros de acesso,
     incluindo entradas, saídas, negações e eventos especiais.
 
     Attributes:
         id: Identificador único
-        guardian_id: ID original no Guardian
+        guardian_id: ID externo de integração
         log_type: Tipo de acesso
         client_id: ID do cliente/condomínio
         post_id: ID do posto de acesso

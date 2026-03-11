@@ -83,7 +83,6 @@ def sample_client_response():
         "phone": "(11) 3456-7890",
         "status": "active",
         "segment": "medium",
-        "guardian_enabled": False,
         "plus_enabled": False,
         "ativo": True,
         "created_at": datetime.now().isoformat(),
@@ -350,23 +349,6 @@ class TestClientAPI:
             result = await mock_client_service.suspend_client(client_id)
 
         assert result["status"] == "suspended"
-
-    @pytest.mark.asyncio
-    async def test_enable_guardian(self, mock_client_service, sample_client_response):
-        """Testa habilitação do Guardian."""
-        client_id = sample_client_response["id"]
-        sample_client_response["guardian_enabled"] = True
-        sample_client_response["guardian_client_id"] = "GRD-12345"
-        mock_client_service.enable_guardian.return_value = sample_client_response
-
-        with patch(
-            "modules.clients.controllers.client_controller.ClientService",
-            return_value=mock_client_service,
-        ):
-            result = await mock_client_service.enable_guardian(client_id, "GRD-12345")
-
-        assert result["guardian_enabled"] is True
-        assert result["guardian_client_id"] == "GRD-12345"
 
     @pytest.mark.asyncio
     async def test_enable_plus(self, mock_client_service, sample_client_response):

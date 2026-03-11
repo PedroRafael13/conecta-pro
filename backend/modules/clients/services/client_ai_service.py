@@ -315,8 +315,6 @@ class ClientAIService:
             score += 10
 
         # Integrações ativas
-        if client.guardian_enabled:
-            score += 10
         if client.plus_enabled:
             score += 10
 
@@ -514,8 +512,6 @@ class ClientAIService:
             score += 10
         if condominium.has_party_room:
             score += 10
-        if condominium.guardian_enabled:
-            score += 5
         if condominium.plus_enabled:
             score += 5
         return min(100, score)
@@ -584,9 +580,6 @@ class ClientAIService:
         if client.type == ClientType.CONDOMINIO and client.active_contracts >= 2:
             patterns.append("Condomínio com múltiplos serviços")
 
-        if client.guardian_enabled and client.plus_enabled:
-            patterns.append("Uso integrado Guardian + Plus")
-
         if client.is_vip and client.satisfaction_score and client.satisfaction_score >= 4:
             patterns.append("Cliente premium satisfeito")
 
@@ -616,15 +609,6 @@ class ClientAIService:
                     "type": "relationship",
                     "action": "Plano de recuperação de relacionamento",
                     "reason": "Score de saúde baixo",
-                }
-            )
-
-        if not client.guardian_enabled and client.type == ClientType.CONDOMINIO:
-            recommendations.append(
-                {
-                    "type": "upsell",
-                    "action": "Apresentar Conecta Guardian",
-                    "reason": "Condomínio sem integração de segurança",
                 }
             )
 
@@ -725,9 +709,6 @@ class ClientAIService:
 
         if health_score < 60:
             recommendations.append("Revisar SLAs e qualidade do atendimento")
-
-        if not condominium.guardian_enabled:
-            recommendations.append("Avaliar integração com Conecta Guardian")
 
         if not condominium.plus_enabled:
             recommendations.append("Avaliar integração com Conecta Plus")
