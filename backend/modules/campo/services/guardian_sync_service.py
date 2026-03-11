@@ -1,6 +1,9 @@
 """
-Serviço de Sincronização com Conecta Guardian.
+DEPRECATED: Guardian integration — scheduled for extraction to separate microservice.
+Do not add new features. Existing code preserved for backward compatibility.
+Deprecation date: 2026-03-11
 
+Serviço de Sincronização com Conecta Guardian.
 Gerencia a comunicação bidirecional entre o ERP e o sistema Guardian.
 """
 

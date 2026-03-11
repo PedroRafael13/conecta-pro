@@ -1,4 +1,8 @@
 """
+DEPRECATED: Guardian integration — scheduled for extraction to separate microservice.
+Do not add new features. Existing code preserved for backward compatibility.
+Deprecation date: 2026-03-11
+
 Schemas Pydantic para GuardianOccurrence.
 """
 

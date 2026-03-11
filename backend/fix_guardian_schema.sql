@@ -1,3 +1,5 @@
+-- DEPRECATED: Guardian integration — scheduled for extraction to separate microservice.
+-- Deprecation date: 2026-03-11
 -- Corrigir schema Guardian - Criar tabelas ausentes
 -- Executar como: psql -U postgres -d erp_conecta_mais -f fix_guardian_schema.sql
 

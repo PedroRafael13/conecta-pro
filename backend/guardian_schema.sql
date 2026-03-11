@@ -1,3 +1,5 @@
+-- DEPRECATED: Guardian integration — scheduled for extraction to separate microservice.
+-- Deprecation date: 2026-03-11
 -- ===============================================================================
 -- GUARDIAN UNIFIED v3.0.0 - DATABASE INSTALLATION SCRIPT
 -- ===============================================================================
@@ -37,7 +39,7 @@ CREATE TABLE IF NOT EXISTS guardian.guardian_syncs (
     external_id VARCHAR(100),
     status VARCHAR(20) DEFAULT 'pending',
     client_id VARCHAR(50),
-    contract_id VARCHAR(50), 
+    contract_id VARCHAR(50),
     post_id VARCHAR(50),
     payload JSONB,
     response JSONB,
@@ -102,4 +104,3 @@ GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA guardian TO conecta_user;
 -- Dados iniciais
 INSERT INTO guardian.guardian_syncs (sync_code, direction, entity_type, status) VALUES
 ('GUARDIAN_INIT', 'outbound', 'system', 'completed') ON CONFLICT DO NOTHING;
-

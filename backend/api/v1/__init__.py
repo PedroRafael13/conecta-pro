@@ -1,5 +1,9 @@
 """
-API v1 - Router principal.
+API v1 - Router principal (dev/complete).
+
+TODO: Migrar imports para usar 9 módulos agregadores (comercial, operacoes, etc.)
+      como já feito em main_production.py. Prioridade baixa — este arquivo é usado
+      apenas em desenvolvimento. Ref: reorganização backend 2026-03-11.
 """
 
 from fastapi import APIRouter
