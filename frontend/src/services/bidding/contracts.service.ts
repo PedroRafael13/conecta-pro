@@ -1,8 +1,21 @@
 /**
- * Service Layer - Contracts (Contratos Públicos)
+ * Service Layer - Contracts (Contratos Publicos)
  *
- * Endpoints: Gestão de contratos públicos, medições, aditivos
- * Controle de vigência, execução financeira
+ * Cobertura 100% dos endpoints backend:
+ * GET  /contracts/                              -> listarContratos
+ * GET  /contracts/dashboard                     -> getDashboard
+ * GET  /contracts/vigentes                      -> listarContratosVigentes
+ * GET  /contracts/vencendo                      -> listarContratosVencendo
+ * GET  /contracts/{id}                          -> buscarContratoPorId
+ * POST /contracts/                              -> criarContrato
+ * PUT  /contracts/{id}                          -> atualizarContrato
+ * DEL  /contracts/{id}                          -> removerContrato
+ * POST /contracts/{id}/aditivo                  -> aditivar
+ * POST /contracts/{id}/reajuste/calcular        -> calcularReajuste
+ * POST /contracts/{id}/reajuste/aplicar         -> aplicarReajuste
+ * GET  /contracts/{id}/medicoes                 -> listarMedicoes
+ * POST /contracts/{id}/medicoes                 -> criarMedicao
+ * POST /medicoes/{measurement_id}/aprovar       -> aprovarMedicao
  */
 
 import api from '@/lib/api';
@@ -11,6 +24,8 @@ import type {
   PublicContractUpdate,
   PublicContractResponse,
 } from '@/types/generated/bidding';
+
+const BASE = '/api/v1/bidding/contracts';
 
 export interface ListContractsParams {
   status?: string;
@@ -24,10 +39,13 @@ export interface ListContractsParams {
   size?: number;
 }
 
-export interface AlterarStatusContratoParams {
-  contract_id: string;
-  novo_status: string;
-  observacoes?: string;
+export interface ContractDashboardResponse {
+  total_contratos: number;
+  vigentes: number;
+  vencidos: number;
+  em_execucao: number;
+  valor_total: number;
+  [key: string]: unknown;
 }
 
 export interface AditivarParams {
@@ -38,223 +56,150 @@ export interface AditivarParams {
   nova_data_fim?: string;
 }
 
-/**
- * Lista contratos com filtros
- */
-export async function listarContratos(
-  params?: ListContractsParams
-): Promise<PublicContractResponse[]> {
-  const { data } = await api.get<PublicContractResponse[]>(
-    '/api/v1/bidding/contracts/',
-    { params }
-  );
+export interface CalcularReajusteParams {
+  contract_id: string;
+  indice: string;
+  data_base?: string;
+}
+
+export interface ReajusteResponse {
+  valor_original: number;
+  valor_reajustado: number;
+  percentual: number;
+  indice: string;
+  [key: string]: unknown;
+}
+
+export interface CriarMedicaoParams {
+  contract_id: string;
+  numero_medicao: number;
+  competencia: string;
+  tipo?: string;
+  periodo_inicio?: string;
+  periodo_fim?: string;
+  valor_bruto: number;
+  retencao_iss?: number;
+  retencao_inss?: number;
+  retencao_irrf?: number;
+  retencao_pis_cofins_csll?: number;
+  descricao_servicos?: string;
+  observacoes?: string;
+  [key: string]: unknown;
+}
+
+export interface MedicaoResponse {
+  id: string;
+  contrato_id: string;
+  numero_medicao: number;
+  competencia: string;
+  valor_bruto: number;
+  valor_liquido: number;
+  status: string;
+  [key: string]: unknown;
+}
+
+// GET /contracts/
+export async function listarContratos(params?: ListContractsParams): Promise<PublicContractResponse[]> {
+  const { data } = await api.get<PublicContractResponse[]>(`${BASE}/`, { params });
   return data;
 }
 
-/**
- * Busca contrato por ID
- */
-export async function buscarContratoPorId(
-  contractId: string
-): Promise<PublicContractResponse> {
-  const { data } = await api.get<PublicContractResponse>(
-    `/api/v1/bidding/contracts/${contractId}`
-  );
+// GET /contracts/dashboard
+export async function getDashboard(params?: { periodo_dias?: number }): Promise<ContractDashboardResponse> {
+  const { data } = await api.get<ContractDashboardResponse>(`${BASE}/dashboard`, { params });
   return data;
 }
 
-/**
- * Cria novo contrato
- */
-export async function criarContrato(
-  payload: PublicContractCreate
-): Promise<PublicContractResponse> {
-  const { data } = await api.post<PublicContractResponse>(
-    '/api/v1/bidding/contracts/',
-    payload
-  );
+// GET /contracts/vigentes
+export async function listarContratosVigentes(params?: { page?: number; size?: number }): Promise<PublicContractResponse[]> {
+  const { data } = await api.get<PublicContractResponse[]>(`${BASE}/vigentes`, { params });
   return data;
 }
 
-/**
- * Atualiza contrato existente
- */
-export async function atualizarContrato(
-  contractId: string,
-  payload: PublicContractUpdate
-): Promise<PublicContractResponse> {
-  const { data } = await api.put<PublicContractResponse>(
-    `/api/v1/bidding/contracts/${contractId}`,
-    payload
-  );
+// GET /contracts/vencendo
+export async function listarContratosVencendo(params?: { dias?: number; page?: number; size?: number }): Promise<PublicContractResponse[]> {
+  const { data } = await api.get<PublicContractResponse[]>(`${BASE}/vencendo`, { params });
   return data;
 }
 
-/**
- * Remove contrato (soft delete)
- */
+// GET /contracts/{id}
+export async function buscarContratoPorId(contractId: string): Promise<PublicContractResponse> {
+  const { data } = await api.get<PublicContractResponse>(`${BASE}/${contractId}`);
+  return data;
+}
+
+// POST /contracts/
+export async function criarContrato(payload: PublicContractCreate): Promise<PublicContractResponse> {
+  const { data } = await api.post<PublicContractResponse>(`${BASE}/`, payload);
+  return data;
+}
+
+// PUT /contracts/{id}
+export async function atualizarContrato(contractId: string, payload: PublicContractUpdate): Promise<PublicContractResponse> {
+  const { data } = await api.put<PublicContractResponse>(`${BASE}/${contractId}`, payload);
+  return data;
+}
+
+// DELETE /contracts/{id}
 export async function removerContrato(contractId: string): Promise<void> {
-  await api.delete(`/api/v1/bidding/contracts/${contractId}`);
+  await api.delete(`${BASE}/${contractId}`);
 }
 
-/**
- * Lista contratos vigentes
- */
-export async function listarContratosVigentes(params?: {
-  page?: number;
-  size?: number;
-}): Promise<PublicContractResponse[]> {
-  const { data } = await api.get<PublicContractResponse[]>(
-    '/api/v1/bidding/contracts/vigentes',
-    { params }
-  );
-  return data;
-}
-
-/**
- * Lista contratos vencendo (próximo aos 60 dias)
- */
-export async function listarContratosVencendo(params?: {
-  dias?: number;
-  page?: number;
-  size?: number;
-}): Promise<PublicContractResponse[]> {
-  const { data } = await api.get<PublicContractResponse[]>(
-    '/api/v1/bidding/contracts/vencendo',
-    { params }
-  );
-  return data;
-}
-
-/**
- * Altera status do contrato
- */
-export async function alterarStatus(
-  params: AlterarStatusContratoParams
-): Promise<PublicContractResponse> {
+// POST /contracts/{id}/aditivo
+export async function aditivar(params: AditivarParams): Promise<PublicContractResponse> {
   const { contract_id, ...payload } = params;
-  const { data } = await api.post<PublicContractResponse>(
-    `/api/v1/bidding/contracts/${contract_id}/status`,
-    payload
-  );
+  const { data } = await api.post<PublicContractResponse>(`${BASE}/${contract_id}/aditivo`, payload);
   return data;
 }
 
-/**
- * Cria aditivo de contrato
- */
-export async function aditivar(
-  params: AditivarParams
-): Promise<PublicContractResponse> {
+// POST /contracts/{id}/reajuste/calcular
+export async function calcularReajuste(params: CalcularReajusteParams): Promise<ReajusteResponse> {
   const { contract_id, ...payload } = params;
-  const { data } = await api.post<PublicContractResponse>(
-    `/api/v1/bidding/contracts/${contract_id}/aditivo`,
-    payload
-  );
+  const { data } = await api.post<ReajusteResponse>(`${BASE}/${contract_id}/reajuste/calcular`, payload);
   return data;
 }
 
-/**
- * Dashboard de contratos
- */
-export async function getDashboard(params?: {
-  periodo_dias?: number;
-}): Promise<{
-  total_contratos: number;
-  vigentes: number;
-  vencidos: number;
-  em_execucao: number;
-  valor_total: number;
-  [key: string]: any;
-}> {
-  const { data } = await api.get(
-    '/api/v1/bidding/contracts/dashboard',
-    { params }
-  );
+// POST /contracts/{id}/reajuste/aplicar
+export async function aplicarReajuste(params: CalcularReajusteParams): Promise<PublicContractResponse> {
+  const { contract_id, ...payload } = params;
+  const { data } = await api.post<PublicContractResponse>(`${BASE}/${contract_id}/reajuste/aplicar`, payload);
   return data;
 }
 
-// ========== MEDIÇÕES ==========
-// Nota: Tipos Measurement não disponíveis nos schemas gerados
-// Descomentar quando os tipos estiverem disponíveis
-
-/*
-export async function criarMedicao(
-  contractId: string,
-  payload: any
-): Promise<any> {
-  const { data } = await api.post(
-    `/api/v1/bidding/contracts/${contractId}/measurements`,
-    payload
-  );
+// GET /contracts/{id}/medicoes
+export async function listarMedicoes(contractId: string, params?: { status?: string }): Promise<MedicaoResponse[]> {
+  const { data } = await api.get<MedicaoResponse[]>(`${BASE}/${contractId}/medicoes`, { params });
   return data;
 }
 
-export async function atualizarMedicao(
-  contractId: string,
-  measurementId: string,
-  payload: any
-): Promise<any> {
-  const { data } = await api.put(
-    `/api/v1/bidding/contracts/${contractId}/measurements/${measurementId}`,
-    payload
-  );
+// POST /contracts/{id}/medicoes
+export async function criarMedicao(params: CriarMedicaoParams): Promise<MedicaoResponse> {
+  const { contract_id, ...payload } = params;
+  const { data } = await api.post<MedicaoResponse>(`${BASE}/${contract_id}/medicoes`, payload);
   return data;
 }
 
-export async function listarMedicoes(
-  contractId: string,
-  params?: { status?: string }
-): Promise<any[]> {
-  const { data } = await api.get(
-    `/api/v1/bidding/contracts/${contractId}/measurements`,
-    { params }
-  );
+// POST /medicoes/{measurement_id}/aprovar
+export async function aprovarMedicao(measurementId: string, observacoes?: string): Promise<MedicaoResponse> {
+  const { data } = await api.post<MedicaoResponse>(`${BASE}/medicoes/${measurementId}/aprovar`, { observacoes });
   return data;
 }
-
-export async function aprovarMedicao(
-  contractId: string,
-  measurementId: string,
-  observacoes?: string
-): Promise<any> {
-  const { data } = await api.post(
-    `/api/v1/bidding/contracts/${contractId}/measurements/${measurementId}/aprovar`,
-    { observacoes }
-  );
-  return data;
-}
-
-export async function rejeitarMedicao(
-  contractId: string,
-  measurementId: string,
-  motivo: string
-): Promise<any> {
-  const { data } = await api.post(
-    `/api/v1/bidding/contracts/${contractId}/measurements/${measurementId}/rejeitar`,
-    { motivo }
-  );
-  return data;
-}
-*/
 
 const contractsService = {
   listarContratos,
+  getDashboard,
+  listarContratosVigentes,
+  listarContratosVencendo,
   buscarContratoPorId,
   criarContrato,
   atualizarContrato,
   removerContrato,
-  listarContratosVigentes,
-  listarContratosVencendo,
-  alterarStatus,
   aditivar,
-  getDashboard,
-  // Medições comentadas até tipos estarem disponíveis
-  // criarMedicao,
-  // atualizarMedicao,
-  // listarMedicoes,
-  // aprovarMedicao,
-  // rejeitarMedicao,
+  calcularReajuste,
+  aplicarReajuste,
+  listarMedicoes,
+  criarMedicao,
+  aprovarMedicao,
 };
 
 export default contractsService;

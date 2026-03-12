@@ -1,41 +1,63 @@
 /**
- * Service Layer - Proposals (Propostas de Licitação)
+ * Service Layer - Proposals (Propostas de Licitacao)
  *
- * Endpoints: Criação, submissão, gestão de propostas comerciais
- * Vinculação com editais, itens, valores, prazos
+ * Cobertura 100% dos endpoints backend:
+ * GET  /proposals/                     -> listarPropostas
+ * GET  /proposals/estatisticas         -> getEstatisticas
+ * GET  /proposals/vencedoras           -> listarVencedoras
+ * GET  /proposals/tender/{tender_id}   -> listarPropostasPorEdital
+ * GET  /proposals/{id}                 -> buscarPropostaPorId
+ * POST /proposals/                     -> criarProposta
+ * PUT  /proposals/{id}                 -> atualizarProposta
+ * DEL  /proposals/{id}                 -> removerProposta
+ * POST /proposals/{id}/pronta          -> marcarPronta
+ * POST /proposals/{id}/enviar          -> enviarProposta
+ * POST /proposals/{id}/resultado       -> registrarResultado
+ * POST /proposals/{id}/lance           -> registrarLance
+ * POST /proposals/calcular-bdi         -> calcularBDI
  */
 
 import api from '@/lib/api';
 
-// Tipos para propostas de licitação (não disponíveis nos schemas gerados)
+const BASE = '/api/v1/bidding/proposals';
+
 export interface BiddingProposalCreate {
   tender_id: string;
-  cnpj: string;
-  razao_social: string;
-  valor_global: number | string;
-  prazo_entrega?: number;
-  proposta_tecnica?: string;
-  [key: string]: any;
+  numero?: string;
+  valor_total?: number;
+  valor_unitario?: number;
+  desconto_percentual?: number;
+  bdi_percentual?: number;
+  bdi_detalhamento?: Record<string, unknown>;
+  encargos_sociais?: number;
+  encargos_detalhamento?: Record<string, unknown>;
+  observacoes?: string;
+  justificativa_preco?: string;
+  [key: string]: unknown;
 }
 
 export interface BiddingProposalUpdate {
-  valor_global?: number | string;
-  prazo_entrega?: number;
-  proposta_tecnica?: string;
-  status?: string;
-  [key: string]: any;
+  valor_total?: number;
+  valor_unitario?: number;
+  desconto_percentual?: number;
+  bdi_percentual?: number;
+  bdi_detalhamento?: Record<string, unknown>;
+  encargos_sociais?: number;
+  observacoes?: string;
+  justificativa_preco?: string;
+  [key: string]: unknown;
 }
 
 export interface BiddingProposalResponse {
   id: string;
   tender_id: string;
-  cnpj: string;
-  razao_social: string;
-  valor_global: number;
+  numero: string;
+  versao: number;
+  valor_total: number;
   status: string;
   created_at: string;
   updated_at?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface BiddingProposalListResponse {
@@ -46,30 +68,12 @@ export interface BiddingProposalListResponse {
   pages: number;
 }
 
-export interface ProposalItemCreate {
-  item_edital_id?: string;
-  descricao: string;
-  quantidade: number;
-  valor_unitario: number;
-  [key: string]: any;
-}
-
-export interface ProposalItemUpdate {
-  descricao?: string;
-  quantidade?: number;
-  valor_unitario?: number;
-  [key: string]: any;
-}
-
-export interface ProposalItemResponse {
-  id: string;
-  proposta_id: string;
-  descricao: string;
-  quantidade: number;
-  valor_unitario: number;
-  valor_total: number;
-  created_at: string;
-  [key: string]: any;
+export interface EstatisticasResponse {
+  total: number;
+  por_status: Record<string, number>;
+  taxa_sucesso: number;
+  valor_medio: number;
+  [key: string]: unknown;
 }
 
 export interface ListProposalsParams {
@@ -83,236 +87,128 @@ export interface ListProposalsParams {
   size?: number;
 }
 
-export interface SubmeterPropostaParams {
+export interface RegistrarResultadoParams {
   proposal_id: string;
+  venceu: boolean;
+  posicao_classificacao?: number;
+  valor_lance_final?: number;
   observacoes?: string;
 }
 
-export interface AlterarStatusPropostaParams {
+export interface RegistrarLanceParams {
   proposal_id: string;
-  novo_status: string;
+  valor: number;
   observacoes?: string;
 }
 
-/**
- * Lista propostas com filtros
- */
-export async function listarPropostas(
-  params?: ListProposalsParams
-): Promise<BiddingProposalListResponse> {
-  const { data } = await api.get<BiddingProposalListResponse>(
-    '/api/v1/bidding/proposals/',
-    { params }
-  );
+export interface CalcularBDIParams {
+  administracao_central: number;
+  seguro_garantia: number;
+  risco: number;
+  despesas_financeiras: number;
+  lucro: number;
+  tributos: number;
+}
+
+export interface BDIResponse {
+  bdi_percentual: number;
+  formula: string;
+  detalhamento: Record<string, number>;
+}
+
+// GET /proposals/
+export async function listarPropostas(params?: ListProposalsParams): Promise<BiddingProposalListResponse> {
+  const { data } = await api.get<BiddingProposalListResponse>(`${BASE}/`, { params });
   return data;
 }
 
-/**
- * Busca proposta por ID
- */
-export async function buscarPropostaPorId(
-  proposalId: string
-): Promise<BiddingProposalResponse> {
-  const { data } = await api.get<BiddingProposalResponse>(
-    `/api/v1/bidding/proposals/${proposalId}`
-  );
+// GET /proposals/estatisticas
+export async function getEstatisticas(): Promise<EstatisticasResponse> {
+  const { data } = await api.get<EstatisticasResponse>(`${BASE}/estatisticas`);
   return data;
 }
 
-/**
- * Cria nova proposta
- */
-export async function criarProposta(
-  payload: BiddingProposalCreate
-): Promise<BiddingProposalResponse> {
-  const { data } = await api.post<BiddingProposalResponse>(
-    '/api/v1/bidding/proposals/',
-    payload
-  );
+// GET /proposals/vencedoras
+export async function listarVencedoras(params?: { page?: number; size?: number }): Promise<BiddingProposalResponse[]> {
+  const { data } = await api.get<BiddingProposalResponse[]>(`${BASE}/vencedoras`, { params });
   return data;
 }
 
-/**
- * Atualiza proposta existente
- */
-export async function atualizarProposta(
-  proposalId: string,
-  payload: BiddingProposalUpdate
-): Promise<BiddingProposalResponse> {
-  const { data } = await api.put<BiddingProposalResponse>(
-    `/api/v1/bidding/proposals/${proposalId}`,
-    payload
-  );
+// GET /proposals/tender/{tender_id}
+export async function listarPropostasPorEdital(tenderId: string, params?: { page?: number; size?: number }): Promise<BiddingProposalListResponse> {
+  const { data } = await api.get<BiddingProposalListResponse>(`${BASE}/tender/${tenderId}`, { params });
   return data;
 }
 
-/**
- * Remove proposta (soft delete)
- */
+// GET /proposals/{id}
+export async function buscarPropostaPorId(proposalId: string): Promise<BiddingProposalResponse> {
+  const { data } = await api.get<BiddingProposalResponse>(`${BASE}/${proposalId}`);
+  return data;
+}
+
+// POST /proposals/
+export async function criarProposta(payload: BiddingProposalCreate): Promise<BiddingProposalResponse> {
+  const { data } = await api.post<BiddingProposalResponse>(`${BASE}/`, payload);
+  return data;
+}
+
+// PUT /proposals/{id}
+export async function atualizarProposta(proposalId: string, payload: BiddingProposalUpdate): Promise<BiddingProposalResponse> {
+  const { data } = await api.put<BiddingProposalResponse>(`${BASE}/${proposalId}`, payload);
+  return data;
+}
+
+// DELETE /proposals/{id}
 export async function removerProposta(proposalId: string): Promise<void> {
-  await api.delete(`/api/v1/bidding/proposals/${proposalId}`);
+  await api.delete(`${BASE}/${proposalId}`);
 }
 
-/**
- * Lista propostas de um edital específico
- */
-export async function listarPropostasPorEdital(
-  tenderId: string,
-  params?: { page?: number; size?: number }
-): Promise<BiddingProposalListResponse> {
-  const { data } = await api.get<BiddingProposalListResponse>(
-    `/api/v1/bidding/proposals/tender/${tenderId}`,
-    { params }
-  );
+// POST /proposals/{id}/pronta
+export async function marcarPronta(proposalId: string, observacoes?: string): Promise<BiddingProposalResponse> {
+  const { data } = await api.post<BiddingProposalResponse>(`${BASE}/${proposalId}/pronta`, { observacoes });
   return data;
 }
 
-/**
- * Submete proposta para análise/aprovação
- */
-export async function submeterProposta(
-  params: SubmeterPropostaParams
-): Promise<BiddingProposalResponse> {
+// POST /proposals/{id}/enviar
+export async function enviarProposta(proposalId: string, observacoes?: string): Promise<BiddingProposalResponse> {
+  const { data } = await api.post<BiddingProposalResponse>(`${BASE}/${proposalId}/enviar`, { observacoes });
+  return data;
+}
+
+// POST /proposals/{id}/resultado
+export async function registrarResultado(params: RegistrarResultadoParams): Promise<BiddingProposalResponse> {
   const { proposal_id, ...payload } = params;
-  const { data } = await api.post<BiddingProposalResponse>(
-    `/api/v1/bidding/proposals/${proposal_id}/submeter`,
-    payload
-  );
+  const { data } = await api.post<BiddingProposalResponse>(`${BASE}/${proposal_id}/resultado`, payload);
   return data;
 }
 
-/**
- * Altera status da proposta
- */
-export async function alterarStatusProposta(
-  params: AlterarStatusPropostaParams
-): Promise<BiddingProposalResponse> {
+// POST /proposals/{id}/lance
+export async function registrarLance(params: RegistrarLanceParams): Promise<BiddingProposalResponse> {
   const { proposal_id, ...payload } = params;
-  const { data } = await api.post<BiddingProposalResponse>(
-    `/api/v1/bidding/proposals/${proposal_id}/status`,
-    payload
-  );
+  const { data } = await api.post<BiddingProposalResponse>(`${BASE}/${proposal_id}/lance`, payload);
   return data;
 }
 
-/**
- * Lista propostas em andamento
- */
-export async function listarPropostasEmAndamento(params?: {
-  page?: number;
-  size?: number;
-}): Promise<BiddingProposalListResponse> {
-  const { data } = await api.get<BiddingProposalListResponse>(
-    '/api/v1/bidding/proposals/em-andamento',
-    { params }
-  );
-  return data;
-}
-
-/**
- * Lista propostas aprovadas
- */
-export async function listarPropostasAprovadas(params?: {
-  page?: number;
-  size?: number;
-}): Promise<BiddingProposalListResponse> {
-  const { data } = await api.get<BiddingProposalListResponse>(
-    '/api/v1/bidding/proposals/aprovadas',
-    { params }
-  );
-  return data;
-}
-
-/**
- * Dashboard de propostas
- */
-export async function getDashboard(params?: {
-  periodo_dias?: number;
-}): Promise<{
-  total_propostas: number;
-  em_andamento: number;
-  aprovadas: number;
-  rejeitadas: number;
-  valor_total: number;
-  taxa_aprovacao: number;
-}> {
-  const { data } = await api.get('/api/v1/bidding/proposals/dashboard', {
-    params,
-  });
-  return data;
-}
-
-// ========== ITENS DE PROPOSTA ==========
-
-/**
- * Adiciona item à proposta
- */
-export async function adicionarItem(
-  proposalId: string,
-  payload: ProposalItemCreate
-): Promise<ProposalItemResponse> {
-  const { data } = await api.post<ProposalItemResponse>(
-    `/api/v1/bidding/proposals/${proposalId}/items`,
-    payload
-  );
-  return data;
-}
-
-/**
- * Atualiza item da proposta
- */
-export async function atualizarItem(
-  proposalId: string,
-  itemId: string,
-  payload: ProposalItemUpdate
-): Promise<ProposalItemResponse> {
-  const { data } = await api.put<ProposalItemResponse>(
-    `/api/v1/bidding/proposals/${proposalId}/items/${itemId}`,
-    payload
-  );
-  return data;
-}
-
-/**
- * Remove item da proposta
- */
-export async function removerItem(
-  proposalId: string,
-  itemId: string
-): Promise<void> {
-  await api.delete(
-    `/api/v1/bidding/proposals/${proposalId}/items/${itemId}`
-  );
-}
-
-/**
- * Lista itens de uma proposta
- */
-export async function listarItens(
-  proposalId: string
-): Promise<ProposalItemResponse[]> {
-  const { data } = await api.get<ProposalItemResponse[]>(
-    `/api/v1/bidding/proposals/${proposalId}/items`
-  );
+// POST /proposals/calcular-bdi
+export async function calcularBDI(params: CalcularBDIParams): Promise<BDIResponse> {
+  const { data } = await api.post<BDIResponse>(`${BASE}/calcular-bdi`, params);
   return data;
 }
 
 const proposalsService = {
   listarPropostas,
+  getEstatisticas,
+  listarVencedoras,
+  listarPropostasPorEdital,
   buscarPropostaPorId,
   criarProposta,
   atualizarProposta,
   removerProposta,
-  listarPropostasPorEdital,
-  submeterProposta,
-  alterarStatusProposta,
-  listarPropostasEmAndamento,
-  listarPropostasAprovadas,
-  getDashboard,
-  adicionarItem,
-  atualizarItem,
-  removerItem,
-  listarItens,
+  marcarPronta,
+  enviarProposta,
+  registrarResultado,
+  registrarLance,
+  calcularBDI,
 };
 
 export default proposalsService;

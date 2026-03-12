@@ -151,3 +151,80 @@ export interface CertificateBulkStatusResponse {
   expired: number;
   items: CertificateResponse[];
 }
+
+// ===== AI Agents Types =====
+
+export interface AgentStatus {
+  agent: string;
+  status: 'operational' | 'development' | 'planned';
+  description: string;
+}
+
+export interface OpportunityResponse {
+  id: string;
+  portal: string;
+  portal_id?: string;
+  objeto: string;
+  valor_estimado?: number;
+  modalidade?: string;
+  orgao_nome?: string;
+  orgao_cnpj?: string;
+  uf?: string;
+  municipio?: string;
+  data_publicacao?: string;
+  data_abertura?: string;
+  data_encerramento?: string;
+  url_edital?: string;
+  status: string;
+  relevancia_score: number;
+  created_at?: string;
+}
+
+export interface AnalysisResponse {
+  id: string;
+  tender_id?: string;
+  objeto_resumido?: string;
+  modalidade_identificada?: string;
+  criterio_julgamento?: string;
+  requisitos_habilitacao?: Record<string, string[]>;
+  red_flags?: Array<{ tipo: string; descricao: string; severidade: string }>;
+  documentos_necessarios?: string[];
+  recomendacao_participacao?: string;
+  created_at?: string;
+}
+
+export interface AssessmentResponse {
+  id: string;
+  tender_id?: string;
+  score?: number;
+  recomendacao?: 'GO' | 'NO_GO' | 'CONDICIONAL';
+  justificativa?: string;
+  requisitos_nao_atendidos?: string[];
+  acoes_necessarias?: Array<Record<string, unknown>>;
+  created_at?: string;
+}
+
+export interface PricingResponse {
+  id: string;
+  tender_id?: string;
+  custos_diretos?: number;
+  custos_indiretos?: number;
+  impostos?: number;
+  valor_total?: number;
+  cenario?: string;
+  cenarios_completos?: Record<string, { margem: number; total: number; descricao: string }>;
+  regime_tributario?: string;
+  bdi_percentual?: number;
+  created_at?: string;
+}
+
+export interface DisputeResponse {
+  id: string;
+  tender_id?: string;
+  portal: string;
+  status: string;
+  posicao_final?: number;
+  resultado?: string;
+  valor_final?: string;
+  created_at?: string;
+}

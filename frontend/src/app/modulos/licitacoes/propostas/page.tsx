@@ -46,7 +46,7 @@ import {
   useCriarProposta,
   useAtualizarProposta,
   useRemoverProposta,
-  useSubmeterProposta,
+  useEnviarProposta,
 } from '@/hooks/bidding/useProposals';
 import type {
   BiddingProposalResponse,
@@ -87,7 +87,7 @@ export default function PropostasPage() {
   const criarProposta = useCriarProposta();
   const atualizarProposta = useAtualizarProposta();
   const removerProposta = useRemoverProposta();
-  const submeterProposta = useSubmeterProposta();
+  const submeterProposta = useEnviarProposta();
 
   const proposals = proposalsData?.items || [];
   const totalPages = proposalsData?.pages || 1;
@@ -135,7 +135,7 @@ export default function PropostasPage() {
   const handleConfirmSubmit = async (observacoes?: string) => {
     if (!proposalToSubmit) return;
     await submeterProposta.mutateAsync({
-      proposal_id: proposalToSubmit.id,
+      proposalId: proposalToSubmit.id,
       observacoes,
     });
     setIsSubmitDialogOpen(false);

@@ -12,9 +12,16 @@ Nota: bidding_certificate_router movido para fiscal_contabil (2026-03-11)
 
 # --- CRM (leads, oportunidades, propostas, contratos, comissões, dashboard) ---
 # --- Bidding / Licitações (sem certidões — movidas para fiscal_contabil) ---
+from modules.bidding import (
+    agent_router as bidding_agent_router,
+)
 from modules.bidding import contract_router as bidding_contract_router
 from modules.bidding import document_router as bidding_document_router
+from modules.bidding import erp_router as bidding_erp_router
 from modules.bidding import proposal_router as bidding_proposal_router
+from modules.bidding import (
+    sync_router as bidding_sync_router,
+)
 from modules.bidding import (
     tender_router as bidding_tender_router,
 )
@@ -55,5 +62,8 @@ __all__ = [
     "bidding_document_router",
     "bidding_proposal_router",
     "bidding_contract_router",
+    "bidding_erp_router",
+    "bidding_agent_router",
+    "bidding_sync_router",
     "service_router",
 ]

@@ -28,6 +28,7 @@ router.include_router(auth_router)
 from modules.comercial import (  # noqa: E402
     bidding_contract_router,
     bidding_document_router,
+    bidding_erp_router,
     bidding_proposal_router,
     bidding_tender_router,
     client_router,
@@ -52,6 +53,7 @@ router.include_router(bidding_tender_router, prefix="/bidding", tags=["Bidding -
 router.include_router(bidding_document_router, prefix="/bidding", tags=["Bidding - Documentos"])
 router.include_router(bidding_proposal_router, prefix="/bidding", tags=["Bidding - Propostas"])
 router.include_router(bidding_contract_router, prefix="/bidding", tags=["Bidding - Contratos"])
+router.include_router(bidding_erp_router, prefix="/bidding", tags=["Bidding - Integracao ERP"])
 
 # =============================================================================
 # 2. OPERAÇÕES (via agregador)

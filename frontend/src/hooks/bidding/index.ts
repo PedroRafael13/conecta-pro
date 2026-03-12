@@ -25,3 +25,6 @@ export * from './useCertificates';
 
 // Documents (Documentos)
 export * from './useDocuments';
+
+// AI Agents (Agentes IA)
+export * from './useAgents';

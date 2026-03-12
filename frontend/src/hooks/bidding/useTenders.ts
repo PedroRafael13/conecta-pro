@@ -2,8 +2,7 @@
 
 /**
  * Hooks React Query - Tenders (Editais)
- *
- * Hooks para gestão de editais de licitação, integração PNCP
+ * Cobertura 100% dos 15 endpoints backend
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -25,27 +24,25 @@ const QUERY_KEYS = {
   list: (params?: ListTendersParams) => [...QUERY_KEYS.lists(), params] as const,
   details: () => [...QUERY_KEYS.all, 'detail'] as const,
   detail: (id: string) => [...QUERY_KEYS.details(), id] as const,
-  abertos: (params?: any) => [...QUERY_KEYS.all, 'abertos', params] as const,
-  segmento: (segmento: string, params?: any) =>
-    [...QUERY_KEYS.all, 'segmento', segmento, params] as const,
+  abertos: (params?: unknown) => [...QUERY_KEYS.all, 'abertos', params] as const,
+  participando: (params?: unknown) => [...QUERY_KEYS.all, 'participando', params] as const,
+  segmento: (segmento: string, params?: unknown) => [...QUERY_KEYS.all, 'segmento', segmento, params] as const,
+  documentos: (tenderId: string) => [...QUERY_KEYS.detail(tenderId), 'documentos'] as const,
   pncp: (params?: PNCPBuscarParams) => [...QUERY_KEYS.all, 'pncp', params] as const,
-  dashboard: (params?: any) => [...QUERY_KEYS.all, 'dashboard', params] as const,
+  pncpStatus: () => [...QUERY_KEYS.all, 'pncp-status'] as const,
+  dashboard: (params?: unknown) => [...QUERY_KEYS.all, 'dashboard', params] as const,
 };
 
-/**
- * Hook para listar editais com filtros
- */
+// GET /tenders/
 export function useListarEditais(params?: ListTendersParams) {
   return useQuery({
     queryKey: QUERY_KEYS.list(params),
     queryFn: () => tendersService.listarEditais(params),
-    staleTime: 1000 * 60 * 5, // 5 minutos
+    staleTime: 1000 * 60 * 5,
   });
 }
 
-/**
- * Hook para buscar edital por ID
- */
+// GET /tenders/{id}
 export function useBuscarEdital(tenderId: string, enabled = true) {
   return useQuery({
     queryKey: QUERY_KEYS.detail(tenderId),
@@ -55,12 +52,76 @@ export function useBuscarEdital(tenderId: string, enabled = true) {
   });
 }
 
-/**
- * Hook para criar novo edital
- */
+// GET /tenders/dashboard
+export function useTendersDashboard(params?: { uf?: string; periodo_dias?: number }) {
+  return useQuery({
+    queryKey: QUERY_KEYS.dashboard(params),
+    queryFn: () => tendersService.getDashboard(params),
+    staleTime: 1000 * 60 * 10,
+  });
+}
+
+// GET /tenders/abertos
+export function useListarEditaisAbertos(params?: { uf?: string; segmento?: string; page?: number; size?: number }) {
+  return useQuery({
+    queryKey: QUERY_KEYS.abertos(params),
+    queryFn: () => tendersService.listarEditaisAbertos(params),
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
+// GET /tenders/participando
+export function useListarEditaisParticipando(params?: { page?: number; size?: number }) {
+  return useQuery({
+    queryKey: QUERY_KEYS.participando(params),
+    queryFn: () => tendersService.listarEditaisParticipando(params),
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
+// GET /tenders/segmento/{segmento}
+export function useListarEditaisPorSegmento(segmento: string, params?: { page?: number; size?: number }) {
+  return useQuery({
+    queryKey: QUERY_KEYS.segmento(segmento, params),
+    queryFn: () => tendersService.listarEditaisPorSegmento(segmento, params),
+    enabled: !!segmento,
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
+// GET /tenders/{id}/documentos
+export function useListarDocumentosEdital(tenderId: string, enabled = true) {
+  return useQuery({
+    queryKey: QUERY_KEYS.documentos(tenderId),
+    queryFn: () => tendersService.listarDocumentosEdital(tenderId),
+    enabled: enabled && !!tenderId,
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
+// GET /tenders/pncp/status
+export function useVerificarStatusPNCP(enabled = true) {
+  return useQuery({
+    queryKey: QUERY_KEYS.pncpStatus(),
+    queryFn: () => tendersService.verificarStatusPNCP(),
+    enabled,
+    staleTime: 1000 * 60 * 30,
+  });
+}
+
+// GET /tenders/pncp/buscar
+export function useBuscarPNCP(params?: PNCPBuscarParams, enabled = false) {
+  return useQuery({
+    queryKey: QUERY_KEYS.pncp(params),
+    queryFn: () => tendersService.buscarPNCP(params || {}),
+    enabled,
+    staleTime: 1000 * 60 * 10,
+  });
+}
+
+// POST /tenders/
 export function useCriarEdital() {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: (payload: TenderCreate) => tendersService.criarEdital(payload),
     onSuccess: () => {
@@ -73,12 +134,9 @@ export function useCriarEdital() {
   });
 }
 
-/**
- * Hook para atualizar edital
- */
+// PUT /tenders/{id}
 export function useAtualizarEdital() {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: TenderUpdate }) =>
       tendersService.atualizarEdital(id, data),
@@ -93,12 +151,9 @@ export function useAtualizarEdital() {
   });
 }
 
-/**
- * Hook para remover edital
- */
+// DELETE /tenders/{id}
 export function useRemoverEdital() {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: (tenderId: string) => tendersService.removerEdital(tenderId),
     onSuccess: () => {
@@ -111,75 +166,30 @@ export function useRemoverEdital() {
   });
 }
 
-/**
- * Hook para listar editais abertos
- */
-export function useListarEditaisAbertos(params?: {
-  uf?: string;
-  segmento?: string;
-  page?: number;
-  size?: number;
-}) {
-  return useQuery({
-    queryKey: QUERY_KEYS.abertos(params),
-    queryFn: () => tendersService.listarEditaisAbertos(params),
-    staleTime: 1000 * 60 * 5,
-  });
-}
-
-/**
- * Hook para listar editais por segmento
- */
-export function useListarEditaisPorSegmento(
-  segmento: string,
-  params?: { page?: number; size?: number }
-) {
-  return useQuery({
-    queryKey: QUERY_KEYS.segmento(segmento, params),
-    queryFn: () => tendersService.listarEditaisPorSegmento(segmento, params),
-    enabled: !!segmento,
-    staleTime: 1000 * 60 * 5,
-  });
-}
-
-/**
- * Hook para marcar participação em edital
- */
+// POST /tenders/{id}/participar
 export function useMarcarParticipacao() {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: (params: MarcarParticipacaoParams) =>
-      tendersService.marcarParticipacao(params),
-    onSuccess: (data, variables) => {
+    mutationFn: (params: MarcarParticipacaoParams) => tendersService.marcarParticipacao(params),
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.lists() });
-      queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.detail(variables.tender_id),
-      });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.detail(variables.tender_id) });
       toast.success('Participação registrada com sucesso');
     },
     onError: (error: any) => {
-      toast.error(
-        error?.response?.data?.detail || 'Erro ao registrar participação'
-      );
+      toast.error(error?.response?.data?.detail || 'Erro ao registrar participação');
     },
   });
 }
 
-/**
- * Hook para alterar status do edital
- */
+// POST /tenders/{id}/status
 export function useAlterarStatusEdital() {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: (params: AlterarStatusParams) =>
-      tendersService.alterarStatus(params),
-    onSuccess: (data, variables) => {
+    mutationFn: (params: AlterarStatusParams) => tendersService.alterarStatus(params),
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.lists() });
-      queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.detail(variables.tender_id),
-      });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.detail(variables.tender_id) });
       toast.success('Status alterado com sucesso');
     },
     onError: (error: any) => {
@@ -188,66 +198,27 @@ export function useAlterarStatusEdital() {
   });
 }
 
-/**
- * Hook para buscar editais no PNCP
- */
-export function useBuscarPNCP(params?: PNCPBuscarParams, enabled = false) {
-  return useQuery({
-    queryKey: QUERY_KEYS.pncp(params),
-    queryFn: () => tendersService.buscarPNCP(params || {}),
-    enabled,
-    staleTime: 1000 * 60 * 10, // 10 minutos
-  });
-}
-
-/**
- * Hook mutation para buscar editais no PNCP sob demanda
- */
+// POST /tenders/pncp/buscar (mutation)
 export function useBuscarPNCPMutation() {
   return useMutation({
     mutationFn: (params: PNCPBuscarParams) => tendersService.buscarPNCP(params),
-    onSuccess: () => {
-      toast.success('Busca no PNCP realizada com sucesso');
-    },
     onError: (error: any) => {
       toast.error(error?.response?.data?.detail || 'Erro ao buscar no PNCP');
     },
   });
 }
 
-/**
- * Hook para sincronizar editais com PNCP
- */
+// POST /tenders/sync-pncp
 export function useSincronizarPNCP() {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: (params?: { uf?: string; dias_retroativos?: number }) =>
-      tendersService.sincronizarPNCP(params),
+    mutationFn: (params?: { uf?: string; dias_retroativos?: number }) => tendersService.sincronizarPNCP(params),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.lists() });
-      toast.success(
-        `${data.total_sincronizado} editais sincronizados com sucesso`
-      );
+      toast.success(`${data.total_sincronizado} editais sincronizados`);
     },
     onError: (error: any) => {
-      toast.error(
-        error?.response?.data?.detail || 'Erro ao sincronizar com PNCP'
-      );
+      toast.error(error?.response?.data?.detail || 'Erro ao sincronizar PNCP');
     },
-  });
-}
-
-/**
- * Hook para dashboard de editais
- */
-export function useTendersDashboard(params?: {
-  uf?: string;
-  periodo_dias?: number;
-}) {
-  return useQuery({
-    queryKey: QUERY_KEYS.dashboard(params),
-    queryFn: () => tendersService.getDashboard(params),
-    staleTime: 1000 * 60 * 10, // 10 minutos
   });
 }

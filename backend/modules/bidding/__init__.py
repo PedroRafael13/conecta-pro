@@ -16,10 +16,13 @@ warnings.warn(
 )
 
 from modules.bidding.controllers import (  # noqa: E402
+    agent_router,
     certificate_router,
     contract_router,
     document_router,
+    erp_router,
     proposal_router,
+    sync_router,
     tender_router,
 )
 from modules.bidding.models import (  # noqa: E402
@@ -44,6 +47,7 @@ from modules.bidding.services import (  # noqa: E402
     CertificateService,
     ContractService,
     DocumentService,
+    ERPIntegrationService,
     PNCPService,
     # BiddingAIService,  # Removido temporariamente (deps: spacy, selenium)
     ProposalService,
@@ -74,6 +78,9 @@ __all__ = [
     "proposal_router",
     "contract_router",
     "certificate_router",
+    "agent_router",
+    "sync_router",
+    "erp_router",
     # Services
     "TenderService",
     "DocumentService",
@@ -81,5 +88,6 @@ __all__ = [
     "ContractService",
     "CertificateService",
     "PNCPService",
+    "ERPIntegrationService",
     # "BiddingAIService",  # Removido temporariamente
 ]

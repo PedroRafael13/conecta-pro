@@ -247,9 +247,12 @@ except Exception as e:
 # =============================================================================
 try:
     from modules.comercial import (
+        bidding_agent_router,
         bidding_contract_router,
         bidding_document_router,
+        bidding_erp_router,
         bidding_proposal_router,
+        bidding_sync_router,
         bidding_tender_router,
         client_router,
         crm_commission_router,
@@ -275,6 +278,9 @@ try:
     api_router.include_router(bidding_document_router, prefix="/bidding", tags=["Bidding - Documentos"])
     api_router.include_router(bidding_proposal_router, prefix="/bidding", tags=["Bidding - Propostas"])
     api_router.include_router(bidding_contract_router, prefix="/bidding", tags=["Bidding - Contratos"])
+    api_router.include_router(bidding_agent_router, prefix="/bidding", tags=["Bidding - AI Agents"])
+    api_router.include_router(bidding_sync_router, prefix="/bidding", tags=["Bidding - Sincronizacao"])
+    api_router.include_router(bidding_erp_router, prefix="/bidding", tags=["Bidding - Integracao ERP"])
     # Services
     api_router.include_router(service_router, tags=["Services - Servicos"])
     logger.info("Modulo Comercial: OK (CRM + Clients + Bidding + Services)")
@@ -576,10 +582,22 @@ except Exception as e:
 # Importações serão adicionadas conforme refatoração avançar
 
 
+# =============================================================================
+# 10. GESTÃO DE PESSOAS (people_management: DP + RH + Operations + Portal)
+# =============================================================================
+try:
+    from modules.people_management import router as people_management_router
+
+    api_router.include_router(people_management_router)
+    logger.info("Modulo People Management: OK (DP + RH + Operations + Portal)")
+except Exception as e:
+    logger.warning(f"Modulo People Management: {e}")
+
+
 # Incluir router principal
 app.include_router(api_router)
 
-logger.info("=== API CONECTA PRO INICIADA (9 módulos) ===")
+logger.info("=== API CONECTA PRO INICIADA (10 módulos) ===")
 
 
 if __name__ == "__main__":

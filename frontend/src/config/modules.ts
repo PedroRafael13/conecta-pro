@@ -24,10 +24,14 @@ export const modules: Module[] = [
       { id: 'propostas', title: 'Propostas', href: '/modulos/crm/propostas', icon: 'FileText', permissions: ['crm:propostas'], group: 'CRM' },
       { id: 'contratos', title: 'Contratos', href: '/modulos/servicos/contratos', icon: 'FileSignature', permissions: ['services:contratos'], group: 'CRM' },
       // --- Licitacoes ---
+      { id: 'licitacoes-dashboard', title: 'Dashboard', href: '/modulos/licitacoes', icon: 'LayoutDashboard', permissions: ['bidding:tenders:read'], group: 'Licitacoes' },
+      { id: 'oportunidades-licitacao', title: 'Oportunidades', href: '/modulos/licitacoes/oportunidades', icon: 'Search', permissions: ['bidding:tenders:read'], group: 'Licitacoes' },
       { id: 'editais', title: 'Editais', href: '/modulos/licitacoes/editais', icon: 'FileSearch', permissions: ['bidding:tenders:read'], group: 'Licitacoes' },
       { id: 'propostas-licitacao', title: 'Propostas', href: '/modulos/licitacoes/propostas', icon: 'FileCheck', permissions: ['bidding:proposals:read'], group: 'Licitacoes' },
       { id: 'contratos-licitacao', title: 'Contratos Publicos', href: '/modulos/licitacoes/contratos', icon: 'FileSignature', permissions: ['bidding:contracts:read'], group: 'Licitacoes' },
+      { id: 'certidoes-licitacao', title: 'Certidoes', href: '/modulos/licitacoes/certidoes', icon: 'Award', permissions: ['bidding:certificates:read'], group: 'Licitacoes' },
       { id: 'documentos-licitacao', title: 'Documentos', href: '/modulos/licitacoes/documentos', icon: 'FolderOpen', permissions: ['bidding:documents:read'], group: 'Licitacoes' },
+      { id: 'ia-licitacoes', title: 'IA Hub', href: '/modulos/licitacoes/ia', icon: 'Bot', permissions: ['bidding:tenders:read'], group: 'Licitacoes' },
       // --- Servicos ---
       { id: 'ordens', title: 'Ordens de Servico', href: '/modulos/servicos/ordens', icon: 'ClipboardList', permissions: ['services:ordens'], group: 'Servicos' },
       { id: 'agendamentos', title: 'Agendamentos', href: '/modulos/servicos/agendamentos', icon: 'Calendar', permissions: ['services:agendamentos'], group: 'Servicos' },
@@ -49,7 +53,7 @@ export const modules: Module[] = [
     subModules: [
       // --- Postos e Escalas ---
       { id: 'postos', title: 'Postos', href: '/modulos/operacional/postos', icon: 'MapPin', permissions: ['operacional:postos'] },
-      { id: 'colaboradores', title: 'Colaboradores', href: '/modulos/operacional/colaboradores', icon: 'UserCheck', permissions: ['operacional:colaboradores'] },
+      // Colaboradores movido para DP — link mantido por compatibilidade
       { id: 'escalas', title: 'Escalas', href: '/modulos/operacional/escalas', icon: 'CalendarDays', permissions: ['operacional:escalas'] },
       { id: 'escalas-visual', title: 'Editor Visual', href: '/modulos/operacional/escalas/visual', icon: 'CalendarDays', permissions: ['operacional:escalas'] },
       { id: 'alocacoes', title: 'Alocacoes', href: '/modulos/operacional/alocacoes', icon: 'Users', permissions: ['operacional:alocacoes'] },
@@ -76,36 +80,84 @@ export const modules: Module[] = [
       // --- IA Operacional ---
       { id: 'ai-command-center', title: 'Central IA', href: '/modulos/operacional/ai-command-center', icon: 'Zap', permissions: ['operacional:read'] },
       { id: 'agentes-ia', title: 'Agentes IA', href: '/modulos/operacional/agentes', icon: 'Bot', permissions: ['operacional:read'] },
-      // --- Ferias e Reembolsos ---
-      { id: 'ferias', title: 'Ferias e Afastamentos', href: '/modulos/operacional/ferias', icon: 'Plane', permissions: ['operacional:read'] },
-      { id: 'reembolsos-op', title: 'Reembolsos', href: '/modulos/operacional/reembolsos', icon: 'Receipt', permissions: ['operacional:reembolsos'] },
+      // Ferias e Reembolsos movidos para DP
     ],
   },
 
   // ═══════════════════════════════════════════════════════════════════
-  // 3. PESSOAS (antigos: Recrutamento + Saude Ocupacional)
+  // 3. DEPARTAMENTO PESSOAL (DP)
   // ═══════════════════════════════════════════════════════════════════
   {
-    id: 'pessoas',
-    title: 'Pessoas',
-    description: 'Recrutamento, saude ocupacional e reembolsos',
-    icon: 'Users',
-    href: '/modulos/recrutamento',
+    id: 'dp',
+    title: 'Depto. Pessoal',
+    description: 'Admissao, folha, ponto, ferias, disciplinar e beneficios',
+    icon: 'UserCog',
+    href: '/modulos/dp',
     color: 'purple',
     permissions: ['operacional:read'],
     enabled: true,
     subModules: [
+      // --- Cadastro e Admissao ---
+      { id: 'dp-colaboradores', title: 'Colaboradores', href: '/modulos/operacional/colaboradores', icon: 'UserCheck', permissions: ['operacional:colaboradores'], group: 'Cadastro' },
+      { id: 'dp-admissao', title: 'Admissao', href: '/modulos/dp/admissao', icon: 'UserPlus', permissions: ['operacional:read'], group: 'Cadastro' },
+      { id: 'dp-rescisao', title: 'Rescisao', href: '/modulos/dp/rescisao', icon: 'UserMinus', permissions: ['operacional:read'], group: 'Cadastro' },
+      { id: 'dp-contratos', title: 'Contratos', href: '/modulos/dp/contratos', icon: 'FileSignature', permissions: ['operacional:read'], group: 'Cadastro' },
+      // --- Ponto e Jornada ---
+      { id: 'dp-ponto', title: 'Ponto Eletronico', href: '/modulos/dp/ponto', icon: 'Clock', permissions: ['operacional:read'], group: 'Ponto e Jornada' },
+      { id: 'dp-escalas', title: 'Escalas', href: '/modulos/operacional/escalas', icon: 'CalendarDays', permissions: ['operacional:escalas'], group: 'Ponto e Jornada' },
+      { id: 'dp-banco-horas', title: 'Banco de Horas', href: '/modulos/operacional/banco-horas', icon: 'Clock', permissions: ['operacional:read'], group: 'Ponto e Jornada' },
+      // --- Remuneracao ---
+      { id: 'dp-folha', title: 'Folha Salarial', href: '/modulos/dp/folha', icon: 'DollarSign', permissions: ['operacional:read'], group: 'Remuneracao' },
+      { id: 'dp-beneficios', title: 'Beneficios', href: '/modulos/dp/beneficios', icon: 'Gift', permissions: ['operacional:read'], group: 'Remuneracao' },
+      { id: 'dp-reembolsos', title: 'Reembolsos', href: '/modulos/reembolso', icon: 'Receipt', permissions: ['operacional:read'], group: 'Remuneracao' },
+      // --- Ferias e Afastamentos ---
+      { id: 'dp-ferias', title: 'Ferias', href: '/modulos/dp/ferias', icon: 'Plane', permissions: ['operacional:read'], group: 'Ferias e Afastamentos' },
+      { id: 'dp-licencas', title: 'Licencas', href: '/modulos/dp/licencas', icon: 'FileText', permissions: ['operacional:read'], group: 'Ferias e Afastamentos' },
+      // --- Disciplinar ---
+      { id: 'dp-ocorrencias', title: 'Ocorrencias', href: '/modulos/operacional/ocorrencias', icon: 'AlertTriangle', permissions: ['operacional:ocorrencias'], group: 'Disciplinar' },
+      { id: 'dp-advertencias', title: 'Advertencias', href: '/modulos/operacional/disciplinar', icon: 'FileText', permissions: ['operacional:disciplinar'], group: 'Disciplinar' },
+      // --- Saude e Seguranca ---
+      { id: 'dp-exames', title: 'Exames (PCMSO)', href: '/modulos/saude-ocupacional/exames', icon: 'Stethoscope', permissions: ['operacional:read'], group: 'Saude e Seguranca' },
+      { id: 'dp-epi', title: 'EPIs (NR-6)', href: '/modulos/saude-ocupacional/epi', icon: 'HardHat', permissions: ['operacional:read'], group: 'Saude e Seguranca' },
+      { id: 'dp-riscos', title: 'Riscos (PPRA)', href: '/modulos/saude-ocupacional/riscos', icon: 'AlertTriangle', permissions: ['operacional:read'], group: 'Saude e Seguranca' },
+      // --- Obrigacoes ---
+      { id: 'dp-esocial', title: 'eSocial', href: '/modulos/dp/esocial', icon: 'Database', permissions: ['operacional:read'], group: 'Obrigacoes' },
+      { id: 'dp-documentos', title: 'Documentos', href: '/modulos/dp/documentos', icon: 'FolderOpen', permissions: ['operacional:read'], group: 'Obrigacoes' },
+    ],
+  },
+
+  // ═══════════════════════════════════════════════════════════════════
+  // 4. RECURSOS HUMANOS (RH)
+  // ═══════════════════════════════════════════════════════════════════
+  {
+    id: 'rh',
+    title: 'Recursos Humanos',
+    description: 'Recrutamento, treinamento, avaliacao, clima e carreira',
+    icon: 'GraduationCap',
+    href: '/modulos/rh',
+    color: 'pink',
+    permissions: ['operacional:read'],
+    enabled: true,
+    subModules: [
       // --- Recrutamento ---
-      { id: 'vagas', title: 'Vagas', href: '/modulos/recrutamento/vagas', icon: 'Briefcase', permissions: ['operacional:read'] },
-      { id: 'candidatos', title: 'Candidatos', href: '/modulos/recrutamento/candidatos', icon: 'Users', permissions: ['operacional:read'] },
-      { id: 'candidaturas', title: 'Candidaturas', href: '/modulos/recrutamento/candidaturas', icon: 'FileText', permissions: ['operacional:read'] },
-      { id: 'entrevistas', title: 'Entrevistas', href: '/modulos/recrutamento/entrevistas', icon: 'Calendar', permissions: ['operacional:read'] },
-      // --- Saude Ocupacional ---
-      { id: 'epi', title: 'EPI', href: '/modulos/saude-ocupacional/epi', icon: 'HardHat', permissions: ['operacional:read'] },
-      { id: 'exames', title: 'Exames Medicos', href: '/modulos/saude-ocupacional/exames', icon: 'Stethoscope', permissions: ['operacional:read'] },
-      { id: 'riscos', title: 'Gestao de Riscos', href: '/modulos/saude-ocupacional/riscos', icon: 'AlertTriangle', permissions: ['operacional:read'] },
-      // --- Reembolso ---
-      { id: 'reembolso-aprovacoes', title: 'Reembolsos', href: '/modulos/reembolso/aprovacoes', icon: 'Receipt', permissions: ['operacional:read'] },
+      { id: 'rh-vagas', title: 'Vagas', href: '/modulos/recrutamento/vagas', icon: 'Briefcase', permissions: ['operacional:read'], group: 'Recrutamento' },
+      { id: 'rh-candidatos', title: 'Candidatos', href: '/modulos/recrutamento/candidatos', icon: 'Users', permissions: ['operacional:read'], group: 'Recrutamento' },
+      { id: 'rh-candidaturas', title: 'Candidaturas', href: '/modulos/recrutamento/candidaturas', icon: 'FileText', permissions: ['operacional:read'], group: 'Recrutamento' },
+      { id: 'rh-entrevistas', title: 'Entrevistas', href: '/modulos/recrutamento/entrevistas', icon: 'Calendar', permissions: ['operacional:read'], group: 'Recrutamento' },
+      // --- Treinamento ---
+      { id: 'rh-cursos', title: 'Cursos', href: '/modulos/rh/cursos', icon: 'BookOpen', permissions: ['operacional:read'], group: 'Treinamento' },
+      { id: 'rh-treinamentos', title: 'Treinamentos', href: '/modulos/rh/treinamentos', icon: 'GraduationCap', permissions: ['operacional:read'], group: 'Treinamento' },
+      { id: 'rh-certificados', title: 'Certificados', href: '/modulos/rh/certificados', icon: 'Award', permissions: ['operacional:read'], group: 'Treinamento' },
+      // --- Desempenho ---
+      { id: 'rh-avaliacoes', title: 'Avaliacoes', href: '/modulos/rh/avaliacoes', icon: 'Star', permissions: ['operacional:read'], group: 'Desempenho' },
+      { id: 'rh-carreira', title: 'Plano de Carreira', href: '/modulos/rh/carreira', icon: 'TrendingUp', permissions: ['operacional:read'], group: 'Desempenho' },
+      // --- Clima e Retencao ---
+      { id: 'rh-clima', title: 'Clima Organizacional', href: '/modulos/rh/clima', icon: 'Heart', permissions: ['operacional:read'], group: 'Clima e Retencao' },
+      { id: 'rh-turnover', title: 'Previsao Turnover', href: '/modulos/rh/turnover', icon: 'TrendingDown', permissions: ['operacional:read'], group: 'Clima e Retencao' },
+      { id: 'rh-onboarding', title: 'Onboarding', href: '/modulos/rh/onboarding', icon: 'UserPlus', permissions: ['operacional:read'], group: 'Clima e Retencao' },
+      // --- Analytics ---
+      { id: 'rh-dashboard', title: 'Dashboard RH', href: '/modulos/rh/dashboard', icon: 'LayoutDashboard', permissions: ['operacional:read'], group: 'Analytics' },
+      { id: 'rh-ia', title: 'IA de Pessoas', href: '/modulos/rh/ia', icon: 'Bot', permissions: ['operacional:read'], group: 'Analytics' },
     ],
   },
 
@@ -293,7 +345,7 @@ export const moduleCategories: ModuleCategory[] = [
   {
     id: 'negocios',
     title: 'Negocios & Operacoes',
-    modules: modules.filter(m => ['comercial', 'operacoes', 'pessoas'].includes(m.id)),
+    modules: modules.filter(m => ['comercial', 'operacoes', 'dp', 'rh'].includes(m.id)),
   },
   {
     id: 'financeiro',

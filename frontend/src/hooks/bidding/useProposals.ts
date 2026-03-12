@@ -2,19 +2,18 @@
 
 /**
  * Hooks React Query - Proposals (Propostas)
- *
- * Hooks para gestão de propostas comerciais de licitação
+ * Cobertura 100% dos 13 endpoints backend
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import proposalsService, {
   type ListProposalsParams,
-  type SubmeterPropostaParams,
-  type AlterarStatusPropostaParams,
   type BiddingProposalCreate,
   type BiddingProposalUpdate,
-  type ProposalItemCreate,
+  type RegistrarResultadoParams,
+  type RegistrarLanceParams,
+  type CalcularBDIParams,
 } from '@/services/bidding/proposals.service';
 
 const QUERY_KEYS = {
@@ -23,18 +22,12 @@ const QUERY_KEYS = {
   list: (params?: ListProposalsParams) => [...QUERY_KEYS.lists(), params] as const,
   details: () => [...QUERY_KEYS.all, 'detail'] as const,
   detail: (id: string) => [...QUERY_KEYS.details(), id] as const,
-  items: (proposalId: string) => [...QUERY_KEYS.detail(proposalId), 'items'] as const,
-  tender: (tenderId: string, params?: any) =>
-    [...QUERY_KEYS.all, 'tender', tenderId, params] as const,
-  emAndamento: (params?: any) =>
-    [...QUERY_KEYS.all, 'em-andamento', params] as const,
-  aprovadas: (params?: any) => [...QUERY_KEYS.all, 'aprovadas', params] as const,
-  dashboard: (params?: any) => [...QUERY_KEYS.all, 'dashboard', params] as const,
+  tender: (tenderId: string, params?: unknown) => [...QUERY_KEYS.all, 'tender', tenderId, params] as const,
+  estatisticas: () => [...QUERY_KEYS.all, 'estatisticas'] as const,
+  vencedoras: (params?: unknown) => [...QUERY_KEYS.all, 'vencedoras', params] as const,
 };
 
-/**
- * Hook para listar propostas com filtros
- */
+// GET /proposals/
 export function useListarPropostas(params?: ListProposalsParams) {
   return useQuery({
     queryKey: QUERY_KEYS.list(params),
@@ -43,9 +36,35 @@ export function useListarPropostas(params?: ListProposalsParams) {
   });
 }
 
-/**
- * Hook para buscar proposta por ID
- */
+// GET /proposals/estatisticas
+export function useEstatisticasPropostas() {
+  return useQuery({
+    queryKey: QUERY_KEYS.estatisticas(),
+    queryFn: () => proposalsService.getEstatisticas(),
+    staleTime: 1000 * 60 * 10,
+  });
+}
+
+// GET /proposals/vencedoras
+export function useListarVencedoras(params?: { page?: number; size?: number }) {
+  return useQuery({
+    queryKey: QUERY_KEYS.vencedoras(params),
+    queryFn: () => proposalsService.listarVencedoras(params),
+    staleTime: 1000 * 60 * 10,
+  });
+}
+
+// GET /proposals/tender/{tender_id}
+export function useListarPropostasPorEdital(tenderId: string, params?: { page?: number; size?: number }) {
+  return useQuery({
+    queryKey: QUERY_KEYS.tender(tenderId, params),
+    queryFn: () => proposalsService.listarPropostasPorEdital(tenderId, params),
+    enabled: !!tenderId,
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
+// GET /proposals/{id}
 export function useBuscarProposta(proposalId: string, enabled = true) {
   return useQuery({
     queryKey: QUERY_KEYS.detail(proposalId),
@@ -55,15 +74,11 @@ export function useBuscarProposta(proposalId: string, enabled = true) {
   });
 }
 
-/**
- * Hook para criar nova proposta
- */
+// POST /proposals/
 export function useCriarProposta() {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: (payload: BiddingProposalCreate) =>
-      proposalsService.criarProposta(payload),
+    mutationFn: (payload: BiddingProposalCreate) => proposalsService.criarProposta(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.lists() });
       toast.success('Proposta criada com sucesso');
@@ -74,12 +89,9 @@ export function useCriarProposta() {
   });
 }
 
-/**
- * Hook para atualizar proposta
- */
+// PUT /proposals/{id}
 export function useAtualizarProposta() {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: BiddingProposalUpdate }) =>
       proposalsService.atualizarProposta(id, data),
@@ -89,22 +101,16 @@ export function useAtualizarProposta() {
       toast.success('Proposta atualizada com sucesso');
     },
     onError: (error: any) => {
-      toast.error(
-        error?.response?.data?.detail || 'Erro ao atualizar proposta'
-      );
+      toast.error(error?.response?.data?.detail || 'Erro ao atualizar proposta');
     },
   });
 }
 
-/**
- * Hook para remover proposta
- */
+// DELETE /proposals/{id}
 export function useRemoverProposta() {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: (proposalId: string) =>
-      proposalsService.removerProposta(proposalId),
+    mutationFn: (proposalId: string) => proposalsService.removerProposta(proposalId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.lists() });
       toast.success('Proposta removida com sucesso');
@@ -115,200 +121,78 @@ export function useRemoverProposta() {
   });
 }
 
-/**
- * Hook para listar propostas de um edital
- */
-export function useListarPropostasPorEdital(
-  tenderId: string,
-  params?: { page?: number; size?: number }
-) {
-  return useQuery({
-    queryKey: QUERY_KEYS.tender(tenderId, params),
-    queryFn: () => proposalsService.listarPropostasPorEdital(tenderId, params),
-    enabled: !!tenderId,
-    staleTime: 1000 * 60 * 5,
-  });
-}
-
-/**
- * Hook para submeter proposta
- */
-export function useSubmeterProposta() {
+// POST /proposals/{id}/pronta
+export function useMarcarPronta() {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: (params: SubmeterPropostaParams) =>
-      proposalsService.submeterProposta(params),
-    onSuccess: (data, variables) => {
+    mutationFn: ({ proposalId, observacoes }: { proposalId: string; observacoes?: string }) =>
+      proposalsService.marcarPronta(proposalId, observacoes),
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.lists() });
-      queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.detail(variables.proposal_id),
-      });
-      toast.success('Proposta submetida com sucesso');
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.detail(data.id) });
+      toast.success('Proposta marcada como pronta');
     },
     onError: (error: any) => {
-      toast.error(
-        error?.response?.data?.detail || 'Erro ao submeter proposta'
-      );
+      toast.error(error?.response?.data?.detail || 'Erro ao marcar proposta como pronta');
     },
   });
 }
 
-/**
- * Hook para alterar status da proposta
- */
-export function useAlterarStatusProposta() {
+// POST /proposals/{id}/enviar
+export function useEnviarProposta() {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: (params: AlterarStatusPropostaParams) =>
-      proposalsService.alterarStatusProposta(params),
-    onSuccess: (data, variables) => {
+    mutationFn: ({ proposalId, observacoes }: { proposalId: string; observacoes?: string }) =>
+      proposalsService.enviarProposta(proposalId, observacoes),
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.lists() });
-      queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.detail(variables.proposal_id),
-      });
-      toast.success('Status alterado com sucesso');
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.detail(data.id) });
+      toast.success('Proposta enviada com sucesso');
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Erro ao alterar status');
+      toast.error(error?.response?.data?.detail || 'Erro ao enviar proposta');
     },
   });
 }
 
-/**
- * Hook para listar propostas em andamento
- */
-export function useListarPropostasEmAndamento(params?: {
-  page?: number;
-  size?: number;
-}) {
-  return useQuery({
-    queryKey: QUERY_KEYS.emAndamento(params),
-    queryFn: () => proposalsService.listarPropostasEmAndamento(params),
-    staleTime: 1000 * 60 * 5,
-  });
-}
-
-/**
- * Hook para listar propostas aprovadas
- */
-export function useListarPropostasAprovadas(params?: {
-  page?: number;
-  size?: number;
-}) {
-  return useQuery({
-    queryKey: QUERY_KEYS.aprovadas(params),
-    queryFn: () => proposalsService.listarPropostasAprovadas(params),
-    staleTime: 1000 * 60 * 5,
-  });
-}
-
-/**
- * Hook para dashboard de propostas
- */
-export function useProposalsDashboard(params?: { periodo_dias?: number }) {
-  return useQuery({
-    queryKey: QUERY_KEYS.dashboard(params),
-    queryFn: () => proposalsService.getDashboard(params),
-    staleTime: 1000 * 60 * 10,
-  });
-}
-
-// ========== ITENS DE PROPOSTA ==========
-
-/**
- * Hook para listar itens de uma proposta
- */
-export function useListarItens(proposalId: string) {
-  return useQuery({
-    queryKey: QUERY_KEYS.items(proposalId),
-    queryFn: () => proposalsService.listarItens(proposalId),
-    enabled: !!proposalId,
-    staleTime: 1000 * 60 * 5,
-  });
-}
-
-/**
- * Hook para adicionar item à proposta
- */
-export function useAdicionarItem() {
+// POST /proposals/{id}/resultado
+export function useRegistrarResultado() {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: ({
-      proposalId,
-      data,
-    }: {
-      proposalId: string;
-      data: ProposalItemCreate;
-    }) => proposalsService.adicionarItem(proposalId, data),
-    onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.items(variables.proposalId),
-      });
-      queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.detail(variables.proposalId),
-      });
-      toast.success('Item adicionado com sucesso');
+    mutationFn: (params: RegistrarResultadoParams) => proposalsService.registrarResultado(params),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.lists() });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.detail(data.id) });
+      toast.success('Resultado registrado com sucesso');
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Erro ao adicionar item');
+      toast.error(error?.response?.data?.detail || 'Erro ao registrar resultado');
     },
   });
 }
 
-/**
- * Hook para atualizar item da proposta
- */
-export function useAtualizarItem() {
+// POST /proposals/{id}/lance
+export function useRegistrarLance() {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: ({
-      proposalId,
-      itemId,
-      data,
-    }: {
-      proposalId: string;
-      itemId: string;
-      data: any;
-    }) => proposalsService.atualizarItem(proposalId, itemId, data),
-    onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.items(variables.proposalId),
-      });
-      queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.detail(variables.proposalId),
-      });
-      toast.success('Item atualizado com sucesso');
+    mutationFn: (params: RegistrarLanceParams) => proposalsService.registrarLance(params),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.lists() });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.detail(data.id) });
+      toast.success('Lance registrado com sucesso');
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Erro ao atualizar item');
+      toast.error(error?.response?.data?.detail || 'Erro ao registrar lance');
     },
   });
 }
 
-/**
- * Hook para remover item da proposta
- */
-export function useRemoverItem() {
-  const queryClient = useQueryClient();
-
+// POST /proposals/calcular-bdi
+export function useCalcularBDI() {
   return useMutation({
-    mutationFn: ({ proposalId, itemId }: { proposalId: string; itemId: string }) =>
-      proposalsService.removerItem(proposalId, itemId),
-    onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.items(variables.proposalId),
-      });
-      queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.detail(variables.proposalId),
-      });
-      toast.success('Item removido com sucesso');
-    },
+    mutationFn: (params: CalcularBDIParams) => proposalsService.calcularBDI(params),
     onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Erro ao remover item');
+      toast.error(error?.response?.data?.detail || 'Erro ao calcular BDI');
     },
   });
 }

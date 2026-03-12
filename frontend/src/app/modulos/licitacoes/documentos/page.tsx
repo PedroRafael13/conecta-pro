@@ -6,7 +6,6 @@ import {
   RefreshCw,
   Upload,
   MoreHorizontal,
-  Download,
   Trash2,
   AlertCircle,
   CheckCircle2,
@@ -46,11 +45,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ConfirmModal } from '@/components/ui/modal';
 import { toast } from 'sonner';
 import {
-  useListarDocumentosEmpresa,
-  useUploadDocumentoEmpresa,
-  useRemoverDocumentoEmpresa,
-  useValidarDocumentoBidding,
-  useDownloadDocumentoEmpresa,
+  useListarDocumentos,
+  useCriarDocumento,
+  useRemoverDocumento,
 } from '@/hooks/bidding/useDocuments';
 import { DocumentUploadModal } from '@/components/licitacoes/DocumentUploadModal';
 import { DocumentStatusBadge } from '@/components/licitacoes/DocumentStatusBadge';
@@ -63,15 +60,13 @@ export default function DocumentosPage() {
   const [page, setPage] = useState(0);
   const pageSize = 20;
 
-  const { data: documentosData, isLoading, error, refetch } = useListarDocumentosEmpresa({
+  const { data: documentosData, isLoading, error, refetch } = useListarDocumentos({
     tipo: tipoFilter !== 'all' ? tipoFilter : undefined,
     status: statusFilter !== 'all' ? statusFilter : undefined,
   });
 
-  const uploadMutation = useUploadDocumentoEmpresa();
-  const removerMutation = useRemoverDocumentoEmpresa();
-  const validarMutation = useValidarDocumentoBidding();
-  const downloadMutation = useDownloadDocumentoEmpresa();
+  const uploadMutation = useCriarDocumento();
+  const removerMutation = useRemoverDocumento();
 
   const [uploadOpen, setUploadOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -112,21 +107,6 @@ export default function DocumentosPage() {
     }
   };
 
-  const handleValidar = async (documentId: string) => {
-    try {
-      await validarMutation.mutateAsync(documentId);
-    } catch (err) {
-      // Error handled by mutation
-    }
-  };
-
-  const handleDownload = async (documentId: string) => {
-    try {
-      await downloadMutation.mutateAsync(documentId);
-    } catch (err) {
-      // Error handled by mutation
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -364,15 +344,6 @@ export default function DocumentosPage() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => handleDownload(documento.id)}>
-                                <Download className="h-4 w-4 mr-2" />
-                                Download
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleValidar(documento.id)}>
-                                <CheckCircle2 className="h-4 w-4 mr-2" />
-                                Validar
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
                               <DropdownMenuItem
                                 className="text-destructive"
                                 onClick={() =>
