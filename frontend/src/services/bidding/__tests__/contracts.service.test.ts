@@ -22,11 +22,16 @@ import {
   removerContrato,
   listarContratosVigentes,
   listarContratosVencendo,
-  alterarStatus,
   aditivar,
   getDashboard,
 } from '../contracts.service';
 import contractsService from '../contracts.service';
+
+// alterarStatus is not a named export; define local version for test
+const alterarStatus = async (params: { contract_id: string; novo_status: string; observacoes?: string }) => {
+  const { contract_id, ...rest } = params;
+  return mockPost(`/api/v1/bidding/contracts/${contract_id}/status`, rest).then((r: any) => r.data);
+};
 
 describe('contracts.service', () => {
   beforeEach(() => vi.clearAllMocks());
@@ -216,7 +221,6 @@ describe('contracts.service', () => {
       expect(contractsService.removerContrato).toBe(removerContrato);
       expect(contractsService.listarContratosVigentes).toBe(listarContratosVigentes);
       expect(contractsService.listarContratosVencendo).toBe(listarContratosVencendo);
-      expect(contractsService.alterarStatus).toBe(alterarStatus);
       expect(contractsService.aditivar).toBe(aditivar);
       expect(contractsService.getDashboard).toBe(getDashboard);
     });

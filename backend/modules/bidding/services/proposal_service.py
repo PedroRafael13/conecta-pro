@@ -58,9 +58,29 @@ class ProposalService:
 
     async def update(self, proposal_id: UUID, data: ProposalUpdate, user_id: UUID = None) -> ProposalResponse | None:
         """Atualiza proposta."""
+        # Capturar status anterior para detectar mudanca
+        old_proposal = await self.repository.get_by_id(proposal_id)
+        old_status = old_proposal.status if old_proposal else None
+
         proposal = await self.repository.update(proposal_id, data, user_id)
         if not proposal:
             return None
+
+        # Notificar se status mudou
+        if old_status and proposal.status != old_status:
+            try:
+                from modules.bidding.services.notification_service import get_notification_service
+
+                notifier = get_notification_service()
+                notifier.notify_proposta_status(
+                    proposta_numero=proposal.numero or str(proposal_id),
+                    novo_status=proposal.status,
+                    proposta_id=str(proposal.id),
+                    tender_id=str(proposal.tender_id) if proposal.tender_id else None,
+                )
+            except Exception:
+                logger.warning("Failed to send proposta_status notification", exc_info=True)
+
         return self._to_response(proposal)
 
     async def delete(self, proposal_id: UUID) -> bool:
@@ -88,6 +108,21 @@ class ProposalService:
         proposal = await self.repository.submit(proposal_id)
         if not proposal:
             return None
+
+        # Notificar proposta enviada
+        try:
+            from modules.bidding.services.notification_service import get_notification_service
+
+            notifier = get_notification_service()
+            notifier.notify_proposta_status(
+                proposta_numero=proposal.numero or str(proposal_id),
+                novo_status=proposal.status,
+                proposta_id=str(proposal.id),
+                tender_id=str(proposal.tender_id) if proposal.tender_id else None,
+            )
+        except Exception:
+            logger.warning("Failed to send proposta_status notification", exc_info=True)
+
         return self._to_response(proposal)
 
     async def registrar_resultado(
@@ -101,6 +136,21 @@ class ProposalService:
         proposal = await self.repository.register_result(proposal_id, status, posicao, valor_final)
         if not proposal:
             return None
+
+        # Notificar resultado da proposta
+        try:
+            from modules.bidding.services.notification_service import get_notification_service
+
+            notifier = get_notification_service()
+            notifier.notify_proposta_status(
+                proposta_numero=proposal.numero or str(proposal_id),
+                novo_status=proposal.status,
+                proposta_id=str(proposal.id),
+                tender_id=str(proposal.tender_id) if proposal.tender_id else None,
+            )
+        except Exception:
+            logger.warning("Failed to send proposta_status notification", exc_info=True)
+
         return self._to_response(proposal)
 
     async def registrar_lance(self, proposal_id: UUID, valor: Decimal) -> ProposalResponse | None:

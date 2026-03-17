@@ -70,7 +70,7 @@ function calcularImpostos(
       { limite: 4800000, aliq: 0.33, ded: 648000 },
     ];
     const faixa = faixas.find((f) => rbt12 <= f.limite) || faixas[faixas.length - 1];
-    const aliqEfetiva = rbt12 > 0 ? (rbt12 * faixa.aliq - faixa.ded) / rbt12 : faixa.aliq;
+    const aliqEfetiva = rbt12 > 0 ? (rbt12 * faixa!.aliq - faixa!.ded) / rbt12 : faixa!.aliq;
     let das = receita * aliqEfetiva;
     if (liminares.includes('pis_cofins_zero')) {
       das -= das * (0.0278 + 0.1282);

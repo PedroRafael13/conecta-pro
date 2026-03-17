@@ -1,4 +1,8 @@
-"""Model JobPosition - Vagas de emprego."""
+"""Model JobPosition - Vagas de emprego.
+
+Reescrito para refletir o schema real do banco de dados (15/03/2026).
+Corrige mismatch que causava 500 em todos os endpoints de recruitment.
+"""
 
 from datetime import date, datetime
 from decimal import Decimal
@@ -6,28 +10,25 @@ from enum import StrEnum
 from typing import TYPE_CHECKING
 
 from sqlalchemy import (
-    JSON,
     Boolean,
     Date,
     DateTime,
-    Enum,
     Integer,
     Numeric,
     String,
     Text,
 )
-from sqlalchemy.dialects.postgresql import ARRAY, UUID
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from core.database import Base
-from core.models import SoftDeleteMixin, TimestampMixin
 
 if TYPE_CHECKING:
     from .application import Application
 
 
 class PositionType(StrEnum):
-    """Tipo de contratação."""
+    """Tipo de contratacao."""
 
     CLT = "clt"
     PJ = "pj"
@@ -39,7 +40,7 @@ class PositionType(StrEnum):
 
 
 class PositionLevel(StrEnum):
-    """Nível da vaga."""
+    """Nivel da vaga."""
 
     ESTAGIARIO = "estagiario"
     JUNIOR = "junior"
@@ -87,8 +88,8 @@ class Department(StrEnum):
     OUTRO = "outro"
 
 
-class JobPosition(Base, TimestampMixin, SoftDeleteMixin):
-    """Model para vagas de emprego."""
+class JobPosition(Base):
+    """Model para vagas de emprego — reflete schema real do banco."""
 
     __tablename__ = "job_positions"
 
@@ -98,67 +99,78 @@ class JobPosition(Base, TimestampMixin, SoftDeleteMixin):
         server_default="gen_random_uuid()",
     )
 
-    # Identificação
-    code: Mapped[str] = mapped_column(String(20), unique=True, nullable=False)
+    # Tenant e condominio
+    tenant_id: Mapped[str | None] = mapped_column(String(50))
+    condominio_id: Mapped[str | None] = mapped_column(UUID(as_uuid=False))
+
+    # Identificacao
+    code: Mapped[str | None] = mapped_column(String(20))
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     description: Mapped[str | None] = mapped_column(Text)
 
-    # Classificação
-    position_type: Mapped[PositionType] = mapped_column(Enum(PositionType), default=PositionType.CLT)
-    position_level: Mapped[PositionLevel] = mapped_column(Enum(PositionLevel), default=PositionLevel.PLENO)
-    department: Mapped[Department] = mapped_column(Enum(Department), default=Department.OPERACIONAL)
-    status: Mapped[PositionStatus] = mapped_column(Enum(PositionStatus), default=PositionStatus.RASCUNHO)
+    # Classificacao
+    position_type: Mapped[str] = mapped_column(String(30), nullable=False, default="clt")
+    position_level: Mapped[str | None] = mapped_column(String(30))
+    department: Mapped[str | None] = mapped_column(String(50))
+    status: Mapped[str] = mapped_column(String(30), nullable=False, default="rascunho")
 
     # Requisitos
     requirements: Mapped[str | None] = mapped_column(Text)
     responsibilities: Mapped[str | None] = mapped_column(Text)
-    required_skills: Mapped[list[str] | None] = mapped_column(ARRAY(String), default=list)
-    desired_skills: Mapped[list[str] | None] = mapped_column(ARRAY(String), default=list)
-    min_experience_years: Mapped[int] = mapped_column(Integer, default=0)
+    benefits: Mapped[str | None] = mapped_column(Text)
+    required_skills: Mapped[list[str] | None] = mapped_column(ARRAY(String))
+    desired_skills: Mapped[list[str] | None] = mapped_column(ARRAY(String))
+    min_experience_years: Mapped[int | None] = mapped_column(Integer)
     education_level: Mapped[str | None] = mapped_column(String(100))
+    languages: Mapped[dict | None] = mapped_column(JSONB)
 
-    # Remuneração
+    # Remuneracao
     salary_min: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
     salary_max: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
-    salary_display: Mapped[bool] = mapped_column(Boolean, default=False)
-    benefits: Mapped[list[str] | None] = mapped_column(ARRAY(String), default=list)
+    show_salary: Mapped[bool | None] = mapped_column(Boolean, default=False)
+    additional_benefits: Mapped[dict | None] = mapped_column(JSONB)
 
-    # Localização
-    work_model: Mapped[WorkModel] = mapped_column(Enum(WorkModel), default=WorkModel.PRESENCIAL)
+    # Localizacao
+    work_model: Mapped[str | None] = mapped_column(String(30))
     city: Mapped[str | None] = mapped_column(String(100))
     state: Mapped[str | None] = mapped_column(String(2))
+    country: Mapped[str | None] = mapped_column(String(50))
     address: Mapped[str | None] = mapped_column(String(300))
 
     # Vagas
-    vacancies: Mapped[int] = mapped_column(Integer, default=1)
-    filled_vacancies: Mapped[int] = mapped_column(Integer, default=0)
-    is_urgent: Mapped[bool] = mapped_column(Boolean, default=False)
-    is_confidential: Mapped[bool] = mapped_column(Boolean, default=False)
+    vacancies: Mapped[int | None] = mapped_column(Integer, default=1)
+    filled_count: Mapped[int | None] = mapped_column(Integer, default=0)
 
     # Datas
-    opening_date: Mapped[date | None] = mapped_column(Date)
-    deadline_date: Mapped[date | None] = mapped_column(Date)
+    published_at: Mapped[datetime | None] = mapped_column(DateTime)
+    deadline: Mapped[date | None] = mapped_column(Date)
     closed_at: Mapped[datetime | None] = mapped_column(DateTime)
 
     # Processo seletivo
-    selection_stages: Mapped[list[dict] | None] = mapped_column(JSON, default=list)
-    expected_start_date: Mapped[date | None] = mapped_column(Date)
+    selection_steps: Mapped[dict | None] = mapped_column(JSONB)
 
-    # Contadores
-    applications_count: Mapped[int] = mapped_column(Integer, default=0)
-    views_count: Mapped[int] = mapped_column(Integer, default=0)
+    # Responsavel
+    responsible_id: Mapped[str | None] = mapped_column(UUID(as_uuid=False))
 
-    # Responsável
-    recruiter_id: Mapped[str | None] = mapped_column(UUID(as_uuid=False))
-    hiring_manager_id: Mapped[str | None] = mapped_column(UUID(as_uuid=False))
+    # Integracao
+    linkedin_job_id: Mapped[str | None] = mapped_column(String(100))
+    indeed_job_id: Mapped[str | None] = mapped_column(String(100))
+    external_url: Mapped[str | None] = mapped_column(String(500))
 
-    # Relacionamentos
-    condominium_id: Mapped[str | None] = mapped_column(UUID(as_uuid=False))
-    created_by: Mapped[str | None] = mapped_column(UUID(as_uuid=False))
+    # Flags
+    is_active: Mapped[bool | None] = mapped_column(Boolean, default=True)
+    is_deleted: Mapped[bool | None] = mapped_column(Boolean, default=False)
+
+    # Timestamps
+    created_at: Mapped[datetime | None] = mapped_column(DateTime, server_default="now()")
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime, onupdate=datetime.utcnow)
+    created_by_id: Mapped[str | None] = mapped_column(UUID(as_uuid=False))
 
     # Relationships
     applications: Mapped[list["Application"]] = relationship(
-        "Application", back_populates="job_position", lazy="dynamic"
+        "Application",
+        back_populates="job_position",
+        lazy="selectin",
     )
 
     def __repr__(self) -> str:
@@ -166,25 +178,20 @@ class JobPosition(Base, TimestampMixin, SoftDeleteMixin):
 
     @property
     def is_open(self) -> bool:
-        """Verifica se vaga está aberta."""
-        return self.status == PositionStatus.ABERTA
+        """Verifica se vaga esta aberta."""
+        return self.status == "aberta"
 
     @property
     def is_expired(self) -> bool:
         """Verifica se vaga expirou."""
-        if not self.deadline_date:
+        if not self.deadline:
             return False
-        return date.today() > self.deadline_date
+        return date.today() > self.deadline
 
     @property
     def remaining_vacancies(self) -> int:
         """Retorna vagas restantes."""
-        return max(0, self.vacancies - self.filled_vacancies)
-
-    @property
-    def is_fully_filled(self) -> bool:
-        """Verifica se todas as vagas foram preenchidas."""
-        return self.filled_vacancies >= self.vacancies
+        return max(0, (self.vacancies or 0) - (self.filled_count or 0))
 
     @property
     def salary_range(self) -> str:
@@ -194,52 +201,5 @@ class JobPosition(Base, TimestampMixin, SoftDeleteMixin):
         if self.salary_min:
             return f"A partir de R$ {self.salary_min:,.2f}"
         if self.salary_max:
-            return f"Até R$ {self.salary_max:,.2f}"
+            return f"Ate R$ {self.salary_max:,.2f}"
         return "A combinar"
-
-    def open(self) -> None:
-        """Abre a vaga."""
-        self.status = PositionStatus.ABERTA
-        self.opening_date = date.today()
-
-    def pause(self) -> None:
-        """Pausa a vaga."""
-        self.status = PositionStatus.PAUSADA
-
-    def close(
-        self,
-        reason: str = None,  # pylint: disable=unused-argument
-    ) -> None:
-        """Fecha a vaga."""
-        self.status = PositionStatus.FECHADA
-        self.closed_at = datetime.utcnow()
-
-    def cancel(self) -> None:
-        """Cancela a vaga."""
-        self.status = PositionStatus.CANCELADA
-        self.closed_at = datetime.utcnow()
-
-    def mark_as_filled(self) -> None:
-        """Marca como preenchida."""
-        self.status = PositionStatus.PREENCHIDA
-        self.closed_at = datetime.utcnow()
-
-    def fill_vacancy(self) -> None:
-        """Preenche uma vaga."""
-        self.filled_vacancies += 1
-        if self.is_fully_filled:
-            self.mark_as_filled()
-
-    def increment_view(self) -> None:
-        """Incrementa visualização."""
-        self.views_count += 1
-
-    def increment_application(self) -> None:
-        """Incrementa candidaturas."""
-        self.applications_count += 1
-
-    @staticmethod
-    def generate_code(sequence: int) -> str:
-        """Gera código da vaga."""
-        year = date.today().year
-        return f"VAG-{year}-{sequence:05d}"

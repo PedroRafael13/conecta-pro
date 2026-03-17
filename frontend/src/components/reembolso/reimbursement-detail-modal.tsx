@@ -133,7 +133,7 @@ export function ReimbursementDetailModal({
             </p>
           </div>
           <div className="bg-[hsl(var(--muted))] rounded-lg p-3">
-            <p className="text-xs text-[hsl(var(--muted-foreground))] mb-1">Nivel Aprovacao</p>
+            <p className="text-xs text-[hsl(var(--muted-foreground))] mb-1">Nível Aprovação</p>
             <p className="text-sm font-medium text-[hsl(var(--foreground))]">
               {request.approval_level
                 ? APPROVAL_LEVEL_LABELS[request.approval_level]

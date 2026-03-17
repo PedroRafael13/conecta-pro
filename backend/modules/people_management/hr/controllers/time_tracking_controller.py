@@ -24,11 +24,12 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/time-tracking", tags=["DP - Ponto"])
 
 # Re-export do router existente de time tracking
+# NOTA: o router HR tem prefix="/time-tracking" → resulta em /hr/time-tracking/time-tracking/
+# Mantemos para compatibilidade, e adicionamos endpoints diretos
 try:
     from modules.hr.time_tracking.controllers import router as _tt_router
 
-    for route in _tt_router.routes:
-        router.routes.append(route)
+    router.include_router(_tt_router)
 except ImportError:
     logger.info("Router de time tracking não disponível para re-export")
 

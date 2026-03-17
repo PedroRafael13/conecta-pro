@@ -338,7 +338,7 @@ describe('useDisciplinary', () => {
         errorUpdateCount: 0,
         dataUpdatedAt: Date.now(),
         errorUpdatedAt: 0,
-      }));
+      }) as any);
 
       const { result } = renderHook(() => useDisciplinaryStats(), { wrapper });
 
@@ -369,7 +369,7 @@ describe('useDisciplinary', () => {
         errorUpdateCount: 1,
         dataUpdatedAt: 0,
         errorUpdatedAt: Date.now(),
-      }));
+      }) as any);
 
       const { result } = renderHook(() => useDisciplinaryStats(), { wrapper });
 
@@ -400,7 +400,7 @@ describe('useDisciplinary', () => {
         errorUpdateCount: 1,
         dataUpdatedAt: 0,
         errorUpdatedAt: Date.now(),
-      }));
+      }) as any);
 
       const { result } = renderHook(() => useDisciplinaryStats(), { wrapper });
 
@@ -492,7 +492,7 @@ describe('useDisciplinary', () => {
         errorUpdateCount: 1,
         dataUpdatedAt: 0,
         errorUpdatedAt: Date.now(),
-      }));
+      }) as any);
 
       const { result } = renderHook(() => useDisciplinary(), { wrapper });
 
@@ -523,7 +523,7 @@ describe('useDisciplinary', () => {
         errorUpdateCount: 1,
         dataUpdatedAt: 0,
         errorUpdatedAt: Date.now(),
-      }));
+      }) as any);
 
       const { result } = renderHook(() => useDisciplinary(), { wrapper });
 
@@ -554,7 +554,7 @@ describe('useDisciplinary', () => {
         errorUpdateCount: 0,
         dataUpdatedAt: Date.now(),
         errorUpdatedAt: 0,
-      }));
+      }) as any);
 
       const { result } = renderHook(() => useDisciplinary(), { wrapper });
 
@@ -587,7 +587,7 @@ describe('useDisciplinary', () => {
         errorUpdateCount: 1,
         dataUpdatedAt: 0,
         errorUpdatedAt: Date.now(),
-      }));
+      }) as any);
 
       const { result } = renderHook(() => useDisciplinaryDetail('123'), { wrapper });
 
@@ -624,7 +624,7 @@ describe('useDisciplinary', () => {
         errorUpdateCount: 1,
         dataUpdatedAt: 0,
         errorUpdatedAt: Date.now(),
-      }));
+      }) as any);
 
       const { result } = renderHook(() => useDisciplinaryDetail('123'), { wrapper });
 
@@ -657,7 +657,7 @@ describe('useDisciplinary', () => {
         errorUpdateCount: 1,
         dataUpdatedAt: 0,
         errorUpdatedAt: Date.now(),
-      }));
+      }) as any);
 
       const { result } = renderHook(() => usePendingApprovals(), { wrapper });
 
@@ -694,7 +694,7 @@ describe('useDisciplinary', () => {
         errorUpdateCount: 1,
         dataUpdatedAt: 0,
         errorUpdatedAt: Date.now(),
-      }));
+      }) as any);
 
       const { result } = renderHook(() => usePendingApprovals(), { wrapper });
 
@@ -727,7 +727,7 @@ describe('useDisciplinary', () => {
         errorUpdateCount: 1,
         dataUpdatedAt: 0,
         errorUpdatedAt: Date.now(),
-      }));
+      }) as any);
 
       const { result } = renderHook(() => useEmployeeDisciplinary('emp-1'), { wrapper });
 
@@ -764,7 +764,7 @@ describe('useDisciplinary', () => {
         errorUpdateCount: 1,
         dataUpdatedAt: 0,
         errorUpdatedAt: Date.now(),
-      }));
+      }) as any);
 
       const { result } = renderHook(() => useEmployeeDisciplinary('emp-1'), { wrapper });
 

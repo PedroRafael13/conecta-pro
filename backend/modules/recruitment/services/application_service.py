@@ -71,7 +71,7 @@ class ApplicationService:
         candidate = await self.candidate_repo.get_by_id(data.candidate_id)
         if not candidate:
             raise ValueError("Candidato não encontrado")
-        if candidate.is_blocked:
+        if candidate.status == "bloqueado":
             raise ValueError("Candidato está bloqueado")
 
         # Cria candidatura
@@ -80,14 +80,10 @@ class ApplicationService:
         # Incrementa contador na vaga
         await self.position_repo.increment_application(data.job_position_id)
 
-        # Incrementa contador no candidato
-        candidate.applications_count += 1
-        candidate.record_activity()
-
         # Calcula score de matching
         try:
             matching = await self.ai_service.calculate_matching_score(candidate, position)
-            application.matching_score = matching["final_score"]
+            application.ai_match_score = matching["final_score"]
         except (ValueError, KeyError, TypeError) as e:
             logger.warning("Erro ao calcular matching: %s", e)
 
@@ -231,7 +227,7 @@ class ApplicationService:
         Returns:
             Candidatura rejeitada ou None
         """
-        application = await self.repository.reject(application_id, data.reason, data.details, data.rejected_by)
+        application = await self.repository.reject(application_id, data.reason, data.details)
         if application:
             await self.session.commit()
             logger.info(
@@ -239,7 +235,6 @@ class ApplicationService:
                 extra={
                     "application_id": str(application.id),
                     "reason": data.reason.value,
-                    "rejected_by": data.rejected_by,
                 },
             )
         return application
@@ -259,19 +254,14 @@ class ApplicationService:
         if not application:
             return None
 
-        application.send_proposal(
-            salary=data.salary,
-            benefits=data.benefits,
-            start_date=data.start_date,
-            details=data.details,
-        )
+        application.send_proposal(amount=data.amount)
         await self.session.commit()
 
         logger.info(
-            f"Proposta enviada: R$ {data.salary}",
+            f"Proposta enviada: R$ {data.amount}",
             extra={
                 "application_id": str(application.id),
-                "salary": data.salary,
+                "salary": data.amount,
             },
         )
 
@@ -293,8 +283,6 @@ class ApplicationService:
             return None
 
         application.accept_proposal()
-        if start_date:
-            application.expected_start_date = start_date
 
         await self.session.commit()
 
@@ -370,38 +358,24 @@ class ApplicationService:
         """
         Alterna favorito.
 
-        Args:
-            application_id: ID da candidatura
-
-        Returns:
-            Candidatura atualizada ou None
+        DB nao possui coluna is_favorite — operacao noop, retorna application.
         """
         application = await self.repository.get_by_id(application_id)
         if not application:
             return None
-
-        application.is_favorite = not application.is_favorite
-        await self.session.commit()
-
+        # is_favorite nao existe no banco — noop
         return application
 
     async def toggle_shortlist(self, application_id: str) -> Application | None:
         """
         Alterna lista restrita.
 
-        Args:
-            application_id: ID da candidatura
-
-        Returns:
-            Candidatura atualizada ou None
+        DB nao possui coluna is_shortlisted — operacao noop, retorna application.
         """
         application = await self.repository.get_by_id(application_id)
         if not application:
             return None
-
-        application.is_shortlisted = not application.is_shortlisted
-        await self.session.commit()
-
+        # is_shortlisted nao existe no banco — noop
         return application
 
     async def update_score(
@@ -414,11 +388,14 @@ class ApplicationService:
         """
         Atualiza scores da candidatura.
 
+        DB possui apenas rating (int) e ai_match_score (Decimal).
+        Mapeia interview_score -> rating.
+
         Args:
             application_id: ID da candidatura
             interview_score: Score de entrevista
-            test_score: Score de teste
-            reference_score: Score de referência
+            test_score: Score de teste (ignorado — coluna nao existe)
+            reference_score: Score de referência (ignorado — coluna nao existe)
 
         Returns:
             Candidatura atualizada ou None
@@ -428,15 +405,9 @@ class ApplicationService:
             return None
 
         if interview_score is not None:
-            application.interview_score = interview_score
-        if test_score is not None:
-            application.test_score = test_score
-        if reference_score is not None:
-            application.reference_score = reference_score
+            application.rating = int(interview_score)
 
-        # Recalcula score final
-        application.calculate_final_score()
-
+        application.updated_at = datetime.utcnow()
         await self.session.commit()
 
         return application
@@ -445,11 +416,9 @@ class ApplicationService:
         """
         Atualiza ranking das candidaturas de uma vaga.
 
-        Args:
-            position_id: ID da vaga
+        DB nao possui ranking_position — noop.
         """
-        await self.repository.update_ranking(position_id)
-        await self.session.commit()
+        pass
 
     async def bulk_action(self, data: ApplicationBulkAction) -> tuple[int, int]:
         """
@@ -478,9 +447,8 @@ class ApplicationService:
                     result = await self.advance_stage(app_id, adv_data)
                 elif data.action == "reject":
                     rej_data = ApplicationReject(
-                        reason=data.rejection_reason or RejectionReason.PERFIL_NAO_ADEQUADO,
+                        reason=RejectionReason.PERFIL_INADEQUADO,
                         details=data.notes,
-                        rejected_by=data.action_by,
                     )
                     result = await self.reject(app_id, rej_data)
                 else:
@@ -529,7 +497,7 @@ class ApplicationService:
 
         result = await self.ai_service.calculate_matching_score(candidate, position)
 
-        application.matching_score = result["final_score"]
+        application.ai_match_score = result["final_score"]
         await self.session.commit()
 
         return result

@@ -346,7 +346,7 @@ describe('useReimbursement', () => {
         isLoading: false,
         error: new Error('Erro de stats'),
         refetch: mockRefetch,
-      }));
+      }) as any);
 
       const { result } = renderHook(() => useReimbursementStats(), { wrapper });
 
@@ -357,9 +357,9 @@ describe('useReimbursement', () => {
       vi.mocked(useReimbursementStatsOrval).mockImplementationOnce(() => ({
         data: undefined,
         isLoading: false,
-        error: 'string de erro',
+        error: 'string de erro' as any,
         refetch: mockRefetch,
-      }));
+      }) as any);
 
       const { result } = renderHook(() => useReimbursementStats(), { wrapper });
 
@@ -380,7 +380,7 @@ describe('useReimbursement', () => {
         isLoading: false,
         error: new Error('Erro de detalhe'),
         refetch: mockRefetch,
-      }));
+      }) as any);
 
       const { result } = renderHook(() => useReimbursementDetail('123'), { wrapper });
 
@@ -391,9 +391,9 @@ describe('useReimbursement', () => {
       vi.mocked(useReimbursementRequestOrval).mockImplementationOnce(() => ({
         data: undefined,
         isLoading: false,
-        error: 'string de erro',
+        error: 'string de erro' as any,
         refetch: mockRefetch,
-      }));
+      }) as any);
 
       const { result } = renderHook(() => useReimbursementDetail('123'), { wrapper });
 
@@ -426,7 +426,7 @@ describe('useReimbursement', () => {
         isLoading: false,
         error: new Error('Erro de rede'),
         refetch: mockRefetch,
-      }));
+      }) as any);
 
       const { result } = renderHook(() => useReimbursements(), { wrapper });
 
@@ -437,9 +437,9 @@ describe('useReimbursement', () => {
       vi.mocked(useReimbursementRequestsOrval).mockImplementationOnce(() => ({
         data: undefined,
         isLoading: false,
-        error: 'string de erro',
+        error: 'string de erro' as any,
         refetch: mockRefetch,
-      }));
+      }) as any);
 
       const { result } = renderHook(() => useReimbursements(), { wrapper });
 
@@ -448,11 +448,11 @@ describe('useReimbursement', () => {
 
     it('deve retornar null quando não há error em useReimbursements', () => {
       vi.mocked(useReimbursementRequestsOrval).mockImplementationOnce(() => ({
-        data: { items: [], total: 0, total_pages: 0 },
+        data: { items: [], total: 0, total_pages: 0, page: 1, page_size: 20 },
         isLoading: false,
         error: null,
         refetch: mockRefetch,
-      }));
+      }) as any);
 
       const { result } = renderHook(() => useReimbursements(), { wrapper });
 
@@ -502,7 +502,7 @@ describe('useReimbursement', () => {
         isLoading: false,
         error: null,
         refetch: mockRefetch,
-      }));
+      }) as any);
 
       const { result } = renderHook(() => usePendingApprovals(), { wrapper });
 
@@ -517,7 +517,7 @@ describe('useReimbursement', () => {
         isLoading: false,
         error: new Error('Falha na aprovação'),
         refetch: mockRefetch,
-      }));
+      }) as any);
 
       const { result } = renderHook(() => usePendingApprovals(), { wrapper });
 
@@ -528,9 +528,9 @@ describe('useReimbursement', () => {
       vi.mocked(usePendingReimbursementApprovals).mockImplementationOnce(() => ({
         data: undefined,
         isLoading: false,
-        error: 'string de erro',
+        error: 'string de erro' as any,
         refetch: mockRefetch,
-      }));
+      }) as any);
 
       const { result } = renderHook(() => usePendingApprovals(), { wrapper });
 
@@ -552,7 +552,7 @@ describe('useReimbursement', () => {
         isLoading: false,
         error: null,
         refetch: mockRefetch,
-      }));
+      }) as any);
 
       const { result } = renderHook(() => useReimbursementCategories(), { wrapper });
 
@@ -565,7 +565,7 @@ describe('useReimbursement', () => {
         isLoading: false,
         error: new Error('Falha ao carregar'),
         refetch: mockRefetch,
-      }));
+      }) as any);
 
       const { result } = renderHook(() => useReimbursementCategories(), { wrapper });
 
@@ -576,9 +576,9 @@ describe('useReimbursement', () => {
       vi.mocked(useExpenseCategories).mockImplementationOnce(() => ({
         data: undefined,
         isLoading: false,
-        error: 'string de erro',
+        error: 'string de erro' as any,
         refetch: mockRefetch,
-      }));
+      }) as any);
 
       const { result } = renderHook(() => useReimbursementCategories(), { wrapper });
 
@@ -601,7 +601,7 @@ describe('useReimbursement', () => {
         isLoading: false,
         error: null,
         refetch: mockRefetch,
-      }));
+      }) as any);
 
       const { result } = renderHook(() => useReadyForPayment(), { wrapper });
 
@@ -616,7 +616,7 @@ describe('useReimbursement', () => {
         isLoading: false,
         error: new Error('Falha no pagamento'),
         refetch: mockRefetch,
-      }));
+      }) as any);
 
       const { result } = renderHook(() => useReadyForPayment(), { wrapper });
 
@@ -627,9 +627,9 @@ describe('useReimbursement', () => {
       vi.mocked(useReadyForPaymentReimbursements).mockImplementationOnce(() => ({
         data: undefined,
         isLoading: false,
-        error: 'string de erro',
+        error: 'string de erro' as any,
         refetch: mockRefetch,
-      }));
+      }) as any);
 
       const { result } = renderHook(() => useReadyForPayment(), { wrapper });
 

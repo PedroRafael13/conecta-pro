@@ -298,7 +298,7 @@ export default function RelatoriosPage() {
     try {
       const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
       const resp = await fetch(
-        `http://localhost:8080/api/v1/financial/ai/advisor/relatorio?periodo=${relatorioPeriodo}`,
+        `${typeof window !== 'undefined' && window.location.hostname === 'localhost' ? 'http://localhost:8080' : 'https://erp.conectamais.pro'}/api/v1/financial/ai/advisor/relatorio?periodo=${relatorioPeriodo}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (resp.ok) {

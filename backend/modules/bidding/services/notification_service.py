@@ -2,15 +2,22 @@
 Servico de Notificacoes do Modulo de Licitacoes.
 
 Gera alertas para eventos importantes do ciclo de licitacoes:
+- Novo edital compativel encontrado
+- Edital vencendo (prazo se aproximando)
 - Certidoes vencendo/vencidas
+- Proposta mudou de status
+- Disputa de pregao iniciando
+- Convocacao no pregao
+- Resultado do pregao
 - Novas oportunidades relevantes
 - Pipeline GO/NO-GO concluido
-- Abertura de editais se aproximando
 - Sincronizacoes concluidas
 
 Integra-se com o sistema de notificacoes operacional existente
 (modules.operacional.communication) quando disponivel, ou opera
 de forma standalone registrando notificacoes internamente.
+
+Canais suportados: EMAIL (SMTP), PUSH (buffer interno), INTERNAL (log).
 
 Author: Conecta PRO Team
 Date: 2026-03-12
@@ -19,7 +26,10 @@ Date: 2026-03-12
 from __future__ import annotations
 
 import logging
+import os
+import smtplib
 from datetime import datetime
+from email.message import EmailMessage
 from enum import StrEnum
 from typing import Any
 from uuid import uuid4
@@ -39,14 +49,22 @@ class NotificationChannel(StrEnum):
 
     EMAIL = "email"
     PUSH = "push"
-    WHATSAPP = "whatsapp"
     INTERNAL = "internal"  # Notificacao interna no sistema
 
 
 class BiddingNotificationType(StrEnum):
     """Tipos de notificacao especificos do modulo de licitacoes."""
 
-    CERTIDAO_VENCENDO = "certidao_vencendo"
+    # Tipos primarios (7 eventos obrigatorios)
+    EDITAL_NOVO = "edital_novo"  # Novo edital compativel encontrado
+    EDITAL_VENCENDO = "edital_vencendo"  # Edital vence em {dias} dias
+    CERTIDAO_VENCENDO = "certidao_vencendo"  # Certidao {tipo} vence em {dias} dias
+    PROPOSTA_STATUS = "proposta_status"  # Proposta mudou de status
+    DISPUTA_INICIANDO = "disputa_iniciando"  # Disputa do pregao inicia em {min} min
+    CONVOCACAO = "convocacao"  # Convocacao no pregao
+    RESULTADO = "resultado"  # Resultado do pregao
+
+    # Tipos complementares
     CERTIDAO_VENCIDA = "certidao_vencida"
     NOVA_OPORTUNIDADE = "nova_oportunidade"
     PIPELINE_CONCLUIDO = "pipeline_concluido"
@@ -84,7 +102,7 @@ class BiddingNotification(BaseModel):
     lido_em: datetime | None = None
 
     # Referencia ao objeto relacionado
-    referencia_tipo: str | None = None  # "certidao", "oportunidade", "pipeline", "edital", "sync"
+    referencia_tipo: str | None = None  # "certidao", "oportunidade", "pipeline", "edital", "sync", "proposta", "pregao"
     referencia_id: str | None = None
 
     # Dados adicionais para contexto
@@ -104,23 +122,27 @@ class BiddingNotificationService:
     Servico de notificacoes para o modulo de licitacoes.
 
     Gera e registra alertas para eventos criticos do fluxo de licitacoes.
-    Por enquanto, as notificacoes sao registradas internamente e logadas.
-    A integracao com canais externos (email, WhatsApp, push) sera feita
-    em uma etapa futura.
+    Suporta envio via EMAIL (SMTP), PUSH (buffer consultavel via API) e
+    INTERNAL (log apenas).
 
-    Pode operar de forma standalone ou integrada com o NotificationService
-    do modulo operacional (communication).
+    Canais de despacho:
+    - EMAIL: envia via SMTP usando variaveis de ambiente SMTP_HOST, SMTP_PORT,
+      SMTP_USER, SMTP_PASS. Se nao configurado, faz fallback para log.
+    - PUSH: armazena no buffer interno _push_buffer, consultavel via
+      get_push_notifications().
+    - INTERNAL: apenas loga e armazena no buffer geral.
 
     Attributes:
         _notifications: Buffer interno de notificacoes geradas.
+        _push_buffer: Buffer de notificacoes push pendentes.
         _operacional_service: Referencia opcional ao NotificationService
                               do modulo operacional para integracao.
 
     Example:
         >>> service = BiddingNotificationService()
-        >>> notif = service.notify_certidao_vencendo("cnd_federal", 10, "35.710.481/0001-03")
+        >>> notif = service.notify_certidao_vencendo("cnd_federal", 10)
         >>> print(notif.titulo)
-        'Certidao Vencendo: CND Federal'
+        'URGENTE - Certidao Vencendo: CND FEDERAL'
     """
 
     def __init__(self, operacional_service: Any | None = None) -> None:
@@ -133,17 +155,135 @@ class BiddingNotificationService:
                                  Se None, opera de forma standalone.
         """
         self._notifications: list[BiddingNotification] = []
+        self._push_buffer: list[BiddingNotification] = []
         self._operacional_service = operacional_service
 
+        # SMTP config from env
+        self._smtp_host = os.environ.get("SMTP_HOST", "")
+        self._smtp_port = int(os.environ.get("SMTP_PORT", "587"))
+        self._smtp_user = os.environ.get("SMTP_USER", "")
+        self._smtp_pass = os.environ.get("SMTP_PASS", "")
+
     # ──────────────────────────────────────────
-    # Metodos publicos de notificacao
+    # 7 Convenience methods (required event types)
     # ──────────────────────────────────────────
+
+    def notify_edital_novo(
+        self,
+        edital_numero: str,
+        orgao: str,
+        objeto: str,
+        edital_id: str | None = None,
+        valor_estimado: float | None = None,
+        channel: NotificationChannel = NotificationChannel.INTERNAL,
+    ) -> BiddingNotification:
+        """
+        Notifica sobre novo edital compativel encontrado.
+
+        Args:
+            edital_numero: Numero do edital.
+            orgao: Orgao licitante.
+            objeto: Objeto resumido da licitacao.
+            edital_id: ID do edital (para action_url).
+            valor_estimado: Valor estimado (opcional).
+            channel: Canal de envio.
+
+        Returns:
+            BiddingNotification criada.
+        """
+        valor_fmt = f" | Valor: R$ {valor_estimado:,.2f}" if valor_estimado else ""
+        titulo = f"Novo Edital: {edital_numero}"
+        mensagem = f"Orgao: {orgao}\nObjeto: {objeto[:300]}{valor_fmt}\nEdital compativel com perfil da empresa."
+
+        notification = self._create_notification(
+            tipo=BiddingNotificationType.EDITAL_NOVO,
+            titulo=titulo,
+            mensagem=mensagem,
+            prioridade=NotificationPriority.ALTA,
+            canal=channel,
+            referencia_tipo="edital",
+            referencia_id=edital_id,
+            dados_extras={
+                "edital_numero": edital_numero,
+                "orgao": orgao,
+                "objeto": objeto[:500],
+                "valor_estimado": valor_estimado,
+            },
+            action_url=f"/licitacoes/editais/{edital_id}" if edital_id else None,
+        )
+
+        logger.info(
+            "[BIDDING_NOTIF] Novo edital: %s | Orgao: %s",
+            edital_numero,
+            orgao,
+        )
+
+        return notification
+
+    def notify_edital_vencendo(
+        self,
+        edital_numero: str,
+        dias: int,
+        edital_id: str | None = None,
+        channel: NotificationChannel = NotificationChannel.INTERNAL,
+    ) -> BiddingNotification:
+        """
+        Notifica que edital vence em {dias} dias.
+
+        Args:
+            edital_numero: Numero do edital.
+            dias: Dias restantes ate vencimento/abertura.
+            edital_id: ID do edital.
+            channel: Canal de envio.
+
+        Returns:
+            BiddingNotification criada.
+        """
+        if dias <= 1:
+            prioridade = NotificationPriority.CRITICA
+            urgencia = "HOJE/AMANHA"
+        elif dias <= 3:
+            prioridade = NotificationPriority.ALTA
+            urgencia = f"em {dias} dias"
+        elif dias <= 7:
+            prioridade = NotificationPriority.MEDIA
+            urgencia = f"em {dias} dias"
+        else:
+            prioridade = NotificationPriority.BAIXA
+            urgencia = f"em {dias} dias"
+
+        titulo = f"Edital Vencendo {urgencia}: {edital_numero}"
+        mensagem = f"O edital {edital_numero} vence {urgencia}. Verifique documentacao e proposta."
+
+        notification = self._create_notification(
+            tipo=BiddingNotificationType.EDITAL_VENCENDO,
+            titulo=titulo,
+            mensagem=mensagem,
+            prioridade=prioridade,
+            canal=channel,
+            referencia_tipo="edital",
+            referencia_id=edital_id,
+            dados_extras={
+                "edital_numero": edital_numero,
+                "dias_restantes": dias,
+            },
+            action_url=f"/licitacoes/editais/{edital_id}" if edital_id else None,
+        )
+
+        logger.info(
+            "[BIDDING_NOTIF] Edital vencendo: %s | %s | Prioridade: %s",
+            edital_numero,
+            urgencia,
+            prioridade.value,
+        )
+
+        return notification
 
     def notify_certidao_vencendo(
         self,
         tipo: str,
-        dias_restantes: int,
-        cnpj: str,
+        dias: int,
+        cnpj: str = "35.710.481/0001-03",
         channel: NotificationChannel = NotificationChannel.INTERNAL,
     ) -> BiddingNotification:
         """
@@ -157,7 +297,7 @@ class BiddingNotificationService:
 
         Args:
             tipo: Tipo da certidao (ex: "cnd_federal", "crf_fgts").
-            dias_restantes: Dias ate o vencimento. Negativo = ja vencida.
+            dias: Dias ate o vencimento. Negativo = ja vencida.
             cnpj: CNPJ da empresa.
             channel: Canal de envio da notificacao.
 
@@ -167,33 +307,32 @@ class BiddingNotificationService:
         tipo_display = tipo.upper().replace("_", " ")
 
         # Determinar prioridade e tipo com base nos dias
-        if dias_restantes <= 0:
+        if dias <= 0:
             prioridade = NotificationPriority.CRITICA
             notif_tipo = BiddingNotificationType.CERTIDAO_VENCIDA
             titulo = f"Certidao VENCIDA: {tipo_display}"
             mensagem = (
                 f"A certidao {tipo_display} do CNPJ {cnpj} esta VENCIDA "
-                f"ha {abs(dias_restantes)} dia(s). Renovacao imediata necessaria "
+                f"ha {abs(dias)} dia(s). Renovacao imediata necessaria "
                 f"para manter aptidao em licitacoes."
             )
-        elif dias_restantes <= 15:
+        elif dias <= 15:
             prioridade = NotificationPriority.ALTA
             notif_tipo = BiddingNotificationType.CERTIDAO_VENCENDO
             titulo = f"URGENTE - Certidao Vencendo: {tipo_display}"
             mensagem = (
-                f"A certidao {tipo_display} do CNPJ {cnpj} vence em "
-                f"{dias_restantes} dia(s). Providenciar renovacao urgente."
+                f"A certidao {tipo_display} do CNPJ {cnpj} vence em {dias} dia(s). Providenciar renovacao urgente."
             )
-        elif dias_restantes <= 30:
+        elif dias <= 30:
             prioridade = NotificationPriority.MEDIA
             notif_tipo = BiddingNotificationType.CERTIDAO_VENCENDO
             titulo = f"Certidao Vencendo: {tipo_display}"
-            mensagem = f"A certidao {tipo_display} do CNPJ {cnpj} vence em {dias_restantes} dia(s). Agendar renovacao."
+            mensagem = f"A certidao {tipo_display} do CNPJ {cnpj} vence em {dias} dia(s). Agendar renovacao."
         else:
             prioridade = NotificationPriority.BAIXA
             notif_tipo = BiddingNotificationType.CERTIDAO_VENCENDO
             titulo = f"Certidao Vencendo: {tipo_display}"
-            mensagem = f"A certidao {tipo_display} do CNPJ {cnpj} vence em {dias_restantes} dia(s). Acompanhar."
+            mensagem = f"A certidao {tipo_display} do CNPJ {cnpj} vence em {dias} dia(s). Acompanhar."
 
         notification = self._create_notification(
             tipo=notif_tipo,
@@ -204,7 +343,7 @@ class BiddingNotificationService:
             referencia_tipo="certidao",
             dados_extras={
                 "tipo_certidao": tipo,
-                "dias_restantes": dias_restantes,
+                "dias_restantes": dias,
                 "cnpj": cnpj,
             },
             action_url=f"/licitacoes/certidoes?tipo={tipo}&cnpj={cnpj}",
@@ -214,11 +353,237 @@ class BiddingNotificationService:
             "[BIDDING_NOTIF] Certidao %s | CNPJ %s | %d dias restantes | Prioridade: %s",
             tipo,
             cnpj,
-            dias_restantes,
+            dias,
             prioridade.value,
         )
 
         return notification
+
+    def notify_proposta_status(
+        self,
+        proposta_numero: str,
+        novo_status: str,
+        proposta_id: str | None = None,
+        tender_id: str | None = None,
+        channel: NotificationChannel = NotificationChannel.INTERNAL,
+    ) -> BiddingNotification:
+        """
+        Notifica que uma proposta mudou de status.
+
+        Args:
+            proposta_numero: Numero/identificador da proposta.
+            novo_status: Novo status da proposta.
+            proposta_id: ID da proposta.
+            tender_id: ID do edital relacionado.
+            channel: Canal de envio.
+
+        Returns:
+            BiddingNotification criada.
+        """
+        # Prioridade baseada no status
+        status_prioridade = {
+            "winner": NotificationPriority.ALTA,
+            "vencedora": NotificationPriority.ALTA,
+            "submitted": NotificationPriority.MEDIA,
+            "enviada": NotificationPriority.MEDIA,
+            "classified": NotificationPriority.MEDIA,
+            "disqualified": NotificationPriority.ALTA,
+            "desclassificada": NotificationPriority.ALTA,
+        }
+        prioridade = status_prioridade.get(novo_status.lower(), NotificationPriority.MEDIA)
+
+        titulo = f"Proposta {proposta_numero}: Status -> {novo_status.upper()}"
+        mensagem = f"A proposta {proposta_numero} teve seu status alterado para: {novo_status}."
+
+        notification = self._create_notification(
+            tipo=BiddingNotificationType.PROPOSTA_STATUS,
+            titulo=titulo,
+            mensagem=mensagem,
+            prioridade=prioridade,
+            canal=channel,
+            referencia_tipo="proposta",
+            referencia_id=proposta_id,
+            dados_extras={
+                "proposta_numero": proposta_numero,
+                "novo_status": novo_status,
+                "tender_id": tender_id,
+            },
+            action_url=f"/licitacoes/propostas/{proposta_id}" if proposta_id else None,
+        )
+
+        logger.info(
+            "[BIDDING_NOTIF] Proposta status: %s -> %s | Prioridade: %s",
+            proposta_numero,
+            novo_status,
+            prioridade.value,
+        )
+
+        return notification
+
+    def notify_disputa_iniciando(
+        self,
+        pregao_numero: str,
+        minutos: int,
+        pregao_id: str | None = None,
+        channel: NotificationChannel = NotificationChannel.INTERNAL,
+    ) -> BiddingNotification:
+        """
+        Notifica que disputa de pregao inicia em {minutos} minutos.
+
+        Args:
+            pregao_numero: Numero do pregao.
+            minutos: Minutos ate o inicio da disputa.
+            pregao_id: ID do pregao/tender.
+            channel: Canal de envio.
+
+        Returns:
+            BiddingNotification criada.
+        """
+        if minutos <= 5:
+            prioridade = NotificationPriority.CRITICA
+        elif minutos <= 15:
+            prioridade = NotificationPriority.ALTA
+        elif minutos <= 30:
+            prioridade = NotificationPriority.MEDIA
+        else:
+            prioridade = NotificationPriority.BAIXA
+
+        titulo = f"Disputa Iniciando em {minutos}min: Pregao {pregao_numero}"
+        mensagem = (
+            f"A fase de disputa do Pregao {pregao_numero} inicia em {minutos} minuto(s). "
+            f"Certifique-se de estar conectado ao portal."
+        )
+
+        notification = self._create_notification(
+            tipo=BiddingNotificationType.DISPUTA_INICIANDO,
+            titulo=titulo,
+            mensagem=mensagem,
+            prioridade=prioridade,
+            canal=channel,
+            referencia_tipo="pregao",
+            referencia_id=pregao_id,
+            dados_extras={
+                "pregao_numero": pregao_numero,
+                "minutos_para_inicio": minutos,
+            },
+            action_url=f"/licitacoes/pregao/{pregao_id}/disputa" if pregao_id else None,
+        )
+
+        logger.info(
+            "[BIDDING_NOTIF] Disputa iniciando: Pregao %s em %d min | Prioridade: %s",
+            pregao_numero,
+            minutos,
+            prioridade.value,
+        )
+
+        return notification
+
+    def notify_convocacao(
+        self,
+        pregao_numero: str,
+        pregao_id: str | None = None,
+        mensagem_portal: str | None = None,
+        channel: NotificationChannel = NotificationChannel.INTERNAL,
+    ) -> BiddingNotification:
+        """
+        Notifica sobre convocacao no pregao.
+
+        Args:
+            pregao_numero: Numero do pregao.
+            pregao_id: ID do pregao/tender.
+            mensagem_portal: Mensagem do portal (se disponivel).
+            channel: Canal de envio.
+
+        Returns:
+            BiddingNotification criada.
+        """
+        titulo = f"CONVOCACAO - Pregao {pregao_numero}"
+        mensagem = f"Voce foi convocado no Pregao {pregao_numero}."
+        if mensagem_portal:
+            mensagem += f"\nMensagem do portal: {mensagem_portal[:500]}"
+
+        notification = self._create_notification(
+            tipo=BiddingNotificationType.CONVOCACAO,
+            titulo=titulo,
+            mensagem=mensagem,
+            prioridade=NotificationPriority.CRITICA,
+            canal=channel,
+            referencia_tipo="pregao",
+            referencia_id=pregao_id,
+            dados_extras={
+                "pregao_numero": pregao_numero,
+                "mensagem_portal": mensagem_portal,
+            },
+            action_url=f"/licitacoes/pregao/{pregao_id}/disputa" if pregao_id else None,
+        )
+
+        logger.warning(
+            "[BIDDING_NOTIF] CONVOCACAO: Pregao %s",
+            pregao_numero,
+        )
+
+        return notification
+
+    def notify_resultado(
+        self,
+        pregao_numero: str,
+        resultado: str,
+        pregao_id: str | None = None,
+        valor_final: float | None = None,
+        posicao: int | None = None,
+        channel: NotificationChannel = NotificationChannel.INTERNAL,
+    ) -> BiddingNotification:
+        """
+        Notifica sobre resultado do pregao.
+
+        Args:
+            pregao_numero: Numero do pregao.
+            resultado: Resultado ("vencedor", "segundo_lugar", "desclassificado", "desistiu").
+            pregao_id: ID do pregao/tender.
+            valor_final: Valor final (se aplicavel).
+            posicao: Posicao na classificacao.
+            channel: Canal de envio.
+
+        Returns:
+            BiddingNotification criada.
+        """
+        resultado_upper = resultado.upper().replace("_", " ")
+        prioridade = NotificationPriority.ALTA
+
+        valor_fmt = f" | Valor final: R$ {valor_final:,.2f}" if valor_final else ""
+        posicao_fmt = f" | Posicao: {posicao}o" if posicao else ""
+
+        titulo = f"Resultado Pregao {pregao_numero}: {resultado_upper}"
+        mensagem = f"Pregao {pregao_numero} encerrado.\nResultado: {resultado_upper}{valor_fmt}{posicao_fmt}"
+
+        notification = self._create_notification(
+            tipo=BiddingNotificationType.RESULTADO,
+            titulo=titulo,
+            mensagem=mensagem,
+            prioridade=prioridade,
+            canal=channel,
+            referencia_tipo="pregao",
+            referencia_id=pregao_id,
+            dados_extras={
+                "pregao_numero": pregao_numero,
+                "resultado": resultado,
+                "valor_final": valor_final,
+                "posicao": posicao,
+            },
+            action_url=f"/licitacoes/pregao/{pregao_id}" if pregao_id else None,
+        )
+
+        logger.info(
+            "[BIDDING_NOTIF] Resultado pregao: %s -> %s",
+            pregao_numero,
+            resultado,
+        )
+
+        return notification
+
+    # ──────────────────────────────────────────
+    # Metodos de notificacao complementares (existentes)
+    # ──────────────────────────────────────────
 
     def notify_nova_oportunidade(
         self,
@@ -472,7 +837,7 @@ class BiddingNotificationService:
         tempo = sync_job_data.get("tempo_segundos", 0)
         proxima = sync_job_data.get("proxima_sync", "")
 
-        # Prioridade: alta se houve novas oportunidades, media se apenas atualizacoes
+        # Prioridade: alta se houve erros, media se novas oportunidades
         if erros > 0:
             prioridade = NotificationPriority.ALTA
         elif novas > 0:
@@ -551,6 +916,27 @@ class BiddingNotificationService:
         result = sorted(result, key=lambda n: n.criado_em, reverse=True)
         return result[:limit]
 
+    def get_push_notifications(
+        self,
+        apenas_nao_lidas: bool = True,
+        limit: int = 50,
+    ) -> list[BiddingNotification]:
+        """
+        Retorna notificacoes push pendentes do buffer.
+
+        Args:
+            apenas_nao_lidas: Se True, retorna apenas nao lidas.
+            limit: Maximo de resultados.
+
+        Returns:
+            Lista de notificacoes push, mais recente primeiro.
+        """
+        result = self._push_buffer
+        if apenas_nao_lidas:
+            result = [n for n in result if not n.lido]
+        result = sorted(result, key=lambda n: n.criado_em, reverse=True)
+        return result[:limit]
+
     def get_summary(self) -> dict[str, Any]:
         """
         Retorna resumo das notificacoes pendentes.
@@ -592,6 +978,12 @@ class BiddingNotificationService:
                 n.lido = True
                 n.lido_em = datetime.utcnow()
                 return True
+        # Also check push buffer
+        for n in self._push_buffer:
+            if n.id == notification_id:
+                n.lido = True
+                n.lido_em = datetime.utcnow()
+                return True
         return False
 
     def clear(self) -> int:
@@ -601,8 +993,9 @@ class BiddingNotificationService:
         Returns:
             Quantidade de notificacoes removidas.
         """
-        count = len(self._notifications)
+        count = len(self._notifications) + len(self._push_buffer)
         self._notifications.clear()
+        self._push_buffer.clear()
         return count
 
     # ──────────────────────────────────────────
@@ -662,9 +1055,10 @@ class BiddingNotificationService:
         """
         Despacha a notificacao para o canal configurado.
 
-        Por enquanto, todos os canais apenas logam a notificacao.
-        Em producao, cada canal sera integrado com seu respectivo
-        provedor (SMTP, Firebase, WhatsApp Business API).
+        Canais implementados:
+        - INTERNAL: apenas loga.
+        - EMAIL: envia via SMTP (fallback para log se nao configurado).
+        - PUSH: armazena em _push_buffer para consulta via API.
 
         Args:
             notification: Notificacao a ser despachada.
@@ -679,29 +1073,74 @@ class BiddingNotificationService:
             )
 
         elif canal == NotificationChannel.EMAIL:
-            # TODO: Integrar com servico de email (SMTP / SES)
-            logger.info(
-                "[BIDDING_NOTIF][EMAIL] Pendente envio: %s",
-                notification.titulo,
-            )
+            self._dispatch_email(notification)
 
         elif canal == NotificationChannel.PUSH:
-            # TODO: Integrar com Firebase Cloud Messaging
+            self._push_buffer.append(notification)
             logger.info(
-                "[BIDDING_NOTIF][PUSH] Pendente envio: %s",
-                notification.titulo,
-            )
-
-        elif canal == NotificationChannel.WHATSAPP:
-            # TODO: Integrar com WhatsApp Business API
-            logger.info(
-                "[BIDDING_NOTIF][WHATSAPP] Pendente envio: %s",
+                "[BIDDING_NOTIF][PUSH] Armazenado no buffer: %s",
                 notification.titulo,
             )
 
         # Marcar como "enviado" (internamente registrado)
         notification.enviado = True
         notification.enviado_em = datetime.utcnow()
+
+    def _dispatch_email(self, notification: BiddingNotification) -> None:
+        """
+        Envia notificacao por email via SMTP.
+
+        Le configuracao de SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS
+        das variaveis de ambiente. Se nao configurado, faz fallback para log.
+
+        Args:
+            notification: Notificacao a ser enviada por email.
+        """
+        if not self._smtp_host or not self._smtp_user:
+            logger.info(
+                "[BIDDING_NOTIF][EMAIL] SMTP nao configurado (fallback log): %s",
+                notification.titulo,
+            )
+            return
+
+        try:
+            msg = EmailMessage()
+            msg["Subject"] = f"[Conecta PRO - Licitacoes] {notification.titulo}"
+            msg["From"] = self._smtp_user
+            msg["To"] = self._smtp_user  # Default: envia para o proprio usuario SMTP
+            msg.set_content(
+                f"{notification.titulo}\n"
+                f"{'=' * 50}\n\n"
+                f"Prioridade: {notification.prioridade.value.upper()}\n"
+                f"Tipo: {notification.tipo.value}\n\n"
+                f"{notification.mensagem}\n\n"
+                f"---\n"
+                f"Referencia: {notification.referencia_tipo or 'N/A'} "
+                f"(ID: {notification.referencia_id or 'N/A'})\n"
+                f"URL: {notification.action_url or 'N/A'}\n"
+                f"Gerado em: {notification.criado_em.isoformat()}\n"
+            )
+
+            with smtplib.SMTP(self._smtp_host, self._smtp_port, timeout=10) as server:
+                server.ehlo()
+                if self._smtp_port != 25:
+                    server.starttls()
+                    server.ehlo()
+                if self._smtp_user and self._smtp_pass:
+                    server.login(self._smtp_user, self._smtp_pass)
+                server.send_message(msg)
+
+            logger.info(
+                "[BIDDING_NOTIF][EMAIL] Enviado com sucesso: %s",
+                notification.titulo,
+            )
+
+        except Exception as e:
+            logger.warning(
+                "[BIDDING_NOTIF][EMAIL] Falha ao enviar email: %s | Erro: %s",
+                notification.titulo,
+                str(e),
+            )
 
     # ──────────────────────────────────────────
     # Integracao com modulo operacional
@@ -755,7 +1194,6 @@ class BiddingNotificationService:
             channel_map = {
                 NotificationChannel.EMAIL: OpNotifChannel.EMAIL,
                 NotificationChannel.PUSH: OpNotifChannel.PUSH,
-                NotificationChannel.WHATSAPP: OpNotifChannel.WHATSAPP,
                 NotificationChannel.INTERNAL: OpNotifChannel.IN_APP,
             }
             op_channel = channel_map.get(notification.canal, OpNotifChannel.IN_APP)
@@ -796,3 +1234,18 @@ class BiddingNotificationService:
                 "[BIDDING_NOTIF] Erro ao encaminhar para operacional: %s",
                 str(e),
             )
+
+
+# ──────────────────────────────────────────────
+# Singleton accessor (must be after class definition)
+# ──────────────────────────────────────────────
+
+_notification_service: BiddingNotificationService | None = None
+
+
+def get_notification_service() -> BiddingNotificationService:
+    """Retorna instancia singleton do BiddingNotificationService."""
+    global _notification_service
+    if _notification_service is None:
+        _notification_service = BiddingNotificationService()
+    return _notification_service

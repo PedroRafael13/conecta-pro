@@ -67,11 +67,9 @@ async def list_applications(  # pylint: disable=too-many-locals
     job_position_id: str | None = None,
     candidate_id: str | None = None,
     status_filter: ApplicationStatus | None = Query(None, alias="status"),
-    is_favorite: bool | None = None,
-    is_shortlisted: bool | None = None,
-    min_score: float | None = None,
-    max_score: float | None = None,
-    assigned_recruiter_id: str | None = None,
+    min_score: int | None = None,
+    max_score: int | None = None,
+    assigned_to_id: str | None = None,
     order_by: str = "applied_at",
     order_desc: bool = True,
     db: AsyncSession = Depends(get_db),
@@ -84,11 +82,9 @@ async def list_applications(  # pylint: disable=too-many-locals
         job_position_id=job_position_id,
         candidate_id=candidate_id,
         status=status_filter,
-        is_favorite=is_favorite,
-        is_shortlisted=is_shortlisted,
         min_score=min_score,
         max_score=max_score,
-        assigned_recruiter_id=assigned_recruiter_id,
+        assigned_to_id=assigned_to_id,
     )
 
     applications, total = await service.list_with_filters(filters, skip, limit, order_by, order_desc)

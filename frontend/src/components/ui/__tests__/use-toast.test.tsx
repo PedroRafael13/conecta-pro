@@ -366,7 +366,7 @@ describe('use-toast', () => {
   describe('toast update function', () => {
     it('deve atualizar toast usando função update retornada', async () => {
       const { result } = renderHook(() => useToast());
-      let updateFn: ((props: { title?: string }) => void) | undefined;
+      let updateFn: ((props: any) => void) | undefined;
 
       act(() => {
         const toastResult = result.current.toast({ title: 'Título Original' });
@@ -391,7 +391,7 @@ describe('use-toast', () => {
     it('deve preservar id ao atualizar toast', async () => {
       const { result } = renderHook(() => useToast());
       let toastId: string;
-      let updateFn: ((props: { description?: string }) => void) | undefined;
+      let updateFn: ((props: any) => void) | undefined;
 
       act(() => {
         const toastResult = result.current.toast({ title: 'Teste' });

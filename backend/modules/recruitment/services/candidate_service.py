@@ -1,6 +1,7 @@
 """Service para Candidate."""
 
 import logging
+from datetime import datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -137,9 +138,9 @@ class CandidateService:
         """
         return await self.repository.list_with_filters(filters, skip, limit, order_by, order_desc)
 
-    async def get_active(self, condominium_id: str = None, skip: int = 0, limit: int = 50) -> list[Candidate]:
+    async def get_active(self, skip: int = 0, limit: int = 50) -> list[Candidate]:
         """Retorna candidatos ativos."""
-        return await self.repository.get_active(condominium_id, skip, limit)
+        return await self.repository.get_active(skip, limit)
 
     async def get_by_source(self, source: CandidateSource, skip: int = 0, limit: int = 50) -> list[Candidate]:
         """Retorna candidatos por fonte."""
@@ -168,7 +169,7 @@ class CandidateService:
         Returns:
             Candidato bloqueado ou None
         """
-        candidate = await self.repository.block(candidate_id, data.reason, data.blocked_by)
+        candidate = await self.repository.block(candidate_id, data.reason, "system")
         if candidate:
             await self.session.commit()
             logger.warning(
@@ -176,7 +177,6 @@ class CandidateService:
                 extra={
                     "candidate_id": str(candidate.id),
                     "reason": data.reason,
-                    "blocked_by": data.blocked_by,
                 },
             )
         return candidate
@@ -231,7 +231,8 @@ class CandidateService:
         """
         candidate = await self.repository.get_by_id(candidate_id)
         if candidate:
-            candidate.archive()
+            candidate.status = CandidateStatus.ARQUIVADO
+            candidate.updated_at = datetime.utcnow()
             await self.session.commit()
             logger.info(
                 f"Candidato arquivado: {candidate.name}",
@@ -252,6 +253,7 @@ class CandidateService:
         candidate = await self.repository.get_by_id(candidate_id)
         if candidate:
             candidate.status = CandidateStatus.ATIVO
+            candidate.updated_at = datetime.utcnow()
             await self.session.commit()
             logger.info(
                 f"Candidato ativado: {candidate.name}",
@@ -274,16 +276,12 @@ class CandidateService:
 
         # Cria candidato com dados extraídos
         create_data = CandidateCreate(
-            name=data.name,
-            email=data.email,
-            phone=data.phone,
-            source=data.source or CandidateSource.PORTAL_EMPREGO,
+            name=parsed.get("name", "Candidato Importado"),
+            email=parsed.get("email", f"imported_{datetime.utcnow().timestamp()}@temp.com"),
+            phone=parsed.get("phone"),
+            source=data.source or CandidateSource.SITE,
             resume_text=data.resume_text,
-            resume_url=data.resume_url,
             tags=parsed.get("skills", []),
-            languages=parsed.get("languages", []),
-            years_experience=parsed.get("experience_years"),
-            condominium_id=data.condominium_id,
         )
 
         candidate = await self.create(create_data)
@@ -312,12 +310,13 @@ class CandidateService:
         candidate = await self.repository.get_by_id(candidate_id)
         if candidate:
             candidate.tags = tags
+            candidate.updated_at = datetime.utcnow()
             await self.session.commit()
         return candidate
 
     async def add_note(self, candidate_id: str, note: str, author: str) -> Candidate | None:
         """
-        Adiciona nota ao candidato.
+        Adiciona nota ao candidato (armazenada em ai_analysis como workaround).
 
         Args:
             candidate_id: ID do candidato
@@ -329,21 +328,25 @@ class CandidateService:
         """
         candidate = await self.repository.get_by_id(candidate_id)
         if candidate:
-            notes = candidate.notes or []
-            notes.append(
+            # DB nao tem coluna 'notes' — usa ai_analysis como storage alternativo
+            analysis = candidate.ai_analysis or {}
+            notes_list = analysis.get("notes", [])
+            notes_list.append(
                 {
                     "text": note,
                     "author": author,
-                    "created_at": candidate.created_at.isoformat(),
+                    "created_at": datetime.utcnow().isoformat(),
                 }
             )
-            candidate.notes = notes
+            analysis["notes"] = notes_list
+            candidate.ai_analysis = analysis
+            candidate.updated_at = datetime.utcnow()
             await self.session.commit()
         return candidate
 
-    async def get_stats(self, condominium_id: str = None) -> dict:
+    async def get_stats(self) -> dict:
         """Retorna estatísticas de candidatos."""
-        return await self.repository.get_stats(condominium_id)
+        return await self.repository.get_stats()
 
     async def merge_duplicates(self, primary_id: str, secondary_id: str) -> Candidate | None:
         """
@@ -377,18 +380,10 @@ class CandidateService:
         secondary_tags = set(secondary.tags or [])
         primary.tags = list(primary_tags.union(secondary_tags))
 
-        # Mescla notas
-        primary_notes = primary.notes or []
-        secondary_notes = secondary.notes or []
-        primary.notes = primary_notes + secondary_notes
-
-        # Soma contadores
-        primary.applications_count += secondary.applications_count
-        primary.views_count += secondary.views_count
-
         # Remove secundário
         await self.repository.soft_delete(secondary_id)
 
+        primary.updated_at = datetime.utcnow()
         await self.session.commit()
 
         logger.info(

@@ -74,7 +74,7 @@ class DocumentKitService:
 
     async def list_kits(
         self,
-        condominio_id: UUID,
+        condominio_id: UUID | None = None,
         tipo: KitType | None = None,
         status: KitStatus | None = None,
         is_template: bool | None = None,
@@ -95,7 +95,7 @@ class DocumentKitService:
 
     async def count_kits(
         self,
-        condominio_id: UUID,
+        condominio_id: UUID | None = None,
         tipo: KitType | None = None,
         status: KitStatus | None = None,
     ) -> int:
@@ -545,7 +545,7 @@ class DocumentKitService:
 
     # === Stats Operations ===
 
-    async def get_stats(self, condominio_id: UUID) -> dict:
+    async def get_stats(self, condominio_id: UUID | None = None) -> dict:
         """Retorna estatisticas."""
         return await self.repository.get_stats(condominio_id)
 

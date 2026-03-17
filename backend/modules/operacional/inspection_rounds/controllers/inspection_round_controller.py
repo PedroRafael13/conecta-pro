@@ -12,6 +12,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.auth.dependencies import get_current_active_user
 from core.database import get_db
 
 from ..schemas import (
@@ -38,7 +39,7 @@ from ..services import (
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_active_user)])
 
 
 def get_inspection_service(db: AsyncSession = Depends(get_db)) -> InspectionRoundService:
@@ -85,7 +86,7 @@ async def create_round(
     summary="Listar rondas",
     description="Lista rondas com filtros e paginacao.",
 )
-async def list_rounds(
+async def list_rounds(  # pylint: disable=too-many-locals
     tenant_id: UUID | None = Query(None, description="ID do tenant (opcional)"),
     page: int = Query(1, ge=1, description="Página atual"),
     page_size: int = Query(10, ge=1, le=100, description="Itens por página"),
@@ -152,8 +153,8 @@ async def get_stats(
 )
 async def get_dashboard(
     tenant_id: UUID | None = Query(None, description="ID do tenant (opcional)"),
-    start_date: datetime | None = Query(None, description="Data inicial"),
-    end_date: datetime | None = Query(None, description="Data final"),
+    _start_date: datetime | None = Query(None, description="Data inicial"),
+    _end_date: datetime | None = Query(None, description="Data final"),
     service: InspectionRoundService = Depends(get_inspection_service),
 ) -> InspectionDashboardStats:
     """Retorna estatisticas do dashboard."""
@@ -450,7 +451,7 @@ async def get_checkpoints(
     description="Atualiza um checkpoint.",
 )
 async def update_checkpoint(
-    round_id: UUID,
+    _round_id: UUID,
     checkpoint_id: UUID,
     data: CheckpointUpdate,
     service: InspectionRoundService = Depends(get_inspection_service),
@@ -527,7 +528,7 @@ async def apply_disciplinary_action(
         return {
             "checkpoint": CheckpointResponse.model_validate(checkpoint),
             "disciplinary_action": action_info,
-            "message": f"Medida disciplinar {action_info['disciplinary_action_code']} aplicada com sucesso",
+            "message": (f"Medida disciplinar {action_info['disciplinary_action_code']} aplicada com sucesso"),
         }
     except InspectionRoundNotFoundError as e:
         raise HTTPException(

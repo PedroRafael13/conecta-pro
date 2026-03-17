@@ -217,7 +217,7 @@ class PushNotificationService:
                 channel_type="push",
                 priority=priority,
                 status=QueueStatus.PENDING,
-                recipient_address=None,  # Push não usa endereço
+                recipient_address="push",  # Push não usa endereço real
                 subject=title,
                 content=body,
                 data={

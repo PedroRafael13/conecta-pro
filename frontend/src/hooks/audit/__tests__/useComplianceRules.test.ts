@@ -147,7 +147,7 @@ describe('useCreateComplianceRule', () => {
       await result.current.mutateAsync({
         name: 'Nova Regra',
         framework: 'ISO27001',
-      } as Parameters<typeof result.current.mutateAsync>[0]);
+      } as unknown as Parameters<typeof result.current.mutateAsync>[0]);
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));

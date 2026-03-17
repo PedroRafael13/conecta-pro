@@ -1,17 +1,54 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Users, Briefcase, GraduationCap, ClipboardCheck, Smile, UserPlus, TrendingUp, Heart, BarChart3, Brain, ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
+const API_BASE = '/api/v1/people-management/human-resources';
+
+function getAuthHeaders() {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+}
+
 export default function RHDashboardPage() {
   const router = useRouter();
+  const [stats, setStats] = useState({ courses: 0, reviews: 0, trainings: 0, plans: 0 });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const [coursesRes, reviewsRes, trainingsRes, plansRes] = await Promise.all([
+          fetch(`${API_BASE}/training/courses?limit=1`, { headers: getAuthHeaders() }).catch(() => null),
+          fetch(`${API_BASE}/performance/reviews?limit=1`, { headers: getAuthHeaders() }).catch(() => null),
+          fetch(`${API_BASE}/training/?limit=1`, { headers: getAuthHeaders() }).catch(() => null),
+          fetch(`${API_BASE}/career/plans?limit=1`, { headers: getAuthHeaders() }).catch(() => null),
+        ]);
+        const getTotal = async (res: Response | null) => {
+          if (res?.ok) { const d = await res.json(); return d.total || (d.items || d || []).length; }
+          return 0;
+        };
+        setStats({
+          courses: await getTotal(coursesRes),
+          reviews: await getTotal(reviewsRes),
+          trainings: await getTotal(trainingsRes),
+          plans: await getTotal(plansRes),
+        });
+      } catch { /* fallback */ } finally { setLoading(false); }
+    }
+    load();
+  }, []);
 
   const statCards = [
-    { title: 'Vagas Abertas', value: 12, subtitle: '3 urgentes', icon: Briefcase, color: 'text-blue-600', bgColor: 'bg-blue-50' },
-    { title: 'Treinamentos Ativos', value: 8, subtitle: '45 participantes', icon: GraduationCap, color: 'text-green-600', bgColor: 'bg-green-50' },
-    { title: 'Avaliacoes Pendentes', value: 23, subtitle: 'Ciclo Q1 2026', icon: ClipboardCheck, color: 'text-purple-600', bgColor: 'bg-purple-50' },
-    { title: 'Indice de Clima', value: '78%', subtitle: 'Ultima pesquisa: Fev/2026', icon: Smile, color: 'text-orange-600', bgColor: 'bg-orange-50' },
+    { title: 'Cursos Ativos', value: loading ? '...' : stats.courses, subtitle: 'Catalogo de cursos', icon: GraduationCap, color: 'text-green-600', bgColor: 'bg-green-50' },
+    { title: 'Avaliacoes', value: loading ? '...' : stats.reviews, subtitle: 'Total de avaliacoes', icon: ClipboardCheck, color: 'text-purple-600', bgColor: 'bg-purple-50' },
+    { title: 'Treinamentos', value: loading ? '...' : stats.trainings, subtitle: 'Turmas agendadas', icon: Briefcase, color: 'text-blue-600', bgColor: 'bg-blue-50' },
+    { title: 'Planos de Carreira', value: loading ? '...' : stats.plans, subtitle: 'Em andamento', icon: TrendingUp, color: 'text-orange-600', bgColor: 'bg-orange-50' },
   ];
 
   const navCards = [

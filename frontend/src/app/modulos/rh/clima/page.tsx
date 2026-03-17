@@ -1,28 +1,25 @@
 'use client';
 
-import { Heart } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { Heart, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-const scoreGeral = 78;
+const API_BASE = '/api/v1/people-management/human-resources';
 
-const dimensoes = [
-  { nome: 'Carreira', score: 72, cor: 'bg-blue-500' },
-  { nome: 'Lideranca', score: 81, cor: 'bg-green-500' },
-  { nome: 'Ambiente', score: 85, cor: 'bg-teal-500' },
-  { nome: 'Comunicacao', score: 74, cor: 'bg-yellow-500' },
-  { nome: 'Beneficios', score: 68, cor: 'bg-purple-500' },
-];
-
-const pesquisasMock = [
-  { id: 1, nome: 'Pesquisa Clima Q1 2026', periodo: 'Jan-Mar 2026', respostas: 38, total: 44, score: 78, status: 'Em Andamento' },
-  { id: 2, nome: 'Pesquisa Clima Q4 2025', periodo: 'Out-Dez 2025', respostas: 42, total: 44, score: 75, status: 'Concluida' },
-  { id: 3, nome: 'Pesquisa Clima Q3 2025', periodo: 'Jul-Set 2025', respostas: 40, total: 42, score: 72, status: 'Concluida' },
-];
+function getAuthHeaders() {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+}
 
 const statusCores: Record<string, string> = {
   'Em Andamento': 'bg-yellow-900/30 text-yellow-400',
   'Concluida': 'bg-green-900/30 text-green-400',
+  'in_progress': 'bg-yellow-900/30 text-yellow-400',
+  'completed': 'bg-green-900/30 text-green-400',
+  'active': 'bg-yellow-900/30 text-yellow-400',
 };
 
 const scoreCor = (s: number) => {
@@ -32,7 +29,26 @@ const scoreCor = (s: number) => {
 };
 
 export default function ClimaPage() {
-  const [pesquisas] = useState(pesquisasMock);
+  const [pesquisas, setPesquisas] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        // Climate surveys from retention/climate module re-exported via human-resources
+        const res = await fetch(`${API_BASE}/climate?limit=50`, { headers: getAuthHeaders() });
+        if (res.ok) {
+          const data = await res.json();
+          setPesquisas(data.items || data || []);
+        }
+      } catch { setPesquisas([]); } finally { setLoading(false); }
+    }
+    load();
+  }, []);
+
+  const scoreGeral = pesquisas.length > 0
+    ? Math.round(pesquisas.reduce((a, p) => a + (p.score || p.overall_score || 0), 0) / pesquisas.length)
+    : 0;
 
   return (
     <div className="space-y-6">
@@ -44,66 +60,72 @@ export default function ClimaPage() {
         <p className="text-muted-foreground">Pesquisas e indicadores de clima</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader><CardTitle className="text-sm font-medium">Score Geral</CardTitle></CardHeader>
-          <CardContent>
-            <div className="flex flex-col items-center">
-              <span className={`text-6xl font-bold ${scoreCor(scoreGeral)}`}>{scoreGeral}</span>
-              <span className="text-muted-foreground text-sm mt-1">de 100 pontos</span>
-              <div className="w-full mt-4 bg-gray-800 rounded-full h-3">
-                <div className={`h-3 rounded-full transition-all ${scoreGeral >= 80 ? 'bg-green-500' : 'bg-yellow-500'}`} style={{ width: `${scoreGeral}%` }} />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader><CardTitle className="text-sm font-medium">Dimensoes</CardTitle></CardHeader>
-          <CardContent className="space-y-3">
-            {dimensoes.map((d) => (
-              <div key={d.nome} className="space-y-1">
-                <div className="flex justify-between text-sm">
-                  <span>{d.nome}</span>
-                  <span className={scoreCor(d.score)}>{d.score}</span>
+      {loading ? (
+        <div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>
+      ) : (
+        <>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card>
+              <CardHeader><CardTitle className="text-sm font-medium">Score Geral</CardTitle></CardHeader>
+              <CardContent>
+                <div className="flex flex-col items-center">
+                  <span className={`text-6xl font-bold ${scoreCor(scoreGeral)}`}>{scoreGeral}</span>
+                  <span className="text-muted-foreground text-sm mt-1">de 100 pontos</span>
+                  <div className="w-full mt-4 bg-gray-800 rounded-full h-3">
+                    <div className={`h-3 rounded-full transition-all ${scoreGeral >= 80 ? 'bg-green-500' : 'bg-yellow-500'}`} style={{ width: `${scoreGeral}%` }} />
+                  </div>
                 </div>
-                <div className="w-full bg-gray-800 rounded-full h-2">
-                  <div className={`${d.cor} h-2 rounded-full transition-all`} style={{ width: `${d.score}%` }} />
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      </div>
+              </CardContent>
+            </Card>
 
-      <Card>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-800">
-                  <th className="text-left p-4 text-muted-foreground font-medium">Pesquisa</th>
-                  <th className="text-left p-4 text-muted-foreground font-medium">Periodo</th>
-                  <th className="text-center p-4 text-muted-foreground font-medium">Respostas</th>
-                  <th className="text-center p-4 text-muted-foreground font-medium">Score Medio</th>
-                  <th className="text-center p-4 text-muted-foreground font-medium">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {pesquisas.map((p) => (
-                  <tr key={p.id} className="border-b border-gray-800/50 hover:bg-gray-800/30">
-                    <td className="p-4 font-medium">{p.nome}</td>
-                    <td className="p-4 text-muted-foreground">{p.periodo}</td>
-                    <td className="p-4 text-center">{p.respostas}/{p.total}</td>
-                    <td className="p-4 text-center"><span className={scoreCor(p.score)}>{p.score}</span></td>
-                    <td className="p-4 text-center"><span className={`text-xs px-2 py-1 rounded ${statusCores[p.status]}`}>{p.status}</span></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <Card>
+              <CardHeader><CardTitle className="text-sm font-medium">Resumo</CardTitle></CardHeader>
+              <CardContent>
+                <div className="space-y-2 text-sm text-muted-foreground">
+                  <p>Total de pesquisas: <span className="font-bold text-white">{pesquisas.length}</span></p>
+                  <p>Pesquisas ativas: <span className="font-bold text-white">{pesquisas.filter(p => p.status === 'active' || p.status === 'in_progress' || p.status === 'Em Andamento').length}</span></p>
+                  <p>Concluidas: <span className="font-bold text-white">{pesquisas.filter(p => p.status === 'completed' || p.status === 'Concluida').length}</span></p>
+                </div>
+              </CardContent>
+            </Card>
           </div>
-        </CardContent>
-      </Card>
+
+          <Card>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-800">
+                      <th className="text-left p-4 text-muted-foreground font-medium">Pesquisa</th>
+                      <th className="text-left p-4 text-muted-foreground font-medium">Periodo</th>
+                      <th className="text-center p-4 text-muted-foreground font-medium">Respostas</th>
+                      <th className="text-center p-4 text-muted-foreground font-medium">Score Medio</th>
+                      <th className="text-center p-4 text-muted-foreground font-medium">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pesquisas.length === 0 ? (
+                      <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">Nenhuma pesquisa de clima encontrada</td></tr>
+                    ) : pesquisas.map((p, i) => {
+                      const cor = statusCores[p.status] || 'bg-gray-800 text-gray-400';
+                      const label = p.status === 'completed' ? 'Concluida' : p.status === 'in_progress' || p.status === 'active' ? 'Em Andamento' : p.status;
+                      return (
+                        <tr key={p.id || i} className="border-b border-gray-800/50 hover:bg-gray-800/30">
+                          <td className="p-4 font-medium">{p.name || p.nome || p.title}</td>
+                          <td className="p-4 text-muted-foreground">{p.period || p.periodo || '-'}</td>
+                          <td className="p-4 text-center">{p.responses || p.respostas || 0}/{p.total_employees || p.total || '-'}</td>
+                          <td className="p-4 text-center"><span className={scoreCor(p.score || p.overall_score || 0)}>{p.score || p.overall_score || 0}</span></td>
+                          <td className="p-4 text-center"><span className={`text-xs px-2 py-1 rounded ${cor}`}>{label}</span></td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </>
+      )}
     </div>
   );
 }

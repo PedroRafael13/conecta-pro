@@ -6,6 +6,7 @@ Status: DEVELOPMENT - simulacao funcional de disputa implementada.
 Integracao com portais reais pendente (requer Playwright + certificado digital).
 """
 
+import asyncio
 import logging
 import random
 from datetime import datetime
@@ -16,6 +17,19 @@ from typing import Any
 from pydantic import BaseModel, Field, field_validator
 
 from modules.bidding.agents.base_agent import AgentConfig, AgentStatus, BaseAgent
+
+# WebSocket notifications (best-effort, never breaks simulation)
+try:
+    from modules.bidding.websockets.dispute_ws import (
+        notify_fim_disputa,
+        notify_lance_coberto,
+        notify_lance_enviado,
+        notify_melhor_colocado,
+    )
+
+    _WS_AVAILABLE = True
+except ImportError:
+    _WS_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
@@ -400,6 +414,9 @@ class WarriorAgent(BaseAgent):
         Returns:
             WarriorResponse como dict, incluindo SimulacaoResponse.
         """
+        # sessao_id para WebSocket notifications (opcional via kwargs)
+        self._sessao_id = kwargs.get("sessao_id")
+
         # Resolver configuracao: parametros diretos tem precedencia
         if valor_referencia is not None:
             vr = Decimal(str(valor_referencia))
@@ -795,6 +812,7 @@ class WarriorAgent(BaseAgent):
         )
 
         # Rodadas de disputa
+        prev_pos_warrior = pos_warrior_0
         for rodada in range(1, cfg.num_rodadas + 1):
             lances_rodada: list[dict[str, Any]] = []
             algum_lance = False
@@ -886,6 +904,51 @@ class WarriorAgent(BaseAgent):
                     )
                 )
 
+                # WebSocket: notificar lance enviado + posição (fire-and-forget)
+                if _WS_AVAILABLE and hasattr(self, "_sessao_id") and self._sessao_id:
+                    try:
+                        loop = asyncio.get_event_loop()
+                        loop.create_task(
+                            notify_lance_enviado(
+                                sessao_id=self._sessao_id,
+                                item_id=f"item_rodada_{rodada}",
+                                valor=float(warrior_valor),
+                                posicao=pos_warrior,
+                            )
+                        )
+                        if pos_warrior == 1:
+                            loop.create_task(
+                                notify_melhor_colocado(
+                                    sessao_id=self._sessao_id,
+                                    item_id=f"item_rodada_{rodada}",
+                                    valor=float(warrior_valor),
+                                )
+                            )
+                    except Exception as ws_err:
+                        logger.debug("WebSocket notify error (non-fatal): %s", ws_err)
+
+            # WebSocket: notificar se warrior foi coberto (fire-and-forget)
+            if (
+                _WS_AVAILABLE
+                and hasattr(self, "_sessao_id")
+                and self._sessao_id
+                and pos_warrior > 1
+                and warrior_valor is not None
+                and prev_pos_warrior == 1
+            ):
+                try:
+                    loop = asyncio.get_event_loop()
+                    loop.create_task(
+                        notify_lance_coberto(
+                            sessao_id=self._sessao_id,
+                            item_id=f"item_rodada_{rodada}",
+                            valor_anterior=float(warrior_valor),
+                            valor_novo=float(menor_global),
+                        )
+                    )
+                except Exception as ws_err:
+                    logger.debug("WebSocket notify error (non-fatal): %s", ws_err)
+
             historico.append(
                 RodadaCompleta(
                     rodada=rodada,
@@ -906,6 +969,8 @@ class WarriorAgent(BaseAgent):
                 f"Acao: {warrior_acao} | "
                 f"Conc. ativos: {concorrentes_ativos}"
             )
+
+            prev_pos_warrior = pos_warrior
 
             # Condicoes de parada
             if concorrentes_ativos == 0:
@@ -944,6 +1009,21 @@ class WarriorAgent(BaseAgent):
             f"Valor final: R$ {float(warrior_valor) if warrior_valor else 0:,.2f} | "
             f"Economia: {economia_pct}%"
         )
+
+        # WebSocket: notificar fim da disputa (fire-and-forget)
+        if _WS_AVAILABLE and hasattr(self, "_sessao_id") and self._sessao_id:
+            try:
+                loop = asyncio.get_event_loop()
+                loop.create_task(
+                    notify_fim_disputa(
+                        sessao_id=self._sessao_id,
+                        resultado=resultado.value,
+                        itens_ganhos=["pregao_simulado"] if resultado == ResultadoDisputa.VENCEDOR else [],
+                        valor_total=float(warrior_valor) if warrior_valor else 0.0,
+                    )
+                )
+            except Exception as ws_err:
+                logger.debug("WebSocket notify_fim error (non-fatal): %s", ws_err)
 
         # Dashboard-ready data
         dashboard = self._build_dashboard_data(

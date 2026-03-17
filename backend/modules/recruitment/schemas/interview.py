@@ -1,4 +1,7 @@
-"""Schemas para Interview."""
+"""Schemas para Interview.
+
+Reescrito para refletir o schema real do banco de dados (15/03/2026).
+"""
 
 from datetime import date, datetime, time
 
@@ -11,98 +14,63 @@ from modules.recruitment.models.interview import (
 )
 
 
-class InterviewBase(BaseModel):
-    """Schema base para Interview."""
+class InterviewCreate(BaseModel):
+    """Schema para criacao de entrevista."""
 
+    application_id: str
     interview_type: InterviewType = InterviewType.VIDEO
+    format: str = "video"
     scheduled_date: date
     scheduled_time: time
     duration_minutes: int = Field(default=60, ge=15, le=480)
-    timezone: str = "America/Sao_Paulo"
     location: str | None = None
-    meeting_link: str | None = None
-    meeting_platform: str | None = None
-    meeting_id: str | None = None
-    meeting_password: str | None = None
+    meeting_url: str | None = None
     interviewer_ids: list[str] | None = Field(default_factory=list)
-    interviewer_names: list[str] | None = Field(default_factory=list)
-    lead_interviewer_id: str | None = None
-    script: str | None = None
-    questions: list[dict] | None = Field(default_factory=list)
-    competencies_to_assess: list[str] | None = Field(default_factory=list)
-
-
-class InterviewCreate(InterviewBase):
-    """Schema para criação de entrevista."""
-
-    application_id: str
-    created_by: str | None = None
 
 
 class InterviewUpdate(BaseModel):
-    """Schema para atualização de entrevista."""
+    """Schema para atualizacao de entrevista."""
 
     interview_type: InterviewType | None = None
+    format: str | None = None
     scheduled_date: date | None = None
     scheduled_time: time | None = None
     duration_minutes: int | None = Field(None, ge=15, le=480)
     location: str | None = None
-    meeting_link: str | None = None
-    meeting_platform: str | None = None
-    meeting_id: str | None = None
-    meeting_password: str | None = None
+    meeting_url: str | None = None
     interviewer_ids: list[str] | None = None
-    interviewer_names: list[str] | None = None
-    lead_interviewer_id: str | None = None
-    script: str | None = None
-    questions: list[dict] | None = None
-    competencies_to_assess: list[str] | None = None
-    internal_notes: str | None = None
 
 
-class InterviewResponse(InterviewBase):
+class InterviewResponse(BaseModel):
     """Schema de resposta para entrevista."""
 
     model_config = ConfigDict(from_attributes=True)
 
     id: str
     application_id: str
-    status: InterviewStatus
-    result: InterviewResult | None = None
-    actual_start_time: datetime | None = None
-    actual_end_time: datetime | None = None
-    actual_duration_minutes: int | None = None
-    score: int | None = None
-    evaluation: dict | None = None
-    strengths: list[str] | None = None
-    weaknesses: list[str] | None = None
-    competency_scores: dict | None = None
+    interview_type: str
+    format: str
+    status: str | None = None
+    result: str | None = None
+    scheduled_at: datetime
+    scheduled_date: date | None = None
+    scheduled_time: time | None = None
+    duration_minutes: int | None = None
+    location: str | None = None
+    meeting_url: str | None = None
+    interviewer_ids: list[str] | None = None
+    interviewer_notes: dict | None = None
     feedback: str | None = None
-    recommendation: str | None = None
-    internal_notes: str | None = None
-    candidate_feedback: str | None = None
-    candidate_questions: list[str] | None = None
-    candidate_confirmed: bool = False
-    candidate_confirmed_at: datetime | None = None
-    interviewer_confirmed: bool = False
-    reminder_sent: bool = False
-    reminder_sent_at: datetime | None = None
+    rating: int | None = None
+    score: int | None = None
+    transcript: str | None = None
+    started_at: datetime | None = None
+    ended_at: datetime | None = None
     cancelled_at: datetime | None = None
     cancellation_reason: str | None = None
-    reschedule_count: int = 0
-    is_recorded: bool = False
     recording_url: str | None = None
-    created_by: str | None = None
-    created_at: datetime
+    created_at: datetime | None = None
     updated_at: datetime | None = None
-
-    # Computed
-    scheduled_datetime: datetime
-    is_past: bool
-    is_today: bool
-    is_upcoming: bool
-    is_pending_result: bool
-    was_successful: bool
 
 
 class InterviewListResponse(BaseModel):
@@ -110,9 +78,8 @@ class InterviewListResponse(BaseModel):
 
     items: list[InterviewResponse]
     total: int
-    page: int
-    page_size: int
-    pages: int
+    skip: int = 0
+    limit: int = 20
 
 
 class InterviewFilter(BaseModel):
@@ -130,7 +97,7 @@ class InterviewFilter(BaseModel):
 
 
 class InterviewStats(BaseModel):
-    """Estatísticas de entrevistas."""
+    """Estatisticas de entrevistas."""
 
     total_interviews: int = 0
     scheduled: int = 0
@@ -150,10 +117,6 @@ class InterviewComplete(BaseModel):
     result: InterviewResult
     score: int | None = Field(None, ge=0, le=100)
     feedback: str | None = None
-    strengths: list[str] | None = Field(default_factory=list)
-    weaknesses: list[str] | None = Field(default_factory=list)
-    competency_scores: dict | None = None
-    recommendation: str | None = None
 
 
 class InterviewReschedule(BaseModel):
@@ -162,44 +125,37 @@ class InterviewReschedule(BaseModel):
     new_date: date
     new_time: time
     reason: str | None = None
-    notify_candidate: bool = True
-    notify_interviewers: bool = True
 
 
 class InterviewCancel(BaseModel):
     """Schema para cancelar entrevista."""
 
     reason: str = Field(..., min_length=5)
-    notify_candidate: bool = True
-    notify_interviewers: bool = True
 
 
 class InterviewEvaluation(BaseModel):
-    """Schema para avaliação de entrevista."""
+    """Schema para avaliacao de entrevista."""
 
-    competency_scores: dict = Field(...)
-    strengths: list[str] = Field(default_factory=list)
-    weaknesses: list[str] = Field(default_factory=list)
-    recommendation: str
-    overall_impression: str | None = None
-    culture_fit_score: int | None = Field(None, ge=0, le=100)
-    technical_score: int | None = Field(None, ge=0, le=100)
-    communication_score: int | None = Field(None, ge=0, le=100)
+    competency: str
+    score: int = Field(..., ge=0, le=100)
+    notes: str | None = None
+    evaluator_id: str | None = None
 
 
 class InterviewSlot(BaseModel):
     """Schema para slot de entrevista."""
 
     date: date
-    start_time: time
-    end_time: time
-    interviewer_id: str
-    is_available: bool = True
+    time: time
+    duration_minutes: int = 60
+    available: bool = True
 
 
 class InterviewCalendar(BaseModel):
-    """Schema para calendário de entrevistas."""
+    """Schema para calendario de entrevistas."""
 
-    date: date
-    interviews: list[InterviewResponse]
-    available_slots: list[InterviewSlot]
+    month: int
+    year: int
+    interviewer_id: str
+    days: dict = Field(default_factory=dict)
+    total_interviews: int = 0

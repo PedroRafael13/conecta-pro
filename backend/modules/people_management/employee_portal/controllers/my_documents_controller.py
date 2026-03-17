@@ -15,6 +15,7 @@ from fastapi import status as http_status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
+from modules.people_management.employee_portal.auth import CurrentEmployeeId
 from modules.people_management.employee_portal.schemas.signature import (
     SignDocumentRequest,
     SignDocumentResponse,
@@ -38,21 +39,12 @@ router = APIRouter(tags=["Portal - Documentos"])
     description="Retorna lista de documentos do funcionario com status de assinatura.",
 )
 async def get_my_documents(
+    employee_id: CurrentEmployeeId,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
-    """Retorna documentos do funcionario.
-
-    Args:
-        db: Sessao do banco de dados.
-
-    Returns:
-        Lista de documentos com status de assinatura.
-    """
-    # TODO: Extrair employee_id do token JWT do portal
+    """Retorna documentos do funcionario autenticado."""
     service = DocumentViewService(db)
-    documents = await service.get_my_documents(
-        employee_id=None,  # type: ignore[arg-type]
-    )
+    documents = await service.get_my_documents(employee_id=employee_id)
     return documents
 
 
@@ -64,28 +56,12 @@ async def get_my_documents(
 )
 async def sign_document(
     request: Request,
+    employee_id: CurrentEmployeeId,
     document_id: int = Path(..., gt=0, description="ID do documento", alias="id"),
     sign_data: SignDocumentRequest = None,  # type: ignore[assignment]
     db: AsyncSession = Depends(get_db),
 ) -> Any:
-    """Assina um documento digitalmente.
-
-    Gera hash SHA-256 unico combinando document_id + employee_id +
-    timestamp + secret.
-
-    Args:
-        request: Objeto Request do FastAPI.
-        document_id: ID do documento a assinar.
-        sign_data: Dados adicionais da assinatura.
-        db: Sessao do banco de dados.
-
-    Returns:
-        SignDocumentResponse com hash e timestamp.
-
-    Raises:
-        HTTPException: 400 se documento ja assinado ou tipo invalido.
-    """
-    # TODO: Extrair employee_id do token JWT do portal
+    """Assina um documento digitalmente com JWT do funcionario."""
     ip_address = request.client.host if request.client else None
     user_agent = request.headers.get("user-agent")
 
@@ -97,7 +73,7 @@ async def sign_document(
         result = await service.sign_document(
             document_id=document_id,
             document_type=document_type,
-            employee_id=None,  # type: ignore[arg-type]
+            employee_id=employee_id,
             ip_address=ip_address,
             user_agent=user_agent,
         )
@@ -121,19 +97,7 @@ async def verify_document_signature(
     signature_hash: str = None,  # type: ignore[assignment]
     db: AsyncSession = Depends(get_db),
 ) -> Any:
-    """Verifica a assinatura digital de um documento.
-
-    Args:
-        document_id: ID do documento.
-        signature_hash: Hash da assinatura a verificar.
-        db: Sessao do banco de dados.
-
-    Returns:
-        VerifySignatureResponse com status da verificacao.
-
-    Raises:
-        HTTPException: 400 se hash nao fornecido.
-    """
+    """Verifica a assinatura digital de um documento."""
     if not signature_hash:
         raise HTTPException(
             status_code=http_status.HTTP_400_BAD_REQUEST,

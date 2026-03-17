@@ -26,6 +26,7 @@ from .admission import AdmissionProcess, AdmissionStatus
 from .benefits import BenefitStatus, BenefitType, EmployeeBenefit
 from .contract import ContractType, EmploymentContract
 from .employee import Employee as EmployeeRef
+from .employee_dp import EmployeeDP, GrauInsalubridade, JornadaType
 from .termination import TerminationProcess, TerminationStatus, TerminationType
 
 __all__ = [
@@ -46,4 +47,7 @@ __all__ = [
     "BenefitStatus",
     "EmploymentContract",
     "ContractType",
+    "EmployeeDP",
+    "GrauInsalubridade",
+    "JornadaType",
 ]

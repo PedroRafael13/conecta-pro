@@ -17,6 +17,13 @@ with contextlib.suppress(ImportError):
         time_bank_router,
     )
 
+try:
+    from modules.people_management.operations.controllers.scale_optimizer_controller import (
+        router as scale_optimizer_router,
+    )
+except ImportError:
+    scale_optimizer_router = None  # type: ignore[assignment]
+
 __all__ = [
     "post_router",
     "scale_router",
@@ -27,4 +34,5 @@ __all__ = [
     "time_bank_router",
     "dashboard_router",
     "employee_router",
+    "scale_optimizer_router",
 ]

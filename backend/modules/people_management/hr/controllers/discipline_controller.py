@@ -20,11 +20,11 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/discipline", tags=["DP - Disciplinar"])
 
 # Re-export do router existente de disciplinares
+# IMPORTANTE: usar include_router (NÃO append) para preservar prefixos
 try:
     from modules.operacional.disciplinary.controllers import disciplinary_router
 
-    for route in disciplinary_router.routes:
-        router.routes.append(route)
+    router.include_router(disciplinary_router)
 except ImportError:
     logger.info("Router disciplinar operacional não disponível para re-export")
 

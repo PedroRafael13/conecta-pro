@@ -38,10 +38,16 @@ class MyScheduleResponse(BaseModel):
         total_hours: Total de horas escaladas.
     """
 
-    employee_name: str
-    month: int
-    year: int
+    employee_name: str = ""
+    month: int = 0
+    year: int = 0
     shifts: list[MyShiftResponse] = []
     total_hours: float = 0.0
+    escala_padrao: str = ""
+    turno_padrao: str = ""
+    carga_horaria_semanal: int = 0
+    jornada_trabalho: str = ""
+    cargo: str = ""
+    posto_atual_nome: str = ""
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, extra="allow")

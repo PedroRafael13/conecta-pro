@@ -218,7 +218,7 @@ describe('exportToPDF', () => {
     await exportToPDF(data, 'test');
 
     expect(mockAutoTable).toHaveBeenCalled();
-    const callArgs = mockAutoTable.mock.calls[0][1];
+    const callArgs = mockAutoTable.mock.calls[0]![1];
     // O primeiro row deve ter '-' para null e undefined
     expect(callArgs.body[0]).toContain('-');
   });
@@ -230,7 +230,7 @@ describe('exportToPDF', () => {
     const data = [{ description: longString }];
     await exportToPDF(data, 'test');
 
-    const callArgs = mockAutoTable.mock.calls[0][1];
+    const callArgs = mockAutoTable.mock.calls[0]![1];
     expect(callArgs.body[0][0]).toBe('A'.repeat(47) + '...');
   });
 
@@ -240,7 +240,7 @@ describe('exportToPDF', () => {
     const data = [{ count: 42, active: true }];
     await exportToPDF(data, 'test');
 
-    const callArgs = mockAutoTable.mock.calls[0][1];
+    const callArgs = mockAutoTable.mock.calls[0]![1];
     expect(callArgs.body[0]).toContain('42');
     expect(callArgs.body[0]).toContain('true');
   });

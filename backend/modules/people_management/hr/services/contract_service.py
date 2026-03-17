@@ -77,6 +77,40 @@ class ContractService:
         logger.info("Contrato criado: %s para employee %s", contract.id, contract.employee_id)
         return contract
 
+    async def list_all(self, page: int = 1, page_size: int = 20) -> dict:
+        """Lista todos os contratos com paginação.
+
+        Args:
+            page: Página atual.
+            page_size: Itens por página.
+
+        Returns:
+            Dicionário com items, total, page, page_size, total_pages.
+        """
+        from sqlalchemy import func
+
+        count_query = select(func.count()).select_from(EmploymentContract)
+        total_result = await self.db.execute(count_query)
+        total = total_result.scalar() or 0
+        total_pages = max(1, (total + page_size - 1) // page_size)
+
+        query = (
+            select(EmploymentContract)
+            .order_by(EmploymentContract.start_date.desc())
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+        )
+        result = await self.db.execute(query)
+        items = result.scalars().all()
+
+        return {
+            "items": list(items),
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "total_pages": total_pages,
+        }
+
     async def get_by_id(self, contract_id: str | UUID) -> EmploymentContract | None:
         """Busca contrato por ID."""
         result = await self.db.execute(select(EmploymentContract).where(EmploymentContract.id == str(contract_id)))

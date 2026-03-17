@@ -7,7 +7,7 @@ Endpoints CRUD para gestão de contratos de trabalho.
 import logging
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.dependencies import CurrentActiveUser
@@ -22,6 +22,18 @@ from modules.people_management.hr.services.contract_service import ContractServi
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/contracts", tags=["DP - Contratos"])
+
+
+@router.get("/")
+async def list_contracts(
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+) -> Any:
+    """Lista todos os contratos com paginação."""
+    service = ContractService(db)
+    return await service.list_all(page=page, page_size=page_size)
 
 
 @router.get("/employee/{employee_id}", response_model=list[ContractResponse])

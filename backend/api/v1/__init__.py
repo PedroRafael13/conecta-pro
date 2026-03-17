@@ -161,6 +161,16 @@ router.include_router(ged_signature_router, prefix="/ged/signatures", tags=["GED
 router.include_router(ged_stats_router, prefix="/ged", tags=["GED - Estatísticas"])
 
 # =============================================================================
+# 4b. GESTÃO DE PESSOAS (people_management: DP + RH + Operations + Portal + GED)
+# =============================================================================
+try:
+    from modules.people_management import router as people_management_router  # noqa: E402
+
+    router.include_router(people_management_router)
+except ImportError:
+    pass
+
+# =============================================================================
 # 5. FINANCEIRO (via agregador)
 # =============================================================================
 from modules.financeiro import (  # noqa: E402

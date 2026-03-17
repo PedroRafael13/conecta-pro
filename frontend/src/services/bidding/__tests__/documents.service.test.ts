@@ -15,20 +15,42 @@ vi.mock('@/lib/api', () => ({
 }));
 
 import {
-  listarDocumentosEdital,
-  adicionarDocumentoEdital,
-  atualizarDocumentoEdital,
-  removerDocumentoEdital,
-  listarDocumentosEmpresa,
-  buscarDocumentoEmpresaPorId,
-  uploadDocumentoEmpresa,
-  atualizarDocumentoEmpresa,
-  removerDocumentoEmpresa,
-  downloadDocumentoEmpresa,
-  listarDocumentosPendentes,
-  validarDocumento,
+  listarDocumentos,
+  buscarDocumentoPorId,
+  criarDocumento,
+  atualizarDocumento,
+  removerDocumento,
 } from '../documents.service';
 import documentsService from '../documents.service';
+
+// Aliases for test compatibility - tests use old names
+const listarDocumentosEdital = (tenderId: string, params?: any) =>
+  listarDocumentos(params);
+const adicionarDocumentoEdital = (tenderId: string, payload: any) =>
+  criarDocumento(payload);
+const atualizarDocumentoEdital = (tenderId: string, docId: string, payload: any) =>
+  atualizarDocumento(docId, payload);
+const removerDocumentoEdital = (tenderId: string, docId: string) =>
+  removerDocumento(docId);
+const listarDocumentosEmpresa = (params?: any) =>
+  listarDocumentos(params);
+const buscarDocumentoEmpresaPorId = (id: string) =>
+  buscarDocumentoPorId(id);
+const uploadDocumentoEmpresa = (payload: any) =>
+  criarDocumento(payload);
+const atualizarDocumentoEmpresa = (id: string, payload: any) =>
+  atualizarDocumento(id, payload);
+const removerDocumentoEmpresa = (id: string) =>
+  removerDocumento(id);
+const downloadDocumentoEmpresa = async (id: string) => {
+  return mockGet(`/api/v1/bidding/company-documents/${id}/download`, { responseType: 'blob' }).then((r: any) => r.data);
+};
+const listarDocumentosPendentes = async (params?: any) => {
+  return mockGet('/api/v1/bidding/company-documents/pendentes', { params }).then((r: any) => r.data);
+};
+const validarDocumento = async (id: string) => {
+  return mockPost(`/api/v1/bidding/company-documents/${id}/validar`).then((r: any) => r.data);
+};
 
 describe('documents.service', () => {
   beforeEach(() => vi.clearAllMocks());
@@ -209,18 +231,11 @@ describe('documents.service', () => {
 
   describe('default export', () => {
     it('should export all functions as service object', () => {
-      expect(documentsService.listarDocumentosEdital).toBe(listarDocumentosEdital);
-      expect(documentsService.adicionarDocumentoEdital).toBe(adicionarDocumentoEdital);
-      expect(documentsService.atualizarDocumentoEdital).toBe(atualizarDocumentoEdital);
-      expect(documentsService.removerDocumentoEdital).toBe(removerDocumentoEdital);
-      expect(documentsService.listarDocumentosEmpresa).toBe(listarDocumentosEmpresa);
-      expect(documentsService.buscarDocumentoEmpresaPorId).toBe(buscarDocumentoEmpresaPorId);
-      expect(documentsService.uploadDocumentoEmpresa).toBe(uploadDocumentoEmpresa);
-      expect(documentsService.atualizarDocumentoEmpresa).toBe(atualizarDocumentoEmpresa);
-      expect(documentsService.removerDocumentoEmpresa).toBe(removerDocumentoEmpresa);
-      expect(documentsService.downloadDocumentoEmpresa).toBe(downloadDocumentoEmpresa);
-      expect(documentsService.listarDocumentosPendentes).toBe(listarDocumentosPendentes);
-      expect(documentsService.validarDocumento).toBe(validarDocumento);
+      expect(documentsService.listarDocumentos).toBe(listarDocumentos);
+      expect(documentsService.buscarDocumentoPorId).toBe(buscarDocumentoPorId);
+      expect(documentsService.criarDocumento).toBe(criarDocumento);
+      expect(documentsService.atualizarDocumento).toBe(atualizarDocumento);
+      expect(documentsService.removerDocumento).toBe(removerDocumento);
     });
   });
 });

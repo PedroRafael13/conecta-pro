@@ -177,9 +177,9 @@ class ClientService:
         logger.info("Conecta Plus habilitado para cliente: %s", client.code)
         return client
 
-    def get_client_stats(self) -> dict:
+    async def get_client_stats(self) -> dict:
         """Get client statistics."""
-        return self.repository.get_client_stats()
+        return await self.repository.get_client_stats()
 
     # =========================================================================
     # CONDOMINIUM METHODS

@@ -223,6 +223,60 @@ async def list_trainings(
     )
 
 
+# =============================================================================
+# Matriculas (Enrollments) — ANTES de /{training_id} para evitar conflito
+# =============================================================================
+
+
+@router.post(
+    "/enrollments",
+    response_model=TrainingEnrollmentResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Matricular funcionario em treinamento",
+)
+async def enroll_employee(
+    data: TrainingEnrollmentCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+) -> TrainingEnrollmentResponse:
+    """Matricula um funcionario em um treinamento."""
+    service = TrainingService(db)
+    try:
+        enrollment = await service.enroll_employee(data)
+        return TrainingEnrollmentResponse.model_validate(enrollment)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@router.get(
+    "/enrollments",
+    response_model=TrainingEnrollmentListResponse,
+    summary="Listar matriculas",
+)
+async def list_enrollments(
+    training_id: UUID | None = None,
+    employee_id: UUID | None = None,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+) -> TrainingEnrollmentListResponse:
+    """Lista matriculas com filtros."""
+    service = TrainingService(db)
+    result = await service.list_enrollments(
+        training_id=training_id,
+        employee_id=employee_id,
+        page=page,
+        page_size=page_size,
+    )
+    return TrainingEnrollmentListResponse(
+        items=[TrainingEnrollmentResponse.model_validate(e) for e in result["items"]],
+        total=result["total"],
+        page=result["page"],
+        page_size=result["page_size"],
+    )
+
+
 @router.get(
     "/{training_id}",
     response_model=TrainingResponse,
@@ -285,60 +339,6 @@ async def complete_training(
             detail="Treinamento nao encontrado.",
         )
     return TrainingResponse.model_validate(training)
-
-
-# =============================================================================
-# Matriculas (Enrollments)
-# =============================================================================
-
-
-@router.post(
-    "/enrollments",
-    response_model=TrainingEnrollmentResponse,
-    status_code=status.HTTP_201_CREATED,
-    summary="Matricular funcionario em treinamento",
-)
-async def enroll_employee(
-    data: TrainingEnrollmentCreate,
-    db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
-) -> TrainingEnrollmentResponse:
-    """Matricula um funcionario em um treinamento."""
-    service = TrainingService(db)
-    try:
-        enrollment = await service.enroll_employee(data)
-        return TrainingEnrollmentResponse.model_validate(enrollment)
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-
-
-@router.get(
-    "/enrollments",
-    response_model=TrainingEnrollmentListResponse,
-    summary="Listar matriculas",
-)
-async def list_enrollments(
-    training_id: UUID | None = None,
-    employee_id: UUID | None = None,
-    page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=100),
-    db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
-) -> TrainingEnrollmentListResponse:
-    """Lista matriculas com filtros."""
-    service = TrainingService(db)
-    result = await service.list_enrollments(
-        training_id=training_id,
-        employee_id=employee_id,
-        page=page,
-        page_size=page_size,
-    )
-    return TrainingEnrollmentListResponse(
-        items=[TrainingEnrollmentResponse.model_validate(e) for e in result["items"]],
-        total=result["total"],
-        page=result["page"],
-        page_size=result["page_size"],
-    )
 
 
 @router.put(

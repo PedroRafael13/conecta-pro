@@ -1,0 +1,13 @@
+{
+    "tipo": "declaracao_menor",
+    "titulo": "DECLARAÇÃO DE NÃO EMPREGO DE MENOR",
+    "secoes": [
+        {"id": "dados_empresa", "titulo": "IDENTIFICAÇÃO DA EMPRESA", "campos": ["razao_social", "cnpj", "endereco", "representante_legal", "cpf_representante"]},
+        {"id": "declaracao", "titulo": "DECLARAÇÃO", "campos": ["nao_emprega_menor_18_trabalho_noturno", "nao_emprega_menor_16_qualquer_trabalho", "emprega_menor_aprendiz_14_a_16"]},
+        {"id": "assinatura", "titulo": "ASSINATURA", "campos": ["local", "data", "nome_representante", "cargo"]}
+    ],
+    "base_legal": "Lei 9.854/1999, Art. 7º inciso XXXIII da Constituição Federal",
+    "formato": "A4",
+    "fonte": "Helvetica",
+    "margem_cm": 2.0
+}

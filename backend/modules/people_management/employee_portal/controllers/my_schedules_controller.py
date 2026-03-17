@@ -16,6 +16,7 @@ from fastapi import status as http_status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
+from modules.people_management.employee_portal.auth import CurrentEmployeeId
 from modules.people_management.employee_portal.schemas.schedule import (
     MyScheduleResponse,
     MyShiftResponse,
@@ -36,24 +37,15 @@ router = APIRouter(tags=["Portal - Escalas"])
     description="Retorna a escala do funcionario para o mes/ano especificado.",
 )
 async def get_my_schedules(
+    employee_id: CurrentEmployeeId,
     month: int = Query(default=None, ge=1, le=12, description="Mes (1-12)"),
     year: int = Query(default=None, ge=2020, le=2030, description="Ano"),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
-    """Retorna escala do funcionario para o periodo.
-
-    Args:
-        month: Mes de referencia (default: mes atual).
-        year: Ano de referencia (default: ano atual).
-        db: Sessao do banco de dados.
-
-    Returns:
-        MyScheduleResponse com turnos e total de horas.
-    """
-    # TODO: Extrair employee_id do token JWT do portal
+    """Retorna escala do funcionario autenticado."""
     service = DocumentViewService(db)
     schedule = await service.get_my_schedules(
-        employee_id=None,  # type: ignore[arg-type]
+        employee_id=employee_id,
         month=month,
         year=year,
     )
@@ -67,20 +59,14 @@ async def get_my_schedules(
     description="Atalho para retornar a escala do mes corrente.",
 )
 async def get_current_month_schedule(
+    employee_id: CurrentEmployeeId,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
-    """Retorna escala do mes atual.
-
-    Args:
-        db: Sessao do banco de dados.
-
-    Returns:
-        MyScheduleResponse do mes corrente.
-    """
+    """Retorna escala do mes atual do funcionario autenticado."""
     now = datetime.utcnow()
     service = DocumentViewService(db)
     schedule = await service.get_my_schedules(
-        employee_id=None,  # type: ignore[arg-type]
+        employee_id=employee_id,
         month=now.month,
         year=now.year,
     )
@@ -94,20 +80,18 @@ async def get_current_month_schedule(
     description="Retorna dados do proximo turno agendado do funcionario.",
 )
 async def get_next_shift(
+    employee_id: CurrentEmployeeId,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
-    """Retorna o proximo turno agendado.
+    """Retorna o proximo turno agendado do funcionario autenticado."""
+    try:
+        service = DocumentViewService(db)
+        shift = await service.get_next_shift(employee_id=employee_id)
+        if shift:
+            return MyShiftResponse(**shift)
+    except Exception as e:
+        logger.warning(f"Erro ao buscar proximo turno: {e}")
 
-    Args:
-        db: Sessao do banco de dados.
-
-    Returns:
-        MyShiftResponse com dados do proximo turno.
-
-    Raises:
-        HTTPException: 404 se nenhum turno futuro encontrado.
-    """
-    # TODO: Implementar busca do proximo turno com employee_id do JWT
     raise HTTPException(
         status_code=http_status.HTTP_404_NOT_FOUND,
         detail="Nenhum turno futuro encontrado.",

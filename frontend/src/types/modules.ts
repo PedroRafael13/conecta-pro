@@ -7,7 +7,7 @@ export interface Module {
   description: string;
   icon: string; // Nome do ícone Lucide
   href: string;
-  color: 'cyan' | 'green' | 'orange' | 'purple' | 'red' | 'blue' | 'yellow' | 'pink';
+  color: 'cyan' | 'green' | 'orange' | 'purple' | 'red' | 'blue' | 'yellow' | 'pink' | 'amber' | 'teal';
   permissions: string[];
   subModules: SubModule[];
   badge?: string | number;

@@ -57,7 +57,7 @@ export default function PropostaDetalhePage() {
   const handleSubmitForm = async (data: ProposalFormData) => {
     await atualizarProposta.mutateAsync({
       id: proposalId,
-      data,
+      data: data as unknown as import('@/services/bidding/proposals.service').BiddingProposalUpdate,
     });
     setIsFormOpen(false);
   };
@@ -126,7 +126,7 @@ export default function PropostaDetalhePage() {
                 Proposta {(proposal as any).numero_proposta || proposal.id.substring(0, 8)}
               </h1>
               <p className="text-muted-foreground">
-                {proposal.razao_social}
+                {String(proposal.razao_social || '')}
               </p>
             </div>
           </div>
@@ -168,7 +168,7 @@ export default function PropostaDetalhePage() {
             <div>
               <p className="text-sm text-muted-foreground">Valor Global</p>
               <p className="text-xl font-bold">
-                {formatCurrency(proposal.valor_global)}
+                {formatCurrency(Number(proposal.valor_global) || 0)}
               </p>
             </div>
           </div>
@@ -249,11 +249,11 @@ export default function PropostaDetalhePage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-sm text-muted-foreground">CNPJ</p>
-                <p className="font-medium">{proposal.cnpj}</p>
+                <p className="font-medium">{String(proposal.cnpj || '')}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Razão Social</p>
-                <p className="font-medium">{proposal.razao_social}</p>
+                <p className="font-medium">{String(proposal.razao_social || '')}</p>
               </div>
             </div>
           </Card>

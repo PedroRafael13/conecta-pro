@@ -297,7 +297,7 @@ describe('useOccurrences', () => {
         isLoading: false,
         error: new Error('Detail error'),
         refetch: mockRefetch,
-      }));
+      }) as any);
 
       const { result } = renderHook(() => useOccurrenceDetail('123'), { wrapper });
 
@@ -309,9 +309,9 @@ describe('useOccurrences', () => {
       vi.mocked(useOrvalOccurrence).mockImplementationOnce(() => ({
         data: undefined,
         isLoading: false,
-        error: 'string error',
+        error: 'string error' as any,
         refetch: mockRefetch,
-      }));
+      }) as any);
 
       const { result } = renderHook(() => useOccurrenceDetail('123'), { wrapper });
 
@@ -351,7 +351,7 @@ describe('useOccurrences', () => {
         isLoading: false,
         error: new Error('Post occurrences error'),
         refetch: mockRefetch,
-      }));
+      }) as any);
 
       const { result } = renderHook(() => usePostOccurrences('post-1'), { wrapper });
 
@@ -364,9 +364,9 @@ describe('useOccurrences', () => {
       vi.mocked(useOrvalOccurrencesByPost).mockImplementationOnce(() => ({
         data: undefined,
         isLoading: false,
-        error: { code: 500 },
+        error: { code: 500 } as any,
         refetch: mockRefetch,
-      }));
+      }) as any);
 
       const { result } = renderHook(() => usePostOccurrences('post-1'), { wrapper });
 
@@ -380,7 +380,7 @@ describe('useOccurrences', () => {
         isLoading: false,
         error: null,
         refetch: mockRefetch,
-      }));
+      }) as any);
 
       const { result } = renderHook(() => usePostOccurrences('post-1'), { wrapper });
 
@@ -638,7 +638,7 @@ describe('useOccurrences', () => {
         isLoading: false,
         error: new Error('Erro ao carregar'),
         refetch: mockRefetch,
-      }));
+      }) as any);
 
       const { result } = renderHook(() => useOccurrences(), { wrapper });
 
@@ -649,9 +649,9 @@ describe('useOccurrences', () => {
       vi.mocked(useOrvalOccurrences).mockImplementationOnce(() => ({
         data: undefined,
         isLoading: false,
-        error: 'string de erro',
+        error: 'string de erro' as any,
         refetch: mockRefetch,
-      }));
+      }) as any);
 
       const { result } = renderHook(() => useOccurrences(), { wrapper });
 
@@ -666,7 +666,7 @@ describe('useOccurrences', () => {
         isLoading: false,
         error: new Error('Erro nas stats'),
         refetch: mockRefetch,
-      }));
+      }) as any);
 
       const { result } = renderHook(() => useOccurrenceStats(), { wrapper });
 
@@ -677,9 +677,9 @@ describe('useOccurrences', () => {
       vi.mocked(useGetOccurrenceStatsApiV1OperacionalOccurrencesStatsGet).mockImplementationOnce(() => ({
         data: undefined,
         isLoading: false,
-        error: { msg: 'erro object' },
+        error: { msg: 'erro object' } as any,
         refetch: mockRefetch,
-      }));
+      }) as any);
 
       const { result } = renderHook(() => useOccurrenceStats(), { wrapper });
 

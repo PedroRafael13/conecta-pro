@@ -10,7 +10,7 @@ export interface ModuleCardProps {
   description: string;
   icon: ElementType;
   href: string;
-  color: 'cyan' | 'green' | 'orange' | 'purple' | 'red' | 'blue' | 'yellow' | 'pink';
+  color: 'cyan' | 'green' | 'orange' | 'purple' | 'red' | 'blue' | 'yellow' | 'pink' | 'teal' | 'amber';
   badge?: string | number;
   disabled?: boolean;
 }
@@ -72,6 +72,20 @@ const colorMap = {
     glow: 'hover:shadow-pink-500/20',
     iconBg: 'bg-pink-500/20',
   },
+  teal: {
+    bg: 'bg-teal-500/10',
+    border: 'border-teal-500/30',
+    text: 'text-teal-400',
+    glow: 'hover:shadow-teal-500/20',
+    iconBg: 'bg-teal-500/20',
+  },
+  amber: {
+    bg: 'bg-amber-500/10',
+    border: 'border-amber-500/30',
+    text: 'text-amber-400',
+    glow: 'hover:shadow-amber-500/20',
+    iconBg: 'bg-amber-500/20',
+  },
 };
 
 export function ModuleCard({
@@ -84,7 +98,7 @@ export function ModuleCard({
   disabled,
 }: ModuleCardProps) {
   const router = useRouter();
-  const colors = colorMap[color];
+  const colors = colorMap[color] || colorMap.cyan;
 
   const handleClick = () => {
     if (!disabled) {

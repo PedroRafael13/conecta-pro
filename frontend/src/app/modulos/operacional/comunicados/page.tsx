@@ -679,7 +679,7 @@ export default function ComunicadosPage() {
         }}
         onConfirm={handlePublish}
         title="Publicar Comunicado"
-        message={`Tem certeza que deseja publicar o comunicado "${selectedAnnouncement?.title}"? Apos publicado, todos os destinatarios serao notificados.`}
+        message={`Tem certeza que deseja publicar o comunicado "${selectedAnnouncement?.title}"? Após publicado, todos os destinatários serão notificados.`}
         confirmText="Publicar"
         isLoading={isPublishing}
         variant="info"

@@ -5,6 +5,7 @@ Visão DP-específica do funcionário: dados pessoais, trabalhistas e financeiro
 """
 
 from datetime import date
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -14,7 +15,7 @@ class DPEmployeeRead(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-    id: str
+    id: str | UUID
     nome: str
     nome_social: str | None = None
     cpf: str | None = None

@@ -143,7 +143,7 @@ export default function ReembolsosOperacionalPage() {
       refreshStats();
     } catch {
       // Optimistic local update on failure
-      showToast('Funcionalidade em implementacao — aprovacao registrada localmente');
+      showToast('Funcionalidade em implementação — aprovação registrada localmente');
       refresh();
     }
   };
@@ -161,7 +161,7 @@ export default function ReembolsosOperacionalPage() {
       refresh();
       refreshStats();
     } catch {
-      showToast('Funcionalidade em implementacao — rejeicao registrada localmente');
+      showToast('Funcionalidade em implementação — rejeicao registrada localmente');
       refresh();
     }
     setShowRejectModal(false);
@@ -175,7 +175,7 @@ export default function ReembolsosOperacionalPage() {
       refresh();
       refreshStats();
     } catch {
-      showToast('Funcionalidade em implementacao — pagamento registrado localmente');
+      showToast('Funcionalidade em implementação — pagamento registrado localmente');
       refresh();
     }
   };
@@ -222,7 +222,7 @@ export default function ReembolsosOperacionalPage() {
                     Reembolsos
                   </h1>
                   <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                    {total} solicitacoes
+                    {total} solicitações
                   </p>
                 </div>
               </div>
@@ -234,7 +234,7 @@ export default function ReembolsosOperacionalPage() {
               </Button>
               <Button variant="primary" size="sm" onClick={handleCreate}>
                 <Plus className="w-4 h-4 mr-2" />
-                Nova Solicitacao
+                Nova Solicitação
               </Button>
             </div>
           </div>
@@ -435,7 +435,7 @@ export default function ReembolsosOperacionalPage() {
                   <thead className="bg-[hsl(var(--muted))]">
                     <tr>
                       <th className="px-4 py-3 text-left text-xs font-medium text-[hsl(var(--muted-foreground))] uppercase tracking-wider">
-                        Solicitacao
+                        Solicitação
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-[hsl(var(--muted-foreground))] uppercase tracking-wider">
                         Periodo
@@ -450,7 +450,7 @@ export default function ReembolsosOperacionalPage() {
                         Status
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-[hsl(var(--muted-foreground))] uppercase tracking-wider">
-                        Aprovacao
+                        Aprovação
                       </th>
                       <th className="px-4 py-3 text-right text-xs font-medium text-[hsl(var(--muted-foreground))] uppercase tracking-wider">
                         Acoes
@@ -587,17 +587,17 @@ export default function ReembolsosOperacionalPage() {
                 <div className="text-center py-12">
                   <Receipt className="w-12 h-12 text-[hsl(var(--muted-foreground))] mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-[hsl(var(--foreground))]">
-                    Nenhuma solicitacao encontrada
+                    Nenhuma solicitação encontrada
                   </h3>
                   <p className="text-[hsl(var(--muted-foreground))] mt-1 mb-4">
                     {searchTerm || Object.keys(filters).length > 0
                       ? 'Tente ajustar os filtros de busca'
-                      : 'Comece criando uma nova solicitacao de reembolso'}
+                      : 'Comece criando uma nova solicitação de reembolso'}
                   </p>
                   {!searchTerm && Object.keys(filters).length === 0 && (
                     <Button variant="primary" onClick={handleCreate}>
                       <Plus className="w-4 h-4 mr-2" />
-                      Criar Primeira Solicitacao
+                      Criar Primeira Solicitação
                     </Button>
                   )}
                 </div>
@@ -609,7 +609,7 @@ export default function ReembolsosOperacionalPage() {
               <div className="flex items-center justify-between mt-4">
                 <p className="text-sm text-[hsl(var(--muted-foreground))]">
                   Mostrando {(page - 1) * pageSize + 1} a{' '}
-                  {Math.min(page * pageSize, total)} de {total} solicitacoes
+                  {Math.min(page * pageSize, total)} de {total} solicitações
                 </p>
                 <div className="flex items-center gap-2">
                   <Button
@@ -711,11 +711,11 @@ export default function ReembolsosOperacionalPage() {
           setDeleteError(null);
         }}
         onConfirm={confirmDelete}
-        title="Excluir Solicitacao"
+        title="Excluir Solicitação"
         message={
           deleteError
             ? deleteError
-            : `Tem certeza que deseja excluir a solicitacao "${selectedRequest?.code}"? Esta acao nao pode ser desfeita.`
+            : `Tem certeza que deseja excluir a solicitação "${selectedRequest?.code}"? Esta ação não pode ser desfeita.`
         }
         confirmText="Excluir"
         cancelText="Cancelar"

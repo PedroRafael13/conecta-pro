@@ -591,3 +591,45 @@ class PayrollCalculationService:
                 },
             },
         )
+
+    # === Period delegation methods ===
+
+    async def list_periods(self, **kwargs):
+        """Lista períodos de folha via query direta."""
+        from sqlalchemy import text as sql_text
+
+        page = kwargs.get("page", 1) or 1
+        page_size = kwargs.get("page_size", 20) or 20
+        offset = (page - 1) * page_size
+
+        count_result = await self.db.execute(sql_text("SELECT COUNT(*) FROM hr_payroll_periods WHERE ativo = true"))
+        total = count_result.scalar() or 0
+
+        result = await self.db.execute(
+            sql_text(
+                "SELECT * FROM hr_payroll_periods WHERE ativo = true ORDER BY start_date DESC LIMIT :lim OFFSET :off"
+            ),
+            {"lim": page_size, "off": offset},
+        )
+        rows = result.mappings().all()
+        return rows, total
+
+    async def get_current_period(self, condominio_id=None):
+        """Busca período atual delegando ao repositório."""
+        return await self.period_repo.get_current_period(condominio_id)
+
+    async def create_period(self, data, created_by=None):
+        """Cria período delegando ao repositório."""
+        return await self.period_repo.create(data, created_by)
+
+    async def get_period(self, period_id, condominio_id=None):
+        """Busca período por ID."""
+        return await self.period_repo.get_by_id(period_id, condominio_id)
+
+    async def update_period(self, period_id, data, condominio_id=None):
+        """Atualiza período."""
+        return await self.period_repo.update(period_id, data, condominio_id)
+
+    async def delete_period(self, period_id):
+        """Remove período."""
+        return await self.period_repo.delete(period_id)

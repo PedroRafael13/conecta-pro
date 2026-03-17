@@ -1,0 +1,11 @@
+{
+    "tipo": "planilha_custos",
+    "titulo": "PLANILHA DE COMPOSIÇÃO DE CUSTOS E FORMAÇÃO DE PREÇOS",
+    "modulos": [
+        {"id": "remuneracao", "titulo": "Módulo 1 - Composição da Remuneração", "itens": ["salario_base", "adicional_periculosidade", "adicional_noturno", "adicional_insalubridade"]},
+        {"id": "encargos", "titulo": "Módulo 2 - Encargos e Benefícios", "itens": ["inss_patronal", "fgts", "terceiros", "ferias", "decimo_terceiro", "rescisao"]},
+        {"id": "beneficios", "titulo": "Módulo 3 - Benefícios Mensais", "itens": ["vale_transporte", "vale_alimentacao", "assistencia_medica", "seguro_vida", "uniforme_epi"]},
+        {"id": "custos_indiretos", "titulo": "Módulo 4 - Custos Indiretos", "itens": ["administracao", "equipamentos"]},
+        {"id": "bdi", "titulo": "Módulo 5 - BDI", "itens": ["administracao_central", "seguro_garantia", "risco", "despesas_financeiras", "lucro", "tributos"]}
+    ]
+}

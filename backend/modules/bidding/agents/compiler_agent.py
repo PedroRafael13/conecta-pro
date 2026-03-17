@@ -4,16 +4,20 @@ COMPILER Agent - Geracao de documentos de proposta
 Gera documentos para propostas de licitacao usando templates:
 carta proposta, planilha de custos, declaracoes, checklist.
 
-Status: DEVELOPMENT — gera conteudo estruturado pronto para renderizacao PDF.
+Inclui renderizacao real em PDF via reportlab (pdf_renderer).
+
+Status: DEVELOPMENT — gera conteudo estruturado + PDFs renderizados.
 """
 
 import logging
+import re
 from datetime import datetime
 from enum import StrEnum
 
 from pydantic import BaseModel, Field
 
 from modules.bidding.agents.base_agent import AgentConfig, AgentStatus, BaseAgent
+from modules.bidding.agents.pdf_renderer import render_pdf, save_pdf
 
 logger = logging.getLogger(__name__)
 
@@ -67,10 +71,14 @@ class DocumentoGerado(BaseModel):
     tipo: TipoDocumento
     titulo: str
     conteudo: str  # Texto do documento
-    formato: str = "txt"  # txt, html, docx
+    formato: str = "txt"  # txt, html, pdf
     variaveis_preenchidas: dict[str, str] = Field(default_factory=dict)
     revisao_necessaria: bool = True
     observacoes: list[str] = Field(default_factory=list)
+    # PDF rendering fields
+    pdf_gerado: bool = False
+    pdf_path: str = ""  # Caminho absoluto do PDF salvo
+    pdf_tamanho_bytes: int = 0
 
 
 class CompilerInput(BaseModel):
@@ -137,6 +145,11 @@ class CompilerResponse(BaseModel):
     erros: list[str] = Field(default_factory=list)
     compilado_em: datetime | None = None
     observacoes: list[str] = Field(default_factory=list)
+
+    # PDF rendering summary
+    pdfs_gerados: int = 0
+    pdfs_paths: list[str] = Field(default_factory=list)
+    pdf_diretorio: str = ""
 
 
 # ──────────────────────────────────────────────
@@ -425,7 +438,38 @@ class CompilerAgent(BaseAgent):
                 self.logger.error(f"Erro ao gerar {tipo.value}: {e}")
                 erros.append(f"{tipo.value}: {e}")
 
-        # Organizar por categoria
+        # ── Render PDFs ──
+        # Build a safe subdirectory name from the edital number
+        edital_slug = re.sub(r"[^\w\-]", "_", inp.numero_edital or "sem_edital").strip("_") or "sem_edital"
+        timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+        pdf_subdir = f"{edital_slug}_{timestamp}"
+
+        pdfs_paths: list[str] = []
+
+        for doc in documentos:
+            try:
+                pdf_bytes = render_pdf(
+                    document_content=doc.conteudo,
+                    document_type=doc.tipo.value,
+                    variaveis=doc.variaveis_preenchidas,
+                    pricing_data=pricing_data,
+                    titulo=doc.titulo,
+                )
+                filename = f"{doc.tipo.value}.pdf"
+                saved_path = save_pdf(pdf_bytes, filename, subdirectory=pdf_subdir)
+
+                doc.pdf_gerado = True
+                doc.pdf_path = saved_path
+                doc.pdf_tamanho_bytes = len(pdf_bytes)
+                doc.formato = "pdf"
+                pdfs_paths.append(saved_path)
+
+                self.logger.info(f"PDF renderizado: {doc.tipo.value} -> {saved_path} ({len(pdf_bytes)} bytes)")
+            except Exception as e:
+                self.logger.error(f"Erro ao renderizar PDF {doc.tipo.value}: {e}")
+                erros.append(f"pdf_{doc.tipo.value}: {e}")
+
+        # ── Organizar por categoria ──
         carta_proposta = None
         planilha_custos = None
         declaracoes = []
@@ -442,6 +486,8 @@ class CompilerAgent(BaseAgent):
             elif doc.tipo.value.startswith("declaracao_"):
                 declaracoes.append(doc_dict)
 
+        from modules.bidding.agents.pdf_renderer import PDF_OUTPUT_DIR
+
         response = CompilerResponse(
             carta_proposta=carta_proposta,
             planilha_custos=planilha_custos,
@@ -453,12 +499,18 @@ class CompilerAgent(BaseAgent):
             erros=erros,
             compilado_em=datetime.utcnow(),
             observacoes=[
-                "Documentos gerados em formato texto estruturado, prontos para renderizacao PDF.",
+                "Documentos gerados com renderizacao PDF via reportlab.",
                 "Revisao manual recomendada antes da submissao.",
+                f"PDFs salvos em: {PDF_OUTPUT_DIR / pdf_subdir}",
             ],
+            pdfs_gerados=len(pdfs_paths),
+            pdfs_paths=pdfs_paths,
+            pdf_diretorio=str(PDF_OUTPUT_DIR / pdf_subdir),
         )
 
-        self.logger.info(f"COMPILER: {len(documentos)} documentos gerados, {len(erros)} erros")
+        self.logger.info(
+            f"COMPILER: {len(documentos)} documentos gerados, {len(pdfs_paths)} PDFs renderizados, {len(erros)} erros"
+        )
 
         return response.model_dump(mode="json")
 

@@ -99,7 +99,7 @@ class TrainingCourse(Base, TimestampMixin):
         nullable=True,
     )
     category: Mapped[TrainingCategoryCourse] = mapped_column(
-        Enum(TrainingCategoryCourse),
+        Enum(TrainingCategoryCourse, values_callable=lambda x: [e.value for e in x]),
         nullable=False,
         default=TrainingCategoryCourse.OTHER,
     )
@@ -213,7 +213,7 @@ class Training(Base, TimestampMixin):
         nullable=True,
     )
     status: Mapped[TrainingStatus] = mapped_column(
-        Enum(TrainingStatus),
+        Enum(TrainingStatus, name="rh_trainingstatus", values_callable=lambda x: [e.value for e in x]),
         nullable=False,
         default=TrainingStatus.SCHEDULED,
     )
@@ -298,7 +298,7 @@ class TrainingEnrollment(Base, TimestampMixin):
         nullable=False,
     )
     status: Mapped[EnrollmentStatus] = mapped_column(
-        Enum(EnrollmentStatus),
+        Enum(EnrollmentStatus, values_callable=lambda x: [e.value for e in x]),
         nullable=False,
         default=EnrollmentStatus.ENROLLED,
     )
@@ -393,7 +393,12 @@ class TrainingCertificate(Base):
         nullable=True,
     )
     status: Mapped[CertificateStatus] = mapped_column(
-        Enum(CertificateStatus),
+        Enum(
+            CertificateStatus,
+            name="certificatestatus",
+            create_type=False,
+            values_callable=lambda enum: [e.value for e in enum],
+        ),
         nullable=False,
         default=CertificateStatus.VALID,
     )

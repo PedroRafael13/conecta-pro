@@ -6,11 +6,17 @@ from datetime import date
 from typing import Any
 
 from fastapi import APIRouter, Depends, Query
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 from core.logging import logger
+from modules.operacional.models.allocation import Allocation, AllocationStatus
+from modules.operacional.models.employee import Employee
+from modules.operacional.models.post import Post
+from modules.operacional.models.shift import Shift
+from modules.operacional.occurrences.models import Occurrence
 from modules.operacional.permissions import Permission, require_operacional_permission
 from modules.operacional.repositories.reports_repository import ReportsRepository
 from modules.operacional.schemas.reports import (
@@ -20,6 +26,8 @@ from modules.operacional.schemas.reports import (
 )
 
 router = APIRouter(prefix="/reports", tags=["Operations - Reports"])
+
+operacional_dashboard_router = APIRouter(prefix="/dashboard", tags=["Operations - Dashboard"])
 
 
 def _default_dates() -> tuple[date, date]:
@@ -34,7 +42,7 @@ def _default_dates() -> tuple[date, date]:
     dependencies=[require_operacional_permission(Permission.REPORTS_VIEW)],
 )
 async def coverage_report(
-    current_user: CurrentActiveUser,
+    _user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
     start_date: date | None = Query(None),
     end_date: date | None = Query(None),
@@ -76,7 +84,7 @@ async def coverage_report(
     dependencies=[require_operacional_permission(Permission.REPORTS_VIEW)],
 )
 async def hours_report(
-    current_user: CurrentActiveUser,
+    _user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
     start_date: date | None = Query(None),
     end_date: date | None = Query(None),
@@ -111,12 +119,28 @@ async def hours_report(
 
 
 @router.get(
+    "/overtime",
+    response_model=HoursReportResponse,
+    dependencies=[require_operacional_permission(Permission.REPORTS_VIEW)],
+)
+async def overtime_report(
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+    start_date: date | None = Query(None),
+    end_date: date | None = Query(None),
+    employee_id: str | None = Query(None),
+) -> HoursReportResponse:
+    """Relatorio de horas extras (alias para /hours)."""
+    return await hours_report(current_user, db, start_date, end_date, employee_id)
+
+
+@router.get(
     "/costs",
     response_model=CostsReportResponse,
     dependencies=[require_operacional_permission(Permission.REPORTS_VIEW)],
 )
 async def costs_report(
-    current_user: CurrentActiveUser,
+    _user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
     start_date: date | None = Query(None),
     end_date: date | None = Query(None),
@@ -146,3 +170,61 @@ async def costs_report(
         total_cost=round(total_cost, 2),
         items=items,
     )
+
+
+# =============================================================================
+# DASHBOARD OPERACIONAL
+# =============================================================================
+
+
+@operacional_dashboard_router.get(
+    "/",
+    dependencies=[require_operacional_permission(Permission.REPORTS_VIEW)],
+)
+async def operacional_dashboard(
+    _user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    """Dashboard operacional com KPIs consolidados."""
+    today = date.today()
+
+    total_postos = (await db.execute(select(func.count(Post.id)))).scalar() or 0
+    postos_ativos = (await db.execute(select(func.count(Post.id)).where(Post.status == "active"))).scalar() or 0
+
+    total_colaboradores = (
+        await db.execute(select(func.count(Employee.id)).where(Employee.is_active.is_(True)))
+    ).scalar() or 0
+
+    alocacoes_ativas = (
+        await db.execute(
+            select(func.count(Allocation.id)).where(
+                Allocation.status == AllocationStatus.ACTIVE.value,
+                Allocation.is_active.is_(True),
+            )
+        )
+    ).scalar() or 0
+
+    turnos_hoje = (
+        await db.execute(select(func.count(Shift.id)).where(func.date(Shift.shift_date) == today))
+    ).scalar() or 0
+
+    ocorrencias_abertas = (
+        await db.execute(select(func.count(Occurrence.id)).where(Occurrence.status == "aberta"))
+    ).scalar() or 0
+
+    required_headcount = (
+        await db.execute(select(func.coalesce(func.sum(Post.required_headcount), 0)).where(Post.status == "active"))
+    ).scalar() or 0
+
+    cobertura = round(alocacoes_ativas / required_headcount * 100, 1) if required_headcount > 0 else 0.0
+
+    return {
+        "total_postos": total_postos,
+        "postos_ativos": postos_ativos,
+        "total_colaboradores": total_colaboradores,
+        "alocacoes_ativas": alocacoes_ativas,
+        "turnos_hoje": turnos_hoje,
+        "ocorrencias_abertas": ocorrencias_abertas,
+        "cobertura_atual": cobertura,
+        "data": today.isoformat(),
+    }

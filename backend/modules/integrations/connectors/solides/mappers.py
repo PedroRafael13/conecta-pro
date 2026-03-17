@@ -65,7 +65,7 @@ def solides_colaborador_to_employee(
     # Mapear sexo
     sexo = solides_data.get("sexo")
     gender_map = {"M": "masculino", "F": "feminino", "O": "outro"}
-    gender = gender_map.get(sexo) if sexo else None
+    gender_map.get(sexo) if sexo else None
 
     # Extrair nome do cargo e departamento
     cargo_nome = None
@@ -81,61 +81,60 @@ def solides_colaborador_to_employee(
         departamento_nome = solides_data["departamento_nome"]
 
     return {
-        "condominio_id": condominio_id,
-        # Identificação
-        "name": solides_data.get("nome", ""),
+        # Identificacao (nomes reais da tabela employees)
+        "nome": solides_data.get("nome", ""),
         "email": solides_data.get("email"),
         "cpf": _clean_document(solides_data.get("cpf")),
         "rg": solides_data.get("rg"),
-        "birth_date": _parse_date(solides_data.get("data_nascimento")),
-        "gender": gender,
-        "marital_status": _map_marital_status(solides_data.get("estado_civil")),
+        "data_nascimento": _parse_date(solides_data.get("data_nascimento")),
+        "sexo": solides_data.get("sexo"),
+        "estado_civil": _map_marital_status(solides_data.get("estado_civil")),
         # Contato
-        "phone": solides_data.get("telefone"),
-        "mobile": solides_data.get("celular"),
-        # Endereço
-        "address_street": endereco.get("logradouro"),
-        "address_number": endereco.get("numero"),
-        "address_complement": endereco.get("complemento"),
-        "address_neighborhood": endereco.get("bairro"),
-        "address_city": endereco.get("cidade"),
-        "address_state": endereco.get("estado"),
-        "address_zipcode": _clean_cep(endereco.get("cep")),
+        "telefone": solides_data.get("telefone"),
+        "celular": solides_data.get("celular"),
+        # Endereco
+        "logradouro": endereco.get("logradouro"),
+        "numero": endereco.get("numero"),
+        "complemento": endereco.get("complemento"),
+        "bairro": endereco.get("bairro"),
+        "cidade": endereco.get("cidade"),
+        "uf": endereco.get("estado"),
+        "cep": _clean_cep(endereco.get("cep")),
         # Profissional
-        "registration_number": solides_data.get("matricula"),
-        "position_name": cargo_nome,
-        "department_name": departamento_nome,
-        "manager_name": solides_data.get("gestor_nome"),
+        "matricula": solides_data.get("matricula"),
+        "cargo": cargo_nome,
+        "departamento": departamento_nome,
+        "gestor_nome": solides_data.get("gestor_nome"),
         # Contrato
-        "hire_date": _parse_date(solides_data.get("data_admissao")),
-        "termination_date": _parse_date(solides_data.get("data_demissao")),
-        "contract_type": contract_type,
-        "work_regime": solides_data.get("regime_trabalho"),
-        "work_schedule": solides_data.get("jornada_trabalho"),
-        "salary": solides_data.get("salario"),
+        "data_admissao": _parse_date(solides_data.get("data_admissao")),
+        "data_demissao": _parse_date(solides_data.get("data_demissao")),
+        "tipo_contrato": contract_type,
+        "regime_trabalho": solides_data.get("regime_trabalho"),
+        "jornada_trabalho": solides_data.get("jornada_trabalho"),
+        "salario_base": solides_data.get("salario"),
         # Dados DP
-        "ctps_number": solides_data.get("ctps_numero"),
-        "ctps_series": solides_data.get("ctps_serie"),
-        "ctps_state": solides_data.get("ctps_uf"),
-        "pis_number": solides_data.get("pis"),
-        "voter_id": solides_data.get("titulo_eleitor"),
-        "military_certificate": solides_data.get("certificado_reservista"),
+        "ctps_numero": solides_data.get("ctps_numero"),
+        "ctps_serie": solides_data.get("ctps_serie"),
+        "ctps_uf": solides_data.get("ctps_uf"),
+        "pis": solides_data.get("pis"),
+        "titulo_eleitor": solides_data.get("titulo_eleitor"),
+        "certificado_reservista": solides_data.get("certificado_reservista"),
         # Dependentes
-        "dependents": solides_data.get("dependentes"),
+        "dependentes": solides_data.get("dependentes"),
         # Status
         "status": status,
         "is_active": situacao == "ativo",
         # Perfil comportamental
-        "behavioral_profile": {
+        "perfil_disc": {
             "disc": solides_data.get("perfil_disc"),
             "profiler": solides_data.get("perfil_profiler"),
         },
         # Metadados
-        "photo_url": solides_data.get("foto_url"),
+        "foto_url": solides_data.get("foto_url"),
         "solides_id": str(solides_data.get("id")) if solides_data.get("id") else None,
         "sync_source": "solides",
         "last_synced_at": datetime.utcnow(),
-        "extra_data": {
+        "dados_adicionais": {
             "solides_id": solides_data.get("id"),
             "cargo_id": solides_data.get("cargo_id"),
             "departamento_id": solides_data.get("departamento_id"),
@@ -149,13 +148,13 @@ def solides_colaborador_to_employee(
 
 def employee_to_solides_colaborador(employee_data: dict[str, Any]) -> dict[str, Any]:
     """
-    Mapeia dados de funcionário interno para criação/atualização no Sólides.
+    Mapeia dados de funcionario interno para criacao/atualizacao no Solides.
 
     Args:
-        employee_data: Dados do funcionário
+        employee_data: Dados do funcionario (campos da tabela employees)
 
     Returns:
-        Dict para API Sólides
+        Dict para API Solides
     """
     # Mapear tipo de contrato
     contract_map = {
@@ -166,69 +165,68 @@ def employee_to_solides_colaborador(employee_data: dict[str, Any]) -> dict[str, 
         "outsourced": "Terceirizado",
         "apprentice": "Jovem Aprendiz",
     }
-    tipo_contrato = contract_map.get(employee_data.get("contract_type", "clt"), "CLT")
-
-    # Mapear sexo
-    gender = employee_data.get("gender")
-    sexo_map = {"masculino": "M", "feminino": "F", "outro": "O"}
-    sexo = sexo_map.get(gender) if gender else None
+    tipo_contrato = contract_map.get(employee_data.get("tipo_contrato", "clt"), "CLT")
 
     # Mapear status
-    status = employee_data.get("status", "active")
+    status = employee_data.get("status", "ativo")
     situacao_map = {
         "active": "ativo",
+        "ativo": "ativo",
         "inactive": "inativo",
+        "inativo": "inativo",
         "on_leave": "afastado",
+        "afastado": "afastado",
         "terminated": "demitido",
+        "demitido": "demitido",
     }
     situacao = situacao_map.get(status, "ativo")
 
-    # Montar endereço
+    # Montar endereco
     endereco = None
-    if employee_data.get("address_street"):
+    if employee_data.get("logradouro"):
         endereco = {
-            "logradouro": employee_data.get("address_street"),
-            "numero": employee_data.get("address_number"),
-            "complemento": employee_data.get("address_complement"),
-            "bairro": employee_data.get("address_neighborhood"),
-            "cidade": employee_data.get("address_city"),
-            "estado": employee_data.get("address_state"),
-            "cep": employee_data.get("address_zipcode"),
+            "logradouro": employee_data.get("logradouro"),
+            "numero": employee_data.get("numero"),
+            "complemento": employee_data.get("complemento"),
+            "bairro": employee_data.get("bairro"),
+            "cidade": employee_data.get("cidade"),
+            "estado": employee_data.get("uf"),
+            "cep": employee_data.get("cep"),
         }
 
-    extra_data = employee_data.get("extra_data", {})
+    dados_adicionais = employee_data.get("dados_adicionais") or {}
 
     result = {
-        "nome": employee_data.get("name", ""),
+        "nome": employee_data.get("nome", ""),
         "email": employee_data.get("email"),
         "cpf": employee_data.get("cpf"),
         "rg": employee_data.get("rg"),
-        "data_nascimento": _format_date(employee_data.get("birth_date")),
-        "sexo": sexo,
-        "estado_civil": _reverse_map_marital_status(employee_data.get("marital_status")),
-        "telefone": employee_data.get("phone"),
-        "celular": employee_data.get("mobile"),
+        "data_nascimento": _format_date(employee_data.get("data_nascimento")),
+        "sexo": employee_data.get("sexo"),
+        "estado_civil": _reverse_map_marital_status(employee_data.get("estado_civil")),
+        "telefone": employee_data.get("telefone"),
+        "celular": employee_data.get("celular"),
         "endereco": endereco,
-        "matricula": employee_data.get("registration_number"),
-        "data_admissao": _format_date(employee_data.get("hire_date")),
-        "data_demissao": _format_date(employee_data.get("termination_date")),
+        "matricula": employee_data.get("matricula"),
+        "data_admissao": _format_date(employee_data.get("data_admissao")),
+        "data_demissao": _format_date(employee_data.get("data_demissao")),
         "tipo_contrato": tipo_contrato,
-        "regime_trabalho": employee_data.get("work_regime"),
-        "jornada_trabalho": employee_data.get("work_schedule"),
-        "salario": float(employee_data["salary"]) if employee_data.get("salary") else None,
+        "regime_trabalho": employee_data.get("regime_trabalho"),
+        "jornada_trabalho": employee_data.get("jornada_trabalho"),
+        "salario": float(employee_data["salario_base"]) if employee_data.get("salario_base") else None,
         "situacao": situacao,
         # Dados DP
-        "ctps_numero": employee_data.get("ctps_number"),
-        "ctps_serie": employee_data.get("ctps_series"),
-        "ctps_uf": employee_data.get("ctps_state"),
-        "pis": employee_data.get("pis_number"),
-        "titulo_eleitor": employee_data.get("voter_id"),
-        "certificado_reservista": employee_data.get("military_certificate"),
-        # IDs de referência
-        "cargo_id": extra_data.get("cargo_id"),
-        "departamento_id": extra_data.get("departamento_id"),
-        "unidade_id": extra_data.get("unidade_id"),
-        "gestor_id": extra_data.get("gestor_id"),
+        "ctps_numero": employee_data.get("ctps_numero"),
+        "ctps_serie": employee_data.get("ctps_serie"),
+        "ctps_uf": employee_data.get("ctps_uf"),
+        "pis": employee_data.get("pis"),
+        "titulo_eleitor": employee_data.get("titulo_eleitor"),
+        "certificado_reservista": employee_data.get("certificado_reservista"),
+        # IDs de referencia
+        "cargo_id": dados_adicionais.get("cargo_id"),
+        "departamento_id": dados_adicionais.get("departamento_id"),
+        "unidade_id": dados_adicionais.get("unidade_id"),
+        "gestor_id": dados_adicionais.get("gestor_id"),
     }
 
     # Remover campos None

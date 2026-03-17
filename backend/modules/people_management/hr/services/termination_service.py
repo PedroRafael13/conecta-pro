@@ -2,17 +2,21 @@
 Serviço de Rescisão — Departamento Pessoal.
 
 Gerencia o workflow de desligamento: criação do processo,
-cálculos rescisórios (férias, 13o, FGTS 40%) e conclusão.
+cálculos rescisórios com CLT real (Decimal) e conclusão.
 """
 
 import logging
 from datetime import date
+from decimal import Decimal
 from uuid import UUID, uuid4
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.operacional.models.employee import Employee
+from modules.people_management.common.utils.clt_calculator import (
+    calcular_rescisao,
+)
 from modules.people_management.hr.models.termination import (
     TerminationProcess,
     TerminationStatus,
@@ -102,7 +106,7 @@ class TerminationService:
         termination_type: TerminationType,
         last_working_day: date,
     ) -> dict:
-        """Calcula verbas rescisórias conforme CLT.
+        """Calcula verbas rescisórias conforme CLT com Decimal preciso.
 
         Args:
             employee_id: ID do funcionário.
@@ -117,75 +121,43 @@ class TerminationService:
         if not employee:
             raise ValueError(f"Funcionário {employee_id} não encontrado")
 
-        salario = float(employee.salario_base or 0)
+        salario_base = Decimal(str(employee.salario_base or 0))
         data_admissao = employee.data_admissao
-        salario_dia = salario / 30 if salario else 0
+
+        if not data_admissao:
+            data_admissao = last_working_day  # fallback
 
         # Meses trabalhados
-        if data_admissao:
-            delta = last_working_day - data_admissao
-            months_worked = max(1, delta.days // 30)
-        else:
-            months_worked = 1
+        delta = last_working_day - data_admissao
+        months_worked = max(1, delta.days // 30)
 
-        # Saldo de salário (dias do mês trabalhados)
+        # Mapear tipo de rescisão para clt_calculator
+        type_map = {
+            TerminationType.INVOLUNTARY: "involuntary",
+            TerminationType.VOLUNTARY: "voluntary",
+            TerminationType.JUST_CAUSE: "just_cause",
+            TerminationType.MUTUAL_AGREEMENT: "mutual_agreement",
+        }
+        tipo_str = type_map.get(termination_type, str(termination_type.value))
+
+        # Estimar saldo FGTS acumulado
+        saldo_fgts = salario_base * Decimal("0.08") * months_worked
+
+        # Férias vencidas (simplificado: 30 dias se > 12 meses)
+        ferias_vencidas_dias = 30 if months_worked > 12 else 0
+
+        # Dias trabalhados no mês da rescisão
         dias_trabalhados_mes = last_working_day.day
-        saldo_salario = salario_dia * dias_trabalhados_mes
 
-        # Aviso prévio indenizado (30 dias + 3 dias por ano trabalhado)
-        anos_trabalhados = months_worked // 12
-        aviso_previo = 0.0
-        if termination_type in (
-            TerminationType.INVOLUNTARY,
-            TerminationType.MUTUAL_AGREEMENT,
-        ):
-            dias_aviso = min(90, 30 + (anos_trabalhados * 3))
-            aviso_previo = salario_dia * dias_aviso
-            if termination_type == TerminationType.MUTUAL_AGREEMENT:
-                aviso_previo *= 0.5  # Acordo: 50% do aviso
-
-        # Férias proporcionais
-        meses_periodo = months_worked % 12 or 12
-        ferias_proporcionais = (salario / 12) * meses_periodo
-
-        # Férias vencidas (simplificado: se > 12 meses e não gozou)
-        ferias_vencidas = salario if months_worked > 12 else 0.0
-
-        # 1/3 constitucional
-        terco = (ferias_proporcionais + ferias_vencidas) / 3
-
-        # 13o proporcional
-        meses_13 = last_working_day.month
-        decimo_terceiro = (salario / 12) * meses_13
-
-        # FGTS do mês da rescisão
-        fgts_mes = saldo_salario * 0.08
-
-        # Multa de 40% do FGTS (estimativa sobre saldo acumulado)
-        fgts_acumulado_estimado = salario * 0.08 * months_worked
-        multa_fgts = 0.0
-        if termination_type == TerminationType.INVOLUNTARY:
-            multa_fgts = fgts_acumulado_estimado * 0.40
-        elif termination_type == TerminationType.MUTUAL_AGREEMENT:
-            multa_fgts = fgts_acumulado_estimado * 0.20
-
-        # Justa causa: perde férias proporcionais, 13o, aviso e multa FGTS
-        if termination_type == TerminationType.JUST_CAUSE:
-            aviso_previo = 0.0
-            ferias_proporcionais = 0.0
-            terco = ferias_vencidas / 3 if ferias_vencidas else 0.0
-            decimo_terceiro = 0.0
-            multa_fgts = 0.0
-
-        total_proventos = (
-            saldo_salario
-            + aviso_previo
-            + ferias_vencidas
-            + ferias_proporcionais
-            + terco
-            + decimo_terceiro
-            + fgts_mes
-            + multa_fgts
+        # Usar clt_calculator para cálculo completo
+        calc = calcular_rescisao(
+            salario_base=salario_base,
+            tipo_rescisao=tipo_str,
+            data_admissao=data_admissao,
+            data_demissao=last_working_day,
+            saldo_fgts=saldo_fgts,
+            ferias_vencidas_dias=ferias_vencidas_dias,
+            dias_trabalhados_mes=dias_trabalhados_mes,
         )
 
         return {
@@ -194,17 +166,19 @@ class TerminationService:
             "termination_type": termination_type,
             "last_working_day": last_working_day,
             "months_worked": months_worked,
-            "saldo_salario": round(saldo_salario, 2),
-            "aviso_previo_indenizado": round(aviso_previo, 2),
-            "ferias_vencidas": round(ferias_vencidas, 2),
-            "ferias_proporcionais": round(ferias_proporcionais, 2),
-            "terco_constitucional": round(terco, 2),
-            "decimo_terceiro_proporcional": round(decimo_terceiro, 2),
-            "fgts_mes_rescisao": round(fgts_mes, 2),
-            "multa_fgts_40": round(multa_fgts, 2),
-            "total_proventos": round(total_proventos, 2),
-            "total_descontos": 0.0,
-            "total_liquido": round(total_proventos, 2),
+            "saldo_salario": float(calc["saldo_salario"]),
+            "aviso_previo_indenizado": float(calc["aviso_previo_indenizado"]),
+            "aviso_previo_dias": calc["aviso_previo_dias"],
+            "ferias_vencidas": float(calc["ferias_vencidas"]),
+            "ferias_proporcionais": float(calc["ferias_proporcionais"]),
+            "terco_constitucional": float(calc["terco_ferias_vencidas"] + calc["terco_ferias_proporcionais"]),
+            "decimo_terceiro_proporcional": float(calc["decimo_terceiro_proporcional"]),
+            "multa_fgts_40": float(calc["multa_fgts"]),
+            "total_proventos": float(calc["total_bruto"]),
+            "inss": float(calc["inss"]),
+            "irrf": float(calc["irrf"]),
+            "total_descontos": float(calc["total_descontos"]),
+            "total_liquido": float(calc["total_liquido"]),
         }
 
     async def complete_termination(

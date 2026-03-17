@@ -1,11 +1,12 @@
 import { Module, ModuleCategory } from '@/types/modules';
 
 // Definicao de todos os modulos do sistema — 9 modulos organizados
-// Reorganizacao visual (frontend only) — backend continua com 35 modulos
+// Reorganizacao visual (frontend only) — backend continua com modulos originais
+// Sessao 23: Gestao de Pessoas com 5 cards separados (DP, RH, GED, Operacoes, Portal)
 export const modules: Module[] = [
-  // ═══════════════════════════════════════════════════════════════════
+  // =================================================================
   // 1. COMERCIAL (antigos: CRM + Servicos)
-  // ═══════════════════════════════════════════════════════════════════
+  // =================================================================
   {
     id: 'comercial',
     title: 'Comercial',
@@ -29,7 +30,7 @@ export const modules: Module[] = [
       { id: 'editais', title: 'Editais', href: '/modulos/licitacoes/editais', icon: 'FileSearch', permissions: ['bidding:tenders:read'], group: 'Licitacoes' },
       { id: 'propostas-licitacao', title: 'Propostas', href: '/modulos/licitacoes/propostas', icon: 'FileCheck', permissions: ['bidding:proposals:read'], group: 'Licitacoes' },
       { id: 'contratos-licitacao', title: 'Contratos Publicos', href: '/modulos/licitacoes/contratos', icon: 'FileSignature', permissions: ['bidding:contracts:read'], group: 'Licitacoes' },
-      { id: 'certidoes-licitacao', title: 'Certidoes', href: '/modulos/licitacoes/certidoes', icon: 'Award', permissions: ['bidding:certificates:read'], group: 'Licitacoes' },
+      { id: 'disputas-licitacao', title: 'Disputas', href: '/modulos/licitacoes/disputas', icon: 'Swords', permissions: ['bidding:tenders:read'], group: 'Licitacoes' },
       { id: 'documentos-licitacao', title: 'Documentos', href: '/modulos/licitacoes/documentos', icon: 'FolderOpen', permissions: ['bidding:documents:read'], group: 'Licitacoes' },
       { id: 'ia-licitacoes', title: 'IA Hub', href: '/modulos/licitacoes/ia', icon: 'Bot', permissions: ['bidding:tenders:read'], group: 'Licitacoes' },
       // --- Servicos ---
@@ -38,22 +39,103 @@ export const modules: Module[] = [
     ],
   },
 
-  // ═══════════════════════════════════════════════════════════════════
-  // 2. OPERACOES (antigos: Operacional + Campo)
-  // ═══════════════════════════════════════════════════════════════════
+  // =================================================================
+  // 2. DEPARTAMENTO PESSOAL (DP) — Card separado dentro de Gestao de Pessoas
+  // =================================================================
+  {
+    id: 'dp',
+    title: 'Departamento Pessoal',
+    description: 'Folha, admissões, demissões, férias e benefícios',
+    icon: 'Users',
+    href: '/modulos/dp',
+    color: 'orange',
+    permissions: ['operacional:read'],
+    enabled: true,
+    subModules: [
+      { id: 'dp-colaboradores', title: 'Colaboradores', href: '/modulos/operacional/colaboradores', icon: 'UserCheck', permissions: ['operacional:colaboradores'] },
+      { id: 'dp-admissao', title: 'Admissão', href: '/modulos/dp/admissao', icon: 'UserPlus', permissions: ['operacional:read'] },
+      { id: 'dp-rescisao', title: 'Rescisão', href: '/modulos/dp/rescisao', icon: 'UserMinus', permissions: ['operacional:read'] },
+      { id: 'dp-contratos', title: 'Contratos', href: '/modulos/dp/contratos', icon: 'FileSignature', permissions: ['operacional:read'] },
+      { id: 'dp-folha', title: 'Folha Salarial', href: '/modulos/dp/folha', icon: 'DollarSign', permissions: ['operacional:read'] },
+      { id: 'dp-ponto', title: 'Ponto Eletrônico', href: '/modulos/dp/ponto', icon: 'Clock', permissions: ['operacional:read'] },
+      { id: 'dp-ferias', title: 'Férias', href: '/modulos/dp/ferias', icon: 'Plane', permissions: ['operacional:read'] },
+      { id: 'dp-beneficios', title: 'Benefícios', href: '/modulos/dp/beneficios', icon: 'Gift', permissions: ['operacional:read'] },
+      { id: 'dp-licencas', title: 'Licenças', href: '/modulos/dp/licencas', icon: 'FileText', permissions: ['operacional:read'] },
+      { id: 'dp-reembolsos', title: 'Reembolsos', href: '/modulos/reembolso', icon: 'Receipt', permissions: ['operacional:read'] },
+      { id: 'dp-esocial', title: 'eSocial', href: '/modulos/dp/esocial', icon: 'Database', permissions: ['operacional:read'] },
+      { id: 'dp-documentos', title: 'Documentos DP', href: '/modulos/dp/documentos', icon: 'FolderOpen', permissions: ['operacional:read'] },
+    ],
+  },
+
+  // =================================================================
+  // 3. RECURSOS HUMANOS (RH) — Card separado dentro de Gestao de Pessoas
+  // =================================================================
+  {
+    id: 'rh',
+    title: 'Recursos Humanos',
+    description: 'Recrutamento, treinamentos, avaliacoes e desenvolvimento',
+    icon: 'Users',
+    href: '/modulos/rh',
+    color: 'purple',
+    permissions: ['operacional:read'],
+    enabled: true,
+    subModules: [
+      { id: 'rh-vagas', title: 'Vagas', href: '/modulos/recrutamento/vagas', icon: 'Briefcase', permissions: ['operacional:read'], group: 'Recrutamento' },
+      { id: 'rh-candidatos', title: 'Candidatos', href: '/modulos/recrutamento/candidatos', icon: 'Users', permissions: ['operacional:read'], group: 'Recrutamento' },
+      { id: 'rh-candidaturas', title: 'Candidaturas', href: '/modulos/recrutamento/candidaturas', icon: 'FileText', permissions: ['operacional:read'], group: 'Recrutamento' },
+      { id: 'rh-entrevistas', title: 'Entrevistas', href: '/modulos/recrutamento/entrevistas', icon: 'Calendar', permissions: ['operacional:read'], group: 'Recrutamento' },
+      { id: 'rh-cursos', title: 'Cursos', href: '/modulos/rh/cursos', icon: 'BookOpen', permissions: ['operacional:read'], group: 'Desenvolvimento' },
+      { id: 'rh-treinamentos', title: 'Treinamentos', href: '/modulos/rh/treinamentos', icon: 'GraduationCap', permissions: ['operacional:read'], group: 'Desenvolvimento' },
+      { id: 'rh-certificados', title: 'Certificados', href: '/modulos/rh/certificados', icon: 'Award', permissions: ['operacional:read'], group: 'Desenvolvimento' },
+      { id: 'rh-avaliacoes', title: 'Avaliacoes 360', href: '/modulos/rh/avaliacoes', icon: 'Star', permissions: ['operacional:read'], group: 'Avaliacao' },
+      { id: 'rh-carreira', title: 'Plano de Carreira', href: '/modulos/rh/carreira', icon: 'TrendingUp', permissions: ['operacional:read'], group: 'Avaliacao' },
+      { id: 'rh-clima', title: 'Clima Organizacional', href: '/modulos/rh/clima', icon: 'Heart', permissions: ['operacional:read'], group: 'Avaliacao' },
+      { id: 'rh-turnover', title: 'Previsao Turnover', href: '/modulos/rh/turnover', icon: 'TrendingDown', permissions: ['operacional:read'], group: 'Avaliacao' },
+      { id: 'rh-onboarding', title: 'Onboarding', href: '/modulos/rh/onboarding', icon: 'UserPlus', permissions: ['operacional:read'] },
+      { id: 'rh-dashboard', title: 'Dashboard RH', href: '/modulos/rh/dashboard', icon: 'LayoutDashboard', permissions: ['operacional:read'] },
+      { id: 'rh-ia', title: 'IA de Pessoas', href: '/modulos/rh/ia', icon: 'Bot', permissions: ['operacional:read'] },
+    ],
+  },
+
+  // =================================================================
+  // 4. GED - KITS DOCUMENTAIS — Card separado dentro de Gestao de Pessoas
+  // =================================================================
+  {
+    id: 'ged',
+    title: 'GED - Kits Documentais',
+    description: 'Gestao eletronica de documentos e kits para clientes',
+    icon: 'FolderOpen',
+    href: '/modulos/gestao-pessoas/ged',
+    color: 'green',
+    permissions: ['ged:read'],
+    enabled: true,
+    subModules: [
+      { id: 'ged-dashboard', title: 'Dashboard GED', href: '/modulos/gestao-pessoas/ged', icon: 'LayoutDashboard', permissions: ['ged:read'] },
+      { id: 'ged-clientes', title: 'Clientes / Condominios', href: '/modulos/gestao-pessoas/ged/clientes', icon: 'Building2', permissions: ['ged:read'] },
+      { id: 'ged-kits', title: 'Kits Documentais', href: '/modulos/gestao-pessoas/ged/kits', icon: 'Package', permissions: ['ged:kits'] },
+      { id: 'ged-documentos', title: 'Documentos', href: '/modulos/gestao-pessoas/ged/documentos', icon: 'FileText', permissions: ['ged:read'] },
+      { id: 'ged-certidoes', title: 'Certidoes da Empresa', href: '/modulos/gestao-pessoas/ged/certidoes', icon: 'Award', permissions: ['ged:read'] },
+      { id: 'ged-envios', title: 'Envios', href: '/modulos/gestao-pessoas/ged/envios', icon: 'Send', permissions: ['ged:read'] },
+      { id: 'ged-relatorios', title: 'Relatorios', href: '/modulos/gestao-pessoas/ged/relatorios', icon: 'BarChart3', permissions: ['ged:read'] },
+      { id: 'ged-configuracoes', title: 'Configuracoes GED', href: '/modulos/gestao-pessoas/ged/configuracoes', icon: 'Settings', permissions: ['ged:admin'] },
+    ],
+  },
+
+  // =================================================================
+  // 5. OPERACOES — Card separado dentro de Gestao de Pessoas
+  // =================================================================
   {
     id: 'operacoes',
     title: 'Operacoes',
     description: 'Postos, escalas, campo e inteligencia operacional',
     icon: 'Shield',
     href: '/modulos/operacional',
-    color: 'green',
+    color: 'cyan',
     permissions: ['operacional:read'],
     enabled: true,
     subModules: [
       // --- Postos e Escalas ---
       { id: 'postos', title: 'Postos', href: '/modulos/operacional/postos', icon: 'MapPin', permissions: ['operacional:postos'] },
-      // Colaboradores movido para DP — link mantido por compatibilidade
       { id: 'escalas', title: 'Escalas', href: '/modulos/operacional/escalas', icon: 'CalendarDays', permissions: ['operacional:escalas'] },
       { id: 'escalas-visual', title: 'Editor Visual', href: '/modulos/operacional/escalas/visual', icon: 'CalendarDays', permissions: ['operacional:escalas'] },
       { id: 'alocacoes', title: 'Alocacoes', href: '/modulos/operacional/alocacoes', icon: 'Users', permissions: ['operacional:alocacoes'] },
@@ -80,90 +162,100 @@ export const modules: Module[] = [
       // --- IA Operacional ---
       { id: 'ai-command-center', title: 'Central IA', href: '/modulos/operacional/ai-command-center', icon: 'Zap', permissions: ['operacional:read'] },
       { id: 'agentes-ia', title: 'Agentes IA', href: '/modulos/operacional/agentes', icon: 'Bot', permissions: ['operacional:read'] },
-      // Ferias e Reembolsos movidos para DP
     ],
   },
 
-  // ═══════════════════════════════════════════════════════════════════
-  // 3. DEPARTAMENTO PESSOAL (DP)
-  // ═══════════════════════════════════════════════════════════════════
+  // =================================================================
+  // 6. SAUDE E SEGURANCA DO TRABALHO (SST) — Card separado dentro de Gestao de Pessoas
+  // =================================================================
   {
-    id: 'dp',
-    title: 'Depto. Pessoal',
-    description: 'Admissao, folha, ponto, ferias, disciplinar e beneficios',
-    icon: 'UserCog',
-    href: '/modulos/dp',
-    color: 'purple',
+    id: 'sst',
+    title: 'Saude Ocupacional',
+    description: 'PCMSO, PPRA/PGR, EPIs, Afastamentos, CAT e CCT 2026',
+    icon: 'HeartPulse',
+    href: '/modulos/saude-ocupacional',
+    color: 'red',
     permissions: ['operacional:read'],
     enabled: true,
     subModules: [
-      // --- Cadastro e Admissao ---
-      { id: 'dp-colaboradores', title: 'Colaboradores', href: '/modulos/operacional/colaboradores', icon: 'UserCheck', permissions: ['operacional:colaboradores'], group: 'Cadastro' },
-      { id: 'dp-admissao', title: 'Admissao', href: '/modulos/dp/admissao', icon: 'UserPlus', permissions: ['operacional:read'], group: 'Cadastro' },
-      { id: 'dp-rescisao', title: 'Rescisao', href: '/modulos/dp/rescisao', icon: 'UserMinus', permissions: ['operacional:read'], group: 'Cadastro' },
-      { id: 'dp-contratos', title: 'Contratos', href: '/modulos/dp/contratos', icon: 'FileSignature', permissions: ['operacional:read'], group: 'Cadastro' },
-      // --- Ponto e Jornada ---
-      { id: 'dp-ponto', title: 'Ponto Eletronico', href: '/modulos/dp/ponto', icon: 'Clock', permissions: ['operacional:read'], group: 'Ponto e Jornada' },
-      { id: 'dp-escalas', title: 'Escalas', href: '/modulos/operacional/escalas', icon: 'CalendarDays', permissions: ['operacional:escalas'], group: 'Ponto e Jornada' },
-      { id: 'dp-banco-horas', title: 'Banco de Horas', href: '/modulos/operacional/banco-horas', icon: 'Clock', permissions: ['operacional:read'], group: 'Ponto e Jornada' },
-      // --- Remuneracao ---
-      { id: 'dp-folha', title: 'Folha Salarial', href: '/modulos/dp/folha', icon: 'DollarSign', permissions: ['operacional:read'], group: 'Remuneracao' },
-      { id: 'dp-beneficios', title: 'Beneficios', href: '/modulos/dp/beneficios', icon: 'Gift', permissions: ['operacional:read'], group: 'Remuneracao' },
-      { id: 'dp-reembolsos', title: 'Reembolsos', href: '/modulos/reembolso', icon: 'Receipt', permissions: ['operacional:read'], group: 'Remuneracao' },
-      // --- Ferias e Afastamentos ---
-      { id: 'dp-ferias', title: 'Ferias', href: '/modulos/dp/ferias', icon: 'Plane', permissions: ['operacional:read'], group: 'Ferias e Afastamentos' },
-      { id: 'dp-licencas', title: 'Licencas', href: '/modulos/dp/licencas', icon: 'FileText', permissions: ['operacional:read'], group: 'Ferias e Afastamentos' },
-      // --- Disciplinar ---
-      { id: 'dp-ocorrencias', title: 'Ocorrencias', href: '/modulos/operacional/ocorrencias', icon: 'AlertTriangle', permissions: ['operacional:ocorrencias'], group: 'Disciplinar' },
-      { id: 'dp-advertencias', title: 'Advertencias', href: '/modulos/operacional/disciplinar', icon: 'FileText', permissions: ['operacional:disciplinar'], group: 'Disciplinar' },
-      // --- Saude e Seguranca ---
-      { id: 'dp-exames', title: 'Exames (PCMSO)', href: '/modulos/saude-ocupacional/exames', icon: 'Stethoscope', permissions: ['operacional:read'], group: 'Saude e Seguranca' },
-      { id: 'dp-epi', title: 'EPIs (NR-6)', href: '/modulos/saude-ocupacional/epi', icon: 'HardHat', permissions: ['operacional:read'], group: 'Saude e Seguranca' },
-      { id: 'dp-riscos', title: 'Riscos (PPRA)', href: '/modulos/saude-ocupacional/riscos', icon: 'AlertTriangle', permissions: ['operacional:read'], group: 'Saude e Seguranca' },
-      // --- Obrigacoes ---
-      { id: 'dp-esocial', title: 'eSocial', href: '/modulos/dp/esocial', icon: 'Database', permissions: ['operacional:read'], group: 'Obrigacoes' },
-      { id: 'dp-documentos', title: 'Documentos', href: '/modulos/dp/documentos', icon: 'FolderOpen', permissions: ['operacional:read'], group: 'Obrigacoes' },
+      { id: 'sst-dashboard', title: 'Dashboard SST', href: '/modulos/saude-ocupacional', icon: 'LayoutDashboard', permissions: ['operacional:read'] },
+      { id: 'sst-exames', title: 'Exames / ASOs', href: '/modulos/saude-ocupacional/exames', icon: 'Stethoscope', permissions: ['operacional:read'] },
+      { id: 'sst-epis', title: 'EPIs (NR-6)', href: '/modulos/saude-ocupacional/epi', icon: 'HardHat', permissions: ['operacional:read'] },
+      { id: 'sst-riscos', title: 'Riscos (PPRA/PGR)', href: '/modulos/saude-ocupacional/riscos', icon: 'AlertTriangle', permissions: ['operacional:read'] },
+      { id: 'sst-afastamentos', title: 'Afastamentos', href: '/modulos/saude-ocupacional/afastamentos', icon: 'UserMinus', permissions: ['operacional:read'] },
+      { id: 'sst-cat', title: 'CAT', href: '/modulos/saude-ocupacional/cat', icon: 'FileWarning', permissions: ['operacional:read'] },
     ],
   },
 
-  // ═══════════════════════════════════════════════════════════════════
-  // 4. RECURSOS HUMANOS (RH)
-  // ═══════════════════════════════════════════════════════════════════
+  // =================================================================
+  // 7. PONTO ELETRONICO — Card separado dentro de Gestao de Pessoas
+  // =================================================================
   {
-    id: 'rh',
-    title: 'Recursos Humanos',
-    description: 'Recrutamento, treinamento, avaliacao, clima e carreira',
-    icon: 'GraduationCap',
-    href: '/modulos/rh',
-    color: 'pink',
+    id: 'ponto',
+    title: 'Ponto Eletronico',
+    description: 'Batida facial, geolocalizacao, offline e justificativas',
+    icon: 'Clock',
+    href: '/modulos/gestao-pessoas/ponto',
+    color: 'blue',
     permissions: ['operacional:read'],
     enabled: true,
     subModules: [
-      // --- Recrutamento ---
-      { id: 'rh-vagas', title: 'Vagas', href: '/modulos/recrutamento/vagas', icon: 'Briefcase', permissions: ['operacional:read'], group: 'Recrutamento' },
-      { id: 'rh-candidatos', title: 'Candidatos', href: '/modulos/recrutamento/candidatos', icon: 'Users', permissions: ['operacional:read'], group: 'Recrutamento' },
-      { id: 'rh-candidaturas', title: 'Candidaturas', href: '/modulos/recrutamento/candidaturas', icon: 'FileText', permissions: ['operacional:read'], group: 'Recrutamento' },
-      { id: 'rh-entrevistas', title: 'Entrevistas', href: '/modulos/recrutamento/entrevistas', icon: 'Calendar', permissions: ['operacional:read'], group: 'Recrutamento' },
-      // --- Treinamento ---
-      { id: 'rh-cursos', title: 'Cursos', href: '/modulos/rh/cursos', icon: 'BookOpen', permissions: ['operacional:read'], group: 'Treinamento' },
-      { id: 'rh-treinamentos', title: 'Treinamentos', href: '/modulos/rh/treinamentos', icon: 'GraduationCap', permissions: ['operacional:read'], group: 'Treinamento' },
-      { id: 'rh-certificados', title: 'Certificados', href: '/modulos/rh/certificados', icon: 'Award', permissions: ['operacional:read'], group: 'Treinamento' },
-      // --- Desempenho ---
-      { id: 'rh-avaliacoes', title: 'Avaliacoes', href: '/modulos/rh/avaliacoes', icon: 'Star', permissions: ['operacional:read'], group: 'Desempenho' },
-      { id: 'rh-carreira', title: 'Plano de Carreira', href: '/modulos/rh/carreira', icon: 'TrendingUp', permissions: ['operacional:read'], group: 'Desempenho' },
-      // --- Clima e Retencao ---
-      { id: 'rh-clima', title: 'Clima Organizacional', href: '/modulos/rh/clima', icon: 'Heart', permissions: ['operacional:read'], group: 'Clima e Retencao' },
-      { id: 'rh-turnover', title: 'Previsao Turnover', href: '/modulos/rh/turnover', icon: 'TrendingDown', permissions: ['operacional:read'], group: 'Clima e Retencao' },
-      { id: 'rh-onboarding', title: 'Onboarding', href: '/modulos/rh/onboarding', icon: 'UserPlus', permissions: ['operacional:read'], group: 'Clima e Retencao' },
-      // --- Analytics ---
-      { id: 'rh-dashboard', title: 'Dashboard RH', href: '/modulos/rh/dashboard', icon: 'LayoutDashboard', permissions: ['operacional:read'], group: 'Analytics' },
-      { id: 'rh-ia', title: 'IA de Pessoas', href: '/modulos/rh/ia', icon: 'Bot', permissions: ['operacional:read'], group: 'Analytics' },
+      { id: 'ponto-dashboard', title: 'Dashboard Ponto', href: '/modulos/gestao-pessoas/ponto', icon: 'LayoutDashboard', permissions: ['operacional:read'] },
+      { id: 'ponto-batida', title: 'Bater Ponto', href: '/modulos/gestao-pessoas/ponto/batida', icon: 'Fingerprint', permissions: ['operacional:read'] },
+      { id: 'ponto-espelho', title: 'Espelho de Ponto', href: '/modulos/gestao-pessoas/ponto/espelho', icon: 'FileText', permissions: ['operacional:read'] },
+      { id: 'ponto-justificativas', title: 'Justificativas', href: '/modulos/gestao-pessoas/ponto/justificativas', icon: 'MessageSquare', permissions: ['operacional:read'] },
+      { id: 'ponto-atrasos', title: 'Atrasos e Faltas', href: '/modulos/gestao-pessoas/ponto/atrasos', icon: 'AlertTriangle', permissions: ['operacional:read'] },
+      { id: 'ponto-banco-horas', title: 'Banco de Horas', href: '/modulos/gestao-pessoas/ponto/banco-horas', icon: 'Clock', permissions: ['operacional:read'] },
+      { id: 'ponto-fechamento', title: 'Fechamento Mensal', href: '/modulos/gestao-pessoas/ponto/fechamento', icon: 'CheckCircle', permissions: ['operacional:read'] },
     ],
   },
 
-  // ═══════════════════════════════════════════════════════════════════
-  // 4. FINANCEIRO (antigo: Financial + Suprimentos + boletos)
-  // ═══════════════════════════════════════════════════════════════════
+  // =================================================================
+  // 8. PORTAL DO FUNCIONARIO — Card separado dentro de Gestao de Pessoas
+  // =================================================================
+  {
+    id: 'portal-funcionario',
+    title: 'Portal do Funcionario',
+    description: 'Acesso do funcionario a contracheques e documentos',
+    icon: 'Users',
+    href: '/modulos/portal',
+    color: 'blue',
+    permissions: ['operacional:read'],
+    enabled: true,
+    subModules: [
+      { id: 'portal-contracheque', title: 'Contracheques', href: '/modulos/portal/contracheque', icon: 'FileText', permissions: ['operacional:read'] },
+      { id: 'portal-ferias', title: 'Ferias', href: '/modulos/portal/ferias', icon: 'Palmtree', permissions: ['operacional:read'] },
+      { id: 'portal-documentos', title: 'Documentos', href: '/modulos/portal/documentos', icon: 'FolderOpen', permissions: ['operacional:read'] },
+      { id: 'portal-treinamentos', title: 'Treinamentos', href: '/modulos/portal/treinamentos', icon: 'GraduationCap', permissions: ['operacional:read'] },
+      { id: 'portal-assinatura', title: 'Assinatura Digital', href: '/modulos/portal/assinatura', icon: 'PenTool', permissions: ['operacional:read'] },
+      { id: 'portal-notificacoes', title: 'Notificacoes', href: '/modulos/portal/notificacoes', icon: 'Bell', permissions: ['operacional:read'] },
+      { id: 'portal-dados', title: 'Meus Dados', href: '/modulos/portal/dados-pessoais', icon: 'User', permissions: ['operacional:read'] },
+    ],
+  },
+
+  // =================================================================
+  // 9. AREA DO CLIENTE — Portal externo para clientes/condominios
+  // =================================================================
+  {
+    id: 'area-cliente',
+    title: 'Area do Cliente',
+    description: 'Portal externo: kits documentais, chamados e downloads',
+    icon: 'Building2',
+    href: '/area-cliente',
+    color: 'amber',
+    permissions: ['ged:read'],
+    enabled: true,
+    subModules: [
+      { id: 'ac-dashboard', title: 'Dashboard', href: '/area-cliente', icon: 'LayoutDashboard', permissions: ['ged:read'] },
+      { id: 'ac-kits', title: 'Kits Documentais', href: '/area-cliente/kits', icon: 'Package', permissions: ['ged:read'] },
+      { id: 'ac-chamados', title: 'Chamados', href: '/area-cliente/chamados', icon: 'MessageSquare', permissions: ['ged:read'] },
+      { id: 'ac-configuracoes', title: 'Configuracoes', href: '/area-cliente/configuracoes', icon: 'Settings', permissions: ['ged:admin'] },
+    ],
+  },
+
+  // =================================================================
+  // 10. FINANCEIRO (antigo: Financial + Suprimentos + boletos)
+  // =================================================================
   {
     id: 'financeiro',
     title: 'Financeiro',
@@ -196,9 +288,9 @@ export const modules: Module[] = [
     ],
   },
 
-  // ═══════════════════════════════════════════════════════════════════
-  // 5. FISCAL & CONTABIL (antigos: Fiscal + Empresas)
-  // ═══════════════════════════════════════════════════════════════════
+  // =================================================================
+  // 8. FISCAL & CONTABIL (antigos: Fiscal + Empresas)
+  // =================================================================
   {
     id: 'fiscal',
     title: 'Fiscal & Contabil',
@@ -236,9 +328,9 @@ export const modules: Module[] = [
     ],
   },
 
-  // ═══════════════════════════════════════════════════════════════════
-  // 6. INTELIGENCIA (antigos: Relatorios + Analytics + Assistente)
-  // ═══════════════════════════════════════════════════════════════════
+  // =================================================================
+  // 9. INTELIGENCIA (Relatorios + Analytics)
+  // =================================================================
   {
     id: 'inteligencia',
     title: 'Inteligencia',
@@ -258,33 +350,31 @@ export const modules: Module[] = [
     ],
   },
 
-  // ═══════════════════════════════════════════════════════════════════
-  // 7. DOCUMENTOS & EQUIPAMENTOS (antigos: GED + Equipamentos)
-  // ═══════════════════════════════════════════════════════════════════
+  // =================================================================
+  // 10. EQUIPAMENTOS & PATRIMONIO
+  // =================================================================
   {
     id: 'patrimonio',
-    title: 'Documentos & Patrimonio',
-    description: 'GED, equipamentos, comodatos e manutencoes',
-    icon: 'FolderOpen',
-    href: '/modulos/documentos',
+    title: 'Equipamentos & Patrimonio',
+    description: 'Equipamentos, comodatos e manutencoes',
+    icon: 'Package',
+    href: '/modulos/equipamentos',
     color: 'yellow',
-    permissions: ['ged:read'],
+    permissions: ['equipment:patrimonio'],
     enabled: true,
     subModules: [
-      // --- GED ---
-      { id: 'arquivos', title: 'Arquivos', href: '/modulos/documentos/arquivos', icon: 'File', permissions: ['ged:arquivos'] },
-      { id: 'pastas', title: 'Pastas', href: '/modulos/documentos/pastas', icon: 'Folder', permissions: ['ged:pastas'] },
-      { id: 'kits', title: 'Kits de Documentos', href: '/modulos/documentos/kits', icon: 'Package', permissions: ['ged:kits'] },
-      // --- Equipamentos ---
       { id: 'patrimonio-equip', title: 'Patrimonio', href: '/modulos/equipamentos/patrimonio', icon: 'Package', permissions: ['equipment:patrimonio'] },
       { id: 'comodatos', title: 'Comodatos', href: '/modulos/equipamentos/comodatos', icon: 'Repeat', permissions: ['equipment:comodatos'] },
       { id: 'manutencoes', title: 'Manutencoes', href: '/modulos/equipamentos/manutencoes', icon: 'Wrench', permissions: ['equipment:manutencoes'] },
+      // --- GED Generico (arquivos e pastas) ---
+      { id: 'arquivos', title: 'Arquivos', href: '/modulos/documentos/arquivos', icon: 'File', permissions: ['ged:arquivos'], group: 'Documentos Gerais' },
+      { id: 'pastas', title: 'Pastas', href: '/modulos/documentos/pastas', icon: 'Folder', permissions: ['ged:pastas'], group: 'Documentos Gerais' },
     ],
   },
 
-  // ═══════════════════════════════════════════════════════════════════
-  // 8. ADMINISTRATIVO (antigos: Integracoes + Seguranca + Agendador + Automacoes)
-  // ═══════════════════════════════════════════════════════════════════
+  // =================================================================
+  // 11. ADMINISTRATIVO (Integracoes + Seguranca + Agendador + Automacoes)
+  // =================================================================
   {
     id: 'administrativo',
     title: 'Administrativo',
@@ -318,9 +408,9 @@ export const modules: Module[] = [
     ],
   },
 
-  // ═══════════════════════════════════════════════════════════════════
-  // 9. CONFIGURACOES (mantido)
-  // ═══════════════════════════════════════════════════════════════════
+  // =================================================================
+  // 12. CONFIGURACOES
+  // =================================================================
   {
     id: 'config',
     title: 'Configuracoes',
@@ -340,12 +430,18 @@ export const modules: Module[] = [
   },
 ];
 
-// Agrupar modulos por categoria — 4 categorias
+// Agrupar modulos por categoria — 5 categorias
+// Operacoes agora dentro de Gestao de Pessoas (nao mais em Negocios)
 export const moduleCategories: ModuleCategory[] = [
   {
     id: 'negocios',
-    title: 'Negocios & Operacoes',
-    modules: modules.filter(m => ['comercial', 'operacoes', 'dp', 'rh'].includes(m.id)),
+    title: 'Negocios',
+    modules: modules.filter(m => ['comercial'].includes(m.id)),
+  },
+  {
+    id: 'pessoas',
+    title: 'Gestao de Pessoas',
+    modules: modules.filter(m => ['dp', 'rh', 'ged', 'operacoes', 'sst', 'ponto', 'portal-funcionario', 'area-cliente'].includes(m.id)),
   },
   {
     id: 'financeiro',
@@ -354,7 +450,7 @@ export const moduleCategories: ModuleCategory[] = [
   },
   {
     id: 'inteligencia',
-    title: 'Inteligencia & Documentos',
+    title: 'Inteligencia & Patrimonio',
     modules: modules.filter(m => ['inteligencia', 'patrimonio'].includes(m.id)),
   },
   {

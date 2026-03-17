@@ -44,6 +44,20 @@ try:
 except ImportError:
     onboarding_router = None  # type: ignore[assignment]
 
+try:
+    from modules.people_management.human_resources.controllers.resume_controller import (
+        router as resume_router,
+    )
+except ImportError:
+    resume_router = None  # type: ignore[assignment]
+
+try:
+    from modules.people_management.human_resources.controllers.evaluation_360_controller import (
+        router as evaluation_360_router,
+    )
+except ImportError:
+    evaluation_360_router = None  # type: ignore[assignment]
+
 __all__ = [
     "training_router",
     "performance_router",
@@ -52,4 +66,6 @@ __all__ = [
     "climate_router",
     "turnover_router",
     "onboarding_router",
+    "resume_router",
+    "evaluation_360_router",
 ]

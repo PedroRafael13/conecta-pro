@@ -8,6 +8,7 @@ import logging
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.dependencies import CurrentActiveUser
@@ -23,6 +24,41 @@ from modules.people_management.hr.services.benefits_service import BenefitsServi
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/benefits", tags=["DP - Benefícios"])
+
+
+@router.get("/")
+async def list_all_benefits(
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+    status: BenefitStatus | None = Query(None, description="Filtro por status"),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+) -> Any:
+    """Lista todos os benefícios com paginação."""
+    from modules.people_management.hr.models.benefits import EmployeeBenefit
+
+    query = select(EmployeeBenefit)
+    count_query = select(func.count()).select_from(EmployeeBenefit)
+
+    if status:
+        query = query.where(EmployeeBenefit.status == status)
+        count_query = count_query.where(EmployeeBenefit.status == status)
+
+    total_result = await db.execute(count_query)
+    total = total_result.scalar() or 0
+    total_pages = max(1, (total + page_size - 1) // page_size)
+
+    query = query.order_by(EmployeeBenefit.created_at.desc()).offset((page - 1) * page_size).limit(page_size)
+    result = await db.execute(query)
+    items = result.scalars().all()
+
+    return {
+        "items": list(items),
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": total_pages,
+    }
 
 
 @router.get("/employee/{employee_id}", response_model=list[BenefitResponse])

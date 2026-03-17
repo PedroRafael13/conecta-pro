@@ -171,7 +171,7 @@ export function useReimbursementDetail(
   return {
     request: (query.data as unknown as ReimbursementRequest) ?? null,
     isLoading: query.isLoading,
-    error: query.error ? (query.error as Error).message || 'Erro ao carregar solicitacao' : null,
+    error: query.error ? (query.error as Error).message || 'Erro ao carregar solicitação' : null,
     refresh,
   };
 }
@@ -234,7 +234,7 @@ export function usePendingApprovals(
     pageSize,
     totalPages: (query.data as any)?.total_pages ?? 0,
     isLoading: query.isLoading,
-    error: query.error ? (query.error as Error).message || 'Erro ao carregar aprovacoes' : null,
+    error: query.error ? (query.error as Error).message || 'Erro ao carregar aprovações' : null,
     approvalLevel,
     setApprovalLevel: handleSetApprovalLevel,
     setPage,

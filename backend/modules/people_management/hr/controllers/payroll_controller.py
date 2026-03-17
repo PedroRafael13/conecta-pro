@@ -20,11 +20,11 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/payroll", tags=["DP - Folha de Pagamento"])
 
 # Re-export do router existente de payroll
+# IMPORTANTE: usar include_router (NÃO append) para preservar prefixos
 try:
     from modules.hr.payroll_integration.controllers import router as _payroll_router
 
-    for route in _payroll_router.routes:
-        router.routes.append(route)
+    router.include_router(_payroll_router)
 except ImportError:
     logger.info("Router de payroll não disponível para re-export")
 

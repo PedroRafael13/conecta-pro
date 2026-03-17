@@ -72,7 +72,7 @@ class DocumentKitRepository:
 
     async def list_kits(
         self,
-        condominio_id: UUID,
+        condominio_id: UUID | None = None,
         tipo: KitType | None = None,
         status: KitStatus | None = None,
         is_template: bool | None = None,
@@ -81,8 +81,10 @@ class DocumentKitRepository:
         limit: int = 100,
     ) -> list[DocumentKit]:
         """Lista kits com filtros."""
-        conditions = [DocumentKit.condominio_id == condominio_id]
+        conditions: list = []
 
+        if condominio_id is not None:
+            conditions.append(DocumentKit.condominio_id == condominio_id)
         if tipo:
             conditions.append(DocumentKit.tipo == tipo)
         if status:
@@ -99,25 +101,32 @@ class DocumentKitRepository:
                 )
             )
 
-        query = select(DocumentKit).where(and_(*conditions)).order_by(DocumentKit.nome).offset(skip).limit(limit)
+        query = select(DocumentKit)
+        if conditions:
+            query = query.where(and_(*conditions))
+        query = query.order_by(DocumentKit.nome).offset(skip).limit(limit)
         result = await self.db.execute(query)
         return list(result.scalars().all())
 
     async def count_kits(
         self,
-        condominio_id: UUID,
+        condominio_id: UUID | None = None,
         tipo: KitType | None = None,
         status: KitStatus | None = None,
     ) -> int:
         """Conta kits."""
-        conditions = [DocumentKit.condominio_id == condominio_id]
+        conditions: list = []
 
+        if condominio_id is not None:
+            conditions.append(DocumentKit.condominio_id == condominio_id)
         if tipo:
             conditions.append(DocumentKit.tipo == tipo)
         if status:
             conditions.append(DocumentKit.status == status)
 
-        query = select(func.count(DocumentKit.id)).where(and_(*conditions))
+        query = select(func.count(DocumentKit.id))
+        if conditions:
+            query = query.where(and_(*conditions))
         result = await self.db.execute(query)
         return result.scalar() or 0
 
@@ -291,33 +300,33 @@ class DocumentKitRepository:
 
     async def count_assignments(
         self,
-        condominio_id: UUID,
+        condominio_id: UUID | None = None,
         status: AssignmentStatus | None = None,
     ) -> int:
         """Conta atribuicoes."""
-        conditions = [DocumentKitAssignment.condominio_id == condominio_id]
+        conditions: list = []
 
+        if condominio_id is not None:
+            conditions.append(DocumentKitAssignment.condominio_id == condominio_id)
         if status:
             conditions.append(DocumentKitAssignment.status == status)
 
-        query = select(func.count(DocumentKitAssignment.id)).where(and_(*conditions))
+        query = select(func.count(DocumentKitAssignment.id))
+        if conditions:
+            query = query.where(and_(*conditions))
         result = await self.db.execute(query)
         return result.scalar() or 0
 
-    async def count_vencidos(self, condominio_id: UUID) -> int:
+    async def count_vencidos(self, condominio_id: UUID | None = None) -> int:
         """Conta atribuicoes vencidas."""
-        query = select(func.count(DocumentKitAssignment.id)).where(
-            and_(
-                DocumentKitAssignment.condominio_id == condominio_id,
-                DocumentKitAssignment.data_limite < datetime.utcnow(),
-                DocumentKitAssignment.status.notin_(
-                    [
-                        AssignmentStatus.COMPLETO,
-                        AssignmentStatus.CANCELADO,
-                    ]
-                ),
-            )
-        )
+        conditions = [
+            DocumentKitAssignment.data_limite < datetime.utcnow(),
+            DocumentKitAssignment.status.notin_([AssignmentStatus.COMPLETO, AssignmentStatus.CANCELADO]),
+        ]
+        if condominio_id is not None:
+            conditions.append(DocumentKitAssignment.condominio_id == condominio_id)
+
+        query = select(func.count(DocumentKitAssignment.id)).where(and_(*conditions))
         result = await self.db.execute(query)
         return result.scalar() or 0
 
@@ -403,7 +412,7 @@ class DocumentKitRepository:
 
     # === Estatisticas ===
 
-    async def get_stats(self, condominio_id: UUID) -> dict:
+    async def get_stats(self, condominio_id: UUID | None = None) -> dict:
         """Retorna estatisticas de kits."""
         total_kits = await self.count_kits(condominio_id)
         kits_ativos = await self.count_kits(condominio_id, status=KitStatus.ATIVO)
@@ -418,19 +427,19 @@ class DocumentKitRepository:
         if total_assignments > 0:
             taxa_conclusao = (assignments_completos / total_assignments) * 100
 
-        # Por tipo
-        por_tipo = {}
-        for kit_type in KitType:
-            count = await self.count_kits(condominio_id, tipo=kit_type)
-            if count > 0:
-                por_tipo[kit_type.value] = count
+        # Por tipo — query direta agrupada (evita iterar enums desalinhados)
+        tipo_query = select(DocumentKit.tipo, func.count(DocumentKit.id)).group_by(DocumentKit.tipo)
+        if condominio_id is not None:
+            tipo_query = tipo_query.where(DocumentKit.condominio_id == condominio_id)
+        tipo_result = await self.db.execute(tipo_query)
+        por_tipo = {str(row[0]): row[1] for row in tipo_result if row[1] > 0}
 
-        # Por status
-        por_status = {}
-        for status in KitStatus:
-            count = await self.count_kits(condominio_id, status=status)
-            if count > 0:
-                por_status[status.value] = count
+        # Por status — query direta agrupada
+        status_query = select(DocumentKit.status, func.count(DocumentKit.id)).group_by(DocumentKit.status)
+        if condominio_id is not None:
+            status_query = status_query.where(DocumentKit.condominio_id == condominio_id)
+        status_result = await self.db.execute(status_query)
+        por_status = {str(row[0]): row[1] for row in status_result if row[1] > 0}
 
         return {
             "total_kits": total_kits,

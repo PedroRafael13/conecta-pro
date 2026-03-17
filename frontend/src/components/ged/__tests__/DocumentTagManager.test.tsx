@@ -31,7 +31,20 @@ const mockTag = {
   description: 'Tags de contrato',
   created_at: '2024-01-01T00:00:00Z',
   updated_at: '2024-01-01T00:00:00Z',
-};
+  slug: 'contrato',
+  parent_id: null,
+  icon: null,
+  condominium_id: null,
+  is_active: true,
+  is_system: false,
+  metadata: null,
+  sort_order: 0,
+  children: [],
+  full_path: 'contrato',
+  level: 0,
+  document_count: 3,
+  is_default: false,
+} as any;
 
 const mockTag2 = {
   id: 'tag-2',
@@ -42,7 +55,20 @@ const mockTag2 = {
   description: '',
   created_at: '2024-01-01T00:00:00Z',
   updated_at: '2024-01-01T00:00:00Z',
-};
+  slug: 'urgente',
+  parent_id: null,
+  icon: null,
+  condominium_id: null,
+  is_active: true,
+  is_system: false,
+  metadata: null,
+  sort_order: 0,
+  children: [],
+  full_path: 'urgente',
+  level: 0,
+  document_count: 0,
+  is_default: false,
+} as any;
 
 describe('DocumentTagManager', () => {
   const onClose = vi.fn();

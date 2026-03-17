@@ -38,8 +38,8 @@ export default function LicitacoesPage() {
   const stats = [
     {
       title: 'Editais Abertos',
-      value: tendersData?.total_abertos || 0,
-      subtitle: `${tendersData?.total || 0} total`,
+      value: Number(tendersData?.total_abertos) || 0,
+      subtitle: `${Number(tendersData?.total) || 0} total`,
       icon: FileText,
       href: '/modulos/licitacoes/editais',
       color: 'text-blue-600',
@@ -47,8 +47,8 @@ export default function LicitacoesPage() {
     },
     {
       title: 'Propostas',
-      value: proposalsData?.total || 0,
-      subtitle: `${proposalsData?.taxa_sucesso || 0}% taxa sucesso`,
+      value: Number(proposalsData?.total) || 0,
+      subtitle: `${Number(proposalsData?.taxa_sucesso) || 0}% taxa sucesso`,
       icon: FileCheck,
       href: '/modulos/licitacoes/propostas',
       color: 'text-orange-600',
@@ -56,7 +56,7 @@ export default function LicitacoesPage() {
     },
     {
       title: 'Contratos Vigentes',
-      value: contractsData?.vigentes || 0,
+      value: Number(contractsData?.vigentes) || 0,
       subtitle: contractsData?.valor_total
         ? `R$ ${Number(contractsData.valor_total).toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`
         : 'R$ 0',
@@ -67,7 +67,7 @@ export default function LicitacoesPage() {
     },
     {
       title: 'Certidoes',
-      value: contractsData?.certidoes_pendentes || 0,
+      value: Number(contractsData?.certidoes_pendentes) || 0,
       subtitle: 'pendentes renovacao',
       icon: Shield,
       href: '/modulos/licitacoes/certidoes',
@@ -78,11 +78,11 @@ export default function LicitacoesPage() {
 
   // Funil de licitações
   const funnel = [
-    { label: 'Oportunidades', value: tendersData?.total || 0, color: 'bg-blue-500' },
-    { label: 'Em Analise', value: tendersData?.em_andamento || tendersData?.em_analise || 0, color: 'bg-purple-500' },
-    { label: 'Participando', value: tendersData?.participando || 0, color: 'bg-orange-500' },
-    { label: 'Propostas', value: proposalsData?.total || 0, color: 'bg-yellow-500' },
-    { label: 'Vencidos', value: proposalsData?.vencedoras || 0, color: 'bg-green-500' },
+    { label: 'Oportunidades', value: Number(tendersData?.total) || 0, color: 'bg-blue-500' },
+    { label: 'Em Analise', value: Number(tendersData?.em_andamento || tendersData?.em_analise) || 0, color: 'bg-purple-500' },
+    { label: 'Participando', value: Number(tendersData?.participando) || 0, color: 'bg-orange-500' },
+    { label: 'Propostas', value: Number(proposalsData?.total) || 0, color: 'bg-yellow-500' },
+    { label: 'Vencidos', value: Number(proposalsData?.vencedoras) || 0, color: 'bg-green-500' },
   ];
 
   const maxFunnel = Math.max(...funnel.map((f) => f.value), 1);

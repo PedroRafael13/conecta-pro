@@ -113,6 +113,22 @@ const nextConfig: NextConfig = {
     ];
   },
 
+  // Redirects para URLs legadas
+  async redirects() {
+    return [
+      {
+        source: '/modulos/dp/folha-salarial',
+        destination: '/modulos/dp/folha',
+        permanent: true,
+      },
+      {
+        source: '/modulos/dp/folha-salarial/:path*',
+        destination: '/modulos/dp/folha/:path*',
+        permanent: true,
+      },
+    ];
+  },
+
   // Rewrites para API
   async rewrites() {
     return process.env.NODE_ENV === 'development'

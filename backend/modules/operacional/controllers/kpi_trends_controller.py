@@ -11,7 +11,9 @@ from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
+from modules.operacional.models.allocation import Allocation, AllocationStatus
 from modules.operacional.models.employee import Employee
 from modules.operacional.models.post import Post
 from modules.operacional.models.scale import Scale
@@ -41,7 +43,8 @@ class KPITrendsResponse(BaseModel):
 
 
 @router.get("/", response_model=KPITrendsResponse)
-async def get_kpi_trends(
+async def get_kpi_trends(  # pylint: disable=too-many-locals
+    _user: CurrentActiveUser,
     period: Literal["7d", "30d", "90d"] = Query("7d", description="Período de análise"),
     db: AsyncSession = Depends(get_db),
 ) -> KPITrendsResponse:
@@ -84,7 +87,7 @@ async def get_kpi_trends(
             # Colaboradores ativos
             result = await db.execute(
                 select(func.count(Employee.id))
-                .where(Employee.is_active == True)  # noqa: E712
+                .where(Employee.is_active.is_(True))
                 .where(Employee.created_at <= current_date)
             )
             colab_count = result.scalar() or 0
@@ -104,9 +107,24 @@ async def get_kpi_trends(
             occ_count = result.scalar() or 0
             ocorrencias_mes.append(int(occ_count))
 
-            # Cobertura percentual
-            if postos_count > 0:
-                cobertura = (colab_count / postos_count) * 100
+            # Cobertura percentual: alocações ativas / headcount necessário
+            required_result = await db.execute(
+                select(func.coalesce(func.sum(Post.required_headcount), 0))
+                .where(Post.status == "active")
+                .where(Post.created_at <= current_date)
+            )
+            required_headcount = required_result.scalar() or 0
+
+            active_alloc_result = await db.execute(
+                select(func.count(Allocation.id))
+                .where(Allocation.status == AllocationStatus.ACTIVE.value)
+                .where(Allocation.is_active.is_(True))
+                .where(Allocation.start_date <= current_date.date())
+            )
+            active_allocations = active_alloc_result.scalar() or 0
+
+            if required_headcount > 0:
+                cobertura = (active_allocations / required_headcount) * 100
                 cobertura_percentual.append(round(float(cobertura), 2))
             else:
                 cobertura_percentual.append(0.0)
@@ -125,7 +143,7 @@ async def get_kpi_trends(
             ),
         )
 
-    except Exception as e:
+    except (RuntimeError, ValueError, OSError) as e:
         logger.error("Erro ao calcular KPI trends: %s", e)
         return KPITrendsResponse(
             period=period,
@@ -136,6 +154,7 @@ async def get_kpi_trends(
 
 @router.get("/performance-scores", tags=["Operacional - KPI Trends"])
 async def get_performance_scores(
+    _user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """
@@ -149,7 +168,7 @@ async def get_performance_scores(
     Returns:
         Performance data for top 10 and bottom 5 employees
     """
-    from sqlalchemy import text
+    from sqlalchemy import text  # pylint: disable=import-outside-toplevel
 
     try:
         # Get employee performance metrics from DB
@@ -233,7 +252,7 @@ async def get_performance_scores(
             },
         }
 
-    except Exception as e:
+    except (RuntimeError, ValueError, OSError) as e:
         logger.error("Erro ao calcular scores de performance: %s", e)
         return {
             "top_performers": [],

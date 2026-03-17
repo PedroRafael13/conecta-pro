@@ -152,11 +152,7 @@ class JobPositionService:
         position.published_at = data.published_at or date.today()
 
         if data.deadline_date:
-            position.deadline_date = data.deadline_date
-        if data.publish_externally is not None:
-            position.publish_externally = data.publish_externally
-        if data.external_platforms:
-            position.external_platforms = data.external_platforms
+            position.deadline = data.deadline_date
 
         await self.session.flush()
         await self.session.commit()
@@ -262,7 +258,7 @@ class JobPositionService:
         if position:
             await self.session.commit()
             logger.info(
-                f"Vaga preenchida: {position.code} ({position.filled_vacancies}/{position.vacancies})",
+                f"Vaga preenchida: {position.code} ({position.filled_count}/{position.vacancies})",
                 extra={"position_id": str(position.id)},
             )
         return position
@@ -308,18 +304,17 @@ class JobPositionService:
             work_model=original.work_model,
             salary_min=original.salary_min,
             salary_max=original.salary_max,
-            salary_currency=original.salary_currency,
-            hide_salary=original.hide_salary,
+            show_salary=original.show_salary if hasattr(original, "show_salary") else False,
             vacancies=original.vacancies,
             city=original.city,
             state=original.state,
             address=original.address,
             required_skills=original.required_skills,
             desired_skills=original.desired_skills,
-            experience_min=original.experience_min,
+            min_experience_years=original.min_experience_years,
             education_level=original.education_level,
-            condominium_id=original.condominium_id,
-            recruiter_id=original.recruiter_id,
+            condominio_id=original.condominio_id,
+            responsible_id=original.responsible_id,
         )
 
         new_position = await self.repository.create(data)

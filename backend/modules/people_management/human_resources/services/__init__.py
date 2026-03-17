@@ -6,8 +6,14 @@ e re-exporta services de recrutamento, clima, turnover e onboarding.
 """
 
 from modules.people_management.human_resources.services.career_service import CareerService
+from modules.people_management.human_resources.services.evaluation_360_service import (
+    Evaluation360Service,
+)
 from modules.people_management.human_resources.services.performance_service import (
     PerformanceService,
+)
+from modules.people_management.human_resources.services.resume_parser_service import (
+    ResumeParserService,
 )
 from modules.people_management.human_resources.services.training_service import TrainingService
 
@@ -48,4 +54,6 @@ __all__ = [
     "ClimateService",
     "TurnoverService",
     "OnboardingService",
+    "Evaluation360Service",
+    "ResumeParserService",
 ]

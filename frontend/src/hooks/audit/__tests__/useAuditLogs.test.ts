@@ -191,7 +191,7 @@ describe('useCreateAuditLog', () => {
         action: 'LOGIN',
         user_id: 'u1',
         resource_type: 'auth',
-      } as Parameters<typeof result.current.mutateAsync>[0]);
+      } as unknown as Parameters<typeof result.current.mutateAsync>[0]);
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));

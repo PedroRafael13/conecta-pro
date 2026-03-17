@@ -86,3 +86,14 @@ try:
     router.include_router(inspection_round_router, prefix="/rondas", tags=["Operations - Rondas"])
 except ImportError:
     pass
+
+# Scale Optimizer (Otimização de Escalas)
+try:
+    from modules.people_management.operations.controllers.scale_optimizer_controller import (
+        router as scale_optimizer_router,
+    )
+
+    router.include_router(scale_optimizer_router)
+    logger.info("Operations: Router de otimização de escalas carregado.")
+except ImportError as e:
+    logger.warning("Operations: Modulo de otimização de escalas nao disponivel: %s", e)

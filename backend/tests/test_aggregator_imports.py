@@ -29,6 +29,9 @@ class TestComercialAggregator:
         "bidding_document_router",
         "bidding_proposal_router",
         "bidding_contract_router",
+        "bidding_agent_router",
+        "bidding_sync_router",
+        "bidding_erp_router",
         "service_router",
     ]
 
@@ -78,6 +81,13 @@ class TestOperacoesAggregator:
         "ordem_servico_router",
         "visita_router",
         "checklist_router",
+        "announcement_router",
+        "notification_router",
+        "operacional_dashboard_router",
+        "banco_horas_alias",
+        "ocorrencias_alias",
+        "ferias_alias",
+        "scale_templates_alias",
     ]
 
     def test_import(self):

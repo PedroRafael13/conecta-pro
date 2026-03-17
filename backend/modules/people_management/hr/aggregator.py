@@ -114,4 +114,44 @@ try:
 except ImportError as e:
     logger.warning("DP: falha ao incluir reimbursement_router: %s", e)
 
+try:
+    from modules.people_management.hr.controllers.payroll_export_controller import (
+        router as payroll_export_router,
+    )
+
+    router.include_router(payroll_export_router)
+    logger.debug("DP: payroll_export_router incluído")
+except ImportError as e:
+    logger.warning("DP: falha ao incluir payroll_export_router: %s", e)
+
+try:
+    from modules.people_management.hr.controllers.esocial_controller import (
+        router as esocial_router,
+    )
+
+    router.include_router(esocial_router)
+    logger.debug("DP: esocial_router incluído")
+except ImportError as e:
+    logger.warning("DP: falha ao incluir esocial_router: %s", e)
+
+try:
+    from modules.people_management.hr.controllers.leave_controller import (
+        router as leave_router,
+    )
+
+    router.include_router(leave_router)
+    logger.debug("DP: leave_router incluído")
+except ImportError as e:
+    logger.warning("DP: falha ao incluir leave_router: %s", e)
+
+try:
+    from modules.people_management.hr.controllers.document_controller import (
+        router as document_router,
+    )
+
+    router.include_router(document_router)
+    logger.debug("DP: document_router incluído")
+except ImportError as e:
+    logger.warning("DP: falha ao incluir document_router: %s", e)
+
 logger.info("Módulo Departamento Pessoal (DP) carregado — aggregator montado em /hr")

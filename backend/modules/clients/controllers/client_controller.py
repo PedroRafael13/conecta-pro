@@ -106,7 +106,7 @@ async def list_clients(  # pylint: disable=too-many-locals
 @router.get("/stats", response_model=ClientStats)
 async def get_client_stats(service: ClientService = Depends(get_service)) -> ClientStats:
     """Retorna estatísticas de clientes."""
-    return service.get_client_stats()
+    return await service.get_client_stats()
 
 
 @router.get("/{client_id}", response_model=ClientResponse)

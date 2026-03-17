@@ -1,8 +1,10 @@
 """
-Operations Services — Re-export dos services do modulo operacional.
+Operations Services — Re-export dos services do modulo operacional + Scale Optimizer.
 """
 
 import contextlib
+
+from .scale_optimizer_service import ScaleOptimizerService
 
 with contextlib.suppress(ImportError):
     from modules.operacional.services import (
@@ -35,4 +37,5 @@ __all__ = [
     "BiometricService",
     "CheckInValidator",
     "CheckInData",
+    "ScaleOptimizerService",
 ]

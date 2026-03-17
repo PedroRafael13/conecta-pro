@@ -7,7 +7,7 @@ Analise automatizada de editais por agentes de IA.
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, ForeignKey, String, Text
+from sqlalchemy import Column, DateTime, ForeignKey, Numeric, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 from core.models import Base
@@ -31,6 +31,9 @@ class BiddingAnalysis(Base):
     objeto_resumido = Column(Text, nullable=True)
     modalidade_identificada = Column(String(50), nullable=True)
     criterio_julgamento = Column(String(50), nullable=True)
+
+    # Valor estimado
+    valor_estimado = Column(Numeric(15, 2), nullable=True)
 
     # Requisitos e documentos
     requisitos_habilitacao = Column(JSONB, nullable=True)

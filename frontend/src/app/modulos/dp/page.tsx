@@ -1,60 +1,84 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import {
   Users, UserPlus, UserMinus, FileText, Clock, DollarSign,
-  Gift, Sun, ShieldCheck, FolderOpen, ArrowRight, CalendarDays,
+  Gift, Sun, ShieldCheck, FolderOpen, ArrowRight, CalendarDays, Loader2,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
+const API_BASE = '/api/v1/people-management/hr';
+
+function getAuthHeaders() {
+  const token = typeof window !== 'undefined' ? (localStorage.getItem('access_token') || localStorage.getItem('token')) : null;
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+}
+
 export default function DPDashboardPage() {
   const router = useRouter();
+  const [stats, setStats] = useState({ employees: 0, admissions: 0, vacations: 0, payroll: '0,00' });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const [empRes, admRes] = await Promise.all([
+          fetch(`${API_BASE}/employees/?page_size=1`, { headers: getAuthHeaders() }),
+          fetch(`${API_BASE}/admissions/?status=documents_pending&page_size=1`, { headers: getAuthHeaders() }),
+        ]);
+        let empCount = 0, admCount = 0;
+        if (empRes.ok) {
+          const d = await empRes.json();
+          empCount = d.total || (d.items || d || []).length;
+        }
+        if (admRes.ok) {
+          const d = await admRes.json();
+          admCount = d.total || (d.items || d || []).length;
+        }
+        // Buscar contagem de ferias e folha via endpoint de employees completo
+        let vacCount = 0;
+        let payrollTotal = 0;
+        try {
+          const allRes = await fetch(`${API_BASE}/employees/?page_size=100`, { headers: getAuthHeaders() });
+          if (allRes.ok) {
+            const allData = await allRes.json();
+            const items = allData.items || allData || [];
+            vacCount = items.filter((e: any) => e.status === 'ferias' || e.status === 'Ferias' || e.status === 'Férias').length;
+            payrollTotal = items.reduce((sum: number, e: any) => sum + (parseFloat(e.salario_base) || 0), 0);
+          }
+        } catch { /* ignore */ }
+        setStats({
+          employees: empCount,
+          admissions: admCount,
+          vacations: vacCount,
+          payroll: payrollTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+        });
+      } catch { /* fallback */ } finally { setLoading(false); }
+    }
+    load();
+  }, []);
 
   const statCards = [
-    {
-      title: 'Colaboradores Ativos',
-      value: 44,
-      subtitle: '3 admitidos nos ultimos 30 dias',
-      icon: Users,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50',
-    },
-    {
-      title: 'Admissoes este Mes',
-      value: 2,
-      subtitle: '1 pendente de documentacao',
-      icon: UserPlus,
-      color: 'text-green-600',
-      bgColor: 'bg-green-50',
-    },
-    {
-      title: 'Ferias em Andamento',
-      value: 3,
-      subtitle: '5 programadas para o proximo mes',
-      icon: Sun,
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-50',
-    },
-    {
-      title: 'Folha Atual (R$)',
-      value: '187.450,00',
-      subtitle: 'Competencia Mar/2026',
-      icon: DollarSign,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-50',
-    },
+    { title: 'Colaboradores Ativos', value: loading ? '...' : stats.employees, subtitle: 'Total no sistema', icon: Users, color: 'text-blue-600', bgColor: 'bg-blue-50' },
+    { title: 'Admissões Pendentes', value: loading ? '...' : stats.admissions, subtitle: 'Processos em aberto', icon: UserPlus, color: 'text-green-600', bgColor: 'bg-green-50' },
+    { title: 'Férias em Andamento', value: loading ? '...' : stats.vacations, subtitle: 'Colaboradores em férias', icon: Sun, color: 'text-orange-600', bgColor: 'bg-orange-50' },
+    { title: 'Folha Atual (R$)', value: loading ? '...' : stats.payroll, subtitle: 'Competência atual', icon: DollarSign, color: 'text-purple-600', bgColor: 'bg-purple-50' },
   ];
 
   const navCards = [
-    { title: 'Admissao', description: 'Processos de admissao de colaboradores', icon: UserPlus, href: '/modulos/dp/admissao', color: 'text-green-600', bgColor: 'bg-green-50' },
-    { title: 'Rescisao', description: 'Processos de desligamento e rescisao', icon: UserMinus, href: '/modulos/dp/rescisao', color: 'text-red-600', bgColor: 'bg-red-50' },
+    { title: 'Admissão', description: 'Processos de admissão de colaboradores', icon: UserPlus, href: '/modulos/dp/admissao', color: 'text-green-600', bgColor: 'bg-green-50' },
+    { title: 'Rescisão', description: 'Processos de desligamento e rescisão', icon: UserMinus, href: '/modulos/dp/rescisao', color: 'text-red-600', bgColor: 'bg-red-50' },
     { title: 'Contratos', description: 'Contratos de trabalho dos colaboradores', icon: FileText, href: '/modulos/dp/contratos', color: 'text-blue-600', bgColor: 'bg-blue-50' },
-    { title: 'Ponto Eletronico', description: 'Registro e controle de ponto', icon: Clock, href: '/modulos/dp/ponto', color: 'text-cyan-600', bgColor: 'bg-cyan-50' },
+    { title: 'Ponto Eletrônico', description: 'Registro e controle de ponto', icon: Clock, href: '/modulos/dp/ponto', color: 'text-cyan-600', bgColor: 'bg-cyan-50' },
     { title: 'Folha Salarial', description: 'Folha de pagamento e encargos', icon: DollarSign, href: '/modulos/dp/folha', color: 'text-purple-600', bgColor: 'bg-purple-50' },
-    { title: 'Beneficios', description: 'Gestao de beneficios dos colaboradores', icon: Gift, href: '/modulos/dp/beneficios', color: 'text-pink-600', bgColor: 'bg-pink-50' },
-    { title: 'Ferias', description: 'Programacao e controle de ferias', icon: Sun, href: '/modulos/dp/ferias', color: 'text-orange-600', bgColor: 'bg-orange-50' },
-    { title: 'Licencas', description: 'Licencas e afastamentos', icon: CalendarDays, href: '/modulos/dp/licencas', color: 'text-yellow-600', bgColor: 'bg-yellow-50' },
-    { title: 'eSocial', description: 'Eventos e obrigacoes do eSocial', icon: ShieldCheck, href: '/modulos/dp/esocial', color: 'text-indigo-600', bgColor: 'bg-indigo-50' },
+    { title: 'Benefícios', description: 'Gestão de benefícios dos colaboradores', icon: Gift, href: '/modulos/dp/beneficios', color: 'text-pink-600', bgColor: 'bg-pink-50' },
+    { title: 'Férias', description: 'Programação e controle de férias', icon: Sun, href: '/modulos/dp/ferias', color: 'text-orange-600', bgColor: 'bg-orange-50' },
+    { title: 'Licenças', description: 'Licenças e afastamentos', icon: CalendarDays, href: '/modulos/dp/licencas', color: 'text-yellow-600', bgColor: 'bg-yellow-50' },
+    { title: 'eSocial', description: 'Eventos e obrigações do eSocial', icon: ShieldCheck, href: '/modulos/dp/esocial', color: 'text-indigo-600', bgColor: 'bg-indigo-50' },
     { title: 'Documentos', description: 'Documentos dos colaboradores', icon: FolderOpen, href: '/modulos/dp/documentos', color: 'text-slate-600', bgColor: 'bg-slate-50' },
   ];
 
@@ -66,7 +90,7 @@ export default function DPDashboardPage() {
           Departamento Pessoal
         </h1>
         <p className="text-muted-foreground">
-          Gestao completa de colaboradores, folha, ponto e beneficios
+          Gestão completa de colaboradores, folha, ponto e benefícios
         </p>
       </div>
 

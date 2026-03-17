@@ -91,13 +91,8 @@ async def list_candidates(  # pylint: disable=too-many-locals
     source: CandidateSource | None = None,
     city: str | None = None,
     state: str | None = None,
-    available_immediately: bool | None = None,
-    has_cnh: bool | None = None,
-    is_pcd: bool | None = None,
-    is_blocked: bool | None = None,
     salary_min: float | None = None,
     salary_max: float | None = None,
-    condominium_id: str | None = None,
     search: str | None = None,
     order_by: str = "created_at",
     order_desc: bool = True,
@@ -112,13 +107,8 @@ async def list_candidates(  # pylint: disable=too-many-locals
         source=source,
         city=city,
         state=state,
-        available_immediately=available_immediately,
-        has_cnh=has_cnh,
-        is_pcd=is_pcd,
-        is_blocked=is_blocked,
         salary_min=salary_min,
         salary_max=salary_max,
-        condominium_id=condominium_id,
         search=search,
     )
 
@@ -140,13 +130,12 @@ async def list_candidates(  # pylint: disable=too-many-locals
 async def list_active_candidates(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
-    condominium_id: str | None = None,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> CandidateListResponse:
     """Lista candidatos ativos e não bloqueados."""
     service = CandidateService(db)
-    candidates = await service.get_active(condominium_id, skip, limit)
+    candidates = await service.get_active(skip, limit)
 
     return CandidateListResponse(
         items=[CandidateResponse.model_validate(c) for c in candidates],
@@ -231,13 +220,12 @@ async def list_recently_active(
     summary="Estatísticas de candidatos",
 )
 async def get_candidate_stats(
-    condominium_id: str | None = None,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> CandidateStats:
     """Retorna estatísticas dos candidatos."""
     service = CandidateService(db)
-    stats = await service.get_stats(condominium_id)
+    stats = await service.get_stats()
     return CandidateStats(**stats)
 
 

@@ -33,7 +33,15 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Card } from '@/components/ui/card';
-import type { ProposalItemResponse } from '@/services/bidding/proposals.service';
+interface ProposalItemResponse {
+  id: string;
+  descricao: string;
+  quantidade: number;
+  valor_unitario: number;
+  valor_total: number;
+  unidade_medida?: string;
+  [key: string]: unknown;
+}
 
 interface ProposalItemsManagerProps {
   items: ProposalItemResponse[];

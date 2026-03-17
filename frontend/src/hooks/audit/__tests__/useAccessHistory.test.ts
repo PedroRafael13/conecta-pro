@@ -235,7 +235,7 @@ describe('useRecordAccess', () => {
         user_id: 'u1',
         action: 'LOGIN',
         resource_type: 'auth',
-      } as Parameters<typeof result.current.mutateAsync>[0]);
+      } as unknown as Parameters<typeof result.current.mutateAsync>[0]);
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));

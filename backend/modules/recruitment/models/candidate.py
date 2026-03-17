@@ -1,4 +1,8 @@
-"""Model Candidate - Candidatos."""
+"""Model Candidate - Candidatos.
+
+Reescrito para refletir o schema real do banco de dados (15/03/2026).
+Corrige mismatch que causava 500 em todos os endpoints de recruitment.
+"""
 
 from datetime import date, datetime
 from decimal import Decimal
@@ -6,27 +10,17 @@ from enum import StrEnum
 from typing import TYPE_CHECKING
 
 from sqlalchemy import (
-    JSON,
     Boolean,
     Date,
     DateTime,
-    Enum,
-    Integer,
     Numeric,
     String,
     Text,
 )
-from sqlalchemy.dialects.postgresql import ARRAY, UUID
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from core.database import Base
-from core.models import SoftDeleteMixin, TimestampMixin
-
-if TYPE_CHECKING:
-    from .application import Application
-    from .candidate_education import CandidateEducation
-    from .candidate_experience import CandidateExperience
-    from .candidate_skill import CandidateSkill
 
 
 class CandidateStatus(StrEnum):
@@ -56,7 +50,7 @@ class CandidateSource(StrEnum):
 
 
 class Gender(StrEnum):
-    """Gênero."""
+    """Genero."""
 
     MASCULINO = "masculino"
     FEMININO = "feminino"
@@ -74,8 +68,15 @@ class MaritalStatus(StrEnum):
     UNIAO_ESTAVEL = "uniao_estavel"
 
 
-class Candidate(Base, TimestampMixin, SoftDeleteMixin):
-    """Model para candidatos."""
+if TYPE_CHECKING:
+    from .application import Application
+    from .candidate_education import CandidateEducation
+    from .candidate_experience import CandidateExperience
+    from .candidate_skill import CandidateSkill
+
+
+class Candidate(Base):
+    """Model para candidatos — reflete schema real do banco."""
 
     __tablename__ = "candidates"
 
@@ -85,6 +86,9 @@ class Candidate(Base, TimestampMixin, SoftDeleteMixin):
         server_default="gen_random_uuid()",
     )
 
+    # Tenant
+    tenant_id: Mapped[str | None] = mapped_column(String(50))
+
     # Dados pessoais
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
@@ -93,93 +97,77 @@ class Candidate(Base, TimestampMixin, SoftDeleteMixin):
     cpf: Mapped[str | None] = mapped_column(String(14), unique=True)
     rg: Mapped[str | None] = mapped_column(String(20))
     birth_date: Mapped[date | None] = mapped_column(Date)
-    gender: Mapped[Gender | None] = mapped_column(Enum(Gender))
-    marital_status: Mapped[MaritalStatus | None] = mapped_column(Enum(MaritalStatus))
+    gender: Mapped[str | None] = mapped_column(String(30))
+    marital_status: Mapped[str | None] = mapped_column(String(30))
 
-    # Endereço
+    # Endereco
     address: Mapped[str | None] = mapped_column(String(300))
     city: Mapped[str | None] = mapped_column(String(100))
     state: Mapped[str | None] = mapped_column(String(2))
     zip_code: Mapped[str | None] = mapped_column(String(10))
-    neighborhood: Mapped[str | None] = mapped_column(String(100))
+    country: Mapped[str | None] = mapped_column(String(50))
 
     # Profissional
     headline: Mapped[str | None] = mapped_column(String(200))
     summary: Mapped[str | None] = mapped_column(Text)
+    current_company: Mapped[str | None] = mapped_column(String(200))
+    current_position: Mapped[str | None] = mapped_column(String(200))
     linkedin_url: Mapped[str | None] = mapped_column(String(300))
-    portfolio_url: Mapped[str | None] = mapped_column(String(300))
+    linkedin_id: Mapped[str | None] = mapped_column(String(100))
     github_url: Mapped[str | None] = mapped_column(String(300))
+    portfolio_url: Mapped[str | None] = mapped_column(String(300))
 
-    # Currículo
-    resume_file_path: Mapped[str | None] = mapped_column(String(500))
+    # Curriculo
+    resume_url: Mapped[str | None] = mapped_column(String(500))
     resume_text: Mapped[str | None] = mapped_column(Text)
-    resume_updated_at: Mapped[datetime | None] = mapped_column(DateTime)
+    resume_parsed: Mapped[dict | None] = mapped_column(JSONB)
     photo_url: Mapped[str | None] = mapped_column(String(500))
 
-    # Pretensão
+    # Pretensao
     salary_expectation: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
-    salary_expectation_pj: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
 
     # Disponibilidade
-    available_immediately: Mapped[bool] = mapped_column(Boolean, default=True)
-    notice_period_days: Mapped[int] = mapped_column(Integer, default=0)
-    available_date: Mapped[date | None] = mapped_column(Date)
-    available_for_travel: Mapped[bool] = mapped_column(Boolean, default=False)
-    available_for_relocation: Mapped[bool] = mapped_column(Boolean, default=False)
-    preferred_work_model: Mapped[str | None] = mapped_column(String(50))
-
-    # CNH
-    has_cnh: Mapped[bool] = mapped_column(Boolean, default=False)
-    cnh_category: Mapped[str | None] = mapped_column(String(5))
-    has_vehicle: Mapped[bool] = mapped_column(Boolean, default=False)
-
-    # Idiomas
-    languages: Mapped[list[dict] | None] = mapped_column(JSON, default=list)
+    availability: Mapped[str | None] = mapped_column(String(50))
 
     # Status e origem
-    status: Mapped[CandidateStatus] = mapped_column(Enum(CandidateStatus), default=CandidateStatus.ATIVO)
-    source: Mapped[CandidateSource] = mapped_column(Enum(CandidateSource), default=CandidateSource.SITE)
-    source_detail: Mapped[str | None] = mapped_column(String(200))
+    status: Mapped[str | None] = mapped_column(String(30))
+    source: Mapped[str | None] = mapped_column(String(50))
 
-    # Bloqueio
-    is_blocked: Mapped[bool] = mapped_column(Boolean, default=False)
-    block_reason: Mapped[str | None] = mapped_column(Text)
-    blocked_at: Mapped[datetime | None] = mapped_column(DateTime)
-    blocked_by: Mapped[str | None] = mapped_column(UUID(as_uuid=False))
+    # AI
+    ai_score: Mapped[Decimal | None] = mapped_column(Numeric(5, 2))
+    ai_analysis: Mapped[dict | None] = mapped_column(JSONB)
 
-    # Scores e métricas
-    profile_score: Mapped[int] = mapped_column(Integer, default=0)
-    applications_count: Mapped[int] = mapped_column(Integer, default=0)
-    interviews_count: Mapped[int] = mapped_column(Integer, default=0)
-    hired_count: Mapped[int] = mapped_column(Integer, default=0)
+    # Tags
+    tags: Mapped[list[str] | None] = mapped_column(ARRAY(String))
 
-    # Tags e notas
-    tags: Mapped[list[str] | None] = mapped_column(ARRAY(String), default=list)
-    internal_notes: Mapped[str | None] = mapped_column(Text)
+    # Flags
+    is_active: Mapped[bool | None] = mapped_column(Boolean, default=True)
+    is_deleted: Mapped[bool | None] = mapped_column(Boolean, default=False)
 
-    # Última atividade
-    last_activity_at: Mapped[datetime | None] = mapped_column(DateTime)
-    last_application_at: Mapped[datetime | None] = mapped_column(DateTime)
-
-    # PCD
-    is_pcd: Mapped[bool] = mapped_column(Boolean, default=False)
-    pcd_type: Mapped[str | None] = mapped_column(String(100))
-    pcd_cid: Mapped[str | None] = mapped_column(String(20))
-    needs_accommodation: Mapped[bool] = mapped_column(Boolean, default=False)
-    accommodation_notes: Mapped[str | None] = mapped_column(Text)
-
-    # Relacionamentos
-    condominium_id: Mapped[str | None] = mapped_column(UUID(as_uuid=False))
-    created_by: Mapped[str | None] = mapped_column(UUID(as_uuid=False))
+    # Timestamps
+    created_at: Mapped[datetime | None] = mapped_column(DateTime, server_default="now()")
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime, onupdate=datetime.utcnow)
 
     # Relationships
-    applications: Mapped[list["Application"]] = relationship("Application", back_populates="candidate", lazy="dynamic")
-    skills: Mapped[list["CandidateSkill"]] = relationship("CandidateSkill", back_populates="candidate", lazy="dynamic")
+    applications: Mapped[list["Application"]] = relationship(
+        "Application",
+        back_populates="candidate",
+        lazy="selectin",
+    )
+    skills: Mapped[list["CandidateSkill"]] = relationship(
+        "CandidateSkill",
+        back_populates="candidate",
+        lazy="selectin",
+    )
     experiences: Mapped[list["CandidateExperience"]] = relationship(
-        "CandidateExperience", back_populates="candidate", lazy="dynamic"
+        "CandidateExperience",
+        back_populates="candidate",
+        lazy="selectin",
     )
     educations: Mapped[list["CandidateEducation"]] = relationship(
-        "CandidateEducation", back_populates="candidate", lazy="dynamic"
+        "CandidateEducation",
+        back_populates="candidate",
+        lazy="selectin",
     )
 
     def __repr__(self) -> str:
@@ -196,144 +184,3 @@ class Candidate(Base, TimestampMixin, SoftDeleteMixin):
             - self.birth_date.year
             - ((today.month, today.day) < (self.birth_date.month, self.birth_date.day))
         )
-
-    @property
-    def is_available(self) -> bool:
-        """Verifica se está disponível."""
-        if self.available_immediately:
-            return True
-        if self.available_date and self.available_date <= date.today():
-            return True
-        return False
-
-    @property
-    def full_address(self) -> str:
-        """Retorna endereço completo."""
-        parts = []
-        if self.address:
-            parts.append(self.address)
-        if self.neighborhood:
-            parts.append(self.neighborhood)
-        if self.city:
-            parts.append(self.city)
-        if self.state:
-            parts.append(self.state)
-        if self.zip_code:
-            parts.append(f"CEP: {self.zip_code}")
-        return ", ".join(parts) if parts else ""
-
-    @property
-    def profile_completeness(self) -> int:  # pylint: disable=too-many-branches
-        """Calcula completude do perfil (0-100)."""
-        score = 0
-        total = 0
-
-        # Dados obrigatórios (40 pontos)
-        total += 10
-        if self.name:
-            score += 10
-        total += 10
-        if self.email:
-            score += 10
-        total += 10
-        if self.phone:
-            score += 10
-        total += 10
-        if self.resume_file_path or self.resume_text:
-            score += 10
-
-        # Dados importantes (35 pontos)
-        total += 7
-        if self.headline:
-            score += 7
-        total += 7
-        if self.summary:
-            score += 7
-        total += 7
-        if self.city and self.state:
-            score += 7
-        total += 7
-        if self.salary_expectation:
-            score += 7
-        total += 7
-        if self.birth_date:
-            score += 7
-
-        # Dados complementares (25 pontos)
-        total += 5
-        if self.linkedin_url:
-            score += 5
-        total += 5
-        if self.photo_url:
-            score += 5
-        total += 5
-        if self.cpf:
-            score += 5
-        total += 5
-        if self.languages:
-            score += 5
-        total += 5
-        if self.has_cnh:
-            score += 5
-
-        return int((score / total) * 100) if total > 0 else 0
-
-    def block(self, reason: str, blocked_by: str) -> None:
-        """Bloqueia candidato."""
-        self.is_blocked = True
-        self.block_reason = reason
-        self.blocked_at = datetime.utcnow()
-        self.blocked_by = blocked_by
-        self.status = CandidateStatus.BLOQUEADO
-
-    def unblock(self) -> None:
-        """Desbloqueia candidato."""
-        self.is_blocked = False
-        self.block_reason = None
-        self.blocked_at = None
-        self.blocked_by = None
-        self.status = CandidateStatus.ATIVO
-
-    def archive(self) -> None:
-        """Arquiva candidato."""
-        self.status = CandidateStatus.ARQUIVADO
-
-    def activate(self) -> None:
-        """Ativa candidato."""
-        self.status = CandidateStatus.ATIVO
-
-    def mark_as_hired(self) -> None:
-        """Marca como contratado."""
-        self.status = CandidateStatus.CONTRATADO
-        self.hired_count += 1
-
-    def record_activity(self) -> None:
-        """Registra atividade."""
-        self.last_activity_at = datetime.utcnow()
-
-    def record_application(self) -> None:
-        """Registra candidatura."""
-        self.applications_count += 1
-        self.last_application_at = datetime.utcnow()
-        self.record_activity()
-
-    def record_interview(self) -> None:
-        """Registra entrevista."""
-        self.interviews_count += 1
-        self.record_activity()
-
-    def update_profile_score(self) -> None:
-        """Atualiza score do perfil."""
-        self.profile_score = self.profile_completeness
-
-    def add_tag(self, tag: str) -> None:
-        """Adiciona tag."""
-        if not self.tags:
-            self.tags = []
-        if tag not in self.tags:
-            self.tags.append(tag)
-
-    def remove_tag(self, tag: str) -> None:
-        """Remove tag."""
-        if self.tags and tag in self.tags:
-            self.tags.remove(tag)

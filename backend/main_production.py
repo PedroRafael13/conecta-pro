@@ -14,6 +14,7 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 from starlette.middleware.base import BaseHTTPMiddleware
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 from core.config import settings
 from core.logging import configure_logging, logger
@@ -114,6 +115,9 @@ app.add_middleware(
 )
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(GZipMiddleware, minimum_size=500)
+# ProxyHeaders: confia nos headers X-Forwarded-Proto/X-Forwarded-For do nginx
+# para que redirects 307 usem https:// em vez de http://
+app.add_middleware(ProxyHeadersMiddleware, trusted_hosts=["*"])
 
 
 @app.get("/health", tags=["Health"])
@@ -294,22 +298,29 @@ except Exception as e:
 try:
     from modules.operacoes import (
         allocation_router,
+        announcement_router,
+        banco_horas_alias,
         checklist_router,
         communication_router,
         diarist_fiscal_router,
         diarist_router,
         disciplinary_router,
         employee_router,
+        ferias_alias,
         inspection_round_router,
         kpi_trends_router,
+        notification_router,
         occurrence_router,
+        ocorrencias_alias,
         operacional_ai_router,
+        operacional_dashboard_router,
         operacional_ws_router,
         ordem_servico_router,
         post_router,
         reports_router,
         scale_router,
         scale_template_router,
+        scale_templates_alias,
         shift_router,
         substitution_router,
         time_bank_router,
@@ -354,6 +365,18 @@ try:
     api_router.include_router(ordem_servico_router, prefix="/campo/os", tags=["Campo - Ordens de Servico"])
     api_router.include_router(visita_router, prefix="/campo/visitas", tags=["Campo - Visitas"])
     api_router.include_router(checklist_router, prefix="/campo/checklists", tags=["Campo - Checklists"])
+    # --- Dashboard operacional ---
+    api_router.include_router(operacional_dashboard_router, prefix="/operacional", tags=["Operacional - Dashboard"])
+    # --- Aliases PT-BR (frontend compatibility — redirects) ---
+    api_router.include_router(banco_horas_alias, prefix="/operacional", tags=["Operacional - Banco Horas (alias)"])
+    api_router.include_router(ocorrencias_alias, prefix="/operacional", tags=["Operacional - Ocorrencias (alias)"])
+    api_router.include_router(ferias_alias, prefix="/operacional", tags=["Operacional - Ferias (alias)"])
+    api_router.include_router(
+        scale_templates_alias, prefix="/operacional", tags=["Operacional - Scale Templates (alias)"]
+    )
+    # --- Comunicados e Notificações (direto, sem /comunicacao/) ---
+    api_router.include_router(announcement_router, prefix="/operacional", tags=["Operacional - Comunicados"])
+    api_router.include_router(notification_router, prefix="/operacional", tags=["Operacional - Notificacoes"])
     logger.info("Modulo Operacoes: OK (Operacional + Campo)")
 except Exception as e:
     logger.warning(f"Modulo Operacoes: {e}")
@@ -413,10 +436,10 @@ try:
     # Recruitment
     api_router.include_router(recruitment_router, tags=["Recruitment - Recrutamento e Selecao"])
     # Retention
-    api_router.include_router(onboarding_router, prefix="/retention/onboarding", tags=["Retention - Onboarding"])
-    api_router.include_router(profile_router, prefix="/retention/profile", tags=["Retention - Operational Profile"])
-    api_router.include_router(climate_router, prefix="/retention/climate", tags=["Retention - Climate Survey"])
-    api_router.include_router(turnover_router, prefix="/retention/turnover", tags=["Retention - Turnover Prediction"])
+    api_router.include_router(onboarding_router, tags=["Retention - Onboarding"])
+    api_router.include_router(profile_router, tags=["Retention - Operational Profile"])
+    api_router.include_router(climate_router, tags=["Retention - Climate Survey"])
+    api_router.include_router(turnover_router, tags=["Retention - Turnover Prediction"])
     # Reimbursement
     api_router.include_router(reimbursement_router, prefix="/reimbursements", tags=["Reimbursement - Reembolsos"])
     # GED
@@ -427,7 +450,13 @@ try:
     api_router.include_router(ged_tag_router, prefix="/ged", tags=["GED - Tags"])
     api_router.include_router(ged_signature_router, prefix="/ged", tags=["GED - Assinaturas"])
     api_router.include_router(ged_stats_router, prefix="/ged", tags=["GED - Estatísticas"])
-    logger.info("Modulo Pessoas: OK (Recruitment + Retention + Reimbursement + GED)")
+    try:
+        from modules.ged.controllers.ged_integration_controller import router as ged_integration_router
+
+        api_router.include_router(ged_integration_router, prefix="/ged", tags=["GED - Integracao"])
+    except ImportError:
+        pass
+    logger.info("Modulo Pessoas: OK (Recruitment + Retention + Reimbursement + GED + Integracao)")
 except Exception as e:
     logger.warning(f"Modulo Pessoas: {e}")
 
@@ -589,15 +618,39 @@ try:
     from modules.people_management import router as people_management_router
 
     api_router.include_router(people_management_router)
-    logger.info("Modulo People Management: OK (DP + RH + Operations + Portal)")
+    logger.info("Modulo People Management: OK (DP + RH + Operations + Portal + GED)")
 except Exception as e:
     logger.warning(f"Modulo People Management: {e}")
+
+
+# =============================================================================
+# 11. AREA DO CLIENTE (client_portal: Auth + Kits + Chamados)
+# =============================================================================
+try:
+    from modules.client_portal import router as client_portal_router
+
+    api_router.include_router(client_portal_router)
+    logger.info("Modulo Client Portal: OK (Auth + Kits + Tickets)")
+except Exception as e:
+    logger.warning(f"Modulo Client Portal: {e}")
+
+
+# =============================================================================
+# 12. CCT 2026 — SINDECOMPRESTS/SINDICOND-AM
+# =============================================================================
+try:
+    from modules.cct import router as cct_router
+
+    api_router.include_router(cct_router)
+    logger.info("Modulo CCT 2026: OK (Salarios + Beneficios + Jornadas + Compliance + Rescisao + Feriados)")
+except Exception as e:
+    logger.warning(f"Modulo CCT 2026: {e}")
 
 
 # Incluir router principal
 app.include_router(api_router)
 
-logger.info("=== API CONECTA PRO INICIADA (10 módulos) ===")
+logger.info("=== API CONECTA PRO INICIADA (11 módulos) ===")
 
 
 if __name__ == "__main__":

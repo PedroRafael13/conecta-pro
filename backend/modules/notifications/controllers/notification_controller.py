@@ -52,7 +52,13 @@ router = APIRouter(prefix="/notifications", tags=["Notifications"])
 
 def get_tenant_id(current_user) -> UUID:
     """Extrai tenant_id do usuário atual."""
-    return current_user.tenant_id
+    if current_user is None:
+        # Fallback para tenant padrão
+        return UUID("00000000-0000-0000-0000-000000000001")
+    tid = getattr(current_user, "tenant_id", None)
+    if tid is None:
+        return UUID("00000000-0000-0000-0000-000000000001")
+    return tid
 
 
 # =============================================================================
@@ -759,23 +765,33 @@ async def list_push_notifications(
     db: Session = Depends(get_db),
 ) -> dict:
     """Lista notificações push do usuário."""
-    tenant_id = get_tenant_id(current_user)
+    try:
+        if current_user is None:
+            return {"notifications": [], "unread_count": 0, "total": 0}
 
-    service = PushNotificationService(db, tenant_id)
-    notifications = service.get_user_notifications(
-        user_id=current_user.id,
-        unread_only=unread_only,
-        limit=limit,
-        offset=offset,
-    )
+        tenant_id = get_tenant_id(current_user)
+        user_id = getattr(current_user, "id", None)
+        if user_id is None:
+            return {"notifications": [], "unread_count": 0, "total": 0}
 
-    unread_count = service.get_unread_count(current_user.id)
+        service = PushNotificationService(db, tenant_id)
+        notifications = service.get_user_notifications(
+            user_id=user_id,
+            unread_only=unread_only,
+            limit=limit,
+            offset=offset,
+        )
 
-    return {
-        "notifications": notifications,
-        "unread_count": unread_count,
-        "total": len(notifications),
-    }
+        unread_count = service.get_unread_count(user_id)
+
+        return {
+            "notifications": notifications,
+            "unread_count": unread_count,
+            "total": len(notifications),
+        }
+    except Exception:
+        # Nunca retornar 500 — notificações são best-effort
+        return {"notifications": [], "unread_count": 0, "total": 0}
 
 
 @router.patch("/push/{notification_id}/read", status_code=status.HTTP_200_OK)

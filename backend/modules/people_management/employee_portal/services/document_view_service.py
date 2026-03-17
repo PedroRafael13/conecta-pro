@@ -5,11 +5,11 @@ Servico de leitura para o portal do funcionario acessar seus proprios dados.
 """
 
 import logging
-from datetime import date, datetime, timedelta
+from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import and_, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger(__name__)
@@ -138,47 +138,24 @@ class DocumentViewService:
         }
 
         try:
-            from modules.operacional.models import Shift
             from modules.operacional.models.employee import Employee
 
-            # Buscar nome do funcionario
             emp_query = select(Employee).where(Employee.id == employee_id)
             emp_result = await self.db.execute(emp_query)
             employee = emp_result.scalar_one_or_none()
 
             if employee:
-                schedule["employee_name"] = employee.nome
+                schedule["employee_name"] = getattr(employee, "nome", "")
+                schedule["escala_padrao"] = getattr(employee, "escala_padrao", "")
+                schedule["turno_padrao"] = getattr(employee, "turno_padrao", "")
+                schedule["carga_horaria_semanal"] = getattr(employee, "carga_horaria_semanal", 0)
+                schedule["jornada_trabalho"] = getattr(employee, "jornada_trabalho", "")
+                schedule["cargo"] = getattr(employee, "cargo", "")
+                schedule["posto_atual_nome"] = getattr(employee, "posto_atual_nome", "")
 
-            # Buscar turnos do mes
-            start_date = date(target_year, target_month, 1)
-            if target_month == 12:
-                end_date = date(target_year + 1, 1, 1) - timedelta(days=1)
-            else:
-                end_date = date(target_year, target_month + 1, 1) - timedelta(days=1)
-
-            shift_query = select(Shift).where(
-                and_(
-                    Shift.employee_id == employee_id,
-                    Shift.date >= start_date,
-                    Shift.date <= end_date,
-                )
-            )
-            shift_result = await self.db.execute(shift_query)
-            shifts = shift_result.scalars().all()
-
-            total_hours = 0.0
-            for s in shifts:
-                shift_data = {
-                    "date": str(s.date) if hasattr(s, "date") else "",
-                    "start_time": str(getattr(s, "start_time", "08:00")),
-                    "end_time": str(getattr(s, "end_time", "20:00")),
-                    "workplace": getattr(s, "post_name", None),
-                    "status": getattr(s, "status", "agendado"),
-                }
-                schedule["shifts"].append(shift_data)
-                total_hours += 12.0  # Estimativa padrao
-
-            schedule["total_hours"] = total_hours
+                # Calcular horas estimadas do mes
+                carga = getattr(employee, "carga_horaria_semanal", 0) or 0
+                schedule["total_hours"] = float(carga * 4.33)
 
         except ImportError:
             logger.warning("Modelos operacionais nao disponiveis para escalas.")

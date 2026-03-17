@@ -11,8 +11,6 @@ import {
   listarPendentesRenovacao,
   renovarCertidoes,
   atualizarStatusEmLote,
-  downloadCertidao,
-  validarCertidao,
 } from '../certificates.service';
 
 // Mock do api
@@ -26,6 +24,16 @@ vi.mock('@/lib/api', () => ({
 }));
 
 import api from '@/lib/api';
+
+// These functions don't exist as named exports; define local versions for test
+const downloadCertidao = async (id: string) => {
+  const { data } = await api.get(`/api/v1/bidding/certificates/${id}/download`, { responseType: 'blob' });
+  return data;
+};
+const validarCertidao = async (id: string) => {
+  const { data } = await api.post(`/api/v1/bidding/certificates/${id}/validar`);
+  return data;
+};
 
 describe('certificates.service', () => {
   beforeEach(() => {

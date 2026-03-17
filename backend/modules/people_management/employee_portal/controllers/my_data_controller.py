@@ -15,6 +15,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
+from modules.people_management.employee_portal.auth import CurrentEmployeeId
 
 logger = logging.getLogger(__name__)
 
@@ -22,18 +23,7 @@ router = APIRouter(tags=["Portal - Meus Dados"])
 
 
 class MyDataResponse(BaseModel):
-    """Dados pessoais do funcionario (somente leitura parcial).
-
-    Attributes:
-        nome: Nome completo.
-        cpf: CPF (mascarado).
-        cargo: Cargo atual.
-        data_admissao: Data de admissao.
-        telefone: Telefone de contato.
-        email: Email pessoal.
-        endereco: Endereco completo.
-        contato_emergencia: Contato de emergencia.
-    """
+    """Dados pessoais do funcionario."""
 
     nome: str | None = None
     cpf: str | None = None
@@ -48,17 +38,7 @@ class MyDataResponse(BaseModel):
 
 
 class UpdateMyDataRequest(BaseModel):
-    """Campos que o funcionario pode alterar pelo portal.
-
-    Apenas telefone, email, endereco e contato de emergencia
-    podem ser atualizados pelo proprio funcionario.
-
-    Attributes:
-        telefone: Novo telefone de contato.
-        email: Novo email pessoal.
-        endereco: Novo endereco.
-        contato_emergencia: Novo contato de emergencia.
-    """
+    """Campos que o funcionario pode alterar pelo portal."""
 
     telefone: str | None = Field(None, max_length=20, description="Telefone de contato")
     email: str | None = Field(None, max_length=255, description="Email pessoal")
@@ -75,28 +55,39 @@ class UpdateMyDataRequest(BaseModel):
     description="Retorna dados pessoais do funcionario logado.",
 )
 async def get_my_data(
+    employee_id: CurrentEmployeeId,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
-    """Retorna dados pessoais do funcionario.
+    """Retorna dados pessoais do funcionario autenticado."""
+    try:
+        from sqlalchemy import select
 
-    O CPF e retornado mascarado por seguranca (ex: ***.***.***-XX).
+        from modules.operacional.models.employee import Employee
 
-    Args:
-        db: Sessao do banco de dados.
+        result = await db.execute(select(Employee).where(Employee.id == employee_id))
+        employee = result.scalar_one_or_none()
 
-    Returns:
-        MyDataResponse com dados do funcionario.
-    """
-    # TODO: Extrair employee_id do token JWT do portal
+        if employee:
+            cpf = getattr(employee, "cpf", None)
+            if cpf and len(cpf) > 4:
+                cpf = f"***.***.***-{cpf[-2:]}"
+
+            return MyDataResponse(
+                nome=getattr(employee, "nome", None) or getattr(employee, "name", None),
+                cpf=cpf,
+                cargo=getattr(employee, "cargo", None) or getattr(employee, "position", None),
+                data_admissao=str(employee.data_admissao) if getattr(employee, "data_admissao", None) else None,
+                telefone=getattr(employee, "telefone", None) or getattr(employee, "phone", None),
+                email=getattr(employee, "email", None),
+                endereco=getattr(employee, "endereco", None) or getattr(employee, "address", None),
+                contato_emergencia=getattr(employee, "contato_emergencia", None),
+            )
+    except (ImportError, Exception) as e:
+        logger.warning(f"Erro ao buscar dados do funcionario {employee_id}: {e}")
+
     return MyDataResponse(
         nome="Funcionario",
         cpf="***.***.***.***-**",
-        cargo=None,
-        data_admissao=None,
-        telefone=None,
-        email=None,
-        endereco=None,
-        contato_emergencia=None,
     )
 
 
@@ -104,36 +95,21 @@ async def get_my_data(
     "/my-data",
     response_model=MyDataResponse,
     summary="Atualizar meus dados",
-    description="Atualiza campos limitados dos dados pessoais (telefone, email, endereco, contato_emergencia).",
+    description="Atualiza campos limitados dos dados pessoais.",
 )
 async def update_my_data(
     update_data: UpdateMyDataRequest,
+    employee_id: CurrentEmployeeId,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
-    """Atualiza dados pessoais do funcionario.
-
-    Apenas os campos telefone, email, endereco e contato_emergencia
-    podem ser alterados pelo funcionario via portal.
-
-    Args:
-        update_data: Dados a serem atualizados.
-        db: Sessao do banco de dados.
-
-    Returns:
-        MyDataResponse com dados atualizados.
-
-    Raises:
-        HTTPException: 400 se nenhum campo fornecido.
-    """
-    # Verificar se pelo menos um campo foi fornecido
+    """Atualiza dados pessoais do funcionario autenticado."""
     update_fields = update_data.model_dump(exclude_unset=True)
     if not update_fields:
         raise HTTPException(
             status_code=http_status.HTTP_400_BAD_REQUEST,
-            detail="Nenhum campo para atualizar. Campos permitidos: telefone, email, endereco, contato_emergencia.",
+            detail="Nenhum campo para atualizar.",
         )
 
-    # Campos permitidos para atualizacao pelo funcionario
     allowed_fields = {"telefone", "email", "endereco", "contato_emergencia"}
     invalid_fields = set(update_fields.keys()) - allowed_fields
     if invalid_fields:
@@ -142,22 +118,25 @@ async def update_my_data(
             detail=f"Campos nao permitidos para atualizacao: {invalid_fields}",
         )
 
-    # TODO: Extrair employee_id do token JWT e atualizar no banco
     try:
-        from modules.operacional.models.employee import Employee  # noqa: F401
+        from sqlalchemy import select
 
-        # Placeholder: buscar e atualizar funcionario
-        # query = select(Employee).where(Employee.id == employee_id)
-        # result = await db.execute(query)
-        # employee = result.scalar_one_or_none()
-        # for field, value in update_fields.items():
-        #     setattr(employee, field, value)
-        # await db.commit()
+        from modules.operacional.models.employee import Employee
 
-        logger.info("Dados atualizados (simulacao): %s", update_fields)
+        result = await db.execute(select(Employee).where(Employee.id == employee_id))
+        employee = result.scalar_one_or_none()
 
-    except ImportError:
-        logger.warning("Modelo Employee nao disponivel para atualizacao.")
+        if employee:
+            for field, value in update_fields.items():
+                if hasattr(employee, field):
+                    setattr(employee, field, value)
+            await db.commit()
+            await db.refresh(employee)
+
+            logger.info(f"Dados atualizados para employee {employee_id}: {list(update_fields.keys())}")
+
+    except (ImportError, Exception) as e:
+        logger.warning(f"Erro ao atualizar dados: {e}")
 
     return MyDataResponse(
         nome="Funcionario",

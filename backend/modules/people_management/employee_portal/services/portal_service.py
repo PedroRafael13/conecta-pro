@@ -40,29 +40,31 @@ class PortalService:
     async def authenticate_employee(
         self,
         cpf: str,
-        password: str,
+        password: str | None = None,
+        data_nascimento: str | None = None,
         ip_address: str | None = None,
         user_agent: str | None = None,
     ) -> dict[str, Any] | None:
-        """Autentica funcionario por CPF e senha.
+        """Autentica funcionario por CPF + senha ou CPF + data de nascimento.
 
-        Busca o funcionario pelo CPF no banco, valida a senha
-        e retorna dados para geracao do token JWT.
+        Dois modos de login:
+        1. CPF + senha (padrao)
+        2. CPF + data de nascimento (primeiro acesso ou esqueceu senha)
 
         Args:
             cpf: CPF do funcionario (com ou sem formatacao).
-            password: Senha do portal.
+            password: Senha do portal (modo 1).
+            data_nascimento: Data de nascimento YYYY-MM-DD (modo 2).
             ip_address: IP do acesso (para log).
             user_agent: User agent do navegador (para log).
 
         Returns:
-            Dict com employee_id, nome e token se autenticado,
+            Dict com employee_id, nome, cargo, cpf, escala se autenticado,
             ou None se credenciais invalidas.
         """
         try:
             from modules.operacional.models.employee import Employee
 
-            # Normalizar CPF (remover pontos e tracos)
             cpf_clean = cpf.replace(".", "").replace("-", "").strip()
 
             query = select(Employee).where(
@@ -76,14 +78,10 @@ class PortalService:
                 logger.warning("Tentativa de login com CPF nao encontrado: %s***", cpf_clean[:3])
                 return None
 
-            # Validar senha (simplificado — em producao usar bcrypt/argon2)
-            # A senha do portal pode estar em um campo dedicado ou ser derivada
-            portal_password = getattr(employee, "portal_password", None)
-            if portal_password and portal_password != password:
-                logger.warning("Senha incorreta para employee_id=%s", employee.id)
+            # Validar credenciais (senha ou data de nascimento)
+            if not self._validate_credentials(employee, password, data_nascimento):
                 return None
 
-            # Registrar acesso
             await self.log_access(
                 employee_id=employee.id,
                 action=PortalAccessAction.LOGIN,
@@ -94,7 +92,9 @@ class PortalService:
             return {
                 "employee_id": str(employee.id),
                 "nome": employee.nome,
-                "cargo": getattr(employee, "cargo", ""),
+                "cargo": getattr(employee, "cargo", "") or "",
+                "cpf": cpf_clean,
+                "escala": getattr(employee, "escala_padrao", "") or "",
             }
 
         except ImportError:
@@ -103,6 +103,35 @@ class PortalService:
         except Exception as e:
             logger.error("Erro na autenticacao: %s", e, exc_info=True)
             return None
+
+    @staticmethod
+    def _validate_credentials(employee: Any, password: str | None, data_nascimento: str | None) -> bool:
+        """Valida credenciais do funcionario.
+
+        Args:
+            employee: Objeto Employee do banco.
+            password: Senha fornecida (modo 1).
+            data_nascimento: Data de nascimento YYYY-MM-DD (modo 2).
+
+        Returns:
+            True se credenciais validas, False caso contrario.
+        """
+        if password:
+            portal_password = getattr(employee, "portal_password", None)
+            if portal_password and portal_password != password:
+                logger.warning("Senha incorreta para employee_id=%s", employee.id)
+                return False
+            return True
+
+        if data_nascimento:
+            dt_nasc = getattr(employee, "data_nascimento", None)
+            if dt_nasc and str(dt_nasc) != data_nascimento:
+                logger.warning("Data nascimento incorreta para employee_id=%s", employee.id)
+                return False
+            return True
+
+        logger.warning("Nenhuma credencial fornecida para employee_id=%s", employee.id)
+        return False
 
     async def get_dashboard(self, employee_id: UUID) -> dict[str, Any]:
         """Retorna dados do dashboard do funcionario.

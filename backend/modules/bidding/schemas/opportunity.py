@@ -19,6 +19,10 @@ class ScoutRequest(BaseModel):
     valor_min: Decimal | None = Field(None, ge=0, description="Valor minimo estimado")
     valor_max: Decimal | None = Field(None, ge=0, description="Valor maximo estimado")
     portal: str | None = Field(None, description="Portal especifico (pncp, comprasnet, bec, etc)")
+    portais: list[str] = Field(
+        default_factory=lambda: ["pncp", "comprasnet", "licitacoes_e", "ecompras_am"],
+        description="Lista de portais para busca simultanea",
+    )
     dias_retroativos: int = Field(default=30, ge=1, le=180, description="Dias retroativos para busca")
     segmentos: list[str] = Field(
         default_factory=lambda: ["vigilancia", "seguranca_eletronica", "portaria"],

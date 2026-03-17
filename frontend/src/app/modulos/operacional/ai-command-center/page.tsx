@@ -495,9 +495,9 @@ export default function AICommandCenterOperacionalPage() {
                     <span className="text-white/70 capitalize">
                       {ev.type.replace(/_/g, ' ')}
                     </span>
-                    {ev.data?.message && (
+                    {ev.data?.message ? (
                       <span className="text-white/40 ml-1">— {String(ev.data.message)}</span>
-                    )}
+                    ) : null}
                   </div>
                   <span className="text-white/20 flex-shrink-0">
                     {new Date(ev.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}

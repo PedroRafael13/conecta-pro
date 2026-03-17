@@ -36,6 +36,7 @@ interface NFSeMultiResult {
   liminares_aplicadas: string[];
   tributos: TributosResult;
   xml_preview: string | null;
+  xml_gerado?: string | null;
   mensagem: string;
   ambiente: string;
 }
@@ -156,8 +157,8 @@ export default function NFSeMultiPage() {
         forcar_liminares: form.forcar_liminares,
       };
 
-      const resp = await apiClient.post('/api/v1/fiscal/nfse-multi/preparar', payload);
-      setResultado(resp.data as NFSeMultiResult);
+      const resp = await apiClient<NFSeMultiResult>({ url: '/api/v1/fiscal/nfse-multi/preparar', method: 'POST', data: payload });
+      setResultado(resp);
     } catch (err: any) {
       setErro(err?.response?.data?.detail ?? 'Erro ao calcular NFS-e. Tente novamente.');
     } finally {
@@ -451,7 +452,7 @@ export default function NFSeMultiPage() {
                         <td className="text-right">{formatCurrency(resultado.tributos.pis)}</td>
                         <td className="text-center">
                           {resultado.tributos.pis === 0 && resultado.liminares_aplicadas.includes('pis_cofins_zero')
-                            ? <CheckCircle2 className="h-4 w-4 text-green-600 mx-auto" title="Zerado por liminar" />
+                            ? <span title="Zerado por liminar"><CheckCircle2 className="h-4 w-4 text-green-600 mx-auto" /></span>
                             : <span className="text-muted-foreground">—</span>
                           }
                         </td>
@@ -462,7 +463,7 @@ export default function NFSeMultiPage() {
                         <td className="text-right">{formatCurrency(resultado.tributos.cofins)}</td>
                         <td className="text-center">
                           {resultado.tributos.cofins === 0 && resultado.liminares_aplicadas.includes('pis_cofins_zero')
-                            ? <CheckCircle2 className="h-4 w-4 text-green-600 mx-auto" title="Zerado por liminar" />
+                            ? <span title="Zerado por liminar"><CheckCircle2 className="h-4 w-4 text-green-600 mx-auto" /></span>
                             : <span className="text-muted-foreground">—</span>
                           }
                         </td>
@@ -481,7 +482,7 @@ export default function NFSeMultiPage() {
                         </td>
                         <td className="text-center">
                           {!resultado.tributos.inss_retido
-                            ? <CheckCircle2 className="h-4 w-4 text-green-600 mx-auto" title="Liminar: não retido" />
+                            ? <span title="Liminar: não retido"><CheckCircle2 className="h-4 w-4 text-green-600 mx-auto" /></span>
                             : <span className="text-muted-foreground">—</span>
                           }
                         </td>

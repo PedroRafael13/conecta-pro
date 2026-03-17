@@ -355,7 +355,7 @@ export default function MonitoramentoPage() {
                   Nenhum agente em monitoramento
                 </h3>
                 <p className="text-[hsl(var(--muted-foreground))] mt-1">
-                  Os dados de monitoramento serao exibidos quando houver agentes ativos.
+                  Os dados de monitoramento serão exibidos quando houver agentes ativos.
                 </p>
                 <Button variant="outline" size="sm" className="mt-4" onClick={handleRefreshAll}>
                   <RefreshCw className="w-4 h-4 mr-2" />

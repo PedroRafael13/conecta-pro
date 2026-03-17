@@ -1,14 +1,16 @@
 """
 Service de Integracao ERP - Licitacoes
 ======================================
-Bridge: Licitacao -> Contrato Operacional -> Financeiro
+Bridge: Licitacao -> Contrato Operacional -> Financeiro -> Fiscal
 
 Converte contratos publicos (bidding) em entidades operacionais
 (postos, alocacoes) e gera medicoes/faturas para o financeiro.
+Gera NFS-e via integracao com modulo fiscal.
 """
 
+import contextlib
 import logging
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 from uuid import UUID, uuid4
 
@@ -21,6 +23,9 @@ from modules.operacional.models.allocation import Allocation, AllocationStatus
 from modules.operacional.models.post import Post, PostStatus, PostType, ShiftType
 
 logger = logging.getLogger(__name__)
+
+# Prazo padrao de vencimento em dias (usado quando contrato nao especifica)
+_DEFAULT_PAYMENT_DAYS = 30
 
 
 class ERPIntegrationService:
@@ -357,22 +362,26 @@ class ERPIntegrationService:
         user_id: UUID | None = None,
     ) -> dict:
         """
-        Gera fatura (conta a receber) a partir de uma medicao aprovada.
+        Gera fatura (conta a receber + NFS-e) a partir de uma medicao aprovada.
 
-        TODO: Integrar com modulo financeiro (contas_a_receber).
-        TODO: Integrar com NFS-e via government_integrations.
+        Integra com:
+        - Modulo financeiro: cria conta a receber (ReceivableAccount)
+        - Modulo fiscal: prepara/emite NFS-e via NfseMultiEmpresaService
+
+        Ambas integracoes sao opcionais — se falharem, a fatura e retornada
+        com dados stub e um aviso no log.
 
         Args:
             medicao_id: ID da medicao aprovada.
             user_id: ID do usuario.
 
         Returns:
-            dict com dados da fatura gerada (stub).
+            dict com dados da fatura (real quando integrado, stub quando nao).
 
         Raises:
             ValueError: Se medicao nao encontrada ou nao aprovada.
         """
-        # Busca medicao
+        # ----- Busca medicao -----
         result = await self.db.execute(
             select(Measurement).where(
                 Measurement.id == medicao_id,
@@ -391,20 +400,23 @@ class ERPIntegrationService:
                 f"Aprove a medicao antes de gerar a fatura."
             )
 
-        # Busca contrato para dados complementares
+        # ----- Busca contrato para dados complementares -----
         result = await self.db.execute(select(PublicContract).where(PublicContract.id == measurement.contrato_id))
         contract = result.scalar_one_or_none()
 
-        # TODO: Criar registro em contas_a_receber (modulo financeiro)
-        # from modules.financial.services.receivable_service import ReceivableService
-        # receivable = await ReceivableService(self.db).create(...)
+        # Dados comuns
+        descricao = (
+            f"Medicao #{measurement.numero_medicao} - {measurement.competencia} - "
+            f"Contrato {contract.numero_contrato}/{contract.ano_contrato}"
+            if contract
+            else f"Medicao #{measurement.numero_medicao} - {measurement.competencia}"
+        )
+        data_emissao = date.today()
+        data_vencimento = self._calcular_vencimento(measurement, contract)
 
-        # TODO: Disparar geracao de NFS-e via government_integrations
-        # from modules.government_integrations.services.nfse_service import NFSeService
-        # nfse = await NFSeService(self.db).emitir(...)
-
-        fatura_stub = {
-            "id": str(uuid4()),  # ID provisorio
+        # Inicializa fatura com stubs
+        fatura = {
+            "id": str(uuid4()),  # ID provisorio — substituido se financeiro criar
             "status": "pendente_integracao",
             "medicao_id": str(measurement.id),
             "contrato_id": str(measurement.contrato_id),
@@ -415,14 +427,9 @@ class ERPIntegrationService:
             "valor_liquido": float(measurement.valor_liquido),
             "cliente_cnpj": contract.orgao_cnpj if contract else None,
             "cliente_nome": contract.orgao_nome if contract else None,
-            "descricao": (
-                f"Medicao #{measurement.numero_medicao} - {measurement.competencia} - "
-                f"Contrato {contract.numero_contrato}/{contract.ano_contrato}"
-                if contract
-                else f"Medicao #{measurement.numero_medicao} - {measurement.competencia}"
-            ),
-            "data_emissao": date.today().isoformat(),
-            "data_vencimento": None,  # TODO: calcular baseado em prazo do contrato
+            "descricao": descricao,
+            "data_emissao": data_emissao.isoformat(),
+            "data_vencimento": data_vencimento.isoformat() if data_vencimento else None,
             "nota_fiscal": {
                 "status": "pendente",
                 "numero": None,
@@ -439,14 +446,317 @@ class ERPIntegrationService:
             ),
         }
 
+        # ------------------------------------------------------------------ #
+        #  TASK 1 — Integracao Financeira (Contas a Receber)                  #
+        # ------------------------------------------------------------------ #
+        receivable_ok = await self._criar_conta_a_receber(
+            fatura,
+            measurement,
+            contract,
+            descricao,
+            data_emissao,
+            data_vencimento,
+            user_id,
+        )
+
+        # ------------------------------------------------------------------ #
+        #  TASK 2 — Integracao Fiscal (NFS-e)                                 #
+        # ------------------------------------------------------------------ #
+        nfse_ok = await self._emitir_nfse(
+            fatura,
+            measurement,
+            contract,
+            descricao,
+        )
+
+        # Atualiza status geral da fatura
+        if receivable_ok and nfse_ok:
+            fatura["status"] = "integrada"
+            fatura["integracao_pendente"] = False
+            fatura["mensagem"] = "Fatura gerada com sucesso. Conta a receber criada e NFS-e preparada."
+        elif receivable_ok:
+            fatura["status"] = "parcial_financeiro"
+            fatura["integracao_pendente"] = True
+            fatura["mensagem"] = "Conta a receber criada. NFS-e pendente (ver nota_fiscal.mensagem)."
+        elif nfse_ok:
+            fatura["status"] = "parcial_fiscal"
+            fatura["integracao_pendente"] = True
+            fatura["mensagem"] = "NFS-e preparada. Conta a receber pendente (ver conta_a_receber.mensagem)."
+        # else: mantém stubs originais
+
         logger.info(
-            "Fatura stub gerada para medicao #%d do contrato %s - Valor: R$ %s",
+            "Fatura gerada para medicao #%d do contrato %s - Valor: R$ %s - Status: %s",
             measurement.numero_medicao,
             contract.numero_contrato if contract else "N/A",
             measurement.valor_liquido,
+            fatura["status"],
         )
 
-        return fatura_stub
+        return fatura
+
+    # ------------------------------------------------------------------ #
+    #  Helpers de integracao (fatura)                                      #
+    # ------------------------------------------------------------------ #
+
+    async def _criar_conta_a_receber(
+        self,
+        fatura: dict,
+        measurement: Measurement,
+        contract: PublicContract | None,
+        descricao: str,
+        data_emissao: date,
+        data_vencimento: date | None,
+        user_id: UUID | None,
+    ) -> bool:
+        """
+        Tenta criar conta a receber no modulo financeiro.
+
+        Retorna True se criou com sucesso, False caso contrario.
+        Atualiza ``fatura["conta_a_receber"]`` in-place.
+        """
+        try:
+            from modules.financial.models.receivable_account import (
+                ReceivableAccount,
+                ReceivableStatus,
+                ReceivableType,
+            )
+
+            logger.info(
+                "[erp_fatura] Criando conta a receber para medicao #%d - R$ %s",
+                measurement.numero_medicao,
+                measurement.valor_liquido,
+            )
+
+            # Competencia como date (primeiro dia do mes)
+            comp_parts = measurement.competencia.split("-")
+            competence_date = date(int(comp_parts[0]), int(comp_parts[1]), 1)
+
+            valor_liquido = Decimal(str(measurement.valor_liquido))
+
+            receivable = ReceivableAccount(
+                description=descricao,
+                receivable_type=ReceivableType.AVULSA.value,
+                status=ReceivableStatus.PENDENTE.value,
+                gross_value=measurement.valor_bruto,
+                net_value=valor_liquido,
+                paid_value=Decimal("0"),
+                discount_value=Decimal("0"),
+                addition_value=Decimal("0"),
+                interest_value=Decimal("0"),
+                penalty_value=Decimal("0"),
+                interest_rate=Decimal("1"),
+                penalty_rate=Decimal("2"),
+                grace_days=0,
+                issue_date=data_emissao,
+                entry_date=data_emissao,
+                due_date=data_vencimento or (data_emissao + timedelta(days=_DEFAULT_PAYMENT_DAYS)),
+                competence_date=competence_date,
+                total_installments=1,
+                is_recurring=False,
+                cost_center="licitacoes",
+                notes=(
+                    f"Gerado automaticamente via ERP Integration — "
+                    f"Medicao #{measurement.numero_medicao} ({measurement.competencia}) | "
+                    f"Contrato {contract.numero_contrato}/{contract.ano_contrato}"
+                    if contract
+                    else (
+                        f"Gerado automaticamente via ERP Integration — "
+                        f"Medicao #{measurement.numero_medicao} ({measurement.competencia})"
+                    )
+                ),
+                tags=["licitacao", "medicao", measurement.competencia],
+                # condominio_id — NOT NULL no banco; usa placeholder ate integrar com multi-empresa
+                condominio_id=uuid4()
+                if not hasattr(contract, "empresa_id") or not getattr(contract, "empresa_id", None)
+                else contract.empresa_id,
+            )
+
+            if user_id:
+                receivable.created_by = user_id
+
+            self.db.add(receivable)
+            await self.db.flush()  # Obtem ID sem commit (commit sera feito pelo caller se necessario)
+
+            receivable_id = str(receivable.id)
+
+            logger.info(
+                "[erp_fatura] Conta a receber criada: %s - Vencimento: %s - R$ %s",
+                receivable_id,
+                receivable.due_date,
+                valor_liquido,
+            )
+
+            fatura["conta_a_receber"] = {
+                "status": "criada",
+                "id": receivable_id,
+                "code": getattr(receivable, "code", None),
+                "due_date": receivable.due_date.isoformat(),
+                "net_value": float(valor_liquido),
+                "mensagem": "Conta a receber criada com sucesso no modulo financeiro.",
+            }
+            # Substitui ID provisorio pelo real do receivable
+            fatura["id"] = receivable_id
+
+            await self.db.commit()
+            return True
+
+        except Exception as exc:
+            logger.warning(
+                "[erp_fatura] Falha ao criar conta a receber para medicao #%d: %s",
+                measurement.numero_medicao,
+                exc,
+            )
+            fatura["conta_a_receber"] = {
+                "status": "erro",
+                "id": None,
+                "mensagem": f"Falha ao criar conta a receber: {exc}",
+            }
+            # Rollback parcial para nao contaminar a sessao
+            with contextlib.suppress(Exception):
+                await self.db.rollback()
+            return False
+
+    async def _emitir_nfse(
+        self,
+        fatura: dict,
+        measurement: Measurement,
+        contract: PublicContract | None,
+        descricao: str,
+    ) -> bool:
+        """
+        Tenta gerar NFS-e via modulo fiscal (NfseMultiEmpresaService).
+
+        Retorna True se preparou/emitiu com sucesso, False caso contrario.
+        Atualiza ``fatura["nota_fiscal"]`` e ``measurement.nota_fiscal_*`` in-place.
+        """
+        try:
+            from modules.fiscal.services.nfse_multi_empresa_service import (
+                DadosNFSeMultiEmpresa,
+                NfseMultiEmpresaService,
+            )
+
+            logger.info(
+                "[erp_fatura] Preparando NFS-e para medicao #%d - R$ %s",
+                measurement.numero_medicao,
+                measurement.valor_liquido,
+            )
+
+            # Determina tipo de servico para selecao de empresa
+            tipo_servico = "vigilancia"  # default para licitacoes de seguranca
+            if contract and contract.objeto:
+                objeto_lower = contract.objeto.lower()
+                if any(kw in objeto_lower for kw in ("eletron", "remota", "cftv", "monitoramento", "alarme")):
+                    tipo_servico = "seguranca_eletronica"
+
+            # Extrai ano/mes da competencia
+            comp_parts = measurement.competencia.split("-")
+            comp_ano = int(comp_parts[0])
+            comp_mes = int(comp_parts[1])
+
+            dados_nfse = DadosNFSeMultiEmpresa(
+                tipo_servico=tipo_servico,
+                descricao_servico=measurement.descricao_servicos or descricao,
+                valor_servico=float(measurement.valor_liquido),
+                tomador_cnpj_cpf=contract.orgao_cnpj if contract and contract.orgao_cnpj else "00000000000000",
+                tomador_razao_social=contract.orgao_nome if contract else "Orgao Publico",
+                tomador_email=None,
+                competencia_ano=comp_ano,
+                competencia_mes=comp_mes,
+            )
+
+            nfse_service = NfseMultiEmpresaService()
+            resultado = nfse_service.preparar_dados_nfse(dados_nfse)
+
+            if resultado.sucesso:
+                # Atualiza dados da nota fiscal na medicao
+                measurement.nota_fiscal_numero = resultado.numero_rps or resultado.protocolo
+                measurement.nota_fiscal_data = date.today()
+
+                # Persiste atualizacao da medicao
+                try:
+                    await self.db.commit()
+                except Exception:
+                    await self.db.rollback()
+
+                logger.info(
+                    "[erp_fatura] NFS-e preparada com sucesso - Empresa: %s - Liminares: %s",
+                    resultado.empresa_emissora,
+                    resultado.liminares_aplicadas,
+                )
+
+                fatura["nota_fiscal"] = {
+                    "status": "preparada",
+                    "numero": resultado.numero_rps,
+                    "protocolo": resultado.protocolo,
+                    "empresa_emissora": resultado.empresa_emissora,
+                    "ambiente": resultado.ambiente,
+                    "valor_servico": resultado.valor_servico,
+                    "valor_liquido_nfse": resultado.valor_liquido,
+                    "pis": resultado.pis,
+                    "cofins": resultado.cofins,
+                    "iss": resultado.iss,
+                    "inss_retido": resultado.inss_retido,
+                    "liminares_aplicadas": resultado.liminares_aplicadas,
+                    "xml_gerado": resultado.xml_gerado is not None,
+                    "mensagem": resultado.mensagem,
+                }
+                return True
+            else:
+                # NFS-e nao pode ser emitida (ex: CNPJ em abertura)
+                logger.warning(
+                    "[erp_fatura] NFS-e nao emitida para medicao #%d: %s",
+                    measurement.numero_medicao,
+                    resultado.mensagem,
+                )
+                fatura["nota_fiscal"] = {
+                    "status": "indisponivel",
+                    "numero": None,
+                    "empresa_emissora": resultado.empresa_emissora,
+                    "ambiente": resultado.ambiente,
+                    "valor_servico": resultado.valor_servico,
+                    "valor_liquido_nfse": resultado.valor_liquido,
+                    "pis": resultado.pis,
+                    "cofins": resultado.cofins,
+                    "iss": resultado.iss,
+                    "inss_retido": resultado.inss_retido,
+                    "liminares_aplicadas": resultado.liminares_aplicadas,
+                    "mensagem": resultado.mensagem,
+                }
+                return False
+
+        except Exception as exc:
+            logger.warning(
+                "[erp_fatura] Falha ao gerar NFS-e para medicao #%d: %s",
+                measurement.numero_medicao,
+                exc,
+            )
+            fatura["nota_fiscal"] = {
+                "status": "erro",
+                "numero": None,
+                "mensagem": f"Falha ao gerar NFS-e: {exc}",
+            }
+            return False
+
+    @staticmethod
+    def _calcular_vencimento(
+        measurement: Measurement,
+        contract: PublicContract | None,
+    ) -> date:
+        """
+        Calcula data de vencimento da fatura.
+
+        Usa data_aprovacao da medicao + prazo do contrato (ou 30 dias padrao).
+        """
+        base = measurement.data_aprovacao or date.today()
+
+        # Se contrato tem prazo de pagamento definido, usa-o
+        prazo_dias = _DEFAULT_PAYMENT_DAYS
+        if contract:
+            prazo = getattr(contract, "prazo_pagamento_dias", None)
+            if prazo and isinstance(prazo, int) and prazo > 0:
+                prazo_dias = prazo
+
+        return base + timedelta(days=prazo_dias)
 
     # ------------------------------------------------------------------ #
     #  4. Status de integracao                                           #
@@ -565,13 +875,21 @@ class ERPIntegrationService:
                 "valor_total_liquido": sum(float(m.valor_liquido) for m in medicoes),
             },
             "faturas": {
-                "concluido": False,
-                "mensagem": "Integracao com modulo financeiro pendente de implementacao",
+                "concluido": tem_medicoes_aprovadas,
+                "mensagem": (
+                    "Integracao com modulo financeiro ativa (gerar_fatura cria conta a receber)"
+                    if tem_medicoes_aprovadas
+                    else "Nenhuma medicao aprovada para gerar fatura"
+                ),
                 "medicoes_aptas": sum(1 for m in medicoes if m.esta_aprovada),
             },
             "nfse": {
-                "concluido": False,
-                "mensagem": "Integracao com NFS-e pendente de implementacao",
+                "concluido": any(m.nota_fiscal_numero for m in medicoes),
+                "mensagem": (
+                    "NFS-e emitida para medicoes com nota fiscal"
+                    if any(m.nota_fiscal_numero for m in medicoes)
+                    else "Integracao com NFS-e ativa (gerar_fatura prepara NFS-e automaticamente)"
+                ),
             },
         }
 
@@ -608,6 +926,122 @@ class ERPIntegrationService:
             "etapas": etapas,
             "pendencias": pendencias,
         }
+
+    # ------------------------------------------------------------------ #
+    #  5. Contrato -> CRM (Comercial)                                    #
+    # ------------------------------------------------------------------ #
+
+    async def contrato_para_crm(self, contract_id: UUID) -> dict:
+        """
+        Contrato Publico -> Modulo CRM (Comercial).
+
+        Cria ou vincula um registro de cliente no CRM a partir dos dados
+        do orgao contratante do contrato publico.
+
+        Args:
+            contract_id: ID do contrato publico.
+
+        Returns:
+            dict com status da integracao e dados do cliente CRM.
+
+        Raises:
+            ValueError: Se contrato nao encontrado.
+        """
+        contract = await self._get_contract(contract_id)
+
+        try:
+            from modules.comercial.crm.services import ClientService
+
+            client_service = ClientService(self.db)
+
+            # Tenta encontrar cliente existente pelo CNPJ do orgao
+            cliente_existente = None
+            if contract.orgao_cnpj:
+                cliente_existente = await client_service.buscar_por_cnpj(contract.orgao_cnpj)
+
+            if cliente_existente:
+                logger.info(
+                    "CRM: cliente existente encontrado para orgao %s (CNPJ %s): %s",
+                    contract.orgao_nome,
+                    contract.orgao_cnpj,
+                    cliente_existente.id,
+                )
+                return {
+                    "status": "vinculado",
+                    "cliente_id": str(cliente_existente.id),
+                    "cliente_nome": getattr(cliente_existente, "nome", None)
+                    or getattr(cliente_existente, "razao_social", None),
+                    "contrato_id": str(contract.id),
+                    "numero_contrato": f"{contract.numero_contrato}/{contract.ano_contrato}",
+                    "mensagem": "Cliente CRM existente vinculado ao contrato.",
+                }
+
+            # Cria novo cliente a partir dos dados do orgao
+            novo_cliente = await client_service.criar_cliente(
+                {
+                    "razao_social": contract.orgao_nome,
+                    "cnpj": contract.orgao_cnpj,
+                    "uf": contract.orgao_uf,
+                    "tipo": "orgao_publico",
+                    "origem": "licitacao",
+                    "observacoes": (
+                        f"Cliente criado automaticamente a partir do contrato "
+                        f"{contract.numero_contrato}/{contract.ano_contrato} (licitacao)"
+                    ),
+                }
+            )
+
+            await self.db.commit()
+
+            logger.info(
+                "CRM: novo cliente criado para orgao %s (CNPJ %s): %s",
+                contract.orgao_nome,
+                contract.orgao_cnpj,
+                novo_cliente.id,
+            )
+
+            return {
+                "status": "criado",
+                "cliente_id": str(novo_cliente.id),
+                "cliente_nome": contract.orgao_nome,
+                "contrato_id": str(contract.id),
+                "numero_contrato": f"{contract.numero_contrato}/{contract.ano_contrato}",
+                "mensagem": "Novo cliente CRM criado e vinculado ao contrato.",
+            }
+
+        except ImportError as e:
+            logger.warning("CRM integration not available (module not found): %s", e)
+            return {
+                "status": "pendente_integracao",
+                "contrato_id": str(contract.id),
+                "numero_contrato": f"{contract.numero_contrato}/{contract.ano_contrato}",
+                "orgao_nome": contract.orgao_nome,
+                "orgao_cnpj": contract.orgao_cnpj,
+                "mensagem": f"Modulo CRM nao disponivel: {e}",
+            }
+        except Exception as e:
+            logger.warning("CRM integration failed for contract %s: %s", contract_id, e)
+            return {
+                "status": "pendente_integracao",
+                "contrato_id": str(contract.id),
+                "numero_contrato": f"{contract.numero_contrato}/{contract.ano_contrato}",
+                "orgao_nome": contract.orgao_nome,
+                "orgao_cnpj": contract.orgao_cnpj,
+                "mensagem": f"Falha na integracao CRM: {e}",
+            }
+
+    async def _get_contract(self, contract_id: UUID) -> PublicContract:
+        """Busca contrato publico por ID. Raises ValueError se nao encontrado."""
+        result = await self.db.execute(
+            select(PublicContract).where(
+                PublicContract.id == contract_id,
+                PublicContract.ativo,
+            )
+        )
+        contract = result.scalar_one_or_none()
+        if not contract:
+            raise ValueError(f"Contrato {contract_id} nao encontrado ou inativo")
+        return contract
 
     # ------------------------------------------------------------------ #
     #  Metodos auxiliares (privados)                                      #

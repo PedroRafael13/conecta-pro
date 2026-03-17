@@ -60,6 +60,22 @@ class TenderService:
             raise ValueError(f"Edital {data.numero}/{data.ano} ja existe")
 
         tender = await self.repository.create(data, user_id)
+
+        # Notificar novo edital
+        try:
+            from modules.bidding.services.notification_service import get_notification_service
+
+            notifier = get_notification_service()
+            notifier.notify_edital_novo(
+                edital_numero=f"{tender.numero}/{tender.ano}",
+                orgao=tender.orgao_nome or "N/A",
+                objeto=tender.objeto or "",
+                edital_id=str(tender.id),
+                valor_estimado=float(tender.valor_estimado) if tender.valor_estimado else None,
+            )
+        except Exception:
+            logger.warning("Failed to send edital_novo notification", exc_info=True)
+
         return self._to_response(tender)
 
     async def update(self, tender_id: UUID, data: TenderUpdate, user_id: UUID = None) -> TenderResponse | None:
@@ -90,7 +106,23 @@ class TenderService:
             raise ValueError(f"Status invalido: {novo_status}")
 
         update = TenderUpdate(status=novo_status)
-        return await self.update(tender_id, update, user_id)
+        result = await self.update(tender_id, update, user_id)
+
+        # Notificar sobre edital vencendo se status indica proximidade
+        if result and result.dias_para_abertura is not None and result.dias_para_abertura <= 7:
+            try:
+                from modules.bidding.services.notification_service import get_notification_service
+
+                notifier = get_notification_service()
+                notifier.notify_edital_vencendo(
+                    edital_numero=f"{result.numero}/{result.ano}",
+                    dias=result.dias_para_abertura,
+                    edital_id=str(result.id),
+                )
+            except Exception:
+                logger.warning("Failed to send edital_vencendo notification", exc_info=True)
+
+        return result
 
     async def get_abertos(self, uf: str = "AM") -> builtins.list[TenderResponse]:
         """Lista editais abertos."""

@@ -75,7 +75,7 @@ async def create_kit(
 
 @router.get("/", response_model=DocumentKitListResponse)
 async def list_kits(
-    condominio_id: UUID = Query(..., description="ID do condominio"),
+    condominio_id: UUID | None = Query(None, description="ID do condominio (opcional)"),
     user_id: CurrentUserId = None,
     tipo: KitType | None = None,
     kit_status: KitStatus | None = Query(None, alias="status"),
@@ -109,7 +109,7 @@ async def list_kits(
 
 @router.get("/stats", response_model=KitStatsResponse)
 async def get_stats(
-    condominio_id: UUID = Query(..., description="ID do condominio"),
+    condominio_id: UUID | None = Query(None, description="ID do condominio (opcional)"),
     user_id: CurrentUserId = None,
     service: DocumentKitService = Depends(get_service),
 ) -> KitStatsResponse:
@@ -120,7 +120,7 @@ async def get_stats(
 
 @router.get("/templates", response_model=list[DocumentKitResponse])
 async def list_templates(
-    condominio_id: UUID = Query(..., description="ID do condominio"),
+    condominio_id: UUID | None = Query(None, description="ID do condominio (opcional)"),
     user_id: CurrentUserId = None,
     tipo: KitType | None = None,
     service: DocumentKitService = Depends(get_service),

@@ -107,10 +107,10 @@ export default function PropostasPage() {
     if (editingProposal) {
       await atualizarProposta.mutateAsync({
         id: editingProposal.id,
-        data,
+        data: data as unknown as import('@/services/bidding/proposals.service').BiddingProposalUpdate,
       });
     } else {
-      await criarProposta.mutateAsync(data);
+      await criarProposta.mutateAsync(data as unknown as import('@/services/bidding/proposals.service').BiddingProposalCreate);
     }
     handleCloseForm();
   };
@@ -247,9 +247,9 @@ export default function PropostasPage() {
                       <TableCell>
                         {proposal.tender_id?.substring(0, 8)}...
                       </TableCell>
-                      <TableCell>{proposal.razao_social}</TableCell>
+                      <TableCell>{String(proposal.razao_social || '')}</TableCell>
                       <TableCell className="text-right font-semibold">
-                        {formatCurrency(proposal.valor_global)}
+                        {formatCurrency(Number(proposal.valor_global) || 0)}
                       </TableCell>
                       <TableCell>
                         {proposal.created_at

@@ -6,7 +6,7 @@ Date: 2026-03-09
 """
 
 import logging
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from typing import Any
 from uuid import uuid4
 
@@ -14,6 +14,7 @@ from fastapi import APIRouter, Body, Depends, Query
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.auth.dependencies import get_current_active_user
 from core.database import get_db
 from modules.operacional.models import Post
 
@@ -34,7 +35,11 @@ from .agents import (
 
 logger = logging.getLogger(__name__)
 
-ai_router = APIRouter(prefix="/ai", tags=["Operacional - AI Command Center"])
+ai_router = APIRouter(
+    prefix="/ai",
+    tags=["Operacional - AI Command Center"],
+    dependencies=[Depends(get_current_active_user)],
+)
 
 _coverage_agent = CoveragePredictorAgent()
 _performance_agent = PerformanceAnalyzerAgent()
@@ -115,7 +120,7 @@ async def get_command_center_data(
                 "predictive_analyzer": "active",
             },
         }
-    except Exception as exc:
+    except (RuntimeError, ValueError, OSError) as exc:
         logger.error("Erro no AI Command Center: %s", exc)
         return {
             "status": "degraded",
@@ -142,7 +147,7 @@ async def get_command_center_data(
 @ai_router.get("/coverage-prediction")
 async def get_coverage_prediction(
     target_date: str | None = Query(None, description="Data YYYY-MM-DD"),
-    db: AsyncSession = Depends(get_db),
+    _db: AsyncSession = Depends(get_db),
 ) -> dict[str, Any]:
     """
     Previsão detalhada de cobertura para uma data específica.
@@ -154,7 +159,8 @@ async def get_coverage_prediction(
             pred_date = date.today() + timedelta(days=1)
 
         risks = await _coverage_agent.predict_coverage(pred_date)
-        weekly = await _coverage_agent.generate_weekly_risk_map(pred_date - timedelta(days=pred_date.weekday()))
+        week_start = pred_date - timedelta(days=pred_date.weekday())
+        weekly = await _coverage_agent.generate_weekly_risk_map(week_start)
 
         return {
             "date": pred_date.isoformat(),
@@ -173,7 +179,7 @@ async def get_coverage_prediction(
             "weekly_summary": weekly.summary,
             "recommended_actions": weekly.recommended_actions,
         }
-    except Exception as exc:
+    except (RuntimeError, ValueError, OSError) as exc:
         logger.error("Erro na previsão de cobertura: %s", exc)
         return {
             "date": date.today().isoformat(),
@@ -185,13 +191,13 @@ async def get_coverage_prediction(
 
 
 @ai_router.get("/performance-overview")
-async def get_performance_overview(
+async def get_performance_overview(  # pylint: disable=too-many-locals
     period_days: int = Query(90, ge=30, le=365),
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, Any]:
     """Visão geral de performance da equipe — dados reais."""
     try:
-        from sqlalchemy import text
+        from sqlalchemy import text  # pylint: disable=import-outside-toplevel
 
         # Buscar colaboradores ativos com alocação
         rows = await db.execute(
@@ -222,7 +228,7 @@ async def get_performance_overview(
 
         scores = []
         for emp in employees:
-            emp_id, nome, cargo, alloc_count, data_admissao = emp
+            emp_id, nome, _cargo, alloc_count, data_admissao = emp
             # Calcular métricas baseadas em dados disponíveis
             tenure_days = (date.today() - data_admissao).days if data_admissao else 0
             metrics = {
@@ -269,7 +275,7 @@ async def get_performance_overview(
                 "critico": sum(1 for s in scores if s.total_score < 60),
             },
         }
-    except Exception as exc:
+    except (RuntimeError, ValueError, OSError) as exc:
         logger.error("Erro no overview de performance: %s", exc)
         return {
             "period_days": period_days,
@@ -286,7 +292,7 @@ async def get_absence_risks(
 ) -> dict[str, Any]:
     """Retorna scores de risco de ausência — dados reais."""
     try:
-        from sqlalchemy import text
+        from sqlalchemy import text  # pylint: disable=import-outside-toplevel
 
         today = date.today()
         tomorrow = today + timedelta(days=1)
@@ -349,7 +355,7 @@ async def get_absence_risks(
                 for r in risks
             ],
         }
-    except Exception as exc:
+    except (RuntimeError, ValueError, OSError) as exc:
         logger.error("Erro nos riscos de ausência: %s", exc)
         return {
             "analysis_date": date.today().isoformat(),
@@ -361,13 +367,13 @@ async def get_absence_risks(
 
 @ai_router.get("/field-monitor")
 async def get_field_monitor(
-    db: AsyncSession = Depends(get_db),
+    _db: AsyncSession = Depends(get_db),
 ) -> dict[str, Any]:
     """Status em tempo real de toda a operação de campo."""
     try:
         dashboard = await _field_monitor.get_real_time_dashboard()
         return dashboard
-    except Exception as exc:
+    except (RuntimeError, ValueError, OSError) as exc:
         logger.error("Erro no field monitor: %s", exc)
         return {
             "timestamp": date.today().isoformat(),
@@ -380,7 +386,7 @@ async def get_field_monitor(
 @ai_router.post("/incident/classify")
 async def classify_incident(
     body: dict[str, Any],
-    db: AsyncSession = Depends(get_db),
+    _db: AsyncSession = Depends(get_db),
 ) -> dict[str, Any]:
     """Classifica uma ocorrência automaticamente usando IA."""
     try:
@@ -394,14 +400,14 @@ async def classify_incident(
             "suggested_actions": classification.suggested_actions,
             "entities_found": classification.entities_found,
         }
-    except Exception as exc:
+    except (RuntimeError, ValueError, OSError) as exc:
         logger.error("Erro ao classificar ocorrência: %s", exc)
         return {"category": "operacional", "severity": "leve", "confidence": 0}
 
 
 @ai_router.get("/bartolo/insights")
 async def get_bartolo_insights(
-    db: AsyncSession = Depends(get_db),
+    _db: AsyncSession = Depends(get_db),
 ) -> dict[str, Any]:
     """Insights proativos gerados pelo Bartolo 3.0."""
     try:
@@ -420,7 +426,7 @@ async def get_bartolo_insights(
             ],
             "count": len(insights),
         }
-    except Exception as exc:
+    except (RuntimeError, ValueError, OSError) as exc:
         logger.error("Erro nos insights do Bartolo: %s", exc)
         return {"insights": [], "count": 0}
 
@@ -428,7 +434,7 @@ async def get_bartolo_insights(
 @ai_router.post("/bartolo/chat")
 async def bartolo_chat(
     body: dict[str, Any],
-    db: AsyncSession = Depends(get_db),
+    _db: AsyncSession = Depends(get_db),
 ) -> dict[str, Any]:
     """Chat com Bartolo 3.0 em linguagem natural."""
     try:
@@ -443,7 +449,7 @@ async def bartolo_chat(
             "suggestions": response.suggestions,
             "needs_confirmation": response.needs_confirmation,
         }
-    except Exception as exc:
+    except (RuntimeError, ValueError, OSError) as exc:
         logger.error("Erro no chat do Bartolo: %s", exc)
         return {
             "message": "Desculpe, tive um problema técnico. Tente novamente.",
@@ -454,12 +460,12 @@ async def bartolo_chat(
 
 
 @ai_router.get("/cost/forecast")
-async def get_cost_forecast(
+async def get_cost_forecast(  # pylint: disable=too-many-locals
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, Any]:
     """Previsão de custos operacionais — dados reais."""
     try:
-        from sqlalchemy import text
+        from sqlalchemy import text  # pylint: disable=import-outside-toplevel
 
         today = date.today()
 
@@ -496,7 +502,7 @@ async def get_cost_forecast(
             post_name = "Média Geral"
             budget = avg_salary * 1.8 * max(total_emp, 1)
         else:
-            post_id, post_name, cost, emp_count = row
+            _post_id, post_name, cost, emp_count = row
             salary_est = cost / max(emp_count, 1) if cost > 0 else 1800.0
             employees_data = [
                 {"monthly_salary": salary_est, "overtime_hours_estimated": 4} for _ in range(max(emp_count, 1))
@@ -522,7 +528,7 @@ async def get_cost_forecast(
             "breakdown": forecast.cost_breakdown,
             "recommendations": forecast.recommendations,
         }
-    except Exception as exc:
+    except (RuntimeError, ValueError, OSError) as exc:
         logger.error("Erro na previsão de custos: %s", exc)
         return {"total_estimated": 0, "budget": 0, "budget_utilization_pct": 0}
 
@@ -536,17 +542,17 @@ async def trigger_time_bank_expiration(
     Útil para testes e execução manual sem Celery.
     """
     try:
-        from datetime import date, datetime
-
-        from sqlalchemy import and_, select
+        # pylint: disable=import-outside-toplevel
+        from sqlalchemy import and_ as sa_and
 
         from modules.operacional.models import TimeBank, TimeBankEntryType, TimeBankStatus
+        # pylint: enable=import-outside-toplevel
 
         today = date.today()
         now = datetime.utcnow()
         result = await db.execute(
             select(TimeBank).where(
-                and_(
+                sa_and(
                     TimeBank.status == TimeBankStatus.APPROVED,
                     TimeBank.expiration_date.isnot(None),
                     TimeBank.expiration_date < today,
@@ -565,13 +571,13 @@ async def trigger_time_bank_expiration(
             await db.commit()
         logger.info("Expiração manual de banco de horas: %d entradas processadas", count)
         return {"expired_count": count, "processed_at": now.isoformat()}
-    except Exception as exc:
+    except (RuntimeError, ValueError, OSError) as exc:
         logger.error("Erro na expiração manual: %s", exc)
         return {"expired_count": 0, "error": str(exc)}
 
 
 @ai_router.post("/scale/optimize")
-async def optimize_scale(
+async def optimize_scale(  # pylint: disable=too-many-locals
     payload: dict[str, Any] = Body(
         default={},
         example={
@@ -586,11 +592,12 @@ async def optimize_scale(
 ) -> dict[str, Any]:
     """Otimiza a alocação de escalas usando IA — dados reais quando possível."""
     try:
+        # pylint: disable=import-outside-toplevel
         from datetime import time as dt_time
         from uuid import UUID as _UUID
-        from uuid import uuid4 as _uuid4
 
         from sqlalchemy import text
+        # pylint: enable=import-outside-toplevel
 
         slots_count = int(payload.get("slots_count", 5))
         employees_count = int(payload.get("employees_count", 8))
@@ -612,9 +619,9 @@ async def optimize_scale(
         slots = []
         for i in range(slots_count):
             d = today + timedelta(days=i)
-            post_id = real_posts[i % len(real_posts)] if real_posts else _uuid4()
+            post_id = real_posts[i % len(real_posts)] if real_posts else uuid4()
             slot = ShiftSlot(
-                id=_uuid4(),
+                id=uuid4(),
                 post_id=post_id if isinstance(post_id, _UUID) else _UUID(str(post_id)),
                 date=d,
                 start_time=dt_time(7, 0),
@@ -656,7 +663,7 @@ async def optimize_scale(
         else:
             for i in range(employees_count):
                 emp = EmployeeAvailability(
-                    employee_id=_uuid4(),
+                    employee_id=uuid4(),
                     employee_name=f"Funcionário {i + 1}",
                     available_dates=[today + timedelta(days=j) for j in range(7)],
                     max_hours_week=max_hours,
@@ -697,7 +704,7 @@ async def optimize_scale(
                 for s in result.slots
             ],
         }
-    except Exception as exc:
+    except (RuntimeError, ValueError, OSError) as exc:
         logger.error("Erro na otimização de escala: %s", exc)
         return {"success": False, "error": str(exc), "coverage_percentage": 0}
 
@@ -714,7 +721,7 @@ async def find_substitute(
             "max_results": 5,
         },
     ),
-    db: AsyncSession = Depends(get_db),
+    _db: AsyncSession = Depends(get_db),
 ) -> dict[str, Any]:
     """
     Encontra substitutos ideais para um turno usando matching inteligente.
@@ -723,8 +730,7 @@ async def find_substitute(
     e histórico de aceitação para rankear os melhores candidatos.
     """
     try:
-        from datetime import datetime
-        from uuid import UUID
+        from uuid import UUID  # pylint: disable=import-outside-toplevel
 
         raw_shift_id = payload.get("shift_id", str(uuid4()))
         try:
@@ -736,7 +742,7 @@ async def find_substitute(
         post_lon = float(payload.get("post_lon", -60.025))
         urgency = str(payload.get("urgency", "normal"))
         max_results = int(payload.get("max_results", 5))
-        shift_date = datetime.now()
+        shift_date = datetime.now()  # noqa: DTZ005
 
         suggestions = await _substitution_optimizer.find_optimal_substitute(
             shift_id=shift_id,
@@ -765,6 +771,6 @@ async def find_substitute(
                 for s in suggestions
             ],
         }
-    except Exception as exc:
+    except (RuntimeError, ValueError, OSError) as exc:
         logger.error("Erro no matching de substituto: %s", exc)
         return {"total_found": 0, "suggestions": [], "error": str(exc)}

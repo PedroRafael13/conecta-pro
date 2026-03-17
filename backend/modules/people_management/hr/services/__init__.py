@@ -11,8 +11,10 @@ from .contract_service import ContractService
 from .discipline_service import DisciplineService
 from .document_service import DocumentService
 from .employee_service import EmployeeService
+from .esocial_service import ESocialEventService
 from .occupational_health_service import OccupationalHealthService
 from .overtime_bank_service import OvertimeBankService
+from .payroll_export_service import PayrollExportService
 from .payroll_service import PayrollService
 from .reimbursement_service import ReimbursementService
 from .termination_service import TerminationService
@@ -33,4 +35,6 @@ __all__ = [
     "ReimbursementService",
     "DocumentService",
     "OccupationalHealthService",
+    "ESocialEventService",
+    "PayrollExportService",
 ]

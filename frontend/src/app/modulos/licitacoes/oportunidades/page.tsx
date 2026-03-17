@@ -189,8 +189,8 @@ const getStatusBadge = (status: Oportunidade['status']) => {
   };
   const cfg = map[status] || map.nova;
   return (
-    <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${cfg.className}`}>
-      {cfg.label}
+    <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${cfg?.className}`}>
+      {cfg?.label}
     </span>
   );
 };

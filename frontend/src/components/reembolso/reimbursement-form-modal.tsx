@@ -249,8 +249,8 @@ export function ReimbursementFormModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={isEditing ? 'Editar Solicitacao' : 'Nova Solicitacao de Reembolso'}
-      description={isEditing ? `Editando ${request?.code}` : 'Preencha os dados da solicitacao'}
+      title={isEditing ? 'Editar Solicitação' : 'Nova Solicitação de Reembolso'}
+      description={isEditing ? `Editando ${request?.code}` : 'Preencha os dados da solicitação'}
       size="xl"
     >
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -537,7 +537,7 @@ export function ReimbursementFormModal({
           </Button>
           <Button type="submit" variant="primary" disabled={isLoading}>
             {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            {isEditing ? 'Salvar Alteracoes' : 'Criar Solicitacao'}
+            {isEditing ? 'Salvar Alterações' : 'Criar Solicitação'}
           </Button>
         </ModalFooter>
       </form>

@@ -2,18 +2,20 @@
 Serviço de Férias — Departamento Pessoal.
 
 Re-exporta funcionalidades do employee_portal e módulo operacional de férias,
-adicionando cálculo de saldo de férias e aprovação com notificação.
+adicionando cálculo de saldo de férias com valores CLT reais (Decimal).
 """
 
 import contextlib
 import logging
 from datetime import date
+from decimal import Decimal
 from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.operacional.models.employee import Employee
+from modules.people_management.common.utils.clt_calculator import calcular_ferias
 
 logger = logging.getLogger(__name__)
 
@@ -99,6 +101,22 @@ class VacationService:
 
         dias_saldo = max(0, dias_direito_total - dias_gozados)
 
+        # Cálculo de valores monetários das férias com CLT real
+        salario_base = Decimal(str(employee.salario_base or 0))
+        valor_ferias = 0.0
+        terco_constitucional = 0.0
+        abono_pecuniario = 0.0
+        total_bruto_ferias = 0.0
+
+        if dias_saldo > 0 and salario_base > 0:
+            dias_gozo = min(dias_saldo, 30)
+            dias_abono = max(0, dias_saldo - 30) if dias_saldo > 30 else 0
+            ferias_calc = calcular_ferias(salario_base, dias_gozo=dias_gozo, dias_abono=dias_abono)
+            valor_ferias = float(ferias_calc["valor_ferias"])
+            terco_constitucional = float(ferias_calc["terco_constitucional"])
+            abono_pecuniario = float(ferias_calc["abono_pecuniario"])
+            total_bruto_ferias = float(ferias_calc["total_bruto"])
+
         return {
             "employee_id": str(employee_id),
             "employee_name": employee.nome,
@@ -109,6 +127,10 @@ class VacationService:
             "dias_gozados": dias_gozados,
             "dias_saldo": dias_saldo,
             "dias_proporcional_periodo_atual": dias_proporcional,
+            "valor_ferias": valor_ferias,
+            "terco_constitucional": terco_constitucional,
+            "abono_pecuniario": abono_pecuniario,
+            "total_bruto_ferias": total_bruto_ferias,
         }
 
     async def approve_vacation(

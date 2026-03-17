@@ -20,6 +20,12 @@ from modules.operacional.ai.controller import ai_router as operacional_ai_router
 
 # --- Operacional Communication ---
 from modules.operacional.communication import communication_router
+from modules.operacional.communication.controllers.announcement_controller import (
+    router as announcement_router,
+)
+from modules.operacional.communication.controllers.notification_controller import (
+    router as notification_router,
+)
 from modules.operacional.controllers import (
     allocation_router,
     employee_router,
@@ -31,6 +37,15 @@ from modules.operacional.controllers import (
     shift_router,
     substitution_router,
     time_bank_router,
+)
+from modules.operacional.controllers.aliases import (
+    banco_horas_alias,
+    ferias_alias,
+    ocorrencias_alias,
+    scale_templates_alias,
+)
+from modules.operacional.controllers.reports_controller import (
+    operacional_dashboard_router,
 )
 
 # --- Operacional Diaristas ---
@@ -75,4 +90,11 @@ __all__ = [
     "ordem_servico_router",
     "visita_router",
     "checklist_router",
+    "announcement_router",
+    "notification_router",
+    "operacional_dashboard_router",
+    "banco_horas_alias",
+    "ocorrencias_alias",
+    "ferias_alias",
+    "scale_templates_alias",
 ]

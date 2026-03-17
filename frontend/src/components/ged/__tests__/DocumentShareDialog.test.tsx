@@ -320,7 +320,7 @@ describe('DocumentShareDialog', () => {
 
     // Click through toggle
     if (switches.length > 0) {
-      fireEvent.click(switches[switches.length - 3] || switches[0]);
+      fireEvent.click(switches[switches.length - 3]! || switches[0]!);
     }
   });
 
@@ -359,14 +359,14 @@ describe('DocumentShareDialog', () => {
     const switches = screen.getAllByRole('switch');
     // The expiry switch
     if (switches.length >= 2) {
-      fireEvent.click(switches[1]);
+      fireEvent.click(switches[1]!);
     }
 
     fireEvent.click(screen.getByRole('button', { name: 'Compartilhar' }));
 
     await waitFor(() => {
       if (mockDocumentShareService.create.mock.calls.length > 0) {
-        const callArg = mockDocumentShareService.create.mock.calls[0][0];
+        const callArg = mockDocumentShareService.create.mock.calls[0]![0];
         expect(callArg).toMatchObject({ document_id: 'doc-1' });
       }
     });
@@ -431,9 +431,9 @@ describe('DocumentShareDialog', () => {
     expect(permSwitches.length).toBeGreaterThan(0);
 
     // Click first permission switch (visualizar - initially on)
-    fireEvent.click(permSwitches[0]);
+    fireEvent.click(permSwitches[0]!);
     // Then re-enable it
-    fireEvent.click(permSwitches[0]);
+    fireEvent.click(permSwitches[0]!);
   });
 
   it('permite recompartilhamento ao ativar switch', async () => {

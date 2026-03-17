@@ -1,0 +1,14 @@
+{
+    "tipo": "carta_proposta",
+    "titulo": "CARTA PROPOSTA",
+    "secoes": [
+        {"id": "destinatario", "titulo": "DESTINATÁRIO", "campos": ["orgao", "setor", "endereco_orgao", "numero_edital", "modalidade"]},
+        {"id": "dados_empresa", "titulo": "DADOS DA PROPONENTE", "campos": ["razao_social", "cnpj", "endereco", "telefone", "email", "representante_legal", "cpf_representante"]},
+        {"id": "proposta", "titulo": "PROPOSTA", "campos": ["descricao_objeto", "valor_mensal", "valor_global", "valor_extenso", "prazo_execucao"]},
+        {"id": "condicoes", "titulo": "CONDIÇÕES", "campos": ["validade_proposta_dias", "prazo_inicio_servicos", "condicoes_pagamento"]},
+        {"id": "assinatura", "titulo": "ASSINATURA", "campos": ["local", "data", "nome_representante", "cargo"]}
+    ],
+    "formato": "A4",
+    "fonte": "Helvetica",
+    "margem_cm": 2.0
+}

@@ -54,7 +54,7 @@ class ContractRepository:
         self, orgao_cnpj: str = None, status: str = None, vigente: bool = None, page: int = 1, size: int = 50
     ) -> tuple[list[PublicContract], int]:
         """Lista contratos com filtros."""
-        query = select(PublicContract).where(PublicContract.ativo)
+        query = select(PublicContract).options(selectinload(PublicContract.medicoes)).where(PublicContract.ativo)
 
         if orgao_cnpj:
             query = query.where(PublicContract.orgao_cnpj == orgao_cnpj)

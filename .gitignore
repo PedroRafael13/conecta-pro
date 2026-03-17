@@ -83,3 +83,9 @@ credentials/
 .env.credentials
 .env.mcp
 *.crt.key
+.env
+.env.*
+backend/.env
+*.env
+frontend/public/models/
+frontend/public/models/face_recognition_model-shard*

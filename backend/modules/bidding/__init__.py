@@ -49,7 +49,6 @@ from modules.bidding.services import (  # noqa: E402
     DocumentService,
     ERPIntegrationService,
     PNCPService,
-    # BiddingAIService,  # Removido temporariamente (deps: spacy, selenium)
     ProposalService,
     TenderService,
 )
@@ -89,5 +88,4 @@ __all__ = [
     "CertificateService",
     "PNCPService",
     "ERPIntegrationService",
-    # "BiddingAIService",  # Removido temporariamente
 ]

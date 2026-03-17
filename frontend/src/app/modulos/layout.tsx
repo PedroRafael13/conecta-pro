@@ -120,7 +120,11 @@ export default function ModulosLayout({
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [wsToken, setWsToken] = useState<string | null>(null);
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || (
+    typeof window !== 'undefined' && window.location.hostname === 'localhost'
+      ? 'http://localhost:8080'
+      : 'https://erp.conectamais.pro'
+  );
 
   // Buscar módulo atual
   const currentModule = getModuleByPath(pathname);

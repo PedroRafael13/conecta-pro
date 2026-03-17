@@ -47,7 +47,7 @@ class JobPositionRepository:
             select(JobPosition).where(
                 and_(
                     JobPosition.id == position_id,
-                    JobPosition.deleted_at.is_(None),
+                    JobPosition.is_deleted.is_(False),
                 )
             )
         )
@@ -59,7 +59,7 @@ class JobPositionRepository:
             select(JobPosition).where(
                 and_(
                     JobPosition.code == code,
-                    JobPosition.deleted_at.is_(None),
+                    JobPosition.is_deleted.is_(False),
                 )
             )
         )
@@ -97,7 +97,7 @@ class JobPositionRepository:
         order_desc: bool = True,
     ) -> tuple[list[JobPosition], int]:
         """Lista vagas com filtros e paginação."""
-        query = select(JobPosition).where(JobPosition.deleted_at.is_(None))
+        query = select(JobPosition).where(JobPosition.is_deleted.is_(False))
 
         if filters:
             if filters.status:
@@ -114,18 +114,12 @@ class JobPositionRepository:
                 query = query.where(JobPosition.city.ilike(f"%{filters.city}%"))
             if filters.state:
                 query = query.where(JobPosition.state == filters.state)
-            if filters.is_urgent is not None:
-                query = query.where(JobPosition.is_urgent == filters.is_urgent)
-            if filters.is_confidential is not None:
-                query = query.where(JobPosition.is_confidential == filters.is_confidential)
             if filters.salary_min:
                 query = query.where(JobPosition.salary_min >= filters.salary_min)
             if filters.salary_max:
                 query = query.where(JobPosition.salary_max <= filters.salary_max)
-            if filters.recruiter_id:
-                query = query.where(JobPosition.recruiter_id == filters.recruiter_id)
             if filters.condominium_id:
-                query = query.where(JobPosition.condominium_id == filters.condominium_id)
+                query = query.where(JobPosition.condominio_id == filters.condominium_id)
             if filters.search:
                 search_term = f"%{filters.search}%"
                 query = query.where(
@@ -161,13 +155,13 @@ class JobPositionRepository:
         query = select(JobPosition).where(
             and_(
                 JobPosition.status == PositionStatus.ABERTA,
-                JobPosition.deleted_at.is_(None),
+                JobPosition.is_deleted.is_(False),
             )
         )
         if condominium_id:
-            query = query.where(JobPosition.condominium_id == condominium_id)
+            query = query.where(JobPosition.condominio_id == condominium_id)
 
-        query = query.order_by(JobPosition.is_urgent.desc(), JobPosition.created_at.desc())
+        query = query.order_by(JobPosition.created_at.desc())
         query = query.offset(skip).limit(limit)
 
         result = await self.session.execute(query)
@@ -178,7 +172,7 @@ class JobPositionRepository:
         query = select(JobPosition).where(
             and_(
                 JobPosition.department == department,
-                JobPosition.deleted_at.is_(None),
+                JobPosition.is_deleted.is_(False),
             )
         )
         if status:
@@ -198,10 +192,10 @@ class JobPositionRepository:
         query = select(JobPosition).where(
             and_(
                 JobPosition.status == PositionStatus.ABERTA,
-                JobPosition.deadline_date.isnot(None),
-                JobPosition.deadline_date <= deadline_limit,
-                JobPosition.deadline_date >= deadline,
-                JobPosition.deleted_at.is_(None),
+                JobPosition.deadline.isnot(None),
+                JobPosition.deadline <= deadline_limit,
+                JobPosition.deadline >= deadline,
+                JobPosition.is_deleted.is_(False),
             )
         )
 
@@ -209,32 +203,24 @@ class JobPositionRepository:
         return list(result.scalars().all())
 
     async def increment_view(self, position_id: str) -> None:
-        """Incrementa visualização."""
-        position = await self.get_by_id(position_id)
-        if position:
-            position.increment_view()
-            await self.session.flush()
+        """Incrementa visualizacao (noop — coluna nao existe no DB)."""
 
     async def increment_application(self, position_id: str) -> None:
-        """Incrementa candidaturas."""
-        position = await self.get_by_id(position_id)
-        if position:
-            position.increment_application()
-            await self.session.flush()
+        """Incrementa candidaturas (noop — coluna nao existe no DB)."""
 
     async def fill_vacancy(self, position_id: str) -> JobPosition | None:
         """Preenche uma vaga."""
         position = await self.get_by_id(position_id)
         if position:
-            position.fill_vacancy()
+            position.filled_count = (position.filled_count or 0) + 1
             await self.session.flush()
         return position
 
     async def get_stats(self, condominium_id: str = None) -> dict:
         """Retorna estatísticas."""
-        query = select(JobPosition).where(JobPosition.deleted_at.is_(None))
+        query = select(JobPosition).where(JobPosition.is_deleted.is_(False))
         if condominium_id:
-            query = query.where(JobPosition.condominium_id == condominium_id)
+            query = query.where(JobPosition.condominio_id == condominium_id)
 
         result = await self.session.execute(query)
         positions = result.scalars().all()
@@ -254,9 +240,8 @@ class JobPositionRepository:
         }
 
         for pos in positions:
-            stats["total_vacancies"] += pos.vacancies
-            stats["filled_vacancies"] += pos.filled_vacancies
-            stats["total_applications"] += pos.applications_count
+            stats["total_vacancies"] += pos.vacancies or 0
+            stats["filled_vacancies"] += pos.filled_count or 0
 
             if pos.status == PositionStatus.ABERTA:
                 stats["open_positions"] += 1
@@ -265,17 +250,20 @@ class JobPositionRepository:
             elif pos.status == PositionStatus.PREENCHIDA:
                 stats["filled_positions"] += 1
 
-            status_key = pos.status.value
+            status_key = pos.status if isinstance(pos.status, str) else pos.status.value
             stats["by_status"][status_key] = stats["by_status"].get(status_key, 0) + 1
 
-            dept_key = pos.department.value
-            stats["by_department"][dept_key] = stats["by_department"].get(dept_key, 0) + 1
+            if pos.department:
+                dept_key = pos.department if isinstance(pos.department, str) else pos.department.value
+                stats["by_department"][dept_key] = stats["by_department"].get(dept_key, 0) + 1
 
-            level_key = pos.position_level.value
-            stats["by_level"][level_key] = stats["by_level"].get(level_key, 0) + 1
+            if pos.position_level:
+                level_key = pos.position_level if isinstance(pos.position_level, str) else pos.position_level.value
+                stats["by_level"][level_key] = stats["by_level"].get(level_key, 0) + 1
 
-            type_key = pos.position_type.value
-            stats["by_type"][type_key] = stats["by_type"].get(type_key, 0) + 1
+            if pos.position_type:
+                type_key = pos.position_type if isinstance(pos.position_type, str) else pos.position_type.value
+                stats["by_type"][type_key] = stats["by_type"].get(type_key, 0) + 1
 
         return stats
 

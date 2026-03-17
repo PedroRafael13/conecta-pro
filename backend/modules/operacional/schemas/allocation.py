@@ -2,7 +2,7 @@
 Schemas Pydantic para Allocation (Alocação Funcionário-Posto).
 """
 
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from typing import Any
 from uuid import UUID
 
@@ -37,10 +37,7 @@ class AllocationBase(BaseModel):
     @classmethod
     def validate_start_date(cls, v: date) -> date:
         """Valida data de início."""
-        from datetime import date as date_type
-        from datetime import timedelta
-
-        today = date_type.today()
+        today = date.today()
         max_past = today - timedelta(days=730)  # Máximo 2 anos no passado
         max_future = today + timedelta(days=365)  # Máximo 1 ano no futuro
 
@@ -62,8 +59,6 @@ class AllocationBase(BaseModel):
 
         # Validar duração máxima
         if self.end_date:
-            from datetime import timedelta
-
             duration = self.end_date - self.start_date
             if duration > timedelta(days=1825):  # 5 anos
                 raise ValueError("Duração da alocação não pode exceder 5 anos")
@@ -77,7 +72,7 @@ class AllocationCreate(AllocationBase):
     hourly_rate: float = Field(default=0.0, ge=0, le=500, description="Valor hora (máx R$ 500)")
     monthly_salary: float = Field(default=0.0, ge=0, le=50000, description="Salário mensal (máx R$ 50k)")
     additional_benefits: float = Field(default=0.0, ge=0, le=20000, description="Benefícios (máx R$ 20k)")
-    qualifications: dict[str, Any] | None = Field(None, description="Qualificações")
+    qualifications: dict[str, Any] | list | None = Field(None, description="Qualificações")
 
     @model_validator(mode="after")
     def validate_compensation(self) -> "AllocationCreate":
@@ -86,7 +81,8 @@ class AllocationCreate(AllocationBase):
         if self.hourly_rate > 0 and self.monthly_salary > 0:
             # 220 horas/mês é padrão
             expected_monthly = self.hourly_rate * 220
-            if abs(self.monthly_salary - expected_monthly) > expected_monthly * 0.2:  # 20% tolerância
+            tolerance = expected_monthly * 0.2  # 20% tolerância
+            if abs(self.monthly_salary - expected_monthly) > tolerance:
                 raise ValueError(
                     f"Valores inconsistentes: hourly_rate (R$ {self.hourly_rate:.2f}) e "
                     f"monthly_salary (R$ {self.monthly_salary:.2f}) não batem. "
@@ -106,7 +102,7 @@ class AllocationUpdate(BaseModel):
     monthly_salary: float | None = Field(None, ge=0)
     additional_benefits: float | None = Field(None, ge=0)
     role: str | None = Field(None, max_length=100)
-    qualifications: dict[str, Any] | None = None
+    qualifications: dict[str, Any] | list | None = None
     notes: str | None = None
     termination_reason: str | None = Field(None, max_length=255)
     is_active: bool | None = None
@@ -129,7 +125,7 @@ class AllocationResponse(BaseModel):
     monthly_salary: float
     additional_benefits: float
     role: str | None
-    qualifications: dict[str, Any] | None
+    qualifications: dict[str, Any] | list | None
     notes: str | None
     termination_reason: str | None
     is_active: bool

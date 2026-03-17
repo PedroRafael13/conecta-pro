@@ -236,7 +236,7 @@ export default function DisciplinarPage() {
                 <p className="text-2xl font-bold text-[hsl(var(--foreground))]">
                   {stats?.pending_approval || 0}
                 </p>
-                <p className="text-xs text-[hsl(var(--muted-foreground))]">Pend. Aprovacao</p>
+                <p className="text-xs text-[hsl(var(--muted-foreground))]">Pend. Aprovação</p>
               </div>
             </div>
           </div>
@@ -575,7 +575,7 @@ export default function DisciplinarPage() {
         }}
         onConfirm={handleDelete}
         title="Excluir Processo"
-        message={`Tem certeza que deseja excluir o processo ${selectedAction?.code}? Esta acao nao pode ser desfeita.${deleteError ? ` Erro: ${deleteError}` : ''}`}
+        message={`Tem certeza que deseja excluir o processo ${selectedAction?.code}? Esta ação não pode ser desfeita.${deleteError ? ` Erro: ${deleteError}` : ''}`}
         confirmText="Excluir"
         isLoading={isDeleting}
         variant="danger"

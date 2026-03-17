@@ -70,7 +70,7 @@ export default function ColaboradoresPage() {
   const [saving, setSaving] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
-  const [editForm, setEditForm] = useState({ cargo: '', departamento: '', telefone: '', status: '' });
+  const [editForm, setEditForm] = useState({ nome: '', email: '', cargo: '', departamento: '', telefone: '', status: '' });
   const [newDialogOpen, setNewDialogOpen] = useState(false);
   const [newForm, setNewForm] = useState({ nome: '', email: '', matricula: '', cargo: '', departamento: '', telefone: '' });
   const [newSaving, setNewSaving] = useState(false);
@@ -120,6 +120,8 @@ export default function ColaboradoresPage() {
   const handleEdit = (employee: Employee) => {
     setSelectedEmployee(employee);
     setEditForm({
+      nome: employee.nome || '',
+      email: employee.email || '',
       cargo: employee.cargo || '',
       departamento: employee.departamento || '',
       telefone: employee.telefone || '',
@@ -154,6 +156,7 @@ export default function ColaboradoresPage() {
   const handleCreateEmployee = async () => {
     if (!newForm.nome.trim()) { setNewError('Nome é obrigatório'); return; }
     if (!newForm.email.trim()) { setNewError('E-mail é obrigatório'); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newForm.email)) { setNewError('E-mail inválido'); return; }
     if (!newForm.matricula.trim()) { setNewError('Matrícula é obrigatória'); return; }
     setNewSaving(true);
     setNewError(null);
@@ -351,13 +354,12 @@ export default function ColaboradoresPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nome</TableHead>
-                  <TableHead>Matrícula</TableHead>
+                  <TableHead className="hidden lg:table-cell">Matrícula</TableHead>
                   <TableHead>Cargo</TableHead>
-                  <TableHead>Departamento</TableHead>
-                  <TableHead>Contato</TableHead>
-                  <TableHead>Admissão</TableHead>
+                  <TableHead className="hidden md:table-cell">Departamento</TableHead>
+                  <TableHead className="hidden lg:table-cell">Admissão</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="w-[120px]">Ações</TableHead>
+                  <TableHead className="w-[80px]">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -383,7 +385,7 @@ export default function ColaboradoresPage() {
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden lg:table-cell">
                       <code className="text-xs bg-muted px-1.5 py-0.5 rounded">
                         {employee.matricula || '-'}
                       </code>
@@ -396,7 +398,7 @@ export default function ColaboradoresPage() {
                         </div>
                       ) : '-'}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden md:table-cell">
                       {employee.departamento ? (
                         <div className="flex items-center gap-1 text-sm">
                           <Building2 className="h-3 w-3 text-muted-foreground" />
@@ -404,15 +406,7 @@ export default function ColaboradoresPage() {
                         </div>
                       ) : '-'}
                     </TableCell>
-                    <TableCell>
-                      {employee.telefone ? (
-                        <div className="flex items-center gap-1 text-sm">
-                          <Phone className="h-3 w-3 text-muted-foreground" />
-                          {employee.telefone}
-                        </div>
-                      ) : '-'}
-                    </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden lg:table-cell">
                       {employee.data_admissao ? (
                         <div className="flex items-center gap-1 text-sm">
                           <Calendar className="h-3 w-3 text-muted-foreground" />
@@ -470,6 +464,18 @@ export default function ColaboradoresPage() {
             <DialogDescription>{selectedEmployee?.nome}</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="edit-nome">Nome Completo</Label>
+              <Input id="edit-nome" value={editForm.nome}
+                onChange={(e) => setEditForm({ ...editForm, nome: e.target.value })}
+                placeholder="Nome do colaborador" />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="edit-email">E-mail</Label>
+              <Input id="edit-email" type="email" value={editForm.email}
+                onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                placeholder="email@exemplo.com" />
+            </div>
             <div className="grid gap-2">
               <Label htmlFor="cargo">Cargo</Label>
               <Input id="cargo" value={editForm.cargo}

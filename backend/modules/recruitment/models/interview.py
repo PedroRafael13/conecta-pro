@@ -1,26 +1,25 @@
-"""Model Interview - Entrevistas."""
+"""Model Interview - Entrevistas.
+
+Reescrito para refletir o schema real do banco de dados (15/03/2026).
+Corrige mismatch que causava erros nos endpoints de entrevistas.
+"""
 
 from datetime import date, datetime, time
 from enum import StrEnum
 from typing import TYPE_CHECKING
 
 from sqlalchemy import (
-    JSON,
-    Boolean,
-    Date,
     DateTime,
-    Enum,
     ForeignKey,
     Integer,
     String,
     Text,
-    Time,
 )
-from sqlalchemy.dialects.postgresql import ARRAY, UUID
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from core.database import Base
-from core.models import SoftDeleteMixin, TimestampMixin
 
 if TYPE_CHECKING:
     from .application import Application
@@ -62,8 +61,8 @@ class InterviewResult(StrEnum):
     INCONCLUSIVO = "inconclusivo"
 
 
-class Interview(Base, TimestampMixin, SoftDeleteMixin):
-    """Model para entrevistas."""
+class Interview(Base):
+    """Model para entrevistas — reflete schema real do banco."""
 
     __tablename__ = "interviews"
 
@@ -73,6 +72,9 @@ class Interview(Base, TimestampMixin, SoftDeleteMixin):
         server_default="gen_random_uuid()",
     )
 
+    # Tenant
+    tenant_id: Mapped[str | None] = mapped_column(String)
+
     # Relacionamento
     application_id: Mapped[str] = mapped_column(
         UUID(as_uuid=False),
@@ -80,104 +82,120 @@ class Interview(Base, TimestampMixin, SoftDeleteMixin):
         nullable=False,
     )
 
-    # Tipo e status
-    interview_type: Mapped[InterviewType] = mapped_column(Enum(InterviewType), default=InterviewType.VIDEO)
-    status: Mapped[InterviewStatus] = mapped_column(Enum(InterviewStatus), default=InterviewStatus.AGENDADA)
-    result: Mapped[InterviewResult | None] = mapped_column(Enum(InterviewResult))
+    # Tipo, formato e status
+    interview_type: Mapped[str] = mapped_column(String, nullable=False)
+    format: Mapped[str] = mapped_column(String, nullable=False)
+    status: Mapped[str | None] = mapped_column(String)
+    result: Mapped[str | None] = mapped_column(String)
 
     # Agendamento
-    scheduled_date: Mapped[date] = mapped_column(Date, nullable=False)
-    scheduled_time: Mapped[time] = mapped_column(Time, nullable=False)
-    duration_minutes: Mapped[int] = mapped_column(Integer, default=60)
-    timezone: Mapped[str] = mapped_column(String(50), default="America/Sao_Paulo")
+    scheduled_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    duration_minutes: Mapped[int | None] = mapped_column(Integer)
 
     # Local/Link
-    location: Mapped[str | None] = mapped_column(String(300))
-    meeting_link: Mapped[str | None] = mapped_column(String(500))
-    meeting_platform: Mapped[str | None] = mapped_column(String(50))
-    meeting_id: Mapped[str | None] = mapped_column(String(100))
-    meeting_password: Mapped[str | None] = mapped_column(String(50))
+    location: Mapped[str | None] = mapped_column(String)
+    meeting_url: Mapped[str | None] = mapped_column(String)
 
     # Entrevistadores
-    interviewer_ids: Mapped[list[str] | None] = mapped_column(ARRAY(UUID(as_uuid=False)), default=list)
-    interviewer_names: Mapped[list[str] | None] = mapped_column(ARRAY(String), default=list)
-    lead_interviewer_id: Mapped[str | None] = mapped_column(UUID(as_uuid=False))
+    interviewer_ids: Mapped[list[str] | None] = mapped_column(ARRAY(UUID(as_uuid=False)))
+    interviewer_notes: Mapped[dict | None] = mapped_column(JSONB)
 
-    # Roteiro
-    script: Mapped[str | None] = mapped_column(Text)
-    questions: Mapped[list[dict] | None] = mapped_column(JSON, default=list)
-    competencies_to_assess: Mapped[list[str] | None] = mapped_column(ARRAY(String), default=list)
-
-    # Realização
-    actual_start_time: Mapped[datetime | None] = mapped_column(DateTime)
-    actual_end_time: Mapped[datetime | None] = mapped_column(DateTime)
-    actual_duration_minutes: Mapped[int | None] = mapped_column(Integer)
-
-    # Avaliação
-    score: Mapped[int | None] = mapped_column(Integer)
-    evaluation: Mapped[dict | None] = mapped_column(JSON)
-    strengths: Mapped[list[str] | None] = mapped_column(ARRAY(String), default=list)
-    weaknesses: Mapped[list[str] | None] = mapped_column(ARRAY(String), default=list)
-    competency_scores: Mapped[dict | None] = mapped_column(JSON)
-
-    # Feedback
+    # Feedback e avaliacao
     feedback: Mapped[str | None] = mapped_column(Text)
-    recommendation: Mapped[str | None] = mapped_column(Text)
-    internal_notes: Mapped[str | None] = mapped_column(Text)
+    rating: Mapped[int | None] = mapped_column(Integer)
+    transcript: Mapped[str | None] = mapped_column(Text)
 
-    # Candidato
-    candidate_feedback: Mapped[str | None] = mapped_column(Text)
-    candidate_questions: Mapped[list[str] | None] = mapped_column(ARRAY(String), default=list)
+    # Realizacao
+    started_at: Mapped[datetime | None] = mapped_column(DateTime)
+    ended_at: Mapped[datetime | None] = mapped_column(DateTime)
 
-    # Confirmações
-    candidate_confirmed: Mapped[bool] = mapped_column(Boolean, default=False)
-    candidate_confirmed_at: Mapped[datetime | None] = mapped_column(DateTime)
-    interviewer_confirmed: Mapped[bool] = mapped_column(Boolean, default=False)
-
-    # Lembretes
-    reminder_sent: Mapped[bool] = mapped_column(Boolean, default=False)
-    reminder_sent_at: Mapped[datetime | None] = mapped_column(DateTime)
-
-    # Cancelamento/Reagendamento
+    # Cancelamento
     cancelled_at: Mapped[datetime | None] = mapped_column(DateTime)
-    cancelled_by: Mapped[str | None] = mapped_column(UUID(as_uuid=False))
     cancellation_reason: Mapped[str | None] = mapped_column(Text)
-    rescheduled_from: Mapped[str | None] = mapped_column(UUID(as_uuid=False))
-    reschedule_count: Mapped[int] = mapped_column(Integer, default=0)
 
-    # Gravação
-    is_recorded: Mapped[bool] = mapped_column(Boolean, default=False)
-    recording_url: Mapped[str | None] = mapped_column(String(500))
-    recording_consent: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Gravacao
+    recording_url: Mapped[str | None] = mapped_column(String)
 
-    # Responsável
-    created_by: Mapped[str | None] = mapped_column(UUID(as_uuid=False))
+    # Timestamps
+    created_at: Mapped[datetime | None] = mapped_column(DateTime, server_default="now()")
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime, onupdate=datetime.utcnow)
 
     # Relationship
     application: Mapped["Application"] = relationship("Application", back_populates="interviews")
 
-    def __repr__(self) -> str:
-        return f"<Interview {self.id}: {self.interview_type.value} - {self.status.value}>"
+    # -------------------------------------------------------------------------
+    # Compatibility: is_deleted (DB nao tem coluna — repositorio filtra por ela)
+    # -------------------------------------------------------------------------
+    @hybrid_property
+    def is_deleted(self) -> bool:
+        """Sempre False — tabela interviews nao possui soft delete."""
+        return False
+
+    @is_deleted.expression  # type: ignore[no-redef]
+    def is_deleted(cls):  # noqa: N805
+        """Expressao SQL: sempre False para queries com .is_(False)."""
+        from sqlalchemy import literal
+
+        return literal(False)
+
+    # -------------------------------------------------------------------------
+    # Compatibility properties (codigo legado usa esses nomes)
+    # -------------------------------------------------------------------------
+    @property
+    def scheduled_date(self) -> date | None:
+        """Extrai date de scheduled_at (compatibilidade)."""
+        if self.scheduled_at is None:
+            return None
+        return self.scheduled_at.date()
 
     @property
-    def scheduled_datetime(self) -> datetime:
-        """Retorna data/hora agendada."""
-        return datetime.combine(self.scheduled_date, self.scheduled_time)
+    def scheduled_time(self) -> time | None:
+        """Extrai time de scheduled_at (compatibilidade)."""
+        if self.scheduled_at is None:
+            return None
+        return self.scheduled_at.time()
 
+    @property
+    def score(self) -> int | None:
+        """Alias para rating (compatibilidade)."""
+        return self.rating
+
+    @score.setter
+    def score(self, value: int | None) -> None:
+        """Setter para score → rating."""
+        self.rating = value
+
+    @property
+    def scheduled_datetime(self) -> datetime | None:
+        """Retorna data/hora agendada (alias direto para scheduled_at)."""
+        return self.scheduled_at
+
+    def __repr__(self) -> str:
+        return f"<Interview {self.id}: {self.interview_type} - {self.status}>"
+
+    # -------------------------------------------------------------------------
+    # Convenience properties
+    # -------------------------------------------------------------------------
     @property
     def is_past(self) -> bool:
-        """Verifica se já passou."""
-        return datetime.now() > self.scheduled_datetime
+        """Verifica se ja passou."""
+        if self.scheduled_at is None:
+            return False
+        return datetime.utcnow() > self.scheduled_at
 
     @property
     def is_today(self) -> bool:
-        """Verifica se é hoje."""
-        return self.scheduled_date == date.today()
+        """Verifica se e hoje."""
+        if self.scheduled_at is None:
+            return False
+        return self.scheduled_at.date() == date.today()
 
     @property
     def is_upcoming(self) -> bool:
-        """Verifica se está próxima (até 7 dias)."""
-        days_until = (self.scheduled_date - date.today()).days
+        """Verifica se esta proxima (ate 7 dias)."""
+        if self.scheduled_at is None:
+            return False
+        days_until = (self.scheduled_at.date() - date.today()).days
         return 0 <= days_until <= 7
 
     @property
@@ -193,91 +211,51 @@ class Interview(Base, TimestampMixin, SoftDeleteMixin):
             InterviewResult.APROVADO_COM_RESSALVAS,
         ]
 
-    def confirm_candidate(self) -> None:
-        """Confirma participação do candidato."""
-        self.candidate_confirmed = True
-        self.candidate_confirmed_at = datetime.utcnow()
-        if self.interviewer_confirmed:
-            self.status = InterviewStatus.CONFIRMADA
-
-    def confirm_interviewer(self) -> None:
-        """Confirma participação do entrevistador."""
-        self.interviewer_confirmed = True
-        if self.candidate_confirmed:
-            self.status = InterviewStatus.CONFIRMADA
-
+    # -------------------------------------------------------------------------
+    # Action methods
+    # -------------------------------------------------------------------------
     def start(self) -> None:
         """Inicia entrevista."""
         self.status = InterviewStatus.EM_ANDAMENTO
-        self.actual_start_time = datetime.utcnow()
+        self.started_at = datetime.utcnow()
 
     def complete(
         self,
         result: InterviewResult,
-        score: int = None,
-        feedback: str = None,
+        rating: int | None = None,
+        feedback: str | None = None,
     ) -> None:
         """Finaliza entrevista."""
         self.status = InterviewStatus.REALIZADA
         self.result = result
-        self.actual_end_time = datetime.utcnow()
-        if self.actual_start_time:
-            self.actual_duration_minutes = int((self.actual_end_time - self.actual_start_time).total_seconds() / 60)
-        if score is not None:
-            self.score = score
+        self.ended_at = datetime.utcnow()
+        if rating is not None:
+            self.rating = rating
         if feedback:
             self.feedback = feedback
 
-    def cancel(self, reason: str, cancelled_by: str) -> None:
-        """Cancela entrevista."""
+    def cancel(self, reason: str, cancelled_by: str | None = None) -> None:
+        """Cancela entrevista.
+
+        cancelled_by aceito por compatibilidade mas nao persiste (coluna nao existe).
+        """
         self.status = InterviewStatus.CANCELADA
         self.cancelled_at = datetime.utcnow()
-        self.cancelled_by = cancelled_by
         self.cancellation_reason = reason
 
-    def reschedule(self, new_date: date, new_time: time) -> None:
-        """Reagenda entrevista."""
+    def reschedule(self, new_datetime: datetime) -> None:
+        """Reagenda entrevista.
+
+        Aceita datetime completo (scheduled_at e timestamp, nao date+time separados).
+        """
         self.status = InterviewStatus.REAGENDADA
-        self.scheduled_date = new_date
-        self.scheduled_time = new_time
-        self.reschedule_count += 1
-        self.candidate_confirmed = False
-        self.interviewer_confirmed = False
+        self.scheduled_at = new_datetime
 
     def mark_no_show(self) -> None:
-        """Marca como não compareceu."""
+        """Marca como nao compareceu."""
         self.status = InterviewStatus.NO_SHOW
         self.result = InterviewResult.INCONCLUSIVO
 
-    def send_reminder(self) -> None:
-        """Marca lembrete como enviado."""
-        self.reminder_sent = True
-        self.reminder_sent_at = datetime.utcnow()
-
-    def add_evaluation(
-        self,
-        competency_scores: dict,
-        strengths: list[str] = None,
-        weaknesses: list[str] = None,
-        recommendation: str = None,
-    ) -> None:
-        """Adiciona avaliação detalhada."""
-        self.competency_scores = competency_scores
-        if strengths:
-            self.strengths = strengths
-        if weaknesses:
-            self.weaknesses = weaknesses
-        if recommendation:
-            self.recommendation = recommendation
-
-        # Calcula score médio das competências
-        if competency_scores:
-            scores = [v for v in competency_scores.values() if isinstance(v, (int, float))]
-            if scores:
-                self.score = int(sum(scores) / len(scores))
-
-    def set_recording(self, url: str, consent: bool = True) -> None:
-        """Define gravação."""
-        self.is_recorded = True
+    def set_recording(self, url: str) -> None:
+        """Define URL da gravacao."""
         self.recording_url = url
-        self.recording_consent = consent

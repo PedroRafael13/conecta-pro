@@ -87,30 +87,30 @@ class SolidesIntegrationService:
         ...     print(f"Sincronizados: {result['created'] + result['updated']}")
     """
 
-    # Mapeamento de campos Solides -> Funcionario Conecta PRO
+    # Mapeamento de campos Solides -> Employee (tabela employees)
     FIELD_MAPPING = {
         # Dados pessoais
-        "nome": "nome_completo",
+        "nome": "nome",
         "email": "email",
         "cpf": "cpf",
         "rg": "rg",
         "data_nascimento": "data_nascimento",
-        "sexo": "genero",
+        "sexo": "sexo",
         "estado_civil": "estado_civil",
         "telefone": "telefone",
         "celular": "celular",
         # Endereco
-        "endereco.logradouro": "endereco_logradouro",
-        "endereco.numero": "endereco_numero",
-        "endereco.complemento": "endereco_complemento",
-        "endereco.bairro": "endereco_bairro",
-        "endereco.cidade": "endereco_cidade",
-        "endereco.estado": "endereco_uf",
-        "endereco.cep": "endereco_cep",
+        "endereco.logradouro": "logradouro",
+        "endereco.numero": "numero",
+        "endereco.complemento": "complemento",
+        "endereco.bairro": "bairro",
+        "endereco.cidade": "cidade",
+        "endereco.estado": "uf",
+        "endereco.cep": "cep",
         # Dados profissionais
         "matricula": "matricula",
-        "cargo.nome": "cargo_nome",
-        "departamento.nome": "departamento_nome",
+        "cargo.nome": "cargo",
+        "departamento.nome": "departamento",
         "gestor_nome": "gestor_nome",
         "data_admissao": "data_admissao",
         "data_demissao": "data_demissao",
@@ -377,23 +377,14 @@ class SolidesIntegrationService:
         Returns:
             Dict com dados ou None
         """
-        # Implementacao depende do modelo Funcionario existente
-        # Exemplo usando query direta:
-        try:
-            from modules.hr.models import Funcionario  # type: ignore
+        from modules.operacional.models.employee import Employee
 
-            stmt = select(Funcionario).where(
-                and_(Funcionario.id == employee_id, Funcionario.condominio_id == self.condominio_id)
-            )
-            result = await self.db.execute(stmt)
-            func = result.scalar_one_or_none()
+        stmt = select(Employee).where(Employee.id == employee_id)
+        result = await self.db.execute(stmt)
+        emp = result.scalar_one_or_none()
 
-            if func:
-                return self._employee_to_dict(func)
-        except ImportError:
-            logger.warning("[SolidesIntegration] Modelo Funcionario nao encontrado, usando tabela generica")
-            # Fallback para query direta na tabela
-            pass
+        if emp:
+            return self._employee_to_dict(emp)
 
         return None
 
@@ -407,19 +398,14 @@ class SolidesIntegrationService:
         Returns:
             Dict com dados ou None
         """
-        try:
-            from modules.hr.models import Funcionario  # type: ignore
+        from modules.operacional.models.employee import Employee
 
-            stmt = select(Funcionario).where(
-                and_(Funcionario.cpf == cpf, Funcionario.condominio_id == self.condominio_id)
-            )
-            result = await self.db.execute(stmt)
-            func = result.scalar_one_or_none()
+        stmt = select(Employee).where(Employee.cpf == cpf)
+        result = await self.db.execute(stmt)
+        emp = result.scalar_one_or_none()
 
-            if func:
-                return self._employee_to_dict(func)
-        except ImportError:
-            pass
+        if emp:
+            return self._employee_to_dict(emp)
 
         return None
 
@@ -594,28 +580,18 @@ class SolidesIntegrationService:
         """
         Insere funcionario no banco de dados.
 
-        Implementacao generica que pode ser adaptada para o modelo
-        especifico do projeto.
-
         Args:
             data: Dados do funcionario a inserir
 
         Returns:
             True se inserido com sucesso
         """
-        try:
-            from modules.hr.models import Funcionario  # type: ignore
+        from modules.operacional.models.employee import Employee
 
-            funcionario = Funcionario(**self._prepare_insert_data(data))
-            self.db.add(funcionario)
-            await self.db.flush()
-            return True
-
-        except ImportError:
-            # Se modelo nao existe, tenta insert direto
-            logger.warning("[SolidesIntegration] Modelo Funcionario nao disponivel, pulando insercao")
-            # Aqui poderia fazer insert direto na tabela se necessario
-            return False
+        employee = Employee(**self._prepare_insert_data(data))
+        self.db.add(employee)
+        await self.db.flush()
+        return True
 
     async def _update_employee_record(self, employee_id: UUID, data: dict[str, Any]) -> bool:
         """
@@ -628,16 +604,11 @@ class SolidesIntegrationService:
         Returns:
             True se atualizado com sucesso
         """
-        try:
-            from modules.hr.models import Funcionario  # type: ignore
+        from modules.operacional.models.employee import Employee
 
-            stmt = update(Funcionario).where(Funcionario.id == employee_id).values(**self._prepare_update_data(data))
-            await self.db.execute(stmt)
-            return True
-
-        except ImportError:
-            logger.warning("[SolidesIntegration] Modelo Funcionario nao disponivel, pulando atualizacao")
-            return False
+        stmt = update(Employee).where(Employee.id == employee_id).values(**self._prepare_update_data(data))
+        await self.db.execute(stmt)
+        return True
 
     def _prepare_insert_data(self, data: dict[str, Any]) -> dict[str, Any]:
         """
@@ -649,33 +620,35 @@ class SolidesIntegrationService:
         Returns:
             Dados filtrados para insercao
         """
-        # Campos validos para o modelo Funcionario
+        # Campos validos do modelo Employee (tabela employees)
         valid_fields = {
             "id",
-            "condominio_id",
-            "nome_completo",
-            "email",
+            "solides_id",
+            "matricula",
+            "nome",
+            "nome_social",
             "cpf",
             "rg",
             "data_nascimento",
-            "genero",
+            "sexo",
             "estado_civil",
+            "email",
             "telefone",
             "celular",
-            "endereco_logradouro",
-            "endereco_numero",
-            "endereco_complemento",
-            "endereco_bairro",
-            "endereco_cidade",
-            "endereco_uf",
-            "endereco_cep",
-            "matricula",
-            "cargo_nome",
+            "cep",
+            "logradouro",
+            "numero",
+            "complemento",
+            "bairro",
+            "cidade",
+            "uf",
+            "cargo",
             "cargo_id",
-            "departamento_nome",
+            "departamento",
             "departamento_id",
-            "gestor_nome",
+            "centro_custo",
             "gestor_id",
+            "gestor_nome",
             "data_admissao",
             "data_demissao",
             "tipo_contrato",
@@ -690,13 +663,14 @@ class SolidesIntegrationService:
             "certificado_reservista",
             "foto_url",
             "status",
-            "solides_id",
+            "is_active",
+            "perfil_disc",
+            "dependentes",
+            "dados_adicionais",
             "sync_source",
             "last_synced_at",
             "created_at",
             "updated_at",
-            "is_active",
-            "extra_data",
         }
 
         return {k: v for k, v in data.items() if k in valid_fields and v is not None}
@@ -719,26 +693,39 @@ class SolidesIntegrationService:
 
     def _employee_to_dict(self, employee: Any) -> dict[str, Any]:
         """
-        Converte objeto Funcionario para dicionario.
+        Converte objeto Employee para dicionario.
 
         Args:
-            employee: Objeto do modelo Funcionario
+            employee: Objeto do modelo Employee
 
         Returns:
             Dict com atributos do funcionario
         """
         return {
             "id": employee.id,
-            "condominio_id": employee.condominio_id,
-            "nome_completo": getattr(employee, "nome_completo", None),
+            "nome": getattr(employee, "nome", None),
             "email": getattr(employee, "email", None),
             "cpf": getattr(employee, "cpf", None),
+            "rg": getattr(employee, "rg", None),
+            "sexo": getattr(employee, "sexo", None),
+            "estado_civil": getattr(employee, "estado_civil", None),
+            "telefone": getattr(employee, "telefone", None),
+            "celular": getattr(employee, "celular", None),
             "data_nascimento": getattr(employee, "data_nascimento", None),
+            "matricula": getattr(employee, "matricula", None),
+            "cargo": getattr(employee, "cargo", None),
+            "departamento": getattr(employee, "departamento", None),
+            "gestor_nome": getattr(employee, "gestor_nome", None),
             "data_admissao": getattr(employee, "data_admissao", None),
             "data_demissao": getattr(employee, "data_demissao", None),
+            "tipo_contrato": getattr(employee, "tipo_contrato", None),
+            "regime_trabalho": getattr(employee, "regime_trabalho", None),
+            "jornada_trabalho": getattr(employee, "jornada_trabalho", None),
+            "salario_base": getattr(employee, "salario_base", None),
             "status": getattr(employee, "status", None),
             "solides_id": getattr(employee, "solides_id", None),
-            "data_hash": getattr(employee, "data_hash", None),
+            "sync_source": getattr(employee, "sync_source", None),
+            "last_synced_at": getattr(employee, "last_synced_at", None),
             "created_at": getattr(employee, "created_at", None),
             "updated_at": getattr(employee, "updated_at", None),
         }

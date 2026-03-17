@@ -1,28 +1,34 @@
-"""Model Application - Candidaturas."""
+"""Model Application - Candidaturas.
 
-from datetime import datetime
+Reescrito para refletir o schema real do banco de dados (15/03/2026).
+Corrige mismatch entre model e DB que causava erros nos endpoints.
+Colunas fantasma removidas, hybrid_property is_deleted adicionada para
+compatibilidade com repository queries existentes.
+"""
+
+from datetime import date, datetime
+from decimal import Decimal
 from enum import StrEnum
 from typing import TYPE_CHECKING
 
 from sqlalchemy import (
-    JSON,
     Boolean,
+    Date,
     DateTime,
-    Enum,
     ForeignKey,
     Integer,
+    Numeric,
     String,
     Text,
 )
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from core.database import Base
-from core.models import SoftDeleteMixin, TimestampMixin
 
 if TYPE_CHECKING:
     from .candidate import Candidate
-    from .interview import Interview
     from .job_position import JobPosition
 
 
@@ -46,7 +52,7 @@ class ApplicationStatus(StrEnum):
 
 
 class RejectionReason(StrEnum):
-    """Motivo de reprovação."""
+    """Motivo de reprovacao."""
 
     PERFIL_INADEQUADO = "perfil_inadequado"
     EXPERIENCIA_INSUFICIENTE = "experiencia_insuficiente"
@@ -60,8 +66,8 @@ class RejectionReason(StrEnum):
     OUTRO = "outro"
 
 
-class Application(Base, TimestampMixin, SoftDeleteMixin):
-    """Model para candidaturas."""
+class Application(Base):
+    """Model para candidaturas — reflete schema real do banco."""
 
     __tablename__ = "applications"
 
@@ -71,7 +77,10 @@ class Application(Base, TimestampMixin, SoftDeleteMixin):
         server_default="gen_random_uuid()",
     )
 
-    # Relacionamentos principais
+    # Tenant
+    tenant_id: Mapped[str | None] = mapped_column(String)
+
+    # Relacionamentos principais (FKs)
     job_position_id: Mapped[str] = mapped_column(
         UUID(as_uuid=False),
         ForeignKey("job_positions.id"),
@@ -83,89 +92,92 @@ class Application(Base, TimestampMixin, SoftDeleteMixin):
         nullable=False,
     )
 
-    # Status
-    status: Mapped[ApplicationStatus] = mapped_column(Enum(ApplicationStatus), default=ApplicationStatus.INSCRITO)
-    current_stage: Mapped[int] = mapped_column(Integer, default=1)
-    current_stage_name: Mapped[str | None] = mapped_column(String(100))
+    # Status e etapa
+    status: Mapped[str | None] = mapped_column(String)
+    current_step: Mapped[str | None] = mapped_column(String)
+    step_order: Mapped[int | None] = mapped_column(Integer)
 
-    # Scores
-    matching_score: Mapped[int] = mapped_column(Integer, default=0)
-    interview_score: Mapped[int | None] = mapped_column(Integer)
-    test_score: Mapped[int | None] = mapped_column(Integer)
-    final_score: Mapped[int | None] = mapped_column(Integer)
-
-    # Ranking
-    ranking_position: Mapped[int | None] = mapped_column(Integer)
-    is_favorite: Mapped[bool] = mapped_column(Boolean, default=False)
-    is_shortlisted: Mapped[bool] = mapped_column(Boolean, default=False)
-
-    # Carta de apresentação
-    cover_letter: Mapped[str | None] = mapped_column(Text)
-
-    # Respostas a perguntas
-    screening_answers: Mapped[list[dict] | None] = mapped_column(JSON, default=list)
-
-    # Histórico de status
-    status_history: Mapped[list[dict] | None] = mapped_column(JSON, default=list)
-
-    # Notas e feedback
+    # Notas e avaliacao
     recruiter_notes: Mapped[str | None] = mapped_column(Text)
-    hiring_manager_notes: Mapped[str | None] = mapped_column(Text)
-    feedback: Mapped[str | None] = mapped_column(Text)
+    rating: Mapped[int | None] = mapped_column(Integer)
 
-    # Reprovação
-    rejection_reason: Mapped[RejectionReason | None] = mapped_column(Enum(RejectionReason))
-    rejection_details: Mapped[str | None] = mapped_column(Text)
-    rejected_at: Mapped[datetime | None] = mapped_column(DateTime)
-    rejected_by: Mapped[str | None] = mapped_column(UUID(as_uuid=False))
+    # AI matching
+    ai_match_score: Mapped[Decimal | None] = mapped_column(Numeric)
+    ai_match_details: Mapped[dict | None] = mapped_column(JSONB)
 
-    # Proposta
-    proposal_sent_at: Mapped[datetime | None] = mapped_column(DateTime)
-    proposal_amount: Mapped[int | None] = mapped_column(Integer)
-    proposal_response_at: Mapped[datetime | None] = mapped_column(DateTime)
-    proposal_accepted: Mapped[bool | None] = mapped_column(Boolean)
+    # Historico de etapas
+    step_history: Mapped[dict | None] = mapped_column(JSONB)
 
-    # Contratação
+    # Carta de apresentacao e pretensao
+    cover_letter: Mapped[str | None] = mapped_column(Text)
+    salary_expectation: Mapped[Decimal | None] = mapped_column(Numeric)
+    availability_date: Mapped[date | None] = mapped_column(Date)
+
+    # Datas do pipeline
+    applied_at: Mapped[datetime | None] = mapped_column(DateTime)
+    screened_at: Mapped[datetime | None] = mapped_column(DateTime)
+    interviewed_at: Mapped[datetime | None] = mapped_column(DateTime)
+    offered_at: Mapped[datetime | None] = mapped_column(DateTime)
     hired_at: Mapped[datetime | None] = mapped_column(DateTime)
-    start_date: Mapped[datetime | None] = mapped_column(DateTime)
+    rejected_at: Mapped[datetime | None] = mapped_column(DateTime)
+    withdrawn_at: Mapped[datetime | None] = mapped_column(DateTime)
 
-    # Datas importantes
-    applied_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    last_update_at: Mapped[datetime | None] = mapped_column(DateTime)
-    viewed_at: Mapped[datetime | None] = mapped_column(DateTime)
+    # Motivos de rejeicao/desistencia
+    rejection_reason: Mapped[str | None] = mapped_column(Text)
+    withdrawal_reason: Mapped[str | None] = mapped_column(Text)
 
-    # Referência interna
-    referral_employee_id: Mapped[str | None] = mapped_column(UUID(as_uuid=False))
-    referral_notes: Mapped[str | None] = mapped_column(Text)
+    # Responsavel
+    assigned_to_id: Mapped[str | None] = mapped_column(UUID(as_uuid=False))
 
-    # Responsáveis
-    assigned_recruiter_id: Mapped[str | None] = mapped_column(UUID(as_uuid=False))
-    created_by: Mapped[str | None] = mapped_column(UUID(as_uuid=False))
+    # Flags
+    is_active: Mapped[bool | None] = mapped_column(Boolean, default=True)
 
+    # Timestamps (sem mixin — colunas explicitas)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime, server_default="now()")
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime, onupdate=datetime.utcnow)
+
+    # -------------------------------------------------------------------------
     # Relationships
-    job_position: Mapped["JobPosition"] = relationship("JobPosition", back_populates="applications")
-    candidate: Mapped["Candidate"] = relationship("Candidate", back_populates="applications")
-    interviews: Mapped[list["Interview"]] = relationship("Interview", back_populates="application", lazy="dynamic")
+    # -------------------------------------------------------------------------
+    job_position: Mapped["JobPosition"] = relationship(
+        "JobPosition",
+        back_populates="applications",
+    )
+    candidate: Mapped["Candidate"] = relationship(
+        "Candidate",
+        back_populates="applications",
+    )
+    interviews: Mapped[list] = relationship(
+        "modules.recruitment.models.interview.Interview",
+        back_populates="application",
+        lazy="selectin",
+    )
+
+    # -------------------------------------------------------------------------
+    # Hybrid property: is_deleted (compatibilidade com repository queries)
+    # O banco usa is_active (bool). O repository filtra por is_deleted.is_(False).
+    # is_deleted == NOT is_active, portanto is_deleted.is_(False) == is_active.is_(True).
+    # -------------------------------------------------------------------------
+    @hybrid_property
+    def is_deleted(self) -> bool:
+        """Compatibilidade: mapeia is_deleted para NOT is_active."""
+        return not self.is_active
+
+    @is_deleted.expression  # type: ignore[no-redef]
+    def is_deleted(cls):  # noqa: N805
+        """SQL expression: is_deleted == NOT is_active."""
+        return cls.is_active.is_not(True)
 
     def __repr__(self) -> str:
-        return f"<Application {self.id}: {self.status.value}>"
+        return f"<Application {self.id}: {self.status}>"
 
-    @property
-    def is_active(self) -> bool:
-        """Verifica se candidatura está ativa."""
-        inactive_statuses = [
-            ApplicationStatus.TRIAGEM_REPROVADO,
-            ApplicationStatus.PROPOSTA_RECUSADA,
-            ApplicationStatus.CONTRATADO,
-            ApplicationStatus.REPROVADO,
-            ApplicationStatus.DESISTIU,
-        ]
-        return self.status not in inactive_statuses
-
+    # -------------------------------------------------------------------------
+    # Convenience properties (compatibilidade com services existentes)
+    # -------------------------------------------------------------------------
     @property
     def is_in_process(self) -> bool:
-        """Verifica se está em processo."""
-        in_process_statuses = [
+        """Verifica se esta em processo ativo no pipeline."""
+        in_process = {
             ApplicationStatus.TRIAGEM,
             ApplicationStatus.ENTREVISTA_RH,
             ApplicationStatus.ENTREVISTA_TECNICA,
@@ -173,8 +185,8 @@ class Application(Base, TimestampMixin, SoftDeleteMixin):
             ApplicationStatus.TESTE,
             ApplicationStatus.REFERENCIAS,
             ApplicationStatus.PROPOSTA,
-        ]
-        return self.status in in_process_statuses
+        }
+        return self.status in in_process
 
     @property
     def is_hired(self) -> bool:
@@ -184,139 +196,107 @@ class Application(Base, TimestampMixin, SoftDeleteMixin):
     @property
     def is_rejected(self) -> bool:
         """Verifica se foi reprovado."""
-        rejected_statuses = [
+        return self.status in {
             ApplicationStatus.TRIAGEM_REPROVADO,
             ApplicationStatus.REPROVADO,
             ApplicationStatus.PROPOSTA_RECUSADA,
-        ]
-        return self.status in rejected_statuses
+        }
 
     @property
-    def days_in_process(self) -> int:
-        """Dias em processo."""
+    def days_in_process(self) -> int | None:
+        """Dias em processo desde applied_at."""
+        if not self.applied_at:
+            return None
         end_date = self.hired_at or self.rejected_at or datetime.utcnow()
         return (end_date - self.applied_at).days
 
-    def advance_stage(self, new_status: ApplicationStatus, notes: str = None) -> None:
-        """Avança para próximo estágio."""
-        self._add_status_history(notes)
-        self.status = new_status
-        self.current_stage += 1
-        self.current_stage_name = new_status.value
-        self.last_update_at = datetime.utcnow()
+    # -------------------------------------------------------------------------
+    # Mutation helpers (compatibilidade com services que chamam esses metodos)
+    # Simplificados para trabalhar apenas com colunas reais do banco.
+    # -------------------------------------------------------------------------
+    def advance_stage(self, new_status: str, notes: str = None) -> None:
+        """Avanca para proximo estagio do pipeline."""
+        self.status = new_status if isinstance(new_status, str) else new_status.value
+        self.current_step = self.status
+        if self.step_order is not None:
+            self.step_order += 1
+        else:
+            self.step_order = 1
+        if notes:
+            self.recruiter_notes = notes
+        self._append_step_history(notes)
+        self.updated_at = datetime.utcnow()
 
-    def reject(self, reason: RejectionReason, details: str = None, rejected_by: str = None) -> None:
+    def reject(self, reason: str = None, details: str = None, **_kwargs) -> None:
         """Reprova candidatura."""
-        self._add_status_history(f"Reprovado: {reason.value}")
         self.status = ApplicationStatus.REPROVADO
-        self.rejection_reason = reason
-        self.rejection_details = details
+        self.rejection_reason = reason if isinstance(reason, str) else (reason.value if reason else None)
         self.rejected_at = datetime.utcnow()
-        self.rejected_by = rejected_by
-        self.last_update_at = datetime.utcnow()
+        self.current_step = ApplicationStatus.REPROVADO
+        self._append_step_history(details or f"Reprovado: {self.rejection_reason}")
+        self.updated_at = datetime.utcnow()
 
-    def move_to_talent_pool(self, notes: str = None) -> None:
-        """Move para banco de talentos."""
-        self._add_status_history(notes or "Movido para banco de talentos")
-        self.status = ApplicationStatus.BANCO_TALENTOS
-        self.last_update_at = datetime.utcnow()
-
-    def send_proposal(self, amount: int) -> None:
-        """Envia proposta."""
-        self._add_status_history(f"Proposta enviada: R$ {amount:,.2f}")
-        self.status = ApplicationStatus.PROPOSTA
-        self.proposal_sent_at = datetime.utcnow()
-        self.proposal_amount = amount
-        self.last_update_at = datetime.utcnow()
-
-    def accept_proposal(self) -> None:
-        """Aceita proposta."""
-        self._add_status_history("Proposta aceita")
-        self.proposal_response_at = datetime.utcnow()
-        self.proposal_accepted = True
-        self.last_update_at = datetime.utcnow()
-
-    def reject_proposal(self, reason: str = None) -> None:
-        """Recusa proposta."""
-        self._add_status_history(f"Proposta recusada: {reason or 'Sem motivo'}")
-        self.status = ApplicationStatus.PROPOSTA_RECUSADA
-        self.proposal_response_at = datetime.utcnow()
-        self.proposal_accepted = False
-        self.last_update_at = datetime.utcnow()
-
-    def hire(self, start_date: datetime = None) -> None:
+    def hire(self, **_kwargs) -> None:
         """Contrata candidato."""
-        self._add_status_history("Contratado")
         self.status = ApplicationStatus.CONTRATADO
         self.hired_at = datetime.utcnow()
-        self.start_date = start_date
-        self.last_update_at = datetime.utcnow()
+        self.current_step = ApplicationStatus.CONTRATADO
+        self._append_step_history("Contratado")
+        self.updated_at = datetime.utcnow()
 
     def withdraw(self, reason: str = None) -> None:
         """Candidato desiste."""
-        self._add_status_history(f"Desistiu: {reason or 'Sem motivo'}")
         self.status = ApplicationStatus.DESISTIU
-        self.last_update_at = datetime.utcnow()
+        self.withdrawal_reason = reason
+        self.withdrawn_at = datetime.utcnow()
+        self.current_step = ApplicationStatus.DESISTIU
+        self._append_step_history(f"Desistiu: {reason or 'Sem motivo'}")
+        self.updated_at = datetime.utcnow()
 
-    def shortlist(self) -> None:
-        """Adiciona à lista restrita."""
-        self.is_shortlisted = True
-        self.last_update_at = datetime.utcnow()
+    def move_to_talent_pool(self, notes: str = None) -> None:
+        """Move para banco de talentos."""
+        self.status = ApplicationStatus.BANCO_TALENTOS
+        self.current_step = ApplicationStatus.BANCO_TALENTOS
+        self._append_step_history(notes or "Movido para banco de talentos")
+        self.updated_at = datetime.utcnow()
 
-    def favorite(self) -> None:
-        """Marca como favorito."""
-        self.is_favorite = True
-        self.last_update_at = datetime.utcnow()
+    def send_proposal(self, amount: Decimal = None) -> None:
+        """Envia proposta."""
+        self.status = ApplicationStatus.PROPOSTA
+        self.offered_at = datetime.utcnow()
+        self.current_step = ApplicationStatus.PROPOSTA
+        if amount is not None:
+            self.salary_expectation = amount
+        self._append_step_history(f"Proposta enviada: R$ {amount}" if amount else "Proposta enviada")
+        self.updated_at = datetime.utcnow()
 
-    def unfavorite(self) -> None:
-        """Remove dos favoritos."""
-        self.is_favorite = False
-        self.last_update_at = datetime.utcnow()
+    def accept_proposal(self) -> None:
+        """Aceita proposta (avanca para contratado)."""
+        self.hire()
 
-    def mark_viewed(self) -> None:
-        """Marca como visualizado."""
-        self.viewed_at = datetime.utcnow()
+    def reject_proposal(self, reason: str = None) -> None:
+        """Recusa proposta."""
+        self.status = ApplicationStatus.PROPOSTA_RECUSADA
+        self.current_step = ApplicationStatus.PROPOSTA_RECUSADA
+        self.withdrawal_reason = reason
+        self._append_step_history(f"Proposta recusada: {reason or 'Sem motivo'}")
+        self.updated_at = datetime.utcnow()
 
-    def update_score(
-        self,
-        matching: int = None,
-        interview: int = None,
-        test: int = None,
-    ) -> None:
-        """Atualiza scores."""
-        if matching is not None:
-            self.matching_score = matching
-        if interview is not None:
-            self.interview_score = interview
-        if test is not None:
-            self.test_score = test
-
-        # Calcula score final (média ponderada)
-        scores = []
-        weights = []
-        if self.matching_score:
-            scores.append(self.matching_score)
-            weights.append(0.3)
-        if self.interview_score:
-            scores.append(self.interview_score)
-            weights.append(0.4)
-        if self.test_score:
-            scores.append(self.test_score)
-            weights.append(0.3)
-
-        if scores:
-            total_weight = sum(weights[: len(scores)])
-            self.final_score = int(sum(s * w for s, w in zip(scores, weights, strict=False)) / total_weight)
-
-    def _add_status_history(self, notes: str = None) -> None:
-        """Adiciona ao histórico de status."""
-        if not self.status_history:
-            self.status_history = []
-        self.status_history.append(
-            {
-                "status": self.status.value,
-                "stage": self.current_stage,
-                "timestamp": datetime.utcnow().isoformat(),
-                "notes": notes,
-            }
-        )
+    # -------------------------------------------------------------------------
+    # Internal helpers
+    # -------------------------------------------------------------------------
+    def _append_step_history(self, notes: str = None) -> None:
+        """Adiciona entrada ao step_history (JSONB)."""
+        if not self.step_history:
+            self.step_history = []
+        if isinstance(self.step_history, list):
+            self.step_history = [
+                *self.step_history,
+                {
+                    "status": self.status,
+                    "step": self.current_step,
+                    "step_order": self.step_order,
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "notes": notes,
+                },
+            ]

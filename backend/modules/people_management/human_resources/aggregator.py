@@ -78,3 +78,25 @@ try:
     logger.info("RH: Router de onboarding carregado.")
 except ImportError:
     logger.warning("RH: Modulo de onboarding nao disponivel.")
+
+# Resume Parser (Currículos)
+try:
+    from modules.people_management.human_resources.controllers.resume_controller import (
+        router as resume_router,
+    )
+
+    router.include_router(resume_router)
+    logger.info("RH: Router de currículos carregado.")
+except ImportError:
+    logger.warning("RH: Modulo de currículos nao disponivel.")
+
+# Avaliação 360°
+try:
+    from modules.people_management.human_resources.controllers.evaluation_360_controller import (
+        router as evaluation_360_router,
+    )
+
+    router.include_router(evaluation_360_router)
+    logger.info("RH: Router de avaliação 360° carregado.")
+except ImportError:
+    logger.warning("RH: Modulo de avaliação 360° nao disponivel.")

@@ -11,6 +11,12 @@ from modules.people_management.human_resources.models.career import (
     CareerPlan,
     CareerPlanStatus,
 )
+from modules.people_management.human_resources.models.evaluation_360 import (
+    Evaluation360Cycle,
+    Evaluation360Response,
+    EvaluationStatus,
+    EvaluatorType,
+)
 from modules.people_management.human_resources.models.performance import (
     PerformanceReview,
     ReviewStatus,
@@ -29,7 +35,7 @@ from modules.people_management.human_resources.models.training import (
 
 # Re-exportar models existentes com try/except
 try:
-    from modules.recruitment.models.candidate import Candidate, CandidateStatus
+    from modules.recruitment.models.candidate import Candidate
 except ImportError:
     Candidate = None  # type: ignore[assignment, misc]
     CandidateStatus = None  # type: ignore[assignment, misc]
@@ -64,6 +70,11 @@ __all__ = [
     "TrainingStatus",
     "EnrollmentStatus",
     "CertificateStatus",
+    # Evaluation 360
+    "Evaluation360Cycle",
+    "Evaluation360Response",
+    "EvaluationStatus",
+    "EvaluatorType",
     # Performance
     "PerformanceReview",
     "ReviewType",

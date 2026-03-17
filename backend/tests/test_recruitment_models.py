@@ -1,4 +1,4 @@
-"""Testes para models do módulo Recruitment."""
+"""Testes para models do modulo Recruitment."""
 
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
@@ -50,10 +50,10 @@ class TestJobPosition:
     """Testes para JobPosition model."""
 
     def test_create_job_position(self):
-        """Testa criação de vaga."""
+        """Testa criacao de vaga."""
         position = JobPosition(
             title="Desenvolvedor Python",
-            description="Vaga para desenvolvedor Python Sênior",
+            description="Vaga para desenvolvedor Python Senior",
             department=Department.TI,
             position_type=PositionType.CLT,
             position_level=PositionLevel.SENIOR,
@@ -62,8 +62,8 @@ class TestJobPosition:
             salary_min=Decimal("10000"),
             salary_max=Decimal("15000"),
             vacancies=2,
-            filled_vacancies=0,
-            city="São Paulo",
+            filled_count=0,
+            city="Sao Paulo",
             state="SP",
         )
 
@@ -71,91 +71,112 @@ class TestJobPosition:
         assert position.department == Department.TI
         assert position.status == PositionStatus.RASCUNHO
         assert position.vacancies == 2
-        assert position.filled_vacancies == 0
+        assert position.filled_count == 0
 
-    def test_generate_code(self):
-        """Testa geração de código."""
-        code = JobPosition.generate_code(42)
-        year = date.today().year
-        assert code == f"VAG-{year}-00042"
-
-    def test_open_position(self):
-        """Testa abertura de vaga."""
+    def test_is_open_property(self):
+        """Testa propriedade is_open."""
         position = JobPosition(
             title="Teste",
             department=Department.TI,
             position_type=PositionType.CLT,
-            position_level=PositionLevel.JUNIOR,
-            work_model=WorkModel.PRESENCIAL,
+            status=PositionStatus.ABERTA,
         )
-        position.open()
+        assert position.is_open is True
 
-        assert position.status == PositionStatus.ABERTA
-        assert position.opening_date is not None
+        position.status = PositionStatus.RASCUNHO
+        assert position.is_open is False
 
-    def test_fill_vacancy(self):
-        """Testa preenchimento de vaga."""
+    def test_is_expired_property(self):
+        """Testa propriedade is_expired."""
         position = JobPosition(
             title="Teste",
             department=Department.TI,
             position_type=PositionType.CLT,
-            position_level=PositionLevel.JUNIOR,
-            work_model=WorkModel.PRESENCIAL,
-            vacancies=2,
-            filled_vacancies=0,
         )
-        position.status = PositionStatus.ABERTA
+        # Sem deadline, nao expira
+        assert position.is_expired is False
 
-        position.fill_vacancy()
-        assert position.filled_vacancies == 1
-        assert position.status == PositionStatus.ABERTA
+        # Deadline no passado
+        position.deadline = date.today() - timedelta(days=1)
+        assert position.is_expired is True
 
-        position.fill_vacancy()
-        assert position.filled_vacancies == 2
-        assert position.status == PositionStatus.PREENCHIDA
+        # Deadline no futuro
+        position.deadline = date.today() + timedelta(days=7)
+        assert position.is_expired is False
 
-    def test_increment_counters(self):
-        """Testa incremento de contadores."""
+    def test_remaining_vacancies_property(self):
+        """Testa propriedade remaining_vacancies."""
         position = JobPosition(
             title="Teste",
             department=Department.TI,
             position_type=PositionType.CLT,
-            position_level=PositionLevel.JUNIOR,
-            work_model=WorkModel.PRESENCIAL,
-            views_count=0,
-            applications_count=0,
+            vacancies=3,
+            filled_count=1,
         )
+        assert position.remaining_vacancies == 2
 
-        position.increment_view()
-        assert position.views_count == 1
+        position.filled_count = 3
+        assert position.remaining_vacancies == 0
 
-        position.increment_application()
-        assert position.applications_count == 1
+        # Nao deve ser negativo
+        position.filled_count = 5
+        assert position.remaining_vacancies == 0
+
+    def test_salary_range_property(self):
+        """Testa propriedade salary_range."""
+        # Min e max
+        position = JobPosition(
+            title="Teste",
+            salary_min=Decimal("5000"),
+            salary_max=Decimal("10000"),
+        )
+        assert "5" in position.salary_range
+        assert "10" in position.salary_range
+
+        # Somente min
+        position.salary_max = None
+        assert "A partir de" in position.salary_range
+
+        # Somente max
+        position.salary_min = None
+        position.salary_max = Decimal("10000")
+        assert "Ate" in position.salary_range
+
+        # Sem salario
+        position.salary_max = None
+        assert position.salary_range == "A combinar"
+
+    def test_remaining_vacancies_none_values(self):
+        """Testa remaining_vacancies com valores None."""
+        position = JobPosition(
+            title="Teste",
+            vacancies=None,
+            filled_count=None,
+        )
+        assert position.remaining_vacancies == 0
 
 
 class TestCandidate:
     """Testes para Candidate model."""
 
     def test_create_candidate(self):
-        """Testa criação de candidato."""
+        """Testa criacao de candidato."""
         candidate = Candidate(
-            name="João Silva",
+            name="Joao Silva",
             email="joao@example.com",
             phone="11999999999",
             source=CandidateSource.SITE,
             status=CandidateStatus.ATIVO,
-            is_blocked=False,
-            city="São Paulo",
+            city="Sao Paulo",
             state="SP",
         )
 
-        assert candidate.name == "João Silva"
+        assert candidate.name == "Joao Silva"
         assert candidate.email == "joao@example.com"
         assert candidate.status == CandidateStatus.ATIVO
-        assert candidate.is_blocked is False
 
     def test_calculate_age(self):
-        """Testa cálculo de idade."""
+        """Testa calculo de idade."""
         candidate = Candidate(
             name="Teste",
             email="teste@example.com",
@@ -164,57 +185,29 @@ class TestCandidate:
 
         assert candidate.age == 30
 
-    def test_full_address(self):
-        """Testa endereço completo."""
-        candidate = Candidate(
-            name="Teste",
-            email="teste@example.com",
-            address="Rua Teste, 123",
-            city="São Paulo",
-            state="SP",
-            zip_code="01234-567",
-        )
-
-        assert "Rua Teste" in candidate.full_address
-        assert "São Paulo" in candidate.full_address
-
-    def test_block_unblock(self):
-        """Testa bloqueio e desbloqueio."""
+    def test_age_none_without_birth_date(self):
+        """Testa que age retorna None sem birth_date."""
         candidate = Candidate(
             name="Teste",
             email="teste@example.com",
         )
+        assert candidate.age is None
 
-        candidate.block("Motivo teste", "admin")
-        assert candidate.is_blocked is True
-        assert candidate.block_reason == "Motivo teste"
-        assert candidate.blocked_by == "admin"
-        assert candidate.blocked_at is not None
-
-        candidate.unblock()
-        assert candidate.is_blocked is False
-        assert candidate.blocked_at is None
-
-    def test_profile_score(self):
-        """Testa cálculo de score do perfil."""
+    def test_candidate_repr(self):
+        """Testa representacao do candidato."""
         candidate = Candidate(
-            name="Teste",
-            email="teste@example.com",
-            phone="11999999999",
-            resume_text="Currículo completo...",
-            headline="Desenvolvedor Sênior",
+            name="Joao Silva",
+            email="joao@example.com",
         )
-        candidate.update_profile_score()
-
-        assert candidate.profile_score > 0
-        assert candidate.profile_score <= 100
+        assert "Joao Silva" in repr(candidate)
+        assert "joao@example.com" in repr(candidate)
 
 
 class TestApplication:
     """Testes para Application model."""
 
     def test_create_application(self):
-        """Testa criação de candidatura."""
+        """Testa criacao de candidatura."""
         application = Application(
             candidate_id="cand-123",
             job_position_id="pos-456",
@@ -228,7 +221,7 @@ class TestApplication:
         assert application.applied_at is not None
 
     def test_advance_stage(self):
-        """Testa avanço de etapa."""
+        """Testa avanco de etapa."""
         application = Application(
             candidate_id="cand-123",
             job_position_id="pos-456",
@@ -244,7 +237,7 @@ class TestApplication:
         assert len(application.status_history) == 1
 
     def test_reject(self):
-        """Testa rejeição."""
+        """Testa rejeicao."""
         application = Application(
             candidate_id="cand-123",
             job_position_id="pos-456",
@@ -253,14 +246,14 @@ class TestApplication:
             status_history=[],
         )
 
-        application.reject(RejectionReason.PERFIL_INADEQUADO, "Falta experiência", "recruiter-789")
+        application.reject(RejectionReason.PERFIL_INADEQUADO, "Falta experiencia", "recruiter-789")
 
         assert application.status == ApplicationStatus.REPROVADO
         assert application.rejection_reason == RejectionReason.PERFIL_INADEQUADO
         assert application.rejected_at is not None
 
     def test_hire(self):
-        """Testa contratação."""
+        """Testa contratacao."""
         application = Application(
             candidate_id="cand-123",
             job_position_id="pos-456",
@@ -277,7 +270,7 @@ class TestApplication:
         assert application.start_date == start_date
 
     def test_calculate_final_score(self):
-        """Testa cálculo de score final."""
+        """Testa calculo de score final."""
         application = Application(
             candidate_id="cand-123",
             job_position_id="pos-456",
@@ -290,12 +283,59 @@ class TestApplication:
         assert application.final_score is not None
         assert 0 <= application.final_score <= 100
 
+    def test_is_active_property(self):
+        """Testa propriedade is_active."""
+        application = Application(
+            candidate_id="cand-123",
+            job_position_id="pos-456",
+            status=ApplicationStatus.INSCRITO,
+        )
+        assert application.is_active is True
+
+        application.status = ApplicationStatus.REPROVADO
+        assert application.is_active is False
+
+    def test_is_hired_property(self):
+        """Testa propriedade is_hired."""
+        application = Application(
+            candidate_id="cand-123",
+            job_position_id="pos-456",
+            status=ApplicationStatus.CONTRATADO,
+        )
+        assert application.is_hired is True
+
+    def test_withdraw(self):
+        """Testa desistencia."""
+        application = Application(
+            candidate_id="cand-123",
+            job_position_id="pos-456",
+            status=ApplicationStatus.INSCRITO,
+            current_stage=1,
+            status_history=[],
+        )
+
+        application.withdraw("Melhor oferta")
+        assert application.status == ApplicationStatus.DESISTIU
+
+    def test_move_to_talent_pool(self):
+        """Testa mover para banco de talentos."""
+        application = Application(
+            candidate_id="cand-123",
+            job_position_id="pos-456",
+            status=ApplicationStatus.INSCRITO,
+            current_stage=1,
+            status_history=[],
+        )
+
+        application.move_to_talent_pool()
+        assert application.status == ApplicationStatus.BANCO_TALENTOS
+
 
 class TestInterview:
     """Testes para Interview model."""
 
     def test_create_interview(self):
-        """Testa criação de entrevista."""
+        """Testa criacao de entrevista."""
         interview = Interview(
             application_id="app-123",
             interview_type=InterviewType.COMPORTAMENTAL,
@@ -314,7 +354,7 @@ class TestInterview:
         assert interview.duration_minutes == 60
 
     def test_confirm_candidate(self):
-        """Testa confirmação do candidato."""
+        """Testa confirmacao do candidato."""
         interview = Interview(
             application_id="app-123",
             interview_type=InterviewType.COMPORTAMENTAL,
@@ -335,7 +375,7 @@ class TestInterview:
         assert interview.status == InterviewStatus.CONFIRMADA
 
     def test_complete_interview(self):
-        """Testa conclusão de entrevista."""
+        """Testa conclusao de entrevista."""
         interview = Interview(
             application_id="app-123",
             interview_type=InterviewType.TECNICA,
@@ -393,12 +433,29 @@ class TestInterview:
         assert interview.scheduled_date == new_date
         assert interview.scheduled_time == new_time
 
+    def test_mark_no_show(self):
+        """Testa marcar como nao compareceu."""
+        interview = Interview(
+            application_id="app-123",
+            interview_type=InterviewType.COMPORTAMENTAL,
+            status=InterviewStatus.AGENDADA,
+            scheduled_date=date.today(),
+            scheduled_time=time(14, 0),
+            candidate_confirmed=False,
+            interviewer_confirmed=False,
+            reschedule_count=0,
+        )
+
+        interview.mark_no_show()
+        assert interview.status == InterviewStatus.NO_SHOW
+        assert interview.result == InterviewResult.INCONCLUSIVO
+
 
 class TestCandidateSkill:
     """Testes para CandidateSkill model."""
 
     def test_create_skill(self):
-        """Testa criação de habilidade."""
+        """Testa criacao de habilidade."""
         skill = CandidateSkill(
             candidate_id="cand-123",
             name="Python",
@@ -412,7 +469,7 @@ class TestCandidateSkill:
         assert skill.years_experience == 5
 
     def test_add_certification(self):
-        """Testa adição de certificação."""
+        """Testa adicao de certificacao."""
         skill = CandidateSkill(
             candidate_id="cand-123",
             name="AWS",
@@ -430,16 +487,38 @@ class TestCandidateSkill:
         assert skill.is_certified is True
         assert skill.certification_name == "AWS Solutions Architect"
 
+    def test_level_score(self):
+        """Testa score do nivel."""
+        skill = CandidateSkill(
+            candidate_id="cand-123",
+            name="Python",
+            level=SkillLevel.AVANCADO,
+        )
+        assert skill.level_score == 3
+
+        skill.level = SkillLevel.EXPERT
+        assert skill.level_score == 4
+
+    def test_total_experience_months(self):
+        """Testa experiencia total em meses."""
+        skill = CandidateSkill(
+            candidate_id="cand-123",
+            name="Python",
+            years_experience=2,
+            months_experience=6,
+        )
+        assert skill.total_experience_months == 30
+
 
 class TestCandidateExperience:
     """Testes para CandidateExperience model."""
 
     def test_create_experience(self):
-        """Testa criação de experiência."""
+        """Testa criacao de experiencia."""
         experience = CandidateExperience(
             candidate_id="cand-123",
             company_name="Tech Corp",
-            job_title="Desenvolvedor Sênior",
+            job_title="Desenvolvedor Senior",
             employment_type=EmploymentType.CLT,
             start_date=date(2020, 1, 1),
             is_current=True,
@@ -451,7 +530,7 @@ class TestCandidateExperience:
         assert experience.duration_months > 0
 
     def test_duration_calculation(self):
-        """Testa cálculo de duração."""
+        """Testa calculo de duracao."""
         experience = CandidateExperience(
             candidate_id="cand-123",
             company_name="Tech Corp",
@@ -462,16 +541,30 @@ class TestCandidateExperience:
 
         assert experience.duration_months == 12
 
+    def test_has_reference(self):
+        """Testa verificacao de referencia."""
+        experience = CandidateExperience(
+            candidate_id="cand-123",
+            company_name="Tech Corp",
+            job_title="Dev",
+            start_date=date(2022, 1, 1),
+        )
+        assert experience.has_reference is False
+
+        experience.reference_name = "Fulano"
+        experience.reference_phone = "11999999999"
+        assert experience.has_reference is True
+
 
 class TestCandidateEducation:
     """Testes para CandidateEducation model."""
 
     def test_create_education(self):
-        """Testa criação de formação."""
+        """Testa criacao de formacao."""
         education = CandidateEducation(
             candidate_id="cand-123",
             institution_name="USP",
-            course_name="Ciência da Computação",
+            course_name="Ciencia da Computacao",
             level=EducationLevel.GRADUACAO,
             status=EducationStatus.COMPLETO,
             start_date=date(2015, 2, 1),
@@ -483,17 +576,39 @@ class TestCandidateEducation:
         assert education.is_completed is True
 
     def test_education_level_check(self):
-        """Testa verificação de nível educacional."""
+        """Testa verificacao de nivel educacional."""
         education = CandidateEducation(
             candidate_id="cand-123",
             institution_name="ETEC",
-            course_name="Técnico em Informática",
+            course_name="Tecnico em Informatica",
             level=EducationLevel.TECNICO,
         )
         assert education.level == EducationLevel.TECNICO
 
         education.level = EducationLevel.GRADUACAO
         assert education.level == EducationLevel.GRADUACAO
+
+    def test_is_in_progress(self):
+        """Testa verificacao de em andamento."""
+        education = CandidateEducation(
+            candidate_id="cand-123",
+            institution_name="USP",
+            course_name="Mestrado",
+            level=EducationLevel.MESTRADO,
+            status=EducationStatus.CURSANDO,
+        )
+        assert education.is_in_progress is True
+        assert education.is_completed is False
+
+    def test_level_weight(self):
+        """Testa peso do nivel."""
+        education = CandidateEducation(
+            candidate_id="cand-123",
+            institution_name="USP",
+            course_name="Doutorado",
+            level=EducationLevel.DOUTORADO,
+        )
+        assert education.level_weight == 9
 
 
 class TestEnums:

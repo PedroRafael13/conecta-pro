@@ -1,0 +1,427 @@
+"""Calculadora CLT - Legislação Trabalhista Brasileira 2026.
+
+Implementa todos os cálculos trabalhistas conforme legislação vigente:
+INSS faixa progressiva, IRRF, férias, 13o, rescisão, hora extra, etc.
+
+Todos os valores monetários usam Decimal para precisão.
+"""
+
+from datetime import date
+from decimal import ROUND_HALF_UP, Decimal
+
+# ===========================================================================
+# TABELAS 2026
+# ===========================================================================
+
+SALARIO_MINIMO = Decimal("1518.00")
+TETO_INSS = Decimal("8157.41")
+
+# INSS Faixas Progressivas 2026
+INSS_FAIXAS: list[tuple[Decimal, Decimal]] = [
+    (Decimal("1518.00"), Decimal("0.075")),
+    (Decimal("2793.88"), Decimal("0.09")),
+    (Decimal("4190.83"), Decimal("0.12")),
+    (Decimal("8157.41"), Decimal("0.14")),
+]
+
+# IRRF Tabela Progressiva 2026
+IRRF_FAIXAS: list[tuple[Decimal, Decimal, Decimal]] = [
+    (Decimal("2259.20"), Decimal("0.0"), Decimal("0.0")),
+    (Decimal("2826.65"), Decimal("0.075"), Decimal("169.44")),
+    (Decimal("3751.05"), Decimal("0.15"), Decimal("381.44")),
+    (Decimal("4664.68"), Decimal("0.225"), Decimal("662.77")),
+    (Decimal("999999999"), Decimal("0.275"), Decimal("896.00")),
+]
+
+DEDUCAO_DEPENDENTE_IRRF = Decimal("189.59")
+FGTS_PERCENTUAL = Decimal("0.08")
+
+_TWO = Decimal("0.01")
+
+
+def _d(value: float | int | str) -> Decimal:
+    """Converte para Decimal."""
+    return Decimal(str(value))
+
+
+def calcular_inss(salario_bruto: Decimal) -> Decimal:
+    """Calcula INSS faixa progressiva 2026.
+
+    Args:
+        salario_bruto: Salário bruto mensal.
+
+    Returns:
+        Valor do INSS a descontar.
+    """
+    if salario_bruto <= 0:
+        return Decimal("0")
+
+    inss = Decimal("0")
+    base_anterior = Decimal("0")
+
+    for teto_faixa, aliquota in INSS_FAIXAS:
+        if salario_bruto <= base_anterior:
+            break
+        base_faixa = min(salario_bruto, teto_faixa) - base_anterior
+        if base_faixa > 0:
+            inss += (base_faixa * aliquota).quantize(_TWO, ROUND_HALF_UP)
+        base_anterior = teto_faixa
+
+    return inss.quantize(_TWO, ROUND_HALF_UP)
+
+
+def calcular_irrf(
+    base_calculo: Decimal,
+    dependentes: int = 0,
+    pensao_alimenticia: Decimal = Decimal("0"),
+) -> Decimal:
+    """Calcula IRRF com dedutíveis.
+
+    Args:
+        base_calculo: Base de cálculo (bruto - INSS - deduções).
+        dependentes: Número de dependentes.
+        pensao_alimenticia: Valor de pensão alimentícia.
+
+    Returns:
+        Valor do IRRF a descontar.
+    """
+    deducoes = (DEDUCAO_DEPENDENTE_IRRF * dependentes) + pensao_alimenticia
+    base = base_calculo - deducoes
+
+    if base <= 0:
+        return Decimal("0")
+
+    for teto, aliquota, deducao in IRRF_FAIXAS:
+        if base <= teto:
+            irrf = (base * aliquota - deducao).quantize(_TWO, ROUND_HALF_UP)
+            return max(irrf, Decimal("0"))
+
+    return Decimal("0")
+
+
+def calcular_hora_normal(salario_base: Decimal, carga_horaria_mensal: Decimal = Decimal("220")) -> Decimal:
+    """Valor da hora normal.
+
+    Args:
+        salario_base: Salário base mensal.
+        carga_horaria_mensal: Carga horária mensal (padrão 220h para 44h/sem).
+
+    Returns:
+        Valor da hora normal.
+    """
+    if carga_horaria_mensal <= 0:
+        return Decimal("0")
+    return (salario_base / carga_horaria_mensal).quantize(_TWO, ROUND_HALF_UP)
+
+
+def calcular_hora_extra_50(valor_hora: Decimal, quantidade_horas: Decimal) -> Decimal:
+    """Hora extra 50% (segunda a sábado).
+
+    Args:
+        valor_hora: Valor da hora normal.
+        quantidade_horas: Quantidade de horas extras.
+
+    Returns:
+        Valor total das horas extras 50%.
+    """
+    return (valor_hora * Decimal("1.5") * quantidade_horas).quantize(_TWO, ROUND_HALF_UP)
+
+
+def calcular_hora_extra_100(valor_hora: Decimal, quantidade_horas: Decimal) -> Decimal:
+    """Hora extra 100% (domingos e feriados).
+
+    Args:
+        valor_hora: Valor da hora normal.
+        quantidade_horas: Quantidade de horas extras.
+
+    Returns:
+        Valor total das horas extras 100%.
+    """
+    return (valor_hora * Decimal("2.0") * quantidade_horas).quantize(_TWO, ROUND_HALF_UP)
+
+
+def calcular_adicional_noturno(valor_hora: Decimal, horas_noturnas: Decimal) -> Decimal:
+    """Adicional noturno 20% (22h-05h).
+
+    A hora noturna reduzida (52min30s) já deve ser considerada
+    na contagem de horas_noturnas pelo chamador.
+
+    Args:
+        valor_hora: Valor da hora normal.
+        horas_noturnas: Total de horas noturnas trabalhadas.
+
+    Returns:
+        Valor do adicional noturno.
+    """
+    return (valor_hora * Decimal("0.20") * horas_noturnas).quantize(_TWO, ROUND_HALF_UP)
+
+
+def calcular_dsr_sobre_extras(total_extras: Decimal, dias_uteis: int, domingos_feriados: int) -> Decimal:
+    """DSR (Descanso Semanal Remunerado) sobre horas extras.
+
+    Fórmula: (total_extras / dias_úteis) * domingos_e_feriados
+
+    Args:
+        total_extras: Valor total de horas extras no mês.
+        dias_uteis: Dias úteis trabalhados no mês.
+        domingos_feriados: Domingos e feriados no mês.
+
+    Returns:
+        Valor do DSR sobre extras.
+    """
+    if dias_uteis <= 0:
+        return Decimal("0")
+    return (total_extras / dias_uteis * domingos_feriados).quantize(_TWO, ROUND_HALF_UP)
+
+
+def calcular_periculosidade(salario_base: Decimal) -> Decimal:
+    """Adicional de periculosidade 30%.
+
+    Args:
+        salario_base: Salário base mensal.
+
+    Returns:
+        Valor do adicional de periculosidade.
+    """
+    return (salario_base * Decimal("0.30")).quantize(_TWO, ROUND_HALF_UP)
+
+
+def calcular_insalubridade(grau: str) -> Decimal:
+    """Adicional de insalubridade sobre salário mínimo.
+
+    Args:
+        grau: 'minimo' (10%), 'medio' (20%) ou 'maximo' (40%).
+
+    Returns:
+        Valor do adicional de insalubridade.
+    """
+    percentuais = {
+        "minimo": Decimal("0.10"),
+        "medio": Decimal("0.20"),
+        "maximo": Decimal("0.40"),
+    }
+    pct = percentuais.get(grau, Decimal("0"))
+    return (SALARIO_MINIMO * pct).quantize(_TWO, ROUND_HALF_UP)
+
+
+def calcular_ferias(salario_base: Decimal, dias_gozo: int = 30, dias_abono: int = 0) -> dict:
+    """Calcula férias + 1/3 constitucional + abono pecuniário.
+
+    Args:
+        salario_base: Salário base mensal.
+        dias_gozo: Dias de gozo (máximo 30).
+        dias_abono: Dias de abono pecuniário (máximo 10).
+
+    Returns:
+        Dict com valor_ferias, terco_constitucional, abono_pecuniario, total.
+    """
+    valor_dia = salario_base / 30
+    valor_ferias = (valor_dia * dias_gozo).quantize(_TWO, ROUND_HALF_UP)
+    terco = (valor_ferias / 3).quantize(_TWO, ROUND_HALF_UP)
+    abono = (valor_dia * dias_abono).quantize(_TWO, ROUND_HALF_UP)
+    terco_abono = (abono / 3).quantize(_TWO, ROUND_HALF_UP)
+    total = valor_ferias + terco + abono + terco_abono
+
+    return {
+        "valor_ferias": valor_ferias,
+        "terco_constitucional": terco,
+        "abono_pecuniario": abono,
+        "terco_abono": terco_abono,
+        "total_bruto": total,
+    }
+
+
+def calcular_13_proporcional(salario_base: Decimal, meses_trabalhados: int) -> Decimal:
+    """13o salário proporcional.
+
+    Args:
+        salario_base: Salário base mensal.
+        meses_trabalhados: Meses trabalhados no ano (avos).
+
+    Returns:
+        Valor do 13o proporcional.
+    """
+    meses = min(max(meses_trabalhados, 0), 12)
+    return (salario_base * meses / 12).quantize(_TWO, ROUND_HALF_UP)
+
+
+def calcular_aviso_previo_dias(anos_servico: int) -> int:
+    """Aviso prévio proporcional ao tempo de serviço.
+
+    30 dias base + 3 dias por ano de serviço, máximo 90 dias.
+
+    Args:
+        anos_servico: Anos completos de serviço.
+
+    Returns:
+        Dias de aviso prévio.
+    """
+    dias = 30 + (3 * max(anos_servico, 0))
+    return min(dias, 90)
+
+
+def calcular_fgts_mensal(remuneracao_bruta: Decimal) -> Decimal:
+    """FGTS mensal 8%.
+
+    Args:
+        remuneracao_bruta: Remuneração bruta mensal.
+
+    Returns:
+        Valor do FGTS mensal.
+    """
+    return (remuneracao_bruta * FGTS_PERCENTUAL).quantize(_TWO, ROUND_HALF_UP)
+
+
+def calcular_multa_fgts(saldo_fgts: Decimal, tipo_rescisao: str) -> Decimal:
+    """Multa FGTS conforme tipo de rescisão.
+
+    Args:
+        saldo_fgts: Saldo total do FGTS.
+        tipo_rescisao: 'sem_justa_causa' (40%), 'acordo' (20%),
+                       'justa_causa'/'pedido_demissao' (0%).
+
+    Returns:
+        Valor da multa FGTS.
+    """
+    percentuais = {
+        "sem_justa_causa": Decimal("0.40"),
+        "involuntary": Decimal("0.40"),
+        "acordo": Decimal("0.20"),
+        "mutual_agreement": Decimal("0.20"),
+        "justa_causa": Decimal("0"),
+        "just_cause": Decimal("0"),
+        "pedido_demissao": Decimal("0"),
+        "voluntary": Decimal("0"),
+    }
+    pct = percentuais.get(tipo_rescisao, Decimal("0"))
+    return (saldo_fgts * pct).quantize(_TWO, ROUND_HALF_UP)
+
+
+def calcular_vale_transporte_desconto(salario_base: Decimal) -> Decimal:
+    """Desconto de Vale Transporte: 6% do salário base.
+
+    Args:
+        salario_base: Salário base mensal.
+
+    Returns:
+        Valor do desconto de VT.
+    """
+    return (salario_base * Decimal("0.06")).quantize(_TWO, ROUND_HALF_UP)
+
+
+def calcular_saldo_salario(salario_base: Decimal, dias_trabalhados: int) -> Decimal:
+    """Saldo de salário proporcional aos dias trabalhados.
+
+    Args:
+        salario_base: Salário base mensal.
+        dias_trabalhados: Dias trabalhados no mês da rescisão.
+
+    Returns:
+        Valor do saldo de salário.
+    """
+    return (salario_base / 30 * dias_trabalhados).quantize(_TWO, ROUND_HALF_UP)
+
+
+def calcular_rescisao(
+    salario_base: Decimal,
+    tipo_rescisao: str,
+    data_admissao: date,
+    data_demissao: date,
+    saldo_fgts: Decimal = Decimal("0"),
+    ferias_vencidas_dias: int = 0,
+    dias_trabalhados_mes: int = 0,
+) -> dict:
+    """Calcula rescisão completa conforme legislação.
+
+    Args:
+        salario_base: Último salário base.
+        tipo_rescisao: voluntary, involuntary, just_cause, mutual_agreement.
+        data_admissao: Data de admissão.
+        data_demissao: Data de demissão.
+        saldo_fgts: Saldo total do FGTS acumulado.
+        ferias_vencidas_dias: Dias de férias vencidas não gozadas.
+        dias_trabalhados_mes: Dias trabalhados no mês da rescisão.
+
+    Returns:
+        Dict com detalhamento completo da rescisão.
+    """
+    # Tempo de serviço
+    delta = data_demissao - data_admissao
+    anos_servico = delta.days // 365
+    meses_ano = (data_demissao.month - data_admissao.month) % 12
+    if data_demissao.day >= 15:
+        meses_ano += 1
+    meses_ano = min(meses_ano, 12)
+
+    valor_dia = salario_base / 30
+
+    # Saldo de salário
+    saldo_sal = calcular_saldo_salario(salario_base, dias_trabalhados_mes)
+
+    # Aviso prévio
+    aviso_dias = calcular_aviso_previo_dias(anos_servico)
+    tem_aviso = tipo_rescisao in ("involuntary", "sem_justa_causa")
+    aviso_indenizado = (valor_dia * aviso_dias).quantize(_TWO, ROUND_HALF_UP) if tem_aviso else Decimal("0")
+
+    # Acordo: 50% do aviso
+    if tipo_rescisao in ("mutual_agreement", "acordo"):
+        aviso_indenizado = (valor_dia * aviso_dias * Decimal("0.5")).quantize(_TWO, ROUND_HALF_UP)
+
+    # Férias vencidas + 1/3
+    ferias_venc = (valor_dia * ferias_vencidas_dias).quantize(_TWO, ROUND_HALF_UP)
+    terco_venc = (ferias_venc / 3).quantize(_TWO, ROUND_HALF_UP)
+
+    # Férias proporcionais + 1/3 (não paga em justa causa)
+    ferias_prop = Decimal("0")
+    terco_prop = Decimal("0")
+    if tipo_rescisao not in ("just_cause", "justa_causa"):
+        ferias_prop = (salario_base * meses_ano / 12).quantize(_TWO, ROUND_HALF_UP)
+        terco_prop = (ferias_prop / 3).quantize(_TWO, ROUND_HALF_UP)
+
+    # 13o proporcional (não paga em justa causa)
+    decimo_terceiro = Decimal("0")
+    if tipo_rescisao not in ("just_cause", "justa_causa"):
+        decimo_terceiro = calcular_13_proporcional(salario_base, meses_ano)
+
+    # Multa FGTS
+    multa_fgts = calcular_multa_fgts(saldo_fgts, tipo_rescisao)
+
+    # Total bruto
+    total_bruto = (
+        saldo_sal
+        + aviso_indenizado
+        + ferias_venc
+        + terco_venc
+        + ferias_prop
+        + terco_prop
+        + decimo_terceiro
+        + multa_fgts
+    )
+
+    # Descontos (INSS + IRRF sobre saldo salário + 13o)
+    base_inss = saldo_sal + decimo_terceiro
+    inss = calcular_inss(base_inss)
+    base_irrf = base_inss - inss
+    irrf = calcular_irrf(base_irrf)
+    total_descontos = inss + irrf
+
+    total_liquido = total_bruto - total_descontos
+
+    return {
+        "saldo_salario": saldo_sal,
+        "aviso_previo_indenizado": aviso_indenizado,
+        "aviso_previo_dias": aviso_dias if tem_aviso or tipo_rescisao in ("mutual_agreement", "acordo") else 0,
+        "ferias_vencidas": ferias_venc,
+        "terco_ferias_vencidas": terco_venc,
+        "ferias_proporcionais": ferias_prop,
+        "terco_ferias_proporcionais": terco_prop,
+        "decimo_terceiro_proporcional": decimo_terceiro,
+        "multa_fgts": multa_fgts,
+        "total_bruto": total_bruto,
+        "inss": inss,
+        "irrf": irrf,
+        "total_descontos": total_descontos,
+        "total_liquido": total_liquido,
+        "anos_servico": anos_servico,
+        "tipo_rescisao": tipo_rescisao,
+    }

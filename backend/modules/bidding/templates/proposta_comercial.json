@@ -1,0 +1,15 @@
+{
+    "tipo": "proposta_comercial",
+    "titulo": "PROPOSTA COMERCIAL",
+    "secoes": [
+        {"id": "dados_empresa", "titulo": "DADOS DA EMPRESA", "campos": ["razao_social", "cnpj", "endereco", "telefone", "email"]},
+        {"id": "objeto", "titulo": "OBJETO", "campos": ["descricao_servico", "local_execucao"]},
+        {"id": "precos", "titulo": "PREÇOS", "campos": ["valor_mensal", "valor_global", "prazo_execucao"]},
+        {"id": "validade", "titulo": "VALIDADE DA PROPOSTA", "campos": ["dias_validade"]},
+        {"id": "dados_bancarios", "titulo": "DADOS BANCÁRIOS", "campos": ["banco", "agencia", "conta"]},
+        {"id": "declaracoes", "titulo": "DECLARAÇÕES", "campos": ["nao_emprega_menor", "idoneidade", "inexistencia_fatos"]}
+    ],
+    "formato": "A4",
+    "fonte": "Helvetica",
+    "margem_cm": 2.0
+}

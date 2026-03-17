@@ -38,7 +38,7 @@ describe('useNotifications', () => {
     it('deve retornar mensagem padrão quando erro não é Error instance', async () => {
       mockCustomInstance.mockRejectedValueOnce('erro string');
 
-      const { wrapper } = createTestWrapper();
+      const wrapper = createTestWrapper();
       const { result } = renderHook(() => useNotifications({ autoLoad: true }), { wrapper });
 
       await waitFor(() => {
@@ -50,7 +50,7 @@ describe('useNotifications', () => {
     it('deve retornar mensagem de erro quando é Error instance', async () => {
       mockCustomInstance.mockRejectedValueOnce(new Error('Erro específico'));
 
-      const { wrapper } = createTestWrapper();
+      const wrapper = createTestWrapper();
       const { result } = renderHook(() => useNotifications({ autoLoad: true }), { wrapper });
 
       await waitFor(() => {
@@ -61,7 +61,7 @@ describe('useNotifications', () => {
 
   describe('autoLoad branches', () => {
     it('não deve carregar quando autoLoad é false', async () => {
-      const { wrapper } = createTestWrapper();
+      const wrapper = createTestWrapper();
       renderHook(() => useNotifications({ autoLoad: false }), { wrapper });
 
       await new Promise(resolve => setTimeout(resolve, 100));
@@ -75,7 +75,7 @@ describe('useNotifications', () => {
         .mockResolvedValueOnce({ items: [{ id: '1' }, { id: '2' }], total: 2, total_pages: 1 })
         .mockResolvedValueOnce(undefined);
 
-      const { wrapper } = createTestWrapper();
+      const wrapper = createTestWrapper();
       const { result } = renderHook(() => useNotifications({ autoLoad: true }), { wrapper });
 
       await waitFor(() => expect(result.current.isLoading).toBe(false));
@@ -96,7 +96,7 @@ describe('useNotifications', () => {
         .mockResolvedValueOnce({ items: [{ id: '1' }], total: 1, total_pages: 1 })
         .mockRejectedValueOnce(new Error('Falha'));
 
-      const { wrapper } = createTestWrapper();
+      const wrapper = createTestWrapper();
       const { result } = renderHook(() => useNotifications({ autoLoad: true }), { wrapper });
 
       await waitFor(() => expect(result.current.isLoading).toBe(false));
@@ -116,7 +116,7 @@ describe('useNotifications', () => {
         .mockResolvedValueOnce({ items: [{ id: '1', is_read: false }, { id: '2', is_read: false }], total: 2, total_pages: 1 })
         .mockResolvedValueOnce({ success: true, count: 2 });
 
-      const { wrapper } = createTestWrapper();
+      const wrapper = createTestWrapper();
       const { result } = renderHook(() => useNotifications({ autoLoad: true }), { wrapper });
 
       await waitFor(() => expect(result.current.isLoading).toBe(false));
@@ -135,7 +135,7 @@ describe('useNotifications', () => {
         .mockResolvedValueOnce({ items: [{ id: '1' }], total: 1, total_pages: 1 })
         .mockRejectedValueOnce(new Error('Falha'));
 
-      const { wrapper } = createTestWrapper();
+      const wrapper = createTestWrapper();
       const { result } = renderHook(() => useNotifications({ autoLoad: true }), { wrapper });
 
       await waitFor(() => expect(result.current.isLoading).toBe(false));
@@ -154,7 +154,7 @@ describe('useNotifications', () => {
       const setIntervalSpy = vi.spyOn(global, 'setInterval');
       mockCustomInstance.mockResolvedValue({ items: [], total: 0, total_pages: 0 });
 
-      const { wrapper } = createTestWrapper();
+      const wrapper = createTestWrapper();
       const { result, unmount } = renderHook(() => useNotifications({ autoLoad: true, pollInterval: 5000 }), { wrapper });
 
       await waitFor(() => expect(result.current.isLoading).toBe(false));
@@ -172,7 +172,7 @@ describe('useNotifications', () => {
         .mockResolvedValueOnce({ items: [{ id: '1', is_read: false }], total: 1, total_pages: 1 })
         .mockResolvedValueOnce({});
 
-      const { wrapper } = createTestWrapper();
+      const wrapper = createTestWrapper();
       const { result } = renderHook(() => useNotifications({ autoLoad: true }), { wrapper });
 
       await waitFor(() => expect(result.current.isLoading).toBe(false));
@@ -190,7 +190,7 @@ describe('useNotifications', () => {
         .mockResolvedValueOnce({ items: [{ id: '1' }], total: 1, total_pages: 1 })
         .mockRejectedValueOnce(new Error('Falha'));
 
-      const { wrapper } = createTestWrapper();
+      const wrapper = createTestWrapper();
       const { result } = renderHook(() => useNotifications({ autoLoad: true }), { wrapper });
 
       await waitFor(() => expect(result.current.isLoading).toBe(false));
@@ -208,7 +208,7 @@ describe('useNotifications', () => {
     it('deve resetar para página 1 quando filtros são alterados', async () => {
       mockCustomInstance.mockResolvedValue({ items: [], total: 0, total_pages: 0 });
 
-      const { wrapper } = createTestWrapper();
+      const wrapper = createTestWrapper();
       const { result } = renderHook(() => useNotifications({ autoLoad: true }), { wrapper });
 
       await waitFor(() => expect(result.current.isLoading).toBe(false));
@@ -236,7 +236,7 @@ describe('useUnreadCount', () => {
   it('deve usar valores padrão quando count é null', async () => {
     mockCustomInstance.mockResolvedValueOnce(null);
 
-    const { wrapper } = createTestWrapper();
+    const wrapper = createTestWrapper();
     const { result } = renderHook(() => useUnreadCount(0), { wrapper });
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
@@ -248,7 +248,7 @@ describe('useUnreadCount', () => {
   it('deve retornar mensagem padrão quando erro não é Error instance', async () => {
     mockCustomInstance.mockRejectedValueOnce('erro string');
 
-    const { wrapper } = createTestWrapper();
+    const wrapper = createTestWrapper();
     const { result } = renderHook(() => useUnreadCount(0), { wrapper });
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
@@ -258,7 +258,7 @@ describe('useUnreadCount', () => {
   it('não deve criar intervalo quando pollInterval é 0', async () => {
     mockCustomInstance.mockResolvedValueOnce({ total: 5 });
 
-    const { wrapper } = createTestWrapper();
+    const wrapper = createTestWrapper();
     renderHook(() => useUnreadCount(0), { wrapper });
 
     await waitFor(() => expect(mockCustomInstance).toHaveBeenCalledTimes(1));
@@ -293,7 +293,7 @@ describe('useAlerts', () => {
   it('deve usar query string vazia quando filters é undefined', async () => {
     mockCustomInstance.mockResolvedValueOnce({ items: [], total: 0 });
 
-    const { wrapper } = createTestWrapper();
+    const wrapper = createTestWrapper();
     renderHook(() => useAlerts({ autoLoad: true }), { wrapper });
 
     await waitFor(() => {
@@ -306,12 +306,12 @@ describe('useAlerts', () => {
   it('deve usar query string quando filters é definido', async () => {
     mockCustomInstance.mockResolvedValueOnce({ items: [], total: 0 });
 
-    const { wrapper } = createTestWrapper();
-    renderHook(() => useAlerts({ autoLoad: true, filters: { alert_type: 'warning' } }), { wrapper });
+    const wrapper = createTestWrapper();
+    renderHook(() => useAlerts({ autoLoad: true, filters: { alert_type: 'seguranca' } }), { wrapper });
 
     await waitFor(() => {
       expect(mockCustomInstance).toHaveBeenCalledWith(expect.objectContaining({
-        url: expect.stringContaining('alert_type=warning'),
+        url: expect.stringContaining('alert_type=seguranca'),
       }));
     });
   });
@@ -319,7 +319,7 @@ describe('useAlerts', () => {
   it('deve retornar mensagem padrão quando erro não é Error instance', async () => {
     mockCustomInstance.mockRejectedValueOnce('erro string');
 
-    const { wrapper } = createTestWrapper();
+    const wrapper = createTestWrapper();
     const { result } = renderHook(() => useAlerts({ autoLoad: true, pollInterval: 0 }), { wrapper });
 
     await waitFor(() => {
@@ -332,7 +332,7 @@ describe('useAlerts', () => {
       .mockResolvedValueOnce({ items: [{ id: '1' }], total: 1 })
       .mockRejectedValueOnce(new Error('Falha'));
 
-    const { wrapper } = createTestWrapper();
+    const wrapper = createTestWrapper();
     const { result } = renderHook(() => useAlerts({ autoLoad: true, pollInterval: 0 }), { wrapper });
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
@@ -350,7 +350,7 @@ describe('useAlerts', () => {
       .mockResolvedValueOnce({ items: [], total: 0 })
       .mockRejectedValueOnce(new Error('Falha'));
 
-    const { wrapper } = createTestWrapper();
+    const wrapper = createTestWrapper();
     const { result } = renderHook(() => useAlerts({ autoLoad: true, pollInterval: 0 }), { wrapper });
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
@@ -378,7 +378,7 @@ describe('useUserAlerts', () => {
       ],
     });
 
-    const { wrapper } = createTestWrapper();
+    const wrapper = createTestWrapper();
     const { result } = renderHook(() => useUserAlerts(0), { wrapper });
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
@@ -390,7 +390,7 @@ describe('useUserAlerts', () => {
   it('deve ter criticalCount 0 quando alerts é vazio', async () => {
     mockCustomInstance.mockResolvedValueOnce({ items: [] });
 
-    const { wrapper } = createTestWrapper();
+    const wrapper = createTestWrapper();
     const { result } = renderHook(() => useUserAlerts(0), { wrapper });
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
@@ -402,7 +402,7 @@ describe('useUserAlerts', () => {
   it('deve retornar mensagem padrão quando erro não é Error instance', async () => {
     mockCustomInstance.mockRejectedValueOnce('erro string');
 
-    const { wrapper } = createTestWrapper();
+    const wrapper = createTestWrapper();
     const { result } = renderHook(() => useUserAlerts(0), { wrapper });
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
@@ -414,7 +414,7 @@ describe('useUserAlerts', () => {
       .mockResolvedValueOnce({ items: [{ id: '1' }] })
       .mockRejectedValueOnce(new Error('Falha'));
 
-    const { wrapper } = createTestWrapper();
+    const wrapper = createTestWrapper();
     const { result } = renderHook(() => useUserAlerts(0), { wrapper });
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
@@ -432,7 +432,7 @@ describe('useUserAlerts', () => {
       .mockResolvedValueOnce({ items: [{ id: '1' }, { id: '2' }] })
       .mockResolvedValueOnce({});
 
-    const { wrapper } = createTestWrapper();
+    const wrapper = createTestWrapper();
     const { result } = renderHook(() => useUserAlerts(0), { wrapper });
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
@@ -467,7 +467,7 @@ describe('useUserAlerts', () => {
   it('deve retornar mensagem de Error quando erro é Error instance', async () => {
     mockCustomInstance.mockRejectedValueOnce(new Error('Erro específico'));
 
-    const { wrapper } = createTestWrapper();
+    const wrapper = createTestWrapper();
     const { result } = renderHook(() => useUserAlerts(0), { wrapper });
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
@@ -486,7 +486,7 @@ describe('useAlerts - fetchData e operações', () => {
       total: 1,
     });
 
-    const { wrapper } = createTestWrapper();
+    const wrapper = createTestWrapper();
     const { result } = renderHook(() => useAlerts({ autoLoad: true, pollInterval: 0 }), { wrapper });
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
@@ -500,7 +500,7 @@ describe('useAlerts - fetchData e operações', () => {
       .mockResolvedValueOnce({ items: [{ id: '1' }], total: 1 })
       .mockResolvedValueOnce({});
 
-    const { wrapper } = createTestWrapper();
+    const wrapper = createTestWrapper();
     const { result } = renderHook(() => useAlerts({ autoLoad: true, pollInterval: 0 }), { wrapper });
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
@@ -519,7 +519,7 @@ describe('useAlerts - fetchData e operações', () => {
       .mockResolvedValueOnce({ items: [], total: 0 })
       .mockResolvedValueOnce({ id: '1', message: 'New alert' });
 
-    const { wrapper } = createTestWrapper();
+    const wrapper = createTestWrapper();
     const { result } = renderHook(() => useAlerts({ autoLoad: true, pollInterval: 0 }), { wrapper });
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
@@ -536,7 +536,7 @@ describe('useAlerts - fetchData e operações', () => {
   it('deve retornar mensagem de erro quando é Error instance', async () => {
     mockCustomInstance.mockRejectedValueOnce(new Error('Erro específico de alerta'));
 
-    const { wrapper } = createTestWrapper();
+    const wrapper = createTestWrapper();
     const { result } = renderHook(() => useAlerts({ autoLoad: true, pollInterval: 0 }), { wrapper });
 
     await waitFor(() => {

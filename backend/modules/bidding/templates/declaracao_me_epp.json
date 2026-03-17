@@ -1,0 +1,14 @@
+{
+    "tipo": "declaracao_me_epp",
+    "titulo": "DECLARAÇÃO DE ENQUADRAMENTO COMO ME/EPP",
+    "secoes": [
+        {"id": "dados_empresa", "titulo": "IDENTIFICAÇÃO DA EMPRESA", "campos": ["razao_social", "cnpj", "endereco", "representante_legal", "cpf_representante"]},
+        {"id": "enquadramento", "titulo": "ENQUADRAMENTO", "campos": ["tipo_enquadramento", "receita_bruta_anual", "exercicio_fiscal"]},
+        {"id": "declaracao", "titulo": "DECLARAÇÃO", "campos": ["nao_se_enquadra_exclusoes_lc123", "nao_possui_socios_pj", "nao_possui_filial_exterior"]},
+        {"id": "assinatura", "titulo": "ASSINATURA", "campos": ["local", "data", "nome_representante", "cargo"]}
+    ],
+    "base_legal": "Lei Complementar 123/2006, Art. 3º",
+    "formato": "A4",
+    "fonte": "Helvetica",
+    "margem_cm": 2.0
+}

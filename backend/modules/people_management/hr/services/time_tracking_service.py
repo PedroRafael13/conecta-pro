@@ -71,10 +71,13 @@ class TimeTrackingService:
         entry = TimeEntry(
             id=uuid4(),
             employee_id=str(employee_id),
-            clock_in=shift_start,
-            clock_out=shift_end,
-            source="operations",
-            location_id=str(location_id) if location_id else None,
+            entry_datetime=shift_start,
+            entry_date=shift_start.date(),
+            entry_time=shift_start.time(),
+            entry_type="entrada",
+            registration_method="operations",
+            employee_name="",
+            code=f"OPS-{uuid4().hex[:8]}",
             notes=notes,
         )
         self.db.add(entry)
@@ -91,8 +94,8 @@ class TimeTrackingService:
         return {
             "entry_id": str(entry.id),
             "employee_id": str(employee_id),
-            "clock_in": shift_start.isoformat(),
-            "clock_out": shift_end.isoformat(),
+            "entry_datetime": shift_start.isoformat(),
+            "shift_end": shift_end.isoformat(),
             "duration_hours": round(duration_hours, 2),
             "source": "operations",
             "status": "registered",
@@ -117,14 +120,21 @@ class TimeTrackingService:
         if not TimeEntry:
             return []
 
-        from sqlalchemy import select
+        try:
+            from sqlalchemy import text
 
-        query = select(TimeEntry).where(TimeEntry.employee_id == str(employee_id))
-        if start_date:
-            query = query.where(TimeEntry.clock_in >= start_date)
-        if end_date:
-            query = query.where(TimeEntry.clock_in <= end_date)
-
-        query = query.order_by(TimeEntry.clock_in.desc())
-        result = await self.db.execute(query)
-        return list(result.scalars().all())
+            # Query raw SQL para evitar mismatch modelo/DB (employee_cpf vs employee_pis)
+            sql = text("""
+                SELECT id, employee_id, employee_name, entry_date, entry_time,
+                       entry_type, status, registration_method, notes
+                FROM time_entries
+                WHERE employee_id = :emp_id
+                ORDER BY entry_date DESC, entry_time DESC
+                LIMIT 100
+            """)
+            result = await self.db.execute(sql, {"emp_id": str(employee_id)})
+            rows = result.mappings().all()
+            return [dict(r) for r in rows]
+        except Exception as e:
+            logger.warning("Erro ao buscar entries de ponto: %s", e)
+            return []

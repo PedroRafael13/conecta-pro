@@ -69,6 +69,32 @@ from modules.operacional.models import (  # noqa: F401
     TimeBank,
 )
 
+# People Management - Portal models
+from modules.people_management.employee_portal.models import (  # noqa: F401
+    PortalAccess,
+    PortalDigitalSignature,
+    PortalNotification,
+    PortalPreference,
+)
+
+# People Management - DP models
+from modules.people_management.hr.models import (  # noqa: F401
+    AdmissionProcess,
+    EmployeeBenefit,
+    EmploymentContract,
+    TerminationProcess,
+)
+
+# People Management - RH models
+from modules.people_management.human_resources.models import (  # noqa: F401
+    CareerPlan,
+    PerformanceReview,
+    Training,
+    TrainingCertificate,
+    TrainingCourse,
+    TrainingEnrollment,
+)
+
 # Alembic Config object
 config = context.config
 

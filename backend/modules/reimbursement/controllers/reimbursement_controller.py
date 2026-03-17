@@ -36,14 +36,14 @@ router = APIRouter()
 
 
 # Dependência para obter condominio_id do usuário
-def get_condominio_id(user: CurrentActiveUser) -> UUID:
-    """Extrai condominio_id do usuário."""
+def get_condominio_id(user: CurrentActiveUser) -> UUID | None:
+    """Extrai condominio_id do usuário. Admins retornam None."""
+    if hasattr(user, "role") and user.role == "admin":
+        return None
     if hasattr(user, "condominio_id") and user.condominio_id:
         return user.condominio_id
-    raise HTTPException(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        detail="Usuário não possui condomínio associado",
-    )
+    # Em vez de bloquear, retorna None para permitir listagem vazia
+    return None
 
 
 def get_condominio_id_optional(user: CurrentActiveUser) -> UUID | None:
@@ -53,10 +53,7 @@ def get_condominio_id_optional(user: CurrentActiveUser) -> UUID | None:
         return None
     if hasattr(user, "condominio_id") and user.condominio_id:
         return user.condominio_id
-    raise HTTPException(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        detail="Usuário não possui condomínio associado",
-    )
+    return None
 
 
 CondominioId = Annotated[UUID, Depends(get_condominio_id)]

@@ -138,15 +138,19 @@ async def scout_buscar(request: ScoutRequest):
             modalidades=[request.modalidade] if request.modalidade else None,
             valor_minimo=request.valor_min,
             valor_maximo=request.valor_max,
+            portais=request.portais
+            if hasattr(request, "portais") and request.portais
+            else ["pncp", "comprasnet", "licitacoes_e", "ecompras_am"],
         )
         result = await scout_agent.run(search_params=search_params)
         if result.success:
+            opportunities = result.data if isinstance(result.data, list) else result.data.get("opportunities", [])
             return {
                 "status": "success",
                 "agent": "scout",
-                "opportunities": result.data.get("opportunities", []),
-                "total": result.data.get("total", 0),
-                "portal": request.portal or "pncp",
+                "opportunities": opportunities,
+                "total": len(opportunities),
+                "portal": request.portal or "todos",
             }
         return {
             "status": "error",

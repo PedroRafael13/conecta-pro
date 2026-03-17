@@ -2,13 +2,14 @@
 Portal Controller — Autenticacao e dashboard do portal do funcionario.
 
 Endpoints:
-- POST /portal/auth/login
+- POST /portal/auth/login (CPF + senha ou data_nascimento)
+- POST /portal/auth/refresh
+- POST /portal/auth/logout
+- GET /portal/auth/me
 - GET /portal/dashboard
 """
 
 import logging
-import os
-from datetime import datetime, timedelta
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -16,6 +17,12 @@ from fastapi import status as http_status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
+from modules.people_management.employee_portal.auth import (
+    CurrentEmployeeId,
+    _decode_portal_token,
+    create_portal_access_token,
+    create_portal_refresh_token,
+)
 from modules.people_management.employee_portal.schemas.portal import (
     PortalDashboard,
     PortalLoginRequest,
@@ -27,34 +34,20 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["Portal - Auth"])
 
-# JWT secret para tokens do portal
-PORTAL_JWT_SECRET = os.getenv("PORTAL_JWT_SECRET", "portal-secret-key-2026")
 
-
-@router.post(
-    "/auth/login",
-    response_model=PortalLoginResponse,
-    summary="Login do funcionario no portal",
-    description="Autentica o funcionario por CPF e senha, retornando token de acesso.",
-)
+@router.post("/auth/login", response_model=PortalLoginResponse)
 async def portal_login(
     request: Request,
     login_data: PortalLoginRequest,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
-    """Autentica funcionario no portal por CPF e senha.
+    """Autentica funcionario por CPF + senha ou CPF + data de nascimento."""
+    if not login_data.password and not login_data.data_nascimento:
+        raise HTTPException(
+            status_code=http_status.HTTP_400_BAD_REQUEST,
+            detail="Informe senha ou data de nascimento.",
+        )
 
-    Args:
-        request: Objeto Request do FastAPI.
-        login_data: CPF e senha do funcionario.
-        db: Sessao do banco de dados.
-
-    Returns:
-        PortalLoginResponse com token, nome e ID do funcionario.
-
-    Raises:
-        HTTPException: 401 se credenciais invalidas.
-    """
     service = PortalService(db)
 
     ip_address = request.client.host if request.client else None
@@ -63,6 +56,7 @@ async def portal_login(
     result = await service.authenticate_employee(
         cpf=login_data.cpf,
         password=login_data.password,
+        data_nascimento=login_data.data_nascimento,
         ip_address=ip_address,
         user_agent=user_agent,
     )
@@ -70,57 +64,108 @@ async def portal_login(
     if not result:
         raise HTTPException(
             status_code=http_status.HTTP_401_UNAUTHORIZED,
-            detail="CPF ou senha invalidos.",
+            detail="CPF ou credenciais invalidas.",
         )
 
-    # Gerar token simples (em producao usar jose/jwt)
-    try:
-        import jwt
+    employee_id = str(result["employee_id"])
+    nome = result.get("nome", "")
+    cargo = result.get("cargo", "")
+    cpf = result.get("cpf", "")
+    escala = result.get("escala", "")
 
-        token_payload = {
-            "employee_id": result["employee_id"],
-            "nome": result["nome"],
-            "exp": datetime.utcnow() + timedelta(hours=8),
-            "type": "portal",
-        }
-        access_token = jwt.encode(token_payload, PORTAL_JWT_SECRET, algorithm="HS256")
-    except ImportError:
-        # Fallback sem PyJWT
-        import hashlib
-
-        token_data = f"{result['employee_id']}:{datetime.utcnow().isoformat()}:{PORTAL_JWT_SECRET}"
-        access_token = hashlib.sha256(token_data.encode()).hexdigest()
+    access_token = create_portal_access_token(employee_id, nome, cargo, cpf, escala)
+    refresh_token = create_portal_refresh_token(employee_id)
 
     return PortalLoginResponse(
         access_token=access_token,
-        employee_name=result["nome"],
-        employee_id=result["employee_id"],
+        refresh_token=refresh_token,
+        token_type="bearer",
+        expires_in=8 * 3600,
+        employee_name=nome,
+        employee_id=employee_id,
     )
 
 
-@router.get(
-    "/dashboard",
-    response_model=PortalDashboard,
-    summary="Dashboard do funcionario",
-    description="Retorna dados resumidos do painel do funcionario logado.",
-)
-async def get_dashboard(
+@router.post("/auth/refresh")
+async def portal_refresh(request: Request) -> Any:
+    """Renova token de acesso usando refresh token."""
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header.startswith("Bearer "):
+        raise HTTPException(
+            status_code=http_status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token nao fornecido.",
+        )
+
+    token = auth_header.replace("Bearer ", "").strip()
+    payload = _decode_portal_token(token, "portal_refresh")
+
+    employee_id = payload.get("sub", "")
+    nome = payload.get("nome", "")
+    cargo = payload.get("cargo", "")
+
+    new_access = create_portal_access_token(employee_id, nome, cargo)
+    new_refresh = create_portal_refresh_token(employee_id)
+
+    return {
+        "access_token": new_access,
+        "refresh_token": new_refresh,
+        "token_type": "bearer",
+        "expires_in": 8 * 3600,
+    }
+
+
+@router.post("/auth/logout")
+async def portal_logout(employee_id: CurrentEmployeeId) -> Any:
+    """Logout do portal (invalida sessao client-side)."""
+    logger.info("Portal logout: employee_id=%s", employee_id)
+    return {"message": "Logout realizado com sucesso."}
+
+
+@router.get("/auth/me")
+async def portal_me(
+    employee_id: CurrentEmployeeId,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
-    """Retorna dados do dashboard do funcionario.
+    """Retorna dados do funcionario autenticado."""
+    try:
+        from sqlalchemy import select
 
-    Args:
-        db: Sessao do banco de dados.
+        from modules.operacional.models.employee import Employee
 
-    Returns:
-        PortalDashboard com informacoes do funcionario.
+        result = await db.execute(select(Employee).where(Employee.id == employee_id))
+        emp = result.scalar_one_or_none()
 
-    Note:
-        Em producao, o employee_id deve vir do token JWT decodificado.
-        Aqui esta simplificado para demonstracao.
-    """
-    # TODO: Extrair employee_id do token JWT do portal
-    # Por enquanto retorna dashboard vazio
+        if emp:
+            return {
+                "employee_id": str(emp.id),
+                "nome": emp.nome,
+                "cargo": getattr(emp, "cargo", None),
+                "cpf": _mask_cpf(getattr(emp, "cpf", "")),
+                "data_admissao": str(getattr(emp, "data_admissao", "")),
+                "status": getattr(emp, "status", "ativo"),
+                "email": getattr(emp, "email", None),
+                "telefone": getattr(emp, "telefone", None),
+            }
+    except ImportError:
+        pass
+
+    return {"employee_id": employee_id, "nome": "Funcionario"}
+
+
+@router.get("/dashboard", response_model=PortalDashboard)
+async def get_dashboard(
+    employee_id: CurrentEmployeeId,
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """Retorna dados do dashboard do funcionario autenticado."""
+    try:
+        service = PortalService(db)
+        dashboard_data = await service.get_dashboard(employee_id)
+        if dashboard_data:
+            return PortalDashboard(**dashboard_data)
+    except Exception as exc:
+        logger.warning("Erro ao carregar dashboard: %s", exc)
+
     return PortalDashboard(
         name="Funcionario",
         position=None,
@@ -129,3 +174,11 @@ async def get_dashboard(
         pending_documents=0,
         unread_notifications=0,
     )
+
+
+def _mask_cpf(cpf: str) -> str:
+    """Mascara CPF: 035.***.*42-38."""
+    if not cpf or len(cpf) < 11:
+        return "***.***.***-**"
+    clean = cpf.replace(".", "").replace("-", "")
+    return f"{clean[:3]}.***.*{clean[8:10]}-{clean[10:]}"

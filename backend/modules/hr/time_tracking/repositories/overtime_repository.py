@@ -104,17 +104,17 @@ class OvertimeRepository:
                 query = query.where(Overtime.overtime_date >= filters.date_from)
             if filters.date_to:
                 query = query.where(Overtime.overtime_date <= filters.date_to)
-            if filters.is_approved is not None:
-                if filters.is_approved:
-                    query = query.where(Overtime.status == OvertimeStatus.APROVADO)
+            if getattr(filters, "is_pending_approval", None) is not None:
+                if filters.is_pending_approval:
+                    query = query.where(Overtime.status == OvertimeStatus.PENDENTE)
                 else:
-                    query = query.where(Overtime.status != OvertimeStatus.APROVADO)
-            if filters.is_compensated is not None:
-                query = query.where(Overtime.is_compensated == filters.is_compensated)
-            if filters.is_paid is not None:
-                query = query.where(Overtime.is_paid == filters.is_paid)
-            if filters.requires_pre_approval is not None:
-                query = query.where(Overtime.requires_pre_approval == filters.requires_pre_approval)
+                    query = query.where(Overtime.status != OvertimeStatus.PENDENTE)
+            if getattr(filters, "is_pending_compensation", None) is not None:
+                query = query.where(Overtime.is_compensated == (not filters.is_pending_compensation))
+            if getattr(filters, "is_pending_payment", None) is not None:
+                query = query.where(Overtime.is_paid == (not filters.is_pending_payment))
+            if getattr(filters, "use_time_bank", None) is not None:
+                query = query.where(Overtime.use_time_bank == filters.use_time_bank)
 
         count_query = select(func.count()).select_from(query.subquery())
         total_result = await self.db.execute(count_query)

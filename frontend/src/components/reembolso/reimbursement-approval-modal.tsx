@@ -159,7 +159,7 @@ export function ReimbursementApprovalModal({
               </p>
             </div>
             <div>
-              <p className="text-xs text-[hsl(var(--muted-foreground))]">Nivel Aprovacao</p>
+              <p className="text-xs text-[hsl(var(--muted-foreground))]">Nível Aprovação</p>
               <p className="text-sm font-medium text-[hsl(var(--foreground))]">
                 {request.approval_level
                   ? APPROVAL_LEVEL_LABELS[request.approval_level]
@@ -178,7 +178,7 @@ export function ReimbursementApprovalModal({
         {/* Itens */}
         <div>
           <h4 className="text-sm font-medium text-[hsl(var(--foreground))] mb-3">
-            Itens da Solicitacao
+            Itens da Solicitação
           </h4>
           <div className="space-y-2 max-h-48 overflow-y-auto">
             {request.items.map((item) => (

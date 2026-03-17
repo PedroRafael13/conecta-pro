@@ -45,7 +45,7 @@ async def create_document(
     """Cria um novo documento."""
     service = DocumentService(db)
     try:
-        data.created_by = current_user["id"]
+        data.created_by = str(current_user.id) if hasattr(current_user, "id") else current_user["id"]
         return await service.create(data)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
@@ -107,8 +107,8 @@ async def upload_document(
             file_size_bytes=len(content),
             mime_type=file.content_type or "application/octet-stream",
             checksum=checksum,
-            owner_id=current_user["id"],
-            created_by=current_user["id"],
+            owner_id=str(current_user.id) if hasattr(current_user, "id") else current_user["id"],
+            created_by=str(current_user.id) if hasattr(current_user, "id") else current_user["id"],
         )
 
         logger.info(f"Upload realizado: {file.filename} ({len(content)} bytes)")
@@ -279,7 +279,9 @@ async def approve_document(
 ) -> DocumentResponse:
     """Aprova documento."""
     service = DocumentService(db)
-    document = await service.approve(document_id, current_user["id"])
+    document = await service.approve(
+        document_id, str(current_user.id) if hasattr(current_user, "id") else current_user["id"]
+    )
     if not document:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado")
     return document
@@ -322,7 +324,9 @@ async def archive_document(
 ) -> DocumentResponse:
     """Arquiva documento."""
     service = DocumentService(db)
-    document = await service.archive(document_id, current_user["id"])
+    document = await service.archive(
+        document_id, str(current_user.id) if hasattr(current_user, "id") else current_user["id"]
+    )
     if not document:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado")
     return document
@@ -512,7 +516,7 @@ async def create_new_version(
         file_size_bytes=data.file_size_bytes,
         mime_type=data.mime_type,
         checksum=data.checksum,
-        created_by=current_user["id"],
+        created_by=str(current_user.id) if hasattr(current_user, "id") else current_user["id"],
         change_summary=data.change_summary,
     )
     if not document:

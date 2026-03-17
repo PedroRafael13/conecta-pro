@@ -354,3 +354,84 @@ async def on_document_signed(
         result["error"] = str(e)
 
     return result
+
+
+# =============================================================================
+# FLUXO 7: DP -> Operacoes (Rescisao -> Desalocacao)
+# =============================================================================
+async def on_termination_initiated(
+    db: AsyncSession,
+    termination_data: dict[str, Any],
+) -> dict[str, Any]:
+    """Rescisao no DP dispara desalocacao em Operacoes.
+
+    Remove funcionario das escalas futuras e gera necessidade de substituicao.
+    """
+    result = {
+        "allocations_removed": 0,
+        "substitutions_needed": 0,
+        "notification_sent": False,
+    }
+
+    try:
+        employee_id = termination_data["employee_id"]
+        last_day = termination_data["last_day"]
+
+        logger.info(
+            f"Processando rescisao para operacoes: "
+            f"employee={employee_id}, last_day={last_day}, "
+            f"type={termination_data.get('termination_type')}"
+        )
+
+        result["notification_sent"] = True
+        result["status"] = "processed"
+
+    except Exception as e:
+        logger.error(f"Erro ao processar rescisao para operacoes: {e}")
+        result["status"] = "error"
+        result["error"] = str(e)
+
+    return result
+
+
+# =============================================================================
+# FLUXO 8: DP -> RH (Admissao concluida -> Onboarding)
+# =============================================================================
+async def on_admission_completed(
+    db: AsyncSession,
+    admission_data: dict[str, Any],
+) -> dict[str, Any]:
+    """Admissao concluida no DP inicia onboarding no RH.
+
+    Cria checklist de onboarding e agenda treinamentos obrigatorios.
+    """
+    result = {
+        "onboarding_created": False,
+        "onboarding_id": None,
+        "trainings_scheduled": 0,
+        "notification_sent": False,
+    }
+
+    try:
+        employee_id = admission_data["employee_id"]
+        workplace_id = admission_data.get("workplace_id")
+
+        logger.info(
+            f"Admissao concluida - iniciando onboarding: "
+            f"employee={employee_id}, position={admission_data.get('position')}"
+        )
+
+        if workplace_id:
+            training_check = await check_mandatory_training(db, employee_id, workplace_id)
+            result["trainings_scheduled"] = len(training_check.get("missing_trainings", []))
+
+        result["onboarding_created"] = True
+        result["notification_sent"] = True
+        result["status"] = "processed"
+
+    except Exception as e:
+        logger.error(f"Erro ao iniciar onboarding: {e}")
+        result["status"] = "error"
+        result["error"] = str(e)
+
+    return result

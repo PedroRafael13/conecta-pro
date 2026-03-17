@@ -355,7 +355,7 @@ export default function SolidesPage() {
               <div className="text-center py-12 text-muted-foreground">
                 <CheckCircle2 className="h-16 w-16 mx-auto mb-4 opacity-50" />
                 <h3 className="text-lg font-medium">Nenhum conflito</h3>
-                <p className="mt-2">Todos os dados estao sincronizados corretamente</p>
+                <p className="mt-2">Todos os dados estão sincronizados corretamente</p>
               </div>
             ) : (
               <Table>

@@ -61,13 +61,13 @@ export function ProposalFormModal({
       if (proposal) {
         setFormData({
           tender_id: proposal.tender_id || '',
-          cnpj: proposal.cnpj || '',
-          razao_social: proposal.razao_social || '',
+          cnpj: String(proposal.cnpj || ''),
+          razao_social: String(proposal.razao_social || ''),
           numero_proposta: (proposal as any).numero_proposta || '',
           valor_global:
             typeof proposal.valor_global === 'string'
               ? parseFloat(proposal.valor_global)
-              : proposal.valor_global || 0,
+              : Number(proposal.valor_global) || 0,
           prazo_entrega: (proposal as any).prazo_entrega || 30,
           validade_proposta: (proposal as any).validade_proposta || 60,
           observacoes_tecnicas: (proposal as any).observacoes_tecnicas || '',

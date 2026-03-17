@@ -39,8 +39,9 @@ class EmployeeService:
         Returns:
             Dicionário com items, total, page, page_size e total_pages.
         """
-        query = select(Employee).where(Employee.status == "Ativo")
-        count_query = select(func.count()).select_from(Employee).where(Employee.status == "Ativo")
+        active_filter = func.lower(Employee.status) == "ativo"
+        query = select(Employee).where(active_filter)
+        count_query = select(func.count()).select_from(Employee).where(active_filter)
 
         if search:
             search_filter = or_(
@@ -131,10 +132,19 @@ class EmployeeService:
         )
         current_contract = contract_result.scalar_one_or_none()
 
+        def _to_dict(obj):
+            """Converte SQLAlchemy model para dict serializável."""
+            if obj is None:
+                return None
+            from sqlalchemy import inspect as sa_inspect
+
+            return {c.key: getattr(obj, c.key) for c in sa_inspect(type(obj)).columns}
+
         return {
-            "employee": employee,
-            "benefits": list(benefits),
-            "current_contract": current_contract,
+            "employee": _to_dict(employee),
+            "benefits": [_to_dict(b) for b in benefits],
+            "current_contract": _to_dict(current_contract),
+            "documents": [],
         }
 
     async def update_employee(self, employee_id: str | UUID, data: dict) -> Employee | None:

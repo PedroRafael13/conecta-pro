@@ -169,3 +169,25 @@ async def gerar_fatura(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         )
+
+
+@router.post("/crm/{contract_id}")
+async def contrato_para_crm(
+    contract_id: UUID,
+    db: Session = Depends(get_db),
+):
+    """
+    Vincula contrato publico ao modulo CRM (Comercial).
+
+    Busca ou cria um registro de cliente no CRM a partir dos dados
+    do orgao contratante. Degradacao graceful se o modulo CRM nao
+    estiver disponivel.
+    """
+    service = ERPIntegrationService(db)
+    try:
+        return await service.contrato_para_crm(contract_id=contract_id)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e),
+        )

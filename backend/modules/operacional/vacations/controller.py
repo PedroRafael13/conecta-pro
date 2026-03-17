@@ -9,14 +9,24 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.auth.dependencies import get_current_active_user
 from core.database import get_db
 
 from .models import VacationRequest
-from .schemas import VacationRequestCreate, VacationRequestListResponse, VacationRequestResponse, VacationRequestUpdate
+from .schemas import (
+    VacationRequestCreate,
+    VacationRequestListResponse,
+    VacationRequestResponse,
+    VacationRequestUpdate,
+)
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/vacations", tags=["Operacional - Férias e Afastamentos"])
+router = APIRouter(
+    prefix="/vacations",
+    tags=["Operacional - Férias e Afastamentos"],
+    dependencies=[Depends(get_current_active_user)],
+)
 
 
 @router.get("/", response_model=VacationRequestListResponse)
@@ -54,7 +64,7 @@ async def list_vacation_requests(
             aprovado=aprovado,
             rejeitado=rejeitado,
         )
-    except Exception as e:
+    except (RuntimeError, ValueError, OSError) as e:
         logger.error("Erro ao listar férias: %s", e)
         return VacationRequestListResponse(items=[], total=0, pendente=0, aprovado=0, rejeitado=0)
 

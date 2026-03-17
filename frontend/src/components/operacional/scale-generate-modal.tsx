@@ -390,7 +390,7 @@ export function ScaleGenerateModal({
             <p className="font-medium">Geracao Automatica</p>
             <p className="text-xs opacity-80 mt-1">
               A escala sera gerada automaticamente com base no tipo selecionado e nas configuracoes definidas.
-              Os funcionarios alocados ao posto serao automaticamente incluidos na escala.
+              Os funcionários alocados ao posto serão automaticamente incluídos na escala.
             </p>
           </div>
         </div>
