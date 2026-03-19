@@ -17,7 +17,7 @@ class TokenResponse(BaseModel):
 
     access_token: str = Field(..., description="Token de acesso JWT")
     refresh_token: str = Field(..., description="Token de refresh JWT")
-    token_type: str = Field(default="bearer", description="Tipo do token")
+    token_type: str = Field(default="Bearer", description="Tipo do token (RFC6750)")  # noqa: S105
 
 
 class LoginResponse(TokenResponse):

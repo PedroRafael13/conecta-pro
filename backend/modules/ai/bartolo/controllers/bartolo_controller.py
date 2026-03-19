@@ -4,7 +4,11 @@ Bartolo Controller - Endpoints do Assistente.
 Expoe a API REST do Bartolo para integracao com o frontend.
 """
 
+# pylint: disable=unused-argument,global-statement,invalid-name,line-too-long
+# pylint: disable=redefined-outer-name
+
 import logging
+from typing import ClassVar
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -53,6 +57,19 @@ def get_learning_service() -> LearningService:
 
 class SendMessageRequest(BaseModel):
     """Request para enviar mensagem."""
+
+    VALID_MODULES: ClassVar[set[str]] = {
+        "dashboard",
+        "dp",
+        "folha",
+        "operacional",
+        "ged",
+        "rh",
+        "sst",
+        "financeiro",
+        "comercial",
+        "licitacoes",
+    }
 
     message: str = Field(..., min_length=1, max_length=2000, description="Mensagem do usuario")
     session_id: str = Field(..., description="ID da sessao")
@@ -124,6 +141,14 @@ async def send_message(
     - Historico da conversa
     - Dados do sistema quando relevante
     """
+    # Validar modulo se informado
+    if request.module and request.module not in SendMessageRequest.VALID_MODULES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Modulo invalido: '{request.module}'. "
+            f"Modulos permitidos: {', '.join(sorted(SendMessageRequest.VALID_MODULES))}",
+        )
+
     try:
         # Usa o UUID do usuario autenticado via JWT
         user_id_str = str(current_user.id)

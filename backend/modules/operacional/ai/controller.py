@@ -67,7 +67,8 @@ async def get_command_center_data(
         week_start = today - timedelta(days=today.weekday())
 
         # Contar postos ativos
-        posts_count = await db.scalar(select(func.count()).select_from(Post).where(Post.is_active)) or 0
+        posts_query = select(func.count()).select_from(Post).where(Post.is_active)
+        posts_count = await db.scalar(posts_query) or 0
 
         # Previsão de cobertura para amanhã
         tomorrow = today + timedelta(days=1)

@@ -2,6 +2,10 @@
 Endpoints de autenticacao.
 """
 
+# pylint: disable=unused-argument,import-outside-toplevel,broad-exception-caught
+# pylint: disable=too-many-branches,too-many-return-statements,too-many-locals
+# pylint: disable=redefined-outer-name,reimported
+
 import secrets
 from datetime import datetime, timedelta
 from urllib.parse import urlencode
@@ -72,14 +76,14 @@ async def register(
     return UserResponse.model_validate(user)
 
 
-@router.post("/login", response_model=Token)
+@router.post("/login")
 @limiter.limit("5/minute")
 async def login(
     request: Request,
     response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: AsyncSession = Depends(get_db),
-) -> Token:
+) -> dict:
     """Autentica usuario e retorna tokens."""
     # Buscar usuario (username = email)
     result = await db.execute(select(User).where(User.email == form_data.username))
@@ -112,11 +116,17 @@ async def login(
     user_refresh_token = create_refresh_token(subject=str(user.id))
 
     logger.info(f"Login bem-sucedido: {user.email}")
-    return Token(
-        access_token=access_token,
-        refresh_token=user_refresh_token,
-        token_type="bearer",  # noqa: S106
-    )
+    return {
+        "access_token": access_token,
+        "refresh_token": user_refresh_token,
+        "token_type": "Bearer",
+        "user": {
+            "id": str(user.id),
+            "name": user.name,
+            "email": user.email,
+            "role": user.role,
+        },
+    }
 
 
 @router.post("/refresh", response_model=Token)
@@ -159,7 +169,7 @@ async def refresh_token(
         return Token(
             access_token=access_token,
             refresh_token=new_refresh_token,
-            token_type="bearer",  # noqa: S106
+            token_type="Bearer",  # noqa: S106
         )
 
     except Exception as e:
@@ -472,7 +482,7 @@ async def google_callback(
             {
                 "access_token": jwt_access_token,
                 "refresh_token": jwt_refresh_token,
-                "token_type": "bearer",
+                "token_type": "Bearer",
             }
         )
 
