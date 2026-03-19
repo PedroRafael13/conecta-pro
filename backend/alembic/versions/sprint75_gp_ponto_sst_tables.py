@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision = "sprint75_gp_ponto_sst"
-down_revision = "sprint74_ged_client_portal_tables"
+down_revision = "sprint74_ged_client_portal"
 branch_labels = None
 depends_on = None
 
