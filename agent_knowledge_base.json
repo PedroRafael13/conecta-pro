@@ -1,0 +1,578 @@
+{
+  "version": "1.0.0",
+  "built_at": "2026-03-20T19:12:57.960397Z",
+  "system": {
+    "name": "Conecta PRO",
+    "environment": "production",
+    "domain": "erp.conectamais.pro",
+    "total_endpoints": 2847
+  },
+  "containers": [
+    {
+      "name": "erp-postgres-exporter",
+      "image": "prometheuscommunity/postgres-exporter",
+      "role": "exporter",
+      "health": "running",
+      "ports": "0.0.0.0:9187->9187/tcp, [::]:9187->9187/tcp"
+    },
+    {
+      "name": "conecta-pro-nginx",
+      "image": "nginx",
+      "role": "unknown",
+      "health": "unknown",
+      "ports": null
+    },
+    {
+      "name": "conecta-pro-celery-beat",
+      "image": "conecta-pro-backend",
+      "role": "scheduler",
+      "health": "healthy",
+      "ports": "8080/tcp"
+    },
+    {
+      "name": "conecta-pro-flower",
+      "image": "conecta-pro-backend",
+      "role": "monitor",
+      "health": "healthy",
+      "ports": "0.0.0.0:5555->5555/tcp, [::]:5555->5555/tcp, 8080/tcp"
+    },
+    {
+      "name": "conecta-pro-celery-integrations",
+      "image": "conecta-pro-backend",
+      "role": "worker",
+      "health": "healthy",
+      "ports": "8080/tcp"
+    },
+    {
+      "name": "34bbe0bcda76_conecta-pro-celery-priority",
+      "image": "conecta-pro-backend",
+      "role": "worker",
+      "health": "healthy",
+      "ports": "8080/tcp"
+    },
+    {
+      "name": "a853a3056bf9_conecta-pro-celery-sefaz",
+      "image": "conecta-pro-backend",
+      "role": "worker",
+      "health": "healthy",
+      "ports": "8080/tcp"
+    },
+    {
+      "name": "8f30da3e29ad_conecta-pro-celery-nfse",
+      "image": "conecta-pro-backend",
+      "role": "worker",
+      "health": "healthy",
+      "ports": "8080/tcp"
+    },
+    {
+      "name": "conecta-pro-celery-batch",
+      "image": "conecta-pro-backend",
+      "role": "worker",
+      "health": "healthy",
+      "ports": "8080/tcp"
+    },
+    {
+      "name": "297439d0453a_conecta-pro-celery-operacional",
+      "image": "conecta-pro-backend",
+      "role": "worker",
+      "health": "healthy",
+      "ports": "8080/tcp"
+    },
+    {
+      "name": "conecta-pro-backend",
+      "image": "conecta-pro-backend",
+      "role": "api",
+      "health": "healthy",
+      "ports": "0.0.0.0:8080->8080/tcp, [::]:8080->8080/tcp"
+    },
+    {
+      "name": "conecta-pro-postgres",
+      "image": "postgres",
+      "role": "database",
+      "health": "healthy",
+      "ports": "5432/tcp"
+    },
+    {
+      "name": "erp-node-exporter",
+      "image": "prom/node-exporter",
+      "role": "exporter",
+      "health": "running",
+      "ports": "0.0.0.0:9100->9100/tcp, [::]:9100->9100/tcp"
+    },
+    {
+      "name": "erp-redis-exporter",
+      "image": "oliver006/redis_exporter",
+      "role": "exporter",
+      "health": "running",
+      "ports": "0.0.0.0:9121->9121/tcp, [::]:9121->9121/tcp"
+    },
+    {
+      "name": "conecta-pro-redis",
+      "image": "redis",
+      "role": "cache",
+      "health": "healthy",
+      "ports": "6379/tcp"
+    },
+    {
+      "name": "conecta-pro-redis-staging",
+      "image": "redis",
+      "role": "staging",
+      "health": "healthy",
+      "ports": "6379/tcp"
+    },
+    {
+      "name": "conecta-pro-postgres-staging",
+      "image": "postgres",
+      "role": "staging",
+      "health": "healthy",
+      "ports": "5432/tcp"
+    },
+    {
+      "name": "erp-alertmanager",
+      "image": "prom/alertmanager",
+      "role": "alerting",
+      "health": "healthy",
+      "ports": "0.0.0.0:9093->9093/tcp, [::]:9093->9093/tcp"
+    },
+    {
+      "name": "erp-promtail",
+      "image": "grafana/promtail",
+      "role": "logging",
+      "health": "running",
+      "ports": null
+    },
+    {
+      "name": "erp-loki",
+      "image": "grafana/loki",
+      "role": "logging",
+      "health": "healthy",
+      "ports": "0.0.0.0:3100->3100/tcp, [::]:3100->3100/tcp"
+    },
+    {
+      "name": "erp-prometheus",
+      "image": "prom/prometheus",
+      "role": "monitoring",
+      "health": "running",
+      "ports": "0.0.0.0:9090->9090/tcp, [::]:9090->9090/tcp"
+    },
+    {
+      "name": "erp-grafana",
+      "image": "grafana/grafana",
+      "role": "monitoring",
+      "health": "running",
+      "ports": "0.0.0.0:3000->3000/tcp, [::]:3000->3000/tcp"
+    }
+  ],
+  "dependencies": {
+    "frontend": {
+      "depends_on": [
+        "backend"
+      ],
+      "type": "http",
+      "port": 3001,
+      "note": "PM2 Next.js → Backend API via nginx"
+    },
+    "backend": {
+      "depends_on": [
+        "postgres",
+        "redis"
+      ],
+      "type": "tcp",
+      "port": 8080,
+      "note": "FastAPI → PostgreSQL (asyncpg) + Redis (cache/sessions)"
+    },
+    "celery_workers": {
+      "depends_on": [
+        "redis",
+        "postgres"
+      ],
+      "type": "amqp",
+      "note": "Celery workers consomem de Redis broker, escrevem em PostgreSQL",
+      "workers": [
+        "celery-batch",
+        "celery-beat",
+        "celery-integrations",
+        "celery-nfse",
+        "celery-operacional",
+        "celery-priority",
+        "celery-sefaz"
+      ]
+    },
+    "postgres": {
+      "depends_on": [],
+      "type": "tcp",
+      "port": 5432,
+      "note": "PostgreSQL 16 — banco principal"
+    },
+    "redis": {
+      "depends_on": [],
+      "type": "tcp",
+      "port": 6379,
+      "note": "Redis 7 — cache, sessions, Celery broker"
+    },
+    "nginx": {
+      "depends_on": [
+        "frontend",
+        "backend"
+      ],
+      "type": "http",
+      "ports": [
+        80,
+        443
+      ],
+      "note": "Reverse proxy, SSL termination, rate limiting"
+    },
+    "monitoring": {
+      "depends_on": [
+        "prometheus",
+        "grafana",
+        "loki",
+        "alertmanager"
+      ],
+      "type": "http",
+      "note": "Stack de observabilidade"
+    }
+  },
+  "criticality_order": [
+    {
+      "level": "critical",
+      "components": [
+        "postgres",
+        "redis",
+        "backend",
+        "nginx"
+      ],
+      "modules": [
+        "financeiro",
+        "operacional",
+        "government"
+      ],
+      "note": "Indisponibilidade causa perda de receita ou multas"
+    },
+    {
+      "level": "high",
+      "components": [
+        "celery_workers",
+        "frontend"
+      ],
+      "modules": [
+        "crm",
+        "rh",
+        "ged",
+        "clientes",
+        "dashboard"
+      ],
+      "note": "Impacta operação diária mas não causa perda imediata"
+    },
+    {
+      "level": "medium",
+      "components": [
+        "flower",
+        "monitoring"
+      ],
+      "modules": [
+        "reembolso",
+        "equipamentos",
+        "analytics",
+        "notificacoes",
+        "licitacoes"
+      ],
+      "note": "Degradação aceitável por horas"
+    },
+    {
+      "level": "low",
+      "components": [
+        "staging",
+        "exporters"
+      ],
+      "modules": [
+        "bartolo"
+      ],
+      "note": "Não impacta produção"
+    }
+  ],
+  "peak_hours": {
+    "known_brt": [
+      "07:00-09:00",
+      "17:00-19:00"
+    ],
+    "note": "Horário comercial Manaus (AMT/BRT-1). Evitar deploys nesses horários.",
+    "from_logs": [
+      0,
+      1,
+      12,
+      13,
+      14
+    ]
+  },
+  "traffic": {
+    "total_requests": 1607,
+    "peak_hours_utc": [
+      4,
+      5,
+      16,
+      17,
+      18
+    ],
+    "peak_hours_brt": [
+      0,
+      1,
+      12,
+      13,
+      14
+    ],
+    "top_endpoints": [
+      {
+        "path": "/api/v1/notifications/push",
+        "count": 304
+      },
+      {
+        "path": "/api/v1/auth/me",
+        "count": 122
+      },
+      {
+        "path": "/api/v1/people-management/operations/postos/posts/stats",
+        "count": 23
+      },
+      {
+        "path": "/api/v1/people-management/operations/escalas/scales/stats",
+        "count": 23
+      },
+      {
+        "path": "/api/v1/clients/stats",
+        "count": 23
+      },
+      {
+        "path": "/api/v1/government/dashboard/status",
+        "count": 23
+      },
+      {
+        "path": "/api/v1/operacional/employees/?page=1&page_size=1",
+        "count": 23
+      },
+      {
+        "path": "/api/v1/auth/login",
+        "count": 19
+      },
+      {
+        "path": "/api/v1/people-management/operations/postos/posts/?page=1&page_size=1",
+        "count": 19
+      },
+      {
+        "path": "/api/v1/people-management/operations/escalas/scales/?page=1&page_size=1",
+        "count": 19
+      },
+      {
+        "path": "/api/v1/clients/?page=1&page_size=1",
+        "count": 19
+      },
+      {
+        "path": "/api/v1/clients?skip=0&limit=100",
+        "count": 18
+      },
+      {
+        "path": "/api/v1/auth/refresh",
+        "count": 17
+      },
+      {
+        "path": "/api/v1/financial/bi-dashboard/bi/dashboards/stats?condominio_id=&condominio_id={id}",
+        "count": 8
+      },
+      {
+        "path": "/api/v1/financial/payablesstats?condominio_id=&condominio_id={id}",
+        "count": 8
+      },
+      {
+        "path": "/api/v1/financial/receivablesstats?condominio_id=&condominio_id={id}",
+        "count": 8
+      },
+      {
+        "path": "/api/v1/financial/cashflowdashboard?condominio_id=&condominio_id={id}",
+        "count": 8
+      },
+      {
+        "path": "/api/v1/financial/payablesstats?condominio_id={id}",
+        "count": 6
+      }
+    ],
+    "status_distribution": {
+      "2xx": 757,
+      "4xx": 518,
+      "5xx": 238,
+      "3xx": 94
+    },
+    "analyzed_at": "2026-03-20T19:12:57.960337Z"
+  },
+  "frontend_backend_map": [
+    {
+      "frontend_module": "dashboard",
+      "path": "/dashboard",
+      "backend_endpoints": [
+        "/api/v1/operacional",
+        "/api/v1/notifications"
+      ],
+      "criticality": "high"
+    },
+    {
+      "frontend_module": "operacional",
+      "path": "/modulos/operacional",
+      "backend_endpoints": [
+        "/api/v1/operacional"
+      ],
+      "criticality": "critical",
+      "note": "252 endpoints — postos, escalas, turnos, alocações, diaristas"
+    },
+    {
+      "frontend_module": "financeiro",
+      "path": "/modulos/financeiro",
+      "backend_endpoints": [
+        "/api/v1/financial"
+      ],
+      "criticality": "critical",
+      "note": "466 endpoints — contas, pagamentos, conciliação, compras"
+    },
+    {
+      "frontend_module": "crm",
+      "path": "/modulos/crm",
+      "backend_endpoints": [
+        "/api/v1/crm"
+      ],
+      "criticality": "high",
+      "note": "100 endpoints — leads, propostas, contratos"
+    },
+    {
+      "frontend_module": "ged",
+      "path": "/modulos/documentos",
+      "backend_endpoints": [
+        "/api/v1/ged",
+        "/api/v1/document-kits"
+      ],
+      "criticality": "high",
+      "note": "193 endpoints — documentos, pastas, kits"
+    },
+    {
+      "frontend_module": "rh",
+      "path": "/modulos/rh",
+      "backend_endpoints": [
+        "/api/v1/people-management",
+        "/api/v1/recruitment"
+      ],
+      "criticality": "high",
+      "note": "722 endpoints — DP, folha, ponto, SST, recrutamento"
+    },
+    {
+      "frontend_module": "reembolso",
+      "path": "/modulos/reembolso",
+      "backend_endpoints": [
+        "/api/v1/reimbursements"
+      ],
+      "criticality": "medium",
+      "note": "26 endpoints — solicitações, aprovações, pagamentos"
+    },
+    {
+      "frontend_module": "government",
+      "path": "/modulos/fiscal",
+      "backend_endpoints": [
+        "/api/v1/government",
+        "/api/v1/fiscal",
+        "/api/v1/empresas"
+      ],
+      "criticality": "critical",
+      "note": "255 endpoints — NFS-e, eSocial, SEFAZ, certidões"
+    },
+    {
+      "frontend_module": "clientes",
+      "path": "/modulos/clientes",
+      "backend_endpoints": [
+        "/api/v1/clients"
+      ],
+      "criticality": "high",
+      "note": "50 endpoints — clientes, condomínios, contratos"
+    },
+    {
+      "frontend_module": "equipamentos",
+      "path": "/modulos/equipamentos",
+      "backend_endpoints": [
+        "/api/v1/equipment",
+        "/api/v1/comodatos",
+        "/api/v1/maintenances"
+      ],
+      "criticality": "medium",
+      "note": "73 endpoints — equipamentos, comodato, manutenção"
+    },
+    {
+      "frontend_module": "bartolo",
+      "path": "/modulos/assistente",
+      "backend_endpoints": [
+        "/api/v1/ai"
+      ],
+      "criticality": "low",
+      "note": "19 endpoints — assistente IA, wizards"
+    },
+    {
+      "frontend_module": "analytics",
+      "path": "/modulos/analytics",
+      "backend_endpoints": [
+        "/api/v1/analytics",
+        "/api/v1/reports"
+      ],
+      "criticality": "medium",
+      "note": "64 endpoints — dashboards, KPIs, relatórios"
+    },
+    {
+      "frontend_module": "notificacoes",
+      "path": "/modulos/notificacoes",
+      "backend_endpoints": [
+        "/api/v1/notifications"
+      ],
+      "criticality": "medium",
+      "note": "76 endpoints — push, alertas, centro de notificações"
+    },
+    {
+      "frontend_module": "licitacoes",
+      "path": "/modulos/licitacoes",
+      "backend_endpoints": [
+        "/api/v1/bidding"
+      ],
+      "criticality": "medium",
+      "note": "87 endpoints — editais, propostas, agentes IA"
+    }
+  ],
+  "operational_rules": [
+    {
+      "rule": "no_deploy_during_peak",
+      "description": "Não executar deploys entre 07:00-09:00 e 17:00-19:00 BRT",
+      "severity": "high"
+    },
+    {
+      "rule": "backup_before_deploy",
+      "description": "Sempre fazer backup do banco antes de qualquer deploy",
+      "severity": "critical"
+    },
+    {
+      "rule": "backend_before_frontend",
+      "description": "Deploiar backend antes do frontend (APIs devem existir antes do UI consumir)",
+      "severity": "high"
+    },
+    {
+      "rule": "restart_celery_monthly",
+      "description": "Reiniciar workers Celery mensalmente (memory leaks observados após 30d)",
+      "severity": "medium"
+    },
+    {
+      "rule": "check_disk_before_build",
+      "description": "Verificar disco antes de build Docker (build cache pode consumir 80GB+)",
+      "severity": "high"
+    },
+    {
+      "rule": "financial_zone_proibida",
+      "description": "Não editar backend/modules/financial/ sem testes — compliance fiscal",
+      "severity": "critical"
+    },
+    {
+      "rule": "government_zone_proibida",
+      "description": "Não editar backend/modules/government_integrations/ — regulatório",
+      "severity": "critical"
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "version": "1.0.0",
+  "last_updated": "2026-03-20T18:32:05.109546Z",
+  "status": "idle",
+  "active_agents": [],
+  "current_issues": [],
+  "fixed_issues": [],
+  "blocked_files": [],
+  "last_build": {
+    "frontend": {
+      "status": "success",
+      "timestamp": null,
+      "duration_seconds": null,
+      "errors": 0
+    },
+    "backend": {
+      "status": "success",
+      "timestamp": null,
+      "duration_seconds": null,
+      "tests_passed": 0,
+      "tests_failed": 0
+    }
+  },
+  "episodic_memory": []
+}

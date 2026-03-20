@@ -579,6 +579,15 @@ try:
 except Exception as e:
     logger.warning(f"Modulo Inteligencia: {e}")
 
+# OpenClaw — Multi-Agent alert response system
+try:
+    from modules.ai.openclaw.controller import router as openclaw_router
+
+    api_router.include_router(openclaw_router, prefix="/ai", tags=["AI - OpenClaw Alert Response"])
+    logger.info("Modulo OpenClaw: OK (Alert webhook + Remediation)")
+except Exception as e:
+    logger.warning(f"Modulo OpenClaw: {e}")
+
 
 # =============================================================================
 # 8. GESTÃO (config + audit + notifications + mobile + workflows + integrations)
