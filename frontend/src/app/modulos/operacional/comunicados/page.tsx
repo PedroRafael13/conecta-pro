@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { Megaphone, Search, Plus, Eye, Edit2, Trash2, ArrowLeft, ChevronLeft, ChevronRight, RefreshCw, Send, Clock, CheckCircle, CheckCheck, FileText, Users, AlertTriangle, Calendar } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -18,8 +19,8 @@ import {
   ANNOUNCEMENT_PRIORITY_LABELS,
   ANNOUNCEMENT_CATEGORY_LABELS,
 } from '@/lib/services/announcements';
-import { AnnouncementFormModal } from '@/components/operacional/announcement-form-modal';
-import { AnnouncementDetailModal } from '@/components/operacional/announcement-detail-modal';
+const AnnouncementFormModal = dynamic(() => import('@/components/operacional/announcement-form-modal').then(m => m.AnnouncementFormModal), { ssr: false });
+const AnnouncementDetailModal = dynamic(() => import('@/components/operacional/announcement-detail-modal').then(m => m.AnnouncementDetailModal), { ssr: false });
 import api from '@/lib/api';
 
 // Cores dos status

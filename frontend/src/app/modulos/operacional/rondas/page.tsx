@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { Shield, Search, Plus, Eye, Edit2, Trash2, ArrowLeft, ChevronLeft, ChevronRight, AlertCircle, CheckCircle, RefreshCw, Clock, Play, Pause, CheckSquare, XCircle, MapPin, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -23,7 +24,7 @@ import {
   PATROL_ROUND_STATUS_LABELS,
   INSPECTOR_ROLE_LABELS,
 } from '@/types/operacional';
-import { PatrolRoundDetailModal } from '@/components/operacional/patrol-round-detail-modal';
+const PatrolRoundDetailModal = dynamic(() => import('@/components/operacional/patrol-round-detail-modal').then(m => m.PatrolRoundDetailModal), { ssr: false });
 import { ExportButton } from '@/components/ui/export-button';
 import { RondaMonitorCard } from '@/components/operacional/RondaMonitorCard';
 

@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { Users, Search, Plus, Eye, Edit2, ArrowLeft, ChevronLeft, ChevronRight, RefreshCw, Star, Calendar, DollarSign, Clock, CheckCircle, XCircle, Filter, Sparkles, TrendingUp, Phone, Mail } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -8,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/useAuth';
 import { useDiarists } from '@/hooks/operacional/useDiarists';
-import { DiaristFormModal } from '@/components/operacional/diarist-form-modal';
+const DiaristFormModal = dynamic(() => import('@/components/operacional/diarist-form-modal').then(m => m.DiaristFormModal), { ssr: false });
 import {
   type Diarist,
   type DiaristStatus,

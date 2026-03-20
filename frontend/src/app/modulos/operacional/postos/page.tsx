@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { MapPin, Search, Plus, Filter, Eye, Edit2, Trash2, Users, Clock, ArrowLeft, ChevronLeft, ChevronRight, AlertCircle, CheckCircle, RefreshCw } from 'lucide-react';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
@@ -10,8 +11,9 @@ import { ConfirmModal } from '@/components/ui/modal';
 import { useAuth } from '@/hooks/useAuth';
 import { usePosts, useDeletePost } from '@/hooks/operacional/usePosts';
 import { getErrorMessage } from '@/lib/api';
-import { PostDetailModal } from '@/components/operacional/post-detail-modal';
-import { PostFormModal } from '@/components/operacional/post-form-modal';
+
+const PostDetailModal = dynamic(() => import('@/components/operacional/post-detail-modal').then(m => m.PostDetailModal), { ssr: false });
+const PostFormModal = dynamic(() => import('@/components/operacional/post-form-modal').then(m => m.PostFormModal), { ssr: false });
 import { ResponsiveTable, Column } from '@/components/ResponsiveTable';
 import { ExportButton } from '@/components/ui/export-button';
 import { formatDataForExport } from '@/utils/export';
@@ -60,7 +62,7 @@ export default function PostosPage() {
   const [pageSize] = useState(10);
   const totalPages = Math.ceil(total / pageSize);
   const [filters, setFilters] = useState<PostFilters>({});
-   
+
   const stats: PostStats | null = posts.length > 0 ? {
     total: total,
     filled: posts.filter((p: Post) => p.status === 'active').length,

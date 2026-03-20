@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { FileWarning, Search, Plus, Filter, Eye, Edit2, Trash2, ArrowLeft, ChevronLeft, ChevronRight, AlertCircle, CheckCircle, RefreshCw, Clock, FileSignature, AlertTriangle, XCircle, Send } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -12,9 +13,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { useDisciplinary, useDisciplinaryStats } from '@/hooks/useDisciplinary';
 import { useDeleteDisciplinaryAction } from '@/hooks/operacional/useDisciplinary';
 import { getErrorMessage } from '@/lib/api';
-import { DisciplinaryFormModal } from '@/components/operacional/disciplinary-form-modal';
-import { DisciplinaryDetailModal } from '@/components/operacional/disciplinary-detail-modal';
-import { DisciplinarySignatureModal } from '@/components/operacional/disciplinary-signature-modal';
+const DisciplinaryFormModal = dynamic(() => import('@/components/operacional/disciplinary-form-modal').then(m => m.DisciplinaryFormModal), { ssr: false });
+const DisciplinaryDetailModal = dynamic(() => import('@/components/operacional/disciplinary-detail-modal').then(m => m.DisciplinaryDetailModal), { ssr: false });
+const DisciplinarySignatureModal = dynamic(() => import('@/components/operacional/disciplinary-signature-modal').then(m => m.DisciplinarySignatureModal), { ssr: false });
 import type {
   DisciplinaryAction,
   DisciplinaryActionStatus,

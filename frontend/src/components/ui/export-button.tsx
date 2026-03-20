@@ -121,13 +121,13 @@ export function ExportButton({
 
       switch (format) {
         case 'excel':
-          exportToExcel(data, filename);
+          await exportToExcel(data, filename);
           break;
         case 'pdf':
-          exportToPDF(data, filename, pdfTitle);
+          await exportToPDF(data, filename, pdfTitle);
           break;
         case 'csv':
-          exportToCSV(data, filename);
+          await exportToCSV(data, filename);
           break;
       }
 

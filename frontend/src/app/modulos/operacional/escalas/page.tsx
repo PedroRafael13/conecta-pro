@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { Shield, Calendar, ArrowLeft, Search, Plus, Filter, ChevronLeft, ChevronRight, Eye, CheckCircle, Send, Clock, AlertCircle, Trash2, CalendarDays, FileText } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -13,7 +14,7 @@ import { usePermission, Permission } from '@/hooks/usePermission';
 import { useScales, useScaleOperations } from '@/hooks/useScales';
 import { usePosts } from '@/hooks/usePosts';
 import { ConfirmModal, Modal } from '@/components/ui/modal';
-import { ScaleGenerateModal } from '@/components/operacional/scale-generate-modal';
+const ScaleGenerateModal = dynamic(() => import('@/components/operacional/scale-generate-modal').then(m => m.ScaleGenerateModal), { ssr: false });
 import { TemplateManager } from '@/features/escalas/components/TemplateManager';
 import { ExportButton } from '@/components/ui/export-button';
 import type { Scale, ScaleStatus, ScaleType, Post } from '@/types/operacional';

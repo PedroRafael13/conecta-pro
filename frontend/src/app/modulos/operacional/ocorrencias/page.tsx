@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { AlertTriangle, Search, Plus, Eye, Edit2, Trash2, ArrowLeft, ChevronLeft, ChevronRight, AlertCircle, CheckCircle, RefreshCw, Clock, Shield, XCircle, CheckSquare } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -23,9 +24,9 @@ import {
   OCCURRENCE_SEVERITY_LABELS,
   OCCURRENCE_CATEGORY_LABELS,
 } from '@/types/operacional';
-import { OccurrenceFormModal } from '@/components/operacional/occurrence-form-modal';
-import { OccurrenceDetailModal } from '@/components/operacional/occurrence-detail-modal';
-import { OccurrenceResolveModal } from '@/components/operacional/occurrence-resolve-modal';
+const OccurrenceFormModal = dynamic(() => import('@/components/operacional/occurrence-form-modal').then(m => m.OccurrenceFormModal), { ssr: false });
+const OccurrenceDetailModal = dynamic(() => import('@/components/operacional/occurrence-detail-modal').then(m => m.OccurrenceDetailModal), { ssr: false });
+const OccurrenceResolveModal = dynamic(() => import('@/components/operacional/occurrence-resolve-modal').then(m => m.OccurrenceResolveModal), { ssr: false });
 import { ExportButton } from '@/components/ui/export-button';
 import { OccurrenceAIPanel } from '@/components/operacional/OccurrenceAIPanel';
 

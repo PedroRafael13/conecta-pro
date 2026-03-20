@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { Users, ArrowLeft, Filter, Eye, Calendar, ChevronLeft, ChevronRight, RefreshCw, AlertCircle, Ban, Plus, ArrowRightLeft } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -12,8 +13,8 @@ import { useAllocations, useTerminateAllocation, useCreateAllocation } from '@/h
 import { usePosts } from '@/hooks/operacional/usePosts';
 import { useEmployees } from '@/hooks/operacional/useEmployees';
 import { getErrorMessage } from '@/lib/api';
-import { AllocationDetailModal } from '@/components/operacional/allocation-detail-modal';
-import { AllocationFormModal } from '@/components/operacional/allocation-form-modal';
+const AllocationDetailModal = dynamic(() => import('@/components/operacional/allocation-detail-modal').then(m => m.AllocationDetailModal), { ssr: false });
+const AllocationFormModal = dynamic(() => import('@/components/operacional/allocation-form-modal').then(m => m.AllocationFormModal), { ssr: false });
 import { ExportButton } from '@/components/ui/export-button';
 import type { Allocation, AllocationFilter, AllocationStatus, AllocationTerminate, Employee, Post } from '@/types/operacional';
 import { ALLOCATION_STATUS_LABELS } from '@/types/operacional';

@@ -1,7 +1,26 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { scaleTemplatesService } from '@/lib/services/scale-templates';
+import { customInstance } from '@/lib/api-client';
+
+const BASE = '/api/v1/operacional/templates-escalas';
+
+const scaleTemplatesService = {
+  list: (page: number, pageSize: number, filters?: Record<string, unknown>) =>
+    customInstance({ url: BASE, method: 'GET', params: { page, page_size: pageSize, ...filters } }),
+  getById: (id: string) =>
+    customInstance({ url: `${BASE}/${id}`, method: 'GET' }),
+  create: (data: unknown) =>
+    customInstance({ url: BASE, method: 'POST', data }),
+  update: (id: string, data: unknown) =>
+    customInstance({ url: `${BASE}/${id}`, method: 'PUT', data }),
+  delete: (id: string) =>
+    customInstance({ url: `${BASE}/${id}`, method: 'DELETE' }),
+  apply: (id: string, data: unknown) =>
+    customInstance({ url: `${BASE}/${id}/apply`, method: 'POST', data }),
+  preview: (id: string, data: unknown) =>
+    customInstance({ url: `${BASE}/${id}/preview`, method: 'POST', data }),
+};
 import { useToast } from '@/components/ui/use-toast';
 import type {
   ScaleTemplate,
@@ -34,7 +53,7 @@ export function useTemplates(
     setIsLoading(true);
     setError(null);
     try {
-      const response = await scaleTemplatesService.list(page, pageSize, filters);
+      const response = await scaleTemplatesService.list(page, pageSize, filters as Record<string, unknown> | undefined) as PaginatedResponse<ScaleTemplate>;
       setTemplates(response.items);
       setTotal(response.total);
       setTotalPages(response.total_pages);
@@ -93,7 +112,7 @@ export function useTemplate(id: string | null) {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await scaleTemplatesService.getById(id);
+      const data = await scaleTemplatesService.getById(id) as ScaleTemplate;
       setTemplate(data);
     } catch (err) {
 
@@ -128,7 +147,7 @@ export function useTemplateOperations() {
     setIsLoading(true);
     setError(null);
     try {
-      const template = await scaleTemplatesService.create(data);
+      const template = await scaleTemplatesService.create(data) as ScaleTemplate;
       toast({
         title: 'Template criado!',
         description: `Template "${data.name}" foi criado com sucesso.`,
@@ -156,7 +175,7 @@ export function useTemplateOperations() {
     setIsLoading(true);
     setError(null);
     try {
-      const template = await scaleTemplatesService.update(id, data);
+      const template = await scaleTemplatesService.update(id, data) as ScaleTemplate;
       toast({
         title: 'Template atualizado!',
         description: 'As alterações foram salvas com sucesso.',
@@ -209,7 +228,7 @@ export function useTemplateOperations() {
     setIsLoading(true);
     setError(null);
     try {
-      const scale = await scaleTemplatesService.apply(id, data);
+      const scale = await scaleTemplatesService.apply(id, data) as Scale;
       toast({
         title: 'Escala criada!',
         description: 'A escala foi gerada a partir do template com sucesso.',
@@ -237,7 +256,7 @@ export function useTemplateOperations() {
     setIsLoading(true);
     setError(null);
     try {
-      const scale = await scaleTemplatesService.preview(id, data);
+      const scale = await scaleTemplatesService.preview(id, data) as Scale;
       return scale;
     } catch (err: unknown) {
 

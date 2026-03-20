@@ -27,6 +27,7 @@ app = Celery(
         "modules.integrations.connectors.solides.tasks",
         "modules.operacional.tasks",
         "modules.bidding.tasks",
+        "modules.people_management.sst.tasks",
     ],
 )
 
@@ -92,6 +93,9 @@ app.conf.task_routes = {
     "operacional.expire_time_bank_entries": {"queue": "operacional"},
     "operacional.send_shift_reminders": {"queue": "operacional"},
     "operacional.daily_coverage_report": {"queue": "operacional"},
+    # SST - Afastamentos
+    "sst.verificar_afastamentos_vencidos": {"queue": "operacional"},
+    "sst.verificar_inss_pendente": {"queue": "operacional"},
 }
 
 # Configurações gerais
@@ -245,6 +249,21 @@ app.conf.beat_schedule = {
         "task": "bidding.sync_pncp_precos",
         "schedule": 86400.0,  # 24 horas
         "options": {"queue": "gov.batch"},
+    },
+    # =========================================================================
+    # SST - SAÚDE E SEGURANÇA DO TRABALHO
+    # =========================================================================
+    # Encerra afastamentos vencidos (diário)
+    "sst-check-expired-leaves-daily": {
+        "task": "sst.verificar_afastamentos_vencidos",
+        "schedule": 86400.0,  # 24 horas
+        "options": {"queue": "operacional"},
+    },
+    # Alerta afastamentos > 15 dias sem INSS (diário)
+    "sst-check-inss-pending-daily": {
+        "task": "sst.verificar_inss_pendente",
+        "schedule": 86400.0,  # 24 horas
+        "options": {"queue": "operacional"},
     },
 }
 

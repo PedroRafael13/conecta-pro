@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { Clock, ArrowLeft, Filter, RefreshCw, AlertCircle } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -16,7 +17,7 @@ import { useCheckInShift, useCheckOutShift, useMarkShiftMissed } from '@/hooks/o
 import { getErrorMessage } from '@/lib/api';
 import { ShiftCalendar } from '@/components/operacional/shift-calendar';
 import { ShiftDayView } from '@/components/operacional/shift-day-view';
-import { ShiftCheckModal } from '@/components/operacional/shift-check-modal';
+const ShiftCheckModal = dynamic(() => import('@/components/operacional/shift-check-modal').then(m => m.ShiftCheckModal), { ssr: false });
 import { ExportButton } from '@/components/ui/export-button';
 import { formatDataForExport } from '@/utils/export';
 import type { Shift, ShiftFilter } from '@/types/operacional';

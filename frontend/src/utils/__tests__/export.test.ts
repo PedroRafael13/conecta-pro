@@ -1,13 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import * as XLSX from 'xlsx';
 import {
   exportToExcel,
   exportToCSV,
   formatDataForExport,
 } from '../export';
 
-// Mock do XLSX
-vi.mock('xlsx', () => ({
+// Mock do XLSX (dynamic import)
+const mockXLSX = {
   utils: {
     json_to_sheet: vi.fn(() => ({
       '!cols': undefined,
@@ -17,7 +16,9 @@ vi.mock('xlsx', () => ({
     sheet_to_csv: vi.fn(() => 'csv,data'),
   },
   writeFile: vi.fn(),
-}));
+};
+
+vi.mock('xlsx', () => mockXLSX);
 
 describe('exportToExcel', () => {
   beforeEach(() => {
@@ -29,44 +30,44 @@ describe('exportToExcel', () => {
     vi.restoreAllMocks();
   });
 
-  it('deve lançar erro quando data é vazio', () => {
-    expect(() => exportToExcel([], 'test')).toThrow('Nenhum dado disponível para exportação');
+  it('deve lançar erro quando data é vazio', async () => {
+    await expect(exportToExcel([], 'test')).rejects.toThrow('Nenhum dado disponível para exportação');
   });
 
-  it('deve lançar erro quando data é null', () => {
-    expect(() => exportToExcel(null as any, 'test')).toThrow('Nenhum dado disponível para exportação');
+  it('deve lançar erro quando data é null', async () => {
+    await expect(exportToExcel(null as any, 'test')).rejects.toThrow('Nenhum dado disponível para exportação');
   });
 
-  it('deve exportar com sucesso', () => {
+  it('deve exportar com sucesso', async () => {
     const data = [{ name: 'John', age: 30 }];
-    exportToExcel(data, 'test');
-    expect(XLSX.writeFile).toHaveBeenCalled();
+    await exportToExcel(data, 'test');
+    expect(mockXLSX.writeFile).toHaveBeenCalled();
   });
 
-  it('deve calcular largura das colunas corretamente', () => {
+  it('deve calcular largura das colunas corretamente', async () => {
     const data = [
       { name: 'John Doe With Long Name', age: 30 },
       { name: 'Jane', age: 25 },
     ];
-    exportToExcel(data, 'test');
-    expect(XLSX.utils.json_to_sheet).toHaveBeenCalled();
+    await exportToExcel(data, 'test');
+    expect(mockXLSX.utils.json_to_sheet).toHaveBeenCalled();
   });
 
-  it('deve lidar com valores null/undefined ao calcular largura das colunas', () => {
+  it('deve lidar com valores null/undefined ao calcular largura das colunas', async () => {
     const data = [
       { name: null, description: undefined, status: 'active' },
       { name: 'Jane', description: 'test', status: null },
     ];
-    exportToExcel(data, 'test');
-    expect(XLSX.utils.json_to_sheet).toHaveBeenCalled();
-    expect(XLSX.writeFile).toHaveBeenCalled();
+    await exportToExcel(data, 'test');
+    expect(mockXLSX.utils.json_to_sheet).toHaveBeenCalled();
+    expect(mockXLSX.writeFile).toHaveBeenCalled();
   });
 
-  it('deve re-lançar erro quando XLSX.writeFile falha', () => {
-    vi.mocked(XLSX.writeFile).mockImplementationOnce(() => { throw new Error('Write failed'); });
+  it('deve re-lançar erro quando XLSX.writeFile falha', async () => {
+    mockXLSX.writeFile.mockImplementationOnce(() => { throw new Error('Write failed'); });
 
     const data = [{ name: 'John' }];
-    expect(() => exportToExcel(data, 'test')).toThrow('Write failed');
+    await expect(exportToExcel(data, 'test')).rejects.toThrow('Write failed');
     expect(console.error).toHaveBeenCalled();
   });
 });
@@ -85,15 +86,15 @@ describe('exportToCSV', () => {
     vi.restoreAllMocks();
   });
 
-  it('deve lançar erro quando data é vazio', () => {
-    expect(() => exportToCSV([], 'test')).toThrow('Nenhum dado disponível para exportação');
+  it('deve lançar erro quando data é vazio', async () => {
+    await expect(exportToCSV([], 'test')).rejects.toThrow('Nenhum dado disponível para exportação');
   });
 
-  it('deve lançar erro quando data é null', () => {
-    expect(() => exportToCSV(null as any, 'test')).toThrow('Nenhum dado disponível para exportação');
+  it('deve lançar erro quando data é null', async () => {
+    await expect(exportToCSV(null as any, 'test')).rejects.toThrow('Nenhum dado disponível para exportação');
   });
 
-  it('deve exportar CSV com sucesso', () => {
+  it('deve exportar CSV com sucesso', async () => {
     const data = [{ name: 'John', age: 30 }];
 
     // Mock document.createElement
@@ -104,15 +105,15 @@ describe('exportToCSV', () => {
     };
     vi.spyOn(document, 'createElement').mockReturnValue(mockLink as any);
 
-    exportToCSV(data, 'test');
+    await exportToCSV(data, 'test');
 
-    expect(XLSX.utils.sheet_to_csv).toHaveBeenCalled();
+    expect(mockXLSX.utils.sheet_to_csv).toHaveBeenCalled();
     expect(mockLink.click).toHaveBeenCalled();
     // Verificar que o download file tem timestamp
     expect(mockLink.download).toMatch(/^test_\d{8}\.csv$/);
   });
 
-  it('deve chamar revokeObjectURL após timeout', () => {
+  it('deve chamar revokeObjectURL após timeout', async () => {
     vi.useFakeTimers();
     const data = [{ name: 'John', age: 30 }];
 
@@ -123,18 +124,18 @@ describe('exportToCSV', () => {
     };
     vi.spyOn(document, 'createElement').mockReturnValue(mockLink as any);
 
-    exportToCSV(data, 'test');
+    await exportToCSV(data, 'test');
 
     vi.advanceTimersByTime(200);
     expect(global.URL.revokeObjectURL).toHaveBeenCalled();
     vi.useRealTimers();
   });
 
-  it('deve re-lançar erro quando exportação CSV falha internamente', () => {
-    vi.mocked(XLSX.utils.json_to_sheet).mockImplementationOnce(() => { throw new Error('Sheet failed'); });
+  it('deve re-lançar erro quando exportação CSV falha internamente', async () => {
+    mockXLSX.utils.json_to_sheet.mockImplementationOnce(() => { throw new Error('Sheet failed'); });
 
     const data = [{ name: 'John' }];
-    expect(() => exportToCSV(data, 'test')).toThrow('Sheet failed');
+    await expect(exportToCSV(data, 'test')).rejects.toThrow('Sheet failed');
     expect(console.error).toHaveBeenCalled();
   });
 });

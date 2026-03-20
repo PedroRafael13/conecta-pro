@@ -1,0 +1,53 @@
+import { ShieldOff } from 'lucide-react';
+import Link from 'next/link';
+
+export default function NotFound() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-[hsl(var(--background))] p-6">
+      <div className="max-w-md w-full text-center space-y-8">
+        {/* Logo / Brand */}
+        <div className="space-y-2">
+          <div className="mx-auto w-20 h-20 rounded-2xl bg-[hsl(var(--primary))]/10 flex items-center justify-center">
+            <ShieldOff className="w-10 h-10 text-[hsl(var(--primary))]" />
+          </div>
+          <p className="text-sm font-medium text-[hsl(var(--primary))] tracking-wider uppercase">
+            Conecta PRO
+          </p>
+        </div>
+
+        {/* 404 */}
+        <div className="space-y-3">
+          <h1 className="text-7xl font-bold text-[hsl(var(--foreground))]">404</h1>
+          <h2 className="text-xl font-semibold text-[hsl(var(--foreground))]">
+            Pagina nao encontrada
+          </h2>
+          <p className="text-sm text-[hsl(var(--muted-foreground))] leading-relaxed">
+            A pagina que voce esta procurando nao existe, foi movida ou voce nao tem permissao
+            para acessa-la.
+          </p>
+        </div>
+
+        {/* Actions */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-medium rounded-lg bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] hover:opacity-90 transition-opacity"
+          >
+            Ir para o Dashboard
+          </Link>
+          <Link
+            href="/login"
+            className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-medium rounded-lg border border-[hsl(var(--border))] text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))] transition-colors"
+          >
+            Fazer Login
+          </Link>
+        </div>
+
+        {/* Footer */}
+        <p className="text-xs text-[hsl(var(--muted-foreground))]">
+          Sistema ERP para Gestao de Vigilancia e Seguranca Patrimonial
+        </p>
+      </div>
+    </div>
+  );
+}
