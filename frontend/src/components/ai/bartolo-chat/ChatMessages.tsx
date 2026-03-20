@@ -1,5 +1,6 @@
 import { forwardRef } from 'react';
 import { User, ThumbsUp, ThumbsDown } from 'lucide-react';
+import DOMPurify from 'dompurify';
 import { cn } from '@/lib/utils';
 import { DachshundIcon } from './DachshundIcon';
 import type { BartoloMessage, BartoloAction } from './types';
@@ -89,7 +90,7 @@ function MessageBubble({
         {message.contentHtml ? (
           <div
             className="text-sm prose prose-invert prose-sm max-w-none"
-            dangerouslySetInnerHTML={{ __html: message.contentHtml }}
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(message.contentHtml) }}
           />
         ) : (
           <p className="text-sm whitespace-pre-wrap">{message.content}</p>

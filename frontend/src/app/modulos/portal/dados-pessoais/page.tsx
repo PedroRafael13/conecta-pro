@@ -110,7 +110,7 @@ export default function DadosPessoaisPortalPage() {
             Meus Dados Pessoais
           </h2>
           {!editing && (
-            <button onClick={() => setEditing(true)} className="flex items-center gap-1 px-4 py-2 text-sm bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100">
+            <button type="button" onClick={() => setEditing(true)} className="flex items-center gap-1 px-4 py-2 text-sm bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100">
               <Pencil className="w-4 h-4" /> Editar
             </button>
           )}
@@ -172,11 +172,11 @@ export default function DadosPessoaisPortalPage() {
 
             {editing && (
               <div className="flex items-center gap-3 mt-6 pt-4 border-t">
-                <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 text-sm">
+                <button type="button" onClick={handleSave} disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 text-sm">
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                   {saving ? 'Salvando...' : 'Salvar Alterações'}
                 </button>
-                <button onClick={() => { setEditing(false); setForm({ telefone: employee?.telefone || '', email: employee?.email || '', endereco: employee?.endereco || '', contato_emergencia: employee?.contato_emergencia || '' }) }} className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm">
+                <button type="button" onClick={() => { setEditing(false); setForm({ telefone: employee?.telefone || '', email: employee?.email || '', endereco: employee?.endereco || '', contato_emergencia: employee?.contato_emergencia || '' }) }} className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm">
                   <X className="w-4 h-4" /> Cancelar
                 </button>
               </div>

@@ -1282,7 +1282,7 @@ function TabInadimplentes() {
             <CardContent className="pt-5 space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-base font-semibold">Enviar Lembrete</h3>
-                <button onClick={() => setLembreteModal(null)} className="text-muted-foreground hover:text-foreground">
+                <button type="button" onClick={() => setLembreteModal(null)} className="text-muted-foreground hover:text-foreground">
                   <X className="h-4 w-4" />
                 </button>
               </div>
@@ -1330,7 +1330,7 @@ function TabInadimplentes() {
             <CardContent className="pt-5 space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-base font-semibold">Registrar Contato</h3>
-                <button onClick={() => setContatoModal(null)} className="text-muted-foreground hover:text-foreground">
+                <button type="button" onClick={() => setContatoModal(null)} className="text-muted-foreground hover:text-foreground">
                   <X className="h-4 w-4" />
                 </button>
               </div>
@@ -1373,7 +1373,7 @@ function TabInadimplentes() {
                 <h3 className="text-base font-semibold flex items-center gap-2">
                   <Handshake className="h-5 w-5 text-green-600" />Fazer Acordo
                 </h3>
-                <button onClick={() => setAcordoModal(null)} className="text-muted-foreground hover:text-foreground">
+                <button type="button" onClick={() => setAcordoModal(null)} className="text-muted-foreground hover:text-foreground">
                   <X className="h-4 w-4" />
                 </button>
               </div>

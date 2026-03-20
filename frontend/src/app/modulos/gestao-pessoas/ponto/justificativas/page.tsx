@@ -41,7 +41,7 @@ export default function JustificativasPage() {
           <FileCheck className="w-6 h-6 text-amber-600" />
           <h1 className="text-2xl font-bold text-gray-900">Justificativas</h1>
         </div>
-        <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
+        <button type="button" className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
           <Plus className="h-4 w-4" />
           Nova Justificativa
         </button>

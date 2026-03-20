@@ -57,11 +57,13 @@ services:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
       - /:/rootfs:ro
+      - /opt/conecta-pro/monitoring/textfile_collector:/textfile_collector:ro
     command:
       - '--path.procfs=/host/proc'
       - '--path.sysfs=/host/sys'
       - '--path.rootfs=/rootfs'
       - '--collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($$|/)'
+      - '--collector.textfile.directory=/textfile_collector'
     networks:
       - monitoring
 
@@ -73,7 +75,8 @@ services:
     ports:
       - "9121:9121"
     environment:
-      - REDIS_ADDR=redis://host.docker.internal:6379
+      - REDIS_ADDR=redis://conecta-pro-redis:6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-conecta_redis_2024}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     networks:

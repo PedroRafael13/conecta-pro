@@ -643,7 +643,7 @@ export default function ReembolsosOperacionalPage() {
         <div className="fixed bottom-4 right-4 z-[100] bg-zinc-800 border border-zinc-600 text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-3 max-w-sm">
           <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0" />
           <span className="text-sm">{approvalToast}</span>
-          <button onClick={() => setApprovalToast(null)} className="ml-auto">
+          <button type="button" onClick={() => setApprovalToast(null)} className="ml-auto">
             <X className="w-4 h-4 text-zinc-400 hover:text-white" />
           </button>
         </div>

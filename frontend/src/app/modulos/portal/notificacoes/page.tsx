@@ -60,7 +60,7 @@ export default function NotificacoesPortalPage() {
                 <p className="text-xs text-gray-600 mt-1">{n.message}</p>
                 <p className="text-xs text-gray-400 mt-2">{n.created_at}</p>
               </div>
-              <button onClick={() => markAsRead(n.id)} className="text-blue-600 hover:text-blue-800">
+              <button type="button" onClick={() => markAsRead(n.id)} className="text-blue-600 hover:text-blue-800">
                 <Check className="w-4 h-4" />
               </button>
             </div>

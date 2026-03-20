@@ -256,7 +256,7 @@ export default function EmpresasPage() {
             </div>
 
             <Link href="/modulos/empresas/rentabilidade">
-              <button className="mt-5 w-full flex items-center justify-center gap-2 bg-[#111b57] hover:bg-[#1a47f5] text-white text-sm font-semibold py-2.5 rounded-lg transition-colors">
+              <button type="button" className="mt-5 w-full flex items-center justify-center gap-2 bg-[#111b57] hover:bg-[#1a47f5] text-white text-sm font-semibold py-2.5 rounded-lg transition-colors">
                 Ver Detalhes
                 <ChevronRight className="h-4 w-4" />
               </button>
@@ -333,7 +333,7 @@ export default function EmpresasPage() {
             </div>
 
             <Link href="/modulos/empresas/liminares">
-              <button className="mt-5 w-full flex items-center justify-center gap-2 bg-[#f97707] hover:bg-orange-600 text-white text-sm font-semibold py-2.5 rounded-lg transition-colors">
+              <button type="button" className="mt-5 w-full flex items-center justify-center gap-2 bg-[#f97707] hover:bg-orange-600 text-white text-sm font-semibold py-2.5 rounded-lg transition-colors">
                 Ver Detalhes
                 <ChevronRight className="h-4 w-4" />
               </button>

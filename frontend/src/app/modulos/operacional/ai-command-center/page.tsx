@@ -548,7 +548,7 @@ export default function AICommandCenterOperacionalPage() {
           {bartoloSuggestions.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-3">
               {bartoloSuggestions.map((s, idx) => (
-                <button key={idx} onClick={() => handleBartolSend(s)} className="text-xs px-2 py-1 bg-white/10 hover:bg-white/20 rounded-full text-white/60 transition-all">
+                <button type="button" key={idx} onClick={() => handleBartolSend(s)} className="text-xs px-2 py-1 bg-white/10 hover:bg-white/20 rounded-full text-white/60 transition-all">
                   {s}
                 </button>
               ))}

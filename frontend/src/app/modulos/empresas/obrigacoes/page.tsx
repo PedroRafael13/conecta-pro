@@ -327,7 +327,7 @@ export default function ObrigacoesPage() {
             <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />
             Atualizar
           </button>
-          <button className="flex items-center gap-2 bg-[#111b57] hover:bg-[#1a47f5] text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors">
+          <button type="button" className="flex items-center gap-2 bg-[#111b57] hover:bg-[#1a47f5] text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors">
             <Bell className="h-4 w-4" />
             Configurar Alertas
           </button>

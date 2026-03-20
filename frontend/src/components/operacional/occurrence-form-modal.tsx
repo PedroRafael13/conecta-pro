@@ -295,10 +295,11 @@ export function OccurrenceFormModal({
 
         {/* Titulo */}
         <div>
-          <label className="block text-sm font-medium text-[hsl(var(--foreground))] mb-1">
+          <label htmlFor="field-occurrence-title" className="block text-sm font-medium text-[hsl(var(--foreground))] mb-1">
             Titulo <span className="text-red-500">*</span>
           </label>
           <Input
+            id="field-occurrence-title"
             name="title"
             value={formData.title}
             onChange={handleChange}
@@ -310,10 +311,11 @@ export function OccurrenceFormModal({
         {/* Tipo, Severidade e Categoria */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-[hsl(var(--foreground))] mb-1">
+            <label htmlFor="field-occurrence-type" className="block text-sm font-medium text-[hsl(var(--foreground))] mb-1">
               Tipo de Ocorrencia *
             </label>
             <select
+              id="field-occurrence-type"
               name="occurrence_type"
               value={formData.occurrence_type}
               onChange={handleChange}
@@ -328,10 +330,11 @@ export function OccurrenceFormModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[hsl(var(--foreground))] mb-1">
+            <label htmlFor="field-occurrence-severity" className="block text-sm font-medium text-[hsl(var(--foreground))] mb-1">
               Severidade *
             </label>
             <select
+              id="field-occurrence-severity"
               name="severity"
               value={formData.severity}
               onChange={handleChange}
@@ -346,10 +349,11 @@ export function OccurrenceFormModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[hsl(var(--foreground))] mb-1">
+            <label htmlFor="field-occurrence-category" className="block text-sm font-medium text-[hsl(var(--foreground))] mb-1">
               Categoria *
             </label>
             <select
+              id="field-occurrence-category"
               name="category"
               value={formData.category}
               onChange={handleChange}
@@ -368,11 +372,12 @@ export function OccurrenceFormModal({
         <div className="border border-[hsl(var(--border))] rounded-lg p-4 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1 flex items-center gap-1">
+              <label htmlFor="field-occurrence-employee-id" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1 flex items-center gap-1">
                 <User className="w-4 h-4" />
                 Funcionario Envolvido <span className="text-red-500">*</span>
               </label>
               <select
+                id="field-occurrence-employee-id"
                 name="employee_id"
                 value={formData.employee_id}
                 onChange={handleChange}
@@ -393,11 +398,12 @@ export function OccurrenceFormModal({
             </div>
 
             <div>
-              <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1 flex items-center gap-1">
+              <label htmlFor="field-occurrence-post-id" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1 flex items-center gap-1">
                 <MapPin className="w-4 h-4" />
                 Posto <span className="text-red-500">*</span>
               </label>
               <select
+                id="field-occurrence-post-id"
                 name="post_id"
                 value={formData.post_id}
                 onChange={handleChange}
@@ -421,10 +427,11 @@ export function OccurrenceFormModal({
 
         {/* Descricao */}
         <div>
-          <label className="block text-sm font-medium text-[hsl(var(--foreground))] mb-1">
+          <label htmlFor="field-occurrence-description" className="block text-sm font-medium text-[hsl(var(--foreground))] mb-1">
             Descricao Detalhada <span className="text-red-500">*</span>
           </label>
           <textarea
+            id="field-occurrence-description"
             name="description"
             value={formData.description}
             onChange={handleChange}
@@ -441,10 +448,11 @@ export function OccurrenceFormModal({
         {/* Data e Testemunhas */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+            <label htmlFor="field-occurred-at" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
               Data/Hora da Ocorrencia <span className="text-red-500">*</span>
             </label>
             <Input
+              id="field-occurred-at"
               type="datetime-local"
               name="occurred_at"
               value={formData.occurred_at}
@@ -455,10 +463,11 @@ export function OccurrenceFormModal({
           </div>
 
           <div>
-            <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+            <label htmlFor="field-witnesses" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
               Testemunhas
             </label>
             <Input
+              id="field-witnesses"
               name="witnesses"
               value={formData.witnesses}
               onChange={handleChange}

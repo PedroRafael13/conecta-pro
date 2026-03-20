@@ -97,7 +97,7 @@ export default function CertificadosPage() {
 
           <div className="flex gap-2 border-b border-gray-800 pb-0">
             {tabs.map(tab => (
-              <button key={tab} onClick={() => setActiveTab(tab)}
+              <button type="button" key={tab} onClick={() => setActiveTab(tab)}
                 className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === tab ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-white'}`}>
                 {tab} ({certificados.filter(c => tabFilter[tab]?.includes(c.status)).length})
               </button>

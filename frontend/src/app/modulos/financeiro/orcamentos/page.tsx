@@ -124,8 +124,8 @@ function EditableCell({ value, onSave }: EditableCellProps) {
           onBlur={commit}
           className="h-7 w-32 text-right text-sm py-0 px-2"
         />
-        <button onClick={commit} className="text-green-500 hover:text-green-600"><Check size={14} /></button>
-        <button onClick={cancel} className="text-red-400 hover:text-red-500"><X size={14} /></button>
+        <button type="button" onClick={commit} className="text-green-500 hover:text-green-600"><Check size={14} /></button>
+        <button type="button" onClick={cancel} className="text-red-400 hover:text-red-500"><X size={14} /></button>
       </div>
     );
   }

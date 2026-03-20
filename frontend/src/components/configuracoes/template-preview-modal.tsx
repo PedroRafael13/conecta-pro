@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import DOMPurify from 'dompurify';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -127,7 +128,7 @@ export function TemplatePreviewModal({
                 <Label className="text-xs text-muted-foreground">HTML</Label>
                 <div
                   className="border rounded p-3 bg-white text-sm mt-1 max-h-[300px] overflow-auto"
-                  dangerouslySetInnerHTML={{ __html: String(result.body_html) }}
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(String(result.body_html)) }}
                 />
               </div>
             ) : null}

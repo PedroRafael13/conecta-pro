@@ -251,7 +251,7 @@ export default function GedClientesPage() {
                         </div>
                       </td>
                       <td className="py-3 px-4">
-                        <button onClick={() => togglePortal(client)} title="Alternar acesso portal">
+                        <button type="button" onClick={() => togglePortal(client)} title="Alternar acesso portal">
                           {client.portal_access_enabled ? (
                             <CheckCircle className="h-5 w-5 text-green-500" />
                           ) : (
@@ -261,10 +261,10 @@ export default function GedClientesPage() {
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-1">
-                          <button onClick={() => openEdit(client)} className="p-1 rounded hover:bg-gray-100" title="Editar">
+                          <button type="button" onClick={() => openEdit(client)} className="p-1 rounded hover:bg-gray-100" title="Editar">
                             <Pencil className="h-4 w-4 text-gray-500" />
                           </button>
-                          <button onClick={() => handleDelete(client.id)} className="p-1 rounded hover:bg-red-50" title="Excluir">
+                          <button type="button" onClick={() => handleDelete(client.id)} className="p-1 rounded hover:bg-red-50" title="Excluir">
                             <Trash2 className="h-4 w-4 text-red-400" />
                           </button>
                         </div>
@@ -285,7 +285,7 @@ export default function GedClientesPage() {
               <h2 className="text-lg font-semibold">
                 {editingId ? 'Editar Cliente' : 'Novo Cliente'}
               </h2>
-              <button onClick={() => setShowModal(false)} className="p-1 rounded hover:bg-gray-100">
+              <button type="button" onClick={() => setShowModal(false)} className="p-1 rounded hover:bg-gray-100">
                 <X className="h-5 w-5 text-gray-400" />
               </button>
             </div>

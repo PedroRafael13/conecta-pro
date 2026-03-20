@@ -14,10 +14,11 @@ export function StepDadosBasicos({ formData, onChange }: StepProps) {
   return (
     <div className="space-y-4">
       <div>
-        <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+        <label htmlFor="field-post-name" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
           Nome do Posto *
         </label>
         <Input
+          id="field-post-name"
           name="name"
           value={formData.name}
           onChange={onChange}
@@ -27,10 +28,11 @@ export function StepDadosBasicos({ formData, onChange }: StepProps) {
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+          <label htmlFor="field-post-type" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
             Tipo de Posto *
           </label>
           <select
+            id="field-post-type"
             name="post_type"
             value={formData.post_type}
             onChange={onChange}
@@ -45,10 +47,11 @@ export function StepDadosBasicos({ formData, onChange }: StepProps) {
           </select>
         </div>
         <div>
-          <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+          <label htmlFor="field-shift-type" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
             Tipo de Turno *
           </label>
           <select
+            id="field-shift-type"
             name="shift_type"
             value={formData.shift_type}
             onChange={onChange}
@@ -64,10 +67,11 @@ export function StepDadosBasicos({ formData, onChange }: StepProps) {
         </div>
       </div>
       <div>
-        <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+        <label htmlFor="field-post-description" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
           Descricao
         </label>
         <textarea
+          id="field-post-description"
           name="description"
           value={formData.description}
           onChange={onChange}
@@ -90,10 +94,11 @@ export function StepLocalizacao({ formData, onChange, isFetchingCep, cepError }:
   return (
     <div className="space-y-4">
       <div>
-        <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+        <label htmlFor="field-post-address" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
           Endereco
         </label>
         <Input
+          id="field-post-address"
           name="address"
           value={formData.address}
           onChange={onChange}
@@ -102,10 +107,11 @@ export function StepLocalizacao({ formData, onChange, isFetchingCep, cepError }:
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+          <label htmlFor="field-post-city" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
             Cidade
           </label>
           <Input
+            id="field-post-city"
             name="city"
             value={formData.city}
             onChange={onChange}
@@ -113,10 +119,11 @@ export function StepLocalizacao({ formData, onChange, isFetchingCep, cepError }:
           />
         </div>
         <div>
-          <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+          <label htmlFor="field-post-state" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
             UF
           </label>
           <select
+            id="field-post-state"
             name="state"
             value={formData.state}
             onChange={onChange}
@@ -132,11 +139,12 @@ export function StepLocalizacao({ formData, onChange, isFetchingCep, cepError }:
         </div>
       </div>
       <div>
-        <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+        <label htmlFor="field-post-zip-code" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
           CEP
         </label>
         <div className="relative">
           <Input
+            id="field-post-zip-code"
             name="zip_code"
             value={formData.zip_code}
             onChange={onChange}
@@ -164,10 +172,11 @@ export function StepConfiguracao({ formData, onChange }: StepProps) {
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+          <label htmlFor="field-required-headcount" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
             Efetivo Necessario *
           </label>
           <Input
+            id="field-required-headcount"
             type="number"
             name="required_headcount"
             value={formData.required_headcount}
@@ -177,10 +186,11 @@ export function StepConfiguracao({ formData, onChange }: StepProps) {
           />
         </div>
         <div>
-          <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+          <label htmlFor="field-break-duration-minutes" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
             Intervalo (minutos)
           </label>
           <Input
+            id="field-break-duration-minutes"
             type="number"
             name="break_duration_minutes"
             value={formData.break_duration_minutes}
@@ -190,10 +200,11 @@ export function StepConfiguracao({ formData, onChange }: StepProps) {
         </div>
       </div>
       <div>
-        <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+        <label htmlFor="field-post-notes" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
           Observacoes sobre o turno
         </label>
         <textarea
+          id="field-post-notes"
           name="notes"
           value={formData.notes}
           onChange={onChange}
@@ -211,10 +222,11 @@ export function StepRequisitos({ formData, onChange }: StepProps) {
   return (
     <div className="space-y-4">
       <div>
-        <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+        <label htmlFor="field-requires-experience-months" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
           Experiencia Minima (meses)
         </label>
         <Input
+          id="field-requires-experience-months"
           type="number"
           name="requires_experience_months"
           value={formData.requires_experience_months}
@@ -269,10 +281,11 @@ export function StepFinanceiro({ formData, onChange }: StepProps) {
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+          <label htmlFor="field-hourly-rate" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
             Valor Hora (R$)
           </label>
           <Input
+            id="field-hourly-rate"
             type="number"
             name="hourly_rate"
             value={formData.hourly_rate}
@@ -283,10 +296,11 @@ export function StepFinanceiro({ formData, onChange }: StepProps) {
           />
         </div>
         <div>
-          <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+          <label htmlFor="field-monthly-cost" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
             Custo Mensal (R$)
           </label>
           <Input
+            id="field-monthly-cost"
             type="number"
             name="monthly_cost"
             value={formData.monthly_cost}
@@ -299,10 +313,11 @@ export function StepFinanceiro({ formData, onChange }: StepProps) {
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+          <label htmlFor="field-night-shift-bonus-percent" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
             Adicional Noturno (%)
           </label>
           <Input
+            id="field-night-shift-bonus-percent"
             type="number"
             name="night_shift_bonus_percent"
             value={formData.night_shift_bonus_percent}
@@ -312,10 +327,11 @@ export function StepFinanceiro({ formData, onChange }: StepProps) {
           />
         </div>
         <div>
-          <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+          <label htmlFor="field-hazard-pay-percent" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
             Periculosidade (%)
           </label>
           <Input
+            id="field-hazard-pay-percent"
             type="number"
             name="hazard_pay_percent"
             value={formData.hazard_pay_percent}
@@ -335,10 +351,11 @@ export function StepContatos({ formData, onChange }: StepProps) {
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+          <label htmlFor="field-supervisor-name" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
             Nome do Supervisor
           </label>
           <Input
+            id="field-supervisor-name"
             name="supervisor_name"
             value={formData.supervisor_name}
             onChange={onChange}
@@ -346,10 +363,11 @@ export function StepContatos({ formData, onChange }: StepProps) {
           />
         </div>
         <div>
-          <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+          <label htmlFor="field-supervisor-phone" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
             Telefone do Supervisor
           </label>
           <Input
+            id="field-supervisor-phone"
             name="supervisor_phone"
             value={formData.supervisor_phone}
             onChange={onChange}
@@ -359,10 +377,11 @@ export function StepContatos({ formData, onChange }: StepProps) {
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+          <label htmlFor="field-emergency-contact" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
             Contato de Emergencia
           </label>
           <Input
+            id="field-emergency-contact"
             name="emergency_contact"
             value={formData.emergency_contact}
             onChange={onChange}
@@ -370,10 +389,11 @@ export function StepContatos({ formData, onChange }: StepProps) {
           />
         </div>
         <div>
-          <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+          <label htmlFor="field-emergency-phone" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
             Telefone de Emergencia
           </label>
           <Input
+            id="field-emergency-phone"
             name="emergency_phone"
             value={formData.emergency_phone}
             onChange={onChange}

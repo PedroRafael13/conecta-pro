@@ -14,10 +14,11 @@ export function DiaristPagamentoTab({ formData, onChange }: DiaristPagamentoTabP
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+          <label htmlFor="field-valor-diaria" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
             Valor da Diaria (R$) *
           </label>
           <Input
+            id="field-valor-diaria"
             type="number"
             name="valor_diaria"
             value={formData.valor_diaria}
@@ -29,10 +30,11 @@ export function DiaristPagamentoTab({ formData, onChange }: DiaristPagamentoTabP
           />
         </div>
         <div>
-          <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+          <label htmlFor="field-valor-hora-extra" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
             Valor Hora Extra (R$)
           </label>
           <Input
+            id="field-valor-hora-extra"
             type="number"
             name="valor_hora_extra"
             value={formData.valor_hora_extra}
@@ -53,10 +55,11 @@ export function DiaristPagamentoTab({ formData, onChange }: DiaristPagamentoTabP
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+            <label htmlFor="field-banco" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
               Banco
             </label>
             <Input
+              id="field-banco"
               name="banco"
               value={formData.banco}
               onChange={onChange}
@@ -64,10 +67,11 @@ export function DiaristPagamentoTab({ formData, onChange }: DiaristPagamentoTabP
             />
           </div>
           <div>
-            <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+            <label htmlFor="field-tipo-conta" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
               Tipo de Conta
             </label>
             <select
+              id="field-tipo-conta"
               name="tipo_conta"
               value={formData.tipo_conta}
               onChange={onChange}
@@ -79,10 +83,11 @@ export function DiaristPagamentoTab({ formData, onChange }: DiaristPagamentoTabP
             </select>
           </div>
           <div>
-            <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+            <label htmlFor="field-agencia" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
               Agencia
             </label>
             <Input
+              id="field-agencia"
               name="agencia"
               value={formData.agencia}
               onChange={onChange}
@@ -90,10 +95,11 @@ export function DiaristPagamentoTab({ formData, onChange }: DiaristPagamentoTabP
             />
           </div>
           <div>
-            <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+            <label htmlFor="field-conta" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
               Conta
             </label>
             <Input
+              id="field-conta"
               name="conta"
               value={formData.conta}
               onChange={onChange}
@@ -101,10 +107,11 @@ export function DiaristPagamentoTab({ formData, onChange }: DiaristPagamentoTabP
             />
           </div>
           <div className="col-span-2">
-            <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+            <label htmlFor="field-pix" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
               Chave PIX
             </label>
             <Input
+              id="field-pix"
               name="pix"
               value={formData.pix}
               onChange={onChange}

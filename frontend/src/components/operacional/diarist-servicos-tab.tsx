@@ -73,10 +73,11 @@ export function DiaristServicosTab({
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+          <label htmlFor="field-hora-inicio-disponivel" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
             Horario Inicio
           </label>
           <Input
+            id="field-hora-inicio-disponivel"
             type="time"
             name="hora_inicio_disponivel"
             value={formData.hora_inicio_disponivel}
@@ -84,10 +85,11 @@ export function DiaristServicosTab({
           />
         </div>
         <div>
-          <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+          <label htmlFor="field-hora-fim-disponivel" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
             Horario Fim
           </label>
           <Input
+            id="field-hora-fim-disponivel"
             type="time"
             name="hora_fim_disponivel"
             value={formData.hora_fim_disponivel}
@@ -97,10 +99,11 @@ export function DiaristServicosTab({
       </div>
 
       <div>
-        <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+        <label htmlFor="field-experiencia-anos" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
           Anos de Experiencia
         </label>
         <Input
+          id="field-experiencia-anos"
           type="number"
           name="experiencia_anos"
           value={formData.experiencia_anos}

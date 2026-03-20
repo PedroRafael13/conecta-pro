@@ -52,11 +52,11 @@ export function useNotificationWebSocket(options: WebSocketOptions = {}) {
    * Obtém URL do WebSocket baseado no ambiente
    */
   const getWebSocketUrl = useCallback(() => {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = window.location.hostname;
-    const port = process.env.NODE_ENV === 'development' ? '8080' : window.location.port;
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || window.location.origin;
+    const parsed = new URL(apiUrl);
+    const protocol = parsed.protocol === 'https:' ? 'wss:' : 'ws:';
 
-    return `${protocol}//${host}:${port}/ws/notifications`;
+    return `${protocol}//${parsed.host}/ws/notifications`;
   }, []);
 
   /**

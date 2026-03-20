@@ -47,7 +47,7 @@ export default function FechamentoPage() {
             <p className="text-gray-500 mt-1">Controle de fechamento do ponto por competencia</p>
           </div>
         </div>
-        <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">
+        <button type="button" className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">
           <Download className="h-4 w-4" />
           Relatorio Geral
         </button>
@@ -127,7 +127,7 @@ export default function FechamentoPage() {
       </Card>
 
       <div className="flex justify-end gap-3">
-        <button className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">
+        <button type="button" className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">
           Revisar Pendencias
         </button>
         <button

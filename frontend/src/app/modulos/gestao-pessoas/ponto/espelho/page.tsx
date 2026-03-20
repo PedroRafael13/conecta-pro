@@ -39,11 +39,11 @@ export default function EspelhoPontoPage() {
           <h1 className="text-2xl font-bold text-gray-900">Espelho de Ponto</h1>
         </div>
         <div className="flex gap-2">
-          <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">
+          <button type="button" className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">
             <Printer className="h-4 w-4" />
             Imprimir
           </button>
-          <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
+          <button type="button" className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
             <Download className="h-4 w-4" />
             Exportar PDF
           </button>
@@ -54,11 +54,11 @@ export default function EspelhoPontoPage() {
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-lg font-semibold">Competencia</CardTitle>
           <div className="flex items-center gap-4">
-            <button className="p-1 hover:bg-gray-100 rounded">
+            <button type="button" className="p-1 hover:bg-gray-100 rounded">
               <ChevronLeft className="h-5 w-5 text-gray-600" />
             </button>
             <span className="text-sm font-medium text-gray-700 min-w-[120px] text-center">{mesAtual}</span>
-            <button className="p-1 hover:bg-gray-100 rounded">
+            <button type="button" className="p-1 hover:bg-gray-100 rounded">
               <ChevronRight className="h-5 w-5 text-gray-600" />
             </button>
           </div>

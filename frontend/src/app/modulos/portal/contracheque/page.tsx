@@ -122,7 +122,7 @@ export default function ContrachequePortalPage() {
               </table>
             </div>
           )}
-          <button onClick={() => setSelectedPayslip(null)} className="mt-4 px-4 py-2 bg-gray-100 rounded-lg text-sm hover:bg-gray-200">Fechar</button>
+          <button type="button" onClick={() => setSelectedPayslip(null)} className="mt-4 px-4 py-2 bg-gray-100 rounded-lg text-sm hover:bg-gray-200">Fechar</button>
         </div>
       )}
     </div>

@@ -161,7 +161,7 @@ export default function KitDetailPage() {
     return (
       <div className="p-6 text-center text-gray-500">
         Kit nao encontrado.
-        <button onClick={() => router.back()} className="ml-2 text-blue-600 hover:underline">
+        <button type="button" onClick={() => router.back()} className="ml-2 text-blue-600 hover:underline">
           Voltar
         </button>
       </div>

@@ -975,7 +975,7 @@ export default function FinanceiroPage() {
                       <p className="text-xs text-[hsl(var(--muted-foreground))]">Faça uma pergunta financeira</p>
                       <div className="flex flex-wrap gap-1 justify-center mt-2">
                         {['Qual minha margem atual?','Tenho inadimplência?','Como melhorar o fluxo?'].map(q => (
-                          <button key={q} onClick={() => setChatInput(q)} className="text-xs px-2 py-1 rounded-full bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border border-indigo-200">{q}</button>
+                          <button type="button" key={q} onClick={() => setChatInput(q)} className="text-xs px-2 py-1 rounded-full bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border border-indigo-200">{q}</button>
                         ))}
                       </div>
                     </div>

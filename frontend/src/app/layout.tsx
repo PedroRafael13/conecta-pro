@@ -39,8 +39,16 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="Conecta PRO" />
       </head>
       <body className="min-h-screen bg-[hsl(var(--background))] antialiased">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:rounded-lg focus:bg-[hsl(var(--primary))] focus:text-[hsl(var(--primary-foreground))] focus:text-sm focus:font-medium focus:outline-none focus:ring-2 focus:ring-offset-2"
+        >
+          Pular para o conteudo principal
+        </a>
         <Providers>
-          {children}
+          <main id="main-content">
+            {children}
+          </main>
           <Toaster />
           <BartoloClientWrapper />
         </Providers>

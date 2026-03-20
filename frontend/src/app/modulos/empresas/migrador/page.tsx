@@ -370,7 +370,7 @@ function SecaoAnaliseIndividual() {
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
               <div className="flex items-center justify-between mb-3">
                 <p className="font-semibold text-blue-800">Simulação Completa</p>
-                <button onClick={() => setShowSimulacao(false)} className="text-blue-500 hover:text-blue-700">
+                <button type="button" onClick={() => setShowSimulacao(false)} className="text-blue-500 hover:text-blue-700">
                   <ChevronUp className="w-4 h-4" />
                 </button>
               </div>

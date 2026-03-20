@@ -28,10 +28,11 @@ export function DiaristDadosPessoaisTab({
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div className="col-span-2">
-          <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+          <label htmlFor="field-nome" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
             Nome Completo *
           </label>
           <Input
+            id="field-nome"
             name="nome"
             value={formData.nome}
             onChange={onChange}
@@ -40,11 +41,12 @@ export function DiaristDadosPessoaisTab({
           />
         </div>
         <div>
-          <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+          <label htmlFor="field-cpf" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
             CPF * {cpfStatus === 'found' && <span className="text-green-500 text-xs ml-1">- Dados encontrados</span>}
           </label>
           <div className="relative">
             <Input
+              id="field-cpf"
               value={formData.cpf}
               onChange={onCPFChange}
               placeholder="000.000.000-00"
@@ -64,10 +66,11 @@ export function DiaristDadosPessoaisTab({
           </div>
         </div>
         <div>
-          <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+          <label htmlFor="field-rg" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
             RG
           </label>
           <Input
+            id="field-rg"
             name="rg"
             value={formData.rg}
             onChange={onChange}
@@ -75,10 +78,11 @@ export function DiaristDadosPessoaisTab({
           />
         </div>
         <div>
-          <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+          <label htmlFor="field-data-nascimento" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
             Data de Nascimento
           </label>
           <Input
+            id="field-data-nascimento"
             type="date"
             name="data_nascimento"
             value={formData.data_nascimento}
@@ -86,10 +90,11 @@ export function DiaristDadosPessoaisTab({
           />
         </div>
         <div>
-          <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+          <label htmlFor="field-email" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
             Email
           </label>
           <Input
+            id="field-email"
             type="email"
             name="email"
             value={formData.email}
@@ -98,10 +103,11 @@ export function DiaristDadosPessoaisTab({
           />
         </div>
         <div>
-          <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+          <label htmlFor="field-telefone" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
             Telefone
           </label>
           <Input
+            id="field-telefone"
             value={formData.telefone}
             onChange={onPhoneChange('telefone')}
             placeholder="(00) 00000-0000"
@@ -109,10 +115,11 @@ export function DiaristDadosPessoaisTab({
           />
         </div>
         <div>
-          <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+          <label htmlFor="field-telefone-emergencia" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
             Telefone Emergencia
           </label>
           <Input
+            id="field-telefone-emergencia"
             value={formData.telefone_emergencia}
             onChange={onPhoneChange('telefone_emergencia')}
             placeholder="(00) 00000-0000"
@@ -128,10 +135,11 @@ export function DiaristDadosPessoaisTab({
         </div>
         <div className="grid grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+            <label htmlFor="field-cep" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
               CEP
             </label>
             <Input
+              id="field-cep"
               value={formData.cep}
               onChange={onCEPChange}
               placeholder="00000-000"
@@ -139,10 +147,11 @@ export function DiaristDadosPessoaisTab({
             />
           </div>
           <div className="col-span-2">
-            <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+            <label htmlFor="field-endereco" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
               Endereco
             </label>
             <Input
+              id="field-endereco"
               name="endereco"
               value={formData.endereco}
               onChange={onChange}
@@ -150,10 +159,11 @@ export function DiaristDadosPessoaisTab({
             />
           </div>
           <div>
-            <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+            <label htmlFor="field-cidade" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
               Cidade
             </label>
             <Input
+              id="field-cidade"
               name="cidade"
               value={formData.cidade}
               onChange={onChange}
@@ -161,10 +171,11 @@ export function DiaristDadosPessoaisTab({
             />
           </div>
           <div>
-            <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+            <label htmlFor="field-estado" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
               Estado
             </label>
             <select
+              id="field-estado"
               name="estado"
               value={formData.estado}
               onChange={onChange}

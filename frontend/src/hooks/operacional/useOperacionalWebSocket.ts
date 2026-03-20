@@ -71,12 +71,10 @@ export function useOperacionalWebSocket(
 
   const getWsUrl = useCallback((): string => {
     if (typeof window === 'undefined') return '';
-    const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = window.location.hostname;
-    const port =
-      process.env.NODE_ENV === 'development' ? '8080' : window.location.port;
-    const portStr = port ? `:${port}` : '';
-    return `${proto}//${host}${portStr}/ws/notifications/${room}`;
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || window.location.origin;
+    const parsed = new URL(apiUrl);
+    const proto = parsed.protocol === 'https:' ? 'wss:' : 'ws:';
+    return `${proto}//${parsed.host}/ws/notifications/${room}`;
   }, [room]);
 
   const connect = useCallback(() => {

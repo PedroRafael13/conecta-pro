@@ -615,7 +615,7 @@ export default function DashboardMultiEmpresaPage() {
                             <span>Próxima: {contabil?.exportacao_contador.proxima_exportacao}</span>
                           </div>
                         </div>
-                        <button className="flex items-center gap-2 px-4 py-2 bg-[#111b57] hover:bg-[#1a47f5] text-white text-sm rounded-lg transition-colors">
+                        <button type="button" className="flex items-center gap-2 px-4 py-2 bg-[#111b57] hover:bg-[#1a47f5] text-white text-sm rounded-lg transition-colors">
                           <Download className="w-4 h-4" />
                           Exportar Agora
                         </button>
