@@ -89,3 +89,4 @@ backend/.env
 *.env
 frontend/public/models/
 frontend/public/models/face_recognition_model-shard*
+monitoring/textfile_collector/*.prom
