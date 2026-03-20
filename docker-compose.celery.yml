@@ -11,6 +11,7 @@ services:
     image: conecta-pro-backend:latest
     container_name: conecta-pro-celery-priority
     restart: unless-stopped
+    stop_grace_period: 30s
     command: celery -A celery_app worker --hostname=priority@%h --queues=gov.esocial,gov.fgts --concurrency=2 --loglevel=INFO
     environment:
       CELERY_BROKER_URL: redis://:${REDIS_PASSWORD:-conecta_redis_2024}@redis:6379/0
@@ -18,6 +19,8 @@ services:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-conecta_pro}
       REDIS_URL: redis://:${REDIS_PASSWORD:-conecta_redis_2024}@redis:6379/1
       LOG_LEVEL: INFO
+      DATABASE_POOL_SIZE: 3
+      DATABASE_MAX_OVERFLOW: 5
     depends_on:
       redis:
         condition: service_healthy
@@ -42,6 +45,7 @@ services:
     image: conecta-pro-backend:latest
     container_name: conecta-pro-celery-sefaz
     restart: unless-stopped
+    stop_grace_period: 30s
     command: celery -A celery_app worker --hostname=sefaz@%h --queues=gov.sefaz.nfe,gov.sefaz.cte,gov.sefaz.mdfe --concurrency=3 --loglevel=INFO
     environment:
       CELERY_BROKER_URL: redis://:${REDIS_PASSWORD:-conecta_redis_2024}@redis:6379/0
@@ -49,6 +53,8 @@ services:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-conecta_pro}
       REDIS_URL: redis://:${REDIS_PASSWORD:-conecta_redis_2024}@redis:6379/1
       LOG_LEVEL: INFO
+      DATABASE_POOL_SIZE: 3
+      DATABASE_MAX_OVERFLOW: 5
     depends_on:
       redis:
         condition: service_healthy
@@ -80,6 +86,8 @@ services:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-conecta_pro}
       REDIS_URL: redis://:${REDIS_PASSWORD:-conecta_redis_2024}@redis:6379/1
       LOG_LEVEL: INFO
+      DATABASE_POOL_SIZE: 3
+      DATABASE_MAX_OVERFLOW: 5
     depends_on:
       redis:
         condition: service_healthy
@@ -111,6 +119,8 @@ services:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-conecta_pro}
       REDIS_URL: redis://:${REDIS_PASSWORD:-conecta_redis_2024}@redis:6379/1
       LOG_LEVEL: INFO
+      DATABASE_POOL_SIZE: 3
+      DATABASE_MAX_OVERFLOW: 5
     depends_on:
       redis:
         condition: service_healthy
@@ -144,6 +154,8 @@ services:
       LOG_LEVEL: INFO
       SOLIDES_API_TOKEN: ${SOLIDES_API_TOKEN}
       SOLIDES_WEBHOOK_SECRET: ${SOLIDES_WEBHOOK_SECRET}
+      DATABASE_POOL_SIZE: 3
+      DATABASE_MAX_OVERFLOW: 5
     depends_on:
       redis:
         condition: service_healthy
@@ -175,6 +187,8 @@ services:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-conecta_pro}
       REDIS_URL: redis://:${REDIS_PASSWORD:-conecta_redis_2024}@redis:6379/1
       LOG_LEVEL: INFO
+      DATABASE_POOL_SIZE: 3
+      DATABASE_MAX_OVERFLOW: 5
     depends_on:
       redis:
         condition: service_healthy
@@ -207,6 +221,8 @@ services:
       REDIS_URL: redis://:${REDIS_PASSWORD:-conecta_redis_2024}@redis:6379/1
       LOG_LEVEL: INFO
       C_FORCE_ROOT: "true"
+      DATABASE_POOL_SIZE: 2
+      DATABASE_MAX_OVERFLOW: 3
     depends_on:
       redis:
         condition: service_healthy

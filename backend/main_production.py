@@ -10,14 +10,14 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
-from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-from slowapi.util import get_remote_address
 from starlette.middleware.base import BaseHTTPMiddleware
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 from core.config import settings
 from core.logging import configure_logging, logger
+from core.rate_limit import limiter
 
 # =============================================================================
 # SENTRY INITIALIZATION
@@ -63,10 +63,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         return response
 
 
-# =============================================================================
-# RATE LIMITER
-# =============================================================================
-limiter = Limiter(key_func=get_remote_address, default_limits=["200/minute"])
+# Rate limiter importado de core.rate_limit (usa Redis, headers habilitados)
 
 
 @asynccontextmanager
@@ -92,12 +89,15 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     logger.info("Conexoes fechadas")
 
 
+_is_production = settings.environment == "production"
+
 app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
     description="Sistema ERP completo para gestao empresarial",
-    docs_url="/docs",
-    redoc_url="/redoc",
+    docs_url=None if _is_production else "/docs",
+    redoc_url=None if _is_production else "/redoc",
+    openapi_url=None if _is_production else "/openapi.json",
     lifespan=lifespan,
 )
 
@@ -189,19 +189,27 @@ async def health_check_detailed():
     statuses = [c["status"] for c in checks.values()]
     if all(s == "healthy" for s in statuses):
         overall = "healthy"
+        status_code = 200
     elif "unhealthy" in statuses:
         overall = "unhealthy"
+        status_code = 503
     else:
         overall = "degraded"
+        status_code = 200
 
-    return {
-        "status": overall,
-        "app": settings.app_name,
-        "version": settings.app_version,
-        "environment": settings.environment,
-        "checks": checks,
-        "timestamp": time.time(),
-    }
+    from fastapi.responses import JSONResponse
+
+    return JSONResponse(
+        status_code=status_code,
+        content={
+            "status": overall,
+            "app": settings.app_name,
+            "version": settings.app_version,
+            "environment": settings.environment,
+            "checks": checks,
+            "timestamp": time.time(),
+        },
+    )
 
 
 @app.get("/", tags=["Root"])
