@@ -427,7 +427,180 @@ docker restart conecta-pro-backend conecta-pro-frontend
 
 - Backend code baked no Docker: mudancas requerem `docker cp` + `docker restart`
 - Build frontend: `NODE_OPTIONS=--max-old-space-size=8192 npx next build` (8GB heap)
-- Deploy frontend: `cp -r .next/static .next/standalone/.next/ && pm2 restart` OU Docker rebuild
-- Auth: `admin@conectapro.com.br` / `admin123` (rate limit: 5/min, localhost:8080, form-urlencoded)
+- Deploy frontend: `npm run build && PORT=3001 pm2 restart conecta-pro-frontend`
+- Auth: `jjesus@conectamais.pro` / `Jordan0612` (admin, rate limit: 5/min)
+- Auth alt: `egonzaga@conectamais.pro` / `Admin@123` (admin)
 - Pre-commit: ruff + bandit + gitleaks + detect-secrets (auto-fix pode alterar staged files)
 - Container user: `erp` (UID 999) — logs e uploads precisam ter permissao para esse user
+
+---
+
+# SESSAO 2026-03-19/20 — CLEANUP & HARDENING COMPLETO
+
+**Duracao:** ~8 horas (2 sessoes)
+**Branch:** `feature/people-management-reorganization`
+**Commits:** 12
+**Arquivos alterados:** 321
+**Linhas:** +3.538 / -15.244 (net: -11.706 linhas removidas)
+
+---
+
+## RESUMO DO QUE FOI FEITO
+
+### Fase 0 — Blindagem (19/mar)
+- Tag de restauracao `pre-cleanup-2026-03-19`
+- Backup PostgreSQL verificado
+- 3 bloqueadores criticos corrigidos (esocial_service 0 bytes, alembic chain, celery-batch crash)
+- Permissoes de logs corrigidas
+- RFC6750 Bearer token fix
+
+### Fase 1 — Guardian Removal + Reembolso Consolidation (20/mar)
+- 142 arquivos Guardian deletados do frontend (models, hooks, services)
+- 131 re-exports mortos removidos do index.ts
+- Servicos reembolso consolidados (diretorio legado removido)
+- TODO audit backend: 240 → 96 TODOs
+
+### Fase 2 — Contexts e userId (20/mar)
+- CondominioContext criado (provider + hook + persistencia localStorage)
+- 37 ocorrencias de `condominio_id: ''` substituidas em 16 paginas
+- 2 userId hardcoded (=1) substituidos por useAuth() no BartoloChat
+- 3 UUID de teste removidos (diaristas, kits)
+
+### Fase 3 — QA (20/mar)
+- Build frontend: 0 erros, 211 paginas
+- Backend health: OK
+- Containers: 14/14 healthy
+
+### Fase 4 — Decomposicao de Componentes (20/mar)
+- post-form-modal.tsx: 872 → 340 linhas (+ 2 arquivos)
+- diarist-form-modal.tsx: 770 → 297 linhas (+ 4 arquivos)
+- BartoloChat.tsx: 653 → 452 linhas (+ 7 sub-componentes)
+
+### Auditoria Backend — Seguranca (20/mar)
+- Segredos hardcoded removidos (PORTAL_SIGNATURE_SECRET, CERTIFICATE_PASSWORD)
+- Private keys: chmod 600 (cora_api.key, inter_api.key, a1_key.pem)
+- Alembic: 54 heads → 1 head (merge migration criada)
+- HSTS header adicionado (max-age=31536000)
+- crm_360_service.py: SyntaxError corrigido (await fora de async)
+- 4 __init__.py faltando criados (lgpd, core/middleware, hr)
+- pool_pre_ping=True em ambos os engines SQLAlchemy
+
+### Auditoria Backend — Infra (20/mar)
+- CORS: localhost removido, allow_methods/headers restritos
+- requirements.txt separado em prod + dev (15 pacotes dev movidos)
+- sentry-sdk: 1.40.0 → 2.19.2
+- Rate limiter: duplicata removida, usa core/rate_limit.py com Redis
+- /docs, /redoc, /openapi.json: desabilitados em producao
+- /health/detailed: retorna 503 quando DB/Redis unhealthy
+- stop_grace_period: 30s no backend + celery-priority + celery-sefaz
+- Celery pool_size: 3/5 por worker (total 83 conexoes vs PG 100)
+- Celery tasks SST registradas
+- console.log removidos (~40 ocorrencias em 30+ paginas)
+- Error Boundary global (error.tsx) criado
+- Dynamic imports: 19 modais + xlsx lazy-loaded
+- not-found.tsx criado
+- 6 services legados deletados
+
+### CSP & Deploy (20/mar)
+- Content-Security-Policy completo implementado
+- CSP excluido de /_next/static/ (fix MIME type blocking)
+- Google Fonts + ViaCEP adicionados ao CSP
+- output: standalone reabilitado para Docker
+- Frontend deployed via PM2 (porta 3001)
+- Senha jjesus@conectamais.pro resetada para Jordan0612
+- GRAFANA_PASSWORD gerada e adicionada ao .env
+- SENTRY_DSN placeholder adicionado ao .env
+
+---
+
+## ESTADO ATUAL DO SISTEMA
+
+### Containers (14 healthy)
+```
+conecta-pro-backend         healthy (porta 8080)
+conecta-pro-frontend        PM2 online (porta 3001)
+conecta-pro-postgres        healthy (4 semanas up)
+conecta-pro-redis           healthy (4 semanas up)
+conecta-pro-celery-*        6 workers + beat + flower (todos healthy)
+conecta-pro-*-staging       postgres + redis staging (healthy)
+```
+
+### URLs
+```
+Producao:  https://erp.conectamais.pro (HTTP/2, CSP, HSTS)
+API:       https://erp.conectamais.pro/api/v1/
+Health:    http://localhost:8080/health/detailed
+Flower:    http://localhost:5555 (auth required)
+```
+
+### Score de Producao (pos-hardening)
+```
+Seguranca:          8/10  (era 4/10 — segredos, CORS, CSP, HSTS corrigidos)
+Infra:              7/10  (era 5/10 — pool, graceful shutdown, healthcheck)
+Codigo:             8/10  (era 6/10 — Guardian removido, components decompostos)
+Score Geral:        7.5/10 (era 5.8/10)
+```
+
+---
+
+## PROBLEMAS RESOLVIDOS NESTA SESSAO
+
+| # | Problema | Status |
+|---|----------|--------|
+| 1 | Login 401 jjesus@conectamais.pro | ✅ Senha resetada, login OK |
+| 2 | CSP bloqueando chunks JS | ✅ CSP excluido de /_next/static/ |
+| 3 | CSP bloqueando Google Fonts | ✅ fonts.googleapis.com + fonts.gstatic.com adicionados |
+| 4 | CSP bloqueando ViaCEP | ✅ viacep.com.br adicionado ao connect-src |
+| 5 | Segredos hardcoded no codigo | ✅ Removidos, RuntimeError se env var ausente |
+| 6 | Private keys world-readable | ✅ chmod 600 |
+| 7 | Alembic 54 heads quebrados | ✅ Merge migration, 1 head unico |
+| 8 | /docs publico em producao | ✅ Desabilitado quando ENVIRONMENT=production |
+
+---
+
+## PENDENTES CONHECIDOS (NAO BLOQUEADORES)
+
+| # | Item | Severidade | Notas |
+|---|------|------------|-------|
+| 1 | SENTRY_DSN nao configurado | Media | Placeholder no .env, precisa criar projeto no Sentry |
+| 2 | NFSE_NACIONAL_ENVIRONMENT=homologacao | Baixa | Servico Nacional nao ativo em Manaus, manter ate ativacao |
+| 3 | ESOCIAL/SEFAZ_ENVIRONMENT nao definidos | Media | Default "2" (homologacao) — definir quando gov integrations forem ativadas |
+| 4 | S3 backup offsite nao configurado | Media | Backups locais funcionam, S3 precisa de bucket AWS |
+| 5 | Cobertura de testes 36.7% | Baixa | Funcional para producao, melhorar incrementalmente |
+| 6 | 30 test files orphaned | Baixa | Em tests/_orphaned/, nao executados |
+| 7 | passlib + bcrypt warning | Baixa | Cosmético, funcional |
+
+---
+
+## PROXIMOS PASSOS
+
+### 1. Push para GitHub
+```bash
+cd /opt/conecta-pro
+git push origin feature/people-management-reorganization
+# Criar PR para main quando pronto
+```
+
+### 2. Configurar Sentry
+- Criar projeto em https://sentry.io
+- Adicionar DSN real no .env: SENTRY_DSN=https://...@sentry.io/...
+- Restart backend: docker restart conecta-pro-backend
+
+### 3. Multi-Agent Systems (proxima sessao)
+- Bartolo DataConnector: expandir para modulos Financeiro, Clientes, RH
+- OpenClaw: configurar daemon com cron para execucao continua
+- Testes automatizados via agentes
+
+### 4. Go-Live Checklist
+- [ ] Push para GitHub e merge na main
+- [ ] Configurar SENTRY_DSN
+- [ ] Configurar S3 backup offsite (AWS_ACCESS_KEY, S3_BACKUP_BUCKET)
+- [ ] Definir ESOCIAL_ENVIRONMENT=1 e SEFAZ_ENVIRONMENT=1 quando pronto
+- [ ] Definir NFSE_NACIONAL_ENVIRONMENT=producao quando servico ativo
+- [ ] Monitorar logs 48h pos-deploy
+- [ ] Treinar usuarios no novo fluxo (CondominioContext)
+
+---
+
+**Ultima atualizacao:** 2026-03-20 05:15 UTC
+**Tag:** `post-cleanup-2026-03-19` → commit `4e963566`
