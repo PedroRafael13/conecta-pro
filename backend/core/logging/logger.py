@@ -160,10 +160,21 @@ def configure_logging() -> None:
 
     # Redireciona stdlib logging para Loguru (captura TODOS os módulos do app)
     intercept_handler = InterceptHandler()
-    for name in ["modules", "core", "api"]:
+    for name in [
+        "modules",
+        "core",
+        "api",
+        "uvicorn",
+        "uvicorn.error",
+        "uvicorn.access",
+        "sqlalchemy.engine",
+        "celery",
+        "celery.worker",
+        "httpx",
+    ]:
         stdlib_logger = logging.getLogger(name)
         stdlib_logger.handlers = [intercept_handler]
-        stdlib_logger.setLevel(logging.DEBUG)
+        stdlib_logger.setLevel(logging.DEBUG if name.startswith(("modules", "core", "api")) else logging.WARNING)
         stdlib_logger.propagate = False
 
 

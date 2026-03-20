@@ -45,6 +45,12 @@ if settings.sentry_dsn:
         attach_stacktrace=True,
     )
     logger.info("Sentry: inicializado")
+else:
+    if settings.environment == "production":
+        logger.warning(
+            "SENTRY_DSN nao configurado — erros de producao nao serao monitorados",
+            action="sentry_missing",
+        )
 
 
 # =============================================================================
@@ -118,7 +124,7 @@ app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(GZipMiddleware, minimum_size=500)
 # ProxyHeaders: confia nos headers X-Forwarded-Proto/X-Forwarded-For do nginx
 # para que redirects 307 usem https:// em vez de http://
-app.add_middleware(ProxyHeadersMiddleware, trusted_hosts=["*"])
+app.add_middleware(ProxyHeadersMiddleware, trusted_hosts=["127.0.0.1", "::1"])
 
 
 @app.get("/health", tags=["Health"])
@@ -464,7 +470,7 @@ try:
 
         api_router.include_router(ged_integration_router, prefix="/ged", tags=["GED - Integracao"])
     except ImportError:
-        pass
+        logger.warning("Modulo GED Integration: falha ao importar (ImportError)")
     logger.info("Modulo Pessoas: OK (Recruitment + Retention + Reimbursement + GED + Integracao)")
 except Exception as e:
     logger.warning(f"Modulo Pessoas: {e}")

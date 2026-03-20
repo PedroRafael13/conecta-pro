@@ -8,6 +8,21 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 DATE=$(date +%Y%m%d_%H%M%S)
+
+# Alerta em caso de falha (set -e faz o script sair no erro, trap captura)
+on_backup_failure() {
+  local exit_code=$?
+  local error_msg="[$(date)] BACKUP FALHOU (exit code: $exit_code)"
+  echo "$error_msg" >> "$PROJECT_DIR/logs/backup.log"
+
+  # Webhook de alerta (configurar BACKUP_ALERT_WEBHOOK no .env)
+  if [ -n "${BACKUP_ALERT_WEBHOOK:-}" ]; then
+    curl -sf -X POST "$BACKUP_ALERT_WEBHOOK" \
+      -H "Content-Type: application/json" \
+      -d "{\"text\":\"🚨 $error_msg — Conecta PRO\"}" 2>/dev/null || true
+  fi
+}
+trap on_backup_failure ERR
 BACKUP_DIR="$PROJECT_DIR/backups/postgresql"
 BACKUP_FILE="$BACKUP_DIR/backup_$DATE.sql.gz"
 LOG_DIR="$PROJECT_DIR/logs"
@@ -17,7 +32,7 @@ RETENTION_DAYS=30
 if [ -f "$PROJECT_DIR/.env" ]; then
   set +e
   # Exportar apenas variáveis necessárias, ignorando linhas problemáticas
-  eval "$(grep -E '^(POSTGRES_USER|POSTGRES_DB|POSTGRES_PASSWORD|S3_BACKUP_BUCKET)=' "$PROJECT_DIR/.env")"
+  eval "$(grep -E '^(POSTGRES_USER|POSTGRES_DB|POSTGRES_PASSWORD|S3_BACKUP_BUCKET|BACKUP_ALERT_WEBHOOK)=' "$PROJECT_DIR/.env")"
   set -e
 else
   echo "ERRO: .env não encontrado em $PROJECT_DIR"
@@ -72,16 +87,24 @@ else
   exit 1
 fi
 
-# 3. Upload para storage offsite (se configurado)
+# 3. Upload para storage offsite (via rclone)
 echo -e "\n${YELLOW}[3/5] Verificando backup offsite...${NC}"
-if command -v aws &> /dev/null && [ -n "${S3_BACKUP_BUCKET:-}" ]; then
+if command -v rclone &> /dev/null && rclone listremotes 2>/dev/null | grep -q "^offsite:"; then
+  if rclone copy "$BACKUP_FILE" "offsite:conecta-pro-backups/postgresql/" --log-level ERROR 2>&1; then
+    echo -e "${GREEN}   Upload offsite OK (rclone → offsite:conecta-pro-backups/postgresql/)${NC}"
+  else
+    echo -e "${YELLOW}   AVISO: Upload offsite falhou${NC}"
+  fi
+elif command -v aws &> /dev/null && [ -n "${S3_BACKUP_BUCKET:-}" ]; then
   if aws s3 cp "$BACKUP_FILE" "s3://$S3_BACKUP_BUCKET/postgresql/" 2>/dev/null; then
     echo -e "${GREEN}   Upload S3 OK${NC}"
   else
     echo -e "${YELLOW}   AVISO: Upload S3 falhou${NC}"
   fi
 else
-  echo -e "${YELLOW}   AVISO: Backup offsite desabilitado (S3 não configurado)${NC}"
+  echo -e "${YELLOW}   AVISO: Backup offsite desabilitado${NC}"
+  echo -e "${YELLOW}   Para ativar, configure: rclone config (crie remote 'offsite')${NC}"
+  echo -e "${YELLOW}   Providers suportados: S3, GCS, Backblaze B2, SFTP, etc.${NC}"
 fi
 
 # 4. Limpar backups antigos (manter últimos 30 dias)

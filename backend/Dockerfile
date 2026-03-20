@@ -66,4 +66,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 EXPOSE ${PORT}
 
 # Comando de início - FastAPI com Uvicorn (versao producao)
-CMD ["uvicorn", "main_production:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["uvicorn", "main_production:app", "--host", "0.0.0.0", "--port", "8080", "--timeout-graceful-shutdown", "25"]

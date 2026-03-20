@@ -265,7 +265,8 @@ async def listar_cats(
             }
             for r in result.fetchall()
         ]
-    except Exception:
+    except Exception as exc:
+        logger.warning("SST listar CATs: %s", exc)
         cats = []
     return {"total": len(cats), "cats": cats}
 
@@ -282,15 +283,15 @@ async def calcular_taxa_acidente(
     try:
         r = await db.execute(sql_text("SELECT count(*) FROM employees WHERE status = 'ativo'"))
         total_colab = r.scalar() or 0
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.warning("SST dashboard: falha ao contar employees: %s", exc)
 
     total_cats = 0
     try:
         r = await db.execute(sql_text("SELECT count(*) FROM gp_cats"))
         total_cats = r.scalar() or 0
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.warning("SST dashboard: falha ao contar CATs: %s", exc)
 
     service = SSTService(db)
     dashboard = await service.get_dashboard()
@@ -368,7 +369,8 @@ async def listar_asos(
             }
             for r in result.fetchall()
         ]
-    except Exception:
+    except Exception as exc:
+        logger.warning("SST listar ASOs: %s", exc)
         asos = []
     return {"total": len(asos), "asos": asos}
 
@@ -452,7 +454,8 @@ async def listar_epis(
             {"delivery_id": r[0], "employee_id": r[1], "epi": r[2], "quantidade": r[3], "ca": r[4], "status": r[5]}
             for r in result.fetchall()
         ]
-    except Exception:
+    except Exception as exc:
+        logger.warning("SST listar EPIs: %s", exc)
         epis = []
     return {"total": len(epis), "epis": epis}
 
@@ -511,7 +514,8 @@ async def listar_riscos(
             {"risk_id": r[0], "posto_id": r[1], "categoria": r[2], "descricao": r[3], "nivel": r[4], "status": r[5]}
             for r in result.fetchall()
         ]
-    except Exception:
+    except Exception as exc:
+        logger.warning("SST listar riscos: %s", exc)
         riscos = []
     return {"total": len(riscos), "riscos": riscos}
 
@@ -588,7 +592,8 @@ async def listar_cipa_membros(
             }
             for r in result.fetchall()
         ]
-    except Exception:
+    except Exception as exc:
+        logger.warning("SST listar membros CIPA: %s", exc)
         membros = []
     return {"total": len(membros), "membros": membros}
 
@@ -611,7 +616,8 @@ async def listar_cipa_reunioes(
             {"reuniao_id": r[0], "data": str(r[1]), "tipo": r[2], "pauta": r[3], "status": r[4]}
             for r in result.fetchall()
         ]
-    except Exception:
+    except Exception as exc:
+        logger.warning("SST listar reunioes CIPA: %s", exc)
         reunioes = []
     return {"total": len(reunioes), "reunioes": reunioes}
 

@@ -17,6 +17,7 @@ engine = create_async_engine(
     pool_size=settings.database_pool_size,
     max_overflow=settings.database_max_overflow,
     pool_pre_ping=True,
+    pool_recycle=1800,
     echo=settings.debug,
 )
 
@@ -62,8 +63,9 @@ async def init_db() -> None:
 
 
 async def close_db() -> None:
-    """Fecha conexões do banco de dados."""
+    """Fecha conexões do banco de dados (async + sync)."""
     await engine.dispose()
+    sync_engine.dispose()
 
 
 # Alias para Celery async tasks
@@ -80,6 +82,7 @@ sync_engine = create_engine(
     pool_size=settings.database_pool_size,
     max_overflow=settings.database_max_overflow,
     pool_pre_ping=True,
+    pool_recycle=1800,
     echo=settings.debug,
 )
 
