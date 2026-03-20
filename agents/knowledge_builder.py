@@ -2,16 +2,14 @@
 """
 Knowledge Builder — Conecta PRO Multi-Agent System
 
-Constrói e atualiza a base de conhecimento do sistema:
-- Mapeia containers Docker e dependências
-- Analisa logs nginx para horários de pico
-- Mapeia módulos frontend → endpoints backend
-- Gera agent_knowledge_base.json
+Mapeia TODOS os 46 modulos do backend, containers, integracoes externas,
+dependencias e trafego. Gera agent_knowledge_base.json.
 
 Uso:
     python3 agents/knowledge_builder.py              # Build completo
-    python3 agents/knowledge_builder.py --discover   # Apenas discovery
-    python3 agents/knowledge_builder.py --traffic    # Apenas análise de tráfego
+    python3 agents/knowledge_builder.py --discover   # Apenas containers
+    python3 agents/knowledge_builder.py --traffic    # Apenas trafego
+    python3 agents/knowledge_builder.py --modules    # Apenas modulos
 """
 
 import json
@@ -19,19 +17,20 @@ import os
 import re
 import subprocess
 import sys
-from collections import Counter, defaultdict
+from collections import Counter
 from datetime import datetime
 from pathlib import Path
 
 PROJECT_DIR = Path("/opt/conecta-pro")
+BACKEND_DIR = PROJECT_DIR / "backend"
+MODULES_DIR = BACKEND_DIR / "modules"
 KB_FILE = PROJECT_DIR / "agent_knowledge_base.json"
 NGINX_LOG = Path("/var/log/nginx/access.log")
 
 
 def run(cmd: str, timeout: int = 30) -> str:
-    """Executa comando shell e retorna stdout."""
     try:
-        result = subprocess.run(
+        result = subprocess.run(  # noqa: S602  # nosec B602
             cmd, shell=True, capture_output=True, text=True, timeout=timeout
         )
         return result.stdout.strip()
@@ -39,129 +38,223 @@ def run(cmd: str, timeout: int = 30) -> str:
         return ""
 
 
+# =============================================================================
+# CONTAINER DISCOVERY
+# =============================================================================
+
+
 def discover_containers() -> list[dict]:
-    """Mapeia todos os containers Docker com status e dependências."""
-    raw = run(
-        "docker ps -a --format '{{.Names}}|{{.Image}}|{{.Status}}|{{.Ports}}'"
-    )
+    raw = run("docker ps -a --format '{{.Names}}|{{.Image}}|{{.Status}}|{{.Ports}}'")
     if not raw:
         return []
 
     containers = []
+    roles = {
+        "postgres": "database", "redis": "cache", "backend": "api",
+        "frontend": "frontend", "celery-beat": "scheduler", "celery": "worker",
+        "flower": "monitor", "prometheus": "monitoring", "grafana": "monitoring",
+        "loki": "logging", "promtail": "logging", "alertmanager": "alerting",
+        "exporter": "exporter", "staging": "staging",
+    }
+
     for line in raw.splitlines():
         parts = line.split("|")
         if len(parts) < 4:
             continue
         name, image, status, ports = parts[0], parts[1], parts[2], parts[3]
 
-        # Determinar role
         role = "unknown"
-        if "postgres" in name and "exporter" not in name and "staging" not in name:
-            role = "database"
-        elif "redis" in name and "exporter" not in name and "staging" not in name:
-            role = "cache"
-        elif "backend" in name and "celery" not in name:
-            role = "api"
-        elif "frontend" in name:
-            role = "frontend"
-        elif "celery-beat" in name:
-            role = "scheduler"
-        elif "celery" in name:
-            role = "worker"
-        elif "flower" in name:
-            role = "monitor"
-        elif "prometheus" in name:
-            role = "monitoring"
-        elif "grafana" in name:
-            role = "monitoring"
-        elif "loki" in name or "promtail" in name:
-            role = "logging"
-        elif "alertmanager" in name:
-            role = "alerting"
-        elif "exporter" in name:
-            role = "exporter"
-        elif "staging" in name:
-            role = "staging"
+        for key, val in roles.items():
+            if key in name and ("exporter" not in name or key == "exporter"):
+                if key in ("postgres", "redis") and ("exporter" in name or "staging" in name):
+                    role = "exporter" if "exporter" in name else "staging"
+                else:
+                    role = val
+                break
 
-        # Health
         health = "unknown"
-        if "healthy" in status.lower():
+        sl = status.lower()
+        if "healthy" in sl:
             health = "healthy"
-        elif "unhealthy" in status.lower():
+        elif "unhealthy" in sl:
             health = "unhealthy"
-        elif "up" in status.lower():
+        elif "up" in sl:
             health = "running"
 
-        containers.append(
-            {
-                "name": name,
-                "image": image.split(":")[0],
-                "role": role,
-                "health": health,
-                "ports": ports if ports else None,
-            }
-        )
+        containers.append({
+            "name": name, "image": image.split(":")[0],
+            "role": role, "health": health,
+            "ports": ports if ports else None,
+        })
 
     return containers
 
 
-def build_dependency_graph(containers: list[dict]) -> dict:
-    """Constrói grafo de dependências entre componentes."""
+# =============================================================================
+# MODULE SCANNER — mapeia todos os 46 modulos
+# =============================================================================
+
+# Criticidade por modulo (baseada em impacto de negocio)
+MODULE_CRITICALITY = {
+    # Critical — indisponibilidade causa perda de receita ou multa
+    "financial": "critical", "operacional": "critical",
+    "government_integrations": "critical", "fiscal": "critical",
+    "fiscal_contabil": "critical",
+    # High — impacta operacao diaria
+    "crm": "high", "hr": "high", "people_management": "high",
+    "clients": "high", "ged": "high", "document_kits": "high",
+    "cct": "high", "empresas": "high",
+    # Medium — degradacao aceitavel por horas
+    "notifications": "medium", "bidding": "medium",
+    "equipment_management": "medium", "recruitment": "medium",
+    "reimbursement": "medium", "analytics": "medium",
+    "reports": "medium", "services": "medium", "campo": "medium",
+    "integrations": "medium", "health_occupational": "medium",
+    "scheduler": "medium", "mobile": "medium",
+    # Low — nao impacta producao diretamente
+    "ai": "low", "audit": "low", "config": "low", "monitoring": "low",
+    "automation": "low", "retention": "low", "security_lgpd": "low",
+    "documents": "low", "fase5": "low", "client_portal": "low",
+    "lgpd": "low",
+    # Scaffold — modulos vazios/placeholder
+    "operacoes": "scaffold", "core": "scaffold", "comercial": "scaffold",
+    "pessoas": "scaffold", "gestao": "scaffold", "financeiro": "scaffold",
+    "tecnico": "scaffold", "inteligencia": "scaffold", "cadastros": "scaffold",
+}
+
+# Integracoes externas por modulo
+EXTERNAL_INTEGRATIONS = {
+    "government_integrations": [
+        {"name": "eSocial", "type": "gov_api", "protocol": "REST/XML", "env": "ESOCIAL_ENVIRONMENT"},
+        {"name": "SEFAZ", "type": "gov_api", "protocol": "SOAP/XML", "env": "SEFAZ_ENVIRONMENT"},
+        {"name": "NFS-e Manaus", "type": "gov_api", "protocol": "SOAP/ABRASF 2.04"},
+        {"name": "NFS-e Nacional", "type": "gov_api", "protocol": "REST/JSON", "env": "NFSE_NACIONAL_ENVIRONMENT"},
+        {"name": "FGTS Digital", "type": "gov_api", "protocol": "REST"},
+        {"name": "EFD-Reinf", "type": "gov_api", "protocol": "XML"},
+        {"name": "DCTFWeb", "type": "gov_api", "protocol": "REST"},
+        {"name": "SPED Fiscal/Contabil", "type": "gov_api", "protocol": "TXT/Layout"},
+        {"name": "Gov.br OAuth", "type": "oauth", "protocol": "OAuth2"},
+        {"name": "e-CAC", "type": "gov_api", "protocol": "REST"},
+        {"name": "Simples Nacional", "type": "gov_api", "protocol": "REST"},
+    ],
+    "integrations": [
+        {"name": "Solides", "type": "hr_platform", "protocol": "REST/Webhook", "env": "SOLIDES_API_TOKEN"},
+        {"name": "Dominio Sistemas (TOTVS)", "type": "accounting", "protocol": "REST"},
+    ],
+    "ai": [
+        {"name": "OpenAI GPT-4", "type": "llm", "protocol": "REST", "env": "OPENAI_API_KEY"},
+        {"name": "Anthropic Claude", "type": "llm", "protocol": "REST", "env": "ANTHROPIC_API_KEY"},
+    ],
+    "campo": [
+        {"name": "ViaCEP", "type": "address_lookup", "protocol": "REST"},
+        {"name": "Google Maps", "type": "geocoding", "protocol": "REST", "env": "GOOGLE_MAPS_API_KEY"},
+    ],
+    "notifications": [
+        {"name": "Evolution API (WhatsApp)", "type": "messaging", "protocol": "REST", "env": "WHATSAPP_API_ENABLED"},
+    ],
+    "financial": [
+        {"name": "Cora Banking", "type": "banking", "protocol": "REST", "env": "CORA_API_KEY"},
+        {"name": "Inter Banking", "type": "banking", "protocol": "REST", "env": "INTER_API_KEY"},
+    ],
+}
+
+
+def scan_module(mod_path: Path) -> dict:
+    """Escaneia um modulo e retorna metadados."""
+    name = mod_path.name
+
+    py_files = list(mod_path.rglob("*.py"))
+    py_files = [f for f in py_files if "__pycache__" not in str(f)]
+
+    total_lines = 0
+    for f in py_files:
+        try:
+            total_lines += sum(1 for _ in open(f))
+        except Exception:
+            pass
+
+    # Contar modelos (classes com __tablename__)
+    model_count = 0
+    model_names = []
+    for f in py_files:
+        try:
+            content = f.read_text()
+            tables = re.findall(r'__tablename__\s*=\s*["\'](\w+)["\']', content)
+            model_count += len(tables)
+            model_names.extend(tables)
+        except Exception:
+            pass
+
+    # Contar controllers/routers
+    controller_files = [f for f in py_files if "controller" in f.name or "router" in f.name]
+
+    # Contar endpoints (@router.get/post/put/delete/patch)
+    endpoint_count = 0
+    for f in py_files:
+        try:
+            content = f.read_text()
+            endpoint_count += len(re.findall(r'@router\.(get|post|put|patch|delete)\(', content))
+        except Exception:
+            pass
+
+    # Detectar dependencias internas (imports de outros modulos)
+    internal_deps = set()
+    for f in py_files:
+        try:
+            content = f.read_text()
+            for m in re.findall(r'from modules\.(\w+)', content):
+                if m != name:
+                    internal_deps.add(m)
+        except Exception:
+            pass
+
+    # Detectar uso de DB, Redis, Celery
+    infra_deps = set()
+    for f in py_files:
+        try:
+            content = f.read_text()
+            if "get_db" in content or "AsyncSession" in content or "Session" in content:
+                infra_deps.add("postgresql")
+            if "redis" in content.lower() or "cache" in content.lower():
+                infra_deps.add("redis")
+            if "celery" in content.lower() or "@shared_task" in content or "delay(" in content:
+                infra_deps.add("celery")
+        except Exception:
+            pass
+
+    criticality = MODULE_CRITICALITY.get(name, "unknown")
+    external = EXTERNAL_INTEGRATIONS.get(name, [])
+
     return {
-        "frontend": {
-            "depends_on": ["backend"],
-            "type": "http",
-            "port": 3001,
-            "note": "PM2 Next.js → Backend API via nginx",
-        },
-        "backend": {
-            "depends_on": ["postgres", "redis"],
-            "type": "tcp",
-            "port": 8080,
-            "note": "FastAPI → PostgreSQL (asyncpg) + Redis (cache/sessions)",
-        },
-        "celery_workers": {
-            "depends_on": ["redis", "postgres"],
-            "type": "amqp",
-            "note": "Celery workers consomem de Redis broker, escrevem em PostgreSQL",
-            "workers": [
-                "celery-batch",
-                "celery-beat",
-                "celery-integrations",
-                "celery-nfse",
-                "celery-operacional",
-                "celery-priority",
-                "celery-sefaz",
-            ],
-        },
-        "postgres": {
-            "depends_on": [],
-            "type": "tcp",
-            "port": 5432,
-            "note": "PostgreSQL 16 — banco principal",
-        },
-        "redis": {
-            "depends_on": [],
-            "type": "tcp",
-            "port": 6379,
-            "note": "Redis 7 — cache, sessions, Celery broker",
-        },
-        "nginx": {
-            "depends_on": ["frontend", "backend"],
-            "type": "http",
-            "ports": [80, 443],
-            "note": "Reverse proxy, SSL termination, rate limiting",
-        },
-        "monitoring": {
-            "depends_on": ["prometheus", "grafana", "loki", "alertmanager"],
-            "type": "http",
-            "note": "Stack de observabilidade",
-        },
+        "name": name,
+        "files": len(py_files),
+        "lines": total_lines,
+        "models": model_count,
+        "tables": model_names[:10],  # Top 10
+        "controllers": len(controller_files),
+        "endpoints": endpoint_count,
+        "criticality": criticality,
+        "internal_dependencies": sorted(internal_deps),
+        "infrastructure": sorted(infra_deps),
+        "external_integrations": external,
     }
 
 
+def scan_all_modules() -> list[dict]:
+    """Escaneia todos os modulos do backend."""
+    modules = []
+    for mod_path in sorted(MODULES_DIR.iterdir()):
+        if mod_path.is_dir() and not mod_path.name.startswith(("__", ".")):
+            modules.append(scan_module(mod_path))
+    return modules
+
+
+# =============================================================================
+# TRAFFIC ANALYSIS
+# =============================================================================
+
+
 def analyze_traffic() -> dict:
-    """Analisa logs nginx para identificar horários de pico e endpoints mais acessados."""
     if not NGINX_LOG.exists():
         return {"error": "nginx log not found", "peak_hours": [], "top_endpoints": []}
 
@@ -170,7 +263,6 @@ def analyze_traffic() -> dict:
     status_counts = Counter()
     total = 0
 
-    # Regex para combined log format
     pattern = re.compile(
         r'\[(\d{2}/\w{3}/\d{4}):(\d{2}):\d{2}:\d{2}.*?"(\w+)\s+(/[^\s]*)\s+HTTP/[\d.]+"'
         r"\s+(\d{3})"
@@ -190,19 +282,19 @@ def analyze_traffic() -> dict:
                 hour_counts[hour] += 1
                 status_counts[status[:1] + "xx"] += 1
 
-                # Normalizar path (remover UUIDs e IDs)
+                # Normalizar path (remover UUIDs)
                 norm = re.sub(
                     r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
-                    "{id}",
-                    path,
+                    "{id}", path,
                 )
                 norm = re.sub(r"/\d+(?=/|$)", "/{id}", norm)
+                # Remover query strings com tokens
+                norm = re.sub(r"\?.*", "", norm)
                 if norm.startswith("/api/"):
                     endpoint_counts[norm] += 1
     except Exception:
         pass
 
-    # Horários de pico (top 5 horas UTC → converter para BRT/AMT)
     peak_hours_utc = [h for h, _ in hour_counts.most_common(5)]
     peak_hours_brt = sorted([(h - 4) % 24 for h in peak_hours_utc])
 
@@ -214,207 +306,131 @@ def analyze_traffic() -> dict:
             {"path": p, "count": c} for p, c in endpoint_counts.most_common(20)
         ],
         "status_distribution": dict(status_counts.most_common()),
-        "analyzed_at": datetime.utcnow().isoformat() + "Z",
+        "analyzed_at": datetime.now(tz=None).astimezone().isoformat(),
     }
 
 
-def map_frontend_to_backend() -> list[dict]:
-    """Mapeia módulos frontend → endpoints backend consumidos."""
-    return [
-        {
-            "frontend_module": "dashboard",
-            "path": "/dashboard",
-            "backend_endpoints": ["/api/v1/operacional", "/api/v1/notifications"],
-            "criticality": "high",
+# =============================================================================
+# DEPENDENCY GRAPH
+# =============================================================================
+
+
+def build_dependency_graph(containers: list[dict]) -> dict:
+    return {
+        "frontend": {"depends_on": ["backend"], "port": 3001},
+        "backend": {"depends_on": ["postgres", "redis"], "port": 8080},
+        "celery_workers": {
+            "depends_on": ["redis", "postgres"],
+            "workers": [
+                "celery-batch", "celery-beat", "celery-integrations",
+                "celery-nfse", "celery-operacional", "celery-priority", "celery-sefaz",
+            ],
         },
-        {
-            "frontend_module": "operacional",
-            "path": "/modulos/operacional",
-            "backend_endpoints": ["/api/v1/operacional"],
-            "criticality": "critical",
-            "note": "252 endpoints — postos, escalas, turnos, alocações, diaristas",
-        },
-        {
-            "frontend_module": "financeiro",
-            "path": "/modulos/financeiro",
-            "backend_endpoints": ["/api/v1/financial"],
-            "criticality": "critical",
-            "note": "466 endpoints — contas, pagamentos, conciliação, compras",
-        },
-        {
-            "frontend_module": "crm",
-            "path": "/modulos/crm",
-            "backend_endpoints": ["/api/v1/crm"],
-            "criticality": "high",
-            "note": "100 endpoints — leads, propostas, contratos",
-        },
-        {
-            "frontend_module": "ged",
-            "path": "/modulos/documentos",
-            "backend_endpoints": ["/api/v1/ged", "/api/v1/document-kits"],
-            "criticality": "high",
-            "note": "193 endpoints — documentos, pastas, kits",
-        },
-        {
-            "frontend_module": "rh",
-            "path": "/modulos/rh",
-            "backend_endpoints": ["/api/v1/people-management", "/api/v1/recruitment"],
-            "criticality": "high",
-            "note": "722 endpoints — DP, folha, ponto, SST, recrutamento",
-        },
-        {
-            "frontend_module": "reembolso",
-            "path": "/modulos/reembolso",
-            "backend_endpoints": ["/api/v1/reimbursements"],
-            "criticality": "medium",
-            "note": "26 endpoints — solicitações, aprovações, pagamentos",
-        },
-        {
-            "frontend_module": "government",
-            "path": "/modulos/fiscal",
-            "backend_endpoints": ["/api/v1/government", "/api/v1/fiscal", "/api/v1/empresas"],
-            "criticality": "critical",
-            "note": "255 endpoints — NFS-e, eSocial, SEFAZ, certidões",
-        },
-        {
-            "frontend_module": "clientes",
-            "path": "/modulos/clientes",
-            "backend_endpoints": ["/api/v1/clients"],
-            "criticality": "high",
-            "note": "50 endpoints — clientes, condomínios, contratos",
-        },
-        {
-            "frontend_module": "equipamentos",
-            "path": "/modulos/equipamentos",
-            "backend_endpoints": ["/api/v1/equipment", "/api/v1/comodatos", "/api/v1/maintenances"],
-            "criticality": "medium",
-            "note": "73 endpoints — equipamentos, comodato, manutenção",
-        },
-        {
-            "frontend_module": "bartolo",
-            "path": "/modulos/assistente",
-            "backend_endpoints": ["/api/v1/ai"],
-            "criticality": "low",
-            "note": "19 endpoints — assistente IA, wizards",
-        },
-        {
-            "frontend_module": "analytics",
-            "path": "/modulos/analytics",
-            "backend_endpoints": ["/api/v1/analytics", "/api/v1/reports"],
-            "criticality": "medium",
-            "note": "64 endpoints — dashboards, KPIs, relatórios",
-        },
-        {
-            "frontend_module": "notificacoes",
-            "path": "/modulos/notificacoes",
-            "backend_endpoints": ["/api/v1/notifications"],
-            "criticality": "medium",
-            "note": "76 endpoints — push, alertas, centro de notificações",
-        },
-        {
-            "frontend_module": "licitacoes",
-            "path": "/modulos/licitacoes",
-            "backend_endpoints": ["/api/v1/bidding"],
-            "criticality": "medium",
-            "note": "87 endpoints — editais, propostas, agentes IA",
-        },
-    ]
+        "postgres": {"depends_on": [], "port": 5432},
+        "redis": {"depends_on": [], "port": 6379},
+        "nginx": {"depends_on": ["frontend", "backend"], "ports": [80, 443]},
+    }
+
+
+# =============================================================================
+# BUILD KNOWLEDGE BASE
+# =============================================================================
 
 
 def build_knowledge_base() -> dict:
-    """Constrói a base de conhecimento completa."""
     print("[*] Discovering containers...")
     containers = discover_containers()
 
     print("[*] Building dependency graph...")
     deps = build_dependency_graph(containers)
 
+    print("[*] Scanning all 46 backend modules...")
+    modules = scan_all_modules()
+
+    # Separar modulos ativos vs scaffold
+    active_modules = [m for m in modules if m["criticality"] != "scaffold"]
+    scaffold_modules = [m for m in modules if m["criticality"] == "scaffold"]
+
+    # Calcular totais
+    total_endpoints = sum(m["endpoints"] for m in modules)
+    total_models = sum(m["models"] for m in modules)
+    total_lines = sum(m["lines"] for m in modules)
+
+    print(f"    Modulos ativos: {len(active_modules)}")
+    print(f"    Modulos scaffold: {len(scaffold_modules)}")
+    print(f"    Total endpoints: {total_endpoints}")
+    print(f"    Total modelos: {total_models}")
+    print(f"    Total linhas: {total_lines:,}")
+
     print("[*] Analyzing traffic patterns...")
     traffic = analyze_traffic()
 
-    print("[*] Mapping frontend → backend...")
-    modules = map_frontend_to_backend()
+    # Coletar todas as integracoes externas
+    all_integrations = {}
+    for m in modules:
+        for ext in m.get("external_integrations", []):
+            all_integrations[ext["name"]] = {
+                "module": m["name"],
+                **ext,
+            }
 
     kb = {
-        "version": "1.0.0",
-        "built_at": datetime.utcnow().isoformat() + "Z",
+        "version": "2.0.0",
+        "built_at": datetime.now(tz=None).astimezone().isoformat(),
         "system": {
             "name": "Conecta PRO",
             "environment": "production",
             "domain": "erp.conectamais.pro",
-            "total_endpoints": 2847,
+            "total_modules": len(modules),
+            "active_modules": len(active_modules),
+            "scaffold_modules": len(scaffold_modules),
+            "total_endpoints": total_endpoints,
+            "total_models": total_models,
+            "total_lines": total_lines,
         },
         "containers": containers,
         "dependencies": deps,
+        "modules": {m["name"]: m for m in active_modules},
+        "scaffold_modules": [m["name"] for m in scaffold_modules],
+        "external_integrations": all_integrations,
         "criticality_order": [
             {
                 "level": "critical",
+                "modules": [m["name"] for m in active_modules if m["criticality"] == "critical"],
                 "components": ["postgres", "redis", "backend", "nginx"],
-                "modules": ["financeiro", "operacional", "government"],
-                "note": "Indisponibilidade causa perda de receita ou multas",
             },
             {
                 "level": "high",
+                "modules": [m["name"] for m in active_modules if m["criticality"] == "high"],
                 "components": ["celery_workers", "frontend"],
-                "modules": ["crm", "rh", "ged", "clientes", "dashboard"],
-                "note": "Impacta operação diária mas não causa perda imediata",
             },
             {
                 "level": "medium",
-                "components": ["flower", "monitoring"],
-                "modules": ["reembolso", "equipamentos", "analytics", "notificacoes", "licitacoes"],
-                "note": "Degradação aceitável por horas",
+                "modules": [m["name"] for m in active_modules if m["criticality"] == "medium"],
+                "components": ["flower"],
             },
             {
                 "level": "low",
-                "components": ["staging", "exporters"],
-                "modules": ["bartolo"],
-                "note": "Não impacta produção",
+                "modules": [m["name"] for m in active_modules if m["criticality"] == "low"],
+                "components": ["monitoring", "staging"],
             },
         ],
+        "traffic": traffic,
         "peak_hours": {
             "known_brt": ["07:00-09:00", "17:00-19:00"],
-            "note": "Horário comercial Manaus (AMT/BRT-1). Evitar deploys nesses horários.",
             "from_logs": traffic.get("peak_hours_brt", []),
         },
-        "traffic": traffic,
-        "frontend_backend_map": modules,
         "operational_rules": [
-            {
-                "rule": "no_deploy_during_peak",
-                "description": "Não executar deploys entre 07:00-09:00 e 17:00-19:00 BRT",
-                "severity": "high",
-            },
-            {
-                "rule": "backup_before_deploy",
-                "description": "Sempre fazer backup do banco antes de qualquer deploy",
-                "severity": "critical",
-            },
-            {
-                "rule": "backend_before_frontend",
-                "description": "Deploiar backend antes do frontend (APIs devem existir antes do UI consumir)",
-                "severity": "high",
-            },
-            {
-                "rule": "restart_celery_monthly",
-                "description": "Reiniciar workers Celery mensalmente (memory leaks observados após 30d)",
-                "severity": "medium",
-            },
-            {
-                "rule": "check_disk_before_build",
-                "description": "Verificar disco antes de build Docker (build cache pode consumir 80GB+)",
-                "severity": "high",
-            },
-            {
-                "rule": "financial_zone_proibida",
-                "description": "Não editar backend/modules/financial/ sem testes — compliance fiscal",
-                "severity": "critical",
-            },
-            {
-                "rule": "government_zone_proibida",
-                "description": "Não editar backend/modules/government_integrations/ — regulatório",
-                "severity": "critical",
-            },
+            {"rule": "no_deploy_during_peak", "severity": "high",
+             "description": "Nao executar deploys entre 07:00-09:00 e 17:00-19:00 BRT"},
+            {"rule": "backup_before_deploy", "severity": "critical",
+             "description": "Sempre fazer backup do banco antes de qualquer deploy"},
+            {"rule": "backend_before_frontend", "severity": "high",
+             "description": "Deploiar backend antes do frontend"},
+            {"rule": "financial_zone_proibida", "severity": "critical",
+             "description": "Nao editar backend/modules/financial/ sem testes — compliance fiscal"},
+            {"rule": "government_zone_proibida", "severity": "critical",
+             "description": "Nao editar backend/modules/government_integrations/ — regulatorio"},
         ],
     }
 
@@ -422,13 +438,16 @@ def build_knowledge_base() -> dict:
 
 
 def save_kb(kb: dict) -> None:
-    """Salva knowledge base em JSON."""
     with open(KB_FILE, "w") as f:
         json.dump(kb, f, indent=2, ensure_ascii=False)
-    print(f"[+] Knowledge base salva: {KB_FILE}")
+        f.write("\n")
+    print(f"\n[+] Knowledge base salva: {KB_FILE}")
+    print(f"    Versao: {kb['version']}")
+    print(f"    Modulos mapeados: {kb['system']['active_modules']}/{kb['system']['total_modules']}")
+    print(f"    Endpoints: {kb['system']['total_endpoints']}")
+    print(f"    Modelos: {kb['system']['total_models']}")
+    print(f"    Integracoes externas: {len(kb['external_integrations'])}")
     print(f"    Containers: {len(kb['containers'])}")
-    print(f"    Módulos mapeados: {len(kb['frontend_backend_map'])}")
-    print(f"    Regras operacionais: {len(kb['operational_rules'])}")
     if kb["traffic"].get("total_requests"):
         print(f"    Requests analisados: {kb['traffic']['total_requests']}")
 
@@ -437,11 +456,14 @@ def main():
     mode = sys.argv[1] if len(sys.argv) > 1 else "--full"
 
     if mode == "--discover":
-        containers = discover_containers()
-        print(json.dumps(containers, indent=2))
+        print(json.dumps(discover_containers(), indent=2))
     elif mode == "--traffic":
-        traffic = analyze_traffic()
-        print(json.dumps(traffic, indent=2))
+        print(json.dumps(analyze_traffic(), indent=2))
+    elif mode == "--modules":
+        modules = scan_all_modules()
+        for m in modules:
+            if m["criticality"] != "scaffold":
+                print(f"  {m['name']:30s} | {m['endpoints']:4d} endpoints | {m['models']:3d} models | {m['lines']:6d} lines | {m['criticality']}")
     else:
         kb = build_knowledge_base()
         save_kb(kb)
