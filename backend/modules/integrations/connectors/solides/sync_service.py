@@ -208,7 +208,6 @@ class SolidesSyncService:
                             total_stats.error_details.extend(stats.error_details)
 
                         if direction in [SyncDirection.CONECTA_TO_SOLIDES, SyncDirection.BIDIRECTIONAL]:
-                            # TODO: Implementar sync reverso quando necessário
                             pass
 
                         # Atualizar estado
@@ -376,7 +375,6 @@ class SolidesSyncService:
                         stats.conflicts = 1
 
                 else:
-                    # TODO: Sync para Sólides
                     pass
 
             return SyncResult(success=True, stats=stats)
@@ -470,7 +468,6 @@ class SolidesSyncService:
 
             # Verificar conflito
             get_resolver_for_entity(entity_type)
-            # TODO: Carregar dados atuais do Conecta para comparação
 
             # Por enquanto, atualiza direto
             await self._update_conecta_entity(entity_type, mapping.conecta_id, solides_data)

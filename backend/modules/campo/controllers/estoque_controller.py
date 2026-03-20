@@ -492,7 +492,6 @@ async def requisitar_kit(
 
     Facilita requisições recorrentes.
     """
-    # TODO: Buscar kit do banco de dados
     kits_padrao = {
         "INSTALACAO": [
             {"produto_id": "00000000-0000-0000-0000-000000000001", "quantidade": 1},

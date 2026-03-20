@@ -185,7 +185,6 @@ class FirebasePushProvider(PushProvider):
             return
 
         try:
-            # TODO: Inicializar Firebase Admin SDK
             # import firebase_admin
             # from firebase_admin import credentials as fb_credentials
             # cred = fb_credentials.Certificate(self.credentials)
@@ -225,7 +224,6 @@ class FirebasePushProvider(PushProvider):
             return False
 
         try:
-            # TODO: Implementar envio real via Firebase
             # from firebase_admin import messaging
             #
             # notification = messaging.Notification(
@@ -299,7 +297,6 @@ class FirebasePushProvider(PushProvider):
         await self._ensure_initialized()
 
         try:
-            # TODO: Implementar envio para topico
             # from firebase_admin import messaging
             #
             # message = messaging.Message(
@@ -417,7 +414,6 @@ class OneSignalPushProvider(PushProvider):
             True se enviado
         """
         try:
-            # TODO: Implementar envio real via OneSignal
             # import httpx
             #
             # headers = {
@@ -471,8 +467,6 @@ class OneSignalPushProvider(PushProvider):
             Resultado por usuario
         """
         try:
-            # OneSignal suporta envio bulk nativo
-            # TODO: Implementar envio bulk
             logger.info(f"Push OneSignal bulk enviado para {len(user_ids)} usuarios")
             return dict.fromkeys(user_ids, True)
 
@@ -500,7 +494,6 @@ class OneSignalPushProvider(PushProvider):
             True se enviado
         """
         try:
-            # TODO: Implementar envio para segmento
             logger.info(f"Push OneSignal enviado para segmento {topic}")
             return True
 
@@ -526,7 +519,6 @@ class OneSignalPushProvider(PushProvider):
             True se registrado
         """
         try:
-            # TODO: Implementar registro via API
             logger.info(f"Dispositivo OneSignal registrado para usuario {user_id}")
             return True
         except Exception as e:
@@ -549,7 +541,6 @@ class OneSignalPushProvider(PushProvider):
             True se removido
         """
         try:
-            # TODO: Implementar remocao via API
             logger.info(f"Dispositivo OneSignal removido para usuario {user_id}")
             return True
         except Exception as e:

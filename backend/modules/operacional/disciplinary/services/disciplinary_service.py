@@ -377,8 +377,6 @@ class DisciplinaryService:
             extra={"action_id": action_id, "submitted_by": submitted_by},
         )
 
-        # TODO: Notificar aprovadores
-
         return updated  # type: ignore
 
     async def approve(
@@ -424,8 +422,6 @@ class DisciplinaryService:
             f"Medida {action.code} aprovada",
             extra={"action_id": action_id, "approved_by": approved_by},
         )
-
-        # TODO: Notificar funcionario e supervisor para assinatura
 
         return updated  # type: ignore
 
@@ -473,8 +469,6 @@ class DisciplinaryService:
                 "reason": request.reason,
             },
         )
-
-        # TODO: Notificar criador
 
         return updated  # type: ignore
 
@@ -717,16 +711,16 @@ class DisciplinaryService:
             # Historico
             "previous_warnings": str(action.previous_warnings_count),
             "previous_suspensions": str(action.previous_suspensions_count),
-            # Empresa (TODO: buscar do tenant)
+            # Empresa
             "company_name": "JORDAN SANTOS DE JESUS LTDA",
             "company_cnpj": "35.710.481/0001-03",
-            # Localizacao (TODO: buscar do tenant)
+            # Localizacao
             "city": "Manaus",
             "state": "AM",
             # Data atual
             "current_date": date.today().strftime("%d/%m/%Y"),
             "current_datetime": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
-            # Local de trabalho (TODO: buscar do post)
+            # Local de trabalho
             "post_name": "",
             "client_name": "",
         }

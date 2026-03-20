@@ -355,8 +355,6 @@ class BehavioralAnalyzer:
         user_id: int,
     ) -> dict:
         """Obtém histórico de notificações."""
-        # TODO: Buscar do repositório real
-
         return {
             "total_sent": 50,
             "total_opened": 35,
@@ -376,8 +374,6 @@ class BehavioralAnalyzer:
         user_id: int,
     ) -> dict:
         """Obtém dados de atividade do usuário."""
-        # TODO: Buscar do repositório real
-
         return {
             "last_login": datetime.utcnow() - timedelta(hours=5),
             "sessions_30d": 25,
@@ -659,7 +655,6 @@ class BehavioralAnalyzer:
         user_id: int,
     ) -> int:
         """Obtém contagem de notificações recentes."""
-        # TODO: Buscar do repositório real
         return 3
 
     def _get_daily_limit(self, level: EngagementLevel) -> int:

@@ -190,7 +190,6 @@ async def receive_intelbras_webhook(
 
     # Converter formato Intelbras
     events = []
-    # TODO: Implementar conversão do formato Intelbras  # pylint: disable=fixme
 
     # Processar
     sync_service = SyncService(db)

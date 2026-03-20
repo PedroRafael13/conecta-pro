@@ -426,8 +426,7 @@ class EstoqueIntegrationService:
         Returns:
             Dict com status de disponibilidade
         """
-        # TODO: Integrar com módulo real de estoque (financial/inventory)
-        # Por ora, simulação
+        # Simulação
         produto = self._get_produto(produto_id)
         estoque_atual = produto.get("estoque_atual", Decimal("100"))
         estoque_minimo = produto.get("estoque_minimo", Decimal("10"))
@@ -506,7 +505,6 @@ class EstoqueIntegrationService:
         Returns:
             Lista de alertas
         """
-        # TODO: Integrar com módulo real de estoque
         # Simulação
         alertas = [
             {
@@ -629,7 +627,6 @@ class EstoqueIntegrationService:
 
     def _get_produto(self, produto_id: UUID) -> dict[str, Any]:
         """Obtém dados de um produto do estoque."""
-        # TODO: Integrar com módulo real de estoque
         # Cache simulado
         if produto_id in self._estoque_cache:
             return self._estoque_cache[produto_id]

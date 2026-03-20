@@ -43,6 +43,7 @@ import {
   useFinancialOverview,
 } from '@/hooks/financial/useFinancial';
 import { CashFlowEntryType } from '@/types/generated/financial/models/cashFlowEntryType';
+import { useCondominio } from '@/contexts/CondominioContext';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -151,6 +152,7 @@ function BudgetStatusBadge({ pct }: { pct: number }) {
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function OrcamentosPage() {
+  const { condominioId } = useCondominio();
   // ── Budget state persisted to localStorage ──────────────────────────────────
   const [budgets, setBudgets] = useState<Record<string, number>>(() => {
     if (typeof window !== 'undefined') {
@@ -172,16 +174,16 @@ export default function OrcamentosPage() {
 
   // ── Data hooks ──────────────────────────────────────────────────────────────
   const { data: expensesRaw, isLoading: loadingExpenses } = useCashflowEntries({
-    condominio_id: '',
+    condominio_id: condominioId,
     limit: 200,
     entry_type: CashFlowEntryType.saida,
   });
   const { data: incomeRaw, isLoading: loadingIncome } = useCashflowEntries({
-    condominio_id: '',
+    condominio_id: condominioId,
     limit: 200,
     entry_type: CashFlowEntryType.entrada,
   });
-  const { data: overviewRaw, isLoading: loadingOverview } = useFinancialOverview({ condominio_id: '' });
+  const { data: overviewRaw, isLoading: loadingOverview } = useFinancialOverview({ condominio_id: condominioId });
 
   const isLoading = loadingExpenses || loadingIncome || loadingOverview;
 

@@ -38,9 +38,7 @@ import {
   useUpdateKit as useUpdateDocumentKit,
   useDeleteKit as useDeleteDocumentKit,
 } from '@/hooks/document-kits/useDocumentKits';
-
-// Condominio padrao para desenvolvimento
-const DEFAULT_CONDOMINIO_ID = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
+import { useCondominio } from '@/contexts/CondominioContext';
 
 // Categorias baseadas nos tipos validos do backend
 const CATEGORIES = Object.entries(KIT_TYPE_LABELS).map(([value, label]) => ({
@@ -49,6 +47,7 @@ const CATEGORIES = Object.entries(KIT_TYPE_LABELS).map(([value, label]) => ({
 }));
 
 export default function KitsPage() {
+  const { condominioId: DEFAULT_CONDOMINIO_ID } = useCondominio();
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [dialogOpen, setDialogOpen] = useState(false);

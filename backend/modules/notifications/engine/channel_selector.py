@@ -195,8 +195,6 @@ class ChannelSelector:
         user_id: int,
     ) -> dict[Channel, float]:
         """Obtém preferências do usuário por canal."""
-        # TODO: Buscar do repositório real
-
         return {
             Channel.PUSH: 0.9,
             Channel.EMAIL: 0.8,
@@ -213,8 +211,6 @@ class ChannelSelector:
         user_id: int,
     ) -> dict[Channel, ChannelPerformance]:
         """Obtém performance histórica por canal."""
-        # TODO: Calcular do histórico real
-
         return {
             Channel.PUSH: ChannelPerformance(
                 channel=Channel.PUSH,
@@ -274,8 +270,6 @@ class ChannelSelector:
         user_id: int,
     ) -> dict:
         """Obtém contexto atual do usuário."""
-        # TODO: Verificar status real do usuário
-
         return {
             "is_online": True,
             "is_mobile_active": True,
@@ -290,8 +284,6 @@ class ChannelSelector:
         user_id: int,
     ) -> list[Channel]:
         """Obtém canais disponíveis para o usuário."""
-        # TODO: Verificar quais canais estão configurados
-
         return [
             Channel.PUSH,
             Channel.EMAIL,

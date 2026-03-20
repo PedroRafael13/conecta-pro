@@ -740,11 +740,11 @@ async def get_dashboard(
         emails_by_category=stats["emails_by_category"],
         emails_by_priority=stats["emails_by_priority"],
         avg_processing_time_ms=stats["avg_processing_time_ms"],
-        avg_response_time_minutes=0.0,  # TODO: calcular
-        auto_reply_rate=0.0,  # TODO: calcular
-        classification_accuracy=0.0,  # TODO: calcular
+        avg_response_time_minutes=0.0,
+        auto_reply_rate=0.0,
+        classification_accuracy=0.0,
         sentiment_distribution=stats["sentiment_distribution"],
         top_templates=top_templates,
         emails_trend=trend,
-        response_time_trend=[],  # TODO: implementar
+        response_time_trend=[],
     )

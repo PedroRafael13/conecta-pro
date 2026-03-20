@@ -138,8 +138,6 @@ class PersonalizationEngine:
         user_id: int,
     ) -> UserProfile:
         """Obtém perfil completo do usuário."""
-        # TODO: Integrar com repositório de usuários real
-        # Por ora, retorna perfil mock
 
         profile = UserProfile(user_id=user_id)
 
@@ -156,8 +154,6 @@ class PersonalizationEngine:
         user_id: int,
     ) -> dict:
         """Analisa padrões de atividade do usuário."""
-        # TODO: Buscar atividades reais do usuário
-        # Retorna padrões mock baseados em análise típica
 
         return {
             "peak_hours": [9, 14, 18],  # Horários de maior atividade
@@ -181,8 +177,6 @@ class PersonalizationEngine:
         user_id: int,
     ) -> dict:
         """Obtém preferências de notificação."""
-        # TODO: Buscar preferências reais do repositório
-
         return {
             "push_enabled": True,
             "email_enabled": True,
@@ -199,8 +193,6 @@ class PersonalizationEngine:
         user_id: int,
     ) -> dict:
         """Calcula métricas de engajamento do usuário."""
-        # TODO: Calcular métricas reais do histórico
-
         return {
             "open_rate": 0.65,
             "click_rate": 0.25,
@@ -217,9 +209,7 @@ class PersonalizationEngine:
         days: int = 30,
     ) -> list[dict]:
         """Obtém histórico de engajamento do usuário."""
-        # TODO: Buscar histórico real de notificações
-
-        return []  # Lista vazia por enquanto
+        return []
 
     async def calculate_optimal_timing(
         self,
@@ -325,8 +315,6 @@ class PersonalizationEngine:
         notification_type: str,
     ) -> dict:
         """Obtém performance histórica por canal."""
-        # TODO: Calcular do histórico real
-
         return {
             "push": {"open_rate": 0.70, "click_rate": 0.25},
             "email": {"open_rate": 0.45, "click_rate": 0.15},
@@ -556,5 +544,4 @@ class PersonalizationEngine:
         user_id: int,
     ) -> int:
         """Conta notificações enviadas hoje."""
-        # TODO: Contar do histórico real
         return 3

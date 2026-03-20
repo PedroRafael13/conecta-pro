@@ -29,6 +29,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ConfirmModal } from '@/components/ui/modal';
+import { useCondominio } from '@/contexts/CondominioContext';
 import {
   useReceivables,
   useReceivableDashboard,
@@ -67,6 +68,7 @@ const getStatusBadge = (status?: string | null) => {
 };
 
 export default function ContasReceberPage() {
+  const { condominioId } = useCondominio();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [customerFilter, setCustomerFilter] = useState('');
@@ -87,7 +89,7 @@ export default function ContasReceberPage() {
     error: queryError,
     refetch,
   } = useReceivables({
-    condominio_id: '',
+    condominio_id: condominioId,
     skip,
     limit,
     ...(search ? { search } : {}),

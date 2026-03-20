@@ -74,7 +74,6 @@ class OpportunityService:
         """
         logger.info("Listando oportunidades com filtros: %s", filters)
 
-        # TODO: Substituir por query real quando model ORM estiver pronto
         results = list(self._cache.values())
 
         if filters:

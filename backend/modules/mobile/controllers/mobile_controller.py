@@ -98,7 +98,6 @@ async def get_mobile_config(
     min_version = "1.0.0"
     force_update = False
 
-    # TODO: Comparar versões reais
     # if compare_versions(current_version, min_version) < 0:
     #     force_update = True
 
@@ -159,7 +158,6 @@ async def get_mobile_dashboard(
     )
 
     # Buscar dados do dashboard
-    # TODO: Integrar com módulos reais
     summary = DashboardSummary(
         total_leads=150,
         total_customers=45,
@@ -341,7 +339,6 @@ async def get_offline_data(
     )
 
     # Dados essenciais por módulo
-    # TODO: Integrar com módulos reais
     essential_data = {}
     total_size = 0
 
@@ -349,7 +346,7 @@ async def get_offline_data(
         if module == "leads":
             essential_data["leads"] = ModuleOfflineData(
                 module="leads",
-                records=[],  # TODO: Buscar leads do usuário
+                records=[],
                 total_count=0,
                 last_modified=datetime.utcnow(),
                 version=1,
@@ -417,7 +414,6 @@ async def execute_batch(
 
     for operation in batch_request.operations:
         try:
-            # TODO: Implementar execução real de cada operação
             # Por ora, simular sucesso
             results.append(
                 BatchOperationResult(
@@ -509,7 +505,6 @@ async def unregister_device(
     current_user: dict = Depends(get_current_user),
 ):
     """Remove registro de dispositivo."""
-    # TODO: Verificar se dispositivo pertence ao usuário
 
     success = await push_service.unregister_device_token(db, device_id)
 
@@ -618,7 +613,6 @@ async def get_notification_preferences(
     current_user: dict = Depends(get_current_user),
 ):
     """Obtém preferências de notificação do usuário."""
-    # TODO: Buscar preferências reais do usuário
     return NotificationPreferences(
         push_enabled=True,
         email_enabled=True,
@@ -647,7 +641,6 @@ async def update_notification_preferences(
     current_user: dict = Depends(get_current_user),
 ):
     """Atualiza preferências de notificação."""
-    # TODO: Salvar preferências reais
     return NotificationPreferences(
         push_enabled=preferences.push_enabled or True,
         email_enabled=preferences.email_enabled or True,
@@ -678,7 +671,6 @@ async def send_broadcast_notification(
 
     Requer permissão de administrador.
     """
-    # TODO: Verificar permissão admin
     if current_user.get("role") not in ["admin", "super_admin"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

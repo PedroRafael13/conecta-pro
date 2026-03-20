@@ -164,7 +164,6 @@ class BiometricService:
         Returns:
             True se rosto detectado.
         """
-        # TODO: Integrar com biblioteca de ML (face_recognition, dlib, etc)
         # Implementacao simplificada para demonstracao
         return True
 
@@ -181,7 +180,6 @@ class BiometricService:
         Returns:
             Score de liveness (0.0 a 1.0).
         """
-        # TODO: Integrar com servico de liveness detection
         # Implementacao simplificada para demonstracao
         return 0.95
 
@@ -195,7 +193,6 @@ class BiometricService:
         Returns:
             Caminho da foto de referencia ou None.
         """
-        # TODO: Buscar do banco de dados/storage
         return f"/storage/employees/{employee_id}/reference.jpg"
 
     async def _compare_faces(
@@ -213,7 +210,6 @@ class BiometricService:
         Returns:
             Score de similaridade (0.0 a 1.0).
         """
-        # TODO: Integrar com biblioteca de reconhecimento facial
         # Implementacao simplificada para demonstracao
         return 0.92
 

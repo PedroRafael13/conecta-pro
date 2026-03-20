@@ -158,7 +158,6 @@ class EventProcessorService:
 
         # Verificar duplicado no mesmo dia
         if event.pis_number and event.event_datetime:
-            # TODO: Implementar verificação de duplicados  # pylint: disable=fixme
             pass
 
         return {
@@ -176,7 +175,6 @@ class EventProcessorService:
         Returns:
             ID do funcionário ou None.
         """
-        # TODO: Implementar busca no cadastro de funcionários  # pylint: disable=fixme
         # Por enquanto, retorna None para marcar como não identificado
         return None
 

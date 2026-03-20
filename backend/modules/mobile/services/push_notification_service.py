@@ -208,7 +208,6 @@ class PushNotificationService:
             if notification.collapse_key:
                 payload["android"]["collapse_key"] = notification.collapse_key
 
-            # TODO: Implementar envio real via Firebase Admin SDK
             # response = messaging.send(message)
             # notification.external_id = response
 
@@ -258,7 +257,6 @@ class PushNotificationService:
             if notification.image_url:
                 payload["aps"]["mutable-content"] = 1
 
-            # TODO: Implementar envio real via aioapns ou similar
             # response = await apns_client.send_notification(...)
             # notification.external_id = response.notification_id
 

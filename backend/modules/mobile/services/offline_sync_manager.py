@@ -280,7 +280,6 @@ class OfflineSyncManager:
         # Isso seria feito consultando a tabela real
         # Por ora, retornamos None (sem conflito)
 
-        # TODO: Implementar verificação real quando tabelas estiverem disponíveis
         # query = select(Model).where(
         #     Model.id == operation.record_id,
         #     Model.updated_at > last_sync,
@@ -403,7 +402,6 @@ class OfflineSyncManager:
         )
         db.add(queue_item)
 
-        # TODO: Aplicar operação real nas tabelas quando disponíveis
         logger.info(f"Applied operation: {operation.operation} on {operation.table}:{operation.record_id}")
 
     async def _get_server_changes(
@@ -437,7 +435,6 @@ class OfflineSyncManager:
 
             self.SYNCABLE_TABLES[table]
 
-            # TODO: Implementar query real quando tabelas estiverem disponíveis
             # Por ora, retornar lista vazia (sem mudanças)
 
             # Exemplo de como seria:

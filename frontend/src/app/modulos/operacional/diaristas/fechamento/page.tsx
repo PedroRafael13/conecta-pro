@@ -6,6 +6,7 @@ import Link from 'next/link';
 ;
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
+import { useCondominio } from '@/contexts/CondominioContext';
 import { usePayrollReport, useGeneratePayments } from '@/hooks/operacional/useDiarists';
 import type {
   PayrollDiaristItem,
@@ -13,6 +14,7 @@ import type {
 
 export default function FechamentoFolhaPage() {
   const { isLoading: authLoading } = useAuth();
+  const { condominioId } = useCondominio();
 
   // Default = mes anterior
   const now = new Date();
@@ -55,7 +57,6 @@ export default function FechamentoFolhaPage() {
     setShowConfirm(false);
 
     try {
-      const condominioId = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
       const result = await generatePaymentsMutation.mutateAsync({
         params: {
           condominio_id: condominioId,

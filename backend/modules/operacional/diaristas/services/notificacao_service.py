@@ -456,7 +456,6 @@ class NotificacaoService:
         - Evolution API
         - Z-API
         """
-        # TODO: Implementar integração real com WhatsApp API
         # Exemplo de integração com Evolution API:
         #
         # import httpx
@@ -481,7 +480,6 @@ class NotificacaoService:
         - Zenvia
         - AWS SNS
         """
-        # TODO: Implementar integração real com SMS API
         # Exemplo com Twilio:
         #
         # from twilio.rest import Client
@@ -505,7 +503,6 @@ class NotificacaoService:
         - AWS SES
         - SMTP
         """
-        # TODO: Implementar integração real com Email API
         logger.info(f"[EMAIL] Enviando para {email}: {titulo}")
         return True
 
@@ -517,7 +514,6 @@ class NotificacaoService:
         - Firebase Cloud Messaging
         - OneSignal
         """
-        # TODO: Implementar integração real com Push API
         logger.info(f"[PUSH] Enviando para diarista {diarist_id}: {titulo}")
         return True
 

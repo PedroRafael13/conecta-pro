@@ -926,7 +926,7 @@ class ClimateService:
                     dimensao=ClimateDimension(dim),
                     score=round(score_dim, 2),
                     total_respostas=len(valores),
-                    tendencia=0.0,  # TODO: calcular tendencia por dimensao
+                    tendencia=0.0,
                     classificacao=self._classificar_score(score_dim),
                 )
             )
@@ -972,7 +972,7 @@ class ClimateService:
             variacao=round(variacao, 2),
             classificacao=self._classificar_score(score_atual),
             total_respostas=total_respostas,
-            taxa_participacao=0.0,  # TODO: calcular baseado em total de funcionarios
+            taxa_participacao=0.0,
             enps_score=round(enps_score, 2),
             scores_por_dimensao=sorted(scores_dimensao_list, key=lambda x: x.score, reverse=True),
             top_postos=[to_entity_score(s) for s in top_postos],
@@ -1144,14 +1144,14 @@ class ClimateService:
         return ClimateByPosto(
             posto_id=posto_id,
             posto_nome=score.entidade_nome or posto_id[:8],
-            cliente_nome=None,  # TODO: buscar nome do cliente
+            cliente_nome=None,
             periodo=periodo,
             score=score.score,
             score_anterior=score_ant.score if score_ant else 0.0,
             variacao=round(variacao, 2),
             classificacao=self._classificar_score(score.score),
             total_respostas=score.total_respostas,
-            total_funcionarios=0,  # TODO: buscar total de funcionarios
+            total_funcionarios=0,
             taxa_participacao=score.taxa_participacao,
             scores_dimensao=score.scores_dimensao,
             enps_score=score.enps_score,
@@ -1192,18 +1192,18 @@ class ClimateService:
         return ClimateByEquipe(
             equipe_id=equipe_id,
             equipe_nome=score.entidade_nome or equipe_id[:8],
-            supervisor_nome=None,  # TODO: buscar nome do supervisor
+            supervisor_nome=None,
             periodo=periodo,
             score=score.score,
             score_anterior=score_ant.score if score_ant else 0.0,
             variacao=round(variacao, 2),
             classificacao=self._classificar_score(score.score),
             total_respostas=score.total_respostas,
-            total_funcionarios=0,  # TODO: buscar total
+            total_funcionarios=0,
             taxa_participacao=score.taxa_participacao,
             scores_dimensao=score.scores_dimensao,
             enps_score=score.enps_score,
-            postos_vinculados=0,  # TODO: contar postos
+            postos_vinculados=0,
         )
 
     async def get_results_empresa(
@@ -1272,12 +1272,12 @@ class ClimateService:
             variacao=round(variacao, 2),
             classificacao=self._classificar_score(score.score),
             total_respostas=score.total_respostas,
-            total_funcionarios=0,  # TODO
+            total_funcionarios=0,
             taxa_participacao=score.taxa_participacao,
             scores_dimensao=score.scores_dimensao,
             enps_score=score.enps_score,
-            total_postos=0,  # TODO
-            total_equipes=0,  # TODO
+            total_postos=0,
+            total_equipes=0,
             postos_criticos=postos_criticos,
             equipes_criticas=equipes_criticas,
         )

@@ -29,6 +29,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ConfirmModal } from '@/components/ui/modal';
+import { useCondominio } from '@/contexts/CondominioContext';
 import {
   usePayables,
   usePayableDashboard,
@@ -71,6 +72,7 @@ const getStatusBadge = (status?: string | null) => {
 };
 
 export default function ContasPagarPage() {
+  const { condominioId } = useCondominio();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [supplierFilter, setSupplierFilter] = useState('');
@@ -92,7 +94,7 @@ export default function ContasPagarPage() {
     error: queryError,
     refetch,
   } = usePayables({
-    condominio_id: '',
+    condominio_id: condominioId,
     skip,
     limit,
     ...(search ? { search } : {}),

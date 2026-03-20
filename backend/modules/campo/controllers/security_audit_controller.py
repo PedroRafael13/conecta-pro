@@ -110,7 +110,6 @@ async def get_audit_status(audit_id: str):
         Status e resultados da auditoria
     """
     try:
-        # TODO: Consultar banco de dados para obter status real
         # Por enquanto retorna exemplo
         return AuditResult(
             audit_id=audit_id,
@@ -144,7 +143,6 @@ async def list_audits(limit: int = 10, offset: int = 0):
         Lista de auditorias
     """
     try:
-        # TODO: Implementar consulta real ao banco
         return {"audits": [], "total": 0, "limit": limit, "offset": offset}
 
     except Exception as e:
@@ -170,7 +168,7 @@ async def _execute_security_audit(  # pylint: disable=unused-argument
     """
     try:
         logger.info(f"Executando auditoria {audit_id} para {target}")
-        # Simula processamento (TODO: Implementar auditoria real)
+        # Simula processamento
         await asyncio.sleep(5)
         logger.info(f"Auditoria {audit_id} concluída")
     except Exception as e:  # pylint: disable=broad-exception-caught

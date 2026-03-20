@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useCondominio } from '@/contexts/CondominioContext';
 import { useCashflowEntries, useCashflowDashboard, useCreateCashflowEntry, useCashflowProjection } from '@/hooks/financial/useFinancial';
 import type { CashFlowEntryResponse } from '@/types/generated/financial/models/cashFlowEntryResponse';
 import { CashflowFormModal } from '@/components/financeiro/cashflow-form-modal';
@@ -17,6 +18,7 @@ import {
 import axios from 'axios';
 
 export default function FluxoCaixaPage() {
+  const { condominioId } = useCondominio();
   const [search, setSearch] = useState('');
   const [entryType, setEntryType] = useState<string | undefined>(undefined);
   const [page, setPage] = useState(1);
@@ -31,17 +33,17 @@ export default function FluxoCaixaPage() {
     error,
     refetch,
   } = useCashflowEntries({
-    condominio_id: '',
+    condominio_id: condominioId,
     skip: (page - 1) * pageSize,
     limit: pageSize,
   });
 
-  const { data: dashboardRaw, refetch: refetchDashboard } = useCashflowDashboard({ condominio_id: '' });
+  const { data: dashboardRaw, refetch: refetchDashboard } = useCashflowDashboard({ condominio_id: condominioId });
   const dashboard = dashboardRaw as any;
   const createEntry = useCreateCashflowEntry();
 
   // Projection hook for chart
-  const { data: projectionRaw } = useCashflowProjection({ condominio_id: '' });
+  const { data: projectionRaw } = useCashflowProjection({ condominio_id: condominioId });
   const projectionData: any[] = Array.isArray(projectionRaw) ? projectionRaw : (projectionRaw as any)?.items ?? [];
 
   // AI Insights state
@@ -69,8 +71,8 @@ export default function FluxoCaixaPage() {
     setAiLoading(true);
     setAiError(false);
     Promise.all([
-      finApi.get('/api/v1/financial/cashflow/ai/risks?condominio_id='),
-      finApi.get('/api/v1/financial/cashflow/ai/opportunities?condominio_id='),
+      finApi.get(`/api/v1/financial/cashflow/ai/risks?condominio_id=${condominioId}`),
+      finApi.get(`/api/v1/financial/cashflow/ai/opportunities?condominio_id=${condominioId}`),
     ])
       .then(([risksRes, oppsRes]) => {
         if (cancelled) return;

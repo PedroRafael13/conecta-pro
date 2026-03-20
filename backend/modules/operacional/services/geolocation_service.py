@@ -166,7 +166,6 @@ class GeolocationService:
         Returns:
             Endereco formatado ou None se nao encontrado.
         """
-        # TODO: Integrar com API de geocoding
         return f"Lat: {point.latitude:.6f}, Lon: {point.longitude:.6f}"
 
     def is_point_in_polygon(

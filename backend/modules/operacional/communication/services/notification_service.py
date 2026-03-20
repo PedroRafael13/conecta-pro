@@ -243,15 +243,12 @@ class NotificationService:
                         )
 
                 elif channel == NotificationChannel.EMAIL.value:
-                    # TODO: Integrar com servico de email
                     logger.debug(f"Email para {notification.user_id}: {notification.title}")
 
                 elif channel == NotificationChannel.SMS.value:
-                    # TODO: Integrar com provedor de SMS
                     logger.debug(f"SMS para {notification.user_id}: {notification.body}")
 
                 elif channel == NotificationChannel.WHATSAPP.value:
-                    # TODO: Integrar com WhatsApp Business API
                     logger.debug(f"WhatsApp para {notification.user_id}: {notification.body}")
 
             except Exception as e:

@@ -1171,18 +1171,18 @@ async def get_dashboard_stats(
         recovery_rate=alert_stats.get("recovery_rate", 0),
         detection_rate=100 - alert_stats["false_positive_rate"],
         false_positive_rate=alert_stats["false_positive_rate"],
-        avg_detection_time_seconds=0,  # TODO: implementar
+        avg_detection_time_seconds=0,
         active_rules=len(rules),
         rules_triggered_today=alert_stats["total_detections_today"],
         most_triggered_rules=top_rules,
         active_patterns=len(patterns),
-        patterns_detected_today=0,  # TODO: implementar
+        patterns_detected_today=0,
         high_risk_profiles=risk_summary["high_risk_count"],
         blocked_entities=risk_summary["blocked_count"],
-        watchlisted_entities=0,  # TODO: implementar
+        watchlisted_entities=0,
         risk_distribution=risk_summary["distribution"],
-        alerts_trend=[],  # TODO: implementar
-        fraud_trend=[],  # TODO: implementar
+        alerts_trend=[],
+        fraud_trend=[],
     )
 
 

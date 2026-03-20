@@ -66,7 +66,6 @@ async def generate_forecast(
     """
     engine = ForecastEngine(db)
 
-    # TODO: Buscar dados do produto e historico do modulo de estoque
     # Por enquanto, usar dados mock para demonstracao
     product_info = {
         "code": f"PROD-{str(request.product_id)[:8]}",
@@ -223,7 +222,6 @@ async def analyze_demand_pattern(
     """
     analyzer = DemandAnalyzer(db)
 
-    # TODO: Buscar dados reais do modulo de estoque
     product_info = {
         "code": f"PROD-{str(product_id)[:8]}",
         "name": "Produto de Teste",
@@ -339,7 +337,6 @@ async def generate_reorder_suggestions(
     """
     reorder_service = ReorderService(db)
 
-    # TODO: Buscar estoque atual do modulo de estoque
     import random
 
     products_stock = [
@@ -388,7 +385,6 @@ async def get_critical_products(
     if not forecasts:
         return []
 
-    # TODO: Buscar estoque real do modulo de estoque
     import random
 
     products_stock = [

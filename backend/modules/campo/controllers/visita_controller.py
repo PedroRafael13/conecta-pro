@@ -286,7 +286,6 @@ async def cancelar_visita(
 ):
     """Cancela uma visita."""
     try:
-        # TODO: Obter usuario atual do token
         cancelado_por = None
         visita = await service.cancelar_visita(visita_id, data.motivo, cancelado_por)
         if not visita:

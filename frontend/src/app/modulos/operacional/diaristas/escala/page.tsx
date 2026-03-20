@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
+import { useCondominio } from '@/contexts/CondominioContext';
 import { useActiveDiarists, useCreateBatchSchedules } from '@/hooks/operacional/useDiarists';
 import type { DiaristResponse, BatchScheduleItem, BatchScheduleResponse } from '@/types/generated/operacional/conectaPROMóduloOPERACIONAL.schemas';
 import {
@@ -16,6 +17,7 @@ import {
 export default function EscalaDiariaPage() {
   const router = useRouter();
   const { isLoading: authLoading, isAuthenticated } = useAuth();
+  const { condominioId } = useCondominio();
 
   // Data selecionada (default = amanha)
   const tomorrow = new Date();
@@ -80,9 +82,6 @@ export default function EscalaDiariaPage() {
     setSuccess(null);
 
     try {
-      // TODO: usar condominio_id real do contexto
-      const condominioId = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
-
       const result: BatchScheduleResponse = await createBatchMutation.mutateAsync({
         data: {
           condominio_id: condominioId,

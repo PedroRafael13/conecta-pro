@@ -35,6 +35,7 @@ import { cn, formatCurrency, formatDate } from '@/lib/utils';
 import { emitirBoleto, listarBoletos, gerarCobrancaPix } from '@/services/banking/bankingService';
 import type { BoletoResponse, BoletoListItem, PixChargeResponse } from '@/services/banking/bankingService';
 import { useReceivableDashboard } from '@/hooks/financial/useFinancial';
+import { useCondominio } from '@/contexts/CondominioContext';
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
 
@@ -1075,7 +1076,8 @@ const DEMO_INADIMPLENTES: FakeInadimplente[] = [
 ];
 
 function TabInadimplentes() {
-  const { data: dashboardRaw } = useReceivableDashboard({ condominio_id: '' });
+  const { condominioId } = useCondominio();
+  const { data: dashboardRaw } = useReceivableDashboard({ condominio_id: condominioId });
   const dashboard = dashboardRaw as any;
 
   const [filtroValor, setFiltroValor] = useState('');
@@ -1457,6 +1459,7 @@ const TABS: Array<{ key: TabType; label: string; icon: React.ReactNode }> = [
 ];
 
 export default function CobrancasPage() {
+  const { condominioId } = useCondominio();
   const [activeTab, setActiveTab] = useState<TabType>('emit');
 
   return (

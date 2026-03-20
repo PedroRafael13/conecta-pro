@@ -173,8 +173,6 @@ class ContentPersonalizer:
         user_id: int,
     ) -> dict[str, Any]:
         """Obtém dados do usuário para personalização."""
-        # TODO: Buscar do repositório real
-
         return {
             "nome": "João Silva",
             "primeiro_nome": "João",
@@ -197,8 +195,6 @@ class ContentPersonalizer:
         user_id: int,
     ) -> dict[str, Any]:
         """Obtém dados comportamentais."""
-        # TODO: Buscar do analytics real
-
         return {
             "ultima_atividade": datetime.utcnow(),
             "notificacoes_lidas_30d": 15,
@@ -471,8 +467,6 @@ class ContentPersonalizer:
         Returns:
             PersonalizedContent localizado
         """
-        # TODO: Integrar com serviço de tradução
-
         # Por enquanto, retorna o mesmo conteúdo
         return PersonalizedContent(
             title=content.title,

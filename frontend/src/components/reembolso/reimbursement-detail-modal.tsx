@@ -12,7 +12,7 @@ import {
   STATUS_COLORS,
   APPROVAL_LEVEL_LABELS,
 } from '@/types/reimbursement';
-import { reimbursementService } from '@/services/reembolso/reimbursementService';
+import { reimbursementRequestService, reimbursementAttachmentService } from '@/services/reimbursement';
 import { AttachmentUpload } from './attachment-upload';
 
 interface ReimbursementDetailModalProps {
@@ -57,7 +57,7 @@ export function ReimbursementDetailModal({
     setActionType('submit');
 
     try {
-      await reimbursementService.submit(request.id);
+      await reimbursementRequestService.submit(request.id);
       onRefresh();
       onClose();
     } catch (err) {
@@ -74,7 +74,7 @@ export function ReimbursementDetailModal({
     setActionType('cancel');
 
     try {
-      await reimbursementService.cancel(request.id);
+      await reimbursementRequestService.cancel(request.id);
       onRefresh();
       onClose();
     } catch (err) {
@@ -86,7 +86,7 @@ export function ReimbursementDetailModal({
   };
 
   const handleAttachmentUpload = async (file: File) => {
-    await reimbursementService.uploadAttachment(request.id, file, {
+    await reimbursementAttachmentService.upload(request.id, file, {
       description: 'outros',
     });
     onRefresh();
@@ -286,7 +286,7 @@ export function ReimbursementDetailModal({
                     </p>
                   </div>
                   <a
-                    href={reimbursementService.getAttachmentDownloadUrl(attachment.id)}
+                    href={reimbursementAttachmentService.getDownloadUrl(attachment.id)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-[hsl(var(--primary))] hover:text-[hsl(var(--primary))]/80"

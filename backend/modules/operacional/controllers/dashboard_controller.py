@@ -403,7 +403,7 @@ async def get_kpis(
                 "total_servicos_realizados": metricas["consolidado"]["servicos_concluidos"],
             },
             "tendencia": {
-                "comparado_periodo_anterior": "Não calculado",  # TODO: Implementar comparação
+                "comparado_periodo_anterior": "Não calculado",
             },
         }
     except Exception as e:
@@ -470,8 +470,6 @@ async def get_kpi_trends(
             stats: dict[str, Any] = post_repo.get_stats()
             postos_ativos.append(stats.get("total", 0))
 
-            # Colaboradores alocados (simulado - precisa de dados reais)
-            # TODO: Implementar contagem real de colaboradores
             colaboradores_ativos.append(stats.get("total_allocated", 0))
 
             # Escalas em andamento

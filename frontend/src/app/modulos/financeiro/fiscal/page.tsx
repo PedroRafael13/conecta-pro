@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { useCondominio } from '@/contexts/CondominioContext';
 import {
   useNFes,
   useNFSes,
@@ -60,6 +61,7 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 export default function FiscalPage() {
+  const { condominioId } = useCondominio();
   const [activeTab, setActiveTab] = useState<TabType>('nfe');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -67,9 +69,9 @@ export default function FiscalPage() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedNFe, setSelectedNFe] = useState<NFeListResponse | null>(null);
 
-  const { data: nfes = [], isLoading: loadingNFes, refetch: refetchNFes } = useNFes({ condominio_id: '' });
-  const { data: nfses = [], isLoading: loadingNFSes, refetch: refetchNFSes } = useNFSes({ condominio_id: '' });
-  const { data: dashboardRaw, isLoading: loadingDashboard } = useFiscalDashboard({ condominio_id: '' });
+  const { data: nfes = [], isLoading: loadingNFes, refetch: refetchNFes } = useNFes({ condominio_id: condominioId });
+  const { data: nfses = [], isLoading: loadingNFSes, refetch: refetchNFSes } = useNFSes({ condominio_id: condominioId });
+  const { data: dashboardRaw, isLoading: loadingDashboard } = useFiscalDashboard({ condominio_id: condominioId });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const dashboard = dashboardRaw as any;
   const createNFe = useCreateNFe();

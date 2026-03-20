@@ -555,7 +555,6 @@ async def add_attachment(
             detail="Tipo de arquivo não permitido",
         )
 
-    # TODO: Implementar upload para storage (S3, GCS, etc)
     # Por enquanto, simula adição
     attachment_info = {
         "name": file.filename,

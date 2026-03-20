@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { useBartoloChat } from '@/hooks/ai/useBartolo';
 import { BartoloService } from '@/services/ai/bartolo.service';
 import { ActionConfirmationModal } from '@/components/ai/ActionConfirmationModal';
+import { useAuth } from '@/hooks/useAuth';
 
 // Types
 interface BartoloMessage {
@@ -146,6 +147,7 @@ function DachshundIcon({ className = 'w-6 h-6', animate = false }: { className?:
 
 export function BartoloChat() {
   const pathname = usePathname();
+  const { user } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -298,10 +300,8 @@ export function BartoloChat() {
 
     setIsExecutingAction(true);
     try {
-      const userId = 1; // TODO: Obter userId do contexto de autenticacao
-
       const result = await BartoloService.confirmAction(
-        userId,
+        Number(user?.id) || 0,
         actionPreview.action_id,
         true
       );
@@ -337,9 +337,8 @@ export function BartoloChat() {
     if (!actionPreview) return;
 
     try {
-      const userId = 1; // TODO: Obter do contexto
       await BartoloService.confirmAction(
-        userId,
+        Number(user?.id) || 0,
         actionPreview.action_id,
         false
       );

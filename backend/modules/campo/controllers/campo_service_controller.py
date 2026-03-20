@@ -88,8 +88,6 @@ async def create_ticket(request: TicketRequest):
 
         logger.info(f"Criando ticket {ticket_id} para {request.client_name}")
 
-        # TODO: Implementar modelo de tickets e salvar no banco de dados
-
         return TicketResponse(
             ticket_id=ticket_id,
             client_name=request.client_name,
@@ -117,7 +115,6 @@ async def get_ticket(ticket_id: str):
         Dados do ticket
     """
     try:
-        # TODO: Implementar modelo de tickets e consultar banco de dados
         return TicketResponse(
             ticket_id=ticket_id,
             client_name="Cliente Exemplo",
@@ -149,8 +146,6 @@ async def update_ticket(
     """
     try:
         logger.info(f"Atualizando ticket {ticket_id}")
-
-        # TODO: Implementar modelo de tickets e atualizar no banco de dados
 
         return {"ticket_id": ticket_id, "updated_at": datetime.utcnow(), "message": "Ticket atualizado com sucesso"}
 
@@ -300,8 +295,6 @@ async def assign_technician(ticket_id: str, technician_id: str):
     try:
         logger.info(f"Atribuindo técnico {technician_id} ao ticket {ticket_id}")
 
-        # TODO: Implementar modelo de tickets e atualizar atribuição no banco
-
         return {
             "ticket_id": ticket_id,
             "technician_id": technician_id,
@@ -344,7 +337,7 @@ async def campo_dashboard(session: AsyncSession = Depends(get_db)):
 
         return {
             "tickets": {
-                "open": 0,  # TODO: implementar quando tiver modelo de tickets
+                "open": 0,
                 "in_progress": 0,
                 "closed": 0,
                 "total": 0,
@@ -356,9 +349,9 @@ async def campo_dashboard(session: AsyncSession = Depends(get_db)):
                 "total": total_techs,
             },
             "performance": {
-                "avg_resolution_time": "0h",  # TODO: calcular quando tiver tickets
-                "customer_satisfaction": 0.0,  # TODO: calcular quando tiver tickets
-                "tickets_today": 0,  # TODO: calcular quando tiver tickets
+                "avg_resolution_time": "0h",
+                "customer_satisfaction": 0.0,
+                "tickets_today": 0,
             },
         }
 

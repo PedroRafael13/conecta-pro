@@ -18,8 +18,5 @@ export * from './useRoteirizacao';
 // Estoque
 export * from './useEstoque';
 
-// Guardian (Access Logs, Occurrences, Equipment, Sync)
-export * from './useGuardian';
-
 // Campo Service Principal, Monitoring, Security Audit
 export * from './useCampo';

@@ -371,5 +371,4 @@ class AFDService:
         device_id: UUID,  # pylint: disable=unused-argument
     ) -> list[dict[str, Any]]:
         """Retorna períodos disponíveis para exportação."""
-        # TODO: Implementar busca de períodos com registros  # pylint: disable=fixme
         return []

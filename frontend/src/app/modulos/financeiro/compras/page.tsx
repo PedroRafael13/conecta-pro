@@ -19,6 +19,7 @@ import {
 } from '@/hooks/financial/useFinancial';
 import { PurchaseFormModal } from '@/components/financeiro/purchase-form-modal';
 import { PurchaseDetailModal } from '@/components/financeiro/purchase-detail-modal';
+import { useCondominio } from '@/contexts/CondominioContext';
 
 type TabType = 'requisitions' | 'orders';
 
@@ -80,6 +81,7 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 export default function ComprasPage() {
+  const { condominioId } = useCondominio();
   const [activeTab, setActiveTab] = useState<TabType>('requisitions');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -88,14 +90,14 @@ export default function ComprasPage() {
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [formType, setFormType] = useState<'requisition' | 'order'>('requisition');
 
-  const { data: requisitionsRaw, isLoading: loadingRequisitions, refetch: refetchRequisitions } = usePurchaseRequisitions({ condominio_id: '' });
-  const { data: ordersRaw, isLoading: loadingOrders, refetch: refetchOrders } = usePurchaseOrders({ condominio_id: '' });
+  const { data: requisitionsRaw, isLoading: loadingRequisitions, refetch: refetchRequisitions } = usePurchaseRequisitions({ condominio_id: condominioId });
+  const { data: ordersRaw, isLoading: loadingOrders, refetch: refetchOrders } = usePurchaseOrders({ condominio_id: condominioId });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const requisitions: any[] = (requisitionsRaw as any)?.items ?? [];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const orders: any[] = (ordersRaw as any)?.items ?? [];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: dashboardRaw, isLoading: loadingDashboard } = usePurchaseDashboard({ condominio_id: '' });
+  const { data: dashboardRaw, isLoading: loadingDashboard } = usePurchaseDashboard({ condominio_id: condominioId });
   const dashboard = dashboardRaw as any;
   const createRequisition = useCreatePurchaseRequisition();
   const createOrder = useCreatePurchaseOrder();

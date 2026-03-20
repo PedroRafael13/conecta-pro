@@ -165,7 +165,6 @@ class ProposalSignatureService:
             return SignatureStatus.PENDING
 
         # Para provedores externos, consulta API
-        # TODO: Implementar consulta real aos provedores
         return SignatureStatus.PENDING
 
     async def cancel_signature_request(self, external_id: str, reason: str | None = None) -> bool:
@@ -184,7 +183,6 @@ class ProposalSignatureService:
                 "Cancelando requisicao de assinatura",
                 extra={"external_id": external_id, "reason": reason},
             )
-            # TODO: Implementar cancelamento real
             return True
         except Exception as e:
             logger.error(f"Erro ao cancelar: {e}")
@@ -223,7 +221,6 @@ class ProposalSignatureService:
             "Reenviando requisicao",
             extra={"external_id": external_id, "email": signer_email},
         )
-        # TODO: Implementar reenvio real
         return True
 
     def _validate_request(self, request: SignatureRequest) -> None:

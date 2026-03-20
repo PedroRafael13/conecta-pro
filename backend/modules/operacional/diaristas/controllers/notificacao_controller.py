@@ -483,7 +483,7 @@ async def listar_canais():
                 "id": CanalNotificacao.PUSH.value,
                 "nome": "Push Notification",
                 "descricao": "Notificações push para app mobile",
-                "disponivel": False,  # TODO: Implementar
+                "disponivel": False,
             },
             {
                 "id": CanalNotificacao.INTERNO.value,

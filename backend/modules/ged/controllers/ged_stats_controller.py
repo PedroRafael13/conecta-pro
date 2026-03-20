@@ -95,7 +95,7 @@ async def get_ged_stats(
         ),
         "total_storage_bytes": getattr(folder_stats, "total_size_bytes", 0),
         "total_storage_mb": getattr(folder_stats, "total_size_mb", 0),
-        "total_versions": 0,  # TODO: Implementar contagem de versões
+        "total_versions": 0,
         "expired_documents": getattr(document_stats, "expired", 0),
         # Signatures
         "total_signatures": getattr(signature_stats, "total_signatures", 0),

@@ -683,7 +683,6 @@ class ABTestingEngine:
         experiment: Experiment,
     ) -> None:
         """Salva experimento no banco."""
-        # TODO: Implementar persistência real
         self._experiments[experiment.id] = experiment
 
     async def _save_event(
@@ -696,7 +695,6 @@ class ABTestingEngine:
         metadata: dict | None,
     ) -> None:
         """Salva evento no banco."""
-        # TODO: Implementar persistência real
         logger.debug(f"Event: {experiment_id}/{variant_id}/{event_type} user={user_id}")
 
     async def list_experiments(

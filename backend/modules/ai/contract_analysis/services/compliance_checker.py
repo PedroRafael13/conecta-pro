@@ -325,7 +325,6 @@ class ComplianceChecker:
             for clause in clauses:
                 if clause.clause_type.value == template_type:
                     found = True
-                    # TODO: Comparar conteudo com NLP similarity
                     break
 
             if found:

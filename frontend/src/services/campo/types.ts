@@ -23,10 +23,5 @@ export type ReotimizacaoRequest = any;
 export type DistanciaCalculoRequest = any;
 export type RedistribuicaoRequest = any;
 
-export type GuardianAccessLog = any;
-export type GuardianOccurrence = any;
-export type GuardianEquipmentStatus = any;
-export type GuardianSync = any;
-
 export type CampoTechnician = any;
 export type CampoTicket = any;

@@ -429,7 +429,6 @@ class FeatureStore:
         end_date: datetime,
     ) -> Any:
         """Computa valor de uma feature."""
-        # TODO: Implementar queries reais baseadas na definição
 
         # Simulação de valores para desenvolvimento
         simulated_values = {

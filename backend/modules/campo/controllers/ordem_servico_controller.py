@@ -308,7 +308,6 @@ async def cancelar_os(
 ):
     """Cancela uma OS."""
     try:
-        # TODO: Obter usuario atual do token
         cancelado_por = None
         os = await service.cancelar_os(os_id, data.motivo, cancelado_por)
         if not os:

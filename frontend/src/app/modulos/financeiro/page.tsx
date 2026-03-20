@@ -4,6 +4,7 @@ import { DollarSign, TrendingUp, TrendingDown, Activity, ArrowRight, CreditCard,
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
+import { useCondominio } from '@/contexts/CondominioContext';
 import { useFinancialOverview, usePayableDashboard, useReceivableDashboard, useCashflowDashboard } from '@/hooks/financial/useFinancial';
 import type { IFinancialOverview } from '@/types/financial';
 import { useState, useEffect, useCallback } from 'react';
@@ -146,14 +147,15 @@ function MarginTooltip({ active, payload, label }: any) {
 
 export default function FinanceiroPage() {
   const router = useRouter();
-  const { data: overview, isLoading } = useFinancialOverview({ condominio_id: '' }) as {
+  const { condominioId } = useCondominio();
+  const { data: overview, isLoading } = useFinancialOverview({ condominio_id: condominioId }) as {
     data: IFinancialOverview | undefined;
     isLoading: boolean;
   };
 
-  const { data: payableData } = usePayableDashboard({ condominio_id: '' });
-  const { data: receivableData } = useReceivableDashboard({ condominio_id: '' });
-  const { data: cashflowData } = useCashflowDashboard({ condominio_id: '' });
+  const { data: payableData } = usePayableDashboard({ condominio_id: condominioId });
+  const { data: receivableData } = useReceivableDashboard({ condominio_id: condominioId });
+  const { data: cashflowData } = useCashflowDashboard({ condominio_id: condominioId });
 
   const payableStats = payableData as any;
   const receivableStats = receivableData as any;

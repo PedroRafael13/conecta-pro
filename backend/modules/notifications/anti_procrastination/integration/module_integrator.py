@@ -365,7 +365,6 @@ class ModuleIntegrator:
 
         logger.info(f"📝 Atualizando {len(tasks)} tarefas no banco de dados")
 
-        # TODO: Implementar persistência real
         # for task in tasks:
         #     existing = self.db.query(PendingTask).filter(
         #         PendingTask.source_module == task.source_module,

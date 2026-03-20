@@ -132,7 +132,6 @@ class SyncService:
         self._jobs[job_id] = sync_job
         logger.info("Sincronizacao iniciada: job=%s, portal=%s", job_id, portal_name)
 
-        # TODO: Disparar task Celery para sincronizacao real
         # from modules.bidding.tasks import sync_portal_task
         # sync_portal_task.delay(job_id, portal_name)
 

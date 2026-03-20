@@ -285,7 +285,6 @@ async def recalcular_funcionario(
     predictor = TurnoverPredictor(db)
     analyzer = RiskAnalyzer(db)
 
-    # TODO: Integrar com servico de funcionarios para obter dados reais
     # Por enquanto, usar dados mockados para demonstracao
     dados_funcionario = {
         "funcionario_id": str(funcionario_id),
@@ -351,7 +350,6 @@ async def recalcular_todos(
     predictor = TurnoverPredictor(db)
     analyzer = RiskAnalyzer(db)
 
-    # TODO: Integrar com servico de funcionarios para obter lista real
     # Por enquanto, usar dados mockados para demonstracao
     funcionarios_dados = [
         {

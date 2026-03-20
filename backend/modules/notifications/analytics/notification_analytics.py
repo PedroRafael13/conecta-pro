@@ -298,7 +298,6 @@ class NotificationAnalytics:
         Returns:
             ChannelPerformance detalhado
         """
-        # TODO: Implementar query real
         return await self._get_channel_metrics(db, channel, days, tenant_id)
 
     async def get_campaign_analytics(
@@ -316,7 +315,6 @@ class NotificationAnalytics:
         Returns:
             CampaignMetrics detalhado
         """
-        # TODO: Implementar query real
         return await self._get_campaign_metrics(db, campaign_id)
 
     async def get_user_analytics(
@@ -336,7 +334,6 @@ class NotificationAnalytics:
         Returns:
             Dict com métricas do usuário
         """
-        # TODO: Implementar query real
         return {
             "user_id": user_id,
             "total_received": 45,
@@ -386,8 +383,6 @@ class NotificationAnalytics:
         tenant_id: str | None,
     ) -> dict[str, float]:
         """Obtém métricas em tempo real."""
-        # TODO: Implementar query real com dados de hoje
-
         return {
             "sent_today": 1250,
             "delivered_today": 1200,
@@ -410,8 +405,6 @@ class NotificationAnalytics:
         end_date: datetime | None = None,
     ) -> list[ChannelPerformance]:
         """Obtém performance por canal."""
-        # TODO: Implementar query real
-
         channels = ["push", "email", "sms", "whatsapp", "in_app"]
         results = []
 
@@ -429,8 +422,6 @@ class NotificationAnalytics:
         tenant_id: str | None,
     ) -> ChannelPerformance:
         """Obtém métricas de um canal."""
-        # TODO: Implementar query real
-
         # Dados simulados
         base_metrics = {
             "push": {"sent": 5000, "opened": 3500, "clicked": 1000, "cost": 0},
@@ -472,8 +463,6 @@ class NotificationAnalytics:
         limit: int = 5,
     ) -> list[CampaignMetrics]:
         """Obtém campanhas recentes."""
-        # TODO: Implementar query real
-
         return [
             CampaignMetrics(
                 campaign_id="camp_001",
@@ -538,8 +527,6 @@ class NotificationAnalytics:
         tenant_id: str | None,
     ) -> dict[str, int]:
         """Obtém totais do período."""
-        # TODO: Implementar query real
-
         return {
             "total_sent": 15000,
             "total_delivered": 14700,
@@ -616,8 +603,6 @@ class NotificationAnalytics:
         tenant_id: str | None,
     ) -> list[MetricPoint]:
         """Obtém dados históricos de uma métrica."""
-        # TODO: Implementar query real
-
         # Simular dados
         data = []
         base_value = {"open_rate": 0.35, "click_rate": 0.10, "delivery_rate": 0.96}.get(metric, 0.5)

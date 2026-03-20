@@ -124,8 +124,6 @@ class TimingOptimizer:
         user_id: int,
     ) -> dict:
         """Obtém padrões de atividade do usuário."""
-        # TODO: Calcular do histórico real de atividades
-
         return {
             "peak_hours": [9, 10, 14, 15, 18],
             "low_activity_hours": [0, 1, 2, 3, 4, 5, 6, 22, 23],
@@ -140,8 +138,6 @@ class TimingOptimizer:
         user_id: int,
     ) -> dict:
         """Obtém preferências de timing do usuário."""
-        # TODO: Buscar do repositório real
-
         return {
             "quiet_hours_start": time(22, 0),
             "quiet_hours_end": time(8, 0),
@@ -156,8 +152,6 @@ class TimingOptimizer:
         user_id: int,
     ) -> dict:
         """Obtém performance histórica por hora."""
-        # TODO: Calcular do histórico real
-
         return {
             "open_rate_by_hour": {h: 0.5 + (0.2 if 9 <= h <= 18 else 0) for h in range(24)},
             "click_rate_by_hour": {h: 0.2 + (0.1 if 9 <= h <= 18 else 0) for h in range(24)},

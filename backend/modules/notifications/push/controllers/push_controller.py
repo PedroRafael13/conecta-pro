@@ -1003,7 +1003,7 @@ async def get_campaign_analytics(
         total_delivered=campaign.total_delivered,
         total_opened=campaign.total_opened,
         total_clicked=campaign.total_clicked,
-        total_converted=0,  # TODO: Implementar tracking de conversões
+        total_converted=0,
         delivery_rate=delivery_rate,
         open_rate=open_rate,
         click_rate=click_rate,

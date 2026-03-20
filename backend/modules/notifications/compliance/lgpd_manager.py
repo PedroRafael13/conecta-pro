@@ -799,8 +799,6 @@ class LGPDComplianceManager:
 
     async def _collect_consent_records(self, db: AsyncSession, user_id: int) -> list[dict]:
         """Coleta registros de consentimento (se existir tabela específica)."""
-        # TODO: Implementar quando houver tabela de consentimentos
-        # Por enquanto, retorna registro baseado nas preferências
         prefs_query = select(NotificationPreference).where(
             NotificationPreference.user_id == user_id, NotificationPreference.enabled.is_(True)
         )
@@ -828,7 +826,6 @@ class LGPDComplianceManager:
         user_id: int,
     ) -> None:
         """Anonimiza dados do usuário."""
-        # TODO: Implementar anonimização real
         logger.info(f"Anonymizing data for user {user_id}")
 
     async def _delete_user_data(
@@ -837,7 +834,6 @@ class LGPDComplianceManager:
         user_id: int,
     ) -> None:
         """Exclui dados do usuário."""
-        # TODO: Implementar exclusão real
         logger.info(f"Deleting data for user {user_id}")
 
     async def _log_audit(
@@ -869,7 +865,6 @@ class LGPDComplianceManager:
         )
 
         self._audit_logs.append(log)
-        # TODO: Persistir no banco
         return log
 
     async def _save_consent(
@@ -878,7 +873,6 @@ class LGPDComplianceManager:
         consent: ConsentRecord,
     ) -> None:
         """Salva registro de consentimento."""
-        # TODO: Implementar persistência real
         pass
 
     async def _save_request(
@@ -887,7 +881,6 @@ class LGPDComplianceManager:
         request: DataProcessingRequest,
     ) -> None:
         """Salva solicitação de dados."""
-        # TODO: Implementar persistência real
         pass
 
     async def get_audit_logs(

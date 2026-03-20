@@ -25,9 +25,11 @@ import {
 import { SupplierFormModal } from '@/components/financeiro/supplier-form-modal';
 import { SupplierDetailModal } from '@/components/financeiro/supplier-detail-modal';
 import { cn } from '@/lib/utils';
+import { useCondominio } from '@/contexts/CondominioContext';
 import type { SupplierListResponse } from '@/types/generated/financial/models/supplierListResponse';
 
 export default function FornecedoresPage() {
+  const { condominioId } = useCondominio();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
   const [showFormModal, setShowFormModal] = useState(false);
@@ -44,13 +46,13 @@ export default function FornecedoresPage() {
     error,
     refetch,
   } = useSuppliers({
-    condominio_id: '',
+    condominio_id: condominioId,
     ...(search && { search }),
     ...(statusFilter && { status: statusFilter }),
   });
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: statsRaw, refetch: refetchStats } = useSupplierStats({ condominio_id: '' });
+  const { data: statsRaw, refetch: refetchStats } = useSupplierStats({ condominio_id: condominioId });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const stats = statsRaw as any;
   const createSupplier = useCreateSupplier();

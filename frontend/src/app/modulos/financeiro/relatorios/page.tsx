@@ -50,6 +50,7 @@ import {
   useFinancialOverview,
 } from '@/hooks/financial/useFinancial';
 import { cn } from '@/lib/utils';
+import { useCondominio } from '@/contexts/CondominioContext';
 
 // ─────────────────────────────────────────────
 // Helpers
@@ -142,6 +143,7 @@ const DreRow = ({ label, value, indent = false, bold = false, positive = false, 
 // Main Page
 // ─────────────────────────────────────────────
 export default function RelatoriosPage() {
+  const { condominioId } = useCondominio();
   const [period, setPeriod] = useState<Period>('month');
   const [activeTab, setActiveTab] = useState('dre');
   const [relatorioLoading, setRelatorioLoading] = useState(false);
@@ -153,25 +155,25 @@ export default function RelatoriosPage() {
 
   // ── Data hooks ──────────────────────────────
   const { data: cashflowRaw, isLoading: loadingCashflow, refetch: refetchCashflow } =
-    useCashflowDashboard({ condominio_id: '' });
+    useCashflowDashboard({ condominio_id: condominioId });
 
   const { data: entriesRaw, isLoading: loadingEntries, refetch: refetchEntries } =
-    useCashflowEntries({ condominio_id: '', limit: 200 });
+    useCashflowEntries({ condominio_id: condominioId, limit: 200 });
 
   const { data: projectionRaw, isLoading: loadingProjection, refetch: refetchProjection } =
-    useCashflowProjection({ condominio_id: '' });
+    useCashflowProjection({ condominio_id: condominioId });
 
   const { data: accountsRaw, isLoading: loadingAccounts, refetch: refetchAccounts } =
     useAccountingAccounts({ chart_id: '' });
 
   const { data: payableDashRaw, isLoading: loadingPayable } =
-    usePayableDashboard({ condominio_id: '' });
+    usePayableDashboard({ condominio_id: condominioId });
 
   const { data: receivableDashRaw, isLoading: loadingReceivable } =
-    useReceivableDashboard({ condominio_id: '' });
+    useReceivableDashboard({ condominio_id: condominioId });
 
   const { data: overviewRaw, isLoading: loadingOverview } =
-    useFinancialOverview({ condominio_id: '' });
+    useFinancialOverview({ condominio_id: condominioId });
 
   const isLoadingAny = loadingCashflow || loadingEntries || loadingOverview;
 

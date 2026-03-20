@@ -10,7 +10,7 @@ const nextConfig: NextConfig = {
 
   // TypeScript: validação de tipos ativa
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
 
   // Configuração de ambiente
@@ -39,12 +39,14 @@ const nextConfig: NextConfig = {
       'zod',
     ],
 
-    // Otimização de server components
-    serverComponentsExternalPackages: ['xlsx'],
+    // serverComponentsExternalPackages moved to top-level in Next.js 16
 
     // Partial Prerendering (Next.js 14+)
     ppr: false, // Habilitar quando estiver estável
   },
+
+  // Server external packages (moved from experimental in Next.js 16)
+  serverExternalPackages: ['xlsx'],
 
   // Habilitar Turbopack (Next.js 16)
   turbopack: {

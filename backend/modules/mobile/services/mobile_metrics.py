@@ -269,7 +269,6 @@ class MobileMetrics:
 
     def _flush_metrics(self) -> None:
         """Persiste métricas em storage."""
-        # TODO: Implementar persistência real (Prometheus, InfluxDB, etc)
 
         if self._request_metrics:
             logger.info(f"Flushing {len(self._request_metrics)} request metrics")

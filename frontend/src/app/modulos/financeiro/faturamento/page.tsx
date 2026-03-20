@@ -26,6 +26,7 @@ import {
 import type { BillingRuleResponse } from '@/types/generated/financial/models/billingRuleResponse';
 import type { BillingRuleCreate } from '@/types/generated/financial/models/billingRuleCreate';
 import { bankingApi } from '@/services/banking/bankingService';
+import { useCondominio } from '@/contexts/CondominioContext';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
 } from 'recharts';
@@ -161,6 +162,7 @@ const KPICard = ({ label, value, icon, color }: KPICardProps) => (
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function FaturamentoPage() {
+  const { condominioId } = useCondominio();
   const [activeTab, setActiveTab] = useState<'visao-geral' | 'contratos' | 'medicao' | 'historico'>('visao-geral');
 
   // ── Tab 1 – Visão Geral state
@@ -193,7 +195,7 @@ export default function FaturamentoPage() {
   } | null>(null);
 
   const { data: rulesData, isLoading: rulesLoading, error: rulesError, refetch } = useBillingRules({
-    condominio_id: '',
+    condominio_id: condominioId,
     status: statusFilter !== 'all' ? statusFilter : undefined,
     search: searchTerm || undefined,
   });

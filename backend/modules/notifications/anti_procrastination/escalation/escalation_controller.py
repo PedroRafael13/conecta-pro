@@ -163,8 +163,6 @@ async def manual_escalation(
                 detail="Acesso negado. Requer permissão de gestão para escalation manual.",
             )
 
-        # Por enquanto processa como escalation automática
-        # TODO: Implementar lógica específica para escalation manual
         result = await escalation_engine.process_task_escalation(request.task_id)
 
         # Adiciona informação de escalation manual
@@ -231,8 +229,6 @@ async def get_escalation_rules(
                 status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado. Requer permissão administrativa."
             )
 
-        # Por enquanto retorna regras padrão
-        # TODO: Implementar listagem completa de regras
         default_rules = [
             {
                 "id": "default-compliance",

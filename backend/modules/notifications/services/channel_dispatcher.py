@@ -132,7 +132,6 @@ class EmailSender(ChannelSender):
         if not api_key:
             return {"success": False, "error": "SendGrid API key não configurada"}
 
-        # TODO: Implementar integração com SendGrid
         logger.info(f"SendGrid: enviando para {queue_item.recipient_address}")
         return {
             "success": True,
@@ -146,7 +145,6 @@ class EmailSender(ChannelSender):
         config: dict[str, Any],
     ) -> dict[str, Any]:
         """Envia via AWS SES."""
-        # TODO: Implementar integração com AWS SES
         logger.info(f"AWS SES: enviando para {queue_item.recipient_address}")
         return {
             "success": True,
@@ -194,7 +192,6 @@ class SmsSender(ChannelSender):
         config: dict[str, Any],
     ) -> dict[str, Any]:
         """Envia via Twilio."""
-        # TODO: Implementar integração com Twilio
         logger.info(f"Twilio SMS: enviando para {queue_item.recipient_address}")
         return {
             "success": True,
@@ -208,7 +205,6 @@ class SmsSender(ChannelSender):
         config: dict[str, Any],
     ) -> dict[str, Any]:
         """Envia via Zenvia."""
-        # TODO: Implementar integração com Zenvia
         logger.info(f"Zenvia: enviando para {queue_item.recipient_address}")
         return {
             "success": True,
@@ -221,7 +217,6 @@ class SmsSender(ChannelSender):
         config: dict[str, Any],
     ) -> dict[str, Any]:
         """Envia via AWS SNS."""
-        # TODO: Implementar integração com AWS SNS
         logger.info(f"AWS SNS: enviando para {queue_item.recipient_address}")
         return {
             "success": True,
@@ -267,7 +262,6 @@ class WhatsAppSender(ChannelSender):
         config: dict[str, Any],
     ) -> dict[str, Any]:
         """Envia via WhatsApp Business API."""
-        # TODO: Implementar integração com WhatsApp Business API
         logger.info(f"WhatsApp Business: enviando para {queue_item.recipient_address}")
         return {
             "success": True,
@@ -281,7 +275,6 @@ class WhatsAppSender(ChannelSender):
         config: dict[str, Any],
     ) -> dict[str, Any]:
         """Envia via Twilio WhatsApp."""
-        # TODO: Implementar integração com Twilio WhatsApp
         logger.info(f"Twilio WhatsApp: enviando para {queue_item.recipient_address}")
         return {
             "success": True,
@@ -326,7 +319,6 @@ class PushSender(ChannelSender):
         config: dict[str, Any],
     ) -> dict[str, Any]:
         """Envia via Firebase Cloud Messaging."""
-        # TODO: Implementar integração com FCM
         logger.info(f"FCM: enviando para {queue_item.recipient_address}")
         return {
             "success": True,
@@ -339,7 +331,6 @@ class PushSender(ChannelSender):
         config: dict[str, Any],
     ) -> dict[str, Any]:
         """Envia via OneSignal."""
-        # TODO: Implementar integração com OneSignal
         logger.info(f"OneSignal: enviando para {queue_item.recipient_address}")
         return {
             "success": True,

@@ -14,7 +14,7 @@ import type {
   ExpenseCategory,
 } from '@/types/reimbursement';
 import { EXPENSE_CATEGORY_LABELS } from '@/types/reimbursement';
-import { reimbursementService } from '@/services/reembolso/reimbursementService';
+import { reimbursementRequestService, reimbursementItemService } from '@/services/reimbursement';
 
 interface ReimbursementFormModalProps {
   request?: ReimbursementRequest | null;
@@ -194,7 +194,7 @@ export function ReimbursementFormModal({
 
       if (isEditing && request) {
         // Update existing request
-        await reimbursementService.update(request.id, {
+        await reimbursementRequestService.update(request.id, {
           title: formData.title,
           description: formData.description || undefined,
           expense_date_start: formData.expense_date_start,
@@ -211,10 +211,10 @@ export function ReimbursementFormModal({
         // Update items (simplified - delete and recreate)
         // In production, you'd want to diff and update individually
         for (const existingItem of request.items) {
-          await reimbursementService.deleteItem(request.id, existingItem.id);
+          await reimbursementItemService.delete(request.id, existingItem.id);
         }
         for (const newItem of itemsToSend) {
-          await reimbursementService.addItem(request.id, newItem);
+          await reimbursementItemService.create(request.id, newItem);
         }
       } else {
         // Create new request
@@ -233,7 +233,7 @@ export function ReimbursementFormModal({
           items: itemsToSend,
         };
 
-        await reimbursementService.create(createData);
+        await reimbursementRequestService.create(createData);
       }
 
       onSuccess();

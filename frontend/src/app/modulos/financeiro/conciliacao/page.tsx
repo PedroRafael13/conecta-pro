@@ -42,6 +42,7 @@ import {
   useBankTransactions,
   useImportOFX,
 } from '@/hooks/financial/useFinancial';
+import { useCondominio } from '@/contexts/CondominioContext';
 import type { BankAccountResponse } from '@/types/generated/financial/models/bankAccountResponse';
 import type { BankTransactionResponse } from '@/types/generated/financial/models/bankTransactionResponse';
 import type { BankAccountCreate } from '@/types/generated/financial/models/bankAccountCreate';
@@ -144,6 +145,7 @@ function KpiCard({
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function ConciliacaoPage() {
+  const { condominioId } = useCondominio();
   const [activeTab, setActiveTab] = useState<TabType>('statement');
   const [search, setSearch] = useState('');
   const [showAccountModal, setShowAccountModal] = useState(false);
@@ -206,7 +208,7 @@ export default function ConciliacaoPage() {
     isError: accountsError,
     error: accountsErr,
     refetch: refetchAccounts,
-  } = useBankAccounts({ condominio_id: '' });
+  } = useBankAccounts({ condominio_id: condominioId });
 
   const {
     data: transactionsData,

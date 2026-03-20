@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactNode, useState, useEffect } from 'react';
 import { ThemeProvider } from './ThemeContext';
+import { CondominioProvider } from './CondominioContext';
 import { ProductivityProvider } from '@/components/ProductivityProvider';
 import { DraftCleanupProvider } from '@/components/providers/draft-cleanup-provider';
 import { PushNotificationProvider } from '@/features/notifications';
@@ -60,13 +61,15 @@ export function Providers({ children }: ProvidersProps) {
   return (
     <ThemeProvider defaultTheme="dark" storageKey="conecta-pro-theme">
       <QueryClientProvider client={queryClient}>
-        <PushNotificationProvider>
-          <DraftCleanupProvider>
-            <ProductivityProvider>
-              {children}
-            </ProductivityProvider>
-          </DraftCleanupProvider>
-        </PushNotificationProvider>
+        <CondominioProvider>
+          <PushNotificationProvider>
+            <DraftCleanupProvider>
+              <ProductivityProvider>
+                {children}
+              </ProductivityProvider>
+            </DraftCleanupProvider>
+          </PushNotificationProvider>
+        </CondominioProvider>
       </QueryClientProvider>
     </ThemeProvider>
   );

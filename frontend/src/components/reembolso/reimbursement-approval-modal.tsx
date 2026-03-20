@@ -10,7 +10,7 @@ import {
   EXPENSE_CATEGORY_LABELS,
   APPROVAL_LEVEL_LABELS,
 } from '@/types/reimbursement';
-import { reimbursementService } from '@/services/reembolso/reimbursementService';
+import { reimbursementApprovalService } from '@/services/reimbursement';
 
 interface ReimbursementApprovalModalProps {
   request: ReimbursementRequest | null;
@@ -53,7 +53,7 @@ export function ReimbursementApprovalModal({
     setActionType('approve');
 
     try {
-      await reimbursementService.approve(request.id, {
+      await reimbursementApprovalService.approve(request.id, {
         comments: comments || undefined,
       });
       onSuccess();
@@ -77,7 +77,7 @@ export function ReimbursementApprovalModal({
     setActionType('reject');
 
     try {
-      await reimbursementService.reject(request.id, {
+      await reimbursementApprovalService.reject(request.id, {
         reason: rejectReason,
       });
       onSuccess();
@@ -101,7 +101,7 @@ export function ReimbursementApprovalModal({
     setActionType('return');
 
     try {
-      await reimbursementService.returnToDraft(request.id, {
+      await reimbursementApprovalService.returnToDraft(request.id, {
         reason: returnReason,
       });
       onSuccess();

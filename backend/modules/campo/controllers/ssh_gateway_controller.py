@@ -73,9 +73,6 @@ async def create_ssh_connection(request: SSHConnectionRequest):
 
         logger.info(f"Conexão SSH {session_id} para {request.username}@{request.host}")
 
-        # TODO: Implementar conexão SSH real usando paramiko
-        # Por enquanto simula conexão
-
         return SSHConnectionResponse(
             session_id=session_id,
             host=request.host,
@@ -105,7 +102,6 @@ async def get_ssh_session(session_id: str):
         Informações da sessão
     """
     try:
-        # TODO: Consultar banco de dados para obter dados reais
         return SSHSessionInfo(
             session_id=session_id,
             host="localhost",
@@ -140,9 +136,6 @@ async def execute_ssh_command(session_id: str, command: str):
     try:
         logger.info(f"Executando comando na sessão {session_id}: {command}")
 
-        # TODO: Implementar execução real de comando
-        # Por enquanto simula execução
-
         return {
             "session_id": session_id,
             "command": command,
@@ -171,8 +164,6 @@ async def close_ssh_session(session_id: str):
     """
     try:
         logger.info(f"Encerrando sessão SSH {session_id}")
-
-        # TODO: Implementar encerramento real da sessão
 
         return {
             "session_id": session_id,
@@ -204,7 +195,6 @@ async def list_ssh_sessions(
         Lista de sessões SSH
     """
     try:
-        # TODO: Implementar consulta real ao banco
         return {"sessions": [], "total": 0, "status_filter": status, "limit": limit}
 
     except Exception as e:

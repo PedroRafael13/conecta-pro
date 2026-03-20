@@ -19,9 +19,11 @@ import {
 } from '@/hooks/financial/useFinancial';
 import { CustomerFormModal } from '@/components/financeiro/customer-form-modal';
 import { cn, formatCurrency } from '@/lib/utils';
+import { useCondominio } from '@/contexts/CondominioContext';
 import type { CustomerResponse } from '@/types/generated/financial/models/customerResponse';
 
 export default function ClientesPage() {
+  const { condominioId } = useCondominio();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
   const [showFormModal, setShowFormModal] = useState(false);
@@ -37,7 +39,7 @@ export default function ClientesPage() {
     error,
     refetch,
   } = useCustomers({
-    condominio_id: '',
+    condominio_id: condominioId,
     skip: (page - 1) * pageSize,
     limit: pageSize,
     ...(search && { search }),
