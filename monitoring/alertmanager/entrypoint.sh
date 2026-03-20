@@ -26,7 +26,6 @@ route:
         severity: critical
       receiver: 'critical-webhook'
       repeat_interval: 1h
-      continue: true
     - match:
         severity: warning
       receiver: 'default-webhook'
@@ -65,23 +64,12 @@ receivers:
           {{ .Annotations.description }}
           {{ end }}
         send_resolved: true
-  - name: 'email-alerts'
-    email_configs:
-      - to: 'admin@conectamais.pro'
-        headers:
-          Subject: '[ALERTA] {{ .GroupLabels.alertname }}'
-
 inhibit_rules:
   - source_match:
       severity: 'critical'
     target_match:
       severity: 'warning'
     equal: ['alertname', 'job']
-  - source_match:
-      alertname: 'InstanceDown'
-    target_match:
-      alertname: 'HighLatency'
-    equal: ['job']
 EOF
 
 # Executar o AlertManager com o arquivo gerado

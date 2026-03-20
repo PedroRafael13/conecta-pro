@@ -87,14 +87,13 @@ services:
     image: prometheuscommunity/postgres-exporter:v0.15.0
     container_name: erp-postgres-exporter
     restart: unless-stopped
+    env_file:
+      - .env.postgres
     ports:
       - "9187:9187"
-    environment:
-      - DATA_SOURCE_NAME=${DATABASE_URL:-postgresql://erp_user:erp_password@host.docker.internal:5432/erp_db?sslmode=disable}
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     networks:
       - monitoring
+      - conecta-pro_conecta-pro-network
 
   # ==========================================================================
   # Loki (Agregador de Logs)
@@ -165,6 +164,8 @@ services:
 networks:
   monitoring:
     driver: bridge
+  conecta-pro_conecta-pro-network:
+    external: true
 
 volumes:
   prometheus_data:

@@ -9,15 +9,25 @@ groups:
       # INFRAESTRUTURA
       # =====================================================================
 
-      # Database down
+      # Database exporter down
       - alert: PostgresDown
         expr: up{job="postgres"} == 0
         for: 1m
         labels:
           severity: critical
         annotations:
-          summary: "PostgreSQL nao acessivel"
+          summary: "PostgreSQL exporter nao acessivel"
           description: "Exporter do PostgreSQL nao esta respondendo ha mais de 1 minuto."
+
+      # Database connection lost (exporter up but cant connect to PG)
+      - alert: PostgresConnectionLost
+        expr: pg_up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL conexao perdida"
+          description: "Exporter esta rodando mas nao consegue conectar ao banco. Verificar credenciais e rede."
 
       # Redis down
       - alert: RedisDown
