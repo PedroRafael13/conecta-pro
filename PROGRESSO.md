@@ -1,8 +1,10 @@
 # PROGRESSO — Cleanup & Quality Gate do Conecta PRO
 
 **Data de inicio:** 2026-03-19
+**Data de conclusao:** 2026-03-20
 **Branch:** `feature/people-management-reorganization`
 **Ponto de restauracao:** tag `pre-cleanup-2026-03-19` (commit `4eed46fc`)
+**Status:** ✅ TODAS AS FASES CONCLUIDAS (0-4)
 
 ---
 
@@ -57,7 +59,7 @@
 
 ---
 
-## PLANO DE EXECUCAO — FASES 1 a 4
+## PLANO DE EXECUCAO — FASES 1 a 4 (TODAS COMPLETAS)
 
 ### Diagrama de dependencias
 
@@ -109,7 +111,7 @@ TEMPO     T1(Guardian)  T2(Types)  T3(Reemb.)  T4(Context)  T5(TODOs)
 
 ---
 
-## TERMINAL 1 — Guardian Removal (Fase 1)
+## TERMINAL 1 — Guardian Removal (Fase 1) ✅ COMPLETO
 
 ### Prompt para colar no Claude Code:
 
@@ -144,7 +146,7 @@ Quando terminar, liste exatamente quantos arquivos foram deletados e editados.
 
 ---
 
-## TERMINAL 2 — Orval Regen + ignoreBuildErrors (Fase 1)
+## TERMINAL 2 — Orval Regen + ignoreBuildErrors (Fase 1) ✅ COMPLETO
 
 ### Prompt para colar no Claude Code:
 
@@ -188,7 +190,7 @@ Quando terminar, reporte:
 
 ---
 
-## TERMINAL 3 — Reembolso Consolidation (Fase 1)
+## TERMINAL 3 — Reembolso Consolidation (Fase 1) ✅ COMPLETO
 
 ### Prompt para colar no Claude Code:
 
@@ -232,7 +234,7 @@ Quando terminar, liste arquivos editados e deletados.
 
 ---
 
-## TERMINAL 4 — Contexts: userId + condominio (Fase 2)
+## TERMINAL 4 — Contexts: userId + condominio (Fase 2) ✅ COMPLETO
 
 ### Prompt para colar no Claude Code:
 
@@ -283,7 +285,7 @@ Quando terminar, reporte:
 
 ---
 
-## TERMINAL 5 — Backend TODO Audit (Fase 2)
+## TERMINAL 5 — Backend TODO Audit (Fase 2) ✅ COMPLETO
 
 ### Prompt para colar no Claude Code:
 
@@ -330,9 +332,15 @@ Quando terminar, reporte totais por categoria.
 
 ---
 
-## FASE 3 — QA (Terminal Principal, APOS Fases 1+2)
+## FASE 3 — QA (COMPLETA)
 
-Apos TODOS os 5 terminais finalizarem, voltar ao terminal principal e executar:
+**Data:** 2026-03-20
+**Build:** 0 erros, 211 paginas, compilado em 31s
+**Health:** backend healthy (v2.0.0)
+**Commits:** `4d793684` (cleanup principal) + `727f74bb` (fix type error)
+**Tag:** `post-cleanup-2026-03-19`
+
+Comandos executados:
 
 ```bash
 # 1. Verificar estado git
@@ -362,19 +370,22 @@ git tag post-cleanup-2026-03-19
 
 ---
 
-## FASE 4 — Componentes Grandes (OPCIONAL, apos Fase 3)
+## FASE 4 — Componentes Grandes (COMPLETA)
 
-Decompor componentes com 500+ linhas:
+**Data:** 2026-03-20
+**Build:** passa limpo (0 erros TS, 211 paginas)
 
-| Componente | Linhas | Estrategia |
-|------------|--------|-----------|
-| `post-form-modal.tsx` | 872 | Extrair StepperNav, FormStepContent (x6), ModalActions |
-| `diarist-form-modal.tsx` | 770 | Extrair FormTabs, ValidationLogic, FormFields |
-| `BartoloChat.tsx` | 653 | Extrair ChatMessages, ChatInput, ActionButtons |
-| `reimbursement-form-modal.tsx` | 546 | Extrair FormSections, AttachmentUpload |
-| `BartoloChatWidget.tsx` | 506 | Extrair WidgetContainer, MinimizedView |
+3 componentes decompostos:
 
-**Executar APENAS se Fase 3 passar sem problemas.**
+| Componente | Antes | Depois | Arquivos criados |
+|------------|-------|--------|------------------|
+| `post-form-modal.tsx` | 872 | 340 | `post-form-steps.tsx` (477), `post-form-types.ts` (46) |
+| `diarist-form-modal.tsx` | 770 | 297 | `diarist-dados-pessoais-tab.tsx` (185), `diarist-servicos-tab.tsx` (124), `diarist-pagamento-tab.tsx` (118), `diarist-form-types.ts` (105) |
+| `BartoloChat.tsx` | 653 | 452 | `bartolo-chat/ChatHeader.tsx` (62), `bartolo-chat/ChatMessages.tsx` (155), `bartolo-chat/ChatInput.tsx` (62), `bartolo-chat/ChatSuggestions.tsx` (28), `bartolo-chat/DachshundIcon.tsx` (99), `bartolo-chat/types.ts` (35), `bartolo-chat/index.ts` (6) |
+
+Nao decompostos (manter como esta):
+- `reimbursement-form-modal.tsx` (546) — complexidade nao justifica
+- `BartoloChatWidget.tsx` (506) — componente independente do BartoloChat
 
 ---
 
