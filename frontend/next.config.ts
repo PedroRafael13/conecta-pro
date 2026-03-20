@@ -6,7 +6,7 @@ const bundleAnalyzer = withBundleAnalyzer({
 });
 
 const nextConfig: NextConfig = {
-  // output: 'standalone', // Temporariamente desabilitado para compatibilidade com npm start
+  output: 'standalone',
 
   // TypeScript: validação de tipos ativa
   typescript: {
