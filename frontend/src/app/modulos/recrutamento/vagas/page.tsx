@@ -91,8 +91,8 @@ export default function VagasPage() {
       setDialogOpen(false);
       setFormData({ title: '', description: '', department: '', location: '', employment_type: 'clt', vacancies: 1 });
       invalidateQueries();
-    } catch (err) {
-      console.error('Erro ao criar vaga:', err);
+    } catch {
+      // silenced
     }
   };
 
@@ -100,8 +100,8 @@ export default function VagasPage() {
     try {
       await publishMutation.mutateAsync({ positionId } as any);
       invalidateQueries();
-    } catch (err) {
-      console.error('Erro ao publicar vaga:', err);
+    } catch {
+      // silenced
     }
   };
 
@@ -109,8 +109,8 @@ export default function VagasPage() {
     try {
       await closeMutation.mutateAsync({ positionId } as any);
       invalidateQueries();
-    } catch (err) {
-      console.error('Erro ao fechar vaga:', err);
+    } catch {
+      // silenced
     }
   };
 
@@ -118,8 +118,8 @@ export default function VagasPage() {
     try {
       await deleteMutation.mutateAsync({ positionId } as any);
       invalidateQueries();
-    } catch (err) {
-      console.error('Erro ao excluir vaga:', err);
+    } catch {
+      // silenced
     }
   };
 

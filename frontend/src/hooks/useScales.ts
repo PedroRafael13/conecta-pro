@@ -46,7 +46,6 @@ export function useScales(
       setTotal(response.total);
       setTotalPages(response.total_pages);
     } catch (err) {
-      console.error('Erro ao buscar escalas:', err);
       setError('Erro ao carregar escalas');
       setScales([]);
     } finally {
@@ -103,7 +102,6 @@ export function useScale(id: string | null) {
       });
       setScale(data);
     } catch (err) {
-      console.error('Erro ao buscar escala:', err);
       setError('Erro ao carregar escala');
       setScale(null);
     } finally {
@@ -138,7 +136,6 @@ export function useScaleOperations() {
       });
       return scale;
     } catch (err: unknown) {
-      console.error('Erro ao gerar escala:', err);
       const message = err instanceof Error ? err.message : 'Erro ao gerar escala';
       setError(message);
       return null;
@@ -157,7 +154,6 @@ export function useScaleOperations() {
       });
       return scale;
     } catch (err: unknown) {
-      console.error('Erro ao enviar para aprovação:', err);
       const message = err instanceof Error ? err.message : 'Erro ao enviar para aprovação';
       setError(message);
       return null;
@@ -177,7 +173,6 @@ export function useScaleOperations() {
       });
       return scale;
     } catch (err: unknown) {
-      console.error('Erro ao aprovar escala:', err);
       const message = err instanceof Error ? err.message : 'Erro ao aprovar escala';
       setError(message);
       return null;
@@ -200,7 +195,6 @@ export function useScaleOperations() {
       });
       return scale;
     } catch (err: unknown) {
-      console.error('Erro ao publicar escala:', err);
       const message = err instanceof Error ? err.message : 'Erro ao publicar escala';
       setError(message);
       return null;
@@ -219,7 +213,6 @@ export function useScaleOperations() {
       });
       return true;
     } catch (err: unknown) {
-      console.error('Erro ao deletar escala:', err);
       const message = err instanceof Error ? err.message : 'Erro ao deletar escala';
       setError(message);
       return false;
@@ -254,7 +247,6 @@ export function useCurrentMonthScales() {
       });
       setScales(response.items);
     } catch (err) {
-      console.error('Erro ao buscar escalas do mês:', err);
       setError('Erro ao carregar escalas');
       setScales([]);
     } finally {
@@ -289,7 +281,6 @@ export function useScaleStats() {
       });
       setStats(data);
     } catch (err) {
-      console.error('Erro ao buscar estatísticas de escalas:', err);
       setError('Erro ao carregar estatísticas');
     } finally {
       setIsLoading(false);

@@ -110,8 +110,7 @@ export default function SubstituicoesPage() {
         },
       });
       setSuggestions(result ?? []);
-    } catch (err) {
-      console.error('Erro ao buscar sugestoes:', err);
+    } catch {
       setSuggestions([]);
     } finally {
       setLoadingSuggestions(false);
@@ -126,8 +125,8 @@ export default function SubstituicoesPage() {
       });
       setShowSuggestionsModal(false);
       refetch();
-    } catch (err) {
-      console.error('Erro ao confirmar substituicao:', err);
+    } catch {
+      // silenced
     }
   };
 
@@ -149,8 +148,8 @@ export default function SubstituicoesPage() {
       setRejectTarget(null);
       setRejectReason('');
       refetch();
-    } catch (err) {
-      console.error('Erro ao rejeitar substituicao:', err);
+    } catch {
+      // silenced
     } finally {
       setIsRejecting(false);
     }

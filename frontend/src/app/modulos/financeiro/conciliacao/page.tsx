@@ -167,8 +167,8 @@ export default function ConciliacaoPage() {
       const data = await fetchBankStatementFull(statementDays, bankCode);
       setStatementData(data);
       setLastSync(new Date().toLocaleTimeString('pt-BR'));
-    } catch (e) {
-      console.error(e);
+    } catch {
+      // silenced
     } finally {
       setStatementLoading(false);
     }
@@ -263,7 +263,6 @@ export default function ConciliacaoPage() {
       await createBankAccount.mutateAsync({ data: data as BankAccountCreate });
       setShowAccountModal(false);
     } catch (err) {
-      console.error('Erro ao criar conta bancaria:', err);
       throw err;
     }
   };
@@ -286,8 +285,8 @@ export default function ConciliacaoPage() {
             data: { file: f } as unknown as Parameters<typeof importOFX.mutateAsync>[0]['data'],
             params: { bank_account_id: '' },
           });
-        } catch (err) {
-          console.error('Erro ao importar OFX:', err);
+        } catch {
+          // silenced
         }
       };
       target.click();
@@ -301,8 +300,8 @@ export default function ConciliacaoPage() {
         data: { file: file! } as unknown as Parameters<typeof importOFX.mutateAsync>[0]['data'],
         params: { bank_account_id: '' },
       });
-    } catch (err) {
-      console.error('Erro ao importar OFX:', err);
+    } catch {
+      // silenced
     }
   };
 

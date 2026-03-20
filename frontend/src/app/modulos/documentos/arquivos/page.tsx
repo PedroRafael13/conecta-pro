@@ -256,8 +256,7 @@ export default function ArquivosPage() {
         setUploadFiles(prev => prev.map((f, idx) =>
           idx === i ? { ...f, status: 'success', progress: 100 } : f
         ));
-      } catch (error) {
-        console.error('Erro no upload:', error);
+      } catch {
         setUploadFiles(prev => prev.map((f, idx) =>
           idx === i ? { ...f, status: 'error', error: 'Falha no upload' } : f
         ));
@@ -298,8 +297,7 @@ export default function ArquivosPage() {
     try {
       const viewData = await getViewUrlApiV1GedDocumentsDocumentIdViewUrlGet(doc.id);
       window.open((viewData as any).url, '_blank');
-    } catch (error) {
-      console.error('Erro ao visualizar:', error);
+    } catch {
       toast({
         variant: 'destructive',
         title: 'Erro ao abrir documento',
@@ -316,8 +314,7 @@ export default function ArquivosPage() {
         title: 'Download iniciado',
         description: `Baixando ${doc.title}...`,
       });
-    } catch (error) {
-      console.error('Erro no download:', error);
+    } catch {
       toast({
         variant: 'destructive',
         title: 'Erro no download',
@@ -340,8 +337,7 @@ export default function ArquivosPage() {
       });
       setSelectedDocument(null);
       invalidateDocuments();
-    } catch (error) {
-      console.error('Erro ao excluir:', error);
+    } catch {
       toast({
         variant: 'destructive',
         title: 'Erro ao excluir',

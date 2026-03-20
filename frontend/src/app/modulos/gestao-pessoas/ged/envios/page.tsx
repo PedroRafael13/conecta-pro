@@ -72,7 +72,6 @@ export default function EnviosPage() {
         setDeliveries(Array.isArray(data) ? data : data.items || []);
       }
     } catch (err) {
-      console.error('Erro ao carregar envios:', err);
     } finally {
       setLoading(false);
     }

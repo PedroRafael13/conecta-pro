@@ -176,7 +176,6 @@ export default function ConsentimentoPage() {
       setSelectedConsent(null);
       handleRefresh();
     } catch (error) {
-      console.error('Erro ao revogar consentimento:', error);
     } finally {
       setIsRevoking(false);
     }
@@ -188,7 +187,6 @@ export default function ConsentimentoPage() {
       setShowFormModal(false);
       handleRefresh();
     } catch (error) {
-      console.error('Erro ao registrar consentimento:', error);
     }
   };
 

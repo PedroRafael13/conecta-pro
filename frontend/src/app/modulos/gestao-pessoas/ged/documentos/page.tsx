@@ -89,7 +89,6 @@ export default function DocumentosSearchPage() {
         setResults(Array.isArray(data) ? data : data.items || []);
       }
     } catch (err) {
-      console.error('Erro ao buscar documentos:', err);
     } finally {
       setLoading(false);
     }

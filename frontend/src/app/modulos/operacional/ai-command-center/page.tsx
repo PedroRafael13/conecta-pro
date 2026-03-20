@@ -111,7 +111,6 @@ export default function AICommandCenterOperacionalPage() {
       }
       setLastUpdated(new Date());
     } catch (err) {
-      console.error('Erro ao carregar AI Command Center:', err);
     } finally {
       setIsLoading(false);
     }

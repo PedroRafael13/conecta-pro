@@ -67,8 +67,8 @@ export default function CandidaturasPage() {
     try {
       await advanceMutation.mutateAsync({ applicationId } as any);
       invalidateQueries();
-    } catch (err) {
-      console.error('Erro ao avancar candidatura:', err);
+    } catch {
+      // silenced
     }
   };
 
@@ -76,8 +76,8 @@ export default function CandidaturasPage() {
     try {
       await rejectMutation.mutateAsync({ applicationId, data: { reason: 'Nao aprovado' } } as any);
       invalidateQueries();
-    } catch (err) {
-      console.error('Erro ao rejeitar candidatura:', err);
+    } catch {
+      // silenced
     }
   };
 
@@ -85,8 +85,8 @@ export default function CandidaturasPage() {
     try {
       await proposalMutation.mutateAsync({ applicationId } as any);
       invalidateQueries();
-    } catch (err) {
-      console.error('Erro ao enviar proposta:', err);
+    } catch {
+      // silenced
     }
   };
 

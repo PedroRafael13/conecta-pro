@@ -96,8 +96,7 @@ export default function CriptografiaPage() {
         String(result);
 
       setEncryptResult(encrypted);
-    } catch (error) {
-      console.error('Erro ao criptografar:', error);
+    } catch {
       setEncryptResult('Erro ao criptografar dados');
     }
   };
@@ -116,8 +115,7 @@ export default function CriptografiaPage() {
         String(result);
 
       setDecryptResult(decrypted);
-    } catch (error) {
-      console.error('Erro ao descriptografar:', error);
+    } catch {
       setDecryptResult('Erro ao descriptografar dados');
     }
   };
@@ -128,7 +126,7 @@ export default function CriptografiaPage() {
       setter(true);
       setTimeout(() => setter(false), 2000);
     } catch {
-      console.error('Erro ao copiar');
+      // silenced
     }
   };
 

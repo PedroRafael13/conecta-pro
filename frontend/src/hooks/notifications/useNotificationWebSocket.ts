@@ -89,7 +89,7 @@ export function useNotificationWebSocket(options: WebSocketOptions = {}) {
           break;
 
         default:
-          console.warn('[WebSocket] Tipo de evento desconhecido:', event.type);
+          break;
       }
     },
     [queryClient]
@@ -138,7 +138,6 @@ export function useNotificationWebSocket(options: WebSocketOptions = {}) {
       };
 
       wsRef.current.onerror = (error) => {
-        console.error('[WebSocket] Erro:', error);
         onError?.(error);
       };
 
@@ -151,11 +150,11 @@ export function useNotificationWebSocket(options: WebSocketOptions = {}) {
           // Invalidar queries relevantes baseado no tipo do evento
           handleEventUpdateRef.current?.(notificationEvent);
         } catch (error) {
-          console.error('[WebSocket] Erro ao processar mensagem:', error);
+          // message parse error - silently ignored
         }
       };
     } catch (error) {
-      console.error('[WebSocket] Erro ao conectar:', error);
+      // connection failed - will retry via reconnect
     }
   }, [
     getWebSocketUrl,
@@ -191,8 +190,6 @@ export function useNotificationWebSocket(options: WebSocketOptions = {}) {
   const send = useCallback((message: unknown) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify(message));
-    } else {
-      console.warn('[WebSocket] Não conectado. Não é possível enviar mensagem.');
     }
   }, []);
 

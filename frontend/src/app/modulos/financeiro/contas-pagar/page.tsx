@@ -150,8 +150,8 @@ export default function ContasPagarPage() {
       }
       setFormModalOpen(false);
       setSelectedPayable(null);
-    } catch (err) {
-      console.error('Erro ao salvar conta a pagar:', err);
+    } catch {
+      // silenced
     }
   };
 
@@ -162,8 +162,8 @@ export default function ContasPagarPage() {
       await updatePayable({ accountId: selectedPayable.id, data: cancelUpdate });
       setDeleteModalOpen(false);
       setSelectedPayable(null);
-    } catch (err) {
-      console.error('Erro ao cancelar conta:', err);
+    } catch {
+      // silenced
     }
   };
 
@@ -174,8 +174,8 @@ export default function ContasPagarPage() {
       setPaymentModalOpen(false);
       setSelectedPayable(null);
       // refetch() removido - mutations já invalidam queries automaticamente
-    } catch (err) {
-      console.error('Erro ao registrar pagamento:', err);
+    } catch {
+      // silenced
     }
   };
 

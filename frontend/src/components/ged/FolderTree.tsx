@@ -36,7 +36,6 @@ export function FolderTree({ onFolderSelect, selectedFolderId }: FolderTreeProps
       const treeData = buildTree(response);
       setTree(treeData);
     } catch (error) {
-      console.error('Erro ao carregar árvore de pastas:', error);
     } finally {
       setLoading(false);
     }

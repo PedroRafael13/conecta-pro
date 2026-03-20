@@ -76,7 +76,7 @@ export default function FechamentoFolhaPage() {
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Erro desconhecido';
       setError(`Erro ao gerar pagamentos: ${message}`);
-      console.error(err);
+      void err;
     } finally {
       setIsGenerating(false);
     }

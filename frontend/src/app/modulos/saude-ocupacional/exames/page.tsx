@@ -67,7 +67,6 @@ export default function ExamesPage() {
         observacoes: '',
       });
     } catch (error) {
-      console.error('Erro ao agendar exame:', error);
     }
   };
 

@@ -102,7 +102,7 @@ export default function ContabilidadePage() {
       setShowFormModal(false);
       // refetch() removido - mutation já invalida queries automaticamente
     } catch (error) {
-      console.error('Erro ao criar lancamento:', error);
+      void error;
     }
   };
 

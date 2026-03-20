@@ -106,7 +106,6 @@ export default function RelatoriosPage() {
         alert('Erro ao gerar relatorio. Tente novamente.');
       }
     } catch (err) {
-      console.error('Erro ao gerar relatorio:', err);
       alert('Erro ao gerar relatorio. Verifique sua conexao.');
     } finally {
       setGeneratingId(null);
@@ -143,7 +142,6 @@ export default function RelatoriosPage() {
         alert('Erro ao baixar relatorio.');
       }
     } catch (err) {
-      console.error('Erro ao baixar relatorio:', err);
     } finally {
       setGeneratingId(null);
     }

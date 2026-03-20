@@ -90,8 +90,8 @@ export default function GedClientesPage() {
         const data = await res.json();
         setClients(Array.isArray(data) ? data : data.items || []);
       }
-    } catch (err) {
-      console.error('Erro ao carregar clientes:', err);
+    } catch {
+      // silenced
     } finally {
       setLoading(false);
     }
@@ -130,8 +130,8 @@ export default function GedClientesPage() {
         setShowModal(false);
         fetchClients();
       }
-    } catch (err) {
-      console.error('Erro ao salvar cliente:', err);
+    } catch {
+      // silenced
     } finally {
       setSaving(false);
     }
@@ -147,8 +147,8 @@ export default function GedClientesPage() {
       if (res.ok) {
         fetchClients();
       }
-    } catch (err) {
-      console.error('Erro ao excluir cliente:', err);
+    } catch {
+      // silenced
     }
   }
 
@@ -160,8 +160,8 @@ export default function GedClientesPage() {
         body: JSON.stringify({ portal_access_enabled: !client.portal_access_enabled }),
       });
       fetchClients();
-    } catch (err) {
-      console.error('Erro ao atualizar portal:', err);
+    } catch {
+      // silenced
     }
   }
 

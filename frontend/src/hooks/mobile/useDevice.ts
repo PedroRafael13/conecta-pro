@@ -112,7 +112,6 @@ export function useAutoRegisterDevice(pushToken?: string) {
 
   const handleRegister = () => {
     if (!pushToken) {
-      console.warn('Push token not available');
       return;
     }
 

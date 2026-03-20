@@ -140,7 +140,7 @@ export default function ContasReceberPage() {
       setFormModalOpen(false);
       setSelectedReceivable(null);
     } catch (err) {
-      console.error('Erro ao salvar conta a receber:', err);
+      void err;
     }
   };
 

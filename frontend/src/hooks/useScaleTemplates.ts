@@ -39,7 +39,7 @@ export function useTemplates(
       setTotal(response.total);
       setTotalPages(response.total_pages);
     } catch (err) {
-      console.error('Erro ao buscar templates:', err);
+
       setError('Erro ao carregar templates');
       setTemplates([]);
     } finally {
@@ -96,7 +96,7 @@ export function useTemplate(id: string | null) {
       const data = await scaleTemplatesService.getById(id);
       setTemplate(data);
     } catch (err) {
-      console.error('Erro ao buscar template:', err);
+
       setError('Erro ao carregar template');
       setTemplate(null);
     } finally {
@@ -135,7 +135,7 @@ export function useTemplateOperations() {
       });
       return template;
     } catch (err: unknown) {
-      console.error('Erro ao criar template:', err);
+
       const message = err instanceof Error ? err.message : 'Erro ao criar template';
       setError(message);
       toast({
@@ -163,7 +163,7 @@ export function useTemplateOperations() {
       });
       return template;
     } catch (err: unknown) {
-      console.error('Erro ao atualizar template:', err);
+
       const message = err instanceof Error ? err.message : 'Erro ao atualizar template';
       setError(message);
       toast({
@@ -188,7 +188,7 @@ export function useTemplateOperations() {
       });
       return true;
     } catch (err: unknown) {
-      console.error('Erro ao deletar template:', err);
+
       const message = err instanceof Error ? err.message : 'Erro ao deletar template';
       setError(message);
       toast({
@@ -216,7 +216,7 @@ export function useTemplateOperations() {
       });
       return scale;
     } catch (err: unknown) {
-      console.error('Erro ao aplicar template:', err);
+
       const message = err instanceof Error ? err.message : 'Erro ao aplicar template';
       setError(message);
       toast({
@@ -240,7 +240,7 @@ export function useTemplateOperations() {
       const scale = await scaleTemplatesService.preview(id, data);
       return scale;
     } catch (err: unknown) {
-      console.error('Erro ao fazer preview do template:', err);
+
       const message = err instanceof Error ? err.message : 'Erro ao fazer preview';
       setError(message);
       return null;

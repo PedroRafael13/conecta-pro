@@ -134,7 +134,7 @@ export default function ComprasPage() {
       setShowFormModal(false);
       // refetch() removido - mutation já invalida queries automaticamente
     } catch (error) {
-      console.error('Erro ao salvar:', error);
+      void error;
     }
   };
 

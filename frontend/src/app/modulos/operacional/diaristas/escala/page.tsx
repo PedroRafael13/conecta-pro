@@ -105,7 +105,7 @@ export default function EscalaDiariaPage() {
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Erro desconhecido';
       setError(`Erro ao criar escala: ${message}`);
-      console.error(err);
+      void err;
     } finally {
       setIsSaving(false);
     }

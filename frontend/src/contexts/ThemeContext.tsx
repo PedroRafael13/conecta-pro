@@ -78,7 +78,6 @@ export function ThemeProvider({
         applyTheme(defaultTheme);
       }
     } catch (error) {
-      console.error('Erro ao carregar tema do localStorage:', error);
       applyTheme(defaultTheme);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- runs once on mount
@@ -116,7 +115,6 @@ export function ThemeProvider({
       // TODO: Sincronizar com backend (preferências do usuário)
       // userPreferencesService.update({ theme: newTheme });
     } catch (error) {
-      console.error('Erro ao salvar tema:', error);
     }
   };
 

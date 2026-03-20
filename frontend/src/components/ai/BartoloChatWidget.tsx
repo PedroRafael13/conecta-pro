@@ -179,7 +179,6 @@ export function BartoloChatWidget({
         module: module,
       });
     } catch (error) {
-      console.error('Error sending message:', error);
     }
   };
 
@@ -221,7 +220,6 @@ export function BartoloChatWidget({
       toast.success('Ação executada com sucesso!');
       setActionPreview(null);
     } catch (error) {
-      console.error('Error executing action:', error);
       toast.error('Erro ao executar ação. Tente novamente.');
     } finally {
       setIsExecutingAction(false);
@@ -241,7 +239,6 @@ export function BartoloChatWidget({
       toast.info('Ação cancelada');
       setActionPreview(null);
     } catch (error) {
-      console.error('Error canceling action:', error);
       setActionPreview(null);
     }
   };

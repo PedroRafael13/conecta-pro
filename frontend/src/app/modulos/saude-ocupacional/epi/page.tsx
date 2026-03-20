@@ -108,7 +108,6 @@ export default function EPIPage() {
       setDialogOpen(false);
       resetForm();
     } catch (error) {
-      console.error('Erro ao salvar EPI:', error);
     }
   };
 

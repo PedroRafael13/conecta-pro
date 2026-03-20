@@ -176,7 +176,6 @@ export function TenderFormModal({
       onSuccess?.();
       onClose();
     } catch (error) {
-      console.error('Erro ao salvar edital:', error);
     }
   };
 

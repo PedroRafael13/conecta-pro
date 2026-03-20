@@ -43,7 +43,6 @@ export function useDisputeWebSocket({
       wsRef.current = new WebSocket(wsUrl);
 
       wsRef.current.onopen = () => {
-        console.log('[WebSocket] Conectado à disputa:', sessaoId);
         setIsConnected(true);
       };
 
@@ -85,27 +84,23 @@ export function useDisputeWebSocket({
               break;
           }
         } catch (e) {
-          console.error('[WebSocket] Erro ao processar mensagem:', e);
+          // message parse error - silently ignored
         }
       };
 
       wsRef.current.onclose = () => {
-        console.log('[WebSocket] Desconectado');
         setIsConnected(false);
 
         // Reconectar após 3 segundos
         reconnectTimeoutRef.current = setTimeout(() => {
-          console.log('[WebSocket] Tentando reconectar...');
           connect();
         }, 3000);
       };
 
       wsRef.current.onerror = (error) => {
-        console.error('[WebSocket] Erro:', error);
         onError?.(error);
       };
     } catch (error) {
-      console.error('[WebSocket] Erro ao conectar:', error);
       onError?.(error);
     }
   }, [sessaoId, onLanceEnviado, onLanceCoberto, onMelhorColocado, onConvocacao, onFimDisputa, onStatusUpdate, onError]);

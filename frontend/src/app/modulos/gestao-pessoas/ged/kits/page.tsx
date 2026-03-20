@@ -87,8 +87,8 @@ export default function KitsListPage() {
         const data = await res.json();
         setClients(Array.isArray(data) ? data : data.items || []);
       }
-    } catch (err) {
-      console.error('Erro ao carregar clientes:', err);
+    } catch {
+      // silenced
     }
   }
 
@@ -106,8 +106,8 @@ export default function KitsListPage() {
         const data = await res.json();
         setKits(Array.isArray(data) ? data : data.items || []);
       }
-    } catch (err) {
-      console.error('Erro ao carregar kits:', err);
+    } catch {
+      // silenced
     } finally {
       setLoading(false);
     }
@@ -121,8 +121,8 @@ export default function KitsListPage() {
         headers: getAuthHeaders(),
       });
       fetchKits();
-    } catch (err) {
-      console.error('Erro ao enviar kit:', err);
+    } catch {
+      // silenced
     }
   }
 
@@ -134,8 +134,8 @@ export default function KitsListPage() {
         headers: getAuthHeaders(),
       });
       fetchKits();
-    } catch (err) {
-      console.error('Erro ao aprovar kit:', err);
+    } catch {
+      // silenced
     }
   }
 

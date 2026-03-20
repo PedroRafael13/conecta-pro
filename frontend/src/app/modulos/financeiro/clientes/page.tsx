@@ -77,7 +77,6 @@ export default function ClientesPage() {
       setSelectedCustomer(null);
       refetch();
     } catch (err) {
-      console.error('Erro ao salvar cliente:', err);
       throw err;
     }
   };

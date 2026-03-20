@@ -57,7 +57,6 @@ export function useGPWebSocket({
       ws.onopen = () => {
         setConnected(true);
         reconnectCountRef.current = 0;
-        console.log('[GP WebSocket] Conectado');
       };
 
       ws.onmessage = (event) => {
@@ -77,25 +76,23 @@ export function useGPWebSocket({
 
       ws.onclose = () => {
         setConnected(false);
-        console.log('[GP WebSocket] Desconectado');
 
         // Reconnect automatico
         if (reconnectCountRef.current < maxReconnectAttempts) {
           reconnectTimerRef.current = setTimeout(() => {
             reconnectCountRef.current += 1;
-            console.log(`[GP WebSocket] Reconnect ${reconnectCountRef.current}/${maxReconnectAttempts}`);
             connect();
           }, reconnectInterval);
         }
       };
 
       ws.onerror = () => {
-        console.error('[GP WebSocket] Erro de conexao');
+        // connection error handled by onclose
       };
 
       wsRef.current = ws;
-    } catch (err) {
-      console.error('[GP WebSocket] Falha ao conectar:', err);
+    } catch {
+      // connection failed - will retry via reconnect
     }
   }, [getWsUrl, onEvent, reconnectInterval, maxReconnectAttempts]);
 

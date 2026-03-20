@@ -84,8 +84,8 @@ export default function CandidatosPage() {
       setDialogOpen(false);
       setFormData({ name: '', email: '', phone: '', cpf: '', position_desired: '', source: '' });
       invalidateQueries();
-    } catch (err) {
-      console.error('Erro ao criar candidato:', err);
+    } catch {
+      // silenced
     }
   };
 
@@ -93,8 +93,8 @@ export default function CandidatosPage() {
     try {
       await blockMutation.mutateAsync({ candidateId } as any);
       invalidateQueries();
-    } catch (err) {
-      console.error('Erro ao bloquear candidato:', err);
+    } catch {
+      // silenced
     }
   };
 
@@ -102,8 +102,8 @@ export default function CandidatosPage() {
     try {
       await unblockMutation.mutateAsync({ candidateId } as any);
       invalidateQueries();
-    } catch (err) {
-      console.error('Erro ao desbloquear candidato:', err);
+    } catch {
+      // silenced
     }
   };
 
@@ -111,8 +111,8 @@ export default function CandidatosPage() {
     try {
       await deleteMutation.mutateAsync({ candidateId } as any);
       invalidateQueries();
-    } catch (err) {
-      console.error('Erro ao excluir candidato:', err);
+    } catch {
+      // silenced
     }
   };
 

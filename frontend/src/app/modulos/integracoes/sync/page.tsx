@@ -140,7 +140,6 @@ export default function SyncPage() {
       refetchQueue();
       refetchStats();
     } catch (error) {
-      console.error('Erro ao cancelar item:', error);
     }
   };
 

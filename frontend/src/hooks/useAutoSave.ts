@@ -108,7 +108,6 @@ export function useAutoSave<T extends Record<string, any>>({
         await onSave(sanitized as T);
       }
     } catch (err) {
-      console.error('Erro ao salvar rascunho:', err);
       setError(err instanceof Error ? err.message : 'Erro ao salvar');
     } finally {
       setSaving(false);
@@ -163,7 +162,6 @@ export function useAutoSave<T extends Record<string, any>>({
       setLastSaved(timestamp ? new Date(timestamp) : null);
       return parsed;
     } catch (err) {
-      console.error('Erro ao restaurar rascunho:', err);
       return null;
     }
   }, [storageKey, timestampKey]);
@@ -219,7 +217,7 @@ export function cleanupExpiredDrafts(): void {
     keysToRemove.forEach((key) => localStorage.removeItem(key));
 
     // Rascunhos expirados removidos silenciosamente
-  } catch (err) {
-    console.error('Erro ao limpar rascunhos expirados:', err);
+  } catch {
+    // cleanup failed silently
   }
 }

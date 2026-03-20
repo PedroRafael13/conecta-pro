@@ -377,13 +377,13 @@ class CRM360Service:
             self.customers[customer_id] = customer
 
             # Criar algumas interações para cada cliente
-            await self._generate_customer_interactions(customer_id, random.randint(8, 15))  # noqa: S311
+            self._generate_customer_interactions(customer_id, random.randint(8, 15))  # noqa: S311
 
         # Gerar perfis de segmentos
-        await self._generate_segment_profiles()
+        self._generate_segment_profiles()
 
         # Gerar insights preditivos
-        await self._generate_predictive_insights()
+        self._generate_predictive_insights()
 
     def _get_journey_stage_from_customer_stage(self, customer_stage: CustomerStage) -> JourneyStage:
         """Mapear customer stage para journey stage."""
@@ -583,7 +583,7 @@ class CRM360Service:
         }
         return actions_map.get(stage, [])
 
-    async def _generate_customer_interactions(self, customer_id: str, count: int):
+    def _generate_customer_interactions(self, customer_id: str, count: int):
         """Gerar interações para um cliente."""
         interaction_types = [
             {
@@ -640,7 +640,7 @@ class CRM360Service:
             if customer_id in self.customers:
                 self.customers[customer_id].interactions.append(interaction)
 
-    async def _generate_segment_profiles(self):
+    def _generate_segment_profiles(self):
         """Gerar perfis de segmentos."""
         segments_data = {
             CustomerSegment.VIP: {"criteria": {"monthly_revenue_min": 8000}, "avg_ltv": 300000, "churn_rate": 0.05},
@@ -675,7 +675,7 @@ class CRM360Service:
 
             self.segments[segment] = profile
 
-    async def _generate_predictive_insights(self):
+    def _generate_predictive_insights(self):
         """Gerar insights preditivos para clientes."""
         insight_types = [
             "churn_prediction",

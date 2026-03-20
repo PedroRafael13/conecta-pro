@@ -88,7 +88,6 @@ export default function BancoHorasPage() {
       setShowApproveModal(false);
       refetch();
     } catch (err) {
-      console.error('Erro ao aprovar:', err);
     } finally {
       setApproving(false);
     }
@@ -109,7 +108,6 @@ export default function BancoHorasPage() {
       setRejectTarget(null);
       refetch();
     } catch (err) {
-      console.error('Erro ao rejeitar:', err);
     } finally {
       setIsRejecting(false);
     }

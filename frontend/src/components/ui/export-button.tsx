@@ -138,8 +138,6 @@ export function ExportButton({
 
       onExportSuccess?.(format);
     } catch (error) {
-      console.error(`Erro ao exportar ${format}:`, error);
-
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
 
       toast({

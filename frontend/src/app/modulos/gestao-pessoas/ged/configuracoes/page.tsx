@@ -99,8 +99,8 @@ export default function ConfiguracoesPage() {
         setDocumentTypes(Array.isArray(data) ? data : data.items || []);
       }
       if (scheduleRes.ok) setSchedule(await scheduleRes.json());
-    } catch (err) {
-      console.error('Erro ao carregar configuracoes:', err);
+    } catch {
+      // silenced
     } finally {
       setLoading(false);
     }
@@ -114,8 +114,8 @@ export default function ConfiguracoesPage() {
         headers: getAuthHeaders(),
         body: JSON.stringify(driveConfig),
       });
-    } catch (err) {
-      console.error('Erro ao salvar configuracao Drive:', err);
+    } catch {
+      // silenced
     } finally {
       setSavingSection(null);
     }
@@ -134,8 +134,8 @@ export default function ConfiguracoesPage() {
         }
         fetchConfig();
       }
-    } catch (err) {
-      console.error('Erro ao conectar Drive:', err);
+    } catch {
+      // silenced
     }
   }
 
@@ -147,8 +147,8 @@ export default function ConfiguracoesPage() {
         headers: getAuthHeaders(),
       });
       setDriveConfig({ connected: false, folder_id: '', email: '' });
-    } catch (err) {
-      console.error('Erro ao desconectar Drive:', err);
+    } catch {
+      // silenced
     }
   }
 
@@ -163,8 +163,8 @@ export default function ConfiguracoesPage() {
       setDocumentTypes((prev) =>
         prev.map((dt) => (dt.id === docType.id ? updated : dt))
       );
-    } catch (err) {
-      console.error('Erro ao atualizar tipo de documento:', err);
+    } catch {
+      // silenced
     }
   }
 
@@ -176,8 +176,8 @@ export default function ConfiguracoesPage() {
         headers: getAuthHeaders(),
         body: JSON.stringify(schedule),
       });
-    } catch (err) {
-      console.error('Erro ao salvar agendamento:', err);
+    } catch {
+      // silenced
     } finally {
       setSavingSection(null);
     }

@@ -13,7 +13,7 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T 
         return JSON.parse(item);
       }
     } catch (error) {
-      console.warn(`Error reading localStorage key "${key}":`, error);
+
     }
     return initialValue;
   });
@@ -30,7 +30,7 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T 
         setStoredValue(initialValue);
       }
     } catch (error) {
-      console.warn(`Error reading localStorage key "${key}" on key change:`, error);
+
     }
     // initialValue omitido intencionalmente — evita loop infinito com refs instáveis ([], {})
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -52,7 +52,7 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T 
         window.dispatchEvent(new StorageEvent('storage', { key, newValue: JSON.stringify(valueToStore) }));
       }
     } catch (error) {
-      console.warn(`Error setting localStorage key "${key}":`, error);
+
     }
   }, [key, storedValue]);
 
@@ -65,7 +65,7 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T 
         window.dispatchEvent(new StorageEvent('storage', { key, newValue: null }));
       }
     } catch (error) {
-      console.warn(`Error removing localStorage key "${key}":`, error);
+
     }
   }, [key, initialValue]);
 
@@ -78,7 +78,7 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T 
         try {
           setStoredValue(JSON.parse(event.newValue));
         } catch (error) {
-          console.warn(`Error parsing storage change for key "${key}":`, error);
+
         }
       } else if (event.key === key && event.newValue === null) {
         setStoredValue(initialValue);

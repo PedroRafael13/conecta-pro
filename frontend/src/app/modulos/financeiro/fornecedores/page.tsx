@@ -100,8 +100,8 @@ export default function FornecedoresPage() {
       setShowDeleteModal(false);
       setSelectedSupplier(null);
       // refetch() removido - mutation já invalida queries automaticamente
-    } catch (err) {
-      console.error('Erro ao excluir fornecedor:', err);
+    } catch {
+      // silenced
     } finally {
       setIsDeleting(false);
     }
@@ -110,16 +110,16 @@ export default function FornecedoresPage() {
   const handleBlock = async (supplier: any) => {
     try {
       await blockSupplier.mutateAsync({ supplierId: supplier.id, data: { reason: 'Bloqueado pelo usuario' } });
-    } catch (err) {
-      console.error('Erro ao bloquear fornecedor:', err);
+    } catch {
+      // silenced
     }
   };
 
   const handleUnblock = async (supplier: any) => {
     try {
       await unblockSupplier.mutateAsync({ supplierId: supplier.id });
-    } catch (err) {
-      console.error('Erro ao desbloquear fornecedor:', err);
+    } catch {
+      // silenced
     }
   };
 
@@ -138,7 +138,6 @@ export default function FornecedoresPage() {
       setSelectedSupplier(null);
       // refetch() removido - mutation já invalida queries automaticamente
     } catch (err) {
-      console.error('Erro ao salvar fornecedor:', err);
       throw err;
     }
   };

@@ -113,7 +113,6 @@ export default function RiscosPage() {
       setDialogOpen(false);
       resetForm();
     } catch (error) {
-      console.error('Erro ao salvar mapeamento:', error);
     }
   };
 

@@ -78,7 +78,6 @@ export default function CertidoesPage() {
         setSummary(await summaryRes.json());
       }
     } catch (err) {
-      console.error('Erro ao carregar certidoes:', err);
     } finally {
       setLoading(false);
     }
@@ -95,7 +94,6 @@ export default function CertidoesPage() {
         await fetchData();
       }
     } catch (err) {
-      console.error('Erro ao sincronizar CNDs:', err);
     } finally {
       setSyncing(false);
     }

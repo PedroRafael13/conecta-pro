@@ -65,7 +65,7 @@ export default function EstoquePage() {
       setShowFormModal(false);
       // refetch() removido - mutation já invalida queries automaticamente
     } catch (error) {
-      console.error('Erro ao registrar movimentacao:', error);
+      void error;
     }
   };
 

@@ -93,8 +93,7 @@ export default function MascaramentoPage() {
           : result?.data?.masked_data || result?.data?.data?.masked_data || String(result);
 
       setMaskedResult(masked);
-    } catch (error) {
-      console.error('Erro ao mascarar dado:', error);
+    } catch {
       setMaskedResult('Erro ao mascarar dado');
     }
   };
@@ -123,8 +122,7 @@ export default function MascaramentoPage() {
         .join('\n');
 
       setBatchResult(resultText);
-    } catch (error) {
-      console.error('Erro ao mascarar lote:', error);
+    } catch {
       setBatchResult('Erro ao mascarar dados em lote');
     }
   };
@@ -135,7 +133,7 @@ export default function MascaramentoPage() {
       setter(true);
       setTimeout(() => setter(false), 2000);
     } catch {
-      console.error('Erro ao copiar');
+      // silenced
     }
   };
 

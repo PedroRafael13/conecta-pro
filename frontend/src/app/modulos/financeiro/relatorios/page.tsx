@@ -308,7 +308,7 @@ export default function RelatoriosPage() {
         setRelatorio(data);
       }
     } catch (e) {
-      console.error('Erro ao carregar relatório:', e);
+      void e;
     } finally {
       setRelatorioLoading(false);
     }

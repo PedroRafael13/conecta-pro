@@ -159,7 +159,6 @@ export function PostFormModal({
         state: data.uf || prev.state,
       }));
     } catch (err) {
-      console.error('Erro ao buscar CEP:', err);
       setCepError('Erro ao buscar CEP. Tente novamente.');
     } finally {
       setIsFetchingCep(false);

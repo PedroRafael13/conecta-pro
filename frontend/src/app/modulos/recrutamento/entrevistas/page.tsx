@@ -111,8 +111,8 @@ export default function EntrevistasPage() {
         notes: '',
       });
       invalidateQueries();
-    } catch (err) {
-      console.error('Erro ao agendar entrevista:', err);
+    } catch {
+      // silenced
     }
   };
 
@@ -125,8 +125,8 @@ export default function EntrevistasPage() {
         data: { scheduled_at: newDate },
       } as any);
       invalidateQueries();
-    } catch (err) {
-      console.error('Erro ao reagendar entrevista:', err);
+    } catch {
+      // silenced
     }
   };
 
@@ -134,8 +134,8 @@ export default function EntrevistasPage() {
     try {
       await cancelMutation.mutateAsync({ interviewId, data: { reason: 'Cancelado pelo usuario' } } as any);
       invalidateQueries();
-    } catch (err) {
-      console.error('Erro ao cancelar entrevista:', err);
+    } catch {
+      // silenced
     }
   };
 
@@ -143,8 +143,8 @@ export default function EntrevistasPage() {
     try {
       await completeMutation.mutateAsync({ interviewId } as any);
       invalidateQueries();
-    } catch (err) {
-      console.error('Erro ao concluir entrevista:', err);
+    } catch {
+      // silenced
     }
   };
 
@@ -158,8 +158,8 @@ export default function EntrevistasPage() {
       //   data: { rating: parseInt(rating), notes: '' },
       // } as any);
       invalidateQueries();
-    } catch (err) {
-      console.error('Erro ao avaliar entrevista:', err);
+    } catch {
+      // silenced
     }
   };
 

@@ -113,7 +113,6 @@ export default function FluxoCaixaPage() {
       setShowFormModal(false);
       // refetch() removido - mutation já invalida queries automaticamente
     } catch (err) {
-      console.error('Erro ao criar lancamento:', err);
       throw err;
     }
   };

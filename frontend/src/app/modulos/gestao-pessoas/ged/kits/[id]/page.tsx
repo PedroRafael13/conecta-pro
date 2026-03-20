@@ -94,8 +94,8 @@ export default function KitDetailPage() {
         const data = await res.json();
         setKit(data);
       }
-    } catch (err) {
-      console.error('Erro ao carregar kit:', err);
+    } catch {
+      // silenced
     } finally {
       setLoading(false);
     }
@@ -109,8 +109,8 @@ export default function KitDetailPage() {
         headers: getAuthHeaders(),
       });
       fetchKit();
-    } catch (err) {
-      console.error('Erro ao enviar kit:', err);
+    } catch {
+      // silenced
     }
   }
 
@@ -122,8 +122,8 @@ export default function KitDetailPage() {
         headers: getAuthHeaders(),
       });
       fetchKit();
-    } catch (err) {
-      console.error('Erro ao aprovar kit:', err);
+    } catch {
+      // silenced
     }
   }
 
@@ -143,8 +143,8 @@ export default function KitDetailPage() {
         a.remove();
         window.URL.revokeObjectURL(url);
       }
-    } catch (err) {
-      console.error('Erro ao exportar kit:', err);
+    } catch {
+      // silenced
     }
   }
 

@@ -87,7 +87,6 @@ export default function GEDDashboardPage() {
         setRecentKits(Array.isArray(data) ? data : data.items || []);
       }
     } catch (err) {
-      console.error('Erro ao carregar dados do GED:', err);
     } finally {
       setLoading(false);
     }
@@ -103,7 +102,6 @@ export default function GEDDashboardPage() {
         fetchData();
       }
     } catch (err) {
-      console.error('Erro ao montar kits automaticamente:', err);
     }
   }
 

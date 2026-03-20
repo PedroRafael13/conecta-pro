@@ -93,7 +93,6 @@ export default function FiscalPage() {
     try {
       await authorizeNFe.mutateAsync({ data: { nfe_id: nfe.id } });
     } catch (error) {
-      console.error('Erro ao autorizar NF-e:', error);
     }
   };
 
@@ -102,7 +101,6 @@ export default function FiscalPage() {
       await createNFe.mutateAsync({ data });
       setShowFormModal(false);
     } catch (error) {
-      console.error('Erro ao criar nota fiscal:', error);
     }
   };
 

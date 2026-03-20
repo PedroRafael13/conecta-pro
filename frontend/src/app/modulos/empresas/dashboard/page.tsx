@@ -224,7 +224,7 @@ export default function DashboardMultiEmpresaPage() {
       setRentabilidade(r.data);
       setContabil(c.data);
     } catch (e) {
-      console.error('Erro ao carregar dashboard:', e);
+      void e;
     } finally {
       setLoading(false);
     }
