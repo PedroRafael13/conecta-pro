@@ -82,9 +82,10 @@ export function CondominioProvider({ children }: CondominioProviderProps) {
         // Se não tem condomínio selecionado mas tem condomínios, seleciona o primeiro
         if (!condominioId && allCondominios.length > 0) {
           const saved = localStorage.getItem(STORAGE_KEY);
+          const first = allCondominios[0];
           const id = saved && allCondominios.some((c) => c.id === saved)
             ? saved
-            : allCondominios[0].id;
+            : first?.id ?? '';
           setCondominioIdState(id);
           localStorage.setItem(STORAGE_KEY, id);
         }
