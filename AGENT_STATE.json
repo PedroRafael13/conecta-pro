@@ -1,9 +1,15 @@
 {
   "version": "1.0.0",
-  "last_updated": "2026-03-20T18:32:05.109546Z",
+  "last_updated": "2026-03-20T19:55:33.694145+00:00Z",
   "status": "idle",
   "active_agents": [],
-  "current_issues": [],
+  "current_issues": [
+    {
+      "severity": "high",
+      "description": "celery_beat: Celery Beat (scheduler)",
+      "detected_at": "2026-03-20T19:55:33.340350+00:00"
+    }
+  ],
   "fixed_issues": [],
   "blocked_files": [],
   "last_build": {

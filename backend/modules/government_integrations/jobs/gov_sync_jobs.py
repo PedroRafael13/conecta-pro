@@ -673,7 +673,7 @@ async def executar_sync_job(
 async def _obter_cnpj_tenant(db: Session, tenant_id: str) -> str | None:
     """Obtem CNPJ do tenant."""
     try:
-        from modules.core.models.tenant import Tenant
+        from core.models.user import User as Tenant  # Single-tenant: user model como fallback
 
         tenant = db.query(Tenant).filter(Tenant.id == tenant_id).first()
         return tenant.cnpj if tenant else None

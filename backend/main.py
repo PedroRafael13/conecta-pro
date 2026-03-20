@@ -12,13 +12,13 @@ from slowapi.errors import RateLimitExceeded
 
 from core.config import settings
 from core.logging import configure_logging, logger
-from core.monitoring import MetricsMiddleware, get_metrics
-from core.rate_limit import limiter, rate_limit_handler
 
 # =============================================================================
 # SECURITY HEADERS MIDDLEWARE
 # =============================================================================
-from modules.core.middleware.security_headers import SecurityHeadersMiddleware
+from core.middleware.security_headers import SecurityHeadersMiddleware
+from core.monitoring import MetricsMiddleware, get_metrics
+from core.rate_limit import limiter, rate_limit_handler
 
 # =============================================================================
 # RATE LIMITER

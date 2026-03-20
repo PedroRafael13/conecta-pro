@@ -54,3 +54,23 @@ class InterventionResponse(BaseModel):
     telegram_sent: bool = False
 
     model_config = {"from_attributes": True}
+
+
+class FeedbackRequest(BaseModel):
+    """Feedback humano sobre uma intervenção."""
+
+    intervention_id: str
+    approved: bool
+    feedback: str = ""
+    validated_by: str = "Jordan"
+
+
+class FeedbackResponse(BaseModel):
+    """Resposta do endpoint de feedback."""
+
+    intervention_id: str
+    human_validated: bool
+    confidence_updated: bool = False
+    pattern_name: str | None = None
+    new_confidence: float | None = None
+    message: str

@@ -75,6 +75,12 @@ class Intervention(BaseModel):
     prevention_action: Mapped[str | None] = mapped_column(Text, nullable=True)
     used_cached_solution: Mapped[bool] = mapped_column(default=False)
 
+    # Validação humana
+    human_validated: Mapped[bool] = mapped_column(default=False)
+    human_feedback: Mapped[str | None] = mapped_column(Text, nullable=True)
+    validated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    validated_by: Mapped[str | None] = mapped_column(String(200), nullable=True)
+
 
 class AgentPattern(BaseModel):
     """Padrao aprendido pelo OpenClaw a partir de intervencoes repetidas."""
@@ -90,6 +96,11 @@ class AgentPattern(BaseModel):
     auto_action: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     diagnosis_template: Mapped[str | None] = mapped_column(Text, nullable=True)
     avg_resolve_time_seconds: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+    # Validação humana
+    human_validated: Mapped[bool] = mapped_column(default=False)
+    validated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    validated_by: Mapped[str | None] = mapped_column(String(200), nullable=True)
 
 
 class AgentKnowledgeBase(BaseModel):

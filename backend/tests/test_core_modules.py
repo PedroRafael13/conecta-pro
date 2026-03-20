@@ -1,6 +1,6 @@
 """Testes massivos para Core Modules.
 
-Coverage: modules/core/
+Coverage: core/
 """
 
 from datetime import UTC, datetime, timedelta
@@ -18,7 +18,7 @@ class TestAuthService:
         from passlib.context import CryptContext
 
         pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-        password = "senha123"
+        password = "senha123"  # pragma: allowlist secret
 
         hashed = pwd_context.hash(password)
         assert pwd_context.verify(password, hashed)
@@ -101,5 +101,6 @@ class TestRateLimiter:
         # Testa que a exceção pode ser criada (requer um objeto limit mock)
         class MockLimit:
             error_message = "Rate limit exceeded"
+
         with pytest.raises(RateLimitExceeded):
             raise RateLimitExceeded(MockLimit())

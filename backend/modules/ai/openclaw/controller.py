@@ -19,7 +19,7 @@ from core.database.session import get_db
 from . import memory_service, telegram_service
 from .models import Intervention, InterventionSeverity, InterventionStatus
 from .remediation_service import RemediationService
-from .schemas import AlertmanagerPayload, InterventionResponse
+from .schemas import AlertmanagerPayload, FeedbackRequest, FeedbackResponse, InterventionResponse
 
 router = APIRouter(prefix="/openclaw", tags=["AI - OpenClaw Alert Response"])
 
@@ -274,6 +274,182 @@ async def intervention_stats(db: AsyncSession = Depends(get_db)):
         "patterns_learned": total_patterns,
         "cached_solutions_used": cached_solutions,
     }
+
+
+# =============================================================================
+# KNOWLEDGE & PATTERNS — Visualização do conhecimento acumulado
+# =============================================================================
+
+
+@router.get("/knowledge")
+async def get_knowledge_base(
+    component: str | None = None,
+    db: AsyncSession = Depends(get_db),
+):
+    """Visualiza o conhecimento acumulado sobre componentes do sistema."""
+    from .models import AgentKnowledgeBase
+
+    query = select(AgentKnowledgeBase).where(AgentKnowledgeBase.is_active == True)  # noqa: E712
+    if component:
+        query = query.where(AgentKnowledgeBase.component.ilike(f"%{component}%"))
+    query = query.order_by(AgentKnowledgeBase.component)
+
+    result = await db.execute(query)
+    items = result.scalars().all()
+
+    return {
+        "total": len(items),
+        "components": [
+            {
+                "id": str(kb.id),
+                "component": kb.component,
+                "criticality_level": kb.criticality_level,
+                "known_issues": kb.known_issues,
+                "dependencies": kb.dependencies,
+                "peak_hours": kb.peak_hours,
+                "runbook": kb.runbook,
+                "last_incident_at": kb.last_incident_at.isoformat() if kb.last_incident_at else None,
+                "updated_at": kb.updated_at.isoformat() if kb.updated_at else None,
+            }
+            for kb in items
+        ],
+    }
+
+
+@router.get("/patterns")
+async def get_patterns(
+    alert_name: str | None = None,
+    min_confidence: float = Query(default=0.0, ge=0, le=100),
+    human_validated_only: bool = False,
+    db: AsyncSession = Depends(get_db),
+):
+    """Visualiza padrões aprendidos pelo OpenClaw."""
+    from .models import AgentPattern
+
+    query = select(AgentPattern).where(AgentPattern.is_active == True)  # noqa: E712
+
+    if alert_name:
+        query = query.where(AgentPattern.alert_name.ilike(f"%{alert_name}%"))
+    if min_confidence > 0:
+        query = query.where(AgentPattern.confidence_score >= min_confidence / 100.0)
+    if human_validated_only:
+        query = query.where(AgentPattern.human_validated == True)  # noqa: E712
+
+    query = query.order_by(desc(AgentPattern.confidence_score))
+    result = await db.execute(query)
+    patterns = result.scalars().all()
+
+    return {
+        "total": len(patterns),
+        "patterns": [
+            {
+                "id": str(p.id),
+                "pattern_name": p.pattern_name,
+                "alert_name": p.alert_name,
+                "confidence_score": round(
+                    p.confidence_score if p.confidence_score <= 100 else p.confidence_score / 100, 1
+                ),
+                "frequency": p.frequency,
+                "trigger_conditions": p.trigger_conditions,
+                "auto_action": p.auto_action,
+                "diagnosis_template": p.diagnosis_template,
+                "avg_resolve_time_seconds": p.avg_resolve_time_seconds,
+                "human_validated": p.human_validated,
+                "validated_by": p.validated_by,
+                "validated_at": p.validated_at.isoformat() if p.validated_at else None,
+                "last_seen": p.last_seen.isoformat() if p.last_seen else None,
+                "created_at": p.created_at.isoformat() if p.created_at else None,
+            }
+            for p in patterns
+        ],
+    }
+
+
+@router.post("/feedback", response_model=FeedbackResponse)
+async def submit_feedback(
+    body: FeedbackRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Feedback humano sobre uma intervenção.
+
+    Quando aprovada (approved=true):
+    - Marca a intervenção como human_validated
+    - Se houver um padrão associado, sobe confidence_score para 95%
+    - O padrão fica marcado como human_validated
+
+    Quando rejeitada (approved=false):
+    - Registra o feedback para análise
+    - Reduz confidence_score do padrão associado em 20%
+    """
+    from .models import AgentPattern
+
+    now = datetime.now(UTC)
+
+    # Buscar intervenção
+    result = await db.execute(select(Intervention).where(Intervention.id == body.intervention_id))
+    intervention = result.scalar_one_or_none()
+
+    if not intervention:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=404, detail=f"Intervencao {body.intervention_id} nao encontrada")
+
+    # Marcar intervenção
+    intervention.human_validated = body.approved
+    intervention.human_feedback = body.feedback or ("Aprovado" if body.approved else "Rejeitado")
+    intervention.validated_at = now
+    intervention.validated_by = body.validated_by
+
+    # Buscar padrão associado (se houver)
+    confidence_updated = False
+    pattern_name = None
+    new_confidence = None
+
+    if intervention.learned_pattern:
+        result = await db.execute(select(AgentPattern).where(AgentPattern.pattern_name == intervention.learned_pattern))
+        pattern = result.scalar_one_or_none()
+
+        if pattern:
+            pattern_name = pattern.pattern_name
+
+            if body.approved:
+                # Validação positiva: confidence sobe para 95%
+                pattern.confidence_score = 0.95
+                pattern.human_validated = True
+                pattern.validated_at = now
+                pattern.validated_by = body.validated_by
+                new_confidence = 95.0
+                confidence_updated = True
+                logger.info(
+                    f"OpenClaw feedback: padrao '{pattern_name}' validado por {body.validated_by}, confidence → 95%"
+                )
+            else:
+                # Validação negativa: confidence cai 20%
+                pattern.confidence_score = max(0.0, pattern.confidence_score - 0.20)
+                pattern.human_validated = False
+                new_confidence = round(pattern.confidence_score * 100, 1)
+                confidence_updated = True
+                logger.info(
+                    f"OpenClaw feedback: padrao '{pattern_name}' rejeitado por {body.validated_by}, "
+                    f"confidence → {new_confidence}%"
+                )
+
+    await db.commit()
+
+    status_text = "aprovada" if body.approved else "rejeitada"
+    message = f"Intervencao {status_text} por {body.validated_by}."
+    if confidence_updated:
+        message += f" Padrao '{pattern_name}' atualizado para {new_confidence}%."
+
+    return FeedbackResponse(
+        intervention_id=body.intervention_id,
+        human_validated=body.approved,
+        confidence_updated=confidence_updated,
+        pattern_name=pattern_name,
+        new_confidence=new_confidence,
+        message=message,
+    )
 
 
 # =============================================================================

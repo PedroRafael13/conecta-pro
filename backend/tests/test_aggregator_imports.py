@@ -328,14 +328,4 @@ class TestGestaoAggregator:
             assert hasattr(mod, name), f"{name} in __all__ but not an attribute"
 
 
-class TestCadastrosAggregator:
-    """Tests for modules.cadastros aggregator (placeholder, empty __all__)."""
-
-    def test_import(self):
-        mod = importlib.import_module("modules.cadastros")
-        assert mod is not None
-
-    def test_no_all_or_empty(self):
-        mod = importlib.import_module("modules.cadastros")
-        all_list = getattr(mod, "__all__", [])
-        assert all_list == [] or all_list is None, f"cadastros should have empty or no __all__, got {all_list}"
+# TestCadastrosAggregator removido — modulo cadastros deletado (scaffold vazio)

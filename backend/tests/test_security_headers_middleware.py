@@ -1,13 +1,13 @@
 """Testes para Security Headers Middleware.
 
-Coverage: modules/core/middleware/security_headers.py
+Coverage: core/middleware/security_headers.py
 """
 
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from modules.core.middleware.security_headers import SecurityHeadersMiddleware
+from core.middleware.security_headers import SecurityHeadersMiddleware
 
 
 @pytest.fixture

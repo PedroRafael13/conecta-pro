@@ -33,9 +33,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-Frame-Options"] = "DENY"
 
         # HTTP Strict Transport Security (HSTS)
-        response.headers["Strict-Transport-Security"] = (
-            "max-age=31536000; includeSubDomains; preload"
-        )
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
 
         # Content Security Policy
         response.headers["Content-Security-Policy"] = (
