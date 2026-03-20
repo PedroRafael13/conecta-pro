@@ -21,8 +21,15 @@ from modules.people_management.employee_portal.models.digital_signature import (
 
 logger = logging.getLogger(__name__)
 
-# Salt/secret para geracao de hash — em producao usar variavel de ambiente
-SIGNATURE_SECRET = os.getenv("PORTAL_SIGNATURE_SECRET", "conecta-pro-signature-salt-2026")
+
+# Salt/secret para geracao de hash — OBRIGATORIO em producao
+def _get_signature_secret() -> str:
+    secret = os.getenv("PORTAL_SIGNATURE_SECRET")
+    if not secret:
+        raise RuntimeError(
+            "Variavel de ambiente PORTAL_SIGNATURE_SECRET nao definida. Defina em .env antes de iniciar o servidor."
+        )
+    return secret
 
 
 class SignatureService:
@@ -224,7 +231,7 @@ class SignatureService:
         Returns:
             String hex do hash SHA-256.
         """
-        payload = f"{document_id}:{employee_id}:{timestamp.isoformat()}:{SIGNATURE_SECRET}"
+        payload = f"{document_id}:{employee_id}:{timestamp.isoformat()}:{_get_signature_secret()}"
         return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
     async def _get_existing_signature(

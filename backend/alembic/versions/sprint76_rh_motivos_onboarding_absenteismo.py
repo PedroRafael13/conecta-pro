@@ -1,7 +1,7 @@
 """add rh motivos desligamento onboarding absenteismo
 
 Revision ID: sprint76_rh_structs
-Revises: sprint75_gp_ponto_sst_tables
+Revises: sprint75_gp_ponto_sst
 Create Date: 2026-03-15
 """
 
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision = "sprint76_rh_structs"
-down_revision = "sprint75_gp_ponto_sst_tables"
+down_revision = "sprint75_gp_ponto_sst"
 branch_labels = None
 depends_on = None
 

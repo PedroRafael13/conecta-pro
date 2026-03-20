@@ -36,7 +36,7 @@ class FileCredentialConfig:
 
     # Paths
     cert_path: str = "/opt/conecta-pro/credentials/certificates/certificado.pfx"
-    cert_password: str = "Conecta123"  # noqa: S105
+    cert_password: str = ""
     cert_pem_path: str = "/opt/conecta-pro/credentials/certificates/a1_cert.pem"
     key_pem_path: str = "/opt/conecta-pro/credentials/certificates/a1_key.pem"
 
@@ -51,9 +51,12 @@ class FileCredentialConfig:
     @classmethod
     def from_env(cls) -> "FileCredentialConfig":
         """Cria configuração a partir de variáveis de ambiente."""
+        cert_password = os.getenv("CERTIFICATE_PASSWORD", "")
+        if not cert_password:
+            raise RuntimeError("CERTIFICATE_PASSWORD nao definida. Defina em .env antes de iniciar o servidor.")
         return cls(
             cert_path=os.getenv("CERTIFICATE_PATH", "/opt/conecta-pro/credentials/certificates/certificado.pfx"),
-            cert_password=os.getenv("CERTIFICATE_PASSWORD", "Conecta123"),  # noqa: S105
+            cert_password=cert_password,
             cert_pem_path=os.getenv("CERT_PEM_PATH", "/opt/conecta-pro/credentials/certificates/a1_cert.pem"),
             key_pem_path=os.getenv("KEY_PEM_PATH", "/opt/conecta-pro/credentials/certificates/a1_key.pem"),
             cnpj=os.getenv("EMPRESA_CNPJ", "35710481000103"),
