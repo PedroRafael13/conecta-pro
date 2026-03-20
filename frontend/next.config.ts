@@ -81,8 +81,8 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        // Headers de segurança para todas as rotas
-        source: '/:path*',
+        // Headers de segurança para páginas (exclui assets estáticos)
+        source: '/((?!_next/static|_next/image|favicon.ico).*)',
         headers: [
           { key: 'X-Frame-Options', value: 'DENY' },
           { key: 'X-Content-Type-Options', value: 'nosniff' },
@@ -91,14 +91,29 @@ const nextConfig: NextConfig = {
           { key: 'X-DNS-Prefetch-Control', value: 'off' },
           { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
           { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
-          { key: 'Cross-Origin-Resource-Policy', value: 'same-origin' },
+          {
+            key: 'Content-Security-Policy',
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
+              "style-src 'self' 'unsafe-inline'",
+              "img-src 'self' data: blob: https://erp.conectamais.pro https://*.amazonaws.com",
+              "font-src 'self' data:",
+              "connect-src 'self' https://erp.conectamais.pro wss://erp.conectamais.pro https://*.amazonaws.com",
+              "frame-ancestors 'none'",
+              "base-uri 'self'",
+              "form-action 'self'",
+              "object-src 'none'",
+            ].join('; '),
+          },
         ],
       },
       {
-        // Cache longo APENAS para assets estáticos (JS/CSS com hash no nome)
+        // Assets estáticos: cache longo, sem CSP/CORP restritivo
         source: '/_next/static/:path*',
         headers: [
           { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
         ],
       },
       {
