@@ -79,13 +79,16 @@ def collect():
             continue
         name, status, image = parts[0], parts[1], parts[2]
         health = "unknown"
-        if "healthy" in status.lower():
+        sl = status.lower()
+        if "(healthy)" in sl:
             health = "healthy"
-        elif "unhealthy" in status.lower():
+        elif "(unhealthy)" in sl:
             health = "unhealthy"
-        elif "up" in status.lower():
+        elif "up" in sl:
             health = "running"
-        elif "created" in status.lower() or "exited" in status.lower():
+        elif "created" in sl:
+            health = "created"
+        elif "exited" in sl:
             health = "stopped"
         containers.append({
             "name": name, "status": status, "health": health,

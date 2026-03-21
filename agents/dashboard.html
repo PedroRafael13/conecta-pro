@@ -3,839 +3,443 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Conecta PRO Multi-Agent Dashboard — Monitoramento em tempo real">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#07090d">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
 <title>Conecta PRO — Multi-Agent Dashboard</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Oxanium:wght@300;400;500;600;700&display=swap');
-
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-
-:root {
-  --bg-deep: #07090d;
-  --bg-panel: #0c1017;
-  --bg-card: #111827;
-  --bg-elevated: #1a2332;
-  --border: #1e293b;
-  --border-bright: #334155;
-  --text: #e2e8f0;
-  --text-dim: #64748b;
-  --text-muted: #475569;
-  --accent: #3b82f6;
-  --accent-glow: rgba(59, 130, 246, 0.15);
-  --green: #22c55e;
-  --green-dim: rgba(34, 197, 94, 0.15);
-  --amber: #f59e0b;
-  --amber-dim: rgba(245, 158, 11, 0.12);
-  --red: #ef4444;
-  --red-dim: rgba(239, 68, 68, 0.12);
-  --cyan: #06b6d4;
-  --font-display: 'Oxanium', sans-serif;
-  --font-mono: 'JetBrains Mono', 'Consolas', monospace;
-}
-
-html { font-size: 14px; }
-body {
-  font-family: var(--font-mono);
-  background: var(--bg-deep);
-  color: var(--text);
-  min-height: 100vh;
-  overflow-x: hidden;
-}
-
-/* Scanline overlay */
-body::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 9999;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    rgba(0,0,0,0.03) 2px,
-    rgba(0,0,0,0.03) 4px
-  );
-}
-
-/* ===== HEADER ===== */
-.header {
-  background: linear-gradient(180deg, #0f1520 0%, var(--bg-deep) 100%);
-  border-bottom: 1px solid var(--border);
-  padding: 0.75rem 1.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.logo {
-  font-family: var(--font-display);
-  font-size: 1.15rem;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  color: var(--text);
-}
-.logo span { color: var(--accent); }
-
-.header-status {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.75rem;
-  color: var(--text-dim);
-}
-
-.pulse-dot {
-  width: 7px; height: 7px;
-  border-radius: 50%;
-  background: var(--green);
-  animation: pulse 2s ease-in-out infinite;
-}
-.pulse-dot.warn { background: var(--amber); }
-.pulse-dot.error { background: var(--red); animation: pulse-fast 1s ease-in-out infinite; }
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(34,197,94,0.4); }
-  50% { opacity: 0.6; box-shadow: 0 0 0 6px rgba(34,197,94,0); }
-}
-@keyframes pulse-fast {
-  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(239,68,68,0.5); }
-  50% { opacity: 0.5; box-shadow: 0 0 0 8px rgba(239,68,68,0); }
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  font-size: 0.75rem;
-  color: var(--text-dim);
-}
-
-.container-summary {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 0.3rem 0.7rem;
-  font-weight: 500;
-}
-.container-summary .num { color: var(--green); font-weight: 700; }
-
-.refresh-badge {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-}
-.refresh-spin {
-  width: 12px; height: 12px;
-  border: 1.5px solid var(--text-muted);
-  border-top-color: var(--accent);
-  border-radius: 50%;
-  animation: spin 1.5s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* ===== MAIN LAYOUT ===== */
-.main {
-  max-width: 1600px;
-  margin: 0 auto;
-  padding: 1rem 1.5rem 3rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-/* ===== METRICS ROW ===== */
-.metrics-row {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0.75rem;
-}
-
-.metric-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 1rem 1.1rem;
-  position: relative;
-  overflow: hidden;
-  transition: border-color 0.3s;
-}
-.metric-card:hover { border-color: var(--border-bright); }
-.metric-card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 2px;
-  background: var(--accent);
-  opacity: 0.5;
-}
-
-.metric-label {
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 1.2px;
-  color: var(--text-dim);
-  margin-bottom: 0.5rem;
-}
-
-.metric-value {
-  font-family: var(--font-display);
-  font-size: 2rem;
-  font-weight: 700;
-  line-height: 1;
-  margin-bottom: 0.6rem;
-}
-
-.metric-sub {
-  font-size: 0.7rem;
-  color: var(--text-muted);
-}
-
-.metric-bar {
-  height: 4px;
-  background: var(--bg-elevated);
-  border-radius: 2px;
-  margin-top: 0.6rem;
-  overflow: hidden;
-}
-.metric-bar-fill {
-  height: 100%;
-  border-radius: 2px;
-  transition: width 0.8s ease, background 0.5s;
-}
-
-/* ===== SPLIT LAYOUT ===== */
-.split {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
-}
-
-/* ===== PANELS ===== */
-.panel {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.panel-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.7rem 1rem;
-  border-bottom: 1px solid var(--border);
-  background: rgba(255,255,255,0.015);
-}
-
-.panel-title {
-  font-family: var(--font-display);
-  font-size: 0.8rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: var(--text-dim);
-}
-
-.panel-badge {
-  font-size: 0.65rem;
-  padding: 0.15rem 0.5rem;
-  border-radius: 10px;
-  background: var(--bg-elevated);
-  color: var(--text-dim);
-  border: 1px solid var(--border);
-}
-
-.panel-body { padding: 0.75rem 1rem; }
-
-/* ===== CONTAINER GRID ===== */
-.container-groups { display: flex; flex-direction: column; gap: 0.75rem; }
-
-.group-label {
-  font-size: 0.65rem;
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  color: var(--text-muted);
-  padding-bottom: 0.25rem;
-  border-bottom: 1px solid rgba(255,255,255,0.04);
-}
-
-.container-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 0.4rem;
-}
-
-.ct {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.45rem 0.6rem;
-  border-radius: 5px;
-  background: var(--bg-elevated);
-  border: 1px solid transparent;
-  transition: all 0.25s;
-  font-size: 0.72rem;
-}
-.ct:hover { border-color: var(--border-bright); background: rgba(255,255,255,0.04); }
-
-.ct-dot {
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  transition: background 0.5s;
-}
-.ct-dot.healthy { background: var(--green); box-shadow: 0 0 6px rgba(34,197,94,0.4); }
-.ct-dot.running { background: var(--amber); box-shadow: 0 0 6px rgba(245,158,11,0.3); }
-.ct-dot.unhealthy { background: var(--red); box-shadow: 0 0 6px rgba(239,68,68,0.4); }
-.ct-dot.stopped { background: #475569; }
-
-.ct-name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--text);
-}
-
-/* ===== TABLE ===== */
-.tbl {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.72rem;
-}
-.tbl th {
-  text-align: left;
-  font-weight: 500;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  font-size: 0.62rem;
-  padding: 0.5rem 0.6rem;
-  border-bottom: 1px solid var(--border);
-}
-.tbl td {
-  padding: 0.5rem 0.6rem;
-  border-bottom: 1px solid rgba(255,255,255,0.03);
-  vertical-align: top;
-}
-.tbl tr:hover td { background: rgba(255,255,255,0.015); }
-
-.sev-badge {
-  display: inline-block;
-  padding: 0.1rem 0.45rem;
-  border-radius: 3px;
-  font-size: 0.6rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-.sev-critical { background: var(--red-dim); color: var(--red); border: 1px solid rgba(239,68,68,0.25); }
-.sev-warning { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(245,158,11,0.2); }
-.sev-info { background: var(--accent-glow); color: var(--accent); border: 1px solid rgba(59,130,246,0.2); }
-
-.status-badge {
-  display: inline-block;
-  padding: 0.1rem 0.4rem;
-  border-radius: 3px;
-  font-size: 0.6rem;
-}
-.status-resolved { background: var(--green-dim); color: var(--green); }
-.status-acting { background: var(--amber-dim); color: var(--amber); }
-.status-failed { background: var(--red-dim); color: var(--red); }
-
-/* ===== PATTERNS ===== */
-.patterns-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 0.6rem;
-}
-
-.pattern-card {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 0.8rem 1rem;
-}
-
-.pattern-name {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: 0.82rem;
-  margin-bottom: 0.3rem;
-  color: var(--text);
-}
-
-.pattern-desc {
-  font-size: 0.7rem;
-  color: var(--text-dim);
-  margin-bottom: 0.6rem;
-  line-height: 1.4;
-}
-
-.confidence-row {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.4rem;
-}
-.confidence-bar {
-  flex: 1;
-  height: 6px;
-  background: var(--bg-card);
-  border-radius: 3px;
-  overflow: hidden;
-}
-.confidence-fill {
-  height: 100%;
-  border-radius: 3px;
-  transition: width 1s ease;
-}
-.confidence-val {
-  font-size: 0.72rem;
-  font-weight: 600;
-  min-width: 38px;
-  text-align: right;
-}
-
-.pattern-meta {
-  display: flex;
-  gap: 1rem;
-  font-size: 0.62rem;
-  color: var(--text-muted);
-}
-
-/* ===== UPTIME CHART ===== */
-.uptime-chart { display: flex; flex-direction: column; gap: 0.5rem; }
-
-.uptime-row {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-}
-.uptime-label {
-  width: 70px;
-  font-size: 0.68rem;
-  color: var(--text-dim);
-  text-align: right;
-  flex-shrink: 0;
-}
-.uptime-bars {
-  flex: 1;
-  display: flex;
-  gap: 2px;
-  height: 22px;
-}
-.uptime-seg {
-  flex: 1;
-  border-radius: 2px;
-  transition: background 0.3s;
-  position: relative;
-}
-.uptime-seg.up { background: var(--green); opacity: 0.7; }
-.uptime-seg.up:hover { opacity: 1; }
-.uptime-seg.down { background: var(--red); opacity: 0.8; }
-.uptime-seg.partial { background: var(--amber); opacity: 0.7; }
-
-.uptime-hours {
-  display: flex;
-  gap: 2px;
-  margin-left: 76px;
-}
-.uptime-hours span {
-  flex: 1;
-  text-align: center;
-  font-size: 0.55rem;
-  color: var(--text-muted);
-}
-
-/* ===== SCHEDULED ===== */
-.sched-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 0.4rem;
-}
-.sched-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.7rem;
-  background: var(--bg-elevated);
-  border-radius: 5px;
-  font-size: 0.7rem;
-}
-.sched-icon {
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: var(--cyan);
-  flex-shrink: 0;
-}
-.sched-name { color: var(--text); flex: 1; }
-.sched-time { color: var(--text-muted); font-size: 0.62rem; }
-
-/* ===== LOADING / ERROR ===== */
-.loading-overlay {
-  position: fixed;
-  inset: 0;
-  background: var(--bg-deep);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  z-index: 200;
-  transition: opacity 0.5s;
-}
-.loading-overlay.hidden { opacity: 0; pointer-events: none; }
-
-.loading-spinner {
-  width: 40px; height: 40px;
-  border: 3px solid var(--border);
-  border-top-color: var(--accent);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-bottom: 1rem;
-}
-.loading-text {
-  font-family: var(--font-display);
-  color: var(--text-dim);
-  font-size: 0.85rem;
-}
-
-.error-banner {
-  background: var(--red-dim);
-  border: 1px solid rgba(239,68,68,0.3);
-  border-radius: 6px;
-  padding: 0.6rem 1rem;
-  font-size: 0.75rem;
-  color: var(--red);
-  display: none;
-  align-items: center;
-  gap: 0.5rem;
-}
-.error-banner.show { display: flex; }
-
-/* ===== RESPONSIVE ===== */
-@media (max-width: 1100px) {
-  .split { grid-template-columns: 1fr; }
-}
-@media (max-width: 768px) {
-  html { font-size: 13px; }
-  .header { padding: 0.5rem 1rem; }
-  .main { padding: 0.75rem; }
-  .metrics-row { grid-template-columns: repeat(2, 1fr); }
-  .metric-value { font-size: 1.5rem; }
-  .container-grid { grid-template-columns: repeat(2, 1fr); }
-}
-@media (max-width: 480px) {
-  .metrics-row { grid-template-columns: 1fr; }
-}
-
-/* ===== ANIMATION ===== */
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.fade-up { animation: fadeUp 0.4s ease forwards; }
-.delay-1 { animation-delay: 0.05s; opacity: 0; }
-.delay-2 { animation-delay: 0.1s; opacity: 0; }
-.delay-3 { animation-delay: 0.15s; opacity: 0; }
-.delay-4 { animation-delay: 0.2s; opacity: 0; }
+:root{--bg-deep:#07090d;--bg-card:#111827;--bg-elevated:#1a2332;--border:#1e293b;--border-bright:#334155;--text:#e2e8f0;--text-dim:#94a3b8;--text-muted:#64748b;--accent:#3b82f6;--accent-glow:rgba(59,130,246,0.15);--green:#22c55e;--green-dim:rgba(34,197,94,0.15);--amber:#f59e0b;--amber-dim:rgba(245,158,11,0.12);--red:#ef4444;--red-dim:rgba(239,68,68,0.12);--cyan:#06b6d4;--font-display:'Oxanium',sans-serif;--font-mono:'JetBrains Mono','Consolas',monospace}
+html{font-size:14px}
+body{font-family:var(--font-mono);background:var(--bg-deep);color:var(--text);min-height:100vh;overflow-x:hidden;font-size:0.86rem}
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.03) 2px,rgba(0,0,0,0.03) 4px)}
+.critical-banner{display:none;align-items:center;gap:0.6rem;padding:0.6rem 1.5rem;background:linear-gradient(90deg,rgba(239,68,68,0.15),rgba(239,68,68,0.05));border-bottom:2px solid var(--red);animation:banner-pulse 2s ease-in-out infinite;font-size:0.85rem;color:var(--red);font-weight:600}
+.critical-banner.show{display:flex}
+.critical-banner .dot{width:10px;height:10px;border-radius:50%;background:var(--red);animation:pulse-fast 1s ease-in-out infinite;flex-shrink:0}
+@keyframes banner-pulse{0%,100%{background:linear-gradient(90deg,rgba(239,68,68,0.15),rgba(239,68,68,0.05))}50%{background:linear-gradient(90deg,rgba(239,68,68,0.25),rgba(239,68,68,0.08))}}
+.header{background:linear-gradient(180deg,#0f1520 0%,var(--bg-deep) 100%);border-bottom:1px solid var(--border);padding:0.75rem 1.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;position:sticky;top:0;z-index:100}
+.header-left{display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
+.logo{font-family:var(--font-display);font-size:1.15rem;font-weight:700;letter-spacing:0.5px;color:var(--text)}
+.logo span{color:var(--accent)}
+.header-status{display:flex;align-items:center;gap:0.5rem;font-size:0.85rem;color:var(--text-dim)}
+.pulse-dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 2s ease-in-out infinite}
+.pulse-dot.warn{background:var(--amber)}.pulse-dot.error{background:var(--red);animation:pulse-fast 1s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(34,197,94,0.4)}50%{opacity:0.6;box-shadow:0 0 0 6px rgba(34,197,94,0)}}
+@keyframes pulse-fast{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(239,68,68,0.5)}50%{opacity:0.5;box-shadow:0 0 0 8px rgba(239,68,68,0)}}
+.header-right{display:flex;align-items:center;gap:0.75rem;font-size:0.85rem;color:var(--text-dim)}
+.container-summary{background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:0.3rem 0.7rem;font-weight:500}
+.container-summary .num{color:var(--green);font-weight:700}
+.alert-open-badge{background:var(--amber-dim);border:1px solid rgba(245,158,11,0.3);border-radius:6px;padding:0.3rem 0.7rem;font-weight:600;color:var(--amber);cursor:pointer;display:none;font-size:0.79rem}
+.alert-open-badge.show{display:inline-block}
+.refresh-wrap{position:relative;cursor:pointer;user-select:none}
+.refresh-badge{display:flex;align-items:center;gap:0.35rem;padding:0.2rem 0.5rem;border-radius:6px;border:1px solid transparent;transition:border-color 0.2s}
+.refresh-badge:hover{border-color:var(--border-bright)}
+.refresh-spin{width:12px;height:12px;border:1.5px solid var(--text-muted);border-top-color:var(--accent);border-radius:50%;animation:spin 1.5s linear infinite}
+.refresh-spin.paused{animation:none;border-top-color:var(--amber)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.refresh-dropdown{display:none;position:absolute;top:100%;right:0;margin-top:4px;background:var(--bg-card);border:1px solid var(--border-bright);border-radius:6px;overflow:hidden;z-index:50;min-width:100px}
+.refresh-dropdown.show{display:block}
+.refresh-opt{padding:0.4rem 0.8rem;font-size:0.79rem;cursor:pointer;color:var(--text-dim);transition:all 0.15s}
+.refresh-opt:hover{background:var(--bg-elevated);color:var(--text)}
+.refresh-opt.active{color:var(--accent);font-weight:600}
+.legend{display:flex;align-items:center;gap:1rem;padding:0.4rem 1.5rem;font-size:0.79rem;color:var(--text-muted);border-bottom:1px solid rgba(255,255,255,0.03);flex-wrap:wrap}
+.legend-item{display:flex;align-items:center;gap:0.35rem}
+.legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.main{max-width:1600px;margin:0 auto;padding:1rem 1.5rem 3rem;display:flex;flex-direction:column;gap:1rem}
+.metrics-row{display:grid;grid-template-columns:repeat(4,1fr);gap:0.75rem}
+.metric-card{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:1rem 1.1rem;position:relative;overflow:hidden;transition:border-color 0.3s}
+.metric-card:hover{border-color:var(--border-bright)}
+.metric-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent);opacity:0.5}
+.metric-label{font-size:0.79rem;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-dim);margin-bottom:0.5rem}
+.metric-value-row{display:flex;align-items:baseline;gap:0.4rem;margin-bottom:0.6rem}
+.metric-value{font-family:var(--font-display);font-size:2rem;font-weight:700;line-height:1}
+.metric-unit{font-size:0.9rem;color:var(--text-dim)}
+.metric-trend{font-size:0.79rem}.trend-up{color:var(--red)}.trend-down{color:var(--green)}.trend-flat{color:var(--text-muted)}
+.metric-sub{font-size:0.79rem;color:var(--text-muted)}
+.metric-bar-wrap{position:relative;height:6px;background:var(--bg-elevated);border-radius:3px;margin-top:0.6rem;overflow:visible}
+.metric-bar-fill{height:100%;border-radius:3px;transition:width 0.8s ease,background 0.5s;position:relative;z-index:1}
+.metric-threshold{position:absolute;top:-2px;width:1px;height:10px;background:rgba(255,255,255,0.3);z-index:2}
+.metric-threshold::after{content:attr(data-label);position:absolute;top:-14px;left:50%;transform:translateX(-50%);font-size:0.55rem;color:var(--text-muted);white-space:nowrap}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:0.75rem}
+.panel{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.panel-header{display:flex;align-items:center;justify-content:space-between;padding:0.7rem 1rem;border-bottom:1px solid var(--border);background:rgba(255,255,255,0.015);gap:0.5rem}
+.panel-title{font-family:var(--font-display);font-size:0.85rem;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim)}
+.panel-header-right{display:flex;align-items:center;gap:0.6rem}
+.panel-badge{font-size:0.79rem;padding:0.15rem 0.5rem;border-radius:10px;background:var(--bg-elevated);color:var(--text-dim);border:1px solid var(--border)}
+.export-btn{font-size:0.79rem;color:var(--text-muted);cursor:pointer;border:none;background:none;font-family:var(--font-mono);transition:color 0.2s}
+.export-btn:hover{color:var(--accent)}
+.panel-body{padding:0.75rem 1rem}
+.container-groups{display:flex;flex-direction:column;gap:0.75rem}
+.group-label{font-size:0.79rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);padding-bottom:0.25rem;border-bottom:1px solid rgba(255,255,255,0.04)}
+.container-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:0.4rem}
+.ct{display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0.65rem;border-radius:5px;background:var(--bg-elevated);border:1px solid transparent;transition:all 0.25s;font-size:0.8rem}
+.ct:hover{border-color:var(--border-bright);background:rgba(255,255,255,0.04)}
+.ct-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;transition:background 0.5s}
+.ct-dot.healthy{background:var(--green);box-shadow:0 0 6px rgba(34,197,94,0.4)}
+.ct-dot.running{background:var(--amber);box-shadow:0 0 6px rgba(245,158,11,0.3)}
+.ct-dot.unhealthy{background:var(--red);box-shadow:0 0 6px rgba(239,68,68,0.4)}
+.ct-dot.created{background:#64748b}
+.ct-dot.stopped{background:#334155}
+.ct-info{display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.ct-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)}
+.ct-uptime{font-size:0.72rem;color:var(--text-muted)}
+.ct-uptime.problem{color:var(--red)}
+.tbl{width:100%;border-collapse:collapse;font-size:0.8rem}
+.tbl th{text-align:left;font-weight:500;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;font-size:0.79rem;padding:0.5rem 0.6rem;border-bottom:1px solid var(--border)}
+.tbl td{padding:0.5rem 0.6rem;border-bottom:1px solid rgba(255,255,255,0.03);vertical-align:top}
+.tbl tr:hover td{background:rgba(255,255,255,0.015)}
+.sev-badge{display:inline-block;padding:0.15rem 0.5rem;border-radius:3px;font-size:0.79rem;font-weight:600;text-transform:uppercase;letter-spacing:0.5px}
+.sev-critical{background:var(--red-dim);color:var(--red);border:1px solid rgba(239,68,68,0.25)}
+.sev-warning{background:var(--amber-dim);color:var(--amber);border:1px solid rgba(245,158,11,0.2)}
+.sev-info{background:var(--accent-glow);color:var(--accent);border:1px solid rgba(59,130,246,0.2)}
+.status-badge{display:inline-block;padding:0.15rem 0.45rem;border-radius:3px;font-size:0.79rem}
+.status-resolved{background:var(--green-dim);color:var(--green)}
+.status-acting{background:var(--amber-dim);color:var(--amber)}
+.status-escalated,.status-failed{background:var(--red-dim);color:var(--red)}
+.resolution-cell{color:var(--text-dim);max-width:200px;cursor:pointer;position:relative}
+.resolution-cell:hover{color:var(--text)}
+.resolution-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.resolution-hint{font-size:0.79rem;color:var(--text-muted);margin-top:2px}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:500;display:none;align-items:center;justify-content:center;padding:2rem}
+.modal-overlay.show{display:flex}
+.modal-box{background:var(--bg-card);border:1px solid var(--border-bright);border-radius:10px;max-width:600px;width:100%;max-height:80vh;overflow-y:auto;padding:1.5rem;position:relative}
+.modal-title{font-family:var(--font-display);font-size:1rem;font-weight:700;margin-bottom:0.3rem;color:var(--text)}
+.modal-meta{font-size:0.79rem;color:var(--text-muted);margin-bottom:1rem}
+.modal-body{font-size:0.85rem;line-height:1.6;white-space:pre-wrap;color:var(--text-dim)}
+.modal-close{position:absolute;top:1rem;right:1rem;background:none;border:none;color:var(--text-muted);font-size:1.2rem;cursor:pointer;padding:0.3rem}
+.modal-close:hover{color:var(--text)}
+.patterns-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:0.6rem}
+.pattern-card{background:var(--bg-elevated);border:1px solid var(--border);border-radius:6px;padding:0.8rem 1rem;position:relative;transition:opacity 0.3s}
+.pattern-card.paused{opacity:0.5}
+.pattern-paused-badge{font-size:0.79rem;color:var(--amber);font-weight:600;margin-left:0.5rem}
+.pattern-name{font-family:var(--font-display);font-weight:600;font-size:0.88rem;margin-bottom:0.3rem;color:var(--text);display:flex;align-items:center;justify-content:space-between}
+.pattern-desc{font-size:0.79rem;color:var(--text-dim);margin-bottom:0.6rem;line-height:1.4}
+.confidence-row{display:flex;align-items:center;gap:0.5rem;margin-bottom:0.4rem}
+.confidence-bar{flex:1;height:6px;background:var(--bg-card);border-radius:3px;overflow:hidden}
+.confidence-fill{height:100%;border-radius:3px;transition:width 1s ease}
+.confidence-val{font-size:0.8rem;font-weight:600;min-width:38px;text-align:right;display:flex;align-items:center;gap:0.3rem}
+.info-icon{cursor:help;opacity:0.5;font-size:0.75rem;position:relative}
+.info-icon:hover{opacity:1}
+.info-tip{position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:var(--bg-elevated);border:1px solid var(--border-bright);color:var(--text);font-size:0.79rem;font-weight:400;padding:0.5rem 0.7rem;border-radius:6px;max-width:220px;white-space:normal;line-height:1.4;z-index:20;opacity:0;visibility:hidden;transition:opacity 150ms ease,visibility 150ms ease}
+.info-icon:hover .info-tip{opacity:1;visibility:visible}
+.info-tip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:var(--border-bright)}
+.pattern-meta{display:flex;gap:1rem;font-size:0.79rem;color:var(--text-muted)}
+.toggle{width:32px;height:18px;border-radius:9px;background:var(--green);position:relative;cursor:pointer;transition:background 0.3s;flex-shrink:0}
+.toggle.off{background:var(--text-muted)}
+.toggle::after{content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:left 0.2s}
+.toggle.off::after{left:2px}
+.toggle:not(.off)::after{left:16px}
+.uptime-chart{display:flex;flex-direction:column;gap:0.5rem}
+.uptime-row{display:flex;align-items:center;gap:0.6rem}
+.uptime-label{width:75px;font-size:0.79rem;color:var(--text-dim);text-align:right;flex-shrink:0}
+.uptime-bars{flex:1;display:flex;gap:2px;height:22px}
+.uptime-seg{flex:1;border-radius:2px;transition:background 0.3s;position:relative}
+.uptime-seg.up{background:var(--green);opacity:0.7}
+.uptime-seg.up:hover{opacity:1}
+.uptime-seg.down{background:var(--red);opacity:0.8}
+.uptime-seg.partial{background:var(--amber);opacity:0.7;cursor:pointer}
+.uptime-seg.partial:hover{opacity:1}
+.uptime-hours{display:flex;gap:2px;margin-left:81px}
+.uptime-hours span{flex:1;text-align:center;font-size:0.6rem;color:var(--text-muted)}
+.sched-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:0.4rem}
+.sched-item{display:flex;align-items:center;gap:0.5rem;padding:0.55rem 0.7rem;background:var(--bg-elevated);border-radius:5px;font-size:0.8rem}
+.sched-icon{width:6px;height:6px;border-radius:50%;background:var(--cyan);flex-shrink:0}
+.sched-name{color:var(--text);flex:1}
+.sched-time{color:var(--text-muted);font-size:0.79rem;text-align:right}
+.loading-overlay{position:fixed;inset:0;background:var(--bg-deep);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:200;transition:opacity 0.5s}
+.loading-overlay.hidden{opacity:0;pointer-events:none}
+.loading-spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite;margin-bottom:1rem}
+.loading-text{font-family:var(--font-display);color:var(--text-dim);font-size:0.9rem}
+.error-banner{background:var(--red-dim);border:1px solid rgba(239,68,68,0.3);border-radius:6px;padding:0.6rem 1rem;font-size:0.85rem;color:var(--red);display:none;align-items:center;gap:0.5rem}
+.error-banner.show{display:flex}
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--bg-elevated);border:1px solid rgba(245,158,11,0.3);color:var(--text);padding:0.7rem 1.2rem;border-radius:8px;font-size:0.79rem;z-index:600;opacity:0;transition:opacity 0.2s;pointer-events:none;max-width:360px}
+.toast.show{opacity:1;pointer-events:auto}
+@media(max-width:1100px){.split{grid-template-columns:1fr}}
+@media(max-width:768px){html{font-size:13px}.header{padding:0.5rem 1rem}.main{padding:0.75rem}.metrics-row{grid-template-columns:repeat(2,1fr)}.metric-value{font-size:1.5rem}.container-grid{grid-template-columns:repeat(2,1fr)}.legend{flex-wrap:wrap}}
+@media(max-width:480px){.metrics-row{grid-template-columns:1fr}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.fade-up{animation:fadeUp 0.4s ease forwards}
+.delay-1{animation-delay:0.05s;opacity:0}.delay-2{animation-delay:0.1s;opacity:0}.delay-3{animation-delay:0.15s;opacity:0}.delay-4{animation-delay:0.2s;opacity:0}
 </style>
 </head>
 <body>
-
-<div class="loading-overlay" id="loader">
-  <div class="loading-spinner"></div>
-  <div class="loading-text">Carregando dados...</div>
-</div>
-
-<header class="header">
+<div class="loading-overlay" id="loader"><div class="loading-spinner"></div><div class="loading-text">Carregando dados...</div></div>
+<div class="critical-banner" id="criticalBanner" role="alert" aria-live="assertive"><div class="dot"></div><span id="criticalText"></span></div>
+<header class="header" role="banner">
   <div class="header-left">
-    <div class="logo">CONECTA <span>PRO</span> &mdash; Multi-Agent Dashboard</div>
-    <div class="header-status">
-      <div class="pulse-dot" id="statusDot"></div>
+    <div class="logo" aria-label="Conecta PRO Multi-Agent Dashboard">CONECTA <span>PRO</span> &mdash; Multi-Agent Dashboard</div>
+    <div class="header-status" aria-label="Status do sistema">
+      <div class="pulse-dot" id="statusDot" role="status"></div>
       <span id="statusText">Conectando...</span>
     </div>
+    <span class="alert-open-badge" id="alertOpenBadge" aria-label="Alertas abertos"></span>
   </div>
   <div class="header-right">
-    <div class="container-summary" id="containerSummary">--/-- containers</div>
-    <div id="lastUpdate">--</div>
-    <div class="refresh-badge">
-      <div class="refresh-spin" id="refreshSpin"></div>
-      <span>30s</span>
+    <div class="container-summary" id="containerSummary" aria-label="Resumo dos containers">--/-- containers</div>
+    <div id="lastUpdate" aria-label="Última atualização">--</div>
+    <div class="refresh-wrap" id="refreshWrap" aria-label="Intervalo de atualização">
+      <div class="refresh-badge" id="refreshBadge"><div class="refresh-spin" id="refreshSpin"></div><span id="refreshText">--</span></div>
+      <div class="refresh-dropdown" id="refreshDropdown"></div>
     </div>
   </div>
 </header>
-
-<main class="main">
-  <div class="error-banner" id="errorBanner">Falha ao carregar dados. Tentando novamente...</div>
-
-  <!-- METRICS -->
-  <section class="metrics-row" id="metricsRow"></section>
-
-  <!-- CONTAINERS + INTERVENTIONS -->
+<div class="legend" role="complementary" aria-label="Legenda de status">
+  <div class="legend-item"><div class="legend-dot" style="background:var(--green);box-shadow:0 0 4px rgba(34,197,94,0.4)"></div> Healthy</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--amber);box-shadow:0 0 4px rgba(245,158,11,0.3)"></div> Running</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--red);box-shadow:0 0 4px rgba(239,68,68,0.4)"></div> Unhealthy</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#64748b"></div> Created</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#334155"></div> Stopped</div>
+</div>
+<main class="main" role="main">
+  <div class="error-banner" id="errorBanner" role="alert">Falha ao carregar dados. Tentando novamente...</div>
+  <section class="metrics-row" id="metricsRow" aria-label="Métricas do sistema"></section>
   <section class="split">
     <div class="panel fade-up delay-2">
-      <div class="panel-header">
-        <div class="panel-title">Containers</div>
-        <div class="panel-badge" id="containerBadge">--</div>
-      </div>
-      <div class="panel-body" id="containerPanel"></div>
+      <div class="panel-header"><div class="panel-title">Containers</div><div class="panel-badge" id="containerBadge">--</div></div>
+      <div class="panel-body" id="containerPanel" role="list" aria-label="Lista de containers"></div>
     </div>
     <div class="panel fade-up delay-3">
       <div class="panel-header">
         <div class="panel-title">Intervenções OpenClaw</div>
-        <div class="panel-badge" id="interventionBadge">--</div>
+        <div class="panel-header-right"><div class="panel-badge" id="interventionBadge">--</div><button class="export-btn" id="exportBtn" aria-label="Exportar intervenções como CSV">&#8595; exportar</button></div>
       </div>
-      <div class="panel-body" style="padding:0;">
-        <div style="overflow-x:auto;" id="interventionPanel"></div>
-      </div>
+      <div class="panel-body" style="padding:0" id="interventionSection"><div style="overflow-x:auto" id="interventionPanel" role="table" aria-label="Tabela de intervenções"></div></div>
     </div>
   </section>
-
-  <!-- PATTERNS -->
   <section class="panel fade-up delay-3">
-    <div class="panel-header">
-      <div class="panel-title">Padrões Aprendidos</div>
-      <div class="panel-badge" id="patternBadge">--</div>
-    </div>
-    <div class="panel-body" id="patternPanel"></div>
+    <div class="panel-header"><div class="panel-title">Padrões Aprendidos</div><div class="panel-badge" id="patternBadge">--</div></div>
+    <div class="panel-body" id="patternPanel" aria-label="Padrões de resolução aprendidos"></div>
   </section>
-
-  <!-- UPTIME + SCHEDULED -->
   <section class="split">
     <div class="panel fade-up delay-4">
-      <div class="panel-header">
-        <div class="panel-title">Uptime 24h</div>
-        <div class="panel-badge">Core Services</div>
-      </div>
-      <div class="panel-body" id="uptimePanel"></div>
+      <div class="panel-header"><div class="panel-title">Uptime 24h</div><div class="panel-badge">Core Services</div></div>
+      <div class="panel-body" id="uptimePanel" aria-label="Gráfico de uptime das últimas 24 horas"></div>
     </div>
     <div class="panel fade-up delay-4">
-      <div class="panel-header">
-        <div class="panel-title">Ações Agendadas</div>
-        <div class="panel-badge" id="schedBadge">--</div>
-      </div>
-      <div class="panel-body" id="schedPanel"></div>
+      <div class="panel-header"><div class="panel-title">Ações Agendadas</div><div class="panel-badge" id="schedBadge">--</div></div>
+      <div class="panel-body" id="schedPanel" aria-label="Próximas ações agendadas"></div>
     </div>
   </section>
 </main>
-
+<div class="modal-overlay" id="modalOverlay" role="dialog" aria-modal="true"><div class="modal-box"><button class="modal-close" id="modalClose" aria-label="Fechar">&times;</button><div class="modal-title" id="modalTitle"></div><div class="modal-meta" id="modalMeta"></div><div class="modal-body" id="modalBody"></div></div></div>
+<div class="toast" id="toast"></div>
 <script>
-const BRT_OFFSET = -4;
+const BRT=-4;let prevMem=null,cachedData=null,lastFetchOk=null,fetchTimer=null,agoTimer=null;
+const INTERVALS=[{ms:5000,label:'5s'},{ms:15000,label:'15s'},{ms:30000,label:'30s'},{ms:60000,label:'1min'},{ms:300000,label:'5min'}];
+let refreshMs=parseInt(localStorage.getItem('dashboard_refresh_interval'))||30000;
 
-function fmtTime(iso) {
-  if (!iso) return '--';
-  const d = new Date(iso);
-  const brt = new Date(d.getTime() + BRT_OFFSET * 3600000);
-  const hh = String(brt.getUTCHours()).padStart(2,'0');
-  const mm = String(brt.getUTCMinutes()).padStart(2,'0');
-  const dd = String(brt.getUTCDate()).padStart(2,'0');
-  const mo = String(brt.getUTCMonth()+1).padStart(2,'0');
-  return `${hh}:${mm} ${dd}/${mo}`;
-}
+function fmtTime(iso){if(!iso)return'--';const d=new Date(iso),b=new Date(d.getTime()+BRT*3600000);return`${String(b.getUTCHours()).padStart(2,'0')}:${String(b.getUTCMinutes()).padStart(2,'0')} ${String(b.getUTCDate()).padStart(2,'0')}/${String(b.getUTCMonth()+1).padStart(2,'0')}`}
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
+function barColor(p,t){const[w,c]=t||[70,90];return p>=c?'var(--red)':p>=w?'var(--amber)':'var(--green)'}
+// STRUCT 2
+function normName(n){return n.replace(/^[0-9a-f]{12}_/,'')}
+function shortName(n){return normName(n).replace('conecta-pro-','').replace('erp-','')}
 
-function barColor(pct, thresholds) {
-  const [w, c] = thresholds || [70, 90];
-  if (pct >= c) return 'var(--red)';
-  if (pct >= w) return 'var(--amber)';
-  return 'var(--green)';
-}
+function showModal(t,m,b){document.getElementById('modalTitle').textContent=t;document.getElementById('modalMeta').textContent=m;document.getElementById('modalBody').textContent=b;document.getElementById('modalOverlay').classList.add('show')}
+document.getElementById('modalClose').onclick=()=>document.getElementById('modalOverlay').classList.remove('show');
+document.getElementById('modalOverlay').onclick=e=>{if(e.target===e.currentTarget)e.currentTarget.classList.remove('show')};
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.getElementById('modalOverlay').classList.remove('show')});
 
-function metricCard(label, value, unit, pct, sub, thresholds) {
-  const color = barColor(pct, thresholds);
-  return `<div class="metric-card fade-up delay-1">
-    <div class="metric-label">${label}</div>
-    <div class="metric-value" style="color:${color}">${value}<span style="font-size:0.9rem;color:var(--text-dim);margin-left:3px">${unit}</span></div>
-    <div class="metric-bar"><div class="metric-bar-fill" style="width:${Math.min(pct,100)}%;background:${color}"></div></div>
-    <div class="metric-sub">${sub}</div>
-  </div>`;
-}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),4000)}
 
-function classifyContainer(name) {
-  if (/backend|postgres(?!-ex)|redis(?!-ex)|nginx/.test(name) && !/staging|celery|flower|exporter/.test(name))
-    return 'core';
-  if (/celery|flower/.test(name)) return 'workers';
-  if (/prometheus|grafana|loki|promtail|alertmanager|exporter/.test(name)) return 'monitoring';
-  if (/staging/.test(name)) return 'staging';
-  return 'other';
-}
+// FIX 4: ago counter
+function updateAgo(){const el=document.getElementById('refreshText'),sp=document.getElementById('refreshSpin');
+if(lastFetchOk===null){el.textContent='--';return}
+const s=Math.round((Date.now()-lastFetchOk)/1000);
+if(s>refreshMs/1000*2){el.textContent=`falha — ${s}s atrás`;el.style.color='var(--amber)';sp.classList.add('paused')}
+else{el.textContent=`${s}s atrás`;el.style.color='';sp.classList.remove('paused')}}
+setInterval(updateAgo,1000);
 
-function shortName(name) {
-  return name
-    .replace(/^[0-9a-f]{12}_/, '')
-    .replace('conecta-pro-', '')
-    .replace('erp-', '');
-}
+// FEAT 2: refresh dropdown
+function buildDropdown(){const dd=document.getElementById('refreshDropdown');
+dd.innerHTML=INTERVALS.map(i=>`<div class="refresh-opt${i.ms===refreshMs?' active':''}" data-ms="${i.ms}">${i.label}</div>`).join('')}
+buildDropdown();
+document.getElementById('refreshWrap').onclick=e=>{
+const dd=document.getElementById('refreshDropdown');
+if(e.target.dataset.ms){refreshMs=parseInt(e.target.dataset.ms);localStorage.setItem('dashboard_refresh_interval',refreshMs);buildDropdown();dd.classList.remove('show');clearInterval(fetchTimer);fetchTimer=setInterval(fetchData,refreshMs);return}
+dd.classList.toggle('show')};
+document.addEventListener('click',e=>{if(!document.getElementById('refreshWrap').contains(e.target))document.getElementById('refreshDropdown').classList.remove('show')});
 
-function render(data) {
-  const m = data.metrics;
+// FEAT 4: uptime text
+function parseUptime(status){const m=status.match(/Up\s+(.+?)(?:\s+\(|$)/);return m?'up '+m[1]:null}
 
-  // Header
-  const healthy = data.containers.filter(c => c.health === 'healthy' || c.health === 'running').length;
-  const total = data.containers.length;
-  document.getElementById('containerSummary').innerHTML =
-    `<span class="num">${healthy}</span>/${total} containers`;
-  document.getElementById('lastUpdate').textContent = fmtTime(data.generated_at);
+function metricCard(label,value,unit,pct,sub,th,trend){
+const color=barColor(pct,th);const[tw,tc]=th||[70,90];
+return`<div class="metric-card fade-up delay-1" role="meter" aria-label="${label}: ${value}${unit}" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100">
+<div class="metric-label">${label}</div>
+<div class="metric-value-row"><div class="metric-value" style="color:${color}">${value}</div><div class="metric-unit">${unit}</div>${trend||''}</div>
+<div class="metric-bar-wrap"><div class="metric-bar-fill" style="width:${Math.min(pct,100)}%;background:${color}"></div>
+<div class="metric-threshold" style="left:${tw}%" data-label="${tw}%"></div><div class="metric-threshold" style="left:${tc}%" data-label="${tc}%"></div></div>
+<div class="metric-sub">${sub}</div></div>`}
 
-  const allOk = healthy >= total - 2;
-  const dot = document.getElementById('statusDot');
-  const stxt = document.getElementById('statusText');
-  dot.className = 'pulse-dot' + (allOk ? '' : healthy > total/2 ? ' warn' : ' error');
-  stxt.textContent = allOk ? 'Operacional' : `${total - healthy} degradados`;
+function classifyContainer(n){const s=normName(n);
+if(/backend|postgres(?!-ex)|redis(?!-ex)|nginx/.test(s)&&!/staging|celery|flower|exporter/.test(s))return'core';
+if(/celery|flower/.test(s))return'workers';if(/prometheus|grafana|loki|promtail|alertmanager|exporter/.test(s))return'monitoring';
+if(/staging/.test(s))return'staging';return'other'}
 
-  // Metrics
-  const cpuPct = Math.round(m.load_5m / m.cpu_cores * 100);
-  document.getElementById('metricsRow').innerHTML =
-    metricCard('CPU Load', m.load_5m.toFixed(1), `/ ${m.cpu_cores}`, cpuPct,
-      `1m: ${m.load_1m.toFixed(1)} · 15m: ${m.load_15m.toFixed(1)}`, [60,85]) +
-    metricCard('Memória', m.mem_percent.toFixed(0), '%', m.mem_percent,
-      `${m.mem_used_gb.toFixed(1)} / ${m.mem_total_gb.toFixed(1)} GB`, [80,90]) +
-    metricCard('Disco', m.disk_percent, '%', m.disk_percent,
-      `${m.disk_used_gb} / ${m.disk_total_gb} GB`, [70,85]) +
-    metricCard('Fila Celery', data.celery_queue_length, 'tasks',
-      Math.min(data.celery_queue_length, 100),
-      data.celery_queue_length > 50 ? 'Acima do normal' : 'Normal', [50,100]);
+// STRUCT 1: CSV export
+document.getElementById('exportBtn').onclick=()=>{if(!cachedData||!cachedData.interventions)return;
+const rows=['\uFEFFhora,alerta,severidade,status,resolucao'];
+cachedData.interventions.forEach(i=>{const res=(i.diagnosis||'--').replace(/"/g,'""');
+rows.push(`"${fmtTime(i.created_at)}","${i.alert_name}","${i.severity}","${i.status}","${res}"`)});
+const blob=new Blob([rows.join('\n')],{type:'text/csv;charset=utf-8'});
+const url=URL.createObjectURL(blob),a=document.createElement('a');
+a.href=url;a.download=`intervencoes-openclaw-${new Date().toISOString().slice(0,10)}.csv`;a.click();URL.revokeObjectURL(url)};
 
-  // Containers
-  const groups = { core: [], workers: [], monitoring: [], staging: [], other: [] };
-  const labels = { core: 'Infraestrutura Core', workers: 'Celery Workers', monitoring: 'Monitoramento', staging: 'Staging', other: 'Outros' };
-  data.containers.forEach(c => {
-    const g = classifyContainer(c.name);
-    groups[g].push(c);
-  });
+function render(data){
+cachedData=data;const m=data.metrics;
+// FIX 1+3: core containers critical banner
+const coreNames=['backend','postgres','redis','nginx'];
+const coreDown=data.containers.filter(c=>{const sn=shortName(c.name).toLowerCase();
+return coreNames.some(cn=>sn===cn)&&(c.health==='stopped'||c.health==='unhealthy'||c.health==='created')});
+const banner=document.getElementById('criticalBanner');
+if(coreDown.length>0){
+const parts=coreDown.map(c=>{const sn=shortName(c.name);
+return c.health==='created'?`${sn} nunca foi iniciado — inicialização necessária`:`${sn} está fora do ar — reiniciar necessário`});
+document.getElementById('criticalText').textContent='ALERTA CRITICO: '+parts.join(' | ');
+banner.classList.add('show')}else{banner.classList.remove('show')}
 
-  let chtml = '<div class="container-groups">';
-  for (const [key, arr] of Object.entries(groups)) {
-    if (!arr.length) continue;
-    chtml += `<div><div class="group-label">${labels[key]} (${arr.length})</div>
-      <div class="container-grid">
-        ${arr.map(c => `<div class="ct">
-          <div class="ct-dot ${c.health}"></div>
-          <div class="ct-name" title="${c.name}">${shortName(c.name)}</div>
-        </div>`).join('')}
-      </div></div>`;
-  }
-  chtml += '</div>';
-  document.getElementById('containerPanel').innerHTML = chtml;
-  document.getElementById('containerBadge').textContent = `${total} total`;
+// Header
+const healthy=data.containers.filter(c=>c.health==='healthy'||c.health==='running').length;
+const total=data.containers.length;
+document.getElementById('containerSummary').innerHTML=`<span class="num">${healthy}</span>/${total} containers`;
+document.getElementById('lastUpdate').textContent=fmtTime(data.generated_at);
+const dot=document.getElementById('statusDot'),stxt=document.getElementById('statusText');
+dot.className='pulse-dot'+(coreDown.length>0?' error':healthy>=total-2?'':' warn');
+stxt.textContent=coreDown.length>0?`${coreDown.length} core DOWN`:healthy>=total-2?'Operacional':`${total-healthy} degradados`;
 
-  // Interventions
-  const intv = data.interventions || [];
-  document.getElementById('interventionBadge').textContent = `${intv.length} registros`;
-  if (intv.length === 0) {
-    document.getElementById('interventionPanel').innerHTML =
-      '<div style="padding:2rem;text-align:center;color:var(--text-muted);font-size:0.75rem;">Nenhuma intervenção registrada</div>';
-  } else {
-    let thtml = `<table class="tbl"><thead><tr>
-      <th>Hora</th><th>Alerta</th><th>Sev.</th><th>Status</th><th>Resolução</th>
-    </tr></thead><tbody>`;
-    intv.slice(0, 10).forEach(i => {
-      const sevCls = i.severity === 'critical' ? 'sev-critical' : i.severity === 'warning' ? 'sev-warning' : 'sev-info';
-      const stCls = i.status === 'resolved' ? 'status-resolved' : i.status === 'acting' ? 'status-acting' : 'status-failed';
-      thtml += `<tr>
-        <td style="white-space:nowrap;color:var(--text-dim)">${fmtTime(i.created_at)}</td>
-        <td style="font-weight:500">${i.alert_name}</td>
-        <td><span class="sev-badge ${sevCls}">${i.severity}</span></td>
-        <td><span class="status-badge ${stCls}">${i.status}</span></td>
-        <td style="color:var(--text-dim);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${i.resolution || '--'}</td>
-      </tr>`;
-    });
-    thtml += '</tbody></table>';
-    document.getElementById('interventionPanel').innerHTML = thtml;
-  }
+// FIX 5: escalated alerts badge
+const escalated=(data.interventions||[]).filter(i=>i.status==='escalated'||i.status==='acting').length;
+const ab=document.getElementById('alertOpenBadge');
+if(escalated>0){ab.textContent=`⚠ ${escalated} aberto${escalated>1?'s':''}`;ab.classList.add('show');
+ab.onclick=()=>document.getElementById('interventionSection').scrollIntoView({behavior:'smooth'})}
+else{ab.classList.remove('show')}
 
-  // Patterns
-  const pats = data.patterns || [];
-  document.getElementById('patternBadge').textContent = `${pats.length} ativos`;
-  if (pats.length === 0) {
-    document.getElementById('patternPanel').innerHTML =
-      '<div style="text-align:center;color:var(--text-muted);font-size:0.75rem;padding:1.5rem;">Nenhum padrão aprendido ainda. O sistema precisa de mais tempo de operação.</div>';
-  } else {
-    document.getElementById('patternPanel').innerHTML = '<div class="patterns-grid">' +
-      pats.map(p => {
-        const conf = p.confidence_score || 0;
-        const confColor = conf >= 85 ? 'var(--green)' : conf >= 60 ? 'var(--amber)' : 'var(--text-muted)';
-        return `<div class="pattern-card">
-          <div class="pattern-name">${p.alert_name}</div>
-          <div class="pattern-desc">${p.description || '--'}</div>
-          <div class="confidence-row">
-            <div class="confidence-bar"><div class="confidence-fill" style="width:${conf}%;background:${confColor}"></div></div>
-            <div class="confidence-val" style="color:${confColor}">${conf.toFixed(0)}%</div>
-          </div>
-          <div class="pattern-meta">
-            <span>Prevenções: ${p.prevention_count || 0}</span>
-            <span>Última: ${p.last_prevented_at ? fmtTime(p.last_prevented_at) : 'nunca'}</span>
-          </div>
-        </div>`;
-      }).join('') + '</div>';
-  }
+// FIX 2: trend separated from value
+const memPct=m.mem_percent;let memTrend='';
+if(prevMem!==null){const d=memPct-prevMem;
+if(d>1)memTrend=`<span class="metric-trend trend-up">&#9650;${d.toFixed(0)}%</span>`;
+else if(d<-1)memTrend=`<span class="metric-trend trend-down">&#9660;${Math.abs(d).toFixed(0)}%</span>`;
+else memTrend=`<span class="metric-trend trend-flat">&#9644;</span>`}
+prevMem=memPct;
+const cpuPct=Math.round(m.load_5m/m.cpu_cores*100);
+document.getElementById('metricsRow').innerHTML=
+metricCard('CPU Load',m.load_5m.toFixed(1),`/ ${m.cpu_cores}`,cpuPct,`1m: ${m.load_1m.toFixed(1)} · 15m: ${m.load_15m.toFixed(1)}`,[60,85])+
+metricCard('Memória',memPct.toFixed(0),'%',memPct,`${m.mem_used_gb.toFixed(1)} / ${m.mem_total_gb.toFixed(1)} GB`,[80,90],memTrend)+
+metricCard('Disco',m.disk_percent,'%',m.disk_percent,`${m.disk_used_gb} / ${m.disk_total_gb} GB`,[70,85])+
+metricCard('Fila Celery',data.celery_queue_length,'tasks',Math.min(data.celery_queue_length,100),data.celery_queue_length>50?'Acima do normal':'Normal',[50,100]);
 
-  // Uptime
-  const up = data.uptime_history || [];
-  const services = ['backend', 'postgres', 'redis'];
-  const serviceLabels = { backend: 'Backend', postgres: 'PostgreSQL', redis: 'Redis' };
-  let uhtml = '<div class="uptime-chart">';
-  services.forEach(svc => {
-    uhtml += `<div class="uptime-row">
-      <div class="uptime-label">${serviceLabels[svc]}</div>
-      <div class="uptime-bars">
-        ${up.map(h => {
-          const v = h[svc] || 0;
-          const cls = v >= 99 ? 'up' : v >= 50 ? 'partial' : 'down';
-          return `<div class="uptime-seg ${cls}" title="${h.hour}: ${v}%"></div>`;
-        }).join('')}
-      </div>
-    </div>`;
-  });
-  // Hour labels (every 4th)
-  uhtml += '<div class="uptime-hours">' +
-    up.map((h, i) => `<span>${i % 4 === 0 ? h.hour.replace(':00','h') : ''}</span>`).join('') +
-    '</div></div>';
-  document.getElementById('uptimePanel').innerHTML = uhtml;
+// Containers with FEAT 4 uptime for core
+const groups={core:[],workers:[],monitoring:[],staging:[],other:[]};
+const labels={core:'Infraestrutura Core',workers:'Celery Workers',monitoring:'Monitoramento',staging:'Staging',other:'Outros'};
+data.containers.forEach(c=>{groups[classifyContainer(c.name)].push(c)});
+let chtml='<div class="container-groups">';
+for(const[key,arr]of Object.entries(groups)){if(!arr.length)continue;
+chtml+=`<div><div class="group-label">${labels[key]} (${arr.length})</div><div class="container-grid">`;
+arr.forEach(c=>{
+const sn=shortName(c.name);const nn=normName(c.name);
+let uptimeHtml='';
+if(key==='core'){
+if(c.health==='healthy'||c.health==='running'){const ut=parseUptime(c.status);uptimeHtml=ut?`<div class="ct-uptime">${ut}</div>`:''}
+else if(c.health==='created')uptimeHtml='<div class="ct-uptime problem">nunca iniciado</div>';
+else if(c.health==='stopped')uptimeHtml='<div class="ct-uptime problem">offline</div>';
+else if(c.health==='unhealthy')uptimeHtml='<div class="ct-uptime problem">unhealthy</div>'}
+chtml+=`<div class="ct" role="listitem" aria-label="${esc(sn)}: ${c.health}">
+<div class="ct-dot ${c.health}"></div>
+<div class="ct-info"><div class="ct-name" title="${esc(nn)} — ${esc(c.status)}">${esc(sn)}</div>${uptimeHtml}</div></div>`});
+chtml+='</div></div>'}
+chtml+='</div>';
+document.getElementById('containerPanel').innerHTML=chtml;
+document.getElementById('containerBadge').textContent=`${total} total`;
 
-  // Scheduled
-  const sched = data.scheduled_actions || [];
-  document.getElementById('schedBadge').textContent = `${sched.length} tarefas`;
-  document.getElementById('schedPanel').innerHTML = '<div class="sched-grid">' +
-    sched.map(s => `<div class="sched-item">
-      <div class="sched-icon"></div>
-      <div class="sched-name">${s.name}</div>
-      <div class="sched-time">${s.schedule}</div>
-    </div>`).join('') + '</div>';
-}
+// Interventions
+const intv=data.interventions||[];
+document.getElementById('interventionBadge').textContent=`${intv.length} registros`;
+if(intv.length===0){document.getElementById('interventionPanel').innerHTML='<div style="padding:2rem;text-align:center;color:var(--text-muted);font-size:0.85rem;">Nenhuma intervenção registrada</div>'}
+else{let t=`<table class="tbl"><thead><tr><th>Hora</th><th>Alerta</th><th>Sev.</th><th>Status</th><th>Resolução</th></tr></thead><tbody>`;
+intv.slice(0,10).forEach((iv,idx)=>{
+const sevCls=iv.severity==='critical'?'sev-critical':iv.severity==='warning'?'sev-warning':'sev-info';
+const stCls=iv.status==='resolved'?'status-resolved':iv.status==='acting'?'status-acting':'status-escalated';
+const shortRes=(iv.resolution||'--').substring(0,40);
+t+=`<tr><td style="white-space:nowrap;color:var(--text-dim)">${fmtTime(iv.created_at)}</td>
+<td style="font-weight:500">${esc(iv.alert_name)}</td>
+<td><span class="sev-badge ${sevCls}">${iv.severity}</span></td>
+<td><span class="status-badge ${stCls}">${iv.status}</span></td>
+<td class="resolution-cell" data-idx="${idx}" aria-label="Clique para ver detalhes">
+<div class="resolution-text">${esc(shortRes)}</div><div class="resolution-hint">clique para detalhes</div></td></tr>`});
+t+='</tbody></table>';
+document.getElementById('interventionPanel').innerHTML=t;
+document.querySelectorAll('.resolution-cell[data-idx]').forEach(el=>{el.addEventListener('click',()=>{
+const i=intv[parseInt(el.dataset.idx)];if(i)showModal(i.alert_name,fmtTime(i.created_at)+' — '+i.status,i.diagnosis||'Sem diagnóstico')})})}
 
-let failCount = 0;
+// STRUCT 3: Patterns with toggle + FEAT 3 tooltip
+const pats=data.patterns||[];
+document.getElementById('patternBadge').textContent=`${pats.length} ativos`;
+if(pats.length===0){document.getElementById('patternPanel').innerHTML='<div style="text-align:center;color:var(--text-muted);font-size:0.85rem;padding:1.5rem;">Nenhum padrão aprendido ainda.</div>'}
+else{document.getElementById('patternPanel').innerHTML='<div class="patterns-grid">'+pats.map((p,i)=>{
+const conf=p.confidence_score||0;const confColor=conf>=85?'var(--green)':conf>=60?'var(--amber)':'var(--text-muted)';
+const key='pattern_disabled_'+p.alert_name;const disabled=localStorage.getItem(key)==='true';
+const prevCount=p.prevention_count||0;
+const tipText=prevCount>0?`Confiança do modelo: baseada em ${prevCount} execuções históricas. Quanto maior, mais precisa a ação preventiva.`:'Padrão ainda não executado. Confiança estimada pelo modelo na configuração atual.';
+return`<div class="pattern-card${disabled?' paused':''}" data-pattern="${esc(p.alert_name)}">
+<div class="pattern-name"><span>${esc(p.alert_name)}${disabled?'<span class="pattern-paused-badge">PAUSADO</span>':''}</span>
+<div class="toggle${disabled?' off':''}" data-toggle="${i}" aria-label="Ativar/desativar padrão"></div></div>
+<div class="pattern-desc">${esc(p.description||'--')}</div>
+<div class="confidence-row"><div class="confidence-bar"><div class="confidence-fill" style="width:${conf}%;background:${confColor}"></div></div>
+<div class="confidence-val" style="color:${confColor}">${conf.toFixed(0)}%
+<span class="info-icon">ⓘ<span class="info-tip">${tipText}</span></span></div></div>
+<div class="pattern-meta"><span>Prevenções: ${prevCount}</span><span>Última: ${p.last_prevented_at?fmtTime(p.last_prevented_at):'nunca'}</span></div></div>`}).join('')+'</div>';
+// STRUCT 3: toggle handlers
+document.querySelectorAll('.toggle[data-toggle]').forEach(el=>{el.addEventListener('click',e=>{
+e.stopPropagation();const card=el.closest('.pattern-card');const name=card.dataset.pattern;
+const key='pattern_disabled_'+name;const wasOff=el.classList.contains('off');
+if(wasOff){el.classList.remove('off');card.classList.remove('paused');localStorage.removeItem(key);
+showToast(`Padrão ${name} reativado`)}
+else{el.classList.add('off');card.classList.add('paused');localStorage.setItem(key,'true');
+showToast(`Padrão ${name} pausado — OpenClaw não executará este padrão até ser reativado`)}
+// TODO: sincronizar estado com backend POST /api/patterns/{name}/toggle
+})})}
 
-async function fetchData() {
-  try {
-    const r = await fetch('/agents/dashboard/dashboard_data.json?t=' + Date.now());
-    if (!r.ok) throw new Error(r.status);
-    const data = await r.json();
-    render(data);
-    failCount = 0;
-    document.getElementById('errorBanner').classList.remove('show');
-    document.getElementById('loader').classList.add('hidden');
-  } catch (e) {
-    failCount++;
-    if (failCount > 1) {
-      document.getElementById('errorBanner').classList.add('show');
-    }
-    document.getElementById('loader').classList.add('hidden');
-  }
-}
+// Uptime with FEAT 1 clickable
+const up=data.uptime_history||[];const svcs=['backend','postgres','redis'];
+const svcLabels={backend:'Backend',postgres:'PostgreSQL',redis:'Redis'};
+const incHours=new Set();(data.interventions||[]).forEach(iv=>{if(iv.created_at){const d=new Date(iv.created_at);
+const h=String(d.getUTCHours()).padStart(2,'0')+':00';const s=iv.alert_name.toLowerCase();
+if(s.includes('redis'))incHours.add('redis:'+h);if(s.includes('postgres'))incHours.add('postgres:'+h);
+if(s.includes('erp')||s.includes('api')||s.includes('memory')||s.includes('load'))incHours.add('backend:'+h)}});
+let uh='<div class="uptime-chart">';
+svcs.forEach(svc=>{uh+=`<div class="uptime-row"><div class="uptime-label">${svcLabels[svc]}</div><div class="uptime-bars">`;
+up.forEach(h=>{const has=incHours.has(svc+':'+h.hour);const v=has?50:(h[svc]||0);
+const cls=v>=99?'up':v>=50?'partial':'down';
+uh+=`<div class="uptime-seg ${cls}" data-svc="${svc}" data-hour="${h.hour}" title="${h.hour}: ${has?'incidente':v+'%'}"></div>`});
+uh+='</div></div>'});
+uh+='<div class="uptime-hours">'+up.map((h,i)=>`<span>${i%4===0?h.hour.replace(':00','h'):''}</span>`).join('')+'</div></div>';
+document.getElementById('uptimePanel').innerHTML=uh;
+// FEAT 1: clickable partial segments
+document.querySelectorAll('.uptime-seg.partial').forEach(el=>{el.addEventListener('click',()=>{
+const svc=svcLabels[el.dataset.svc]||el.dataset.svc;const hour=el.dataset.hour;
+const hInt=parseInt(hour);const matching=(data.interventions||[]).filter(iv=>{if(!iv.created_at)return false;
+const d=new Date(iv.created_at);return d.getUTCHours()===hInt});
+let body;if(matching.length>0){body=matching.map(iv=>`[${iv.severity}] ${iv.alert_name} — ${iv.status}\n${iv.diagnosis||''}`).join('\n\n---\n\n')}
+else{body='Incidente registrado sem intervenção documentada neste período.'}
+showModal(`${svc} — ${hour}`,`Intervenções durante esta hora`,body)})});
 
-fetchData();
-setInterval(fetchData, 30000);
+// Scheduled
+const sched=data.scheduled_actions||[];
+document.getElementById('schedBadge').textContent=`${sched.length} tarefas`;
+const schedMap={'*/2 * * * *':'A cada 2 min','*/5 * * * *':'A cada 5 min','*/15 * * * *':'A cada 15 min','0 3 * * *':'Diário 03:00 UTC','30 3 * * *':'Diário 03:30 UTC','Sexta 17-18h BRT':'Sexta 17-18h BRT'};
+document.getElementById('schedPanel').innerHTML='<div class="sched-grid">'+sched.map(s=>
+`<div class="sched-item" role="listitem" aria-label="${esc(s.name)}"><div class="sched-icon"></div><div class="sched-name">${esc(s.name)}</div><div class="sched-time">${schedMap[s.schedule]||s.next||s.schedule}</div></div>`).join('')+'</div>'}
+
+let failCount=0;
+async function fetchData(){try{const r=await fetch('/agents/dashboard/dashboard_data.json?t='+Date.now());
+if(!r.ok)throw new Error(r.status);const data=await r.json();render(data);failCount=0;lastFetchOk=Date.now();
+document.getElementById('errorBanner').classList.remove('show');document.getElementById('loader').classList.add('hidden')}
+catch(e){failCount++;if(failCount>1)document.getElementById('errorBanner').classList.add('show');
+document.getElementById('loader').classList.add('hidden')}}
+fetchData();fetchTimer=setInterval(fetchData,refreshMs);
 </script>
 </body>
 </html>

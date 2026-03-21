@@ -1,0 +1,1072 @@
+{
+  "generated_at": "2026-03-21T05:00:02.838108+00:00",
+  "generated_at_brt": "21/03/2026 01:00 AMT",
+  "containers": [
+    {
+      "name": "conecta-pro-backend",
+      "image": "conecta-pro-backend",
+      "status": "Up 27 minutes (healthy)",
+      "health": "healthy",
+      "cpu": "254.64%",
+      "mem_usage": "1.723GiB / 31.34GiB",
+      "mem_pct": "5.50%"
+    },
+    {
+      "name": "erp-postgres-exporter",
+      "image": "prometheuscommunity/postgres-exporter",
+      "status": "Up 11 hours",
+      "health": "running",
+      "cpu": "0.00%",
+      "mem_usage": "21.86MiB / 31.34GiB",
+      "mem_pct": "0.07%"
+    },
+    {
+      "name": "conecta-pro-celery-beat",
+      "image": "2e35599590cc",
+      "status": "Up 11 hours (unhealthy)",
+      "health": "unhealthy",
+      "cpu": "0.00%",
+      "mem_usage": "658.9MiB / 31.34GiB",
+      "mem_pct": "2.05%"
+    },
+    {
+      "name": "conecta-pro-flower",
+      "image": "2e35599590cc",
+      "status": "Up 11 hours (healthy)",
+      "health": "healthy",
+      "cpu": "1.16%",
+      "mem_usage": "669MiB / 31.34GiB",
+      "mem_pct": "2.08%"
+    },
+    {
+      "name": "conecta-pro-celery-integrations",
+      "image": "2e35599590cc",
+      "status": "Up 11 hours (healthy)",
+      "health": "healthy",
+      "cpu": "7.03%",
+      "mem_usage": "976.3MiB / 31.34GiB",
+      "mem_pct": "3.04%"
+    },
+    {
+      "name": "34bbe0bcda76_conecta-pro-celery-priority",
+      "image": "2e35599590cc",
+      "status": "Up 11 hours (healthy)",
+      "health": "healthy",
+      "cpu": "1.44%",
+      "mem_usage": "942.4MiB / 31.34GiB",
+      "mem_pct": "2.94%"
+    },
+    {
+      "name": "a853a3056bf9_conecta-pro-celery-sefaz",
+      "image": "2e35599590cc",
+      "status": "Up 11 hours (healthy)",
+      "health": "healthy",
+      "cpu": "1.41%",
+      "mem_usage": "1.172GiB / 31.34GiB",
+      "mem_pct": "3.74%"
+    },
+    {
+      "name": "8f30da3e29ad_conecta-pro-celery-nfse",
+      "image": "2e35599590cc",
+      "status": "Up 11 hours (healthy)",
+      "health": "healthy",
+      "cpu": "0.98%",
+      "mem_usage": "941.6MiB / 31.34GiB",
+      "mem_pct": "2.93%"
+    },
+    {
+      "name": "conecta-pro-celery-batch",
+      "image": "2e35599590cc",
+      "status": "Up 11 hours (healthy)",
+      "health": "healthy",
+      "cpu": "0.85%",
+      "mem_usage": "1.061GiB / 31.34GiB",
+      "mem_pct": "3.39%"
+    },
+    {
+      "name": "297439d0453a_conecta-pro-celery-operacional",
+      "image": "2e35599590cc",
+      "status": "Up 11 hours (healthy)",
+      "health": "healthy",
+      "cpu": "4.32%",
+      "mem_usage": "1.236GiB / 31.34GiB",
+      "mem_pct": "3.94%"
+    },
+    {
+      "name": "conecta-pro-postgres",
+      "image": "postgres",
+      "status": "Up 11 hours (healthy)",
+      "health": "healthy",
+      "cpu": "20.88%",
+      "mem_usage": "75.36MiB / 31.34GiB",
+      "mem_pct": "0.23%"
+    },
+    {
+      "name": "erp-node-exporter",
+      "image": "prom/node-exporter",
+      "status": "Up 12 hours",
+      "health": "running",
+      "cpu": "0.00%",
+      "mem_usage": "14.39MiB / 31.34GiB",
+      "mem_pct": "0.04%"
+    },
+    {
+      "name": "erp-redis-exporter",
+      "image": "oliver006/redis_exporter",
+      "status": "Up 25 hours",
+      "health": "running",
+      "cpu": "0.00%",
+      "mem_usage": "8.512MiB / 31.34GiB",
+      "mem_pct": "0.03%"
+    },
+    {
+      "name": "conecta-pro-redis",
+      "image": "redis",
+      "status": "Up 3 hours (healthy)",
+      "health": "healthy",
+      "cpu": "22.29%",
+      "mem_usage": "10.29MiB / 31.34GiB",
+      "mem_pct": "0.03%"
+    },
+    {
+      "name": "conecta-pro-redis-staging",
+      "image": "redis",
+      "status": "Up 12 days (healthy)",
+      "health": "healthy",
+      "cpu": "1.38%",
+      "mem_usage": "4.688MiB / 31.34GiB",
+      "mem_pct": "0.01%"
+    },
+    {
+      "name": "conecta-pro-postgres-staging",
+      "image": "postgres",
+      "status": "Up 12 days (healthy)",
+      "health": "healthy",
+      "cpu": "0.00%",
+      "mem_usage": "19.87MiB / 31.34GiB",
+      "mem_pct": "0.06%"
+    },
+    {
+      "name": "erp-alertmanager",
+      "image": "prom/alertmanager",
+      "status": "Up 23 minutes (healthy)",
+      "health": "healthy",
+      "cpu": "0.19%",
+      "mem_usage": "18.23MiB / 31.34GiB",
+      "mem_pct": "0.06%"
+    },
+    {
+      "name": "erp-promtail",
+      "image": "grafana/promtail",
+      "status": "Up 12 days",
+      "health": "running",
+      "cpu": "6.69%",
+      "mem_usage": "62.85MiB / 31.34GiB",
+      "mem_pct": "0.20%"
+    },
+    {
+      "name": "erp-loki",
+      "image": "grafana/loki",
+      "status": "Up 12 days (healthy)",
+      "health": "healthy",
+      "cpu": "5.03%",
+      "mem_usage": "120.6MiB / 31.34GiB",
+      "mem_pct": "0.38%"
+    },
+    {
+      "name": "erp-prometheus",
+      "image": "prom/prometheus",
+      "status": "Up 12 hours",
+      "health": "running",
+      "cpu": "117.59%",
+      "mem_usage": "166.7MiB / 31.34GiB",
+      "mem_pct": "0.52%"
+    },
+    {
+      "name": "erp-grafana",
+      "image": "grafana/grafana",
+      "status": "Up 12 days",
+      "health": "running",
+      "cpu": "7.02%",
+      "mem_usage": "92.19MiB / 31.34GiB",
+      "mem_pct": "0.29%"
+    }
+  ],
+  "server": {
+    "load_1m": 3.69,
+    "load_5m": 2.16,
+    "load_15m": 2.62,
+    "cpu_cores": 8,
+    "mem_total_gb": 31.3,
+    "mem_used_gb": 17.6,
+    "mem_percent": 56.2,
+    "disk_total_gb": 386.0,
+    "disk_used_gb": 39.0,
+    "disk_percent": 11,
+    "swap_total_gb": 4.0,
+    "swap_used_gb": 0.0,
+    "uptime_days": 39.5
+  },
+  "interventions": [
+    {
+      "alert_name": "DiskSpaceLow",
+      "severity": "warning",
+      "status": "resolved",
+      "diagnosis": "DIAGNOSTICO Disco:\n  - Disco: overlay         387G   48G  339G  13% /\n  - Diretorios grandes:\n\n  - Limpeza: \n  - Docker prune: Timeout apos 30s",
+      "resolution": "Resolvido automaticamente pelo OpenClaw",
+      "response_time_seconds": 31,
+      "false_positive": false,
+      "false_positive_reason": null,
+      "created_at": "2026-03-21T04:34:05.035197+00:00",
+      "resolved_at": "2026-03-21T04:34:35.156189+00:00"
+    },
+    {
+      "alert_name": "HighMemoryUsage",
+      "severity": "warning",
+      "status": "resolved",
+      "diagnosis": "DIAGNOSTICO Memoria:\n  - Memoria:\ntotal        used        free      shared  buff/cache   available\nMem:            31Gi        16Gi       2.3Gi        85Mi        13Gi        15Gi\nSwap:          4.0Gi       4.2Mi       4.0Gi\n  - Top processos:\nUSER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND\nerp          1 11.1  5.6 2819672 1853468 ?     Ssl  04:17   1:07 /usr/local/bin/python3.12 /usr/local/bin/uvicorn main_production:app --host 0.0.0.0 --port 8080 --timeout-graceful-shutdown 25\nerp        163  0.0  0.0   6784  3968 ?        R    04:27   0:00 ps aux --sort=-%mem\nerp        162  0.0  0.0   2672  1792 ?        S    04:27   0:00 /bin/sh -c ps aux --sort=-%mem | head -6\nerp        164  0.0  0.0   3020  1664 ?        S    04:27   0:00 head -6\n  - RAM em 52% — abaixo do threshold, alerta pode ser falso positivo",
+      "resolution": "Falso positivo detectado: memory_at_52_percent",
+      "response_time_seconds": 0,
+      "false_positive": true,
+      "false_positive_reason": "memory_at_52_percent",
+      "created_at": "2026-03-21T04:27:49.076303+00:00",
+      "resolved_at": "2026-03-21T04:27:49.109290+00:00"
+    },
+    {
+      "alert_name": "RedisDown",
+      "severity": "critical",
+      "status": "resolved",
+      "diagnosis": "DIAGNOSTICO Redis:\n  - Container Redis: running\n  - Classificacao: healthy (PONG)\n  - Redis respondendo normalmente — alerta era falso positivo",
+      "resolution": "Falso positivo detectado: healthy_on_first_check",
+      "response_time_seconds": 0,
+      "false_positive": true,
+      "false_positive_reason": "healthy_on_first_check",
+      "created_at": "2026-03-21T04:27:29.953328+00:00",
+      "resolved_at": "2026-03-21T04:27:30.064364+00:00"
+    },
+    {
+      "alert_name": "RedisDown",
+      "severity": "critical",
+      "status": "resolved",
+      "diagnosis": "DIAGNOSTICO Redis:\n  - Container Redis: running\n  - Redis PING: PONG\n  - Memoria: used_memory_human:6.40M",
+      "resolution": "Resolvido automaticamente pelo OpenClaw",
+      "response_time_seconds": 0,
+      "false_positive": false,
+      "false_positive_reason": null,
+      "created_at": "2026-03-21T02:22:21.275004+00:00",
+      "resolved_at": "2026-03-21T02:22:21.362741+00:00"
+    },
+    {
+      "alert_name": "RedisDown",
+      "severity": "critical",
+      "status": "escalated",
+      "diagnosis": "DIAGNOSTICO Redis:\n  - Container Redis: running\n  - Redis PING: FALHA\n  - Memoria: \n  - Acao: container Redis reiniciado\n  - Pos-restart: ainda com problemas",
+      "resolution": null,
+      "response_time_seconds": 6,
+      "false_positive": false,
+      "false_positive_reason": null,
+      "created_at": "2026-03-21T02:16:41.639156+00:00",
+      "resolved_at": null
+    },
+    {
+      "alert_name": "RedisDown",
+      "severity": "critical",
+      "status": "escalated",
+      "diagnosis": "DIAGNOSTICO Redis:\n  - Container Redis: running\n  - Redis PING: FALHA\n  - Memoria: \n  - Acao: container Redis reiniciado\n  - Pos-restart: ainda com problemas",
+      "resolution": null,
+      "response_time_seconds": 6,
+      "false_positive": false,
+      "false_positive_reason": null,
+      "created_at": "2026-03-21T02:09:46.097443+00:00",
+      "resolved_at": null
+    },
+    {
+      "alert_name": "HighMemoryUsage",
+      "severity": "warning",
+      "status": "resolved",
+      "diagnosis": "DIAGNOSTICO Memoria:\n  - Memoria:\ntotal        used        free      shared  buff/cache   available\nMem:            31Gi        16Gi       5.3Gi        80Mi        10Gi        15Gi\nSwap:          4.0Gi       4.5Mi       4.0Gi\n  - Top processos:\nUSER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND\nerp          1 59.9  5.6 2744528 1851676 ?     Ssl  02:07   0:50 /usr/local/bin/python3.12 /usr/local/bin/uvicorn main_production:app --host 0.0.0.0 --port 8080 --timeout-graceful-shutdown 25\nerp         84  0.0  0.0   6784  3968 ?        R    02:08   0:00 ps aux --sort=-%mem\nerp         83  0.0  0.0   2672  1792 ?        S    02:08   0:00 /bin/sh -c ps aux --sort=-%mem | head -6\nerp         85  0.0  0.0   3020  1664 ?        S    02:08   0:00 head -6",
+      "resolution": "Resolvido automaticamente pelo OpenClaw",
+      "response_time_seconds": 1,
+      "false_positive": false,
+      "false_positive_reason": null,
+      "created_at": "2026-03-21T02:08:33.823345+00:00",
+      "resolved_at": "2026-03-21T02:08:33.895243+00:00"
+    },
+    {
+      "alert_name": "RedisDown",
+      "severity": "critical",
+      "status": "resolved",
+      "diagnosis": "DIAGNOSTICO Redis:\n  - Container Redis: \n  - Redis PING: FALHA\n  - Memoria: \n  - Acao: container Redis reiniciado\n  - Pos-restart: ainda com problemas",
+      "resolution": "Resolvido manualmente — Redis estava saudável, intervenção ficou presa em acting por limitação do ambiente de execução (dentro do container Docker sem acesso a redis-cli)",
+      "response_time_seconds": 5,
+      "false_positive": false,
+      "false_positive_reason": null,
+      "created_at": "2026-03-20T18:47:43.247062+00:00",
+      "resolved_at": "2026-03-21T01:38:26.098220+00:00"
+    },
+    {
+      "alert_name": "HighMemoryUsage",
+      "severity": "warning",
+      "status": "resolved",
+      "diagnosis": "DIAGNOSTICO Memoria:\n  - /bin/sh: 1: free: not found\n  - Top processos:\n/bin/sh: 1: ps: not found",
+      "resolution": "Resolvido automaticamente pelo OpenClaw",
+      "response_time_seconds": 0,
+      "false_positive": false,
+      "false_positive_reason": null,
+      "created_at": "2026-03-20T18:47:33.293492+00:00",
+      "resolved_at": "2026-03-20T18:47:33.335163+00:00"
+    }
+  ],
+  "patterns": [
+    {
+      "alert_name": "DiskSpaceLow",
+      "description": "Disco acima de 75%: limpar logs e backups antigos preventivamente.",
+      "confidence_score": 90.0,
+      "frequency": 1,
+      "prevention_count": 0,
+      "last_prevented_at": null,
+      "preventive_command": "find /opt/conecta-pro/logs -name '*.log' -mtime +7 -delete 2>/dev/null; docker system prune -f 2>/dev/null",
+      "conditions": {
+        "metric": "disk_usage_percent",
+        "operator": ">",
+        "threshold": 75
+      }
+    },
+    {
+      "alert_name": "HighMemoryUsage",
+      "description": "Alerta 'HighMemoryUsage' ocorreu 2x nos ultimos 30 dias. Taxa resolucao: 100%. Tempo medio resposta: 1.0s.",
+      "confidence_score": 90.0,
+      "frequency": 1,
+      "prevention_count": 0,
+      "last_prevented_at": null,
+      "preventive_command": null,
+      "conditions": {
+        "failed_count": 0,
+        "resolution_rate": 1.0,
+        "total_occurrences": 2,
+        "avg_response_seconds": 1.0
+      }
+    },
+    {
+      "alert_name": "RedisDown",
+      "description": "Alerta 'RedisDown' ocorreu 4x nos ultimos 30 dias. Taxa resolucao: 50%. Tempo medio resposta: 5.7s.",
+      "confidence_score": 85.0,
+      "frequency": 1,
+      "prevention_count": 0,
+      "last_prevented_at": null,
+      "preventive_command": null,
+      "conditions": {
+        "failed_count": 2,
+        "resolution_rate": 0.5,
+        "total_occurrences": 4,
+        "avg_response_seconds": 5.7
+      }
+    },
+    {
+      "alert_name": "PostgresConnectionLost",
+      "description": "Conexoes PostgreSQL acima de 80: fechar conexoes idle.",
+      "confidence_score": 85.0,
+      "frequency": 1,
+      "prevention_count": 0,
+      "last_prevented_at": null,
+      "preventive_command": "docker exec conecta-pro-postgres psql -U postgres -d conecta_pro -c \"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE state = 'idle' AND state_change < now() - interval '10 minutes' AND pid <> pg_backend_pid()\" 2>/dev/null",
+      "conditions": {
+        "metric": "pg_active_connections",
+        "operator": ">",
+        "threshold": 80
+      }
+    },
+    {
+      "alert_name": "HighMemoryUsage",
+      "description": "Memoria acima de 85%: limpar caches e verificar processos.",
+      "confidence_score": 80.0,
+      "frequency": 1,
+      "prevention_count": 0,
+      "last_prevented_at": null,
+      "preventive_command": "docker exec conecta-pro-redis redis-cli FLUSHDB 2>/dev/null; sync; echo 3 > /proc/sys/vm/drop_caches 2>/dev/null",
+      "conditions": {
+        "metric": "memory_usage_percent",
+        "operator": ">",
+        "threshold": 85
+      }
+    },
+    {
+      "alert_name": "RedisDown",
+      "description": "Alerta 'RedisDown' concentra 75% das ocorrencias por volta das 02:00 UTC. Total: 4 incidentes.",
+      "confidence_score": 72.0,
+      "frequency": 1,
+      "prevention_count": 0,
+      "last_prevented_at": null,
+      "preventive_command": null,
+      "conditions": {
+        "peak_ratio": 0.75,
+        "peak_hour_utc": 2,
+        "total_incidents": 4
+      }
+    },
+    {
+      "alert_name": "HighMemoryUsage+RedisDown",
+      "description": "Alertas 'HighMemoryUsage' e 'RedisDown' co-ocorreram 2x dentro de janelas de 10 minutos. Possivel causa raiz comum.",
+      "confidence_score": 50.0,
+      "frequency": 1,
+      "prevention_count": 0,
+      "last_prevented_at": null,
+      "preventive_command": null,
+      "conditions": {
+        "alert_a": "HighMemoryUsage",
+        "alert_b": "RedisDown",
+        "co_occurrences": 2,
+        "window_minutes": 10
+      }
+    },
+    {
+      "alert_name": "RedisDown",
+      "description": "Alerta 'RedisDown' escala/falha em 50% dos casos (2/4). Remediacao automatica insuficiente.",
+      "confidence_score": 50.0,
+      "frequency": 1,
+      "prevention_count": 0,
+      "last_prevented_at": null,
+      "preventive_command": null,
+      "conditions": {
+        "total": 4,
+        "escalated": 2,
+        "escalation_rate": 0.5
+      }
+    }
+  ],
+  "prometheus_alerts": [
+    {
+      "name": "PostgresDown",
+      "state": "inactive",
+      "active_alerts": 0
+    },
+    {
+      "name": "PostgresConnectionLost",
+      "state": "inactive",
+      "active_alerts": 0
+    },
+    {
+      "name": "RedisDown",
+      "state": "inactive",
+      "active_alerts": 0
+    },
+    {
+      "name": "DiskSpaceLow",
+      "state": "inactive",
+      "active_alerts": 0
+    },
+    {
+      "name": "DiskSpaceCritical",
+      "state": "inactive",
+      "active_alerts": 0
+    },
+    {
+      "name": "HighMemoryUsage",
+      "state": "inactive",
+      "active_alerts": 0
+    },
+    {
+      "name": "HighLoadAverage",
+      "state": "inactive",
+      "active_alerts": 0
+    },
+    {
+      "name": "SSLCertExpiringSoon",
+      "state": "inactive",
+      "active_alerts": 0
+    },
+    {
+      "name": "SSLCertExpiringCritical",
+      "state": "inactive",
+      "active_alerts": 0
+    },
+    {
+      "name": "BackupStale",
+      "state": "inactive",
+      "active_alerts": 0
+    },
+    {
+      "name": "CeleryQueueBacklog",
+      "state": "inactive",
+      "active_alerts": 0
+    },
+    {
+      "name": "CeleryQueueCritical",
+      "state": "inactive",
+      "active_alerts": 0
+    },
+    {
+      "name": "PM2ExcessiveRestarts",
+      "state": "inactive",
+      "active_alerts": 0
+    }
+  ],
+  "error_logs": {
+    "conecta-pro-backend": [
+      "{\"time\": \"2026-03-21 04:59:11.533\", \"level\": \"ERROR\", \"message\": \"Erro ao contar notificações não lidas: 'AsyncSession' object has no attribute 'query'\", \"module\": \"__init__\", \"function\": \"callHandlers\", \"line\": 1762}",
+      "{\"time\": \"2026-03-21 04:59:41.535\", \"level\": \"ERROR\", \"message\": \"Erro ao listar notificações: 'AsyncSession' object has no attribute 'query'\", \"module\": \"__init__\", \"function\": \"callHandlers\", \"line\": 1762}",
+      "{\"time\": \"2026-03-21 04:59:41.535\", \"level\": \"ERROR\", \"message\": \"Erro ao contar notificações não lidas: 'AsyncSession' object has no attribute 'query'\", \"module\": \"__init__\", \"function\": \"callHandlers\", \"line\": 1762}"
+    ],
+    "conecta-pro-postgres": [
+      "(sem erros recentes)"
+    ],
+    "conecta-pro-redis": [
+      "(sem erros recentes)"
+    ]
+  },
+  "knowledge_base": {
+    "total_modules": 46,
+    "total_endpoints": 3244,
+    "modules": {
+      "ai": {
+        "endpoints": 332,
+        "criticality": "low",
+        "lines": 119360,
+        "models": 85,
+        "dependencies": [
+          "audit",
+          "notifications",
+          "operacional"
+        ],
+        "infra": [
+          "celery",
+          "postgresql",
+          "redis"
+        ]
+      },
+      "analytics": {
+        "endpoints": 7,
+        "criticality": "medium",
+        "lines": 7755,
+        "models": 0,
+        "dependencies": [],
+        "infra": [
+          "postgresql",
+          "redis"
+        ]
+      },
+      "audit": {
+        "endpoints": 31,
+        "criticality": "low",
+        "lines": 4387,
+        "models": 5,
+        "dependencies": [],
+        "infra": [
+          "postgresql"
+        ]
+      },
+      "automation": {
+        "endpoints": 9,
+        "criticality": "low",
+        "lines": 9052,
+        "models": 8,
+        "dependencies": [
+          "_deprecated_workflows_dataclass"
+        ],
+        "infra": [
+          "postgresql",
+          "redis"
+        ]
+      },
+      "bidding": {
+        "endpoints": 96,
+        "criticality": "medium",
+        "lines": 25969,
+        "models": 15,
+        "dependencies": [
+          "comercial",
+          "financial",
+          "fiscal",
+          "operacional"
+        ],
+        "infra": [
+          "celery",
+          "postgresql",
+          "redis"
+        ]
+      },
+      "campo": {
+        "endpoints": 125,
+        "criticality": "medium",
+        "lines": 13383,
+        "models": 9,
+        "dependencies": [],
+        "infra": [
+          "postgresql",
+          "redis"
+        ]
+      },
+      "cct": {
+        "endpoints": 25,
+        "criticality": "high",
+        "lines": 3141,
+        "models": 3,
+        "dependencies": [
+          "operacional"
+        ],
+        "infra": [
+          "postgresql"
+        ]
+      },
+      "client_portal": {
+        "endpoints": 12,
+        "criticality": "low",
+        "lines": 1923,
+        "models": 3,
+        "dependencies": [
+          "people_management"
+        ],
+        "infra": [
+          "postgresql"
+        ]
+      },
+      "clients": {
+        "endpoints": 50,
+        "criticality": "high",
+        "lines": 6135,
+        "models": 5,
+        "dependencies": [],
+        "infra": [
+          "postgresql"
+        ]
+      },
+      "config": {
+        "endpoints": 47,
+        "criticality": "low",
+        "lines": 4335,
+        "models": 5,
+        "dependencies": [],
+        "infra": [
+          "postgresql",
+          "redis"
+        ]
+      },
+      "crm": {
+        "endpoints": 100,
+        "criticality": "high",
+        "lines": 14673,
+        "models": 16,
+        "dependencies": [],
+        "infra": [
+          "postgresql"
+        ]
+      },
+      "document_kits": {
+        "endpoints": 54,
+        "criticality": "high",
+        "lines": 4775,
+        "models": 4,
+        "dependencies": [
+          "operacional"
+        ],
+        "infra": [
+          "postgresql"
+        ]
+      },
+      "documents": {
+        "endpoints": 16,
+        "criticality": "low",
+        "lines": 7289,
+        "models": 0,
+        "dependencies": [],
+        "infra": [
+          "postgresql"
+        ]
+      },
+      "empresas": {
+        "endpoints": 35,
+        "criticality": "high",
+        "lines": 3797,
+        "models": 2,
+        "dependencies": [
+          "financial"
+        ],
+        "infra": [
+          "postgresql"
+        ]
+      },
+      "equipment_management": {
+        "endpoints": 93,
+        "criticality": "medium",
+        "lines": 8677,
+        "models": 4,
+        "dependencies": [],
+        "infra": [
+          "postgresql"
+        ]
+      },
+      "fase5": {
+        "endpoints": 11,
+        "criticality": "low",
+        "lines": 3300,
+        "models": 0,
+        "dependencies": [],
+        "infra": [
+          "redis"
+        ]
+      },
+      "financial": {
+        "endpoints": 516,
+        "criticality": "critical",
+        "lines": 72653,
+        "models": 79,
+        "dependencies": [
+          "ai",
+          "integrations"
+        ],
+        "infra": [
+          "postgresql",
+          "redis"
+        ]
+      },
+      "fiscal": {
+        "endpoints": 5,
+        "criticality": "critical",
+        "lines": 532,
+        "models": 0,
+        "dependencies": [],
+        "infra": []
+      },
+      "fiscal_contabil": {
+        "endpoints": 0,
+        "criticality": "critical",
+        "lines": 38,
+        "models": 0,
+        "dependencies": [
+          "bidding",
+          "empresas",
+          "fiscal",
+          "government_integrations"
+        ],
+        "infra": []
+      },
+      "ged": {
+        "endpoints": 139,
+        "criticality": "high",
+        "lines": 9804,
+        "models": 6,
+        "dependencies": [],
+        "infra": [
+          "postgresql"
+        ]
+      },
+      "government_integrations": {
+        "endpoints": 215,
+        "criticality": "critical",
+        "lines": 64296,
+        "models": 33,
+        "dependencies": [
+          "core",
+          "scheduler"
+        ],
+        "infra": [
+          "celery",
+          "postgresql",
+          "redis"
+        ]
+      },
+      "health_occupational": {
+        "endpoints": 40,
+        "criticality": "medium",
+        "lines": 8769,
+        "models": 16,
+        "dependencies": [],
+        "infra": [
+          "postgresql",
+          "redis"
+        ]
+      },
+      "hr": {
+        "endpoints": 273,
+        "criticality": "high",
+        "lines": 45558,
+        "models": 29,
+        "dependencies": [],
+        "infra": [
+          "postgresql",
+          "redis"
+        ]
+      },
+      "integrations": {
+        "endpoints": 70,
+        "criticality": "medium",
+        "lines": 29494,
+        "models": 34,
+        "dependencies": [
+          "operacional"
+        ],
+        "infra": [
+          "celery",
+          "postgresql",
+          "redis"
+        ]
+      },
+      "lgpd": {
+        "endpoints": 3,
+        "criticality": "low",
+        "lines": 495,
+        "models": 0,
+        "dependencies": [],
+        "infra": [
+          "postgresql"
+        ]
+      },
+      "mobile": {
+        "endpoints": 17,
+        "criticality": "medium",
+        "lines": 5326,
+        "models": 4,
+        "dependencies": [],
+        "infra": [
+          "postgresql",
+          "redis"
+        ]
+      },
+      "monitoring": {
+        "endpoints": 25,
+        "criticality": "low",
+        "lines": 3581,
+        "models": 2,
+        "dependencies": [],
+        "infra": [
+          "postgresql",
+          "redis"
+        ]
+      },
+      "notifications": {
+        "endpoints": 111,
+        "criticality": "medium",
+        "lines": 21905,
+        "models": 19,
+        "dependencies": [
+          "ai"
+        ],
+        "infra": [
+          "celery",
+          "postgresql",
+          "redis"
+        ]
+      },
+      "operacional": {
+        "endpoints": 245,
+        "criticality": "critical",
+        "lines": 52034,
+        "models": 32,
+        "dependencies": [
+          "config",
+          "integrations",
+          "notifications"
+        ],
+        "infra": [
+          "celery",
+          "postgresql",
+          "redis"
+        ]
+      },
+      "people_management": {
+        "endpoints": 219,
+        "criticality": "high",
+        "lines": 33159,
+        "models": 31,
+        "dependencies": [
+          "cct",
+          "ged",
+          "hr",
+          "operacional",
+          "recruitment",
+          "reimbursement",
+          "retention"
+        ],
+        "infra": [
+          "celery",
+          "postgresql",
+          "redis"
+        ]
+      },
+      "recruitment": {
+        "endpoints": 79,
+        "criticality": "medium",
+        "lines": 8384,
+        "models": 7,
+        "dependencies": [],
+        "infra": [
+          "postgresql",
+          "redis"
+        ]
+      },
+      "reimbursement": {
+        "endpoints": 26,
+        "criticality": "medium",
+        "lines": 3541,
+        "models": 4,
+        "dependencies": [
+          "financial"
+        ],
+        "infra": [
+          "postgresql"
+        ]
+      },
+      "reports": {
+        "endpoints": 38,
+        "criticality": "medium",
+        "lines": 5575,
+        "models": 5,
+        "dependencies": [],
+        "infra": [
+          "postgresql",
+          "redis"
+        ]
+      },
+      "retention": {
+        "endpoints": 70,
+        "criticality": "low",
+        "lines": 17766,
+        "models": 14,
+        "dependencies": [],
+        "infra": [
+          "postgresql"
+        ]
+      },
+      "scheduler": {
+        "endpoints": 26,
+        "criticality": "medium",
+        "lines": 4630,
+        "models": 7,
+        "dependencies": [],
+        "infra": [
+          "postgresql",
+          "redis"
+        ]
+      },
+      "security_lgpd": {
+        "endpoints": 21,
+        "criticality": "low",
+        "lines": 5659,
+        "models": 4,
+        "dependencies": [],
+        "infra": [
+          "postgresql",
+          "redis"
+        ]
+      },
+      "services": {
+        "endpoints": 63,
+        "criticality": "medium",
+        "lines": 5155,
+        "models": 5,
+        "dependencies": [],
+        "infra": [
+          "postgresql"
+        ]
+      }
+    },
+    "peak_hours": {
+      "known_brt": [
+        "07:00-09:00",
+        "17:00-19:00"
+      ],
+      "from_logs": [
+        0,
+        1,
+        13,
+        14,
+        15
+      ]
+    },
+    "operational_rules": [
+      {
+        "rule": "no_deploy_during_peak",
+        "severity": "high",
+        "description": "Nao executar deploys entre 07:00-09:00 e 17:00-19:00 BRT"
+      },
+      {
+        "rule": "backup_before_deploy",
+        "severity": "critical",
+        "description": "Sempre fazer backup do banco antes de qualquer deploy"
+      },
+      {
+        "rule": "backend_before_frontend",
+        "severity": "high",
+        "description": "Deploiar backend antes do frontend"
+      },
+      {
+        "rule": "financial_zone_proibida",
+        "severity": "critical",
+        "description": "Nao editar backend/modules/financial/ sem testes — compliance fiscal"
+      },
+      {
+        "rule": "government_zone_proibida",
+        "severity": "critical",
+        "description": "Nao editar backend/modules/government_integrations/ — regulatorio"
+      }
+    ]
+  },
+  "cron_status": {
+    "latest_backup": {
+      "file": "backup_20260321_030001.sql.gz",
+      "size_kb": 390,
+      "age_hours": 2.0
+    },
+    "pattern_learner_last": "[2026-03-21 03:00:04] pattern_learner: Concluido. Total padroes processados: 5",
+    "preventive_action_last": "[2026-03-21 05:00:09] preventive: === Concluido. Problemas: 3 | Pico: 0 | DB: 0 "
+  },
+  "celery_queues": {
+    "celery": 2,
+    "operacional": 0,
+    "gov.batch": 0,
+    "integrations": 0,
+    "webhooks": 0
+  },
+  "recent_events": [
+    {
+      "time": "2026-03-21T05:00:11.157245+00:00",
+      "type": "backup",
+      "summary": "Último backup: backup_20260321_030001.sql.gz (390KB, 2.0h atrás)"
+    },
+    {
+      "time": "2026-03-21T04:34:05.035197+00:00",
+      "type": "intervention",
+      "summary": "DiskSpaceLow: resolved"
+    },
+    {
+      "time": "2026-03-21T04:27:49.076303+00:00",
+      "type": "intervention",
+      "summary": "HighMemoryUsage: resolved (falso positivo)"
+    },
+    {
+      "time": "2026-03-21T04:27:29.953328+00:00",
+      "type": "intervention",
+      "summary": "RedisDown: resolved (falso positivo)"
+    },
+    {
+      "time": "2026-03-21T02:22:21.275004+00:00",
+      "type": "intervention",
+      "summary": "RedisDown: resolved"
+    },
+    {
+      "time": "2026-03-21T02:16:41.639156+00:00",
+      "type": "intervention",
+      "summary": "RedisDown: escalated"
+    },
+    {
+      "time": "2026-03-21T02:09:46.097443+00:00",
+      "type": "intervention",
+      "summary": "RedisDown: escalated"
+    },
+    {
+      "time": "2026-03-21T02:08:33.823345+00:00",
+      "type": "intervention",
+      "summary": "HighMemoryUsage: resolved"
+    },
+    {
+      "time": "2026-03-20T18:47:43.247062+00:00",
+      "type": "intervention",
+      "summary": "RedisDown: resolved"
+    },
+    {
+      "time": "2026-03-20T18:47:33.293492+00:00",
+      "type": "intervention",
+      "summary": "HighMemoryUsage: resolved"
+    }
+  ]
+}

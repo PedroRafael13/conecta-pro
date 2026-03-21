@@ -51,6 +51,9 @@ receivers:
           {{ .Annotations.summary }}
           {{ end }}
         send_resolved: true
+    webhook_configs:
+      - url: 'http://172.19.0.1:8080/api/v1/ai/openclaw/alert-webhook'
+        send_resolved: true
   - name: 'critical-webhook'
     telegram_configs:
       - bot_token: '${TELEGRAM_BOT_TOKEN}'
@@ -63,6 +66,9 @@ receivers:
           {{ .Annotations.summary }}
           {{ .Annotations.description }}
           {{ end }}
+        send_resolved: true
+    webhook_configs:
+      - url: 'http://172.19.0.1:8080/api/v1/ai/openclaw/alert-webhook'
         send_resolved: true
 inhibit_rules:
   - source_match:

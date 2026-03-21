@@ -110,6 +110,10 @@ async def receive_alert_webhook(
 
             elapsed = int(time.time() - start_time)
 
+            # Detectar falso positivo (step "false_positive" nos actions)
+            is_false_positive = any(a.get("step") == "false_positive" for a in actions)
+            fp_reason = next((a.get("reason", "unknown") for a in actions if a.get("step") == "false_positive"), None)
+
             # Determinar status final
             has_restart = any(a.get("step", "").startswith("restart") for a in actions)
             post_check_ok = any(
@@ -119,47 +123,53 @@ async def receive_alert_webhook(
                 a.get("step", "").startswith("post_restart") and "FALHA" in str(a.get("result", "")) for a in actions
             )
 
-            if failed_post:
-                final_status = InterventionStatus.ESCALATED
-            elif has_restart and post_check_ok:
+            if is_false_positive:
                 final_status = InterventionStatus.RESOLVED
-            elif not has_restart:
-                # Diagnóstico sem restart necessário = resolved (informativo)
+            elif failed_post:
+                final_status = InterventionStatus.ESCALATED
+            elif has_restart and post_check_ok or not has_restart:
                 final_status = InterventionStatus.RESOLVED
             else:
-                # Restart executado mas post-check inconclusivo (sem OK nem FALHA)
-                # Marcar como escalated em vez de ficar preso em acting
                 final_status = InterventionStatus.ESCALATED
 
             intervention.status = final_status
             intervention.diagnosis = diagnosis
             intervention.actions_taken = actions
             intervention.response_time_seconds = elapsed
+            intervention.false_positive = is_false_positive
+            intervention.false_positive_reason = fp_reason
+
             if final_status == InterventionStatus.RESOLVED:
                 intervention.resolved_at = datetime.now(UTC)
-                intervention.resolution = "Resolvido automaticamente pelo OpenClaw"
+                if is_false_positive:
+                    intervention.resolution = f"Falso positivo detectado: {fp_reason}"
+                else:
+                    intervention.resolution = "Resolvido automaticamente pelo OpenClaw"
 
-            # Notificar via Telegram
-            msg_id = await telegram_service.send_diagnosis(
-                alert_name=alert_name,
-                severity=severity,
-                status=final_status.value,
-                diagnosis=diagnosis,
-                actions=actions,
-                intervention_id=str(intervention.id),
-            )
+            # Notificar via Telegram (não notificar falsos positivos)
+            msg_id = None
+            if not is_false_positive:
+                msg_id = await telegram_service.send_diagnosis(
+                    alert_name=alert_name,
+                    severity=severity,
+                    status=final_status.value,
+                    diagnosis=diagnosis,
+                    actions=actions,
+                    intervention_id=str(intervention.id),
+                )
             intervention.telegram_sent = msg_id is not None
             intervention.telegram_message_id = msg_id
 
             logger.info(
                 f"OpenClaw intervenção {intervention.id}: "
                 f"status={final_status}, tempo={elapsed}s, "
+                f"false_positive={'sim (' + fp_reason + ')' if is_false_positive else 'nao'}, "
                 f"cached={'sim' if intervention.used_cached_solution else 'nao'}, "
                 f"telegram={'sim' if msg_id else 'nao'}"
             )
 
-            # 4. Registrar aprendizado se resolvido
-            if final_status == InterventionStatus.RESOLVED:
+            # 4. Registrar aprendizado APENAS se resolvido E NÃO falso positivo
+            if final_status == InterventionStatus.RESOLVED and not is_false_positive:
                 root_cause = _extract_root_cause(diagnosis, actions)
                 await memory_service.record_learning(
                     db=db,

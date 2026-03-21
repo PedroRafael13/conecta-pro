@@ -1,155 +1,199 @@
 {
-  "generated_at": "2026-03-21T02:16:01.105422+00:00",
+  "generated_at": "2026-03-21T05:00:04.338790+00:00",
   "containers": [
     {
       "name": "297439d0453a_conecta-pro-celery-operacional",
-      "status": "Up 8 hours (healthy)",
+      "status": "Up 11 hours (healthy)",
       "health": "healthy",
       "image": "2e35599590cc"
     },
     {
       "name": "34bbe0bcda76_conecta-pro-celery-priority",
-      "status": "Up 8 hours (healthy)",
+      "status": "Up 11 hours (healthy)",
       "health": "healthy",
       "image": "2e35599590cc"
     },
     {
       "name": "8f30da3e29ad_conecta-pro-celery-nfse",
-      "status": "Up 8 hours (healthy)",
+      "status": "Up 11 hours (healthy)",
       "health": "healthy",
       "image": "2e35599590cc"
     },
     {
       "name": "a853a3056bf9_conecta-pro-celery-sefaz",
-      "status": "Up 8 hours (healthy)",
+      "status": "Up 11 hours (healthy)",
       "health": "healthy",
       "image": "2e35599590cc"
     },
     {
       "name": "conecta-pro-backend",
-      "status": "Up About a minute (healthy)",
+      "status": "Up 27 minutes (healthy)",
       "health": "healthy",
       "image": "conecta-pro-backend"
     },
     {
       "name": "conecta-pro-celery-batch",
-      "status": "Up 8 hours (healthy)",
+      "status": "Up 11 hours (healthy)",
       "health": "healthy",
       "image": "2e35599590cc"
     },
     {
       "name": "conecta-pro-celery-beat",
-      "status": "Up 8 hours (unhealthy)",
-      "health": "healthy",
+      "status": "Up 11 hours (unhealthy)",
+      "health": "unhealthy",
       "image": "2e35599590cc"
     },
     {
       "name": "conecta-pro-celery-integrations",
-      "status": "Up 8 hours (healthy)",
+      "status": "Up 11 hours (healthy)",
       "health": "healthy",
       "image": "2e35599590cc"
     },
     {
       "name": "conecta-pro-flower",
-      "status": "Up 8 hours (healthy)",
+      "status": "Up 11 hours (healthy)",
       "health": "healthy",
       "image": "2e35599590cc"
     },
     {
-      "name": "conecta-pro-nginx",
-      "status": "Created",
-      "health": "stopped",
-      "image": "nginx"
-    },
-    {
       "name": "conecta-pro-postgres",
-      "status": "Up 9 hours (healthy)",
+      "status": "Up 11 hours (healthy)",
       "health": "healthy",
       "image": "postgres"
     },
     {
       "name": "conecta-pro-postgres-staging",
-      "status": "Up 11 days (healthy)",
+      "status": "Up 12 days (healthy)",
       "health": "healthy",
       "image": "postgres"
     },
     {
       "name": "conecta-pro-redis",
-      "status": "Up 6 minutes (healthy)",
+      "status": "Up 3 hours (healthy)",
       "health": "healthy",
       "image": "redis"
     },
     {
       "name": "conecta-pro-redis-staging",
-      "status": "Up 11 days (healthy)",
+      "status": "Up 12 days (healthy)",
       "health": "healthy",
       "image": "redis"
     },
     {
       "name": "erp-alertmanager",
-      "status": "Up 8 hours (healthy)",
+      "status": "Up 23 minutes (healthy)",
       "health": "healthy",
       "image": "prom/alertmanager"
     },
     {
       "name": "erp-grafana",
-      "status": "Up 11 days",
+      "status": "Up 12 days",
       "health": "running",
       "image": "grafana/grafana"
     },
     {
       "name": "erp-loki",
-      "status": "Up 11 days (healthy)",
+      "status": "Up 12 days (healthy)",
       "health": "healthy",
       "image": "grafana/loki"
     },
     {
       "name": "erp-node-exporter",
-      "status": "Up 9 hours",
+      "status": "Up 12 hours",
       "health": "running",
       "image": "prom/node-exporter"
     },
     {
       "name": "erp-postgres-exporter",
-      "status": "Up 8 hours",
+      "status": "Up 11 hours",
       "health": "running",
       "image": "prometheuscommunity/postgres-exporter"
     },
     {
       "name": "erp-prometheus",
-      "status": "Up 9 hours",
+      "status": "Up 12 hours",
       "health": "running",
       "image": "prom/prometheus"
     },
     {
       "name": "erp-promtail",
-      "status": "Up 11 days",
+      "status": "Up 12 days",
       "health": "running",
       "image": "grafana/promtail"
     },
     {
       "name": "erp-redis-exporter",
-      "status": "Up 22 hours",
+      "status": "Up 25 hours",
       "health": "running",
       "image": "oliver006/redis_exporter"
     }
   ],
   "metrics": {
-    "load_1m": 2.95,
-    "load_5m": 3.86,
-    "load_15m": 4.0,
+    "load_1m": 3.75,
+    "load_5m": 2.15,
+    "load_15m": 2.62,
     "cpu_cores": 8,
     "mem_total_gb": 31.3,
-    "mem_used_gb": 16.1,
-    "mem_percent": 51.3,
+    "mem_used_gb": 17.7,
+    "mem_percent": 56.5,
     "disk_total_gb": 386.0,
-    "disk_used_gb": 48.0,
-    "disk_percent": 13,
+    "disk_used_gb": 39.0,
+    "disk_percent": 11,
     "swap_total_gb": 4.0,
     "swap_used_gb": 0.0,
-    "uptime_days": 39.3811
+    "uptime_days": 39.4951
   },
   "interventions": [
+    {
+      "alert_name": "DiskSpaceLow",
+      "severity": "warning",
+      "status": "resolved",
+      "diagnosis": "DIAGNOSTICO Disco:\n  - Disco: overlay         387G   48G  339G  13% /\n  - Diretorios grandes:\n\n  - Limpeza: \n  - Docker prune: Timeout apos 30s",
+      "resolution": "Resolvido automaticamente pelo OpenClaw",
+      "response_time_seconds": 31,
+      "created_at": "2026-03-21T04:34:05.035197+00:00",
+      "resolved_at": "2026-03-21T04:34:35.156189+00:00"
+    },
+    {
+      "alert_name": "HighMemoryUsage",
+      "severity": "warning",
+      "status": "resolved",
+      "diagnosis": "DIAGNOSTICO Memoria:\n  - Memoria:\ntotal        used        free      shared  buff/cache   available\nMem:            31Gi        16Gi       2.3Gi        85Mi        13Gi        15Gi\nSwap:          4.0Gi       4.2Mi       4.0Gi\n  - Top processos:\nUSER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND\nerp          1 11.1  5.6 2819672 1853468 ?     Ssl  04:17   1:07 /usr/local/bin/python3.12 /usr/local/bin/uvicorn main_production:app --host 0.0.0.0 --port 8080 --timeout-graceful-shutdown 25\nerp        163  0.0  0.0   6784  3968 ?        R    04:27   0:00 ps aux --sort=-%mem\nerp        162  0.0  0.0   2672  1792 ?        S    04:27   0:00 /bin/sh -c ps aux --sort=-%mem | head -6\nerp        164  0.0  0.0   3020  1664 ?        S    04:27   0:00 head -6\n  - RAM em 52% — abaixo do threshold, alerta pode ser falso positivo",
+      "resolution": "Falso positivo detectado: memory_at_52_percent",
+      "response_time_seconds": 0,
+      "created_at": "2026-03-21T04:27:49.076303+00:00",
+      "resolved_at": "2026-03-21T04:27:49.109290+00:00"
+    },
+    {
+      "alert_name": "RedisDown",
+      "severity": "critical",
+      "status": "resolved",
+      "diagnosis": "DIAGNOSTICO Redis:\n  - Container Redis: running\n  - Classificacao: healthy (PONG)\n  - Redis respondendo normalmente — alerta era falso positivo",
+      "resolution": "Falso positivo detectado: healthy_on_first_check",
+      "response_time_seconds": 0,
+      "created_at": "2026-03-21T04:27:29.953328+00:00",
+      "resolved_at": "2026-03-21T04:27:30.064364+00:00"
+    },
+    {
+      "alert_name": "RedisDown",
+      "severity": "critical",
+      "status": "resolved",
+      "diagnosis": "DIAGNOSTICO Redis:\n  - Container Redis: running\n  - Redis PING: PONG\n  - Memoria: used_memory_human:6.40M",
+      "resolution": "Resolvido automaticamente pelo OpenClaw",
+      "response_time_seconds": 0,
+      "created_at": "2026-03-21T02:22:21.275004+00:00",
+      "resolved_at": "2026-03-21T02:22:21.362741+00:00"
+    },
+    {
+      "alert_name": "RedisDown",
+      "severity": "critical",
+      "status": "escalated",
+      "diagnosis": "DIAGNOSTICO Redis:\n  - Container Redis: running\n  - Redis PING: FALHA\n  - Memoria: \n  - Acao: container Redis reiniciado\n  - Pos-restart: ainda com problemas",
+      "resolution": null,
+      "response_time_seconds": 6,
+      "created_at": "2026-03-21T02:16:41.639156+00:00",
+      "resolved_at": null
+    },
     {
       "alert_name": "RedisDown",
       "severity": "critical",
@@ -207,6 +251,36 @@
       }
     },
     {
+      "alert_name": "HighMemoryUsage",
+      "description": "Alerta 'HighMemoryUsage' ocorreu 2x nos ultimos 30 dias. Taxa resolucao: 100%. Tempo medio resposta: 1.0s.",
+      "confidence_score": 90.0,
+      "frequency": 1,
+      "prevention_count": 0,
+      "last_prevented_at": null,
+      "preventive_command": null,
+      "conditions": {
+        "failed_count": 0,
+        "resolution_rate": 1.0,
+        "total_occurrences": 2,
+        "avg_response_seconds": 1.0
+      }
+    },
+    {
+      "alert_name": "RedisDown",
+      "description": "Alerta 'RedisDown' ocorreu 4x nos ultimos 30 dias. Taxa resolucao: 50%. Tempo medio resposta: 5.7s.",
+      "confidence_score": 85.0,
+      "frequency": 1,
+      "prevention_count": 0,
+      "last_prevented_at": null,
+      "preventive_command": null,
+      "conditions": {
+        "failed_count": 2,
+        "resolution_rate": 0.5,
+        "total_occurrences": 4,
+        "avg_response_seconds": 5.7
+      }
+    },
+    {
       "alert_name": "PostgresConnectionLost",
       "description": "Conexoes PostgreSQL acima de 80: fechar conexoes idle.",
       "confidence_score": 85.0,
@@ -233,27 +307,52 @@
         "operator": ">",
         "threshold": 85
       }
+    },
+    {
+      "alert_name": "RedisDown",
+      "description": "Alerta 'RedisDown' concentra 75% das ocorrencias por volta das 02:00 UTC. Total: 4 incidentes.",
+      "confidence_score": 72.0,
+      "frequency": 1,
+      "prevention_count": 0,
+      "last_prevented_at": null,
+      "preventive_command": null,
+      "conditions": {
+        "peak_ratio": 0.75,
+        "peak_hour_utc": 2,
+        "total_incidents": 4
+      }
+    },
+    {
+      "alert_name": "HighMemoryUsage+RedisDown",
+      "description": "Alertas 'HighMemoryUsage' e 'RedisDown' co-ocorreram 2x dentro de janelas de 10 minutos. Possivel causa raiz comum.",
+      "confidence_score": 50.0,
+      "frequency": 1,
+      "prevention_count": 0,
+      "last_prevented_at": null,
+      "preventive_command": null,
+      "conditions": {
+        "alert_a": "HighMemoryUsage",
+        "alert_b": "RedisDown",
+        "co_occurrences": 2,
+        "window_minutes": 10
+      }
+    },
+    {
+      "alert_name": "RedisDown",
+      "description": "Alerta 'RedisDown' escala/falha em 50% dos casos (2/4). Remediacao automatica insuficiente.",
+      "confidence_score": 50.0,
+      "frequency": 1,
+      "prevention_count": 0,
+      "last_prevented_at": null,
+      "preventive_command": null,
+      "conditions": {
+        "total": 4,
+        "escalated": 2,
+        "escalation_rate": 0.5
+      }
     }
   ],
   "uptime_history": [
-    {
-      "hour": "03:00",
-      "backend": 100,
-      "postgres": 100,
-      "redis": 100
-    },
-    {
-      "hour": "04:00",
-      "backend": 100,
-      "postgres": 100,
-      "redis": 100
-    },
-    {
-      "hour": "05:00",
-      "backend": 100,
-      "postgres": 100,
-      "redis": 100
-    },
     {
       "hour": "06:00",
       "backend": 100,
@@ -376,6 +475,24 @@
     },
     {
       "hour": "02:00",
+      "backend": 100,
+      "postgres": 100,
+      "redis": 100
+    },
+    {
+      "hour": "03:00",
+      "backend": 100,
+      "postgres": 100,
+      "redis": 100
+    },
+    {
+      "hour": "04:00",
+      "backend": 100,
+      "postgres": 100,
+      "redis": 100
+    },
+    {
+      "hour": "05:00",
       "backend": 100,
       "postgres": 100,
       "redis": 100

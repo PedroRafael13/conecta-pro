@@ -75,6 +75,10 @@ class Intervention(BaseModel):
     prevention_action: Mapped[str | None] = mapped_column(Text, nullable=True)
     used_cached_solution: Mapped[bool] = mapped_column(default=False)
 
+    # Proteção contra falsos positivos
+    false_positive: Mapped[bool] = mapped_column(default=False)
+    false_positive_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+
     # Validação humana
     human_validated: Mapped[bool] = mapped_column(default=False)
     human_feedback: Mapped[str | None] = mapped_column(Text, nullable=True)
