@@ -144,26 +144,23 @@ class RemediationService:
         return diagnosis, actions
 
     def _get_redis_password(self) -> str:
-        """Lê a senha do Redis do .env."""
+        """Lê a senha do Redis (REDIS_PASSWORD ou extraída de REDIS_URL)."""
         import os
 
         pw = os.getenv("REDIS_PASSWORD", "")
         if not pw:
-            env_file = "/opt/conecta-pro/.env"
-            try:
-                with open(env_file) as f:
-                    for line in f:
-                        if line.startswith("REDIS_PASSWORD=") and "STAGING" not in line:
-                            return line.strip().split("=", 1)[1]
-            except FileNotFoundError:
-                pass
+            # Extrair de REDIS_URL: redis://:PASSWORD@host:port/db
+            redis_url = os.getenv("REDIS_URL", "")
+            if ":@" in redis_url:
+                pw = redis_url.split(":@")[0].rsplit(":", 1)[-1]
         return pw
 
     def _redis_cli(self, cmd: str = "ping") -> tuple[int, str]:
-        """Executa redis-cli com autenticação."""
+        """Executa redis-cli com autenticação (direto, sem docker exec)."""
         pw = self._get_redis_password()
         auth = f"-a '{pw}'" if pw else ""
-        return _run(f"docker exec conecta-pro-redis redis-cli {auth} {cmd} 2>/dev/null")
+        # redis-tools instalado no container, hostname 'redis' resolve via Docker DNS
+        return _run(f"redis-cli -h redis -p 6379 {auth} {cmd} 2>/dev/null")
 
     def _handle_redis(self, alert_name: str, severity: str, annotations: dict) -> tuple[str, list[dict]]:
         actions = []

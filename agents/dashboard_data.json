@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-03-21T02:12:01.097723+00:00",
+  "generated_at": "2026-03-21T02:16:01.105422+00:00",
   "containers": [
     {
       "name": "297439d0453a_conecta-pro-celery-operacional",
@@ -27,7 +27,7 @@
     },
     {
       "name": "conecta-pro-backend",
-      "status": "Up 4 minutes (healthy)",
+      "status": "Up About a minute (healthy)",
       "health": "healthy",
       "image": "conecta-pro-backend"
     },
@@ -63,7 +63,7 @@
     },
     {
       "name": "conecta-pro-postgres",
-      "status": "Up 8 hours (healthy)",
+      "status": "Up 9 hours (healthy)",
       "health": "healthy",
       "image": "postgres"
     },
@@ -75,7 +75,7 @@
     },
     {
       "name": "conecta-pro-redis",
-      "status": "Up 2 minutes (healthy)",
+      "status": "Up 6 minutes (healthy)",
       "health": "healthy",
       "image": "redis"
     },
@@ -135,19 +135,19 @@
     }
   ],
   "metrics": {
-    "load_1m": 2.57,
-    "load_5m": 3.04,
-    "load_15m": 3.74,
+    "load_1m": 2.95,
+    "load_5m": 3.86,
+    "load_15m": 4.0,
     "cpu_cores": 8,
     "mem_total_gb": 31.3,
-    "mem_used_gb": 17.2,
-    "mem_percent": 54.9,
+    "mem_used_gb": 16.1,
+    "mem_percent": 51.3,
     "disk_total_gb": 386.0,
     "disk_used_gb": 48.0,
     "disk_percent": 13,
     "swap_total_gb": 4.0,
     "swap_used_gb": 0.0,
-    "uptime_days": 39.3784
+    "uptime_days": 39.3811
   },
   "interventions": [
     {
