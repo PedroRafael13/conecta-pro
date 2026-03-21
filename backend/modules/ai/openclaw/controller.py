@@ -127,7 +127,9 @@ async def receive_alert_webhook(
                 # Diagnóstico sem restart necessário = resolved (informativo)
                 final_status = InterventionStatus.RESOLVED
             else:
-                final_status = InterventionStatus.ACTING
+                # Restart executado mas post-check inconclusivo (sem OK nem FALHA)
+                # Marcar como escalated em vez de ficar preso em acting
+                final_status = InterventionStatus.ESCALATED
 
             intervention.status = final_status
             intervention.diagnosis = diagnosis

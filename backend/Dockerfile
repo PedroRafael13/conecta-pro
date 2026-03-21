@@ -31,10 +31,19 @@ RUN mkdir -p /tmp && chmod 1777 /tmp && \
     apt-get update && apt-get install -y \
     libpq5 \
     curl \
+    procps \
+    redis-tools \
     && rm -rf /var/lib/apt/lists/*
 
-# Criar usuário não-root e diretórios
-RUN groupadd -r erp && useradd -r -g erp erp && \
+# Instalar Docker CLI (para OpenClaw remediação)
+RUN curl -fsSL https://download.docker.com/linux/static/stable/x86_64/docker-27.5.1.tgz \
+    | tar xz --strip-components=1 -C /usr/local/bin docker/docker \
+    && chmod +x /usr/local/bin/docker
+
+# Criar usuário não-root com acesso ao Docker socket
+# GID 988 = grupo docker do host para acesso ao /var/run/docker.sock
+RUN groupadd -r erp && groupadd -g 988 docker-host && \
+    useradd -r -g erp -G docker-host erp && \
     mkdir -p /app/logs
 
 # Copiar wheels do builder

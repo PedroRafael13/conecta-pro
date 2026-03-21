@@ -715,6 +715,31 @@ def main():
     except Exception as e:
         log(f"  DB indisponivel para padroes: {e}")
 
+    # 3.5. Cleanup intervenções presas em estados intermediários (> 1h)
+    if conn:
+        try:
+            cur = conn.cursor()
+            cur.execute("""
+                UPDATE openclaw_interventions
+                SET status = 'failed',
+                    resolution = 'Timeout: intervenção presa em estado intermediário por mais de 1 hora',
+                    resolved_at = NOW(),
+                    updated_at = NOW()
+                WHERE status IN ('acting', 'diagnosing')
+                  AND created_at < NOW() - INTERVAL '1 hour'
+                RETURNING id, alert_name, status
+            """)
+            stuck = cur.fetchall()
+            conn.commit()
+            cur.close()
+            if stuck:
+                log(f"  CLEANUP: {len(stuck)} intervencoes presas resolvidas como failed")
+                for row in stuck:
+                    log(f"    - {row[1]} (id: {str(row[0])[:8]})")
+        except Exception as e:
+            log(f"  Erro no cleanup de intervencoes: {e}")
+            conn.rollback()
+
     # 4. Registrar problemas de módulos no state
     try:
         state = json.loads(STATE_FILE.read_text())

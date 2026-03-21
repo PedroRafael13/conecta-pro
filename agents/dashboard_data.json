@@ -1,0 +1,417 @@
+{
+  "generated_at": "2026-03-21T02:12:01.097723+00:00",
+  "containers": [
+    {
+      "name": "297439d0453a_conecta-pro-celery-operacional",
+      "status": "Up 8 hours (healthy)",
+      "health": "healthy",
+      "image": "2e35599590cc"
+    },
+    {
+      "name": "34bbe0bcda76_conecta-pro-celery-priority",
+      "status": "Up 8 hours (healthy)",
+      "health": "healthy",
+      "image": "2e35599590cc"
+    },
+    {
+      "name": "8f30da3e29ad_conecta-pro-celery-nfse",
+      "status": "Up 8 hours (healthy)",
+      "health": "healthy",
+      "image": "2e35599590cc"
+    },
+    {
+      "name": "a853a3056bf9_conecta-pro-celery-sefaz",
+      "status": "Up 8 hours (healthy)",
+      "health": "healthy",
+      "image": "2e35599590cc"
+    },
+    {
+      "name": "conecta-pro-backend",
+      "status": "Up 4 minutes (healthy)",
+      "health": "healthy",
+      "image": "conecta-pro-backend"
+    },
+    {
+      "name": "conecta-pro-celery-batch",
+      "status": "Up 8 hours (healthy)",
+      "health": "healthy",
+      "image": "2e35599590cc"
+    },
+    {
+      "name": "conecta-pro-celery-beat",
+      "status": "Up 8 hours (unhealthy)",
+      "health": "healthy",
+      "image": "2e35599590cc"
+    },
+    {
+      "name": "conecta-pro-celery-integrations",
+      "status": "Up 8 hours (healthy)",
+      "health": "healthy",
+      "image": "2e35599590cc"
+    },
+    {
+      "name": "conecta-pro-flower",
+      "status": "Up 8 hours (healthy)",
+      "health": "healthy",
+      "image": "2e35599590cc"
+    },
+    {
+      "name": "conecta-pro-nginx",
+      "status": "Created",
+      "health": "stopped",
+      "image": "nginx"
+    },
+    {
+      "name": "conecta-pro-postgres",
+      "status": "Up 8 hours (healthy)",
+      "health": "healthy",
+      "image": "postgres"
+    },
+    {
+      "name": "conecta-pro-postgres-staging",
+      "status": "Up 11 days (healthy)",
+      "health": "healthy",
+      "image": "postgres"
+    },
+    {
+      "name": "conecta-pro-redis",
+      "status": "Up 2 minutes (healthy)",
+      "health": "healthy",
+      "image": "redis"
+    },
+    {
+      "name": "conecta-pro-redis-staging",
+      "status": "Up 11 days (healthy)",
+      "health": "healthy",
+      "image": "redis"
+    },
+    {
+      "name": "erp-alertmanager",
+      "status": "Up 8 hours (healthy)",
+      "health": "healthy",
+      "image": "prom/alertmanager"
+    },
+    {
+      "name": "erp-grafana",
+      "status": "Up 11 days",
+      "health": "running",
+      "image": "grafana/grafana"
+    },
+    {
+      "name": "erp-loki",
+      "status": "Up 11 days (healthy)",
+      "health": "healthy",
+      "image": "grafana/loki"
+    },
+    {
+      "name": "erp-node-exporter",
+      "status": "Up 9 hours",
+      "health": "running",
+      "image": "prom/node-exporter"
+    },
+    {
+      "name": "erp-postgres-exporter",
+      "status": "Up 8 hours",
+      "health": "running",
+      "image": "prometheuscommunity/postgres-exporter"
+    },
+    {
+      "name": "erp-prometheus",
+      "status": "Up 9 hours",
+      "health": "running",
+      "image": "prom/prometheus"
+    },
+    {
+      "name": "erp-promtail",
+      "status": "Up 11 days",
+      "health": "running",
+      "image": "grafana/promtail"
+    },
+    {
+      "name": "erp-redis-exporter",
+      "status": "Up 22 hours",
+      "health": "running",
+      "image": "oliver006/redis_exporter"
+    }
+  ],
+  "metrics": {
+    "load_1m": 2.57,
+    "load_5m": 3.04,
+    "load_15m": 3.74,
+    "cpu_cores": 8,
+    "mem_total_gb": 31.3,
+    "mem_used_gb": 17.2,
+    "mem_percent": 54.9,
+    "disk_total_gb": 386.0,
+    "disk_used_gb": 48.0,
+    "disk_percent": 13,
+    "swap_total_gb": 4.0,
+    "swap_used_gb": 0.0,
+    "uptime_days": 39.3784
+  },
+  "interventions": [
+    {
+      "alert_name": "RedisDown",
+      "severity": "critical",
+      "status": "escalated",
+      "diagnosis": "DIAGNOSTICO Redis:\n  - Container Redis: running\n  - Redis PING: FALHA\n  - Memoria: \n  - Acao: container Redis reiniciado\n  - Pos-restart: ainda com problemas",
+      "resolution": null,
+      "response_time_seconds": 6,
+      "created_at": "2026-03-21T02:09:46.097443+00:00",
+      "resolved_at": null
+    },
+    {
+      "alert_name": "HighMemoryUsage",
+      "severity": "warning",
+      "status": "resolved",
+      "diagnosis": "DIAGNOSTICO Memoria:\n  - Memoria:\ntotal        used        free      shared  buff/cache   available\nMem:            31Gi        16Gi       5.3Gi        80Mi        10Gi        15Gi\nSwap:          4.0Gi       4.5Mi       4.0Gi\n  - Top processos:\nUSER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND\nerp          1 59.9  5.6 2744528 1851676 ?     Ssl  02:07   0:50 /usr/local/bin/python3.12 /usr/local/bin/uvicorn main_production:app --host 0.0.0.0 --port 8080 --timeout-graceful-shutdown 25\nerp         84  0.0  0.0   6784  3968 ?        R    02:08   0:00 ps aux --sort=-%mem\nerp         83  0.0  0.0   2672  1792 ?        S    02:08   0:00 /bin/sh -c ps aux --sort=-%mem | head -6\nerp         85  0.0  0.0   3020  1664 ?        S    02:08   0:00 head -6",
+      "resolution": "Resolvido automaticamente pelo OpenClaw",
+      "response_time_seconds": 1,
+      "created_at": "2026-03-21T02:08:33.823345+00:00",
+      "resolved_at": "2026-03-21T02:08:33.895243+00:00"
+    },
+    {
+      "alert_name": "RedisDown",
+      "severity": "critical",
+      "status": "resolved",
+      "diagnosis": "DIAGNOSTICO Redis:\n  - Container Redis: \n  - Redis PING: FALHA\n  - Memoria: \n  - Acao: container Redis reiniciado\n  - Pos-restart: ainda com problemas",
+      "resolution": "Resolvido manualmente — Redis estava saudável, intervenção ficou presa em acting por limitação do ambiente de execução (dentro do container Docker sem acesso a redis-cli)",
+      "response_time_seconds": 5,
+      "created_at": "2026-03-20T18:47:43.247062+00:00",
+      "resolved_at": "2026-03-21T01:38:26.098220+00:00"
+    },
+    {
+      "alert_name": "HighMemoryUsage",
+      "severity": "warning",
+      "status": "resolved",
+      "diagnosis": "DIAGNOSTICO Memoria:\n  - /bin/sh: 1: free: not found\n  - Top processos:\n/bin/sh: 1: ps: not found",
+      "resolution": "Resolvido automaticamente pelo OpenClaw",
+      "response_time_seconds": 0,
+      "created_at": "2026-03-20T18:47:33.293492+00:00",
+      "resolved_at": "2026-03-20T18:47:33.335163+00:00"
+    }
+  ],
+  "patterns": [
+    {
+      "alert_name": "DiskSpaceLow",
+      "description": "Disco acima de 75%: limpar logs e backups antigos preventivamente.",
+      "confidence_score": 90.0,
+      "frequency": 1,
+      "prevention_count": 0,
+      "last_prevented_at": null,
+      "preventive_command": "find /opt/conecta-pro/logs -name '*.log' -mtime +7 -delete 2>/dev/null; docker system prune -f 2>/dev/null",
+      "conditions": {
+        "metric": "disk_usage_percent",
+        "operator": ">",
+        "threshold": 75
+      }
+    },
+    {
+      "alert_name": "PostgresConnectionLost",
+      "description": "Conexoes PostgreSQL acima de 80: fechar conexoes idle.",
+      "confidence_score": 85.0,
+      "frequency": 1,
+      "prevention_count": 0,
+      "last_prevented_at": null,
+      "preventive_command": "docker exec conecta-pro-postgres psql -U postgres -d conecta_pro -c \"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE state = 'idle' AND state_change < now() - interval '10 minutes' AND pid <> pg_backend_pid()\" 2>/dev/null",
+      "conditions": {
+        "metric": "pg_active_connections",
+        "operator": ">",
+        "threshold": 80
+      }
+    },
+    {
+      "alert_name": "HighMemoryUsage",
+      "description": "Memoria acima de 85%: limpar caches e verificar processos.",
+      "confidence_score": 80.0,
+      "frequency": 1,
+      "prevention_count": 0,
+      "last_prevented_at": null,
+      "preventive_command": "docker exec conecta-pro-redis redis-cli FLUSHDB 2>/dev/null; sync; echo 3 > /proc/sys/vm/drop_caches 2>/dev/null",
+      "conditions": {
+        "metric": "memory_usage_percent",
+        "operator": ">",
+        "threshold": 85
+      }
+    }
+  ],
+  "uptime_history": [
+    {
+      "hour": "03:00",
+      "backend": 100,
+      "postgres": 100,
+      "redis": 100
+    },
+    {
+      "hour": "04:00",
+      "backend": 100,
+      "postgres": 100,
+      "redis": 100
+    },
+    {
+      "hour": "05:00",
+      "backend": 100,
+      "postgres": 100,
+      "redis": 100
+    },
+    {
+      "hour": "06:00",
+      "backend": 100,
+      "postgres": 100,
+      "redis": 100
+    },
+    {
+      "hour": "07:00",
+      "backend": 100,
+      "postgres": 100,
+      "redis": 100
+    },
+    {
+      "hour": "08:00",
+      "backend": 100,
+      "postgres": 100,
+      "redis": 100
+    },
+    {
+      "hour": "09:00",
+      "backend": 100,
+      "postgres": 100,
+      "redis": 100
+    },
+    {
+      "hour": "10:00",
+      "backend": 100,
+      "postgres": 100,
+      "redis": 100
+    },
+    {
+      "hour": "11:00",
+      "backend": 100,
+      "postgres": 100,
+      "redis": 100
+    },
+    {
+      "hour": "12:00",
+      "backend": 100,
+      "postgres": 100,
+      "redis": 100
+    },
+    {
+      "hour": "13:00",
+      "backend": 100,
+      "postgres": 100,
+      "redis": 100
+    },
+    {
+      "hour": "14:00",
+      "backend": 100,
+      "postgres": 100,
+      "redis": 100
+    },
+    {
+      "hour": "15:00",
+      "backend": 100,
+      "postgres": 100,
+      "redis": 100
+    },
+    {
+      "hour": "16:00",
+      "backend": 100,
+      "postgres": 100,
+      "redis": 100
+    },
+    {
+      "hour": "17:00",
+      "backend": 100,
+      "postgres": 100,
+      "redis": 100
+    },
+    {
+      "hour": "18:00",
+      "backend": 100,
+      "postgres": 100,
+      "redis": 100
+    },
+    {
+      "hour": "19:00",
+      "backend": 100,
+      "postgres": 100,
+      "redis": 100
+    },
+    {
+      "hour": "20:00",
+      "backend": 100,
+      "postgres": 100,
+      "redis": 100
+    },
+    {
+      "hour": "21:00",
+      "backend": 100,
+      "postgres": 100,
+      "redis": 100
+    },
+    {
+      "hour": "22:00",
+      "backend": 100,
+      "postgres": 100,
+      "redis": 100
+    },
+    {
+      "hour": "23:00",
+      "backend": 100,
+      "postgres": 100,
+      "redis": 100
+    },
+    {
+      "hour": "00:00",
+      "backend": 100,
+      "postgres": 100,
+      "redis": 100
+    },
+    {
+      "hour": "01:00",
+      "backend": 100,
+      "postgres": 100,
+      "redis": 100
+    },
+    {
+      "hour": "02:00",
+      "backend": 100,
+      "postgres": 100,
+      "redis": 100
+    }
+  ],
+  "scheduled_actions": [
+    {
+      "name": "Health check módulos",
+      "schedule": "*/15 * * * *",
+      "next": "próximos 15min"
+    },
+    {
+      "name": "Métricas Prometheus",
+      "schedule": "*/5 * * * *",
+      "next": "próximos 5min"
+    },
+    {
+      "name": "Backup PostgreSQL",
+      "schedule": "0 3 * * *",
+      "next": "03:00 UTC"
+    },
+    {
+      "name": "Retenção de backups",
+      "schedule": "30 3 * * *",
+      "next": "03:30 UTC"
+    },
+    {
+      "name": "Pattern Learner",
+      "schedule": "0 3 * * *",
+      "next": "03:00 UTC"
+    },
+    {
+      "name": "Relatório semanal",
+      "schedule": "Sexta 17-18h BRT",
+      "next": "sexta"
+    }
+  ],
+  "celery_queue_length": 2
+}

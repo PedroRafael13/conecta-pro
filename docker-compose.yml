@@ -154,6 +154,8 @@ services:
       - ./data:/app/data
       - ./reports:/opt/conecta-pro/reports
       - ./frontend:/opt/conecta-pro/frontend:ro
+      # Docker socket para OpenClaw (remediação automática)
+      - /var/run/docker.sock:/var/run/docker.sock
       # Módulos Fase 3 (externos ao backend)
       - ./01_security_lgpd:/opt/conecta-pro/security_lgpd:ro
       - ./02_health_occupational:/opt/conecta-pro/health_occupational:ro

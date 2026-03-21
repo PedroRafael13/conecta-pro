@@ -143,6 +143,28 @@ class RemediationService:
         diagnosis = "DIAGNOSTICO ERP API:\n" + "\n".join(f"  - {p}" for p in diag_parts)
         return diagnosis, actions
 
+    def _get_redis_password(self) -> str:
+        """Lê a senha do Redis do .env."""
+        import os
+
+        pw = os.getenv("REDIS_PASSWORD", "")
+        if not pw:
+            env_file = "/opt/conecta-pro/.env"
+            try:
+                with open(env_file) as f:
+                    for line in f:
+                        if line.startswith("REDIS_PASSWORD=") and "STAGING" not in line:
+                            return line.strip().split("=", 1)[1]
+            except FileNotFoundError:
+                pass
+        return pw
+
+    def _redis_cli(self, cmd: str = "ping") -> tuple[int, str]:
+        """Executa redis-cli com autenticação."""
+        pw = self._get_redis_password()
+        auth = f"-a '{pw}'" if pw else ""
+        return _run(f"docker exec conecta-pro-redis redis-cli {auth} {cmd} 2>/dev/null")
+
     def _handle_redis(self, alert_name: str, severity: str, annotations: dict) -> tuple[str, list[dict]]:
         actions = []
         diag_parts = []
@@ -153,16 +175,21 @@ class RemediationService:
         actions.append({"step": "check_container", "result": container_status})
         diag_parts.append(f"Container Redis: {container_status}")
 
-        # 2. Redis ping
-        rc, out = _run("docker exec conecta-pro-redis redis-cli ping 2>/dev/null")
+        # 2. Redis ping (com senha)
+        rc, out = self._redis_cli("ping")
         redis_ok = "PONG" in out
-        actions.append({"step": "redis_ping", "result": out})
+        actions.append({"step": "redis_ping", "result": "PONG" if redis_ok else out})
         diag_parts.append(f"Redis PING: {'PONG' if redis_ok else 'FALHA'}")
 
         # 3. Memoria usada
-        rc, out = _run("docker exec conecta-pro-redis redis-cli info memory 2>/dev/null | grep used_memory_human")
-        actions.append({"step": "memory_usage", "result": out.strip()})
-        diag_parts.append(f"Memoria: {out.strip()}")
+        rc, out = self._redis_cli("info memory")
+        mem_line = ""
+        for line in out.split("\n"):
+            if "used_memory_human" in line:
+                mem_line = line.strip()
+                break
+        actions.append({"step": "memory_usage", "result": mem_line})
+        diag_parts.append(f"Memoria: {mem_line}")
 
         # 4. Restart se não responde
         if not redis_ok:
@@ -173,9 +200,11 @@ class RemediationService:
             import time
 
             time.sleep(5)
-            rc, out = _run("docker exec conecta-pro-redis redis-cli ping 2>/dev/null")
-            actions.append({"step": "post_restart_ping", "result": out})
-            diag_parts.append(f"Pos-restart: {'recuperado' if 'PONG' in out else 'ainda com problemas'}")
+
+            rc, out = self._redis_cli("ping")
+            post_ok = "PONG" in out
+            actions.append({"step": "post_restart_ping", "result": "OK" if post_ok else "FALHA"})
+            diag_parts.append(f"Pos-restart: {'recuperado' if post_ok else 'ainda com problemas'}")
 
         diagnosis = "DIAGNOSTICO Redis:\n" + "\n".join(f"  - {p}" for p in diag_parts)
         return diagnosis, actions
@@ -244,12 +273,36 @@ class RemediationService:
 
     def _handle_memory(self, alert_name: str, severity: str, annotations: dict) -> tuple[str, list[dict]]:
         actions = []
-        rc, out = _run("free -h | head -2")
+        diag_parts = []
+
+        # 1. Info de memória
+        rc, out = _run("free -h")
         actions.append({"step": "memory_info", "result": out})
+        diag_parts.append(f"Memoria:\n{out}")
+
+        # 2. Top consumidores
         rc, out2 = _run("ps aux --sort=-%mem | head -6")
         actions.append({"step": "top_memory_procs", "result": out2})
+        diag_parts.append(f"Top processos:\n{out2}")
 
-        diagnosis = f"DIAGNOSTICO Memoria:\n  - {out}\n  - Top processos:\n{out2}"
+        # 3. Limpar cache do Redis se memória > 90%
+        rc, mem_pct = _run("free | awk '/^Mem:/ {printf \"%.0f\", $3/$2*100}'")
+        try:
+            pct = int(mem_pct.strip())
+        except (ValueError, AttributeError):
+            pct = 0
+
+        if pct > 90:
+            _, flush_out = self._redis_cli("FLUSHDB")
+            actions.append({"step": "redis_flush", "result": flush_out})
+            diag_parts.append(f"Acao: Redis FLUSHDB executado (RAM em {pct}%)")
+
+            # Drop caches do kernel
+            _run("sync && echo 3 > /proc/sys/vm/drop_caches 2>/dev/null")
+            actions.append({"step": "drop_caches", "result": "executed"})
+            diag_parts.append("Acao: drop_caches executado")
+
+        diagnosis = "DIAGNOSTICO Memoria:\n" + "\n".join(f"  - {p}" for p in diag_parts)
         return diagnosis, actions
 
     def _handle_load(self, alert_name: str, severity: str, annotations: dict) -> tuple[str, list[dict]]:
