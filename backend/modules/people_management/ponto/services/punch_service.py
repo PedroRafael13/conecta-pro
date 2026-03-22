@@ -106,8 +106,8 @@ class PunchService:
             distancia_posto_metros=distancia_metros,
             device_type=data.device_type or "web",
             is_offline=data.is_offline or False,
-            posto_id=posto_id,
-            posto_nome=posto_nome,
+            posto_id=str(posto_id) if posto_id else None,
+            posto_nome=str(posto_nome) if posto_nome else None,
         )
         self.db.add(punch)
         await self.db.flush()
@@ -406,8 +406,8 @@ class PunchService:
             posto = row.first()
 
             if posto:
-                posto_id = posto[0]
-                posto_nome = posto[1]
+                posto_id = str(posto[0])
+                posto_nome = str(posto[1]) if posto[1] else None
                 posto_lat = posto[2]
                 posto_lon = posto[3]
 
