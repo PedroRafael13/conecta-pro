@@ -167,7 +167,17 @@ const nextConfig: NextConfig = {
         destination: '/modulos/gestao-pessoas/ponto/:path*',
         permanent: true,
       },
-      // saude-ocupacional: páginas originais em /modulos/saude-ocupacional/ — sem redirect
+      // Rotas legadas de Saude Ocupacional
+      {
+        source: '/modulos/saude-ocupacional',
+        destination: '/modulos/gestao-pessoas/saude-ocupacional',
+        permanent: true,
+      },
+      {
+        source: '/modulos/saude-ocupacional/:path*',
+        destination: '/modulos/gestao-pessoas/saude-ocupacional/:path*',
+        permanent: true,
+      },
     ];
   },
 
