@@ -2,14 +2,16 @@
 
 Usa ClockPunchModel, JustificationModel e MonthlyClosingModel
 para INSERT/SELECT/UPDATE na tabela gp_clock_punches.
+Valida geofence via coordenadas do posto (Haversine).
 """
 
 import logging
+import math
 from datetime import datetime
 from typing import Any
 from uuid import uuid4
 
-from sqlalchemy import extract, func, select
+from sqlalchemy import extract, func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..models.clock_punch import ClockPunchModel
@@ -18,6 +20,29 @@ from ..models.monthly_closing import MonthlyClosingModel
 from ..schemas.punch_schemas import JustificationCreate, PunchCreate
 
 logger = logging.getLogger(__name__)
+
+# Raio padrao de geofence em metros
+GEOFENCE_RADIUS_METERS = 200.0
+
+
+def _haversine(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    """Calcula distancia em metros entre dois pontos via formula Haversine.
+
+    Args:
+        lat1, lon1: Coordenadas do ponto 1 (graus decimais).
+        lat2, lon2: Coordenadas do ponto 2 (graus decimais).
+
+    Returns:
+        Distancia em metros.
+    """
+    r = 6_371_000  # raio da Terra em metros
+    p = math.pi / 180
+    a = (
+        0.5
+        - math.cos((lat2 - lat1) * p) / 2
+        + math.cos(lat1 * p) * math.cos(lat2 * p) * (1 - math.cos((lon2 - lon1) * p)) / 2
+    )
+    return 2 * r * math.asin(math.sqrt(a))
 
 
 class PunchService:
@@ -44,10 +69,26 @@ class PunchService:
         if data.is_offline:
             status = "offline"
 
-        # Geofence check (placeholder — integrar com geofence real)
+        # Geofence check — validacao real via coordenadas do posto
         dentro_geofence = None
-        if data.location:
-            dentro_geofence = True
+        distancia_metros = None
+        posto_id = data.posto_id
+        posto_nome = None
+
+        if data.location and data.location.latitude and data.location.longitude:
+            geofence = await self._validar_geofence(
+                employee_id=data.employee_id,
+                lat=data.location.latitude,
+                lon=data.location.longitude,
+                posto_id=posto_id,
+            )
+            dentro_geofence = geofence["dentro"]
+            distancia_metros = geofence["distancia_metros"]
+            posto_id = geofence.get("posto_id") or posto_id
+            posto_nome = geofence.get("posto_nome")
+
+            if not dentro_geofence:
+                status = "fora_local"
 
         # Criar model e persistir
         punch = ClockPunchModel(
@@ -62,9 +103,11 @@ class PunchService:
             latitude=data.location.latitude if data.location else None,
             longitude=data.location.longitude if data.location else None,
             dentro_geofence=dentro_geofence,
+            distancia_posto_metros=distancia_metros,
             device_type=data.device_type or "web",
             is_offline=data.is_offline or False,
-            posto_id=data.posto_id,
+            posto_id=posto_id,
+            posto_nome=posto_nome,
         )
         self.db.add(punch)
         await self.db.flush()
@@ -307,3 +350,115 @@ class PunchService:
             dias_trabalhados,
         )
         return closing.to_dict()
+
+    # =========================================================================
+    # GEOFENCE
+    # =========================================================================
+
+    async def _validar_geofence(
+        self,
+        employee_id: int | str,
+        lat: float,
+        lon: float,
+        posto_id: int | str | None = None,
+    ) -> dict[str, Any]:
+        """Valida se o funcionario esta dentro do raio do posto.
+
+        Busca o posto via:
+        1. posto_id informado na batida
+        2. Alocacao ativa do funcionario (allocations)
+        3. Geofence zone vinculada ao posto
+
+        Args:
+            employee_id: ID do funcionario.
+            lat: Latitude da batida.
+            lon: Longitude da batida.
+            posto_id: ID do posto (opcional).
+
+        Returns:
+            Dict com 'dentro' (bool), 'distancia_metros' (float),
+            'posto_id', 'posto_nome', 'raio_metros'.
+        """
+        posto_lat = None
+        posto_lon = None
+        posto_nome = None
+        raio = GEOFENCE_RADIUS_METERS
+
+        try:
+            # 1. Buscar posto por ID ou alocacao ativa
+            if posto_id:
+                row = await self.db.execute(
+                    text("SELECT id, name, latitude, longitude FROM posts WHERE id::text = :pid"),
+                    {"pid": str(posto_id)},
+                )
+            else:
+                # Buscar posto via alocacao ativa do funcionario
+                row = await self.db.execute(
+                    text(
+                        "SELECT p.id, p.name, p.latitude, p.longitude "
+                        "FROM allocations a "
+                        "JOIN posts p ON a.post_id = p.id "
+                        "WHERE a.employee_id::text = :eid AND a.status = 'active' "
+                        "ORDER BY a.created_at DESC LIMIT 1"
+                    ),
+                    {"eid": str(employee_id)},
+                )
+            posto = row.first()
+
+            if posto:
+                posto_id = posto[0]
+                posto_nome = posto[1]
+                posto_lat = posto[2]
+                posto_lon = posto[3]
+
+            # 2. Se posto sem coords, tentar geofence_zones
+            if not posto_lat or not posto_lon:
+                gz_row = await self.db.execute(
+                    text(
+                        "SELECT center_latitude, center_longitude, radius_meters, name "
+                        "FROM geofence_zones "
+                        "WHERE post_id::text = :pid AND status = 'active' "
+                        "LIMIT 1"
+                    ),
+                    {"pid": str(posto_id) if posto_id else ""},
+                )
+                gz = gz_row.first()
+                if gz:
+                    posto_lat = gz[0]
+                    posto_lon = gz[1]
+                    raio = gz[2] or GEOFENCE_RADIUS_METERS
+
+        except Exception as exc:
+            logger.warning("Erro ao buscar geofence: %s", exc)
+
+        # 3. Calcular distancia
+        if posto_lat and posto_lon:
+            distancia = _haversine(lat, lon, posto_lat, posto_lon)
+            dentro = distancia <= raio
+
+            logger.info(
+                "Geofence: employee=%s posto=%s dist=%.0fm raio=%.0fm %s",
+                employee_id,
+                posto_nome,
+                distancia,
+                raio,
+                "DENTRO" if dentro else "FORA",
+            )
+
+            return {
+                "dentro": dentro,
+                "distancia_metros": round(distancia, 1),
+                "posto_id": posto_id,
+                "posto_nome": posto_nome,
+                "raio_metros": raio,
+            }
+
+        # Sem coordenadas do posto — nao valida
+        logger.info("Geofence: sem coordenadas do posto para employee=%s", employee_id)
+        return {
+            "dentro": None,
+            "distancia_metros": None,
+            "posto_id": posto_id,
+            "posto_nome": posto_nome,
+            "raio_metros": raio,
+        }

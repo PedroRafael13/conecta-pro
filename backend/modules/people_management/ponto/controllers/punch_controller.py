@@ -53,6 +53,7 @@ async def registrar_batida(
         facial_match=result.get("facial_match"),
         facial_confidence=result.get("facial_confidence"),
         dentro_geofence=result.get("dentro_geofence"),
+        distancia_posto_metros=result.get("distancia_posto_metros"),
         is_offline=result.get("is_offline", False),
         message="Ponto registrado com sucesso",
     )

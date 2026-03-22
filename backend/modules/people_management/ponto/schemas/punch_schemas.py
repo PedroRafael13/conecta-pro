@@ -21,27 +21,28 @@ class FacialSchema(BaseModel):
 class PunchCreate(BaseModel):
     """Schema para criar uma batida de ponto."""
 
-    employee_id: int
+    employee_id: str | int
     punch_type: str = Field(..., description="entrada|saida_almoco|retorno_almoco|saida")
     timestamp: str | None = None
     location: GeoLocationSchema | None = None
     facial: FacialSchema | None = None
     device_type: str = "web"
     is_offline: bool = False
-    posto_id: int | None = None
+    posto_id: str | int | None = None
 
 
 class PunchResponse(BaseModel):
     """Resposta de batida registrada."""
 
     punch_id: str
-    employee_id: int
-    punch_type: str
-    punch_timestamp: str
-    status: str
+    employee_id: str | int
+    punch_type: str | None = None
+    punch_timestamp: str | None = None
+    status: str | None = None
     facial_match: bool | None = None
     facial_confidence: float | None = None
     dentro_geofence: bool | None = None
+    distancia_posto_metros: float | None = None
     is_offline: bool = False
     message: str = "Ponto registrado"
 

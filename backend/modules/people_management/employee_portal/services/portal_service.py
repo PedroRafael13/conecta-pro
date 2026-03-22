@@ -78,16 +78,29 @@ class PortalService:
                 logger.warning("Tentativa de login com CPF nao encontrado: %s***", cpf_clean[:3])
                 return None
 
+            # Buscar portal_password_hash (nao esta no ORM model)
+            from sqlalchemy import text
+
+            hash_result = await self.db.execute(
+                text("SELECT portal_password_hash FROM employees WHERE id = :eid"),
+                {"eid": str(employee.id)},
+            )
+            portal_hash = hash_result.scalar()
+
             # Validar credenciais (senha ou data de nascimento)
-            if not self._validate_credentials(employee, password, data_nascimento):
+            if not self._validate_credentials(employee, password, data_nascimento, portal_hash):
                 return None
 
-            await self.log_access(
-                employee_id=employee.id,
-                action=PortalAccessAction.LOGIN,
-                ip_address=ip_address,
-                user_agent=user_agent,
-            )
+            try:
+                await self.log_access(
+                    employee_id=employee.id,
+                    action=PortalAccessAction.LOGIN,
+                    ip_address=ip_address,
+                    user_agent=user_agent,
+                )
+            except Exception as log_err:
+                logger.warning("Erro ao registrar acesso: %s", log_err)
+                await self.db.rollback()
 
             return {
                 "employee_id": str(employee.id),
@@ -105,19 +118,24 @@ class PortalService:
             return None
 
     @staticmethod
-    def _validate_credentials(employee: Any, password: str | None, data_nascimento: str | None) -> bool:
+    def _validate_credentials(
+        employee: Any,
+        password: str | None,
+        data_nascimento: str | None,
+        portal_hash: str | None = None,
+    ) -> bool:
         """Valida credenciais do funcionario.
 
         Args:
             employee: Objeto Employee do banco.
             password: Senha fornecida (modo 1).
             data_nascimento: Data de nascimento YYYY-MM-DD (modo 2).
+            portal_hash: Hash bcrypt da senha do portal (buscado previamente).
 
         Returns:
             True se credenciais validas, False caso contrario.
         """
         if password:
-            portal_hash = getattr(employee, "portal_password_hash", None)
             if portal_hash:
                 try:
                     from passlib.hash import bcrypt
