@@ -75,6 +75,7 @@ class ScaleResponse(BaseModel):
 
     id: str
     post_id: str
+    post_name: str | None = None
     scale_type: str
     status: str
     month: int

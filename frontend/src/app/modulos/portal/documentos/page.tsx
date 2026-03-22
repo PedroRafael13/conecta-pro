@@ -263,10 +263,10 @@ export default function DocumentosPortalPage() {
                       <div className="space-y-1">
                         {((cctData as Record<string, unknown>).cargos as Record<string, unknown>[]).map((cargo, i) => (
                           <div key={i} className="flex justify-between items-center p-2 bg-gray-50 rounded text-sm">
-                            <span>{cargo.nome as string}</span>
+                            <span>{(cargo.nome_cargo || cargo.nome) as string}</span>
                             <span className="font-medium">
-                              {typeof cargo.piso === 'number'
-                                ? `R$ ${(cargo.piso as number).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                              {parseFloat(String(cargo.salario_base || cargo.piso || 0)) > 0
+                                ? `R$ ${parseFloat(String(cargo.salario_base || cargo.piso || 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
                                 : '-'}
                             </span>
                           </div>

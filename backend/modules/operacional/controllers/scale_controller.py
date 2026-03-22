@@ -179,8 +179,26 @@ async def list_scales(
     scales, total = await repo.list(filters=filters, page=page, page_size=page_size)
     total_pages = (total + page_size - 1) // page_size
 
+    # Enriquecer com post_name (buscar todos os postos incluindo inativos)
+    from sqlalchemy import text
+
+    post_ids = list({str(s.post_id) for s in scales if s.post_id})
+    post_names: dict[str, str] = {}
+    if post_ids:
+        result = await db.execute(
+            text("SELECT id::text, name FROM posts WHERE id::text = ANY(:ids)"),
+            {"ids": post_ids},
+        )
+        post_names = {row[0]: row[1] for row in result.fetchall()}
+
+    items = []
+    for scale in scales:
+        resp = ScaleResponse.model_validate(scale)
+        resp.post_name = post_names.get(str(scale.post_id), "Posto removido")
+        items.append(resp)
+
     return ScaleListResponse(
-        items=[ScaleResponse.model_validate(scale) for scale in scales],
+        items=items,
         total=total,
         page=page,
         page_size=page_size,
