@@ -475,6 +475,15 @@ try:
 except Exception as e:
     logger.warning(f"Modulo Pessoas: {e}")
 
+# Saude Ocupacional (NR-4, NR-6, NR-7, NR-9)
+try:
+    from modules.health_occupational import router as health_occupational_router
+
+    api_router.include_router(health_occupational_router, tags=["Health - Saude Ocupacional"])
+    logger.info("Modulo Saude Ocupacional: OK (PCMSO + PPRA + EPI)")
+except Exception as e:
+    logger.warning(f"Modulo Saude Ocupacional: {e}")
+
 
 # =============================================================================
 # 5. FINANCEIRO (financial completo)

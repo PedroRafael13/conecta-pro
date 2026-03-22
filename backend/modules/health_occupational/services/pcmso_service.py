@@ -276,35 +276,40 @@ class PCMSOService:
         Returns:
             Lista de ASOs a vencer.
         """
-        limit_date = date.today() + timedelta(days=days)
+        if not self.db:
+            return []
 
-        asos = (
-            self.db.query(ASO)
-            .filter(
-                ASO.ativo,
-                not ASO.cancelado,
-                ASO.data_vencimento <= limit_date,
-                ASO.data_vencimento >= date.today(),
-            )
-            .all()
-        )
+        from sqlalchemy import text
 
-        result = []
-        for aso in asos:
-            exam = self.get_exam(aso.exame_id)
-            result.append(
+        try:
+            rows = self.db.execute(
+                text(
+                    "SELECT a.id as aso_id, e.funcionario_id, a.resultado, "
+                    "a.data_vencimento, a.medico_responsavel, a.crm, e.tipo_exame "
+                    "FROM health_asos a "
+                    "JOIN health_medical_exams e ON a.exame_id = e.id "
+                    "WHERE a.ativo = true AND a.cancelado = false "
+                    "AND a.data_vencimento BETWEEN current_date AND current_date + :days * interval '1 day' "
+                    "ORDER BY a.data_vencimento"
+                ),
+                {"days": days},
+            ).fetchall()
+
+            return [
                 {
-                    "aso_id": str(aso.id),
-                    "funcionario_id": str(exam.funcionario_id) if exam else None,
-                    "numero_aso": aso.numero_aso,
-                    "tipo_exame": exam.tipo_exame if exam else None,
-                    "data_vencimento": aso.data_vencimento.isoformat(),
-                    "dias_para_vencer": aso.dias_para_vencer,
-                    "resultado": aso.resultado,
+                    "aso_id": str(row.aso_id),
+                    "funcionario_id": str(row.funcionario_id),
+                    "resultado": row.resultado,
+                    "data_vencimento": row.data_vencimento.isoformat() if row.data_vencimento else None,
+                    "medico": row.medico_responsavel,
+                    "crm": row.crm,
+                    "tipo_exame": row.tipo_exame,
                 }
-            )
-
-        return result
+                for row in rows
+            ]
+        except Exception as e:
+            logger.error("Erro ao listar ASOs vencendo: %s", e)
+            return []
 
     def update_aso(self, aso_id: UUID, request: ASOUpdateRequest) -> ASO | None:
         """Atualiza ASO."""
@@ -373,31 +378,62 @@ class PCMSOService:
 
     def get_statistics(self) -> dict[str, Any]:
         """Retorna estatisticas do PCMSO."""
-        today = date.today()
-        start_of_year = date(today.year, 1, 1)
+        if not self.db:
+            return {
+                "total_exames_ano": 0,
+                "exames_pendentes": 0,
+                "exames_realizados": 0,
+                "asos_vencendo_30_dias": 0,
+            }
 
-        total_exams = self.db.query(MedicalExam).filter(MedicalExam.data_agendamento >= start_of_year).count()
+        from sqlalchemy import text
 
-        pending_exams = (
-            self.db.query(MedicalExam)
-            .filter(MedicalExam.status.in_([ExamStatus.AGENDADO.value, ExamStatus.CONFIRMADO.value]))
-            .count()
-        )
-
-        completed_exams = (
-            self.db.query(MedicalExam)
-            .filter(
-                MedicalExam.status == ExamStatus.REALIZADO.value,
-                MedicalExam.data_realizacao >= start_of_year,
+        try:
+            total_exams = (
+                self.db.execute(
+                    text(
+                        "SELECT count(*) FROM health_medical_exams WHERE extract(year from data_agendamento) = extract(year from current_date)"
+                    )
+                ).scalar()
+                or 0
             )
-            .count()
-        )
 
-        expiring_asos = len(self.list_expiring_asos(days=30))
+            pending_exams = (
+                self.db.execute(
+                    text("SELECT count(*) FROM health_medical_exams WHERE status IN ('agendado', 'confirmado')")
+                ).scalar()
+                or 0
+            )
 
-        return {
-            "total_exames_ano": total_exams,
-            "exames_pendentes": pending_exams,
-            "exames_realizados": completed_exams,
-            "asos_vencendo_30_dias": expiring_asos,
-        }
+            completed_exams = (
+                self.db.execute(
+                    text(
+                        "SELECT count(*) FROM health_medical_exams WHERE status = 'realizado' AND extract(year from data_realizacao) = extract(year from current_date)"
+                    )
+                ).scalar()
+                or 0
+            )
+
+            expiring_asos = (
+                self.db.execute(
+                    text(
+                        "SELECT count(*) FROM health_asos WHERE ativo = true AND cancelado = false AND data_vencimento BETWEEN current_date AND current_date + interval '30 days'"
+                    )
+                ).scalar()
+                or 0
+            )
+
+            return {
+                "total_exames_ano": total_exams,
+                "exames_pendentes": pending_exams,
+                "exames_realizados": completed_exams,
+                "asos_vencendo_30_dias": expiring_asos,
+            }
+        except Exception as e:
+            logger.error("Erro ao consultar estatisticas PCMSO: %s", e)
+            return {
+                "total_exames_ano": 0,
+                "exames_pendentes": 0,
+                "exames_realizados": 0,
+                "asos_vencendo_30_dias": 0,
+            }

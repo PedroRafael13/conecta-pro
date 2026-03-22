@@ -87,7 +87,10 @@ export default function LoginPage() {
             </label>
             <input
               id="cnpj"
+              name="client-cnpj"
               type="text"
+              inputMode="numeric"
+              autoComplete="off"
               value={cnpj}
               onChange={handleCnpjChange}
               placeholder="00.000.000/0000-00"
@@ -103,7 +106,9 @@ export default function LoginPage() {
             <div className="relative">
               <input
                 id="password"
+                name="client-password"
                 type={showPassword ? 'text' : 'password'}
+                autoComplete="new-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Digite sua senha"

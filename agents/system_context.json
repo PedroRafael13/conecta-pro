@@ -1,140 +1,140 @@
 {
-  "generated_at": "2026-03-21T05:00:02.838108+00:00",
-  "generated_at_brt": "21/03/2026 01:00 AMT",
+  "generated_at": "2026-03-22T00:18:01.132053+00:00",
+  "generated_at_brt": "21/03/2026 20:18 AMT",
   "containers": [
     {
       "name": "conecta-pro-backend",
       "image": "conecta-pro-backend",
-      "status": "Up 27 minutes (healthy)",
+      "status": "Up 4 minutes (healthy)",
       "health": "healthy",
-      "cpu": "254.64%",
-      "mem_usage": "1.723GiB / 31.34GiB",
-      "mem_pct": "5.50%"
+      "cpu": "0.38%",
+      "mem_usage": "1.579GiB / 31.34GiB",
+      "mem_pct": "5.04%"
     },
     {
       "name": "erp-postgres-exporter",
       "image": "prometheuscommunity/postgres-exporter",
-      "status": "Up 11 hours",
+      "status": "Up 30 hours",
       "health": "running",
       "cpu": "0.00%",
-      "mem_usage": "21.86MiB / 31.34GiB",
+      "mem_usage": "23.81MiB / 31.34GiB",
       "mem_pct": "0.07%"
     },
     {
       "name": "conecta-pro-celery-beat",
       "image": "2e35599590cc",
-      "status": "Up 11 hours (unhealthy)",
+      "status": "Up 30 hours (unhealthy)",
       "health": "unhealthy",
       "cpu": "0.00%",
-      "mem_usage": "658.9MiB / 31.34GiB",
-      "mem_pct": "2.05%"
+      "mem_usage": "660.4MiB / 31.34GiB",
+      "mem_pct": "2.06%"
     },
     {
       "name": "conecta-pro-flower",
       "image": "2e35599590cc",
-      "status": "Up 11 hours (healthy)",
+      "status": "Up 30 hours (healthy)",
       "health": "healthy",
-      "cpu": "1.16%",
-      "mem_usage": "669MiB / 31.34GiB",
-      "mem_pct": "2.08%"
+      "cpu": "0.64%",
+      "mem_usage": "681.1MiB / 31.34GiB",
+      "mem_pct": "2.12%"
     },
     {
       "name": "conecta-pro-celery-integrations",
       "image": "2e35599590cc",
-      "status": "Up 11 hours (healthy)",
+      "status": "Up 30 hours (healthy)",
       "health": "healthy",
-      "cpu": "7.03%",
-      "mem_usage": "976.3MiB / 31.34GiB",
+      "cpu": "1.89%",
+      "mem_usage": "977MiB / 31.34GiB",
       "mem_pct": "3.04%"
     },
     {
       "name": "34bbe0bcda76_conecta-pro-celery-priority",
       "image": "2e35599590cc",
-      "status": "Up 11 hours (healthy)",
+      "status": "Up 30 hours (healthy)",
       "health": "healthy",
-      "cpu": "1.44%",
-      "mem_usage": "942.4MiB / 31.34GiB",
-      "mem_pct": "2.94%"
+      "cpu": "2.81%",
+      "mem_usage": "941.7MiB / 31.34GiB",
+      "mem_pct": "2.93%"
     },
     {
       "name": "a853a3056bf9_conecta-pro-celery-sefaz",
       "image": "2e35599590cc",
-      "status": "Up 11 hours (healthy)",
+      "status": "Up 30 hours (healthy)",
       "health": "healthy",
-      "cpu": "1.41%",
+      "cpu": "1.09%",
       "mem_usage": "1.172GiB / 31.34GiB",
       "mem_pct": "3.74%"
     },
     {
       "name": "8f30da3e29ad_conecta-pro-celery-nfse",
       "image": "2e35599590cc",
-      "status": "Up 11 hours (healthy)",
+      "status": "Up 30 hours (healthy)",
       "health": "healthy",
-      "cpu": "0.98%",
+      "cpu": "1.38%",
       "mem_usage": "941.6MiB / 31.34GiB",
       "mem_pct": "2.93%"
     },
     {
       "name": "conecta-pro-celery-batch",
       "image": "2e35599590cc",
-      "status": "Up 11 hours (healthy)",
+      "status": "Up 30 hours (healthy)",
       "health": "healthy",
-      "cpu": "0.85%",
-      "mem_usage": "1.061GiB / 31.34GiB",
-      "mem_pct": "3.39%"
+      "cpu": "25.64%",
+      "mem_usage": "1.019GiB / 31.34GiB",
+      "mem_pct": "3.25%"
     },
     {
       "name": "297439d0453a_conecta-pro-celery-operacional",
       "image": "2e35599590cc",
-      "status": "Up 11 hours (healthy)",
+      "status": "Up 30 hours (healthy)",
       "health": "healthy",
-      "cpu": "4.32%",
-      "mem_usage": "1.236GiB / 31.34GiB",
-      "mem_pct": "3.94%"
+      "cpu": "38.34%",
+      "mem_usage": "1.615GiB / 31.34GiB",
+      "mem_pct": "5.15%"
     },
     {
       "name": "conecta-pro-postgres",
       "image": "postgres",
-      "status": "Up 11 hours (healthy)",
+      "status": "Up 31 hours (healthy)",
       "health": "healthy",
-      "cpu": "20.88%",
-      "mem_usage": "75.36MiB / 31.34GiB",
-      "mem_pct": "0.23%"
+      "cpu": "0.01%",
+      "mem_usage": "69.65MiB / 31.34GiB",
+      "mem_pct": "0.22%"
     },
     {
       "name": "erp-node-exporter",
       "image": "prom/node-exporter",
-      "status": "Up 12 hours",
+      "status": "Up 31 hours",
       "health": "running",
       "cpu": "0.00%",
-      "mem_usage": "14.39MiB / 31.34GiB",
-      "mem_pct": "0.04%"
+      "mem_usage": "14.93MiB / 31.34GiB",
+      "mem_pct": "0.05%"
     },
     {
       "name": "erp-redis-exporter",
       "image": "oliver006/redis_exporter",
-      "status": "Up 25 hours",
+      "status": "Up 44 hours",
       "health": "running",
       "cpu": "0.00%",
-      "mem_usage": "8.512MiB / 31.34GiB",
+      "mem_usage": "8.617MiB / 31.34GiB",
       "mem_pct": "0.03%"
     },
     {
       "name": "conecta-pro-redis",
       "image": "redis",
-      "status": "Up 3 hours (healthy)",
+      "status": "Up 22 hours (healthy)",
       "health": "healthy",
-      "cpu": "22.29%",
-      "mem_usage": "10.29MiB / 31.34GiB",
-      "mem_pct": "0.03%"
+      "cpu": "2.95%",
+      "mem_usage": "11.36MiB / 31.34GiB",
+      "mem_pct": "0.04%"
     },
     {
       "name": "conecta-pro-redis-staging",
       "image": "redis",
       "status": "Up 12 days (healthy)",
       "health": "healthy",
-      "cpu": "1.38%",
-      "mem_usage": "4.688MiB / 31.34GiB",
+      "cpu": "1.22%",
+      "mem_usage": "4.422MiB / 31.34GiB",
       "mem_pct": "0.01%"
     },
     {
@@ -142,26 +142,26 @@
       "image": "postgres",
       "status": "Up 12 days (healthy)",
       "health": "healthy",
-      "cpu": "0.00%",
-      "mem_usage": "19.87MiB / 31.34GiB",
-      "mem_pct": "0.06%"
+      "cpu": "0.01%",
+      "mem_usage": "23.68MiB / 31.34GiB",
+      "mem_pct": "0.07%"
     },
     {
       "name": "erp-alertmanager",
       "image": "prom/alertmanager",
-      "status": "Up 23 minutes (healthy)",
+      "status": "Up 20 hours (healthy)",
       "health": "healthy",
-      "cpu": "0.19%",
-      "mem_usage": "18.23MiB / 31.34GiB",
-      "mem_pct": "0.06%"
+      "cpu": "0.39%",
+      "mem_usage": "14.53MiB / 31.34GiB",
+      "mem_pct": "0.05%"
     },
     {
       "name": "erp-promtail",
       "image": "grafana/promtail",
       "status": "Up 12 days",
       "health": "running",
-      "cpu": "6.69%",
-      "mem_usage": "62.85MiB / 31.34GiB",
+      "cpu": "4.86%",
+      "mem_usage": "64.13MiB / 31.34GiB",
       "mem_pct": "0.20%"
     },
     {
@@ -169,43 +169,43 @@
       "image": "grafana/loki",
       "status": "Up 12 days (healthy)",
       "health": "healthy",
-      "cpu": "5.03%",
-      "mem_usage": "120.6MiB / 31.34GiB",
-      "mem_pct": "0.38%"
+      "cpu": "2.98%",
+      "mem_usage": "116.5MiB / 31.34GiB",
+      "mem_pct": "0.36%"
     },
     {
       "name": "erp-prometheus",
       "image": "prom/prometheus",
-      "status": "Up 12 hours",
+      "status": "Up 31 hours",
       "health": "running",
-      "cpu": "117.59%",
-      "mem_usage": "166.7MiB / 31.34GiB",
-      "mem_pct": "0.52%"
+      "cpu": "0.63%",
+      "mem_usage": "114.1MiB / 31.34GiB",
+      "mem_pct": "0.36%"
     },
     {
       "name": "erp-grafana",
       "image": "grafana/grafana",
       "status": "Up 12 days",
       "health": "running",
-      "cpu": "7.02%",
-      "mem_usage": "92.19MiB / 31.34GiB",
-      "mem_pct": "0.29%"
+      "cpu": "0.13%",
+      "mem_usage": "98.64MiB / 31.34GiB",
+      "mem_pct": "0.31%"
     }
   ],
   "server": {
-    "load_1m": 3.69,
-    "load_5m": 2.16,
-    "load_15m": 2.62,
+    "load_1m": 3.95,
+    "load_5m": 5.59,
+    "load_15m": 5.01,
     "cpu_cores": 8,
     "mem_total_gb": 31.3,
-    "mem_used_gb": 17.6,
-    "mem_percent": 56.2,
+    "mem_used_gb": 17.4,
+    "mem_percent": 55.7,
     "disk_total_gb": 386.0,
-    "disk_used_gb": 39.0,
-    "disk_percent": 11,
+    "disk_used_gb": 43.0,
+    "disk_percent": 12,
     "swap_total_gb": 4.0,
-    "swap_used_gb": 0.0,
-    "uptime_days": 39.5
+    "swap_used_gb": 0.2,
+    "uptime_days": 40.3
   },
   "interventions": [
     {
@@ -503,9 +503,7 @@
   ],
   "error_logs": {
     "conecta-pro-backend": [
-      "{\"time\": \"2026-03-21 04:59:11.533\", \"level\": \"ERROR\", \"message\": \"Erro ao contar notificações não lidas: 'AsyncSession' object has no attribute 'query'\", \"module\": \"__init__\", \"function\": \"callHandlers\", \"line\": 1762}",
-      "{\"time\": \"2026-03-21 04:59:41.535\", \"level\": \"ERROR\", \"message\": \"Erro ao listar notificações: 'AsyncSession' object has no attribute 'query'\", \"module\": \"__init__\", \"function\": \"callHandlers\", \"line\": 1762}",
-      "{\"time\": \"2026-03-21 04:59:41.535\", \"level\": \"ERROR\", \"message\": \"Erro ao contar notificações não lidas: 'AsyncSession' object has no attribute 'query'\", \"module\": \"__init__\", \"function\": \"callHandlers\", \"line\": 1762}"
+      "AttributeError: module 'bcrypt' has no attribute '__about__'"
     ],
     "conecta-pro-postgres": [
       "(sem erros recentes)"
@@ -1005,10 +1003,10 @@
     "latest_backup": {
       "file": "backup_20260321_030001.sql.gz",
       "size_kb": 390,
-      "age_hours": 2.0
+      "age_hours": 21.3
     },
-    "pattern_learner_last": "[2026-03-21 03:00:04] pattern_learner: Concluido. Total padroes processados: 5",
-    "preventive_action_last": "[2026-03-21 05:00:09] preventive: === Concluido. Problemas: 3 | Pico: 0 | DB: 0 "
+    "pattern_learner_last": null,
+    "preventive_action_last": "[2026-03-22 00:15:06] preventive: === Concluido. Problemas: 3 | Pico: 0 | DB: 0 "
   },
   "celery_queues": {
     "celery": 2,
@@ -1019,9 +1017,9 @@
   },
   "recent_events": [
     {
-      "time": "2026-03-21T05:00:11.157245+00:00",
+      "time": "2026-03-22T00:18:06.100495+00:00",
       "type": "backup",
-      "summary": "Último backup: backup_20260321_030001.sql.gz (390KB, 2.0h atrás)"
+      "summary": "Último backup: backup_20260321_030001.sql.gz (390KB, 21.3h atrás)"
     },
     {
       "time": "2026-03-21T04:34:05.035197+00:00",
@@ -1055,16 +1053,6 @@
     },
     {
       "time": "2026-03-21T02:08:33.823345+00:00",
-      "type": "intervention",
-      "summary": "HighMemoryUsage: resolved"
-    },
-    {
-      "time": "2026-03-20T18:47:43.247062+00:00",
-      "type": "intervention",
-      "summary": "RedisDown: resolved"
-    },
-    {
-      "time": "2026-03-20T18:47:33.293492+00:00",
       "type": "intervention",
       "summary": "HighMemoryUsage: resolved"
     }

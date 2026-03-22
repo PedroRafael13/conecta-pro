@@ -8,7 +8,7 @@ from datetime import datetime
 from decimal import Decimal
 from uuid import UUID
 
-from sqlalchemy import desc, func, or_
+from sqlalchemy import desc, func
 from sqlalchemy.orm import Session, joinedload
 
 from modules.clients.models.client import Client
@@ -86,51 +86,93 @@ class ClientRepository:
         limit: int = 100,
         order_by: str = "created_at",
         order_desc: bool = True,
-    ) -> tuple[list[Client], int]:
-        """List clients with filtering and pagination."""
-        query = self.db.query(Client)
+    ) -> tuple[list, int]:
+        """List clients with filtering and pagination using raw SQL."""
+        from sqlalchemy import text
+
+        where_clauses = ["1=1"]
+        params: dict = {}
 
         if filters:
             if filters.type:
-                query = query.filter(Client.type == filters.type)
+                where_clauses.append("client_type = :ftype")
+                params["ftype"] = filters.type.value if hasattr(filters.type, "value") else filters.type
             if filters.status:
-                query = query.filter(Client.status == filters.status)
+                where_clauses.append("status = :fstatus")
+                params["fstatus"] = filters.status.value if hasattr(filters.status, "value") else filters.status
             if filters.segment:
-                query = query.filter(Client.segment == filters.segment)
-            if filters.is_defaulter is not None:
-                query = query.filter(Client.is_defaulter == filters.is_defaulter)
-            if filters.is_vip is not None:
-                query = query.filter(Client.is_vip == filters.is_vip)
-            if filters.plus_enabled is not None:
-                query = query.filter(Client.plus_enabled == filters.plus_enabled)
-            if filters.city:
-                query = query.filter(Client.address_city.ilike(f"%{filters.city}%"))
-            if filters.state:
-                query = query.filter(Client.address_state == filters.state)
-            if filters.sales_rep_id:
-                query = query.filter(Client.sales_rep_id == filters.sales_rep_id)
-            if filters.search:
-                search_term = f"%{filters.search}%"
-                query = query.filter(
-                    or_(
-                        Client.legal_name.ilike(search_term),
-                        Client.trade_name.ilike(search_term),
-                        Client.document_number.ilike(search_term),
-                        Client.code.ilike(search_term),
-                        Client.email.ilike(search_term),
-                    )
+                where_clauses.append("segment = :fsegment")
+                params["fsegment"] = filters.segment.value if hasattr(filters.segment, "value") else filters.segment
+            if getattr(filters, "is_defaulter", None) is not None:
+                where_clauses.append("is_defaulter = :fdefaulter")
+                params["fdefaulter"] = filters.is_defaulter
+            if getattr(filters, "is_vip", None) is not None:
+                where_clauses.append("is_vip = :fvip")
+                params["fvip"] = filters.is_vip
+            if getattr(filters, "plus_enabled", None) is not None:
+                where_clauses.append("plus_enabled = :fplus")
+                params["fplus"] = filters.plus_enabled
+            if getattr(filters, "city", None):
+                where_clauses.append("address_city ILIKE :fcity")
+                params["fcity"] = f"%{filters.city}%"
+            if getattr(filters, "state", None):
+                where_clauses.append("address_state = :fstate")
+                params["fstate"] = filters.state
+            if getattr(filters, "search", None):
+                where_clauses.append(
+                    "(name ILIKE :fsearch OR trading_name ILIKE :fsearch "
+                    "OR document_number ILIKE :fsearch OR code ILIKE :fsearch OR email ILIKE :fsearch)"
                 )
+                params["fsearch"] = f"%{filters.search}%"
 
-        total = query.count()
+        where = " AND ".join(where_clauses)
 
-        # Ordering
-        order_column = getattr(Client, order_by, Client.created_at)
-        if order_desc:
-            query = query.order_by(desc(order_column))
-        else:
-            query = query.order_by(order_column)
+        # Count
+        count_sql = text(f"SELECT count(*) FROM clients WHERE {where}")  # noqa: S608
+        total = self.db.execute(count_sql, params).scalar() or 0
 
-        clients = query.offset(skip).limit(limit).all()
+        # Ordering + pagination via raw SQL
+        valid_order = order_by if order_by in ("created_at", "name", "code", "status") else "created_at"
+        direction = "DESC" if order_desc else "ASC"
+        params["pskip"] = skip
+        params["plimit"] = limit
+
+        data_sql = text(  # noqa: S608
+            f"SELECT id, code, name, trading_name, client_type, document_type, "
+            f"document_number, email, phone, address_city, address_state, "
+            f"status, segment, plus_enabled, guardian_enabled, "
+            f"is_defaulter, is_vip, created_at, updated_at "
+            f"FROM clients WHERE {where} "
+            f"ORDER BY {valid_order} {direction} OFFSET :pskip LIMIT :plimit"
+        )
+        rows = self.db.execute(data_sql, params).fetchall()
+
+        # Convert rows to dicts that match ClientListResponse
+        clients = []
+        for r in rows:
+            clients.append(
+                {
+                    "id": str(r[0]),
+                    "code": r[1],
+                    "name": r[2],
+                    "trading_name": r[3],
+                    "type": r[4],
+                    "document_type": r[5],
+                    "document_number": r[6],
+                    "email": r[7],
+                    "phone": r[8],
+                    "address_city": r[9],
+                    "address_state": r[10],
+                    "status": r[11],
+                    "segment": r[12],
+                    "plus_enabled": r[13],
+                    "guardian_enabled": r[14],
+                    "is_defaulter": r[15],
+                    "is_vip": r[16],
+                    "created_at": r[17].isoformat() if r[17] else None,
+                    "updated_at": r[18].isoformat() if r[18] else None,
+                }
+            )
         return clients, total
 
     def update_client(self, client_id: UUID, data: ClientUpdate, updated_by: UUID | None = None) -> Client | None:

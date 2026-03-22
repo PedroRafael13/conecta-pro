@@ -9,7 +9,9 @@ import logging
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
+from sqlalchemy.orm import Session
 
+from core.database.session import get_sync_db_dependency
 from modules.health_occupational.schemas.common import StandardResponse
 from modules.health_occupational.schemas.pcmso import (
     ASORequest,
@@ -25,12 +27,10 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/pcmso", tags=["PCMSO - Exames Medicos (NR-7)"])
 
 
-# Dependency para obter o service (sera substituido pelo sistema de DI real)
-def get_pcmso_service() -> PCMSOService:
-    """Retorna instancia do PCMSOService."""
-    # Em producao, isso viria do sistema de injecao de dependencias
-    # Por enquanto, retorna uma instancia sem db (mock)
-    return PCMSOService()
+# Dependency para obter o service com DB session
+def get_pcmso_service(db: Session = Depends(get_sync_db_dependency)) -> PCMSOService:
+    """Retorna instancia do PCMSOService com DB session."""
+    return PCMSOService(db=db)
 
 
 # ==============================================================================

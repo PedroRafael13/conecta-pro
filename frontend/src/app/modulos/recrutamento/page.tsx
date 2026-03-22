@@ -4,7 +4,6 @@ import { Users, Briefcase, UserPlus, FileText, Calendar, RefreshCw, ArrowRight }
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-;
 import {
   usePositionStats,
   useCandidateStats,
@@ -15,12 +14,13 @@ import {
 export default function RecrutamentoDashboardPage() {
   const router = useRouter();
 
-  const { data: positionStats, isLoading: loadingPositions, refetch: refetchPositions } = usePositionStats();
-  const { data: candidateStats, isLoading: loadingCandidates, refetch: refetchCandidates } = useCandidateStats();
-  const { data: applicationStats, isLoading: loadingApplications, refetch: refetchApplications } = useApplicationStats();
-  const { data: interviewStats, isLoading: loadingInterviews, refetch: refetchInterviews } = useInterviewStats();
+  const { data: positionStats, isLoading: loadingPositions, error: errPositions, refetch: refetchPositions } = usePositionStats();
+  const { data: candidateStats, isLoading: loadingCandidates, error: errCandidates, refetch: refetchCandidates } = useCandidateStats();
+  const { data: applicationStats, isLoading: loadingApplications, error: errApplications, refetch: refetchApplications } = useApplicationStats();
+  const { data: interviewStats, isLoading: loadingInterviews, error: errInterviews, refetch: refetchInterviews } = useInterviewStats();
 
   const isLoading = loadingPositions || loadingCandidates || loadingApplications || loadingInterviews;
+  const hasError = errPositions || errCandidates || errApplications || errInterviews;
 
   const posStats = positionStats as any;
   const candStats = candidateStats as any;
@@ -122,6 +122,19 @@ export default function RecrutamentoDashboardPage() {
           Atualizar
         </Button>
       </div>
+
+      {/* Error Banner */}
+      {hasError && !isLoading && (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-800/30 dark:bg-red-900/20 dark:text-red-400">
+          <p className="font-medium">Erro ao carregar dados do recrutamento</p>
+          <p className="mt-1 text-red-600 dark:text-red-500">
+            Alguns serviços estão temporariamente indisponíveis. Os dados exibidos podem estar incompletos.
+          </p>
+          <Button variant="outline" size="sm" className="mt-2" onClick={handleRefresh}>
+            <RefreshCw className="h-3 w-3 mr-1" /> Tentar novamente
+          </Button>
+        </div>
+      )}
 
       {/* Stat Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

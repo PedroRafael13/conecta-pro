@@ -151,12 +151,22 @@ export function WebSocketProvider({ children, token, apiUrl }: WebSocketProvider
     cancelledRef.current = false;
     backoffRef.current = 1_000;
 
-    const wsUrl =
-      apiUrl.replace(/^http/, 'ws') +
-      '/api/v1/operacional/comunicacao/ws/operacional/alertas?token=' +
-      token;
-
-    connect(token, wsUrl);
+    // Verificar se o endpoint WS existe antes de tentar conectar
+    const healthUrl = apiUrl + '/api/v1/operacional/comunicacao/ws/operacional/alertas';
+    fetch(healthUrl, { method: 'HEAD' }).then((res) => {
+      if (res.status === 404 || res.status === 405) {
+        // Endpoint WebSocket não implementado no backend — não tentar conectar
+        console.debug('[WS] Endpoint de alertas não disponível (404). WebSocket desabilitado.');
+        return;
+      }
+      const wsUrl =
+        apiUrl.replace(/^http/, 'ws') +
+        '/api/v1/operacional/comunicacao/ws/operacional/alertas?token=' +
+        token;
+      connect(token, wsUrl);
+    }).catch(() => {
+      // Rede indisponível — silenciar
+    });
 
     return () => {
       cancelledRef.current = true;

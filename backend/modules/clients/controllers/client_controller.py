@@ -11,7 +11,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
-from core.database import get_db
+from core.database.session import get_sync_db_dependency as get_db
 from modules.clients.models.client import ClientSegment, ClientStatus, ClientType
 from modules.clients.schemas.client_schemas import (
     ClientContractCreate,

@@ -1,63 +1,63 @@
 {
-  "generated_at": "2026-03-21T05:00:04.338790+00:00",
+  "generated_at": "2026-03-22T00:18:01.182995+00:00",
   "containers": [
     {
       "name": "297439d0453a_conecta-pro-celery-operacional",
-      "status": "Up 11 hours (healthy)",
+      "status": "Up 30 hours (healthy)",
       "health": "healthy",
       "image": "2e35599590cc"
     },
     {
       "name": "34bbe0bcda76_conecta-pro-celery-priority",
-      "status": "Up 11 hours (healthy)",
+      "status": "Up 30 hours (healthy)",
       "health": "healthy",
       "image": "2e35599590cc"
     },
     {
       "name": "8f30da3e29ad_conecta-pro-celery-nfse",
-      "status": "Up 11 hours (healthy)",
+      "status": "Up 30 hours (healthy)",
       "health": "healthy",
       "image": "2e35599590cc"
     },
     {
       "name": "a853a3056bf9_conecta-pro-celery-sefaz",
-      "status": "Up 11 hours (healthy)",
+      "status": "Up 30 hours (healthy)",
       "health": "healthy",
       "image": "2e35599590cc"
     },
     {
       "name": "conecta-pro-backend",
-      "status": "Up 27 minutes (healthy)",
+      "status": "Up 4 minutes (healthy)",
       "health": "healthy",
       "image": "conecta-pro-backend"
     },
     {
       "name": "conecta-pro-celery-batch",
-      "status": "Up 11 hours (healthy)",
+      "status": "Up 30 hours (healthy)",
       "health": "healthy",
       "image": "2e35599590cc"
     },
     {
       "name": "conecta-pro-celery-beat",
-      "status": "Up 11 hours (unhealthy)",
+      "status": "Up 30 hours (unhealthy)",
       "health": "unhealthy",
       "image": "2e35599590cc"
     },
     {
       "name": "conecta-pro-celery-integrations",
-      "status": "Up 11 hours (healthy)",
+      "status": "Up 30 hours (healthy)",
       "health": "healthy",
       "image": "2e35599590cc"
     },
     {
       "name": "conecta-pro-flower",
-      "status": "Up 11 hours (healthy)",
+      "status": "Up 30 hours (healthy)",
       "health": "healthy",
       "image": "2e35599590cc"
     },
     {
       "name": "conecta-pro-postgres",
-      "status": "Up 11 hours (healthy)",
+      "status": "Up 31 hours (healthy)",
       "health": "healthy",
       "image": "postgres"
     },
@@ -69,7 +69,7 @@
     },
     {
       "name": "conecta-pro-redis",
-      "status": "Up 3 hours (healthy)",
+      "status": "Up 22 hours (healthy)",
       "health": "healthy",
       "image": "redis"
     },
@@ -81,7 +81,7 @@
     },
     {
       "name": "erp-alertmanager",
-      "status": "Up 23 minutes (healthy)",
+      "status": "Up 20 hours (healthy)",
       "health": "healthy",
       "image": "prom/alertmanager"
     },
@@ -99,19 +99,19 @@
     },
     {
       "name": "erp-node-exporter",
-      "status": "Up 12 hours",
+      "status": "Up 31 hours",
       "health": "running",
       "image": "prom/node-exporter"
     },
     {
       "name": "erp-postgres-exporter",
-      "status": "Up 11 hours",
+      "status": "Up 30 hours",
       "health": "running",
       "image": "prometheuscommunity/postgres-exporter"
     },
     {
       "name": "erp-prometheus",
-      "status": "Up 12 hours",
+      "status": "Up 31 hours",
       "health": "running",
       "image": "prom/prometheus"
     },
@@ -123,25 +123,25 @@
     },
     {
       "name": "erp-redis-exporter",
-      "status": "Up 25 hours",
+      "status": "Up 44 hours",
       "health": "running",
       "image": "oliver006/redis_exporter"
     }
   ],
   "metrics": {
-    "load_1m": 3.75,
-    "load_5m": 2.15,
-    "load_15m": 2.62,
+    "load_1m": 3.86,
+    "load_5m": 5.6,
+    "load_15m": 5.01,
     "cpu_cores": 8,
     "mem_total_gb": 31.3,
-    "mem_used_gb": 17.7,
-    "mem_percent": 56.5,
+    "mem_used_gb": 17.5,
+    "mem_percent": 55.9,
     "disk_total_gb": 386.0,
-    "disk_used_gb": 39.0,
-    "disk_percent": 11,
+    "disk_used_gb": 43.0,
+    "disk_percent": 12,
     "swap_total_gb": 4.0,
-    "swap_used_gb": 0.0,
-    "uptime_days": 39.4951
+    "swap_used_gb": 0.2,
+    "uptime_days": 40.2992
   },
   "interventions": [
     {
@@ -354,6 +354,36 @@
   ],
   "uptime_history": [
     {
+      "hour": "01:00",
+      "backend": 100,
+      "postgres": 100,
+      "redis": 100
+    },
+    {
+      "hour": "02:00",
+      "backend": 100,
+      "postgres": 100,
+      "redis": 100
+    },
+    {
+      "hour": "03:00",
+      "backend": 100,
+      "postgres": 100,
+      "redis": 100
+    },
+    {
+      "hour": "04:00",
+      "backend": 100,
+      "postgres": 100,
+      "redis": 100
+    },
+    {
+      "hour": "05:00",
+      "backend": 100,
+      "postgres": 100,
+      "redis": 100
+    },
+    {
       "hour": "06:00",
       "backend": 100,
       "postgres": 100,
@@ -463,36 +493,6 @@
     },
     {
       "hour": "00:00",
-      "backend": 100,
-      "postgres": 100,
-      "redis": 100
-    },
-    {
-      "hour": "01:00",
-      "backend": 100,
-      "postgres": 100,
-      "redis": 100
-    },
-    {
-      "hour": "02:00",
-      "backend": 100,
-      "postgres": 100,
-      "redis": 100
-    },
-    {
-      "hour": "03:00",
-      "backend": 100,
-      "postgres": 100,
-      "redis": 100
-    },
-    {
-      "hour": "04:00",
-      "backend": 100,
-      "postgres": 100,
-      "redis": 100
-    },
-    {
-      "hour": "05:00",
       "backend": 100,
       "postgres": 100,
       "redis": 100

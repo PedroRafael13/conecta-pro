@@ -9,7 +9,9 @@ import logging
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
+from sqlalchemy.orm import Session
 
+from core.database.session import get_sync_db_dependency
 from modules.health_occupational.schemas.common import StandardResponse
 from modules.health_occupational.schemas.ppra import (
     ControlMeasureRequest,
@@ -27,10 +29,10 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/ppra", tags=["PPRA/PGR - Riscos Ocupacionais (NR-9)"])
 
 
-# Dependency para obter o service
-def get_ppra_service() -> PPRAService:
-    """Retorna instancia do PPRAService."""
-    return PPRAService()
+# Dependency para obter o service com DB session
+def get_ppra_service(db: Session = Depends(get_sync_db_dependency)) -> PPRAService:
+    """Retorna instancia do PPRAService com DB session."""
+    return PPRAService(db=db)
 
 
 # ==============================================================================

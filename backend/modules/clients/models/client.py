@@ -82,7 +82,7 @@ class Client(Base):
     code = Column(String(20), unique=True, nullable=False, index=True)
 
     # Dados cadastrais
-    type = Column(Enum(ClientType), nullable=False, default=ClientType.CONDOMINIO)
+    type = Column("client_type", Enum(ClientType), nullable=False, default=ClientType.CONDOMINIO)
     status = Column(Enum(ClientStatus), nullable=False, default=ClientStatus.PROSPECT)
     segment = Column(Enum(ClientSegment), nullable=True)
 
@@ -180,7 +180,7 @@ class Client(Base):
     # Índices
     __table_args__ = (
         Index("ix_clients_document", "document_type", "document_number"),
-        Index("ix_clients_status_type", "status", "type"),
+        Index("ix_clients_status_type", "status", "client_type"),
         Index("ix_clients_segment", "segment"),
         Index("ix_clients_sales_rep", "sales_rep_id"),
         Index("ix_clients_defaulter", "is_defaulter"),
