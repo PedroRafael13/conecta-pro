@@ -18,6 +18,7 @@ export interface IntegrationSummary {
   online: number;
   offline: number;
   degraded: number;
+  homologacao: number;
 }
 
 export interface RecentActivityItem {
@@ -115,17 +116,33 @@ export async function fetchAllDashboardStats(): Promise<DashboardStats> {
 /**
  * Busca resumo das integrações
  */
+const HOMOLOGACAO_NAMES = [
+  'SEFAZ NF-e', 'SEFAZ CT-e', 'SEFAZ MDF-e', 'NFS-e Manaus',
+  'eSocial', 'FGTS Digital', 'Simples Nacional', 'Receita Federal',
+];
+
 export async function fetchIntegrationSummary(): Promise<IntegrationSummary> {
   try {
     const { data } = await api.get('/api/v1/government/dashboard/status');
+    const integrations = data.integrations ?? [];
+    let homologacao = 0;
+    let realDegraded = 0;
+    for (const item of integrations) {
+      if (item.status === 'degraded' && HOMOLOGACAO_NAMES.includes(item.name)) {
+        homologacao++;
+      } else if (item.status === 'degraded') {
+        realDegraded++;
+      }
+    }
     return {
       total: data.total ?? 0,
       online: data.online ?? 0,
       offline: data.offline ?? 0,
-      degraded: data.degraded ?? 0,
+      degraded: realDegraded,
+      homologacao,
     };
   } catch {
-    return { total: 0, online: 0, offline: 0, degraded: 0 };
+    return { total: 0, online: 0, offline: 0, degraded: 0, homologacao: 0 };
   }
 }
 

@@ -250,6 +250,7 @@ export const modules: Module[] = [
       { id: 'ac-kits', title: 'Kits Documentais', href: '/area-cliente/kits', icon: 'Package', permissions: ['ged:read'] },
       { id: 'ac-chamados', title: 'Chamados', href: '/area-cliente/chamados', icon: 'MessageSquare', permissions: ['ged:read'] },
       { id: 'ac-configuracoes', title: 'Configuracoes', href: '/area-cliente/configuracoes', icon: 'Settings', permissions: ['ged:admin'] },
+      { id: 'ac-gerenciamento', title: 'Gerenciamento de Acessos', href: '/modulos/area-cliente/gerenciamento', icon: 'Key', permissions: ['ged:admin'] },
     ],
   },
 

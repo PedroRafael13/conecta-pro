@@ -167,11 +167,7 @@ const nextConfig: NextConfig = {
         destination: '/modulos/gestao-pessoas/ponto/:path*',
         permanent: true,
       },
-      {
-        source: '/modulos/saude-ocupacional/:path*',
-        destination: '/modulos/gestao-pessoas/saude-ocupacional/:path*',
-        permanent: true,
-      },
+      // saude-ocupacional: páginas originais em /modulos/saude-ocupacional/ — sem redirect
     ];
   },
 

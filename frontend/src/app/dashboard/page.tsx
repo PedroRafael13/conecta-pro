@@ -215,20 +215,27 @@ export default function DashboardPage() {
                   <div className="flex items-center gap-1.5">
                     <Wifi className="w-3.5 h-3.5 text-emerald-500" />
                     <span className="text-sm font-bold text-emerald-500">{integrations.online}</span>
-                    <span className="text-xs text-[hsl(var(--muted-foreground))]">online</span>
+                    <span className="text-xs text-[hsl(var(--muted-foreground))]">Online</span>
                   </div>
                   {integrations.offline > 0 && (
                     <div className="flex items-center gap-1.5">
                       <WifiOff className="w-3.5 h-3.5 text-red-500" />
                       <span className="text-sm font-bold text-red-500">{integrations.offline}</span>
-                      <span className="text-xs text-[hsl(var(--muted-foreground))]">offline</span>
+                      <span className="text-xs text-[hsl(var(--muted-foreground))]">Offline</span>
+                    </div>
+                  )}
+                  {(integrations.homologacao ?? 0) > 0 && (
+                    <div className="flex items-center gap-1.5">
+                      <Wifi className="w-3.5 h-3.5 text-blue-400" />
+                      <span className="text-sm font-bold text-blue-400">{integrations.homologacao}</span>
+                      <span className="text-xs text-[hsl(var(--muted-foreground))]">Homologa&ccedil;&atilde;o</span>
                     </div>
                   )}
                   {integrations.degraded > 0 && (
                     <div className="flex items-center gap-1.5">
                       <Wifi className="w-3.5 h-3.5 text-amber-500" />
                       <span className="text-sm font-bold text-amber-500">{integrations.degraded}</span>
-                      <span className="text-xs text-[hsl(var(--muted-foreground))]">instável</span>
+                      <span className="text-xs text-[hsl(var(--muted-foreground))]">Inst&aacute;vel</span>
                     </div>
                   )}
                 </div>

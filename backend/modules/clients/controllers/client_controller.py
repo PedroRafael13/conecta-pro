@@ -69,7 +69,8 @@ async def create_client(data: ClientCreate, service: ClientService = Depends(get
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
-@router.get("/")
+@router.get("")
+@router.get("/", include_in_schema=False)
 async def list_clients(  # pylint: disable=too-many-locals
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),

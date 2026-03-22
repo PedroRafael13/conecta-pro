@@ -113,9 +113,22 @@ export default function PrimeiroAcessoPage() {
             <ArrowLeft className="w-4 h-4" /> Voltar ao login
           </Link>
 
+          {/* Stepper mobile */}
+          <div className="flex items-center justify-center mb-6 lg:hidden">
+            <div className={`flex items-center gap-2 ${step >= 1 ? 'text-blue-600' : 'text-gray-400'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${step > 1 ? 'bg-green-500 text-white' : step === 1 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'}`}>{step > 1 ? '✓' : '1'}</div>
+              <span className="text-sm font-medium">Identificacao</span>
+            </div>
+            <div className={`w-12 h-0.5 mx-2 ${step >= 2 ? 'bg-blue-600' : 'bg-gray-200'}`} />
+            <div className={`flex items-center gap-2 ${step >= 2 ? 'text-blue-600' : 'text-gray-400'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${step >= 2 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'}`}>2</div>
+              <span className="text-sm font-medium">Nova Senha</span>
+            </div>
+          </div>
+
           <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
             <h2 className="text-xl font-bold text-gray-900 mb-1">
-              {step === 1 ? 'Identifique-se' : 'Crie sua senha'}
+              {step === 1 ? 'Primeiro Acesso — Identificacao' : 'Primeiro Acesso — Criar Senha'}
             </h2>
             <p className="text-gray-500 text-sm mb-6">
               {step === 1 ? 'Informe seu CPF e data de nascimento' : 'Escolha uma senha segura'}

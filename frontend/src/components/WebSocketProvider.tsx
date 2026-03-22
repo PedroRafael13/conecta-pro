@@ -153,10 +153,13 @@ export function WebSocketProvider({ children, token, apiUrl }: WebSocketProvider
 
     // Verificar se o endpoint WS existe antes de tentar conectar
     const healthUrl = apiUrl + '/api/v1/operacional/comunicacao/ws/operacional/alertas';
-    fetch(healthUrl, { method: 'HEAD' }).then((res) => {
-      if (res.status === 404 || res.status === 405) {
-        // Endpoint WebSocket não implementado no backend — não tentar conectar
-        console.debug('[WS] Endpoint de alertas não disponível (404). WebSocket desabilitado.');
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+    fetch(healthUrl, { method: 'HEAD', signal: controller.signal }).then((res) => {
+      clearTimeout(timeoutId);
+      if (res.status !== 101 && res.status !== 200 && res.status !== 426) {
+        // Endpoint WebSocket não implementado — não tentar conectar
+        console.debug(`[WS] Endpoint indisponível (${res.status}). WebSocket desabilitado.`);
         return;
       }
       const wsUrl =
@@ -165,6 +168,7 @@ export function WebSocketProvider({ children, token, apiUrl }: WebSocketProvider
         token;
       connect(token, wsUrl);
     }).catch(() => {
+      clearTimeout(timeoutId);
       // Rede indisponível — silenciar
     });
 

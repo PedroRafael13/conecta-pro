@@ -65,8 +65,18 @@ export default function ResetSenhaPage() {
     <div className="min-h-screen flex flex-col lg:flex-row">
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-[#0A2540] to-[#1E3A5F] text-white flex-col justify-center px-16">
         <ShieldCheck className="w-10 h-10 text-blue-300 mb-4" />
-        <h1 className="text-3xl font-bold mb-2">Redefinir Senha</h1>
+        <h1 className="text-3xl font-bold mb-2">Recuperar Senha</h1>
         <p className="text-blue-200">Valide sua identidade e crie uma nova senha.</p>
+        <div className="mt-8 space-y-3">
+          {[1, 2].map((s) => (
+            <div key={s} className={`flex items-center gap-3 ${step >= s ? 'text-white' : 'text-blue-400'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${step > s ? 'bg-green-500' : step === s ? 'bg-white text-[#0A2540]' : 'bg-white/20'}`}>
+                {step > s ? '\u2713' : s}
+              </div>
+              <span className="text-sm">{s === 1 ? 'Identificacao' : 'Nova Senha'}</span>
+            </div>
+          ))}
+        </div>
       </div>
 
       <div className="flex-1 flex items-center justify-center bg-gray-50 px-6 py-12">
@@ -75,8 +85,21 @@ export default function ResetSenhaPage() {
             <ArrowLeft className="w-4 h-4" /> Voltar ao login
           </Link>
 
+          {/* Stepper mobile */}
+          <div className="flex items-center justify-center mb-6 lg:hidden">
+            <div className={`flex items-center gap-2 ${step >= 1 ? 'text-blue-600' : 'text-gray-400'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${step > 1 ? 'bg-green-500 text-white' : step === 1 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'}`}>{step > 1 ? '\u2713' : '1'}</div>
+              <span className="text-sm font-medium">Identificacao</span>
+            </div>
+            <div className={`w-12 h-0.5 mx-2 ${step >= 2 ? 'bg-blue-600' : 'bg-gray-200'}`} />
+            <div className={`flex items-center gap-2 ${step >= 2 ? 'text-blue-600' : 'text-gray-400'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${step >= 2 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'}`}>2</div>
+              <span className="text-sm font-medium">Nova Senha</span>
+            </div>
+          </div>
+
           <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
-            <h2 className="text-xl font-bold text-gray-900 mb-1">{step === 1 ? 'Identifique-se' : 'Nova Senha'}</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-1">{step === 1 ? 'Recuperar Senha — Identificacao' : 'Recuperar Senha — Nova Senha'}</h2>
             <p className="text-gray-500 text-sm mb-6">{step === 1 ? 'Confirme seu CPF e data de nascimento' : 'Escolha uma nova senha segura'}</p>
 
             {error && <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">{error}</div>}
