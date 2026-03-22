@@ -1,24 +1,26 @@
 'use client';
 
 import { useState } from 'react';
-import { Lock, Unlock, CheckCircle2, AlertTriangle, Calendar, Users, Download } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { customInstance } from '@/lib/api-client';
+import { Lock, Unlock, CheckCircle2, AlertTriangle, Calendar, Users, Download, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-interface FechamentoMes {
-  mes: string;
-  periodo: string;
-  status: 'aberto' | 'em_revisao' | 'fechado';
-  colaboradores: number;
-  pendencias: number;
-  fechadoPor?: string;
-  fechadoEm?: string;
+interface PontoDashboardData {
+  total_colaboradores: number;
+  inconsistencias_periodo: number;
+  pontos_em_aberto: number;
 }
 
-const meses: FechamentoMes[] = [
-  { mes: 'Marco 2026', periodo: '01/03 - 31/03', status: 'aberto', colaboradores: 44, pendencias: 5 },
-  { mes: 'Fevereiro 2026', periodo: '01/02 - 28/02', status: 'fechado', colaboradores: 42, pendencias: 0, fechadoPor: 'Admin', fechadoEm: '05/03/2026' },
-  { mes: 'Janeiro 2026', periodo: '01/01 - 31/01', status: 'fechado', colaboradores: 40, pendencias: 0, fechadoPor: 'Admin', fechadoEm: '05/02/2026' },
-];
+interface FechamentoPayload {
+  mes: number;
+  ano: number;
+}
+
+interface FechamentoResponse {
+  message?: string;
+  status?: string;
+}
 
 const statusConfig: Record<string, { label: string; classes: string; icon: typeof Lock }> = {
   aberto: { label: 'Aberto', classes: 'bg-green-100 text-green-800', icon: Unlock },
@@ -26,16 +28,74 @@ const statusConfig: Record<string, { label: string; classes: string; icon: typeo
   fechado: { label: 'Fechado', classes: 'bg-gray-100 text-gray-600', icon: Lock },
 };
 
-const pendencias = [
-  { colaborador: 'Maria Oliveira', tipo: 'Atraso sem justificativa', data: '12/03/2026' },
-  { colaborador: 'Pedro Costa', tipo: 'Batida faltante', data: '09/03/2026' },
-  { colaborador: 'Ana Pereira', tipo: 'Falta injustificada', data: '08/03/2026' },
-  { colaborador: 'Carlos Silva', tipo: 'Hora extra nao aprovada', data: '05/03/2026' },
-  { colaborador: 'Roberto Lima', tipo: 'Divergencia de horario', data: '04/03/2026' },
-];
-
 export default function FechamentoPage() {
+  const queryClient = useQueryClient();
+  const now = new Date();
+  const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState(now.getFullYear());
   const [confirmando, setConfirmando] = useState(false);
+
+  const monthNames = ['Janeiro', 'Fevereiro', 'Marco', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+
+  const { data: dashboard, isLoading: loadingDashboard } = useQuery<PontoDashboardData>({
+    queryKey: ['ponto', 'dashboard'],
+    queryFn: () => customInstance({ url: '/api/v1/people-management/ponto/dashboard' }) as Promise<PontoDashboardData>,
+    staleTime: 30000,
+    retry: 2,
+  });
+
+  const fechamentoMutation = useMutation<FechamentoResponse, Error, FechamentoPayload>({
+    mutationFn: (body) => customInstance({
+      url: '/api/v1/people-management/ponto/fechamento',
+      method: 'POST',
+      data: body,
+    }) as Promise<FechamentoResponse>,
+    onSuccess: () => {
+      setConfirmando(false);
+      queryClient.invalidateQueries({ queryKey: ['ponto'] });
+    },
+  });
+
+  function handleConfirmFechamento() {
+    fechamentoMutation.mutate({ mes: selectedMonth, ano: selectedYear });
+  }
+
+  const pendencias = dashboard?.inconsistencias_periodo ?? 0;
+  const colaboradores = dashboard?.total_colaboradores ?? 0;
+  const pontosAbertos = dashboard?.pontos_em_aberto ?? 0;
+
+  // Build period cards: current month (open) + 2 previous (assumed closed)
+  const meses = [
+    {
+      mes: `${monthNames[selectedMonth - 1]} ${selectedYear}`,
+      periodo: `01/${String(selectedMonth).padStart(2, '0')} - ${new Date(selectedYear, selectedMonth, 0).getDate()}/${String(selectedMonth).padStart(2, '0')}`,
+      status: 'aberto' as const,
+      colaboradores,
+      pendencias,
+    },
+    (() => {
+      const pm = selectedMonth === 1 ? 12 : selectedMonth - 1;
+      const py = selectedMonth === 1 ? selectedYear - 1 : selectedYear;
+      return {
+        mes: `${monthNames[pm - 1]} ${py}`,
+        periodo: `01/${String(pm).padStart(2, '0')} - ${new Date(py, pm, 0).getDate()}/${String(pm).padStart(2, '0')}`,
+        status: 'fechado' as const,
+        colaboradores,
+        pendencias: 0,
+      };
+    })(),
+    (() => {
+      const pm2 = selectedMonth <= 2 ? (selectedMonth === 1 ? 11 : 12) : selectedMonth - 2;
+      const py2 = selectedMonth <= 2 ? selectedYear - 1 : selectedYear;
+      return {
+        mes: `${monthNames[pm2 - 1]} ${py2}`,
+        periodo: `01/${String(pm2).padStart(2, '0')} - ${new Date(py2, pm2, 0).getDate()}/${String(pm2).padStart(2, '0')}`,
+        status: 'fechado' as const,
+        colaboradores,
+        pendencias: 0,
+      };
+    })(),
+  ];
 
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
@@ -53,18 +113,52 @@ export default function FechamentoPage() {
         </button>
       </div>
 
+      {fechamentoMutation.isError && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+          Erro ao fechar competencia: {fechamentoMutation.error.message}
+        </div>
+      )}
+
+      {fechamentoMutation.isSuccess && (
+        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm">
+          Competencia fechada com sucesso!
+        </div>
+      )}
+
+      <div className="flex items-center gap-4">
+        <label className="text-sm text-gray-600">Competencia:</label>
+        <select
+          value={selectedMonth}
+          onChange={(e) => setSelectedMonth(Number(e.target.value))}
+          className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          {monthNames.map((name, idx) => (
+            <option key={idx} value={idx + 1}>{name}</option>
+          ))}
+        </select>
+        <select
+          value={selectedYear}
+          onChange={(e) => setSelectedYear(Number(e.target.value))}
+          className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          {[2024, 2025, 2026, 2027].map((y) => (
+            <option key={y} value={y}>{y}</option>
+          ))}
+        </select>
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {meses.map((m) => {
           const config = statusConfig[m.status]!;
-          const StatusIcon = config!.icon;
+          const StatusIcon = config.icon;
           return (
             <Card key={m.mes} className={`border ${m.status === 'aberto' ? 'border-blue-300 ring-1 ring-blue-100' : 'border-gray-200'}`}>
               <CardContent className="p-5">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="font-semibold text-gray-900">{m.mes}</h3>
-                  <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full ${config!.classes}`}>
+                  <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full ${config.classes}`}>
                     <StatusIcon className="h-3 w-3" />
-                    {config!.label}
+                    {config.label}
                   </span>
                 </div>
                 <div className="space-y-2 text-sm text-gray-600">
@@ -74,7 +168,11 @@ export default function FechamentoPage() {
                   </div>
                   <div className="flex justify-between">
                     <span>Colaboradores</span>
-                    <span className="font-medium text-gray-800">{m.colaboradores}</span>
+                    {loadingDashboard ? (
+                      <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                    ) : (
+                      <span className="font-medium text-gray-800">{m.colaboradores}</span>
+                    )}
                   </div>
                   <div className="flex justify-between">
                     <span>Pendencias</span>
@@ -82,12 +180,6 @@ export default function FechamentoPage() {
                       {m.pendencias}
                     </span>
                   </div>
-                  {m.fechadoPor && (
-                    <div className="flex justify-between">
-                      <span>Fechado por</span>
-                      <span className="font-medium text-gray-800">{m.fechadoPor} em {m.fechadoEm}</span>
-                    </div>
-                  )}
                 </div>
               </CardContent>
             </Card>
@@ -99,30 +191,24 @@ export default function FechamentoPage() {
         <CardHeader className="pb-2">
           <CardTitle className="text-lg font-semibold flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-amber-500" />
-            Pendencias — Marco 2026
+            Pendencias — {monthNames[selectedMonth - 1]} {selectedYear}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-200 bg-gray-50">
-                  <th className="text-left py-3 px-4 font-medium text-gray-500">Colaborador</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-500">Pendencia</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-500">Data</th>
-                </tr>
-              </thead>
-              <tbody>
-                {pendencias.map((p, idx) => (
-                  <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-3 px-4 font-medium text-gray-900">{p.colaborador}</td>
-                    <td className="py-3 px-4 text-gray-600">{p.tipo}</td>
-                    <td className="py-3 px-4 text-gray-500">{p.data}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          {loadingDashboard ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+            </div>
+          ) : pendencias === 0 ? (
+            <div className="text-center py-8 text-gray-400">
+              Nenhuma pendencia encontrada para este periodo.
+            </div>
+          ) : (
+            <div className="text-sm text-gray-600 py-4">
+              <p>Existem <strong className="text-red-600">{pendencias}</strong> inconsistencias e <strong className="text-amber-600">{pontosAbertos}</strong> pontos em aberto neste periodo.</p>
+              <p className="mt-2 text-gray-400">Resolva as pendencias antes de fechar a competencia.</p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -145,19 +231,28 @@ export default function FechamentoPage() {
             <CardContent className="p-6">
               <h3 className="text-lg font-bold text-gray-900 mb-2">Confirmar Fechamento</h3>
               <p className="text-sm text-gray-600 mb-4">
-                Tem certeza que deseja fechar a competencia Marco 2026? Existem 5 pendencias nao resolvidas. Apos o fechamento, nao sera possivel alterar batidas.
+                Tem certeza que deseja fechar a competencia {monthNames[selectedMonth - 1]} {selectedYear}?
+                {pendencias > 0 && ` Existem ${pendencias} pendencias nao resolvidas.`} Apos o fechamento, nao sera possivel alterar batidas.
               </p>
+              {fechamentoMutation.isError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-sm mb-4">
+                  {fechamentoMutation.error.message}
+                </div>
+              )}
               <div className="flex justify-end gap-3">
                 <button
                   onClick={() => setConfirmando(false)}
+                  disabled={fechamentoMutation.isPending}
                   className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50"
                 >
                   Cancelar
                 </button>
                 <button
-                  onClick={() => setConfirmando(false)}
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700"
+                  onClick={handleConfirmFechamento}
+                  disabled={fechamentoMutation.isPending}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 flex items-center gap-2"
                 >
+                  {fechamentoMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
                   Confirmar Fechamento
                 </button>
               </div>

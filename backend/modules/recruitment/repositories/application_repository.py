@@ -276,8 +276,7 @@ class ApplicationRepository:
 
         DB nao possui coluna ranking_position — ordena por ai_match_score apenas.
         """
-        # Noop: ranking_position nao existe no banco
-        pass
+        return  # Noop: ranking_position nao existe no banco — ordenação via ai_match_score
 
     async def get_stats(  # pylint: disable=too-many-locals
         self, position_id: str = None

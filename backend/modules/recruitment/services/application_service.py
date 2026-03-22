@@ -418,7 +418,7 @@ class ApplicationService:
 
         DB nao possui ranking_position — noop.
         """
-        pass
+        return  # Ordenação via ai_match_score no repositório
 
     async def bulk_action(self, data: ApplicationBulkAction) -> tuple[int, int]:
         """

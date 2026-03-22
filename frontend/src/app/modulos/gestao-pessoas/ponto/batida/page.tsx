@@ -1,6 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { customInstance } from '@/lib/api-client';
 import {
   Fingerprint,
   Camera,
@@ -9,35 +11,91 @@ import {
   Clock,
   Wifi,
   WifiOff,
+  Loader2,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 
 interface PunchRecord {
-  tipo: string;
-  hora: string;
-  local: string;
+  id?: number | string;
+  tipo?: string;
+  type?: string;
+  hora?: string;
+  timestamp?: string;
+  local?: string;
+  location?: string;
 }
 
-const lastPunches: PunchRecord[] = [
-  { tipo: 'Entrada', hora: '08:02', local: 'Posto Central - Manaus' },
-  { tipo: 'Saida Almoco', hora: '12:00', local: 'Posto Central - Manaus' },
-  { tipo: 'Retorno Almoco', hora: '13:05', local: 'Posto Central - Manaus' },
-];
+interface BatidaPayload {
+  tipo?: string;
+  latitude?: number;
+  longitude?: number;
+}
 
 export default function BaterPontoPage() {
-  const [punching, setPunching] = useState(false);
+  const queryClient = useQueryClient();
   const [punched, setPunched] = useState(false);
-  const [geoEnabled] = useState(true);
-  const [currentTime] = useState(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+  const [geoEnabled, setGeoEnabled] = useState(true);
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
 
-  function handlePunch() {
-    setPunching(true);
-    setTimeout(() => {
-      setPunching(false);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => { setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude }); setGeoEnabled(true); },
+        () => { setGeoEnabled(false); },
+      );
+    } else {
+      setGeoEnabled(false);
+    }
+  }, []);
+
+  // Fetch today's punches - use employee_id from token (backend resolves from auth)
+  const { data: todayPunches, isLoading: loadingPunches } = useQuery<PunchRecord[]>({
+    queryKey: ['ponto', 'batidas', 'hoje'],
+    queryFn: async () => {
+      try {
+        const res = await customInstance({ url: '/api/v1/people-management/ponto/batidas/me' }) as unknown as PunchRecord[] | { items?: PunchRecord[]; batidas?: PunchRecord[] };
+        if (Array.isArray(res)) return res;
+        return (res as Record<string, unknown>)?.items as PunchRecord[] ?? (res as Record<string, unknown>)?.batidas as PunchRecord[] ?? [];
+      } catch {
+        return [];
+      }
+    },
+    staleTime: 10000,
+    retry: 1,
+  });
+
+  const punchMutation = useMutation({
+    mutationFn: (body: BatidaPayload) => customInstance({
+      url: '/api/v1/people-management/ponto/batida',
+      method: 'POST',
+      data: body,
+    }),
+    onSuccess: () => {
       setPunched(true);
       setTimeout(() => setPunched(false), 3000);
-    }, 2000);
+      queryClient.invalidateQueries({ queryKey: ['ponto', 'batidas'] });
+    },
+  });
+
+  function handlePunch() {
+    const payload: BatidaPayload = {};
+    if (coords) {
+      payload.latitude = coords.lat;
+      payload.longitude = coords.lng;
+    }
+    punchMutation.mutate(payload);
   }
+
+  const punches = todayPunches ?? [];
+  const punching = punchMutation.isPending;
 
   return (
     <div className="p-6 space-y-6 max-w-3xl mx-auto">
@@ -45,6 +103,12 @@ export default function BaterPontoPage() {
         <Fingerprint className="w-6 h-6 text-blue-600" />
         <h1 className="text-2xl font-bold text-gray-900">Bater Ponto</h1>
       </div>
+
+      {punchMutation.isError && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+          Erro ao registrar batida: {(punchMutation.error as Error).message}
+        </div>
+      )}
 
       <Card className="border border-gray-200">
         <CardContent className="p-8 flex flex-col items-center">
@@ -71,7 +135,7 @@ export default function BaterPontoPage() {
               </>
             ) : (
               <>
-                <Camera className="w-10 h-10" />
+                {punching ? <Loader2 className="w-10 h-10 animate-spin" /> : <Camera className="w-10 h-10" />}
                 <span className="text-sm">{punching ? 'Registrando...' : 'Bater Ponto'}</span>
               </>
             )}
@@ -99,27 +163,30 @@ export default function BaterPontoPage() {
       <Card className="border border-gray-200">
         <CardContent className="p-4">
           <h2 className="text-sm font-semibold text-gray-700 mb-3">Batidas de Hoje</h2>
-          <div className="space-y-3">
-            {lastPunches.map((punch, idx) => (
-              <div key={idx} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
-                <div className="flex items-center gap-3">
-                  <Clock className="h-4 w-4 text-gray-400" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">{punch.tipo}</p>
-                    <p className="text-xs text-gray-500">{punch.local}</p>
-                  </div>
-                </div>
-                <span className="text-sm font-mono font-medium text-gray-700">{punch.hora}</span>
-              </div>
-            ))}
-            <div className="flex items-center justify-between py-2 opacity-50">
-              <div className="flex items-center gap-3">
-                <Clock className="h-4 w-4 text-gray-300" />
-                <p className="text-sm text-gray-400">Saida — Aguardando</p>
-              </div>
-              <span className="text-sm text-gray-400">--:--</span>
+          {loadingPunches ? (
+            <div className="flex justify-center py-4">
+              <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
             </div>
-          </div>
+          ) : (
+            <div className="space-y-3">
+              {punches.length === 0 ? (
+                <p className="text-sm text-gray-400 text-center py-4">Nenhuma batida registrada hoje</p>
+              ) : (
+                punches.map((punch, idx) => (
+                  <div key={punch.id ?? idx} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+                    <div className="flex items-center gap-3">
+                      <Clock className="h-4 w-4 text-gray-400" />
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">{punch.tipo || punch.type || `Batida ${idx + 1}`}</p>
+                        <p className="text-xs text-gray-500">{punch.local || punch.location || ''}</p>
+                      </div>
+                    </div>
+                    <span className="text-sm font-mono font-medium text-gray-700">{punch.hora || punch.timestamp || '--:--'}</span>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

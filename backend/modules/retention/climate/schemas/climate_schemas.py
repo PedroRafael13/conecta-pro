@@ -113,16 +113,24 @@ class SurveyResponse(SurveyBase):
     id: str
     perguntas: list[dict[str, Any]]
     ativo: bool
-    data_inicio: datetime
-    data_fim: datetime | None
-    empresa_id: str | None
-    total_respostas: int
-    score_medio: float
-    total_perguntas: int
-    is_active: bool
-    created_at: datetime
-    updated_at: datetime
-    created_by: str | None
+    data_inicio: datetime | None = None
+    data_fim: datetime | None = None
+    empresa_id: str | None = None
+    total_respostas: int = 0
+    score_medio: float = 0.0
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+    created_by: str | None = None
+
+    @property
+    def total_perguntas(self) -> int:
+        """Calcula total de perguntas a partir do JSON."""
+        return len(self.perguntas) if self.perguntas else 0
+
+    @property
+    def is_active(self) -> bool:
+        """Alias para ativo."""
+        return self.ativo
 
 
 class SurveyListResponse(BaseModel):

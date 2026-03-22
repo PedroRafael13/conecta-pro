@@ -8,6 +8,8 @@ import logging
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel, Field
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.dependencies import CurrentActiveUser
@@ -93,3 +95,75 @@ async def update_employee(
         raise HTTPException(status_code=404, detail="Funcionário não encontrado")
     await db.commit()
     return employee
+
+
+# =============================================================================
+# CONSIGNADOS E PENSÕES (Deduções fixas)
+# =============================================================================
+
+
+class DeductionCreate(BaseModel):
+    """Schema para criar dedução do funcionário."""
+
+    tipo: str = Field(..., pattern="^(consignado|pensao_alimenticia|emprestimo|outros)$")
+    descricao: str = Field(..., min_length=3, max_length=200)
+    valor: float | None = Field(None, ge=0)
+    percentual: float | None = Field(None, ge=0, le=100)
+    base_calculo: str = Field("fixo", pattern="^(bruto|liquido|fixo)$")
+    total_parcelas: int | None = Field(None, ge=1)
+    data_inicio: str = Field(...)
+    data_fim: str | None = None
+
+
+@router.get("/{employee_id}/deductions")
+async def list_deductions(
+    employee_id: str,
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+    ativo: bool = True,
+) -> Any:
+    """Lista deduções (consignados, pensões) de um funcionário."""
+    result = await db.execute(
+        text(
+            "SELECT id, tipo, descricao, valor, percentual, base_calculo, "
+            "parcela_atual, total_parcelas, data_inicio::text, data_fim::text, ativo "
+            "FROM employee_deductions WHERE employee_id = :eid "
+            "AND ativo = :ativo ORDER BY tipo, descricao"
+        ),
+        {"eid": employee_id, "ativo": ativo},
+    )
+    rows = result.mappings().all()
+    return {"employee_id": employee_id, "total": len(rows), "items": [dict(r) for r in rows]}
+
+
+@router.post("/{employee_id}/deductions", status_code=201)
+async def create_deduction(
+    employee_id: str,
+    data: DeductionCreate,
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """Cria nova dedução para um funcionário."""
+    result = await db.execute(
+        text(
+            "INSERT INTO employee_deductions "
+            "(employee_id, tipo, descricao, valor, percentual, base_calculo, "
+            "total_parcelas, data_inicio, data_fim) "
+            "VALUES (:eid, :tipo, :desc, :val, :pct, :base, :parcelas, :inicio, :fim) "
+            "RETURNING id"
+        ),
+        {
+            "eid": employee_id,
+            "tipo": data.tipo,
+            "desc": data.descricao,
+            "val": data.valor,
+            "pct": data.percentual,
+            "base": data.base_calculo,
+            "parcelas": data.total_parcelas,
+            "inicio": data.data_inicio,
+            "fim": data.data_fim,
+        },
+    )
+    new_id = result.scalar_one()
+    await db.commit()
+    return {"id": str(new_id), "employee_id": employee_id, "tipo": data.tipo, "descricao": data.descricao}

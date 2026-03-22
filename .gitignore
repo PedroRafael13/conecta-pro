@@ -92,3 +92,4 @@ frontend/public/models/face_recognition_model-shard*
 monitoring/textfile_collector/*.prom
 agents/system_context.json
 agents/dashboard_data.json
+.next/

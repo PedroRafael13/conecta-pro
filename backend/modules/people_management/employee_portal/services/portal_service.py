@@ -117,11 +117,21 @@ class PortalService:
             True se credenciais validas, False caso contrario.
         """
         if password:
-            portal_password = getattr(employee, "portal_password", None)
-            if portal_password and portal_password != password:
-                logger.warning("Senha incorreta para employee_id=%s", employee.id)
-                return False
-            return True
+            portal_hash = getattr(employee, "portal_password_hash", None)
+            if portal_hash:
+                try:
+                    from passlib.hash import bcrypt
+
+                    if not bcrypt.verify(password, portal_hash):
+                        logger.warning("Senha incorreta para employee_id=%s", employee.id)
+                        return False
+                    return True
+                except Exception:
+                    logger.warning("Erro ao verificar hash para employee_id=%s", employee.id)
+                    return False
+            # Sem hash definido — primeiro acesso necessario
+            logger.info("Funcionario %s sem senha definida (primeiro acesso)", employee.id)
+            return False
 
         if data_nascimento:
             dt_nasc = getattr(employee, "data_nascimento", None)

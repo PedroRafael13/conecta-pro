@@ -86,6 +86,130 @@ async def portal_login(
     )
 
 
+@router.post("/auth/primeiro-acesso")
+async def portal_primeiro_acesso(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """Primeiro acesso ao portal: define senha usando CPF + data de nascimento."""
+    from passlib.hash import bcrypt
+    from sqlalchemy import select, text
+
+    body = await request.json()
+    cpf = (body.get("cpf") or "").replace(".", "").replace("-", "").strip()
+    data_nasc = body.get("data_nascimento", "")
+    nova_senha = body.get("nova_senha", "")
+    confirmar = body.get("confirmar_senha", "")
+
+    if not cpf or not nova_senha:
+        raise HTTPException(status_code=400, detail="CPF e nova_senha sao obrigatorios.")
+    if len(nova_senha) < 6:
+        raise HTTPException(status_code=400, detail="Senha deve ter no minimo 6 caracteres.")
+    if nova_senha != confirmar:
+        raise HTTPException(status_code=400, detail="Senhas nao conferem.")
+
+    # Buscar funcionario
+    from modules.operacional.models.employee import Employee
+
+    result = await db.execute(select(Employee).where(Employee.cpf == cpf, Employee.status == "ativo"))
+    employee = result.scalar_one_or_none()
+
+    if not employee:
+        raise HTTPException(status_code=404, detail="Funcionario nao encontrado com este CPF.")
+
+    # Verificar data de nascimento (validacao de identidade)
+    dt_nasc_db = str(getattr(employee, "data_nascimento", "") or "")
+    if data_nasc and dt_nasc_db and dt_nasc_db != data_nasc:
+        raise HTTPException(status_code=401, detail="Data de nascimento nao confere.")
+
+    # Verificar se ja tem senha definida
+    existing_hash = await db.execute(
+        text("SELECT portal_password_hash FROM employees WHERE id = :eid"),
+        {"eid": str(employee.id)},
+    )
+    current_hash = existing_hash.scalar()
+
+    if current_hash:
+        raise HTTPException(
+            status_code=409,
+            detail="Senha ja definida. Use o endpoint /auth/reset-senha para redefinir.",
+        )
+
+    # Definir senha
+    hashed = bcrypt.hash(nova_senha)
+    await db.execute(
+        text(
+            "UPDATE employees SET portal_password_hash = :hash, "
+            "portal_password_set_at = now(), portal_first_access = false "
+            "WHERE id = :eid"
+        ),
+        {"hash": hashed, "eid": str(employee.id)},
+    )
+    await db.commit()
+
+    # Gerar token
+    access_token = create_portal_access_token(str(employee.id), employee.nome, getattr(employee, "cargo", ""), cpf, "")
+    refresh_token = create_portal_refresh_token(str(employee.id))
+
+    logger.info("Primeiro acesso do portal: employee_id=%s cpf=%s***", employee.id, cpf[:3])
+
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer",
+        "expires_in": 8 * 3600,
+        "employee_name": employee.nome,
+        "employee_id": str(employee.id),
+        "message": "Senha definida com sucesso! Bem-vindo ao portal.",
+    }
+
+
+@router.post("/auth/reset-senha")
+async def portal_reset_senha(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """Reset de senha do portal: redefine senha usando CPF + data de nascimento."""
+    from passlib.hash import bcrypt
+    from sqlalchemy import select, text
+
+    body = await request.json()
+    cpf = (body.get("cpf") or "").replace(".", "").replace("-", "").strip()
+    data_nasc = body.get("data_nascimento", "")
+    nova_senha = body.get("nova_senha", "")
+    confirmar = body.get("confirmar_senha", "")
+
+    if not cpf or not nova_senha:
+        raise HTTPException(status_code=400, detail="CPF e nova_senha sao obrigatorios.")
+    if len(nova_senha) < 6:
+        raise HTTPException(status_code=400, detail="Senha deve ter no minimo 6 caracteres.")
+    if nova_senha != confirmar:
+        raise HTTPException(status_code=400, detail="Senhas nao conferem.")
+
+    from modules.operacional.models.employee import Employee
+
+    result = await db.execute(select(Employee).where(Employee.cpf == cpf, Employee.status == "ativo"))
+    employee = result.scalar_one_or_none()
+
+    if not employee:
+        raise HTTPException(status_code=404, detail="Funcionario nao encontrado com este CPF.")
+
+    dt_nasc_db = str(getattr(employee, "data_nascimento", "") or "")
+    if data_nasc and dt_nasc_db and dt_nasc_db != data_nasc:
+        raise HTTPException(status_code=401, detail="Data de nascimento nao confere.")
+
+    hashed = bcrypt.hash(nova_senha)
+    await db.execute(
+        text("UPDATE employees SET portal_password_hash = :hash, portal_password_set_at = now() WHERE id = :eid"),
+        {"hash": hashed, "eid": str(employee.id)},
+    )
+    await db.commit()
+
+    logger.info("Reset de senha do portal: employee_id=%s", employee.id)
+
+    return {"message": "Senha redefinida com sucesso. Faca login com a nova senha."}
+
+
 @router.post("/auth/refresh")
 async def portal_refresh(request: Request) -> Any:
     """Renova token de acesso usando refresh token."""

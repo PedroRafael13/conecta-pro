@@ -2,13 +2,15 @@
 Controller de Folha de Pagamento — Departamento Pessoal.
 
 Re-exporta endpoints de folha do módulo HR e adiciona endpoints
-para cálculo individual e fechamento mensal.
+para cálculo individual, fechamento mensal e contracheque PDF.
 """
 
 import logging
+from io import BytesIO
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.dependencies import CurrentActiveUser
@@ -43,6 +45,175 @@ async def calculate_employee_payroll(
         return await service.calculate_employee_payroll(employee_id, month, year)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/employee/{employee_id}/payslip-pdf")
+async def generate_payslip_pdf(
+    employee_id: str,
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+    month: int = Query(..., ge=1, le=12, description="Mes de referencia"),
+    year: int = Query(..., ge=2020, le=2030, description="Ano de referencia"),
+) -> StreamingResponse:
+    """Gera contracheque em PDF para um funcionario e competencia."""
+    service = PayrollService(db)
+    try:
+        calc = await service.calculate_employee_payroll(employee_id, month, year)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    pdf_bytes = _build_payslip_pdf(calc, month, year)
+
+    filename = f"contracheque_{calc['employee_name'].replace(' ', '_')}_{month:02d}_{year}.pdf"
+    return StreamingResponse(
+        BytesIO(pdf_bytes),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'inline; filename="{filename}"'},
+    )
+
+
+def _build_payslip_pdf(calc: dict, month: int, year: int) -> bytes:
+    """Gera bytes do PDF do contracheque usando ReportLab."""
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+    from reportlab.lib.units import cm, mm
+    from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=1.5 * cm, bottomMargin=1 * cm)
+    styles = getSampleStyleSheet()
+
+    title_style = ParagraphStyle("Title2", parent=styles["Heading1"], fontSize=14, alignment=1)
+    subtitle_style = ParagraphStyle("Sub", parent=styles["Normal"], fontSize=8, alignment=1, textColor=colors.gray)
+    normal = styles["Normal"]
+    bold_style = ParagraphStyle("Bold", parent=normal, fontName="Helvetica-Bold", fontSize=9)
+    # small style reservado para uso futuro
+
+    elements = []
+
+    # Cabecalho empresa
+    elements.append(Paragraph("CONECTA MAIS — Seguranca e Tecnologia", title_style))
+    elements.append(Paragraph("CNPJ: 35.710.481/0001-03 — Manaus/AM", subtitle_style))
+    elements.append(Spacer(1, 6 * mm))
+    elements.append(Paragraph(f"<b>CONTRACHEQUE — Competencia {month:02d}/{year}</b>", bold_style))
+    elements.append(Spacer(1, 4 * mm))
+
+    # Dados do funcionario
+    emp_data = [
+        ["Funcionario:", calc.get("employee_name", ""), "Cargo:", calc.get("cargo", "")],
+        ["Matricula:", calc.get("matricula", "-"), "CPF:", calc.get("cpf", "-")],
+        ["Admissao:", calc.get("data_admissao", "-"), "Referencia:", calc.get("reference", f"{month:02d}/{year}")],
+    ]
+    emp_table = Table(emp_data, colWidths=[2.5 * cm, 7 * cm, 2.5 * cm, 6 * cm])
+    emp_table.setStyle(
+        TableStyle(
+            [
+                ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
+                ("FONTNAME", (2, 0), (2, -1), "Helvetica-Bold"),
+                ("FONTSIZE", (0, 0), (-1, -1), 8),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+                ("TOPPADDING", (0, 0), (-1, -1), 2),
+            ]
+        )
+    )
+    elements.append(emp_table)
+    elements.append(Spacer(1, 4 * mm))
+
+    # Proventos
+    proventos = calc.get("proventos", [])
+    prov_rows = [["Cod", "Descricao", "Ref", "Valor (R$)"]]
+    for p in proventos:
+        prov_rows.append([p.get("codigo", ""), p.get("descricao", ""), p.get("ref", ""), f"{p.get('valor', 0):,.2f}"])
+    prov_rows.append(["", "", "TOTAL PROVENTOS", f"{calc.get('total_proventos', 0):,.2f}"])
+
+    prov_table = Table(prov_rows, colWidths=[1.5 * cm, 8 * cm, 3 * cm, 3.5 * cm])
+    prov_table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#2563EB")),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                ("FONTSIZE", (0, 0), (-1, -1), 8),
+                ("ALIGN", (3, 0), (3, -1), "RIGHT"),
+                ("GRID", (0, 0), (-1, -1), 0.5, colors.lightgrey),
+                ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#EFF6FF")),
+                ("FONTNAME", (2, -1), (3, -1), "Helvetica-Bold"),
+                ("TOPPADDING", (0, 0), (-1, -1), 2),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+            ]
+        )
+    )
+    elements.append(Paragraph("<b>PROVENTOS</b>", bold_style))
+    elements.append(Spacer(1, 2 * mm))
+    elements.append(prov_table)
+    elements.append(Spacer(1, 4 * mm))
+
+    # Descontos
+    descontos = calc.get("descontos", [])
+    desc_rows = [["Cod", "Descricao", "Ref", "Valor (R$)"]]
+    for d in descontos:
+        desc_rows.append([d.get("codigo", ""), d.get("descricao", ""), d.get("ref", ""), f"{d.get('valor', 0):,.2f}"])
+    desc_rows.append(["", "", "TOTAL DESCONTOS", f"{calc.get('total_descontos', 0):,.2f}"])
+
+    desc_table = Table(desc_rows, colWidths=[1.5 * cm, 8 * cm, 3 * cm, 3.5 * cm])
+    desc_table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#DC2626")),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                ("FONTSIZE", (0, 0), (-1, -1), 8),
+                ("ALIGN", (3, 0), (3, -1), "RIGHT"),
+                ("GRID", (0, 0), (-1, -1), 0.5, colors.lightgrey),
+                ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#FEF2F2")),
+                ("FONTNAME", (2, -1), (3, -1), "Helvetica-Bold"),
+                ("TOPPADDING", (0, 0), (-1, -1), 2),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+            ]
+        )
+    )
+    elements.append(Paragraph("<b>DESCONTOS</b>", bold_style))
+    elements.append(Spacer(1, 2 * mm))
+    elements.append(desc_table)
+    elements.append(Spacer(1, 6 * mm))
+
+    # Resumo
+    resumo_data = [
+        ["SALARIO LIQUIDO", f"R$ {calc.get('salario_liquido', 0):,.2f}"],
+        ["Base INSS", f"R$ {calc.get('base_inss', 0):,.2f}"],
+        ["Base IRRF", f"R$ {calc.get('base_irrf', 0):,.2f}"],
+        ["FGTS 8%", f"R$ {calc.get('fgts_8_pct', 0):,.2f}"],
+    ]
+    resumo_table = Table(resumo_data, colWidths=[10 * cm, 6 * cm])
+    resumo_table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#16A34A")),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                ("FONTSIZE", (0, 0), (-1, 0), 11),
+                ("FONTSIZE", (0, 1), (-1, -1), 8),
+                ("ALIGN", (1, 0), (1, -1), "RIGHT"),
+                ("GRID", (0, 0), (-1, -1), 0.5, colors.lightgrey),
+                ("TOPPADDING", (0, 0), (-1, -1), 3),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+            ]
+        )
+    )
+    elements.append(resumo_table)
+    elements.append(Spacer(1, 10 * mm))
+
+    # Rodape
+    elements.append(
+        Paragraph(
+            "Documento gerado pelo Conecta PRO — Sistema ERP para Gestao de Vigilancia e Seguranca Patrimonial",
+            ParagraphStyle("Footer", parent=normal, fontSize=7, textColor=colors.gray, alignment=1),
+        )
+    )
+
+    doc.build(elements)
+    return buffer.getvalue()
 
 
 # =============================================================================

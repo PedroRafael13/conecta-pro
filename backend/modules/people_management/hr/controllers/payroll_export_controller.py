@@ -144,8 +144,8 @@ async def gerar_contracheques_batch(
         try:
             calc = await payroll_svc.calculate_employee_payroll(str(emp.id), month, year)
             folha_data.append(calc)
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.warning("Erro ao calcular folha do funcionário %s: %s", emp.id, exc)
 
     pdfs = PayrollExportService.gerar_contracheques_batch(folha_data)
 

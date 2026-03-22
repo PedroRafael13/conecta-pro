@@ -26,6 +26,7 @@ from typing import Any
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.dependencies import CurrentActiveUser
@@ -648,3 +649,117 @@ async def registrar_reuniao_cipa(
     )
     await db.commit()
     return {"reuniao_id": reuniao_id, "status": "agendada"}
+
+
+# =============================================================================
+# LTCAT — Laudo Técnico das Condições Ambientais de Trabalho
+# =============================================================================
+
+
+@router.get("/ltcat/status")
+async def ltcat_status(
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """Retorna status do LTCAT vigente."""
+    result = await db.execute(text("SELECT count(*) FROM posts WHERE is_active = true"))
+    total_postos = result.scalar() or 0
+
+    return {
+        "documento": "LTCAT - Laudo Técnico das Condições Ambientais de Trabalho",
+        "base_legal": "Lei 8.213/91 Art. 58 + IN INSS 128/2022",
+        "empresa": "Jordan Santos de Jesus LTDA",
+        "cnpj": "35.710.481/0001-03",
+        "vigencia": "2026-01-01 a 2026-12-31",
+        "responsavel_tecnico": "A definir (Engenheiro de Segurança)",
+        "postos_avaliados": total_postos,
+        "status": "pendente_elaboracao",
+        "fatores_risco": [
+            {"agente": "Ruído", "tipo": "físico", "nr_referencia": "NR-15 Anexo 1"},
+            {"agente": "Calor", "tipo": "físico", "nr_referencia": "NR-15 Anexo 3"},
+            {"agente": "Jornada prolongada", "tipo": "ergonômico", "nr_referencia": "NR-17"},
+            {"agente": "Risco de agressão", "tipo": "acidente", "nr_referencia": "NR-1"},
+        ],
+        "proxima_acao": "Contratar engenheiro de segurança para elaboração",
+    }
+
+
+@router.get("/ppp/{employee_id}")
+async def gerar_ppp(
+    employee_id: str,
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """Gera PPP (Perfil Profissiográfico Previdenciário) de um funcionário.
+
+    Documento obrigatório conforme Lei 8.213/91 Art. 58 e IN INSS 128/2022.
+    Alimenta o evento S-2240 do eSocial.
+    """
+    # Buscar dados do funcionário
+    result = await db.execute(
+        text("SELECT id, nome, cpf, cargo, data_admissao, data_demissao FROM employees WHERE id = :eid"),
+        {"eid": employee_id},
+    )
+    emp = result.mappings().first()
+    if not emp:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=404, detail="Funcionário não encontrado")
+
+    # Buscar ASOs
+    asos_result = await db.execute(
+        text(
+            "SELECT tipo, data_agendamento, status FROM gp_asos WHERE employee_id = :eid ORDER BY data_agendamento DESC LIMIT 5"
+        ),
+        {"eid": employee_id},
+    )
+    asos = [dict(r) for r in asos_result.mappings().all()]
+
+    return {
+        "documento": "PPP - Perfil Profissiográfico Previdenciário",
+        "base_legal": "Lei 8.213/91 Art. 58 § 4º + IN INSS 128/2022",
+        "esocial_evento": "S-2240",
+        "empresa": {
+            "razao_social": "Jordan Santos de Jesus LTDA",
+            "cnpj": "35.710.481/0001-03",
+            "cnae": "8011-1/01 - Atividades de vigilância e segurança privada",
+        },
+        "funcionario": {
+            "nome": emp["nome"],
+            "cpf": emp["cpf"],
+            "cargo": emp["cargo"],
+            "data_admissao": str(emp["data_admissao"]) if emp["data_admissao"] else None,
+            "data_demissao": str(emp["data_demissao"]) if emp["data_demissao"] else None,
+        },
+        "atividades": [
+            {
+                "periodo": f"{emp['data_admissao'] or 'admissão'} até presente",
+                "cargo": emp["cargo"],
+                "setor": "Operacional",
+                "descricao": "Atividades de vigilância, controle de acesso e ronda patrimonial",
+            }
+        ],
+        "fatores_risco": [
+            {
+                "agente": "Jornada prolongada",
+                "tipo": "ergonômico",
+                "intensidade": "Habitual",
+                "tecnica_utilizada": "Avaliação qualitativa NR-17",
+                "epi_epc": "N/A",
+            },
+            {
+                "agente": "Risco de agressão",
+                "tipo": "acidente",
+                "intensidade": "Eventual",
+                "tecnica_utilizada": "Análise preliminar de risco",
+                "epi_epc": "Colete balístico (quando aplicável)",
+            },
+        ],
+        "exames_medicos": asos,
+        "responsavel_tecnico": {
+            "nome": "A definir",
+            "registro": "CREA/CRM",
+            "especialidade": "Engenharia de Segurança / Medicina do Trabalho",
+        },
+        "observacoes": "PPP deve ser mantido atualizado e entregue ao funcionário na rescisão (Art. 58 § 4º Lei 8.213/91).",
+    }

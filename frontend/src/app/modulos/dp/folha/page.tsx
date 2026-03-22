@@ -70,12 +70,14 @@ export default function FolhaPage() {
   }, 0);
   const totalDescontos = payrollData.reduce((a, p) => a + (p.total_descontos || 0), 0);
   const totalLiquido = payrollData.reduce((a, p) => a + (p.salario_liquido || 0), 0);
+  const totalFgts = payrollData.reduce((a, p) => a + (p.fgts_8_pct || 0), 0);
 
   const summaryCards = [
     { title: 'Total Bruto', value: fmt(totalBruto), color: 'text-blue-600', bgColor: 'bg-blue-50' },
     { title: 'Total Descontos', value: fmt(totalDescontos), color: 'text-red-600', bgColor: 'bg-red-50' },
     { title: 'Total Líquido', value: fmt(totalLiquido), color: 'text-green-600', bgColor: 'bg-green-50' },
     { title: 'Total INSS', value: fmt(totalInss), color: 'text-purple-600', bgColor: 'bg-purple-50' },
+    { title: 'Total FGTS 8%', value: fmt(totalFgts), color: 'text-cyan-600', bgColor: 'bg-cyan-50' },
     { title: 'Total IRRF', value: fmt(totalIrrf), color: 'text-orange-600', bgColor: 'bg-orange-50' },
   ];
 
@@ -134,10 +136,9 @@ export default function FolhaPage() {
                     <TableRow>
                       <TableHead>Colaborador</TableHead>
                       <TableHead>Salário Base</TableHead>
-                      <TableHead>Horas Extras</TableHead>
-                      <TableHead>Adic. Noturno</TableHead>
                       <TableHead>INSS</TableHead>
-                      <TableHead>IRRF</TableHead>
+                      <TableHead>FGTS 8%</TableHead>
+                      <TableHead>Descontos</TableHead>
                       <TableHead>Liquido</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -149,10 +150,9 @@ export default function FolhaPage() {
                         <TableRow key={i}>
                           <TableCell className="font-medium">{item.nome || item.employee_name}</TableCell>
                           <TableCell>{fmt(item.salario_base)}</TableCell>
-                          <TableCell>{fmt(item.horas_extras || 0)}</TableCell>
-                          <TableCell>{fmt(item.adicional_noturno || 0)}</TableCell>
                           <TableCell className="text-red-500">{fmt(inssVal)}</TableCell>
-                          <TableCell className="text-red-500">{fmt(irrfVal)}</TableCell>
+                          <TableCell className="text-cyan-600">{fmt(item.fgts_8_pct || 0)}</TableCell>
+                          <TableCell className="text-red-500">{fmt(item.total_descontos || 0)}</TableCell>
                           <TableCell className="font-bold">{fmt(item.salario_liquido)}</TableCell>
                         </TableRow>
                       );

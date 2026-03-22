@@ -136,7 +136,13 @@ class PayrollService:
 
         # 2. IRRF
         base_irrf = total_proventos - inss
-        dependentes = 0  # TODO: buscar dependentes do employee
+        # Buscar dependentes do employee (campo JSONB com lista de dependentes)
+        dep_result = await self.db.execute(
+            text("SELECT dependentes FROM employees WHERE id = :eid"),
+            {"eid": employee_id},
+        )
+        dep_data = dep_result.scalar()
+        dependentes = len(dep_data) if isinstance(dep_data, list) else 0
         irrf = calcular_irrf(base_irrf, dependentes=dependentes)
         if irrf > 0:
             descontos.append({"codigo": "202", "descricao": "IRRF", "ref": "", "valor": irrf})
@@ -195,6 +201,11 @@ class PayrollService:
             "employee_id": str(employee_id),
             "employee_name": employee.nome,
             "cargo": getattr(employee, "cargo", ""),
+            "matricula": getattr(employee, "matricula", ""),
+            "cpf": getattr(employee, "cpf", ""),
+            "data_admissao": str(getattr(employee, "data_admissao", ""))
+            if getattr(employee, "data_admissao", None)
+            else "",
             "reference": f"{reference_month:02d}/{reference_year}",
             "salario_base": _f(salario_base),
             "valor_hora": _f(valor_hora),

@@ -53,6 +53,7 @@ class KitBuildRequest(BaseModel):
 
 
 @router.get("", response_model=KitListResponse)
+@router.get("/", response_model=KitListResponse, include_in_schema=False)
 async def list_kits(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
