@@ -47,7 +47,7 @@ class ClockPunchModel(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     punch_id = Column(String(36), unique=True, nullable=False, index=True)
-    employee_id = Column(Integer, nullable=False, index=True)
+    employee_id = Column(String(36), nullable=False, index=True)
 
     # Tipo e timestamp (varchar no banco, nao enum PG)
     punch_type = Column(String(20), nullable=False)
@@ -81,7 +81,7 @@ class ClockPunchModel(Base):
     sync_attempts = Column(Integer, nullable=False, default=0)
 
     # Posto
-    posto_id = Column(Integer, nullable=True)
+    posto_id = Column(String(36), nullable=True)
     posto_nome = Column(String(255), nullable=True)
 
     # Justificativa (se atraso/falta)

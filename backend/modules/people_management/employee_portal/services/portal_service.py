@@ -91,16 +91,8 @@ class PortalService:
             if not self._validate_credentials(employee, password, data_nascimento, portal_hash):
                 return None
 
-            try:
-                await self.log_access(
-                    employee_id=employee.id,
-                    action=PortalAccessAction.LOGIN,
-                    ip_address=ip_address,
-                    user_agent=user_agent,
-                )
-            except Exception as log_err:
-                logger.warning("Erro ao registrar acesso: %s", log_err)
-                await self.db.rollback()
+            # log_access desabilitado temporariamente (enum mismatch no DB)
+            logger.info("Portal login OK: employee_id=%s", employee.id)
 
             return {
                 "employee_id": str(employee.id),
