@@ -8,7 +8,6 @@ from sqlalchemy import (
     Boolean,
     Column,
     DateTime,
-    Enum,
     Float,
     Index,
     Integer,
@@ -50,20 +49,13 @@ class ClockPunchModel(Base):
     punch_id = Column(String(36), unique=True, nullable=False, index=True)
     employee_id = Column(Integer, nullable=False, index=True)
 
-    # Tipo e timestamp
-    punch_type = Column(
-        Enum(ClockPunchType, name="clock_punch_type_enum"),
-        nullable=False,
-    )
+    # Tipo e timestamp (varchar no banco, nao enum PG)
+    punch_type = Column(String(20), nullable=False)
     punch_timestamp = Column(DateTime, nullable=False, index=True)
     server_timestamp = Column(DateTime, nullable=False, default=datetime.utcnow)
 
-    # Status
-    status = Column(
-        Enum(ClockPunchStatus, name="clock_punch_status_enum"),
-        nullable=False,
-        default=ClockPunchStatus.NORMAL,
-    )
+    # Status (varchar no banco)
+    status = Column(String(20), nullable=False, default="normal")
 
     # Reconhecimento facial
     facial_match = Column(Boolean, nullable=True)
@@ -110,9 +102,9 @@ class ClockPunchModel(Base):
             "id": self.id,
             "punch_id": self.punch_id,
             "employee_id": self.employee_id,
-            "punch_type": self.punch_type.value if self.punch_type else None,
+            "punch_type": self.punch_type,
             "punch_timestamp": self.punch_timestamp.isoformat() if self.punch_timestamp else None,
-            "status": self.status.value if self.status else None,
+            "status": self.status,
             "facial_match": self.facial_match,
             "facial_confidence": self.facial_confidence,
             "latitude": self.latitude,

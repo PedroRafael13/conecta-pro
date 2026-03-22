@@ -5,7 +5,7 @@ para INSERT/SELECT/UPDATE na tabela gp_clock_punches.
 """
 
 import logging
-from datetime import UTC, datetime
+from datetime import datetime
 from typing import Any
 from uuid import uuid4
 
@@ -36,7 +36,7 @@ class PunchService:
             Dicionario com os dados da batida registrada.
         """
         punch_id = str(uuid4())
-        now = datetime.now(UTC)
+        now = datetime.utcnow()
         timestamp = data.timestamp or now.isoformat()
 
         # Determinar status
@@ -94,7 +94,7 @@ class PunchService:
 
         for p in punches:
             # Verificar duplicata no banco
-            ts = p.timestamp or datetime.now(UTC).isoformat()
+            ts = p.timestamp or datetime.utcnow().isoformat()
             existing = await self.db.execute(
                 select(ClockPunchModel.id)
                 .where(
@@ -137,7 +137,7 @@ class PunchService:
             select(ClockPunchModel)
             .where(
                 ClockPunchModel.employee_id == employee_id,
-                func.date(ClockPunchModel.punch_timestamp) == dia,
+                func.date(ClockPunchModel.punch_timestamp) == func.date(dia),
             )
             .order_by(ClockPunchModel.punch_timestamp)
         )
@@ -228,7 +228,7 @@ class PunchService:
 
         justification.status = JustificationStatus.APROVADA if action == "aprovar" else JustificationStatus.REJEITADA
         justification.reviewed_by = reviewer_id
-        justification.reviewed_at = datetime.now(UTC)
+        justification.reviewed_at = datetime.utcnow()
         justification.review_notes = notes
 
         await self.db.flush()
@@ -293,7 +293,7 @@ class PunchService:
             total_dias_trabalhados=dias_trabalhados,
             fechado=True,
             fechado_por=fechado_por,
-            fechado_em=datetime.now(UTC),
+            fechado_em=datetime.utcnow(),
         )
         self.db.add(closing)
         await self.db.flush()
