@@ -38,4 +38,12 @@ try:
 except ImportError as e:
     logger.warning("Portal: falha ao importar ticket_controller: %s", e)
 
+try:
+    from .controllers.access_management_controller import router as access_mgmt_router
+
+    router.include_router(access_mgmt_router)
+    logger.info("Portal: access_management_controller registrado")
+except ImportError as e:
+    logger.warning("Portal: falha ao importar access_management_controller: %s", e)
+
 __all__ = ["router"]
