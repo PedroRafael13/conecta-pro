@@ -43,7 +43,7 @@ export default function DocumentosPage() {
       try {
         // Fetch from admission checklist as document source
         const admRes = await fetch(`${API_BASE}/admissions/checklist`, { headers: getAuthHeaders() });
-        const empRes = await fetch(`${API_BASE}/employees?limit=100`, { headers: getAuthHeaders() });
+        const empRes = await fetch(`${API_BASE}/employees/?limit=100`, { headers: getAuthHeaders() });
         const docs: any[] = [];
 
         if (empRes.ok) {

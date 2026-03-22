@@ -30,7 +30,7 @@ export default function FolhaPage() {
     async function load() {
       setLoading(true);
       try {
-        const res = await fetch(`${API_BASE}/employees?limit=100`, { headers: getAuthHeaders() });
+        const res = await fetch(`${API_BASE}/employees/?page_size=100`, { headers: getAuthHeaders() });
         if (res.ok) {
           const data = await res.json();
           const emps = data.items || data || [];
@@ -38,7 +38,7 @@ export default function FolhaPage() {
 
           const [year, month] = periodo.split('-');
           const payrolls = await Promise.all(
-            emps.slice(0, 20).map(async (emp: any) => {
+            emps.map(async (emp: any) => {
               try {
                 const pr = await fetch(
                   `${API_BASE}/payroll/employee/${emp.id}/calculate?month=${parseInt(month ?? '0')}&year=${parseInt(year ?? '0')}`,

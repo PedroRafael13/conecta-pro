@@ -59,7 +59,7 @@ export default function RescisaoPage() {
           const data = await res.json();
           setRescisões(data.items || data || []);
         }
-        const empRes = await fetch(`${API_BASE}/employees?limit=100`, { headers: getAuthHeaders() });
+        const empRes = await fetch(`${API_BASE}/employees/?limit=100`, { headers: getAuthHeaders() });
         if (empRes.ok) { const d = await empRes.json(); setEmployees(d.items || d || []); }
       } catch { setRescisões([]); } finally { setLoading(false); }
     }
