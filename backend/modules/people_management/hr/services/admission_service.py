@@ -130,8 +130,12 @@ class AdmissionService:
         result = await self.db.execute(query)
         items = result.scalars().all()
 
+        from modules.people_management.hr.schemas.admission import AdmissionProcessResponse
+
+        serialized = [AdmissionProcessResponse.model_validate(item).model_dump(mode="json") for item in items]
+
         return {
-            "items": list(items),
+            "items": serialized,
             "total": total,
             "page": page,
             "page_size": page_size,

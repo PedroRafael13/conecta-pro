@@ -9,7 +9,7 @@ const API_HR = '/api/v1/people-management/hr';
 const API_RH = '/api/v1/people-management/human-resources';
 
 function getAuthHeaders() {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') || localStorage.getItem('token') : null;
   return {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),

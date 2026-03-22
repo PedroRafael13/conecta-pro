@@ -120,7 +120,7 @@ function ModalRegistro({ tipoInicial, mes, onClose, onSuccess }: ModalRegistroPr
     setErro('');
     setLoading(true);
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') || localStorage.getItem('token') : null;
       await bankingApi.post(
         '/api/v1/financial/ai/costing/registrar',
         {
@@ -247,7 +247,7 @@ export default function CustosPage() {
   const [showModal, setShowModal] = useState(false);
 
   const getAuthHeaders = () => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') || localStorage.getItem('token') : null;
     return token ? { Authorization: `Bearer ${token}` } : {};
   };
 

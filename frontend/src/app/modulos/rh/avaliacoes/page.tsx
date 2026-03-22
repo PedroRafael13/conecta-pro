@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 const API_BASE = '/api/v1/people-management/human-resources';
 
 function getAuthHeaders() {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') || localStorage.getItem('token') : null;
   return {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),

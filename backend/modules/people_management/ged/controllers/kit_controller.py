@@ -183,6 +183,28 @@ async def build_kit(
         raise HTTPException(status_code=400, detail=str(e))
 
 
+@router.post("/auto-assemble")
+async def auto_assemble_kits(
+    reference_month: date | None = Query(None, description="Mes de referencia (default: mes atual)"),
+    current_user: CurrentActiveUser = None,
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """Monta kits automaticamente para todos os clientes ativos.
+
+    Coleta documentos de DP, Fiscal e Operacoes automaticamente
+    para cada cliente que tem funcionarios alocados.
+    """
+    ref = reference_month or date.today().replace(day=1)
+    builder = KitBuilderService(db)
+    try:
+        result = await builder.auto_build_all_kits(ref)
+        await db.commit()
+        return result
+    except Exception as e:
+        logger.error(f"Erro no auto-assemble: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.post("/{kit_id}/send", response_model=KitResponse)
 async def send_kit(
     kit_id: str,
