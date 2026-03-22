@@ -1,11 +1,12 @@
-"""Controller de Ponto Eletronico - Rotas FastAPI."""
+"""Controller de Ponto Eletronico — rotas FastAPI com persistencia no banco."""
 
 from typing import Any
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Query
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 
-from core.database.session import get_sync_db_dependency
+from core.database.session import get_db, get_sync_db_dependency
 
 from ..schemas.dashboard_schemas import (
     AjusteRequest,
@@ -31,22 +32,24 @@ from ..services.punch_service import PunchService
 
 router = APIRouter(prefix="/ponto", tags=["Ponto Eletronico"])
 
-_service = PunchService()
 
-
-# ==================== ENDPOINTS EXISTENTES ====================
+# ==================== BATIDA E ESPELHO (async, banco real) ====================
 
 
 @router.post("/batida", response_model=PunchResponse, status_code=201)
-async def registrar_batida(data: PunchCreate) -> PunchResponse:
+async def registrar_batida(
+    data: PunchCreate,
+    db: AsyncSession = Depends(get_db),
+) -> PunchResponse:
     """Registra uma batida de ponto (entrada, saida, almoco)."""
-    result = await _service.registrar_batida(data)
+    service = PunchService(db)
+    result = await service.registrar_batida(data)
     return PunchResponse(
         punch_id=result["punch_id"],
         employee_id=result["employee_id"],
-        punch_type=result["punch_type"],
-        punch_timestamp=result["punch_timestamp"],
-        status=result["status"],
+        punch_type=result.get("punch_type"),
+        punch_timestamp=result.get("punch_timestamp"),
+        status=result.get("status"),
         facial_match=result.get("facial_match"),
         facial_confidence=result.get("facial_confidence"),
         dentro_geofence=result.get("dentro_geofence"),
@@ -56,9 +59,13 @@ async def registrar_batida(data: PunchCreate) -> PunchResponse:
 
 
 @router.post("/sync", response_model=PunchSyncResponse)
-async def sync_offline_punches(data: PunchSyncRequest) -> PunchSyncResponse:
+async def sync_offline_punches(
+    data: PunchSyncRequest,
+    db: AsyncSession = Depends(get_db),
+) -> PunchSyncResponse:
     """Sincroniza batidas feitas em modo offline."""
-    result = await _service.sync_offline_punches(data.punches)
+    service = PunchService(db)
+    result = await service.sync_offline_punches(data.punches)
     return PunchSyncResponse(**result)
 
 
@@ -66,9 +73,11 @@ async def sync_offline_punches(data: PunchSyncRequest) -> PunchSyncResponse:
 async def get_batidas_dia(
     employee_id: int,
     data: str = Query(..., description="Data no formato YYYY-MM-DD"),
+    db: AsyncSession = Depends(get_db),
 ) -> dict[str, Any]:
     """Retorna batidas de um funcionario em um dia."""
-    batidas = await _service.get_batidas_dia(employee_id, data)
+    service = PunchService(db)
+    batidas = await service.get_batidas_dia(employee_id, data)
     return {"employee_id": employee_id, "date": data, "punches": batidas}
 
 
@@ -77,15 +86,21 @@ async def get_espelho_mensal(
     employee_id: int,
     month: int = Query(..., ge=1, le=12),
     year: int = Query(..., ge=2020),
+    db: AsyncSession = Depends(get_db),
 ) -> dict[str, Any]:
     """Retorna espelho de ponto mensal."""
-    return await _service.get_espelho_mensal(employee_id, month, year)
+    service = PunchService(db)
+    return await service.get_espelho_mensal(employee_id, month, year)
 
 
 @router.post("/justificativa", response_model=JustificationResponse, status_code=201)
-async def criar_justificativa(data: JustificationCreate) -> JustificationResponse:
+async def criar_justificativa(
+    data: JustificationCreate,
+    db: AsyncSession = Depends(get_db),
+) -> JustificationResponse:
     """Cria justificativa de atraso ou falta."""
-    result = await _service.criar_justificativa(data)
+    service = PunchService(db)
+    result = await service.criar_justificativa(data)
     return JustificationResponse(
         justification_id=result["justification_id"],
         employee_id=result["employee_id"],
@@ -101,25 +116,29 @@ async def criar_justificativa(data: JustificationCreate) -> JustificationRespons
 async def revisar_justificativa(
     justification_id: str,
     data: JustificationReview,
+    db: AsyncSession = Depends(get_db),
 ) -> dict[str, Any]:
     """Aprova ou rejeita uma justificativa."""
-    result = await _service.revisar_justificativa(
-        justification_id,
-        data.action,
-        data.reviewer_id,
-        data.notes,
-    )
-    if "error" in result:
-        raise HTTPException(status_code=404, detail=result["error"])
-    return result
+    service = PunchService(db)
+    try:
+        return await service.revisar_justificativa(
+            justification_id,
+            data.action,
+            data.reviewer_id,
+            data.notes,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
 
 
 @router.get("/justificativas/pendentes")
 async def get_justificativas_pendentes(
     employee_id: int | None = None,
+    db: AsyncSession = Depends(get_db),
 ) -> list[dict[str, Any]]:
     """Lista justificativas pendentes de aprovacao."""
-    return await _service.get_justificativas_pendentes(employee_id)
+    service = PunchService(db)
+    return await service.get_justificativas_pendentes(employee_id)
 
 
 @router.post("/fechamento", response_model=MonthlyClosingResponse)
@@ -128,13 +147,15 @@ async def fechar_mes(
     month: int = Query(..., ge=1, le=12),
     year: int = Query(..., ge=2020),
     fechado_por: str = Query(...),
+    db: AsyncSession = Depends(get_db),
 ) -> MonthlyClosingResponse:
     """Fecha o ponto mensal de um funcionario."""
-    result = await _service.fechar_mes(employee_id, month, year, fechado_por)
+    service = PunchService(db)
+    result = await service.fechar_mes(employee_id, month, year, fechado_por)
     return MonthlyClosingResponse(**result)
 
 
-# ==================== ENDPOINTS NOVOS — WIRING REAL ====================
+# ==================== DASHBOARD E RELATORIOS (sync, dados reais) ====================
 
 
 @router.get(
@@ -190,12 +211,8 @@ def sincronizar_solides(
     request: SyncSolidesRequest = Body(default=SyncSolidesRequest()),
     db: Session = Depends(get_sync_db_dependency),
 ) -> SyncSolidesResponse:
-    """Importa registros de ponto do Solides Tangerino e classifica inconsistencias."""
-    data = dashboard_service.sync_solides_ponto(
-        db,
-        request.periodo_inicio,
-        request.periodo_fim,
-    )
+    """Importa registros de ponto do Solides Tangerino."""
+    data = dashboard_service.sync_solides_ponto(db, request.periodo_inicio, request.periodo_fim)
     return SyncSolidesResponse(**data)
 
 
