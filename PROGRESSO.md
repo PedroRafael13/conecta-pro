@@ -754,9 +754,139 @@ git push origin --tags --force
 
 ---
 
-**Ultima atualizacao:** 2026-03-20 19:30 UTC
+---
+
+# SESSAO 2026-03-21/22 — GESTAO DE PESSOAS + FOLHA DE PAGAMENTO
+
+---
+
+## AUDITORIA COMPLETA: 8 SUB-MODULOS
+
+### Scores de Prontidao
+
+| # | Sub-Modulo | Backend | Frontend | Score | Status |
+|---|-----------|---------|----------|-------|--------|
+| 1 | Departamento Pessoal | 49 endpoints, CLT calculator | 11/11 paginas | 8/10 | ✅ |
+| 2 | Recursos Humanos | 49 endpoints, 360, carreira | 11/11 paginas | 7.5/10 | ✅ |
+| 3 | GED Kits Documentais | 218 endpoints, geracao mensal | 13/13 paginas | 9/10 | ✅ |
+| 4 | Operacoes | 245 endpoints, IA operacional | 30/30 paginas | 9/10 | ✅ |
+| 5 | Saude Ocupacional | 92 endpoints, CCT 2026 | 8/8 paginas | 8.5/10 | ✅ |
+| 6 | Ponto Eletronico | 14 endpoints (in-memory) | 0/7 (MOCK) | 2.5/10 | ❌ |
+| 7 | Portal do Funcionario | 32 endpoints, auth propria | 7/7 paginas | 8/10 | ✅ |
+| 8 | Area do Cliente | 12 endpoints, tickets | Backend only | 8/10 | ✅ |
+
+### Bugs Corrigidos
+
+| Bug | Causa | Fix |
+|-----|-------|-----|
+| /api/v1/clients 500 | Model `type` vs DB `client_type` + AsyncSession | Raw SQL + sync session + Column mapping |
+| GED 403 admin | Token expirado (30min JWT) | Nao era bug |
+| Employees 307→403 | Trailing slash faltando em 8 paginas DP | Adicionado `/` |
+| PPRA 500 | 11 colunas + 2 tabelas faltando no PostgreSQL | ALTER TABLE + CREATE TABLE |
+| Folha inconsistente | employees sem slash + slice(0,20) | URL corrigida + todos calculados |
+| Trailing slash em RH/GED | Mesmo bug em 15+ paginas | Fix global em DP/RH/GED |
+
+### Folha de Pagamento — Comparativo Dominio vs Conecta PRO
+
+Validacao com PDFs reais do Dominio Sistemas (12/2025, 01/2026, 02/2026):
+
+| Item | Dominio 02/2026 | Conecta PRO (antes) | Conecta PRO (agora) |
+|------|----------------|--------------------|--------------------|
+| Funcionarios | 47 | 52 | 52 |
+| Bruto | R$ 98.640 | R$ 87.410 | R$ 87.410 |
+| INSS | R$ 6.485 | R$ 6.682 | R$ 6.682 |
+| VT | incluido | R$ 0 | R$ 5.244 |
+| Beneficios | incluido | R$ 676 | R$ 676 |
+| Total Descontos | R$ 35.863 | R$ 7.358 | R$ 12.603 |
+| Liquido | R$ 62.776 | R$ 80.051 | R$ 74.806 |
+
+Calculo INSS/IRRF 2026 validado com tabelas oficiais (clt_calculator.py, 427 linhas, Decimal).
+
+### Rubricas Implementadas
+
+| Tipo | Rubrica | Fonte | Status |
+|------|---------|-------|--------|
+| Provento | Salario Base | employees.salario_base | ✅ |
+| Provento | Hora Extra 50% | overtime_records | ✅ |
+| Provento | Hora Extra 100% | overtime_records | ✅ |
+| Provento | Adicional Noturno 20% | overtime_records (night) | ✅ |
+| Provento | DSR sobre Extras | Calculado | ✅ |
+| Provento | Periculosidade 30% | employees flag | ✅ |
+| Desconto | INSS Progressivo | Calculado (tabela 2026) | ✅ |
+| Desconto | IRRF | Calculado (tabela 2026) | ✅ |
+| Desconto | VT 4% | Todos funcionarios | ✅ |
+| Desconto | Beneficios | employee_benefits | ✅ |
+| Desconto | Faltas | solides_absences | ✅ |
+| Desconto | Atrasos | solides_absences | ✅ |
+
+### Cobertura de Testes
+
+| Metrica | Valor |
+|---------|-------|
+| Coverage | 36.7% → 53% (+16.3pp) |
+| Testes passando | 9.173 |
+| Arquivos de teste | 219 (+7 novos) |
+
+### Outros Fixes desta Sessao
+
+- Nginx: retry 2x em 5s + pagina 503 amigavel com auto-reload
+- Axios: interceptor retry 2x/3s em 502/503/504
+- Postgres Exporter: pg_up=1 (corrigido rede Docker)
+- Alertmanager: sem duplicatas Telegram
+- Knowledge Builder v2: 37 modulos ativos mapeados
+- System prompt + response templates para Telegram
+- Assistente Telegram completo (context_builder, action_executor, conversation_memory)
+- Scaffolds removidos (modules/core + modules/cadastros)
+
+---
+
+## PENDENTES GESTAO DE PESSOAS
+
+| # | Item | Prioridade | Detalhe |
+|---|------|------------|---------|
+| 1 | Ponto Eletronico: PunchService in-memory | Alta | Injetar AsyncSession, persistir em gp_clock_punches |
+| 2 | Ponto Eletronico: 7 paginas frontend MOCK | Alta | Conectar aos 14 endpoints reais |
+| 3 | Rubricas por funcionario | Media | Criar tela para configurar rubricas especificas (consignado, pensao) |
+| 4 | HE reais | Media | Importar horas extras do Dominio ou ponto eletronico |
+| 5 | REP Integration (Solides) | Media | Endpoint /sincronizar-solides existe mas e stub |
+| 6 | FGTS Digital | Media | Endpoint de transmissao existe mas sem integracao real |
+| 7 | eSocial producao | Media | Trocar tpAmb=2 → tpAmb=1 quando ativar |
+| 8 | Clima: tabela surveys | Baixa | Endpoint /surveys retorna lista vazia |
+| 9 | LTCAT e PPP | Baixa | Documentos SST faltantes |
+| 10 | health_occupational sync→async | Baixa | Usa Session sync, inconsistente com stack |
+
+---
+
+## PROXIMOS PASSOS
+
+### 1. Ponto Eletronico (BLOQUEADOR)
+- Migrar PunchService de in-memory para AsyncSession + gp_clock_punches
+- Conectar 7 paginas frontend aos endpoints reais
+- Implementar geofence real (hoje hardcoda True)
+- Testar ciclo completo: batida → espelho → fechamento
+
+### 2. Folha Completa
+- Importar horas extras reais dos ultimos 3 meses
+- Implementar consignados e pensoes alimenticias
+- Validar folha completa contra Dominio mes a mes
+- Gerar contracheque PDF
+
+### 3. Integracoes
+- Solides: ativar sync real de ponto e ausencias
+- Dominio: exportar folha no formato Dominio
+- eSocial: ativar transmissao em producao
+
+### 4. Go-Live Gestao de Pessoas
+- [ ] Ponto Eletronico funcional (PunchService + frontend)
+- [ ] Folha validada contra Dominio (3 meses)
+- [ ] eSocial em producao
+- [ ] REP integration ativa
+- [ ] Treinamento dos gestores
+
+---
+
+**Ultima atualizacao:** 2026-03-22 03:00 UTC
 **Tag:** `post-cleanup-2026-03-19`
-**Commits totais nesta sessao:** 21
-**Arquivos alterados totais:** 402
-**Linhas:** +8.923 / -15.491 (net: -6.568)
-**Score final:** 10/10
+**Commits sessao 21-22/mar:** 14
+**Score Gestao de Pessoas:** 7.6/10 (media dos 8 modulos)
+**Bloqueador:** Ponto Eletronico (2.5/10)
