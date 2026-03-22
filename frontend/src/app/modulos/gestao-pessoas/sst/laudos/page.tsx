@@ -74,7 +74,7 @@ export default function LTCATPage() {
     );
   }
 
-  const st = statusConfig[data.status] || statusConfig.pendente_elaboracao;
+  const st = statusConfig[data.status as keyof typeof statusConfig] ?? { icon: Clock, color: 'text-gray-500', bg: 'bg-gray-50', label: data.status };
   const StatusIcon = st.icon;
 
   return (
