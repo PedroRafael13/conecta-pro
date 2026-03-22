@@ -7,10 +7,10 @@ e integração com benefícios. Usa clt_calculator para precisão Decimal.
 
 import contextlib
 import logging
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.operacional.models.employee import Employee
@@ -34,6 +34,9 @@ try:
     from modules.hr.payroll_integration.services import PayrollService as HRPayrollService
 except ImportError:
     HRPayrollService = None  # type: ignore[assignment, misc]
+
+
+_TWO = Decimal("0.01")  # Precisão de 2 casas decimais
 
 
 def _d(v) -> Decimal:
@@ -91,20 +94,19 @@ class PayrollService:
                 {"codigo": "010", "descricao": "Periculosidade 30%", "ref": "30%", "valor": ad_periculosidade}
             )
 
-        # 3. Adicional Noturno (20%) — placeholder para integração com time_records
+        # 3. Adicional Noturno (20%) — busca horas noturnas do mês
         ad_noturno = Decimal("0")
-        horas_noturnas = Decimal("0")
-        if getattr(employee, "adicional_noturno", None) and horas_noturnas > 0:
+        horas_noturnas = await self._get_horas_noturnas(employee_id, reference_month, reference_year)
+        if horas_noturnas > 0:
             ad_noturno = calcular_adicional_noturno(valor_hora, horas_noturnas)
             proventos.append(
                 {"codigo": "020", "descricao": "Ad. Noturno 20%", "ref": f"{horas_noturnas}h", "valor": ad_noturno}
             )
 
-        # 4. Horas extras — placeholder para integração com time_records
+        # 4. Horas extras — busca de overtime_records
         he_50 = Decimal("0")
         he_100 = Decimal("0")
-        horas_extras_50 = Decimal("0")
-        horas_extras_100 = Decimal("0")
+        horas_extras_50, horas_extras_100 = await self._get_horas_extras(employee_id, reference_month, reference_year)
         if horas_extras_50 > 0:
             he_50 = calcular_hora_extra_50(valor_hora, horas_extras_50)
             proventos.append(
@@ -139,13 +141,12 @@ class PayrollService:
         if irrf > 0:
             descontos.append({"codigo": "202", "descricao": "IRRF", "ref": "", "valor": irrf})
 
-        # 3. Vale Transporte (6%)
-        vt_desconto = Decimal("0")
-        if getattr(employee, "vale_transporte", None):
-            vt_desconto = calcular_vale_transporte_desconto(salario_base)
-            descontos.append({"codigo": "210", "descricao": "VT 6%", "ref": "6%", "valor": vt_desconto})
+        # 3. Vale Transporte (4% CLT — CCT Conecta Mais)
+        vt_desconto = calcular_vale_transporte_desconto(salario_base)
+        if vt_desconto > 0:
+            descontos.append({"codigo": "210", "descricao": "VT 4%", "ref": "4%", "valor": vt_desconto})
 
-        # 4. Benefícios (plano saúde, odonto, etc.)
+        # 4. Benefícios (plano saúde, odonto, seguro de vida, etc.)
         from modules.people_management.hr.models.benefits import EmployeeBenefit
 
         ben_result = await self.db.execute(
@@ -166,6 +167,19 @@ class PayrollService:
                         "valor": contrib,
                     }
                 )
+
+        # 5. Faltas e atrasos — busca do ponto eletrônico
+        faltas, minutos_atraso = await self._get_faltas_atrasos(employee_id, reference_month, reference_year)
+        if faltas > 0:
+            desconto_falta = (salario_base / Decimal("30")) * Decimal(str(faltas))
+            desconto_falta = desconto_falta.quantize(_TWO, ROUND_HALF_UP)
+            descontos.append({"codigo": "230", "descricao": "Faltas", "ref": f"{faltas}d", "valor": desconto_falta})
+        if minutos_atraso > 0:
+            horas_atraso = Decimal(str(minutos_atraso)) / Decimal("60")
+            desconto_atraso = (valor_hora * horas_atraso).quantize(_TWO, ROUND_HALF_UP)
+            descontos.append(
+                {"codigo": "231", "descricao": "Atrasos", "ref": f"{minutos_atraso}min", "valor": desconto_atraso}
+            )
 
         total_descontos = sum(d["valor"] for d in descontos)
         salario_liquido = total_proventos - total_descontos
@@ -268,3 +282,95 @@ class PayrollService:
         """
         logger.info("Contracheque %02d/%d visualizado por %s", month, year, employee_id)
         return {"status": "viewed", "employee_id": str(employee_id), "reference": f"{month:02d}/{year}"}
+
+    # =========================================================================
+    # METODOS DE INTEGRACAO — busca dados reais das tabelas
+    # =========================================================================
+
+    async def _get_horas_extras(self, employee_id: str | UUID, month: int, year: int) -> tuple[Decimal, Decimal]:
+        """Busca horas extras do mês em overtime_records.
+
+        Returns:
+            Tuple (horas_50, horas_100) em Decimal.
+        """
+        try:
+            result = await self.db.execute(
+                text(
+                    "SELECT overtime_type, SUM(total_minutes) "
+                    "FROM overtime_records "
+                    "WHERE employee_id = :eid "
+                    "AND EXTRACT(MONTH FROM overtime_date) = :m "
+                    "AND EXTRACT(YEAR FROM overtime_date) = :y "
+                    "AND status = 'approved' "
+                    "GROUP BY overtime_type"
+                ),
+                {"eid": str(employee_id), "m": month, "y": year},
+            )
+            rows = result.fetchall()
+
+            horas_50 = Decimal("0")
+            horas_100 = Decimal("0")
+            for row in rows:
+                tipo, minutos = row[0], row[1] or 0
+                horas = Decimal(str(minutos)) / Decimal("60")
+                if tipo in ("50", "normal", "weekday"):
+                    horas_50 += horas
+                elif tipo in ("100", "sunday", "holiday"):
+                    horas_100 += horas
+
+            return horas_50.quantize(_TWO), horas_100.quantize(_TWO)
+        except Exception as e:
+            logger.debug("Horas extras nao encontradas para %s: %s", employee_id, e)
+            return Decimal("0"), Decimal("0")
+
+    async def _get_horas_noturnas(self, employee_id: str | UUID, month: int, year: int) -> Decimal:
+        """Busca horas noturnas do mês em overtime_records ou shifts.
+
+        Returns:
+            Total de horas noturnas (22h-05h) no mês.
+        """
+        try:
+            result = await self.db.execute(
+                text(
+                    "SELECT SUM(total_minutes) "
+                    "FROM overtime_records "
+                    "WHERE employee_id = :eid "
+                    "AND EXTRACT(MONTH FROM overtime_date) = :m "
+                    "AND EXTRACT(YEAR FROM overtime_date) = :y "
+                    "AND overtime_type = 'night'"
+                ),
+                {"eid": str(employee_id), "m": month, "y": year},
+            )
+            minutos = result.scalar() or 0
+            return (Decimal(str(minutos)) / Decimal("60")).quantize(_TWO)
+        except Exception:
+            return Decimal("0")
+
+    async def _get_faltas_atrasos(self, employee_id: str | UUID, month: int, year: int) -> tuple[int, int]:
+        """Busca faltas e atrasos do ponto eletrônico.
+
+        Returns:
+            Tuple (dias_falta, minutos_atraso).
+        """
+        try:
+            # Buscar faltas (dias sem batida e sem justificativa)
+            result = await self.db.execute(
+                text(
+                    "SELECT "
+                    "  COALESCE(SUM(CASE WHEN tipo = 'falta' THEN 1 ELSE 0 END), 0) as faltas, "
+                    "  COALESCE(SUM(CASE WHEN tipo = 'atraso' THEN minutos ELSE 0 END), 0) as atrasos "
+                    "FROM solides_absences "
+                    "WHERE employee_id = :eid "
+                    "AND EXTRACT(MONTH FROM data) = :m "
+                    "AND EXTRACT(YEAR FROM data) = :y "
+                    "AND justificada = false"
+                ),
+                {"eid": str(employee_id), "m": month, "y": year},
+            )
+            row = result.fetchone()
+            if row:
+                return int(row[0] or 0), int(row[1] or 0)
+        except Exception as e:
+            logger.debug("Faltas/atrasos nao encontrados para %s: %s", employee_id, e)
+
+        return 0, 0
