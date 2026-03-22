@@ -85,7 +85,7 @@ export default function GedClientesPage() {
   async function fetchClients() {
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/clients`, { headers: getAuthHeaders() });
+      const res = await fetch(`${API_BASE}/clients/`, { headers: getAuthHeaders() });
       if (res.ok) {
         const data = await res.json();
         setClients(Array.isArray(data) ? data : data.items || []);
@@ -119,7 +119,7 @@ export default function GedClientesPage() {
   async function handleSave() {
     setSaving(true);
     try {
-      const url = editingId ? `${API_BASE}/clients/${editingId}` : `${API_BASE}/clients`;
+      const url = editingId ? `${API_BASE}/clients/${editingId}` : `${API_BASE}/clients/`;
       const method = editingId ? 'PUT' : 'POST';
       const res = await fetch(url, {
         method,

@@ -101,11 +101,11 @@ class CareerPlan(Base, TimestampMixin):
 
     # Niveis
     current_level: Mapped[CareerLevel] = mapped_column(
-        Enum(CareerLevel),
+        Enum(CareerLevel, values_callable=lambda e: [x.value for x in e], create_type=False),
         nullable=False,
     )
     target_level: Mapped[CareerLevel] = mapped_column(
-        Enum(CareerLevel),
+        Enum(CareerLevel, values_callable=lambda e: [x.value for x in e], create_type=False),
         nullable=False,
     )
 
@@ -119,7 +119,7 @@ class CareerPlan(Base, TimestampMixin):
 
     # Status
     status: Mapped[CareerPlanStatus] = mapped_column(
-        Enum(CareerPlanStatus),
+        Enum(CareerPlanStatus, values_callable=lambda e: [x.value for x in e], create_type=False),
         nullable=False,
         default=CareerPlanStatus.ACTIVE,
     )

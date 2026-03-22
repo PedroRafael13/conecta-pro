@@ -82,7 +82,7 @@ export default function KitsListPage() {
 
   async function fetchClients() {
     try {
-      const res = await fetch(`${API_BASE}/clients`, { headers: getAuthHeaders() });
+      const res = await fetch(`${API_BASE}/clients/`, { headers: getAuthHeaders() });
       if (res.ok) {
         const data = await res.json();
         setClients(Array.isArray(data) ? data : data.items || []);

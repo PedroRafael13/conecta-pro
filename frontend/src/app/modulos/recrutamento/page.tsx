@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Users, Briefcase, UserPlus, FileText, Calendar, RefreshCw, ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,6 +22,15 @@ export default function RecrutamentoDashboardPage() {
 
   const isLoading = loadingPositions || loadingCandidates || loadingApplications || loadingInterviews;
   const hasError = errPositions || errCandidates || errApplications || errInterviews;
+
+  // Timeout: se loading > 10s, considerar como erro
+  const [timedOut, setTimedOut] = useState(false);
+  useEffect(() => {
+    if (!isLoading) { setTimedOut(false); return; }
+    const timer = setTimeout(() => setTimedOut(true), 10000);
+    return () => clearTimeout(timer);
+  }, [isLoading]);
+  const showError = hasError || timedOut;
 
   const posStats = positionStats as any;
   const candStats = candidateStats as any;
@@ -124,11 +134,11 @@ export default function RecrutamentoDashboardPage() {
       </div>
 
       {/* Error Banner */}
-      {hasError && !isLoading && (
+      {showError && (
         <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-800/30 dark:bg-red-900/20 dark:text-red-400">
-          <p className="font-medium">Erro ao carregar dados do recrutamento</p>
+          <p className="font-medium">{timedOut ? 'Serviço temporariamente indisponível' : 'Erro ao carregar dados do recrutamento'}</p>
           <p className="mt-1 text-red-600 dark:text-red-500">
-            Alguns serviços estão temporariamente indisponíveis. Os dados exibidos podem estar incompletos.
+            {timedOut ? 'O servidor não respondeu em 10 segundos. Verifique sua conexão ou tente novamente.' : 'Alguns serviços estão temporariamente indisponíveis.'}
           </p>
           <Button variant="outline" size="sm" className="mt-2" onClick={handleRefresh}>
             <RefreshCw className="h-3 w-3 mr-1" /> Tentar novamente

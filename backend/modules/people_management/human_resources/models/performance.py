@@ -110,12 +110,12 @@ class PerformanceReview(Base, TimestampMixin):
 
     # Tipo e status
     type: Mapped[ReviewType] = mapped_column(
-        Enum(ReviewType),
+        Enum(ReviewType, values_callable=lambda e: [x.value for x in e], create_type=False),
         nullable=False,
         default=ReviewType.QUARTERLY,
     )
     status: Mapped[ReviewStatus] = mapped_column(
-        Enum(ReviewStatus),
+        Enum(ReviewStatus, values_callable=lambda e: [x.value for x in e], create_type=False),
         nullable=False,
         default=ReviewStatus.DRAFT,
     )
