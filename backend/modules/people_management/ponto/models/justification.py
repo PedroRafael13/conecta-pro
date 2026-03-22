@@ -8,7 +8,6 @@ from sqlalchemy import (
     JSON,
     Column,
     DateTime,
-    Enum,
     Index,
     Integer,
     String,
@@ -50,14 +49,11 @@ class JustificationModel(Base):
 
     justification_type = Column(String(20), nullable=False)  # atraso, falta
     reason = Column(Text, nullable=False)
-    category = Column(
-        Enum(JustificationCategory, name="justification_category_enum"),
-        nullable=False,
-    )
+    category = Column(String(30), nullable=False)
     status = Column(
-        Enum(JustificationStatus, name="justification_status_enum"),
+        String(20),
         nullable=False,
-        default=JustificationStatus.PENDENTE,
+        default="pendente",
     )
 
     # Anexos (fotos, documentos)
@@ -82,8 +78,8 @@ class JustificationModel(Base):
             "employee_id": self.employee_id,
             "type": self.justification_type,
             "reason": self.reason,
-            "category": self.category.value if self.category else None,
-            "status": self.status.value if self.status else None,
+            "category": self.category,
+            "status": self.status,
             "attachments": self.attachments or [],
             "reviewed_by": self.reviewed_by,
             "reviewed_at": self.reviewed_at.isoformat() if self.reviewed_at else None,

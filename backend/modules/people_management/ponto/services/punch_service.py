@@ -13,7 +13,7 @@ from sqlalchemy import extract, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..models.clock_punch import ClockPunchModel
-from ..models.justification import JustificationModel, JustificationStatus
+from ..models.justification import JustificationModel
 from ..models.monthly_closing import MonthlyClosingModel
 from ..schemas.punch_schemas import JustificationCreate, PunchCreate
 
@@ -189,7 +189,7 @@ class PunchService:
             justification_type=data.justification_type,
             reason=data.reason,
             category=data.category,
-            status=JustificationStatus.PENDENTE,
+            status="pendente",
             attachments=data.attachments or [],
         )
         self.db.add(justification)
@@ -226,7 +226,7 @@ class PunchService:
         if not justification:
             raise ValueError(f"Justificativa {justification_id} nao encontrada")
 
-        justification.status = JustificationStatus.APROVADA if action == "aprovar" else JustificationStatus.REJEITADA
+        justification.status = "aprovada" if action == "aprovar" else "rejeitada"
         justification.reviewed_by = reviewer_id
         justification.reviewed_at = datetime.utcnow()
         justification.review_notes = notes
@@ -243,7 +243,7 @@ class PunchService:
         Returns:
             Lista de justificativas pendentes.
         """
-        query = select(JustificationModel).where(JustificationModel.status == JustificationStatus.PENDENTE)
+        query = select(JustificationModel).where(JustificationModel.status == "pendente")
         if employee_id:
             query = query.where(JustificationModel.employee_id == employee_id)
 
