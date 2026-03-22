@@ -37,7 +37,7 @@ export default function TurnoverPage() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch(`${API_BASE}/turnover?limit=50`, { headers: getAuthHeaders() });
+        const res = await fetch(`${API_BASE}/turnover/?limit=50`, { headers: getAuthHeaders() });
         if (res.ok) {
           const data = await res.json();
           setColaboradores(data.items || data.predictions || data || []);

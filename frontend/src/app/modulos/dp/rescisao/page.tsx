@@ -54,7 +54,7 @@ export default function RescisaoPage() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch(`${API_BASE}/terminations?limit=50`, { headers: getAuthHeaders() });
+        const res = await fetch(`${API_BASE}/terminations/?limit=50`, { headers: getAuthHeaders() });
         if (res.ok) {
           const data = await res.json();
           setRescisões(data.items || data || []);

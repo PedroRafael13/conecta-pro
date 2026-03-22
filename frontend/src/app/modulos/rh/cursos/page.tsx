@@ -49,7 +49,7 @@ export default function CursosPage() {
 
   async function loadCursos() {
     try {
-      const res = await fetch(`${API_BASE}/training/courses?limit=50`, { headers: getAuthHeaders() });
+      const res = await fetch(`${API_BASE}/training/courses/?limit=50`, { headers: getAuthHeaders() });
       if (res.ok) {
         const data = await res.json();
         setCursos(data.items || data || []);

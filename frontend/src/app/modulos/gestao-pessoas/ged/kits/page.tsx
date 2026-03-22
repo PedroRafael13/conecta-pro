@@ -99,7 +99,7 @@ export default function KitsListPage() {
       if (filterMonth) params.append('reference_month', filterMonth);
       if (filterStatus) params.append('status', filterStatus);
       if (filterClient) params.append('client_id', filterClient);
-      const res = await fetch(`${API_BASE}/kits?${params.toString()}`, {
+      const res = await fetch(`${API_BASE}/kits/?${params.toString()}`, {
         headers: getAuthHeaders(),
       });
       if (res.ok) {

@@ -42,7 +42,7 @@ export default function CarreiraPage() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch(`${API_BASE}/career/plans?limit=50`, { headers: getAuthHeaders() });
+        const res = await fetch(`${API_BASE}/career/plans/?limit=50`, { headers: getAuthHeaders() });
         if (res.ok) {
           const data = await res.json();
           setPlanos(data.items || data || []);

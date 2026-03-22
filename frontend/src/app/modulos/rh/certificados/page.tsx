@@ -47,7 +47,7 @@ export default function CertificadosPage() {
     async function load() {
       try {
         const [enrRes, expRes] = await Promise.all([
-          fetch(`${API_BASE}/training/enrollments?limit=100`, { headers: getAuthHeaders() }),
+          fetch(`${API_BASE}/training/enrollments/?limit=100`, { headers: getAuthHeaders() }),
           fetch(`${API_BASE}/training/certificates/expiring`, { headers: getAuthHeaders() }),
         ]);
         if (enrRes.ok) {

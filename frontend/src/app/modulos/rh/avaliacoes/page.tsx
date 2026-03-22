@@ -43,7 +43,7 @@ export default function AvaliacoesPage() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch(`${API_BASE}/performance/reviews?limit=50`, { headers: getAuthHeaders() });
+        const res = await fetch(`${API_BASE}/performance/reviews/?limit=50`, { headers: getAuthHeaders() });
         if (res.ok) {
           const data = await res.json();
           setAvaliacoes(data.items || data || []);

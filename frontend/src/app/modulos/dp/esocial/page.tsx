@@ -42,8 +42,8 @@ export default function ESocialPage() {
       try {
         // eSocial events are generated from admissions and terminations
         const [admRes, termRes] = await Promise.all([
-          fetch(`${API_BASE}/admissions?limit=50`, { headers: getAuthHeaders() }),
-          fetch(`${API_BASE}/terminations?limit=50`, { headers: getAuthHeaders() }),
+          fetch(`${API_BASE}/admissions/?limit=50`, { headers: getAuthHeaders() }),
+          fetch(`${API_BASE}/terminations/?limit=50`, { headers: getAuthHeaders() }),
         ]);
         const evts: any[] = [];
         if (admRes.ok) {

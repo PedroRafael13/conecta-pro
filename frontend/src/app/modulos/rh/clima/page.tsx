@@ -36,7 +36,7 @@ export default function ClimaPage() {
     async function load() {
       try {
         // Climate surveys from retention/climate module re-exported via human-resources
-        const res = await fetch(`${API_BASE}/climate?limit=50`, { headers: getAuthHeaders() });
+        const res = await fetch(`${API_BASE}/climate/?limit=50`, { headers: getAuthHeaders() });
         if (res.ok) {
           const data = await res.json();
           setPesquisas(data.items || data || []);

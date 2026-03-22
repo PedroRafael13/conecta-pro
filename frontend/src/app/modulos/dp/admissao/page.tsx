@@ -46,8 +46,8 @@ export default function AdmissaoPage() {
     async function load() {
       try {
         const url = filtroStatus === 'todos'
-          ? `${API_BASE}/admissions?limit=50`
-          : `${API_BASE}/admissions?status=${filtroStatus}&limit=50`;
+          ? `${API_BASE}/admissions/?limit=50`
+          : `${API_BASE}/admissions/?status=${filtroStatus}&limit=50`;
         const res = await fetch(url, { headers: getAuthHeaders() });
         if (res.ok) {
           const data = await res.json();

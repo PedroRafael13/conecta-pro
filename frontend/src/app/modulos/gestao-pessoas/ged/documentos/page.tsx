@@ -81,7 +81,7 @@ export default function DocumentosSearchPage() {
       if (filterType) params.append('type', filterType);
       if (filterOrigin) params.append('origin', filterOrigin);
       if (filterSigned) params.append('signed', filterSigned);
-      const res = await fetch(`${API_BASE}/documents/search?${params.toString()}`, {
+      const res = await fetch(`${API_BASE}/documents/search/?${params.toString()}`, {
         headers: getAuthHeaders(),
       });
       if (res.ok) {

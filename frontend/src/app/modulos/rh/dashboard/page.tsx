@@ -37,9 +37,9 @@ export default function DashboardRHPage() {
       try {
         const headers = getAuthHeaders();
         const [empRes, turnoverRes, climaRes] = await Promise.all([
-          fetch(`${API_HR}/employees?limit=200`, { headers }),
+          fetch(`${API_HR}/employees/?limit=200`, { headers }),
           fetch(`${API_RH}/turnover/dashboard`, { headers }).catch(() => null),
-          fetch(`${API_RH}/climate?limit=1`, { headers }).catch(() => null),
+          fetch(`${API_RH}/climate/?limit=1`, { headers }).catch(() => null),
         ]);
 
         let headcount = 0;

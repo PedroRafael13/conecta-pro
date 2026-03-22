@@ -41,7 +41,7 @@ export default function TreinamentosPage() {
     try {
       const [tRes, cRes] = await Promise.all([
         fetch(`${API_BASE}/training/?limit=50`, { headers: getAuthHeaders() }),
-        fetch(`${API_BASE}/training/courses?limit=50`, { headers: getAuthHeaders() }),
+        fetch(`${API_BASE}/training/courses/?limit=50`, { headers: getAuthHeaders() }),
       ]);
       if (tRes.ok) {
         const data = await tRes.json();

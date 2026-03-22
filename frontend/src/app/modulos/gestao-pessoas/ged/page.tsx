@@ -78,7 +78,7 @@ export default function GEDDashboardPage() {
     try {
       const [sumRes, kitsRes] = await Promise.all([
         fetch(`${API_BASE}/kits/summary`, { headers: getAuthHeaders() }),
-        fetch(`${API_BASE}/kits?limit=10`, { headers: getAuthHeaders() }),
+        fetch(`${API_BASE}/kits/?limit=10`, { headers: getAuthHeaders() }),
       ]);
       if (sumRes.ok) {
         const data = await sumRes.json();
@@ -139,7 +139,7 @@ export default function GEDDashboardPage() {
             Montar Kits Automatico
           </button>
           <button
-            onClick={() => router.push('/modulos/gestao-pessoas/ged/kits?new=true')}
+            onClick={() => router.push('/modulos/gestao-pessoas/ged/kits/?new=true')}
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
           >
             <Plus className="h-4 w-4" />

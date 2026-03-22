@@ -64,7 +64,7 @@ export default function EnviosPage() {
     try {
       const params = new URLSearchParams();
       if (filterMethod) params.append('method', filterMethod);
-      const res = await fetch(`${API_BASE}/deliveries?${params.toString()}`, {
+      const res = await fetch(`${API_BASE}/deliveries/?${params.toString()}`, {
         headers: getAuthHeaders(),
       });
       if (res.ok) {

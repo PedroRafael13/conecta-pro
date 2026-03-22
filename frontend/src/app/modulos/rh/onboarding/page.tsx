@@ -35,7 +35,7 @@ export default function OnboardingPage() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch(`${API_BASE}/onboarding?limit=50`, { headers: getAuthHeaders() });
+        const res = await fetch(`${API_BASE}/onboarding/?limit=50`, { headers: getAuthHeaders() });
         if (res.ok) {
           const data = await res.json();
           setColaboradores(data.items || data || []);

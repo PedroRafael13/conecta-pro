@@ -24,10 +24,10 @@ export default function RHDashboardPage() {
     async function load() {
       try {
         const [coursesRes, reviewsRes, trainingsRes, plansRes] = await Promise.all([
-          fetch(`${API_BASE}/training/courses?limit=1`, { headers: getAuthHeaders() }).catch(() => null),
-          fetch(`${API_BASE}/performance/reviews?limit=1`, { headers: getAuthHeaders() }).catch(() => null),
+          fetch(`${API_BASE}/training/courses/?limit=1`, { headers: getAuthHeaders() }).catch(() => null),
+          fetch(`${API_BASE}/performance/reviews/?limit=1`, { headers: getAuthHeaders() }).catch(() => null),
           fetch(`${API_BASE}/training/?limit=1`, { headers: getAuthHeaders() }).catch(() => null),
-          fetch(`${API_BASE}/career/plans?limit=1`, { headers: getAuthHeaders() }).catch(() => null),
+          fetch(`${API_BASE}/career/plans/?limit=1`, { headers: getAuthHeaders() }).catch(() => null),
         ]);
         const getTotal = async (res: Response | null) => {
           if (res?.ok) { const d = await res.json(); return d.total || (d.items || d || []).length; }
