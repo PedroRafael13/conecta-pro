@@ -19,7 +19,6 @@ from modules.clients.schemas.client_schemas import (
     ClientContractUpdate,
     ClientCreate,
     ClientFilter,
-    ClientListResponse,
     ClientResponse,
     ClientStats,
     ClientUpdate,
@@ -70,7 +69,7 @@ async def create_client(data: ClientCreate, service: ClientService = Depends(get
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
-@router.get("/", response_model=list[ClientListResponse])
+@router.get("/")
 async def list_clients(  # pylint: disable=too-many-locals
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
@@ -86,7 +85,7 @@ async def list_clients(  # pylint: disable=too-many-locals
     order_by: str = Query("created_at"),
     order_desc: bool = Query(True),
     service: ClientService = Depends(get_service),
-) -> list[ClientListResponse]:
+):
     """Lista clientes com filtros."""
     filters = ClientFilter(
         type=client_type,
