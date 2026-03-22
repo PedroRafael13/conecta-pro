@@ -146,6 +146,32 @@ const nextConfig: NextConfig = {
         destination: '/modulos/dp/folha/:path*',
         permanent: true,
       },
+      // Rotas legadas de Gestão de Pessoas
+      {
+        source: '/modulos/ged',
+        destination: '/modulos/gestao-pessoas/ged',
+        permanent: true,
+      },
+      {
+        source: '/modulos/ged/:path*',
+        destination: '/modulos/gestao-pessoas/ged/:path*',
+        permanent: true,
+      },
+      {
+        source: '/modulos/ponto',
+        destination: '/modulos/gestao-pessoas/ponto',
+        permanent: true,
+      },
+      {
+        source: '/modulos/ponto/:path*',
+        destination: '/modulos/gestao-pessoas/ponto/:path*',
+        permanent: true,
+      },
+      {
+        source: '/modulos/saude-ocupacional/:path*',
+        destination: '/modulos/gestao-pessoas/saude-ocupacional/:path*',
+        permanent: true,
+      },
     ];
   },
 

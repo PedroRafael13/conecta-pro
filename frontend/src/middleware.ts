@@ -17,6 +17,7 @@ const PUBLIC_PATHS = [
   '/offline',
   '/area-cliente',
   '/auth/callback',
+  '/portal-funcionario',
 ];
 
 function isPublic(pathname: string): boolean {

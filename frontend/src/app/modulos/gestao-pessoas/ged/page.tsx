@@ -82,7 +82,12 @@ export default function GEDDashboardPage() {
       ]);
       if (sumRes.ok) {
         const data = await sumRes.json();
-        setSummary(data);
+        setSummary({
+          total_kits: data.total_kits ?? 0,
+          kits_pendentes: data.kits_pending_send ?? data.kits_pendentes ?? 0,
+          kits_enviados: data.kits_pending_approval ?? data.kits_enviados ?? 0,
+          taxa_conclusao: Math.round(parseFloat(data.average_completion ?? data.taxa_conclusao ?? '0')),
+        });
       }
       if (kitsRes.ok) {
         const data = await kitsRes.json();
