@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useMemo } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Key, RefreshCw, Copy, Check, Power, FileText, Search,
   Shield, AlertTriangle, Clock, Eye, X, Loader2, Users,
+  ExternalLink,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,6 +20,8 @@ function getHeaders(): Record<string, string> {
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 }
+
+// ─── Types ──────────────────────────────────────────────────────────────────
 
 interface ClientAccess {
   client_id: string;
@@ -40,12 +44,70 @@ interface LogEntry {
 }
 
 interface ProvisionResult {
+  client_id: string;
+  nome: string;
+  cnpj: string;
   portal_username: string;
   senha_temporaria: string;
   portal_url: string;
-  cnpj: string;
-  nome: string;
+  primeiro_acesso: boolean;
+  instrucoes: string;
 }
+
+interface ToggleResult {
+  client_id: string;
+  nome: string;
+  portal_ativo: boolean;
+  acao: string;
+}
+
+interface LogsResult {
+  client_id: string;
+  total: number;
+  logs: LogEntry[];
+}
+
+interface PreviewResult {
+  client_id: string;
+  nome: string;
+  preview_url: string;
+  expira_em: string;
+  aviso: string;
+}
+
+// ─── API functions ──────────────────────────────────────────────────────────
+
+async function fetchClients(): Promise<ClientAccess[]> {
+  const res = await fetch(API, { headers: getHeaders() });
+  if (!res.ok) throw new Error('Erro ao carregar clientes');
+  return res.json();
+}
+
+async function provisionAccess(clientId: string): Promise<ProvisionResult> {
+  const res = await fetch(`${API}/${clientId}/provision`, { method: 'POST', headers: getHeaders() });
+  if (!res.ok) throw new Error('Erro ao provisionar acesso');
+  return res.json();
+}
+
+async function toggleAccess(clientId: string): Promise<ToggleResult> {
+  const res = await fetch(`${API}/${clientId}/toggle`, { method: 'POST', headers: getHeaders() });
+  if (!res.ok) throw new Error('Erro ao alterar acesso');
+  return res.json();
+}
+
+async function fetchLogs(clientId: string): Promise<LogsResult> {
+  const res = await fetch(`${API}/${clientId}/logs`, { headers: getHeaders() });
+  if (!res.ok) throw new Error('Erro ao carregar logs');
+  return res.json();
+}
+
+async function generatePreviewToken(clientId: string): Promise<PreviewResult> {
+  const res = await fetch(`${API}/${clientId}/preview-token`, { method: 'POST', headers: getHeaders() });
+  if (!res.ok) throw new Error('Erro ao gerar preview');
+  return res.json();
+}
+
+// ─── Helpers ────────────────────────────────────────────────────────────────
 
 function fmtDate(iso: string | null): string {
   if (!iso) return '—';
@@ -63,84 +125,126 @@ function StatusBadge({ client }: { client: ClientAccess }) {
   return <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">Ativo</span>;
 }
 
+function SkeletonRow() {
+  return (
+    <tr className="border-b animate-pulse">
+      <td className="p-3"><div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-48" /><div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-32 mt-1" /></td>
+      <td className="p-3"><div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-36" /></td>
+      <td className="p-3"><div className="h-5 bg-gray-200 dark:bg-gray-700 rounded-full w-20" /></td>
+      <td className="p-3"><div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-28" /></td>
+      <td className="p-3"><div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-24 ml-auto" /></td>
+    </tr>
+  );
+}
+
+// ─── Page ───────────────────────────────────────────────────────────────────
+
 export default function GerenciamentoAcessosPage() {
-  const [clients, setClients] = useState<ClientAccess[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [provisionModal, setProvisionModal] = useState<ProvisionResult | null>(null);
   const [logsModal, setLogsModal] = useState<{ clientId: string; nome: string; logs: LogEntry[] } | null>(null);
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [previewModal, setPreviewModal] = useState<PreviewResult | null>(null);
   const [copied, setCopied] = useState(false);
   const [toast, setToast] = useState('');
 
-  const fetchClients = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(API, { headers: getHeaders() });
-      if (res.ok) setClients(await res.json());
-    } catch { /* silenciar */ } finally { setLoading(false); }
-  }, []);
+  // ─── Queries ──────────────────────────────────────────────────────────────
 
-  useEffect(() => { fetchClients(); }, [fetchClients]);
+  const {
+    data: clients = [],
+    isLoading,
+    isRefetching,
+    refetch,
+  } = useQuery<ClientAccess[]>({
+    queryKey: ['access-management', 'clients'],
+    queryFn: fetchClients,
+    staleTime: 60_000,
+  });
+
+  // ─── Mutations ────────────────────────────────────────────────────────────
+
+  const provisionMutation = useMutation({
+    mutationFn: provisionAccess,
+    onSuccess: (data) => {
+      setProvisionModal(data);
+      queryClient.invalidateQueries({ queryKey: ['access-management', 'clients'] });
+    },
+    onError: () => showToast('Erro ao provisionar acesso'),
+  });
+
+  const toggleMutation = useMutation({
+    mutationFn: toggleAccess,
+    onSuccess: (data) => {
+      showToast(`Acesso ${data.acao} para ${data.nome}`);
+      queryClient.invalidateQueries({ queryKey: ['access-management', 'clients'] });
+    },
+    onError: () => showToast('Erro ao alterar acesso'),
+  });
+
+  const logsMutation = useMutation({
+    mutationFn: fetchLogs,
+    onSuccess: (data) => {
+      const client = clients.find(c => c.client_id === data.client_id);
+      setLogsModal({ clientId: data.client_id, nome: client?.nome ?? '', logs: data.logs });
+    },
+    onError: () => showToast('Erro ao carregar logs'),
+  });
+
+  const previewMutation = useMutation({
+    mutationFn: generatePreviewToken,
+    onSuccess: (data) => setPreviewModal(data),
+    onError: () => showToast('Erro ao gerar preview'),
+  });
+
+  // ─── Derived state ───────────────────────────────────────────────────────
 
   const filtered = useMemo(() => {
     if (!search) return clients;
     const s = search.toLowerCase();
     return clients.filter(c =>
-      c.nome.toLowerCase().includes(s) || c.cnpj.toLowerCase().includes(s)
+      c.nome.toLowerCase().includes(s) || c.cnpj.toLowerCase().includes(s),
     );
   }, [clients, search]);
 
+  const activeCount = clients.filter(c => c.portal_ativo).length;
+  const busyId = provisionMutation.isPending
+    ? (provisionMutation.variables ?? null)
+    : toggleMutation.isPending
+      ? (toggleMutation.variables ?? null)
+      : logsMutation.isPending
+        ? (logsMutation.variables ?? null)
+        : previewMutation.isPending
+          ? (previewMutation.variables ?? null)
+          : null;
+
+  // ─── Handlers ─────────────────────────────────────────────────────────────
+
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 4000); };
 
-  async function handleProvision(clientId: string) {
-    setActionLoading(clientId);
-    try {
-      const res = await fetch(`${API}/${clientId}/provision`, { method: 'POST', headers: getHeaders() });
-      if (res.ok) {
-        const data: ProvisionResult = await res.json();
-        setProvisionModal(data);
-        fetchClients();
-      } else { showToast('Erro ao provisionar acesso'); }
-    } catch { showToast('Erro de conexão'); }
-    finally { setActionLoading(null); }
-  }
-
-  async function handleToggle(clientId: string, nome: string, ativo: boolean) {
+  function handleToggle(clientId: string, nome: string, ativo: boolean) {
     if (ativo && !confirm(`Desativar acesso de "${nome}" ao portal?`)) return;
-    setActionLoading(clientId);
-    try {
-      const res = await fetch(`${API}/${clientId}/toggle`, { method: 'POST', headers: getHeaders() });
-      if (res.ok) {
-        const data = await res.json();
-        showToast(`Acesso ${data.acao} para ${nome}`);
-        fetchClients();
-      }
-    } catch { showToast('Erro ao alterar acesso'); }
-    finally { setActionLoading(null); }
-  }
-
-  async function handleLogs(clientId: string, nome: string) {
-    setActionLoading(clientId);
-    try {
-      const res = await fetch(`${API}/${clientId}/logs`, { headers: getHeaders() });
-      if (res.ok) {
-        const data = await res.json();
-        setLogsModal({ clientId, nome, logs: data.logs || [] });
-      }
-    } catch { showToast('Erro ao carregar logs'); }
-    finally { setActionLoading(null); }
+    toggleMutation.mutate(clientId);
   }
 
   async function handleCopy() {
     if (!provisionModal) return;
-    const text = `Portal do Cliente — Conecta PRO\nUsername: ${provisionModal.portal_username}\nSenha: ${provisionModal.senha_temporaria}\nURL: ${provisionModal.portal_url}`;
+    const text = [
+      'Portal do Cliente — Conecta PRO',
+      `Username: ${provisionModal.portal_username}`,
+      `Senha: ${provisionModal.senha_temporaria}`,
+      `URL: ${provisionModal.portal_url}`,
+    ].join('\n');
     await navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
 
-  const activeCount = clients.filter(c => c.portal_ativo).length;
+  function closeProvisionModal() {
+    setProvisionModal(null);
+    setCopied(false);
+  }
+
+  // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
     <div className="space-y-6">
@@ -157,8 +261,8 @@ export default function GerenciamentoAcessosPage() {
           <span className="px-3 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400">
             <Users className="w-3 h-3 inline mr-1" />{activeCount}/{clients.length} ativos
           </span>
-          <Button variant="outline" size="sm" onClick={fetchClients} disabled={loading}>
-            <RefreshCw className={`h-4 w-4 mr-1 ${loading ? 'animate-spin' : ''}`} /> Atualizar
+          <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isLoading || isRefetching}>
+            <RefreshCw className={`h-4 w-4 mr-1 ${isRefetching ? 'animate-spin' : ''}`} /> Atualizar
           </Button>
         </div>
       </div>
@@ -184,17 +288,32 @@ export default function GerenciamentoAcessosPage() {
                   <th className="text-left p-3 font-medium">Cliente</th>
                   <th className="text-left p-3 font-medium">CNPJ</th>
                   <th className="text-left p-3 font-medium">Status Portal</th>
-                  <th className="text-left p-3 font-medium">Último Acesso</th>
-                  <th className="text-right p-3 font-medium">Ações</th>
+                  <th className="text-left p-3 font-medium">Ultimo Acesso</th>
+                  <th className="text-right p-3 font-medium">Acoes</th>
                 </tr>
               </thead>
               <tbody>
-                {loading ? (
-                  <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">
-                    <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" /> Carregando...
-                  </td></tr>
+                {isLoading ? (
+                  <>
+                    <SkeletonRow />
+                    <SkeletonRow />
+                    <SkeletonRow />
+                    <SkeletonRow />
+                  </>
                 ) : filtered.length === 0 ? (
-                  <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">Nenhum cliente encontrado</td></tr>
+                  <tr>
+                    <td colSpan={5} className="p-12 text-center">
+                      <Users className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
+                      <p className="text-muted-foreground font-medium">
+                        {search ? 'Nenhum cliente encontrado para esta busca' : 'Nenhum cliente cadastrado'}
+                      </p>
+                      {search && (
+                        <Button variant="ghost" size="sm" className="mt-2" onClick={() => setSearch('')}>
+                          Limpar busca
+                        </Button>
+                      )}
+                    </td>
+                  </tr>
                 ) : filtered.map(c => (
                   <tr key={c.client_id} className="border-b hover:bg-muted/30 transition-colors">
                     <td className="p-3">
@@ -208,27 +327,37 @@ export default function GerenciamentoAcessosPage() {
                       <div className="flex items-center justify-end gap-1">
                         <Button
                           variant="ghost" size="sm"
-                          onClick={() => handleProvision(c.client_id)}
-                          disabled={actionLoading === c.client_id}
+                          onClick={() => provisionMutation.mutate(c.client_id)}
+                          disabled={busyId === c.client_id}
                           title="Provisionar ou resetar senha"
                         >
-                          {actionLoading === c.client_id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Key className="h-4 w-4" />}
+                          {busyId === c.client_id && provisionMutation.isPending
+                            ? <Loader2 className="h-4 w-4 animate-spin" />
+                            : <Key className="h-4 w-4" />}
                         </Button>
                         <Button
                           variant="ghost" size="sm"
                           onClick={() => handleToggle(c.client_id, c.nome, c.portal_ativo)}
-                          disabled={actionLoading === c.client_id}
+                          disabled={busyId === c.client_id}
                           title={c.portal_ativo ? 'Desativar acesso' : 'Ativar acesso'}
                         >
                           <Power className={`h-4 w-4 ${c.portal_ativo ? 'text-green-600' : 'text-gray-400'}`} />
                         </Button>
                         <Button
                           variant="ghost" size="sm"
-                          onClick={() => handleLogs(c.client_id, c.nome)}
-                          disabled={actionLoading === c.client_id}
+                          onClick={() => logsMutation.mutate(c.client_id)}
+                          disabled={busyId === c.client_id}
                           title="Ver logs de acesso"
                         >
                           <FileText className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost" size="sm"
+                          onClick={() => previewMutation.mutate(c.client_id)}
+                          disabled={busyId === c.client_id || !c.portal_ativo}
+                          title="Visualizar como cliente"
+                        >
+                          <Eye className="h-4 w-4" />
                         </Button>
                       </div>
                     </td>
@@ -242,16 +371,22 @@ export default function GerenciamentoAcessosPage() {
 
       {/* Modal Provisionar */}
       {provisionModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => { setProvisionModal(null); setCopied(false); }}>
-          <div className="bg-white dark:bg-gray-900 rounded-xl max-w-md w-full p-6 space-y-4" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={closeProvisionModal}>
+          <div className="bg-white dark:bg-gray-900 rounded-xl max-w-md w-full p-6 space-y-4 shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold flex items-center gap-2"><Key className="h-5 w-5 text-indigo-600" /> Acesso Provisionado</h3>
-              <button type="button" onClick={() => { setProvisionModal(null); setCopied(false); }} className="text-gray-400 hover:text-gray-600"><X className="h-5 w-5" /></button>
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <Key className="h-5 w-5 text-indigo-600" /> Acesso Provisionado
+              </h3>
+              <button type="button" onClick={closeProvisionModal} className="text-gray-400 hover:text-gray-600">
+                <X className="h-5 w-5" />
+              </button>
             </div>
+
             <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 text-sm text-amber-800 dark:text-amber-300 flex gap-2">
               <AlertTriangle className="h-4 w-4 flex-shrink-0 mt-0.5" />
-              <span>Esta senha será exibida apenas uma vez. Copie antes de fechar.</span>
+              <span>Esta senha sera exibida apenas uma vez. Copie antes de fechar.</span>
             </div>
+
             <div className="space-y-3">
               <div>
                 <label className="text-xs text-muted-foreground">Cliente</label>
@@ -267,7 +402,7 @@ export default function GerenciamentoAcessosPage() {
                   <p className="font-mono font-bold text-lg">{provisionModal.portal_username}</p>
                 </div>
                 <div>
-                  <label className="text-xs text-muted-foreground">Senha temporária</label>
+                  <label className="text-xs text-muted-foreground">Senha temporaria</label>
                   <p className="font-mono font-bold text-lg text-indigo-600">{provisionModal.senha_temporaria}</p>
                 </div>
               </div>
@@ -276,6 +411,7 @@ export default function GerenciamentoAcessosPage() {
                 <p className="text-sm text-blue-600">{provisionModal.portal_url}</p>
               </div>
             </div>
+
             <Button onClick={handleCopy} className="w-full" variant={copied ? 'default' : 'outline'}>
               {copied ? <><Check className="h-4 w-4 mr-1" /> Copiado!</> : <><Copy className="h-4 w-4 mr-1" /> Copiar credenciais</>}
             </Button>
@@ -286,10 +422,14 @@ export default function GerenciamentoAcessosPage() {
       {/* Modal Logs */}
       {logsModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setLogsModal(null)}>
-          <div className="bg-white dark:bg-gray-900 rounded-xl max-w-2xl w-full p-6 max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-gray-900 rounded-xl max-w-2xl w-full p-6 max-h-[80vh] overflow-y-auto shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold flex items-center gap-2"><Clock className="h-5 w-5" /> Logs — {logsModal.nome}</h3>
-              <button type="button" onClick={() => setLogsModal(null)} className="text-gray-400 hover:text-gray-600"><X className="h-5 w-5" /></button>
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <Clock className="h-5 w-5" /> Logs — {logsModal.nome}
+              </h3>
+              <button type="button" onClick={() => setLogsModal(null)} className="text-gray-400 hover:text-gray-600">
+                <X className="h-5 w-5" />
+              </button>
             </div>
             {logsModal.logs.length === 0 ? (
               <p className="text-center text-muted-foreground py-8">Nenhum log registrado</p>
@@ -297,11 +437,14 @@ export default function GerenciamentoAcessosPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b text-left text-muted-foreground">
-                    <th className="pb-2">Data/Hora</th><th className="pb-2">Ação</th><th className="pb-2">IP</th><th className="pb-2">Detalhes</th>
+                    <th className="pb-2">Data/Hora</th>
+                    <th className="pb-2">Acao</th>
+                    <th className="pb-2">IP</th>
+                    <th className="pb-2">Detalhes</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {logsModal.logs.slice(0, 20).map(l => (
+                  {logsModal.logs.map(l => (
                     <tr key={l.id} className="border-b">
                       <td className="py-2 text-xs text-muted-foreground whitespace-nowrap">{fmtDate(l.data)}</td>
                       <td className="py-2 font-medium">{l.acao}</td>
@@ -312,6 +455,41 @@ export default function GerenciamentoAcessosPage() {
                 </tbody>
               </table>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Modal Preview */}
+      {previewModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setPreviewModal(null)}>
+          <div className="bg-white dark:bg-gray-900 rounded-xl max-w-md w-full p-6 space-y-4 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <Eye className="h-5 w-5 text-blue-600" /> Preview do Portal
+              </h3>
+              <button type="button" onClick={() => setPreviewModal(null)} className="text-gray-400 hover:text-gray-600">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-sm text-blue-800 dark:text-blue-300 flex gap-2">
+              <Eye className="h-4 w-4 flex-shrink-0 mt-0.5" />
+              <span>{previewModal.aviso}</span>
+            </div>
+            <div className="space-y-2">
+              <div>
+                <label className="text-xs text-muted-foreground">Cliente</label>
+                <p className="font-medium">{previewModal.nome}</p>
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground">Expira em</label>
+                <p className="text-sm font-medium text-amber-600">{previewModal.expira_em}</p>
+              </div>
+            </div>
+            <a href={previewModal.preview_url} target="_blank" rel="noopener noreferrer" className="w-full">
+              <Button className="w-full">
+                <ExternalLink className="h-4 w-4 mr-2" /> Abrir Portal como Cliente
+              </Button>
+            </a>
           </div>
         </div>
       )}
