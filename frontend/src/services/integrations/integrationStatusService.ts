@@ -10,7 +10,7 @@ export interface IntegrationStatusItem {
   id: string;
   name: string;
   category: 'banking' | 'government' | 'hr';
-  status: 'online' | 'offline' | 'degraded';
+  status: 'online' | 'offline' | 'degraded' | 'homologacao';
   description: string;
   last_check: string | null;
   last_sync: string | null;
@@ -23,9 +23,19 @@ export interface IntegrationStatusResponse {
   online: number;
   offline: number;
   degraded: number;
+  homologacao: number;
   integrations: IntegrationStatusItem[];
   checked_at: string;
 }
+
+/**
+ * Integrações governamentais em homologação (tpAmb=2).
+ * São "degraded" no backend mas na verdade estão em ambiente de teste.
+ */
+const HOMOLOGACAO_NAMES = [
+  'SEFAZ NF-e', 'SEFAZ CT-e', 'SEFAZ MDF-e', 'NFS-e Manaus',
+  'eSocial', 'FGTS Digital', 'Simples Nacional', 'Receita Federal',
+];
 
 /**
  * Busca status de todas as integrações
@@ -34,7 +44,28 @@ export async function fetchIntegrationStatus(): Promise<IntegrationStatusRespons
   const { data } = await api.get<IntegrationStatusResponse>(
     '/api/v1/government/dashboard/status'
   );
-  return data;
+
+  // Reclassificar integrações gov em homologação de "degraded" para "homologacao"
+  let homologacaoCount = 0;
+  let realDegraded = 0;
+
+  const integrations = data.integrations.map((item) => {
+    if (item.status === 'degraded' && HOMOLOGACAO_NAMES.includes(item.name)) {
+      homologacaoCount++;
+      return { ...item, status: 'homologacao' as const, error_message: 'Ambiente de homologação (tpAmb=2)' };
+    }
+    if (item.status === 'degraded') {
+      realDegraded++;
+    }
+    return item;
+  });
+
+  return {
+    ...data,
+    integrations,
+    degraded: realDegraded,
+    homologacao: homologacaoCount,
+  };
 }
 
 /**
