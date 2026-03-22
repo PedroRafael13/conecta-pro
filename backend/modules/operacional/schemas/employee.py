@@ -92,6 +92,7 @@ class EmployeeResponse(BaseModel):
     status: str | None = None
     cpf: str | None = None
     telefone: str | None = None
+    data_admissao: str | None = None
 
 
 class EmployeeListResponse(BaseModel):

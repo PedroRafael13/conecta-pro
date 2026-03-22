@@ -59,11 +59,17 @@ export default function FolhaPage() {
     load();
   }, [periodo]);
 
-  const totalBruto = payrollData.reduce((a, p) => a + (p.salario_bruto || p.salario_base || 0), 0);
-  const totalInss = payrollData.reduce((a, p) => a + (p.inss || 0), 0);
-  const totalIrrf = payrollData.reduce((a, p) => a + (p.irrf || 0), 0);
-  const totalDescontos = totalInss + totalIrrf;
-  const totalLiquido = totalBruto - totalDescontos;
+  const totalBruto = payrollData.reduce((a, p) => a + (p.total_proventos || p.salario_base || 0), 0);
+  const totalInss = payrollData.reduce((a, p) => {
+    const inssItem = (p.descontos || []).find((d: any) => d.descricao?.includes('INSS'));
+    return a + (inssItem?.valor || 0);
+  }, 0);
+  const totalIrrf = payrollData.reduce((a, p) => {
+    const irrfItem = (p.descontos || []).find((d: any) => d.descricao?.includes('IRRF'));
+    return a + (irrfItem?.valor || 0);
+  }, 0);
+  const totalDescontos = payrollData.reduce((a, p) => a + (p.total_descontos || 0), 0);
+  const totalLiquido = payrollData.reduce((a, p) => a + (p.salario_liquido || 0), 0);
 
   const summaryCards = [
     { title: 'Total Bruto', value: fmt(totalBruto), color: 'text-blue-600', bgColor: 'bg-blue-50' },
@@ -136,17 +142,21 @@ export default function FolhaPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {payrollData.map((item, i) => (
-                      <TableRow key={i}>
-                        <TableCell className="font-medium">{item.nome}</TableCell>
-                        <TableCell>{fmt(item.salario_base)}</TableCell>
-                        <TableCell>{fmt(item.horas_extras || 0)}</TableCell>
-                        <TableCell>{fmt(item.adicional_noturno || 0)}</TableCell>
-                        <TableCell className="text-red-500">{fmt(item.inss)}</TableCell>
-                        <TableCell className="text-red-500">{fmt(item.irrf)}</TableCell>
-                        <TableCell className="font-bold">{fmt(item.salario_liquido || (item.salario_bruto || item.salario_base) - (item.inss || 0) - (item.irrf || 0))}</TableCell>
-                      </TableRow>
-                    ))}
+                    {payrollData.map((item, i) => {
+                      const inssVal = (item.descontos || []).find((d: any) => d.descricao?.includes('INSS'))?.valor || 0;
+                      const irrfVal = (item.descontos || []).find((d: any) => d.descricao?.includes('IRRF'))?.valor || 0;
+                      return (
+                        <TableRow key={i}>
+                          <TableCell className="font-medium">{item.nome || item.employee_name}</TableCell>
+                          <TableCell>{fmt(item.salario_base)}</TableCell>
+                          <TableCell>{fmt(item.horas_extras || 0)}</TableCell>
+                          <TableCell>{fmt(item.adicional_noturno || 0)}</TableCell>
+                          <TableCell className="text-red-500">{fmt(inssVal)}</TableCell>
+                          <TableCell className="text-red-500">{fmt(irrfVal)}</TableCell>
+                          <TableCell className="font-bold">{fmt(item.salario_liquido)}</TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               )}

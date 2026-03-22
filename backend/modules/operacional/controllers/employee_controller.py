@@ -80,8 +80,11 @@ async def list_employees(
                 nome=item.nome,
                 email=item.email,
                 matricula=item.matricula,
+                cpf=item.cpf,
                 cargo=item.cargo,
                 departamento=item.departamento,
+                telefone=item.telefone,
+                data_admissao=str(item.data_admissao) if item.data_admissao else None,
                 status=item.status,
             )
             for item in items
