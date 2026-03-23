@@ -268,6 +268,7 @@ export const modules: Module[] = [
     enabled: true,
     subModules: [
       { id: 'dashboard-financeiro', title: 'Dashboard Financeiro', href: '/modulos/financeiro/dashboard', icon: 'LayoutDashboard', permissions: ['financial:read'] },
+      { id: 'contratos', title: 'Contratos', href: '/modulos/financeiro/contratos', icon: 'FileText', permissions: ['financial:read'] },
       { id: 'contas-pagar', title: 'Contas a Pagar', href: '/modulos/financeiro/contas-pagar', icon: 'TrendingDown', permissions: ['financial:contas-pagar'] },
       { id: 'contas-receber', title: 'Contas a Receber', href: '/modulos/financeiro/contas-receber', icon: 'TrendingUp', permissions: ['financial:contas-receber'] },
       { id: 'fluxo-caixa', title: 'Fluxo de Caixa', href: '/modulos/financeiro/fluxo-caixa', icon: 'Activity', permissions: ['financial:fluxo'] },
