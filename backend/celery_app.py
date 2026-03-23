@@ -28,6 +28,7 @@ app = Celery(
         "modules.operacional.tasks",
         "modules.bidding.tasks",
         "modules.people_management.sst.tasks",
+        "modules.people_management.ged.tasks",
     ],
 )
 
@@ -96,6 +97,9 @@ app.conf.task_routes = {
     # SST - Afastamentos
     "sst.verificar_afastamentos_vencidos": {"queue": "operacional"},
     "sst.verificar_inss_pendente": {"queue": "operacional"},
+    # GED - Kits e CNDs (roteadas para worker operacional)
+    "ged.auto_collect_documents": {"queue": "operacional"},
+    "ged.sync_cnds": {"queue": "operacional"},
 }
 
 # Configurações gerais
@@ -262,6 +266,15 @@ app.conf.beat_schedule = {
     # Alerta afastamentos > 15 dias sem INSS (diário)
     "sst-check-inss-pending-daily": {
         "task": "sst.verificar_inss_pendente",
+        "schedule": 86400.0,  # 24 horas
+        "options": {"queue": "operacional"},
+    },
+    # =========================================================================
+    # GED - KITS DOCUMENTAIS E CERTIDÕES
+    # =========================================================================
+    # Sincronização diária de CNDs renovadas (06:00)
+    "ged-sync-cnds-daily": {
+        "task": "ged.sync_cnds",
         "schedule": 86400.0,  # 24 horas
         "options": {"queue": "operacional"},
     },
