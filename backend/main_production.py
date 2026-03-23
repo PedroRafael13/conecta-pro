@@ -357,7 +357,7 @@ try:
     api_router.include_router(kpi_trends_router, prefix="/operacional", tags=["Operacional - KPI Trends"])
     api_router.include_router(occurrence_router, prefix="/operacional", tags=["Operacional - Ocorrencias"])
     # Diaristas
-    api_router.include_router(diarist_router, prefix="/operacional/diaristas", tags=["Operacional - Diaristas"])
+    api_router.include_router(diarist_router, prefix="/operacional", tags=["Operacional - Diaristas"])
     api_router.include_router(
         diarist_fiscal_router, prefix="/operacional/diaristas/fiscal", tags=["Operacional - Diaristas Fiscal"]
     )

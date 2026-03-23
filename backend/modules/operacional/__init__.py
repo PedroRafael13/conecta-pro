@@ -273,7 +273,7 @@ operacional_router.include_router(substitution_router, prefix="/substituicoes", 
 operacional_router.include_router(time_bank_router, prefix="/banco-horas", tags=["Operacional - Banco de Horas"])
 
 # Diaristas
-operacional_router.include_router(diarist_router, prefix="/diaristas", tags=["Operacional - Diaristas"])
+operacional_router.include_router(diarist_router, tags=["Operacional - Diaristas"])
 
 # Employees
 operacional_router.include_router(employee_router, tags=["Operacional - Employees"])

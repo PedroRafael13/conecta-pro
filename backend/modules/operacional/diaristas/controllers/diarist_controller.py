@@ -47,7 +47,7 @@ from modules.operacional.diaristas.services.diarist_service import DiaristServic
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(tags=["Diaristas"])
+router = APIRouter(prefix="/diaristas", tags=["Diaristas"])
 
 
 def get_diarist_service(db: Session = Depends(get_db)) -> DiaristService:
