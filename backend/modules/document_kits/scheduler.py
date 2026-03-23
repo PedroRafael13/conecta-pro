@@ -138,11 +138,15 @@ def get_scheduler_status() -> dict:
 
     jobs = []
     for job in scheduler.get_jobs():
-        next_run = job.next_run_time.isoformat() if job.next_run_time else None
+        next_run = None
+        if hasattr(job, "next_run_time") and job.next_run_time:
+            next_run = job.next_run_time.isoformat()
+        elif hasattr(job, "next_fire_time") and job.next_fire_time:
+            next_run = job.next_fire_time.isoformat()
         jobs.append(
             {
                 "id": job.id,
-                "name": job.name,
+                "name": str(getattr(job, "name", job.id)),
                 "next_run": next_run,
                 "trigger": str(job.trigger),
             }
