@@ -395,6 +395,125 @@ async def renew_contract(
     }
 
 
+@router.get("/bidding/dashboard")
+async def bidding_dashboard(
+    current_user: CurrentActiveUser = None,
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """Dashboard de licitacoes com editais, certidoes e propostas."""
+    from datetime import date as date_cls
+
+    today = date_cls.today()
+
+    # Editais
+    tenders = await db.execute(
+        text("""
+        SELECT id, numero, orgao_nome, objeto_resumido, valor_estimado,
+            status, participando, modalidade, data_abertura, data_encerramento_propostas,
+            segmento, tags
+        FROM bidding_tenders WHERE ativo = true ORDER BY data_abertura DESC
+    """)
+    )
+    all_tenders = [dict(r) for r in tenders.mappings().all()]
+    for t in all_tenders:
+        t["id"] = str(t["id"])
+        t["valor_estimado"] = float(t["valor_estimado"]) if t["valor_estimado"] else 0
+        t["data_abertura"] = t["data_abertura"].isoformat() if t["data_abertura"] else None
+        t["data_encerramento_propostas"] = (
+            t["data_encerramento_propostas"].isoformat() if t["data_encerramento_propostas"] else None
+        )
+
+    # Certidoes
+    certs = await db.execute(
+        text("""
+        SELECT id, tipo, nome, situacao, status, data_validade, ativo
+        FROM bidding_certificates WHERE ativo = true ORDER BY data_validade ASC
+    """)
+    )
+    all_certs = []
+    cert_alertas = []
+    for c in certs.mappings().all():
+        cd = dict(c)
+        cd["id"] = str(cd["id"])
+        dias = (cd["data_validade"].date() - today).days if cd["data_validade"] else 999
+        cd["data_validade"] = cd["data_validade"].isoformat() if cd["data_validade"] else None
+        cd["dias_para_vencer"] = dias
+        all_certs.append(cd)
+        if dias <= 0:
+            cert_alertas.append(
+                {
+                    "tipo": cd["tipo"],
+                    "nome": cd["nome"],
+                    "dias": dias,
+                    "severity": "critical",
+                    "message": f"{cd['nome']}: VENCIDA",
+                }
+            )
+        elif dias <= 15:
+            cert_alertas.append(
+                {
+                    "tipo": cd["tipo"],
+                    "nome": cd["nome"],
+                    "dias": dias,
+                    "severity": "high",
+                    "message": f"{cd['nome']}: vence em {dias} dias",
+                }
+            )
+        elif dias <= 30:
+            cert_alertas.append(
+                {
+                    "tipo": cd["tipo"],
+                    "nome": cd["nome"],
+                    "dias": dias,
+                    "severity": "medium",
+                    "message": f"{cd['nome']}: vence em {dias} dias",
+                }
+            )
+
+    # Propostas
+    props = await db.execute(
+        text("""
+        SELECT bp.id, bp.numero, bp.valor_total, bp.status, bp.ativo,
+            bt.numero as edital_numero, bt.orgao_nome, bt.objeto_resumido
+        FROM bidding_proposals bp
+        LEFT JOIN bidding_tenders bt ON bp.tender_id = bt.id
+        WHERE bp.ativo = true ORDER BY bp.created_at DESC
+    """)
+    )
+    all_props = []
+    for p in props.mappings().all():
+        pd = dict(p)
+        pd["id"] = str(pd["id"])
+        pd["valor_total"] = float(pd["valor_total"]) if pd["valor_total"] else 0
+        all_props.append(pd)
+
+    # Stats
+    participando = [t for t in all_tenders if t["participando"]]
+    won = [t for t in all_tenders if t["status"] == "won"]
+    lost = [t for t in all_tenders if t["status"] == "lost"]
+    pipeline = sum(t["valor_estimado"] for t in participando if t["status"] not in ("won", "lost"))
+    total_won = sum(t["valor_estimado"] for t in won)
+    taxa = len(won) / (len(won) + len(lost)) * 100 if (len(won) + len(lost)) > 0 else 0
+
+    return {
+        "stats": {
+            "total_editais": len(all_tenders),
+            "participando": len(participando),
+            "pipeline_valor": round(pipeline, 2),
+            "ganhas": len(won),
+            "perdidas": len(lost),
+            "total_ganho": round(total_won, 2),
+            "taxa_conversao": round(taxa, 1),
+            "certidoes_validas": sum(1 for c in all_certs if c["dias_para_vencer"] > 0),
+            "certidoes_total": len(all_certs),
+        },
+        "tenders": all_tenders,
+        "certificates": all_certs,
+        "proposals": all_props,
+        "alertas": cert_alertas,
+    }
+
+
 @router.get("/headcount")
 async def headcount_by_client(
     current_user: CurrentActiveUser = None,

@@ -48,9 +48,8 @@ const nextConfig: NextConfig = {
   // Server external packages (moved from experimental in Next.js 16)
   serverExternalPackages: ['xlsx'],
 
-  // Habilitar Turbopack (Next.js 16)
+  // Turbopack (Next.js 16)
   turbopack: {
-    // Configurações específicas do Turbopack
     resolveExtensions: ['.tsx', '.ts', '.jsx', '.js', '.json'],
   },
 
