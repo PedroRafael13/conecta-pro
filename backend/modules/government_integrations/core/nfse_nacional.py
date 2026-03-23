@@ -236,14 +236,17 @@ class NFSeNacionalManager:
         from datetime import datetime as _dt
 
         dps.calcular_valores()
-        tp_amb = "1" if self.ambiente == AmbienteNacional.PRODUCAO else "2"
+        # NFS-e Nacional: a URL sefin.nfse.gov.br É produção, tpAmb deve ser 1
+        tp_amb = "1"
         cnpj_clean = _re.sub(r"\D", "", self.cnpj)
         tomador_doc = _re.sub(r"\D", "", dps.tomador.cpf_cnpj) if dps.tomador else ""
-        im = dps.prestador.inscricao_municipal if dps.prestador else "45177801"
-        cod_trib = _re.sub(r"\.", "", dps.servico.codigo_tributacao_nacional) if dps.servico else "140601"
+        im = dps.prestador.inscricao_municipal if dps.prestador and dps.prestador.inscricao_municipal else "45177801"
+        # cTribNac: 6 dígitos (2 Item + 2 Subitem + 2 Desdobro LC 116/2003)
+        raw_trib = _re.sub(r"\D", "", dps.servico.codigo_tributacao_nacional) if dps.servico else "140601"
+        cod_trib = raw_trib[:6] if len(raw_trib) >= 6 else raw_trib.ljust(6, "0")
         valor = f"{dps.servico.valor_servico:.2f}" if dps.servico else "0.00"
-        aliquota = f"{dps.servico.aliquota_iss * 100:.2f}" if dps.servico else "5.00"
-        valor_iss = f"{dps.valor_iss:.2f}" if dps.valor_iss else "0.00"
+        _aliquota = f"{dps.servico.aliquota_iss * 100:.2f}" if dps.servico else "5.00"  # noqa: F841
+        _valor_iss = f"{dps.valor_iss:.2f}" if dps.valor_iss else "0.00"  # noqa: F841
         descricao = dps.servico.descricao if dps.servico else "Prestação de serviços"
         competencia = (
             dps.data_competencia.strftime("%Y-%m-%d") if dps.data_competencia else _dt.now().strftime("%Y-%m-%d")
@@ -254,50 +257,57 @@ class NFSeNacionalManager:
         ndps_pad = f"{int(dps.numero or '1'):015d}"  # nDPS com 15 dígitos
         dps_id = f"DPS13026031{cnpj_clean}{serie_pad}{ndps_pad}"
 
+        # Ordem EXATA do XSD TCInfDPS (tiposComplexos_v1.00.xsd):
+        # tpAmb → dhEmi → verAplic → serie → nDPS → dCompet → tpEmit → cLocEmi →
+        # [subst] → prest → [toma] → [interm] → serv → valores
         xml = f"""<?xml version="1.0" encoding="UTF-8"?>
 <DPS xmlns="http://www.sped.fazenda.gov.br/nfse" versao="1.00">
   <infDPS Id="{dps_id}">
     <tpAmb>{tp_amb}</tpAmb>
-    <dhEmi>{_dt.now().strftime("%Y-%m-%dT%H:%M:%S")}-04:00</dhEmi>
+    <dhEmi>{(_dt.now() - __import__("datetime").timedelta(hours=3)).strftime("%Y-%m-%dT%H:%M:%S")}-03:00</dhEmi>
     <verAplic>ConectaPRO-2.0</verAplic>
     <serie>900</serie>
     <nDPS>{dps.numero or "1"}</nDPS>
     <dCompet>{competencia}</dCompet>
+    <tpEmit>1</tpEmit>
+    <cLocEmi>1302603</cLocEmi>
     <prest>
       <CNPJ>{cnpj_clean}</CNPJ>
       <IM>{im}</IM>
+      <regTrib>
+        <opSimpNac>2</opSimpNac>
+        <regEspTrib>0</regEspTrib>
+      </regTrib>
     </prest>
     <toma>
       <CNPJ>{tomador_doc}</CNPJ>
+      <xNome>{dps.tomador.razao_social if dps.tomador else "TOMADOR"}</xNome>
     </toma>
     <serv>
+      <locPrest>
+        <cLocPrestacao>1302603</cLocPrestacao>
+      </locPrest>
       <cServ>
         <cTribNac>{cod_trib}</cTribNac>
         <cTribMun>100</cTribMun>
-        <CNAE>8011102</CNAE>
+        <xDescServ>{descricao}</xDescServ>
         <cNBS>120032900</cNBS>
       </cServ>
-      <xDescServ>{descricao}</xDescServ>
-      <comPrest>
-        <cMunIni>1302603</cMunIni>
-        <cMunFim>1302603</cMunFim>
-      </comPrest>
+    </serv>
+    <valores>
       <vServPrest>
-        <vReceb>{valor}</vReceb>
+        <vServ>{valor}</vServ>
       </vServPrest>
-      <tribServ>
+      <trib>
         <tribMun>
           <tribISSQN>1</tribISSQN>
-          <cMunFG>1302603</cMunFG>
-          <tpImunidade>0</tpImunidade>
-          <pAliq>{aliquota}</pAliq>
-          <tpRetISSQN>2</tpRetISSQN>
+          <tpRetISSQN>1</tpRetISSQN>
         </tribMun>
         <totTrib>
-          <vTotTrib>{valor_iss}</vTotTrib>
+          <pTotTribSN>0.00</pTotTribSN>
         </totTrib>
-      </tribServ>
-    </serv>
+      </trib>
+    </valores>
   </infDPS>
 </DPS>"""
         return xml
