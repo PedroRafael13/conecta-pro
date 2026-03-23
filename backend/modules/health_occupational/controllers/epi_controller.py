@@ -101,7 +101,7 @@ async def create_epi(
 
 
 @router.get(
-    "/",
+    "",
     response_model=StandardResponse,
     status_code=status.HTTP_200_OK,
     summary="Lista EPIs cadastrados",
