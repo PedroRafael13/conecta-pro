@@ -29,7 +29,7 @@ router = APIRouter(
 )
 
 
-@router.get("/", response_model=VacationRequestListResponse)
+@router.get("", response_model=VacationRequestListResponse)
 async def list_vacation_requests(
     status: str | None = Query(None),
     type_filter: str | None = Query(None, alias="type"),
@@ -69,7 +69,7 @@ async def list_vacation_requests(
         return VacationRequestListResponse(items=[], total=0, pendente=0, aprovado=0, rejeitado=0)
 
 
-@router.post("/", response_model=VacationRequestResponse, status_code=201)
+@router.post("", response_model=VacationRequestResponse, status_code=201)
 async def create_vacation_request(
     data: VacationRequestCreate,
     db: AsyncSession = Depends(get_db),

@@ -163,7 +163,7 @@ async def create_diarist(
         )
 
 
-@router.get("/", response_model=DiaristListResponse)
+@router.get("", response_model=DiaristListResponse)
 async def list_diarists(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),

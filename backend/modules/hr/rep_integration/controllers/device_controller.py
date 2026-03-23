@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/devices", tags=["REP Devices"])
 
 
-@router.post("/", response_model=REPDeviceResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=REPDeviceResponse, status_code=status.HTTP_201_CREATED)
 async def create_device(
     data: REPDeviceCreate,
     db: AsyncSession = Depends(get_db),
@@ -44,7 +44,7 @@ async def create_device(
     return device
 
 
-@router.get("/", response_model=REPDeviceList)
+@router.get("", response_model=REPDeviceList)
 async def list_devices(
     condominio_id: UUID | None = None,
     manufacturer: str | None = None,

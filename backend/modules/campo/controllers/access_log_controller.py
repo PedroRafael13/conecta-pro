@@ -64,7 +64,7 @@ async def create_access_logs_batch(
     }
 
 
-@router.get("/", response_model=AccessLogListResponse)
+@router.get("", response_model=AccessLogListResponse)
 async def list_access_logs(  # pylint: disable=too-many-locals
     search: str | None = Query(None),
     log_type: AccessLogType | None = Query(None),

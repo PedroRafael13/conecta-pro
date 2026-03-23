@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/admissions", tags=["DP - Admissões"])
 
 
-@router.get("/")
+@router.get("")
 async def list_admissions(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
@@ -38,7 +38,7 @@ async def list_admissions(
     return await service.list_admissions(status=status, page=page, page_size=page_size)
 
 
-@router.post("/", response_model=AdmissionProcessResponse, status_code=201)
+@router.post("", response_model=AdmissionProcessResponse, status_code=201)
 async def create_admission(
     data: AdmissionProcessCreate,
     current_user: CurrentActiveUser,

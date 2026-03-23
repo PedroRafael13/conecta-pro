@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/benefits", tags=["DP - Benefícios"])
 
 
-@router.get("/")
+@router.get("")
 async def list_all_benefits(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
@@ -73,7 +73,7 @@ async def list_employee_benefits(
     return await service.list_by_employee(employee_id, status=status)
 
 
-@router.post("/", response_model=BenefitResponse, status_code=201)
+@router.post("", response_model=BenefitResponse, status_code=201)
 async def create_benefit(
     data: BenefitCreate,
     current_user: CurrentActiveUser,

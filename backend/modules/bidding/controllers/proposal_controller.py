@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/proposals", tags=["Licitacoes - Propostas"])
 
 
-@router.get("/", response_model=ProposalListResponse)
+@router.get("", response_model=ProposalListResponse)
 async def list_proposals(
     tender_id: UUID | None = None,
     status: str | None = None,
@@ -71,7 +71,7 @@ async def get_proposal(proposal_id: UUID, db: Session = Depends(get_db)):
     return proposal
 
 
-@router.post("/", response_model=ProposalResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=ProposalResponse, status_code=status.HTTP_201_CREATED)
 async def create_proposal(data: ProposalCreate, db: Session = Depends(get_db)):
     """Cria nova proposta."""
     service = ProposalService(db)

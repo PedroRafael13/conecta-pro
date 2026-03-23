@@ -26,7 +26,7 @@ async def get_service(db: AsyncSession = Depends(get_db)) -> ComodatoService:
     return ComodatoService(db)
 
 
-@router.post("/", response_model=ComodatoResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=ComodatoResponse, status_code=status.HTTP_201_CREATED)
 async def create_comodato(
     data: ComodatoCreate,
     service: ComodatoService = Depends(get_service),
@@ -44,7 +44,7 @@ async def create_comodato(
         )
 
 
-@router.get("/", response_model=ComodatoListResponse)
+@router.get("", response_model=ComodatoListResponse)
 async def list_comodatos(
     search: str | None = Query(None),
     status_filter: str | None = Query(None, alias="status"),

@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/events", tags=["REP Events"])
 
 
-@router.get("/", response_model=REPEventList)
+@router.get("", response_model=REPEventList)
 async def list_events(  # pylint: disable=too-many-locals
     device_id: UUID | None = None,
     condominio_id: UUID | None = None,

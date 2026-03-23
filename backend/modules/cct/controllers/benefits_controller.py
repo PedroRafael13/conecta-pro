@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/beneficios", tags=["CCT — Beneficios"])
 
 
-@router.get("/")
+@router.get("")
 async def get_beneficios_cct(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),

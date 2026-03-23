@@ -61,7 +61,7 @@ async def sync_all_devices(
     return await sync_service.sync_all_devices(condominio_id)
 
 
-@router.get("/", response_model=REPSyncList)
+@router.get("", response_model=REPSyncList)
 async def list_syncs(
     device_id: UUID | None = None,
     condominio_id: UUID | None = None,

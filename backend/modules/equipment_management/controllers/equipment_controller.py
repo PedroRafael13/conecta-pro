@@ -26,7 +26,7 @@ async def get_service(db: AsyncSession = Depends(get_db)) -> EquipmentService:
     return EquipmentService(db)
 
 
-@router.post("/", response_model=EquipmentResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=EquipmentResponse, status_code=status.HTTP_201_CREATED)
 async def create_equipment(
     data: EquipmentCreate,
     service: EquipmentService = Depends(get_service),
@@ -44,7 +44,7 @@ async def create_equipment(
         )
 
 
-@router.get("/", response_model=EquipmentListResponse)
+@router.get("", response_model=EquipmentListResponse)
 async def list_equipment(
     search: str | None = Query(None),
     equipment_type: str | None = Query(None),

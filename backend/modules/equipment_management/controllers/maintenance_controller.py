@@ -37,7 +37,7 @@ async def get_ai_service(db: AsyncSession = Depends(get_db)) -> MaintenanceAISer
     return MaintenanceAIService(db)
 
 
-@router.post("/", response_model=MaintenanceResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=MaintenanceResponse, status_code=status.HTTP_201_CREATED)
 async def create_maintenance(
     data: MaintenanceCreate,
     service: MaintenanceService = Depends(get_service),
@@ -55,7 +55,7 @@ async def create_maintenance(
         )
 
 
-@router.get("/", response_model=MaintenanceListResponse)
+@router.get("", response_model=MaintenanceListResponse)
 async def list_maintenances(  # pylint: disable=too-many-locals
     search: str | None = Query(None),
     maintenance_type: str | None = Query(None),

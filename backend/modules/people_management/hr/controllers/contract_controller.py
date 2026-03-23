@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/contracts", tags=["DP - Contratos"])
 
 
-@router.get("/")
+@router.get("")
 async def list_contracts(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
@@ -61,7 +61,7 @@ async def get_current_contract(
     return contract
 
 
-@router.post("/", response_model=ContractResponse, status_code=201)
+@router.post("", response_model=ContractResponse, status_code=201)
 async def create_contract(
     data: ContractCreate,
     current_user: CurrentActiveUser,

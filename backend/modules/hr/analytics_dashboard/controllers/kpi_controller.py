@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/kpis", tags=["KPIs"])
 
 
-@router.get("/", response_model=list[KPIDefinitionResponse])
+@router.get("", response_model=list[KPIDefinitionResponse])
 async def list_kpis(
     category: KPICategory | None = Query(None),
     featured_only: bool = Query(False),
@@ -46,7 +46,7 @@ async def list_kpis(
     return kpis
 
 
-@router.post("/", response_model=KPIDefinitionResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=KPIDefinitionResponse, status_code=status.HTTP_201_CREATED)
 async def create_kpi(
     data: KPIDefinitionCreate,
     db: AsyncSession = Depends(get_db),

@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/leaves", tags=["DP - Afastamentos"])
 
 
-@router.get("/")
+@router.get("")
 async def list_leaves(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),

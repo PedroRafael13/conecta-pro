@@ -28,7 +28,7 @@ async def get_service(db: AsyncSession = Depends(get_db)) -> InstallationService
     return InstallationService(db)
 
 
-@router.post("/", response_model=InstallationResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=InstallationResponse, status_code=status.HTTP_201_CREATED)
 async def create_installation(
     data: InstallationCreate,
     service: InstallationService = Depends(get_service),
@@ -46,7 +46,7 @@ async def create_installation(
         )
 
 
-@router.get("/", response_model=InstallationListResponse)
+@router.get("", response_model=InstallationListResponse)
 async def list_installations(
     search: str | None = Query(None),
     status_filter: str | None = Query(None, alias="status"),

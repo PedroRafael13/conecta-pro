@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/feriados", tags=["CCT — Feriados"])
 
 
-@router.get("/")
+@router.get("")
 async def get_feriados(
     current_user: CurrentActiveUser,
 ) -> Any:

@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/employees", tags=["DP - Funcionários"])
 
 
-@router.get("/", response_model=DPEmployeeList)
+@router.get("", response_model=DPEmployeeList)
 async def list_employees(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),

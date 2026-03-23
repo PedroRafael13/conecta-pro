@@ -244,7 +244,7 @@ async def calculate_commission(
     return CommissionResponse.model_validate(commission)
 
 
-@router.get("/", response_model=CommissionListResponse)
+@router.get("", response_model=CommissionListResponse)
 async def list_commissions(  # pylint: disable=too-many-locals
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),

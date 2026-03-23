@@ -43,7 +43,7 @@ def get_service(db: AsyncSession = Depends(get_db)) -> OrdemServicoService:
 # =============================================================================
 
 
-@router.post("/", response_model=OrdemServicoRead, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=OrdemServicoRead, status_code=status.HTTP_201_CREATED)
 async def criar_os(
     data: OrdemServicoCreate,
     service: OrdemServicoService = Depends(get_service),
@@ -53,7 +53,7 @@ async def criar_os(
     return OrdemServicoRead.model_validate(os)
 
 
-@router.get("/", response_model=OSPaginatedResponse)
+@router.get("", response_model=OSPaginatedResponse)
 async def listar_os(
     tipo: TipoOS | None = None,
     status_os: StatusOS | None = Query(None, alias="status"),

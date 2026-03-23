@@ -33,7 +33,7 @@ router = APIRouter(prefix="/proposals", tags=["CRM - Proposals"])
 # ============== Proposal Endpoints ==============
 
 
-@router.post("/", response_model=ProposalDetailResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=ProposalDetailResponse, status_code=status.HTTP_201_CREATED)
 async def create_proposal(
     data: ProposalCreate,
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
@@ -78,7 +78,7 @@ async def create_proposal_from_opportunity(
     return ProposalDetailResponse.model_validate(proposal)
 
 
-@router.get("/", response_model=ProposalListResponse)
+@router.get("", response_model=ProposalListResponse)
 async def list_proposals(  # pylint: disable=too-many-locals
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),

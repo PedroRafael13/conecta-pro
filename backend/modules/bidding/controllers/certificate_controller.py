@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/certificates", tags=["Licitacoes - Certidoes"])
 
 
-@router.get("/")
+@router.get("")
 async def list_certificates(
     cnpj: str | None = None,
     tipo: str | None = None,
@@ -84,7 +84,7 @@ async def get_by_cnpj_tipo(cnpj: str, tipo: str, db: Session = Depends(get_db)):
     return cert
 
 
-@router.post("/", response_model=CertificateResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=CertificateResponse, status_code=status.HTTP_201_CREATED)
 async def create_certificate(data: CertificateCreate, db: Session = Depends(get_db)):
     """Cria nova certidao."""
     service = CertificateService(db)

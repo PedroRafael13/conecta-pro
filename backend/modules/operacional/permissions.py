@@ -344,7 +344,7 @@ def require_operacional_permission(*permissions: Permission):
     Dependency factory para validar permissoes do modulo operacional.
 
     Uso:
-        @router.get("/", dependencies=[Depends(require_operacional_permission(Permission.POSTS_VIEW))])
+        @router.get("", dependencies=[Depends(require_operacional_permission(Permission.POSTS_VIEW))])
         async def list_posts(): ...
 
     Args:
@@ -384,7 +384,7 @@ def require_minimum_role(minimum_role: OperacionalRole):
     Usa a hierarquia de poder para comparacao.
 
     Uso:
-        @router.get("/", dependencies=[Depends(require_minimum_role(OperacionalRole.SUPERVISOR))])
+        @router.get("", dependencies=[Depends(require_minimum_role(OperacionalRole.SUPERVISOR))])
         async def supervisor_endpoint(): ...
 
     Args:

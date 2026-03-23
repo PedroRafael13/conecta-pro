@@ -59,7 +59,7 @@ async def create_equipment_status(
     return EquipmentStatusResponse.model_validate(equipment)
 
 
-@router.get("/", response_model=EquipmentStatusListResponse)
+@router.get("", response_model=EquipmentStatusListResponse)
 async def list_equipment_status(  # pylint: disable=too-many-locals
     search: str | None = Query(None),
     equipment_type: str | None = Query(None),

@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/documents", tags=["Licitacoes - Documentos"])
 
 
-@router.get("/")
+@router.get("")
 async def list_documents(
     tipo: str | None = None,
     status: str | None = None,
@@ -86,7 +86,7 @@ async def get_document(document_id: UUID, db: Session = Depends(get_db)):
     return doc
 
 
-@router.post("/", response_model=CompanyDocumentResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=CompanyDocumentResponse, status_code=status.HTTP_201_CREATED)
 async def create_document(data: CompanyDocumentCreate, db: Session = Depends(get_db)):
     """Cria novo documento."""
     service = DocumentService(db)

@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/tenders", tags=["Licitacoes - Editais"])
 
 
-@router.get("/", response_model=TenderListResponse)
+@router.get("", response_model=TenderListResponse)
 async def list_tenders(
     uf: str = Query(default="AM", max_length=2),
     municipio: str | None = None,
@@ -98,7 +98,7 @@ async def get_tender(tender_id: UUID, db: Session = Depends(get_db)):
     return tender
 
 
-@router.post("/", response_model=TenderResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=TenderResponse, status_code=status.HTTP_201_CREATED)
 async def create_tender(data: TenderCreate, db: Session = Depends(get_db)):
     """Cria novo edital."""
     service = TenderService(db)

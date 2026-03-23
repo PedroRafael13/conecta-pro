@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/contracts", tags=["Licitacoes - Contratos"])
 
 
-@router.get("/", response_model=ContractListResponse)
+@router.get("", response_model=ContractListResponse)
 async def list_contracts(
     orgao_cnpj: str | None = None,
     status: str | None = None,
@@ -73,7 +73,7 @@ async def get_contract(contract_id: UUID, db: Session = Depends(get_db)):
     return contract
 
 
-@router.post("/", response_model=PublicContractResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=PublicContractResponse, status_code=status.HTTP_201_CREATED)
 async def create_contract(data: PublicContractCreate, db: Session = Depends(get_db)):
     """Cria novo contrato."""
     service = ContractService(db)

@@ -91,7 +91,7 @@ class ExecutionResponse(BaseModel):
 # ==================== Endpoints ====================
 
 
-@router.get("/", response_model=list[WorkflowResponse])
+@router.get("", response_model=list[WorkflowResponse])
 async def list_workflows(
     tenant_id: str = Query(..., description="ID do tenant"),
     workflow_status: WorkflowStatus | None = Query(None, alias="status"),
@@ -133,7 +133,7 @@ async def get_workflow(
     return workflow
 
 
-@router.post("/", response_model=WorkflowResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=WorkflowResponse, status_code=status.HTTP_201_CREATED)
 async def create_workflow(
     data: WorkflowCreate,
     db: AsyncSession = Depends(get_db),

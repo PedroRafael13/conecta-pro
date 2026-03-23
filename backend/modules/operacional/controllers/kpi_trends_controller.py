@@ -42,7 +42,7 @@ class KPITrendsResponse(BaseModel):
     data: KPITrendsData
 
 
-@router.get("/", response_model=KPITrendsResponse)
+@router.get("", response_model=KPITrendsResponse)
 async def get_kpi_trends(  # pylint: disable=too-many-locals
     _user: CurrentActiveUser,
     period: Literal["7d", "30d", "90d"] = Query("7d", description="Período de análise"),

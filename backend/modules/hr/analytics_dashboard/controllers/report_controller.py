@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/reports", tags=["Relatórios"])
 
 
-@router.get("/", response_model=list[ScheduledReportResponse])
+@router.get("", response_model=list[ScheduledReportResponse])
 async def list_reports(
     report_type: str | None = Query(None),
     report_status: ReportStatus | None = Query(None, alias="status"),
@@ -44,7 +44,7 @@ async def list_reports(
     return reports
 
 
-@router.post("/", response_model=ScheduledReportResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=ScheduledReportResponse, status_code=status.HTTP_201_CREATED)
 async def create_report(
     data: ScheduledReportCreate,
     db: AsyncSession = Depends(get_db),

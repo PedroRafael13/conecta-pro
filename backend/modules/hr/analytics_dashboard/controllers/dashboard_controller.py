@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/dashboards", tags=["Dashboards"])
 
 
-@router.get("/", response_model=list[DashboardListResponse])
+@router.get("", response_model=list[DashboardListResponse])
 async def list_dashboards(
     dashboard_type: str | None = Query(None, description="Filtrar por tipo"),
     page: int = Query(1, ge=1),
@@ -47,7 +47,7 @@ async def list_dashboards(
     return dashboards
 
 
-@router.post("/", response_model=DashboardConfigResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=DashboardConfigResponse, status_code=status.HTTP_201_CREATED)
 async def create_dashboard(
     data: DashboardConfigCreate,
     db: AsyncSession = Depends(get_db),

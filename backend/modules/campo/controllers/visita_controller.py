@@ -46,7 +46,7 @@ def get_service(db: AsyncSession = Depends(get_db)) -> VisitaService:
 # =============================================================================
 
 
-@router.post("/", response_model=VisitaRead, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=VisitaRead, status_code=status.HTTP_201_CREATED)
 async def criar_visita(
     data: VisitaCreate,
     service: VisitaService = Depends(get_service),
@@ -56,7 +56,7 @@ async def criar_visita(
     return VisitaRead.model_validate(visita)
 
 
-@router.get("/", response_model=VisitaPaginatedResponse)
+@router.get("", response_model=VisitaPaginatedResponse)
 async def listar_visitas(
     tipo: TipoVisita | None = None,
     status_visita: StatusVisita | None = Query(None, alias="status"),

@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/terminations", tags=["DP - Rescisões"])
 
 
-@router.get("/")
+@router.get("")
 async def list_terminations(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
@@ -44,7 +44,7 @@ async def list_terminations(
     return await service.list_terminations(status=status, page=page, page_size=page_size)
 
 
-@router.post("/", response_model=TerminationResponse, status_code=201)
+@router.post("", response_model=TerminationResponse, status_code=201)
 async def create_termination(
     data: TerminationCreate,
     current_user: CurrentActiveUser,

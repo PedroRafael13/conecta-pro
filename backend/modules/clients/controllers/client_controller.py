@@ -59,7 +59,7 @@ def get_ai_service(db: Session = Depends(get_db)) -> ClientAIService:
 # =============================================================================
 
 
-@router.post("/", response_model=ClientResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=ClientResponse, status_code=status.HTTP_201_CREATED)
 async def create_client(data: ClientCreate, service: ClientService = Depends(get_service)) -> ClientResponse:
     """Cria um novo cliente."""
     try:
@@ -70,7 +70,7 @@ async def create_client(data: ClientCreate, service: ClientService = Depends(get
 
 
 @router.get("")
-@router.get("/", include_in_schema=False)
+@router.get("", include_in_schema=False)
 async def list_clients(  # pylint: disable=too-many-locals
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),

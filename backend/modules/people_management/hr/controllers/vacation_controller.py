@@ -30,7 +30,7 @@ except ImportError:
     logger.info("Router de férias operacional não disponível para re-export")
 
 
-@router.get("/")
+@router.get("")
 async def list_vacations(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
