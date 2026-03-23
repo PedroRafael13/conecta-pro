@@ -125,9 +125,13 @@ class DocumentResponse(BaseModel):
     requires_signature: bool
     signature_deadline: datetime | None
     is_ocr_processed: bool
-    ocr_confidence: float | None
+    ocr_text: str | None = None
+    ocr_confidence: float | None = None
     is_indexed: bool
-    search_keywords: list[str] | None
+    search_keywords: list[str] | None = None
+    ai_classification: dict | None = None
+    ai_confidence: float | None = None
+    ai_processed_at: datetime | None = None
     external_reference: str | None
     view_count: int
     download_count: int

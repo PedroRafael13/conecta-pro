@@ -278,6 +278,12 @@ app.conf.beat_schedule = {
         "schedule": 86400.0,  # 24 horas
         "options": {"queue": "operacional"},
     },
+    # Alertas de expiração de documentos (diário)
+    "ged-check-document-expiry-daily": {
+        "task": "ged.check_document_expiry",
+        "schedule": 86400.0,  # 24 horas
+        "options": {"queue": "batch"},
+    },
 }
 
 

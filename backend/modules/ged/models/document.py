@@ -92,7 +92,7 @@ class DocumentConfidentiality(StrEnum):
     INTERNO = "interno"
     CONFIDENCIAL = "confidencial"
     RESTRITO = "restrito"
-    SECRETO = "secreto"
+    SECRETO = "secreto"  # pragma: allowlist secret
 
 
 class FileType(StrEnum):
@@ -214,6 +214,11 @@ class Document(Base):
     is_indexed: Mapped[bool] = mapped_column(Boolean, default=False)
     indexed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     search_keywords: Mapped[list[str] | None] = mapped_column(ARRAY(String), nullable=True)
+
+    # Classificação IA
+    ai_classification: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    ai_confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
+    ai_processed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     # Metadados
     extra_metadata: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
@@ -385,6 +390,12 @@ class Document(Base):
         self.ocr_confidence = confidence
         self.is_ocr_processed = True
         self.ocr_processed_at = datetime.utcnow()
+
+    def set_ai_classification(self, classification: dict, confidence: float) -> None:
+        """Define resultado da classificacao IA."""
+        self.ai_classification = classification
+        self.ai_confidence = confidence
+        self.ai_processed_at = datetime.utcnow()
 
     def mark_as_indexed(self, keywords: list[str] = None) -> None:
         """Marca como indexado."""
