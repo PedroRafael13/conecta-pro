@@ -33,7 +33,7 @@ except ImportError:
     default_retry_delay=300,
     queue="ged",
 )
-def ged_auto_collect_documents(self, reference_month_iso: str) -> dict:
+def ged_auto_collect_documents(self, reference_month_iso: str | None = None) -> dict:
     """Task Celery para coleta automatica de documentos em kits.
 
     Deve ser chamada apos o fechamento da folha de pagamento mensal.
@@ -43,21 +43,24 @@ def ged_auto_collect_documents(self, reference_month_iso: str) -> dict:
     Args:
         reference_month_iso: Mes de referencia em formato ISO (YYYY-MM-DD).
             Sera normalizado para o primeiro dia do mes.
+            Se None, usa o mes atual.
 
     Returns:
         Dicionario com resumo da execucao.
     """
     import asyncio
 
-    logger.info("Task ged_auto_collect_documents iniciada para %s", reference_month_iso)
-
-    try:
-        reference_month = date.fromisoformat(reference_month_iso)
-    except (ValueError, TypeError):
-        logger.error("Data invalida: %s", reference_month_iso)
-        return {"error": f"Data invalida: {reference_month_iso}"}
+    if reference_month_iso is None:
+        reference_month = date.today().replace(day=1)
+    else:
+        try:
+            reference_month = date.fromisoformat(reference_month_iso)
+        except (ValueError, TypeError):
+            logger.error("Data invalida: %s", reference_month_iso)
+            return {"error": f"Data invalida: {reference_month_iso}"}
 
     reference_month = reference_month.replace(day=1)
+    logger.info("Task ged_auto_collect_documents iniciada para %s", reference_month.isoformat())
 
     async def _run():
         from core.database import async_session_factory

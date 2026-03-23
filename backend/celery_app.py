@@ -7,6 +7,7 @@ Ponto de entrada para os workers Celery de integrações governamentais.
 import os
 
 from celery import Celery
+from celery.schedules import crontab
 from kombu import Exchange, Queue
 
 # Broker e Backend (Redis)
@@ -278,11 +279,12 @@ app.conf.beat_schedule = {
         "schedule": 86400.0,  # 24 horas
         "options": {"queue": "operacional"},
     },
-    # Alertas de expiração de documentos (diário)
-    "ged-check-document-expiry-daily": {
-        "task": "ged.check_document_expiry",
-        "schedule": 86400.0,  # 24 horas
-        "options": {"queue": "batch"},
+    # Geração mensal de kits — dia 1 às 02:00 (substitui APScheduler)
+    "ged-auto-collect-monthly": {
+        "task": "ged.auto_collect_documents",
+        "schedule": crontab(day_of_month="1", hour="2", minute="0"),
+        "args": [None],  # reference_month=None → usa mês atual
+        "options": {"queue": "operacional"},
     },
 }
 
