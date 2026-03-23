@@ -12,6 +12,8 @@ import {
   Wand2,
   Eye,
   ChevronRight,
+  Upload,
+  PenTool,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -137,11 +139,25 @@ export default function GEDDashboardPage() {
         </div>
         <div className="flex gap-2">
           <button
+            onClick={() => router.push('/modulos/gestao-pessoas/ged/assinaturas')}
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+          >
+            <PenTool className="h-4 w-4" />
+            Assinaturas
+          </button>
+          <button
+            onClick={() => router.push('/modulos/gestao-pessoas/ged/upload')}
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+          >
+            <Upload className="h-4 w-4" />
+            Upload com IA
+          </button>
+          <button
             onClick={handleAutoAssemble}
             className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
           >
             <Wand2 className="h-4 w-4" />
-            Montar Kits Automatico
+            Montar Kits
           </button>
           <button
             onClick={() => router.push('/modulos/gestao-pessoas/ged/kits/?new=true')}
