@@ -8,7 +8,7 @@ e metricas de faturamento.
 import logging
 from typing import Any
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -184,6 +184,217 @@ async def nfse_dashboard(
     }
 
 
+@router.get("/contracts")
+async def list_contracts(
+    status_filter: str | None = Query(None, alias="status", description="ativo, cancelado, etc."),
+    current_user: CurrentActiveUser = None,
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """Lista contratos com dados do cliente e retencoes fiscais."""
+    conditions = ["ct.is_active = true"]
+    params: dict[str, Any] = {}
+    if status_filter:
+        conditions.append("ct.status = :status")
+        params["status"] = status_filter
+    where = " AND ".join(conditions)
+    result = await db.execute(
+        text(f"""
+        SELECT ct.id, ct.contract_number, ct.name as servico, ct.description,
+            ct.monthly_value, ct.total_value, ct.start_date, ct.end_date,
+            ct.status, ct.contract_type, ct.auto_renewal,
+            ct.renewal_period_months, ct.renewal_notification_days,
+            ct.adjustment_enabled, ct.adjustment_index,
+            ct.sla_config,
+            c.id as client_id, c.name as client_name,
+            c.document_number as client_cnpj, c.email as client_email,
+            c.address_city, c.address_state
+        FROM contracts ct
+        JOIN clients c ON ct.client_id = c.id
+        WHERE {where}
+        ORDER BY ct.monthly_value DESC
+        """),
+        params,
+    )
+    rows = result.mappings().all()
+    total_mrr = sum(float(r["monthly_value"]) for r in rows)
+    return {
+        "total": len(rows),
+        "mrr_total": round(total_mrr, 2),
+        "items": [
+            {
+                "id": str(r["id"]),
+                "contract_number": r["contract_number"],
+                "servico": r["servico"],
+                "description": r["description"],
+                "monthly_value": float(r["monthly_value"]),
+                "total_value": float(r["total_value"]) if r["total_value"] else 0,
+                "start_date": r["start_date"].isoformat() if r["start_date"] else None,
+                "end_date": r["end_date"].isoformat() if r["end_date"] else None,
+                "status": r["status"],
+                "contract_type": r["contract_type"],
+                "auto_renewal": r["auto_renewal"],
+                "renewal_period_months": r["renewal_period_months"],
+                "adjustment_enabled": r["adjustment_enabled"],
+                "adjustment_index": r["adjustment_index"],
+                "sla_config": r["sla_config"] or {},
+                "client": {
+                    "id": str(r["client_id"]),
+                    "name": r["client_name"],
+                    "cnpj": r["client_cnpj"],
+                    "email": r["client_email"],
+                    "city": r["address_city"],
+                    "state": r["address_state"],
+                },
+            }
+            for r in rows
+        ],
+    }
+
+
+@router.get("/contracts/summary")
+async def contracts_summary(
+    current_user: CurrentActiveUser = None,
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """Resumo dos contratos com alertas de vencimento."""
+    from datetime import date as date_cls
+
+    today = date_cls.today()
+    result = await db.execute(
+        text("""
+        SELECT ct.id, ct.contract_number, ct.name as servico,
+            ct.monthly_value, ct.end_date, ct.status, ct.auto_renewal, ct.sla_config,
+            c.name as client_name, c.document_number as client_cnpj
+        FROM contracts ct JOIN clients c ON ct.client_id = c.id
+        WHERE ct.is_active = true ORDER BY ct.end_date ASC
+        """)
+    )
+    rows = result.mappings().all()
+    ativos = [r for r in rows if r["status"] == "ativo"]
+    total_mrr = sum(float(r["monthly_value"]) for r in ativos)
+    com_inss = sum(1 for r in ativos if r["sla_config"] and r["sla_config"].get("retencao_inss"))
+    com_issqn = sum(1 for r in ativos if r["sla_config"] and r["sla_config"].get("retencao_issqn"))
+    com_pis = sum(1 for r in ativos if r["sla_config"] and r["sla_config"].get("retencao_pis_cofins_csll"))
+
+    alertas = []
+    for r in ativos:
+        if r["end_date"]:
+            dias = (r["end_date"] - today).days
+            sev = (
+                "critical"
+                if dias <= 0
+                else "high"
+                if dias <= 30
+                else "medium"
+                if dias <= 60
+                else "low"
+                if dias <= 90
+                else None
+            )
+            if sev:
+                msg = f"VENCIDO há {abs(dias)} dias" if dias <= 0 else f"Vence em {dias} dias"
+                alertas.append(
+                    {
+                        "contract_number": r["contract_number"],
+                        "client": r["client_name"],
+                        "end_date": r["end_date"].isoformat(),
+                        "dias": dias,
+                        "severity": sev,
+                        "message": msg,
+                    }
+                )
+
+    return {
+        "total_ativos": len(ativos),
+        "mrr_total": round(total_mrr, 2),
+        "mrr_anual": round(total_mrr * 12, 2),
+        "retencoes": {"com_inss": com_inss, "com_issqn": com_issqn, "com_pis_cofins": com_pis},
+        "vencimentos": {
+            "em_30_dias": sum(1 for a in alertas if a["severity"] in ("critical", "high")),
+            "em_60_dias": sum(1 for a in alertas if a["severity"] == "medium"),
+            "em_90_dias": sum(1 for a in alertas if a["severity"] == "low"),
+        },
+        "alertas": alertas,
+    }
+
+
+@router.post("/contracts/{contract_id}/renew")
+async def renew_contract(
+    contract_id: str,
+    reajuste_percent: float = Query(0.0, description="Percentual de reajuste"),
+    meses: int = Query(12, description="Meses de renovacao"),
+    current_user: CurrentActiveUser = None,
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """Renova contrato criando novo periodo com reajuste opcional."""
+    import uuid
+    from datetime import date as date_cls
+    from datetime import timedelta
+
+    result = await db.execute(text("SELECT * FROM contracts WHERE id = :id AND is_active = true"), {"id": contract_id})
+    contract = result.mappings().first()
+    if not contract:
+        raise HTTPException(status_code=404, detail="Contrato nao encontrado")
+    old_value = float(contract["monthly_value"])
+    new_value = round(old_value * (1 + reajuste_percent / 100), 2)
+    old_end = contract["end_date"]
+    new_start = old_end + timedelta(days=1) if old_end else date_cls.today()
+    new_end = date_cls(
+        new_start.year + (new_start.month + meses - 1) // 12, (new_start.month + meses - 1) % 12 + 1, 1
+    ) - timedelta(days=1)
+    num_parts = contract["contract_number"].rsplit("-", 1)
+    new_num = f"{num_parts[0]}-R{num_parts[1]}" if len(num_parts) > 1 else f"{contract['contract_number']}-R1"
+    new_id = str(uuid.uuid4())
+    await db.execute(
+        text("""
+        INSERT INTO contracts (id, contract_number, client_id, contract_type, status, name, description,
+            monthly_value, total_value, setup_fee, start_date, end_date,
+            grace_period_days, notice_period_days, auto_renewal, renewal_period_months,
+            renewal_notification_days, adjustment_enabled, has_sla, signature_required,
+            sla_config, is_active, created_at)
+        VALUES (:id, :num, :cid, :type, 'ativo', :name, :desc, :mv, :tv, 0, :sd, :ed,
+            0, 30, true, :months, 30, true, false, true, :sla, true, NOW())
+    """),
+        {
+            "id": new_id,
+            "num": new_num,
+            "cid": str(contract["client_id"]),
+            "type": contract["contract_type"],
+            "name": contract["name"],
+            "desc": contract["description"],
+            "mv": new_value,
+            "tv": round(new_value * meses, 2),
+            "sd": new_start.isoformat(),
+            "ed": new_end.isoformat(),
+            "months": meses,
+            "sla": contract["sla_config"],
+        },
+    )
+    await db.execute(
+        text("UPDATE contracts SET status='encerrado', is_active=false, updated_at=NOW() WHERE id=:id"),
+        {"id": contract_id},
+    )
+    await db.commit()
+    return {
+        "message": "Contrato renovado com sucesso",
+        "old_contract": {
+            "id": contract_id,
+            "number": contract["contract_number"],
+            "value": old_value,
+            "status": "encerrado",
+        },
+        "new_contract": {
+            "id": new_id,
+            "number": new_num,
+            "monthly_value": new_value,
+            "total_value": round(new_value * meses, 2),
+            "start_date": new_start.isoformat(),
+            "end_date": new_end.isoformat(),
+            "reajuste_percent": reajuste_percent,
+        },
+    }
+
+
 @router.get("/headcount")
 async def headcount_by_client(
     current_user: CurrentActiveUser = None,
@@ -244,4 +455,69 @@ async def headcount_by_client(
             }
             for r in rows
         ],
+    }
+
+
+@router.get("/bi/dashboard")
+async def bi_dashboard(
+    current_user: CurrentActiveUser = None,
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """Dashboard Business Intelligence com KPIs executivos e indicadores."""
+    kpis_result = await db.execute(
+        text("""
+        SELECT codigo, nome, category, unit, current_value, previous_value,
+               target_value, variance_percentage, trend, history
+        FROM executive_kpis
+        WHERE ativo = true
+        ORDER BY display_order
+    """)
+    )
+    kpis = kpis_result.mappings().all()
+
+    obrig_result = await db.execute(
+        text("""
+        SELECT tipo, nome, status, competencia_mes, competencia_ano,
+               data_vencimento, valor_devido
+        FROM fiscal_obligations
+        WHERE active = true AND status = 'pendente'
+        ORDER BY data_vencimento
+    """)
+    )
+    obrigacoes = obrig_result.mappings().all()
+
+    cumpridas = (
+        await db.execute(text("SELECT count(*) FROM fiscal_obligations WHERE active = true AND status = 'cumprida'"))
+    ).scalar() or 0
+
+    return {
+        "kpis": [
+            {
+                "codigo": k["codigo"],
+                "nome": k["nome"],
+                "categoria": k["category"],
+                "unidade": k["unit"],
+                "valor_atual": float(k["current_value"]) if k["current_value"] else 0,
+                "valor_anterior": float(k["previous_value"]) if k["previous_value"] else 0,
+                "meta": float(k["target_value"]) if k["target_value"] else 0,
+                "variacao_pct": float(k["variance_percentage"]) if k["variance_percentage"] else 0,
+                "tendencia": k["trend"],
+                "historico": k["history"],
+            }
+            for k in kpis
+        ],
+        "fiscal": {
+            "obrigacoes_cumpridas": cumpridas,
+            "obrigacoes_pendentes": len(obrigacoes),
+            "proximas": [
+                {
+                    "tipo": o["tipo"],
+                    "nome": o["nome"],
+                    "competencia": f"{o['competencia_mes']:02d}/{o['competencia_ano']}",
+                    "vencimento": o["data_vencimento"].isoformat() if o["data_vencimento"] else None,
+                    "valor": float(o["valor_devido"]) if o["valor_devido"] else 0,
+                }
+                for o in obrigacoes
+            ],
+        },
     }
