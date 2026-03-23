@@ -131,6 +131,7 @@ function PieTooltip({ active, payload }: any) {
 export default function DashboardFinanceiroPage() {
   const [data, setData] = useState<NfseDashboardData | null>(null);
   const [nfseList, setNfseList] = useState<NfseItem[]>([]);
+  const [bankBalance, setBankBalance] = useState<{total: number; banks: Array<{name: string; balance: number}>}>({total: 0, banks: []});
   const [loading, setLoading] = useState(true);
   const [periodo, setPeriodo] = useState('todos');
   const [lastUpdate, setLastUpdate] = useState<string>('');
@@ -138,12 +139,18 @@ export default function DashboardFinanceiroPage() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [dashRes, nfseRes] = await Promise.all([
+      const [dashRes, nfseRes, bankRes] = await Promise.all([
         api.get('/api/v1/financial/nfse/dashboard'),
         api.get('/api/v1/financial/nfse', { params: { page_size: 50 } }),
+        api.get('/api/v1/integrations/banking/balances').catch(() => ({ data: { total_balance: 0, balances: [] } })),
       ]);
       setData(dashRes.data);
       setNfseList(nfseRes.data.items ?? []);
+      const balances = bankRes.data?.balances ?? [];
+      setBankBalance({
+        total: bankRes.data?.total_balance ?? 0,
+        banks: balances.map((b: Record<string, unknown>) => ({ name: String(b.bank_name ?? ''), balance: Number(b.balance ?? 0) })),
+      });
       setLastUpdate(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
     } catch (err) {
       console.error('Erro ao carregar dashboard financeiro:', err);
@@ -338,6 +345,32 @@ export default function DashboardFinanceiroPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* ── Saldo Bancario ── */}
+      {bankBalance.total > 0 && (
+        <Card className="bg-gradient-to-r from-blue-500/5 to-cyan-500/5 border-blue-500/20">
+          <CardContent className="pt-4 pb-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-[hsl(var(--muted-foreground))]">
+                  Saldo Bancario Consolidado
+                </p>
+                <p className="text-3xl font-bold text-blue-500 mt-1">{fmt(bankBalance.total)}</p>
+                <div className="flex gap-4 mt-1">
+                  {bankBalance.banks.map((b) => (
+                    <span key={b.name} className="text-xs text-[hsl(var(--muted-foreground))]">
+                      {b.name}: {fmt(b.balance)}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <div className="rounded-full bg-blue-500/10 p-3">
+                <DollarSign className="h-6 w-6 text-blue-500" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* ── MRR Card ── */}
       <Card className="bg-gradient-to-r from-emerald-500/5 to-blue-500/5 border-emerald-500/20">
