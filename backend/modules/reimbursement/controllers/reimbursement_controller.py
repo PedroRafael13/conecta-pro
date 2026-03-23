@@ -63,7 +63,7 @@ CondominioIdOptional = Annotated[UUID | None, Depends(get_condominio_id_optional
 # ==================== SOLICITAÇÕES ====================
 
 
-@router.post("", response_model=ReimbursementRequestResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=ReimbursementRequestResponse, status_code=status.HTTP_201_CREATED)
 async def create_reimbursement(
     data: ReimbursementRequestCreate,
     user: CurrentActiveUser,
@@ -95,7 +95,7 @@ async def create_reimbursement(
     return request
 
 
-@router.get("", response_model=PaginatedReimbursementResponse)
+@router.get("/", response_model=PaginatedReimbursementResponse)
 async def list_reimbursements(
     user: CurrentActiveUser,
     condominio_id: CondominioIdOptional,
