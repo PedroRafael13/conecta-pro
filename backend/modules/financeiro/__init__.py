@@ -29,6 +29,14 @@ from modules.financial.controllers import (
     supplier_router,
 )
 
+# --- NFS-e Entrada + Fiscal Stats + Conciliacao + Custos ---
+try:
+    from modules.financial.controllers.nfse_entrada_controller import (
+        router as nfse_entrada_router,
+    )
+except Exception:
+    nfse_entrada_router = None
+
 __all__ = [
     "accounting_router",
     "supplier_router",
@@ -47,4 +55,5 @@ __all__ = [
     "financial_ai_router",
     "relatorios_router",
     "bi_dashboard_router",
+    "nfse_entrada_router",
 ]

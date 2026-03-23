@@ -543,6 +543,7 @@ try:
         financial_ai_router,
         fiscal_router,
         inventory_router,
+        nfse_entrada_router,
         payable_router,
         purchase_router,
         receivable_category_router,
@@ -568,7 +569,9 @@ try:
     api_router.include_router(financial_ai_router, prefix="/financial", tags=["Financial AI"])
     api_router.include_router(relatorios_router, prefix="/financial", tags=["Financial - Relatórios"])
     api_router.include_router(bi_dashboard_router, prefix="/financial", tags=["Financial - BI Dashboard"])
-    logger.info("Modulo Financeiro: OK (17 routers)")
+    if nfse_entrada_router:
+        api_router.include_router(nfse_entrada_router, prefix="/financial", tags=["Financial - NFS-e Entrada"])
+    logger.info("Modulo Financeiro: OK (18 routers)")
 except Exception as e:
     logger.warning(f"Modulo Financeiro: {e}")
 
