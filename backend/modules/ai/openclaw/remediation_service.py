@@ -58,6 +58,8 @@ class RemediationService:
         "DiskSpaceCritical": "_handle_disk",
         "HighMemoryUsage": "_handle_memory",
         "HighLoadAverage": "_handle_load",
+        "PM2ExcessiveRestarts": "_handle_pm2",
+        "PM2ProcessCrash": "_handle_pm2",
     }
 
     # Ferramentas requeridas por handler
@@ -69,6 +71,7 @@ class RemediationService:
         "_handle_disk": ["df", "docker"],
         "_handle_memory": ["free", "ps"],
         "_handle_load": ["ps"],
+        "_handle_pm2": [],
     }
 
     async def diagnose_and_act(self, alert_name: str, severity: str, annotations: dict) -> tuple[str, list[dict]]:
@@ -481,3 +484,76 @@ class RemediationService:
         actions.append({"step": "top_cpu_procs", "result": out2})
 
         return f"DIAGNOSTICO Load:\n  - {out}\n  - Top processos:\n{out2}", actions
+
+    def _handle_pm2(self, alert_name: str, severity: str, annotations: dict) -> tuple[str, list[dict]]:
+        """Diagnostica e resolve restarts excessivos do PM2.
+
+        PM2 roda no host, não no container. Usamos nsenter para executar
+        comandos no namespace do host (PID 1).
+        """
+        actions = []
+        # Prefixo para executar no host (container roda com --pid=host)
+        HOST = "nsenter --target 1 --mount --uts --ipc --net --pid -- "
+
+        # 1. Status atual
+        rc, out = _run(f"{HOST}pm2 jlist 2>/dev/null")
+        actions.append({"step": "pm2_status", "result": out[:500]})
+
+        import json as _json
+
+        try:
+            processes = _json.loads(out) if out else []
+        except Exception:
+            processes = []
+
+        unstable = [p for p in processes if isinstance(p, dict) and p.get("pm2_env", {}).get("restart_time", 0) > 10]
+
+        if not unstable:
+            return "PM2: Nenhum processo com restarts excessivos no momento.", actions
+
+        for proc in unstable:
+            name = proc.get("name", "unknown")
+            restarts = proc.get("pm2_env", {}).get("restart_time", 0)
+            status = proc.get("pm2_env", {}).get("status", "unknown")
+
+            # 2. Capturar últimos erros
+            rc_log, err_log = _run(f"{HOST}pm2 logs {name} --err --lines 5 --nostream 2>/dev/null")
+            actions.append({"step": f"error_logs_{name}", "result": err_log[:500]})
+
+            # 3. Verificar se é OOM
+            rc_mem, mem_info = _run("free -m | head -2")
+            actions.append({"step": "memory_check", "result": mem_info})
+
+            is_standalone_error = "output: standalone" in err_log or "production build" in err_log
+            is_oom = "ENOMEM" in err_log or "heap out of memory" in err_log
+
+            # 4. Remediar
+            if is_standalone_error:
+                # Reconfigurar para usar node standalone server
+                rc_fix, fix_out = _run(
+                    f"{HOST}bash -c '"
+                    f"pm2 delete {name} 2>/dev/null; "
+                    f"PORT=3001 HOSTNAME=0.0.0.0 NODE_OPTIONS=--max-old-space-size=4096 "
+                    f"pm2 start /opt/conecta-pro/frontend/.next/standalone/server.js "
+                    f"--name {name} --cwd /opt/conecta-pro/frontend "
+                    f"--max-restarts 10 --restart-delay 5000 && pm2 save'"
+                )
+                actions.append({"step": f"fix_standalone_{name}", "result": fix_out[:500]})
+            elif is_oom:
+                rc_fix, fix_out = _run(
+                    f"{HOST}bash -c 'pm2 delete {name} 2>/dev/null; "
+                    f"NODE_OPTIONS=--max-old-space-size=8192 pm2 restart {name} && pm2 save'"
+                )
+                actions.append({"step": f"fix_oom_{name}", "result": fix_out[:500]})
+            else:
+                # Restart simples com delay
+                rc_fix, fix_out = _run(f"{HOST}bash -c 'pm2 restart {name} && pm2 save'")
+                actions.append({"step": f"restart_{name}", "result": fix_out[:500]})
+
+            diag = (
+                f"PM2 {name}: {restarts} restarts, status={status}. "
+                f"{'standalone_error' if is_standalone_error else 'oom' if is_oom else 'crash'}. "
+                f"Remediação aplicada."
+            )
+
+        return diag, actions

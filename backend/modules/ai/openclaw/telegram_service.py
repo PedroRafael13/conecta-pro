@@ -5,6 +5,7 @@ Envia mensagens formatadas em HTML para o chat configurado.
 """
 
 import os
+import time
 
 import httpx
 from loguru import logger
@@ -12,6 +13,12 @@ from loguru import logger
 BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
 API_URL = "https://api.telegram.org"
+
+# Throttle: máx 1 notificação por alert_name a cada 5 minutos
+THROTTLE_SECONDS = 300
+MAX_ALERTS_PER_HOUR = 10
+_last_sent: dict[str, float] = {}
+_hourly_count: list[float] = []
 
 
 def _severity_emoji(severity: str) -> str:
@@ -45,6 +52,22 @@ async def send_diagnosis(
     if not BOT_TOKEN or not CHAT_ID:
         logger.warning("Telegram nao configurado (TELEGRAM_BOT_TOKEN ou TELEGRAM_CHAT_ID ausentes)")
         return None
+
+    # Throttle: suprimir duplicatas do mesmo alerta
+    now = time.time()
+    last = _last_sent.get(alert_name, 0)
+    if now - last < THROTTLE_SECONDS:
+        logger.info(f"Telegram throttled: {alert_name} (enviado {int(now - last)}s atrás, limite {THROTTLE_SECONDS}s)")
+        return None
+
+    # Throttle: limite global por hora
+    _hourly_count[:] = [t for t in _hourly_count if now - t < 3600]
+    if len(_hourly_count) >= MAX_ALERTS_PER_HOUR:
+        logger.warning(f"Telegram throttled: limite de {MAX_ALERTS_PER_HOUR} alertas/hora atingido")
+        return None
+
+    _last_sent[alert_name] = now
+    _hourly_count.append(now)
 
     sev_emoji = _severity_emoji(severity)
     status_emoji = _status_emoji(status)
