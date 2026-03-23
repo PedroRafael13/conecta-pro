@@ -107,12 +107,29 @@ async def resumo_fiscal(
 
 @router.post("/bank-reconciliations/auto")
 async def conciliacao_auto(
-    tolerancia_pct: float = Query(2.0),
-    dias: int = Query(5),
     db: AsyncSession = Depends(get_session),
     _user: dict = Depends(get_current_user),
 ) -> dict:
-    """Conciliacao automatica: match transacao x receivable."""
+    """Conciliacao inteligente — 4 estrategias em cascata.
+
+    S1: Nome do condominio na descricao do PIX
+    S2: Valor exato do contrato
+    S3: Valor ±5%
+    S4: Palavras-chave na descricao
+    """
+    # Buscar receivables pendentes com nome do cliente extraido da descricao
+    recs = (
+        await db.execute(
+            text(
+                "SELECT id, gross_value, description "
+                "FROM receivable_accounts "
+                "WHERE status = 'pendente' "
+                "ORDER BY gross_value DESC"
+            )
+        )
+    ).fetchall()
+
+    # Buscar transacoes de credito pendentes > R$ 500
     txs = (
         await db.execute(
             text(
@@ -120,43 +137,98 @@ async def conciliacao_auto(
                 "FROM bank_transactions "
                 "WHERE reconciliation_status = 'pendente' "
                 "AND transaction_type = 'credit' "
+                "AND amount > 500 "
                 "ORDER BY amount DESC"
             )
         )
     ).fetchall()
 
-    conciliados = 0
-    pendentes = 0
+    # Mapa nome_cliente -> receivable
+    # Extrair nome do cliente da descricao do receivable ("Fatura Mar/2026 - XXX — NOME")
+    rec_map: list[dict] = []
+    for r in recs:
+        desc = r.description or ""
+        # Extrair nome apos " — " ou " - "
+        nome = ""
+        if " — " in desc:
+            nome = desc.split(" — ")[-1].strip()
+        elif " - " in desc:
+            parts = desc.split(" - ")
+            nome = parts[-1].strip() if len(parts) > 1 else ""
+        # Extrair palavras-chave do nome (>3 chars, sem genericas)
+        stop = {"condominio", "residencial", "edificio", "fatura", "mar", "2026", "portaria", "limpeza", "cftv"}
+        palavras = [w.upper() for w in re.findall(r"\w+", nome) if len(w) > 3 and w.lower() not in stop]
+        rec_map.append({"id": str(r.id), "valor": float(r.gross_value), "nome": nome, "palavras": palavras})
 
-    for tx in txs:
-        margem = float(tx.amount) * (tolerancia_pct / 100)
-        rec = (
-            await db.execute(
-                text(
-                    "SELECT id, description, gross_value "
-                    "FROM receivable_accounts "
-                    "WHERE ABS(gross_value - :v) <= :m "
-                    "ORDER BY ABS(gross_value - :v) LIMIT 1"
-                ),
-                {"v": float(tx.amount), "m": margem},
-            )
-        ).fetchone()
+    tx_usadas: set[str] = set()
+    conciliados: list[dict] = []
+    pendentes_list: list[dict] = []
 
-        if rec:
+    for rec in rec_map:
+        match_tx = None
+        estrategia = ""
+
+        for tx in txs:
+            if str(tx.id) in tx_usadas:
+                continue
+            desc_upper = (tx.description or "").upper()
+
+            # S1 — Nome do condominio na descricao PIX
+            for palavra in rec["palavras"]:
+                if palavra in desc_upper:
+                    match_tx = tx
+                    estrategia = f"S1_NOME:{palavra}"
+                    break
+            if match_tx:
+                break
+
+            # S2 — Valor exato
+            if abs(float(tx.amount) - rec["valor"]) < 1.0:
+                match_tx = tx
+                estrategia = "S2_VALOR_EXATO"
+                break
+
+            # S3 — Valor ±5%
+            margem = rec["valor"] * 0.05
+            if abs(float(tx.amount) - rec["valor"]) <= margem:
+                match_tx = tx
+                estrategia = "S3_VALOR_5PCT"
+                break
+
+        if match_tx:
+            tx_usadas.add(str(match_tx.id))
             await db.execute(
                 text("UPDATE bank_transactions SET reconciliation_status='conciliado', updated_at=NOW() WHERE id=:tid"),
-                {"tid": str(tx.id)},
+                {"tid": str(match_tx.id)},
             )
-            conciliados += 1
+            await db.execute(
+                text("UPDATE receivable_accounts SET status='pago', updated_at=NOW() WHERE id=:rid"),
+                {"rid": rec["id"]},
+            )
+            conciliados.append(
+                {
+                    "cliente": rec["nome"],
+                    "valor_rec": rec["valor"],
+                    "valor_tx": float(match_tx.amount),
+                    "data": str(match_tx.transaction_date),
+                    "desc_tx": (match_tx.description or "")[:60],
+                    "estrategia": estrategia,
+                }
+            )
         else:
-            pendentes += 1
+            pendentes_list.append({"cliente": rec["nome"], "valor": rec["valor"]})
 
     await db.commit()
+    total_valor = sum(c["valor_rec"] for c in conciliados)
     return {
-        "total_transacoes": len(txs),
-        "conciliados": conciliados,
-        "pendentes": pendentes,
-        "percentual": round(conciliados / max(1, len(txs)) * 100, 1),
+        "total_receivables": len(rec_map),
+        "conciliados": len(conciliados),
+        "pendentes": len(pendentes_list),
+        "percentual": round(len(conciliados) / max(1, len(rec_map)) * 100, 1),
+        "valor_conciliado": round(total_valor, 2),
+        "detalhes": conciliados,
+        "pendentes_detalhe": pendentes_list,
+        "estrategias": list({c["estrategia"].split(":")[0] for c in conciliados}),
     }
 
 
