@@ -44,14 +44,14 @@ export default function ContratosPage() {
   useEffect(() => {
     async function load() {
       try {
-        const empRes = await fetch(`${API_BASE}/employees/?limit=100`, { headers: getAuthHeaders() });
+        const empRes = await fetch(`${API_BASE}/employees?page_size=100`, { headers: getAuthHeaders() });
         if (empRes.ok) {
           const empData = await empRes.json();
           const emps = empData.items || empData || [];
           setEmployees(emps);
           const allContracts: any[] = [];
           await Promise.all(
-            emps.slice(0, 30).map(async (emp: any) => {
+            emps.map(async (emp: any) => {
               try {
                 const cRes = await fetch(`${API_BASE}/contracts/employee/${emp.id}/current`, { headers: getAuthHeaders() });
                 if (cRes.ok) {
@@ -154,7 +154,7 @@ export default function ContratosPage() {
                 if (Object.keys(errors).length > 0) { setFormErrors(errors); toast.error('Corrija os campos destacados'); return; }
                 setSaving(true);
                 try {
-                  const res = await fetch(`${API_BASE}/contracts/`, { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(formData) });
+                  const res = await fetch(`${API_BASE}/contracts`, { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(formData) });
                   if (res.ok) { setShowForm(false); setFormData({ employee_id: '', contract_type: 'CLT', start_date: '', end_date: '', salary: '', workload_hours: '44', department: '', position: '' }); setFormErrors({}); setReloadKey(k => k + 1); toast.success('Contrato criado com sucesso'); }
                   else { const err = await res.json().catch(() => null); toast.error(err?.detail || 'Erro ao criar contrato'); }
                 } catch { toast.error('Erro de conexão'); } finally { setSaving(false); }

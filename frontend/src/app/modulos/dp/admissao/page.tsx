@@ -46,8 +46,8 @@ export default function AdmissaoPage() {
     async function load() {
       try {
         const url = filtroStatus === 'todos'
-          ? `${API_BASE}/admissions/?limit=50`
-          : `${API_BASE}/admissions/?status=${filtroStatus}&limit=50`;
+          ? `${API_BASE}/admissions?page_size=50`
+          : `${API_BASE}/admissions?status=${filtroStatus}&limit=50`;
         const res = await fetch(url, { headers: getAuthHeaders() });
         if (res.ok) {
           const data = await res.json();
@@ -141,7 +141,7 @@ export default function AdmissaoPage() {
                 if (Object.keys(errors).length > 0) { setFormErrors(errors); toast.error('Corrija os campos destacados'); return; }
                 setSaving(true);
                 try {
-                  const res = await fetch(`${API_BASE}/admissions/`, { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(formData) });
+                  const res = await fetch(`${API_BASE}/admissions`, { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(formData) });
                   if (res.ok) { setShowForm(false); setFormData({ candidate_name: '', cpf: '', position: '', expected_date: '', department: '', salary: '' }); setFormErrors({}); setFiltroStatus('todos'); toast.success('Admissão criada com sucesso'); }
                   else { const err = await res.json().catch(() => null); toast.error(err?.detail || 'Erro ao criar admissão'); }
                 } catch { toast.error('Erro de conexão'); } finally { setSaving(false); }

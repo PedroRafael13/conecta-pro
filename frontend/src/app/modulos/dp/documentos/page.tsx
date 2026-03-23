@@ -43,7 +43,7 @@ export default function DocumentosPage() {
       try {
         // Fetch from admission checklist as document source
         const admRes = await fetch(`${API_BASE}/admissions/checklist`, { headers: getAuthHeaders() });
-        const empRes = await fetch(`${API_BASE}/employees/?limit=100`, { headers: getAuthHeaders() });
+        const empRes = await fetch(`${API_BASE}/employees?page_size=100`, { headers: getAuthHeaders() });
         const docs: any[] = [];
 
         if (empRes.ok) {
@@ -52,7 +52,7 @@ export default function DocumentosPage() {
           setEmployees(emps);
           // Get employee profiles which include documents
           await Promise.all(
-            emps.slice(0, 20).map(async (emp: any) => {
+            emps.map(async (emp: any) => {
               try {
                 const profRes = await fetch(`${API_BASE}/employees/${emp.id}/profile`, { headers: getAuthHeaders() });
                 if (profRes.ok) {

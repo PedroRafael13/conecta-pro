@@ -72,7 +72,7 @@ export default function RubricasPage() {
     setLoading(true);
     try {
       const [empRes, benRes] = await Promise.all([
-        fetch(`${API_HR}/employees/?page_size=100`, { headers: getAuthHeaders() }),
+        fetch(`${API_HR}/employees?page_size=100`, { headers: getAuthHeaders() }),
         fetch(`${API_HR}/payroll/benefits`, { headers: getAuthHeaders() }),
       ]);
       if (empRes.ok) {

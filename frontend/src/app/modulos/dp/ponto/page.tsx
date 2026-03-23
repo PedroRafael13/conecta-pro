@@ -47,7 +47,7 @@ export default function PontoPage() {
           const endDate = `${year}-${month}-28`;
           const allEntries: any[] = [];
           await Promise.all(
-            emps.slice(0, 20).map(async (emp: any) => {
+            emps.map(async (emp: any) => {
               try {
                 const tRes = await fetch(
                   `${API_BASE}/time-tracking/employee/${emp.id}/entries?start_date=${startDate}&end_date=${endDate}`,

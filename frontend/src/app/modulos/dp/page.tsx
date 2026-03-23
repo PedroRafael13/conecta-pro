@@ -27,8 +27,8 @@ export default function DPDashboardPage() {
     async function load() {
       try {
         const [empRes, admRes] = await Promise.all([
-          fetch(`${API_BASE}/employees/?page_size=1`, { headers: getAuthHeaders() }),
-          fetch(`${API_BASE}/admissions/?status=documents_pending&page_size=1`, { headers: getAuthHeaders() }),
+          fetch(`${API_BASE}/employees?page_size=1`, { headers: getAuthHeaders() }),
+          fetch(`${API_BASE}/admissions?status=documents_pending&page_size=1`, { headers: getAuthHeaders() }),
         ]);
         let empCount = 0, admCount = 0;
         if (empRes.ok) {
@@ -43,7 +43,7 @@ export default function DPDashboardPage() {
         let vacCount = 0;
         let payrollTotal = 0;
         try {
-          const allRes = await fetch(`${API_BASE}/employees/?page_size=100`, { headers: getAuthHeaders() });
+          const allRes = await fetch(`${API_BASE}/employees?page_size=100`, { headers: getAuthHeaders() });
           if (allRes.ok) {
             const allData = await allRes.json();
             const items = allData.items || allData || [];

@@ -55,16 +55,16 @@ export default function LicencasPage() {
     async function load() {
       try {
         // Fetch employees and their discipline/leave history
-        const empRes = await fetch(`${API_BASE}/employees/?limit=100`, { headers: getAuthHeaders() });
+        const empRes = await fetch(`${API_BASE}/employees?page_size=100`, { headers: getAuthHeaders() });
         if (empRes.ok) {
           const empData = await empRes.json();
           const emps = empData.items || empData || [];
           setEmployees(emps);
           const allLeaves: any[] = [];
           await Promise.all(
-            emps.slice(0, 30).map(async (emp: any) => {
+            emps.map(async (emp: any) => {
               try {
-                const lRes = await fetch(`${API_BASE}/discipline/employee/${emp.id}/history?limit=50`, { headers: getAuthHeaders() });
+                const lRes = await fetch(`${API_BASE}/discipline/employee/${emp.id}/history?page_size=50`, { headers: getAuthHeaders() });
                 if (lRes.ok) {
                   const data = await lRes.json();
                   const items = data.items || data || [];

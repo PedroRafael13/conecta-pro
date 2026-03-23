@@ -54,12 +54,12 @@ export default function RescisaoPage() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch(`${API_BASE}/terminations/?limit=50`, { headers: getAuthHeaders() });
+        const res = await fetch(`${API_BASE}/terminations?page_size=50`, { headers: getAuthHeaders() });
         if (res.ok) {
           const data = await res.json();
           setRescisões(data.items || data || []);
         }
-        const empRes = await fetch(`${API_BASE}/employees/?limit=100`, { headers: getAuthHeaders() });
+        const empRes = await fetch(`${API_BASE}/employees?page_size=100`, { headers: getAuthHeaders() });
         if (empRes.ok) { const d = await empRes.json(); setEmployees(d.items || d || []); }
       } catch { setRescisões([]); } finally { setLoading(false); }
     }
@@ -129,7 +129,7 @@ export default function RescisaoPage() {
                 if (Object.keys(errors).length > 0) { setFormErrors(errors); toast.error('Corrija os campos destacados'); return; }
                 setSaving(true);
                 try {
-                  const res = await fetch(`${API_BASE}/terminations/`, { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(formData) });
+                  const res = await fetch(`${API_BASE}/terminations`, { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(formData) });
                   if (res.ok) { setShowForm(false); setFormData({ employee_id: '', employee_name: '', termination_type: 'voluntary', last_day: '', reason: '' }); setFormErrors({}); setReloadKey(k => k + 1); toast.success('Rescisão criada com sucesso'); }
                   else { const err = await res.json().catch(() => null); toast.error(err?.detail || 'Erro ao criar rescisão'); }
                 } catch { toast.error('Erro de conexão'); } finally { setSaving(false); }

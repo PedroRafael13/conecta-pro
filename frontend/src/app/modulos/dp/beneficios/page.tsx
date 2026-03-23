@@ -42,14 +42,14 @@ export default function BeneficiosPage() {
   useEffect(() => {
     async function load() {
       try {
-        const empRes = await fetch(`${API_BASE}/employees/?limit=100`, { headers: getAuthHeaders() });
+        const empRes = await fetch(`${API_BASE}/employees?page_size=100`, { headers: getAuthHeaders() });
         if (empRes.ok) {
           const empData = await empRes.json();
           const emps = empData.items || empData || [];
           setEmployees(emps);
           const allBenefits: any[] = [];
           await Promise.all(
-            emps.slice(0, 30).map(async (emp: any) => {
+            emps.map(async (emp: any) => {
               try {
                 const benRes = await fetch(`${API_BASE}/benefits/employee/${emp.id}`, { headers: getAuthHeaders() });
                 if (benRes.ok) {

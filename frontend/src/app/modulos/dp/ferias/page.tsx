@@ -45,13 +45,13 @@ export default function FeriasPage() {
     async function load() {
       try {
         // Fetch employees and their vacation balances
-        const empRes = await fetch(`${API_BASE}/employees/?limit=100`, { headers: getAuthHeaders() });
+        const empRes = await fetch(`${API_BASE}/employees?page_size=100`, { headers: getAuthHeaders() });
         if (empRes.ok) {
           const empData = await empRes.json();
           const emps = empData.items || empData || [];
           setEmployees(emps);
           const balances = await Promise.all(
-            emps.slice(0, 30).map(async (emp: any) => {
+            emps.map(async (emp: any) => {
               try {
                 const balRes = await fetch(`${API_BASE}/vacations/employee/${emp.id}/balance`, { headers: getAuthHeaders() });
                 if (balRes.ok) {
@@ -160,7 +160,7 @@ export default function FeriasPage() {
                 if (Object.keys(errors).length > 0) { setFormErrors(errors); toast.error('Corrija os campos destacados'); return; }
                 setSaving(true);
                 try {
-                  const res = await fetch(`${API_BASE}/vacations/vacations/`, { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(formData) });
+                  const res = await fetch(`${API_BASE}/vacations/vacations`, { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(formData) });
                   if (res.ok) { setShowForm(false); setFormData({ employee_id: '', start_date: '', end_date: '', days_count: '30', sell_days: false, sell_days_count: '0', notes: '' }); setFormErrors({}); setReloadKey(k => k + 1); toast.success('Férias programadas com sucesso'); }
                   else { const err = await res.json().catch(() => null); toast.error(err?.detail || 'Erro ao programar férias'); }
                 } catch { toast.error('Erro de conexão'); } finally { setSaving(false); }

@@ -165,6 +165,27 @@ class TimeTrackingService:
             # Ordenar por timestamp para emparelhar entrada/saida
             rows.sort(key=lambda r: str(r.get("date", "")) + str(r.get("time", "")))
 
+            def _calc_hours(entrada_time, entrada_date, saida_time, saida_date):
+                """Calcula horas reais entre entrada e saida."""
+                if not entrada_time or not saida_time:
+                    return "00:00", 0
+                from datetime import timedelta
+
+                ent = (
+                    dt_type.combine(entrada_date, entrada_time)
+                    if not isinstance(entrada_time, dt_type)
+                    else entrada_time
+                )
+                sai = dt_type.combine(saida_date, saida_time) if not isinstance(saida_time, dt_type) else saida_time
+                if sai < ent:
+                    sai += timedelta(days=1)  # turno noturno
+                diff = (sai - ent).total_seconds()
+                if diff > 16 * 3600:
+                    diff = 12 * 3600  # sanidade
+                h = int(diff // 3600)
+                m = int((diff % 3600) // 60)
+                return f"{h:02d}:{m:02d}", diff
+
             # Emparelhar entrada + saida consecutiva
             entries = []
             i = 0
@@ -173,10 +194,15 @@ class TimeTrackingService:
                 if r["entry_type"] == "entrada":
                     entrada = r
                     saida = None
-                    # Buscar saida mais proxima
                     if i + 1 < len(rows) and rows[i + 1]["entry_type"] == "saida":
                         saida = rows[i + 1]
                         i += 1
+                    total_str, total_secs = _calc_hours(
+                        entrada["time"],
+                        entrada["date"],
+                        saida["time"] if saida else None,
+                        saida["date"] if saida else None,
+                    )
                     entries.append(
                         {
                             "date": str(entrada["date"]),
@@ -185,14 +211,13 @@ class TimeTrackingService:
                             "entrada": str(entrada["time"])[:5],
                             "clock_out": str(saida["time"])[:5] if saida else None,
                             "saida": str(saida["time"])[:5] if saida else None,
-                            "total_hours": "12:00" if saida else "00:00",
-                            "total": "12:00" if saida else "00:00",
+                            "total_hours": total_str,
+                            "total": total_str,
                             "status": "normal",
                             "source": entrada.get("source", "tangerino"),
                         }
                     )
                 else:
-                    # Saida orfã (sem entrada)
                     entries.append(
                         {
                             "date": str(r["date"]),
