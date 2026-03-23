@@ -34,6 +34,124 @@ def run_async(coro):
     return loop.run_until_complete(coro)
 
 
+def _propagate_employees_to_db(solides_employees: list[dict]) -> dict:
+    """Propaga dados do Tangerino para tabela employees (por CPF).
+
+    Atualiza campos pessoais (nascimento, sexo, PIS, admissao, solides_id).
+    NAO toca em cargo e salario (mantidos do cadastro interno).
+    Inativa funcionarios que nao estao mais no Solides.
+
+    Returns:
+        Dict com estatisticas de propagacao.
+    """
+    from datetime import datetime
+
+    from sqlalchemy import create_engine, text
+
+    db_url = os.environ.get("DATABASE_URL", "").replace("+asyncpg", "")
+    if not db_url:
+        logger.warning("[Solides] DATABASE_URL nao configurado, pulando propagacao")
+        return {"propagated": 0, "error": "no_db_url"}
+
+    engine = create_engine(db_url)
+    updated = 0
+    not_found = 0
+    inactivated = 0
+    cpfs_solides = set()
+
+    with engine.connect() as conn:
+        for emp in solides_employees:
+            cpf = (emp.get("cpf") or "").replace(".", "").replace("-", "").strip()
+            if not cpf:
+                continue
+            cpfs_solides.add(cpf)
+
+            # Parse birthDate (ms timestamp)
+            birth = None
+            bd = emp.get("birthDate")
+            if bd:
+                try:
+                    birth = datetime.fromtimestamp(bd / 1000).date()
+                except Exception:
+                    pass
+
+            # Parse admissionDate
+            adm = None
+            ad = emp.get("admissionDate")
+            if ad:
+                try:
+                    adm = datetime.fromtimestamp(ad / 1000).date()
+                except Exception:
+                    pass
+
+            # Gender (varchar(1))
+            gender = emp.get("gender", "")
+            sexo = None
+            if "FEM" in gender.upper():
+                sexo = "F"
+            elif "MASC" in gender.upper():
+                sexo = "M"
+
+            pis = (emp.get("pis", "") or "")[:20]
+            sid = str(emp.get("id", ""))
+            name = emp.get("name", "")
+
+            sets = []
+            params = {"cpf": cpf}
+            if birth:
+                sets.append("data_nascimento = :b")
+                params["b"] = birth
+            if sexo:
+                sets.append("sexo = :s")
+                params["s"] = sexo
+            if pis:
+                sets.append("pis = :p")
+                params["p"] = pis
+            if adm:
+                sets.append("data_admissao = :a")
+                params["a"] = adm
+            if sid:
+                sets.append("solides_id = :sid")
+                params["sid"] = sid
+            if name:
+                sets.append("nome = :nome")
+                params["nome"] = name
+
+            if sets:
+                sql = f"UPDATE employees SET {', '.join(sets)} WHERE cpf = :cpf AND status = 'ativo'"
+                r = conn.execute(text(sql), params)
+                if r.rowcount > 0:
+                    updated += 1
+                else:
+                    not_found += 1
+
+        # Inativar quem tem solides_id mas nao esta mais no Solides
+        if cpfs_solides:
+            cpf_list = ",".join(f"'{c}'" for c in cpfs_solides)
+            inact_sql = text(
+                f"UPDATE employees SET status = 'inativo' "
+                f"WHERE solides_id IS NOT NULL AND cpf NOT IN ({cpf_list}) "
+                f"AND status = 'ativo'"
+            )
+            r = conn.execute(inact_sql)
+            inactivated = r.rowcount
+
+        conn.commit()
+
+    logger.info(
+        "[Solides] Propagacao: %d atualizados, %d sem match, %d inativados",
+        updated,
+        not_found,
+        inactivated,
+    )
+    return {
+        "propagated": updated,
+        "not_found": not_found,
+        "inactivated": inactivated,
+        "total_solides": len(solides_employees),
+    }
+
+
 # ==================== SYNC TASKS ====================
 
 
@@ -83,16 +201,35 @@ def sync_solides_full(
             }
 
             # Sincronizar cada entidade
+            employees_data = []
             for entity_type in entity_types or ["employees", "job_roles", "workplaces", "work_schedules"]:
                 try:
                     result = await connector.fetch_entities(entity_type, page_size=100)
                     if result.success:
                         results[entity_type] = len(result.data)
                         logger.info(f"[Solides Task] Sincronizado {entity_type}: {len(result.data)} registros")
+                        if entity_type == "employees":
+                            employees_data = result.data
                 except Exception as e:
                     logger.error(f"[Solides Task] Erro ao sincronizar {entity_type}: {e}")
 
-            return {"success": True, "triggered_by": triggered_by, "results": results, "total": sum(results.values())}
+            # Propagar dados dos funcionarios para tabela employees
+            propagation = {"propagated": 0}
+            if employees_data:
+                try:
+                    propagation = _propagate_employees_to_db(employees_data)
+                    logger.info(f"[Solides Task] Propagacao: {propagation}")
+                except Exception as e:
+                    logger.error(f"[Solides Task] Erro na propagacao: {e}")
+                    propagation = {"propagated": 0, "error": str(e)}
+
+            return {
+                "success": True,
+                "triggered_by": triggered_by,
+                "results": results,
+                "total": sum(results.values()),
+                "propagation": propagation,
+            }
         finally:
             await connector.teardown()
 
@@ -134,13 +271,21 @@ def sync_solides_incremental(self, condominio_id: str = None, entity_types: list
         await connector.setup()
 
         try:
-            # Por enquanto, incremental é igual ao full sync com filtro de data
-            # Futuramente: usar updated_since para filtrar
-            result = await connector.fetch_entities("employees", page_size=50)
+            # Busca funcionarios atuais do Solides
+            result = await connector.fetch_entities("employees", page_size=100)
+
+            propagation = {"propagated": 0}
+            if result.success and result.data:
+                try:
+                    propagation = _propagate_employees_to_db(result.data)
+                except Exception as e:
+                    logger.error(f"[Solides Task] Erro na propagacao incremental: {e}")
+                    propagation = {"propagated": 0, "error": str(e)}
 
             return {
                 "success": result.success,
                 "processed": len(result.data) if result.success else 0,
+                "propagation": propagation,
             }
         finally:
             await connector.teardown()

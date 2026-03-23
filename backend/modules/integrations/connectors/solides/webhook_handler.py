@@ -224,7 +224,7 @@ class SolidesWebhookHandler:
 
     async def _handle_new_employee(self, condominio_id: UUID | None, payload: dict[str, Any]) -> None:
         """
-        Processa evento de novo colaborador.
+        Processa evento de novo colaborador — dispara sync imediato.
         """
         if not condominio_id:
             logger.warning("[Solides Webhook] Condomínio não identificado para novo colaborador")
@@ -233,12 +233,14 @@ class SolidesWebhookHandler:
         colaborador_data = payload.get("data", payload)
         solides_id = str(colaborador_data.get("id"))
 
-        logger.info(f"[Solides Webhook] Processando novo colaborador {solides_id}")
-        # Sincronização será implementada via integration_service
+        logger.info(f"[Solides Webhook] Novo colaborador {solides_id} — disparando sync")
+        from modules.integrations.connectors.solides.tasks import sync_solides_incremental
+
+        sync_solides_incremental.delay(str(condominio_id))
 
     async def _handle_employee_update(self, condominio_id: UUID | None, payload: dict[str, Any]) -> None:
         """
-        Processa evento de atualização de colaborador.
+        Processa evento de atualizacao de colaborador — dispara sync imediato.
         """
         if not condominio_id:
             return
@@ -246,11 +248,14 @@ class SolidesWebhookHandler:
         colaborador_data = payload.get("data", payload)
         solides_id = str(colaborador_data.get("id"))
 
-        logger.info(f"[Solides Webhook] Processando atualização colaborador {solides_id}")
+        logger.info(f"[Solides Webhook] Atualizacao colaborador {solides_id} — disparando sync")
+        from modules.integrations.connectors.solides.tasks import sync_solides_incremental
+
+        sync_solides_incremental.delay(str(condominio_id))
 
     async def _handle_employee_termination(self, condominio_id: UUID | None, payload: dict[str, Any]) -> None:
         """
-        Processa evento de demissão de colaborador.
+        Processa evento de demissao — inativa colaborador e dispara sync.
         """
         if not condominio_id:
             return
@@ -258,7 +263,25 @@ class SolidesWebhookHandler:
         colaborador_data = payload.get("data", payload)
         solides_id = str(colaborador_data.get("id"))
 
-        logger.info(f"[Solides Webhook] Processando demissão colaborador {solides_id}")
+        logger.info(f"[Solides Webhook] Demissao colaborador {solides_id} — inativando + sync")
+
+        # Inativar imediatamente pelo solides_id
+        try:
+            from sqlalchemy import text
+
+            await self.db.execute(
+                text("UPDATE employees SET status = 'inativo' WHERE solides_id = :sid"),
+                {"sid": solides_id},
+            )
+            await self.db.commit()
+            logger.info(f"[Solides Webhook] Colaborador {solides_id} inativado com sucesso")
+        except Exception as e:
+            logger.error(f"[Solides Webhook] Erro ao inativar {solides_id}: {e}")
+
+        # Disparar sync completo para atualizar tudo
+        from modules.integrations.connectors.solides.tasks import sync_solides_incremental
+
+        sync_solides_incremental.delay(str(condominio_id))
 
     async def _handle_new_occurrence(self, condominio_id: UUID | None, payload: dict[str, Any]) -> None:
         """
