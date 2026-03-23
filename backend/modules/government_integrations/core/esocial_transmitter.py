@@ -9,6 +9,8 @@ Compliance: Decreto 8.373/2014 - eSocial
 """
 
 import logging
+import os
+import re as re_module
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from enum import StrEnum
@@ -18,6 +20,7 @@ from xml.dom import minidom  # noqa: S408
 from xml.etree.ElementTree import Element, SubElement  # noqa: S405
 
 import defusedxml.ElementTree as ET  # noqa: N817
+import requests as http_requests
 from sqlalchemy import Column, Date, DateTime, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
@@ -222,13 +225,13 @@ class XMLBuilder:
         self.environment = environment
 
     def build_event_id(self, event_type: str, employer_cnpj: str) -> str:
-        """Gera ID unico do evento."""
+        """Gera ID unico do evento (max 36 chars conforme XSD eSocial)."""
         timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
-        seq = uuid4().hex[:5].upper()
-        # Formato: ID + CNPJ (14) + Tipo (6) + AAAAMMDDHHMMSS + SEQ (5)
+        seq = uuid4().int % 100000  # noqa: S311
+        seq_str = f"{seq:05d}"
         cnpj_clean = employer_cnpj.replace(".", "").replace("/", "").replace("-", "")
-        type_code = event_type.replace("-", "").replace("S", "")
-        return f"ID{cnpj_clean}{type_code}{timestamp}{seq}"
+        # Formato: ID(2) + tpInsc(1) + nrInsc(14) + AAAA(4) + MMDD(4) + HHMMSS(6) + seq(5) = 36
+        return f"ID1{cnpj_clean[:14]}{timestamp}{seq_str}"
 
     def build_s2200_admissao(self, data: dict[str, Any]) -> str:
         """Constroi XML do evento S-2200 (Admissao)."""
@@ -379,10 +382,57 @@ class XMLBuilder:
 
         return self._prettify(root)
 
+    def build_s1000_empregador(self, data: dict[str, Any]) -> str:
+        """Constroi XML do evento S-1000 (Informações do Empregador)."""
+        event_id = self.build_event_id("S-1000", data["employer_cnpj"])
+
+        root = Element("eSocial", xmlns="http://www.esocial.gov.br/schema/evt/evtInfoEmpregador/v_S_01_02_00")
+        evt = SubElement(root, "evtInfoEmpregador", Id=event_id)
+
+        # ideEvento
+        ide = SubElement(evt, "ideEvento")
+        SubElement(ide, "indRetif").text = str(data.get("indRetif", 1))
+        SubElement(ide, "tpAmb").text = self.environment.value
+        SubElement(ide, "procEmi").text = "1"  # Aplicativo do empregador
+        SubElement(ide, "verProc").text = "CONECTA_PRO_1.0"
+
+        # ideEmpregador
+        emp = SubElement(evt, "ideEmpregador")
+        SubElement(emp, "tpInsc").text = "1"  # CNPJ
+        cnpj_clean = data["employer_cnpj"].replace(".", "").replace("/", "").replace("-", "")
+        SubElement(emp, "nrInsc").text = cnpj_clean[:8]  # Raiz do CNPJ
+
+        # infoEmpregador
+        info = SubElement(evt, "infoEmpregador")
+        inclusao = SubElement(info, "inclusao")
+
+        # idePeriodo
+        ide_periodo = SubElement(inclusao, "idePeriodo")
+        SubElement(ide_periodo, "iniValid").text = data.get("iniValid", datetime.utcnow().strftime("%Y-%m"))
+
+        # infoCadastro
+        cad = SubElement(inclusao, "infoCadastro")
+        SubElement(cad, "classTrib").text = data.get("classTrib", "02")  # 02=Empresa geral
+        SubElement(cad, "indCoop").text = data.get("indCoop", "0")  # Não cooperativa
+        SubElement(cad, "indConstr").text = data.get("indConstr", "0")  # Não construtora
+        SubElement(cad, "indDesFolha").text = data.get("indDesFolha", "0")  # Sem desoneração
+        SubElement(cad, "indOptRegEletron").text = data.get("indOptRegEletron", "0")
+        SubElement(cad, "nmRazao").text = data["razao_social"]
+        SubElement(cad, "natJurid").text = data.get("natJurid", "2062")  # LTDA
+
+        # contato
+        contato = SubElement(cad, "contato")
+        SubElement(contato, "nmCtt").text = data.get("nmCtt", "JORDAN SANTOS DE JESUS")
+        SubElement(contato, "cpfCtt").text = data.get("cpfCtt", cnpj_clean[:11])
+        SubElement(contato, "foneFixo").text = data.get("foneFixo", "9293485518")
+        SubElement(contato, "email").text = data.get("email", "contato@conectamaistech.com.br")
+
+        return self._prettify(root), event_id
+
     def _prettify(self, elem: Element) -> str:
         """Formata XML com identacao."""
         rough_string = ET.tostring(elem, encoding="unicode")
-        reparsed = minidom.parseString(rough_string)  # noqa: S318 - Apenas formata XML gerado internamente
+        reparsed = minidom.parseString(rough_string)  # noqa: S318 # nosec B318
         return reparsed.toprettyxml(indent="  ")
 
 
@@ -463,7 +513,7 @@ class ESocialTransmitter:
                 raise ESocialError(f"Certificado invalido: {validation_msg}")
 
             # Extrai informacoes
-            cert_info = self._certificate_manager.get_info()
+            cert_info = self._certificate_manager.info
 
             self._certificate_info = CertificateInfo(
                 serial_number=cert_info.serial_number,
@@ -540,7 +590,12 @@ class ESocialTransmitter:
         """Constroi XML do evento."""
         data["employer_cnpj"] = employer_cnpj
 
-        if event_type == EventType.S2200_ADMISSAO:
+        if event_type == EventType.S1000_EMPREGADOR:
+            xml, event_id = self._xml_builder.build_s1000_empregador(data)
+            # Armazena event_id para uso na assinatura
+            data["_event_xml_id"] = event_id
+            return xml
+        elif event_type == EventType.S2200_ADMISSAO:
             return self._xml_builder.build_s2200_admissao(data)
         elif event_type == EventType.S2299_DESLIGAMENTO:
             return self._xml_builder.build_s2299_desligamento(data)
@@ -645,15 +700,81 @@ class ESocialTransmitter:
             logger.error("Erro ao assinar evento %s: %s", event_id, str(e))
             raise ESocialError(f"Falha na assinatura digital: {str(e)}", str(event_id))
 
-    async def transmit(self, event_id: UUID) -> ESocialEvent:
+    def _build_soap_envelope(self, signed_xml: str, grupo: int = 1) -> str:
         """
-        Transmite evento para o eSocial.
+        Monta envelope SOAP para o webservice EnviarLoteEventos.
 
         Args:
-            event_id: ID do evento.
+            signed_xml: XML do evento já assinado
+            grupo: Grupo do evento (1=tabelas, 2=não-periódicos, 3=periódicos)
+        """
+        # Extrair XML sem declaração <?xml?>
+        xml_clean = signed_xml
+        if xml_clean.startswith("<?xml"):
+            xml_clean = xml_clean[xml_clean.index("?>") + 2 :].strip()
 
-        Returns:
-            ESocialEvent: Evento atualizado com resultado.
+        # Extrair o Id do evento do XML para usar como Id do <evento> no lote
+        id_match = re_module.search(r'Id="([^"]+)"', xml_clean)
+        lote_id = (
+            id_match.group(1) if id_match else f"ID135710481000103{datetime.utcnow().strftime('%Y%m%d%H%M%S')}00001"
+        )
+
+        envelope = f"""<?xml version="1.0" encoding="UTF-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+  <soap:Body>
+    <EnviarLoteEventos xmlns="http://www.esocial.gov.br/servicos/empregador/lote/eventos/envio/v1_1_1">
+      <loteEventos>
+        <eSocial xmlns="http://www.esocial.gov.br/schema/lote/eventos/envio/v1_1_1">
+          <envioLoteEventos grupo="{grupo}">
+            <ideEmpregador>
+              <tpInsc>1</tpInsc>
+              <nrInsc>35710481</nrInsc>
+            </ideEmpregador>
+            <ideTransmissor>
+              <tpInsc>1</tpInsc>
+              <nrInsc>35710481000103</nrInsc>
+            </ideTransmissor>
+            <eventos>
+              <evento Id="{lote_id}">
+                {xml_clean}
+              </evento>
+            </eventos>
+          </envioLoteEventos>
+        </eSocial>
+      </loteEventos>
+    </EnviarLoteEventos>
+  </soap:Body>
+</soap:Envelope>"""
+        return envelope
+
+    def _build_consulta_soap(self, protocolo: str) -> str:
+        """Monta envelope SOAP para ConsultarLoteEventos."""
+        return f"""<?xml version="1.0" encoding="UTF-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+  <soap:Body>
+    <ConsultarLoteEventos xmlns="http://www.esocial.gov.br/servicos/empregador/lote/eventos/envio/consulta/retornoProcessamento/v1_0_0">
+      <consulta>
+        <eSocial xmlns="http://www.esocial.gov.br/schema/consulta/retornoProcessamento/v1_0_0">
+          <consultaLoteEventos>
+            <protocoloEnvio>{protocolo}</protocoloEnvio>
+          </consultaLoteEventos>
+        </eSocial>
+      </consulta>
+    </ConsultarLoteEventos>
+  </soap:Body>
+</soap:Envelope>"""
+
+    def _get_cert_files(self) -> tuple[str, str]:
+        """Retorna caminhos dos arquivos PEM do certificado para mTLS."""
+        if not self._certificate_manager:
+            raise ESocialError("Certificado não carregado")
+        return self._certificate_manager.get_certificate_for_request()
+
+    async def transmit(self, event_id: UUID) -> ESocialEvent:
+        """
+        Transmite evento para o eSocial via SOAP com mTLS.
+
+        Faz chamada real ao webservice do governo usando certificado A1.
         """
         event = self._events.get(event_id)
         if not event:
@@ -662,33 +783,154 @@ class ESocialTransmitter:
         # Valida
         await self.validate_event(event_id)
 
-        # Assina
+        # Assina com certificado A1
         if not event.xml_signed:
             await self.sign_event(event_id)
 
         event.status = TransmissionStatus.TRANSMITTED
         event.transmitted_at = datetime.utcnow()
 
-        # Simulacao de transmissao - em producao usaria zeep/requests
-        protocol = f"PROT{datetime.utcnow().strftime('%Y%m%d%H%M%S')}{uuid4().hex[:6].upper()}"
-        event.protocol = protocol
+        # Determinar grupo do evento
+        grupo = 1  # Tabelas (S-1000 a S-1080)
+        if event.event_type.value.startswith("S-2"):
+            grupo = 2  # Não-periódicos
+        elif event.event_type.value.startswith("S-12"):
+            grupo = 3  # Periódicos
 
-        logger.info("Evento transmitido: id=%s, protocol=%s", event_id, protocol)
+        # Montar envelope SOAP
+        soap_envelope = self._build_soap_envelope(event.xml_signed, grupo)
 
-        # Simula processamento
-        event.status = TransmissionStatus.PROCESSING
+        # URL do webservice
+        base_url = self.WEBSERVICE_URLS[self.environment]
+        url = f"{base_url}/servicos/empregador/enviarloteeventos/WsEnviarLoteEventos.svc"
+
+        logger.info(
+            "Transmitindo evento %s (%s) para %s",
+            event.event_type.value,
+            event_id,
+            url,
+        )
+
+        # Obter certificado para mTLS
+        cert_path, key_path = self._get_cert_files()
+
+        try:
+            response = http_requests.post(
+                url,
+                data=soap_envelope.encode("utf-8"),
+                headers={
+                    "Content-Type": "text/xml; charset=utf-8",
+                    "SOAPAction": "http://www.esocial.gov.br/servicos/empregador/lote/eventos/envio/v1_1_0/ServicoEnviarLoteEventos/EnviarLoteEventos",
+                },
+                cert=(cert_path, key_path),
+                timeout=60,
+                verify=True,
+            )
+
+            logger.info(
+                "Resposta eSocial: HTTP %d (%d bytes)",
+                response.status_code,
+                len(response.content),
+            )
+
+            # Parsear resposta SOAP
+            event.metadata["http_status"] = response.status_code
+            event.metadata["response_raw"] = response.text[:5000]
+
+            if response.status_code == 200:
+                # Extrair protocolo da resposta
+                protocolo = self._extract_protocol(response.text)
+                if protocolo:
+                    event.protocol = protocolo
+                    event.status = TransmissionStatus.PROCESSING
+                    logger.info("Evento aceito: protocolo=%s", protocolo)
+                else:
+                    # Pode ser erro de validação do governo
+                    erro = self._extract_error(response.text)
+                    event.status = TransmissionStatus.REJECTED
+                    event.errors.append({"code": "GOV_REJECT", "message": erro})
+                    logger.warning("Evento rejeitado pelo governo: %s", erro)
+            else:
+                event.status = TransmissionStatus.ERROR
+                event.errors.append(
+                    {
+                        "code": f"HTTP_{response.status_code}",
+                        "message": response.text[:500],
+                    }
+                )
+                logger.error("Erro HTTP %d na transmissão", response.status_code)
+
+        except http_requests.exceptions.SSLError as e:
+            event.status = TransmissionStatus.ERROR
+            event.errors.append({"code": "SSL_ERROR", "message": str(e)[:300]})
+            logger.error("Erro SSL/mTLS: %s", str(e)[:200])
+        except http_requests.exceptions.ConnectionError as e:
+            event.status = TransmissionStatus.ERROR
+            event.errors.append({"code": "CONNECTION_ERROR", "message": str(e)[:300]})
+            logger.error("Erro de conexão: %s", str(e)[:200])
+        except http_requests.exceptions.Timeout:
+            event.status = TransmissionStatus.ERROR
+            event.errors.append({"code": "TIMEOUT", "message": "Timeout na conexão com webservice"})
+            logger.error("Timeout na transmissão")
+        except Exception as e:
+            event.status = TransmissionStatus.ERROR
+            event.errors.append({"code": "UNKNOWN", "message": str(e)[:300]})
+            logger.error("Erro inesperado: %s", str(e))
+        finally:
+            # Limpar arquivos temporários do certificado
+            try:
+                if cert_path and os.path.exists(cert_path):
+                    cert_dir = os.path.dirname(cert_path)
+                    os.unlink(cert_path)
+                    if key_path and os.path.exists(key_path):
+                        os.unlink(key_path)
+                    if os.path.isdir(cert_dir):
+                        os.rmdir(cert_dir)
+            except OSError:
+                pass
 
         return event
 
+    def _extract_protocol(self, response_xml: str) -> str | None:
+        """Extrai protocolo de envio da resposta SOAP do eSocial."""
+        try:
+            # Tentar extrair com regex (mais robusto contra namespaces)
+            match = re_module.search(r"<protocoloEnvio>([^<]+)</protocoloEnvio>", response_xml)
+            if match:
+                return match.group(1).strip()
+
+            # Fallback: tentar com nrProt
+            match = re_module.search(r"<nrProt>([^<]+)</nrProt>", response_xml)
+            if match:
+                return match.group(1).strip()
+
+            # Fallback: protocolo em atributo
+            match = re_module.search(r"protocolo[\"=]([^\"<>\s]+)", response_xml, re_module.IGNORECASE)
+            if match:
+                return match.group(1).strip()
+
+        except Exception as e:
+            logger.error("Erro extraindo protocolo: %s", e)
+
+        return None
+
+    def _extract_error(self, response_xml: str) -> str:
+        """Extrai mensagem de erro da resposta SOAP."""
+        try:
+            # Buscar descricao de erro
+            for tag in ["descricao", "descResposta", "faultstring", "dsOcorrencia", "mensagem"]:
+                match = re_module.search(rf"<{tag}>([^<]+)</{tag}>", response_xml, re_module.IGNORECASE)
+                if match:
+                    return match.group(1).strip()
+
+            # Se não encontrou tag específica, retornar trecho do XML
+            return response_xml[:300]
+        except Exception:
+            return "Erro desconhecido na resposta"
+
     async def check_status(self, event_id: UUID) -> ESocialEvent:
         """
-        Consulta status de processamento do evento.
-
-        Args:
-            event_id: ID do evento.
-
-        Returns:
-            ESocialEvent: Evento com status atualizado.
+        Consulta status de processamento do evento via SOAP.
         """
         event = self._events.get(event_id)
         if not event:
@@ -697,12 +939,66 @@ class ESocialTransmitter:
         if event.status not in [TransmissionStatus.TRANSMITTED, TransmissionStatus.PROCESSING]:
             return event
 
-        # Simulacao - em producao consultaria webservice
-        event.status = TransmissionStatus.ACCEPTED
-        event.processed_at = datetime.utcnow()
-        event.receipt_number = f"REC{uuid4().hex[:12].upper()}"
+        if not event.protocol:
+            raise ESocialError("Evento sem protocolo para consulta")
 
-        logger.info("Evento aceito: id=%s, receipt=%s", event_id, event.receipt_number)
+        # URL do webservice de consulta
+        base_url = self.WEBSERVICE_URLS[self.environment]
+        url = f"{base_url}/servicos/empregador/consultarloteeventos/WsConsultarLoteEventos.svc"
+
+        soap_consulta = self._build_consulta_soap(event.protocol)
+
+        cert_path, key_path = self._get_cert_files()
+
+        try:
+            response = http_requests.post(
+                url,
+                data=soap_consulta.encode("utf-8"),
+                headers={
+                    "Content-Type": "text/xml; charset=utf-8",
+                    "SOAPAction": "http://www.esocial.gov.br/servicos/empregador/lote/eventos/envio/consulta/retornoProcessamento/v1_0_0/ServicoConsultarLoteEventos/ConsultarLoteEventos",
+                },
+                cert=(cert_path, key_path),
+                timeout=60,
+                verify=True,
+            )
+
+            logger.info("Consulta status: HTTP %d", response.status_code)
+
+            if response.status_code == 200:
+                # Verificar se foi processado
+                if "cdResposta>201" in response.text or "processado" in response.text.lower():
+                    event.status = TransmissionStatus.ACCEPTED
+                    event.processed_at = datetime.utcnow()
+                    # Extrair recibo
+                    match = re_module.search(r"<nrRecibo>([^<]+)</nrRecibo>", response.text)
+                    if match:
+                        event.receipt_number = match.group(1).strip()
+                elif "cdResposta>501" in response.text:
+                    # Ainda em processamento
+                    event.status = TransmissionStatus.PROCESSING
+                else:
+                    # Verificar rejeição
+                    erro = self._extract_error(response.text)
+                    event.status = TransmissionStatus.REJECTED
+                    event.errors.append({"code": "GOV_REJECT", "message": erro})
+
+            event.metadata["status_response"] = response.text[:1000]
+
+        except Exception as e:
+            logger.error("Erro consultando status: %s", e)
+            event.errors.append({"code": "STATUS_ERROR", "message": str(e)[:300]})
+        finally:
+            try:
+                if cert_path and os.path.exists(cert_path):
+                    cert_dir = os.path.dirname(cert_path)
+                    os.unlink(cert_path)
+                    if key_path and os.path.exists(key_path):
+                        os.unlink(key_path)
+                    if os.path.isdir(cert_dir):
+                        os.rmdir(cert_dir)
+            except OSError:
+                pass
 
         return event
 

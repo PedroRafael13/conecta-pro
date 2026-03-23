@@ -3,12 +3,19 @@ Controller para integrações com eSocial.
 """
 
 import logging
+import os
 from datetime import datetime
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Path, Query, status
 from pydantic import BaseModel, Field
 
+# Import real transmitter
+from ..core.esocial_transmitter import (
+    Environment,
+    EventType,
+    init_esocial_transmitter,
+)
 from ..schemas.common import StandardResponse
 from ..schemas.esocial import ESocialEventRequest
 from ..services.esocial_service import ESocialService
@@ -25,6 +32,18 @@ class ConfigurarEmpresaRequest(BaseModel):
     natureza_juridica: str = Field(..., description="Natureza jurídica (ex: 206-2)")
     regime_tributario: str = Field(..., description="Regime tributário")
     ambiente: str = Field(default="homologacao", pattern=r"^(producao|homologacao)$")
+
+
+class TransmitirS1000Request(BaseModel):
+    """Request para transmissão real do S-1000."""
+
+    cnpj: str = Field(default="35710481000103", description="CNPJ (somente números)")
+    razao_social: str = Field(default="JORDAN SANTOS DE JESUS LTDA")
+    nat_jurid: str = Field(default="2062", description="Natureza jurídica")
+    class_trib: str = Field(default="99", description="Classificação tributária")
+    ini_valid: str = Field(default="2026-01", description="Início validade AAAA-MM")
+    ambiente: str = Field(default="homologacao", pattern=r"^(producao|homologacao)$")
+    transmitir: bool = Field(default=True, description="Se True, transmite ao governo. Se False, apenas gera XML.")
 
 
 class CalculoFolhaRequest(BaseModel):
@@ -366,4 +385,172 @@ async def gerar_lote(request: GerarLoteRequest) -> StandardResponse:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao gerar lote: {str(e)}",
+        )
+
+
+@router.post(
+    "/transmitir-s1000",
+    response_model=StandardResponse,
+    summary="Transmite S-1000 real ao webservice do eSocial",
+    description=(
+        "Gera XML do S-1000, assina com certificado A1 e transmite "
+        "via SOAP+mTLS ao webservice do eSocial (homologação ou produção)."
+    ),
+)
+async def transmitir_s1000(request: TransmitirS1000Request) -> StandardResponse:
+    """
+    Transmissão REAL do evento S-1000 ao eSocial.
+
+    1. Gera XML do S-1000 (Informações do Empregador)
+    2. Assina com certificado digital A1
+    3. Envia via SOAP+mTLS ao webservice do governo
+    4. Retorna protocolo real ou erro de rejeição
+    """
+    try:
+        # Configurar ambiente
+        env = Environment.PRODUCAO_RESTRITA if request.ambiente == "homologacao" else Environment.PRODUCAO
+
+        # Inicializar transmitter com certificado
+        cert_path = os.environ.get("CERTIFICATE_PATH", "/opt/conecta-pro/credentials/certificates/certificado.pfx")
+        cert_password = os.environ.get("CERTIFICATE_PASSWORD", "Conecta123")
+
+        transmitter = init_esocial_transmitter(
+            environment=env,
+            certificate_path=cert_path,
+            certificate_password=cert_password,
+        )
+
+        # Carregar certificado
+        cert_info = await transmitter.load_certificate()
+        logger.info("Certificado carregado: %s (válido até %s)", cert_info.subject_cn, cert_info.valid_until.date())
+
+        # Criar evento S-1000
+        data = {
+            "razao_social": request.razao_social,
+            "natJurid": request.nat_jurid,
+            "classTrib": request.class_trib,
+            "iniValid": request.ini_valid,
+        }
+
+        event = await transmitter.create_event(
+            event_type=EventType.S1000_EMPREGADOR,
+            employer_cnpj=request.cnpj,
+            data=data,
+        )
+
+        result = {
+            "event_id": str(event.id),
+            "event_type": "S-1000",
+            "xml_gerado": True,
+            "xml_tamanho": len(event.xml_content) if event.xml_content else 0,
+            "certificado": cert_info.subject_cn,
+            "certificado_validade": cert_info.valid_until.isoformat(),
+            "ambiente": request.ambiente,
+        }
+
+        if not request.transmitir:
+            result["xml_preview"] = event.xml_content[:500] if event.xml_content else None
+            result["status"] = "xml_gerado_sem_transmissao"
+            return StandardResponse(
+                success=True,
+                message="XML do S-1000 gerado e assinado (transmissão desabilitada)",
+                data=result,
+            )
+
+        # TRANSMITIR REAL ao webservice do governo
+        event = await transmitter.transmit(event.id)
+
+        result["status"] = event.status.value
+        result["protocolo"] = event.protocol
+        result["erros"] = event.errors
+        result["transmitido_em"] = event.transmitted_at.isoformat() if event.transmitted_at else None
+        result["response_preview"] = event.metadata.get("response_raw", "")[:3000]
+
+        sucesso = event.status.value in ["processing", "accepted", "transmitted"]
+
+        return StandardResponse(
+            success=sucesso,
+            message=(
+                f"S-1000 transmitido — protocolo: {event.protocol}" if sucesso else f"S-1000 rejeitado: {event.errors}"
+            ),
+            data=result,
+        )
+
+    except Exception as e:
+        logger.exception("Erro na transmissão S-1000: %s", str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro na transmissão: {str(e)}",
+        )
+
+
+@router.get(
+    "/gaps-funcionarios",
+    response_model=StandardResponse,
+    summary="Identifica gaps nos dados dos funcionários para S-2200",
+)
+async def gaps_funcionarios() -> StandardResponse:
+    """Verifica quais campos obrigatórios do S-2200 estão faltando nos funcionários."""
+    try:
+        from core.database import get_db_sync
+
+        db = next(get_db_sync())
+
+        result = db.execute(
+            __import__("sqlalchemy").text("""
+            SELECT
+                COUNT(*) FILTER (WHERE is_active) as total_ativos,
+                COUNT(*) FILTER (WHERE is_active AND cpf IS NOT NULL AND cpf != '') as com_cpf,
+                COUNT(*) FILTER (WHERE is_active AND data_nascimento IS NOT NULL) as com_nascimento,
+                COUNT(*) FILTER (WHERE is_active AND data_admissao IS NOT NULL) as com_admissao,
+                COUNT(*) FILTER (WHERE is_active AND salario_base IS NOT NULL) as com_salario,
+                COUNT(*) FILTER (WHERE is_active AND sexo IS NOT NULL AND sexo != '') as com_sexo,
+                COUNT(*) FILTER (WHERE is_active AND rg IS NOT NULL AND rg != '') as com_rg,
+                COUNT(*) FILTER (WHERE is_active AND estado_civil IS NOT NULL AND estado_civil != '') as com_estado_civil,
+                COUNT(*) FILTER (WHERE is_active AND matricula IS NOT NULL AND matricula != '') as com_matricula,
+                COUNT(*) FILTER (WHERE is_active AND pis IS NOT NULL AND pis != '') as com_pis
+            FROM employees
+        """)
+        )
+        row = result.fetchone()
+
+        total = row[0]
+        campos = {
+            "cpf": {"preenchido": row[1], "total": total, "obrigatorio_s2200": True},
+            "data_nascimento": {"preenchido": row[2], "total": total, "obrigatorio_s2200": True},
+            "data_admissao": {"preenchido": row[3], "total": total, "obrigatorio_s2200": True},
+            "salario_base": {"preenchido": row[4], "total": total, "obrigatorio_s2200": True},
+            "sexo": {"preenchido": row[5], "total": total, "obrigatorio_s2200": True},
+            "rg": {"preenchido": row[6], "total": total, "obrigatorio_s2200": False},
+            "estado_civil": {"preenchido": row[7], "total": total, "obrigatorio_s2200": True},
+            "matricula": {"preenchido": row[8], "total": total, "obrigatorio_s2200": True},
+            "pis": {"preenchido": row[9], "total": total, "obrigatorio_s2200": True},
+        }
+
+        bloqueadores = [
+            f"{k}: {v['preenchido']}/{total}"
+            for k, v in campos.items()
+            if v["obrigatorio_s2200"] and v["preenchido"] < total
+        ]
+
+        return StandardResponse(
+            success=len(bloqueadores) == 0,
+            message=(
+                "Todos os campos obrigatórios preenchidos"
+                if not bloqueadores
+                else f"{len(bloqueadores)} campo(s) bloqueando S-2200"
+            ),
+            data={
+                "total_funcionarios_ativos": total,
+                "campos": campos,
+                "bloqueadores_s2200": bloqueadores,
+                "pronto_para_s2200": len(bloqueadores) == 0,
+            },
+        )
+
+    except Exception as e:
+        logger.exception("Erro ao verificar gaps: %s", str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao verificar gaps: {str(e)}",
         )
