@@ -31,7 +31,7 @@ def get_service(session: AsyncSession = Depends(get_session)) -> SupplierService
 
 
 @router.post(
-    "/",
+    "",
     response_model=SupplierResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Criar fornecedor",
@@ -56,7 +56,7 @@ async def create_supplier(
 
 
 @router.get(
-    "/",
+    "",
     response_model=list[SupplierListResponse],
     summary="Listar fornecedores",
 )

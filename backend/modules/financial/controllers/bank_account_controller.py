@@ -41,7 +41,7 @@ def get_repository(session: AsyncSession = Depends(get_session)) -> BankAccountR
 
 
 @router.post(
-    "/",
+    "",
     response_model=BankAccountResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Criar conta bancária",
@@ -65,7 +65,7 @@ async def create_bank_account(
 
 
 @router.get(
-    "/",
+    "",
     response_model=list[BankAccountResponse],
     summary="Listar contas bancárias",
 )

@@ -29,7 +29,7 @@ def get_repository(
 
 
 @router.post(
-    "/",
+    "",
     response_model=ReceivableCategoryResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Criar categoria",
@@ -54,7 +54,7 @@ async def create_category(
 
 
 @router.get(
-    "/",
+    "",
     response_model=list[ReceivableCategoryResponse],
     summary="Listar categorias",
 )

@@ -30,7 +30,7 @@ def get_repository(
 
 
 @router.post(
-    "/",
+    "",
     response_model=CustomerResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Criar cliente",
@@ -55,7 +55,7 @@ async def create_customer(
 
 
 @router.get(
-    "/",
+    "",
     response_model=list[CustomerResponse],
     summary="Listar clientes",
 )

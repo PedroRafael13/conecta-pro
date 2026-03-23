@@ -60,7 +60,7 @@ def get_transaction_repository(
 
 
 @router.post(
-    "/",
+    "",
     response_model=BankReconciliationResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Criar conciliação",
@@ -101,7 +101,7 @@ async def create_reconciliation(
 
 
 @router.get(
-    "/",
+    "",
     response_model=list[BankReconciliationResponse],
     summary="Listar conciliações",
 )

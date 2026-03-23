@@ -225,13 +225,18 @@ class XMLBuilder:
         self.environment = environment
 
     def build_event_id(self, event_type: str, employer_cnpj: str) -> str:
-        """Gera ID unico do evento (max 36 chars conforme XSD eSocial)."""
+        """Gera ID unico do evento (exatamente 36 chars conforme XSD eSocial).
+
+        Formato: ID(2) + tpInsc(1) + nrInsc(14, raiz CNPJ padded) + AAAAMMDDHHMMSS(14) + seq(5) = 36
+        IMPORTANTE: nrInsc usa raiz CNPJ (8 dígitos) padded com zeros até 14.
+        """
         timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
         seq = uuid4().int % 100000  # noqa: S311
         seq_str = f"{seq:05d}"
         cnpj_clean = employer_cnpj.replace(".", "").replace("/", "").replace("-", "")
-        # Formato: ID(2) + tpInsc(1) + nrInsc(14) + AAAA(4) + MMDD(4) + HHMMSS(6) + seq(5) = 36
-        return f"ID1{cnpj_clean[:14]}{timestamp}{seq_str}"
+        # Raiz do CNPJ (8 primeiros dígitos) padded com zeros até 14
+        cnpj_raiz = cnpj_clean[:8].ljust(14, "0")
+        return f"ID1{cnpj_raiz}{timestamp}{seq_str}"
 
     def build_s2200_admissao(self, data: dict[str, Any]) -> str:
         """Constroi XML do evento S-2200 (Admissao)."""
@@ -708,13 +713,17 @@ class ESocialTransmitter:
             signed_xml: XML do evento já assinado
             grupo: Grupo do evento (1=tabelas, 2=não-periódicos, 3=periódicos)
         """
-        # Extrair XML sem declaração <?xml?>
+        # Remover declaração <?xml?>
         xml_clean = signed_xml
         if xml_clean.startswith("<?xml"):
             xml_clean = xml_clean[xml_clean.index("?>") + 2 :].strip()
 
-        # Extrair o Id do evento do XML para usar como Id do <evento> no lote
-        id_match = re_module.search(r'Id="([^"]+)"', xml_clean)
+        # XSD EnvioLoteEventos-v1_1_1: <evento> contém xs:any processContents="skip"
+        # O XML completo do evento (com <eSocial> wrapper) vai DENTRO de <evento>.
+        xml_evento_inner = xml_clean
+
+        # Extrair o Id do evento do XML
+        id_match = re_module.search(r'Id="([^"]+)"', xml_evento_inner)
         lote_id = (
             id_match.group(1) if id_match else f"ID135710481000103{datetime.utcnow().strftime('%Y%m%d%H%M%S')}00001"
         )
@@ -736,7 +745,7 @@ class ESocialTransmitter:
             </ideTransmissor>
             <eventos>
               <evento Id="{lote_id}">
-                {xml_clean}
+{xml_evento_inner}
               </evento>
             </eventos>
           </envioLoteEventos>

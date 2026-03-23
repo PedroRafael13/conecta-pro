@@ -30,7 +30,7 @@ def get_repository(
 
 
 @router.post(
-    "/",
+    "",
     response_model=BillingRuleResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Criar regra de cobranca",
@@ -55,7 +55,7 @@ async def create_billing_rule(
 
 
 @router.get(
-    "/",
+    "",
     response_model=list[BillingRuleResponse],
     summary="Listar regras de cobranca",
 )
