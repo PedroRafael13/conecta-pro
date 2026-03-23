@@ -405,6 +405,7 @@ try:
     from modules.tecnico import (
         comodato_router,
         document_kit_router,
+        documents_router,
         equipment_maintenance_router,
         equipment_router,
         installation_router,
@@ -415,7 +416,11 @@ try:
     api_router.include_router(equipment_maintenance_router, tags=["Equipment - Manutencao"])
     api_router.include_router(comodato_router, tags=["Equipment - Comodato"])
     api_router.include_router(document_kit_router, tags=["Document Kits"])
-    logger.info("Modulo Tecnico: OK (Equipment + Document Kits)")
+    if documents_router:
+        api_router.include_router(documents_router, tags=["Document Intelligence"])
+        logger.info("Modulo Tecnico: OK (Equipment + Document Kits + Documents/OCR)")
+    else:
+        logger.info("Modulo Tecnico: OK (Equipment + Document Kits)")
 except Exception as e:
     logger.warning(f"Modulo Tecnico: {e}")
 

@@ -1,6 +1,6 @@
 """
 Módulo TÉCNICO — Agregador
-Unifica: equipment_management + document_kits
+Unifica: equipment_management + document_kits + documents
 
 Routers re-exportados dos módulos de implementação.
 API URLs inalteradas.
@@ -19,10 +19,17 @@ from modules.equipment_management.controllers import (
     maintenance_router as equipment_maintenance_router,
 )
 
+# --- Document Intelligence (OCR) ---
+try:
+    from modules.documents import router as documents_router
+except Exception:
+    documents_router = None
+
 __all__ = [
     "equipment_router",
     "installation_router",
     "equipment_maintenance_router",
     "comodato_router",
     "document_kit_router",
+    "documents_router",
 ]

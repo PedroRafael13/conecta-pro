@@ -57,7 +57,7 @@ async def get_operational_service(db: AsyncSession = Depends(get_db)) -> KitOper
 # === Kit Endpoints ===
 
 
-@router.post("/", response_model=DocumentKitResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=DocumentKitResponse, status_code=status.HTTP_201_CREATED)
 async def create_kit(
     data: DocumentKitCreate,
     user_id: CurrentUserId,
@@ -73,7 +73,7 @@ async def create_kit(
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
-@router.get("/", response_model=DocumentKitListResponse)
+@router.get("", response_model=DocumentKitListResponse)
 async def list_kits(
     condominio_id: UUID | None = Query(None, description="ID do condominio (opcional)"),
     user_id: CurrentUserId = None,
