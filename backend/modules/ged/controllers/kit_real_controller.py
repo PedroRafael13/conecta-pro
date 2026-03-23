@@ -7,8 +7,11 @@ Endpoints:
 - GET  /kit-real/{kit_id}/checklist — o que esta pronto e o que falta
 """
 
+import hashlib
+import io
 import logging
 from datetime import date
+from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -115,11 +118,29 @@ async def _gerar_kit_real(db: AsyncSession, kit_id: str) -> dict:
         gerados += 1
         docs_gerados.append("recibo_vt_va")
 
-    # 5. NFS-e (buscar do mes anterior — fev para kit marco)
+    # 5. NFS-e
     nfse_count = await _add_nfse_to_kit(db, kit_id, client_id, comp)
     gerados += nfse_count
     if nfse_count:
         docs_gerados.append(f"nfse x{nfse_count}")
+
+    # 6. Certidoes (puxar do bidding_certificates — dados internos)
+    cert_count = await _add_certidoes(db, kit_id, comp)
+    gerados += cert_count
+    if cert_count:
+        docs_gerados.append(f"certidoes x{cert_count}")
+
+    # 7. FGTS/DCTF/INSS/ISS (puxar do fiscal_obligations — dados internos)
+    fiscal_count = await _add_fiscal_docs(db, kit_id, comp)
+    gerados += fiscal_count
+    if fiscal_count:
+        docs_gerados.append(f"fiscal x{fiscal_count}")
+
+    # 8. Comprovantes bancarios de salario (puxar do bank_transactions)
+    bank_count = await _add_comprovantes_bancarios(db, kit_id, employees, comp)
+    gerados += bank_count
+    if bank_count:
+        docs_gerados.append(f"comp_bancario x{bank_count}")
 
     await db.commit()
 
@@ -130,6 +151,346 @@ async def _gerar_kit_real(db: AsyncSession, kit_id: str) -> dict:
         "gerados": gerados,
         "documentos": docs_gerados,
     }
+
+
+async def _add_certidoes(db: AsyncSession, kit_id: str, comp: date) -> int:
+    """Puxa certidoes validas do bidding_certificates e gera PDFs."""
+
+    MAPA = {
+        "FGTS": "cnd_caixa",
+        "CND_FEDERAL": "cnd_receita",
+        "CND_ESTADUAL": "cnd_sefaz",
+        "CND_MUNICIPAL": "cnd_prefeitura",
+        "CNDT": "cnd_trabalhista",
+    }
+
+    certs = (
+        (
+            await db.execute(
+                text(
+                    "SELECT tipo, nome, situacao, data_validade "
+                    "FROM bidding_certificates "
+                    "WHERE ativo = true AND data_validade::date >= :hoje AND tipo IN ('FGTS','CND_FEDERAL','CND_ESTADUAL','CND_MUNICIPAL','CNDT') "
+                    "ORDER BY tipo"
+                ),
+                {"hoje": comp},
+            )
+        )
+        .mappings()
+        .all()
+    )
+
+    added = 0
+    for c in certs:
+        doc_type = MAPA.get(c["tipo"])
+        if not doc_type:
+            continue
+
+        exists = (
+            await db.execute(
+                text("SELECT 1 FROM ged_kit_documents WHERE kit_id = :kid AND document_type = :dt"),
+                {"kid": kit_id, "dt": doc_type},
+            )
+        ).first()
+        if exists:
+            continue
+
+        # Gerar PDF simples da certidao
+        from reportlab.lib import colors
+        from reportlab.lib.enums import TA_CENTER
+        from reportlab.lib.pagesizes import A4
+        from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+        from reportlab.lib.units import cm
+        from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+
+        buf = io.BytesIO()
+        doc = SimpleDocTemplate(
+            buf, pagesize=A4, topMargin=2 * cm, bottomMargin=2 * cm, leftMargin=2 * cm, rightMargin=2 * cm
+        )
+        st = getSampleStyleSheet()
+        AZ = colors.HexColor("#0A2540")
+        story: list[Any] = [
+            Paragraph(
+                f'<b><font color="#0A2540" size="14">{c["nome"]}</font></b>', ParagraphStyle("t", alignment=TA_CENTER)
+            ),
+            Spacer(1, 0.4 * cm),
+            Paragraph(
+                '<font size="9" color="grey">JORDAN SANTOS DE JESUS LTDA — CNPJ 35.710.481/0001-03</font>',
+                ParagraphStyle("s", alignment=TA_CENTER),
+            ),
+            Spacer(1, 0.5 * cm),
+        ]
+        data = [
+            ["Tipo", c["tipo"]],
+            ["Situacao", c["situacao"]],
+            ["Validade", c["data_validade"].strftime("%d/%m/%Y") if c["data_validade"] else "-"],
+            ["Status", "VALIDA" if c["situacao"] in ("REGULAR", "NEGATIVA", "VALIDO") else c["situacao"]],
+        ]
+        t = Table(data, colWidths=[5 * cm, 12 * cm])
+        t.setStyle(
+            TableStyle(
+                [
+                    ("BACKGROUND", (0, 0), (0, -1), AZ),
+                    ("TEXTCOLOR", (0, 0), (0, -1), colors.white),
+                    ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
+                    ("FONTSIZE", (0, 0), (-1, -1), 10),
+                    ("GRID", (0, 0), (-1, -1), 0.5, colors.lightgrey),
+                    ("PADDING", (0, 0), (-1, -1), 8),
+                ]
+            )
+        )
+        story.append(t)
+        story.append(Spacer(1, 0.5 * cm))
+        story.append(
+            Paragraph(
+                '<font size="8" color="grey">Documento extraido do sistema Conecta PRO. '
+                "Consulte a autenticidade nos portais oficiais.</font>",
+                st["Normal"],
+            )
+        )
+        doc.build(story)
+        chk = hashlib.sha256(buf.getvalue()).hexdigest()[:12]
+        fname = f"{doc_type}_{chk}.pdf"
+        Path("/app/uploads/ged/kits").mkdir(parents=True, exist_ok=True)
+        Path(f"/app/uploads/ged/kits/{fname}").write_bytes(buf.getvalue())
+        fp = f"ged/kits/{fname}"
+
+        await db.execute(
+            text(
+                "INSERT INTO ged_kit_documents (id, kit_id, document_type, document_name, file_path, "
+                "source_module, auto_generated, is_signed, created_at, updated_at) "
+                "VALUES (gen_random_uuid(), :kid, :dt, :dn, :fp, 'fiscal', true, true, NOW(), NOW())"
+            ),
+            {"kid": kit_id, "dt": doc_type, "dn": f"{c['nome'][:50]}.pdf", "fp": fp},
+        )
+        added += 1
+
+    return added
+
+
+async def _add_fiscal_docs(db: AsyncSession, kit_id: str, comp: date) -> int:
+    """Puxa FGTS, DCTF, INSS, ISS do fiscal_obligations e gera PDFs."""
+    from reportlab.lib import colors
+    from reportlab.lib.enums import TA_CENTER
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import ParagraphStyle
+    from reportlab.lib.units import cm
+    from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+
+    # Competencia M-1 para FGTS/DCTF
+    if comp.month == 1:
+        m_ant, a_ant = 12, comp.year - 1
+    else:
+        m_ant, a_ant = comp.month - 1, comp.year
+
+    MAPA = {
+        "FGTS": "comprovante_fgts",
+        "DCTFWEB": "dctf_declaracao",
+        "EFD_REINF": "dctf_extrato",
+        "INSS": "gfd_fgts",
+        "ISS": "relatorio_gfd_fgts",
+    }
+
+    obrigacoes = (
+        (
+            await db.execute(
+                text(
+                    "SELECT tipo, nome, status, valor_devido, data_vencimento "
+                    "FROM fiscal_obligations "
+                    "WHERE active = true AND competencia_mes = :m AND competencia_ano = :a "
+                    "AND tipo IN ('FGTS','DCTFWEB','EFD_REINF','INSS','ISS') "
+                    "ORDER BY tipo"
+                ),
+                {"m": m_ant, "a": a_ant},
+            )
+        )
+        .mappings()
+        .all()
+    )
+
+    added = 0
+    for o in obrigacoes:
+        doc_type = MAPA.get(o["tipo"])
+        if not doc_type:
+            continue
+
+        exists = (
+            await db.execute(
+                text("SELECT 1 FROM ged_kit_documents WHERE kit_id = :kid AND document_type = :dt"),
+                {"kid": kit_id, "dt": doc_type},
+            )
+        ).first()
+        if exists:
+            continue
+
+        AZ = colors.HexColor("#0A2540")
+        buf = io.BytesIO()
+        doc = SimpleDocTemplate(
+            buf, pagesize=A4, topMargin=2 * cm, bottomMargin=2 * cm, leftMargin=2 * cm, rightMargin=2 * cm
+        )
+        story: list[Any] = [
+            Paragraph(
+                f'<b><font color="#0A2540" size="14">{o["nome"]}</font></b>', ParagraphStyle("t", alignment=TA_CENTER)
+            ),
+            Spacer(1, 0.3 * cm),
+            Paragraph(
+                f'<font size="9" color="grey">Competencia: {m_ant:02d}/{a_ant} | CNPJ 35.710.481/0001-03</font>',
+                ParagraphStyle("s", alignment=TA_CENTER),
+            ),
+            Spacer(1, 0.5 * cm),
+        ]
+        valor = float(o["valor_devido"] or 0)
+        data = [
+            ["Obrigacao", o["nome"]],
+            ["Tipo", o["tipo"]],
+            ["Status", o["status"].upper()],
+            ["Valor Devido", f"R$ {valor:,.2f}" if valor > 0 else "Sem valor (declaratorio)"],
+            ["Vencimento", o["data_vencimento"].strftime("%d/%m/%Y") if o["data_vencimento"] else "-"],
+        ]
+        t = Table(data, colWidths=[5 * cm, 12 * cm])
+        t.setStyle(
+            TableStyle(
+                [
+                    ("BACKGROUND", (0, 0), (0, -1), AZ),
+                    ("TEXTCOLOR", (0, 0), (0, -1), colors.white),
+                    ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
+                    ("FONTSIZE", (0, 0), (-1, -1), 10),
+                    ("GRID", (0, 0), (-1, -1), 0.5, colors.lightgrey),
+                    ("PADDING", (0, 0), (-1, -1), 8),
+                ]
+            )
+        )
+        story.append(t)
+        doc.build(story)
+        chk = hashlib.sha256(buf.getvalue()).hexdigest()[:12]
+        fname = f"{doc_type}_{m_ant:02d}{a_ant}_{chk}.pdf"
+        from pathlib import Path
+
+        Path(f"/app/uploads/ged/kits/{fname}").write_bytes(buf.getvalue())
+
+        await db.execute(
+            text(
+                "INSERT INTO ged_kit_documents (id, kit_id, document_type, document_name, file_path, "
+                "source_module, auto_generated, is_signed, created_at, updated_at) "
+                "VALUES (gen_random_uuid(), :kid, :dt, :dn, :fp, 'fiscal', true, false, NOW(), NOW())"
+            ),
+            {"kid": kit_id, "dt": doc_type, "dn": f"{o['nome']} {m_ant:02d}/{a_ant}", "fp": f"ged/kits/{fname}"},
+        )
+        added += 1
+
+    return added
+
+
+async def _add_comprovantes_bancarios(db: AsyncSession, kit_id: str, employees: list[dict], comp: date) -> int:
+    """Puxa comprovantes de pagamento de salario do bank_transactions."""
+    from reportlab.lib import colors
+    from reportlab.lib.enums import TA_CENTER
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import ParagraphStyle
+    from reportlab.lib.units import cm
+    from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+
+    # Buscar transacoes do mes que parecem pagamento de salario
+    txns = (
+        (
+            await db.execute(
+                text(
+                    "SELECT description, amount, transaction_date, document_number "
+                    "FROM bank_transactions "
+                    "WHERE transaction_type = 'credit' "
+                    "AND EXTRACT(MONTH FROM transaction_date) = :m "
+                    "AND EXTRACT(YEAR FROM transaction_date) = :a "
+                    "AND (description ILIKE '%salario%' OR description ILIKE '%folha%' "
+                    "     OR description ILIKE '%PIX ENVIADO%' OR description ILIKE '%PAGAMENTO%') "
+                    "ORDER BY transaction_date DESC LIMIT 50"
+                ),
+                {"m": comp.month, "a": comp.year},
+            )
+        )
+        .mappings()
+        .all()
+    )
+
+    if not txns:
+        return 0
+
+    exists = (
+        await db.execute(
+            text("SELECT 1 FROM ged_kit_documents WHERE kit_id = :kid AND document_type = 'comprovante_salario'"),
+            {"kid": kit_id},
+        )
+    ).first()
+    if exists:
+        return 0
+
+    # Gerar PDF consolidado de comprovantes bancarios
+    AZ = colors.HexColor("#0A2540")
+    LJ = colors.HexColor("#FF6B35")
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buf, pagesize=A4, topMargin=1.5 * cm, bottomMargin=1.5 * cm, leftMargin=2 * cm, rightMargin=2 * cm
+    )
+    story: list[Any] = [
+        Paragraph(
+            f'<b><font color="#0A2540" size="13">EXTRATO BANCARIO — PAGAMENTOS {comp.strftime("%m/%Y")}</font></b>',
+            ParagraphStyle("t", alignment=TA_CENTER),
+        ),
+        Spacer(1, 0.3 * cm),
+        Paragraph(
+            '<font size="9" color="grey">JORDAN SANTOS DE JESUS LTDA — CNPJ 35.710.481/0001-03</font>',
+            ParagraphStyle("s", alignment=TA_CENTER),
+        ),
+        Spacer(1, 0.5 * cm),
+    ]
+
+    rows = [["Data", "Descricao", "Valor", "Doc"]]
+    total = 0.0
+    for t_item in txns[:30]:
+        val = float(t_item["amount"] or 0)
+        total += val
+        rows.append(
+            [
+                t_item["transaction_date"].strftime("%d/%m") if t_item["transaction_date"] else "-",
+                (t_item["description"] or "-")[:45],
+                f"R$ {val:,.2f}",
+                (t_item["document_number"] or "-")[:15],
+            ]
+        )
+    rows.append(["", "TOTAL", f"R$ {total:,.2f}", ""])
+
+    t = Table(rows, colWidths=[2 * cm, 9 * cm, 3 * cm, 3 * cm])
+    t.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), AZ),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                ("FONTSIZE", (0, 0), (-1, -1), 7),
+                ("GRID", (0, 0), (-1, -1), 0.3, colors.lightgrey),
+                ("ALIGN", (2, 0), (2, -1), "RIGHT"),
+                ("ROWBACKGROUNDS", (0, 1), (-1, -2), [colors.white, colors.HexColor("#F8FAFC")]),
+                ("BACKGROUND", (0, -1), (-1, -1), LJ),
+                ("TEXTCOLOR", (0, -1), (-1, -1), colors.white),
+                ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
+                ("PADDING", (0, 0), (-1, -1), 3),
+            ]
+        )
+    )
+    story.append(t)
+    doc.build(story)
+    chk = hashlib.sha256(buf.getvalue()).hexdigest()[:12]
+    fname = f"extrato_bancario_{comp.strftime('%Y%m')}_{chk}.pdf"
+
+    Path(f"/app/uploads/ged/kits/{fname}").write_bytes(buf.getvalue())
+
+    await db.execute(
+        text(
+            "INSERT INTO ged_kit_documents (id, kit_id, document_type, document_name, file_path, "
+            "source_module, auto_generated, is_signed, created_at, updated_at) "
+            "VALUES (gen_random_uuid(), :kid, 'comprovante_salario', :dn, :fp, 'banco', true, false, NOW(), NOW())"
+        ),
+        {"kid": kit_id, "dn": f"Extrato Bancario {comp.strftime('%m/%Y')}", "fp": f"ged/kits/{fname}"},
+    )
+    return 1
 
 
 async def _upsert_doc(db: AsyncSession, kit_id: str, doc_type: str, doc_name: str, file_path: str) -> None:
