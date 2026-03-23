@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/document-tags", tags=["GED - Tags"])
 
 
-@router.post("/", response_model=DocumentTagResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=DocumentTagResponse, status_code=status.HTTP_201_CREATED)
 async def create_tag(
     data: DocumentTagCreate,
     db: AsyncSession = Depends(get_db),
@@ -124,7 +124,7 @@ async def delete_tag(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
-@router.get("/", response_model=DocumentTagListResponse)
+@router.get("", response_model=DocumentTagListResponse)
 async def list_tags(
     condominium_id: str | None = Query(None),
     tag_type: TagType | None = Query(None),

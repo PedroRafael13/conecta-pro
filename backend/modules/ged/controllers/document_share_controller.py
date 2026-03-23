@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/document-shares", tags=["GED - Compartilhamento"])
 
 
-@router.post("/", response_model=DocumentShareResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=DocumentShareResponse, status_code=status.HTTP_201_CREATED)
 async def create_share(
     data: DocumentShareCreate,
     db: AsyncSession = Depends(get_db),
@@ -101,7 +101,7 @@ async def delete_share(
         )
 
 
-@router.get("/", response_model=DocumentShareListResponse)
+@router.get("", response_model=DocumentShareListResponse)
 async def list_shares(
     document_id: str | None = Query(None),
     share_type: ShareType | None = Query(None),

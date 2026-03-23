@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/folders", tags=["GED - Pastas"])
 
 
-@router.post("/", response_model=FolderResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=FolderResponse, status_code=status.HTTP_201_CREATED)
 async def create_folder(
     data: FolderCreate,
     db: AsyncSession = Depends(get_db),
@@ -132,7 +132,7 @@ async def delete_folder(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
-@router.get("/", response_model=FolderListResponse)
+@router.get("", response_model=FolderListResponse)
 async def list_folders(
     condominium_id: str | None = Query(None),
     folder_type: FolderType | None = Query(None),

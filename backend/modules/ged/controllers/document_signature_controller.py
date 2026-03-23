@@ -48,7 +48,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/document-signatures", tags=["GED - Assinaturas"])
 
 
-@router.post("/", response_model=DocumentSignatureResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=DocumentSignatureResponse, status_code=status.HTTP_201_CREATED)
 async def create_signature(
     data: DocumentSignatureCreate,
     db: AsyncSession = Depends(get_db),

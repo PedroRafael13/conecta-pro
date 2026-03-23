@@ -5,7 +5,7 @@ import logging
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, Query, UploadFile, status
 from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/documents", tags=["GED - Documentos"])
 
 
-@router.post("/", response_model=DocumentResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=DocumentResponse, status_code=status.HTTP_201_CREATED)
 async def create_document(
     data: DocumentCreate,
     db: AsyncSession = Depends(get_db),
@@ -59,6 +59,7 @@ async def create_document(
 
 @router.post("/upload", response_model=DocumentResponse, status_code=status.HTTP_201_CREATED)
 async def upload_document(
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     title: str = Form(...),
     folder_id: str = Form(...),
@@ -112,7 +113,15 @@ async def upload_document(
         )
 
         logger.info(f"Upload realizado: {file.filename} ({len(content)} bytes)")
-        return await service.create(document_data)
+        result = await service.create(document_data)
+
+        # Disparar processamento IA em background (nao bloqueia resposta)
+        from modules.ged.tasks.ai_processing import process_document_ai
+
+        background_tasks.add_task(process_document_ai, str(result.id))
+        logger.info("IA Background agendado para documento %s", result.id)
+
+        return result
 
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
@@ -179,7 +188,7 @@ async def delete_document(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado")
 
 
-@router.get("/", response_model=DocumentListResponse)
+@router.get("", response_model=DocumentListResponse)
 async def list_documents(
     folder_id: str | None = Query(None),
     condominium_id: str | None = Query(None),
