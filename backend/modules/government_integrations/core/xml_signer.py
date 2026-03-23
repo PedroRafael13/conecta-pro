@@ -460,6 +460,53 @@ class ESocialXMLSigner(XMLSigner):
         return self.sign(xml_content, signature_type=SignatureType.ESOCIAL, reference_uri="")
 
 
+class NFSeNacionalXMLSigner(XMLSigner):
+    """Assinador para NFS-e Nacional — SEM prefixo ds: na Signature (resolve E6155)."""
+
+    def _create_signature_element(self, digest_value: str, config: SignatureConfig) -> etree._Element:
+        """Cria Signature SEM prefixo de namespace (NFS-e Nacional exige)."""
+        ds_ns = NAMESPACES["ds"]
+
+        # nsmap={None: ds_ns} gera <Signature xmlns="..."> sem prefixo "ds:"
+        signature = etree.Element(f"{{{ds_ns}}}Signature", nsmap={None: ds_ns})
+
+        signed_info = etree.SubElement(signature, f"{{{ds_ns}}}SignedInfo")
+
+        c14n_method = etree.SubElement(signed_info, f"{{{ds_ns}}}CanonicalizationMethod")
+        c14n_method.set("Algorithm", config.canonicalization.value)
+
+        sig_method = etree.SubElement(signed_info, f"{{{ds_ns}}}SignatureMethod")
+        sig_method.set("Algorithm", config.signature_method.value)
+
+        reference = etree.SubElement(signed_info, f"{{{ds_ns}}}Reference")
+        reference.set("URI", config.reference_uri)
+
+        transforms = etree.SubElement(reference, f"{{{ds_ns}}}Transforms")
+        for transform in config.transforms:
+            transform_elem = etree.SubElement(transforms, f"{{{ds_ns}}}Transform")
+            transform_elem.set("Algorithm", transform.value)
+
+        digest_method = etree.SubElement(reference, f"{{{ds_ns}}}DigestMethod")
+        digest_method.set("Algorithm", config.digest_method.value)
+
+        digest_value_elem = etree.SubElement(reference, f"{{{ds_ns}}}DigestValue")
+        digest_value_elem.text = digest_value
+
+        sig_value = etree.SubElement(signature, f"{{{ds_ns}}}SignatureValue")
+        sig_value.text = ""
+
+        key_info = etree.SubElement(signature, f"{{{ds_ns}}}KeyInfo")
+        x509_data = etree.SubElement(key_info, f"{{{ds_ns}}}X509Data")
+        x509_cert = etree.SubElement(x509_data, f"{{{ds_ns}}}X509Certificate")
+        x509_cert.text = self.cert_manager.get_certificate_base64()
+
+        return signature
+
+    def sign_nfse(self, xml_content: str) -> str:
+        """Assina XML para NFS-e Nacional (URI vazia, C14N normal, sem prefixo ds:)."""
+        return self.sign(xml_content, signature_type=SignatureType.ESOCIAL, reference_uri="")
+
+
 class NFEXMLSigner(XMLSigner):
     """Assinador especializado para NF-e/NFC-e."""
 

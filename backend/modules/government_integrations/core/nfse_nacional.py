@@ -249,9 +249,14 @@ class NFSeNacionalManager:
             dps.data_competencia.strftime("%Y-%m-%d") if dps.data_competencia else _dt.now().strftime("%Y-%m-%d")
         )
 
+        # Id do infDPS: cMun(7) + tpInsc(1) + nrInsc(14) + serie(5) + nDPS(15) = 42 chars
+        serie_pad = "00900"  # série 900 com 5 dígitos
+        ndps_pad = f"{int(dps.numero or '1'):015d}"  # nDPS com 15 dígitos
+        dps_id = f"DPS13026031{cnpj_clean}{serie_pad}{ndps_pad}"
+
         xml = f"""<?xml version="1.0" encoding="UTF-8"?>
 <DPS xmlns="http://www.sped.fazenda.gov.br/nfse" versao="1.00">
-  <infDPS Id="DPS{cnpj_clean}{_dt.now().strftime("%Y%m%d%H%M%S")}">
+  <infDPS Id="{dps_id}">
     <tpAmb>{tp_amb}</tpAmb>
     <dhEmi>{_dt.now().strftime("%Y-%m-%dT%H:%M:%S")}-04:00</dhEmi>
     <verAplic>ConectaPRO-2.0</verAplic>
@@ -333,15 +338,16 @@ class NFSeNacionalManager:
         # 2. Assinar XML com certificado A1
         try:
             from .certificate_manager import CertificateManager
-            from .xml_signer import ESocialXMLSigner
+            from .xml_signer import NFSeNacionalXMLSigner
 
             cert_mgr = CertificateManager(
                 pfx_path=self.certificado_path,
                 password=self.certificado_senha,
             )
             cert_mgr.load()
-            signer = ESocialXMLSigner(cert_mgr)
-            xml_assinado = signer.sign(xml_dps, reference_uri="")
+            # NFSeNacionalXMLSigner gera <Signature> sem prefixo ds: (resolve E6155)
+            signer = NFSeNacionalXMLSigner(cert_mgr)
+            xml_assinado = signer.sign_nfse(xml_dps)
             result["xml_assinado"] = True
         except Exception as e:
             logger.error(f"Erro assinando DPS: {e}")
