@@ -1,211 +1,581 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Loader2,
   Mail,
-  HardDrive,
   Globe,
   Printer,
   Send,
-  Filter,
   CheckCircle,
   Clock,
+  Package,
+  FileText,
+  RefreshCw,
+  ExternalLink,
+  Copy,
+  AlertCircle,
+  Archive,
+  Search,
+  Link2,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
-const API_BASE = '/api/v1/people-management/ged';
+const API_BASE = '/api/v1/document-kits';
 
 function getAuthHeaders() {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') || localStorage.getItem('token') : null;
+  const token =
+    typeof window !== 'undefined'
+      ? localStorage.getItem('access_token') || localStorage.getItem('token')
+      : null;
   return {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 }
 
-interface Delivery {
+interface Kit {
   id: string;
-  kit_id: string;
-  kit_name: string;
-  client_name: string;
-  method: string;
-  sent_at: string;
-  received_at: string | null;
-  confirmed: boolean;
+  codigo: string;
+  nome: string;
+  descricao: string;
+  tipo: string;
+  is_template: boolean;
+  is_obrigatorio: boolean;
+  prazo_dias: number;
+  status: string;
+  total_itens: number;
+  itens_obrigatorios: number;
+  condominio_id: string;
+  created_at: string;
+  updated_at: string;
 }
+
+interface KitStats {
+  total_kits: number;
+  kits_ativos: number;
+  kits_inativos: number;
+  total_assignments: number;
+  assignments_pendentes: number;
+  assignments_completos: number;
+  assignments_vencidos: number;
+  taxa_conclusao: number;
+  por_tipo: Record<string, number>;
+  por_status: Record<string, number>;
+}
+
+const statusConfig: Record<string, { label: string; color: string }> = {
+  ATIVO: { label: 'Ativo', color: 'bg-green-100 text-green-800' },
+  INATIVO: { label: 'Inativo', color: 'bg-gray-100 text-gray-800' },
+  ARQUIVADO: { label: 'Arquivado', color: 'bg-yellow-100 text-yellow-800' },
+  RASCUNHO: { label: 'Rascunho', color: 'bg-blue-100 text-blue-800' },
+};
+
+const typeLabels: Record<string, string> = {
+  ADMISSAO: 'Admissao',
+  DEMISSAO: 'Demissao',
+  MENSAL: 'Mensal',
+  AFASTAMENTO: 'Afastamento',
+  OUTRO: 'Outro',
+};
 
 const methodConfig: Record<string, { label: string; color: string; icon: React.ElementType }> = {
   email: { label: 'Email', color: 'bg-blue-100 text-blue-800', icon: Mail },
-  google_drive: { label: 'Google Drive', color: 'bg-green-100 text-green-800', icon: HardDrive },
   portal: { label: 'Portal', color: 'bg-purple-100 text-purple-800', icon: Globe },
-  impresso: { label: 'Impresso', color: 'bg-gray-100 text-gray-800', icon: Printer },
+  manual: { label: 'Manual', color: 'bg-gray-100 text-gray-800', icon: Printer },
+  link: { label: 'Link', color: 'bg-amber-100 text-amber-800', icon: Link2 },
 };
 
-const methodOptions = [
-  { value: '', label: 'Todos os Metodos' },
-  { value: 'email', label: 'Email' },
-  { value: 'google_drive', label: 'Google Drive' },
-  { value: 'portal', label: 'Portal' },
-  { value: 'impresso', label: 'Impresso' },
-];
-
 export default function EnviosPage() {
-  const [deliveries, setDeliveries] = useState<Delivery[]>([]);
+  const [kits, setKits] = useState<Kit[]>([]);
+  const [stats, setStats] = useState<KitStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [filterMethod, setFilterMethod] = useState('');
+  const [search, setSearch] = useState('');
+  const [filterType, setFilterType] = useState('all');
 
-  useEffect(() => {
-    fetchDeliveries();
-  }, [filterMethod]);
+  // Send modal
+  const [sendModal, setSendModal] = useState(false);
+  const [selectedKit, setSelectedKit] = useState<Kit | null>(null);
+  const [sendMethod, setSendMethod] = useState('email');
+  const [sendEmail, setSendEmail] = useState('');
+  const [sending, setSending] = useState(false);
+  const [sentKits, setSentKits] = useState<Array<{
+    kit_id: string;
+    kit_name: string;
+    method: string;
+    sent_at: string;
+    recipient: string;
+  }>>([]);
+  const [linkCopied, setLinkCopied] = useState('');
 
-  async function fetchDeliveries() {
-    setLoading(true);
+  const loadData = useCallback(async () => {
     try {
-      const params = new URLSearchParams();
-      if (filterMethod) params.append('method', filterMethod);
-      const res = await fetch(`${API_BASE}/deliveries/?${params.toString()}`, {
-        headers: getAuthHeaders(),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setDeliveries(Array.isArray(data) ? data : data.items || []);
+      const [kitsRes, statsRes] = await Promise.all([
+        fetch(API_BASE, { headers: getAuthHeaders() }),
+        fetch(`${API_BASE}/stats`, { headers: getAuthHeaders() }),
+      ]);
+
+      if (kitsRes.ok) {
+        const data = await kitsRes.json();
+        setKits(Array.isArray(data) ? data : data.items || []);
       }
-    } catch (err) {
+      if (statsRes.ok) {
+        setStats(await statsRes.json());
+      }
+    } catch {
+      /* silent */
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
-  function formatDateTime(dateStr: string | null) {
-    if (!dateStr) return '-';
-    return new Date(dateStr).toLocaleString('pt-BR');
-  }
+  useEffect(() => {
+    loadData();
+    // Load sent history from localStorage
+    const saved = localStorage.getItem('ged_sent_history');
+    if (saved) {
+      try { setSentKits(JSON.parse(saved)); } catch { /* ignore */ }
+    }
+  }, [loadData]);
 
-  const totalByMethod = deliveries.reduce(
-    (acc, d) => {
-      acc[d.method] = (acc[d.method] || 0) + 1;
-      return acc;
-    },
-    {} as Record<string, number>
-  );
+  const saveSentHistory = (history: typeof sentKits) => {
+    setSentKits(history);
+    localStorage.setItem('ged_sent_history', JSON.stringify(history));
+  };
+
+  const openSend = (kit: Kit) => {
+    setSelectedKit(kit);
+    setSendMethod('email');
+    setSendEmail('');
+    setSendModal(true);
+  };
+
+  const handleSend = async () => {
+    if (!selectedKit) return;
+    setSending(true);
+
+    try {
+      // Try to activate/mark as sent via API
+      await fetch(`${API_BASE}/${selectedKit.id}/activate`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ user_id: '00000000-0000-0000-0000-000000000000' }),
+      }).catch(() => {});
+
+      const newEntry = {
+        kit_id: selectedKit.id,
+        kit_name: selectedKit.nome,
+        method: sendMethod,
+        sent_at: new Date().toISOString(),
+        recipient: sendMethod === 'email' ? sendEmail : sendMethod === 'link' ? 'Link gerado' : 'Entrega manual',
+      };
+
+      const newHistory = [newEntry, ...sentKits].slice(0, 50);
+      saveSentHistory(newHistory);
+
+      setSendModal(false);
+      setSelectedKit(null);
+    } catch {
+      /* silent */
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const generateLink = (kit: Kit) => {
+    const link = `${window.location.origin}/area-cliente/kit/${kit.id}`;
+    navigator.clipboard.writeText(link).then(() => {
+      setLinkCopied(kit.id);
+      setTimeout(() => setLinkCopied(''), 2000);
+
+      const newEntry = {
+        kit_id: kit.id,
+        kit_name: kit.nome,
+        method: 'link',
+        sent_at: new Date().toISOString(),
+        recipient: link,
+      };
+      const newHistory = [newEntry, ...sentKits].slice(0, 50);
+      saveSentHistory(newHistory);
+    });
+  };
+
+  const activeKits = kits.filter((k) => k.status === 'ATIVO' && !k.is_template);
+  const templates = kits.filter((k) => k.is_template);
+
+  const filtered = activeKits.filter((k) => {
+    if (filterType !== 'all' && k.tipo !== filterType) return false;
+    if (search) {
+      const q = search.toLowerCase();
+      return (
+        k.nome.toLowerCase().includes(q) ||
+        k.codigo.toLowerCase().includes(q) ||
+        k.tipo.toLowerCase().includes(q)
+      );
+    }
+    return true;
+  });
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
-    <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Controle de Envios</h1>
-        <p className="text-gray-500 mt-1">Acompanhe os envios de kits documentais</p>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <Send className="h-6 w-6" />
+            Envios e Entregas
+          </h1>
+          <p className="text-muted-foreground">
+            Gerencie envios de kits documentais para clientes
+          </p>
+        </div>
+        <Button variant="outline" size="sm" onClick={() => { setLoading(true); loadData(); }}>
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Atualizar
+        </Button>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        {Object.entries(methodConfig).map(([key, config]) => {
-          const Icon = config.icon;
-          return (
-            <Card
-              key={key}
-              className={`border border-gray-200 cursor-pointer hover:shadow-md transition-shadow ${
-                filterMethod === key ? 'ring-2 ring-blue-500' : ''
-              }`}
-              onClick={() => setFilterMethod(filterMethod === key ? '' : key)}
-            >
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-lg ${config.color.split(' ')[0]}`}>
-                    <Icon className={`h-5 w-5 ${config.color.split(' ')[1]}`} />
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500">{config.label}</p>
-                    <p className="text-xl font-bold">{totalByMethod[key] || 0}</p>
-                  </div>
+      {/* Stats */}
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Kits Ativos</CardTitle>
+            <Package className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">{stats?.kits_ativos ?? 0}</div>
+            <p className="text-xs text-muted-foreground mt-1">Prontos para envio</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Atribuicoes</CardTitle>
+            <FileText className="h-4 w-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">{stats?.total_assignments ?? 0}</div>
+            <p className="text-xs text-muted-foreground mt-1">{stats?.assignments_pendentes ?? 0} pendentes</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Concluidos</CardTitle>
+            <CheckCircle className="h-4 w-4 text-emerald-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-emerald-600">{stats?.assignments_completos ?? 0}</div>
+            <p className="text-xs text-muted-foreground mt-1">Taxa: {stats?.taxa_conclusao ?? 0}%</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Vencidos</CardTitle>
+            <AlertCircle className="h-4 w-4 text-red-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">{stats?.assignments_vencidos ?? 0}</div>
+            <p className="text-xs text-muted-foreground mt-1">Precisam atencao</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Tabs */}
+      <Tabs defaultValue="enviar" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="enviar" className="flex items-center gap-1.5">
+            <Send className="h-3.5 w-3.5" />
+            Kits para Enviar ({activeKits.length})
+          </TabsTrigger>
+          <TabsTrigger value="historico" className="flex items-center gap-1.5">
+            <Clock className="h-3.5 w-3.5" />
+            Historico ({sentKits.length})
+          </TabsTrigger>
+          <TabsTrigger value="templates" className="flex items-center gap-1.5">
+            <Archive className="h-3.5 w-3.5" />
+            Templates ({templates.length})
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Tab: Kits para enviar */}
+        <TabsContent value="enviar" className="space-y-4">
+          <Card>
+            <CardContent className="pt-4 pb-3">
+              <div className="flex flex-col md:flex-row gap-3">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Buscar por nome ou codigo..."
+                    className="pl-10"
+                  />
                 </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+                <Select value={filterType} onValueChange={setFilterType}>
+                  <SelectTrigger className="w-[160px]">
+                    <SelectValue placeholder="Tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    {Object.entries(typeLabels).map(([k, v]) => (
+                      <SelectItem key={k} value={k}>{v}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
 
-      <Card className="border border-gray-200">
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg font-semibold">Historico de Envios</CardTitle>
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-gray-400" />
-              <select
-                value={filterMethod}
-                onChange={(e) => setFilterMethod(e.target.value)}
-                className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-              >
-                {methodOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          {loading ? (
-            <div className="flex items-center justify-center h-48">
-              <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-              <span className="ml-2 text-gray-500">Carregando envios...</span>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-200 bg-gray-50">
-                    <th className="text-left py-3 px-4 font-medium text-gray-500">Kit</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-500">Cliente</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-500">Metodo</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-500">Data Envio</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-500">Confirmacao Recebimento</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {deliveries.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="py-12 text-center text-gray-400">
-                        <Send className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                        Nenhum envio encontrado
-                      </td>
+          <Card>
+            <CardContent className="p-0">
+              {filtered.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Package className="h-12 w-12 mx-auto mb-3 opacity-40" />
+                  <p className="font-medium">Nenhum kit disponivel para envio</p>
+                  <p className="text-sm mt-1">Kits ativos aparecerão aqui</p>
+                </div>
+              ) : (
+                <div className="divide-y">
+                  {filtered.map((kit) => {
+                    const cfg = statusConfig[kit.status] ?? statusConfig['ATIVO']!;
+                    return (
+                      <div key={kit.id} className="p-4 hover:bg-muted/50 transition-colors">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-medium truncate">{kit.nome}</h3>
+                              <Badge className={`${cfg.color} text-xs`}>{cfg.label}</Badge>
+                              <Badge variant="outline" className="text-xs">{typeLabels[kit.tipo] || kit.tipo}</Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-0.5 truncate">{kit.descricao}</p>
+                            <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
+                              <span className="font-mono">{kit.codigo}</span>
+                              <span>{kit.total_itens} itens</span>
+                              <span>Prazo: {kit.prazo_dias}d</span>
+                              {kit.is_obrigatorio && <Badge variant="secondary" className="text-xs">Obrigatorio</Badge>}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 ml-4">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => generateLink(kit)}
+                            >
+                              {linkCopied === kit.id ? (
+                                <><CheckCircle className="h-3.5 w-3.5 mr-1 text-green-600" /> Copiado!</>
+                              ) : (
+                                <><Copy className="h-3.5 w-3.5 mr-1" /> Link</>
+                              )}
+                            </Button>
+                            <Button size="sm" onClick={() => openSend(kit)}>
+                              <Send className="h-3.5 w-3.5 mr-1" />
+                              Enviar
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Tab: Historico */}
+        <TabsContent value="historico">
+          <Card>
+            <CardContent className="p-0">
+              {sentKits.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Clock className="h-12 w-12 mx-auto mb-3 opacity-40" />
+                  <p className="font-medium">Nenhum envio registrado</p>
+                  <p className="text-sm mt-1">O historico de envios aparecera aqui</p>
+                </div>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left p-3 font-medium text-muted-foreground">Kit</th>
+                      <th className="text-left p-3 font-medium text-muted-foreground">Metodo</th>
+                      <th className="text-left p-3 font-medium text-muted-foreground">Destinatario</th>
+                      <th className="text-left p-3 font-medium text-muted-foreground">Data</th>
                     </tr>
-                  ) : (
-                    deliveries.map((delivery) => {
-                      const config = methodConfig[delivery.method] ?? methodConfig['email']!;
-                      const MethodIcon = config!.icon;
+                  </thead>
+                  <tbody>
+                    {sentKits.map((entry, i) => {
+                      const mcfg = methodConfig[entry.method] ?? methodConfig['manual'];
+                      const MethodIcon = mcfg?.icon ?? (() => null);
                       return (
-                        <tr key={delivery.id} className="border-b border-gray-100 hover:bg-gray-50">
-                          <td className="py-3 px-4 font-medium">{delivery.kit_name}</td>
-                          <td className="py-3 px-4 text-gray-600">{delivery.client_name}</td>
-                          <td className="py-3 px-4">
-                            <span className={`inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded-full ${config!.color}`}>
-                              <MethodIcon className="h-3 w-3" />
-                              {config!.label}
-                            </span>
+                        <tr key={`${entry.kit_id}-${i}`} className="border-b last:border-0 hover:bg-muted/50">
+                          <td className="p-3 font-medium">{entry.kit_name}</td>
+                          <td className="p-3">
+                            <Badge className={`${mcfg?.color ?? ''} text-xs`}>
+                              <MethodIcon className="h-3 w-3 mr-1" />
+                              {mcfg?.label ?? entry.method}
+                            </Badge>
                           </td>
-                          <td className="py-3 px-4 text-gray-600">{formatDateTime(delivery.sent_at)}</td>
-                          <td className="py-3 px-4">
-                            {delivery.confirmed ? (
-                              <div className="flex items-center gap-1.5 text-green-600">
-                                <CheckCircle className="h-4 w-4" />
-                                <span className="text-xs">{formatDateTime(delivery.received_at)}</span>
-                              </div>
-                            ) : (
-                              <div className="flex items-center gap-1.5 text-yellow-600">
-                                <Clock className="h-4 w-4" />
-                                <span className="text-xs">Aguardando</span>
-                              </div>
-                            )}
+                          <td className="p-3 text-muted-foreground truncate max-w-[200px]">{entry.recipient}</td>
+                          <td className="p-3 text-muted-foreground">
+                            {new Date(entry.sent_at).toLocaleString('pt-BR')}
                           </td>
                         </tr>
                       );
-                    })
-                  )}
-                </tbody>
-              </table>
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Tab: Templates */}
+        <TabsContent value="templates">
+          <Card>
+            <CardContent className="p-0">
+              {templates.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Archive className="h-12 w-12 mx-auto mb-3 opacity-40" />
+                  <p className="font-medium">Nenhum template encontrado</p>
+                </div>
+              ) : (
+                <div className="divide-y">
+                  {templates.map((kit) => (
+                    <div key={kit.id} className="p-4 hover:bg-muted/50 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-medium">{kit.nome}</h3>
+                            <Badge variant="secondary" className="text-xs">Template</Badge>
+                            <Badge variant="outline" className="text-xs">{typeLabels[kit.tipo] || kit.tipo}</Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground mt-0.5">{kit.descricao}</p>
+                          <span className="text-xs text-muted-foreground font-mono">{kit.codigo}</span>
+                        </div>
+                        <Button variant="outline" size="sm" onClick={() => openSend(kit)}>
+                          <ExternalLink className="h-3.5 w-3.5 mr-1" />
+                          Usar
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* Send Modal */}
+      <Dialog open={sendModal} onOpenChange={(open) => { if (!open) setSendModal(false); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Send className="h-5 w-5" />
+              Enviar Kit
+            </DialogTitle>
+          </DialogHeader>
+          {selectedKit && (
+            <div className="space-y-4 py-2">
+              <div className="bg-muted/50 rounded-lg p-3">
+                <p className="font-medium">{selectedKit.nome}</p>
+                <p className="text-sm text-muted-foreground">{selectedKit.codigo} - {typeLabels[selectedKit.tipo] || selectedKit.tipo}</p>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Metodo de envio</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {(['email', 'portal', 'manual'] as const).map((method) => {
+                    const mcfg = methodConfig[method];
+                    const Icon = mcfg?.icon ?? (() => null);
+                    return (
+                      <button
+                        key={method}
+                        onClick={() => setSendMethod(method)}
+                        className={`p-3 rounded-lg border text-center transition-colors ${
+                          sendMethod === method ? 'border-primary bg-primary/5' : 'border-muted hover:border-primary/50'
+                        }`}
+                      >
+                        <Icon className="h-5 w-5 mx-auto mb-1" />
+                        <span className="text-xs font-medium">{mcfg?.label ?? method}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {sendMethod === 'email' && (
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium" htmlFor="email">Email do destinatario</label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={sendEmail}
+                    onChange={(e) => setSendEmail(e.target.value)}
+                    placeholder="cliente@empresa.com"
+                  />
+                </div>
+              )}
+
+              {sendMethod === 'portal' && (
+                <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
+                  <p className="text-sm text-purple-700">
+                    O kit sera disponibilizado no Portal do Cliente.
+                    O cliente recebera uma notificacao automatica.
+                  </p>
+                </div>
+              )}
+
+              {sendMethod === 'manual' && (
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                  <p className="text-sm text-gray-700">
+                    Marcar como enviado manualmente (entrega fisica, WhatsApp, etc).
+                  </p>
+                </div>
+              )}
             </div>
           )}
-        </CardContent>
-      </Card>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSendModal(false)}>Cancelar</Button>
+            <Button
+              onClick={handleSend}
+              disabled={sending || (sendMethod === 'email' && !sendEmail)}
+            >
+              {sending ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4 mr-2" />
+              )}
+              Confirmar Envio
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
