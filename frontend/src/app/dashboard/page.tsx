@@ -13,7 +13,18 @@ import { useAuth } from '@/hooks/useAuth';
 import { moduleCategories, modules } from '@/config/modules';
 import { hasPermission, UserRole } from '@/types/modules';
 import { cn } from '@/lib/utils';
-import { fetchAllDashboardStats, fetchIntegrationSummary, type DashboardStats, type IntegrationSummary } from '@/services/dashboard/dashboardStatsService';
+import {
+  fetchAllDashboardStats,
+  fetchIntegrationSummary,
+  fetchCertificateAlerts,
+  fetchKitStats,
+  fetchGedStats,
+  type DashboardStats,
+  type IntegrationSummary,
+  type CertificateAlert,
+  type KitStats,
+  type GedStats,
+} from '@/services/dashboard/dashboardStatsService';
 
 // Mapeamento de ícones
 const iconMap: Record<string, React.ElementType> = {
@@ -27,17 +38,26 @@ export default function DashboardPage() {
   const [search, setSearch] = useState('');
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [integrations, setIntegrations] = useState<IntegrationSummary | null>(null);
+  const [certAlerts, setCertAlerts] = useState<CertificateAlert[]>([]);
+  const [kitStats, setKitStats] = useState<KitStats | null>(null);
+  const [gedStats, setGedStats] = useState<GedStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
 
   // Buscar dados reais do backend
   const loadRealData = useCallback(async () => {
     setStatsLoading(true);
-    const [statsData, intgData] = await Promise.all([
+    const [statsData, intgData, certs, kits, ged] = await Promise.all([
       fetchAllDashboardStats(),
       fetchIntegrationSummary(),
+      fetchCertificateAlerts(),
+      fetchKitStats(),
+      fetchGedStats(),
     ]);
     setStats(statsData);
     setIntegrations(intgData);
+    setCertAlerts(certs);
+    setKitStats(kits);
+    setGedStats(ged);
     setStatsLoading(false);
   }, []);
 
@@ -243,6 +263,129 @@ export default function DashboardPage() {
             </div>
           )}
         </div>
+
+        {/* Critical Alerts */}
+        {!statsLoading && certAlerts.length > 0 && (
+          <div className="mb-6 space-y-2 animate-slide-up">
+            {certAlerts.map((cert) => {
+              const isExpired = cert.dias_para_vencer <= 0;
+              const isCritical = cert.dias_para_vencer <= 7 && cert.dias_para_vencer > 0;
+              return (
+                <div
+                  key={cert.id}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl border ${
+                    isExpired
+                      ? 'bg-red-50 border-red-200'
+                      : isCritical
+                        ? 'bg-red-50 border-red-200'
+                        : 'bg-amber-50 border-amber-200'
+                  }`}
+                >
+                  <span className="text-lg">{isExpired ? '🔴' : isCritical ? '🔴' : '🟡'}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm font-medium ${isExpired || isCritical ? 'text-red-800' : 'text-amber-800'}`}>
+                      {cert.nome || cert.tipo}
+                      {isExpired
+                        ? ` — Vencida desde ${new Date(cert.data_validade).toLocaleDateString('pt-BR')}`
+                        : ` — Vence em ${cert.dias_para_vencer} dia(s)`}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => router.push('/modulos/gestao-pessoas/ged/certidoes')}
+                    className={`text-xs font-medium px-3 py-1 rounded-lg ${
+                      isExpired || isCritical
+                        ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                        : 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+                    }`}
+                  >
+                    {isExpired ? 'Regularizar' : 'Ver'}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Module Status Grid */}
+        {!statsLoading && (
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8 animate-slide-up">
+            <div
+              onClick={() => router.push('/modulos/gestao-pessoas')}
+              className="card-shine bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-2xl p-4 cursor-pointer hover:shadow-md transition-shadow"
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <Users className="w-4 h-4 text-blue-600" />
+                <span className="text-sm font-semibold">Gestao RH</span>
+              </div>
+              <p className="text-2xl font-bold">{stats?.employees ?? 0}</p>
+              <p className="text-xs text-[hsl(var(--muted-foreground))]">funcionarios ativos</p>
+            </div>
+
+            <div
+              onClick={() => router.push('/modulos/gestao-pessoas/ged')}
+              className="card-shine bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-2xl p-4 cursor-pointer hover:shadow-md transition-shadow"
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <FolderOpen className="w-4 h-4 text-amber-600" />
+                <span className="text-sm font-semibold">GED</span>
+              </div>
+              <p className="text-2xl font-bold">{kitStats?.kits_ativos ?? 0}</p>
+              <p className="text-xs text-[hsl(var(--muted-foreground))]">kits ativos | {gedStats?.total_documents ?? 0} docs</p>
+            </div>
+
+            <div
+              onClick={() => router.push('/modulos/financeiro/dashboard')}
+              className="card-shine bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-2xl p-4 cursor-pointer hover:shadow-md transition-shadow"
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <DollarSign className="w-4 h-4 text-green-600" />
+                <span className="text-sm font-semibold">Financeiro</span>
+              </div>
+              <p className="text-2xl font-bold">{stats?.clients ?? 0}</p>
+              <p className="text-xs text-[hsl(var(--muted-foreground))]">clientes ativos</p>
+            </div>
+
+            <div
+              onClick={() => router.push('/modulos/operacional')}
+              className="card-shine bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-2xl p-4 cursor-pointer hover:shadow-md transition-shadow"
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <Shield className="w-4 h-4 text-cyan-600" />
+                <span className="text-sm font-semibold">Operacional</span>
+              </div>
+              <p className="text-2xl font-bold">{stats?.active_posts ?? 0}</p>
+              <p className="text-xs text-[hsl(var(--muted-foreground))]">postos | {stats?.scales ?? 0} escalas</p>
+            </div>
+
+            <div
+              onClick={() => router.push('/modulos/gestao-pessoas/ged/certidoes')}
+              className="card-shine bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-2xl p-4 cursor-pointer hover:shadow-md transition-shadow"
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <Landmark className="w-4 h-4 text-red-600" />
+                <span className="text-sm font-semibold">Compliance</span>
+              </div>
+              <p className="text-2xl font-bold text-red-600">{certAlerts.length}</p>
+              <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                {certAlerts.filter(c => c.dias_para_vencer <= 0).length > 0
+                  ? `${certAlerts.filter(c => c.dias_para_vencer <= 0).length} vencida(s)!`
+                  : 'alertas ativos'}
+              </p>
+            </div>
+
+            <div
+              onClick={() => router.push('/modulos/integracoes')}
+              className="card-shine bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-2xl p-4 cursor-pointer hover:shadow-md transition-shadow"
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <Plug className="w-4 h-4 text-purple-600" />
+                <span className="text-sm font-semibold">Integracoes</span>
+              </div>
+              <p className="text-2xl font-bold">{integrations?.online ?? 0}/{integrations?.total ?? 0}</p>
+              <p className="text-xs text-[hsl(var(--muted-foreground))]">online | Gov.br ativo</p>
+            </div>
+          </div>
+        )}
 
         {/* Search - Mobile */}
         <div className="md:hidden mb-6">

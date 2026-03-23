@@ -158,10 +158,75 @@ export async function fetchRecentActivity(): Promise<RecentActivityItem[]> {
   }
 }
 
+export interface CertificateAlert {
+  id: string;
+  tipo: string;
+  nome: string;
+  dias_para_vencer: number;
+  situacao: string;
+  esta_valida: boolean;
+  data_validade: string;
+}
+
+export interface KitStats {
+  total_kits: number;
+  kits_ativos: number;
+  assignments_pendentes: number;
+  taxa_conclusao: number;
+}
+
+export interface GedStats {
+  total_documents: number;
+  pending_approval: number;
+  pending_signature: number;
+}
+
+export async function fetchCertificateAlerts(): Promise<CertificateAlert[]> {
+  try {
+    const { data } = await api.get('/api/v1/bidding/certificates');
+    const items = Array.isArray(data) ? data : data.items ?? [];
+    return items
+      .filter((c: CertificateAlert) => c.dias_para_vencer <= 30 || !c.esta_valida)
+      .sort((a: CertificateAlert, b: CertificateAlert) => a.dias_para_vencer - b.dias_para_vencer);
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchKitStats(): Promise<KitStats> {
+  try {
+    const { data } = await api.get('/api/v1/document-kits/stats');
+    return {
+      total_kits: data.total_kits ?? 0,
+      kits_ativos: data.kits_ativos ?? 0,
+      assignments_pendentes: data.assignments_pendentes ?? 0,
+      taxa_conclusao: data.taxa_conclusao ?? 0,
+    };
+  } catch {
+    return { total_kits: 0, kits_ativos: 0, assignments_pendentes: 0, taxa_conclusao: 0 };
+  }
+}
+
+export async function fetchGedStats(): Promise<GedStats> {
+  try {
+    const { data } = await api.get('/api/v1/ged/documents/stats/summary');
+    return {
+      total_documents: data.total_documents ?? 0,
+      pending_approval: data.pending_approval ?? 0,
+      pending_signature: data.pending_signature ?? 0,
+    };
+  } catch {
+    return { total_documents: 0, pending_approval: 0, pending_signature: 0 };
+  }
+}
+
 const dashboardStatsService = {
   fetchAllDashboardStats,
   fetchIntegrationSummary,
   fetchRecentActivity,
+  fetchCertificateAlerts,
+  fetchKitStats,
+  fetchGedStats,
 };
 
 export default dashboardStatsService;
