@@ -27,6 +27,7 @@ export const sstKeys = {
   taxaAcidente: () => [...sstKeys.all, 'taxa-acidente'] as const,
   estabilidade: () => [...sstKeys.all, 'estabilidade'] as const,
   ajudaMedicamento: () => [...sstKeys.all, 'ajuda-medicamento'] as const,
+  ltcat: () => [...sstKeys.all, 'ltcat'] as const,
 };
 
 // =============================================================================
@@ -184,5 +185,20 @@ export function useAjudaMedicamento() {
     queryKey: sstKeys.ajudaMedicamento(),
     queryFn: () => sstService.listAjudaMedicamento(),
     staleTime: 5 * 60 * 1000,
+  });
+}
+
+// =============================================================================
+// LTCAT
+// =============================================================================
+
+/**
+ * Hook para status do LTCAT
+ */
+export function useLTCATStatus() {
+  return useQuery({
+    queryKey: sstKeys.ltcat(),
+    queryFn: () => sstService.getLTCATStatus(),
+    staleTime: 30 * 1000,
   });
 }

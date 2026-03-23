@@ -1,6 +1,6 @@
 'use client';
 
-import { Heart, Stethoscope, HardHat, AlertTriangle, FileCheck, ShieldAlert, Package, ArrowRight } from 'lucide-react';
+import { Heart, Stethoscope, HardHat, AlertTriangle, FileCheck, ShieldAlert, Package, ArrowRight, FileText } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 ;
 import { useRouter } from 'next/navigation';
@@ -30,6 +30,14 @@ const subPages = [
     href: '/modulos/gestao-pessoas/saude-ocupacional/riscos',
     color: 'text-orange-600',
     bg: 'bg-orange-50',
+  },
+  {
+    title: 'LTCAT (NR-15 / Lei 8.213)',
+    description: 'Laudo Tecnico das Condicoes Ambientais do Trabalho - agentes de risco e aposentadoria especial',
+    icon: FileText,
+    href: '/modulos/gestao-pessoas/saude-ocupacional/ltcat',
+    color: 'text-teal-600',
+    bg: 'bg-teal-50',
   },
 ];
 
@@ -120,7 +128,7 @@ export default function SaudeOcupacionalPage() {
       </div>
 
       {/* Sub-page navigation cards */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {subPages.map((page) => (
           <Card
             key={page.href}
