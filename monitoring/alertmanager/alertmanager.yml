@@ -38,25 +38,19 @@ route:
       repeat_interval: 24h
 
 receivers:
-  # Telegram + OpenClaw webhook - Alertas padrão (warnings, info)
-  # bot_token e chat_id injetados via entrypoint.sh + env vars
+  # OpenClaw webhook ONLY — Telegram removido do Alertmanager para evitar
+  # notificações duplicadas. O OpenClaw é responsável por:
+  # 1. Diagnosticar o alerta
+  # 2. Tentar remediação automática
+  # 3. Enviar notificação Telegram com contexto (diagnóstico + ações)
+  # 4. Suprimir falsos positivos (não notifica)
+  # 5. Throttle: max 1 msg/alerta a cada 5min, max 10/hora
   - name: 'default-webhook'
-    telegram_configs:
-      - bot_token: '${TELEGRAM_BOT_TOKEN}'
-        chat_id: ${TELEGRAM_CHAT_ID}
-        parse_mode: 'HTML'
-        send_resolved: true
     webhook_configs:
       - url: 'http://conecta-pro-backend:8080/api/v1/ai/openclaw/alert-webhook'
         send_resolved: true
 
-  # Telegram + OpenClaw webhook - Alertas críticos
   - name: 'critical-webhook'
-    telegram_configs:
-      - bot_token: '${TELEGRAM_BOT_TOKEN}'
-        chat_id: ${TELEGRAM_CHAT_ID}
-        parse_mode: 'HTML'
-        send_resolved: true
     webhook_configs:
       - url: 'http://conecta-pro-backend:8080/api/v1/ai/openclaw/alert-webhook'
         send_resolved: true

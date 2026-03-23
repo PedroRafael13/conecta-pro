@@ -146,6 +146,9 @@ async def receive_alert_webhook(
                 else:
                     intervention.resolution = "Resolvido automaticamente pelo OpenClaw"
 
+                # Silenciar alerta no Alertmanager por 1h para evitar re-disparo
+                await _silence_alertmanager(alert_name, duration_hours=1)
+
             # Notificar via Telegram (não notificar falsos positivos)
             msg_id = None
             if not is_false_positive:
@@ -200,6 +203,36 @@ async def receive_alert_webhook(
         )
 
     return results
+
+
+async def _silence_alertmanager(alert_name: str, duration_hours: int = 1) -> None:
+    """Cria silence no Alertmanager para evitar re-disparo após resolução."""
+    import httpx
+
+    alertmanager_url = "http://erp-alertmanager:9093"
+    now = datetime.now(UTC)
+    ends_at = now + __import__("datetime").timedelta(hours=duration_hours)
+
+    silence = {
+        "matchers": [{"name": "alertname", "value": alert_name, "isRegex": False}],
+        "startsAt": now.isoformat(),
+        "endsAt": ends_at.isoformat(),
+        "createdBy": "OpenClaw",
+        "comment": f"Auto-silence após resolução automática ({alert_name})",
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=5) as client:
+            resp = await client.post(f"{alertmanager_url}/api/v2/silences", json=silence)
+            if resp.status_code in (200, 201):
+                sid = resp.json().get("silenceID", "?")
+                logger.info(
+                    f"OpenClaw: silence criado no Alertmanager para {alert_name} ({duration_hours}h) — ID: {sid}"
+                )
+            else:
+                logger.warning(f"OpenClaw: falha ao criar silence: {resp.status_code} {resp.text[:200]}")
+    except Exception as e:
+        logger.warning(f"OpenClaw: não conseguiu silenciar Alertmanager: {e}")
 
 
 @router.get("/interventions")

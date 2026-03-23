@@ -145,12 +145,13 @@ groups:
       # FRONTEND / PM2
       # =====================================================================
 
-      # PM2 muitos restarts (> 5 em janela recente)
+      # PM2 muitos restarts (> 20 em janela recente)
+      # Threshold alto para evitar falsos positivos em deploys normais
       - alert: PM2ExcessiveRestarts
-        expr: pm2_restart_count > 5
-        for: 5m
+        expr: pm2_restart_count > 20
+        for: 15m
         labels:
           severity: warning
         annotations:
           summary: "PM2 frontend com {{ $value }} restarts"
-          description: "O processo PM2 do frontend reiniciou mais de 5 vezes. Possivel crash loop."
+          description: "O processo PM2 do frontend reiniciou mais de 20 vezes em 15 minutos. Crash loop confirmado."
