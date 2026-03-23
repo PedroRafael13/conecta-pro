@@ -1,12 +1,13 @@
 #!/bin/sh
 # Entrypoint script para AlertManager
-# Substitui variáveis de ambiente no arquivo de configuração
+# Alertas vão APENAS para OpenClaw webhook (que notifica Telegram com contexto)
+# Telegram removido do Alertmanager para evitar duplicatas
 
 CONFIG_FILE=/etc/alertmanager/alertmanager.yml
 
-# Criar configuração a partir do template, substituindo variáveis
 cat > "$CONFIG_FILE" << EOF
 # AlertManager Configuration - ERP Conecta Mais
+# Telegram removido — OpenClaw é o único notificador (com diagnóstico + throttle)
 global:
   resolve_timeout: 5m
   smtp_smarthost: 'localhost:587'
@@ -39,34 +40,10 @@ route:
 
 receivers:
   - name: 'default-webhook'
-    telegram_configs:
-      - bot_token: '${TELEGRAM_BOT_TOKEN}'
-        chat_id: ${TELEGRAM_CHAT_ID}
-        parse_mode: 'HTML'
-        message: |
-          {{ if eq .Status "firing" }}🔔 <b>ALERTA</b>{{ else }}✅ <b>RESOLVIDO</b>{{ end }}
-          <b>{{ .GroupLabels.alertname }}</b>
-          Severidade: {{ .CommonLabels.severity }}
-          {{ range .Alerts }}
-          {{ .Annotations.summary }}
-          {{ end }}
-        send_resolved: true
     webhook_configs:
       - url: 'http://172.19.0.1:8080/api/v1/ai/openclaw/alert-webhook'
         send_resolved: true
   - name: 'critical-webhook'
-    telegram_configs:
-      - bot_token: '${TELEGRAM_BOT_TOKEN}'
-        chat_id: ${TELEGRAM_CHAT_ID}
-        parse_mode: 'HTML'
-        message: |
-          {{ if eq .Status "firing" }}🚨 <b>CRÍTICO</b>{{ else }}✅ <b>RESOLVIDO</b>{{ end }}
-          <b>{{ .GroupLabels.alertname }}</b>
-          {{ range .Alerts }}
-          {{ .Annotations.summary }}
-          {{ .Annotations.description }}
-          {{ end }}
-        send_resolved: true
     webhook_configs:
       - url: 'http://172.19.0.1:8080/api/v1/ai/openclaw/alert-webhook'
         send_resolved: true
@@ -78,7 +55,6 @@ inhibit_rules:
     equal: ['alertname', 'job']
 EOF
 
-# Executar o AlertManager com o arquivo gerado
 exec /bin/alertmanager \
   --config.file="$CONFIG_FILE" \
   --storage.path=/alertmanager \
