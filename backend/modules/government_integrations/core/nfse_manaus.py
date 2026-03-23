@@ -12,6 +12,7 @@ Funções:
 """
 
 import logging
+import re
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from decimal import Decimal
@@ -563,9 +564,7 @@ class NFSeManausManager:
                 data=envelope.encode("utf-8"),
                 headers=headers,
                 timeout=timeout,
-                cert=(self.cert_manager.get_cert_path(), self.cert_manager.get_key_path())
-                if self.cert_manager
-                else None,
+                cert=self.cert_manager.get_certificate_for_request() if self.cert_manager else None,
             )
 
             resultado = {
@@ -578,8 +577,6 @@ class NFSeManausManager:
             # Parseia resposta
             if response.status_code == 200:
                 if "Outputxml" in response.text:
-                    import re
-
                     match = re.search(r"<Outputxml>(.*?)</Outputxml>", response.text, re.DOTALL)
                     if match:
                         resultado["outputxml"] = match.group(1)

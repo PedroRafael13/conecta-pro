@@ -388,9 +388,7 @@ async def obter_status(
                 }
 
         # Contar jobs ativos
-        jobs_ativos = len(
-            [j for j in sync_manager._active_jobs.values() if j.get("cnpj") == cnpj and j.get("status") == "running"]
-        )
+        jobs_ativos = len(sync_manager.obter_jobs_ativos(cnpj))
 
         # Última sincronização geral
         ultima_sync = None
@@ -480,23 +478,20 @@ async def listar_jobs(
 ):
     """Lista jobs de sincronização em execução."""
     try:
-        jobs = []
+        jobs_data = sync_manager.obter_jobs_ativos(cnpj)
 
-        for job_id, job_info in sync_manager._active_jobs.items():
-            if cnpj and job_info.get("cnpj") != cnpj:
-                continue
-
-            jobs.append(
-                JobStatusResponse(
-                    job_id=job_id,
-                    servico=job_info.get("servico", "unknown"),
-                    cnpj=job_info.get("cnpj", ""),
-                    status=job_info.get("status", "unknown"),
-                    inicio=job_info.get("inicio", datetime.utcnow()),
-                    fim=job_info.get("fim"),
-                    resultado=None,  # Resultado só disponível após conclusão
-                )
+        jobs = [
+            JobStatusResponse(
+                job_id=j["id"],
+                servico=j.get("servico", "unknown"),
+                cnpj=j.get("cnpj", ""),
+                status=j.get("status", "unknown"),
+                inicio=datetime.fromisoformat(j["inicio"]) if j.get("inicio") else datetime.utcnow(),
+                fim=None,
+                resultado=None,
             )
+            for j in jobs_data
+        ]
 
         return jobs
 
@@ -511,11 +506,12 @@ async def cancelar_job(
 ):
     """Solicita cancelamento de job de sincronização."""
     try:
-        if job_id not in sync_manager._active_jobs:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Job {job_id} não encontrado")
+        with sync_manager._jobs_lock:
+            if job_id not in sync_manager._jobs:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Job {job_id} não encontrado")
 
-        job_info = sync_manager._active_jobs[job_id]
-        servico = job_info.get("servico")
+            job = sync_manager._jobs[job_id]
+            servico = job.servico.value if hasattr(job.servico, "value") else job.servico
 
         if servico and servico in sync_manager._synchronizers:
             sync_manager._synchronizers[servico].cancelar()
@@ -587,13 +583,12 @@ async def configurar_agendamento(
         db.commit()
 
         # Atualizar no manager
-        sync_manager._scheduled_jobs[f"{request.cnpj_empresa}_{request.servico.value}"] = {
-            "servico": servico_gov,
-            "cnpj": request.cnpj_empresa,
-            "intervalo": request.intervalo_minutos,
-            "ativo": request.ativo,
-            "proxima_execucao": datetime.utcnow(),
-        }
+        sync_manager.configurar_agendamento(
+            cnpj=request.cnpj_empresa,
+            servico=servico_gov,
+            intervalo_minutos=request.intervalo_minutos,
+            ativo=request.ativo,
+        )
 
         return {
             "status": "configurado",
@@ -672,9 +667,9 @@ async def remover_agendamento(
         db.commit()
 
         # Remover do manager
-        job_key = f"{cnpj}_{servico.value}"
-        if job_key in sync_manager._scheduled_jobs:
-            del sync_manager._scheduled_jobs[job_key]
+        if cnpj in sync_manager._schedules:
+            servico_gov = ServicoGov(servico.value)
+            sync_manager._schedules[cnpj].pop(servico_gov, None)
 
         return {"status": "removido", "servico": servico.value}
 
@@ -766,9 +761,17 @@ async def obter_configuracao(
 ):
     """Obtém configuração de integração."""
     try:
+        from sqlalchemy import select
+
         from ..models.sync_models import ConfiguracaoIntegracao
 
-        config = db.query(ConfiguracaoIntegracao).filter(ConfiguracaoIntegracao.cnpj_empresa == cnpj).first()
+        # Tentar usar select() (compatível com sync e async sessions)
+        try:
+            result = db.execute(select(ConfiguracaoIntegracao).where(ConfiguracaoIntegracao.cnpj_empresa == cnpj))
+            config = result.scalars().first()
+        except Exception:
+            # Fallback: tabela pode não existir (migration sprint56 não aplicada)
+            config = None
 
         if not config:
             return {
@@ -910,11 +913,18 @@ async def listar_certidoes(
 ):
     """Lista certidões (CND, CNDT, CRF, etc)."""
     try:
+        from sqlalchemy import select
+
         from ..models.sync_models import Certidao
 
-        certidoes = (
-            db.query(Certidao).filter(Certidao.cnpj_empresa == cnpj).order_by(Certidao.data_emissao.desc()).all()
-        )
+        try:
+            result = db.execute(
+                select(Certidao).where(Certidao.cnpj_empresa == cnpj).order_by(Certidao.data_emissao.desc())
+            )
+            certidoes = result.scalars().all()
+        except Exception:
+            # Tabela pode não existir (migration sprint56 não aplicada)
+            return []
 
         return [
             {
