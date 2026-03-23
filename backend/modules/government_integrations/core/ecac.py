@@ -42,6 +42,7 @@ class SituacaoFiscal(StrEnum):
     PENDENTE = "pendente"
     IRREGULAR = "irregular"
     OMISSO = "omisso"
+    NAO_SINCRONIZADO = "nao_sincronizado"
 
 
 class TipoPendencia(StrEnum):
@@ -193,13 +194,15 @@ class EcacManager:
         """
         logger.info(f"Consultando situação fiscal: {self.cnpj_cpf}")
 
-        # Na implementação real, acessaria o e-CAC via SOAP/REST
+        # e-CAC não tem API pública. Requer scraping com certificado ou Gov.br OAuth2.
         resultado = ResultadoSituacaoFiscal(
             cpf_cnpj=self.cnpj_cpf,
             nome="",
-            situacao=SituacaoFiscal.REGULAR,
+            situacao=SituacaoFiscal.NAO_SINCRONIZADO,
             data_consulta=datetime.now(),
         )
+        resultado.fonte = "nao_consultado"
+        resultado.aviso = "e-CAC não tem API pública. Requer Gov.br OAuth2 ou scraping com certificado."
 
         return resultado
 

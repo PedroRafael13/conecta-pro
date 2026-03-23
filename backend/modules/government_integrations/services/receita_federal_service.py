@@ -10,7 +10,6 @@ from typing import Any
 from modules.government_integrations.utils import (
     formatar_cnpj,
     formatar_cpf,
-    get_receita_service,
     validar_cnpj,
     validar_cpf,
 )
@@ -69,18 +68,12 @@ class ReceitaFederalApiService:
         if not validar_cpf(cpf_limpo):
             raise ValueError("CPF invalido")
 
-        receita_service = get_receita_service()
-        resultado = receita_service.consultar_cpf(
-            cpf=cpf_limpo,
-            data_nascimento=data_nascimento,
-        )
-
+        # Receita Federal não tem API pública para consulta de CPF
         return {
             "cpf": formatar_cpf(cpf_limpo),
-            "situacao": resultado.get("situacao"),
-            "nome": resultado.get("nome"),
-            "data_inscricao": resultado.get("data_inscricao"),
-            "digito_verificador": resultado.get("digito_verificador"),
+            "status": "indisponivel",
+            "fonte": "nao_consultado",
+            "aviso": "Receita Federal não tem API pública. Consultar via e-CAC ou Gov.br.",
         }
 
     @staticmethod
@@ -102,17 +95,10 @@ class ReceitaFederalApiService:
         if not validar_cnpj(cnpj_limpo):
             raise ValueError("CNPJ invalido")
 
-        receita_service = get_receita_service()
-        resultado = receita_service.consultar_cnpj(cnpj=cnpj_limpo)
-
+        # Receita Federal não tem API pública para consulta de CNPJ
         return {
             "cnpj": formatar_cnpj(cnpj_limpo),
-            "razao_social": resultado.get("razao_social"),
-            "nome_fantasia": resultado.get("nome_fantasia"),
-            "situacao_cadastral": resultado.get("situacao_cadastral"),
-            "data_situacao": resultado.get("data_situacao"),
-            "cnae_principal": resultado.get("cnae_principal"),
-            "endereco": resultado.get("endereco"),
-            "porte": resultado.get("porte"),
-            "natureza_juridica": resultado.get("natureza_juridica"),
+            "status": "indisponivel",
+            "fonte": "nao_consultado",
+            "aviso": "Receita Federal não tem API pública. Consultar via e-CAC ou Gov.br.",
         }

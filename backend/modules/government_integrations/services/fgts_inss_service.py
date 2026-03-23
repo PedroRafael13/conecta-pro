@@ -67,6 +67,8 @@ class FGTSINSSService:
                 "multa_rescisoria": str(multa_rescisoria.quantize(Decimal("0.01"))) if rescisao else None,
                 "valor_total": str((valor_fgts + multa_rescisoria).quantize(Decimal("0.01"))),
                 "tipo_recolhimento": tipo_recolhimento,
+                "fonte": "calculo_local",
+                "aviso": "Calculado localmente com alíquota 8%. Sem conexão com FGTS Digital/Caixa.",
             }
 
         except CalculoError:
@@ -134,6 +136,8 @@ class FGTSINSSService:
             "teto_aplicado": teto_aplicado,
             "detalhamento_faixas": detalhamento,
             "tabela_vigencia": "2026",
+            "fonte": "calculo_local",
+            "aviso": "Calculado localmente com tabela progressiva 2026. Sem conexão com Dataprev/INSS.",
         }
 
     @classmethod

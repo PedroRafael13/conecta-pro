@@ -289,14 +289,17 @@ class SimplesNacionalManager:
         Returns:
             Dados da situação
         """
-        # Na implementação real, consultaria o portal
+        # IMPORTANTE: A empresa migrou para Lucro Real em 01/01/2026.
+        # Não há API pública do Simples Nacional para consulta automática.
         return {
             "cnpj": self.cnpj,
             "razao_social": self.razao_social,
-            "situacao": SituacaoOpcao.OPTANTE.value,
-            "data_opcao": "2020-01-01",
-            "enquadramento": self.anexo_principal.value,
-            "simei": False,  # Não é MEI
+            "situacao": "nao_sincronizado",
+            "regime_atual": "lucro_real",
+            "data_migracao": "2026-01-01",
+            "simei": False,
+            "fonte": "configuracao_local",
+            "aviso": "Empresa no Lucro Real desde 01/2026. Simples Nacional não tem API pública.",
         }
 
     def obter_faixa(self, rbt12: Decimal, anexo: AnexoSimples) -> FaixaAliquota:
