@@ -128,6 +128,16 @@ class DocumentShareRepository:
         result = await self.session.execute(query.order_by(DocumentShare.created_at.desc()))
         return list(result.scalars().all())
 
+    async def get_by_recipient(
+        self, recipient_id: str = None, recipient_email: str = None, skip: int = 0, limit: int = 20
+    ) -> list[DocumentShare]:
+        """Alias para get_by_user — compartilhamentos recebidos."""
+        return await self.get_by_user(recipient_id or "", skip, limit)
+
+    async def get_by_owner(self, owner_id: str, skip: int = 0, limit: int = 20) -> list[DocumentShare]:
+        """Alias para get_shared_by_user — compartilhamentos criados."""
+        return await self.get_shared_by_user(owner_id, skip, limit)
+
     async def get_by_user(self, user_id: str, skip: int = 0, limit: int = 20) -> list[DocumentShare]:
         """Retorna documentos compartilhados com usuário."""
         query = (

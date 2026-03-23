@@ -64,10 +64,11 @@ class DocumentTagResponse(BaseModel):
     updated_at: datetime
     created_by: str
 
-    # Computed
-    is_category: bool
-    has_children: bool
-    full_path: str
+    # Computed (optional to avoid lazy-loading issues in async)
+    is_category: bool = False
+    has_children: bool = False
+    full_path: str = ""
+    document_count: int = 0
 
 
 class DocumentTagListResponse(BaseModel):
@@ -99,9 +100,11 @@ class DocumentTagTreeNode(BaseModel):
     id: str
     name: str
     slug: str
-    color: str
-    icon: str | None
-    usage_count: int
+    tag_type: TagType | None = None
+    color: str = "blue"
+    icon: str | None = None
+    document_count: int = 0
+    usage_count: int = 0
     children: list["DocumentTagTreeNode"] = []
 
 

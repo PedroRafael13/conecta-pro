@@ -19,6 +19,12 @@ from modules.ged.schemas.document_share import (
 )
 from modules.ged.services.document_share_service import DocumentShareService
 
+
+def _uid(current_user) -> str:
+    """Extrai user id de User object ou dict."""
+    return str(current_user.id) if hasattr(current_user, "id") else _uid(current_user)
+
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/document-shares", tags=["GED - Compartilhamento"])
@@ -33,7 +39,7 @@ async def create_share(
     """Cria compartilhamento."""
     service = DocumentShareService(db)
     try:
-        data.shared_by = current_user["id"]
+        data.shared_by = _uid(current_user)
         return await service.create(data)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
@@ -137,7 +143,7 @@ async def get_by_owner(
 ) -> list[DocumentShareResponse]:
     """Retorna compartilhamentos criados pelo usuário."""
     service = DocumentShareService(db)
-    return await service.get_by_owner(current_user["id"], page, page_size)
+    return await service.get_by_owner(_uid(current_user), page, page_size)
 
 
 @router.get("/recipient/list", response_model=list[DocumentShareResponse])
@@ -150,7 +156,7 @@ async def get_by_recipient(
     """Retorna compartilhamentos recebidos pelo usuário."""
     service = DocumentShareService(db)
     return await service.get_by_recipient(
-        recipient_id=current_user["id"],
+        recipient_id=_uid(current_user),
         page=page,
         page_size=page_size,
     )
@@ -165,7 +171,7 @@ async def create_public_link(
     """Cria link público para documento."""
     service = DocumentShareService(db)
     try:
-        data.shared_by = current_user["id"]
+        data.shared_by = _uid(current_user)
         return await service.create_public_link(data)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
@@ -219,7 +225,7 @@ async def accept_share(
 ) -> DocumentShareResponse:
     """Aceita compartilhamento."""
     service = DocumentShareService(db)
-    share = await service.accept(share_id, current_user["id"])
+    share = await service.accept(share_id, _uid(current_user))
     if not share:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

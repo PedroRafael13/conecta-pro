@@ -19,6 +19,12 @@ from modules.ged.schemas.folder import (
 )
 from modules.ged.services.folder_service import FolderService
 
+
+def _uid(current_user) -> str:
+    """Extrai user id de User object ou dict."""
+    return str(current_user.id) if hasattr(current_user, "id") else _uid(current_user)
+
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/folders", tags=["GED - Pastas"])
@@ -204,7 +210,7 @@ async def archive_folder(
 ) -> FolderResponse:
     """Arquiva pasta."""
     service = FolderService(db)
-    folder = await service.archive(folder_id, current_user["id"])
+    folder = await service.archive(folder_id, _uid(current_user))
     if not folder:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Pasta não encontrada")
     return folder
@@ -349,4 +355,4 @@ async def create_default_structure(
 ) -> list[FolderResponse]:
     """Cria estrutura padrão de pastas."""
     service = FolderService(db)
-    return await service.create_default_structure(condominium_id, owner_id, current_user["id"])
+    return await service.create_default_structure(condominium_id, owner_id, _uid(current_user))

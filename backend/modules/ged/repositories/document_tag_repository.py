@@ -147,6 +147,19 @@ class DocumentTagRepository:
 
         return list(tags), total
 
+    async def get_tree(self, condominium_id: str = None) -> list[DocumentTag]:
+        """Retorna todas as tags para montagem de arvore."""
+        query = select(DocumentTag).where(DocumentTag.is_active.is_(True))
+        if condominium_id:
+            query = query.where(
+                or_(
+                    DocumentTag.condominium_id == condominium_id,
+                    DocumentTag.is_global.is_(True),
+                )
+            )
+        result = await self.session.execute(query.order_by(DocumentTag.order, DocumentTag.name))
+        return list(result.scalars().all())
+
     async def get_root_tags(self, condominium_id: str = None) -> list[DocumentTag]:
         """Retorna tags raiz (sem pai)."""
         query = select(DocumentTag).where(

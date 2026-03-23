@@ -21,6 +21,11 @@ from modules.ged.schemas.document_signature import (
 from modules.ged.services.document_signature_service import DocumentSignatureService
 
 
+def _uid(current_user) -> str:
+    """Extrai user id de User object ou dict."""
+    return str(current_user.id) if hasattr(current_user, "id") else _uid(current_user)
+
+
 class BulkSignatureRequest(BaseModel):
     """Request para criação de assinaturas em lote."""
 
@@ -52,7 +57,7 @@ async def create_signature(
     """Cria solicitação de assinatura."""
     service = DocumentSignatureService(db)
     try:
-        data.created_by = current_user["id"]
+        data.created_by = _uid(current_user)
         return await service.create(data)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
@@ -73,7 +78,7 @@ async def create_bulk_signatures(
     """Cria múltiplas solicitações de assinatura."""
     service = DocumentSignatureService(db)
     try:
-        return await service.create_bulk(data.document_id, data.signers, current_user["id"])
+        return await service.create_bulk(data.document_id, data.signers, _uid(current_user))
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
@@ -170,7 +175,7 @@ async def get_by_signer(
     """Retorna assinaturas do usuário."""
     service = DocumentSignatureService(db)
     return await service.get_by_signer(
-        signer_id=current_user["id"],
+        signer_id=_uid(current_user),
         status=signature_status,
     )
 
@@ -182,7 +187,7 @@ async def get_pending_by_signer(
 ) -> list[DocumentSignatureResponse]:
     """Retorna assinaturas pendentes do usuário."""
     service = DocumentSignatureService(db)
-    return await service.get_pending_by_signer(signer_id=current_user["id"])
+    return await service.get_pending_by_signer(signer_id=_uid(current_user))
 
 
 @router.post("/{signature_id}/sign", response_model=DocumentSignatureResponse)
@@ -387,7 +392,7 @@ async def request_signatures(
         return await service.request_signatures(
             document_id=data.document_id,
             signers=data.signers,
-            created_by=current_user["id"],
+            created_by=_uid(current_user),
             sequential=data.sequential,
             deadline_days=data.deadline_days,
             message=data.message,

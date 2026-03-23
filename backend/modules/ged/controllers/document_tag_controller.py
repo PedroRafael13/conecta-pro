@@ -18,6 +18,12 @@ from modules.ged.schemas.document_tag import (
 )
 from modules.ged.services.document_tag_service import DocumentTagService
 
+
+def _uid(current_user) -> str:
+    """Extrai user id de User object ou dict."""
+    return str(current_user.id) if hasattr(current_user, "id") else _uid(current_user)
+
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/document-tags", tags=["GED - Tags"])
@@ -32,7 +38,7 @@ async def create_tag(
     """Cria uma nova tag."""
     service = DocumentTagService(db)
     try:
-        data.created_by = current_user["id"]
+        data.created_by = _uid(current_user)
         return await service.create(data)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
@@ -293,7 +299,7 @@ async def create_default_tags(
 ) -> list[DocumentTagResponse]:
     """Cria tags padrão."""
     service = DocumentTagService(db)
-    return await service.create_default_tags(condominium_id, current_user["id"])
+    return await service.create_default_tags(condominium_id, _uid(current_user))
 
 
 @router.get("/stats/summary")

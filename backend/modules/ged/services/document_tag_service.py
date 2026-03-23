@@ -21,6 +21,34 @@ from modules.ged.schemas.document_tag import (
 logger = logging.getLogger(__name__)
 
 
+def _tag_to_response(tag) -> DocumentTagResponse:
+    """Converte DocumentTag model para response sem triggering lazy loads."""
+    return DocumentTagResponse(
+        id=str(tag.id),
+        name=tag.name,
+        slug=tag.slug,
+        description=tag.description,
+        tag_type=tag.tag_type,
+        parent_id=str(tag.parent_id) if tag.parent_id else None,
+        color=tag.color if hasattr(tag, "color") and tag.color else "blue",
+        icon=tag.icon if hasattr(tag, "icon") else None,
+        condominium_id=str(tag.condominium_id) if hasattr(tag, "condominium_id") and tag.condominium_id else None,
+        is_global=tag.is_global if hasattr(tag, "is_global") else False,
+        is_active=tag.is_active if hasattr(tag, "is_active") else True,
+        is_system=tag.is_system if hasattr(tag, "is_system") else False,
+        usage_count=tag.usage_count if hasattr(tag, "usage_count") else 0,
+        last_used_at=tag.last_used_at if hasattr(tag, "last_used_at") else None,
+        order=tag.order if hasattr(tag, "order") else 0,
+        created_at=tag.created_at,
+        updated_at=tag.updated_at,
+        created_by=str(tag.created_by) if tag.created_by else "",
+        is_category=tag.tag_type == TagType.CATEGORIA,
+        has_children=bool(tag.parent_id is None and tag.tag_type == TagType.CATEGORIA),
+        full_path=tag.name,
+        document_count=len(tag.documents) if hasattr(tag, "documents") and tag.documents is not None else 0,
+    )
+
+
 class DocumentTagService:
     """Service para operações de tags."""
 
@@ -109,7 +137,7 @@ class DocumentTagService:
         pages = (total + page_size - 1) // page_size if total > 0 else 0
 
         return DocumentTagListResponse(
-            items=[DocumentTagResponse.model_validate(t) for t in tags],
+            items=[_tag_to_response(t) for t in tags],
             total=total,
             page=page,
             page_size=page_size,
@@ -119,7 +147,7 @@ class DocumentTagService:
     async def get_by_type(self, tag_type: TagType, condominium_id: str = None) -> builtins.list[DocumentTagResponse]:
         """Retorna tags por tipo."""
         tags = await self.repository.get_by_type(tag_type, condominium_id)
-        return [DocumentTagResponse.model_validate(t) for t in tags]
+        return [_tag_to_response(t) for t in tags]
 
     async def get_tree(self, condominium_id: str = None) -> builtins.list[DocumentTagTreeNode]:
         """Retorna árvore de tags."""
@@ -131,13 +159,13 @@ class DocumentTagService:
 
         for tag in tags:
             node = DocumentTagTreeNode(
-                id=tag.id,
+                id=str(tag.id),
                 name=tag.name,
                 slug=tag.slug,
                 tag_type=tag.tag_type,
-                color=tag.color,
-                icon=tag.icon,
-                document_count=tag.document_count,
+                color=tag.color if tag.color else "blue",
+                icon=tag.icon if hasattr(tag, "icon") else None,
+                document_count=tag.usage_count if hasattr(tag, "usage_count") else 0,
                 children=[],
             )
             tag_map[tag.id] = node
@@ -183,7 +211,7 @@ class DocumentTagService:
     async def get_by_document(self, document_id: str) -> builtins.list[DocumentTagResponse]:
         """Retorna tags de um documento."""
         tags = await self.repository.get_by_document(document_id)
-        return [DocumentTagResponse.model_validate(t) for t in tags]
+        return [_tag_to_response(t) for t in tags]
 
     async def get_documents_by_tag(self, tag_id: str, page: int = 1, page_size: int = 20) -> builtins.list[str]:
         """Retorna IDs de documentos com a tag."""
@@ -214,14 +242,14 @@ class DocumentTagService:
     async def get_most_used(self, condominium_id: str = None, limit: int = 10) -> builtins.list[DocumentTagResponse]:
         """Retorna tags mais usadas."""
         tags = await self.repository.get_most_used(condominium_id, limit)
-        return [DocumentTagResponse.model_validate(t) for t in tags]
+        return [_tag_to_response(t) for t in tags]
 
     async def search(
         self, query: str, condominium_id: str = None, limit: int = 10
     ) -> builtins.list[DocumentTagResponse]:
         """Busca tags por texto."""
         tags = await self.repository.search(query, condominium_id, limit)
-        return [DocumentTagResponse.model_validate(t) for t in tags]
+        return [_tag_to_response(t) for t in tags]
 
     async def merge_tags(self, source_tag_id: str, target_tag_id: str) -> DocumentTagResponse:
         """Mescla duas tags."""
@@ -266,7 +294,7 @@ class DocumentTagService:
             if len(suggested) >= limit:
                 break
 
-        return [DocumentTagResponse.model_validate(t) for t in suggested]
+        return [_tag_to_response(t) for t in suggested]
 
     def _extract_keywords(self, text: str) -> builtins.list[str]:
         """Extrai palavras-chave do texto."""

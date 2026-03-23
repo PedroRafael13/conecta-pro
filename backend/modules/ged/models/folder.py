@@ -38,6 +38,9 @@ class FolderType(StrEnum):
     PESSOAL = "pessoal"  # Pasta pessoal do usuário
     COMPARTILHADA = "compartilhada"  # Pasta compartilhada
     ARQUIVO = "arquivo"  # Pasta de arquivo morto
+    OPERACIONAL = "operacional"  # Pasta operacional
+    DP = "dp"  # Pasta departamento pessoal
+    FISCAL = "fiscal"  # Pasta fiscal
 
 
 class FolderStatus(StrEnum):
@@ -76,10 +79,22 @@ class Folder(Base):
 
     # Classificação
     folder_type: Mapped[FolderType] = mapped_column(
-        SQLEnum(FolderType, native_enum=False, create_constraint=False), default=FolderType.CONDOMINIO
+        SQLEnum(
+            FolderType,
+            native_enum=False,
+            create_constraint=False,
+            values_callable=lambda e: [m.value for m in e],
+        ),
+        default=FolderType.CONDOMINIO,
     )
     status: Mapped[FolderStatus] = mapped_column(
-        SQLEnum(FolderStatus, native_enum=False, create_constraint=False), default=FolderStatus.ATIVA
+        SQLEnum(
+            FolderStatus,
+            native_enum=False,
+            create_constraint=False,
+            values_callable=lambda e: [m.value for m in e],
+        ),
+        default=FolderStatus.ATIVA,
     )
 
     # Vínculo com entidades

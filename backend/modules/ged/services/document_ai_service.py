@@ -545,6 +545,10 @@ class DocumentAIService:
             "alerts_count": len(recommendations),
         }
 
+    async def get_trends(self, condominium_id: str = None, days: int = 30) -> dict:
+        """Alias para analyze_document_trends."""
+        return await self.analyze_document_trends(condominium_id, days)
+
     async def analyze_document_trends(  # pylint: disable=too-many-locals
         self, condominium_id: str = None, days: int = 30
     ) -> dict:
