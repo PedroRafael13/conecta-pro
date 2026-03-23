@@ -499,6 +499,15 @@ try:
 except Exception as e:
     logger.warning(f"Modulo NFS-e Faturamento: {e}")
 
+# GED Kit PDFs: geração, ZIP, email
+try:
+    from modules.ged.controllers.kit_pdf_controller import router as kit_pdf_router
+
+    api_router.include_router(kit_pdf_router, prefix="/ged", tags=["GED - Kit PDFs"])
+    logger.info("Modulo GED Kit PDFs: OK")
+except Exception as e:
+    logger.warning(f"Modulo GED Kit PDFs: {e}")
+
 # Saude Ocupacional (NR-4, NR-6, NR-7, NR-9)
 try:
     from modules.health_occupational import router as health_occupational_router
