@@ -142,6 +142,24 @@ async def _gerar_kit_real(db: AsyncSession, kit_id: str) -> dict:
     if bank_count:
         docs_gerados.append(f"comp_bancario x{bank_count}")
 
+    # 9. Boleto NFS-e (puxar do receivable_accounts)
+    try:
+        boleto_count = await _add_boleto_nfse(db, kit_id, client_id, comp)
+        gerados += boleto_count
+        if boleto_count:
+            docs_gerados.append(f"boleto_nfse x{boleto_count}")
+    except Exception as exc:
+        logger.warning("Erro gerando boleto_nfse: %s", exc)
+
+    # 10. Comprovante VT (puxar do bank_transactions + employees)
+    try:
+        vt_count = await _add_comprovante_vt(db, kit_id, client_id, comp)
+        gerados += vt_count
+        if vt_count:
+            docs_gerados.append("comprovante_vt")
+    except Exception as exc:
+        logger.warning("Erro gerando comprovante_vt: %s", exc, exc_info=True)
+
     await db.commit()
 
     return {
@@ -289,6 +307,7 @@ async def _add_fiscal_docs(db: AsyncSession, kit_id: str, comp: date) -> int:
         "EFD_REINF": "dctf_extrato",
         "INSS": "gfd_fgts",
         "ISS": "relatorio_gfd_fgts",
+        "IRRF": "dctf_recibo",
     }
 
     obrigacoes = (
@@ -298,7 +317,7 @@ async def _add_fiscal_docs(db: AsyncSession, kit_id: str, comp: date) -> int:
                     "SELECT tipo, nome, status, valor_devido, data_vencimento "
                     "FROM fiscal_obligations "
                     "WHERE active = true AND competencia_mes = :m AND competencia_ano = :a "
-                    "AND tipo IN ('FGTS','DCTFWEB','EFD_REINF','INSS','ISS') "
+                    "AND tipo IN ('FGTS','DCTFWEB','EFD_REINF','INSS','ISS','IRRF') "
                     "ORDER BY tipo"
                 ),
                 {"m": m_ant, "a": a_ant},
@@ -489,6 +508,248 @@ async def _add_comprovantes_bancarios(db: AsyncSession, kit_id: str, employees: 
             "VALUES (gen_random_uuid(), :kid, 'comprovante_salario', :dn, :fp, 'banco', true, false, NOW(), NOW())"
         ),
         {"kid": kit_id, "dn": f"Extrato Bancario {comp.strftime('%m/%Y')}", "fp": f"ged/kits/{fname}"},
+    )
+    return 1
+
+
+async def _add_boleto_nfse(db: AsyncSession, kit_id: str, client_id: str, comp: date) -> int:
+    """Gera PDF de boleto a partir de receivable_accounts ou NFS-e."""
+    from reportlab.lib import colors
+    from reportlab.lib.enums import TA_CENTER
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+    from reportlab.lib.units import cm
+    from reportlab.platypus import HRFlowable, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+
+    exists = (
+        await db.execute(
+            text("SELECT 1 FROM ged_kit_documents WHERE kit_id = :kid AND document_type = 'boleto_nfse'"),
+            {"kid": kit_id},
+        )
+    ).first()
+    if exists:
+        return 0
+
+    # Get NFS-e data for this client to generate boleto
+    nfses = (
+        (
+            await db.execute(
+                text(
+                    "SELECT numero_nfse, valor_servicos, tomador_razao_social, data_competencia FROM nfses WHERE condominio_id::text = :cid AND active = true ORDER BY data_competencia DESC LIMIT 2"
+                ),
+                {"cid": client_id},
+            )
+        )
+        .mappings()
+        .all()
+    )
+    if not nfses:
+        return 0
+
+    gc = (
+        (await db.execute(text("SELECT name FROM ged_clients WHERE id::text = :cid"), {"cid": client_id}))
+        .mappings()
+        .first()
+    )
+    cliente_nome = gc["name"] if gc else "Cliente"
+    total_valor = sum(float(n["valor_servicos"]) for n in nfses)
+    mes_ano = comp.strftime("%m/%Y")
+
+    AZ = colors.HexColor("#0A2540")
+    AZ2 = colors.HexColor("#1E3A5F")
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buf, pagesize=A4, topMargin=1.5 * cm, bottomMargin=1.5 * cm, leftMargin=2 * cm, rightMargin=2 * cm
+    )
+    st = getSampleStyleSheet()
+    story: list[Any] = []
+
+    # Header
+    hdr = Table(
+        [
+            [
+                Paragraph(
+                    '<b><font color="white" size="13">Conecta Mais</font></b><br/><font color="white" size="8">Seguranca e Tecnologia</font>',
+                    st["Normal"],
+                ),
+                Paragraph(f'<b><font color="white" size="14">R$ {total_valor:,.2f}</font></b>', st["Normal"]),
+            ]
+        ],
+        colWidths=[12 * cm, 5 * cm],
+    )
+    hdr.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, -1), AZ),
+                ("PADDING", (0, 0), (-1, -1), 10),
+                ("ALIGN", (1, 0), (1, 0), "RIGHT"),
+            ]
+        )
+    )
+    story.append(hdr)
+    story.append(Spacer(1, 0.3 * cm))
+
+    nfs_str = ", ".join(f"NF {n['numero_nfse']}" for n in nfses)
+    dados = [
+        ["BENEFICIARIO", "JORDAN SANTOS DE JESUS LTDA — CNPJ 35.710.481/0001-03"],
+        ["PAGADOR", cliente_nome],
+        ["REFERENCIA", f"Servicos prestados — {mes_ano} ({nfs_str})"],
+        ["VENCIMENTO", f"15/{comp.strftime('%m/%Y')}"],
+        ["VALOR", f"R$ {total_valor:,.2f}"],
+        ["AG/CONTA", "0001 / 37099007-2 — Banco Inter"],
+        ["PIX (CNPJ)", "35.710.481/0001-03"],
+    ]
+    t = Table(dados, colWidths=[4 * cm, 13 * cm])
+    t.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (0, -1), AZ2),
+                ("TEXTCOLOR", (0, 0), (0, -1), colors.white),
+                ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
+                ("FONTSIZE", (0, 0), (-1, -1), 9),
+                ("GRID", (0, 0), (-1, -1), 0.3, colors.lightgrey),
+                ("PADDING", (0, 0), (-1, -1), 6),
+            ]
+        )
+    )
+    story.append(t)
+    story.append(Spacer(1, 0.4 * cm))
+    story.append(HRFlowable(width="100%", thickness=1, color=AZ))
+    story.append(Spacer(1, 0.2 * cm))
+    story.append(
+        Paragraph(
+            f'<font size="7" color="grey">Documento gerado pelo Conecta PRO | {mes_ano}</font>',
+            ParagraphStyle("ft", alignment=TA_CENTER),
+        )
+    )
+
+    doc.build(story)
+    chk = hashlib.sha256(buf.getvalue()).hexdigest()[:12]
+    fname = f"boleto_nfse_{comp.strftime('%Y%m')}_{chk}.pdf"
+    Path(f"/app/uploads/ged/kits/{fname}").write_bytes(buf.getvalue())
+    fp = f"ged/kits/{fname}"
+
+    await db.execute(
+        text(
+            "INSERT INTO ged_kit_documents (id, kit_id, document_type, document_name, file_path, source_module, auto_generated, is_signed, created_at, updated_at) VALUES (gen_random_uuid(), :kid, 'boleto_nfse', :dn, :fp, 'banco', true, false, NOW(), NOW())"
+        ),
+        {"kid": kit_id, "dn": f"Boleto NFS-e {mes_ano}", "fp": fp},
+    )
+    return 1
+
+
+async def _add_comprovante_vt(db: AsyncSession, kit_id: str, client_id: str, comp: date) -> int:
+    """Gera comprovante VT consolidado a partir dos funcionarios alocados."""
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import getSampleStyleSheet
+    from reportlab.lib.units import cm
+    from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+
+    exists = (
+        await db.execute(
+            text(
+                "SELECT 1 FROM ged_kit_documents WHERE kit_id = :kid AND document_type = 'comprovante_vt' AND file_path LIKE 'ged/kits/%'"
+            ),
+            {"kid": kit_id},
+        )
+    ).first()
+    if exists:
+        return 0
+
+    employees = await _get_employees_for_client(db, client_id)
+    if not employees:
+        return 0
+
+    gc = (
+        (await db.execute(text("SELECT name FROM ged_clients WHERE id::text = :cid"), {"cid": client_id}))
+        .mappings()
+        .first()
+    )
+    cliente_nome = gc["name"] if gc else "Cliente"
+    mes_ano = comp.strftime("%m/%Y")
+    AZ = colors.HexColor("#0A2540")
+    LJ = colors.HexColor("#FF6B35")
+    CZ = colors.HexColor("#F8FAFC")
+
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buf, pagesize=A4, topMargin=1.5 * cm, bottomMargin=1.5 * cm, leftMargin=1.5 * cm, rightMargin=1.5 * cm
+    )
+    st = getSampleStyleSheet()
+    story: list[Any] = []
+    story.append(
+        Paragraph(f'<b><font color="#0A2540" size="12">COMPROVANTE VALE TRANSPORTE — {mes_ano}</font></b>', st["Title"])
+    )
+    story.append(
+        Paragraph(
+            f'<font size="8" color="grey">{cliente_nome} | Conecta Mais — CNPJ 35.710.481/0001-03</font>', st["Normal"]
+        )
+    )
+    story.append(Spacer(1, 0.4 * cm))
+
+    rows = [["No", "Funcionario", "Cargo", "Salario", "VT Bruto (22d)", "Desc 6%", "VT Liquido", "Assin."]]
+    tvt = td = tl = 0.0
+    for i, e in enumerate(employees, 1):
+        sal = float(e.get("salario_base") or 0)
+        vt_bruto = round(sal * 0.06 * 22 / 30, 2)  # proporcional 22 dias uteis
+        desc = round(sal * 0.06, 2)
+        liq = round(max(vt_bruto - desc, 0), 2)
+        tvt += vt_bruto
+        td += desc
+        tl += liq
+        rows.append(
+            [
+                str(i),
+                e.get("nome", "-")[:25],
+                e.get("cargo", "-")[:15],
+                f"R${sal:,.2f}",
+                f"R${vt_bruto:,.2f}",
+                f"R${desc:,.2f}",
+                f"R${liq:,.2f}",
+                "",
+            ]
+        )
+    rows.append(["", "TOTAL", "", "", f"R${tvt:,.2f}", f"R${td:,.2f}", f"R${tl:,.2f}", ""])
+
+    t = Table(rows, colWidths=[0.7 * cm, 4.5 * cm, 2.5 * cm, 2.2 * cm, 2.2 * cm, 2 * cm, 2.2 * cm, 2.2 * cm])
+    t.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), AZ),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                ("FONTSIZE", (0, 0), (-1, -1), 7),
+                ("ALIGN", (3, 0), (6, -1), "RIGHT"),
+                ("GRID", (0, 0), (-1, -1), 0.3, colors.lightgrey),
+                ("ROWBACKGROUNDS", (0, 1), (-1, -2), [colors.white, CZ]),
+                ("BACKGROUND", (0, -1), (-1, -1), LJ),
+                ("TEXTCOLOR", (0, -1), (-1, -1), colors.white),
+                ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
+                ("PADDING", (0, 0), (-1, -1), 3),
+            ]
+        )
+    )
+    story.append(t)
+    story.append(Spacer(1, 0.3 * cm))
+    story.append(
+        Paragraph(
+            '<font size="7" color="grey">VT calculado: 6% salario x 22 dias uteis. Desconto: 6% salario base (CLT Art. 4o Lei 7.418/85)</font>',
+            st["Normal"],
+        )
+    )
+
+    doc.build(story)
+    chk = hashlib.sha256(buf.getvalue()).hexdigest()[:12]
+    fname = f"comp_vt_{comp.strftime('%Y%m')}_{chk}.pdf"
+    Path(f"/app/uploads/ged/kits/{fname}").write_bytes(buf.getvalue())
+    fp = f"ged/kits/{fname}"
+
+    await db.execute(
+        text(
+            "INSERT INTO ged_kit_documents (id, kit_id, document_type, document_name, file_path, source_module, auto_generated, is_signed, created_at, updated_at) VALUES (gen_random_uuid(), :kid, 'comprovante_vt', :dn, :fp, 'sistema', true, false, NOW(), NOW())"
+        ),
+        {"kid": kit_id, "dn": f"Comprovante VT {mes_ano}", "fp": fp},
     )
     return 1
 
