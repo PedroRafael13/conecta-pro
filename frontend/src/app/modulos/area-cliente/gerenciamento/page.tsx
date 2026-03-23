@@ -230,7 +230,7 @@ export default function GerenciamentoAcessosPage() {
     if (!provisionModal) return;
     const text = [
       'Portal do Cliente — Conecta PRO',
-      `Username: ${provisionModal.portal_username}`,
+      `Login: ${provisionModal.portal_username}`,
       `Senha: ${provisionModal.senha_temporaria}`,
       `URL: ${provisionModal.portal_url}`,
     ].join('\n');
@@ -398,7 +398,7 @@ export default function GerenciamentoAcessosPage() {
               </div>
               <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 space-y-2">
                 <div>
-                  <label className="text-xs text-muted-foreground">Username</label>
+                  <label className="text-xs text-muted-foreground">Login (CNPJ ou usuario)</label>
                   <p className="font-mono font-bold text-lg">{provisionModal.portal_username}</p>
                 </div>
                 <div>

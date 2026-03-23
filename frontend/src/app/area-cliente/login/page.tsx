@@ -8,24 +8,30 @@ const API_BASE = (process.env.NEXT_PUBLIC_API_URL || '') + '/api/v1/portal';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [cnpj, setCnpj] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  function formatCnpj(value: string): string {
-    const digits = value.replace(/\D/g, '').slice(0, 14);
-    if (digits.length <= 2) return digits;
-    if (digits.length <= 5) return `${digits.slice(0, 2)}.${digits.slice(2)}`;
-    if (digits.length <= 8) return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5)}`;
-    if (digits.length <= 12)
-      return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8)}`;
-    return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8, 12)}-${digits.slice(12)}`;
+  function formatIdentifier(value: string): string {
+    const digitsOnly = value.replace(/\D/g, '');
+    // Se parece ser CNPJ (só dígitos e está digitando até 14), formata
+    if (digitsOnly === value.replace(/[.\-/]/g, '') && digitsOnly.length > 0 && digitsOnly.length <= 14) {
+      const d = digitsOnly;
+      if (d.length <= 2) return d;
+      if (d.length <= 5) return `${d.slice(0, 2)}.${d.slice(2)}`;
+      if (d.length <= 8) return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5)}`;
+      if (d.length <= 12)
+        return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8)}`;
+      return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8, 12)}-${d.slice(12)}`;
+    }
+    // Caso contrário, aceita texto livre (username)
+    return value;
   }
 
-  function handleCnpjChange(e: React.ChangeEvent<HTMLInputElement>) {
-    setCnpj(formatCnpj(e.target.value));
+  function handleIdentifierChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setIdentifier(formatIdentifier(e.target.value));
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -34,16 +40,18 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const rawCnpj = cnpj.replace(/\D/g, '');
+      // Remove formatação de CNPJ se for numérico, senão envia como está (username)
+      const cleaned = identifier.replace(/\D/g, '');
+      const username = cleaned.length >= 11 ? cleaned : identifier;
       const res = await fetch(`${API_BASE}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cnpj: rawCnpj, password }),
+        body: JSON.stringify({ username, password }),
       });
 
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        throw new Error(data?.detail || 'CNPJ ou senha inválidos.');
+        throw new Error(data?.detail || 'Credenciais inválidas.');
       }
 
       const data = await res.json();
@@ -82,18 +90,17 @@ export default function LoginPage() {
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label htmlFor="cnpj" className="block text-sm font-medium text-gray-700 mb-1">
-              CNPJ
+            <label htmlFor="identifier" className="block text-sm font-medium text-gray-700 mb-1">
+              CNPJ ou Usuario
             </label>
             <input
-              id="cnpj"
-              name="client-cnpj"
+              id="identifier"
+              name="client-identifier"
               type="text"
-              inputMode="numeric"
               autoComplete="off"
-              value={cnpj}
-              onChange={handleCnpjChange}
-              placeholder="00.000.000/0000-00"
+              value={identifier}
+              onChange={handleIdentifierChange}
+              placeholder="00.000.000/0000-00 ou usuario"
               required
               className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-colors text-gray-900 placeholder-gray-400"
             />
