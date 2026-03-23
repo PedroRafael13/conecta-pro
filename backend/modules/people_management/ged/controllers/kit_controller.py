@@ -288,6 +288,146 @@ async def send_kit(
         raise HTTPException(status_code=400, detail=str(e))
 
 
+@router.post("/{kit_id}/send-email")
+async def send_kit_email(
+    kit_id: str,
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """Envia kit por email para o cliente.
+
+    Busca o email do cliente GED, compoe o email com resumo do kit
+    e envia via SMTP. Marca o kit como enviado se bem sucedido.
+    """
+    import smtplib
+    from email.mime.multipart import MIMEMultipart
+    from email.mime.text import MIMEText
+
+    from sqlalchemy import func, select
+
+    from core.config.settings import settings
+    from modules.people_management.ged.models.client import GedClient
+    from modules.people_management.ged.models.document_kit import GedDocumentKit
+    from modules.people_management.ged.models.kit_document import KitDocument
+
+    # Buscar kit
+    kit_result = await db.execute(select(GedDocumentKit).where(GedDocumentKit.id == kit_id))
+    kit = kit_result.scalars().first()
+    if not kit:
+        raise HTTPException(status_code=404, detail="Kit nao encontrado")
+
+    # Buscar cliente
+    client_result = await db.execute(select(GedClient).where(GedClient.id == kit.client_id))
+    client = client_result.scalars().first()
+    if not client:
+        raise HTTPException(status_code=404, detail="Cliente nao encontrado")
+
+    if not client.contact_email:
+        return {
+            "status": "sem_email",
+            "kit_id": kit_id,
+            "client_name": client.name,
+            "message": "Cliente nao possui email cadastrado",
+        }
+
+    # Contar documentos por tipo
+    doc_count_result = await db.execute(
+        select(KitDocument.document_type, func.count())
+        .where(KitDocument.kit_id == kit_id)
+        .group_by(KitDocument.document_type)
+    )
+    doc_counts = {row[0]: row[1] for row in doc_count_result.all()}
+
+    ref_month = kit.reference_month.strftime("%m/%Y") if kit.reference_month else "N/A"
+
+    # Montar email
+    subject = f"Kit Documental {ref_month} - Conecta Mais Seguranca e Tecnologia"
+    doc_list = "\n".join(f"  - {dtype}: {count} documento(s)" for dtype, count in sorted(doc_counts.items()))
+
+    body = f"""Prezado(a),
+
+Segue o kit documental referente ao periodo {ref_month} para {client.name}.
+
+RESUMO DO KIT:
+  Funcionarios: {kit.total_employees}
+  Total de documentos: {kit.total_documents}
+  Documentos assinados: {kit.documents_signed}
+
+DOCUMENTOS INCLUIDOS:
+{doc_list}
+
+Para acessar e baixar os documentos, entre no portal do cliente
+ou solicite o envio do arquivo ZIP ao seu contato na Conecta Mais.
+
+Atenciosamente,
+Conecta Mais - Seguranca e Tecnologia
+CNPJ: 35.710.481/0001-03
+"""
+
+    # Enviar email
+    try:
+        msg = MIMEMultipart()
+        msg["From"] = f"{settings.SMTP_FROM_NAME} <{settings.SMTP_FROM_EMAIL}>"
+        msg["To"] = client.contact_email
+        msg["Subject"] = subject
+        msg.attach(MIMEText(body, "plain", "utf-8"))
+
+        smtp_host = settings.SMTP_HOST
+        smtp_port = settings.SMTP_PORT
+        smtp_user = settings.SMTP_USERNAME
+        smtp_pass = settings.SMTP_PASSWORD
+
+        if not smtp_host or not smtp_user:
+            return {
+                "status": "smtp_nao_configurado",
+                "kit_id": kit_id,
+                "message": "SMTP nao configurado no servidor",
+            }
+
+        if smtp_port == 465:
+            server = smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=30)
+        else:
+            server = smtplib.SMTP(smtp_host, smtp_port, timeout=30)
+            server.starttls()
+
+        server.login(smtp_user, smtp_pass)
+        server.send_message(msg)
+        server.quit()
+
+        # Marcar kit como enviado
+        service = KitService(db)
+        await service.mark_kit_sent(
+            kit_id=kit_id,
+            method="email",
+            sent_to=client.contact_email,
+        )
+        await db.commit()
+
+        logger.info("Kit %s enviado por email para %s (%s)", kit_id, client.name, client.contact_email)
+
+        return {
+            "status": "enviado",
+            "kit_id": kit_id,
+            "client_name": client.name,
+            "email": client.contact_email,
+            "subject": subject,
+            "documents_count": sum(doc_counts.values()),
+        }
+
+    except smtplib.SMTPException as e:
+        logger.error("Erro SMTP ao enviar kit %s: %s", kit_id, e)
+        return {
+            "status": "erro_smtp",
+            "kit_id": kit_id,
+            "client_name": client.name,
+            "email": client.contact_email,
+            "error": str(e),
+        }
+    except Exception as e:
+        logger.error("Erro ao enviar kit %s por email: %s", kit_id, e)
+        raise HTTPException(status_code=500, detail=f"Erro ao enviar email: {e}") from e
+
+
 @router.post("/{kit_id}/approve", response_model=KitResponse)
 async def approve_kit(
     kit_id: str,
