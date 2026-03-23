@@ -191,12 +191,17 @@ class ContractResponse(BaseModel):
     updated_at: datetime | None = None
 
     # Propriedades calculadas
-    is_active_contract: bool
-    is_expiring_soon: bool
+    is_active_contract: bool = False
+    is_expiring_soon: bool = False
     days_until_end: int | None = None
-    needs_adjustment: bool
+    needs_adjustment: bool = False
 
     model_config = ConfigDict(from_attributes=True)
+
+    @field_validator("id", "client_id", mode="before")
+    @classmethod
+    def stringify_uuid(cls, v: Any) -> str:
+        return str(v) if v is not None else ""
 
 
 class ContractDetailResponse(ContractResponse):
@@ -206,6 +211,12 @@ class ContractDetailResponse(ContractResponse):
     opportunity_id: str | None = None
     proposal_id: str | None = None
     template_id: str | None = None
+
+    @field_validator("opportunity_id", "proposal_id", "template_id", mode="before")
+    @classmethod
+    def stringify_optional_uuid(cls, v: Any) -> str | None:
+        return str(v) if v is not None else None
+
     setup_fee: Decimal
     grace_period_days: int
     notice_period_days: int

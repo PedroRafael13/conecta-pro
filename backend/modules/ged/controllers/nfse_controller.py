@@ -270,7 +270,7 @@ async def contracts_summary(
         """)
     )
     rows = result.mappings().all()
-    ativos = [r for r in rows if r["status"] == "ativo"]
+    ativos = [r for r in rows if r["status"] in ("ativo", "ACTIVE")]
     total_mrr = sum(float(r["monthly_value"]) for r in ativos)
     com_inss = sum(1 for r in ativos if r["sla_config"] and r["sla_config"].get("retencao_inss"))
     com_issqn = sum(1 for r in ativos if r["sla_config"] and r["sla_config"].get("retencao_issqn"))

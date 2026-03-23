@@ -25,6 +25,10 @@ router = APIRouter(prefix="/openclaw", tags=["AI - OpenClaw Alert Response"])
 
 remediation = RemediationService()
 
+# Cooldown por fingerprint: ignora alertas já processados nas últimas 2h
+_fingerprint_cooldown: dict[str, float] = {}
+FINGERPRINT_COOLDOWN_SECONDS = 7200  # 2 horas
+
 
 @router.post("/alert-webhook", response_model=list[InterventionResponse])
 async def receive_alert_webhook(
@@ -42,13 +46,43 @@ async def receive_alert_webhook(
     results = []
 
     for alert in payload.alerts:
-        # Ignorar alertas resolvidos (Alertmanager já notifica via Telegram nativo)
+        # Ignorar alertas resolvidos
         if alert.status == "resolved":
             logger.info(f"Alerta resolvido ignorado: {alert.labels.alertname}")
+            # Limpar cooldown quando resolve
+            _fingerprint_cooldown.pop(alert.fingerprint, None)
             continue
 
         alert_name = alert.labels.alertname
         severity = alert.labels.severity or "warning"
+
+        # Cooldown por fingerprint: ignorar se já processado recentemente
+        now = time.time()
+        last_processed = _fingerprint_cooldown.get(alert.fingerprint, 0)
+        if now - last_processed < FINGERPRINT_COOLDOWN_SECONDS:
+            elapsed_min = int((now - last_processed) / 60)
+            logger.info(
+                f"OpenClaw: fingerprint {alert.fingerprint} ignorado "
+                f"(processado {elapsed_min}min atrás, cooldown {FINGERPRINT_COOLDOWN_SECONDS // 60}min)"
+            )
+            results.append(
+                InterventionResponse(
+                    intervention_id="",
+                    alert_name=alert_name,
+                    status="cooldown",
+                    diagnosis=f"Fingerprint em cooldown ({elapsed_min}min de {FINGERPRINT_COOLDOWN_SECONDS // 60}min)",
+                    actions_taken=[],
+                    telegram_sent=False,
+                )
+            )
+            continue
+
+        _fingerprint_cooldown[alert.fingerprint] = now
+        # Limpar cooldowns expirados (manutenção)
+        expired = [k for k, v in _fingerprint_cooldown.items() if now - v > FINGERPRINT_COOLDOWN_SECONDS * 2]
+        for k in expired:
+            del _fingerprint_cooldown[k]
+
         start_time = time.time()
 
         # Criar registro de intervenção
