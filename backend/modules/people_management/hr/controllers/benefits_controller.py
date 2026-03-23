@@ -53,7 +53,25 @@ async def list_all_benefits(
     items = result.scalars().all()
 
     return {
-        "items": list(items),
+        "items": [
+            BenefitResponse(
+                id=str(i.id),
+                employee_id=str(i.employee_id),
+                type=str(i.type),
+                provider=i.provider,
+                plan_name=i.plan_name,
+                employee_contribution=float(i.employee_contribution) if i.employee_contribution else None,
+                company_contribution=float(i.company_contribution) if i.company_contribution else None,
+                start_date=i.start_date,
+                end_date=i.end_date,
+                status=str(i.status),
+                card_number=i.card_number,
+                notes=i.notes,
+                created_at=i.created_at,
+                updated_at=i.updated_at,
+            )
+            for i in items
+        ],
         "total": total,
         "page": page,
         "page_size": page_size,
