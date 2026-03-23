@@ -82,9 +82,9 @@ export default function ClimaPage() {
               <CardHeader><CardTitle className="text-sm font-medium">Resumo</CardTitle></CardHeader>
               <CardContent>
                 <div className="space-y-2 text-sm text-muted-foreground">
-                  <p>Total de pesquisas: <span className="font-bold text-white">{pesquisas?.length ?? 0}</span></p>
-                  <p>Pesquisas ativas: <span className="font-bold text-white">{pesquisas?.filter(p => p.ativo === true || p.status === 'active' || p.status === 'in_progress')?.length ?? 0}</span></p>
-                  <p>Concluidas: <span className="font-bold text-white">{pesquisas?.filter(p => p.ativo === false || p.status === 'completed')?.length ?? 0}</span></p>
+                  <p>Total de pesquisas: <span className="font-bold text-foreground">{pesquisas?.length ?? 0}</span></p>
+                  <p>Pesquisas ativas: <span className="font-bold text-foreground">{pesquisas?.filter(p => p.ativo === true || p.status === 'active' || p.status === 'in_progress')?.length ?? 0}</span></p>
+                  <p>Concluidas: <span className="font-bold text-foreground">{pesquisas?.filter(p => p.ativo === false || p.status === 'completed')?.length ?? 0}</span></p>
                 </div>
               </CardContent>
             </Card>
