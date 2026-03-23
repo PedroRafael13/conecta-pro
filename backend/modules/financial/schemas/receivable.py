@@ -4,7 +4,7 @@ from datetime import date, datetime, time
 from decimal import Decimal
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from modules.financial.models.billing_rule import (
     BillingFrequency,
@@ -761,30 +761,32 @@ class BillingRuleUpdate(BaseModel):
     notes: str | None = None
 
 
-class BillingRuleResponse(BillingRuleBase):
-    """Schema de resposta para regra."""
+class BillingRuleResponse(BaseModel):
+    """Schema de resposta para regra de cobranca."""
+
+    model_config = ConfigDict(from_attributes=True)
 
     id: UUID
     condominio_id: UUID
-    status: BillingRuleStatus
-    is_active: bool
-    should_run_today: bool
-
-    total_generated: int
-    total_collected: Decimal
-    collection_rate: Decimal
-
+    name: str = ""
+    description: str | None = None
+    billing_type: str | None = None
+    base_value: Decimal = Decimal("0")
+    frequency: str = "mensal"
+    due_day: int = 10
+    start_date: date | None = None
+    end_date: date | None = None
+    status: str = "ativa"
+    is_active: bool = True
+    should_run_today: bool = False
+    total_generated: int = 0
+    total_collected: Decimal = Decimal("0")
+    collection_rate: Decimal = Decimal("0")
     last_run_at: datetime | None = None
-    last_run_result: dict = Field(default_factory=dict)
+    last_run_result: dict | None = None
     next_run_at: datetime | None = None
-
-    created_at: datetime
+    created_at: datetime | None = None
     updated_at: datetime | None = None
-
-    class Config:  # pylint: disable=too-few-public-methods
-        """Configuracao do schema."""
-
-        from_attributes = True
 
 
 class BillingRuleFilter(BaseModel):
