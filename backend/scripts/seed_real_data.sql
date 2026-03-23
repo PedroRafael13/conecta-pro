@@ -64,3 +64,13 @@ VALUES
 (gen_random_uuid(), 'Life Centro', 'lifecentro@conectamais.pro', '92999000010', 'CONDOMINIO LIFE CENTRO', 'indicacao', 'converted', 100, 1.0, 1500.00, true, 'Manutencao CFTV', NOW(), NOW()),
 (gen_random_uuid(), 'Green Hills', 'greenhills@conectamais.pro', '92999000011', 'CONDOMINIO RESIDENCIAL GREEN HILLS', 'indicacao', 'converted', 100, 1.0, 500.00, true, 'Manutencao CFTV', NOW(), NOW())
 ON CONFLICT DO NOTHING;
+
+-- 5. OPORTUNIDADES CRM (pipeline de expansao)
+INSERT INTO opportunities (id, title, contact_name, contact_email, company_name, stage, priority, value, probability, is_active, description, lead_id, expected_close_date, created_at, updated_at)
+VALUES
+(gen_random_uuid(), 'Expansao Portaria 24h - Life Centro', 'Sindico Life Centro', 'lifecentro@conectamais.pro', 'CONDOMINIO LIFE CENTRO', 'proposal', 'high', 20000.00, 60, true, 'Cliente atual CFTV R$1.500. Potencial expansao para portaria 24h.', (SELECT id FROM leads WHERE name = 'Life Centro' LIMIT 1), '2026-05-01', NOW(), NOW()),
+(gen_random_uuid(), 'Portaria + CFTV - Parise Village', 'Sindico Parise Village', 'parisevillage@conectamais.pro', 'CONDOMINIO RESIDENCIAL PARISE VILLAGE', 'qualification', 'medium', 15000.00, 50, true, 'Cliente atual CFTV R$1.700. Interesse em portaria.', (SELECT id FROM leads WHERE name = 'Parise Village' LIMIT 1), '2026-06-01', NOW(), NOW()),
+(gen_random_uuid(), 'Portaria Remota - Green Hills', 'Sindico Green Hills', 'greenhills@conectamais.pro', 'CONDOMINIO RESIDENCIAL GREEN HILLS', 'qualification', 'medium', 10000.00, 40, true, 'Cliente atual CFTV R$500. Potencial portaria remota.', (SELECT id FROM leads WHERE name = 'Green Hills' LIMIT 1), '2026-07-01', NOW(), NOW()),
+(gen_random_uuid(), 'Upgrade Seg. Eletronica - Gelain', 'Sindico Gelain', 'gelain@conectamais.pro', 'CONDOMINIO PARQUE RESIDENCIAL GELAIN', 'negotiation', 'high', 10000.00, 70, true, 'Cliente atual R$6.000 seg eletronica. Interesse em portaria remota integrada.', (SELECT id FROM leads WHERE name = 'Gelain' LIMIT 1), '2026-04-15', NOW(), NOW()),
+(gen_random_uuid(), 'Jardinagem - Mirante das Flores', 'Sindico Mirante', 'miranteflores@conectamais.pro', 'CONDOMINIO MIRANTE DAS FLORES', 'proposal', 'low', 8000.00, 45, true, 'Orcamento jardinagem solicitado pelo sindico.', (SELECT id FROM leads WHERE name = 'Mirante das Flores' LIMIT 1), '2026-05-15', NOW(), NOW())
+ON CONFLICT DO NOTHING;
