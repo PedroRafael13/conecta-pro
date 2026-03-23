@@ -490,6 +490,15 @@ try:
 except Exception as e:
     logger.warning(f"Modulo GED Auto-Assemble: {e}")
 
+# NFS-e e Dashboard Financeiro
+try:
+    from modules.ged.controllers.nfse_controller import router as nfse_router
+
+    api_router.include_router(nfse_router, prefix="/financial", tags=["NFS-e - Faturamento"])
+    logger.info("Modulo NFS-e Faturamento: OK")
+except Exception as e:
+    logger.warning(f"Modulo NFS-e Faturamento: {e}")
+
 # Saude Ocupacional (NR-4, NR-6, NR-7, NR-9)
 try:
     from modules.health_occupational import router as health_occupational_router
