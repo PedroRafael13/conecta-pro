@@ -22,35 +22,35 @@ def register_routers() -> None:
         from .hr.aggregator import router as hr_router
 
         router.include_router(hr_router)
-    except ImportError:
+    except Exception:
         pass
 
     try:
         from .human_resources.aggregator import router as human_resources_router
 
         router.include_router(human_resources_router)
-    except ImportError:
+    except Exception:
         pass
 
     try:
         from .operations.aggregator import router as operations_router
 
         router.include_router(operations_router)
-    except ImportError:
+    except Exception:
         pass
 
     try:
         from .employee_portal.aggregator import router as portal_router
 
         router.include_router(portal_router)
-    except ImportError:
+    except Exception:
         pass
 
     try:
         from .ged.aggregator import router as ged_router
 
         router.include_router(ged_router)
-    except ImportError:
+    except Exception:
         pass
 
     try:
@@ -67,7 +67,7 @@ def register_routers() -> None:
         from .ponto.controllers import router as ponto_router
 
         router.include_router(ponto_router)
-    except ImportError:
+    except Exception:
         pass
 
     # Folha de Pagamento
@@ -75,7 +75,7 @@ def register_routers() -> None:
         from .folha.controllers.folha_controller import router as folha_router
 
         router.include_router(folha_router)
-    except ImportError:
+    except Exception:
         pass
 
     # SST - Saude e Seguranca
@@ -83,7 +83,7 @@ def register_routers() -> None:
         from .sst.controllers import router as sst_router
 
         router.include_router(sst_router)
-    except ImportError:
+    except Exception:
         pass
 
     # WebSocket GP
@@ -91,7 +91,7 @@ def register_routers() -> None:
         from .core.websocket import gp_ws_router
 
         router.include_router(gp_ws_router)
-    except ImportError:
+    except Exception:
         pass
 
 

@@ -481,6 +481,15 @@ try:
 except Exception as e:
     logger.warning(f"Modulo Pessoas: {e}")
 
+# GED Auto-Assemble + Dashboard (standalone, fora de people_management p/ evitar import circular)
+try:
+    from modules.ged.controllers.auto_assemble_controller import router as ged_auto_assemble_router
+
+    api_router.include_router(ged_auto_assemble_router, prefix="/ged", tags=["GED - Auto-Assemble"])
+    logger.info("Modulo GED Auto-Assemble: OK")
+except Exception as e:
+    logger.warning(f"Modulo GED Auto-Assemble: {e}")
+
 # Saude Ocupacional (NR-4, NR-6, NR-7, NR-9)
 try:
     from modules.health_occupational import router as health_occupational_router
