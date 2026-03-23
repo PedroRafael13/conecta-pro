@@ -324,3 +324,269 @@ async def checklist_kit_real(
         "percentual": round(prontos / max(1, len(checklist)) * 100, 1),
         "checklist": checklist,
     }
+
+
+# ── Montagem Guiada (listas suspensas) ─────────────────────────────────────
+
+
+@router.get("/montar/condominios")
+async def listar_condominios_kit(
+    current_user: CurrentActiveUser = None,
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """Lista 1: condominios que recebem kit mensal (7 mao de obra + 1 remota)."""
+    rows = (
+        (
+            await db.execute(
+                text(
+                    "SELECT c.id, c.name, c.document_number, ct.id as contract_id, "
+                    "ct.tipo_servico, ct.monthly_value, ct.retencao_iss, ct.retencao_inss, ct.retencao_csll, "
+                    "(SELECT p.client_id FROM posts p WHERE p.client_id IS NOT NULL AND p.is_active = true "
+                    " AND EXISTS (SELECT 1 FROM allocations a WHERE a.post_id = p.id AND a.status = 'active') "
+                    " AND p.name ILIKE '%' || SPLIT_PART(c.name, ' ', 2) || '%' LIMIT 1) as ged_client_id "
+                    "FROM contracts ct JOIN clients c ON ct.client_id = c.id "
+                    "WHERE ct.is_active = true AND ct.kit_mensal = true "
+                    "ORDER BY ct.monthly_value DESC"
+                )
+            )
+        )
+        .mappings()
+        .all()
+    )
+
+    return {
+        "total": len(rows),
+        "condominios": [
+            {
+                "client_id": str(r["ged_client_id"] or r["id"]),
+                "nome": r["name"],
+                "cnpj": r["document_number"],
+                "contract_id": str(r["contract_id"]),
+                "tipo_servico": r["tipo_servico"],
+                "valor_mensal": float(r["monthly_value"] or 0),
+                "retencoes": {
+                    "iss": r["retencao_iss"] or False,
+                    "inss": r["retencao_inss"] or False,
+                    "csll": r["retencao_csll"] or False,
+                },
+            }
+            for r in rows
+        ],
+    }
+
+
+@router.get("/montar/servicos/{client_id}")
+async def listar_servicos_cliente(
+    client_id: str,
+    current_user: CurrentActiveUser = None,
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """Lista 2: servicos do condominio baseado nas NFS-e reais emitidas."""
+    client = (
+        (await db.execute(text("SELECT name, document_number FROM clients WHERE id = :cid"), {"cid": client_id}))
+        .mappings()
+        .first()
+    )
+    if not client:
+        raise HTTPException(404, "Cliente nao encontrado")
+
+    import re
+
+    cnpj = re.sub(r"\D", "", client["document_number"] or "")
+
+    nfses = (
+        (
+            await db.execute(
+                text(
+                    "SELECT DISTINCT descricao_servico, codigo_servico, valor_servicos "
+                    "FROM nfses WHERE tomador_cpf_cnpj = :cnpj AND active = true "
+                    "ORDER BY valor_servicos DESC"
+                ),
+                {"cnpj": cnpj},
+            )
+        )
+        .mappings()
+        .all()
+    )
+
+    servicos = []
+    seen = set()
+    for n in nfses:
+        desc = n["descricao_servico"]
+        if desc in seen:
+            continue
+        seen.add(desc)
+        tem_mao = any(w in desc.lower() for w in ["portaria", "limpeza", "servicos gerais", "jardinagem", "seguranca"])
+        servicos.append(
+            {
+                "descricao": desc,
+                "codigo": n["codigo_servico"],
+                "valor_ultima_nf": float(n["valor_servicos"]),
+                "tem_mao_de_obra": tem_mao,
+            }
+        )
+
+    if not servicos:
+        servicos.append(
+            {"descricao": "Servicos de portaria", "codigo": "11.02", "valor_ultima_nf": 0, "tem_mao_de_obra": True}
+        )
+
+    return {"client_id": client_id, "cliente": client["name"], "servicos": servicos}
+
+
+@router.get("/montar/funcionarios/{client_id}")
+async def listar_funcionarios_kit(
+    client_id: str,
+    current_user: CurrentActiveUser = None,
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """Lista funcionarios alocados no condominio para o kit."""
+    employees = await _get_employees_for_client(db, client_id)
+
+    # Buscar ged_client correspondente
+    gc = (
+        (await db.execute(text("SELECT id, name FROM ged_clients WHERE id::text = :cid"), {"cid": client_id}))
+        .mappings()
+        .first()
+    )
+    # Tentar pelo client_id nos posts
+    if not gc:
+        gc_alt = (
+            (
+                await db.execute(
+                    text(
+                        "SELECT g.id, g.name FROM ged_clients g "
+                        "JOIN posts p ON p.client_id::text = g.id::text "
+                        "JOIN clients c ON c.id = :cid "
+                        "WHERE p.is_active = true LIMIT 1"
+                    ),
+                    {"cid": client_id},
+                )
+            )
+            .mappings()
+            .first()
+        )
+        gc = gc_alt
+
+    return {
+        "client_id": client_id,
+        "cliente": gc["name"] if gc else "-",
+        "total_funcionarios": len(employees),
+        "funcionarios": [
+            {
+                "id": e["id"],
+                "nome": e["nome"],
+                "cargo": e["cargo"],
+                "cpf": e["cpf"],
+                "salario_base": float(e["salario_base"] or 0),
+                "salario_liquido": round(float(e["salario_base"] or 0) * 0.85, 2),
+            }
+            for e in employees
+        ],
+    }
+
+
+@router.post("/montar/kit")
+async def montar_kit_guiado(
+    client_id: str = Query(...),
+    competencia: str = Query("2026-03-01"),
+    current_user: CurrentActiveUser = None,
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """Monta kit completo: gera PDFs + vincula NFS-e + retorna checklist."""
+    from datetime import date as d
+
+    d.fromisoformat(competencia)  # validate format
+
+    # Verificar contrato com kit
+    ct = (
+        (
+            await db.execute(
+                text(
+                    "SELECT kit_mensal, tipo_servico, retencao_iss, retencao_inss, retencao_csll FROM contracts WHERE client_id = :cid AND is_active = true AND kit_mensal = true LIMIT 1"
+                ),
+                {"cid": client_id},
+            )
+        )
+        .mappings()
+        .first()
+    )
+    if not ct:
+        return {"erro": "Cliente nao recebe kit mensal", "sugestao": "Verificar contratos ativos"}
+
+    # Buscar ou criar GED client
+    gc = (
+        (
+            await db.execute(
+                text(
+                    "SELECT id FROM ged_clients WHERE id::text IN (SELECT p.client_id::text FROM posts p WHERE p.client_id IS NOT NULL) AND id::text = :cid"
+                ),
+                {"cid": client_id},
+            )
+        )
+        .mappings()
+        .first()
+    )
+    if not gc:
+        # Tentar via posts linkados
+        gc = (
+            (
+                await db.execute(
+                    text(
+                        "SELECT DISTINCT p.client_id as id FROM posts p WHERE p.client_id IS NOT NULL AND EXISTS (SELECT 1 FROM allocations a WHERE a.post_id = p.id AND a.status = 'active') AND p.client_id::text IN (SELECT g.id::text FROM ged_clients g) ORDER BY p.client_id LIMIT 1"
+                    ),
+                )
+            )
+            .mappings()
+            .first()
+        )
+
+    ged_client_id = str(gc["id"]) if gc else client_id
+
+    # Verificar/criar kit
+    kit = (
+        (
+            await db.execute(
+                text("SELECT id FROM ged_document_kits WHERE client_id::text = :cid AND reference_month = :rm LIMIT 1"),
+                {"cid": ged_client_id, "rm": competencia},
+            )
+        )
+        .mappings()
+        .first()
+    )
+
+    if kit:
+        kit_id = str(kit["id"])
+    else:
+        await db.execute(
+            text(
+                "INSERT INTO ged_document_kits (id, client_id, reference_month, status, total_employees, total_documents, completion_percentage, created_at, updated_at) "
+                "VALUES (gen_random_uuid(), :cid, :rm, 'em_montagem', 0, 0, 0, NOW(), NOW()) RETURNING id"
+            ),
+            {"cid": ged_client_id, "rm": competencia},
+        )
+        await db.commit()
+        new_kit = (
+            (
+                await db.execute(
+                    text("SELECT id FROM ged_document_kits WHERE client_id::text = :cid AND reference_month = :rm"),
+                    {"cid": ged_client_id, "rm": competencia},
+                )
+            )
+            .mappings()
+            .first()
+        )
+        kit_id = str(new_kit["id"]) if new_kit else "?"
+
+    # Gerar PDFs reais
+    result = await _gerar_kit_real(db, kit_id)
+
+    # Adicionar info de retencoes
+    result["retencoes"] = {
+        "iss": ct["retencao_iss"] or False,
+        "inss": ct["retencao_inss"] or False,
+        "csll": ct["retencao_csll"] or False,
+    }
+    result["tipo_servico"] = ct["tipo_servico"]
+
+    return result
