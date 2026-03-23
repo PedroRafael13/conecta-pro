@@ -24,6 +24,12 @@ from modules.integrations.controllers import (
     solides_router,
 )
 
+# --- WhatsApp (Evolution API) ---
+try:
+    from modules.integrations.connectors.whatsapp.controller import router as whatsapp_router
+except Exception:
+    whatsapp_router = None
+
 # --- Mobile ---
 from modules.mobile import mobile_router
 
@@ -52,4 +58,5 @@ __all__ = [
     "connector_router",
     "solides_router",
     "banking_router",
+    "whatsapp_router",
 ]

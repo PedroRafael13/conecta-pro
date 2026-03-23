@@ -14,6 +14,7 @@ import {
   ChevronRight,
   Upload,
   PenTool,
+  MessageCircle,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -138,6 +139,13 @@ export default function GEDDashboardPage() {
           <p className="text-gray-500 mt-1">Kits documentais, certidoes e envios</p>
         </div>
         <div className="flex gap-2">
+          <button
+            onClick={() => router.push('/modulos/gestao-pessoas/ged/whatsapp')}
+            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
+          >
+            <MessageCircle className="h-4 w-4" />
+            WhatsApp
+          </button>
           <button
             onClick={() => router.push('/modulos/gestao-pessoas/ged/assinaturas')}
             className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"

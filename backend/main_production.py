@@ -637,6 +637,7 @@ try:
         notification_router,
         push_notification_router,
         solides_router,
+        whatsapp_router,
         workflow_router,
     )
 
@@ -659,7 +660,10 @@ try:
     api_router.include_router(connector_router, tags=["Integrations - Conectores"])
     api_router.include_router(solides_router, prefix="/integrations", tags=["Integrations - Sólides RH/DP"])
     api_router.include_router(banking_router, prefix="/integrations", tags=["Integrations - Banking"])
-    logger.info("Modulo Gestao: OK (Config + Audit + Notifications + Mobile + Workflows + Integrations)")
+    # WhatsApp (Evolution API)
+    if whatsapp_router:
+        api_router.include_router(whatsapp_router, tags=["WhatsApp - Evolution API"])
+    logger.info("Modulo Gestao: OK (Config + Audit + Notifications + Mobile + Workflows + Integrations + WhatsApp)")
 except Exception as e:
     logger.warning(f"Modulo Gestao: {e}")
 
