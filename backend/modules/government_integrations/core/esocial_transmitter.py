@@ -388,23 +388,34 @@ class XMLBuilder:
         return self._prettify(root)
 
     def build_s1000_empregador(self, data: dict[str, Any]) -> str:
-        """Constroi XML do evento S-1000 (Informações do Empregador)."""
+        """Constroi XML do evento S-1000 conforme XSD v_S_01_03_00 (eSocial Simplificado).
+
+        IMPORTANTE: No schema S_01_02_00, o S-1000 NÃO tem:
+        - indRetif no ideEvento
+        - nmRazao (razão social vem da RFB)
+        - natJurid (vem da RFB)
+        - contato (removido)
+
+        Ordem dos campos em infoCadastro:
+        classTrib, indCoop?, indConstr?, indDesFolha, indOpcCP?, indPorte?,
+        indOptRegEletron, cnpjEFR?, dtTrans11096?, indTribFolhaPisCofins?,
+        dadosIsencao?, infoOrgInternacional?
+        """
         event_id = self.build_event_id("S-1000", data["employer_cnpj"])
 
-        root = Element("eSocial", xmlns="http://www.esocial.gov.br/schema/evt/evtInfoEmpregador/v_S_01_02_00")
+        root = Element("eSocial", xmlns="http://www.esocial.gov.br/schema/evt/evtInfoEmpregador/v_S_01_03_00")
         evt = SubElement(root, "evtInfoEmpregador", Id=event_id)
 
-        # ideEvento
+        # ideEvento — S-1000 usa T_ideEvento_exclusao: SEM indRetif
         ide = SubElement(evt, "ideEvento")
-        SubElement(ide, "indRetif").text = str(data.get("indRetif", 1))
         SubElement(ide, "tpAmb").text = self.environment.value
-        SubElement(ide, "procEmi").text = "1"  # Aplicativo do empregador
+        SubElement(ide, "procEmi").text = "1"  # 1=Aplicativo do empregador
         SubElement(ide, "verProc").text = "CONECTA_PRO_1.0"
 
         # ideEmpregador
+        cnpj_clean = data["employer_cnpj"].replace(".", "").replace("/", "").replace("-", "")
         emp = SubElement(evt, "ideEmpregador")
         SubElement(emp, "tpInsc").text = "1"  # CNPJ
-        cnpj_clean = data["employer_cnpj"].replace(".", "").replace("/", "").replace("-", "")
         SubElement(emp, "nrInsc").text = cnpj_clean[:8]  # Raiz do CNPJ
 
         # infoEmpregador
@@ -415,22 +426,15 @@ class XMLBuilder:
         ide_periodo = SubElement(inclusao, "idePeriodo")
         SubElement(ide_periodo, "iniValid").text = data.get("iniValid", datetime.utcnow().strftime("%Y-%m"))
 
-        # infoCadastro
+        # infoCadastro — ordem EXATA do XSD v_S_01_03_00
+        # classTrib, indCoop, indConstr, indDesFolha, indOpcCP?, indPorte?,
+        # indOptRegEletron, cnpjEFR?, dtTrans11096?, indTribFolhaPisCofins?
         cad = SubElement(inclusao, "infoCadastro")
         SubElement(cad, "classTrib").text = data.get("classTrib", "02")  # 02=Empresa geral
-        SubElement(cad, "indCoop").text = data.get("indCoop", "0")  # Não cooperativa
-        SubElement(cad, "indConstr").text = data.get("indConstr", "0")  # Não construtora
-        SubElement(cad, "indDesFolha").text = data.get("indDesFolha", "0")  # Sem desoneração
-        SubElement(cad, "indOptRegEletron").text = data.get("indOptRegEletron", "0")
-        SubElement(cad, "nmRazao").text = data["razao_social"]
-        SubElement(cad, "natJurid").text = data.get("natJurid", "2062")  # LTDA
-
-        # contato
-        contato = SubElement(cad, "contato")
-        SubElement(contato, "nmCtt").text = data.get("nmCtt", "JORDAN SANTOS DE JESUS")
-        SubElement(contato, "cpfCtt").text = data.get("cpfCtt", cnpj_clean[:11])
-        SubElement(contato, "foneFixo").text = data.get("foneFixo", "9293485518")
-        SubElement(contato, "email").text = data.get("email", "contato@conectamaistech.com.br")
+        SubElement(cad, "indCoop").text = data.get("indCoop", "0")  # 0=Não cooperativa
+        SubElement(cad, "indConstr").text = data.get("indConstr", "0")  # 0=Não construtora
+        SubElement(cad, "indDesFolha").text = data.get("indDesFolha", "0")  # 0=Não desonerada
+        SubElement(cad, "indOptRegEletron").text = data.get("indOptRegEletron", "0")  # 0=Não optou
 
         return self._prettify(root), event_id
 

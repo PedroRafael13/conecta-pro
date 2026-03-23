@@ -102,8 +102,8 @@ DEFAULT_CONFIGS = {
         signature_type=SignatureType.ESOCIAL,
         digest_method=DigestMethod.SHA256,
         signature_method=SignatureMethod.RSA_SHA256,
-        canonicalization=CanonicalizationMethod.C14N_EXCLUSIVE,
-        transforms=[TransformMethod.ENVELOPED, TransformMethod.C14N_EXCLUSIVE],
+        canonicalization=CanonicalizationMethod.C14N,  # Governo exige C14N não-exclusiva
+        transforms=[TransformMethod.ENVELOPED, TransformMethod.C14N],
     ),
     SignatureType.NFE: SignatureConfig(
         signature_type=SignatureType.NFE,
@@ -328,13 +328,11 @@ class XMLSigner:
 
     def _insert_signature(self, xml_doc: etree._Element, signature: etree._Element, signature_type: SignatureType):
         """Insere Signature no documento."""
-        # Para eSocial: inserir no elemento raiz do evento
+        # Para eSocial: inserir como último child do <eSocial> (sibling do evtXXX)
+        # XSD exige: <eSocial><evtXXX Id="...">...</evtXXX><Signature>...</Signature></eSocial>
         if signature_type == SignatureType.ESOCIAL:
-            # Buscar elemento do evento (evtAdmissao, evtDeslig, etc.)
-            for child in xml_doc:
-                if child.tag.startswith("{http://www.esocial.gov.br"):
-                    child.append(signature)
-                    return
+            xml_doc.append(signature)
+            return
 
         # Para NFe: inserir após infNFe
         if signature_type in [SignatureType.NFE, SignatureType.NFCE]:
@@ -458,7 +456,8 @@ class ESocialXMLSigner(XMLSigner):
         Returns:
             XML assinado
         """
-        return self.sign(xml_content, signature_type=SignatureType.ESOCIAL, reference_uri=f"#{event_id}")
+        # Governo exige URI vazia — assinatura sobre documento inteiro
+        return self.sign(xml_content, signature_type=SignatureType.ESOCIAL, reference_uri="")
 
 
 class NFEXMLSigner(XMLSigner):
