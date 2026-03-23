@@ -38,7 +38,7 @@ export default function PontoPage() {
     async function load() {
       setLoading(true);
       try {
-        const empRes = await fetch(`${API_BASE}/employees/?limit=100`, { headers: getAuthHeaders() });
+        const empRes = await fetch(`${API_BASE}/employees?page_size=100`, { headers: getAuthHeaders() });
         if (empRes.ok) {
           const empData = await empRes.json();
           const emps = empData.items || empData || [];

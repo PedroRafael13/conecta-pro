@@ -30,7 +30,7 @@ export default function FolhaPage() {
     async function load() {
       setLoading(true);
       try {
-        const res = await fetch(`${API_BASE}/employees/?page_size=100`, { headers: getAuthHeaders() });
+        const res = await fetch(`${API_BASE}/employees?page_size=100`, { headers: getAuthHeaders() });
         if (res.ok) {
           const data = await res.json();
           const emps = data.items || data || [];

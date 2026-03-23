@@ -121,20 +121,96 @@ class TimeTrackingService:
             return []
 
         try:
+            from datetime import date as date_type
+            from datetime import datetime as dt_type
+
             from sqlalchemy import text
 
-            # Query raw SQL para evitar mismatch modelo/DB (employee_cpf vs employee_pis)
-            sql = text("""
-                SELECT id, employee_id, employee_name, entry_date, entry_time,
-                       entry_type, status, registration_method, notes
-                FROM time_entries
+            # Buscar de gp_clock_punches (fonte real: Tangerino + portal)
+            params = {"emp_id": str(employee_id)}
+            date_filter = ""
+            if start_date:
+                date_filter += " AND punch_timestamp >= :start"
+                sd = (
+                    start_date
+                    if isinstance(start_date, (date_type, dt_type))
+                    else dt_type.fromisoformat(str(start_date))
+                )
+                params["start"] = sd
+            if end_date:
+                date_filter += " AND punch_timestamp <= :end"
+                ed = end_date if isinstance(end_date, (date_type, dt_type)) else dt_type.fromisoformat(str(end_date))
+                if isinstance(ed, date_type) and not isinstance(ed, dt_type):
+                    ed = dt_type.combine(ed, dt_type.max.time())
+                params["end"] = ed
+
+            sql = text(f"""
+                SELECT
+                    id,
+                    employee_id,
+                    punch_timestamp::date as date,
+                    punch_timestamp::time as time,
+                    punch_type as entry_type,
+                    status,
+                    CASE WHEN punch_id LIKE 'TNG%' THEN 'tangerino' ELSE 'portal' END as source
+                FROM gp_clock_punches
                 WHERE employee_id = :emp_id
-                ORDER BY entry_date DESC, entry_time DESC
-                LIMIT 100
+                {date_filter}
+                ORDER BY punch_timestamp DESC
+                LIMIT 200
             """)
-            result = await self.db.execute(sql, {"emp_id": str(employee_id)})
-            rows = result.mappings().all()
-            return [dict(r) for r in rows]
+            result = await self.db.execute(sql, params)
+            rows = [dict(r) for r in result.mappings().all()]
+
+            # Ordenar por timestamp para emparelhar entrada/saida
+            rows.sort(key=lambda r: str(r.get("date", "")) + str(r.get("time", "")))
+
+            # Emparelhar entrada + saida consecutiva
+            entries = []
+            i = 0
+            while i < len(rows):
+                r = rows[i]
+                if r["entry_type"] == "entrada":
+                    entrada = r
+                    saida = None
+                    # Buscar saida mais proxima
+                    if i + 1 < len(rows) and rows[i + 1]["entry_type"] == "saida":
+                        saida = rows[i + 1]
+                        i += 1
+                    entries.append(
+                        {
+                            "date": str(entrada["date"]),
+                            "data": str(entrada["date"]),
+                            "clock_in": str(entrada["time"])[:5],
+                            "entrada": str(entrada["time"])[:5],
+                            "clock_out": str(saida["time"])[:5] if saida else None,
+                            "saida": str(saida["time"])[:5] if saida else None,
+                            "total_hours": "12:00" if saida else "00:00",
+                            "total": "12:00" if saida else "00:00",
+                            "status": "normal",
+                            "source": entrada.get("source", "tangerino"),
+                        }
+                    )
+                else:
+                    # Saida orfã (sem entrada)
+                    entries.append(
+                        {
+                            "date": str(r["date"]),
+                            "data": str(r["date"]),
+                            "clock_in": None,
+                            "entrada": None,
+                            "clock_out": str(r["time"])[:5],
+                            "saida": str(r["time"])[:5],
+                            "total_hours": "00:00",
+                            "total": "00:00",
+                            "status": "inconsistencia",
+                            "source": r.get("source", "tangerino"),
+                        }
+                    )
+                i += 1
+
+            entries.sort(key=lambda e: e["date"], reverse=True)
+            return entries
         except Exception as e:
             logger.warning("Erro ao buscar entries de ponto: %s", e)
             return []
