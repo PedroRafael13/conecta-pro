@@ -27,8 +27,8 @@ class NFSeNacionalSynchronizer(BaseSynchronizer):
     DIAS_RETROATIVOS_PADRAO = 30
 
     # URL do ambiente nacional
-    URL_PRODUCAO = "https://www.nfse.gov.br/emissornacional"
-    URL_HOMOLOGACAO = "https://www.producaorestrita.nfse.gov.br"
+    URL_PRODUCAO = "https://www.nfse.gov.br/EmissorNacional"
+    URL_HOMOLOGACAO = "https://sefin.nfse.gov.br/sefinnacional"
 
     # Situacoes da NFS-e
     SITUACOES = {

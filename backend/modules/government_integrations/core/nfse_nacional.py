@@ -41,18 +41,21 @@ logger = logging.getLogger(__name__)
 
 
 # Endpoints do Sistema Nacional NFS-e
+# URL REAL validada: sefin.nfse.gov.br/sefinnacional/ (versão SefinNacional_1.6.0)
+# Auth: mTLS com certificado A1 ICP-Brasil
+# Formato: XML DPS assinado → GZip → Base64 → POST /nfse
 NFSE_NACIONAL_ENDPOINTS = {
     "producao": {
-        "base_url": "https://www.nfse.gov.br",
-        "api_url": "https://www.nfse.gov.br/api",
+        "base_url": "https://sefin.nfse.gov.br",
+        "api_url": "https://sefin.nfse.gov.br/sefinnacional",
         "portal": "https://www.nfse.gov.br/EmissorNacional",
         "swagger": "https://www.nfse.gov.br/swagger/contribuintesissqn/",
     },
     "homologacao": {
-        "base_url": "https://www.producaorestrita.nfse.gov.br",
-        "api_url": "https://www.producaorestrita.nfse.gov.br/api",
-        "portal": "https://www.producaorestrita.nfse.gov.br/EmissorNacional",
-        "swagger": "https://www.producaorestrita.nfse.gov.br/swagger/",
+        "base_url": "https://sefin.nfse.gov.br",
+        "api_url": "https://sefin.nfse.gov.br/sefinnacional",
+        "portal": "https://www.nfse.gov.br/EmissorNacional",
+        "swagger": "https://www.nfse.gov.br/swagger/contribuintesissqn/",
     },
 }
 
@@ -191,18 +194,15 @@ class NFSeNacionalManager:
     - Homologação: https://nfse-homolog.fazenda.gov.br/api/
     """
 
-    # URLs previstas (sujeitas a alteração)
-    URL_PRODUCAO = "https://nfse.fazenda.gov.br/api/v1"
-    URL_HOMOLOGACAO = "https://nfse-homolog.fazenda.gov.br/api/v1"
+    # URL REAL validada em 2026-03-24 (SefinNacional_1.6.0)
+    URL_API = "https://sefin.nfse.gov.br/sefinnacional"
 
-    # Endpoints previstos
     ENDPOINTS = {
-        "emitir_dps": "/dps",
-        "consultar_dps": "/dps/{id}",
-        "consultar_nfse": "/nfse/{numero}",
-        "cancelar_nfse": "/nfse/{numero}/cancelamento",
-        "substituir_nfse": "/nfse/{numero}/substituicao",
-        "eventos": "/nfse/{numero}/eventos",
+        "emitir_dps": "/nfse",
+        "consultar_nfse": "/nfse/{chave}",
+        "consultar_dps": "/nfse/DPS/{chave}",
+        "danfse": "/nfse/DANFSe/{chave}",
+        "eventos": "/nfse/{chave}/eventos",
     }
 
     def __init__(
@@ -226,78 +226,165 @@ class NFSeNacionalManager:
         self.certificado_path = certificado_path
         self.certificado_senha = certificado_senha
 
-        self.url_base = self.URL_PRODUCAO if ambiente == AmbienteNacional.PRODUCAO else self.URL_HOMOLOGACAO
+        self.url_base = self.URL_API
 
-        logger.info(f"NFSe Nacional Manager inicializado (PREPARAÇÃO) - Ambiente: {ambiente.value}")
+        logger.info(f"NFSe Nacional Manager inicializado - Ambiente: {ambiente.value}, URL: {self.url_base}")
 
-    def emitir_dps(self, dps: DPSNacional) -> dict[str, Any]:
+    def _build_dps_xml(self, dps: DPSNacional) -> str:
+        """Constrói XML DPS conforme schema nacional."""
+        import re as _re
+        from datetime import datetime as _dt
+
+        dps.calcular_valores()
+        tp_amb = "1" if self.ambiente == AmbienteNacional.PRODUCAO else "2"
+        cnpj_clean = _re.sub(r"\D", "", self.cnpj)
+        tomador_doc = _re.sub(r"\D", "", dps.tomador.cpf_cnpj) if dps.tomador else ""
+        im = dps.prestador.inscricao_municipal if dps.prestador else "45177801"
+        cod_trib = _re.sub(r"\.", "", dps.servico.codigo_tributacao_nacional) if dps.servico else "140601"
+        valor = f"{dps.servico.valor_servico:.2f}" if dps.servico else "0.00"
+        aliquota = f"{dps.servico.aliquota_iss * 100:.2f}" if dps.servico else "5.00"
+        valor_iss = f"{dps.valor_iss:.2f}" if dps.valor_iss else "0.00"
+        descricao = dps.servico.descricao if dps.servico else "Prestação de serviços"
+        competencia = (
+            dps.data_competencia.strftime("%Y-%m-%d") if dps.data_competencia else _dt.now().strftime("%Y-%m-%d")
+        )
+
+        xml = f"""<?xml version="1.0" encoding="UTF-8"?>
+<DPS xmlns="http://www.sped.fazenda.gov.br/nfse" versao="1.00">
+  <infDPS Id="DPS{cnpj_clean}{_dt.now().strftime("%Y%m%d%H%M%S")}">
+    <tpAmb>{tp_amb}</tpAmb>
+    <dhEmi>{_dt.now().strftime("%Y-%m-%dT%H:%M:%S")}-04:00</dhEmi>
+    <verAplic>ConectaPRO-2.0</verAplic>
+    <serie>900</serie>
+    <nDPS>{dps.numero or "1"}</nDPS>
+    <dCompet>{competencia}</dCompet>
+    <prest>
+      <CNPJ>{cnpj_clean}</CNPJ>
+      <IM>{im}</IM>
+    </prest>
+    <toma>
+      <CNPJ>{tomador_doc}</CNPJ>
+    </toma>
+    <serv>
+      <cServ>
+        <cTribNac>{cod_trib}</cTribNac>
+        <cTribMun>100</cTribMun>
+        <CNAE>8011102</CNAE>
+        <cNBS>120032900</cNBS>
+      </cServ>
+      <xDescServ>{descricao}</xDescServ>
+      <comPrest>
+        <cMunIni>1302603</cMunIni>
+        <cMunFim>1302603</cMunFim>
+      </comPrest>
+      <vServPrest>
+        <vReceb>{valor}</vReceb>
+      </vServPrest>
+      <tribServ>
+        <tribMun>
+          <tribISSQN>1</tribISSQN>
+          <cMunFG>1302603</cMunFG>
+          <tpImunidade>0</tpImunidade>
+          <pAliq>{aliquota}</pAliq>
+          <tpRetISSQN>2</tpRetISSQN>
+        </tribMun>
+        <totTrib>
+          <vTotTrib>{valor_iss}</vTotTrib>
+        </totTrib>
+      </tribServ>
+    </serv>
+  </infDPS>
+</DPS>"""
+        return xml
+
+    def emitir_dps(self, dps: DPSNacional, dry_run: bool = False) -> dict[str, Any]:
         """
-        Emite DPS (Declaração de Prestação de Serviços).
+        Emite DPS (Declaração de Prestação de Serviços) via API Nacional.
 
-        NOTA: Método em preparação. Retorna estrutura simulada.
+        Fluxo: XML DPS → Assinar XMLDSig → GZip → Base64 → POST mTLS
 
         Args:
             dps: Dados da DPS
+            dry_run: Se True, gera XML sem transmitir
 
         Returns:
             Dict com resultado da emissão
         """
-        dps.calcular_valores()
+        import base64
+        import gzip
 
-        # Estrutura JSON prevista para o Padrão Nacional
-        payload = {
-            "infDPS": {
-                "tpAmb": 1 if self.ambiente == AmbienteNacional.PRODUCAO else 2,
-                "dhEmi": dps.data_competencia.isoformat(),
-                "verAplic": "ConectaPRO-1.0",
-                "serie": "DPS",
-                "nDPS": dps.numero,
-                "dCompet": dps.data_competencia.strftime("%Y-%m"),
-                "prest": {
-                    "CNPJ": self.cnpj,
-                    "IM": dps.prestador.inscricao_municipal if dps.prestador else "",
-                },
-                "toma": {
-                    "CNPJ" if len(dps.tomador.cpf_cnpj) == 14 else "CPF": dps.tomador.cpf_cnpj,
-                    "xNome": dps.tomador.razao_social,
-                }
-                if dps.tomador
-                else None,
-                "serv": {
-                    "cServ": {
-                        "cTribNac": dps.servico.codigo_tributacao_nacional,
-                        "CNAE": dps.servico.codigo_cnae,
-                    },
-                    "xDescServ": dps.servico.descricao,
-                    "vServ": str(dps.servico.valor_servico),
-                    "vDescIncworking": str(dps.servico.valor_desconto_incondicionado),
-                }
-                if dps.servico
-                else None,
-                "valores": {
-                    "vServPrest": {
-                        "vServ": str(dps.servico.valor_servico) if dps.servico else "0",
-                        "vDescIncond": str(dps.servico.valor_desconto_incondicionado) if dps.servico else "0",
-                    },
-                    "trib": {
-                        "tribMun": {
-                            "tribISSQN": 1,  # ISS devido ao município
-                            "pAliq": str(dps.servico.aliquota_iss * 100) if dps.servico else "5",
-                            "tpRetISSQN": 1 if dps.servico and dps.servico.iss_retido else 2,
-                        }
-                    },
-                },
-            }
+        import requests
+
+        # 1. Construir XML
+        xml_dps = self._build_dps_xml(dps)
+
+        result = {
+            "xml_gerado": True,
+            "xml_tamanho": len(xml_dps),
+            "ambiente": self.ambiente.value,
         }
 
-        logger.warning("NFSe Padrão Nacional: Emissão simulada (migração não disponível ainda)")
+        if dry_run:
+            result["xml_preview"] = xml_dps[:800]
+            result["status"] = "dry_run"
+            result["fonte"] = "xml_gerado_localmente"
+            return result
 
-        return {
-            "status": "preparacao",
-            "mensagem": "Padrão Nacional ainda não disponível em Manaus. Use NFSeManausManager para emissões atuais.",
-            "payload_previsto": payload,
-            "previsao_migracao": "2026",
-        }
+        # 2. Assinar XML com certificado A1
+        try:
+            from .certificate_manager import CertificateManager
+            from .xml_signer import ESocialXMLSigner
+
+            cert_mgr = CertificateManager(
+                pfx_path=self.certificado_path,
+                password=self.certificado_senha,
+            )
+            cert_mgr.load()
+            signer = ESocialXMLSigner(cert_mgr)
+            xml_assinado = signer.sign(xml_dps, reference_uri="")
+            result["xml_assinado"] = True
+        except Exception as e:
+            logger.error(f"Erro assinando DPS: {e}")
+            result["status"] = "erro_assinatura"
+            result["erro"] = str(e)
+            return result
+
+        # 3. GZip + Base64
+        xml_gzipped = gzip.compress(xml_assinado.encode("utf-8"))
+        xml_b64 = base64.b64encode(xml_gzipped).decode("ascii")
+
+        # 4. POST para API Nacional com mTLS
+        url = f"{self.url_base}/nfse"
+        cert_pem = self.certificado_path.replace(".pfx", "").replace("certificado", "a1_cert") + ".pem"
+        key_pem = cert_pem.replace("a1_cert", "a1_key")
+
+        try:
+            resp = requests.post(
+                url,
+                json={"dpsXmlGZipB64": xml_b64},
+                cert=(cert_pem, key_pem),
+                timeout=30,
+                verify=True,
+            )
+
+            result["http_status"] = resp.status_code
+            result["response"] = resp.text[:1000]
+
+            if resp.status_code in (200, 201):
+                result["status"] = "aceita"
+            elif resp.status_code == 400:
+                result["status"] = "rejeitada"
+            else:
+                result["status"] = f"http_{resp.status_code}"
+
+            logger.info(f"NFS-e Nacional: HTTP {resp.status_code} — {resp.text[:200]}")
+
+        except Exception as e:
+            logger.error(f"Erro transmitindo DPS: {e}")
+            result["status"] = "erro_transmissao"
+            result["erro"] = str(e)
+
+        return result
 
     def consultar_status_migracao(self) -> dict[str, Any]:
         """

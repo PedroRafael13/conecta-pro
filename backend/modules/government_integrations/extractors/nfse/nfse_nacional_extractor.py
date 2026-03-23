@@ -40,8 +40,8 @@ class ExtratorNFSeNacional(ExtratorBase):
 
     URLS = {
         "producao": "https://www.nfse.gov.br/EmissorNacional/",
-        "homologacao": "https://www.producaorestrita.nfse.gov.br/EmissorNacional/",
-        "api": "https://www.nfse.gov.br/api/",
+        "homologacao": "https://sefin.nfse.gov.br/sefinnacional/EmissorNacional/",
+        "api": "https://sefin.nfse.gov.br/sefinnacional/",
     }
 
     @property

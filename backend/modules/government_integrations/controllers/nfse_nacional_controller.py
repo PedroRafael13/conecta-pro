@@ -70,24 +70,38 @@ async def emitir_dps(request: EmitirDPSRequest) -> StandardResponse:
             tipo_tributacao=request.tipo_tributacao.value,
         )
 
+        # Resultado real do manager (pode conter xml_gerado, http_status, response, etc.)
+        status_dps = resultado.get("status", "preparacao")
+        sucesso = status_dps in ("aceita", "dry_run", "preparacao")
+
         response_data = EmitirDPSResponse(
             id_dps=resultado.get("id_dps"),
             numero_dps=resultado.get("numero_dps"),
-            status=DPSStatusEnum.PREPARACAO,
-            mensagem=resultado.get("mensagem"),
+            status=DPSStatusEnum.AUTORIZADA if status_dps == "aceita" else DPSStatusEnum.PREPARACAO,
+            mensagem=resultado.get("mensagem") or resultado.get("erro"),
             data_emissao=datetime.now(),
             valor_servico=request.servico.valor_servico,
             valor_iss=request.servico.valor_servico * request.servico.aliquota_iss,
             valor_liquido=resultado.get("valor_liquido"),
             tomador_cpf_cnpj=request.tomador.cpf_cnpj,
-            previsao_migracao=resultado.get("previsao_migracao", "2026"),
-            payload_json=resultado.get("payload_previsto"),
+            previsao_migracao=None,
+            payload_json=None,  # Dados extras vão no dict separado
         )
 
+        # Incluir dados da transmissão real
+        extra = {}
+        for k in ("http_status", "response", "xml_gerado", "xml_assinado", "xml_tamanho", "fonte", "erro"):
+            if k in resultado:
+                extra[k] = resultado[k]
+
+        resp_dict = response_data.model_dump()
+        resp_dict.update(extra)
+
         return StandardResponse(
-            success=True,
-            message="DPS preparada para migracao. Padrao Nacional ainda nao disponivel.",
-            data=response_data.model_dump(),
+            success=sucesso,
+            message=f"NFS-e Nacional: {status_dps}"
+            + (f" — HTTP {resultado.get('http_status')}" if resultado.get("http_status") else ""),
+            data=resp_dict,
         )
 
     except ValueError as e:
