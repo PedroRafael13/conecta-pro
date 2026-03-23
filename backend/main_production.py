@@ -508,6 +508,15 @@ try:
 except Exception as e:
     logger.warning(f"Modulo GED Kit PDFs: {e}")
 
+# GED Kit Real (anatomia auditada Google Drive)
+try:
+    from modules.ged.controllers.kit_real_controller import router as kit_real_router
+
+    api_router.include_router(kit_real_router, prefix="/ged", tags=["GED - Kit Real"])
+    logger.info("Modulo GED Kit Real: OK")
+except Exception as e:
+    logger.warning(f"Modulo GED Kit Real: {e}")
+
 # Saude Ocupacional (NR-4, NR-6, NR-7, NR-9)
 try:
     from modules.health_occupational import router as health_occupational_router
