@@ -182,3 +182,66 @@ async def nfse_dashboard(
             for s in servicos
         ],
     }
+
+
+@router.get("/headcount")
+async def headcount_by_client(
+    current_user: CurrentActiveUser = None,
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """Headcount por cliente com folha bruta e valor do contrato."""
+    result = await db.execute(
+        text("""
+        SELECT
+            g.id as client_id,
+            g.name as cliente,
+            (SELECT n2.tomador_cpf_cnpj FROM nfses n2 WHERE n2.condominio_id = g.id LIMIT 1) as cnpj,
+            count(DISTINCT a.employee_id) as headcount,
+            (SELECT sum(e2.salario_base)
+             FROM employees e2
+             WHERE e2.id IN (
+                SELECT DISTINCT a2.employee_id
+                FROM allocations a2
+                JOIN posts p2 ON a2.post_id = p2.id
+                WHERE p2.client_id::text = g.id::text
+                AND a2.status = 'active' AND p2.is_active = true
+                AND e2.is_active = true
+             )
+            ) as folha_bruta,
+            COALESCE((
+                SELECT sum(valor_servicos)
+                FROM nfses
+                WHERE condominio_id = g.id
+                AND data_competencia = (
+                    SELECT MAX(data_competencia) FROM nfses
+                    WHERE condominio_id = g.id AND active = true
+                )
+            ), 0) as contrato_mensal
+        FROM ged_clients g
+        JOIN posts p ON p.client_id::text = g.id::text AND p.is_active = true
+        JOIN allocations a ON a.post_id = p.id AND a.status = 'active'
+        JOIN employees e ON e.id = a.employee_id AND e.is_active = true
+        GROUP BY g.id, g.name
+        ORDER BY count(DISTINCT a.employee_id) DESC
+    """)
+    )
+    rows = result.mappings().all()
+
+    total_headcount = sum(r["headcount"] for r in rows)
+    total_folha = sum(float(r["folha_bruta"]) for r in rows)
+
+    return {
+        "total_headcount": total_headcount,
+        "total_folha_bruta": round(total_folha, 2),
+        "por_cliente": [
+            {
+                "client_id": str(r["client_id"]),
+                "cliente": r["cliente"],
+                "cnpj": r["cnpj"],
+                "headcount": r["headcount"],
+                "folha_bruta": round(float(r["folha_bruta"]), 2),
+                "contrato_mensal": round(float(r["contrato_mensal"]), 2),
+            }
+            for r in rows
+        ],
+    }
