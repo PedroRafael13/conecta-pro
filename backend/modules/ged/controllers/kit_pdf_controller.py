@@ -567,8 +567,22 @@ async def download_kit_zip(
         .all()
     )
 
+    # Build employee name lookup for per-employee docs
+    emp_names: dict[str, str] = {}
+    for d in docs:
+        eid = d["employee_id"]
+        if eid and str(eid) not in emp_names:
+            emp_row = (
+                (await db.execute(text("SELECT nome FROM employees WHERE id = :eid"), {"eid": str(eid)}))
+                .mappings()
+                .first()
+            )
+            if emp_row:
+                emp_names[str(eid)] = emp_row["nome"]
+
     buf = io.BytesIO()
     included = 0
+    seen_names: dict[str, int] = {}
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
         for d in docs:
             fp = d["file_path"] or ""
@@ -576,8 +590,37 @@ async def download_kit_zip(
                 continue
             full = Path(f"/app/uploads/{fp}")
             if full.exists():
-                safe = (d["document_name"] or d["document_type"] or "doc").replace("/", "_").replace("\\", "_")[:60]
-                zf.write(full, f"{safe}.pdf")
+                base = (d["document_name"] or d["document_type"] or "doc").replace("/", "_").replace("\\", "_")
+
+                # Add employee name for per-employee docs
+                if d["employee_id"] and d["document_type"] in (
+                    "contracheque",
+                    "comprovante_va",
+                    "comprovante_vt",
+                    "comprovante_vr",
+                    "folha_ponto",
+                    "escala_mes",
+                    "comp_salario",
+                ):
+                    emp_name = emp_names.get(str(d["employee_id"]), "")
+                    if emp_name:
+                        short = "_".join(emp_name.split()[:2])
+                        base = f"{d['document_type']}_{short}"
+
+                # Remove .pdf if already present, then add once
+                if base.endswith(".pdf"):
+                    base = base[:-4]
+                arcname = f"{base[:60]}.pdf"
+
+                # Deduplicate names
+                if arcname in seen_names:
+                    seen_names[arcname] += 1
+                    name_no_ext = arcname[:-4]
+                    arcname = f"{name_no_ext}_{seen_names[arcname]}.pdf"
+                else:
+                    seen_names[arcname] = 0
+
+                zf.write(full, arcname)
                 included += 1
 
         idx = f"KIT MENSAL — {kit['reference_month']}\nDocumentos: {included}\n"
