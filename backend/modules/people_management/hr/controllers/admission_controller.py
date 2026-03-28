@@ -7,7 +7,7 @@ Endpoints para o workflow de admissão de novos colaboradores.
 import logging
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.dependencies import CurrentActiveUser
@@ -143,3 +143,83 @@ async def complete_admission(
         }
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/{admission_id}/documents")
+async def upload_document(
+    admission_id: str,
+    file: UploadFile = File(...),
+    document_type: str = Query("outro", description="Tipo: rg, cpf, ctps, cnv, aso, etc"),
+    current_user: CurrentActiveUser = None,
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """Upload de documento para o processo de admissao."""
+    from pathlib import Path
+    from uuid import uuid4
+
+    service = AdmissionService(db)
+    admission = await service.get_by_id(admission_id)
+    if not admission:
+        raise HTTPException(status_code=404, detail="Admissao nao encontrada")
+
+    upload_dir = Path(f"/opt/conecta-pro/uploads/admissions/{admission_id}")
+    upload_dir.mkdir(parents=True, exist_ok=True)
+
+    ext = (file.filename or "doc").rsplit(".", 1)[-1] if file.filename else "pdf"
+    file_id = str(uuid4())[:8]
+    filename = f"{document_type}_{file_id}.{ext}"
+    file_path = upload_dir / filename
+
+    content = await file.read()
+    with open(file_path, "wb") as f:
+        f.write(content)
+
+    # Update documents_received in admission
+    docs = dict(admission.documents_received or {})
+    docs[document_type] = {
+        "filename": filename,
+        "original_name": file.filename,
+        "size_bytes": len(content),
+        "uploaded_at": __import__("datetime").datetime.now().isoformat(),
+        "path": str(file_path),
+    }
+    admission.documents_received = docs
+
+    # Also mark checklist item if it matches
+    checklist = dict(admission.checklist or {})
+    for category, items in checklist.items():
+        if isinstance(items, dict) and document_type in items:
+            checklist[category] = {**items, document_type: True}
+    admission.checklist = checklist
+
+    await db.flush()
+    await db.refresh(admission)
+    await db.commit()
+
+    return {
+        "message": f"Documento '{document_type}' enviado com sucesso",
+        "filename": filename,
+        "size_bytes": len(content),
+        "document_type": document_type,
+        "documents_total": len(docs),
+    }
+
+
+@router.get("/{admission_id}/documents")
+async def list_documents(
+    admission_id: str,
+    current_user: CurrentActiveUser = None,
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """Lista documentos enviados para o processo de admissao."""
+    service = AdmissionService(db)
+    admission = await service.get_by_id(admission_id)
+    if not admission:
+        raise HTTPException(status_code=404, detail="Admissao nao encontrada")
+
+    docs = admission.documents_received or {}
+    return {
+        "admission_id": admission_id,
+        "total": len(docs),
+        "documents": [{"type": k, **v} if isinstance(v, dict) else {"type": k, "value": v} for k, v in docs.items()],
+    }

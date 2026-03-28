@@ -163,6 +163,69 @@ export default function AdmissaoDetalhePage() {
           </CardContent>
         </Card>
       ) : null}
+
+      {/* Upload de Documentos */}
+      <Card>
+        <CardHeader><CardTitle className="text-base flex items-center gap-2"><FileText className="h-4 w-4" /> Upload de Documentos</CardTitle></CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <select id="doc-type" className="border rounded-md px-3 py-2 text-sm" defaultValue="rg">
+                <option value="rg">RG</option>
+                <option value="cpf">CPF</option>
+                <option value="ctps">CTPS</option>
+                <option value="pis_pasep">PIS/PASEP</option>
+                <option value="titulo_eleitor">Titulo Eleitor</option>
+                <option value="comprovante_residencia">Comprovante Residencia</option>
+                <option value="certidao_nascimento_casamento">Certidao Nascimento/Casamento</option>
+                <option value="foto_3x4">Foto 3x4</option>
+                <option value="curso_vigilante">Curso Vigilante</option>
+                <option value="cnv_carteira_nacional_vigilante">CNV</option>
+                <option value="certificado_reciclagem">Certificado Reciclagem</option>
+                <option value="registro_policia_federal">Registro PF</option>
+                <option value="antecedentes_criminais">Antecedentes</option>
+                <option value="aso_admissional">ASO Admissional</option>
+                <option value="dados_conta_bancaria">Dados Bancarios</option>
+                <option value="outro">Outro</option>
+              </select>
+              <input type="file" id="doc-file" className="text-sm" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
+              <Button size="sm" onClick={async () => {
+                const fileInput = document.getElementById('doc-file') as HTMLInputElement;
+                const typeSelect = document.getElementById('doc-type') as HTMLSelectElement;
+                const file = fileInput?.files?.[0];
+                if (!file) { toast.error('Selecione um arquivo'); return; }
+                const formData = new FormData();
+                formData.append('file', file);
+                const token = localStorage.getItem('access_token') || localStorage.getItem('token') || '';
+                try {
+                  const res = await fetch(`${API_BASE}/admissions/${params.id}/documents?document_type=${typeSelect.value}`, {
+                    method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: formData,
+                  });
+                  if (res.ok) { toast.success('Documento enviado!'); fileInput.value = ''; loadData(); }
+                  else { toast.error('Erro ao enviar documento'); }
+                } catch { toast.error('Erro de conexao'); }
+              }}>
+                Upload
+              </Button>
+            </div>
+            {/* Documentos enviados */}
+            {data.documents_received && typeof data.documents_received === 'object' && Object.keys(data.documents_received as Record<string, unknown>).length > 0 ? (
+              <div className="border rounded-md p-3 bg-muted/30">
+                <p className="text-sm font-medium mb-2">Documentos enviados ({Object.keys(data.documents_received as Record<string, unknown>).length}):</p>
+                {Object.entries(data.documents_received as Record<string, Record<string, string>>).map(([type, info]) => (
+                  <div key={type} className="flex items-center gap-2 text-sm py-1">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+                    <span className="font-medium">{type.replace(/_/g, ' ')}</span>
+                    <span className="text-muted-foreground">— {info?.original_name || info?.filename || 'arquivo'}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">Nenhum documento enviado ainda.</p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

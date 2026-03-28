@@ -46,7 +46,7 @@ export function CondominioProvider({ children }: CondominioProviderProps) {
       try {
         // Busca clientes primeiro
         const clients = await customInstance<{ items?: Array<{ id: string }>; } | Array<{ id: string }>>({
-          url: '/api/v1/clients/clients/',
+          url: '/api/v1/clients',
           method: 'GET',
           params: { skip: 0, limit: 100 },
         });
@@ -58,9 +58,9 @@ export function CondominioProvider({ children }: CondominioProviderProps) {
         for (const client of clientList) {
           try {
             const conds = await customInstance<Array<{ id: string; nome?: string; name?: string; tipo?: string; type?: string; status?: string }>>({
-              url: `/api/v1/clients/clients/${client.id}/condominiums`,
+              url: `/api/v1/clients/${client.id}/condominiums`,
               method: 'GET',
-            });
+            }).catch(() => [] as Array<{ id: string; nome?: string; name?: string; tipo?: string; type?: string; status?: string }>);
 
             if (Array.isArray(conds)) {
               allCondominios.push(

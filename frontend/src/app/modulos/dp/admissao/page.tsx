@@ -36,7 +36,8 @@ export default function AdmissaoPage() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [formData, setFormData] = useState({ candidate_name: '', cpf: '', position: '', expected_date: '', department: '', salary: '' });
+  const [formStep, setFormStep] = useState(1);
+  const [formData, setFormData] = useState({ candidate_name: '', cpf: '', position: '', expected_date: '', department: '', salary: '', contract_type: 'CLT', birth_date: '', pis_pasep: '' });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -96,11 +97,16 @@ export default function AdmissaoPage() {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle>Nova Admissão</CardTitle>
-              <Button type="button" variant="ghost" size="sm" onClick={() => setShowForm(false)}><X className="h-4 w-4" /></Button>
+              <CardTitle>Nova Admissão — Passo {formStep}/2</CardTitle>
+              <Button type="button" variant="ghost" size="sm" onClick={() => { setShowForm(false); setFormStep(1); }}><X className="h-4 w-4" /></Button>
+            </div>
+            <div className="flex gap-1 mt-2">
+              <div className={`h-1 flex-1 rounded ${formStep >= 1 ? 'bg-primary' : 'bg-muted'}`} />
+              <div className={`h-1 flex-1 rounded ${formStep >= 2 ? 'bg-primary' : 'bg-muted'}`} />
             </div>
           </CardHeader>
           <CardContent>
+            {formStep === 1 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium mb-1 block">Nome do Candidato *</label>
@@ -114,51 +120,97 @@ export default function AdmissaoPage() {
               </div>
               <div>
                 <label className="text-sm font-medium mb-1 block">Cargo *</label>
-                <input type="text" value={formData.position} onChange={e => { setFormData(p => ({ ...p, position: e.target.value })); setFormErrors(p => ({ ...p, position: '' })); }} className={`w-full px-3 py-2 border rounded-md text-sm ${formErrors.position ? 'border-red-500' : ''}`} placeholder="Ex: Vigilante" />
+                <select value={formData.position} onChange={e => { setFormData(p => ({ ...p, position: e.target.value })); setFormErrors(p => ({ ...p, position: '' })); }} className={`w-full px-3 py-2 border rounded-md text-sm ${formErrors.position ? 'border-red-500' : ''}`}>
+                  <option value="">Selecione o cargo</option>
+                  <option value="Agente de Portaria">Agente de Portaria</option>
+                  <option value="Agente de Servicos Gerais">Agente de Servicos Gerais</option>
+                  <option value="Vigilante">Vigilante</option>
+                  <option value="Lider de Portaria">Lider de Portaria</option>
+                  <option value="Artifice">Artifice</option>
+                  <option value="Supervisor">Supervisor</option>
+                  <option value="Administrativo">Administrativo</option>
+                </select>
                 {formErrors.position && <p className="text-red-500 text-xs mt-1">{formErrors.position}</p>}
               </div>
               <div>
                 <label className="text-sm font-medium mb-1 block">Departamento</label>
-                <input type="text" value={formData.department} onChange={e => setFormData(p => ({ ...p, department: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm" placeholder="Ex: Operações" />
+                <select value={formData.department} onChange={e => setFormData(p => ({ ...p, department: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm">
+                  <option value="">Selecione</option>
+                  <option value="Operacoes">Operacoes</option>
+                  <option value="Administrativo">Administrativo</option>
+                  <option value="Comercial">Comercial</option>
+                  <option value="Financeiro">Financeiro</option>
+                </select>
               </div>
+            </div>
+            )}
+
+            {formStep === 2 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium mb-1 block">Data Prevista de Admissão *</label>
                 <input type="date" value={formData.expected_date} onChange={e => { setFormData(p => ({ ...p, expected_date: e.target.value })); setFormErrors(p => ({ ...p, expected_date: '' })); }} className={`w-full px-3 py-2 border rounded-md text-sm ${formErrors.expected_date ? 'border-red-500' : ''}`} />
                 {formErrors.expected_date && <p className="text-red-500 text-xs mt-1">{formErrors.expected_date}</p>}
               </div>
               <div>
-                <label className="text-sm font-medium mb-1 block">Salário Base</label>
-                <input type="number" step="0.01" value={formData.salary} onChange={e => setFormData(p => ({ ...p, salary: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm" placeholder="0.00" />
+                <label className="text-sm font-medium mb-1 block">Salário Base (R$)</label>
+                <input type="number" step="0.01" value={formData.salary} onChange={e => setFormData(p => ({ ...p, salary: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm" placeholder="1670.00" />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Tipo de Contrato</label>
+                <select value={formData.contract_type} onChange={e => setFormData(p => ({ ...p, contract_type: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm">
+                  <option value="CLT">CLT</option>
+                  <option value="Temporario">Temporário</option>
+                  <option value="Experiencia">Experiência (90 dias)</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">PIS/PASEP</label>
+                <input type="text" value={formData.pis_pasep} onChange={e => setFormData(p => ({ ...p, pis_pasep: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm" placeholder="000.00000.00-0" />
               </div>
             </div>
+            )}
             <div className="flex gap-2 mt-4">
-              <Button type="button" size="sm" disabled={saving} onClick={async () => {
-                const errors: Record<string, string> = {};
-                if (!formData.candidate_name.trim()) errors.candidate_name = 'Nome é obrigatório';
-                if (!formData.cpf.trim()) errors.cpf = 'CPF é obrigatório';
-                else if (!validateCPF(formData.cpf)) errors.cpf = 'CPF inválido';
-                if (!formData.position.trim()) errors.position = 'Cargo é obrigatório';
-                if (!formData.expected_date) errors.expected_date = 'Data de admissão é obrigatória';
-                if (Object.keys(errors).length > 0) { setFormErrors(errors); toast.error('Corrija os campos destacados'); return; }
-                setSaving(true);
-                try {
-                  const payload = {
-                    candidate_name: formData.candidate_name,
-                    cpf: formData.cpf,
-                    position: formData.position,
-                    department: formData.department || undefined,
-                    expected_start_date: formData.expected_date || undefined,
-                    salary_proposed: formData.salary ? parseFloat(formData.salary) : undefined,
-                  };
-                  const res = await fetch(`${API_BASE}/admissions`, { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(payload) });
-                  if (res.ok) { setShowForm(false); setFormData({ candidate_name: '', cpf: '', position: '', expected_date: '', department: '', salary: '' }); setFormErrors({}); setRefreshKey(k => k + 1); toast.success('Admissão criada com sucesso!'); }
-                  else { const err = await res.json().catch(() => null); toast.error(err?.detail || 'Erro ao criar admissão'); }
-                } catch { toast.error('Erro de conexão'); } finally { setSaving(false); }
-              }}>
-                {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />}
-                {saving ? 'Salvando...' : 'Criar Admissão'}
-              </Button>
-              <Button type="button" variant="outline" size="sm" onClick={() => setShowForm(false)}>Cancelar</Button>
+              {formStep === 1 && (
+                <Button type="button" size="sm" onClick={() => {
+                  const errors: Record<string, string> = {};
+                  if (!formData.candidate_name.trim()) errors.candidate_name = 'Nome é obrigatório';
+                  if (!formData.cpf.trim()) errors.cpf = 'CPF é obrigatório';
+                  else if (!validateCPF(formData.cpf)) errors.cpf = 'CPF inválido';
+                  if (!formData.position.trim()) errors.position = 'Cargo é obrigatório';
+                  if (Object.keys(errors).length > 0) { setFormErrors(errors); toast.error('Corrija os campos destacados'); return; }
+                  setFormStep(2);
+                }}>Próximo →</Button>
+              )}
+              {formStep === 2 && (
+                <>
+                  <Button type="button" variant="outline" size="sm" onClick={() => setFormStep(1)}>← Voltar</Button>
+                  <Button type="button" size="sm" disabled={saving} onClick={async () => {
+                    const errors: Record<string, string> = {};
+                    if (!formData.expected_date) errors.expected_date = 'Data de admissão é obrigatória';
+                    if (Object.keys(errors).length > 0) { setFormErrors(errors); toast.error('Corrija os campos destacados'); return; }
+                    setSaving(true);
+                    try {
+                      const payload = {
+                        candidate_name: formData.candidate_name,
+                        cpf: formData.cpf,
+                        position: formData.position,
+                        department: formData.department || undefined,
+                        expected_start_date: formData.expected_date || undefined,
+                        salary_proposed: formData.salary ? parseFloat(formData.salary) : undefined,
+                        contract_type: formData.contract_type || 'CLT',
+                      };
+                      const res = await fetch(`${API_BASE}/admissions`, { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(payload) });
+                      if (res.ok) { setShowForm(false); setFormStep(1); setFormData({ candidate_name: '', cpf: '', position: '', expected_date: '', department: '', salary: '', contract_type: 'CLT', birth_date: '', pis_pasep: '' }); setFormErrors({}); setRefreshKey(k => k + 1); toast.success('Admissão criada com sucesso!'); }
+                      else { const err = await res.json().catch(() => null); toast.error(err?.detail || 'Erro ao criar admissão'); }
+                    } catch { toast.error('Erro de conexão'); } finally { setSaving(false); }
+                  }}>
+                    {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />}
+                    {saving ? 'Salvando...' : 'Criar Admissão'}
+                  </Button>
+                </>
+              )}
+              <Button type="button" variant="outline" size="sm" onClick={() => { setShowForm(false); setFormStep(1); }}>Cancelar</Button>
             </div>
           </CardContent>
         </Card>
