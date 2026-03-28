@@ -275,17 +275,24 @@ async def send_message_stream(
 
 @bartolo_router.get("/greeting")
 async def get_greeting(
-    session_id: str = Query(..., description="ID da sessao"),
+    session_id: str = Query("default", description="ID da sessao"),
     current_user: User = Depends(get_current_user),
     engine: BartoloEngine = Depends(get_bartolo_engine),
 ):
     """
     Retorna saudacao personalizada do Bartolo.
 
-    Considera nome do usuario e hora do dia.
+    Usa nome real do usuario do JWT (nao UUID).
     """
-    user_id_str = str(current_user.id)
-    greeting = await engine.get_greeting(user_id_str, session_id)
+    # Usar nome real do JWT em vez de depender do profile_service
+    user_name = getattr(current_user, "name", "") or getattr(current_user, "full_name", "")
+    if not user_name:
+        user_name = getattr(current_user, "email", "").split("@")[0]
+    primeiro_nome = user_name.split()[0] if user_name else "Jordan"
+
+    from modules.ai.bartolo.config.identity import get_greeting as _get_greeting
+
+    greeting = _get_greeting(primeiro_nome, True)
     return {"greeting": greeting}
 
 
