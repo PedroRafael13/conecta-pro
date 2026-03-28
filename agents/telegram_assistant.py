@@ -488,6 +488,46 @@ def get_briefing() -> str:
     return f"BRIEFING EXECUTIVO:\n{result[:3000]}"
 
 
+def ask_bartolo(mensagem: str) -> str:
+    """Consulta o Bartolo Engine via API REST."""
+    try:
+        # Obter token
+        login = httpx.post(
+            "http://127.0.0.1:8080/api/v1/auth/login",
+            data={
+                "username": os.getenv("ADMIN_USER", "jjesus@conectamais.pro"),
+                "password": os.getenv("ADMIN_PASS", ""),  # pragma: allowlist secret
+            },
+            timeout=10,
+        )
+        token = login.json().get("access_token", "")
+        if not token:
+            return "Erro: nao consegui autenticar no Bartolo."
+
+        # Chamar Bartolo
+        resp = httpx.post(
+            "http://127.0.0.1:8080/api/v1/ai/bartolo/send",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"message": mensagem, "session_id": "telegram_jordan"},
+            timeout=30,
+        )
+        if resp.status_code != 200:
+            return f"Bartolo retornou HTTP {resp.status_code}."
+
+        dados = resp.json()
+        resposta = dados.get("response", "")
+        model = dados.get("model_used", "?")
+        data_results = dados.get("data_results")
+
+        resultado = f"[Bartolo/{model}] {resposta}"
+        if data_results:
+            resultado += f"\n\nDados: {json.dumps(data_results, ensure_ascii=False, default=str)[:500]}"
+        return resultado
+
+    except Exception as e:
+        return f"Erro ao consultar Bartolo: {e}"
+
+
 TOOL_FUNCTIONS = {
     # Business
     "get_saldo_bancario": lambda **_: get_saldo_bancario(),
@@ -510,6 +550,7 @@ TOOL_FUNCTIONS = {
     "get_coverage": lambda **_: get_coverage(),
     "get_alerts": lambda **_: get_alerts(),
     "run_command": lambda command="", **_: run_command(command),
+    "ask_bartolo": lambda mensagem="", **_: ask_bartolo(mensagem),
 }
 
 
