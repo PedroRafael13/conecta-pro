@@ -22,10 +22,10 @@ function getAuthHeaders() {
 
 const statusConfig: Record<string, { label: string; className: string }> = {
   documents_pending: { label: 'Documentos Pendentes', className: 'bg-yellow-500 text-white' },
-  medical_exam: { label: 'Exame Medico', className: 'bg-blue-500 text-white' },
-  contract_signing: { label: 'Assinatura Contrato', className: 'bg-orange-500 text-white' },
+  medical_exam: { label: 'Exame Médico', className: 'bg-blue-500 text-white' },
+  contract_signing: { label: 'Assinatura de Contrato', className: 'bg-orange-500 text-white' },
   in_progress: { label: 'Em Andamento', className: 'bg-cyan-500 text-white' },
-  completed: { label: 'Concluida', className: 'bg-green-500 text-white' },
+  completed: { label: 'Concluída', className: 'bg-green-500 text-white' },
   cancelled: { label: 'Cancelada', className: 'bg-red-500 text-white' },
 };
 
@@ -38,13 +38,15 @@ export default function AdmissaoPage() {
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({ candidate_name: '', cpf: '', position: '', expected_date: '', department: '', salary: '' });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     async function load() {
+      setLoading(true);
       try {
         const url = filtroStatus === 'todos'
           ? `${API_BASE}/admissions?page_size=50`
-          : `${API_BASE}/admissions?status=${filtroStatus}&limit=50`;
+          : `${API_BASE}/admissions?status=${filtroStatus}&page_size=50`;
         const res = await fetch(url, { headers: getAuthHeaders() });
         if (res.ok) {
           const data = await res.json();
@@ -53,7 +55,7 @@ export default function AdmissaoPage() {
       } catch { setAdmissoes([]); } finally { setLoading(false); }
     }
     load();
-  }, [filtroStatus]);
+  }, [filtroStatus, refreshKey]);
 
   return (
     <div className="space-y-6">
@@ -121,7 +123,8 @@ export default function AdmissaoPage() {
               </div>
               <div>
                 <label className="text-sm font-medium mb-1 block">Data Prevista de Admissão *</label>
-                <input type="date" value={formData.expected_date} onChange={e => setFormData(p => ({ ...p, expected_date: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm" />
+                <input type="date" value={formData.expected_date} onChange={e => { setFormData(p => ({ ...p, expected_date: e.target.value })); setFormErrors(p => ({ ...p, expected_date: '' })); }} className={`w-full px-3 py-2 border rounded-md text-sm ${formErrors.expected_date ? 'border-red-500' : ''}`} />
+                {formErrors.expected_date && <p className="text-red-500 text-xs mt-1">{formErrors.expected_date}</p>}
               </div>
               <div>
                 <label className="text-sm font-medium mb-1 block">Salário Base</label>
@@ -135,6 +138,7 @@ export default function AdmissaoPage() {
                 if (!formData.cpf.trim()) errors.cpf = 'CPF é obrigatório';
                 else if (!validateCPF(formData.cpf)) errors.cpf = 'CPF inválido';
                 if (!formData.position.trim()) errors.position = 'Cargo é obrigatório';
+                if (!formData.expected_date) errors.expected_date = 'Data de admissão é obrigatória';
                 if (Object.keys(errors).length > 0) { setFormErrors(errors); toast.error('Corrija os campos destacados'); return; }
                 setSaving(true);
                 try {
@@ -147,7 +151,7 @@ export default function AdmissaoPage() {
                     salary_proposed: formData.salary ? parseFloat(formData.salary) : undefined,
                   };
                   const res = await fetch(`${API_BASE}/admissions`, { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(payload) });
-                  if (res.ok) { setShowForm(false); setFormData({ candidate_name: '', cpf: '', position: '', expected_date: '', department: '', salary: '' }); setFormErrors({}); setFiltroStatus('todos'); toast.success('Admissão criada com sucesso'); }
+                  if (res.ok) { setShowForm(false); setFormData({ candidate_name: '', cpf: '', position: '', expected_date: '', department: '', salary: '' }); setFormErrors({}); setRefreshKey(k => k + 1); toast.success('Admissão criada com sucesso!'); }
                   else { const err = await res.json().catch(() => null); toast.error(err?.detail || 'Erro ao criar admissão'); }
                 } catch { toast.error('Erro de conexão'); } finally { setSaving(false); }
               }}>
@@ -192,7 +196,7 @@ export default function AdmissaoPage() {
                       <TableCell>{item.cpf || '-'}</TableCell>
                       <TableCell>{item.position || '-'}</TableCell>
                       <TableCell><Badge className={st.className}>{st.label}</Badge></TableCell>
-                      <TableCell>{item.expected_start_date ? new Date(item.expected_start_date).toLocaleDateString('pt-BR') : '-'}</TableCell>
+                      <TableCell>{item.expected_start_date ? (() => { const p = String(item.expected_start_date).split('-'); return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : '-'; })() : '-'}</TableCell>
                       <TableCell><Button variant="outline" size="sm" onClick={() => router.push(`/modulos/dp/admissao/${item.id}`)}>Detalhes</Button></TableCell>
                     </TableRow>
                   );

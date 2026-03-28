@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Loader2, User, FileText, Calendar, DollarSign, Building2, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Loader2, User, FileText, Calendar, DollarSign, Building2, ChevronRight, CheckCircle2, XCircle, Edit } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,11 +17,18 @@ function getAuthHeaders() {
 
 const STATUS: Record<string, { label: string; color: string }> = {
   documents_pending: { label: 'Documentos Pendentes', color: 'bg-yellow-500 text-white' },
-  medical_exam: { label: 'Exame Medico', color: 'bg-blue-500 text-white' },
-  contract_signing: { label: 'Assinatura Contrato', color: 'bg-orange-500 text-white' },
-  completed: { label: 'Concluida', color: 'bg-green-500 text-white' },
+  medical_exam: { label: 'Exame Médico', color: 'bg-blue-500 text-white' },
+  contract_signing: { label: 'Assinatura de Contrato', color: 'bg-orange-500 text-white' },
+  completed: { label: 'Concluída', color: 'bg-green-500 text-white' },
   cancelled: { label: 'Cancelada', color: 'bg-red-500 text-white' },
 };
+
+function fmtDate(d: unknown): string {
+  if (!d) return '-';
+  const s = String(d);
+  const p = s.split('-');
+  return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : s;
+}
 
 export default function AdmissaoDetalhePage() {
   const params = useParams();
@@ -69,6 +76,13 @@ export default function AdmissaoDetalhePage() {
           <p className="text-muted-foreground">Processo de admissao</p>
         </div>
         <Badge className={st.color}>{st.label}</Badge>
+        <div className="ml-auto flex gap-2">
+          {String(data.status) !== 'completed' && String(data.status) !== 'cancelled' && (
+            <Button variant="destructive" size="sm" disabled={advancing} onClick={() => advanceStatus('cancelled')}>
+              <XCircle className="h-4 w-4 mr-1" /> Cancelar Admissao
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Workflow Buttons */}
@@ -113,7 +127,7 @@ export default function AdmissaoDetalhePage() {
           <CardHeader><CardTitle className="text-base flex items-center gap-2"><Calendar className="h-4 w-4" /> Informacoes</CardTitle></CardHeader>
           <CardContent className="space-y-3">
             <div><span className="text-sm text-muted-foreground">Salario Proposto:</span><p className="font-medium">{data.salary_proposed ? `R$ ${Number(data.salary_proposed).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}</p></div>
-            <div><span className="text-sm text-muted-foreground">Data Prevista:</span><p className="font-medium">{data.expected_start_date ? new Date(String(data.expected_start_date)).toLocaleDateString('pt-BR') : '-'}</p></div>
+            <div><span className="text-sm text-muted-foreground">Data Prevista:</span><p className="font-medium">{fmtDate(data.expected_start_date)}</p></div>
             <div><span className="text-sm text-muted-foreground">Criado em:</span><p className="font-medium">{data.created_at ? new Date(String(data.created_at)).toLocaleString('pt-BR') : '-'}</p></div>
             {data.notes ? <div><span className="text-sm text-muted-foreground">Observacoes:</span><p className="text-sm">{String(data.notes)}</p></div> : null}
           </CardContent>
@@ -130,10 +144,17 @@ export default function AdmissaoDetalhePage() {
                   <h4 className="font-medium text-sm mb-2 capitalize">{cat.replace(/_/g, ' ')}</h4>
                   <div className="space-y-1">
                     {Object.entries(items).map(([doc, done]) => (
-                      <div key={doc} className="flex items-center gap-2 text-sm">
+                      <button key={doc} className="flex items-center gap-2 text-sm w-full text-left hover:bg-muted/50 rounded px-1 py-0.5 transition-colors" onClick={async () => {
+                        const checklist = { ...(data.checklist as Record<string, Record<string, boolean>>) };
+                        checklist[cat] = { ...checklist[cat], [doc]: !done };
+                        try {
+                          const res = await fetch(`${API_BASE}/admissions/${params.id}`, { method: 'PATCH', headers: getAuthHeaders(), body: JSON.stringify({ checklist }) });
+                          if (res.ok) { toast.success(`${doc.replace(/_/g, ' ')} ${!done ? 'marcado' : 'desmarcado'}`); loadData(); }
+                        } catch { /* */ }
+                      }}>
                         <span className={done ? 'text-green-600' : 'text-muted-foreground'}>{done ? '✓' : '○'}</span>
                         <span className={done ? '' : 'text-muted-foreground'}>{doc.replace(/_/g, ' ')}</span>
-                      </div>
+                      </button>
                     ))}
                   </div>
                 </div>
