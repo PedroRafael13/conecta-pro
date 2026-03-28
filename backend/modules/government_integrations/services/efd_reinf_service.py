@@ -42,7 +42,7 @@ class EFDReinfService:
         self.cert_manager = None
         if self.cert_path and os.path.exists(self.cert_path):
             try:
-                self.cert_manager = CertificateManager(certificate_path=self.cert_path, password=self.cert_password)
+                self.cert_manager = CertificateManager(pfx_path=self.cert_path, password=self.cert_password)
                 logger.info("Certificado digital carregado para EFD-Reinf")
             except Exception as e:
                 logger.warning(f"Certificado não carregado: {e}")
@@ -359,6 +359,125 @@ class EFDReinfService:
             "status": resultado["status"],
             "mensagem": "Lote preparado para envio" if self.cert_manager else "Modo simulado (sem certificado)",
         }
+
+    def transmitir_r1000_real(self) -> dict[str, Any]:
+        """
+        Transmite R-1000 de verdade para a Receita Federal via SOAP + mTLS.
+
+        Mesmo padrao do eSocial S-1000 que foi aceito com recibo
+        1.2.0000000000305333794.
+        """
+        import re as re_mod
+
+        import requests as http_requests
+
+        # 1. Gerar XML do R-1000
+        info = InfoContribuinte(
+            cnpj=self.cnpj,
+            razao_social="JORDAN SANTOS DE JESUS LTDA",
+            classificacao_tributaria=ClassificacaoTributaria.EMPRESA_GERAL,
+            inicio_validade="2026-01",
+            ind_desoneracao="0",
+            telefone="9293485518",
+            email="jjesus@conectamais.pro",
+        )
+        xml_evento = self.manager.gerar_r1000(info)
+        logger.info("R-1000 XML gerado: %d chars", len(xml_evento))
+
+        # 2. Montar lote
+        resultado_lote = self.manager.enviar_lote([xml_evento])
+        xml_envio = resultado_lote["xml_envio"]
+
+        # 3. Verificar certificado
+        if not self.cert_manager:
+            return {
+                "sucesso": False,
+                "erro": "Certificado nao configurado. Defina CERTIFICATE_PATH no .env",
+                "xml_gerado": xml_evento[:500],
+                "ambiente": self.ambiente.value,
+            }
+
+        # 4. Obter arquivos PEM
+        try:
+            cert_path, key_path = self.cert_manager.get_certificate_for_request()
+        except Exception as e:
+            return {"sucesso": False, "erro": f"Certificado: {e}", "xml_gerado": xml_evento[:300]}
+
+        # 5. Montar envelope SOAP
+        soap_envelope = f"""<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+  <soap:Body>
+    <ReceberLoteEventos xmlns="http://sped.fazenda.gov.br/">
+      <loteEventos>{xml_envio}</loteEventos>
+    </ReceberLoteEventos>
+  </soap:Body>
+</soap:Envelope>"""
+
+        # 6. Transmitir via mTLS
+        url = self.manager.url
+        logger.info("Transmitindo R-1000 para %s", url)
+
+        try:
+            response = http_requests.post(
+                url,
+                data=soap_envelope.encode("utf-8"),
+                headers={
+                    "Content-Type": "text/xml; charset=utf-8",
+                    "SOAPAction": "http://sped.fazenda.gov.br/ReceberLoteEventos",
+                },
+                cert=(cert_path, key_path),
+                timeout=60,
+                verify=True,
+            )
+
+            logger.info("Resposta Reinf: HTTP %d (%d bytes)", response.status_code, len(response.content))
+
+            # 7. Parsear resposta
+            resp_text = response.text
+            protocolo = None
+            recibo = None
+            erros = []
+
+            m = re_mod.search(r"<nrProtEnvioLote>([^<]+)</nrProtEnvioLote>", resp_text)
+            if m:
+                protocolo = m.group(1)
+            m = re_mod.search(r"<nrRec>([^<]+)</nrRec>", resp_text)
+            if m:
+                recibo = m.group(1)
+
+            erros_raw = re_mod.findall(
+                r"<codigo>([^<]+)</codigo>.*?<descricao>([^<]+)</descricao>", resp_text, re_mod.DOTALL
+            )
+            erros = [{"codigo": c, "descricao": d} for c, d in erros_raw]
+
+            sucesso = bool(protocolo or recibo) or response.status_code == 200
+
+            return {
+                "sucesso": sucesso,
+                "http_status": response.status_code,
+                "protocolo": protocolo,
+                "recibo": recibo,
+                "erros": erros,
+                "ambiente": self.ambiente.value,
+                "url": url,
+                "xml_gerado": xml_evento[:500],
+                "resposta_resumo": resp_text[:800],
+            }
+
+        except http_requests.exceptions.SSLError as e:
+            return {"sucesso": False, "erro": f"SSL/mTLS: {e}", "url": url}
+        except http_requests.exceptions.ConnectionError as e:
+            return {"sucesso": False, "erro": f"Conexao: {e}", "url": url}
+        except Exception as e:
+            return {"sucesso": False, "erro": str(e), "url": url}
+        finally:
+            # Limpar temporarios
+            for p in [cert_path, key_path]:
+                if p and os.path.exists(p):
+                    try:
+                        os.unlink(p)
+                    except Exception:
+                        pass
 
     def listar_naturezas_rendimento(self) -> dict[str, Any]:
         """

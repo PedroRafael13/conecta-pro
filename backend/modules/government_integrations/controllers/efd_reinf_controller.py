@@ -258,3 +258,26 @@ async def enviar_lote(eventos_xml: list[str], service: EFDReinfService = Depends
     except Exception as e:
         logger.error(f"Erro ao enviar lote: {e}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao enviar lote: {str(e)}")
+
+
+@router.post(
+    "/r1000/transmitir",
+    response_model=StandardResponse,
+    summary="Transmitir R-1000 para a Receita Federal",
+    description="Transmite o R-1000 de verdade via SOAP + mTLS com certificado A1",
+)
+async def transmitir_r1000(service: EFDReinfService = Depends(get_service)) -> StandardResponse:
+    """Transmite R-1000 real para a Receita Federal."""
+    try:
+        resultado = service.transmitir_r1000_real()
+
+        if resultado.get("sucesso"):
+            msg = f"R-1000 transmitido! Protocolo: {resultado.get('protocolo', 'N/A')}"
+        else:
+            msg = f"R-1000 com erro: {resultado.get('erro', 'desconhecido')}"
+
+        return StandardResponse(success=resultado.get("sucesso", False), message=msg, data=resultado)
+
+    except Exception as e:
+        logger.error(f"Erro ao transmitir R-1000: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro: {str(e)}")
