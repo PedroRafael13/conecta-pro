@@ -1,12 +1,9 @@
 'use client';
 
-import { Mail, Lock, AlertCircle, ArrowRight } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { Suspense, useState, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Image from 'next/image';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/useAuth';
 
 const OAUTH_ERROR_MESSAGES: Record<string, string> = {
@@ -31,7 +28,6 @@ function LoginContent() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
-  // Erro vindo do OAuth redirect (derivado, sem setState em efeito)
   const oauthError = useMemo(() => {
     const code = searchParams.get('error');
     if (!code) return '';
@@ -43,9 +39,7 @@ function LoginContent() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-
     const result = await login({ email, password });
-
     if (result.success) {
       router.push('/dashboard');
     } else {
@@ -54,278 +48,368 @@ function LoginContent() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row">
-      {/* ===== LEFT SIDE - Branding (desktop only) ===== */}
-      <div className="hidden lg:flex lg:w-[55%] relative overflow-hidden bg-gradient-to-br from-navy-950 via-navy-900 to-navy-950">
-        {/* Noise texture overlay */}
-        <div className="noise absolute inset-0 z-10 pointer-events-none" />
-
-        {/* Animated gradient orbs */}
+    <div className="min-h-screen flex">
+      {/* ── PAINEL ESQUERDO ── */}
+      <div
+        className="hidden lg:flex flex-col justify-between relative overflow-hidden"
+        style={{ flex: '1.25', background: '#1E3A5F', padding: '44px 52px' }}
+      >
+        {/* Circles */}
         <div
-          className="absolute top-[15%] left-[20%] w-80 h-80 rounded-full opacity-30 blur-3xl"
-          style={{
-            background: 'radial-gradient(circle, #1a47f5 0%, transparent 70%)',
-            animation: 'float 6s ease-in-out infinite',
-          }}
+          className="absolute pointer-events-none"
+          style={{ top: -100, right: -100, width: 360, height: 360, borderRadius: '50%', background: 'rgba(249,115,22,0.06)' }}
         />
         <div
-          className="absolute bottom-[20%] right-[15%] w-96 h-96 rounded-full opacity-20 blur-3xl"
-          style={{
-            background: 'radial-gradient(circle, #f97707 0%, transparent 70%)',
-            animation: 'float 8s ease-in-out infinite 2s',
-          }}
-        />
-        <div
-          className="absolute top-[60%] left-[50%] w-64 h-64 rounded-full opacity-15 blur-3xl"
-          style={{
-            background: 'radial-gradient(circle, #3366ff 0%, transparent 70%)',
-            animation: 'float 7s ease-in-out infinite 1s',
-          }}
+          className="absolute pointer-events-none"
+          style={{ bottom: -80, left: -80, width: 280, height: 280, borderRadius: '50%', background: 'rgba(249,115,22,0.04)' }}
         />
 
-        {/* Floating geometric shapes */}
-        <div
-          className="absolute top-[12%] right-[18%] w-16 h-16 rounded-2xl border border-white/10 rotate-12"
-          style={{ animation: 'float 5s ease-in-out infinite 0.5s' }}
-        />
-        <div
-          className="absolute top-[35%] left-[10%] w-10 h-10 rounded-full border border-brand-500/20"
-          style={{ animation: 'float 6s ease-in-out infinite 1.5s' }}
-        />
-        <div
-          className="absolute bottom-[30%] left-[25%] w-20 h-20 rounded-3xl border border-white/5 -rotate-6"
-          style={{ animation: 'float 7s ease-in-out infinite 0.8s' }}
-        />
-        <div
-          className="absolute bottom-[15%] right-[30%] w-8 h-8 rounded-full border border-brand-400/15"
-          style={{ animation: 'float 5s ease-in-out infinite 2.2s' }}
-        />
-        <div
-          className="absolute top-[55%] right-[10%] w-14 h-14 rounded-2xl border border-navy-400/10 rotate-45"
-          style={{ animation: 'float 8s ease-in-out infinite 3s' }}
-        />
-
-        {/* Grid pattern */}
-        <div className="absolute inset-0 bg-grid opacity-[0.06]" />
-
-        {/* Main content */}
-        <div className="relative z-20 flex flex-col items-center justify-center w-full px-16">
-          {/* Logo with glow */}
-          <div className="relative mb-12">
-            <div className="absolute inset-0 scale-150 blur-3xl opacity-20 bg-brand-500 rounded-full" />
-            <Image
-              src="/images/logo-transparent.png"
-              alt="Conecta Mais"
-              width={200}
-              height={200}
-              className="relative z-10 drop-shadow-2xl animate-pulse-slow"
-              style={{ animationDuration: '4s' }}
-              priority
-            />
-          </div>
-
-          {/* Tagline */}
-          <div className="text-center mb-14 max-w-lg">
-            <p className="text-brand-400 text-sm font-semibold tracking-widest uppercase mb-4">
-              Conecta PRO
-            </p>
-            <h1 className="text-4xl xl:text-5xl font-bold text-white leading-tight mb-4">
-              Gestao inteligente para{' '}
-              <span className="text-gradient">vigilancia patrimonial</span>
-            </h1>
-            <p className="text-navy-300/80 text-base leading-relaxed max-w-md mx-auto">
-              Plataforma completa com controle operacional, financeiro e fiscal integrados em um so lugar.
-            </p>
-          </div>
-
-          {/* Stats row */}
-          <div className="flex items-center gap-0 bg-white/[0.04] backdrop-blur-sm rounded-2xl border border-white/[0.08] px-2 py-5">
-            <div className="flex-1 text-center px-8">
-              <p className="text-3xl font-bold text-white mb-1">500+</p>
-              <p className="text-navy-400 text-xs font-medium tracking-wide uppercase">Colaboradores</p>
+        {/* LOGO */}
+        <div className="flex items-center relative z-10">
+          <svg width="54" height="54" viewBox="0 0 56 56" fill="none">
+            <circle cx="28" cy="28" r="8" stroke="#F97316" strokeWidth="2.2" fill="none" />
+            <circle cx="28" cy="28" r="3.5" fill="#F97316" />
+            <line x1="28" y1="5" x2="28" y2="18" stroke="#5B9BD5" strokeWidth="2.2" strokeLinecap="round" />
+            <line x1="28" y1="38" x2="28" y2="51" stroke="#5B9BD5" strokeWidth="2.2" strokeLinecap="round" />
+            <line x1="5" y1="28" x2="18" y2="28" stroke="#5B9BD5" strokeWidth="2.2" strokeLinecap="round" />
+            <line x1="38" y1="28" x2="51" y2="28" stroke="#5B9BD5" strokeWidth="2.2" strokeLinecap="round" />
+            <circle cx="28" cy="7" r="3" stroke="white" strokeWidth="1.8" fill="rgba(255,255,255,0.1)" />
+            <circle cx="28" cy="49" r="3" stroke="white" strokeWidth="1.8" fill="rgba(255,255,255,0.1)" />
+            <circle cx="7" cy="28" r="3" stroke="white" strokeWidth="1.8" fill="rgba(255,255,255,0.1)" />
+            <circle cx="49" cy="28" r="3" stroke="white" strokeWidth="1.8" fill="rgba(255,255,255,0.1)" />
+            <line x1="12" y1="12" x2="20.5" y2="20.5" stroke="#F97316" strokeWidth="2" strokeLinecap="round" />
+            <line x1="35.5" y1="35.5" x2="44" y2="44" stroke="#F97316" strokeWidth="2" strokeLinecap="round" />
+            <line x1="44" y1="12" x2="35.5" y2="20.5" stroke="#F97316" strokeWidth="2" strokeLinecap="round" />
+            <line x1="20.5" y1="35.5" x2="12" y2="44" stroke="#F97316" strokeWidth="2" strokeLinecap="round" />
+            <circle cx="11" cy="11" r="2.8" fill="#F97316" />
+            <circle cx="45" cy="45" r="2.8" fill="#F97316" />
+            <circle cx="45" cy="11" r="2.8" fill="#F97316" />
+            <circle cx="11" cy="45" r="2.8" fill="#F97316" />
+            <rect x="24" y="2" width="8" height="4" rx="1.5" fill="rgba(255,255,255,0.6)" />
+            <rect x="24" y="50" width="8" height="4" rx="1.5" fill="rgba(255,255,255,0.6)" />
+            <rect x="2" y="24" width="4" height="8" rx="1.5" fill="rgba(255,255,255,0.6)" />
+            <rect x="50" y="24" width="4" height="8" rx="1.5" fill="rgba(255,255,255,0.6)" />
+            <polygon points="13,7 7,7 7,13" fill="#F97316" opacity="0.85" />
+            <polygon points="43,49 49,49 49,43" fill="#F97316" opacity="0.85" />
+          </svg>
+          <div className="ml-3.5">
+            <div className="flex items-baseline gap-1.5 text-xl font-bold tracking-tight">
+              <span className="text-white">CONECTA</span>
+              <span style={{ color: '#F97316' }}>PRO</span>
             </div>
-            <div className="w-px h-10 bg-white/10" />
-            <div className="flex-1 text-center px-8">
-              <p className="text-3xl font-bold text-white mb-1">50+</p>
-              <p className="text-navy-400 text-xs font-medium tracking-wide uppercase">Postos</p>
+            <div className="mt-1" style={{ fontSize: '10.5px', color: 'rgba(255,255,255,0.38)' }}>
+              by <span style={{ color: 'rgba(249,115,22,0.65)', fontWeight: 500 }}>Conecta Mais</span>
             </div>
-            <div className="w-px h-10 bg-white/10" />
-            <div className="flex-1 text-center px-8">
-              <p className="text-3xl font-bold text-brand-400 mb-1">24/7</p>
-              <p className="text-navy-400 text-xs font-medium tracking-wide uppercase">Monitoramento</p>
-            </div>
-          </div>
-
-          {/* Footer */}
-          <div className="absolute bottom-8 left-0 right-0 text-center text-navy-600 text-xs">
-            <span>&copy; 2025 Jordan Santos de Jesus LTDA</span>
           </div>
         </div>
 
-        {/* Corner decorative circles */}
-        <div className="absolute -bottom-20 -right-20 w-72 h-72 rounded-full border border-navy-800/20" />
-        <div className="absolute -bottom-10 -right-10 w-48 h-48 rounded-full border border-brand-500/10" />
-        <div className="absolute -top-16 -left-16 w-56 h-56 rounded-full border border-navy-700/15" />
+        {/* HERO */}
+        <div className="relative z-10 text-center flex flex-col items-center">
+          <div
+            className="inline-flex items-center gap-2 rounded-full mb-8"
+            style={{
+              background: 'rgba(249,115,22,0.12)',
+              border: '1px solid rgba(249,115,22,0.25)',
+              padding: '5px 16px 5px 12px',
+              fontSize: '10.5px',
+              fontWeight: 600,
+              color: '#FB923C',
+              letterSpacing: '0.5px',
+              textTransform: 'uppercase',
+            }}
+          >
+            <span
+              className="inline-block flex-shrink-0 rounded-full"
+              style={{ width: 6, height: 6, background: '#F97316', animation: 'login-pulse 2s infinite' }}
+            />
+            Seguranca Patrimonial & Eletronica
+          </div>
+
+          <div style={{ fontSize: 13, fontWeight: 400, color: 'rgba(255,255,255,0.45)', letterSpacing: '0.8px', textTransform: 'uppercase', marginBottom: 12 }}>
+            Sistema de Gestao Empresarial
+          </div>
+
+          <div className="flex items-center gap-3 w-full mb-3.5">
+            <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.1)' }} />
+            <div style={{ width: 8, height: 8, background: '#F97316', transform: 'rotate(45deg)', opacity: 0.8, flexShrink: 0 }} />
+            <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.1)' }} />
+          </div>
+
+          <div style={{ fontSize: 44, fontWeight: 800, letterSpacing: '-1.5px', lineHeight: 1, marginBottom: 10 }}>
+            <span className="text-white">Conecta</span>{' '}
+            <span style={{ color: '#F97316' }}>Mais</span>
+          </div>
+
+          <div style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.35)', letterSpacing: '1.5px', textTransform: 'uppercase', fontWeight: 400 }}>
+            Tecnologia para quem protege
+          </div>
+        </div>
+
+        {/* MODULOS */}
+        <div className="relative z-10">
+          <div
+            style={{
+              fontSize: 10,
+              color: 'rgba(255,255,255,0.28)',
+              textTransform: 'uppercase',
+              letterSpacing: '1px',
+              marginBottom: 12,
+              borderTop: '1px solid rgba(255,255,255,0.07)',
+              paddingTop: 20,
+              textAlign: 'center',
+            }}
+          >
+            Modulos disponiveis
+          </div>
+
+          <div className="flex flex-wrap gap-2 mb-3.5 justify-center">
+            {['Operacional', 'Financeiro', 'GED & Fiscal', 'DP & Folha', 'CFTV & Eletronica'].map((m) => (
+              <div
+                key={m}
+                className="flex items-center gap-1.5"
+                style={{
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: 8,
+                  padding: '7px 13px',
+                  fontSize: 11.5,
+                  color: 'rgba(255,255,255,0.68)',
+                }}
+              >
+                <span className="inline-block flex-shrink-0 rounded-full" style={{ width: 5, height: 5, background: '#F97316', opacity: 0.8 }} />
+                {m}
+              </div>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2.5">
+            <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.06)' }} />
+            <div
+              className="inline-flex items-center gap-1.5"
+              style={{
+                background: 'rgba(249,115,22,0.14)',
+                border: '1px solid rgba(249,115,22,0.32)',
+                borderRadius: 100,
+                padding: '6px 20px',
+                fontSize: 12,
+                fontWeight: 700,
+                color: '#FB923C',
+                letterSpacing: '0.3px',
+              }}
+            >
+              &#10022; E muito mais
+            </div>
+            <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.06)' }} />
+          </div>
+        </div>
       </div>
 
-      {/* ===== RIGHT SIDE - Form ===== */}
-      {/* Mobile: full background with gradient */}
-      <div className="flex-1 flex items-center justify-center relative lg:bg-[hsl(var(--background))]">
-        {/* Mobile gradient background */}
-        <div className="absolute inset-0 lg:hidden bg-gradient-to-br from-navy-950 via-navy-900 to-navy-950">
-          <div className="noise absolute inset-0 pointer-events-none" />
-          <div
-            className="absolute top-[10%] left-[15%] w-64 h-64 rounded-full opacity-20 blur-3xl"
-            style={{ background: 'radial-gradient(circle, #1a47f5 0%, transparent 70%)' }}
-          />
-          <div
-            className="absolute bottom-[20%] right-[10%] w-48 h-48 rounded-full opacity-15 blur-3xl"
-            style={{ background: 'radial-gradient(circle, #f97707 0%, transparent 70%)' }}
-          />
-        </div>
-
-        <div className="relative z-10 w-full max-w-md px-6 py-12 lg:px-10">
-          {/* Mobile: glass card wrapper */}
-          <div className="lg:bg-transparent lg:border-0 lg:shadow-none lg:backdrop-blur-none glass rounded-3xl p-8 lg:p-0 lg:rounded-none">
-            {/* Logo mobile */}
-            <div className="lg:hidden flex justify-center mb-8">
-              <div className="relative">
-                <div className="absolute inset-0 scale-150 blur-2xl opacity-20 bg-brand-500 rounded-full" />
-                <Image
-                  src="/images/logo-transparent.png"
-                  alt="Conecta Mais"
-                  width={120}
-                  height={120}
-                  className="relative z-10 animate-pulse-slow"
-                  style={{ animationDuration: '4s' }}
-                />
+      {/* ── PAINEL DIREITO ── */}
+      <div className="flex-1 bg-white flex flex-col justify-center" style={{ padding: '52px 50px' }}>
+        <div className="max-w-md mx-auto w-full">
+          <div style={{ marginBottom: 28 }}>
+            {/* Mobile logo */}
+            <div className="lg:hidden flex items-center gap-2 mb-6">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: '#1E3A5F' }}>
+                <span className="text-white font-bold text-xs">C</span>
               </div>
+              <span className="font-bold" style={{ color: '#1E3A5F' }}>
+                CONECTA <span style={{ color: '#F97316' }}>PRO</span>
+              </span>
             </div>
 
-            {/* Staggered form content */}
-            <div className="stagger">
-              {/* Header */}
-              <div className="text-center lg:text-left mb-8 animate-slide-up">
-                <h2 className="text-2xl font-bold text-white lg:text-[hsl(var(--foreground))]">
-                  Bem-vindo de volta
-                </h2>
-                <p className="text-navy-300 lg:text-[hsl(var(--muted-foreground))] mt-2 text-sm">
-                  Entre com suas credenciais para acessar o sistema
-                </p>
-              </div>
+            <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 600, color: '#F97316', textTransform: 'uppercase', letterSpacing: '.8px', marginBottom: 10 }}>
+              Conecta PRO v2.0.0
+            </span>
+            <h2 style={{ fontSize: 26, fontWeight: 700, color: '#1E3A5F', letterSpacing: '-0.5px', marginBottom: 5, lineHeight: 1.2 }}>
+              Bem-vindo de volta
+            </h2>
+            <p style={{ fontSize: 13.5, color: '#6B7280', lineHeight: 1.5 }}>Entre com suas credenciais para acessar o sistema</p>
+          </div>
 
-              {/* Form */}
-              <form onSubmit={handleSubmit} className="space-y-5 animate-slide-up">
-                {/* Erro */}
-                {displayError && (
-                  <div className="flex items-center gap-2 p-3 rounded-xl bg-[hsl(var(--destructive))]/10 border border-[hsl(var(--destructive))]/30 text-[hsl(var(--destructive))] animate-slide-up">
-                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                    <span className="text-sm">{displayError}</span>
-                  </div>
-                )}
+          {/* Erro */}
+          {displayError && (
+            <div className="flex items-center gap-2 p-3 rounded-xl mb-4" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
+              <AlertCircle className="w-4 h-4 flex-shrink-0 text-red-500" />
+              <span className="text-sm text-red-600">{displayError}</span>
+            </div>
+          )}
 
-                {/* Email */}
-                <Input
+          <form onSubmit={handleSubmit}>
+            {/* E-mail */}
+            <div style={{ marginBottom: 15 }}>
+              <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#374151', marginBottom: 7 }}>E-mail</label>
+              <div style={{ position: 'relative' }}>
+                <svg
+                  style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', width: 15, height: 15, color: '#9CA3AF', pointerEvents: 'none' }}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                >
+                  <rect x="2" y="4" width="20" height="16" rx="2.5" />
+                  <path d="M2 7.5l10 7 10-7" />
+                </svg>
+                <input
                   type="email"
-                  label="E-mail"
-                  placeholder="seu@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  icon={<Mail className="w-4 h-4" />}
-                  className="!h-12 !rounded-xl !bg-white/[0.06] lg:!bg-[hsl(var(--input))]"
+                  placeholder="seu@email.com"
                   required
                   autoFocus
+                  style={{
+                    width: '100%',
+                    height: 44,
+                    border: '1.5px solid #E9ECEF',
+                    borderRadius: 10,
+                    padding: '0 14px 0 40px',
+                    fontSize: 13.5,
+                    color: '#111827',
+                    background: '#F8F9FB',
+                    outline: 'none',
+                    fontFamily: 'inherit',
+                  }}
                 />
+              </div>
+            </div>
 
-                {/* Senha */}
-                <Input
+            {/* Senha */}
+            <div style={{ marginBottom: 8 }}>
+              <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#374151', marginBottom: 7 }}>Senha</label>
+              <div style={{ position: 'relative' }}>
+                <svg
+                  style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', width: 15, height: 15, color: '#9CA3AF', pointerEvents: 'none' }}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                >
+                  <rect x="3" y="11" width="18" height="11" rx="2.5" />
+                  <path d="M7 11V7a5 5 0 0110 0v4" />
+                </svg>
+                <input
                   type="password"
-                  label="Senha"
-                  placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  icon={<Lock className="w-4 h-4" />}
-                  className="!h-12 !rounded-xl !bg-white/[0.06] lg:!bg-[hsl(var(--input))]"
+                  placeholder="••••••••"
                   required
+                  style={{
+                    width: '100%',
+                    height: 44,
+                    border: '1.5px solid #E9ECEF',
+                    borderRadius: 10,
+                    padding: '0 14px 0 40px',
+                    fontSize: 13.5,
+                    color: '#111827',
+                    background: '#F8F9FB',
+                    outline: 'none',
+                    fontFamily: 'inherit',
+                  }}
                 />
-
-                {/* Lembrar e esqueci */}
-                <div className="flex items-center justify-between text-sm">
-                  <label className="flex items-center gap-2 cursor-pointer group">
-                    <input
-                      type="checkbox"
-                      className="w-4 h-4 rounded border-[hsl(var(--border))] bg-[hsl(var(--input))] text-navy-600 focus:ring-navy-600 focus:ring-offset-0"
-                    />
-                    <span className="text-navy-300 lg:text-[hsl(var(--muted-foreground))] group-hover:text-white lg:group-hover:text-[hsl(var(--foreground))] transition-colors">
-                      Lembrar-me
-                    </span>
-                  </label>
-                  <Link
-                    href="/forgot-password"
-                    className="text-brand-400 hover:text-brand-300 transition-colors"
-                  >
-                    Esqueci a senha
-                  </Link>
-                </div>
-
-                {/* Botao de login */}
-                <Button
-                  type="submit"
-                  className="w-full btn-brand !h-12 !rounded-xl !text-base !font-semibold group"
-                  size="lg"
-                  isLoading={isLoading}
-                >
-                  Entrar
-                  <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              </form>
-
-              {/* Separador "ou" */}
-              <div className="relative my-6 animate-slide-up">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-white/10 lg:border-[hsl(var(--border))]" />
-                </div>
-                <div className="relative flex justify-center text-xs">
-                  <span className="px-3 bg-transparent text-navy-400 lg:bg-[hsl(var(--background))] lg:text-[hsl(var(--muted-foreground))]">
-                    ou continue com
-                  </span>
-                </div>
               </div>
-
-              {/* Google OAuth */}
-              <a
-                href="/api/v1/auth/google"
-                className="animate-slide-up w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl border border-white/10 lg:border-[hsl(var(--border))] bg-white/[0.04] lg:bg-transparent hover:bg-white/[0.08] lg:hover:bg-[hsl(var(--accent))]/10 transition-all text-navy-200 lg:text-[hsl(var(--muted-foreground))] hover:text-white lg:hover:text-[hsl(var(--foreground))] font-medium text-sm"
-              >
-                <svg className="w-5 h-5" viewBox="0 0 24 24">
-                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />
-                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-                </svg>
-                Entrar com Google
-              </a>
-
-              {/* Version footer */}
-              <p className="animate-slide-up text-center text-[10px] text-navy-600 lg:text-[hsl(var(--muted-foreground))]/40 mt-8">
-                Conecta PRO v2.0.0
-              </p>
-
-              {/* Terms footer */}
-              <p className="animate-slide-up text-center text-xs text-navy-400 lg:text-[hsl(var(--muted-foreground))] mt-3">
-                Ao entrar, voce concorda com os{' '}
-                <a href="#" className="text-brand-400 hover:underline">
-                  Termos de Uso
-                </a>{' '}
-                e{' '}
-                <a href="#" className="text-brand-400 hover:underline">
-                  Politica de Privacidade
-                </a>
-              </p>
+              <div className="flex items-center justify-between mt-2.5">
+                <label className="flex items-center gap-2 cursor-pointer" style={{ fontSize: 13, color: '#6B7280' }}>
+                  <input type="checkbox" style={{ accentColor: '#F97316' }} />
+                  Lembrar-me
+                </label>
+                <Link href="/forgot-password" style={{ fontSize: 13, fontWeight: 600, color: '#F97316' }}>
+                  Esqueci a senha
+                </Link>
+              </div>
             </div>
+
+            {/* Botao Entrar */}
+            <button
+              type="submit"
+              disabled={isLoading}
+              style={{
+                width: '100%',
+                height: 46,
+                background: isLoading ? '#2d5a8f' : '#1E3A5F',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 10,
+                fontSize: 15,
+                fontWeight: 600,
+                cursor: isLoading ? 'wait' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 9,
+                marginTop: 8,
+                letterSpacing: '-0.1px',
+                fontFamily: 'inherit',
+                transition: 'background .15s',
+              }}
+            >
+              {isLoading ? 'Entrando...' : 'Entrar'}
+              {!isLoading && (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              )}
+            </button>
+          </form>
+
+          {/* Divisor */}
+          <div className="flex items-center gap-3" style={{ margin: '17px 0' }}>
+            <div style={{ flex: 1, height: 1, background: '#E9ECEF' }} />
+            <span style={{ fontSize: 12, color: '#9CA3AF', whiteSpace: 'nowrap' }}>ou continue com</span>
+            <div style={{ flex: 1, height: 1, background: '#E9ECEF' }} />
           </div>
+
+          {/* Google */}
+          <a
+            href="/api/v1/auth/google"
+            style={{
+              width: '100%',
+              height: 44,
+              background: '#fff',
+              border: '1.5px solid #E9ECEF',
+              borderRadius: 10,
+              fontSize: 13.5,
+              fontWeight: 500,
+              color: '#374151',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 10,
+              fontFamily: 'inherit',
+              textDecoration: 'none',
+              transition: 'border-color .15s, background .15s',
+            }}
+          >
+            <svg width="18" height="18" viewBox="0 0 18 18">
+              <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 01-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" />
+              <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" />
+              <path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" />
+              <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" />
+            </svg>
+            Entrar com Google
+          </a>
+
+          {/* Footer */}
+          <p style={{ marginTop: 18, textAlign: 'center', fontSize: 11.5, color: '#9CA3AF', lineHeight: 1.6 }}>
+            Ao entrar, voce concorda com os{' '}
+            <a href="/termos" style={{ color: '#F97316', textDecoration: 'none', fontWeight: 600 }}>
+              Termos de Uso
+            </a>{' '}
+            e{' '}
+            <a href="/privacidade" style={{ color: '#F97316', textDecoration: 'none', fontWeight: 600 }}>
+              Politica de Privacidade
+            </a>
+          </p>
         </div>
       </div>
+
+      {/* CSS pulse */}
+      <style>{`
+        @keyframes login-pulse {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.5; transform: scale(0.8); }
+        }
+      `}</style>
     </div>
   );
 }
