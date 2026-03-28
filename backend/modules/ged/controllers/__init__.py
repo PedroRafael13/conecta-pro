@@ -10,6 +10,7 @@ from modules.ged.controllers.document_version_controller import (
     router as version_router,
 )
 from modules.ged.controllers.folder_controller import router as folder_router
+from modules.ged.controllers.ged_config_controller import router as config_router
 from modules.ged.controllers.ged_stats_controller import router as stats_router
 
 try:
@@ -27,5 +28,6 @@ __all__ = [
     "tag_router",
     "signature_router",
     "stats_router",
+    "config_router",
     "integration_router",
 ]

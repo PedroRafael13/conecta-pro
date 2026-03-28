@@ -10,6 +10,9 @@ Data migração: 2026-03-11
 # --- Recruitment ---
 # --- GED (Gestão Eletrônica de Documentos) ---
 from modules.ged.controllers import (
+    config_router as ged_config_router,
+)
+from modules.ged.controllers import (
     document_router as ged_document_router,
 )
 from modules.ged.controllers import (
@@ -57,4 +60,5 @@ __all__ = [
     "ged_tag_router",
     "ged_signature_router",
     "ged_stats_router",
+    "ged_config_router",
 ]

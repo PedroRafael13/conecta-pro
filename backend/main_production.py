@@ -440,6 +440,7 @@ except Exception as e:
 try:
     from modules.pessoas import (
         climate_router,
+        ged_config_router,
         ged_document_router,
         ged_folder_router,
         ged_share_router,
@@ -471,6 +472,7 @@ try:
     api_router.include_router(ged_tag_router, prefix="/ged", tags=["GED - Tags"])
     api_router.include_router(ged_signature_router, prefix="/ged", tags=["GED - Assinaturas"])
     api_router.include_router(ged_stats_router, prefix="/ged", tags=["GED - Estatísticas"])
+    api_router.include_router(ged_config_router, prefix="/ged", tags=["GED - Config & Reports"])
     try:
         from modules.ged.controllers.ged_integration_controller import router as ged_integration_router
 
