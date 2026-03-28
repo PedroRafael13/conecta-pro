@@ -1,5 +1,5 @@
 """
-Schemas Pydantic para AdmissionProcess (Processo de Admissão).
+Schemas Pydantic para AdmissionProcess (Processo de Admissao).
 """
 
 from datetime import date, datetime
@@ -11,24 +11,34 @@ from modules.people_management.hr.models.admission import AdmissionStatus
 
 
 class AdmissionProcessCreate(BaseModel):
-    """Schema para criação de processo de admissão."""
+    """Schema para criacao de processo de admissao."""
 
+    candidate_name: str = Field(..., min_length=2, max_length=200)
+    cpf: str = Field(..., min_length=11, max_length=20)
+    position: str = Field(..., min_length=2, max_length=100)
+    department: str | None = Field(None, max_length=100)
+    salary_proposed: float | None = Field(None, ge=0)
+    expected_start_date: date | None = None
+    contract_type: str | None = Field("CLT", max_length=20)
     candidate_id: str | None = None
     job_position_id: str | None = None
-    expected_start_date: date | None = None
-    salary_proposed: float | None = Field(None, ge=0)
     workplace_id: str | None = None
     checklist: dict | None = None
     notes: str | None = None
 
 
 class AdmissionProcessUpdate(BaseModel):
-    """Schema para atualização de processo de admissão."""
+    """Schema para atualizacao de processo de admissao."""
 
+    candidate_name: str | None = None
+    cpf: str | None = None
+    position: str | None = None
+    department: str | None = None
     status: AdmissionStatus | None = None
     expected_start_date: date | None = None
     actual_start_date: date | None = None
     salary_proposed: float | None = Field(None, ge=0)
+    contract_type: str | None = None
     workplace_id: str | None = None
     checklist: dict | None = None
     documents_received: dict | None = None
@@ -40,11 +50,15 @@ class AdmissionProcessUpdate(BaseModel):
 
 
 class AdmissionProcessResponse(BaseModel):
-    """Schema de resposta para processo de admissão."""
+    """Schema de resposta para processo de admissao."""
 
     model_config = ConfigDict(from_attributes=True)
 
     id: str | UUID
+    candidate_name: str | None = None
+    cpf: str | None = None
+    position: str | None = None
+    department: str | None = None
     candidate_id: str | UUID | None = None
     employee_id: str | UUID | None = None
     job_position_id: str | UUID | None = None
@@ -52,6 +66,7 @@ class AdmissionProcessResponse(BaseModel):
     expected_start_date: date | None = None
     actual_start_date: date | None = None
     salary_proposed: float | None = None
+    contract_type: str | None = None
     workplace_id: str | UUID | None = None
     checklist: dict | None = None
     documents_received: dict | None = None
@@ -60,5 +75,5 @@ class AdmissionProcessResponse(BaseModel):
     contract_signed_at: datetime | None = None
     notes: str | None = None
     created_by_id: str | UUID | None = None
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime | None = None
+    updated_at: datetime | None = None

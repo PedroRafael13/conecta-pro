@@ -40,6 +40,13 @@ class AdmissionProcess(Base):
         primary_key=True,
         default=uuid4,
     )
+    # Dados do candidato (preenchidos pelo form)
+    candidate_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    cpf: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    position: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    department: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    contract_type: Mapped[str | None] = mapped_column(String(20), nullable=True, default="CLT")
+
     candidate_id: Mapped[str | None] = mapped_column(
         UUID(as_uuid=True),
         nullable=True,

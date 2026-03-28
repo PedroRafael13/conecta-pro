@@ -20,16 +20,13 @@ function getAuthHeaders() {
   };
 }
 
-type Status = 'documentos_pendentes' | 'exame_medico' | 'assinatura_contrato' | 'concluida';
-
 const statusConfig: Record<string, { label: string; className: string }> = {
-  documentos_pendentes: { label: 'Documentos Pendentes', className: 'bg-yellow-500 text-white' },
-  exame_medico: { label: 'Exame Médico', className: 'bg-blue-500 text-white' },
-  assinatura_contrato: { label: 'Assinatura Contrato', className: 'bg-orange-500 text-white' },
-  concluida: { label: 'Concluída', className: 'bg-green-500 text-white' },
-  pending: { label: 'Pendente', className: 'bg-yellow-500 text-white' },
-  in_progress: { label: 'Em Andamento', className: 'bg-blue-500 text-white' },
-  completed: { label: 'Concluída', className: 'bg-green-500 text-white' },
+  documents_pending: { label: 'Documentos Pendentes', className: 'bg-yellow-500 text-white' },
+  medical_exam: { label: 'Exame Medico', className: 'bg-blue-500 text-white' },
+  contract_signing: { label: 'Assinatura Contrato', className: 'bg-orange-500 text-white' },
+  in_progress: { label: 'Em Andamento', className: 'bg-cyan-500 text-white' },
+  completed: { label: 'Concluida', className: 'bg-green-500 text-white' },
+  cancelled: { label: 'Cancelada', className: 'bg-red-500 text-white' },
 };
 
 export default function AdmissaoPage() {
@@ -141,7 +138,15 @@ export default function AdmissaoPage() {
                 if (Object.keys(errors).length > 0) { setFormErrors(errors); toast.error('Corrija os campos destacados'); return; }
                 setSaving(true);
                 try {
-                  const res = await fetch(`${API_BASE}/admissions`, { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(formData) });
+                  const payload = {
+                    candidate_name: formData.candidate_name,
+                    cpf: formData.cpf,
+                    position: formData.position,
+                    department: formData.department || undefined,
+                    expected_start_date: formData.expected_date || undefined,
+                    salary_proposed: formData.salary ? parseFloat(formData.salary) : undefined,
+                  };
+                  const res = await fetch(`${API_BASE}/admissions`, { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(payload) });
                   if (res.ok) { setShowForm(false); setFormData({ candidate_name: '', cpf: '', position: '', expected_date: '', department: '', salary: '' }); setFormErrors({}); setFiltroStatus('todos'); toast.success('Admissão criada com sucesso'); }
                   else { const err = await res.json().catch(() => null); toast.error(err?.detail || 'Erro ao criar admissão'); }
                 } catch { toast.error('Erro de conexão'); } finally { setSaving(false); }
@@ -179,16 +184,16 @@ export default function AdmissaoPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {admissoes.map((item, i) => {
+                {(filtroStatus === 'todos' ? admissoes : admissoes.filter(a => a.status === filtroStatus)).map((item, i) => {
                   const st = statusConfig[item.status] || { label: item.status, className: 'bg-gray-500 text-white' };
                   return (
                     <TableRow key={item.id || i}>
-                      <TableCell className="font-medium">{item.nome || item.candidate_name}</TableCell>
-                      <TableCell>{item.cpf}</TableCell>
-                      <TableCell>{item.cargo || item.position}</TableCell>
+                      <TableCell className="font-medium">{item.candidate_name || '-'}</TableCell>
+                      <TableCell>{item.cpf || '-'}</TableCell>
+                      <TableCell>{item.position || '-'}</TableCell>
                       <TableCell><Badge className={st.className}>{st.label}</Badge></TableCell>
-                      <TableCell>{item.dataPrevista || item.expected_date ? new Date(item.dataPrevista || item.expected_date).toLocaleDateString('pt-BR') : '-'}</TableCell>
-                      <TableCell><Button variant="outline" size="sm">Detalhes</Button></TableCell>
+                      <TableCell>{item.expected_start_date ? new Date(item.expected_start_date).toLocaleDateString('pt-BR') : '-'}</TableCell>
+                      <TableCell><Button variant="outline" size="sm" onClick={() => router.push(`/modulos/dp/admissao/${item.id}`)}>Detalhes</Button></TableCell>
                     </TableRow>
                   );
                 })}

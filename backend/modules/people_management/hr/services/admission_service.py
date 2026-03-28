@@ -76,6 +76,11 @@ class AdmissionService:
         """
         admission = AdmissionProcess(
             id=uuid4(),
+            candidate_name=data.get("candidate_name"),
+            cpf=data.get("cpf"),
+            position=data.get("position"),
+            department=data.get("department"),
+            contract_type=data.get("contract_type", "CLT"),
             candidate_id=data.get("candidate_id"),
             job_position_id=data.get("job_position_id"),
             expected_start_date=data.get("expected_start_date"),
