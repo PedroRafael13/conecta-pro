@@ -642,25 +642,45 @@ class BartoloEngine:
                 if wizard_response:
                     return self._build_wizard_response(message_id, session_id, wizard_response, start_time)
 
+            # 3b. Wizard redirect — palavras-chave que devem ir para wizard, nao acao
+            _msg_lower = message.lower()
+            _wizard_redirects = {
+                "admissao_funcionario": ["admissão", "admissao", "admitir", "contratar", "contratação", "contratacao"],
+                "escala": ["escala", "escalas"],
+                "posto": ["posto", "postos"],
+                "diarista": ["diarista"],
+                "proposta_comercial": ["proposta comercial", "proposta"],
+            }
+            for wiz_type, keywords in _wizard_redirects.items():
+                if any(kw in _msg_lower for kw in keywords):
+                    # So redireciona se tem palavra de criacao explicita
+                    _create_words = {"criar", "nova", "novo", "gerar", "cadastrar", "montar", "preciso", "quero"}
+                    _has_create = any(w in _msg_lower.split() for w in _create_words)
+                    if _has_create:
+                        logger.info(f"Wizard redirect: {wiz_type} para '{message[:50]}'")
+                        wizard_response = self.wizard_manager.start_wizard(
+                            user_id=str(user_id),
+                            session_id=session_id,
+                            wizard_type=wiz_type,
+                        )
+                        if wizard_response:
+                            return self._build_wizard_response(message_id, session_id, wizard_response, start_time)
+
             # 4. Detecta ação executiva
             logger.info(f"[ACTION DEBUG] db={db is not None}, enable_actions={self.config.enable_actions}")
             if db and self.config.enable_actions:
                 logger.info("[ACTION DEBUG] Entrando no fluxo de detecção de ações")
-                # Inicializa executor se ainda não foi
                 if not self.action_executor:
                     self.action_executor = ActionExecutor(db)
-                    logger.info("[ACTION DEBUG] ActionExecutor inicializado")
 
                 action_request = self.action_detector.detect(message, str(user_id), session_id)
-                logger.info(f"[ACTION DEBUG] Resultado da detecção: {action_request is not None}")
 
                 if action_request:
-                    logger.info(f"Ação detectada: {action_request.action_type.value}")
+                    logger.info(f"Acao detectada: {action_request.action_type.value}")
 
-                    # Criar preview da ação
+                    # Criar preview
                     action_preview = await self.action_executor.create_action_preview(action_request)
 
-                    # Formatar resposta para o usuário
                     response_text = self._format_action_preview_response(action_preview)
 
                     processing_time = int((time.time() - start_time) * 1000)
@@ -669,7 +689,7 @@ class BartoloEngine:
                         message_id=message_id,
                         session_id=session_id,
                         response=response_text,
-                        action_preview=action_preview,  # Inclui preview
+                        action_preview=action_preview,
                         processing_time_ms=processing_time,
                         model_used="action_detector",
                         bartolo_mood="professional",
@@ -1086,38 +1106,27 @@ NÃO dê instruções de como buscar - os dados JÁ ESTÃO AQUI!
             return None
 
     def _format_action_preview_response(self, preview: ActionPreview) -> str:
-        """
-        Formata resposta com preview de ação para o usuário.
-
-        Args:
-            preview: Preview da ação
-
-        Returns:
-            Texto formatado em markdown
-        """
-        response = f"Entendi! Você quer **{preview.title}**.\n\n"
+        """Formata resposta com preview de acao (texto limpo, sem markdown)."""
+        response = f"Entendi! Voce quer {preview.title}.\n\n"
         response += f"{preview.description}\n\n"
 
         if preview.changes_summary:
-            response += "**O que será feito:**\n"
+            response += "O que sera feito:\n"
             for change in preview.changes_summary:
-                response += f"- {change}\n"
+                response += f"  - {change}\n"
             response += "\n"
 
         if preview.warnings:
-            response += "**⚠️ Avisos:**\n"
+            response += "Avisos:\n"
             for warning in preview.warnings:
-                response += f"- {warning}\n"
+                response += f"  - {warning}\n"
             response += "\n"
 
         if not preview.user_has_permission:
-            response += f"**⛔ Permissão Necessária:** {preview.required_permission}\n"
-            response += "Você não tem permissão para executar esta ação.\n"
+            response += f"Permissao Necessaria: {preview.required_permission}\n"
+            response += "Voce nao tem permissao para executar esta acao.\n"
         else:
-            response += "**Deseja confirmar esta ação?**\n"
-            response += (
-                f"_(Pode {'ser desfeita' if preview.can_be_undone else 'não pode ser desfeita'} posteriormente)_"
-            )
+            response += "Deseja confirmar esta acao?\n"
 
         return response
 
