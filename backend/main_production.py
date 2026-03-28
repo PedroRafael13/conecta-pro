@@ -483,6 +483,15 @@ try:
 except Exception as e:
     logger.warning(f"Modulo Pessoas: {e}")
 
+# CCT 2026 SINDECOMPRESTS
+try:
+    from modules.people_management.hr.controllers.cct_controller import router as cct_router
+
+    api_router.include_router(cct_router, prefix="/people-management/hr", tags=["CCT 2026 SINDECOMPRESTS"])
+    logger.info("Modulo CCT 2026 SINDECOMPRESTS: OK")
+except Exception as e:
+    logger.warning(f"Modulo CCT: {e}")
+
 # GED Auto-Assemble + Dashboard (standalone, fora de people_management p/ evitar import circular)
 try:
     from modules.ged.controllers.auto_assemble_controller import router as ged_auto_assemble_router

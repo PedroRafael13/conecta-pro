@@ -1,0 +1,163 @@
+"""
+CCT 2026 SINDECOMPRESTS — Controller
+Convenção Coletiva de Trabalho para empresas de segurança patrimonial.
+"""
+
+import logging
+from datetime import datetime
+
+from fastapi import APIRouter, Depends
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from core.database import get_async_session
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter(prefix="/cct", tags=["CCT 2026 SINDECOMPRESTS"])
+
+
+@router.get("/cargos")
+async def listar_cargos_cct(db: AsyncSession = Depends(get_async_session)):
+    """Lista todos os cargos da CCT 2026 SINDECOMPRESTS."""
+    result = await db.execute(
+        text("""
+        SELECT id, nome_cargo, cbo, salario_base,
+               adicional_insalubridade, adicional_periculosidade,
+               escala_padrao, divisor_horas, ativo
+        FROM cct_cargos
+        WHERE ativo = true
+        ORDER BY salario_base DESC
+    """)
+    )
+    rows = result.fetchall()
+
+    return {
+        "cargos": [
+            {
+                "id": r[0],
+                "nome_cargo": r[1],
+                "cbo": r[2],
+                "salario_base": float(r[3]) if r[3] else 0,
+                "adicional_insalubridade": float(r[4]) if r[4] else 0,
+                "adicional_periculosidade": float(r[5]) if r[5] else 0,
+                "escala_padrao": r[6],
+                "divisor_horas": r[7],
+            }
+            for r in rows
+        ],
+        "total": len(rows),
+        "sindicato": "SINDECOMPRESTS",
+        "vigencia": "2026",
+    }
+
+
+@router.get("/funcionarios")
+async def listar_funcionarios_cct(db: AsyncSession = Depends(get_async_session)):
+    """Lista funcionários com vínculo CCT."""
+    result = await db.execute(
+        text("""
+        SELECT
+            e.id, e.nome, e.cargo, e.salario_base,
+            c.nome_cargo as cargo_cct, c.salario_base as piso_cct,
+            c.adicional_periculosidade, c.escala_padrao,
+            CASE WHEN e.salario_base >= c.salario_base THEN 'conforme' ELSE 'abaixo_piso' END as status
+        FROM employees e
+        JOIN cct_cargos c ON e.cct_cargo_id = c.id
+        WHERE e.is_active = true
+        ORDER BY e.cargo, e.nome
+    """)
+    )
+    rows = result.fetchall()
+
+    return {
+        "funcionarios": [
+            {
+                "id": r[0],
+                "nome": r[1],
+                "cargo": r[2],
+                "salario_atual": float(r[3]) if r[3] else 0,
+                "cargo_cct": r[4],
+                "piso_cct": float(r[5]) if r[5] else 0,
+                "adicional_periculosidade": float(r[6]) if r[6] else 0,
+                "escala": r[7],
+                "status_cct": r[8],
+            }
+            for r in rows
+        ],
+        "total": len(rows),
+    }
+
+
+@router.get("/conformidade")
+async def verificar_conformidade(db: AsyncSession = Depends(get_async_session)):
+    """Verifica conformidade salarial com o piso CCT."""
+    result = await db.execute(
+        text("""
+        SELECT
+            e.nome, e.cargo, e.salario_base,
+            c.nome_cargo, c.salario_base as piso,
+            c.salario_base - e.salario_base as diferenca
+        FROM employees e
+        JOIN cct_cargos c ON e.cct_cargo_id = c.id
+        WHERE e.is_active = true AND e.salario_base < c.salario_base
+        ORDER BY (c.salario_base - e.salario_base) DESC
+    """)
+    )
+    abaixo = result.fetchall()
+
+    total_risco = sum(float(r[5]) for r in abaixo)
+
+    return {
+        "funcionarios_abaixo_piso": [
+            {
+                "nome": r[0],
+                "cargo": r[1],
+                "salario_atual": float(r[2]),
+                "cargo_cct": r[3],
+                "piso_cct": float(r[4]),
+                "diferenca": float(r[5]),
+            }
+            for r in abaixo
+        ],
+        "total_abaixo": len(abaixo),
+        "custo_adequacao_mensal": total_risco,
+        "status": "regular" if not abaixo else "requer_adequacao",
+        "gerado_em": datetime.now().isoformat(),
+    }
+
+
+@router.get("/resumo")
+async def resumo_cct(db: AsyncSession = Depends(get_async_session)):
+    """Resumo geral da conformidade CCT 2026."""
+    result = await db.execute(
+        text("""
+        SELECT
+            COUNT(*) as total,
+            COUNT(cct_cargo_id) as vinculados,
+            SUM(CASE WHEN e.salario_base < c.salario_base THEN 1 ELSE 0 END) as abaixo_piso,
+            SUM(CASE WHEN e.salario_base < c.salario_base THEN c.salario_base - e.salario_base ELSE 0 END) as custo_adequacao
+        FROM employees e
+        LEFT JOIN cct_cargos c ON e.cct_cargo_id = c.id
+        WHERE e.is_active = true
+    """)
+    )
+    row = result.fetchone()
+
+    total = row[0] or 0
+    vinculados = row[1] or 0
+    abaixo = int(row[2] or 0)
+    custo = float(row[3] or 0)
+
+    return {
+        "total_funcionarios": total,
+        "vinculados_cct": vinculados,
+        "sem_vinculo": total - vinculados,
+        "abaixo_piso_cct": abaixo,
+        "custo_adequacao_mensal": custo,
+        "conformidade_pct": round((vinculados / total * 100) if total else 0, 1),
+        "status": "regular" if abaixo == 0 else "requer_adequacao",
+        "sindicato": "SINDECOMPRESTS",
+        "vigencia": "2026",
+        "gerado_em": datetime.now().isoformat(),
+    }
