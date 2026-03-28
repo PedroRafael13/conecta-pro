@@ -629,7 +629,14 @@ try:
     api_router.include_router(analytics_router, tags=["Analytics - Predictive"])
     api_router.include_router(report_router, tags=["Reports - Relatorios"])
     api_router.include_router(monitoring_router, tags=["Monitoring"])
-    logger.info("Modulo Inteligencia: OK (AI + Analytics + Reports + Monitoring + Search)")
+    # Briefing Executivo
+    try:
+        from modules.ai.bartolo.controllers.briefing_controller import router as briefing_router
+
+        api_router.include_router(briefing_router, prefix="/ai", tags=["AI - Briefing Executivo"])
+    except Exception as exc:
+        logger.warning("Briefing controller: %s", exc)
+    logger.info("Modulo Inteligencia: OK (AI + Analytics + Reports + Monitoring + Search + Briefing)")
 except Exception as e:
     logger.warning(f"Modulo Inteligencia: {e}")
 
