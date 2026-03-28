@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Loader2, User, FileText, Calendar, DollarSign, Building2 } from 'lucide-react';
+import { ArrowLeft, Loader2, User, FileText, Calendar, DollarSign, Building2, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -27,17 +28,30 @@ export default function AdmissaoDetalhePage() {
   const router = useRouter();
   const [data, setData] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
+  const [advancing, setAdvancing] = useState(false);
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const res = await fetch(`${API_BASE}/admissions/${params.id}`, { headers: getAuthHeaders() });
-        if (res.ok) setData(await res.json());
-      } catch { /* */ }
-      finally { setLoading(false); }
-    }
-    if (params.id) load();
+  const loadData = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/admissions/${params.id}`, { headers: getAuthHeaders() });
+      if (res.ok) setData(await res.json());
+    } catch { /* */ }
+    finally { setLoading(false); }
   }, [params.id]);
+
+  useEffect(() => { if (params.id) loadData(); }, [params.id, loadData]);
+
+  const advanceStatus = async (newStatus: string, extraData?: Record<string, string>) => {
+    setAdvancing(true);
+    try {
+      const res = await fetch(`${API_BASE}/admissions/${params.id}`, {
+        method: 'PATCH', headers: getAuthHeaders(),
+        body: JSON.stringify({ status: newStatus, ...extraData }),
+      });
+      if (res.ok) { toast.success(`Status atualizado para ${STATUS[newStatus]?.label || newStatus}`); await loadData(); }
+      else { toast.error('Erro ao atualizar status'); }
+    } catch { toast.error('Erro de conexao'); }
+    finally { setAdvancing(false); }
+  };
 
   if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
   if (!data) return <div className="text-center py-20 text-muted-foreground">Admissao nao encontrada</div>;
@@ -56,6 +70,33 @@ export default function AdmissaoDetalhePage() {
         </div>
         <Badge className={st.color}>{st.label}</Badge>
       </div>
+
+      {/* Workflow Buttons */}
+      {String(data.status) !== 'completed' && String(data.status) !== 'cancelled' && (
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className="text-sm font-medium text-muted-foreground">Avancar para:</span>
+              {String(data.status) === 'documents_pending' && (
+                <Button size="sm" disabled={advancing} onClick={() => advanceStatus('medical_exam')}>
+                  <ChevronRight className="h-4 w-4 mr-1" /> Exame Medico
+                </Button>
+              )}
+              {String(data.status) === 'medical_exam' && (
+                <Button size="sm" disabled={advancing} onClick={() => advanceStatus('contract_signing', { medical_exam_date: new Date().toISOString().slice(0, 10), medical_exam_result: 'apto' })}>
+                  <ChevronRight className="h-4 w-4 mr-1" /> Assinatura Contrato
+                </Button>
+              )}
+              {String(data.status) === 'contract_signing' && (
+                <Button size="sm" disabled={advancing} onClick={() => advanceStatus('completed', { actual_start_date: String(data.expected_start_date || new Date().toISOString().slice(0, 10)) })}>
+                  <CheckCircle2 className="h-4 w-4 mr-1" /> Concluir Admissao
+                </Button>
+              )}
+              {advancing && <Loader2 className="h-4 w-4 animate-spin" />}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-4 md:grid-cols-2">
         <Card>

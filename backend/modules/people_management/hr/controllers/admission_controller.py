@@ -60,6 +60,27 @@ async def get_document_checklist(
     return service.generate_document_checklist(include_security=include_security)
 
 
+@router.get("/stats")
+async def get_admission_stats(
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """Retorna estatisticas dos processos de admissao."""
+    from sqlalchemy import text
+
+    r = (await db.execute(text("SELECT status, COUNT(*) as qtd FROM admission_processes GROUP BY status"))).fetchall()
+    total = sum(int(row.qtd) for row in r)
+    by_status = {row.status: int(row.qtd) for row in r}
+    return {
+        "total": total,
+        "by_status": by_status,
+        "documents_pending": by_status.get("documents_pending", 0),
+        "medical_exam": by_status.get("medical_exam", 0),
+        "contract_signing": by_status.get("contract_signing", 0),
+        "completed": by_status.get("completed", 0),
+    }
+
+
 @router.get("/{admission_id}", response_model=AdmissionProcessResponse)
 async def get_admission(
     admission_id: str,
