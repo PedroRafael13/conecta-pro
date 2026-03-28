@@ -104,7 +104,7 @@ export default function KitsListPage() {
 
   async function fetchClients() {
     try {
-      const res = await fetch('/api/v1/people-management/ged/clients/', { headers: getAuthHeaders() });
+      const res = await fetch('/api/v1/ged/clients', { headers: getAuthHeaders() });
       if (res.ok) {
         const data = await res.json();
         setClients(Array.isArray(data) ? data : data.items || []);
