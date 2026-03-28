@@ -27,7 +27,7 @@ interface CondominioProviderProps {
 }
 
 export function CondominioProvider({ children }: CondominioProviderProps) {
-  const [condominioId, setCondominioIdState] = useState<string>('');
+  const [condominioId, setCondominioIdState] = useState<string>('a1b2c3d4-e5f6-7890-abcd-ef1234567890');
   const [condominios, setCondominios] = useState<Condominio[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 

@@ -33,7 +33,13 @@ async def list_contracts(
 ) -> Any:
     """Lista todos os contratos com paginação."""
     service = ContractService(db)
-    return await service.list_all(page=page, page_size=page_size)
+    result = await service.list_all(page=page, page_size=page_size)
+    # Serialize manually to avoid Pydantic errors with raw ORM objects
+    if isinstance(result, dict) and "items" in result:
+        result["items"] = [ContractResponse.model_validate(c).model_dump(mode="json") for c in result["items"]]
+    elif isinstance(result, list):
+        result = [ContractResponse.model_validate(c).model_dump(mode="json") for c in result]
+    return result
 
 
 @router.get("/employee/{employee_id}", response_model=list[ContractResponse])

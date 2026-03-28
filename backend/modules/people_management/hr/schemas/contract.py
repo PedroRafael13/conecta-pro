@@ -3,6 +3,7 @@ Schemas Pydantic para EmploymentContract (Contrato de Trabalho).
 """
 
 from datetime import date, datetime
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -12,7 +13,7 @@ from modules.people_management.hr.models.contract import ContractType
 class ContractCreate(BaseModel):
     """Schema para criação de contrato de trabalho."""
 
-    employee_id: str
+    employee_id: str | UUID
     type: ContractType
     start_date: date
     end_date: date | None = None
@@ -58,8 +59,8 @@ class ContractResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-    id: str
-    employee_id: str
+    id: str | UUID
+    employee_id: str | UUID
     type: str
     start_date: date
     end_date: date | None = None
