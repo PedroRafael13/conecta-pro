@@ -636,7 +636,9 @@ try:
         api_router.include_router(briefing_router, prefix="/ai", tags=["AI - Briefing Executivo"])
     except Exception as exc:
         logger.warning("Briefing controller: %s", exc)
-    logger.info("Modulo Inteligencia: OK (AI + Analytics + Reports + Monitoring + Search + Briefing)")
+    # Intelligence Hub — desabilitado (bloqueia startup com workers pesados)
+    # Para reativar: resolver inicializacao sincrona em intelligence_hub/__init__.py
+    logger.info("Modulo Inteligencia: OK (AI + Briefing)")
 except Exception as e:
     logger.warning(f"Modulo Inteligencia: {e}")
 
