@@ -130,11 +130,44 @@ class EnhancedActionDetector(ActionDetector):
     }
 
     def _is_query_not_action(self, message: str) -> bool:
-        """Verifica se a mensagem é uma consulta, não uma ação."""
+        """Retorna True se NAO deve disparar acao CREATE.
+
+        Regra: sem palavra de criacao explicita = consulta.
+        Palavra solta ('escala', 'posto') nunca cria nada.
+        """
         msg_lower = message.lower()
-        has_query = any(q in msg_lower for q in self._QUERY_INDICATORS)
-        has_create = any(w in msg_lower for w in ["criar", "nova ", "novo ", "gerar ", "montar ", "cadastrar"])
-        return has_query and not has_create
+        words = msg_lower.split()
+        create_words = {
+            "criar",
+            "cria",
+            "crie",
+            "novo",
+            "nova",
+            "novos",
+            "novas",
+            "gerar",
+            "gera",
+            "gere",
+            "cadastrar",
+            "cadastra",
+            "cadastre",
+            "adicionar",
+            "adiciona",
+            "adicione",
+            "registrar",
+            "registra",
+            "montar",
+            "monta",
+            "monte",
+            "incluir",
+            "inclua",
+            "inserir",
+            "lancar",
+            "lanca",
+            "lance",
+        }
+        has_create = any(w in create_words for w in words)
+        return not has_create
 
     def detect(self, message: str, user_id: str, session_id: str) -> ActionRequest | None:
         """
