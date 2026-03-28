@@ -256,6 +256,28 @@ TOOLS = [
             "required": ["command"],
         },
     },
+    # ── BARTOLO (IA Operacional — 12 skills + 11 agents + 10 wizards) ──────
+    {
+        "name": "ask_bartolo",
+        "description": (
+            "Conversa com o Bartolo, assistente de IA operacional do Conecta PRO. "
+            "Use para consultas operacionais: escalas, postos, rondas, ocorrências, "
+            "diaristas, medidas disciplinares, banco de horas, comunicados, "
+            "substituições, alertas operacionais, relatórios operacionais. "
+            "O Bartolo tem acesso direto ao banco de dados e responde com dados reais. "
+            "Também suporta wizards guiados: /escala, /posto, /ronda, /briefing."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "mensagem": {
+                    "type": "string",
+                    "description": "Pergunta ou comando para o Bartolo processar.",
+                },
+            },
+            "required": ["mensagem"],
+        },
+    },
 ]
 
 

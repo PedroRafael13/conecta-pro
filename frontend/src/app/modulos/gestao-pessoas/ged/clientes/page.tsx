@@ -14,7 +14,16 @@ import {
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 
-const API_BASE = '/api/v1/people-management/ged';
+const API_BASE = '/api/v1/ged';
+const API_CLIENTS = '/api/v1/people-management/ged/clients';
+
+function showToast(msg: string, type: 'success' | 'error' = 'success') {
+  const el = document.createElement('div');
+  el.className = `fixed top-4 right-4 z-[9999] px-4 py-3 rounded-lg shadow-lg text-sm font-medium text-white transition-all ${type === 'error' ? 'bg-red-500' : 'bg-emerald-500'}`;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 3000);
+}
 
 function getAuthHeaders() {
   const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') || localStorage.getItem('token') : null;
@@ -85,13 +94,16 @@ export default function GedClientesPage() {
   async function fetchClients() {
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/clients/`, { headers: getAuthHeaders() });
+      const res = await fetch(`${API_CLIENTS}/`, { headers: getAuthHeaders() });
       if (res.ok) {
         const data = await res.json();
         setClients(Array.isArray(data) ? data : data.items || []);
+      } else {
+        showToast('Erro ao carregar clientes', 'error');
       }
-    } catch {
-      // silenced
+    } catch (error) {
+      showToast('Erro de conexão ao carregar clientes', 'error');
+      console.error('fetchClients:', error);
     } finally {
       setLoading(false);
     }
@@ -117,9 +129,19 @@ export default function GedClientesPage() {
   }
 
   async function handleSave() {
+    // B4: Validação campos obrigatórios
+    if (!form.name || form.name.trim() === '') {
+      showToast('Nome é obrigatório', 'error');
+      return;
+    }
+    if (!form.type || form.type.trim() === '') {
+      showToast('Tipo é obrigatório', 'error');
+      return;
+    }
+
     setSaving(true);
     try {
-      const url = editingId ? `${API_BASE}/clients/${editingId}` : `${API_BASE}/clients/`;
+      const url = editingId ? `${API_CLIENTS}/${editingId}` : `${API_CLIENTS}/`;
       const method = editingId ? 'PUT' : 'POST';
       const res = await fetch(url, {
         method,
@@ -127,11 +149,17 @@ export default function GedClientesPage() {
         body: JSON.stringify(form),
       });
       if (res.ok) {
+        showToast(editingId ? 'Cliente atualizado' : 'Cliente criado');
         setShowModal(false);
         fetchClients();
+      } else {
+        // B3: Feedback de erro
+        const errData = await res.json().catch(() => null);
+        showToast(errData?.detail || `Erro ${res.status}: ${res.statusText}`, 'error');
       }
-    } catch {
-      // silenced
+    } catch (error) {
+      showToast('Erro ao salvar. Verifique a conexão.', 'error');
+      console.error('Erro API GED clients:', error);
     } finally {
       setSaving(false);
     }
@@ -140,7 +168,7 @@ export default function GedClientesPage() {
   async function handleDelete(id: string) {
     if (!confirm('Tem certeza que deseja excluir este cliente?')) return;
     try {
-      const res = await fetch(`${API_BASE}/clients/${id}`, {
+      const res = await fetch(`${API_CLIENTS}/${id}`, {
         method: 'DELETE',
         headers: getAuthHeaders(),
       });
@@ -154,7 +182,7 @@ export default function GedClientesPage() {
 
   async function togglePortal(client: Client) {
     try {
-      await fetch(`${API_BASE}/clients/${client.id}`, {
+      await fetch(`${API_CLIENTS}/${client.id}`, {
         method: 'PUT',
         headers: getAuthHeaders(),
         body: JSON.stringify({ portal_access_enabled: !client.portal_access_enabled }),

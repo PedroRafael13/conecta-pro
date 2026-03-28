@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Loader2,
   Eye,
@@ -9,10 +9,12 @@ import {
   CheckCircle,
   Filter,
   FolderOpen,
+  Plus,
+  X,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 
-const API_BASE = '/api/v1/people-management/ged';
+const API_BASE = '/api/v1/ged';
 
 function getAuthHeaders() {
   const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') || localStorage.getItem('token') : null;
@@ -63,14 +65,34 @@ const statusOptions = [
   { value: 'aprovado', label: 'Aprovado' },
 ];
 
+function showToast(msg: string, type: 'success' | 'error' = 'success') {
+  const el = document.createElement('div');
+  el.className = `fixed top-4 right-4 z-[9999] px-4 py-3 rounded-lg shadow-lg text-sm font-medium text-white transition-opacity ${type === 'error' ? 'bg-red-500' : 'bg-emerald-500'}`;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 3000);
+}
+
 export default function KitsListPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [kits, setKits] = useState<Kit[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterMonth, setFilterMonth] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [filterClient, setFilterClient] = useState('');
+  const [showNewKit, setShowNewKit] = useState(false);
+  const [newKitClient, setNewKitClient] = useState('');
+  const [newKitMonth, setNewKitMonth] = useState('');
+  const [creatingKit, setCreatingKit] = useState(false);
+
+  // B2: Abrir modal quando ?new=true
+  useEffect(() => {
+    if (searchParams?.get('new') === 'true') {
+      setShowNewKit(true);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     fetchClients();
@@ -82,13 +104,41 @@ export default function KitsListPage() {
 
   async function fetchClients() {
     try {
-      const res = await fetch(`${API_BASE}/clients/`, { headers: getAuthHeaders() });
+      const res = await fetch('/api/v1/people-management/ged/clients/', { headers: getAuthHeaders() });
       if (res.ok) {
         const data = await res.json();
         setClients(Array.isArray(data) ? data : data.items || []);
       }
-    } catch {
-      // silenced
+    } catch (err) {
+      console.error('fetchClients:', err);
+    }
+  }
+
+  async function handleCreateKit() {
+    if (!newKitClient) { showToast('Selecione um cliente', 'error'); return; }
+    if (!newKitMonth) { showToast('Selecione o mês', 'error'); return; }
+    setCreatingKit(true);
+    try {
+      const res = await fetch(`${API_BASE}/kits/`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ client_id: newKitClient, reference_month: newKitMonth + '-01' }),
+      });
+      if (res.ok) {
+        showToast('Kit criado com sucesso');
+        setShowNewKit(false);
+        setNewKitClient('');
+        setNewKitMonth('');
+        fetchKits();
+      } else {
+        const err = await res.json().catch(() => null);
+        showToast(err?.detail || `Erro ${res.status}`, 'error');
+      }
+    } catch (error) {
+      showToast('Erro ao criar kit', 'error');
+      console.error('createKit:', error);
+    } finally {
+      setCreatingKit(false);
     }
   }
 
@@ -99,7 +149,8 @@ export default function KitsListPage() {
       if (filterMonth) params.append('reference_month', filterMonth);
       if (filterStatus) params.append('status', filterStatus);
       if (filterClient) params.append('client_id', filterClient);
-      const res = await fetch(`${API_BASE}/kits/?${params.toString()}`, {
+      const qs = params.toString();
+      const res = await fetch(`${API_BASE}/kits${qs ? '?' + qs : ''}`, {
         headers: getAuthHeaders(),
       });
       if (res.ok) {
@@ -141,9 +192,17 @@ export default function KitsListPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Kits Documentais</h1>
-        <p className="text-gray-500 mt-1">Listagem e gerenciamento de kits</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Kits Documentais</h1>
+          <p className="text-gray-500 mt-1">Listagem e gerenciamento de kits</p>
+        </div>
+        <button
+          onClick={() => setShowNewKit(true)}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+        >
+          <Plus className="h-4 w-4" />Novo Kit
+        </button>
       </div>
 
       <Card className="border border-gray-200">
@@ -275,6 +334,38 @@ export default function KitsListPage() {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* B2: Modal Novo Kit */}
+      {showNewKit && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 relative">
+            <button onClick={() => setShowNewKit(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+              <X className="h-5 w-5" />
+            </button>
+            <h2 className="text-lg font-bold mb-4">Novo Kit Documental</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Cliente *</label>
+                <select value={newKitClient} onChange={e => setNewKitClient(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                  <option value="">Selecione o cliente</option>
+                  {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Mês Referência *</label>
+                <input type="month" value={newKitMonth} onChange={e => setNewKitMonth(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-6">
+              <button onClick={() => setShowNewKit(false)} className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">Cancelar</button>
+              <button onClick={handleCreateKit} disabled={creatingKit} className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
+                {creatingKit ? <Loader2 className="h-4 w-4 animate-spin inline mr-1" /> : null}
+                Criar Kit
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

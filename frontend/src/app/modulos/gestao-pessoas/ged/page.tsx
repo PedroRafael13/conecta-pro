@@ -18,7 +18,15 @@ import {
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-const API_BASE = '/api/v1/people-management/ged';
+const API_BASE = '/api/v1/ged';
+
+function showToast(msg: string, type: 'success' | 'error' = 'success') {
+  const el = document.createElement('div');
+  el.className = `fixed top-4 right-4 z-[9999] px-4 py-3 rounded-lg shadow-lg text-sm font-medium text-white transition-opacity ${type === 'error' ? 'bg-red-500' : 'bg-emerald-500'}`;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 3000);
+}
 
 function getAuthHeaders() {
   const token = typeof window !== 'undefined'
@@ -80,8 +88,8 @@ export default function GEDDashboardPage() {
     setLoading(true);
     try {
       const [sumRes, kitsRes] = await Promise.all([
-        fetch(`${API_BASE}/kits/summary`, { headers: getAuthHeaders() }),
-        fetch(`${API_BASE}/kits/?limit=10`, { headers: getAuthHeaders() }),
+        fetch('/api/v1/people-management/ged/kits/summary', { headers: getAuthHeaders() }),
+        fetch(`${API_BASE}/kits?page_size=10`, { headers: getAuthHeaders() }),
       ]);
       if (sumRes.ok) {
         const data = await sumRes.json();
@@ -104,14 +112,21 @@ export default function GEDDashboardPage() {
 
   async function handleAutoAssemble() {
     try {
-      const res = await fetch(`${API_BASE}/kits/auto-assemble`, {
+      showToast('Montando kits...');
+      const res = await fetch('/api/v1/people-management/ged/kits/auto-assemble', {
         method: 'POST',
         headers: getAuthHeaders(),
       });
       if (res.ok) {
+        const data = await res.json().catch(() => null);
+        showToast(`Kits montados: ${data?.kits_created ?? data?.total ?? 'OK'}`);
         fetchData();
+      } else {
+        showToast(`Erro ao montar kits: ${res.status}`, 'error');
       }
-    } catch (err) {
+    } catch (error) {
+      showToast('Erro de conexão ao montar kits', 'error');
+      console.error('handleAutoAssemble:', error);
     }
   }
 

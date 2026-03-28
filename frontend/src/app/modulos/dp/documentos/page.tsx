@@ -150,7 +150,7 @@ export default function DocumentosPage() {
                 if (Object.keys(errors).length > 0) { setFormErrors(errors); toast.error('Corrija os campos destacados'); return; }
                 setSaving(true);
                 try {
-                  const res = await fetch('/api/v1/people-management/ged/documents', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ title: formData.file_name, document_type: formData.document_type, employee_id: formData.employee_id, expiry_date: formData.expiry_date || null, notes: formData.notes }) });
+                  const res = await fetch('/api/v1/ged/documents', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ title: formData.file_name, document_type: formData.document_type, employee_id: formData.employee_id, expiry_date: formData.expiry_date || null, notes: formData.notes }) });
                   if (res.ok) { setShowForm(false); setFormData({ employee_id: '', document_type: 'RG', file_name: '', expiry_date: '', notes: '' }); setFormErrors({}); toast.success('Documento registrado com sucesso'); }
                   else { const err = await res.json().catch(() => null); toast.error(err?.detail || 'Erro ao registrar documento'); }
                 } catch { toast.error('Erro de conexão'); } finally { setSaving(false); }

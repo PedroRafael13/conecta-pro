@@ -18,7 +18,15 @@ import {
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-const API_BASE = '/api/v1/people-management/ged';
+const API_BASE = '/api/v1/ged';
+
+function showToast(msg: string, type: 'success' | 'error' = 'success') {
+  const el = document.createElement('div');
+  el.className = `fixed top-4 right-4 z-[9999] px-4 py-3 rounded-lg shadow-lg text-sm font-medium text-white transition-opacity ${type === 'error' ? 'bg-red-500' : 'bg-emerald-500'}`;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 3000);
+}
 
 function getAuthHeaders() {
   const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') || localStorage.getItem('token') : null;
@@ -109,13 +117,16 @@ export default function ConfiguracoesPage() {
   async function saveDriveConfig() {
     setSavingSection('drive');
     try {
-      await fetch(`${API_BASE}/config/drive`, {
+      const res = await fetch(`${API_BASE}/config/drive`, {
         method: 'PUT',
         headers: getAuthHeaders(),
         body: JSON.stringify(driveConfig),
       });
-    } catch {
-      // silenced
+      if (res.ok) showToast('Configuração do Drive salva');
+      else showToast(`Erro: ${res.status}`, 'error');
+    } catch (error) {
+      showToast('Erro de conexão', 'error');
+      console.error('saveDriveConfig:', error);
     } finally {
       setSavingSection(null);
     }
@@ -171,13 +182,16 @@ export default function ConfiguracoesPage() {
   async function saveSchedule() {
     setSavingSection('schedule');
     try {
-      await fetch(`${API_BASE}/config/schedule`, {
+      const res = await fetch(`${API_BASE}/config/schedule`, {
         method: 'PUT',
         headers: getAuthHeaders(),
         body: JSON.stringify(schedule),
       });
-    } catch {
-      // silenced
+      if (res.ok) showToast('Agendamento salvo com sucesso');
+      else showToast(`Erro ao salvar: ${res.status}`, 'error');
+    } catch (error) {
+      showToast('Erro de conexão', 'error');
+      console.error('saveSchedule:', error);
     } finally {
       setSavingSection(null);
     }

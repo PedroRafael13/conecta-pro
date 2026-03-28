@@ -148,7 +148,8 @@ export default function WhatsAppPage() {
   };
 
   const handleSendKit = async () => {
-    if (!selectedKit || !kitPhone) return;
+    if (!selectedKit) { alert('Selecione um kit'); return; }
+    if (!kitPhone || kitPhone.trim().length < 10) { alert('Informe um telefone válido'); return; }
     setSending(true);
     try {
       const res = await fetch('/api/v1/whatsapp/send/kit-notification', {
@@ -171,8 +172,10 @@ export default function WhatsAppPage() {
         status: data.success ? 'enviado' : data.status || 'erro',
         sent_at: new Date().toISOString(),
       });
+      if (data.success) { alert('Kit enviado com sucesso!'); }
+      else { alert(data.detail || data.message || 'Erro ao enviar'); }
       setKitModal(false);
-    } catch { /* */ }
+    } catch (error) { alert('Erro de conexão ao enviar WhatsApp'); console.error(error); }
     finally { setSending(false); }
   };
 
@@ -205,7 +208,8 @@ export default function WhatsAppPage() {
   };
 
   const handleSendCustom = async () => {
-    if (!customPhone || !customMessage) return;
+    if (!customPhone || customPhone.trim().length < 10) { alert('Informe um telefone válido'); return; }
+    if (!customMessage || customMessage.trim() === '') { alert('Digite uma mensagem'); return; }
     setSending(true);
     try {
       const res = await fetch('/api/v1/whatsapp/send/custom', {
@@ -221,8 +225,9 @@ export default function WhatsAppPage() {
         status: data.success ? 'enviado' : data.status || 'erro',
         sent_at: new Date().toISOString(),
       });
-      if (data.success) { setCustomPhone(''); setCustomMessage(''); }
-    } catch { /* */ }
+      if (data.success) { alert('Mensagem enviada!'); setCustomPhone(''); setCustomMessage(''); }
+      else { alert(data.detail || data.message || 'Erro ao enviar'); }
+    } catch (error) { alert('Erro de conexão'); console.error(error); }
     finally { setSending(false); }
   };
 
