@@ -501,6 +501,15 @@ try:
 except Exception as e:
     logger.warning(f"Modulo NFS-e Faturamento: {e}")
 
+# Financial Overview (endpoints para /modulos/financeiro page)
+try:
+    from modules.ged.controllers.financial_overview_controller import router as fin_overview_router
+
+    api_router.include_router(fin_overview_router, prefix="/financial", tags=["Financial Overview"])
+    logger.info("Modulo Financial Overview: OK")
+except Exception as e:
+    logger.warning(f"Modulo Financial Overview: {e}")
+
 # GED Kit PDFs: geração, ZIP, email
 try:
     from modules.ged.controllers.kit_pdf_controller import router as kit_pdf_router
