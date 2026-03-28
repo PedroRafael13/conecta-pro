@@ -133,6 +133,70 @@ async def upload_document(
         ) from e
 
 
+@router.get("/search")
+async def search_documents(
+    q: str = Query("", description="Texto de busca"),
+    document_type: str | None = Query(None),
+    category: str | None = Query(None),
+    status_filter: str | None = Query(None, alias="status"),
+    limit: int = Query(50, ge=1, le=200),
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+) -> dict[str, Any]:
+    """Busca documentos por texto, tipo, categoria ou status."""
+    from sqlalchemy import text as sql_text
+
+    conditions = ["1=1"]
+    params: dict[str, Any] = {"limit": limit}
+
+    if q and q.strip():
+        conditions.append(
+            "(LOWER(title) LIKE :q OR LOWER(description) LIKE :q "
+            "OR LOWER(file_name) LIKE :q OR LOWER(ocr_text) LIKE :q)"
+        )
+        params["q"] = f"%{q.lower()}%"
+    if document_type:
+        conditions.append("document_type = :dtype")
+        params["dtype"] = document_type
+    if category:
+        conditions.append("category = :cat")
+        params["cat"] = category
+    if status_filter:
+        conditions.append("status = :st")
+        params["st"] = status_filter
+
+    where = " AND ".join(conditions)
+    result = await db.execute(
+        sql_text(
+            f"SELECT id, code, title, file_name, document_type, category, "
+            f"status, file_size_bytes, created_at "
+            f"FROM ged_documents WHERE {where} "
+            f"ORDER BY created_at DESC LIMIT :limit"
+        ),
+        params,
+    )
+    rows = result.mappings().all()
+
+    return {
+        "total": len(rows),
+        "query": q,
+        "items": [
+            {
+                "id": str(r["id"]),
+                "code": r["code"],
+                "title": r["title"],
+                "file_name": r["file_name"],
+                "document_type": r["document_type"],
+                "category": r["category"],
+                "status": r["status"],
+                "file_size_bytes": r["file_size_bytes"],
+                "created_at": r["created_at"].isoformat() if r["created_at"] else None,
+            }
+            for r in rows
+        ],
+    }
+
+
 @router.get("/{document_id}", response_model=DocumentResponse)
 async def get_document(
     document_id: str,
@@ -472,7 +536,7 @@ async def get_view_url(
 
 
 @router.get("/search/query", response_model=list[DocumentResponse])
-async def search_documents(
+async def search_documents_by_query(
     query: str = Query(..., min_length=2),
     condominium_id: str | None = Query(None),
     limit: int = Query(20, ge=1, le=100),

@@ -73,7 +73,9 @@ async def list_kits(
 
     where = " AND ".join(conditions) if conditions else "1=1"
     query = text(
-        f"SELECT * FROM ged_document_kits WHERE {where} ORDER BY reference_month DESC, created_at DESC LIMIT 50"
+        f"SELECT gk.*, gc.name as client_name FROM ged_document_kits gk "
+        f"LEFT JOIN ged_clients gc ON gk.client_id = gc.id "
+        f"WHERE {where} ORDER BY gk.reference_month DESC, gk.created_at DESC LIMIT 50"
     )
     result = await db.execute(query, params)
     rows = result.mappings().all()
@@ -83,6 +85,7 @@ async def list_kits(
             {
                 "id": str(r["id"]),
                 "client_id": str(r["client_id"]) if r["client_id"] else None,
+                "client_name": r.get("client_name") or None,
                 "reference_month": r["reference_month"].isoformat() if r["reference_month"] else None,
                 "status": r["status"],
                 "total_employees": r["total_employees"],

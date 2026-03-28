@@ -51,8 +51,8 @@ export function useOperacionalWebSocket(
   const {
     room = 'operacional',
     autoConnect = true,
-    reconnectInterval = 5000,
-    maxReconnectAttempts = 5,
+    reconnectInterval = 30000,
+    maxReconnectAttempts = 3,
     onEvent,
   } = options;
 

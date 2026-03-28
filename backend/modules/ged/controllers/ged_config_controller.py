@@ -25,6 +25,46 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["GED - Config & Reports"])
 
 
+# ─── GED Clients (alias /ged/clients → proxy to people-management) ────────────
+
+
+@router.get("/clients")
+async def list_ged_clients(
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    """Lista clientes GED. Alias para /people-management/ged/clients."""
+    result = await db.execute(
+        text("""
+        SELECT id, name, type, cnpj, address, contact_name, contact_email,
+            contact_phone, portal_access_enabled, is_active, created_at
+        FROM ged_clients
+        WHERE is_active = true
+        ORDER BY name
+        """)
+    )
+    rows = result.mappings().all()
+    return {
+        "items": [
+            {
+                "id": str(r["id"]),
+                "name": r["name"],
+                "type": r["type"],
+                "cnpj": r["cnpj"],
+                "address": r["address"],
+                "contact_name": r["contact_name"],
+                "contact_email": r["contact_email"],
+                "contact_phone": r["contact_phone"],
+                "portal_access_enabled": r["portal_access_enabled"],
+                "is_active": r["is_active"],
+                "created_at": r["created_at"].isoformat() if r["created_at"] else None,
+            }
+            for r in rows
+        ],
+        "total": len(rows),
+    }
+
+
 # ─── Config Google Drive ──────────────────────────────────────────────────────
 
 
