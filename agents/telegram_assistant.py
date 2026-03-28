@@ -56,19 +56,50 @@ if os.path.exists(ENV_FILE):
 conversation_history: list[dict] = []
 MAX_HISTORY = 10
 
-SYSTEM_PROMPT = """Você é o assistente do Conecta PRO, sistema ERP da empresa Conecta Mais em Manaus-AM.
-Seu dono e administrador é Jordan Santos de Jesus.
+SYSTEM_PROMPT = """Voce e o Cerebro Executivo da Conecta Mais — o assistente pessoal de Jordan Jesus, CEO.
 
-Você tem acesso em tempo real ao estado do sistema e pode executar ações.
-Responda de forma natural, direta e em português brasileiro.
+EMPRESA: Conecta Mais Seguranca e Tecnologia | Manaus-AM
+CNPJ: 35.710.481/0001-03 | Lucro Real desde 01/2026
+MRR: R$ 272.086,96 | 42 funcionarios ativos | 11 condominios
+
+CLIENTES ATIVOS (mao de obra — recebem kit mensal):
+- Ideal Flores: R$ 65.842/mes | retem ISS+INSS+CSLL
+- Laranjeiras Village: R$ 42.544/mes | retem ISS+INSS+CSLL
+- Mirante das Flores: R$ 42.255/mes | sem retencao
+- Prime Arena: R$ 40.466/mes | retem INSS 11%
+- Villa dos Passaros: R$ 37.338/mes | sem retencao
+- Villa Dei Fiori: R$ 25.592/mes | sem retencao
+- Michelangelo: R$ 8.346/mes | sem retencao
+- Gelain: R$ 6.000/mes | portaria remota
+SEM KIT: Parise Village, Green Hills (CFTV), Life Centro (ex)
+
+BANCO: Inter (principal, PIX) | Cora (secundario)
+Laranjeiras e Gelain pagam via BOLETO (nao PIX)
+
+SEU PAPEL: Voce e um COO de IA. Fala direto, sem rodeios.
+Tom executivo mas humano. Usa dados reais SEMPRE.
+NUNCA inventa numeros. Se nao souber, diz claramente.
+
+CAPACIDADES (use as tools):
+- get_saldo_bancario: saldo atual das contas
+- get_inadimplentes: clientes em atraso
+- get_recebimentos: entradas da semana/mes
+- get_folha_pagamento: custo com pessoal
+- get_equipe: funcionarios ativos por cargo
+- get_status_kits: kits mensais dos condominios
+- get_nfse_status: notas fiscais do mes
+- get_analise_cliente: dados de 1 cliente especifico
+- gerar_kit_cliente: gera kit mensal automaticamente
+- get_briefing: resumo executivo completo
+- get_system_status: estado dos containers/infra
 
 REGRAS:
-- Seja conciso. Telegram tem limite de 4096 caracteres.
-- Use emojis com moderação para organizar informação.
-- Quando executar ações, relate o resultado de forma clara.
-- Se algo estiver errado, sugira a correção.
-- Não invente dados — use apenas o que as tools retornam.
-- Para reiniciar containers, sempre confirme antes com Jordan.
+- Maximo 15 linhas por resposta. Telegram = conciso.
+- Use emojis com moderacao (1-2 por resposta).
+- Sempre termine com dado acionavel ou pergunta.
+- Valores: sempre R$ formatado com virgula.
+- Nao invente dados — use APENAS o que as tools retornam.
+- Para acoes destrutivas (restart, delete), confirme antes.
 """
 
 # =============================================================================
@@ -76,6 +107,70 @@ REGRAS:
 # =============================================================================
 
 TOOLS = [
+    # ── BUSINESS TOOLS (Cerebro Executivo) ──────────────────────────────────
+    {
+        "name": "get_saldo_bancario",
+        "description": "Retorna saldo atual das contas bancarias (Inter + Cora). Use quando Jordan perguntar sobre saldo, dinheiro no banco, quanto tem na conta.",
+        "input_schema": {"type": "object", "properties": {}, "required": []},
+    },
+    {
+        "name": "get_inadimplentes",
+        "description": "Lista clientes em atraso ou com vencimento proximo. Use quando perguntar: quem nao pagou, inadimplentes, vencidos, atrasados, pagou?",
+        "input_schema": {"type": "object", "properties": {}, "required": []},
+    },
+    {
+        "name": "get_recebimentos",
+        "description": "Mostra recebimentos (creditos) recentes no banco. Use quando perguntar: quanto recebi, entradas, recebimentos da semana.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"dias": {"type": "integer", "description": "Periodo em dias (padrao: 7)"}},
+            "required": [],
+        },
+    },
+    {
+        "name": "get_folha_pagamento",
+        "description": "Retorna custo da folha de pagamento do mes. Use quando perguntar: folha, salarios, custo pessoal, quanto pago.",
+        "input_schema": {"type": "object", "properties": {}, "required": []},
+    },
+    {
+        "name": "get_equipe",
+        "description": "Retorna total de funcionarios ativos e distribuicao por cargo. Use quando perguntar: quantos funcionarios, minha equipe, headcount.",
+        "input_schema": {"type": "object", "properties": {}, "required": []},
+    },
+    {
+        "name": "get_status_kits",
+        "description": "Retorna status dos kits documentais mensais de todos os condominios. Use quando perguntar: kits, documentos, kit mensal, enviou kit.",
+        "input_schema": {"type": "object", "properties": {}, "required": []},
+    },
+    {
+        "name": "get_nfse_status",
+        "description": "Retorna status das NFS-e emitidas no mes. Use quando perguntar: notas fiscais, nfse, emiti nota.",
+        "input_schema": {"type": "object", "properties": {}, "required": []},
+    },
+    {
+        "name": "get_analise_cliente",
+        "description": "Analise detalhada de um cliente especifico: contrato, pagamentos, status. Use quando mencionar nome de condominio (Ideal Flores, Mirante, Laranjeiras, etc).",
+        "input_schema": {
+            "type": "object",
+            "properties": {"cliente": {"type": "string", "description": "Nome ou parte do nome do cliente"}},
+            "required": ["cliente"],
+        },
+    },
+    {
+        "name": "gerar_kit_cliente",
+        "description": "Gera automaticamente o kit mensal de um condominio com todos os PDFs. Use quando Jordan pedir: gera o kit, manda o kit, prepara documentos do X.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"cliente": {"type": "string", "description": "Nome do condominio"}},
+            "required": ["cliente"],
+        },
+    },
+    {
+        "name": "get_briefing",
+        "description": "Gera resumo executivo completo: saldo, inadimplencia, kits, equipe, nfse. Use quando pedir: resumo, como esta a empresa, briefing, overview.",
+        "input_schema": {"type": "object", "properties": {}, "required": []},
+    },
+    # ── DEVOPS TOOLS ────────────────────────────────────────────────────────
     {
         "name": "get_system_status",
         "description": "Retorna estado completo do sistema: containers Docker, CPU, RAM, disco, uptime.",
@@ -294,7 +389,96 @@ def run_command(command: str) -> str:
     return _run(command, timeout=30)
 
 
+# =============================================================================
+# BUSINESS TOOLS — Cerebro Executivo
+# =============================================================================
+
+DB_CMD = f'docker exec conecta-pro-postgres psql -U postgres -d conecta_pro -t -c'
+
+
+def get_saldo_bancario() -> str:
+    out = _run(f"""{DB_CMD} "SELECT bank_name, account_type, current_balance FROM bank_accounts WHERE status IN ('ativa','ativo') ORDER BY current_balance DESC;" """)
+    total = _run(f"""{DB_CMD} "SELECT COALESCE(SUM(current_balance), 0) FROM bank_accounts WHERE status IN ('ativa','ativo');" """)
+    return f"SALDO BANCARIO:\n{out}\nTOTAL: R$ {total.strip()}"
+
+
+def get_inadimplentes() -> str:
+    vencidos = _run(f"""{DB_CMD} "SELECT c.name, ra.gross_value, ra.due_date, ra.status FROM receivable_accounts ra LEFT JOIN clients c ON ra.customer_id = c.id WHERE ra.status IN ('pendente','overdue','vencido') AND ra.due_date < CURRENT_DATE ORDER BY ra.due_date LIMIT 10;" """)
+    vencendo = _run(f"""{DB_CMD} "SELECT c.name, ra.gross_value, ra.due_date FROM receivable_accounts ra LEFT JOIN clients c ON ra.customer_id = c.id WHERE ra.status = 'pendente' AND ra.due_date BETWEEN CURRENT_DATE AND CURRENT_DATE + 7 ORDER BY ra.due_date LIMIT 10;" """)
+    total = _run(f"""{DB_CMD} "SELECT COALESCE(SUM(ra.gross_value), 0) FROM receivable_accounts ra WHERE ra.status IN ('pendente','overdue','vencido') AND ra.due_date < CURRENT_DATE;" """)
+    result = f"VENCIDOS:\n{vencidos if vencidos.strip() else '  Nenhum!'}\n\nVENCENDO EM 7 DIAS:\n{vencendo if vencendo.strip() else '  Nenhum!'}\n\nTOTAL EM RISCO: R$ {total.strip()}"
+    return result
+
+
+def get_recebimentos(dias: int = 7) -> str:
+    out = _run(f"""{DB_CMD} "SELECT description, amount, transaction_date FROM bank_transactions WHERE transaction_type IN ('credito','credit','entrada') AND transaction_date >= CURRENT_DATE - {dias} ORDER BY transaction_date DESC LIMIT 15;" """)
+    total = _run(f"""{DB_CMD} "SELECT COALESCE(SUM(amount), 0) FROM bank_transactions WHERE transaction_type IN ('credito','credit','entrada') AND transaction_date >= CURRENT_DATE - {dias};" """)
+    return f"RECEBIMENTOS ULTIMOS {dias} DIAS:\n{out if out.strip() else '  Nenhum recebimento.'}\n\nTOTAL: R$ {total.strip()}"
+
+
+def get_folha_pagamento() -> str:
+    out = _run(f"""{DB_CMD} "SELECT COUNT(*) as func, COALESCE(SUM(salario_base), 0) as bruta FROM employees WHERE is_active = true;" """)
+    encargos = _run(f"""{DB_CMD} "SELECT ROUND(SUM(salario_base) * 0.08, 2) as fgts, ROUND(SUM(salario_base) * 0.20, 2) as inss_patr FROM employees WHERE is_active = true;" """)
+    return f"FOLHA DE PAGAMENTO:\nFuncionarios + Salario Bruto: {out}\nEncargos (FGTS 8% + INSS 20%): {encargos}"
+
+
+def get_equipe() -> str:
+    total = _run(f"""{DB_CMD} "SELECT COUNT(*) FROM employees WHERE is_active = true;" """)
+    por_cargo = _run(f"""{DB_CMD} "SELECT cargo, COUNT(*) FROM employees WHERE is_active = true GROUP BY cargo ORDER BY COUNT(*) DESC LIMIT 10;" """)
+    return f"EQUIPE: {total.strip()} funcionarios ativos\n\nPOR CARGO:\n{por_cargo}"
+
+
+def get_status_kits() -> str:
+    out = _run(f"""{DB_CMD} "SELECT g.name, k.status, k.total_documents, k.completion_percentage FROM ged_document_kits k JOIN ged_clients g ON g.id::text = k.client_id::text WHERE k.reference_month >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month') ORDER BY k.reference_month DESC, g.name LIMIT 15;" """)
+    total = _run(f"""{DB_CMD} "SELECT COUNT(*) FROM ged_document_kits WHERE reference_month >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month');" """)
+    return f"KITS MENSAIS ({total.strip()} total):\n{out}"
+
+
+def get_nfse_status() -> str:
+    out = _run(f"""{DB_CMD} "SELECT tomador_razao_social, numero_nfse, valor_servicos, status FROM nfses WHERE data_competencia >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month') AND active = true ORDER BY data_competencia DESC, valor_servicos DESC LIMIT 15;" """)
+    totais = _run(f"""{DB_CMD} "SELECT COUNT(*), COALESCE(SUM(valor_servicos), 0) FROM nfses WHERE data_competencia >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month') AND active = true;" """)
+    return f"NFS-e RECENTES:\n{out}\n\nTOTAIS (qtd | valor): {totais}"
+
+
+def get_analise_cliente(cliente: str) -> str:
+    palavra = cliente.upper().split()[0] if cliente else "IDEAL"
+    contrato = _run(f"""{DB_CMD} "SELECT c.name, c.document_number, ct.monthly_value, ct.status FROM contracts ct JOIN clients c ON ct.client_id = c.id WHERE UPPER(c.name) LIKE '%{palavra}%' AND ct.is_active = true LIMIT 3;" """)
+    recebimentos = _run(f"""{DB_CMD} "SELECT bt.description, bt.amount, bt.transaction_date FROM bank_transactions bt WHERE UPPER(bt.description) LIKE '%{palavra}%' AND bt.transaction_type IN ('credito','credit','entrada') ORDER BY bt.transaction_date DESC LIMIT 5;" """)
+    nfse = _run(f"""{DB_CMD} "SELECT numero_nfse, valor_servicos, data_competencia, status FROM nfses WHERE UPPER(tomador_razao_social) LIKE '%{palavra}%' AND active = true ORDER BY data_competencia DESC LIMIT 5;" """)
+    return f"ANALISE CLIENTE '{cliente}':\n\nCONTRATO:\n{contrato}\n\nRECEBIMENTOS:\n{recebimentos if recebimentos.strip() else '  Nenhum encontrado.'}\n\nNFS-e:\n{nfse if nfse.strip() else '  Nenhuma.'}"
+
+
+def gerar_kit_cliente(cliente: str) -> str:
+    palavra = cliente.upper().split()[0] if cliente else ""
+    if not palavra:
+        return "Qual condominio? Tenho: Ideal Flores, Laranjeiras, Mirante, Prime Arena, Villa Passaros, Villa Dei Fiori, Michelangelo, Gelain"
+    kit_id = _run(f"""{DB_CMD} "SELECT k.id FROM ged_document_kits k JOIN ged_clients g ON g.id::text = k.client_id::text WHERE UPPER(g.name) LIKE '%{palavra}%' ORDER BY k.reference_month DESC LIMIT 1;" """).strip()
+    if not kit_id:
+        return f"Kit nao encontrado para '{cliente}'. Verifique o nome do condominio."
+    token = _run("""curl -sf -X POST http://127.0.0.1:8080/api/v1/auth/login -H "Content-Type: application/x-www-form-urlencoded" -d "username=jjesus@conectamais.pro&password=Jordan0612" | python3 -c "import sys,json;print(json.load(sys.stdin)['access_token'])" """)
+    result = _run(f"""curl -sf -X POST "http://127.0.0.1:8080/api/v1/ged/kit-real/{kit_id}/gerar" -H "Authorization: Bearer {token}" """, timeout=60)
+    return f"KIT GERADO para '{cliente}':\nkit_id: {kit_id}\n{result[:500]}"
+
+
+def get_briefing() -> str:
+    token = _run("""curl -sf -X POST http://127.0.0.1:8080/api/v1/auth/login -H "Content-Type: application/x-www-form-urlencoded" -d "username=jjesus@conectamais.pro&password=Jordan0612" | python3 -c "import sys,json;print(json.load(sys.stdin)['access_token'])" """)
+    result = _run(f"""curl -sf "http://127.0.0.1:8080/api/v1/ai/briefing/diario" -H "Authorization: Bearer {token}" """, timeout=30)
+    return f"BRIEFING EXECUTIVO:\n{result[:3000]}"
+
+
 TOOL_FUNCTIONS = {
+    # Business
+    "get_saldo_bancario": lambda **_: get_saldo_bancario(),
+    "get_inadimplentes": lambda **_: get_inadimplentes(),
+    "get_recebimentos": lambda dias=7, **_: get_recebimentos(int(dias)),
+    "get_folha_pagamento": lambda **_: get_folha_pagamento(),
+    "get_equipe": lambda **_: get_equipe(),
+    "get_status_kits": lambda **_: get_status_kits(),
+    "get_nfse_status": lambda **_: get_nfse_status(),
+    "get_analise_cliente": lambda cliente="", **_: get_analise_cliente(cliente),
+    "gerar_kit_cliente": lambda cliente="", **_: gerar_kit_cliente(cliente),
+    "get_briefing": lambda **_: get_briefing(),
+    # DevOps
     "get_system_status": lambda **_: get_system_status(),
     "run_tests": lambda module="all", **_: run_tests(module),
     "get_logs": lambda container="conecta-pro-backend", lines=20, **_: get_logs(container, int(lines)),
