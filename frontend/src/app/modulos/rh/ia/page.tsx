@@ -1,9 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Brain, UserCheck, Users, Heart, CalendarClock, CheckCircle, Clock, AlertCircle, Loader2, Play } from 'lucide-react';
+import { Brain, UserCheck, Users, Heart, CalendarClock, CheckCircle, Clock, AlertCircle, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 
 const API_HR = '/api/v1/people-management/hr';
 const API_RH = '/api/v1/people-management/human-resources';
@@ -54,7 +53,7 @@ export default function IAPage() {
       color: 'text-red-400',
       bgColor: 'bg-red-900/30',
       skill: 'hr_predictor',
-      endpoint: `${API_RH}/turnover`,
+      endpoint: `${API_RH}/turnover/dashboard`,
     },
     {
       title: 'Analise de Clima',
@@ -63,7 +62,7 @@ export default function IAPage() {
       color: 'text-green-400',
       bgColor: 'bg-green-900/30',
       skill: 'performance_evaluator',
-      endpoint: `${API_RH}/climate`,
+      endpoint: `${API_RH}/climate/dashboard`,
     },
     {
       title: 'Otimizacao de Escalas',
@@ -90,10 +89,11 @@ export default function IAPage() {
       setFeatureStatus(statuses);
     }
     checkStatus();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-28">
       <div>
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <Brain className="h-6 w-6" />
@@ -128,7 +128,7 @@ export default function IAPage() {
       </div>
 
       <Card>
-        <CardHeader><CardTitle className="text-sm">Skills Disponíveis (12 agentes)</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-sm">Skills Disponiveis (12 agentes)</CardTitle></CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
             {[

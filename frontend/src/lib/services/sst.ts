@@ -88,11 +88,12 @@ export interface CATList {
 
 export interface CATCreate {
   employee_id: string;
-  tipo: string;
-  data: string;
+  tipo_acidente: string;
+  data_acidente: string;
   local: string;
+  descricao: string;
   gravidade: string;
-  descricao?: string;
+  testemunhas?: string[];
 }
 
 export interface TaxaAcidente {

@@ -12,6 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { toast } from 'sonner';
 import { useLTCATStatus } from '@/hooks/sst';
 
 const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
@@ -52,12 +53,21 @@ function getStatusBadge(status: string) {
 export default function LTCATPage() {
   const { data, isLoading, error, refetch } = useLTCATStatus();
 
+  const handleRefresh = async () => {
+    try {
+      await refetch();
+      toast.success('Dados atualizados', { duration: 4000 });
+    } catch {
+      toast.error('Erro ao atualizar dados', { duration: 5000 });
+    }
+  };
+
   const fatoresRisco = data?.fatores_risco ?? [];
   const postosAvaliados = data?.postos_avaliados ?? 0;
   const totalAgentes = fatoresRisco.length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-28">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

@@ -1,15 +1,26 @@
 'use client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { customInstance } from '@/lib/api-client';
-import { Magnet, Download, Users } from 'lucide-react';
+import { Magnet, Download, Users, ArrowRightCircle } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function LeadMagnetPage() {
+  const queryClient = useQueryClient();
   const { data } = useQuery({
     queryKey: ['marketing-leads'],
     queryFn: () => customInstance({ url: '/api/v1/marketing/leads/', method: 'GET' }),
     staleTime: 30_000,
   });
   const leads = (data as any)?.items || [];
+
+  const convertMutation = useMutation({
+    mutationFn: (id: string) => customInstance({ url: `/api/v1/marketing/leads/${id}/convert`, method: 'POST' }),
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ['marketing-leads'] });
+      toast.success(`Lead convertido para CRM: ${data.crm_lead_id || 'OK'}`);
+    },
+    onError: () => { toast.error('Erro ao converter lead'); },
+  });
 
   return (
     <div className="p-6 space-y-6">
@@ -42,9 +53,26 @@ export default function LeadMagnetPage() {
       {leads.length > 0 && (
         <div className="bg-white rounded-xl border overflow-hidden">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50"><tr><th className="text-left p-3">Lead</th><th className="text-left p-3">Email</th><th className="text-left p-3">Campanha</th><th className="text-left p-3">Status</th></tr></thead>
+            <thead className="bg-gray-50"><tr><th className="text-left p-3">Lead</th><th className="text-left p-3">Email</th><th className="text-left p-3">Campanha</th><th className="text-left p-3">Status</th><th className="text-left p-3">Acoes</th></tr></thead>
             <tbody>{leads.map((l: any) => (
-              <tr key={l.id} className="border-t hover:bg-gray-50"><td className="p-3 font-medium">{l.name}</td><td className="p-3">{l.email || '—'}</td><td className="p-3">{l.campaign_name || '—'}</td><td className="p-3"><span className={`px-2 py-0.5 rounded text-xs ${l.status === 'converted' ? 'bg-green-100 text-green-700' : 'bg-gray-100'}`}>{l.status}</span></td></tr>
+              <tr key={l.id} className="border-t hover:bg-gray-50">
+                <td className="p-3 font-medium">{l.name}</td>
+                <td className="p-3">{l.email || '\u2014'}</td>
+                <td className="p-3">{l.campaign_name || '\u2014'}</td>
+                <td className="p-3"><span className={`px-2 py-0.5 rounded text-xs ${l.status === 'converted' ? 'bg-green-100 text-green-700' : 'bg-gray-100'}`}>{l.status}</span></td>
+                <td className="p-3">
+                  {l.status !== 'converted' && (
+                    <button
+                      onClick={() => convertMutation.mutate(l.id)}
+                      disabled={convertMutation.isPending}
+                      className="flex items-center gap-1 text-xs bg-cyan-600 text-white px-3 py-1.5 rounded-lg hover:bg-cyan-700 disabled:opacity-50"
+                    >
+                      <ArrowRightCircle className="h-3 w-3" />
+                      Converter
+                    </button>
+                  )}
+                </td>
+              </tr>
             ))}</tbody>
           </table>
         </div>

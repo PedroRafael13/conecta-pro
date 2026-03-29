@@ -31,7 +31,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-;
+import { toast } from 'sonner';
 import {
   useEPIStatistics,
   useEPIList,
@@ -102,12 +102,16 @@ export default function EPIPage() {
     try {
       if (editItem) {
         await updateEPI.mutateAsync({ epiId: editItem.id, data: formData as any });
+        toast.success('EPI atualizado com sucesso', { duration: 4000 });
       } else {
         await createEPI.mutateAsync(formData as any);
+        toast.success('EPI cadastrado com sucesso', { duration: 4000 });
       }
       setDialogOpen(false);
       resetForm();
+      refetch();
     } catch (error) {
+      toast.error('Erro ao salvar EPI. Tente novamente.', { duration: 5000 });
     }
   };
 
@@ -136,7 +140,7 @@ export default function EPIPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-28">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

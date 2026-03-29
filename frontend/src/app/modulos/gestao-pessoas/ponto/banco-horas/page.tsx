@@ -46,7 +46,7 @@ export default function BancoHorasPage() {
   const { data: employees, isLoading: loadingEmployees } = useQuery<Employee[]>({
     queryKey: ['ponto', 'employees'],
     queryFn: async () => {
-      const res = await customInstance({ url: '/api/v1/people-management/hr/employees/', params: { page_size: 100 } }) as unknown as { items?: Employee[] } | Employee[];
+      const res = await customInstance({ url: '/api/v1/people-management/hr/employees', params: { page_size: 100 } }) as unknown as { items?: Employee[] } | Employee[];
       return Array.isArray(res) ? res : res?.items ?? [];
     },
     staleTime: 60000,

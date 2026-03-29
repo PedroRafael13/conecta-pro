@@ -1,20 +1,20 @@
 'use client';
 
-import { Briefcase, Plus, Search, RefreshCw, MoreHorizontal, Edit2, Trash2, Globe, XCircle, AlertCircle } from 'lucide-react';
-import { useState } from 'react';
-;
+import { useState, useEffect, useCallback } from 'react';
+import { Briefcase, Plus, Search, RefreshCw, Edit2, Trash2, Globe, XCircle, AlertCircle, Pause, Play, Copy, ChevronLeft, ChevronRight } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import {
   Select,
@@ -31,100 +31,217 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  useJobPositions,
-  usePositionStats,
-  useCreateJobPosition,
-  usePublishPosition,
-  useClosePosition,
-  useDeleteJobPosition,
-} from '@/hooks/recruitment';
-import { useQueryClient } from '@tanstack/react-query';
+
+const API_BASE = '/api/v1/recruitment/job-positions';
+const PAGE_SIZE = 15;
+
+function getAuthHeaders() {
+  const token = typeof window !== 'undefined' ? (localStorage.getItem('access_token') || localStorage.getItem('token')) : null;
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+}
 
 const statusConfig: Record<string, { label: string; color: string }> = {
   draft: { label: 'Rascunho', color: 'bg-gray-500/20 text-gray-500 border-gray-500/30' },
   open: { label: 'Aberta', color: 'bg-green-500/20 text-green-500 border-green-500/30' },
   paused: { label: 'Pausada', color: 'bg-yellow-500/20 text-yellow-500 border-yellow-500/30' },
   closed: { label: 'Fechada', color: 'bg-red-500/20 text-red-500 border-red-500/30' },
-  published: { label: 'Publicada', color: 'bg-blue-500/20 text-blue-500 border-blue-500/30' },
+  filled: { label: 'Preenchida', color: 'bg-blue-500/20 text-blue-500 border-blue-500/30' },
+  cancelled: { label: 'Cancelada', color: 'bg-gray-500/20 text-gray-500 border-gray-500/30' },
+};
+
+const positionTypeLabels: Record<string, string> = {
+  clt: 'CLT',
+  pj: 'PJ',
+  temporario: 'Temporario',
+  estagio: 'Estagio',
+  trainee: 'Trainee',
+  freelancer: 'Freelancer',
+  terceirizado: 'Terceirizado',
+};
+
+const departmentOptions = [
+  'operacional', 'administrativo', 'financeiro', 'rh', 'comercial',
+  'ti', 'logistica', 'juridico', 'marketing', 'diretoria',
+];
+
+const emptyForm = {
+  title: '',
+  description: '',
+  position_type: 'clt',
+  position_level: '',
+  department: '',
+  city: '',
+  state: '',
+  work_model: '',
+  salary_min: '',
+  salary_max: '',
+  vacancies: 1,
+  requirements: '',
+  responsibilities: '',
+  benefits: '',
 };
 
 export default function VagasPage() {
-  const queryClient = useQueryClient();
-  const [search, setSearch] = useState('');
+  const [positions, setPositions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [totalItems, setTotalItems] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [stats, setStats] = useState<any>(null);
+
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    department: '',
-    location: '',
-    employment_type: 'clt',
-    vacancies: 1,
-  });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [formData, setFormData] = useState({ ...emptyForm });
 
-  // Queries
-  const { data: positionsData, isLoading, isError, error, refetch } = useJobPositions();
-  const { data: statsData } = usePositionStats();
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailItem, setDetailItem] = useState<any>(null);
 
-  // Mutations
-  const createMutation = useCreateJobPosition();
-  const publishMutation = usePublishPosition();
-  const closeMutation = useClosePosition();
-  const deleteMutation = useDeleteJobPosition();
+  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
 
-  const positions = (positionsData as any)?.items || (positionsData as any) || [];
-  const stats = statsData as any;
+  const fetchPositions = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        skip: String((currentPage - 1) * PAGE_SIZE),
+        limit: String(PAGE_SIZE),
+        order_by: 'created_at',
+        order_desc: 'true',
+      });
+      if (searchTerm) params.set('search', searchTerm);
+      if (statusFilter !== 'all') params.set('status', statusFilter);
 
-  const filteredPositions = positions.filter((p: any) =>
-    p.title?.toLowerCase().includes(search.toLowerCase()) ||
-    p.department?.toLowerCase().includes(search.toLowerCase())
-  );
+      const res = await fetch(`${API_BASE}/?${params}`, { headers: getAuthHeaders() });
+      if (!res.ok) throw new Error(`Erro ${res.status}`);
+      const data = await res.json();
+      setPositions(data.items || []);
+      setTotalItems(data.total || 0);
+    } catch (err: any) {
+      toast.error('Erro ao carregar vagas', { description: err.message, duration: 4000 });
+      setPositions([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentPage, searchTerm, statusFilter]);
 
-  const invalidateQueries = () => {
-    queryClient.invalidateQueries({ queryKey: ['/api/v1/recruitment/job-positions'] });
-    queryClient.invalidateQueries({ queryKey: ['/api/v1/recruitment/job-positions/stats'] });
+  const fetchStats = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/stats`, { headers: getAuthHeaders() });
+      if (res.ok) setStats(await res.json());
+    } catch { /* silent */ }
+  }, []);
+
+  useEffect(() => { fetchPositions(); }, [fetchPositions]);
+  useEffect(() => { fetchStats(); }, [fetchStats]);
+
+  const openCreate = () => {
+    setEditingId(null);
+    setFormData({ ...emptyForm });
+    setDialogOpen(true);
   };
 
-  const handleCreate = async () => {
+  const openEdit = (item: any) => {
+    setEditingId(item.id);
+    setFormData({
+      title: item.title || '',
+      description: item.description || '',
+      position_type: item.position_type || 'clt',
+      position_level: item.position_level || '',
+      department: item.department || '',
+      city: item.city || '',
+      state: item.state || '',
+      work_model: item.work_model || '',
+      salary_min: item.salary_min != null ? String(item.salary_min) : '',
+      salary_max: item.salary_max != null ? String(item.salary_max) : '',
+      vacancies: item.vacancies || 1,
+      requirements: item.requirements || '',
+      responsibilities: item.responsibilities || '',
+      benefits: item.benefits || '',
+    });
+    setDialogOpen(true);
+  };
+
+  const handleSave = async () => {
+    if (!formData.title.trim()) {
+      toast.error('Titulo e obrigatorio', { duration: 4000 });
+      return;
+    }
+    setSaving(true);
     try {
-      await createMutation.mutateAsync({ data: formData as any });
+      const body: any = {
+        ...formData,
+        vacancies: Number(formData.vacancies) || 1,
+        salary_min: formData.salary_min ? Number(formData.salary_min) : null,
+        salary_max: formData.salary_max ? Number(formData.salary_max) : null,
+      };
+      // Remove empty strings
+      Object.keys(body).forEach(k => { if (body[k] === '') body[k] = null; });
+
+      const url = editingId ? `${API_BASE}/${editingId}` : `${API_BASE}/`;
+      const method = editingId ? 'PUT' : 'POST';
+      const res = await fetch(url, {
+        method,
+        headers: getAuthHeaders(),
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.detail || `Erro ${res.status}`);
+      }
+      toast.success(editingId ? 'Vaga atualizada com sucesso' : 'Vaga criada com sucesso', { duration: 4000 });
       setDialogOpen(false);
-      setFormData({ title: '', description: '', department: '', location: '', employment_type: 'clt', vacancies: 1 });
-      invalidateQueries();
-    } catch {
-      // silenced
+      fetchPositions();
+      fetchStats();
+    } catch (err: any) {
+      toast.error('Erro ao salvar vaga', { description: err.message, duration: 5000 });
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handlePublish = async (positionId: string) => {
+  const handleDelete = async (id: string) => {
+    if (!confirm('Tem certeza que deseja excluir esta vaga?')) return;
     try {
-      await publishMutation.mutateAsync({ positionId } as any);
-      invalidateQueries();
-    } catch {
-      // silenced
+      const res = await fetch(`${API_BASE}/${id}`, { method: 'DELETE', headers: getAuthHeaders() });
+      if (!res.ok && res.status !== 204) throw new Error(`Erro ${res.status}`);
+      toast.success('Vaga excluida com sucesso', { duration: 4000 });
+      fetchPositions();
+      fetchStats();
+    } catch (err: any) {
+      toast.error('Erro ao excluir vaga', { description: err.message, duration: 5000 });
     }
   };
 
-  const handleClose = async (positionId: string) => {
+  const handleAction = async (id: string, action: 'publish' | 'pause' | 'reopen' | 'close' | 'duplicate', label: string) => {
     try {
-      await closeMutation.mutateAsync({ positionId } as any);
-      invalidateQueries();
-    } catch {
-      // silenced
+      const res = await fetch(`${API_BASE}/${id}/${action}`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({}),
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.detail || `Erro ${res.status}`);
+      }
+      toast.success(`Vaga ${label} com sucesso`, { duration: 4000 });
+      fetchPositions();
+      fetchStats();
+    } catch (err: any) {
+      toast.error(`Erro ao ${label.toLowerCase()} vaga`, { description: err.message, duration: 5000 });
     }
   };
 
-  const handleDelete = async (positionId: string) => {
-    try {
-      await deleteMutation.mutateAsync({ positionId } as any);
-      invalidateQueries();
-    } catch {
-      // silenced
-    }
+  const openDetail = (item: any) => {
+    setDetailItem(item);
+    setDetailOpen(true);
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-28">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -135,99 +252,13 @@ export default function VagasPage() {
           <p className="text-muted-foreground">Gerencie as vagas e posicoes abertas</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isLoading}>
-            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+          <Button variant="outline" size="sm" onClick={() => { fetchPositions(); fetchStats(); }} disabled={loading}>
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
           </Button>
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Nova Vaga
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Criar Nova Vaga</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="title">Titulo</Label>
-                  <Input
-                    id="title"
-                    value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    placeholder="Ex: Vigilante Patrimonial"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="description">Descricao</Label>
-                  <Input
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    placeholder="Descricao da vaga"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="department">Departamento</Label>
-                    <Input
-                      id="department"
-                      value={formData.department}
-                      onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                      placeholder="Ex: Operacional"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="location">Localizacao</Label>
-                    <Input
-                      id="location"
-                      value={formData.location}
-                      onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                      placeholder="Ex: Sao Paulo"
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="employment_type">Tipo de Contrato</Label>
-                    <Select
-                      value={formData.employment_type}
-                      onValueChange={(value) => setFormData({ ...formData, employment_type: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="clt">CLT</SelectItem>
-                        <SelectItem value="pj">PJ</SelectItem>
-                        <SelectItem value="temporary">Temporario</SelectItem>
-                        <SelectItem value="intern">Estagio</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="vacancies">Numero de Vagas</Label>
-                    <Input
-                      id="vacancies"
-                      type="number"
-                      min={1}
-                      value={formData.vacancies}
-                      onChange={(e) => setFormData({ ...formData, vacancies: parseInt(e.target.value) || 1 })}
-                    />
-                  </div>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setDialogOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button onClick={handleCreate} disabled={!formData.title || createMutation.isPending}>
-                  {createMutation.isPending ? 'Criando...' : 'Criar Vaga'}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <Button onClick={openCreate}>
+            <Plus className="h-4 w-4 mr-2" />
+            Nova Vaga
+          </Button>
         </div>
       </div>
 
@@ -235,84 +266,60 @@ export default function VagasPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total</p>
-                <p className="text-2xl font-bold">{stats?.total ?? 0}</p>
-              </div>
-              <div className="h-10 w-10 rounded-lg bg-blue-50 flex items-center justify-center">
-                <Briefcase className="h-5 w-5 text-blue-600" />
-              </div>
-            </div>
+            <p className="text-sm text-muted-foreground">Total</p>
+            <p className="text-2xl font-bold">{stats?.total_positions ?? 0}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Abertas</p>
-                <p className="text-2xl font-bold text-green-600">{stats?.open_positions ?? stats?.abertas ?? 0}</p>
-              </div>
-              <div className="h-10 w-10 rounded-lg bg-green-50 flex items-center justify-center">
-                <Globe className="h-5 w-5 text-green-600" />
-              </div>
-            </div>
+            <p className="text-sm text-muted-foreground">Abertas</p>
+            <p className="text-2xl font-bold text-green-600">{stats?.open_positions ?? 0}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Pausadas</p>
-                <p className="text-2xl font-bold text-yellow-600">{stats?.paused_positions ?? stats?.pausadas ?? 0}</p>
-              </div>
-              <div className="h-10 w-10 rounded-lg bg-yellow-50 flex items-center justify-center">
-                <AlertCircle className="h-5 w-5 text-yellow-600" />
-              </div>
-            </div>
+            <p className="text-sm text-muted-foreground">Preenchidas</p>
+            <p className="text-2xl font-bold text-blue-600">{stats?.filled_positions ?? 0}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Fechadas</p>
-                <p className="text-2xl font-bold text-red-600">{stats?.closed_positions ?? stats?.fechadas ?? 0}</p>
-              </div>
-              <div className="h-10 w-10 rounded-lg bg-red-50 flex items-center justify-center">
-                <XCircle className="h-5 w-5 text-red-600" />
-              </div>
-            </div>
+            <p className="text-sm text-muted-foreground">Fechadas</p>
+            <p className="text-2xl font-bold text-red-600">{stats?.closed_positions ?? 0}</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar vagas por titulo ou departamento..."
-          className="pl-10"
-        />
-      </div>
-
-      {/* Error */}
-      {isError && (
-        <div className="flex items-center gap-3 p-4 rounded-lg bg-destructive/10 border border-destructive/30">
-          <AlertCircle className="h-5 w-5 text-destructive" />
-          <p className="text-sm text-destructive">{(error as Error)?.message || 'Erro ao carregar vagas'}</p>
-          <Button variant="outline" size="sm" onClick={() => refetch()} className="ml-auto">
-            Tentar novamente
-          </Button>
+      {/* Search & Filters */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={searchTerm}
+            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+            placeholder="Buscar vagas por titulo ou departamento..."
+            className="pl-10"
+          />
         </div>
-      )}
+        <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setCurrentPage(1); }}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os status</SelectItem>
+            <SelectItem value="draft">Rascunho</SelectItem>
+            <SelectItem value="open">Aberta</SelectItem>
+            <SelectItem value="paused">Pausada</SelectItem>
+            <SelectItem value="closed">Fechada</SelectItem>
+            <SelectItem value="filled">Preenchida</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
       {/* Table */}
       <Card>
         <CardContent className="p-0">
-          {isLoading ? (
+          {loading ? (
             <div className="divide-y">
               {[...Array(5)].map((_, i) => (
                 <div key={i} className="p-4 flex items-center gap-4">
@@ -324,15 +331,15 @@ export default function VagasPage() {
                 </div>
               ))}
             </div>
-          ) : filteredPositions.length === 0 ? (
+          ) : positions.length === 0 ? (
             <div className="text-center py-12">
               <Briefcase className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium">Nenhum registro encontrado</h3>
               <p className="text-muted-foreground mt-1">
-                {search ? 'Tente ajustar a busca' : 'Crie sua primeira vaga'}
+                {searchTerm ? 'Tente ajustar a busca' : 'Crie sua primeira vaga'}
               </p>
-              {!search && (
-                <Button className="mt-4" onClick={() => setDialogOpen(true)}>
+              {!searchTerm && (
+                <Button className="mt-4" onClick={openCreate}>
                   <Plus className="h-4 w-4 mr-2" />
                   Nova Vaga
                 </Button>
@@ -344,7 +351,7 @@ export default function VagasPage() {
                 <TableRow>
                   <TableHead>Titulo</TableHead>
                   <TableHead>Departamento</TableHead>
-                  <TableHead>Localizacao</TableHead>
+                  <TableHead>Local</TableHead>
                   <TableHead>Contrato</TableHead>
                   <TableHead>Vagas</TableHead>
                   <TableHead>Status</TableHead>
@@ -353,73 +360,71 @@ export default function VagasPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredPositions.map((position: any) => {
-                  const status = statusConfig[position.status] || statusConfig.draft || { label: 'Rascunho', color: 'bg-gray-100 text-gray-800' };
+                {positions.map((position: any) => {
+                  const st = statusConfig[position.status] || statusConfig.draft;
                   return (
-                    <TableRow key={position.id}>
+                    <TableRow key={position.id} className="cursor-pointer" onClick={() => openDetail(position)}>
                       <TableCell>
                         <div>
                           <p className="font-medium">{position.title}</p>
-                          {position.description && (
-                            <p className="text-xs text-muted-foreground truncate max-w-[200px]">
-                              {position.description}
-                            </p>
+                          {position.code && (
+                            <p className="text-xs text-muted-foreground">{position.code}</p>
                           )}
                         </div>
                       </TableCell>
                       <TableCell>{position.department || '-'}</TableCell>
-                      <TableCell>{position.location || '-'}</TableCell>
                       <TableCell>
-                        <span className="text-sm capitalize">{position.employment_type || '-'}</span>
+                        {[position.city, position.state].filter(Boolean).join(', ') || '-'}
                       </TableCell>
                       <TableCell>
-                        <span className="font-medium">{position.vacancies ?? position.vagas ?? '-'}</span>
+                        <span className="text-sm">{positionTypeLabels[position.position_type] || position.position_type || '-'}</span>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className={status.color}>
-                          {status.label}
+                        <span className="font-medium">{position.vacancies ?? '-'}</span>
+                        {position.filled_count > 0 && (
+                          <span className="text-xs text-muted-foreground ml-1">({position.filled_count} preenchida{position.filled_count > 1 ? 's' : ''})</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={st.color}>
+                          {st.label}
                         </Badge>
                       </TableCell>
                       <TableCell>
                         <span className="text-sm text-muted-foreground">
-                          {position.created_at
-                            ? new Date(position.created_at).toLocaleDateString('pt-BR')
-                            : '-'}
+                          {position.created_at ? new Date(position.created_at).toLocaleDateString('pt-BR') : '-'}
                         </span>
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            title="Editar"
-                          >
+                          <Button variant="ghost" size="sm" title="Editar" onClick={() => openEdit(position)}>
                             <Edit2 className="h-4 w-4" />
                           </Button>
-                          {(position.status === 'draft' || position.status === 'paused') && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              title="Publicar"
-                              onClick={() => handlePublish(position.id)}
-                            >
+                          {(position.status === 'draft') && (
+                            <Button variant="ghost" size="sm" title="Publicar" onClick={() => handleAction(position.id, 'publish', 'publicada')}>
                               <Globe className="h-4 w-4 text-green-600" />
                             </Button>
                           )}
-                          {(position.status === 'open' || position.status === 'published') && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              title="Fechar"
-                              onClick={() => handleClose(position.id)}
-                            >
+                          {(position.status === 'open') && (
+                            <Button variant="ghost" size="sm" title="Pausar" onClick={() => handleAction(position.id, 'pause', 'pausada')}>
+                              <Pause className="h-4 w-4 text-yellow-600" />
+                            </Button>
+                          )}
+                          {(position.status === 'paused') && (
+                            <Button variant="ghost" size="sm" title="Reabrir" onClick={() => handleAction(position.id, 'reopen', 'reaberta')}>
+                              <Play className="h-4 w-4 text-green-600" />
+                            </Button>
+                          )}
+                          {['open', 'paused'].includes(position.status) && (
+                            <Button variant="ghost" size="sm" title="Fechar" onClick={() => handleAction(position.id, 'close', 'fechada')}>
                               <XCircle className="h-4 w-4 text-orange-600" />
                             </Button>
                           )}
+                          <Button variant="ghost" size="sm" title="Duplicar" onClick={() => handleAction(position.id, 'duplicate', 'duplicada')}>
+                            <Copy className="h-4 w-4 text-blue-600" />
+                          </Button>
                           <Button
-                            variant="ghost"
-                            size="sm"
-                            title="Excluir"
+                            variant="ghost" size="sm" title="Excluir"
                             onClick={() => handleDelete(position.id)}
                             className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
                           >
@@ -436,12 +441,179 @@ export default function VagasPage() {
         </CardContent>
       </Card>
 
-      {/* Info */}
-      {!isLoading && filteredPositions.length > 0 && (
-        <div className="text-sm text-muted-foreground text-center">
-          Mostrando {filteredPositions.length} de {positions.length} vagas
+      {/* Pagination */}
+      {!loading && totalItems > PAGE_SIZE && (
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">
+            Mostrando {((currentPage - 1) * PAGE_SIZE) + 1} a {Math.min(currentPage * PAGE_SIZE, totalItems)} de {totalItems} vagas
+          </p>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => p - 1)} disabled={currentPage <= 1}>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="text-sm">{currentPage} / {totalPages}</span>
+            <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage >= totalPages}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       )}
+
+      {/* Create/Edit Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editingId ? 'Editar Vaga' : 'Criar Nova Vaga'}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="title">Titulo *</Label>
+              <Input
+                id="title"
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                placeholder="Ex: Vigilante Patrimonial"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="description">Descricao</Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="Descricao detalhada da vaga"
+                rows={3}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Tipo de Contrato</Label>
+                <Select value={formData.position_type} onValueChange={(v) => setFormData({ ...formData, position_type: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="clt">CLT</SelectItem>
+                    <SelectItem value="pj">PJ</SelectItem>
+                    <SelectItem value="temporario">Temporario</SelectItem>
+                    <SelectItem value="estagio">Estagio</SelectItem>
+                    <SelectItem value="trainee">Trainee</SelectItem>
+                    <SelectItem value="freelancer">Freelancer</SelectItem>
+                    <SelectItem value="terceirizado">Terceirizado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Nivel</Label>
+                <Select value={formData.position_level} onValueChange={(v) => setFormData({ ...formData, position_level: v })}>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="estagiario">Estagiario</SelectItem>
+                    <SelectItem value="junior">Junior</SelectItem>
+                    <SelectItem value="pleno">Pleno</SelectItem>
+                    <SelectItem value="senior">Senior</SelectItem>
+                    <SelectItem value="especialista">Especialista</SelectItem>
+                    <SelectItem value="coordenador">Coordenador</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Departamento</Label>
+                <Select value={formData.department} onValueChange={(v) => setFormData({ ...formData, department: v })}>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    {departmentOptions.map(d => (
+                      <SelectItem key={d} value={d}>{d.charAt(0).toUpperCase() + d.slice(1)}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Modelo de Trabalho</Label>
+                <Select value={formData.work_model} onValueChange={(v) => setFormData({ ...formData, work_model: v })}>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="presencial">Presencial</SelectItem>
+                    <SelectItem value="remoto">Remoto</SelectItem>
+                    <SelectItem value="hibrido">Hibrido</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label>Cidade</Label>
+                <Input value={formData.city} onChange={(e) => setFormData({ ...formData, city: e.target.value })} placeholder="Manaus" />
+              </div>
+              <div className="space-y-2">
+                <Label>Estado</Label>
+                <Input value={formData.state} onChange={(e) => setFormData({ ...formData, state: e.target.value })} placeholder="AM" maxLength={2} />
+              </div>
+              <div className="space-y-2">
+                <Label>N. de Vagas</Label>
+                <Input type="number" min={1} value={formData.vacancies} onChange={(e) => setFormData({ ...formData, vacancies: parseInt(e.target.value) || 1 })} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Salario Minimo (R$)</Label>
+                <Input type="number" min={0} value={formData.salary_min} onChange={(e) => setFormData({ ...formData, salary_min: e.target.value })} placeholder="0.00" />
+              </div>
+              <div className="space-y-2">
+                <Label>Salario Maximo (R$)</Label>
+                <Input type="number" min={0} value={formData.salary_max} onChange={(e) => setFormData({ ...formData, salary_max: e.target.value })} placeholder="0.00" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Requisitos</Label>
+              <Textarea value={formData.requirements} onChange={(e) => setFormData({ ...formData, requirements: e.target.value })} placeholder="Requisitos da vaga" rows={2} />
+            </div>
+            <div className="space-y-2">
+              <Label>Responsabilidades</Label>
+              <Textarea value={formData.responsibilities} onChange={(e) => setFormData({ ...formData, responsibilities: e.target.value })} placeholder="Responsabilidades da funcao" rows={2} />
+            </div>
+            <div className="space-y-2">
+              <Label>Beneficios</Label>
+              <Textarea value={formData.benefits} onChange={(e) => setFormData({ ...formData, benefits: e.target.value })} placeholder="Beneficios oferecidos" rows={2} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={handleSave} disabled={!formData.title || saving}>
+              {saving ? 'Salvando...' : editingId ? 'Salvar Alteracoes' : 'Criar Vaga'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Detail Dialog */}
+      <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Detalhes da Vaga</DialogTitle>
+          </DialogHeader>
+          {detailItem && (
+            <div className="space-y-3 py-2 text-sm">
+              <div><span className="font-medium">Codigo:</span> {detailItem.code || '-'}</div>
+              <div><span className="font-medium">Titulo:</span> {detailItem.title}</div>
+              <div><span className="font-medium">Status:</span> <Badge variant="outline" className={statusConfig[detailItem.status]?.color}>{statusConfig[detailItem.status]?.label || detailItem.status}</Badge></div>
+              <div><span className="font-medium">Tipo:</span> {positionTypeLabels[detailItem.position_type] || detailItem.position_type}</div>
+              {detailItem.department && <div><span className="font-medium">Departamento:</span> {detailItem.department}</div>}
+              {detailItem.position_level && <div><span className="font-medium">Nivel:</span> {detailItem.position_level}</div>}
+              {detailItem.city && <div><span className="font-medium">Local:</span> {[detailItem.city, detailItem.state].filter(Boolean).join(', ')}</div>}
+              {detailItem.work_model && <div><span className="font-medium">Modelo:</span> {detailItem.work_model}</div>}
+              <div><span className="font-medium">Vagas:</span> {detailItem.vacancies} ({detailItem.filled_count || 0} preenchidas)</div>
+              {(detailItem.salary_min || detailItem.salary_max) && (
+                <div><span className="font-medium">Salario:</span> R$ {detailItem.salary_min || '0'} - R$ {detailItem.salary_max || '0'}</div>
+              )}
+              {detailItem.description && <div><span className="font-medium">Descricao:</span><p className="mt-1 text-muted-foreground whitespace-pre-line">{detailItem.description}</p></div>}
+              {detailItem.requirements && <div><span className="font-medium">Requisitos:</span><p className="mt-1 text-muted-foreground whitespace-pre-line">{detailItem.requirements}</p></div>}
+              {detailItem.responsibilities && <div><span className="font-medium">Responsabilidades:</span><p className="mt-1 text-muted-foreground whitespace-pre-line">{detailItem.responsibilities}</p></div>}
+              <div><span className="font-medium">Criado em:</span> {detailItem.created_at ? new Date(detailItem.created_at).toLocaleString('pt-BR') : '-'}</div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

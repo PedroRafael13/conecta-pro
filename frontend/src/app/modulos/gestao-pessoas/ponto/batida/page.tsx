@@ -64,7 +64,8 @@ export default function BaterPontoPage() {
         const res = await customInstance({ url: '/api/v1/people-management/ponto/batidas/me' }) as unknown as PunchRecord[] | { items?: PunchRecord[]; batidas?: PunchRecord[] };
         if (Array.isArray(res)) return res;
         return (res as Record<string, unknown>)?.items as PunchRecord[] ?? (res as Record<string, unknown>)?.batidas as PunchRecord[] ?? [];
-      } catch {
+      } catch (err) {
+        console.error('fetchTodayPunches:', err);
         return [];
       }
     },

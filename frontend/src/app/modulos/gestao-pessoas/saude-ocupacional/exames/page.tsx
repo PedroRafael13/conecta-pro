@@ -30,7 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-;
+import { toast } from 'sonner';
 import {
   usePCMSOStatistics,
   useExpiringASOs,
@@ -58,6 +58,7 @@ export default function ExamesPage() {
     if (!formData.funcionario_id || !formData.tipo_exame || !formData.data_agendamento) return;
     try {
       await scheduleExam.mutateAsync(formData as any);
+      toast.success('Exame agendado com sucesso', { duration: 4000 });
       setDialogOpen(false);
       setFormData({
         funcionario_id: '',
@@ -66,7 +67,9 @@ export default function ExamesPage() {
         clinica: '',
         observacoes: '',
       });
+      refetch();
     } catch (error) {
+      toast.error('Erro ao agendar exame. Tente novamente.', { duration: 5000 });
     }
   };
 
@@ -96,7 +99,7 @@ export default function ExamesPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-28">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

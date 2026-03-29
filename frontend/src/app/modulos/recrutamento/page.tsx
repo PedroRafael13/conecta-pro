@@ -1,78 +1,100 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Users, Briefcase, UserPlus, FileText, Calendar, RefreshCw, ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import {
-  usePositionStats,
-  useCandidateStats,
-  useApplicationStats,
-  useInterviewStats,
-} from '@/hooks/recruitment';
+
+const API_BASE = '/api/v1/recruitment';
+
+function getAuthHeaders() {
+  const token = typeof window !== 'undefined' ? (localStorage.getItem('access_token') || localStorage.getItem('token')) : null;
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+}
 
 export default function RecrutamentoDashboardPage() {
   const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [posStats, setPosStats] = useState<any>(null);
+  const [candStats, setCandStats] = useState<any>(null);
+  const [appStats, setAppStats] = useState<any>(null);
+  const [intStats, setIntStats] = useState<any>(null);
+  const [hasError, setHasError] = useState(false);
 
-  const { data: positionStats, isLoading: loadingPositions, error: errPositions, refetch: refetchPositions } = usePositionStats();
-  const { data: candidateStats, isLoading: loadingCandidates, error: errCandidates, refetch: refetchCandidates } = useCandidateStats();
-  const { data: applicationStats, isLoading: loadingApplications, error: errApplications, refetch: refetchApplications } = useApplicationStats();
-  const { data: interviewStats, isLoading: loadingInterviews, error: errInterviews, refetch: refetchInterviews } = useInterviewStats();
+  const fetchStats = useCallback(async () => {
+    setLoading(true);
+    setHasError(false);
+    try {
+      const headers = getAuthHeaders();
+      const [posRes, candRes, appRes, intRes] = await Promise.allSettled([
+        fetch(`${API_BASE}/job-positions/stats`, { headers }),
+        fetch(`${API_BASE}/candidates/stats`, { headers }),
+        fetch(`${API_BASE}/applications/stats`, { headers }),
+        fetch(`${API_BASE}/interviews/stats`, { headers }),
+      ]);
 
-  const isLoading = loadingPositions || loadingCandidates || loadingApplications || loadingInterviews;
-  const hasError = errPositions || errCandidates || errApplications || errInterviews;
+      if (posRes.status === 'fulfilled' && posRes.value.ok) {
+        setPosStats(await posRes.value.json());
+      }
+      if (candRes.status === 'fulfilled' && candRes.value.ok) {
+        setCandStats(await candRes.value.json());
+      }
+      if (appRes.status === 'fulfilled' && appRes.value.ok) {
+        setAppStats(await appRes.value.json());
+      }
+      if (intRes.status === 'fulfilled' && intRes.value.ok) {
+        setIntStats(await intRes.value.json());
+      }
 
-  // Timeout: se loading > 10s, considerar como erro
-  const [timedOut, setTimedOut] = useState(false);
-  useEffect(() => {
-    if (!isLoading) { setTimedOut(false); return; }
-    const timer = setTimeout(() => setTimedOut(true), 10000);
-    return () => clearTimeout(timer);
-  }, [isLoading]);
-  const showError = hasError || timedOut;
+      const allFailed = [posRes, candRes, appRes, intRes].every(
+        r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.ok)
+      );
+      if (allFailed) {
+        setHasError(true);
+      }
+    } catch {
+      setHasError(true);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const posStats = positionStats as any;
-  const candStats = candidateStats as any;
-  const appStats = applicationStats as any;
-  const intStats = interviewStats as any;
-
-  const handleRefresh = () => {
-    refetchPositions();
-    refetchCandidates();
-    refetchApplications();
-    refetchInterviews();
-  };
+  useEffect(() => { fetchStats(); }, [fetchStats]);
 
   const statCards = [
     {
       title: 'Vagas Abertas',
-      value: posStats?.open_positions ?? posStats?.abertas ?? 0,
-      subtitle: `${posStats?.total ?? 0} vagas no total`,
+      value: posStats?.open_positions ?? 0,
+      subtitle: `${posStats?.total_positions ?? 0} vagas no total`,
       icon: Briefcase,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50',
     },
     {
       title: 'Candidatos Ativos',
-      value: candStats?.active_candidates ?? candStats?.ativos ?? 0,
-      subtitle: `${candStats?.total ?? 0} candidatos cadastrados`,
+      value: candStats?.active_candidates ?? 0,
+      subtitle: `${candStats?.total_candidates ?? 0} candidatos cadastrados`,
       icon: UserPlus,
       color: 'text-green-600',
       bgColor: 'bg-green-50',
     },
     {
-      title: 'Candidaturas',
-      value: appStats?.active_applications ?? appStats?.ativas ?? 0,
-      subtitle: `${appStats?.total ?? 0} candidaturas no total`,
+      title: 'Candidaturas Ativas',
+      value: appStats?.active_applications ?? appStats?.in_process ?? 0,
+      subtitle: `${appStats?.total_applications ?? 0} candidaturas no total`,
       icon: FileText,
       color: 'text-purple-600',
       bgColor: 'bg-purple-50',
     },
     {
-      title: 'Entrevistas Hoje',
-      value: intStats?.today ?? intStats?.hoje ?? 0,
-      subtitle: `${intStats?.scheduled ?? intStats?.agendadas ?? 0} agendadas`,
+      title: 'Entrevistas Agendadas',
+      value: intStats?.scheduled ?? 0,
+      subtitle: `${intStats?.total_interviews ?? 0} entrevistas no total`,
       icon: Calendar,
       color: 'text-orange-600',
       bgColor: 'bg-orange-50',
@@ -115,7 +137,7 @@ export default function RecrutamentoDashboardPage() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-28">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -127,20 +149,20 @@ export default function RecrutamentoDashboardPage() {
             Gerencie vagas, candidatos, candidaturas e entrevistas
           </p>
         </div>
-        <Button variant="outline" onClick={handleRefresh} disabled={isLoading}>
-          <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+        <Button variant="outline" onClick={fetchStats} disabled={loading}>
+          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
           Atualizar
         </Button>
       </div>
 
       {/* Error Banner */}
-      {showError && (
+      {hasError && (
         <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-800/30 dark:bg-red-900/20 dark:text-red-400">
-          <p className="font-medium">{timedOut ? 'Serviço temporariamente indisponível' : 'Erro ao carregar dados do recrutamento'}</p>
+          <p className="font-medium">Erro ao carregar dados do recrutamento</p>
           <p className="mt-1 text-red-600 dark:text-red-500">
-            {timedOut ? 'O servidor não respondeu em 10 segundos. Verifique sua conexão ou tente novamente.' : 'Alguns serviços estão temporariamente indisponíveis.'}
+            Alguns servicos estao temporariamente indisponiveis. Tente novamente.
           </p>
-          <Button variant="outline" size="sm" className="mt-2" onClick={handleRefresh}>
+          <Button variant="outline" size="sm" className="mt-2" onClick={fetchStats}>
             <RefreshCw className="h-3 w-3 mr-1" /> Tentar novamente
           </Button>
         </div>
@@ -155,7 +177,7 @@ export default function RecrutamentoDashboardPage() {
                 <div>
                   <p className="text-sm text-muted-foreground">{card.title}</p>
                   <p className="text-2xl font-bold">
-                    {isLoading ? '...' : card.value}
+                    {loading ? '...' : card.value}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">{card.subtitle}</p>
                 </div>

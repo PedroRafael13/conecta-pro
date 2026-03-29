@@ -12,6 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { toast } from 'sonner';
 import { useCATs, useTaxaAcidente } from '@/hooks/sst';
 
 function getGravidadeBadge(gravidade: string) {
@@ -58,13 +59,22 @@ export default function CATPage() {
   const { data: catsData, isLoading: catsLoading, error: catsError, refetch } = useCATs();
   const { data: taxaData, isLoading: taxaLoading } = useTaxaAcidente();
 
+  const handleRefresh = async () => {
+    try {
+      await refetch();
+      toast.success('Dados atualizados', { duration: 4000 });
+    } catch {
+      toast.error('Erro ao atualizar dados', { duration: 5000 });
+    }
+  };
+
   const cats = catsData?.cats ?? [];
   const totalCATs = catsData?.total ?? 0;
   const taxaAcidente = taxaData?.taxa_acidente_percentual ?? 0;
   const totalColaboradores = taxaData?.total_colaboradores ?? 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-28">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -76,7 +86,7 @@ export default function CATPage() {
             Registro e acompanhamento de acidentes de trabalho
           </p>
         </div>
-        <Button variant="outline" onClick={() => refetch()} disabled={catsLoading}>
+        <Button variant="outline" onClick={handleRefresh} disabled={catsLoading}>
           <RefreshCw className={`h-4 w-4 mr-2 ${catsLoading ? 'animate-spin' : ''}`} />
           Atualizar
         </Button>

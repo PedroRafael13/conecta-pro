@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Award, AlertTriangle, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Award, AlertTriangle, CheckCircle, XCircle, Loader2, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import { toast } from 'sonner';
 
 const API_BASE = '/api/v1/people-management/human-resources';
 
@@ -42,33 +43,51 @@ export default function CertificadosPage() {
   const [certificados, setCertificados] = useState<any[]>([]);
   const [expiring, setExpiring] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const [enrRes, expRes] = await Promise.all([
-          fetch(`${API_BASE}/training/enrollments/?limit=100`, { headers: getAuthHeaders() }),
-          fetch(`${API_BASE}/training/certificates/expiring`, { headers: getAuthHeaders() }),
-        ]);
-        if (enrRes.ok) {
-          const data = await enrRes.json();
-          // Filter enrollments that have certificates
-          const items = (data.items || data || []).filter((e: any) => e.certificate_number || e.certificate_id);
-          setCertificados(items);
-        }
-        if (expRes.ok) {
-          const data = await expRes.json();
-          setExpiring(data.items || data || []);
-        }
-      } catch { setCertificados([]); } finally { setLoading(false); }
-    }
-    load();
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [enrRes, expRes] = await Promise.all([
+        fetch(`${API_BASE}/training/enrollments/?limit=200`, { headers: getAuthHeaders() }),
+        fetch(`${API_BASE}/training/certificates/expiring`, { headers: getAuthHeaders() }),
+      ]);
+      if (enrRes.ok) {
+        const data = await enrRes.json();
+        const items = (data.items || data || []).filter((e: any) => e.certificate_number || e.certificate_id);
+        setCertificados(items);
+      } else {
+        toast.error('Erro ao carregar certificados', { duration: 5000 });
+      }
+      if (expRes.ok) {
+        const data = await expRes.json();
+        setExpiring(data.items || data || []);
+      }
+    } catch {
+      toast.error('Erro de conexao ao carregar certificados', { duration: 5000 });
+      setCertificados([]);
+    } finally { setLoading(false); }
   }, []);
 
-  const filtered = certificados.filter(c => tabFilter[activeTab]?.includes(c.status));
+  useEffect(() => { loadData(); }, [loadData]);
+
+  const tabFiltered = certificados.filter((c: any) => tabFilter[activeTab]?.includes(c.status));
+
+  const filtered = tabFiltered.filter((c: any) => {
+    if (!search) return true;
+    const s = search.toLowerCase();
+    return (c.employee_name || c.colaborador || '').toLowerCase().includes(s) ||
+           (c.course_name || c.curso || '').toLowerCase().includes(s) ||
+           (c.certificate_number || c.numero || '').toLowerCase().includes(s);
+  });
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const paginatedData = filtered.slice((page - 1) * pageSize, page * pageSize);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-28">
       <div>
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <Award className="h-6 w-6" />
@@ -89,7 +108,7 @@ export default function CertificadosPage() {
                   <span className="font-medium">{expiring.length} certificado(s) vencendo nos proximos 30 dias</span>
                 </div>
                 <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
-                  {expiring.map((c, i) => <li key={i}>{c.employee_name || c.colaborador} - {c.course_name || c.curso} (validade: {c.expires_at || c.validade})</li>)}
+                  {expiring.slice(0, 5).map((c: any, i: number) => <li key={i}>{c.employee_name || c.colaborador} - {c.course_name || c.curso} (validade: {c.expires_at || c.validade})</li>)}
                 </ul>
               </CardContent>
             </Card>
@@ -97,11 +116,22 @@ export default function CertificadosPage() {
 
           <div className="flex gap-2 border-b border-gray-800 pb-0">
             {tabs.map(tab => (
-              <button type="button" key={tab} onClick={() => setActiveTab(tab)}
+              <button type="button" key={tab} onClick={() => { setActiveTab(tab); setPage(1); }}
                 className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === tab ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-white'}`}>
-                {tab} ({certificados.filter(c => tabFilter[tab]?.includes(c.status)).length})
+                {tab} ({certificados.filter((c: any) => tabFilter[tab]?.includes(c.status)).length})
               </button>
             ))}
+          </div>
+
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Buscar por colaborador, curso ou numero..."
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+              className="w-full pl-10 pr-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm"
+            />
           </div>
 
           <Card>
@@ -119,9 +149,9 @@ export default function CertificadosPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filtered.length === 0 ? (
+                    {paginatedData.length === 0 ? (
                       <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">Nenhum certificado nesta categoria</td></tr>
-                    ) : filtered.map((c, i) => {
+                    ) : paginatedData.map((c: any, i: number) => {
                       const label = statusLabels[c.status] || c.status;
                       return (
                         <tr key={c.id || i} className="border-b border-gray-800/50 hover:bg-gray-800/30">
@@ -139,6 +169,23 @@ export default function CertificadosPage() {
               </div>
             </CardContent>
           </Card>
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">
+                Mostrando {((page - 1) * pageSize) + 1}-{Math.min(page * pageSize, filtered.length)} de {filtered.length}
+              </p>
+              <div className="flex items-center gap-2">
+                <button type="button" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="p-2 rounded hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed">
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <span className="text-sm">Pagina {page} de {totalPages}</span>
+                <button type="button" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="p-2 rounded hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed">
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>

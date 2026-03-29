@@ -1,7 +1,8 @@
 'use client';
 
-import { Building2, Search, RefreshCw, Plus, MoreHorizontal, Eye, Edit, Trash2, AlertCircle, Users, CheckCircle2 } from 'lucide-react';
+import { Building2, Search, RefreshCw, Plus, MoreHorizontal, Eye, Edit, Trash2, AlertCircle, Users, CheckCircle2, ExternalLink } from 'lucide-react';
 import { useState } from 'react';
+import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -262,7 +263,12 @@ export default function ClientesPage() {
                 {clients.map((client: any) => (
                   <TableRow key={client.id}>
                     <TableCell>
-                      <div className="font-medium">{client.nome}</div>
+                      <Link
+                        href={`/modulos/crm/clientes/${client.id}`}
+                        className="font-medium text-primary hover:underline"
+                      >
+                        {client.nome}
+                      </Link>
                     </TableCell>
                     <TableCell className="text-sm">{client.cnpj || '-'}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">{client.email || '-'}</TableCell>
@@ -279,6 +285,12 @@ export default function ClientesPage() {
                           <DropdownMenuItem onClick={() => { setSelectedItem(client); setDetailOpen(true); }}>
                             <Eye className="h-4 w-4 mr-2" />
                             Ver detalhes
+                          </DropdownMenuItem>
+                          <DropdownMenuItem asChild>
+                            <Link href={`/modulos/crm/clientes/${client.id}`}>
+                              <ExternalLink className="h-4 w-4 mr-2" />
+                              Ver 360°
+                            </Link>
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => { setEditItem(client); setFormOpen(true); }}>
                             <Edit className="h-4 w-4 mr-2" />

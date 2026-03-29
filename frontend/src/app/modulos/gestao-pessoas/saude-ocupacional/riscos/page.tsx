@@ -29,7 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-;
+import { toast } from 'sonner';
 import {
   usePPRAStatistics,
   useRiskMappings,
@@ -107,12 +107,16 @@ export default function RiscosPage() {
     try {
       if (editItem) {
         await updateMapping.mutateAsync({ mappingId: editItem.id, data: formData as any });
+        toast.success('Mapeamento atualizado com sucesso', { duration: 4000 });
       } else {
         await createMapping.mutateAsync(formData as any);
+        toast.success('Mapeamento de risco cadastrado com sucesso', { duration: 4000 });
       }
       setDialogOpen(false);
       resetForm();
+      refetch();
     } catch (error) {
+      toast.error('Erro ao salvar mapeamento. Tente novamente.', { duration: 5000 });
     }
   };
 
@@ -180,7 +184,7 @@ export default function RiscosPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-28">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

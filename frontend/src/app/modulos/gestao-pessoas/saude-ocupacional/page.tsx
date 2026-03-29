@@ -1,10 +1,10 @@
 'use client';
 
-import { Heart, Stethoscope, HardHat, AlertTriangle, FileCheck, ShieldAlert, Package, ArrowRight, FileText } from 'lucide-react';
+import { Heart, Stethoscope, HardHat, AlertTriangle, FileCheck, ShieldAlert, Package, ArrowRight, FileText, UserX, Pill, Shield } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-;
 import { useRouter } from 'next/navigation';
 import { usePCMSOStatistics, useEPIStatistics, usePPRAStatistics } from '@/hooks/health-occupational';
+import { useSSTDashboard } from '@/hooks/sst';
 
 const subPages = [
   {
@@ -39,6 +39,38 @@ const subPages = [
     color: 'text-teal-600',
     bg: 'bg-teal-50',
   },
+  {
+    title: 'CAT - Acidente de Trabalho',
+    description: 'Registro e acompanhamento de Comunicacoes de Acidente de Trabalho',
+    icon: AlertTriangle,
+    href: '/modulos/gestao-pessoas/saude-ocupacional/cat',
+    color: 'text-red-600',
+    bg: 'bg-red-50',
+  },
+  {
+    title: 'Afastamentos',
+    description: 'Controle de afastamentos de colaboradores',
+    icon: UserX,
+    href: '/modulos/gestao-pessoas/saude-ocupacional/afastamentos',
+    color: 'text-yellow-600',
+    bg: 'bg-yellow-50',
+  },
+  {
+    title: 'Estabilidade Pos-Acidente',
+    description: 'Controle de colaboradores em periodo de estabilidade provisoria (CCT Clausula 29a)',
+    icon: Shield,
+    href: '/modulos/gestao-pessoas/saude-ocupacional/estabilidade',
+    color: 'text-indigo-600',
+    bg: 'bg-indigo-50',
+  },
+  {
+    title: 'Ajuda Medicamento',
+    description: 'Beneficio CCT Clausula 15a - Auxilio medicamento R$ 300/mes',
+    icon: Pill,
+    href: '/modulos/gestao-pessoas/saude-ocupacional/ajuda-medicamento',
+    color: 'text-emerald-600',
+    bg: 'bg-emerald-50',
+  },
 ];
 
 export default function SaudeOcupacionalPage() {
@@ -46,11 +78,12 @@ export default function SaudeOcupacionalPage() {
   const { data: pcmsoStats, isLoading: pcmsoLoading } = usePCMSOStatistics();
   const { data: epiStats, isLoading: epiLoading } = useEPIStatistics();
   const { data: ppraStats, isLoading: ppraLoading } = usePPRAStatistics();
+  const { data: dashboard, isLoading: dashboardLoading } = useSSTDashboard();
 
-  const statsLoading = pcmsoLoading || epiLoading || ppraLoading;
+  const statsLoading = pcmsoLoading || epiLoading || ppraLoading || dashboardLoading;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-28">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold flex items-center gap-2">
@@ -58,7 +91,7 @@ export default function SaudeOcupacionalPage() {
           Saude Ocupacional
         </h1>
         <p className="text-muted-foreground">
-          Gestao integrada de saude e seguranca do trabalho - PCMSO, EPIs e PPRA/PGR.
+          Gestao integrada de saude e seguranca do trabalho - PCMSO, EPIs, PPRA/PGR, SST.
         </p>
       </div>
 
@@ -88,7 +121,7 @@ export default function SaudeOcupacionalPage() {
               <div className="h-8 w-16 animate-pulse rounded bg-muted" />
             ) : (
               <div className="text-2xl font-bold text-yellow-600">
-                {(pcmsoStats as any)?.asos_vencendo ?? 0}
+                {(dashboard as any)?.asos_vencendo_30d ?? (pcmsoStats as any)?.asos_vencendo ?? 0}
               </div>
             )}
           </CardContent>
@@ -96,15 +129,15 @@ export default function SaudeOcupacionalPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">EPIs Entregues</CardTitle>
-            <Package className="h-4 w-4 text-purple-600" />
+            <CardTitle className="text-sm font-medium">Afastados Ativos</CardTitle>
+            <UserX className="h-4 w-4 text-orange-600" />
           </CardHeader>
           <CardContent>
             {statsLoading ? (
               <div className="h-8 w-16 animate-pulse rounded bg-muted" />
             ) : (
-              <div className="text-2xl font-bold text-purple-600">
-                {(epiStats as any)?.total_entregas ?? 0}
+              <div className="text-2xl font-bold text-orange-600">
+                {(dashboard as any)?.afastados_ativos ?? 0}
               </div>
             )}
           </CardContent>

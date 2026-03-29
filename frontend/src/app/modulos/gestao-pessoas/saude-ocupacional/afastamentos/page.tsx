@@ -12,6 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { toast } from 'sonner';
 import { useAfastamentos, useAjudaMedicamento } from '@/hooks/sst';
 
 function getStatusBadge(status: string) {
@@ -46,6 +47,15 @@ export default function AfastamentosPage() {
   } = useAfastamentos();
   const { data: ajudaData } = useAjudaMedicamento();
 
+  const handleRefresh = async () => {
+    try {
+      await refetch();
+      toast.success('Dados atualizados', { duration: 4000 });
+    } catch {
+      toast.error('Erro ao atualizar dados', { duration: 5000 });
+    }
+  };
+
   const afastamentos = afastamentosData?.afastamentos ?? [];
   const totalAfastados = afastamentos.filter((a) => a.status === 'ativo').length;
   const totalRegistros = afastamentosData?.total ?? 0;
@@ -56,7 +66,7 @@ export default function AfastamentosPage() {
   const custoMensal = ajudaData?.custo_mensal_total ?? 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-28">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -68,7 +78,7 @@ export default function AfastamentosPage() {
             Controle de afastamentos de colaboradores - SST
           </p>
         </div>
-        <Button variant="outline" onClick={() => refetch()} disabled={isLoading}>
+        <Button variant="outline" onClick={handleRefresh} disabled={isLoading}>
           <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
           Atualizar
         </Button>

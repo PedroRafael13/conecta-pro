@@ -21,6 +21,12 @@ export default function CampanhasPage() {
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['marketing-campaigns'] }); toast.success('Campanha criada'); setShowForm(false); },
   });
 
+  const activateMutation = useMutation({
+    mutationFn: (id: string) => customInstance({ url: `/api/v1/marketing/campaigns/${id}`, method: 'PUT', data: { status: 'active' } }),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['marketing-campaigns'] }); toast.success('Campanha ativada'); },
+    onError: () => { toast.error('Erro ao ativar campanha'); },
+  });
+
   const campaigns = (data as any)?.items || [];
 
   return (
@@ -65,7 +71,7 @@ export default function CampanhasPage() {
       ) : (
         <div className="bg-white rounded-xl border overflow-hidden">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50"><tr><th className="text-left p-3">Campanha</th><th className="text-left p-3">Tipo</th><th className="text-right p-3">Budget</th><th className="text-right p-3">Leads</th><th className="text-right p-3">Conversão</th><th className="text-left p-3">Status</th></tr></thead>
+            <thead className="bg-gray-50"><tr><th className="text-left p-3">Campanha</th><th className="text-left p-3">Tipo</th><th className="text-right p-3">Budget</th><th className="text-right p-3">Leads</th><th className="text-right p-3">Conversao</th><th className="text-left p-3">Status</th><th className="text-left p-3">Acoes</th></tr></thead>
             <tbody>
               {campaigns.map((c: any) => (
                 <tr key={c.id} className="border-t hover:bg-gray-50">
@@ -75,6 +81,17 @@ export default function CampanhasPage() {
                   <td className="p-3 text-right">{c.total_leads}</td>
                   <td className="p-3 text-right font-medium text-green-600">{c.roi}%</td>
                   <td className="p-3"><span className={`px-2 py-0.5 rounded text-xs ${c.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100'}`}>{c.status}</span></td>
+                  <td className="p-3">
+                    {c.status !== 'active' && (
+                      <button
+                        onClick={() => activateMutation.mutate(c.id)}
+                        disabled={activateMutation.isPending}
+                        className="text-xs bg-green-600 text-white px-3 py-1.5 rounded-lg hover:bg-green-700 disabled:opacity-50"
+                      >
+                        Ativar
+                      </button>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>

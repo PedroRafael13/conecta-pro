@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { BarChart3, Users, TrendingDown, Clock, Smile, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { toast } from 'sonner';
 import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -39,7 +40,7 @@ export default function DashboardRHPage() {
         const [empRes, turnoverRes, climaRes] = await Promise.all([
           fetch(`${API_HR}/employees/?limit=200`, { headers }),
           fetch(`${API_RH}/turnover/dashboard`, { headers }).catch(() => null),
-          fetch(`${API_RH}/climate/?limit=1`, { headers }).catch(() => null),
+          fetch(`${API_RH}/climate/dashboard`, { headers }).catch(() => null),
         ]);
 
         let headcount = 0;
@@ -81,6 +82,8 @@ export default function DashboardRHPage() {
             .map(([name, value]) => ({ name, value }))
             .sort((a, b) => b.value - a.value);
           setTurnoData(funcDistr);
+        } else {
+          toast.error('Erro ao carregar dados de funcionarios', { duration: 5000 });
         }
 
         let turnoverRate = '-';
@@ -94,14 +97,23 @@ export default function DashboardRHPage() {
         let satisfaction = '-%';
         if (climaRes?.ok) {
           const d = await climaRes.json();
-          const items = d.items || d || [];
-          if (items.length > 0) {
-            satisfaction = `${items[0].score || items[0].overall_score || 0}%`;
+          if (d.overall_score !== undefined) {
+            satisfaction = `${d.overall_score}%`;
+          } else if (d.satisfaction !== undefined) {
+            satisfaction = `${d.satisfaction}%`;
+          } else {
+            // Fallback: try items array
+            const items = d.items || d || [];
+            if (Array.isArray(items) && items.length > 0) {
+              satisfaction = `${items[0].score || items[0].overall_score || 0}%`;
+            }
           }
         }
 
         setStats({ headcount, turnoverRate, avgHireTime, satisfaction });
-      } catch { /* fallback */ } finally { setLoading(false); }
+      } catch {
+        toast.error('Erro de conexao ao carregar dashboard', { duration: 5000 });
+      } finally { setLoading(false); }
     }
     load();
   }, []);
@@ -114,7 +126,7 @@ export default function DashboardRHPage() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-28">
       <div>
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <BarChart3 className="h-6 w-6" />

@@ -48,7 +48,7 @@ function formatDate(val: string | null | undefined): string {
   try {
     const parts = val.split('T')[0]?.split('-');
     if (parts && parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
-  } catch { /* fallback */ }
+  } catch (err) { console.error('formatDate:', err); }
   return val;
 }
 
@@ -124,7 +124,8 @@ export default function PontoPage() {
 
         setRegistros(normalized);
         toast.info(`${normalized.length} registro${normalized.length !== 1 ? 's' : ''} carregado${normalized.length !== 1 ? 's' : ''}`, { duration: 3000 });
-      } catch {
+      } catch (err) {
+        console.error('loadTimeRecords:', err);
         toast.error('Erro ao carregar registros de ponto', { duration: 5000 });
         setRegistros([]);
       } finally {
@@ -150,7 +151,8 @@ export default function PontoPage() {
         const err = await res.json().catch(() => null);
         toast.error(err?.detail || 'Erro ao registrar entrada', { duration: 5000 });
       }
-    } catch {
+    } catch (err) {
+      console.error('handleClockIn:', err);
       toast.error('Erro de conexao', { duration: 5000 });
     }
   };
@@ -168,7 +170,8 @@ export default function PontoPage() {
         const err = await res.json().catch(() => null);
         toast.error(err?.detail || 'Erro ao registrar saida', { duration: 5000 });
       }
-    } catch {
+    } catch (err) {
+      console.error('handleClockOut:', err);
       toast.error('Erro de conexao', { duration: 5000 });
     }
   };
@@ -205,7 +208,8 @@ export default function PontoPage() {
         const err = await res.json().catch(() => null);
         toast.error(err?.detail || 'Erro ao criar registro manual', { duration: 5000 });
       }
-    } catch {
+    } catch (err) {
+      console.error('handleManualEntry:', err);
       toast.error('Erro de conexao', { duration: 5000 });
     } finally {
       setSaving(false);

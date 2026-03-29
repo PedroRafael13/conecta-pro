@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { BookOpen, Plus, Clock, Users, CheckCircle, XCircle, Loader2, X } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { BookOpen, Plus, Clock, Users, CheckCircle, XCircle, Loader2, X, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 const API_BASE = '/api/v1/people-management/human-resources';
 
@@ -42,22 +43,31 @@ export default function CursosPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const pageSize = 9;
   const [form, setForm] = useState({
     name: '', category: 'technical', duration_hours: 8,
     is_mandatory: false, description: '', validity_months: '' as string,
   });
 
-  async function loadCursos() {
+  const loadCursos = useCallback(async () => {
+    setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/training/courses/?limit=50`, { headers: getAuthHeaders() });
+      const res = await fetch(`${API_BASE}/training/courses/?limit=100`, { headers: getAuthHeaders() });
       if (res.ok) {
         const data = await res.json();
         setCursos(data.items || data || []);
+      } else {
+        toast.error('Erro ao carregar cursos', { duration: 5000 });
       }
-    } catch { setCursos([]); } finally { setLoading(false); }
-  }
+    } catch {
+      toast.error('Erro de conexao ao carregar cursos', { duration: 5000 });
+      setCursos([]);
+    } finally { setLoading(false); }
+  }, []);
 
-  useEffect(() => { loadCursos(); }, []);
+  useEffect(() => { loadCursos(); }, [loadCursos]);
 
   async function handleSave() {
     if (!form.name.trim()) return;
@@ -75,15 +85,32 @@ export default function CursosPage() {
         method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(body),
       });
       if (res.ok) {
+        toast.success('Curso criado com sucesso', { duration: 4000 });
         setShowModal(false);
         setForm({ name: '', category: 'technical', duration_hours: 8, is_mandatory: false, description: '', validity_months: '' });
         await loadCursos();
+      } else {
+        const err = await res.json().catch(() => null);
+        toast.error(err?.detail || 'Erro ao criar curso', { duration: 5000 });
       }
-    } catch { /* ignore */ } finally { setSaving(false); }
+    } catch {
+      toast.error('Erro de conexao ao salvar curso', { duration: 5000 });
+    } finally { setSaving(false); }
   }
 
+  const filtered = cursos.filter((c: any) => {
+    if (!search) return true;
+    const s = search.toLowerCase();
+    return (c.name || c.nome || '').toLowerCase().includes(s) ||
+           (categoriaLabels[c.category] || c.category || '').toLowerCase().includes(s) ||
+           (c.description || '').toLowerCase().includes(s);
+  });
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const paginatedData = filtered.slice((page - 1) * pageSize, page * pageSize);
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-28">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
@@ -95,44 +122,74 @@ export default function CursosPage() {
         <Button onClick={() => setShowModal(true)}><Plus className="h-4 w-4 mr-2" />Novo Curso</Button>
       </div>
 
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <input
+          type="text"
+          placeholder="Buscar por nome, categoria ou descricao..."
+          value={search}
+          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+          className="w-full pl-10 pr-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm"
+        />
+      </div>
+
       {loading ? (
         <div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>
-      ) : cursos.length === 0 ? (
+      ) : paginatedData.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">Nenhum curso encontrado</div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {cursos.map((curso, i) => {
-            const cat = curso.category || 'other';
-            return (
-              <Card key={curso.id || i} className="hover:shadow-md transition-shadow">
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm font-medium">{curso.name || curso.nome}</CardTitle>
-                    {curso.is_mandatory && (
-                      <span className="text-xs bg-red-900/30 text-red-400 px-2 py-0.5 rounded">Obrigatorio</span>
-                    )}
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <span className={`text-xs px-2 py-0.5 rounded ${categoriaCores[cat] || 'bg-gray-800 text-gray-400'}`}>
-                    {categoriaLabels[cat] || cat}
-                  </span>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{curso.duration_hours || '-'}h</span>
-                    <span className="flex items-center gap-1"><Users className="h-3 w-3" />{curso.participants_count || 0}</span>
-                  </div>
-                  <div className="flex items-center gap-1 text-sm">
-                    {curso.is_active !== false ? (
-                      <><CheckCircle className="h-4 w-4 text-green-500" /><span className="text-green-500">Ativo</span></>
-                    ) : (
-                      <><XCircle className="h-4 w-4 text-gray-500" /><span className="text-gray-500">Inativo</span></>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+        <>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {paginatedData.map((curso: any, i: number) => {
+              const cat = curso.category || 'other';
+              return (
+                <Card key={curso.id || i} className="hover:shadow-md transition-shadow">
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-sm font-medium">{curso.name || curso.nome}</CardTitle>
+                      {curso.is_mandatory && (
+                        <span className="text-xs bg-red-900/30 text-red-400 px-2 py-0.5 rounded">Obrigatorio</span>
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <span className={`text-xs px-2 py-0.5 rounded ${categoriaCores[cat] || 'bg-gray-800 text-gray-400'}`}>
+                      {categoriaLabels[cat] || cat}
+                    </span>
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{curso.duration_hours || '-'}h</span>
+                      <span className="flex items-center gap-1"><Users className="h-3 w-3" />{curso.participants_count || 0}</span>
+                    </div>
+                    <div className="flex items-center gap-1 text-sm">
+                      {curso.is_active !== false ? (
+                        <><CheckCircle className="h-4 w-4 text-green-500" /><span className="text-green-500">Ativo</span></>
+                      ) : (
+                        <><XCircle className="h-4 w-4 text-gray-500" /><span className="text-gray-500">Inativo</span></>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">
+                Mostrando {((page - 1) * pageSize) + 1}-{Math.min(page * pageSize, filtered.length)} de {filtered.length}
+              </p>
+              <div className="flex items-center gap-2">
+                <button type="button" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="p-2 rounded hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed">
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <span className="text-sm">Pagina {page} de {totalPages}</span>
+                <button type="button" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="p-2 rounded hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed">
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {showModal && (
