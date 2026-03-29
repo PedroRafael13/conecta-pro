@@ -295,6 +295,14 @@ try:
     api_router.include_router(crm_contract_router, prefix="/crm", tags=["CRM - Contratos"])
     api_router.include_router(crm_commission_router, prefix="/crm", tags=["CRM - Comissoes"])
     api_router.include_router(crm_dashboard_router, prefix="/crm", tags=["CRM - Dashboard"])
+    # CRM Contacts + Activities + 360°
+    from modules.crm.controllers.contact_controller import router as crm_contact_router
+
+    api_router.include_router(crm_contact_router, prefix="/crm", tags=["CRM - Contatos & 360"])
+    # Marketing
+    from modules.crm.controllers.marketing_controller import router as mkt_router
+
+    api_router.include_router(mkt_router, tags=["Marketing"])
     # Clients
     api_router.include_router(client_router, tags=["Clients - Cadastro"])
     # Bidding (Licitações — sem certidões, movidas para fiscal_contabil)

@@ -5,12 +5,12 @@ import { Module, ModuleCategory } from '@/types/modules';
 // Sessao 23: Gestao de Pessoas com 5 cards separados (DP, RH, GED, Operacoes, Portal)
 export const modules: Module[] = [
   // =================================================================
-  // 1. COMERCIAL (antigos: CRM + Servicos)
+  // 1. MARKETING E VENDAS (CRM + Marketing + Licitacoes)
   // =================================================================
   {
-    id: 'comercial',
-    title: 'Comercial',
-    description: 'CRM, servicos e licitacoes',
+    id: 'marketing-vendas',
+    title: 'Marketing e Vendas',
+    description: 'CRM, marketing digital e licitacoes',
     icon: 'Handshake',
     href: '/modulos/crm',
     color: 'cyan',
@@ -18,24 +18,25 @@ export const modules: Module[] = [
     enabled: true,
     subModules: [
       // --- CRM ---
+      { id: 'crm-dashboard', title: 'Dashboard', href: '/modulos/crm', icon: 'LayoutDashboard', permissions: ['crm:read'], group: 'CRM' },
+      { id: 'clientes', title: 'Clientes', href: '/modulos/crm/clientes', icon: 'Building2', permissions: ['crm:clientes'], group: 'CRM' },
       { id: 'leads', title: 'Leads', href: '/modulos/crm/leads', icon: 'UserPlus', permissions: ['crm:leads'], group: 'CRM' },
       { id: 'oportunidades', title: 'Oportunidades', href: '/modulos/crm/oportunidades', icon: 'Target', permissions: ['crm:oportunidades'], group: 'CRM' },
-      { id: 'clientes', title: 'Clientes', href: '/modulos/crm/clientes', icon: 'Building2', permissions: ['crm:clientes'], group: 'CRM' },
-      { id: 'contatos', title: 'Contatos', href: '/modulos/crm/contatos', icon: 'Contact', permissions: ['crm:contatos'], group: 'CRM' },
       { id: 'propostas', title: 'Propostas', href: '/modulos/crm/propostas', icon: 'FileText', permissions: ['crm:propostas'], group: 'CRM' },
-      { id: 'contratos', title: 'Contratos', href: '/modulos/servicos/contratos', icon: 'FileSignature', permissions: ['services:contratos'], group: 'CRM' },
+      { id: 'contratos', title: 'Contratos', href: '/modulos/crm/contratos', icon: 'FileSignature', permissions: ['crm:read'], group: 'CRM' },
+      { id: 'contatos', title: 'Contatos', href: '/modulos/crm/contatos', icon: 'Contact', permissions: ['crm:contatos'], group: 'CRM' },
+      // --- Marketing ---
+      { id: 'mkt-funil', title: 'Funil', href: '/modulos/marketing/funil', icon: 'Filter', permissions: ['crm:read'], group: 'Marketing' },
+      { id: 'mkt-campanhas', title: 'Campanhas', href: '/modulos/marketing/campanhas', icon: 'Megaphone', permissions: ['crm:read'], group: 'Marketing' },
+      { id: 'mkt-lead-magnet', title: 'Lead Magnet', href: '/modulos/marketing/lead-magnet', icon: 'Magnet', permissions: ['crm:read'], group: 'Marketing' },
+      { id: 'mkt-brand-voice', title: 'Brand Voice', href: '/modulos/marketing/brand-voice', icon: 'Volume2', permissions: ['crm:read'], group: 'Marketing' },
       // --- Licitacoes ---
       { id: 'licitacoes-dashboard', title: 'Dashboard', href: '/modulos/licitacoes', icon: 'LayoutDashboard', permissions: ['bidding:tenders:read'], group: 'Licitacoes' },
-      { id: 'oportunidades-licitacao', title: 'Oportunidades', href: '/modulos/licitacoes/oportunidades', icon: 'Search', permissions: ['bidding:tenders:read'], group: 'Licitacoes' },
       { id: 'editais', title: 'Editais', href: '/modulos/licitacoes/editais', icon: 'FileSearch', permissions: ['bidding:tenders:read'], group: 'Licitacoes' },
       { id: 'propostas-licitacao', title: 'Propostas', href: '/modulos/licitacoes/propostas', icon: 'FileCheck', permissions: ['bidding:proposals:read'], group: 'Licitacoes' },
-      { id: 'contratos-licitacao', title: 'Contratos Publicos', href: '/modulos/licitacoes/contratos', icon: 'FileSignature', permissions: ['bidding:contracts:read'], group: 'Licitacoes' },
-      { id: 'disputas-licitacao', title: 'Disputas', href: '/modulos/licitacoes/disputas', icon: 'Swords', permissions: ['bidding:tenders:read'], group: 'Licitacoes' },
       { id: 'documentos-licitacao', title: 'Documentos', href: '/modulos/licitacoes/documentos', icon: 'FolderOpen', permissions: ['bidding:documents:read'], group: 'Licitacoes' },
+      { id: 'disputas-licitacao', title: 'Disputas', href: '/modulos/licitacoes/disputas', icon: 'Swords', permissions: ['bidding:tenders:read'], group: 'Licitacoes' },
       { id: 'ia-licitacoes', title: 'IA Hub', href: '/modulos/licitacoes/ia', icon: 'Bot', permissions: ['bidding:tenders:read'], group: 'Licitacoes' },
-      // --- Servicos ---
-      { id: 'ordens', title: 'Ordens de Servico', href: '/modulos/servicos/ordens', icon: 'ClipboardList', permissions: ['services:ordens'], group: 'Servicos' },
-      { id: 'agendamentos', title: 'Agendamentos', href: '/modulos/servicos/agendamentos', icon: 'Calendar', permissions: ['services:agendamentos'], group: 'Servicos' },
     ],
   },
 
