@@ -347,35 +347,35 @@ class CondominiumResponse(BaseModel):
     """Schema for condominium response."""
 
     id: UUID
-    code: str
-    client_id: UUID
-    name: str
-    type: CondominiumType
-    status: CondominiumStatus
-    administration_type: AdministrationType | None
-    cnpj: str | None
-    full_address: str
-    address_city: str
-    address_state: str
+    code: str | None = None
+    client_id: UUID | None = None
+    name: str | None = None
+    condominium_type: CondominiumType | None = None
+    status: CondominiumStatus | None = None
+    administration_type: AdministrationType | None = None
+    cnpj: str | None = None
+    full_address: str | None = None
+    address_city: str | None = None
+    address_state: str | None = None
 
-    syndic_name: str | None
-    syndic_phone: str | None
-    syndic_mandate_active: bool
+    syndic_name: str | None = None
+    syndic_phone: str | None = None
+    syndic_mandate_active: bool | None = None
 
-    total_units: int
-    occupied_units: int
-    occupancy_rate: float
-    total_towers: int | None
+    total_units: int | None = 0
+    occupied_units: int | None = 0
+    occupancy_rate: float | None = 0.0
+    total_towers: int | None = None
 
-    security_level: str
-    amenities_count: int
+    security_level: str | None = None
+    amenities_count: int | None = 0
 
-    plus_enabled: bool
-    is_active: bool
-    is_premium: bool
+    plus_enabled: bool | None = False
+    is_active: bool | None = True
+    is_premium: bool | None = False
 
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
     model_config = {"from_attributes": True}
 
@@ -384,18 +384,18 @@ class CondominiumListResponse(BaseModel):
     """Schema for condominium list response."""
 
     id: UUID
-    code: str
-    client_id: UUID
-    name: str
-    type: CondominiumType
-    status: CondominiumStatus
-    address_city: str
-    address_state: str
-    total_units: int
-    occupancy_rate: float
-    security_level: str
-    is_premium: bool
-    created_at: datetime
+    code: str | None = None
+    client_id: UUID | None = None
+    name: str | None = None
+    condominium_type: CondominiumType | None = None
+    status: CondominiumStatus | None = None
+    address_city: str | None = None
+    address_state: str | None = None
+    total_units: int | None = 0
+    occupancy_rate: float | None = 0.0
+    security_level: str | None = None
+    is_premium: bool | None = False
+    created_at: datetime | None = None
 
     model_config = {"from_attributes": True}
 

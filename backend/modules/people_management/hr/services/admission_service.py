@@ -29,6 +29,8 @@ DEFAULT_ADMISSION_CHECKLIST = {
         "comprovante_residencia": False,
         "certidao_nascimento_casamento": False,
         "foto_3x4": False,
+        "declaracao_dependentes": False,
+        "comprovante_escolaridade": False,
     },
     "documentos_trabalhistas": {
         "ctps": False,
@@ -36,6 +38,7 @@ DEFAULT_ADMISSION_CHECKLIST = {
         "certificado_escolaridade": False,
         "certidao_nascimento_filhos": False,
         "cartao_vacina_filhos": False,
+        "comprovante_endereco_atualizado": False,
     },
     "documentos_seguranca": {
         "curso_vigilante": False,
@@ -43,13 +46,16 @@ DEFAULT_ADMISSION_CHECKLIST = {
         "certificado_reciclagem": False,
         "registro_policia_federal": False,
         "antecedentes_criminais": False,
+        "exame_toxicologico": False,
     },
     "exames": {
         "aso_admissional": False,
         "exame_psicotecnico": False,
+        "laudo_pcd": False,
     },
     "bancarios": {
         "dados_conta_bancaria": False,
+        "comprovante_abertura_conta": False,
     },
 }
 

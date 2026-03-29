@@ -57,10 +57,10 @@ export function CondominioProvider({ children }: CondominioProviderProps) {
         const allCondominios: Condominio[] = [];
         for (const client of clientList) {
           try {
-            const conds = await customInstance<Array<{ id: string; nome?: string; name?: string; tipo?: string; type?: string; status?: string }>>({
+            const conds = await customInstance<Array<{ id: string; nome?: string; name?: string; tipo?: string; type?: string; condominium_type?: string; status?: string }>>({
               url: `/api/v1/clients/${client.id}/condominiums`,
               method: 'GET',
-            }).catch(() => [] as Array<{ id: string; nome?: string; name?: string; tipo?: string; type?: string; status?: string }>);
+            }).catch(() => [] as Array<{ id: string; nome?: string; name?: string; tipo?: string; type?: string; condominium_type?: string; status?: string }>);
 
             if (Array.isArray(conds)) {
               allCondominios.push(

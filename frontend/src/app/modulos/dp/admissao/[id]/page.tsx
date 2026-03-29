@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Loader2, User, FileText, Calendar, DollarSign, Building2, ChevronRight, CheckCircle2, XCircle, Edit } from 'lucide-react';
+import { ArrowLeft, Loader2, User, FileText, Calendar, ChevronRight, CheckCircle2, XCircle, Edit, Save, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -36,11 +36,30 @@ export default function AdmissaoDetalhePage() {
   const [data, setData] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
   const [advancing, setAdvancing] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [showExamModal, setShowExamModal] = useState(false);
+  const [examData, setExamData] = useState({ date: new Date().toISOString().slice(0, 10), result: 'apto' });
+  const [showCompleteModal, setShowCompleteModal] = useState(false);
+  const [completeData, setCompleteData] = useState({ actual_start_date: '' });
+  const [editing, setEditing] = useState(false);
+  const [editData, setEditData] = useState({ candidate_name: '', cpf: '', position: '', department: '', salary_proposed: '', notes: '' });
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const loadData = useCallback(async () => {
     try {
       const res = await fetch(`${API_BASE}/admissions/${params.id}`, { headers: getAuthHeaders() });
-      if (res.ok) setData(await res.json());
+      if (res.ok) {
+        const json = await res.json();
+        setData(json);
+        setEditData({
+          candidate_name: String(json.candidate_name || ''),
+          cpf: String(json.cpf || ''),
+          position: String(json.position || ''),
+          department: String(json.department || ''),
+          salary_proposed: json.salary_proposed ? String(json.salary_proposed) : '',
+          notes: String(json.notes || ''),
+        });
+      }
     } catch { /* */ }
     finally { setLoading(false); }
   }, [params.id]);
@@ -56,14 +75,56 @@ export default function AdmissaoDetalhePage() {
       });
       if (res.ok) { toast.success(`Status atualizado para ${STATUS[newStatus]?.label || newStatus}`); await loadData(); }
       else { toast.error('Erro ao atualizar status'); }
-    } catch { toast.error('Erro de conexao'); }
+    } catch { toast.error('Erro de conexão'); }
     finally { setAdvancing(false); }
   };
 
+  const handleCancelAdmission = async () => {
+    setShowCancelConfirm(false);
+    await advanceStatus('cancelled');
+  };
+
+  const handleSaveEdit = async () => {
+    setSavingEdit(true);
+    try {
+      const payload: Record<string, unknown> = {};
+      if (editData.candidate_name !== String(data?.candidate_name || '')) payload.candidate_name = editData.candidate_name;
+      if (editData.cpf !== String(data?.cpf || '')) payload.cpf = editData.cpf;
+      if (editData.position !== String(data?.position || '')) payload.position = editData.position;
+      if (editData.department !== String(data?.department || '')) payload.department = editData.department;
+      if (editData.notes !== String(data?.notes || '')) payload.notes = editData.notes;
+      const newSalary = editData.salary_proposed ? parseFloat(editData.salary_proposed) : null;
+      const oldSalary = data?.salary_proposed ? Number(data.salary_proposed) : null;
+      if (newSalary !== oldSalary) payload.salary_proposed = newSalary;
+
+      if (Object.keys(payload).length === 0) {
+        toast.info('Nenhuma alteração detectada');
+        setEditing(false);
+        setSavingEdit(false);
+        return;
+      }
+
+      const res = await fetch(`${API_BASE}/admissions/${params.id}`, {
+        method: 'PATCH', headers: getAuthHeaders(),
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) {
+        toast.success('Dados atualizados com sucesso!');
+        setEditing(false);
+        await loadData();
+      } else {
+        const err = await res.json().catch(() => null);
+        toast.error(err?.detail || 'Erro ao salvar alterações');
+      }
+    } catch { toast.error('Erro de conexão'); }
+    finally { setSavingEdit(false); }
+  };
+
   if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
-  if (!data) return <div className="text-center py-20 text-muted-foreground">Admissao nao encontrada</div>;
+  if (!data) return <div className="text-center py-20 text-muted-foreground">Admissão não encontrada</div>;
 
   const st = STATUS[String(data.status)] || { label: String(data.status), color: 'bg-gray-500 text-white' };
+  const isEditable = String(data.status) !== 'completed' && String(data.status) !== 'cancelled';
 
   return (
     <div className="space-y-6">
@@ -73,40 +134,200 @@ export default function AdmissaoDetalhePage() {
         </Button>
         <div>
           <h1 className="text-2xl font-bold">{String(data.candidate_name || 'Candidato')}</h1>
-          <p className="text-muted-foreground">Processo de admissao</p>
+          <p className="text-muted-foreground">Processo de admissão</p>
         </div>
         <Badge className={st.color}>{st.label}</Badge>
         <div className="ml-auto flex gap-2">
-          {String(data.status) !== 'completed' && String(data.status) !== 'cancelled' && (
-            <Button variant="destructive" size="sm" disabled={advancing} onClick={() => advanceStatus('cancelled')}>
-              <XCircle className="h-4 w-4 mr-1" /> Cancelar Admissao
+          {isEditable && !editing && (
+            <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
+              <Edit className="h-4 w-4 mr-1" /> Editar
+            </Button>
+          )}
+          {isEditable && (
+            <Button variant="destructive" size="sm" disabled={advancing} onClick={() => setShowCancelConfirm(true)}>
+              <XCircle className="h-4 w-4 mr-1" /> Cancelar Admissão
             </Button>
           )}
         </div>
       </div>
 
+      {/* Modal de confirmação de cancelamento */}
+      {showCancelConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-lg shadow-xl p-6 max-w-md mx-4 text-gray-900">
+            <h3 className="text-lg font-bold mb-2">Confirmar Cancelamento</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Tem certeza que deseja cancelar a admissão de <strong>{String(data.candidate_name)}</strong>?
+              Esta ação não pode ser desfeita.
+            </p>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" size="sm" onClick={() => setShowCancelConfirm(false)}>Não, manter</Button>
+              <Button variant="destructive" size="sm" onClick={handleCancelAdmission}>
+                Sim, cancelar admissão
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Workflow Buttons */}
-      {String(data.status) !== 'completed' && String(data.status) !== 'cancelled' && (
+      {isEditable && !editing && (
         <Card>
           <CardContent className="pt-4">
             <div className="flex items-center gap-3 flex-wrap">
-              <span className="text-sm font-medium text-muted-foreground">Avancar para:</span>
+              <span className="text-sm font-medium text-muted-foreground">Avançar para:</span>
               {String(data.status) === 'documents_pending' && (
                 <Button size="sm" disabled={advancing} onClick={() => advanceStatus('medical_exam')}>
-                  <ChevronRight className="h-4 w-4 mr-1" /> Exame Medico
+                  <ChevronRight className="h-4 w-4 mr-1" /> Exame Médico
                 </Button>
               )}
               {String(data.status) === 'medical_exam' && (
-                <Button size="sm" disabled={advancing} onClick={() => advanceStatus('contract_signing', { medical_exam_date: new Date().toISOString().slice(0, 10), medical_exam_result: 'apto' })}>
+                <Button size="sm" disabled={advancing} onClick={() => {
+                  setExamData({ date: new Date().toISOString().slice(0, 10), result: 'apto' });
+                  setShowExamModal(true);
+                }}>
                   <ChevronRight className="h-4 w-4 mr-1" /> Assinatura Contrato
                 </Button>
               )}
               {String(data.status) === 'contract_signing' && (
-                <Button size="sm" disabled={advancing} onClick={() => advanceStatus('completed', { actual_start_date: String(data.expected_start_date || new Date().toISOString().slice(0, 10)) })}>
-                  <CheckCircle2 className="h-4 w-4 mr-1" /> Concluir Admissao
+                <Button size="sm" disabled={advancing} onClick={() => {
+                  setCompleteData({ actual_start_date: String(data.expected_start_date || new Date().toISOString().slice(0, 10)) });
+                  setShowCompleteModal(true);
+                }}>
+                  <CheckCircle2 className="h-4 w-4 mr-1" /> Concluir Admissão
                 </Button>
               )}
               {advancing && <Loader2 className="h-4 w-4 animate-spin" />}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Modal Exame Médico */}
+      {showExamModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-lg shadow-xl p-6 max-w-md mx-4 text-gray-900">
+            <h3 className="text-lg font-bold mb-4">Dados do Exame Médico (ASO)</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="text-sm font-medium mb-1 block">Data do Exame *</label>
+                <input type="date" value={examData.date} onChange={e => setExamData(p => ({ ...p, date: e.target.value }))}
+                  className="w-full px-3 py-2 border rounded-md text-sm" />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Resultado *</label>
+                <select value={examData.result} onChange={e => setExamData(p => ({ ...p, result: e.target.value }))}
+                  className="w-full px-3 py-2 border rounded-md text-sm">
+                  <option value="apto">Apto</option>
+                  <option value="inapto">Inapto</option>
+                  <option value="apto_com_restricao">Apto com Restrição</option>
+                </select>
+              </div>
+              {examData.result === 'inapto' && (
+                <p className="text-sm text-red-600 bg-red-50 p-2 rounded">
+                  Candidato inapto não pode avançar para assinatura de contrato. Considere cancelar a admissão ou reagendar o exame.
+                </p>
+              )}
+            </div>
+            <div className="flex gap-2 justify-end mt-4">
+              <Button variant="outline" size="sm" onClick={() => setShowExamModal(false)}>Cancelar</Button>
+              <Button size="sm" disabled={advancing || examData.result === 'inapto' || !examData.date}
+                onClick={async () => {
+                  setShowExamModal(false);
+                  await advanceStatus('contract_signing', { medical_exam_date: examData.date, medical_exam_result: examData.result });
+                }}>
+                Confirmar e Avançar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Concluir Admissão */}
+      {showCompleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-lg shadow-xl p-6 max-w-md mx-4 text-gray-900">
+            <h3 className="text-lg font-bold mb-4">Concluir Admissão</h3>
+            <p className="text-sm text-gray-600 mb-3">
+              Ao concluir, o funcionário <strong>{String(data.candidate_name)}</strong> será registrado como colaborador ativo no sistema.
+            </p>
+            <div>
+              <label className="text-sm font-medium mb-1 block">Data de Início Efetivo *</label>
+              <input type="date" value={completeData.actual_start_date}
+                onChange={e => setCompleteData(p => ({ ...p, actual_start_date: e.target.value }))}
+                className="w-full px-3 py-2 border rounded-md text-sm" />
+            </div>
+            <div className="flex gap-2 justify-end mt-4">
+              <Button variant="outline" size="sm" onClick={() => setShowCompleteModal(false)}>Cancelar</Button>
+              <Button size="sm" disabled={advancing || !completeData.actual_start_date}
+                onClick={async () => {
+                  setShowCompleteModal(false);
+                  await advanceStatus('completed', { actual_start_date: completeData.actual_start_date });
+                }}>
+                <CheckCircle2 className="h-4 w-4 mr-1" /> Confirmar Admissão
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Formulário de edição */}
+      {editing && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base">Editar Dados da Admissão</CardTitle>
+              <Button variant="ghost" size="sm" onClick={() => setEditing(false)}><X className="h-4 w-4" /></Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium mb-1 block">Nome do Candidato</label>
+                <input type="text" value={editData.candidate_name} onChange={e => setEditData(p => ({ ...p, candidate_name: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm" />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">CPF</label>
+                <input type="text" value={editData.cpf} onChange={e => setEditData(p => ({ ...p, cpf: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm" maxLength={14} />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Cargo</label>
+                <select value={editData.position} onChange={e => setEditData(p => ({ ...p, position: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm">
+                  <option value="">Selecione</option>
+                  <option value="Agente de Portaria">Agente de Portaria</option>
+                  <option value="Agente de Serviços Gerais">Agente de Serviços Gerais</option>
+                  <option value="Vigilante">Vigilante</option>
+                  <option value="Líder de Portaria">Líder de Portaria</option>
+                  <option value="Artífice">Artífice</option>
+                  <option value="Supervisor">Supervisor</option>
+                  <option value="Administrativo">Administrativo</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Departamento</label>
+                <select value={editData.department} onChange={e => setEditData(p => ({ ...p, department: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm">
+                  <option value="">Selecione</option>
+                  <option value="Operações">Operações</option>
+                  <option value="Administrativo">Administrativo</option>
+                  <option value="Comercial">Comercial</option>
+                  <option value="Financeiro">Financeiro</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Salário Proposto (R$)</label>
+                <input type="number" step="0.01" value={editData.salary_proposed} onChange={e => setEditData(p => ({ ...p, salary_proposed: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm" />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Observações</label>
+                <input type="text" value={editData.notes} onChange={e => setEditData(p => ({ ...p, notes: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm" placeholder="Observações sobre o candidato" />
+              </div>
+            </div>
+            <div className="flex gap-2 mt-4">
+              <Button size="sm" disabled={savingEdit} onClick={handleSaveEdit}>
+                {savingEdit ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />}
+                {savingEdit ? 'Salvando...' : 'Salvar Alterações'}
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setEditing(false)}>Cancelar</Button>
             </div>
           </CardContent>
         </Card>
@@ -124,12 +345,14 @@ export default function AdmissaoDetalhePage() {
         </Card>
 
         <Card>
-          <CardHeader><CardTitle className="text-base flex items-center gap-2"><Calendar className="h-4 w-4" /> Informacoes</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-base flex items-center gap-2"><Calendar className="h-4 w-4" /> Informações</CardTitle></CardHeader>
           <CardContent className="space-y-3">
-            <div><span className="text-sm text-muted-foreground">Salario Proposto:</span><p className="font-medium">{data.salary_proposed ? `R$ ${Number(data.salary_proposed).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}</p></div>
+            <div><span className="text-sm text-muted-foreground">Salário Proposto:</span><p className="font-medium">{data.salary_proposed ? `R$ ${Number(data.salary_proposed).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}</p></div>
             <div><span className="text-sm text-muted-foreground">Data Prevista:</span><p className="font-medium">{fmtDate(data.expected_start_date)}</p></div>
             <div><span className="text-sm text-muted-foreground">Criado em:</span><p className="font-medium">{data.created_at ? new Date(String(data.created_at)).toLocaleString('pt-BR') : '-'}</p></div>
-            {data.notes ? <div><span className="text-sm text-muted-foreground">Observacoes:</span><p className="text-sm">{String(data.notes)}</p></div> : null}
+            {data.medical_exam_date ? <div><span className="text-sm text-muted-foreground">Exame Médico:</span><p className="font-medium">{fmtDate(data.medical_exam_date)} — {String(data.medical_exam_result || '-')}</p></div> : null}
+            {data.actual_start_date ? <div><span className="text-sm text-muted-foreground">Data de Início:</span><p className="font-medium">{fmtDate(data.actual_start_date)}</p></div> : null}
+            {data.notes ? <div><span className="text-sm text-muted-foreground">Observações:</span><p className="text-sm">{String(data.notes)}</p></div> : null}
           </CardContent>
         </Card>
       </div>
@@ -175,9 +398,9 @@ export default function AdmissaoDetalhePage() {
                 <option value="cpf">CPF</option>
                 <option value="ctps">CTPS</option>
                 <option value="pis_pasep">PIS/PASEP</option>
-                <option value="titulo_eleitor">Titulo Eleitor</option>
-                <option value="comprovante_residencia">Comprovante Residencia</option>
-                <option value="certidao_nascimento_casamento">Certidao Nascimento/Casamento</option>
+                <option value="titulo_eleitor">Título Eleitor</option>
+                <option value="comprovante_residencia">Comprovante Residência</option>
+                <option value="certidao_nascimento_casamento">Certidão Nascimento/Casamento</option>
                 <option value="foto_3x4">Foto 3x4</option>
                 <option value="curso_vigilante">Curso Vigilante</option>
                 <option value="cnv_carteira_nacional_vigilante">CNV</option>
@@ -185,7 +408,7 @@ export default function AdmissaoDetalhePage() {
                 <option value="registro_policia_federal">Registro PF</option>
                 <option value="antecedentes_criminais">Antecedentes</option>
                 <option value="aso_admissional">ASO Admissional</option>
-                <option value="dados_conta_bancaria">Dados Bancarios</option>
+                <option value="dados_conta_bancaria">Dados Bancários</option>
                 <option value="outro">Outro</option>
               </select>
               <input type="file" id="doc-file" className="text-sm" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
@@ -201,9 +424,9 @@ export default function AdmissaoDetalhePage() {
                   const res = await fetch(`${API_BASE}/admissions/${params.id}/documents?document_type=${typeSelect.value}`, {
                     method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: formData,
                   });
-                  if (res.ok) { toast.success('Documento enviado!'); fileInput.value = ''; loadData(); }
+                  if (res.ok) { toast.success('Documento enviado com sucesso!'); fileInput.value = ''; loadData(); }
                   else { toast.error('Erro ao enviar documento'); }
-                } catch { toast.error('Erro de conexao'); }
+                } catch { toast.error('Erro de conexão'); }
               }}>
                 Upload
               </Button>

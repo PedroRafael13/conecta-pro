@@ -101,6 +101,215 @@ async def list_kits(
     }
 
 
+@router.get("/kits/{kit_id}")
+async def get_kit_detail(
+    kit_id: str,
+    current_user: CurrentActiveUser = None,
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """Retorna detalhes de um kit documental."""
+    from sqlalchemy import text
+
+    result = await db.execute(
+        text("""
+        SELECT gk.*, gc.name as client_name
+        FROM ged_document_kits gk
+        LEFT JOIN ged_clients gc ON gk.client_id = gc.id
+        WHERE gk.id = :kit_id
+        """),
+        {"kit_id": kit_id},
+    )
+    r = result.mappings().first()
+    if not r:
+        raise HTTPException(status_code=404, detail="Kit nao encontrado")
+
+    # Buscar documentos do kit
+    docs_result = await db.execute(
+        text("""
+        SELECT id, document_type, document_name, file_path, is_signed, source_module, created_at
+        FROM ged_kit_documents
+        WHERE kit_id = :kit_id
+        ORDER BY document_type, created_at
+        """),
+        {"kit_id": kit_id},
+    )
+    docs = docs_result.mappings().all()
+
+    return {
+        "id": str(r["id"]),
+        "client_id": str(r["client_id"]) if r["client_id"] else None,
+        "client_name": r.get("client_name"),
+        "reference_month": r["reference_month"].isoformat() if r["reference_month"] else None,
+        "status": r["status"],
+        "total_employees": r["total_employees"],
+        "total_documents": r["total_documents"],
+        "documents_signed": r["documents_signed"],
+        "completion_percentage": float(r["completion_percentage"]) if r["completion_percentage"] else 0,
+        "sent_at": r["sent_at"].isoformat() if r["sent_at"] else None,
+        "created_at": r["created_at"].isoformat() if r["created_at"] else None,
+        "documents": [
+            {
+                "id": str(d["id"]),
+                "document_type": d["document_type"],
+                "name": d["document_name"],
+                "file_path": d["file_path"],
+                "signed": d["is_signed"],
+                "origin": d["source_module"],
+                "category": "employee" if d["source_module"] in ("dp", "rh", "operacional") else "company",
+                "created_at": d["created_at"].isoformat() if d["created_at"] else None,
+            }
+            for d in docs
+        ],
+    }
+
+
+@router.post("/kits")
+async def create_kit(
+    data: dict[str, Any],
+    current_user: CurrentActiveUser = None,
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """Cria um novo kit documental."""
+    import uuid
+
+    from sqlalchemy import text
+
+    client_id = data.get("client_id")
+    reference_month_str = data.get("reference_month")
+
+    if not client_id:
+        raise HTTPException(status_code=422, detail="client_id obrigatorio")
+    if not reference_month_str:
+        raise HTTPException(status_code=422, detail="reference_month obrigatorio (YYYY-MM-DD)")
+
+    # Converter string para date
+    try:
+        ref_date = date.fromisoformat(reference_month_str[:10])
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=422, detail="reference_month formato invalido (YYYY-MM-DD)")
+
+    # Verificar duplicata
+    existing = await db.execute(
+        text("SELECT id FROM ged_document_kits WHERE client_id = :cid AND reference_month = :rm"),
+        {"cid": client_id, "rm": ref_date},
+    )
+    if existing.first():
+        raise HTTPException(status_code=409, detail="Kit ja existe para este cliente/mes")
+
+    kit_id = str(uuid.uuid4())
+    await db.execute(
+        text("""
+        INSERT INTO ged_document_kits (id, client_id, reference_month, status,
+            total_employees, total_documents, documents_signed, completion_percentage,
+            created_at, updated_at)
+        VALUES (:id, :cid, :rm, 'em_montagem', 0, 0, 0, 0, NOW(), NOW())
+        """),
+        {"id": kit_id, "cid": client_id, "rm": ref_date},
+    )
+    await db.commit()
+
+    return {"id": kit_id, "client_id": client_id, "reference_month": ref_date.isoformat(), "status": "em_montagem"}
+
+
+@router.post("/kits/{kit_id}/send")
+async def send_kit(
+    kit_id: str,
+    current_user: CurrentActiveUser = None,
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """Envia kit ao cliente (muda status para 'enviado')."""
+    from sqlalchemy import text
+
+    result = await db.execute(
+        text("SELECT id, status FROM ged_document_kits WHERE id = :id"),
+        {"id": kit_id},
+    )
+    kit = result.mappings().first()
+    if not kit:
+        raise HTTPException(status_code=404, detail="Kit nao encontrado")
+
+    await db.execute(
+        text("UPDATE ged_document_kits SET status = 'enviado', sent_at = NOW(), updated_at = NOW() WHERE id = :id"),
+        {"id": kit_id},
+    )
+    await db.commit()
+    return {"success": True, "kit_id": kit_id, "novo_status": "enviado"}
+
+
+@router.post("/kits/{kit_id}/approve")
+async def approve_kit(
+    kit_id: str,
+    current_user: CurrentActiveUser = None,
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """Aprova kit (muda status para 'aprovado')."""
+    from sqlalchemy import text
+
+    result = await db.execute(
+        text("SELECT id, status FROM ged_document_kits WHERE id = :id"),
+        {"id": kit_id},
+    )
+    kit = result.mappings().first()
+    if not kit:
+        raise HTTPException(status_code=404, detail="Kit nao encontrado")
+
+    await db.execute(
+        text(
+            "UPDATE ged_document_kits SET status = 'aprovado', approved_at = NOW(), updated_at = NOW() WHERE id = :id"
+        ),
+        {"id": kit_id},
+    )
+    await db.commit()
+    return {"success": True, "kit_id": kit_id, "novo_status": "aprovado"}
+
+
+@router.post("/kits/montar")
+async def montar_kits(
+    current_user: CurrentActiveUser = None,
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """Monta kits para todos os clientes ativos que nao tem kit no mes atual."""
+    import uuid
+
+    from sqlalchemy import text
+
+    hoje = date.today()
+    mes_ref = hoje.replace(day=1)
+
+    result = await db.execute(
+        text("""
+        SELECT gc.id, gc.name
+        FROM ged_clients gc
+        WHERE gc.is_active = true
+        AND gc.id NOT IN (
+            SELECT client_id FROM ged_document_kits
+            WHERE reference_month = :mes
+        )
+        """),
+        {"mes": mes_ref},
+    )
+    clientes = result.mappings().all()
+
+    criados = 0
+    detalhes = []
+    for c in clientes:
+        kit_id = str(uuid.uuid4())
+        await db.execute(
+            text("""
+            INSERT INTO ged_document_kits (id, client_id, reference_month, status,
+                total_employees, total_documents, documents_signed, completion_percentage,
+                created_at, updated_at)
+            VALUES (:id, :cid, :mes, 'em_montagem', 0, 0, 0, 0, NOW(), NOW())
+            """),
+            {"id": kit_id, "cid": str(c["id"]), "mes": mes_ref},
+        )
+        criados += 1
+        detalhes.append({"kit_id": kit_id, "client": c["name"]})
+
+    await db.commit()
+    return {"kits_criados": criados, "detalhes": detalhes}
+
+
 @router.get("/dashboard")
 async def ged_dashboard(
     current_user: CurrentActiveUser = None,

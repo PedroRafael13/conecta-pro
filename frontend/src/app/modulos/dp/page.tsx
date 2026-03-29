@@ -70,6 +70,7 @@ export default function DPDashboardPage() {
   ];
 
   const navCards = [
+    { title: 'Funcionários', description: 'Cadastro completo e dados para eSocial', icon: Users, href: '/modulos/dp/funcionarios', color: 'text-blue-600', bgColor: 'bg-blue-50' },
     { title: 'Admissão', description: 'Processos de admissão de colaboradores', icon: UserPlus, href: '/modulos/dp/admissao', color: 'text-green-600', bgColor: 'bg-green-50' },
     { title: 'Rescisão', description: 'Processos de desligamento e rescisão', icon: UserMinus, href: '/modulos/dp/rescisao', color: 'text-red-600', bgColor: 'bg-red-50' },
     { title: 'Contratos', description: 'Contratos de trabalho dos colaboradores', icon: FileText, href: '/modulos/dp/contratos', color: 'text-blue-600', bgColor: 'bg-blue-50' },

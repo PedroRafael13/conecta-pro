@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { UserPlus, Filter, ArrowLeft, Inbox, Loader2, X, Save, AlertCircle } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { UserPlus, Filter, ArrowLeft, Inbox, Loader2, X, Save, Search, ChevronLeft, ChevronRight as ChevronRightIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { validateCPF, formatCPF } from '@/utils/validators';
 import { useRouter } from 'next/navigation';
@@ -13,11 +13,19 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 const API_BASE = '/api/v1/people-management/hr';
 
 function getAuthHeaders() {
-  const token = typeof window !== 'undefined' ? (localStorage.getItem('access_token') || localStorage.getItem('access_token') || localStorage.getItem('token')) : null;
+  const token = typeof window !== 'undefined' ? (localStorage.getItem('access_token') || localStorage.getItem('token')) : null;
   return {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
+}
+
+function formatPIS(value: string): string {
+  const digits = value.replace(/[^\d]/g, '').slice(0, 11);
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 8) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
+  if (digits.length <= 10) return `${digits.slice(0, 3)}.${digits.slice(3, 8)}.${digits.slice(8)}`;
+  return `${digits.slice(0, 3)}.${digits.slice(3, 8)}.${digits.slice(8, 10)}-${digits.slice(10)}`;
 }
 
 const statusConfig: Record<string, { label: string; className: string }> = {
@@ -28,6 +36,8 @@ const statusConfig: Record<string, { label: string; className: string }> = {
   completed: { label: 'Concluída', className: 'bg-green-500 text-white' },
   cancelled: { label: 'Cancelada', className: 'bg-red-500 text-white' },
 };
+
+const PAGE_SIZE = 10;
 
 export default function AdmissaoPage() {
   const router = useRouter();
@@ -40,14 +50,18 @@ export default function AdmissaoPage() {
   const [formData, setFormData] = useState({ candidate_name: '', cpf: '', position: '', expected_date: '', department: '', salary: '', contract_type: 'CLT', birth_date: '', pis_pasep: '' });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [refreshKey, setRefreshKey] = useState(0);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [sortField, setSortField] = useState<string>('');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
   useEffect(() => {
     async function load() {
       setLoading(true);
       try {
         const url = filtroStatus === 'todos'
-          ? `${API_BASE}/admissions?page_size=50`
-          : `${API_BASE}/admissions?status=${filtroStatus}&page_size=50`;
+          ? `${API_BASE}/admissions?page_size=100`
+          : `${API_BASE}/admissions?status=${filtroStatus}&page_size=100`;
         const res = await fetch(url, { headers: getAuthHeaders() });
         if (res.ok) {
           const data = await res.json();
@@ -57,6 +71,47 @@ export default function AdmissaoPage() {
     }
     load();
   }, [filtroStatus, refreshKey]);
+
+  // Reset page when filter/search changes
+  useEffect(() => { setCurrentPage(1); }, [filtroStatus, searchTerm]);
+
+  // Filtered + searched + sorted data
+  const filteredData = useMemo(() => {
+    let items = filtroStatus === 'todos' ? admissoes : admissoes.filter(a => a.status === filtroStatus);
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase();
+      items = items.filter(a =>
+        (a.candidate_name || '').toLowerCase().includes(term) ||
+        (a.cpf || '').includes(term) ||
+        (a.position || '').toLowerCase().includes(term)
+      );
+    }
+    if (sortField) {
+      items = [...items].sort((a, b) => {
+        const va = String(a[sortField] || '').toLowerCase();
+        const vb = String(b[sortField] || '').toLowerCase();
+        return sortDir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+      });
+    }
+    return items;
+  }, [admissoes, filtroStatus, searchTerm, sortField, sortDir]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredData.length / PAGE_SIZE));
+  const paginatedData = filteredData.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDir('asc');
+    }
+  };
+
+  const sortIcon = (field: string) => {
+    if (sortField !== field) return ' ↕';
+    return sortDir === 'asc' ? ' ↑' : ' ↓';
+  };
 
   return (
     <div className="space-y-6">
@@ -123,10 +178,10 @@ export default function AdmissaoPage() {
                 <select value={formData.position} onChange={e => { setFormData(p => ({ ...p, position: e.target.value })); setFormErrors(p => ({ ...p, position: '' })); }} className={`w-full px-3 py-2 border rounded-md text-sm ${formErrors.position ? 'border-red-500' : ''}`}>
                   <option value="">Selecione o cargo</option>
                   <option value="Agente de Portaria">Agente de Portaria</option>
-                  <option value="Agente de Servicos Gerais">Agente de Servicos Gerais</option>
+                  <option value="Agente de Serviços Gerais">Agente de Serviços Gerais</option>
                   <option value="Vigilante">Vigilante</option>
-                  <option value="Lider de Portaria">Lider de Portaria</option>
-                  <option value="Artifice">Artifice</option>
+                  <option value="Líder de Portaria">Líder de Portaria</option>
+                  <option value="Artífice">Artífice</option>
                   <option value="Supervisor">Supervisor</option>
                   <option value="Administrativo">Administrativo</option>
                 </select>
@@ -136,7 +191,7 @@ export default function AdmissaoPage() {
                 <label className="text-sm font-medium mb-1 block">Departamento</label>
                 <select value={formData.department} onChange={e => setFormData(p => ({ ...p, department: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm">
                   <option value="">Selecione</option>
-                  <option value="Operacoes">Operacoes</option>
+                  <option value="Operações">Operações</option>
                   <option value="Administrativo">Administrativo</option>
                   <option value="Comercial">Comercial</option>
                   <option value="Financeiro">Financeiro</option>
@@ -154,19 +209,19 @@ export default function AdmissaoPage() {
               </div>
               <div>
                 <label className="text-sm font-medium mb-1 block">Salário Base (R$)</label>
-                <input type="number" step="0.01" value={formData.salary} onChange={e => setFormData(p => ({ ...p, salary: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm" placeholder="1670.00" />
+                <input type="text" inputMode="decimal" value={formData.salary} onChange={e => { const v = e.target.value.replace(/[^\d.,]/g, ''); setFormData(p => ({ ...p, salary: v })); }} className="w-full px-3 py-2 border rounded-md text-sm" placeholder="1670.00" />
               </div>
               <div>
                 <label className="text-sm font-medium mb-1 block">Tipo de Contrato</label>
                 <select value={formData.contract_type} onChange={e => setFormData(p => ({ ...p, contract_type: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm">
                   <option value="CLT">CLT</option>
-                  <option value="Temporario">Temporário</option>
-                  <option value="Experiencia">Experiência (90 dias)</option>
+                  <option value="Temporário">Temporário</option>
+                  <option value="Experiência">Experiência (90 dias)</option>
                 </select>
               </div>
               <div>
                 <label className="text-sm font-medium mb-1 block">PIS/PASEP</label>
-                <input type="text" value={formData.pis_pasep} onChange={e => setFormData(p => ({ ...p, pis_pasep: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm" placeholder="000.00000.00-0" />
+                <input type="text" value={formData.pis_pasep} onChange={e => { const formatted = formatPIS(e.target.value); setFormData(p => ({ ...p, pis_pasep: formatted })); }} className="w-full px-3 py-2 border rounded-md text-sm" placeholder="000.00000.00-0" maxLength={14} />
               </div>
             </div>
             )}
@@ -201,8 +256,17 @@ export default function AdmissaoPage() {
                         contract_type: formData.contract_type || 'CLT',
                       };
                       const res = await fetch(`${API_BASE}/admissions`, { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(payload) });
-                      if (res.ok) { setShowForm(false); setFormStep(1); setFormData({ candidate_name: '', cpf: '', position: '', expected_date: '', department: '', salary: '', contract_type: 'CLT', birth_date: '', pis_pasep: '' }); setFormErrors({}); setRefreshKey(k => k + 1); toast.success('Admissão criada com sucesso!'); }
-                      else { const err = await res.json().catch(() => null); toast.error(err?.detail || 'Erro ao criar admissão'); }
+                      if (res.ok) {
+                        setShowForm(false);
+                        setFormStep(1);
+                        setFormData({ candidate_name: '', cpf: '', position: '', expected_date: '', department: '', salary: '', contract_type: 'CLT', birth_date: '', pis_pasep: '' });
+                        setFormErrors({});
+                        setRefreshKey(k => k + 1);
+                        toast.success('Admissão criada com sucesso!');
+                      } else {
+                        const err = await res.json().catch(() => null);
+                        toast.error(err?.detail || 'Erro ao criar admissão');
+                      }
                     } catch { toast.error('Erro de conexão'); } finally { setSaving(false); }
                   }}>
                     {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />}
@@ -217,44 +281,85 @@ export default function AdmissaoPage() {
       )}
 
       <Card>
-        <CardHeader><CardTitle>Processos de Admissão</CardTitle></CardHeader>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>Processos de Admissão</CardTitle>
+            <div className="relative w-64">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                placeholder="Buscar por nome, CPF ou cargo..."
+                className="w-full pl-9 pr-3 py-2 border rounded-md text-sm"
+              />
+            </div>
+          </div>
+        </CardHeader>
         <CardContent>
           {loading ? (
             <div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>
-          ) : admissoes.length === 0 ? (
+          ) : filteredData.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
               <Inbox className="h-12 w-12 mb-3" />
               <p className="font-medium">Nenhum processo de admissão encontrado</p>
-                  <p className="text-sm text-muted-foreground mt-1">Clique em "Nova Admissão" para iniciar um processo.</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                {searchTerm ? 'Tente outra busca.' : 'Clique em "Nova Admissão" para iniciar um processo.'}
+              </p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>CPF</TableHead>
-                  <TableHead>Cargo</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Data Prevista</TableHead>
-                  <TableHead>Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {(filtroStatus === 'todos' ? admissoes : admissoes.filter(a => a.status === filtroStatus)).map((item, i) => {
-                  const st = statusConfig[item.status] || { label: item.status, className: 'bg-gray-500 text-white' };
-                  return (
-                    <TableRow key={item.id || i}>
-                      <TableCell className="font-medium">{item.candidate_name || '-'}</TableCell>
-                      <TableCell>{item.cpf || '-'}</TableCell>
-                      <TableCell>{item.position || '-'}</TableCell>
-                      <TableCell><Badge className={st.className}>{st.label}</Badge></TableCell>
-                      <TableCell>{item.expected_start_date ? (() => { const p = String(item.expected_start_date).split('-'); return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : '-'; })() : '-'}</TableCell>
-                      <TableCell><Button variant="outline" size="sm" onClick={() => router.push(`/modulos/dp/admissao/${item.id}`)}>Detalhes</Button></TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="cursor-pointer select-none" onClick={() => handleSort('candidate_name')}>Nome{sortIcon('candidate_name')}</TableHead>
+                    <TableHead>CPF</TableHead>
+                    <TableHead className="cursor-pointer select-none" onClick={() => handleSort('position')}>Cargo{sortIcon('position')}</TableHead>
+                    <TableHead className="cursor-pointer select-none" onClick={() => handleSort('status')}>Status{sortIcon('status')}</TableHead>
+                    <TableHead className="cursor-pointer select-none" onClick={() => handleSort('expected_start_date')}>Data Prevista{sortIcon('expected_start_date')}</TableHead>
+                    <TableHead>Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginatedData.map((item, i) => {
+                    const st = statusConfig[item.status] || { label: item.status, className: 'bg-gray-500 text-white' };
+                    return (
+                      <TableRow key={item.id || i}>
+                        <TableCell className="font-medium">{item.candidate_name || '-'}</TableCell>
+                        <TableCell>{item.cpf || '-'}</TableCell>
+                        <TableCell>{item.position || '-'}</TableCell>
+                        <TableCell><Badge className={st.className}>{st.label}</Badge></TableCell>
+                        <TableCell>{item.expected_start_date ? (() => { const p = String(item.expected_start_date).split('-'); return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : '-'; })() : '-'}</TableCell>
+                        <TableCell><Button variant="outline" size="sm" onClick={() => router.push(`/modulos/dp/admissao/${item.id}`)}>Detalhes</Button></TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+
+              {/* Paginação */}
+              <div className="flex items-center justify-between mt-4 text-sm">
+                <span className="text-muted-foreground">
+                  {filteredData.length} registro{filteredData.length !== 1 ? 's' : ''} — Página {currentPage} de {totalPages}
+                </span>
+                <div className="flex gap-1">
+                  <Button variant="outline" size="sm" disabled={currentPage <= 1} onClick={() => setCurrentPage(p => p - 1)}>
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                    const page = totalPages <= 5 ? i + 1 : Math.max(1, Math.min(currentPage - 2, totalPages - 4)) + i;
+                    return (
+                      <Button key={page} variant={currentPage === page ? 'default' : 'outline'} size="sm" onClick={() => setCurrentPage(page)}>
+                        {page}
+                      </Button>
+                    );
+                  })}
+                  <Button variant="outline" size="sm" disabled={currentPage >= totalPages} onClick={() => setCurrentPage(p => p + 1)}>
+                    <ChevronRightIcon className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
