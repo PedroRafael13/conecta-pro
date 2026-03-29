@@ -4,9 +4,10 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Users, ArrowLeft, Search, Loader2, AlertTriangle, CheckCircle2, Edit, Save, X,
-  ChevronLeft, ChevronRight, User, FileText, MapPin, Building2, CreditCard, Shield,
+  ChevronLeft, ChevronRight, User, FileText, MapPin, Building2, CreditCard, Shield, RefreshCw,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { validateCPF } from '@/utils/validators';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -55,6 +56,8 @@ const FIELD_LABELS: Record<string, string> = {
   observacoes: 'Observações',
 };
 
+const UFS = ['AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT','PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO'];
+
 const PAGE_SIZE = 15;
 
 type Tab = 'pessoal' | 'documentos' | 'endereco' | 'profissional' | 'bancario' | 'vigilancia';
@@ -63,6 +66,7 @@ export default function FuncionariosPage() {
   const router = useRouter();
   const [employees, setEmployees] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [filterComplete, setFilterComplete] = useState<'all' | 'incomplete' | 'complete'>('all');
@@ -70,16 +74,33 @@ export default function FuncionariosPage() {
   const [editData, setEditData] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>('pessoal');
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [cepLoading, setCepLoading] = useState(false);
 
-  const loadEmployees = useCallback(async () => {
+  const loadEmployees = useCallback(async (retry = 0) => {
     setLoading(true);
+    setLoadError(false);
     try {
       const res = await fetch(`${API_BASE}/employees?page_size=100`, { headers: getAuthHeaders() });
       if (res.ok) {
         const data = await res.json();
         setEmployees(data.items || data || []);
+      } else if (res.status >= 500 && retry < 2) {
+        // Bug #2: Retry on 5xx
+        await new Promise(r => setTimeout(r, 2000));
+        return loadEmployees(retry + 1);
+      } else {
+        setLoadError(true);
+        toast.error(`Erro ao carregar funcionários (HTTP ${res.status})`, { duration: 5000 });
       }
-    } catch { /* */ } finally { setLoading(false); }
+    } catch {
+      if (retry < 2) {
+        await new Promise(r => setTimeout(r, 2000));
+        return loadEmployees(retry + 1);
+      }
+      setLoadError(true);
+      toast.error('Erro de conexão ao carregar funcionários', { duration: 5000 });
+    } finally { setLoading(false); }
   }, []);
 
   useEffect(() => { loadEmployees(); }, [loadEmployees]);
@@ -96,12 +117,13 @@ export default function FuncionariosPage() {
     }
     if (filterComplete === 'incomplete') items = items.filter(e => e.percent < 100);
     if (filterComplete === 'complete') items = items.filter(e => e.percent === 100);
-    return items.sort((a, b) => a.percent - b.percent); // Mais incompletos primeiro
+    return items.sort((a, b) => a.percent - b.percent);
   }, [enriched, searchTerm, filterComplete]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
+  // Bug #3: KPIs computed from enriched (auto-updates when employees reload)
   const statsComplete = enriched.filter(e => e.percent === 100).length;
   const statsIncomplete = enriched.filter(e => e.percent < 100).length;
   const avgPercent = enriched.length ? Math.round(enriched.reduce((s, e) => s + e.percent, 0) / enriched.length) : 0;
@@ -113,11 +135,60 @@ export default function FuncionariosPage() {
       data[key] = emp[key] != null ? String(emp[key]) : '';
     }
     setEditData(data);
+    setValidationErrors({});
     setActiveTab('pessoal');
+    // Scroll to form
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Bug #6: ViaCEP autocomplete
+  const handleCepBlur = async () => {
+    const cep = (editData.cep || '').replace(/\D/g, '');
+    if (cep.length !== 8) return;
+    setCepLoading(true);
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+      if (res.ok) {
+        const data = await res.json();
+        if (!data.erro) {
+          setEditData(p => ({
+            ...p,
+            logradouro: data.logradouro || p.logradouro,
+            bairro: data.bairro || p.bairro,
+            cidade: data.localidade || p.cidade,
+            uf: data.uf || p.uf,
+            complemento: data.complemento || p.complemento,
+          }));
+          toast.success('Endereço preenchido pelo CEP', { duration: 3000 });
+        }
+      }
+    } catch { /* ViaCEP offline — usuário preenche manual */ }
+    finally { setCepLoading(false); }
+  };
+
+  // Bug #1: CPF validation + Bug #10: Inline validation messages
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {};
+    if (editData.cpf && !validateCPF(editData.cpf)) {
+      errors.cpf = 'CPF inválido';
+    }
+    if (editData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editData.email)) {
+      errors.email = 'Email inválido';
+    }
+    setValidationErrors(errors);
+    if (Object.keys(errors).length > 0) {
+      toast.error('Corrija os erros antes de salvar', { duration: 4000 });
+      // Navigate to tab with error
+      if (errors.cpf) setActiveTab('pessoal');
+      else if (errors.email) setActiveTab('pessoal');
+      return false;
+    }
+    return true;
   };
 
   const handleSave = async () => {
     if (!editingId) return;
+    if (!validateForm()) return;
     setSaving(true);
     try {
       const original = employees.find(e => e.id === editingId) || {};
@@ -139,7 +210,10 @@ export default function FuncionariosPage() {
       if (res.ok) {
         toast.success('Dados atualizados com sucesso!', { duration: 4000 });
         setEditingId(null);
-        await loadEmployees();
+        setValidationErrors({});
+        await loadEmployees(); // Bug #3: Reloads data → KPIs recalculate
+      } else if (res.status >= 500) {
+        toast.error('Erro no servidor. Tente novamente em instantes.', { duration: 5000 });
       } else {
         const err = await res.json().catch(() => null);
         toast.error(err?.detail || 'Erro ao salvar', { duration: 5000 });
@@ -148,23 +222,36 @@ export default function FuncionariosPage() {
     finally { setSaving(false); }
   };
 
-  const renderField = (key: string, type: string = 'text', options?: string[]) => (
-    <div key={key}>
-      <label className="text-sm font-medium mb-1 block">
-        {FIELD_LABELS[key] || key}
-        {ESOCIAL_FIELDS.includes(key as any) && <span className="text-red-500 ml-1">*</span>}
-      </label>
-      {options ? (
-        <select value={editData[key] || ''} onChange={e => setEditData(p => ({ ...p, [key]: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm">
-          <option value="">Selecione</option>
-          {options.map(o => <option key={o} value={o}>{o}</option>)}
-        </select>
-      ) : (
-        <input type={type} value={editData[key] || ''} onChange={e => setEditData(p => ({ ...p, [key]: e.target.value }))}
-          className={`w-full px-3 py-2 border rounded-md text-sm ${ESOCIAL_FIELDS.includes(key as any) && !editData[key] ? 'border-yellow-400 bg-yellow-50' : ''}`} />
-      )}
-    </div>
-  );
+  const renderField = (key: string, type: string = 'text', options?: string[]) => {
+    const isRequired = ESOCIAL_FIELDS.includes(key as any);
+    const isEmpty = isRequired && !editData[key];
+    const hasError = !!validationErrors[key];
+
+    return (
+      <div key={key}>
+        <label className="text-sm font-medium mb-1 block">
+          {FIELD_LABELS[key] || key}
+          {isRequired && <span className="text-red-500 ml-1">*</span>}
+        </label>
+        {options ? (
+          <select value={editData[key] || ''} onChange={e => { setEditData(p => ({ ...p, [key]: e.target.value })); setValidationErrors(p => ({ ...p, [key]: '' })); }}
+            className={`w-full px-3 py-2 border rounded-md text-sm ${hasError ? 'border-red-500 bg-red-50' : isEmpty ? 'border-yellow-400 bg-yellow-50' : ''}`}>
+            <option value="">Selecione</option>
+            {options.map(o => <option key={o} value={o}>{o}</option>)}
+          </select>
+        ) : (
+          <input type={type} value={editData[key] || ''}
+            onChange={e => { setEditData(p => ({ ...p, [key]: e.target.value })); setValidationErrors(p => ({ ...p, [key]: '' })); }}
+            onBlur={key === 'cep' ? handleCepBlur : key === 'cpf' ? () => { if (editData.cpf && !validateCPF(editData.cpf)) setValidationErrors(p => ({ ...p, cpf: 'CPF inválido' })); } : undefined}
+            className={`w-full px-3 py-2 border rounded-md text-sm ${hasError ? 'border-red-500 bg-red-50' : isEmpty ? 'border-yellow-400 bg-yellow-50' : ''}`} />
+        )}
+        {/* Bug #10: Inline validation errors */}
+        {hasError && <p className="text-red-500 text-xs mt-1">{validationErrors[key]}</p>}
+        {isEmpty && !hasError && <p className="text-yellow-600 text-xs mt-1">Obrigatório para eSocial</p>}
+        {key === 'cep' && cepLoading && <p className="text-blue-500 text-xs mt-1">Buscando endereço...</p>}
+      </div>
+    );
+  };
 
   const tabs: { key: Tab; label: string; icon: typeof User }[] = [
     { key: 'pessoal', label: 'Pessoal', icon: User },
@@ -176,7 +263,7 @@ export default function FuncionariosPage() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-28">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -193,7 +280,7 @@ export default function FuncionariosPage() {
         </div>
       </div>
 
-      {/* Stats */}
+      {/* Stats — Bug #3: These auto-update because they depend on enriched which depends on employees */}
       <div className="grid gap-4 md:grid-cols-4">
         <Card><CardContent className="pt-6">
           <p className="text-sm text-muted-foreground">Total</p>
@@ -217,15 +304,30 @@ export default function FuncionariosPage() {
         </CardContent></Card>
       </div>
 
+      {/* Bug #2: Error state with retry */}
+      {loadError && !loading && (
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="pt-6 flex items-center justify-between">
+            <p className="text-sm text-red-700">Erro ao carregar dados. O servidor pode estar temporariamente indisponível.</p>
+            <Button variant="outline" size="sm" onClick={() => loadEmployees()}>
+              <RefreshCw className="h-4 w-4 mr-1" /> Tentar Novamente
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Edit Form */}
       {editingId && (
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle className="text-base">Editar Funcionário — {editData.nome || 'Sem nome'}</CardTitle>
-              <Button variant="ghost" size="sm" onClick={() => setEditingId(null)}><X className="h-4 w-4" /></Button>
+              {/* Bug #9: Show full name without truncation */}
+              <CardTitle className="text-base truncate max-w-[70%]" title={editData.nome || 'Sem nome'}>
+                Editar Funcionário — {editData.nome || 'Sem nome'}
+              </CardTitle>
+              <Button variant="ghost" size="sm" onClick={() => { setEditingId(null); setValidationErrors({}); }}><X className="h-4 w-4" /></Button>
             </div>
-            <div className="flex gap-1 mt-2">
+            <div className="flex gap-1 mt-2 flex-wrap">
               {tabs.map(t => (
                 <Button key={t.key} variant={activeTab === t.key ? 'default' : 'outline'} size="sm"
                   onClick={() => setActiveTab(t.key)} className="text-xs">
@@ -255,11 +357,11 @@ export default function FuncionariosPage() {
               {activeTab === 'documentos' && (<>
                 {renderField('rg')}
                 {renderField('rg_orgao')}
-                {renderField('rg_uf', 'text', ['AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT','PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO'])}
+                {renderField('rg_uf', 'text', UFS)}
                 {renderField('pis')}
                 {renderField('ctps_numero')}
                 {renderField('ctps_serie')}
-                {renderField('ctps_uf', 'text', ['AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT','PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO'])}
+                {renderField('ctps_uf', 'text', UFS)}
                 {renderField('ctps_data_emissao', 'date')}
                 {renderField('titulo_eleitor')}
                 {renderField('certificado_reservista')}
@@ -274,7 +376,7 @@ export default function FuncionariosPage() {
                 {renderField('complemento')}
                 {renderField('bairro')}
                 {renderField('cidade')}
-                {renderField('uf', 'text', ['AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT','PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO'])}
+                {renderField('uf', 'text', UFS)}
               </>)}
               {activeTab === 'profissional' && (<>
                 {renderField('cargo')}
@@ -304,7 +406,7 @@ export default function FuncionariosPage() {
                 {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />}
                 {saving ? 'Salvando...' : 'Salvar Alterações'}
               </Button>
-              <Button variant="outline" size="sm" onClick={() => setEditingId(null)}>Cancelar</Button>
+              <Button variant="outline" size="sm" onClick={() => { setEditingId(null); setValidationErrors({}); }}>Cancelar</Button>
             </div>
           </CardContent>
         </Card>
@@ -353,15 +455,15 @@ export default function FuncionariosPage() {
                 <TableBody>
                   {paginated.map((emp) => (
                     <TableRow key={emp.id} className={emp.percent < 100 ? 'bg-yellow-50/50' : ''}>
-                      <TableCell className="font-medium">{emp.nome || '-'}</TableCell>
+                      <TableCell className="font-medium max-w-[200px]" title={emp.nome}>{emp.nome || '-'}</TableCell>
                       <TableCell className="text-sm">{emp.cpf || '-'}</TableCell>
                       <TableCell className="text-sm">{emp.cargo || '-'}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           {emp.percent === 100 ? (
-                            <CheckCircle2 className="h-4 w-4 text-green-600" />
+                            <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />
                           ) : (
-                            <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                            <AlertTriangle className="h-4 w-4 text-yellow-500 shrink-0" />
                           )}
                           <div className="w-20 bg-muted rounded-full h-2">
                             <div className={`h-2 rounded-full ${emp.percent === 100 ? 'bg-green-500' : emp.percent >= 60 ? 'bg-yellow-500' : 'bg-red-500'}`}

@@ -254,3 +254,42 @@ async def stats_mkt_leads(db: AsyncSession = Depends(get_async_session)):
         ],
         "gerado_em": datetime.now().isoformat(),
     }
+
+
+# === INTERLIGAÇÃO LICITAÇÕES → CRM ===
+
+
+class LicitacaoConvertRequest(BaseModel):
+    orgao: str
+    objeto: str
+    valor: float = 0
+    numero_edital: str | None = None
+
+
+@router.post("/licitacao/convert-to-crm")
+async def converter_licitacao_para_crm(
+    data: LicitacaoConvertRequest,
+    db: AsyncSession = Depends(get_async_session),
+):
+    """Converte licitação vencida em lead CRM — fecha ciclo licitação→CRM."""
+    crm_result = await db.execute(
+        text("""
+        INSERT INTO leads (name, email, phone, company, source, status, score, probability, expected_value, is_active)
+        VALUES (:name, :email, '', :company, 'licitacao', 'qualified', 70, 0.6, :value, true) RETURNING id
+    """),
+        {
+            "name": data.orgao,
+            "email": f"licitacao.{data.numero_edital or 'novo'}@lead.conecta",
+            "company": data.orgao,
+            "value": data.valor,
+        },
+    )
+    crm_lead_id = str(crm_result.fetchone()[0])
+    await db.commit()
+
+    return {
+        "message": "Licitação vencida convertida em lead CRM",
+        "crm_lead_id": crm_lead_id,
+        "orgao": data.orgao,
+        "valor": data.valor,
+    }

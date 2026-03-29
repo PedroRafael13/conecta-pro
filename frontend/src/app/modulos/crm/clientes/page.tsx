@@ -33,7 +33,8 @@ import { ConfirmModal } from '@/components/ui/modal';
 import { toast } from 'sonner';
 import { ClienteFormModal } from '@/components/crm/cliente-form-modal';
 import { ClienteDetailModal } from '@/components/crm/cliente-detail-modal';
-import { useClients, useCreateClient, useUpdateClient, useDeleteClient } from '@/hooks/clients';
+import { useCRMClients } from '@/hooks/crm/useCRMClients';
+import { useCreateClient, useUpdateClient, useDeleteClient } from '@/hooks/clients';
 
 export default function ClientesPage() {
   const [search, setSearch] = useState('');
@@ -41,7 +42,7 @@ export default function ClientesPage() {
   const [page, setPage] = useState(0);
   const pageSize = 20;
 
-  const { data: clientsData, isLoading, error, refetch } = useClients({ skip: page * pageSize, limit: pageSize });
+  const { data: clientsData, isLoading, error, refetch } = useCRMClients();
   const createMutation = useCreateClient();
   const updateMutation = useUpdateClient();
   const deleteMutation = useDeleteClient();

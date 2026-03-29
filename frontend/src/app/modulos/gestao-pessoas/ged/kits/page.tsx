@@ -11,11 +11,16 @@ import { Card, CardContent } from '@/components/ui/card';
 const API_BASE = '/api/v1/ged';
 
 function getAuthHeaders() {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') || localStorage.getItem('token') : null;
+  if (typeof window === 'undefined') return { 'Content-Type': 'application/json' } as HeadersInit;
+  const token = localStorage.getItem('access_token') || localStorage.getItem('token');
+  if (!token) {
+    window.location.href = '/login';
+    return { 'Content-Type': 'application/json' } as HeadersInit;
+  }
   return {
     'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
+    Authorization: `Bearer ${token}`,
+  } as HeadersInit;
 }
 
 function showToast(msg: string, type: 'success' | 'error' = 'success') {
@@ -138,6 +143,9 @@ export default function KitsListPage() {
         setNewKitClient('');
         setNewKitMonth('');
         fetchKits();
+      } else if (res.status === 401 || res.status === 403) {
+        showToast('Sessão expirada. Faça login novamente.', 'error');
+        setTimeout(() => { window.location.href = '/login'; }, 1500);
       } else {
         const err = await res.json().catch(() => null);
         showToast(err?.detail || `Erro ${res.status}: não foi possível criar o kit`, 'error');

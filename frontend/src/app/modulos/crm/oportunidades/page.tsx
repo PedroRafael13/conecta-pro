@@ -45,6 +45,7 @@ import { formatCurrency } from '@/lib/utils';
 export default function OportunidadesPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [viewMode, setViewMode] = useState<'table' | 'kanban'>('kanban');
   const [page, setPage] = useState(0);
   const pageSize = 20;
 
@@ -133,6 +134,10 @@ export default function OportunidadesPage() {
           <p className="text-muted-foreground">Pipeline de oportunidades comerciais</p>
         </div>
         <div className="flex items-center gap-2">
+          <div className="flex border rounded-lg overflow-hidden">
+            <button onClick={() => setViewMode('kanban')} className={`px-3 py-1.5 text-sm ${viewMode === 'kanban' ? 'bg-cyan-600 text-white' : 'bg-white'}`}>Kanban</button>
+            <button onClick={() => setViewMode('table')} className={`px-3 py-1.5 text-sm ${viewMode === 'table' ? 'bg-cyan-600 text-white' : 'bg-white'}`}>Tabela</button>
+          </div>
           <Button variant="outline" onClick={() => refetch()} disabled={isLoading}>
             <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
             Atualizar
@@ -241,6 +246,35 @@ export default function OportunidadesPage() {
                 <Plus className="h-4 w-4 mr-2" />
                 Nova Oportunidade
               </Button>
+            </div>
+          ) : viewMode === 'kanban' ? (
+            /* === KANBAN VIEW === */
+            <div className="flex gap-4 overflow-x-auto pb-4">
+              {['qualification', 'needs_analysis', 'proposal', 'negotiation', 'closed_won', 'closed_lost'].map(stage => {
+                const stageItems = oportunidades.filter((item: any) => item.stage === stage);
+                const stageNames: Record<string, string> = { qualification: 'Qualificação', needs_analysis: 'Análise', proposal: 'Proposta', negotiation: 'Negociação', closed_won: 'Ganho', closed_lost: 'Perdido' };
+                const stageColors: Record<string, string> = { qualification: 'border-blue-300 bg-blue-50', needs_analysis: 'border-cyan-300 bg-cyan-50', proposal: 'border-yellow-300 bg-yellow-50', negotiation: 'border-orange-300 bg-orange-50', closed_won: 'border-green-300 bg-green-50', closed_lost: 'border-red-300 bg-red-50' };
+                return (
+                  <div key={stage} className="min-w-[260px] flex-shrink-0">
+                    <div className={`rounded-t-lg border-t-4 ${stageColors[stage]?.split(' ')[0] || 'border-gray-300'} p-2 bg-gray-50 font-semibold text-sm flex justify-between`}>
+                      <span>{stageNames[stage] || stage}</span>
+                      <span className="bg-white px-2 rounded-full text-xs">{stageItems.length}</span>
+                    </div>
+                    <div className={`space-y-2 p-2 min-h-[200px] rounded-b-lg ${stageColors[stage]?.split(' ')[1] || 'bg-gray-50'}`}>
+                      {stageItems.map((item: any) => (
+                        <div key={item.id} className="bg-white rounded-lg border p-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer" onClick={() => { setSelectedItem(item); setDetailOpen(true); }}>
+                          <p className="font-medium text-sm">{item.title}</p>
+                          <p className="text-xs text-gray-500">{item.company_name || item.contact_name}</p>
+                          <div className="flex justify-between mt-2">
+                            <span className="text-green-600 font-semibold text-sm">R$ {item.value?.toLocaleString('pt-BR')}</span>
+                            <span className="text-xs text-gray-400">{item.probability}%</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           ) : (
             <Table>
