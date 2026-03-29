@@ -73,9 +73,9 @@ export default function AdmissaoDetalhePage() {
         method: 'PATCH', headers: getAuthHeaders(),
         body: JSON.stringify({ status: newStatus, ...extraData }),
       });
-      if (res.ok) { toast.success(`Status atualizado para ${STATUS[newStatus]?.label || newStatus}`); await loadData(); }
-      else { toast.error('Erro ao atualizar status'); }
-    } catch { toast.error('Erro de conexão'); }
+      if (res.ok) { toast.success(`Status atualizado para ${STATUS[newStatus]?.label || newStatus}`, { duration: 4000 }); await loadData(); }
+      else { toast.error('Erro ao atualizar status', { duration: 5000 }); }
+    } catch { toast.error('Erro de conexão', { duration: 5000 }); }
     finally { setAdvancing(false); }
   };
 
@@ -98,7 +98,7 @@ export default function AdmissaoDetalhePage() {
       if (newSalary !== oldSalary) payload.salary_proposed = newSalary;
 
       if (Object.keys(payload).length === 0) {
-        toast.info('Nenhuma alteração detectada');
+        toast.info('Nenhuma alteração detectada', { duration: 3000 });
         setEditing(false);
         setSavingEdit(false);
         return;
@@ -109,14 +109,14 @@ export default function AdmissaoDetalhePage() {
         body: JSON.stringify(payload),
       });
       if (res.ok) {
-        toast.success('Dados atualizados com sucesso!');
+        toast.success('Dados atualizados com sucesso!', { duration: 4000 });
         setEditing(false);
         await loadData();
       } else {
         const err = await res.json().catch(() => null);
-        toast.error(err?.detail || 'Erro ao salvar alterações');
+        toast.error(err?.detail || 'Erro ao salvar alterações', { duration: 5000 });
       }
-    } catch { toast.error('Erro de conexão'); }
+    } catch { toast.error('Erro de conexão', { duration: 5000 }); }
     finally { setSavingEdit(false); }
   };
 
@@ -372,7 +372,7 @@ export default function AdmissaoDetalhePage() {
                         checklist[cat] = { ...checklist[cat], [doc]: !done };
                         try {
                           const res = await fetch(`${API_BASE}/admissions/${params.id}`, { method: 'PATCH', headers: getAuthHeaders(), body: JSON.stringify({ checklist }) });
-                          if (res.ok) { toast.success(`${doc.replace(/_/g, ' ')} ${!done ? 'marcado' : 'desmarcado'}`); loadData(); }
+                          if (res.ok) { toast.success(`${doc.replace(/_/g, ' ')} ${!done ? 'marcado' : 'desmarcado'}`, { duration: 3000 }); loadData(); }
                         } catch { /* */ }
                       }}>
                         <span className={done ? 'text-green-600' : 'text-muted-foreground'}>{done ? '✓' : '○'}</span>
@@ -416,7 +416,7 @@ export default function AdmissaoDetalhePage() {
                 const fileInput = document.getElementById('doc-file') as HTMLInputElement;
                 const typeSelect = document.getElementById('doc-type') as HTMLSelectElement;
                 const file = fileInput?.files?.[0];
-                if (!file) { toast.error('Selecione um arquivo'); return; }
+                if (!file) { toast.error('Selecione um arquivo', { duration: 5000 }); return; }
                 const formData = new FormData();
                 formData.append('file', file);
                 const token = localStorage.getItem('access_token') || localStorage.getItem('token') || '';
@@ -424,9 +424,9 @@ export default function AdmissaoDetalhePage() {
                   const res = await fetch(`${API_BASE}/admissions/${params.id}/documents?document_type=${typeSelect.value}`, {
                     method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: formData,
                   });
-                  if (res.ok) { toast.success('Documento enviado com sucesso!'); fileInput.value = ''; loadData(); }
-                  else { toast.error('Erro ao enviar documento'); }
-                } catch { toast.error('Erro de conexão'); }
+                  if (res.ok) { toast.success('Documento enviado com sucesso!', { duration: 4000 }); fileInput.value = ''; loadData(); }
+                  else { toast.error('Erro ao enviar documento', { duration: 5000 }); }
+                } catch { toast.error('Erro de conexão', { duration: 5000 }); }
               }}>
                 Upload
               </Button>

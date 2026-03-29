@@ -129,7 +129,7 @@ export default function FuncionariosPage() {
         }
       }
       if (Object.keys(payload).length === 0) {
-        toast.info('Nenhuma alteração detectada');
+        toast.info('Nenhuma alteração detectada', { duration: 3000 });
         setSaving(false);
         return;
       }
@@ -137,14 +137,14 @@ export default function FuncionariosPage() {
         method: 'PATCH', headers: getAuthHeaders(), body: JSON.stringify(payload),
       });
       if (res.ok) {
-        toast.success('Dados atualizados com sucesso!');
+        toast.success('Dados atualizados com sucesso!', { duration: 4000 });
         setEditingId(null);
         await loadEmployees();
       } else {
         const err = await res.json().catch(() => null);
-        toast.error(err?.detail || 'Erro ao salvar');
+        toast.error(err?.detail || 'Erro ao salvar', { duration: 5000 });
       }
-    } catch { toast.error('Erro de conexão'); }
+    } catch { toast.error('Erro de conexão', { duration: 5000 }); }
     finally { setSaving(false); }
   };
 
