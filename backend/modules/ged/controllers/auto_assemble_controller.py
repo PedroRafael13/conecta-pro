@@ -115,6 +115,35 @@ async def list_kits(
     }
 
 
+@router.get("/kits/summary")
+async def kits_summary(
+    current_user: CurrentActiveUser = None,
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """Resumo dos kits do mês atual."""
+    from sqlalchemy import text
+
+    result = await db.execute(
+        text("""
+        SELECT
+            COUNT(*) as total_kits,
+            COUNT(*) FILTER (WHERE status = 'em_montagem') as kits_pending_send,
+            COUNT(*) FILTER (WHERE status IN ('enviado','aprovado')) as kits_pending_approval,
+            COALESCE(AVG(completion_percentage), 0) as average_completion
+        FROM ged_document_kits
+        WHERE EXTRACT(MONTH FROM reference_month) = EXTRACT(MONTH FROM CURRENT_DATE)
+          AND EXTRACT(YEAR FROM reference_month) = EXTRACT(YEAR FROM CURRENT_DATE)
+        """)
+    )
+    r = result.mappings().first()
+    return {
+        "total_kits": r["total_kits"] if r else 0,
+        "kits_pending_send": r["kits_pending_send"] if r else 0,
+        "kits_pending_approval": r["kits_pending_approval"] if r else 0,
+        "average_completion": round(float(r["average_completion"]), 1) if r else 0,
+    }
+
+
 @router.get("/kits/{kit_id}")
 async def get_kit_detail(
     kit_id: str,

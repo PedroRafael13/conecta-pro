@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { CalendarDays, ArrowLeft, Inbox, Loader2, Plus, X, Save } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { CalendarDays, ArrowLeft, Inbox, Loader2, Plus, X, Save, Search, Filter, ChevronLeft, ChevronRight as ChevronRightIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 const API_BASE = '/api/v1/people-management/hr';
 
 function getAuthHeaders() {
-  const token = typeof window !== 'undefined' ? (localStorage.getItem('access_token') || localStorage.getItem('access_token') || localStorage.getItem('token')) : null;
+  const token = typeof window !== 'undefined' ? (localStorage.getItem('access_token') || localStorage.getItem('token')) : null;
   return {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -20,77 +20,195 @@ function getAuthHeaders() {
 }
 
 const statusConfig: Record<string, { label: string; className: string }> = {
-  ativa: { label: 'Ativa', className: 'bg-green-500 text-white' },
-  encerrada: { label: 'Encerrada', className: 'bg-gray-500 text-white' },
-  pendente: { label: 'Pendente', className: 'bg-yellow-500 text-white' },
-  active: { label: 'Ativa', className: 'bg-green-500 text-white' },
-  ended: { label: 'Encerrada', className: 'bg-gray-500 text-white' },
   pending: { label: 'Pendente', className: 'bg-yellow-500 text-white' },
+  approved: { label: 'Aprovada', className: 'bg-green-500 text-white' },
+  active: { label: 'Ativa', className: 'bg-blue-500 text-white' },
+  ended: { label: 'Encerrada', className: 'bg-gray-500 text-white' },
+  rejected: { label: 'Rejeitada', className: 'bg-red-500 text-white' },
+  cancelled: { label: 'Cancelada', className: 'bg-red-400 text-white' },
 };
 
-const tipoConfig: Record<string, string> = {
-  medica: 'Licença Médica',
+const typeConfig: Record<string, string> = {
+  medical_leave: 'Licenca Medica',
+  medica: 'Licenca Medica',
   maternidade: 'Maternidade',
-  paternidade: 'Paternidade',
-  acidente: 'Acidente de Trabalho',
-  obito: 'Nojo (Óbito)',
-  casamento: 'Gala (Casamento)',
-  medical: 'Licença Médica',
   maternity: 'Maternidade',
+  paternidade: 'Paternidade',
   paternity: 'Paternidade',
+  acidente: 'Acidente de Trabalho',
   work_accident: 'Acidente de Trabalho',
+  obito: 'Nojo (Obito)',
+  bereavement: 'Nojo (Obito)',
+  casamento: 'Gala (Casamento)',
+  marriage: 'Gala (Casamento)',
+  jury_duty: 'Servico do Juri',
+  military: 'Servico Militar',
+  other: 'Outro',
 };
+
+const leaveTypeOptions = [
+  { value: 'medica', label: 'Licenca Medica' },
+  { value: 'maternidade', label: 'Maternidade' },
+  { value: 'paternidade', label: 'Paternidade' },
+  { value: 'acidente', label: 'Acidente de Trabalho' },
+  { value: 'obito', label: 'Nojo (Obito)' },
+  { value: 'casamento', label: 'Gala (Casamento)' },
+  { value: 'jury_duty', label: 'Servico do Juri' },
+  { value: 'military', label: 'Servico Militar' },
+  { value: 'other', label: 'Outro' },
+];
+
+const PAGE_SIZE = 15;
+
+function formatDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return '-';
+  const parts = String(dateStr).split('T')[0].split('-');
+  return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : '-';
+}
 
 export default function LicencasPage() {
   const router = useRouter();
   const [licencas, setLicencas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [totalItems, setTotalItems] = useState(0);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [employees, setEmployees] = useState<any[]>([]);
   const [formData, setFormData] = useState({ employee_id: '', leave_type: 'medica', start_date: '', end_date: '', cid: '', notes: '' });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [filtroStatus, setFiltroStatus] = useState<string>('todos');
+  const [sortField, setSortField] = useState<string>('');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
+  // Load leaves from API
   useEffect(() => {
     async function load() {
+      setLoading(true);
       try {
-        // Fetch employees and their discipline/leave history
-        const empRes = await fetch(`${API_BASE}/employees?page_size=100`, { headers: getAuthHeaders() });
-        if (empRes.ok) {
-          const empData = await empRes.json();
-          const emps = empData.items || empData || [];
-          setEmployees(emps);
-          const allLeaves: any[] = [];
-          await Promise.all(
-            emps.map(async (emp: any) => {
-              try {
-                const lRes = await fetch(`${API_BASE}/discipline/employee/${emp.id}/history?page_size=50`, { headers: getAuthHeaders() });
-                if (lRes.ok) {
-                  const data = await lRes.json();
-                  const items = data.items || data || [];
-                  items.filter((item: any) => item.type === 'leave' || item.leave_type).forEach((l: any) => {
-                    allLeaves.push({
-                      colaborador: emp.nome || emp.name,
-                      tipo: l.leave_type || l.tipo || 'medica',
-                      inicio: l.start_date || l.inicio,
-                      fim: l.end_date || l.fim,
-                      dias: l.days || l.dias || 0,
-                      status: l.status || 'active',
-                    });
-                  });
-                }
-              } catch { /* skip */ }
-            })
-          );
-          setLicencas(allLeaves);
+        const res = await fetch(`${API_BASE}/leaves?page=${currentPage}&page_size=${PAGE_SIZE}`, { headers: getAuthHeaders() });
+        if (res.ok) {
+          const data = await res.json();
+          setLicencas(data.items || []);
+          setTotalItems(data.total || 0);
+        } else {
+          setLicencas([]);
+          setTotalItems(0);
         }
-      } catch { setLicencas([]); } finally { setLoading(false); }
+      } catch {
+        setLicencas([]);
+        setTotalItems(0);
+      } finally {
+        setLoading(false);
+      }
     }
     load();
+  }, [currentPage, refreshKey]);
+
+  // Load employees for the form
+  useEffect(() => {
+    async function loadEmployees() {
+      try {
+        const res = await fetch(`${API_BASE}/employees?page_size=200`, { headers: getAuthHeaders() });
+        if (res.ok) {
+          const data = await res.json();
+          setEmployees(data.items || data || []);
+        }
+      } catch { /* skip */ }
+    }
+    loadEmployees();
   }, []);
 
+  // Reset page on filter/search change
+  useEffect(() => { setCurrentPage(1); }, [searchTerm, filtroStatus]);
+
+  // Filtered + searched + sorted
+  const filteredData = useMemo(() => {
+    let items = [...licencas];
+    if (filtroStatus !== 'todos') {
+      items = items.filter(l => l.status === filtroStatus);
+    }
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase();
+      items = items.filter(l =>
+        (l.type || '').toLowerCase().includes(term) ||
+        (l.employee_id || '').toLowerCase().includes(term) ||
+        (l.id || '').toLowerCase().includes(term) ||
+        (typeConfig[l.type] || '').toLowerCase().includes(term)
+      );
+    }
+    if (sortField) {
+      items = [...items].sort((a, b) => {
+        const va = String(a[sortField] || '').toLowerCase();
+        const vb = String(b[sortField] || '').toLowerCase();
+        return sortDir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+      });
+    }
+    return items;
+  }, [licencas, filtroStatus, searchTerm, sortField, sortDir]);
+
+  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
+
+  // Summary by status
+  const statusSummary = useMemo(() => {
+    return licencas.reduce((acc, l) => {
+      const st = l.status || 'pending';
+      acc[st] = (acc[st] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+  }, [licencas]);
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDir('asc');
+    }
+  };
+
+  const sortIcon = (field: string) => {
+    if (sortField !== field) return ' ↕';
+    return sortDir === 'asc' ? ' ↑' : ' ↓';
+  };
+
+  const handleCreate = async () => {
+    const errors: Record<string, string> = {};
+    if (!formData.employee_id) errors.employee_id = 'Colaborador e obrigatorio';
+    if (!formData.start_date) errors.start_date = 'Data inicio e obrigatoria';
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      toast.error('Corrija os campos destacados', { duration: 5000 });
+      return;
+    }
+    setSaving(true);
+    try {
+      const payload = {
+        employee_id: formData.employee_id,
+        leave_type: formData.leave_type,
+        start_date: formData.start_date,
+        end_date: formData.end_date || null,
+        cid: formData.cid || null,
+        notes: formData.notes || null,
+      };
+      const res = await fetch(`${API_BASE}/leaves`, { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(payload) });
+      if (res.ok) {
+        setShowForm(false);
+        setFormData({ employee_id: '', leave_type: 'medica', start_date: '', end_date: '', cid: '', notes: '' });
+        setFormErrors({});
+        setRefreshKey(k => k + 1);
+        toast.success('Licenca registrada com sucesso!', { duration: 4000 });
+      } else {
+        const err = await res.json().catch(() => null);
+        toast.error(err?.detail || 'Erro ao registrar licenca', { duration: 5000 });
+      }
+    } catch { toast.error('Erro de conexao', { duration: 5000 }); } finally { setSaving(false); }
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-28">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Button type="button" variant="ghost" size="sm" onClick={() => router.push('/modulos/dp')}>
@@ -99,19 +217,39 @@ export default function LicencasPage() {
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">
               <CalendarDays className="h-6 w-6" />
-              Licenças e Afastamentos
+              Licencas e Afastamentos
             </h1>
-            <p className="text-muted-foreground">Controle de licenças e afastamentos</p>
+            <p className="text-muted-foreground">Controle de licencas e afastamentos</p>
           </div>
         </div>
-        <Button type="button" size="sm" onClick={() => setShowForm(true)}><Plus className="h-4 w-4 mr-1" /> Nova Licença</Button>
+        <div className="flex gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={() => setFiltroStatus('todos')}>
+            <Filter className="h-4 w-4 mr-1" /> Todos
+          </Button>
+          <Button type="button" size="sm" onClick={() => setShowForm(true)}>
+            <Plus className="h-4 w-4 mr-1" /> Nova Licenca
+          </Button>
+        </div>
+      </div>
+
+      {/* Status filter badges */}
+      <div className="flex gap-2 flex-wrap">
+        {Object.entries(statusConfig).map(([key, val]) => (
+          <Badge
+            key={key}
+            className={`cursor-pointer ${filtroStatus === key ? val.className : 'bg-muted text-muted-foreground'}`}
+            onClick={() => setFiltroStatus(key)}
+          >
+            {val.label} {statusSummary[key] ? `(${statusSummary[key]})` : ''}
+          </Badge>
+        ))}
       </div>
 
       {showForm && (
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle>Nova Licença</CardTitle>
+              <CardTitle>Nova Licenca</CardTitle>
               <Button type="button" variant="ghost" size="sm" onClick={() => setShowForm(false)}><X className="h-4 w-4" /></Button>
             </div>
           </CardHeader>
@@ -128,18 +266,15 @@ export default function LicencasPage() {
                 {formErrors.employee_id && <p className="text-red-500 text-xs mt-1">{formErrors.employee_id}</p>}
               </div>
               <div>
-                <label className="text-sm font-medium mb-1 block">Tipo de Licença</label>
+                <label className="text-sm font-medium mb-1 block">Tipo de Licenca</label>
                 <select value={formData.leave_type} onChange={e => setFormData(p => ({ ...p, leave_type: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm">
-                  <option value="medica">Licença Médica</option>
-                  <option value="maternidade">Maternidade</option>
-                  <option value="paternidade">Paternidade</option>
-                  <option value="acidente">Acidente de Trabalho</option>
-                  <option value="obito">Nojo (Óbito)</option>
-                  <option value="casamento">Gala (Casamento)</option>
+                  {leaveTypeOptions.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
                 </select>
               </div>
               <div>
-                <label className="text-sm font-medium mb-1 block">Data Início *</label>
+                <label className="text-sm font-medium mb-1 block">Data Inicio *</label>
                 <input type="date" value={formData.start_date} onChange={e => { setFormData(p => ({ ...p, start_date: e.target.value })); setFormErrors(p => ({ ...p, start_date: '' })); }} className={`w-full px-3 py-2 border rounded-md text-sm ${formErrors.start_date ? 'border-red-500' : ''}`} />
                 {formErrors.start_date && <p className="text-red-500 text-xs mt-1">{formErrors.start_date}</p>}
               </div>
@@ -147,32 +282,21 @@ export default function LicencasPage() {
                 <label className="text-sm font-medium mb-1 block">Data Fim</label>
                 <input type="date" value={formData.end_date} onChange={e => setFormData(p => ({ ...p, end_date: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm" />
               </div>
-              {formData.leave_type === 'medica' && (
+              {(formData.leave_type === 'medica' || formData.leave_type === 'medical_leave') && (
                 <div>
                   <label className="text-sm font-medium mb-1 block">CID</label>
                   <input type="text" value={formData.cid} onChange={e => setFormData(p => ({ ...p, cid: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm" placeholder="Ex: J11" />
                 </div>
               )}
               <div className="md:col-span-2">
-                <label className="text-sm font-medium mb-1 block">Observações</label>
-                <textarea value={formData.notes} onChange={e => setFormData(p => ({ ...p, notes: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm" rows={3} placeholder="Observações adicionais" />
+                <label className="text-sm font-medium mb-1 block">Observacoes</label>
+                <textarea value={formData.notes} onChange={e => setFormData(p => ({ ...p, notes: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm" rows={3} placeholder="Observacoes adicionais" />
               </div>
             </div>
             <div className="flex gap-2 mt-4">
-              <Button type="button" size="sm" disabled={saving} onClick={async () => {
-                const errors: Record<string, string> = {};
-                if (!formData.employee_id) errors.employee_id = 'Colaborador é obrigatório';
-                if (!formData.start_date) errors.start_date = 'Data início é obrigatória';
-                if (Object.keys(errors).length > 0) { setFormErrors(errors); toast.error('Corrija os campos destacados'); return; }
-                setSaving(true);
-                try {
-                  const res = await fetch(`${API_BASE}/leaves/`, { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(formData) });
-                  if (res.ok) { setShowForm(false); setFormData({ employee_id: '', leave_type: 'medica', start_date: '', end_date: '', cid: '', notes: '' }); setFormErrors({}); toast.success('Licença registrada com sucesso'); }
-                  else { const err = await res.json().catch(() => null); toast.error(err?.detail || 'Erro ao registrar licença'); }
-                } catch { toast.error('Erro de conexão'); } finally { setSaving(false); }
-              }}>
+              <Button type="button" size="sm" disabled={saving} onClick={handleCreate}>
                 {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />}
-                {saving ? 'Salvando...' : 'Registrar Licença'}
+                {saving ? 'Salvando...' : 'Registrar Licenca'}
               </Button>
               <Button type="button" variant="outline" size="sm" onClick={() => setShowForm(false)}>Cancelar</Button>
             </div>
@@ -181,44 +305,85 @@ export default function LicencasPage() {
       )}
 
       <Card>
-        <CardHeader><CardTitle>Licenças Registradas</CardTitle></CardHeader>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>Licencas Registradas</CardTitle>
+            <div className="relative w-64">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                placeholder="Buscar por tipo, ID..."
+                className="w-full pl-9 pr-3 py-2 border rounded-md text-sm"
+              />
+            </div>
+          </div>
+        </CardHeader>
         <CardContent>
           {loading ? (
             <div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>
-          ) : licencas.length === 0 ? (
+          ) : filteredData.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
               <Inbox className="h-12 w-12 mb-3" />
-              <p className="font-medium">Nenhuma licença registrada</p>
-                  <p className="text-sm text-muted-foreground mt-1">As licenças aparecerão aqui quando solicitadas.</p>
+              <p className="font-medium">Nenhuma licenca encontrada</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                {searchTerm ? 'Tente outra busca.' : 'As licencas aparecerao aqui quando registradas.'}
+              </p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Colaborador</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Início</TableHead>
-                  <TableHead>Fim</TableHead>
-                  <TableHead>Dias</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {licencas.map((item, i) => {
-                  const st = statusConfig[item.status] || { label: item.status, className: 'bg-gray-500 text-white' };
-                  return (
-                    <TableRow key={i}>
-                      <TableCell className="font-medium">{item.colaborador}</TableCell>
-                      <TableCell>{tipoConfig[item.tipo] || item.tipo}</TableCell>
-                      <TableCell>{item.inicio ? new Date(item.inicio).toLocaleDateString('pt-BR') : '-'}</TableCell>
-                      <TableCell>{item.fim ? new Date(item.fim).toLocaleDateString('pt-BR') : '-'}</TableCell>
-                      <TableCell>{item.dias}</TableCell>
-                      <TableCell><Badge className={st.className}>{st.label}</Badge></TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="cursor-pointer select-none" onClick={() => handleSort('employee_id')}>Colaborador{sortIcon('employee_id')}</TableHead>
+                    <TableHead className="cursor-pointer select-none" onClick={() => handleSort('type')}>Tipo{sortIcon('type')}</TableHead>
+                    <TableHead>Inicio</TableHead>
+                    <TableHead>Fim</TableHead>
+                    <TableHead className="cursor-pointer select-none" onClick={() => handleSort('status')}>Status{sortIcon('status')}</TableHead>
+                    <TableHead>ID</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredData.map((item, i) => {
+                    const st = statusConfig[item.status] || { label: item.status || 'N/A', className: 'bg-gray-500 text-white' };
+                    return (
+                      <TableRow key={item.id || i}>
+                        <TableCell className="font-medium text-xs">{item.employee_id ? item.employee_id.slice(0, 8) + '...' : '-'}</TableCell>
+                        <TableCell>{typeConfig[item.type] || item.type || '-'}</TableCell>
+                        <TableCell>{formatDate(item.start_date)}</TableCell>
+                        <TableCell>{formatDate(item.end_date)}</TableCell>
+                        <TableCell><Badge className={st.className}>{st.label}</Badge></TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{item.id ? item.id.slice(0, 8) + '...' : '-'}</TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+
+              {/* Pagination */}
+              <div className="flex items-center justify-between mt-4 text-sm">
+                <span className="text-muted-foreground">
+                  {totalItems} registro{totalItems !== 1 ? 's' : ''} — Pagina {currentPage} de {totalPages}
+                </span>
+                <div className="flex gap-1">
+                  <Button variant="outline" size="sm" disabled={currentPage <= 1} onClick={() => setCurrentPage(p => p - 1)}>
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                    const page = totalPages <= 5 ? i + 1 : Math.max(1, Math.min(currentPage - 2, totalPages - 4)) + i;
+                    return (
+                      <Button key={page} variant={currentPage === page ? 'default' : 'outline'} size="sm" onClick={() => setCurrentPage(page)}>
+                        {page}
+                      </Button>
+                    );
+                  })}
+                  <Button variant="outline" size="sm" disabled={currentPage >= totalPages} onClick={() => setCurrentPage(p => p + 1)}>
+                    <ChevronRightIcon className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

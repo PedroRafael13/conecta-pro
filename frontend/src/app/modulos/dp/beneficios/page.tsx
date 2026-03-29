@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Gift, ArrowLeft, Inbox, Loader2, Bus, UtensilsCrossed, Heart, Shield, Smile, Plus, X, Save } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Gift, ArrowLeft, Inbox, Loader2, Plus, X, Save, Search, Filter, Edit, Trash2, ChevronLeft, ChevronRight as ChevronRightIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 const API_BASE = '/api/v1/people-management/hr';
 
 function getAuthHeaders() {
-  const token = typeof window !== 'undefined' ? (localStorage.getItem('access_token') || localStorage.getItem('access_token') || localStorage.getItem('token')) : null;
+  const token = typeof window !== 'undefined' ? (localStorage.getItem('access_token') || localStorage.getItem('token')) : null;
   return {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -20,73 +20,246 @@ function getAuthHeaders() {
 }
 
 const statusConfig: Record<string, { label: string; className: string }> = {
-  ativo: { label: 'Ativo', className: 'bg-green-500 text-white' },
-  inativo: { label: 'Inativo', className: 'bg-gray-500 text-white' },
   active: { label: 'Ativo', className: 'bg-green-500 text-white' },
-  inactive: { label: 'Inativo', className: 'bg-gray-500 text-white' },
+  suspended: { label: 'Suspenso', className: 'bg-yellow-500 text-white' },
+  cancelled: { label: 'Cancelado', className: 'bg-red-500 text-white' },
 };
 
-const fmt = (v: number) => `R$ ${(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+const typeLabels: Record<string, string> = {
+  vale_transporte: 'Vale Transporte',
+  vale_refeicao: 'Vale Refeicao',
+  vale_alimentacao: 'Vale Alimentacao',
+  plano_saude: 'Plano de Saude',
+  plano_odontologico: 'Plano Odontologico',
+  seguro_vida: 'Seguro de Vida',
+  auxilio_creche: 'Auxilio Creche',
+  gym_pass: 'Gym Pass',
+  other: 'Outro',
+};
+
+const typeOptions = [
+  { value: 'vale_transporte', label: 'Vale Transporte' },
+  { value: 'vale_refeicao', label: 'Vale Refeicao' },
+  { value: 'vale_alimentacao', label: 'Vale Alimentacao' },
+  { value: 'plano_saude', label: 'Plano de Saude' },
+  { value: 'plano_odontologico', label: 'Plano Odontologico' },
+  { value: 'seguro_vida', label: 'Seguro de Vida' },
+  { value: 'auxilio_creche', label: 'Auxilio Creche' },
+  { value: 'gym_pass', label: 'Gym Pass' },
+  { value: 'other', label: 'Outro' },
+];
+
+const fmt = (v: number | null | undefined) => `R$ ${(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+
+const PAGE_SIZE = 15;
 
 export default function BeneficiosPage() {
   const router = useRouter();
   const [beneficios, setBeneficios] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [totalItems, setTotalItems] = useState(0);
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [employees, setEmployees] = useState<any[]>([]);
-  const [formData, setFormData] = useState({ employee_id: '', benefit_type: 'VT', value: '', start_date: '', end_date: '', discount_payroll: false, discount_percentage: '' });
+  const [formData, setFormData] = useState({
+    employee_id: '',
+    type: 'vale_transporte',
+    provider: '',
+    plan_name: '',
+    employee_contribution: '',
+    company_contribution: '',
+    start_date: '',
+    end_date: '',
+    card_number: '',
+    notes: '',
+  });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-  const [reloadKey, setReloadKey] = useState(0);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [filtroStatus, setFiltroStatus] = useState<string>('todos');
+  const [filtroType, setFiltroType] = useState<string>('todos');
+  const [sortField, setSortField] = useState<string>('');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
+  // Load benefits from API
   useEffect(() => {
     async function load() {
+      setLoading(true);
       try {
-        const empRes = await fetch(`${API_BASE}/employees?page_size=100`, { headers: getAuthHeaders() });
-        if (empRes.ok) {
-          const empData = await empRes.json();
-          const emps = empData.items || empData || [];
-          setEmployees(emps);
-          const allBenefits: any[] = [];
-          await Promise.all(
-            emps.map(async (emp: any) => {
-              try {
-                const benRes = await fetch(`${API_BASE}/benefits/employee/${emp.id}`, { headers: getAuthHeaders() });
-                if (benRes.ok) {
-                  const bens = await benRes.json();
-                  const items = bens.items || bens || [];
-                  items.forEach((b: any) => {
-                    allBenefits.push({
-                      colaborador: emp.nome || emp.name,
-                      tipo: b.benefit_type || b.tipo,
-                      plano: b.plan_name || b.plano || '-',
-                      empresa: b.company_contribution || b.employer_cost || 0,
-                      desconto: b.employee_discount || b.employee_cost || 0,
-                      status: b.status || 'active',
-                    });
-                  });
-                }
-              } catch { /* skip */ }
-            })
-          );
-          setBeneficios(allBenefits);
+        let url = `${API_BASE}/benefits?page=${currentPage}&page_size=${PAGE_SIZE}`;
+        if (filtroStatus !== 'todos') url += `&status=${filtroStatus}`;
+        const res = await fetch(url, { headers: getAuthHeaders() });
+        if (res.ok) {
+          const data = await res.json();
+          setBeneficios(data.items || []);
+          setTotalItems(data.total || 0);
+        } else {
+          setBeneficios([]);
+          setTotalItems(0);
         }
-      } catch { setBeneficios([]); } finally { setLoading(false); }
+      } catch {
+        setBeneficios([]);
+        setTotalItems(0);
+      } finally {
+        setLoading(false);
+      }
     }
     load();
-  }, [reloadKey]);
+  }, [currentPage, filtroStatus, refreshKey]);
+
+  // Load employees for the form
+  useEffect(() => {
+    async function loadEmployees() {
+      try {
+        const res = await fetch(`${API_BASE}/employees?page_size=200`, { headers: getAuthHeaders() });
+        if (res.ok) {
+          const data = await res.json();
+          setEmployees(data.items || data || []);
+        }
+      } catch { /* skip */ }
+    }
+    loadEmployees();
+  }, []);
+
+  // Reset page on filter/search change
+  useEffect(() => { setCurrentPage(1); }, [searchTerm, filtroStatus, filtroType]);
+
+  // Filtered + searched + sorted (client-side on already-fetched page)
+  const filteredData = useMemo(() => {
+    let items = [...beneficios];
+    if (filtroType !== 'todos') {
+      items = items.filter(b => b.type === filtroType);
+    }
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase();
+      items = items.filter(b =>
+        (b.type || '').toLowerCase().includes(term) ||
+        (b.provider || '').toLowerCase().includes(term) ||
+        (b.plan_name || '').toLowerCase().includes(term) ||
+        (b.employee_id || '').toLowerCase().includes(term) ||
+        (b.card_number || '').toLowerCase().includes(term)
+      );
+    }
+    if (sortField) {
+      items = [...items].sort((a, b) => {
+        const va = String(a[sortField] || '').toLowerCase();
+        const vb = String(b[sortField] || '').toLowerCase();
+        return sortDir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+      });
+    }
+    return items;
+  }, [beneficios, filtroType, searchTerm, sortField, sortDir]);
+
+  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
 
   // Summary by type
-  const tipoSummary = beneficios.reduce((acc, b) => {
-    const tipo = b.tipo || 'Outro';
-    if (!acc[tipo]) acc[tipo] = { count: 0, total: 0 };
-    acc[tipo].count++;
-    acc[tipo].total += (b.empresa || 0);
-    return acc;
-  }, {} as Record<string, { count: number; total: number }>);
+  const tipoSummary = useMemo(() => {
+    return beneficios.reduce((acc, b) => {
+      const tipo = b.type || 'other';
+      if (!acc[tipo]) acc[tipo] = { count: 0, total: 0 };
+      acc[tipo].count++;
+      acc[tipo].total += (b.company_contribution || 0);
+      return acc;
+    }, {} as Record<string, { count: number; total: number }>);
+  }, [beneficios]);
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDir('asc');
+    }
+  };
+
+  const sortIcon = (field: string) => {
+    if (sortField !== field) return ' ↕';
+    return sortDir === 'asc' ? ' ↑' : ' ↓';
+  };
+
+  const resetForm = () => {
+    setFormData({ employee_id: '', type: 'vale_transporte', provider: '', plan_name: '', employee_contribution: '', company_contribution: '', start_date: '', end_date: '', card_number: '', notes: '' });
+    setFormErrors({});
+    setEditingId(null);
+  };
+
+  const openEditForm = (item: any) => {
+    setEditingId(item.id);
+    setFormData({
+      employee_id: item.employee_id || '',
+      type: item.type || 'vale_transporte',
+      provider: item.provider || '',
+      plan_name: item.plan_name || '',
+      employee_contribution: item.employee_contribution != null ? String(item.employee_contribution) : '',
+      company_contribution: item.company_contribution != null ? String(item.company_contribution) : '',
+      start_date: item.start_date || '',
+      end_date: item.end_date || '',
+      card_number: item.card_number || '',
+      notes: item.notes || '',
+    });
+    setShowForm(true);
+  };
+
+  const handleSave = async () => {
+    const errors: Record<string, string> = {};
+    if (!editingId && !formData.employee_id) errors.employee_id = 'Selecione um colaborador';
+    if (!formData.type) errors.type = 'Selecione o tipo de beneficio';
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      toast.error('Corrija os campos destacados', { duration: 5000 });
+      return;
+    }
+    setSaving(true);
+    try {
+      const payload: any = {
+        type: formData.type,
+        provider: formData.provider || null,
+        plan_name: formData.plan_name || null,
+        employee_contribution: formData.employee_contribution ? parseFloat(formData.employee_contribution) : null,
+        company_contribution: formData.company_contribution ? parseFloat(formData.company_contribution) : null,
+        start_date: formData.start_date || null,
+        end_date: formData.end_date || null,
+        card_number: formData.card_number || null,
+        notes: formData.notes || null,
+      };
+      if (!editingId) {
+        payload.employee_id = formData.employee_id;
+      }
+
+      const url = editingId ? `${API_BASE}/benefits/${editingId}` : `${API_BASE}/benefits`;
+      const method = editingId ? 'PATCH' : 'POST';
+      const res = await fetch(url, { method, headers: getAuthHeaders(), body: JSON.stringify(payload) });
+
+      if (res.ok) {
+        setShowForm(false);
+        resetForm();
+        setRefreshKey(k => k + 1);
+        toast.success(editingId ? 'Beneficio atualizado com sucesso!' : 'Beneficio criado com sucesso!', { duration: 4000 });
+      } else {
+        const err = await res.json().catch(() => null);
+        toast.error(err?.detail || 'Erro ao salvar beneficio', { duration: 5000 });
+      }
+    } catch { toast.error('Erro de conexao', { duration: 5000 }); } finally { setSaving(false); }
+  };
+
+  const handleCancel = async (id: string) => {
+    if (!confirm('Cancelar este beneficio?')) return;
+    try {
+      const res = await fetch(`${API_BASE}/benefits/${id}`, { method: 'DELETE', headers: getAuthHeaders() });
+      if (res.ok) {
+        setRefreshKey(k => k + 1);
+        toast.success('Beneficio cancelado', { duration: 4000 });
+      } else {
+        const err = await res.json().catch(() => null);
+        toast.error(err?.detail || 'Erro ao cancelar beneficio', { duration: 5000 });
+      }
+    } catch { toast.error('Erro de conexao', { duration: 5000 }); }
+  };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-28">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Button type="button" variant="ghost" size="sm" onClick={() => router.push('/modulos/dp')}>
@@ -95,88 +268,112 @@ export default function BeneficiosPage() {
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">
               <Gift className="h-6 w-6" />
-              Gestão de Benefícios
+              Gestao de Beneficios
             </h1>
-            <p className="text-muted-foreground">Benefícios oferecidos aos colaboradores</p>
+            <p className="text-muted-foreground">Beneficios oferecidos aos colaboradores</p>
           </div>
         </div>
-        <Button type="button" size="sm" onClick={() => setShowForm(true)}><Plus className="h-4 w-4 mr-1" /> Novo Benefício</Button>
+        <div className="flex gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={() => { setFiltroStatus('todos'); setFiltroType('todos'); }}>
+            <Filter className="h-4 w-4 mr-1" /> Todos
+          </Button>
+          <Button type="button" size="sm" onClick={() => { resetForm(); setShowForm(true); }}>
+            <Plus className="h-4 w-4 mr-1" /> Novo Beneficio
+          </Button>
+        </div>
+      </div>
+
+      {/* Status filter badges */}
+      <div className="flex gap-2 flex-wrap">
+        {Object.entries(statusConfig).map(([key, val]) => (
+          <Badge
+            key={key}
+            className={`cursor-pointer ${filtroStatus === key ? val.className : 'bg-muted text-muted-foreground'}`}
+            onClick={() => setFiltroStatus(key)}
+          >
+            {val.label}
+          </Badge>
+        ))}
+        <span className="border-l mx-2" />
+        {typeOptions.slice(0, 5).map(opt => (
+          <Badge
+            key={opt.value}
+            className={`cursor-pointer ${filtroType === opt.value ? 'bg-blue-500 text-white' : 'bg-muted text-muted-foreground'}`}
+            onClick={() => setFiltroType(filtroType === opt.value ? 'todos' : opt.value)}
+          >
+            {opt.label}
+          </Badge>
+        ))}
       </div>
 
       {showForm && (
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle>Novo Benefício</CardTitle>
-              <Button type="button" variant="ghost" size="sm" onClick={() => setShowForm(false)}><X className="h-4 w-4" /></Button>
+              <CardTitle>{editingId ? 'Editar Beneficio' : 'Novo Beneficio'}</CardTitle>
+              <Button type="button" variant="ghost" size="sm" onClick={() => { setShowForm(false); resetForm(); }}><X className="h-4 w-4" /></Button>
             </div>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium mb-1 block">Colaborador *</label>
-                <select value={formData.employee_id} onChange={e => { setFormData(p => ({ ...p, employee_id: e.target.value })); setFormErrors(p => ({ ...p, employee_id: '' })); }} className={`w-full px-3 py-2 border rounded-md text-sm ${formErrors.employee_id ? 'border-red-500' : ''}`}>
-                  <option value="">Selecione um colaborador</option>
-                  {employees.map((emp: any) => <option key={emp.id} value={emp.id}>{emp.nome}</option>)}
-                </select>
-                {formErrors.employee_id && <p className="text-red-500 text-xs mt-1">{formErrors.employee_id}</p>}
-              </div>
+              {!editingId && (
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Colaborador *</label>
+                  <select value={formData.employee_id} onChange={e => { setFormData(p => ({ ...p, employee_id: e.target.value })); setFormErrors(p => ({ ...p, employee_id: '' })); }} className={`w-full px-3 py-2 border rounded-md text-sm ${formErrors.employee_id ? 'border-red-500' : ''}`}>
+                    <option value="">Selecione um colaborador</option>
+                    {employees.map((emp: any) => <option key={emp.id} value={emp.id}>{emp.nome || emp.name}</option>)}
+                  </select>
+                  {formErrors.employee_id && <p className="text-red-500 text-xs mt-1">{formErrors.employee_id}</p>}
+                </div>
+              )}
               <div>
                 <label className="text-sm font-medium mb-1 block">Tipo *</label>
-                <select value={formData.benefit_type} onChange={e => setFormData(p => ({ ...p, benefit_type: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm">
-                  <option value="VT">Vale Transporte</option>
-                  <option value="VR">Vale Refeição</option>
-                  <option value="VA">Vale Alimentação</option>
-                  <option value="Plano Saude">Plano de Saúde</option>
-                  <option value="Plano Odonto">Plano Odontológico</option>
-                  <option value="Seguro Vida">Seguro de Vida</option>
+                <select value={formData.type} onChange={e => { setFormData(p => ({ ...p, type: e.target.value })); setFormErrors(p => ({ ...p, type: '' })); }} className={`w-full px-3 py-2 border rounded-md text-sm ${formErrors.type ? 'border-red-500' : ''}`}>
+                  {typeOptions.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
                 </select>
+                {formErrors.type && <p className="text-red-500 text-xs mt-1">{formErrors.type}</p>}
               </div>
               <div>
-                <label className="text-sm font-medium mb-1 block">Valor *</label>
-                <input type="number" step="0.01" value={formData.value} onChange={e => { setFormData(p => ({ ...p, value: e.target.value })); setFormErrors(p => ({ ...p, value: '' })); }} className={`w-full px-3 py-2 border rounded-md text-sm ${formErrors.value ? 'border-red-500' : ''}`} placeholder="0.00" />
-                {formErrors.value && <p className="text-red-500 text-xs mt-1">{formErrors.value}</p>}
+                <label className="text-sm font-medium mb-1 block">Operadora/Fornecedor</label>
+                <input type="text" value={formData.provider} onChange={e => setFormData(p => ({ ...p, provider: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm" placeholder="Ex: Unimed, Sodexo..." />
               </div>
               <div>
-                <label className="text-sm font-medium mb-1 block">Data Início *</label>
-                <input type="date" value={formData.start_date} onChange={e => { setFormData(p => ({ ...p, start_date: e.target.value })); setFormErrors(p => ({ ...p, start_date: '' })); }} className={`w-full px-3 py-2 border rounded-md text-sm ${formErrors.start_date ? 'border-red-500' : ''}`} />
-                {formErrors.start_date && <p className="text-red-500 text-xs mt-1">{formErrors.start_date}</p>}
+                <label className="text-sm font-medium mb-1 block">Nome do Plano</label>
+                <input type="text" value={formData.plan_name} onChange={e => setFormData(p => ({ ...p, plan_name: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm" placeholder="Ex: Enfermaria, Premium..." />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Contrib. Empresa (R$)</label>
+                <input type="number" step="0.01" value={formData.company_contribution} onChange={e => setFormData(p => ({ ...p, company_contribution: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm" placeholder="0.00" />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Desc. Funcionario (R$)</label>
+                <input type="number" step="0.01" value={formData.employee_contribution} onChange={e => setFormData(p => ({ ...p, employee_contribution: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm" placeholder="0.00" />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Data Inicio</label>
+                <input type="date" value={formData.start_date} onChange={e => setFormData(p => ({ ...p, start_date: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm" />
               </div>
               <div>
                 <label className="text-sm font-medium mb-1 block">Data Fim</label>
                 <input type="date" value={formData.end_date} onChange={e => setFormData(p => ({ ...p, end_date: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm" />
               </div>
               <div>
-                <label className="text-sm font-medium mb-1 block flex items-center gap-2">
-                  <input type="checkbox" checked={formData.discount_payroll} onChange={e => setFormData(p => ({ ...p, discount_payroll: e.target.checked }))} />
-                  Desconto em Folha
-                </label>
+                <label className="text-sm font-medium mb-1 block">Numero do Cartao</label>
+                <input type="text" value={formData.card_number} onChange={e => setFormData(p => ({ ...p, card_number: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm" placeholder="Numero do cartao beneficio" />
               </div>
-              {formData.discount_payroll && (
-                <div>
-                  <label className="text-sm font-medium mb-1 block">Percentual de Desconto (%)</label>
-                  <input type="number" step="0.01" value={formData.discount_percentage} onChange={e => setFormData(p => ({ ...p, discount_percentage: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm" placeholder="6.00" />
-                </div>
-              )}
+              <div className="md:col-span-2">
+                <label className="text-sm font-medium mb-1 block">Observacoes</label>
+                <textarea value={formData.notes} onChange={e => setFormData(p => ({ ...p, notes: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm" rows={2} placeholder="Observacoes adicionais" />
+              </div>
             </div>
             <div className="flex gap-2 mt-4">
-              <Button type="button" size="sm" disabled={saving} onClick={async () => {
-                const errors: Record<string, string> = {};
-                if (!formData.employee_id) errors.employee_id = 'Selecione um colaborador';
-                if (!formData.value) errors.value = 'Valor é obrigatório';
-                if (!formData.start_date) errors.start_date = 'Data de início é obrigatória';
-                if (Object.keys(errors).length > 0) { setFormErrors(errors); toast.error('Corrija os campos destacados'); return; }
-                setSaving(true);
-                try {
-                  const res = await fetch(`${API_BASE}/benefits/`, { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(formData) });
-                  if (res.ok) { setShowForm(false); setFormData({ employee_id: '', benefit_type: 'VT', value: '', start_date: '', end_date: '', discount_payroll: false, discount_percentage: '' }); setFormErrors({}); setReloadKey(k => k + 1); toast.success('Benefício criado com sucesso'); }
-                  else { const err = await res.json().catch(() => null); toast.error(err?.detail || 'Erro ao criar benefício'); }
-                } catch { toast.error('Erro de conexão'); } finally { setSaving(false); }
-              }}>
+              <Button type="button" size="sm" disabled={saving} onClick={handleSave}>
                 {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />}
-                {saving ? 'Salvando...' : 'Criar Benefício'}
+                {saving ? 'Salvando...' : editingId ? 'Atualizar Beneficio' : 'Criar Beneficio'}
               </Button>
-              <Button type="button" variant="outline" size="sm" onClick={() => setShowForm(false)}>Cancelar</Button>
+              <Button type="button" variant="outline" size="sm" onClick={() => { setShowForm(false); resetForm(); }}>Cancelar</Button>
             </div>
           </CardContent>
         </Card>
@@ -186,12 +383,13 @@ export default function BeneficiosPage() {
         <div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>
       ) : (
         <>
+          {/* Summary cards */}
           {Object.keys(tipoSummary).length > 0 && (
-            <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
+            <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-5">
               {(Object.entries(tipoSummary) as [string, { count: number; total: number }][]).map(([tipo, data]) => (
-                <Card key={tipo}>
+                <Card key={tipo} className={`cursor-pointer transition-colors ${filtroType === tipo ? 'ring-2 ring-primary' : ''}`} onClick={() => setFiltroType(filtroType === tipo ? 'todos' : tipo)}>
                   <CardContent className="pt-4 pb-4">
-                    <span className="text-sm font-medium">{tipo}</span>
+                    <span className="text-sm font-medium">{typeLabels[tipo] || tipo}</span>
                     <p className="text-lg font-bold">{data.count} colab.</p>
                     <p className="text-xs text-muted-foreground">{fmt(data.total)}/mes</p>
                   </CardContent>
@@ -201,42 +399,96 @@ export default function BeneficiosPage() {
           )}
 
           <Card>
-            <CardHeader><CardTitle>Benefícios por Colaborador</CardTitle></CardHeader>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Beneficios por Colaborador</CardTitle>
+                <div className="relative w-64">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={e => setSearchTerm(e.target.value)}
+                    placeholder="Buscar por tipo, operadora..."
+                    className="w-full pl-9 pr-3 py-2 border rounded-md text-sm"
+                  />
+                </div>
+              </div>
+            </CardHeader>
             <CardContent>
-              {beneficios.length === 0 ? (
+              {filteredData.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
                   <Inbox className="h-12 w-12 mb-3" />
-                  <p className="font-medium">Nenhum benefício cadastrado</p>
-                    <p className="text-sm text-muted-foreground mt-1">Clique em "Novo Benefício" para adicionar.</p>
+                  <p className="font-medium">Nenhum beneficio encontrado</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {searchTerm ? 'Tente outra busca.' : 'Clique em "Novo Beneficio" para adicionar.'}
+                  </p>
                 </div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Colaborador</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Plano</TableHead>
-                      <TableHead>Contrib. Empresa</TableHead>
-                      <TableHead>Desc. Funcionário</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {beneficios.map((item, i) => {
-                      const st = statusConfig[item.status] || { label: item.status, className: 'bg-gray-500 text-white' };
-                      return (
-                        <TableRow key={i}>
-                          <TableCell className="font-medium">{item.colaborador}</TableCell>
-                          <TableCell>{item.tipo}</TableCell>
-                          <TableCell>{item.plano}</TableCell>
-                          <TableCell>{fmt(item.empresa)}</TableCell>
-                          <TableCell>{fmt(item.desconto)}</TableCell>
-                          <TableCell><Badge className={st.className}>{st.label}</Badge></TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
+                <>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="cursor-pointer select-none" onClick={() => handleSort('type')}>Tipo{sortIcon('type')}</TableHead>
+                        <TableHead className="cursor-pointer select-none" onClick={() => handleSort('provider')}>Operadora{sortIcon('provider')}</TableHead>
+                        <TableHead>Plano</TableHead>
+                        <TableHead>Contrib. Empresa</TableHead>
+                        <TableHead>Desc. Funcionario</TableHead>
+                        <TableHead className="cursor-pointer select-none" onClick={() => handleSort('start_date')}>Vigencia{sortIcon('start_date')}</TableHead>
+                        <TableHead className="cursor-pointer select-none" onClick={() => handleSort('status')}>Status{sortIcon('status')}</TableHead>
+                        <TableHead>Acoes</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredData.map((item, i) => {
+                        const st = statusConfig[item.status] || { label: item.status || 'N/A', className: 'bg-gray-500 text-white' };
+                        const startStr = item.start_date ? (() => { const p = String(item.start_date).split('-'); return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : '-'; })() : '-';
+                        const endStr = item.end_date ? (() => { const p = String(item.end_date).split('-'); return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : '-'; })() : 'Indeterminado';
+                        return (
+                          <TableRow key={item.id || i}>
+                            <TableCell className="font-medium">{typeLabels[item.type] || item.type || '-'}</TableCell>
+                            <TableCell>{item.provider || '-'}</TableCell>
+                            <TableCell>{item.plan_name || '-'}</TableCell>
+                            <TableCell>{fmt(item.company_contribution)}</TableCell>
+                            <TableCell>{fmt(item.employee_contribution)}</TableCell>
+                            <TableCell className="text-xs">{startStr} - {endStr}</TableCell>
+                            <TableCell><Badge className={st.className}>{st.label}</Badge></TableCell>
+                            <TableCell>
+                              <div className="flex gap-1">
+                                <Button type="button" variant="outline" size="sm" onClick={() => openEditForm(item)}><Edit className="h-3 w-3" /></Button>
+                                {item.status === 'active' && (
+                                  <Button type="button" variant="outline" size="sm" onClick={() => handleCancel(item.id)}><Trash2 className="h-3 w-3" /></Button>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+
+                  {/* Pagination */}
+                  <div className="flex items-center justify-between mt-4 text-sm">
+                    <span className="text-muted-foreground">
+                      {totalItems} registro{totalItems !== 1 ? 's' : ''} — Pagina {currentPage} de {totalPages}
+                    </span>
+                    <div className="flex gap-1">
+                      <Button variant="outline" size="sm" disabled={currentPage <= 1} onClick={() => setCurrentPage(p => p - 1)}>
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                        const page = totalPages <= 5 ? i + 1 : Math.max(1, Math.min(currentPage - 2, totalPages - 4)) + i;
+                        return (
+                          <Button key={page} variant={currentPage === page ? 'default' : 'outline'} size="sm" onClick={() => setCurrentPage(page)}>
+                            {page}
+                          </Button>
+                        );
+                      })}
+                      <Button variant="outline" size="sm" disabled={currentPage >= totalPages} onClick={() => setCurrentPage(p => p + 1)}>
+                        <ChevronRightIcon className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </>
               )}
             </CardContent>
           </Card>
