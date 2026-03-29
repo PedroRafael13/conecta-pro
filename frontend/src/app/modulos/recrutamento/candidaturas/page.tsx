@@ -386,7 +386,7 @@ export default function CandidaturasPage() {
               </TableHeader>
               <TableBody>
                 {filtered.map((app: any) => {
-                  const st = statusConfig[app.status] || statusConfig.inscrito;
+                  const st = statusConfig[app.status] ?? { label: app.status || 'Inscrito', color: 'bg-blue-500/20 text-blue-500 border-blue-500/30' };
                   const isActive = !terminalStatuses.includes(app.status);
 
                   return (

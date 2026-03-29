@@ -98,6 +98,15 @@ export default function ExamesPage() {
     return <Badge className={map[status] || 'bg-gray-100 text-gray-800'}>{labels[status] || status}</Badge>;
   };
 
+  const handleRefresh = async () => {
+    try {
+      await refetch();
+      toast.success('Dados atualizados', { duration: 4000 });
+    } catch {
+      toast.error('Erro ao atualizar dados', { duration: 5000 });
+    }
+  };
+
   return (
     <div className="space-y-6 pb-28">
       {/* Header */}
@@ -112,7 +121,7 @@ export default function ExamesPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => refetch()} disabled={asosLoading}>
+          <Button variant="outline" onClick={handleRefresh} disabled={asosLoading}>
             <RefreshCw className={`h-4 w-4 mr-2 ${asosLoading ? 'animate-spin' : ''}`} />
             Atualizar
           </Button>

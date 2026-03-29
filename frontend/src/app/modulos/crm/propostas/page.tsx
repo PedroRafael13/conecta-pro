@@ -453,7 +453,7 @@ export default function PropostasPage() {
                                   openConfirm(
                                     'Rejeitar Proposta',
                                     `Rejeitar "${proposta.title || proposta.titulo}"?`,
-                                    () => rejectMutation.mutateAsync({ id: proposta.id }),
+                                    async () => { await rejectMutation.mutateAsync({ id: proposta.id }); },
                                     'warning'
                                   )
                                 }

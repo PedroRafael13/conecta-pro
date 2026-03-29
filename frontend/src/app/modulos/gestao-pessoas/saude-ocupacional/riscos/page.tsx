@@ -183,6 +183,15 @@ export default function RiscosPage() {
     );
   };
 
+  const handleRefresh = async () => {
+    try {
+      await refetch();
+      toast.success('Dados atualizados', { duration: 4000 });
+    } catch {
+      toast.error('Erro ao atualizar dados', { duration: 5000 });
+    }
+  };
+
   return (
     <div className="space-y-6 pb-28">
       {/* Header */}
@@ -197,7 +206,7 @@ export default function RiscosPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => refetch()} disabled={mappingsLoading}>
+          <Button variant="outline" onClick={handleRefresh} disabled={mappingsLoading}>
             <RefreshCw className={`h-4 w-4 mr-2 ${mappingsLoading ? 'animate-spin' : ''}`} />
             Atualizar
           </Button>

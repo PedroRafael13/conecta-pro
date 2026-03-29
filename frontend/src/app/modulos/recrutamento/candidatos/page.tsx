@@ -398,7 +398,7 @@ export default function CandidatosPage() {
               </TableHeader>
               <TableBody>
                 {candidates.map((candidate: any) => {
-                  const st = statusConfig[candidate.status] || statusConfig.ativo;
+                  const st = statusConfig[candidate.status] ?? { label: candidate.status || 'Ativo', color: 'bg-green-500/20 text-green-500 border-green-500/30' };
                   return (
                     <TableRow key={candidate.id} className="cursor-pointer" onClick={() => openDetail(candidate)}>
                       <TableCell>

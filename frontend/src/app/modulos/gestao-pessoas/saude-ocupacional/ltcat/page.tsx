@@ -83,7 +83,7 @@ export default function LTCATPage() {
             </p>
           </div>
         </div>
-        <Button variant="outline" onClick={() => refetch()} disabled={isLoading}>
+        <Button variant="outline" onClick={handleRefresh} disabled={isLoading}>
           <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
           Atualizar
         </Button>

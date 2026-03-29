@@ -139,6 +139,15 @@ export default function EPIPage() {
     return <Badge className="bg-green-100 text-green-800">Normal</Badge>;
   };
 
+  const handleRefresh = async () => {
+    try {
+      await refetch();
+      toast.success('Dados atualizados', { duration: 4000 });
+    } catch {
+      toast.error('Erro ao atualizar dados', { duration: 5000 });
+    }
+  };
+
   return (
     <div className="space-y-6 pb-28">
       {/* Header */}
@@ -153,7 +162,7 @@ export default function EPIPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => refetch()} disabled={epiLoading}>
+          <Button variant="outline" onClick={handleRefresh} disabled={epiLoading}>
             <RefreshCw className={`h-4 w-4 mr-2 ${epiLoading ? 'animate-spin' : ''}`} />
             Atualizar
           </Button>

@@ -1,7 +1,8 @@
 'use client';
 
-import { Contact, Search, Plus, MoreHorizontal, Eye, Edit, Phone, Mail, AlertCircle } from 'lucide-react';
+import { Contact, Search, Plus, MoreHorizontal, Eye, Edit, Phone, Mail, AlertCircle, RefreshCw, Trash2 } from 'lucide-react';
 import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,39 +16,39 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-;
 import { toast } from 'sonner';
+import { customInstance } from '@/lib/api-client';
 
-interface ContatoLocal {
+interface ContatoAPI {
   id: string;
   nome: string;
+  name?: string;
   email: string;
-  telefone: string;
-  cargo: string;
-  cliente: string;
-  ativo: boolean;
+  telefone?: string;
+  phone?: string;
+  cargo?: string;
+  role?: string;
+  cliente?: string;
+  client_name?: string;
+  client_id?: string;
+  ativo?: boolean;
+  is_active?: boolean;
+  created_at?: string;
 }
 
 export default function ContatosPage() {
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
-  const [contacts, setContacts] = useState<ContatoLocal[]>([]);
   const [formOpen, setFormOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<ContatoLocal | null>(null);
-  const [editItem, setEditItem] = useState<ContatoLocal | null>(null);
+  const [selectedItem, setSelectedItem] = useState<ContatoAPI | null>(null);
+  const [editItem, setEditItem] = useState<ContatoAPI | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -58,67 +59,115 @@ export default function ContatosPage() {
     cliente: '',
   });
 
+  // Fetch contacts from API
+  const { data: contactsRaw, isLoading, error, refetch } = useQuery<any>({
+    queryKey: ['crm-contacts'],
+    queryFn: () => customInstance<any>({ url: '/api/v1/crm/contacts/', method: 'GET' }),
+    staleTime: 30_000,
+  });
+
+  // Normalize response: handle array or {items: []} or {data: []}
+  const contacts: ContatoAPI[] = Array.isArray(contactsRaw)
+    ? contactsRaw
+    : (contactsRaw as any)?.items || (contactsRaw as any)?.data || [];
+
+  // Create contact mutation
+  const createMutation = useMutation({
+    mutationFn: (data: any) =>
+      customInstance({ url: '/api/v1/crm/contacts/', method: 'POST', data }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['crm-contacts'] });
+      toast.success('Contato criado com sucesso');
+    },
+    onError: () => {
+      toast.error('Erro ao criar contato');
+    },
+  });
+
+  // Update contact mutation
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) =>
+      customInstance({ url: `/api/v1/crm/contacts/${id}`, method: 'PUT', data }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['crm-contacts'] });
+      toast.success('Contato atualizado com sucesso');
+    },
+    onError: () => {
+      toast.error('Erro ao atualizar contato');
+    },
+  });
+
+  // Delete contact mutation
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) =>
+      customInstance({ url: `/api/v1/crm/contacts/${id}`, method: 'DELETE' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['crm-contacts'] });
+      toast.success('Contato removido com sucesso');
+    },
+    onError: () => {
+      toast.error('Erro ao remover contato');
+    },
+  });
+
+  // Normalize field access
+  const getName = (c: ContatoAPI) => c.nome || c.name || '';
+  const getPhone = (c: ContatoAPI) => c.telefone || c.phone || '';
+  const getCargo = (c: ContatoAPI) => c.cargo || c.role || '';
+  const getCliente = (c: ContatoAPI) => c.cliente || c.client_name || '';
+  const isActive = (c: ContatoAPI) => c.ativo ?? c.is_active ?? true;
+
   const filteredContacts = contacts.filter((c) => {
     if (!search) return true;
     const q = search.toLowerCase();
     return (
-      c.nome.toLowerCase().includes(q) ||
-      c.email.toLowerCase().includes(q) ||
-      c.telefone.includes(q) ||
-      c.cargo.toLowerCase().includes(q) ||
-      c.cliente.toLowerCase().includes(q)
+      getName(c).toLowerCase().includes(q) ||
+      (c.email || '').toLowerCase().includes(q) ||
+      getPhone(c).includes(q) ||
+      getCargo(c).toLowerCase().includes(q) ||
+      getCliente(c).toLowerCase().includes(q)
     );
   });
 
   const stats = {
     total: contacts.length,
-    ativos: contacts.filter((c) => c.ativo).length,
+    ativos: contacts.filter((c) => isActive(c)).length,
   };
 
   const resetForm = () => {
     setFormData({ nome: '', email: '', telefone: '', cargo: '', cliente: '' });
   };
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!formData.nome.trim()) {
       toast.error('Nome e obrigatorio');
       return;
     }
-    const newContact: ContatoLocal = {
-      id: crypto.randomUUID(),
-      ...formData,
-      ativo: true,
-    };
-    setContacts((prev) => [...prev, newContact]);
+    await createMutation.mutateAsync(formData);
     resetForm();
     setFormOpen(false);
-    toast.success('Contato criado com sucesso');
   };
 
-  const handleUpdate = () => {
+  const handleUpdate = async () => {
     if (!editItem) return;
-    setContacts((prev) =>
-      prev.map((c) => (c.id === editItem.id ? { ...c, ...formData } : c))
-    );
+    await updateMutation.mutateAsync({ id: editItem.id, data: formData });
     resetForm();
     setEditItem(null);
     setFormOpen(false);
-    toast.success('Contato atualizado com sucesso');
   };
 
-  const handleDelete = (id: string) => {
-    setContacts((prev) => prev.filter((c) => c.id !== id));
-    toast.success('Contato removido com sucesso');
+  const handleDelete = async (id: string) => {
+    await deleteMutation.mutateAsync(id);
   };
 
-  const openEdit = (contact: ContatoLocal) => {
+  const openEdit = (contact: ContatoAPI) => {
     setEditItem(contact);
     setFormData({
-      nome: contact.nome,
-      email: contact.email,
-      telefone: contact.telefone,
-      cargo: contact.cargo,
-      cliente: contact.cliente,
+      nome: getName(contact),
+      email: contact.email || '',
+      telefone: getPhone(contact),
+      cargo: getCargo(contact),
+      cliente: getCliente(contact),
     });
     setFormOpen(true);
   };
@@ -141,6 +190,10 @@ export default function ContatosPage() {
           <p className="text-muted-foreground">Gestao de contatos de clientes</p>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => refetch()} disabled={isLoading}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+            Atualizar
+          </Button>
           <Button onClick={openCreate}>
             <Plus className="h-4 w-4 mr-2" />
             Novo Contato
@@ -169,6 +222,17 @@ export default function ContatosPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Error */}
+      {error && (
+        <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 flex items-center gap-3">
+          <AlertCircle className="h-5 w-5 text-destructive" />
+          <p className="text-sm text-destructive flex-1">Erro ao carregar contatos</p>
+          <Button variant="outline" size="sm" onClick={() => refetch()}>
+            Tentar novamente
+          </Button>
+        </div>
+      )}
 
       {/* Filters */}
       <Card>
@@ -244,7 +308,13 @@ export default function ContatosPage() {
                 <Button variant="outline" onClick={() => { setFormOpen(false); setEditItem(null); resetForm(); }}>
                   Cancelar
                 </Button>
-                <Button onClick={editItem ? handleUpdate : handleCreate}>
+                <Button
+                  onClick={editItem ? handleUpdate : handleCreate}
+                  disabled={createMutation.isPending || updateMutation.isPending}
+                >
+                  {(createMutation.isPending || updateMutation.isPending) && (
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  )}
                   {editItem ? 'Salvar' : 'Criar Contato'}
                 </Button>
               </div>
@@ -256,7 +326,11 @@ export default function ContatosPage() {
       {/* Table */}
       <Card>
         <CardContent className="p-0">
-          {filteredContacts.length === 0 ? (
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+            </div>
+          ) : filteredContacts.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Contact className="h-16 w-16 mx-auto mb-4 opacity-50" />
               <h3 className="text-lg font-medium">Nenhum contato encontrado</h3>
@@ -282,7 +356,7 @@ export default function ContatosPage() {
                 {filteredContacts.map((contact) => (
                   <TableRow key={contact.id}>
                     <TableCell>
-                      <div className="font-medium">{contact.nome}</div>
+                      <div className="font-medium">{getName(contact)}</div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1 text-sm text-muted-foreground">
@@ -293,11 +367,11 @@ export default function ContatosPage() {
                     <TableCell>
                       <div className="flex items-center gap-1 text-sm text-muted-foreground">
                         <Phone className="h-3 w-3" />
-                        {contact.telefone || '-'}
+                        {getPhone(contact) || '-'}
                       </div>
                     </TableCell>
-                    <TableCell className="text-sm">{contact.cargo || '-'}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{contact.cliente || '-'}</TableCell>
+                    <TableCell className="text-sm">{getCargo(contact) || '-'}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{getCliente(contact) || '-'}</TableCell>
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -319,7 +393,7 @@ export default function ContatosPage() {
                             className="text-destructive"
                             onClick={() => handleDelete(contact.id)}
                           >
-                            <AlertCircle className="h-4 w-4 mr-2" />
+                            <Trash2 className="h-4 w-4 mr-2" />
                             Remover
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -346,7 +420,7 @@ export default function ContatosPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <p className="text-sm text-muted-foreground">Nome</p>
-                <p className="font-medium">{selectedItem.nome}</p>
+                <p className="font-medium">{getName(selectedItem)}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Email</p>
@@ -354,20 +428,20 @@ export default function ContatosPage() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Telefone</p>
-                <p className="font-medium">{selectedItem.telefone || '-'}</p>
+                <p className="font-medium">{getPhone(selectedItem) || '-'}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Cargo</p>
-                <p className="font-medium">{selectedItem.cargo || '-'}</p>
+                <p className="font-medium">{getCargo(selectedItem) || '-'}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Cliente</p>
-                <p className="font-medium">{selectedItem.cliente || '-'}</p>
+                <p className="font-medium">{getCliente(selectedItem) || '-'}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Status</p>
-                <Badge className={selectedItem.ativo ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
-                  {selectedItem.ativo ? 'Ativo' : 'Inativo'}
+                <Badge className={isActive(selectedItem) ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
+                  {isActive(selectedItem) ? 'Ativo' : 'Inativo'}
                 </Badge>
               </div>
             </div>

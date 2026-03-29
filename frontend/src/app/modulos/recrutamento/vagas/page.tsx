@@ -361,7 +361,7 @@ export default function VagasPage() {
               </TableHeader>
               <TableBody>
                 {positions.map((position: any) => {
-                  const st = statusConfig[position.status] || statusConfig.draft;
+                  const st = statusConfig[position.status] ?? { label: position.status || 'Rascunho', color: 'bg-gray-500/20 text-gray-500 border-gray-500/30' };
                   return (
                     <TableRow key={position.id} className="cursor-pointer" onClick={() => openDetail(position)}>
                       <TableCell>
