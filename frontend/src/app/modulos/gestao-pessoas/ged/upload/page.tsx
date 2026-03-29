@@ -30,6 +30,14 @@ import {
 
 const API_BASE = '/api/v1/ged';
 
+function showToast(msg: string, type: 'success' | 'error' = 'success') {
+  const el = document.createElement('div');
+  el.className = `fixed top-4 right-4 z-[9999] px-4 py-3 rounded-lg shadow-lg text-sm font-medium text-white transition-opacity ${type === 'error' ? 'bg-red-500' : 'bg-emerald-500'}`;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 3000);
+}
+
 function getAuthHeaders(json = true) {
   const token =
     typeof window !== 'undefined'
@@ -115,8 +123,9 @@ export default function UploadPage() {
         const data = await res.json();
         setFolders(Array.isArray(data) ? data : data.items || []);
       }
-    } catch {
-      /* silent */
+    } catch (err) {
+      console.error('Erro ao carregar pastas:', err);
+      showToast('Erro ao carregar pastas.', 'error');
     }
   }, []);
 
@@ -129,8 +138,9 @@ export default function UploadPage() {
         const data = await res.json();
         setRecentUploads(Array.isArray(data) ? data.slice(0, 10) : (data.items || []).slice(0, 10));
       }
-    } catch {
-      /* silent */
+    } catch (err) {
+      console.error('Erro ao carregar uploads recentes:', err);
+      showToast('Erro ao carregar uploads recentes.', 'error');
     }
   }, []);
 
@@ -231,7 +241,9 @@ export default function UploadPage() {
         });
         if (suggestedFolder?.id) setSelectedFolder(suggestedFolder.id);
       }
-    } catch {
+    } catch (err) {
+      console.error('Erro ao classificar com IA:', err);
+      showToast('Erro ao classificar com IA. Tente novamente.', 'error');
       setError('Erro ao classificar com IA. Tente novamente.');
     } finally {
       setClassifying(false);
@@ -292,7 +304,9 @@ export default function UploadPage() {
         const err = await res.json().catch(() => null);
         setError(err?.detail?.[0]?.msg || err?.detail || 'Erro ao enviar documento.');
       }
-    } catch {
+    } catch (err) {
+      console.error('Erro ao enviar documento:', err);
+      showToast('Erro de conexao ao enviar documento.', 'error');
       setError('Erro de conexao ao enviar documento.');
     } finally {
       setUploading(false);

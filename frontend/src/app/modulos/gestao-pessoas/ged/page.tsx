@@ -88,7 +88,7 @@ export default function GEDDashboardPage() {
     setLoading(true);
     try {
       const [sumRes, kitsRes] = await Promise.all([
-        fetch('/api/v1/people-management/ged/kits/summary', { headers: getAuthHeaders() }),
+        fetch(`${API_BASE}/kits/summary`, { headers: getAuthHeaders() }),
         fetch(`${API_BASE}/kits?page_size=10`, { headers: getAuthHeaders() }),
       ]);
       if (sumRes.ok) {
@@ -105,6 +105,8 @@ export default function GEDDashboardPage() {
         setRecentKits(Array.isArray(data) ? data : data.items || []);
       }
     } catch (err) {
+      console.error('fetchData:', err);
+      showToast('Erro ao carregar dados', 'error');
     } finally {
       setLoading(false);
     }
@@ -113,7 +115,7 @@ export default function GEDDashboardPage() {
   async function handleAutoAssemble() {
     try {
       showToast('Montando kits...');
-      const res = await fetch('/api/v1/people-management/ged/kits/auto-assemble', {
+      const res = await fetch(`${API_BASE}/kits/montar`, {
         method: 'POST',
         headers: getAuthHeaders(),
       });

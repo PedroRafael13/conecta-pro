@@ -28,6 +28,14 @@ import {
 
 const API_BASE = '/api/v1/bidding/certificates';
 
+function showToast(msg: string, type: 'success' | 'error' = 'success') {
+  const el = document.createElement('div');
+  el.className = `fixed top-4 right-4 z-[9999] px-4 py-3 rounded-lg shadow-lg text-sm font-medium text-white transition-opacity ${type === 'error' ? 'bg-red-500' : 'bg-emerald-500'}`;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 3000);
+}
+
 function getAuthHeaders() {
   const token =
     typeof window !== 'undefined'
@@ -134,8 +142,9 @@ export default function CertidoesPage() {
         const data = await typesRes.json();
         setCertTypes(data.tipos || []);
       }
-    } catch {
-      /* silent */
+    } catch (err) {
+      console.error('Erro ao carregar certidoes:', err);
+      showToast('Erro ao carregar certidoes.', 'error');
     } finally {
       setLoading(false);
     }
@@ -148,14 +157,19 @@ export default function CertidoesPage() {
   const handleSync = async () => {
     setSyncing(true);
     try {
-      await fetch(`${API_BASE}/atualizar-status`, {
+      const res = await fetch(`${API_BASE}/atualizar-status`, {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify({}),
       });
+      if (!res.ok) {
+        console.error('Erro ao atualizar status:', res.status);
+        showToast('Erro ao sincronizar certidoes. Endpoint pode estar indisponivel.', 'error');
+      }
       await loadData();
-    } catch {
-      /* silent */
+    } catch (err) {
+      console.error('Erro ao sincronizar certidoes:', err);
+      showToast('Erro de conexao ao sincronizar certidoes.', 'error');
     } finally {
       setSyncing(false);
     }

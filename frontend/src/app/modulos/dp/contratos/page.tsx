@@ -55,9 +55,9 @@ function deriveStatus(contract: any): string {
 
 function formatDate(dateStr: string | null | undefined): string {
   if (!dateStr) return '-';
-  const parts = String(dateStr).split('T')[0].split('-');
+  const parts = String(dateStr).split('T')[0]?.split('-') ?? [];
   if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
-  return dateStr;
+  return dateStr ?? '-';
 }
 
 function formatCurrency(value: number | null | undefined): string {

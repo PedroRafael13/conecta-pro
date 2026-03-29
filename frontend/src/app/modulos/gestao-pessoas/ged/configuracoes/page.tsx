@@ -107,8 +107,9 @@ export default function ConfiguracoesPage() {
         setDocumentTypes(Array.isArray(data) ? data : data.items || []);
       }
       if (scheduleRes.ok) setSchedule(await scheduleRes.json());
-    } catch {
-      // silenced
+    } catch (error) {
+      console.error('fetchConfig:', error);
+      showToast('Erro ao carregar configurações', 'error');
     } finally {
       setLoading(false);
     }
@@ -145,8 +146,9 @@ export default function ConfiguracoesPage() {
         }
         fetchConfig();
       }
-    } catch {
-      // silenced
+    } catch (error) {
+      console.error('handleDriveConnect:', error);
+      showToast('Erro ao conectar Google Drive', 'error');
     }
   }
 
@@ -158,8 +160,9 @@ export default function ConfiguracoesPage() {
         headers: getAuthHeaders(),
       });
       setDriveConfig({ connected: false, folder_id: '', email: '' });
-    } catch {
-      // silenced
+    } catch (error) {
+      console.error('handleDriveDisconnect:', error);
+      showToast('Erro ao desconectar Google Drive', 'error');
     }
   }
 
@@ -174,8 +177,9 @@ export default function ConfiguracoesPage() {
       setDocumentTypes((prev) =>
         prev.map((dt) => (dt.id === docType.id ? updated : dt))
       );
-    } catch {
-      // silenced
+    } catch (error) {
+      console.error('toggleDocumentType:', error);
+      showToast('Erro ao alterar tipo de documento', 'error');
     }
   }
 

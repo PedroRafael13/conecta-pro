@@ -15,7 +15,7 @@ import {
 import { Card, CardContent } from '@/components/ui/card';
 
 const API_BASE = '/api/v1/ged';
-const API_CLIENTS = '/api/v1/people-management/ged/clients';
+const API_CLIENTS = '/api/v1/ged/clients';
 
 function showToast(msg: string, type: 'success' | 'error' = 'success') {
   const el = document.createElement('div');
@@ -175,8 +175,9 @@ export default function GedClientesPage() {
       if (res.ok) {
         fetchClients();
       }
-    } catch {
-      // silenced
+    } catch (error) {
+      console.error('handleDelete:', error);
+      showToast('Erro ao excluir cliente', 'error');
     }
   }
 
@@ -188,8 +189,9 @@ export default function GedClientesPage() {
         body: JSON.stringify({ portal_access_enabled: !client.portal_access_enabled }),
       });
       fetchClients();
-    } catch {
-      // silenced
+    } catch (error) {
+      console.error('togglePortal:', error);
+      showToast('Erro ao alterar acesso do portal', 'error');
     }
   }
 

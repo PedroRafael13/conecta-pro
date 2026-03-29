@@ -88,6 +88,14 @@ function getUrgencyBadge(expiresAt?: string) {
   return null;
 }
 
+function showToast(msg: string, type: 'success' | 'error' = 'success') {
+  const el = document.createElement('div');
+  el.className = `fixed top-4 right-4 z-[9999] px-4 py-3 rounded-lg shadow-lg text-sm font-medium text-white transition-opacity ${type === 'error' ? 'bg-red-500' : 'bg-emerald-500'}`;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 3000);
+}
+
 export default function AssinaturasPage() {
   const [stats, setStats] = useState<SignatureStats | null>(null);
   const [pending, setPending] = useState<Signature[]>([]);
@@ -122,8 +130,8 @@ export default function AssinaturasPage() {
         const data = await sentRes.json();
         setSent(Array.isArray(data) ? data : data.items || []);
       }
-    } catch {
-      /* silent */
+    } catch (err) {
+      console.error('loadData:', err);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -155,10 +163,15 @@ export default function AssinaturasPage() {
         setSignModal(false);
         setSelectedSig(null);
         setObservation('');
+        showToast('Documento assinado com sucesso!');
         loadData();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        showToast(data.detail || 'Erro ao assinar documento', 'error');
       }
-    } catch {
-      /* silent */
+    } catch (err) {
+      console.error('handleSign:', err);
+      showToast('Erro de conexao ao assinar', 'error');
     } finally {
       setActionLoading(false);
     }
@@ -177,10 +190,15 @@ export default function AssinaturasPage() {
         setRefuseModal(false);
         setSelectedSig(null);
         setRefusalReason('');
+        showToast('Assinatura recusada');
         loadData();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        showToast(data.detail || 'Erro ao recusar assinatura', 'error');
       }
-    } catch {
-      /* silent */
+    } catch (err) {
+      console.error('handleRefuse:', err);
+      showToast('Erro de conexao ao recusar', 'error');
     } finally {
       setActionLoading(false);
     }

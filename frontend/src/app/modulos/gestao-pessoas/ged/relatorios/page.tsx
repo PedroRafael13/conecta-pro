@@ -14,6 +14,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const API_BASE = '/api/v1/ged';
 
+function showToast(msg: string, type: 'success' | 'error' = 'success') {
+  const el = document.createElement('div');
+  el.className = `fixed top-4 right-4 z-[9999] px-4 py-3 rounded-lg shadow-lg text-sm font-medium text-white transition-opacity ${type === 'error' ? 'bg-red-500' : 'bg-emerald-500'}`;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 3000);
+}
+
 function getAuthHeaders() {
   const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') || localStorage.getItem('token') : null;
   return {
@@ -78,7 +86,7 @@ export default function RelatoriosPage() {
 
   async function handleGenerate(report: ReportCard) {
     if (!startDate || !endDate) {
-      alert('Selecione o periodo (data inicio e data fim).');
+      showToast('Selecione o periodo (data inicio e data fim).', 'error');
       return;
     }
 
@@ -103,10 +111,11 @@ export default function RelatoriosPage() {
         a.remove();
         window.URL.revokeObjectURL(url);
       } else {
-        alert('Erro ao gerar relatorio. Tente novamente.');
+        showToast('Erro ao gerar relatório. Tente novamente.', 'error');
       }
     } catch (err) {
-      alert('Erro ao gerar relatorio. Verifique sua conexao.');
+      console.error('handleGenerate:', err);
+      showToast('Erro ao gerar relatório. Verifique sua conexão.', 'error');
     } finally {
       setGeneratingId(null);
     }
@@ -114,7 +123,7 @@ export default function RelatoriosPage() {
 
   async function handleDownload(report: ReportCard) {
     if (!startDate || !endDate) {
-      alert('Selecione o periodo (data inicio e data fim).');
+      showToast('Selecione o periodo (data inicio e data fim).', 'error');
       return;
     }
 
@@ -139,9 +148,11 @@ export default function RelatoriosPage() {
         a.remove();
         window.URL.revokeObjectURL(url);
       } else {
-        alert('Erro ao baixar relatorio.');
+        showToast('Erro ao baixar relatório.', 'error');
       }
     } catch (err) {
+      console.error('handleDownload:', err);
+      showToast('Erro ao carregar relatório', 'error');
     } finally {
       setGeneratingId(null);
     }

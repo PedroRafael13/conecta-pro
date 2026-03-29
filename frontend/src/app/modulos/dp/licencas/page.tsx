@@ -62,7 +62,8 @@ const PAGE_SIZE = 15;
 
 function formatDate(dateStr: string | null | undefined): string {
   if (!dateStr) return '-';
-  const parts = String(dateStr).split('T')[0].split('-');
+  const base = String(dateStr).split('T')[0] ?? dateStr;
+  const parts = base.split('-');
   return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : '-';
 }
 

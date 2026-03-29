@@ -131,14 +131,14 @@ export default function WhatsAppPage() {
         const data = await kitsRes.json();
         setKits(Array.isArray(data) ? data : data.items ?? []);
       }
-    } catch { /* silent */ }
+    } catch (err) { console.error('loadData:', err); }
     finally { setLoading(false); }
   }, []);
 
   useEffect(() => {
     loadData();
     const saved = localStorage.getItem('wa_send_logs');
-    if (saved) try { setSendLogs(JSON.parse(saved)); } catch { /* */ }
+    if (saved) try { setSendLogs(JSON.parse(saved)); } catch (err) { console.error('parseSendLogs:', err); }
   }, [loadData]);
 
   const addLog = (log: SendLog) => {
@@ -203,7 +203,8 @@ export default function WhatsAppPage() {
         sent_at: new Date().toISOString(),
       });
       setCertModal(false);
-    } catch { /* */ }
+      alert('Alerta enviado com sucesso!');
+    } catch (err) { console.error('handleSendCertAlert:', err); alert('Erro de conexao ao enviar alerta'); }
     finally { setSending(false); }
   };
 

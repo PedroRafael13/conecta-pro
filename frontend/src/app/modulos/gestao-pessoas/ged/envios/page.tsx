@@ -104,6 +104,14 @@ const methodConfig: Record<string, { label: string; color: string; icon: React.E
   link: { label: 'Link', color: 'bg-amber-100 text-amber-800', icon: Link2 },
 };
 
+function showToast(msg: string, type: 'success' | 'error' = 'success') {
+  const el = document.createElement('div');
+  el.className = `fixed top-4 right-4 z-[9999] px-4 py-3 rounded-lg shadow-lg text-sm font-medium text-white transition-opacity ${type === 'error' ? 'bg-red-500' : 'bg-emerald-500'}`;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 3000);
+}
+
 export default function EnviosPage() {
   const [kits, setKits] = useState<Kit[]>([]);
   const [stats, setStats] = useState<KitStats | null>(null);
@@ -140,8 +148,8 @@ export default function EnviosPage() {
       if (statsRes.ok) {
         setStats(await statsRes.json());
       }
-    } catch {
-      /* silent */
+    } catch (err) {
+      console.error('loadData:', err);
     } finally {
       setLoading(false);
     }
@@ -152,7 +160,7 @@ export default function EnviosPage() {
     // Load sent history from localStorage
     const saved = localStorage.getItem('ged_sent_history');
     if (saved) {
-      try { setSentKits(JSON.parse(saved)); } catch { /* ignore */ }
+      try { setSentKits(JSON.parse(saved)); } catch (err) { console.error('parseSentHistory:', err); }
     }
   }, [loadData]);
 
@@ -178,7 +186,7 @@ export default function EnviosPage() {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify({ user_id: '00000000-0000-0000-0000-000000000000' }),
-      }).catch(() => {});
+      }).catch((err) => { console.error('activate kit:', err); });
 
       const newEntry = {
         kit_id: selectedKit.id,
@@ -193,8 +201,10 @@ export default function EnviosPage() {
 
       setSendModal(false);
       setSelectedKit(null);
-    } catch {
-      /* silent */
+      showToast('Kit enviado com sucesso!');
+    } catch (err) {
+      console.error('handleSend:', err);
+      showToast('Erro ao enviar kit', 'error');
     } finally {
       setSending(false);
     }

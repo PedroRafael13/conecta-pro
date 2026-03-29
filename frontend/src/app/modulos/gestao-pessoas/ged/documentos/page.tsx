@@ -13,6 +13,14 @@ import { Card, CardContent } from '@/components/ui/card';
 
 const API_BASE = '/api/v1/ged';
 
+function showToast(msg: string, type: 'success' | 'error' = 'success') {
+  const el = document.createElement('div');
+  el.className = `fixed top-4 right-4 z-[9999] px-4 py-3 rounded-lg shadow-lg text-sm font-medium text-white transition-opacity ${type === 'error' ? 'bg-red-500' : 'bg-emerald-500'}`;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 3000);
+}
+
 function getAuthHeaders() {
   const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') || localStorage.getItem('token') : null;
   return {
@@ -24,7 +32,7 @@ function getAuthHeaders() {
 interface DocumentResult {
   id: string;
   name: string;
-  type: string;
+  document_type: string;
   kit_name: string;
   kit_id: string;
   employee_name: string;
@@ -81,7 +89,7 @@ export default function DocumentosSearchPage() {
       if (filterType) params.append('type', filterType);
       if (filterOrigin) params.append('origin', filterOrigin);
       if (filterSigned) params.append('signed', filterSigned);
-      const res = await fetch(`${API_BASE}/documents/search/?${params.toString()}`, {
+      const res = await fetch(`${API_BASE}/documents/search?${params.toString()}`, {
         headers: getAuthHeaders(),
       });
       if (res.ok) {
@@ -89,6 +97,8 @@ export default function DocumentosSearchPage() {
         setResults(Array.isArray(data) ? data : data.items || []);
       }
     } catch (err) {
+      console.error('Erro ao buscar documentos:', err);
+      showToast('Erro ao buscar documentos. Tente novamente.', 'error');
     } finally {
       setLoading(false);
     }
@@ -207,7 +217,7 @@ export default function DocumentosSearchPage() {
                         <td className="py-3 px-4 font-medium">{doc.name}</td>
                         <td className="py-3 px-4">
                           <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-700">
-                            {doc.type}
+                            {doc.document_type}
                           </span>
                         </td>
                         <td className="py-3 px-4 text-gray-600">{doc.kit_name}</td>
