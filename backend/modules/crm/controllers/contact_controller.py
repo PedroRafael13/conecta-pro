@@ -130,6 +130,41 @@ async def deletar_contato(
 # === ACTIVITIES ===
 
 
+@router.get("/activities/recent")
+async def atividades_recentes(
+    db: AsyncSession = Depends(get_async_session),
+):
+    """Ultimas 20 atividades de todos os clientes."""
+    result = await db.execute(
+        text("""
+        SELECT a.id, a.client_id, a.type, a.subject, a.description,
+               a.outcome, a.created_at, c.name as client_name
+        FROM crm_activities a
+        JOIN clients c ON a.client_id = c.id
+        ORDER BY a.created_at DESC
+        LIMIT 20
+    """)
+    )
+    rows = result.fetchall()
+
+    return {
+        "items": [
+            {
+                "id": str(r[0]),
+                "client_id": str(r[1]),
+                "type": r[2],
+                "subject": r[3],
+                "description": r[4],
+                "outcome": r[5],
+                "created_at": r[6].isoformat() if r[6] else None,
+                "client_name": r[7],
+            }
+            for r in rows
+        ],
+        "total": len(rows),
+    }
+
+
 @router.get("/activities/")
 async def listar_atividades(
     client_id: str | None = Query(None),
@@ -289,6 +324,35 @@ async def visao_360_cliente(
         {"cnpj": cl[2]},
     )
 
+    # Funcionarios alocados (via allocations -> posts -> client)
+    funcionarios = await db.execute(
+        text("""
+        SELECT DISTINCT e.id, e.nome, e.cargo, e.matricula
+        FROM employees e
+        JOIN allocations a ON a.employee_id = e.id
+        JOIN posts p ON a.post_id = p.id
+        WHERE p.client_id = :cid
+          AND a.status = 'active'
+          AND e.is_active = true
+        ORDER BY e.nome
+    """),
+        {"cid": cid},
+    )
+
+    # MRR historico (NFS-e agrupado por mes)
+    mrr_hist = await db.execute(
+        text("""
+        SELECT DATE_TRUNC('month', data_competencia) as mes,
+               SUM(valor_servicos) as total
+        FROM nfses
+        WHERE tomador_cpf_cnpj = :cnpj
+        GROUP BY mes
+        ORDER BY mes DESC
+        LIMIT 12
+    """),
+        {"cnpj": cl[2]},
+    )
+
     return {
         "cliente": {
             "id": str(cl[0]),
@@ -350,6 +414,22 @@ async def visao_360_cliente(
                 "status": r[3],
             }
             for r in nfse.fetchall()
+        ],
+        "funcionarios_alocados": [
+            {
+                "id": str(r[0]),
+                "nome": r[1],
+                "cargo": r[2],
+                "matricula": r[3],
+            }
+            for r in funcionarios.fetchall()
+        ],
+        "mrr_historico": [
+            {
+                "mes": r[0].strftime("%Y-%m") if r[0] else None,
+                "total": float(r[1]) if r[1] else 0,
+            }
+            for r in mrr_hist.fetchall()
         ],
         "gerado_em": datetime.now().isoformat(),
     }

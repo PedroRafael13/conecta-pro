@@ -135,6 +135,16 @@ except ImportError as e:
     logger.warning("DP: falha ao incluir esocial_router: %s", e)
 
 try:
+    from modules.people_management.hr.controllers.time_record_controller import (
+        router as time_record_router,
+    )
+
+    router.include_router(time_record_router)
+    logger.debug("DP: time_record_router incluído")
+except ImportError as e:
+    logger.warning("DP: falha ao incluir time_record_router: %s", e)
+
+try:
     from modules.people_management.hr.controllers.leave_controller import (
         router as leave_router,
     )

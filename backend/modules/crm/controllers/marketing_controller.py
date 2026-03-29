@@ -96,6 +96,33 @@ async def criar_campanha(data: CampaignCreate, db: AsyncSession = Depends(get_as
     return {"id": str(result.fetchone()[0]), "message": "Campanha criada"}
 
 
+@router.put("/campaigns/{campaign_id}")
+async def atualizar_campanha(campaign_id: str, data: CampaignCreate, db: AsyncSession = Depends(get_async_session)):
+    """Atualiza campanha existente."""
+    await db.execute(
+        text("""
+        UPDATE marketing_campaigns SET name=:name, type=:type, budget=:budget,
+        description=:desc, start_date=:start, end_date=:end,
+        utm_source=:utm_s, utm_medium=:utm_m, utm_campaign=:utm_c, updated_at=NOW()
+        WHERE id = :id
+    """),
+        {
+            "id": campaign_id,
+            "name": data.name,
+            "type": data.type,
+            "budget": data.budget,
+            "desc": data.description,
+            "start": data.start_date,
+            "end": data.end_date,
+            "utm_s": data.utm_source,
+            "utm_m": data.utm_medium,
+            "utm_c": data.utm_campaign,
+        },
+    )
+    await db.commit()
+    return {"message": "Campanha atualizada", "id": campaign_id}
+
+
 # === MARKETING LEADS ===
 
 
@@ -187,8 +214,8 @@ async def converter_lead_para_crm(lead_id: str, db: AsyncSession = Depends(get_a
     # Criar lead no CRM
     crm_result = await db.execute(
         text("""
-        INSERT INTO leads (name, email, phone, company, source, status, score, probability, expected_value, is_active)
-        VALUES (:name, :email, :phone, :name, :source, 'new', 50, 0.3, 0, true) RETURNING id
+        INSERT INTO leads (id, name, email, phone, company, source, status, score, probability, expected_value, is_active, created_at, updated_at)
+        VALUES (gen_random_uuid(), :name, :email, :phone, :name, :source, 'new', 50, 0.3, 0, true, NOW(), NOW()) RETURNING id
     """),
         {
             "name": mkt_lead.name,
@@ -274,8 +301,8 @@ async def converter_licitacao_para_crm(
     """Converte licitação vencida em lead CRM — fecha ciclo licitação→CRM."""
     crm_result = await db.execute(
         text("""
-        INSERT INTO leads (name, email, phone, company, source, status, score, probability, expected_value, is_active)
-        VALUES (:name, :email, '', :company, 'licitacao', 'qualified', 70, 0.6, :value, true) RETURNING id
+        INSERT INTO leads (id, name, email, phone, company, source, status, score, probability, expected_value, is_active, created_at, updated_at)
+        VALUES (gen_random_uuid(), :name, :email, '', :company, 'licitacao', 'qualified', 70, 0.6, :value, true, NOW(), NOW()) RETURNING id
     """),
         {
             "name": data.orgao,

@@ -16,6 +16,16 @@ from .termination import (
     TerminationResponse,
     TerminationUpdate,
 )
+from .time_record import (
+    ClockInRequest,
+    ClockOutRequest,
+    DailyRecordsResponse,
+    MonthlySummaryResponse,
+    TimeRecordCreate,
+    TimeRecordListResponse,
+    TimeRecordResponse,
+    TimeRecordUpdate,
+)
 
 __all__ = [
     "DPEmployeeRead",
@@ -34,4 +44,12 @@ __all__ = [
     "ContractCreate",
     "ContractUpdate",
     "ContractResponse",
+    "TimeRecordCreate",
+    "TimeRecordUpdate",
+    "TimeRecordResponse",
+    "TimeRecordListResponse",
+    "ClockInRequest",
+    "ClockOutRequest",
+    "MonthlySummaryResponse",
+    "DailyRecordsResponse",
 ]

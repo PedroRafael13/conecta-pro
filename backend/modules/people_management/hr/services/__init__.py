@@ -18,6 +18,7 @@ from .payroll_export_service import PayrollExportService
 from .payroll_service import PayrollService
 from .reimbursement_service import ReimbursementService
 from .termination_service import TerminationService
+from .time_record_service import TimeRecordService
 from .time_tracking_service import TimeTrackingService
 from .vacation_service import VacationService
 
@@ -37,4 +38,5 @@ __all__ = [
     "OccupationalHealthService",
     "ESocialEventService",
     "PayrollExportService",
+    "TimeRecordService",
 ]

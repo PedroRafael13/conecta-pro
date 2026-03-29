@@ -14,6 +14,7 @@ from .payroll_controller import router as payroll_router
 from .payroll_export_controller import router as payroll_export_router
 from .reimbursement_controller import router as reimbursement_router
 from .termination_controller import router as termination_router
+from .time_record_controller import router as time_record_router
 from .time_tracking_controller import router as time_tracking_router
 from .vacation_controller import router as vacation_router
 
@@ -26,6 +27,7 @@ __all__ = [
     "vacation_router",
     "discipline_router",
     "time_tracking_router",
+    "time_record_router",
     "payroll_router",
     "reimbursement_router",
     "payroll_export_router",

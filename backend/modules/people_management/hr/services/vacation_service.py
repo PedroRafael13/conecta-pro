@@ -41,6 +41,58 @@ class VacationService:
             with contextlib.suppress(Exception):
                 self._portal_service = PortalVacationService(db)
 
+    async def get_by_id(self, vacation_id: str | UUID) -> "VacationRequest | None":
+        """Busca uma solicitação de férias pelo ID.
+
+        Args:
+            vacation_id: ID da solicitação de férias.
+
+        Returns:
+            Instância de VacationRequest ou None se não encontrada.
+        """
+        if not VacationRequest:
+            return None
+        result = await self.db.execute(select(VacationRequest).where(VacationRequest.id == str(vacation_id)))
+        return result.scalar_one_or_none()
+
+    async def list_by_employee(self, employee_id: str | UUID, page: int = 1, page_size: int = 20) -> dict:
+        """Lista solicitações de férias de um funcionário específico.
+
+        Args:
+            employee_id: ID do funcionário.
+            page: Página atual.
+            page_size: Itens por página.
+
+        Returns:
+            Dicionário com items, total e paginação.
+        """
+        if not VacationRequest:
+            return {"items": [], "total": 0, "page": page, "page_size": page_size, "total_pages": 1}
+
+        from sqlalchemy import func
+
+        emp_id = str(employee_id)
+        count_q = select(func.count()).select_from(VacationRequest).where(VacationRequest.employee_id == emp_id)
+        total = (await self.db.execute(count_q)).scalar() or 0
+
+        query = (
+            select(VacationRequest)
+            .where(VacationRequest.employee_id == emp_id)
+            .order_by(VacationRequest.created_at.desc())
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+        )
+        result = await self.db.execute(query)
+        items = result.scalars().all()
+
+        return {
+            "items": items,
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "total_pages": max(1, (total + page_size - 1) // page_size),
+        }
+
     async def calculate_vacation_balance(self, employee_id: str | UUID) -> dict:
         """Calcula o saldo de férias do funcionário.
 

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { customInstance } from '@/lib/api-client';
-import { ArrowLeft, Building2, Phone, Mail, DollarSign, FileText, Users, Activity, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Building2, Phone, Mail, DollarSign, FileText, Users, Activity, AlertTriangle, Heart } from 'lucide-react';
 
 export default function Cliente360Page() {
   const params = useParams();
@@ -51,10 +51,16 @@ export default function Cliente360Page() {
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <div className="bg-white rounded-xl border p-4">
           <div className="flex items-center gap-2 text-gray-500 text-sm mb-1"><DollarSign className="h-4 w-4" /> MRR</div>
           <p className="text-2xl font-bold text-green-600">R$ {cliente.mrr?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+        </div>
+        <div className="bg-white rounded-xl border p-4">
+          <div className="flex items-center gap-2 text-gray-500 text-sm mb-1"><Heart className="h-4 w-4" /> Health Score</div>
+          <p className={`text-2xl font-bold ${(cliente.health_score ?? 0) >= 70 ? 'text-green-600' : (cliente.health_score ?? 0) >= 40 ? 'text-yellow-600' : 'text-red-600'}`}>
+            {cliente.health_score ?? 0}
+          </p>
         </div>
         <div className="bg-white rounded-xl border p-4">
           <div className="flex items-center gap-2 text-gray-500 text-sm mb-1"><FileText className="h-4 w-4" /> Contratos</div>
