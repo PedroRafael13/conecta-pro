@@ -283,8 +283,12 @@ try:
         crm_proposal_router,
         service_router,
     )
+    from modules.crm.controllers.client_controller import (
+        router as crm_client_router,
+    )
 
     # CRM
+    api_router.include_router(crm_client_router, prefix="/crm", tags=["CRM - Clientes"])
     api_router.include_router(crm_lead_router, prefix="/crm", tags=["CRM - Leads"])
     api_router.include_router(crm_opportunity_router, prefix="/crm", tags=["CRM - Oportunidades"])
     api_router.include_router(crm_proposal_router, prefix="/crm", tags=["CRM - Propostas"])
