@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Gift, ArrowLeft, Inbox, Loader2, Plus, X, Save, Search, Filter, Edit, Trash2, ChevronLeft, ChevronRight as ChevronRightIcon } from 'lucide-react';
+import { Gift, ArrowLeft, Inbox, Loader2, Plus, X, Save, Search, Filter, Edit, Trash2, ChevronLeft, ChevronRight as ChevronRightIcon, DollarSign } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -82,6 +82,9 @@ export default function BeneficiosPage() {
   const [filtroType, setFiltroType] = useState<string>('todos');
   const [sortField, setSortField] = useState<string>('');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+  const [selectedEmployeeTotal, setSelectedEmployeeTotal] = useState<string | null>(null);
+  const [employeeTotal, setEmployeeTotal] = useState<Record<string, any> | null>(null);
+  const [totalLoading, setTotalLoading] = useState(false);
 
   // Load benefits from API
   useEffect(() => {
@@ -185,8 +188,24 @@ export default function BeneficiosPage() {
     setEditingId(null);
   };
 
+  const fetchEmployeeTotal = async (employeeId: string) => {
+    setSelectedEmployeeTotal(employeeId);
+    setTotalLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/benefits/employee/${employeeId}/total`, { headers: getAuthHeaders() });
+      if (res.ok) {
+        const data = await res.json();
+        setEmployeeTotal(data);
+      } else {
+        setEmployeeTotal(null);
+      }
+    } catch { setEmployeeTotal(null); }
+    finally { setTotalLoading(false); }
+  };
+
   const openEditForm = (item: any) => {
     setEditingId(item.id);
+    if (item.employee_id) fetchEmployeeTotal(item.employee_id);
     setFormData({
       employee_id: item.employee_id || '',
       type: item.type || 'vale_transporte',
@@ -398,6 +417,35 @@ export default function BeneficiosPage() {
             </div>
           )}
 
+          {/* Employee total cost card */}
+          {selectedEmployeeTotal && (
+            <Card className="border-blue-200 bg-blue-50/30">
+              <CardContent className="pt-4 pb-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="h-5 w-5 text-blue-600" />
+                    <span className="text-sm font-medium">Custo Total de Beneficios do Colaborador</span>
+                  </div>
+                  <Button variant="ghost" size="sm" onClick={() => { setSelectedEmployeeTotal(null); setEmployeeTotal(null); }}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+                {totalLoading ? (
+                  <div className="flex items-center gap-2 mt-2"><Loader2 className="h-4 w-4 animate-spin" /> <span className="text-sm text-muted-foreground">Calculando...</span></div>
+                ) : employeeTotal ? (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-2 text-sm">
+                    <div><span className="text-muted-foreground">Custo empresa:</span><br /><span className="font-bold text-blue-700">{fmt(employeeTotal.total_company ?? employeeTotal.company_total ?? employeeTotal.total_empresa)}</span></div>
+                    <div><span className="text-muted-foreground">Desc. funcionario:</span><br /><span className="font-bold">{fmt(employeeTotal.total_employee ?? employeeTotal.employee_total ?? employeeTotal.total_funcionario)}</span></div>
+                    <div><span className="text-muted-foreground">Beneficios ativos:</span><br /><span className="font-bold">{employeeTotal.active_count ?? employeeTotal.total_benefits ?? employeeTotal.total_ativos ?? '-'}</span></div>
+                    <div><span className="text-muted-foreground">Custo total:</span><br /><span className="font-bold text-green-700">{fmt(employeeTotal.grand_total ?? employeeTotal.total ?? ((employeeTotal.total_company || 0) + (employeeTotal.total_employee || 0)))}</span></div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground mt-2">Nao foi possivel calcular o total</p>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -455,6 +503,7 @@ export default function BeneficiosPage() {
                             <TableCell>
                               <div className="flex gap-1">
                                 <Button type="button" variant="outline" size="sm" onClick={() => openEditForm(item)}><Edit className="h-3 w-3" /></Button>
+                                <Button type="button" variant="ghost" size="sm" onClick={() => item.employee_id && fetchEmployeeTotal(item.employee_id)} title="Ver custo total do colaborador"><DollarSign className="h-3 w-3" /></Button>
                                 {item.status === 'active' && (
                                   <Button type="button" variant="outline" size="sm" onClick={() => handleCancel(item.id)}><Trash2 className="h-3 w-3" /></Button>
                                 )}

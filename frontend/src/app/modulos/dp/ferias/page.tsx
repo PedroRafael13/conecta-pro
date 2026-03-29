@@ -98,6 +98,8 @@ export default function FeriasPage() {
   const [showDetail, setShowDetail] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
+  const [vacationBalance, setVacationBalance] = useState<Record<string, any> | null>(null);
+  const [balanceLoading, setBalanceLoading] = useState(false);
   const [showRejectInput, setShowRejectInput] = useState(false);
 
   // Status counts from API
@@ -246,6 +248,7 @@ export default function FeriasPage() {
     setShowDetail(true);
     setShowRejectInput(false);
     setRejectReason('');
+    setVacationBalance(null);
     // Fetch fresh detail
     try {
       const res = await fetch(`${API_BASE}/vacations/vacations/${item.id}`, { headers: getAuthHeaders() });
@@ -254,6 +257,18 @@ export default function FeriasPage() {
         setSelectedVacation(detail);
       }
     } catch { /* use cached */ }
+    // Fetch vacation balance for this employee
+    if (item.employee_id) {
+      setBalanceLoading(true);
+      try {
+        const balRes = await fetch(`${API_BASE}/vacations/employee/${item.employee_id}/balance`, { headers: getAuthHeaders() });
+        if (balRes.ok) {
+          const balData = await balRes.json();
+          setVacationBalance(balData);
+        }
+      } catch { /* ignore */ }
+      finally { setBalanceLoading(false); }
+    }
   };
 
   // Approve
@@ -699,6 +714,23 @@ export default function FeriasPage() {
                   <p className="text-sm text-muted-foreground">Atualizado em</p>
                   <p className="font-medium">{formatDateTime(selectedVacation.updated_at)}</p>
                 </div>
+              </div>
+
+              {/* Vacation Balance */}
+              <div className="border rounded-md p-3 bg-muted/30">
+                <p className="text-sm font-medium mb-2 flex items-center gap-1"><UserCheck className="h-4 w-4" /> Saldo de Ferias</p>
+                {balanceLoading ? (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Carregando saldo...</div>
+                ) : vacationBalance ? (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                    <div><span className="text-muted-foreground">Dias disponiveis:</span><br /><span className="font-bold text-green-600">{vacationBalance.days_available ?? vacationBalance.saldo_dias ?? '-'}</span></div>
+                    <div><span className="text-muted-foreground">Dias usados:</span><br /><span className="font-bold">{vacationBalance.days_used ?? vacationBalance.dias_usados ?? '-'}</span></div>
+                    <div><span className="text-muted-foreground">Dias totais:</span><br /><span className="font-bold">{vacationBalance.days_total ?? vacationBalance.dias_direito ?? '-'}</span></div>
+                    <div><span className="text-muted-foreground">Periodo aquisitivo:</span><br /><span className="font-bold">{vacationBalance.acquisition_period ?? vacationBalance.periodo_aquisitivo ?? '-'}</span></div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Saldo nao disponivel</p>
+                )}
               </div>
 
               {/* Reject reason input */}

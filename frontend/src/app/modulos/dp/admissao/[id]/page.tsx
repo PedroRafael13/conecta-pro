@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Loader2, User, FileText, Calendar, ChevronRight, CheckCircle2, XCircle, Edit, Save, X } from 'lucide-react';
+import { ArrowLeft, Loader2, User, FileText, Calendar, ChevronRight, CheckCircle2, XCircle, Edit, Save, X, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -44,6 +44,56 @@ export default function AdmissaoDetalhePage() {
   const [editing, setEditing] = useState(false);
   const [editData, setEditData] = useState({ candidate_name: '', cpf: '', position: '', department: '', salary_proposed: '', notes: '' });
   const [savingEdit, setSavingEdit] = useState(false);
+  const [generatingEsocial, setGeneratingEsocial] = useState(false);
+
+  const handleGerarS2200 = async () => {
+    if (!data) return;
+    setGeneratingEsocial(true);
+    try {
+      const payload = {
+        cpf: String(data.cpf || '').replace(/\D/g, ''),
+        nome: String(data.candidate_name || ''),
+        data_nascimento: data.data_nascimento ? String(data.data_nascimento) : null,
+        sexo: data.sexo ? String(data.sexo) : 'M',
+        data_admissao: String(data.actual_start_date || data.expected_start_date || ''),
+        cargo: String(data.position || ''),
+        salario: Number(data.salary_proposed || 0),
+        matricula: String(data.employee_id || data.id || '').slice(0, 20),
+        cbo: '',
+        categoria: '101',
+        tipo_contrato: '1',
+      };
+      if (!payload.cpf || !payload.nome || !payload.data_admissao || !payload.salario) {
+        toast.error('Dados insuficientes para gerar S-2200 (CPF, nome, data admissao e salario sao obrigatorios)', { duration: 5000 });
+        setGeneratingEsocial(false);
+        return;
+      }
+      const res = await fetch(`${API_BASE}/esocial/s2200/gerar`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `S2200_${payload.matricula}.xml`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+        toast.success('XML S-2200 gerado e baixado com sucesso!', { duration: 4000 });
+      } else {
+        const err = await res.json().catch(() => null);
+        toast.error(err?.detail || 'Erro ao gerar S-2200', { duration: 5000 });
+      }
+    } catch {
+      toast.error('Erro de conexao ao gerar S-2200', { duration: 5000 });
+    } finally {
+      setGeneratingEsocial(false);
+    }
+  };
 
   const loadData = useCallback(async () => {
     try {
@@ -146,6 +196,12 @@ export default function AdmissaoDetalhePage() {
           {isEditable && (
             <Button variant="destructive" size="sm" disabled={advancing} onClick={() => setShowCancelConfirm(true)}>
               <XCircle className="h-4 w-4 mr-1" /> Cancelar Admissão
+            </Button>
+          )}
+          {String(data.status) === 'completed' && (
+            <Button variant="outline" size="sm" disabled={generatingEsocial} onClick={handleGerarS2200}>
+              {generatingEsocial ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Download className="h-4 w-4 mr-1" />}
+              {generatingEsocial ? 'Gerando...' : 'Gerar S-2200 eSocial'}
             </Button>
           )}
         </div>

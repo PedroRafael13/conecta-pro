@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import {
   Users, ArrowLeft, Search, Loader2, AlertTriangle, CheckCircle2, Edit, Save, X,
   ChevronLeft, ChevronRight, User, FileText, MapPin, Building2, CreditCard, Shield, RefreshCw,
+  Minus, Plus,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { validateCPF } from '@/utils/validators';
@@ -60,7 +61,7 @@ const UFS = ['AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT','P
 
 const PAGE_SIZE = 15;
 
-type Tab = 'pessoal' | 'documentos' | 'endereco' | 'profissional' | 'bancario' | 'vigilancia';
+type Tab = 'pessoal' | 'documentos' | 'endereco' | 'profissional' | 'bancario' | 'vigilancia' | 'deducoes';
 
 export default function FuncionariosPage() {
   const router = useRouter();
@@ -76,6 +77,70 @@ export default function FuncionariosPage() {
   const [activeTab, setActiveTab] = useState<Tab>('pessoal');
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [cepLoading, setCepLoading] = useState(false);
+  // Gap 3: Deductions
+  const [deductions, setDeductions] = useState<any[]>([]);
+  const [deductionsLoading, setDeductionsLoading] = useState(false);
+  const [showDeductionForm, setShowDeductionForm] = useState(false);
+  const [deductionSaving, setDeductionSaving] = useState(false);
+  const [deductionForm, setDeductionForm] = useState({ tipo: 'consignado', descricao: '', valor: '', percentual: '', base_calculo: 'fixo', total_parcelas: '', data_inicio: '', data_fim: '' });
+  // Gap 6: Full profile
+  const [profileData, setProfileData] = useState<Record<string, any> | null>(null);
+
+  const loadDeductions = async (empId: string) => {
+    setDeductionsLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/employees/${empId}/deductions`, { headers: getAuthHeaders() });
+      if (res.ok) {
+        const data = await res.json();
+        setDeductions(data.items || []);
+      } else { setDeductions([]); }
+    } catch { setDeductions([]); }
+    finally { setDeductionsLoading(false); }
+  };
+
+  const handleCreateDeduction = async () => {
+    if (!editingId) return;
+    if (!deductionForm.descricao || !deductionForm.data_inicio) {
+      toast.error('Descricao e data de inicio sao obrigatorios', { duration: 5000 });
+      return;
+    }
+    setDeductionSaving(true);
+    try {
+      const payload: Record<string, unknown> = {
+        tipo: deductionForm.tipo,
+        descricao: deductionForm.descricao,
+        base_calculo: deductionForm.base_calculo,
+        data_inicio: deductionForm.data_inicio,
+      };
+      if (deductionForm.valor) payload.valor = parseFloat(deductionForm.valor);
+      if (deductionForm.percentual) payload.percentual = parseFloat(deductionForm.percentual);
+      if (deductionForm.total_parcelas) payload.total_parcelas = parseInt(deductionForm.total_parcelas);
+      if (deductionForm.data_fim) payload.data_fim = deductionForm.data_fim;
+      const res = await fetch(`${API_BASE}/employees/${editingId}/deductions`, {
+        method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(payload),
+      });
+      if (res.ok) {
+        toast.success('Deducao criada com sucesso!', { duration: 4000 });
+        setShowDeductionForm(false);
+        setDeductionForm({ tipo: 'consignado', descricao: '', valor: '', percentual: '', base_calculo: 'fixo', total_parcelas: '', data_inicio: '', data_fim: '' });
+        await loadDeductions(editingId);
+      } else {
+        const err = await res.json().catch(() => null);
+        toast.error(err?.detail || 'Erro ao criar deducao', { duration: 5000 });
+      }
+    } catch { toast.error('Erro de conexao', { duration: 5000 }); }
+    finally { setDeductionSaving(false); }
+  };
+
+  const loadProfile = async (empId: string) => {
+    try {
+      const res = await fetch(`${API_BASE}/employees/${empId}/profile`, { headers: getAuthHeaders() });
+      if (res.ok) {
+        const data = await res.json();
+        setProfileData(data);
+      }
+    } catch { /* ignore */ }
+  };
 
   const loadEmployees = useCallback(async (retry = 0) => {
     setLoading(true);
@@ -137,6 +202,11 @@ export default function FuncionariosPage() {
     setEditData(data);
     setValidationErrors({});
     setActiveTab('pessoal');
+    setDeductions([]);
+    setProfileData(null);
+    // Load deductions and profile in background
+    loadDeductions(emp.id);
+    loadProfile(emp.id);
     // Scroll to form
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -260,6 +330,7 @@ export default function FuncionariosPage() {
     { key: 'profissional', label: 'Profissional', icon: Building2 },
     { key: 'bancario', label: 'Bancário', icon: CreditCard },
     { key: 'vigilancia', label: 'Vigilância', icon: Shield },
+    { key: 'deducoes', label: 'Deduções', icon: Minus },
   ];
 
   return (
@@ -400,6 +471,116 @@ export default function FuncionariosPage() {
                 {renderField('cnv')}
                 {renderField('cnv_validade', 'date')}
               </>)}
+              {activeTab === 'deducoes' && (
+                <div className="col-span-full space-y-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium">Deducoes do funcionario (consignados, pensoes, emprestimos)</p>
+                    <Button size="sm" variant="outline" onClick={() => setShowDeductionForm(true)}>
+                      <Plus className="h-4 w-4 mr-1" /> Nova Deducao
+                    </Button>
+                  </div>
+                  {showDeductionForm && (
+                    <div className="border rounded-md p-4 bg-muted/30 space-y-3">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div>
+                          <label className="text-sm font-medium mb-1 block">Tipo *</label>
+                          <select value={deductionForm.tipo} onChange={e => setDeductionForm(p => ({ ...p, tipo: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm">
+                            <option value="consignado">Consignado</option>
+                            <option value="pensao_alimenticia">Pensao Alimenticia</option>
+                            <option value="emprestimo">Emprestimo</option>
+                            <option value="outros">Outros</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium mb-1 block">Descricao *</label>
+                          <input type="text" value={deductionForm.descricao} onChange={e => setDeductionForm(p => ({ ...p, descricao: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm" placeholder="Ex: Emprestimo BMG" />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium mb-1 block">Base Calculo</label>
+                          <select value={deductionForm.base_calculo} onChange={e => setDeductionForm(p => ({ ...p, base_calculo: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm">
+                            <option value="fixo">Valor Fixo</option>
+                            <option value="bruto">% Salario Bruto</option>
+                            <option value="liquido">% Salario Liquido</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium mb-1 block">Valor (R$)</label>
+                          <input type="number" step="0.01" value={deductionForm.valor} onChange={e => setDeductionForm(p => ({ ...p, valor: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm" placeholder="0.00" />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium mb-1 block">Percentual (%)</label>
+                          <input type="number" step="0.01" max="100" value={deductionForm.percentual} onChange={e => setDeductionForm(p => ({ ...p, percentual: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm" placeholder="0.00" />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium mb-1 block">Total Parcelas</label>
+                          <input type="number" min="1" value={deductionForm.total_parcelas} onChange={e => setDeductionForm(p => ({ ...p, total_parcelas: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm" placeholder="Ex: 36" />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium mb-1 block">Data Inicio *</label>
+                          <input type="date" value={deductionForm.data_inicio} onChange={e => setDeductionForm(p => ({ ...p, data_inicio: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm" />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium mb-1 block">Data Fim</label>
+                          <input type="date" value={deductionForm.data_fim} onChange={e => setDeductionForm(p => ({ ...p, data_fim: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm" />
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button size="sm" disabled={deductionSaving} onClick={handleCreateDeduction}>
+                          {deductionSaving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />}
+                          {deductionSaving ? 'Salvando...' : 'Criar Deducao'}
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => setShowDeductionForm(false)}>Cancelar</Button>
+                      </div>
+                    </div>
+                  )}
+                  {deductionsLoading ? (
+                    <div className="flex items-center justify-center py-6"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+                  ) : deductions.length === 0 ? (
+                    <p className="text-sm text-muted-foreground py-4 text-center">Nenhuma deducao cadastrada para este funcionario.</p>
+                  ) : (
+                    <div className="border rounded-md overflow-hidden">
+                      <table className="w-full text-sm">
+                        <thead className="bg-muted/50">
+                          <tr>
+                            <th className="text-left px-3 py-2 font-medium">Tipo</th>
+                            <th className="text-left px-3 py-2 font-medium">Descricao</th>
+                            <th className="text-right px-3 py-2 font-medium">Valor</th>
+                            <th className="text-right px-3 py-2 font-medium">Percentual</th>
+                            <th className="text-center px-3 py-2 font-medium">Parcelas</th>
+                            <th className="text-left px-3 py-2 font-medium">Periodo</th>
+                            <th className="text-center px-3 py-2 font-medium">Ativo</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {deductions.map((d: any, i: number) => (
+                            <tr key={d.id || i} className="border-t">
+                              <td className="px-3 py-2 capitalize">{String(d.tipo || '-').replace(/_/g, ' ')}</td>
+                              <td className="px-3 py-2">{d.descricao || '-'}</td>
+                              <td className="px-3 py-2 text-right">{d.valor != null ? `R$ ${Number(d.valor).toFixed(2)}` : '-'}</td>
+                              <td className="px-3 py-2 text-right">{d.percentual != null ? `${d.percentual}%` : '-'}</td>
+                              <td className="px-3 py-2 text-center">{d.parcela_atual && d.total_parcelas ? `${d.parcela_atual}/${d.total_parcelas}` : d.total_parcelas || '-'}</td>
+                              <td className="px-3 py-2">{d.data_inicio || '-'} {d.data_fim ? `a ${d.data_fim}` : ''}</td>
+                              <td className="px-3 py-2 text-center">{d.ativo ? '✓' : '✗'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                  {/* Gap 6: Profile summary */}
+                  {profileData && (
+                    <div className="border rounded-md p-3 bg-blue-50/50 space-y-2">
+                      <p className="text-sm font-medium text-blue-800">Resumo do Perfil Completo</p>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                        {profileData.benefits_count != null && <div><span className="text-muted-foreground">Beneficios ativos:</span><br /><span className="font-bold">{profileData.benefits_count}</span></div>}
+                        {profileData.contract_type && <div><span className="text-muted-foreground">Tipo contrato:</span><br /><span className="font-bold">{profileData.contract_type}</span></div>}
+                        {profileData.contract_start_date && <div><span className="text-muted-foreground">Inicio contrato:</span><br /><span className="font-bold">{profileData.contract_start_date}</span></div>}
+                        {profileData.base_salary != null && <div><span className="text-muted-foreground">Salario base:</span><br /><span className="font-bold">R$ {Number(profileData.base_salary).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span></div>}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
             <div className="flex gap-2 mt-4">
               <Button size="sm" disabled={saving} onClick={handleSave}>

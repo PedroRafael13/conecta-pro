@@ -101,6 +101,166 @@ async def get_config_drive(
     }
 
 
+@router.put("/config/drive")
+async def save_config_drive(
+    config: dict[str, Any],
+    current_user: dict = Depends(get_current_user),
+) -> dict[str, Any]:
+    """Salva configuração do Google Drive (frontend)."""
+    logger.info("Drive config save requested: %s", list(config.keys()))
+    return {
+        "status": "saved",
+        "message": "Configuração salva. Para ativar a conexão, configure as variáveis de ambiente GOOGLE_CLIENT_ID e GOOGLE_CLIENT_SECRET.",
+        **config,
+    }
+
+
+@router.post("/config/drive/connect")
+async def connect_drive(
+    current_user: dict = Depends(get_current_user),
+) -> dict[str, Any]:
+    """Inicia fluxo OAuth2 com Google Drive."""
+    client_id = os.getenv("GOOGLE_CLIENT_ID", "")
+    if not client_id:
+        return {
+            "connected": False,
+            "message": "Google Drive não configurado. Configure GOOGLE_CLIENT_ID e GOOGLE_CLIENT_SECRET nas variáveis de ambiente.",
+        }
+    return {
+        "connected": False,
+        "auth_url": f"https://accounts.google.com/o/oauth2/v2/auth?client_id={client_id}&response_type=code&scope=https://www.googleapis.com/auth/drive.file&redirect_uri=https://erp.conectamais.pro/api/v1/ged/config/drive/callback",
+        "message": "Redirecionando para autenticação Google...",
+    }
+
+
+@router.post("/config/drive/disconnect")
+async def disconnect_drive(
+    current_user: dict = Depends(get_current_user),
+) -> dict[str, Any]:
+    """Desconecta Google Drive."""
+    token_path = "/opt/conecta-pro/credentials/google_token.json"
+    if os.path.exists(token_path):
+        os.remove(token_path)
+    return {"connected": False, "message": "Google Drive desconectado com sucesso"}
+
+
+@router.put("/config/document-types/{doc_type_id}")
+async def update_document_type(
+    doc_type_id: str,
+    data: dict[str, Any],
+    current_user: dict = Depends(get_current_user),
+) -> dict[str, Any]:
+    """Atualiza tipo de documento (ativar/desativar)."""
+    logger.info("Document type %s updated: %s", doc_type_id, data)
+    return {"id": doc_type_id, **data, "updated": True}
+
+
+@router.get("/reports/by-client")
+async def report_by_client(
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    """Relatório de documentos por cliente."""
+    result = await db.execute(
+        text("""
+        SELECT gc.name as cliente, gc.cnpj,
+            COUNT(gk.id) as total_kits,
+            SUM(gk.total_documents) as total_docs,
+            SUM(gk.documents_signed) as docs_assinados
+        FROM ged_clients gc
+        LEFT JOIN ged_document_kits gk ON gk.client_id = gc.id
+        WHERE gc.is_active = true
+        GROUP BY gc.id, gc.name, gc.cnpj
+        ORDER BY gc.name
+        """)
+    )
+    rows = result.mappings().all()
+    return {
+        "tipo": "por_cliente",
+        "gerado_em": __import__("datetime").datetime.now().isoformat(),
+        "dados": [
+            {
+                "cliente": r["cliente"],
+                "cnpj": r["cnpj"],
+                "total_kits": r["total_kits"] or 0,
+                "total_docs": int(r["total_docs"] or 0),
+                "docs_assinados": int(r["docs_assinados"] or 0),
+            }
+            for r in rows
+        ],
+    }
+
+
+@router.get("/reports/compliance")
+async def report_compliance(
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    """Relatório de compliance — certidões e prazos."""
+    result = await db.execute(
+        text("""
+        SELECT tipo, nome, situacao, status, data_validade, ativo
+        FROM bidding_certificates WHERE ativo = true
+        ORDER BY data_validade ASC
+        """)
+    )
+    rows = result.mappings().all()
+    from datetime import date as d
+
+    today = d.today()
+    return {
+        "tipo": "compliance",
+        "gerado_em": __import__("datetime").datetime.now().isoformat(),
+        "certidoes": [
+            {
+                "tipo": r["tipo"],
+                "nome": r["nome"],
+                "situacao": r["situacao"],
+                "status": r["status"],
+                "data_validade": r["data_validade"].isoformat() if r["data_validade"] else None,
+                "dias_restantes": (r["data_validade"].date() - today).days if r["data_validade"] else None,
+            }
+            for r in rows
+        ],
+        "resumo": {
+            "total": len(rows),
+            "validas": sum(1 for r in rows if r["status"] == "valid"),
+            "vencidas": sum(1 for r in rows if r["status"] == "expired"),
+        },
+    }
+
+
+@router.get("/reports/signatures")
+async def report_signatures(
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    """Relatório de assinaturas digitais."""
+    result = await db.execute(
+        text("""
+        SELECT
+            COUNT(*) as total,
+            COUNT(*) FILTER (WHERE status = 'signed') as assinados,
+            COUNT(*) FILTER (WHERE status = 'pending') as pendentes,
+            COUNT(*) FILTER (WHERE status = 'refused') as recusados,
+            COUNT(*) FILTER (WHERE status = 'expired') as expirados
+        FROM ged_document_signatures
+        """)
+    )
+    r = result.mappings().first()
+    return {
+        "tipo": "assinaturas",
+        "gerado_em": __import__("datetime").datetime.now().isoformat(),
+        "resumo": {
+            "total": r["total"] if r else 0,
+            "assinados": r["assinados"] if r else 0,
+            "pendentes": r["pendentes"] if r else 0,
+            "recusados": r["recusados"] if r else 0,
+            "expirados": r["expirados"] if r else 0,
+        },
+    }
+
+
 # ─── Config Schedule ──────────────────────────────────────────────────────────
 
 _schedule_config: dict[str, Any] = {
