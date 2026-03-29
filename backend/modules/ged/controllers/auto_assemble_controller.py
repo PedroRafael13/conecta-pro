@@ -50,6 +50,7 @@ async def list_kits(
     status: str | None = Query(None),
     month: int | None = Query(None, ge=1, le=12),
     year: int | None = Query(None, ge=2020),
+    reference_month: str | None = Query(None, description="YYYY-MM formato do filtro frontend"),
     current_user: CurrentActiveUser = None,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -60,14 +61,27 @@ async def list_kits(
     params: dict[str, Any] = {}
 
     if client_id:
-        conditions.append("client_id = :client_id")
+        conditions.append("gk.client_id = :client_id")
         params["client_id"] = client_id
     if status:
-        conditions.append("status = :status")
+        conditions.append("gk.status = :status")
         params["status"] = status
-    if month and year:
-        conditions.append("EXTRACT(MONTH FROM reference_month) = :month")
-        conditions.append("EXTRACT(YEAR FROM reference_month) = :year")
+
+    # Aceitar tanto month+year quanto reference_month (YYYY-MM)
+    if reference_month and len(reference_month) >= 7:
+        try:
+            parts = reference_month.split("-")
+            _year = int(parts[0])
+            _month = int(parts[1])
+            conditions.append("EXTRACT(MONTH FROM gk.reference_month) = :month")
+            conditions.append("EXTRACT(YEAR FROM gk.reference_month) = :year")
+            params["month"] = _month
+            params["year"] = _year
+        except (ValueError, IndexError):
+            pass
+    elif month and year:
+        conditions.append("EXTRACT(MONTH FROM gk.reference_month) = :month")
+        conditions.append("EXTRACT(YEAR FROM gk.reference_month) = :year")
         params["month"] = month
         params["year"] = year
 
