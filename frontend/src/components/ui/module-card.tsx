@@ -13,6 +13,7 @@ export interface ModuleCardProps {
   color: 'cyan' | 'green' | 'orange' | 'purple' | 'red' | 'blue' | 'yellow' | 'pink' | 'teal' | 'amber';
   badge?: string | number;
   disabled?: boolean;
+  external?: boolean;
 }
 
 const colorMap = {
@@ -96,13 +97,18 @@ export function ModuleCard({
   color,
   badge,
   disabled,
+  external,
 }: ModuleCardProps) {
   const router = useRouter();
   const colors = colorMap[color] || colorMap.cyan;
 
   const handleClick = () => {
     if (!disabled) {
-      router.push(href);
+      if (external) {
+        window.open(href, '_blank', 'noopener,noreferrer');
+      } else {
+        router.push(href);
+      }
     }
   };
 

@@ -12,6 +12,7 @@ export interface Module {
   subModules: SubModule[];
   badge?: string | number;
   enabled: boolean;
+  external?: boolean;
 }
 
 // Sub-módulo (aparece na sidebar após clicar no card)

@@ -424,6 +424,7 @@ export default function DashboardPage() {
                       color={module.color}
                       badge={module.badge}
                       disabled={!module.enabled}
+                      external={module.external}
                     />
                   );
                 })}

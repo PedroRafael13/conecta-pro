@@ -277,6 +277,7 @@ export const modules: Module[] = [
     color: 'amber',
     permissions: ['ged:read'],
     enabled: true,
+    external: true,
     subModules: [
       { id: 'ac-dashboard', title: 'Dashboard', href: '/area-cliente', icon: 'LayoutDashboard', permissions: ['ged:read'] },
       { id: 'ac-kits', title: 'Kits Documentais', href: '/area-cliente/kits', icon: 'Package', permissions: ['ged:read'] },
