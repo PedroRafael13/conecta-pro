@@ -173,7 +173,7 @@ async def sync_offline_punches(
 
 @router.get("/batidas/{employee_id}")
 async def get_batidas_dia(
-    employee_id: int,
+    employee_id: str,
     data: str = Query(..., description="Data no formato YYYY-MM-DD"),
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, Any]:
@@ -185,7 +185,7 @@ async def get_batidas_dia(
 
 @router.get("/espelho/{employee_id}")
 async def get_espelho_mensal(
-    employee_id: int,
+    employee_id: str,
     month: int = Query(..., ge=1, le=12),
     year: int = Query(..., ge=2020),
     db: AsyncSession = Depends(get_db),

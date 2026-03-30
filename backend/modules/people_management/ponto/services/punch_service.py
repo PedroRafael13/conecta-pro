@@ -171,7 +171,7 @@ class PunchService:
             "errors": errors,
         }
 
-    async def get_batidas_dia(self, employee_id: int, dia: str) -> list[dict[str, Any]]:
+    async def get_batidas_dia(self, employee_id: str, dia: str) -> list[dict[str, Any]]:
         """Retorna batidas de um funcionario em um dia especifico.
 
         Args:
@@ -191,7 +191,7 @@ class PunchService:
         )
         return [p.to_dict() for p in result.scalars().all()]
 
-    async def get_espelho_mensal(self, employee_id: int, month: int, year: int) -> dict[str, Any]:
+    async def get_espelho_mensal(self, employee_id: str, month: int, year: int) -> dict[str, Any]:
         """Retorna espelho de ponto mensal com totais.
 
         Args:
