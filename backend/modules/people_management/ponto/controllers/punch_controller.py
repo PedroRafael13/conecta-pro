@@ -1,11 +1,14 @@
 """Controller de Ponto Eletronico — rotas FastAPI com persistencia no banco."""
 
+from datetime import date
 from typing import Any
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Query
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 
+from core.auth.dependencies import CurrentActiveUser
 from core.database.session import get_db, get_sync_db_dependency
 
 from ..schemas.dashboard_schemas import (
@@ -18,6 +21,7 @@ from ..schemas.dashboard_schemas import (
     SyncSolidesResponse,
 )
 from ..schemas.punch_schemas import (
+    GeoLocationSchema,
     JustificationCreate,
     JustificationResponse,
     JustificationReview,
@@ -57,6 +61,103 @@ async def registrar_batida(
         is_offline=result.get("is_offline", False),
         message="Ponto registrado com sucesso",
     )
+
+
+async def _resolve_employee_id(db: AsyncSession, current_user: Any) -> str:
+    """Resolve o employee_id (UUID) do usuário autenticado pelo e-mail."""
+    user_email = getattr(current_user, "email", None)
+    if not user_email:
+        raise HTTPException(status_code=400, detail="Usuário sem e-mail vinculado")
+    row = (
+        await db.execute(
+            text("SELECT id FROM employees WHERE email = :email LIMIT 1"),
+            {"email": user_email},
+        )
+    ).fetchone()
+    if not row:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Funcionário não encontrado para o e-mail {user_email}. Verifique se o cadastro do funcionário usa o mesmo e-mail do login.",
+        )
+    return str(row[0])
+
+
+_PUNCH_SEQUENCE = ["entrada", "saida_almoco", "retorno_almoco", "saida"]
+
+
+async def _next_punch_type(db: AsyncSession, employee_id: str) -> str:
+    """Detecta o próximo tipo de batida com base nas batidas de hoje."""
+    today = date.today()
+    rows = (
+        await db.execute(
+            text(
+                "SELECT punch_type FROM gp_clock_punches "
+                "WHERE employee_id = :eid AND DATE(punch_timestamp) = :today "
+                "ORDER BY punch_timestamp ASC"
+            ),
+            {"eid": employee_id, "today": today},
+        )
+    ).fetchall()
+    count = len(rows)
+    if count >= len(_PUNCH_SEQUENCE):
+        return "saida"
+    return _PUNCH_SEQUENCE[count]
+
+
+@router.post("/batida/me", response_model=PunchResponse, status_code=201)
+async def registrar_batida_me(
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+    latitude: float | None = Query(None),
+    longitude: float | None = Query(None),
+    punch_type: str | None = Query(None, description="entrada|saida_almoco|retorno_almoco|saida"),
+) -> PunchResponse:
+    """Registra batida do funcionário autenticado — resolve employee e tipo automaticamente."""
+    employee_id = await _resolve_employee_id(db, current_user)
+    tipo = punch_type or await _next_punch_type(db, employee_id)
+
+    location = None
+    if latitude is not None and longitude is not None:
+        location = GeoLocationSchema(latitude=latitude, longitude=longitude)
+
+    data = PunchCreate(
+        employee_id=str(employee_id),
+        punch_type=tipo,
+        location=location,
+        device_type="web",
+    )
+    service = PunchService(db)
+    result = await service.registrar_batida(data)
+    await db.commit()
+    return PunchResponse(
+        punch_id=result["punch_id"],
+        employee_id=result["employee_id"],
+        punch_type=result.get("punch_type"),
+        punch_timestamp=result.get("punch_timestamp"),
+        status=result.get("status"),
+        facial_match=result.get("facial_match"),
+        facial_confidence=result.get("facial_confidence"),
+        dentro_geofence=result.get("dentro_geofence"),
+        distancia_posto_metros=result.get("distancia_posto_metros"),
+        is_offline=False,
+        message=f"Ponto registrado: {tipo}",
+    )
+
+
+@router.get("/batidas/me")
+async def get_batidas_me(
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    """Retorna as batidas de hoje do funcionário autenticado."""
+    try:
+        employee_id = await _resolve_employee_id(db, current_user)
+        today = date.today().isoformat()
+        service = PunchService(db)
+        batidas = await service.get_batidas_dia(employee_id, today)
+        return {"employee_id": employee_id, "date": today, "batidas": batidas}
+    except HTTPException:
+        return {"employee_id": None, "date": date.today().isoformat(), "batidas": []}
 
 
 @router.post("/sync", response_model=PunchSyncResponse)

@@ -26,7 +26,6 @@ interface PunchRecord {
 }
 
 interface BatidaPayload {
-  tipo?: string;
   latitude?: number;
   longitude?: number;
 }
@@ -34,7 +33,7 @@ interface BatidaPayload {
 export default function BaterPontoPage() {
   const queryClient = useQueryClient();
   const [punched, setPunched] = useState(false);
-  const [geoEnabled, setGeoEnabled] = useState(true);
+  const [geoEnabled, setGeoEnabled] = useState(false);
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
 
@@ -56,14 +55,14 @@ export default function BaterPontoPage() {
     }
   }, []);
 
-  // Fetch today's punches - use employee_id from token (backend resolves from auth)
+  // Fetch today's punches — backend resolves employee from auth
   const { data: todayPunches, isLoading: loadingPunches } = useQuery<PunchRecord[]>({
     queryKey: ['ponto', 'batidas', 'hoje'],
     queryFn: async () => {
       try {
-        const res = await customInstance({ url: '/api/v1/people-management/ponto/batidas/me' }) as unknown as PunchRecord[] | { items?: PunchRecord[]; batidas?: PunchRecord[] };
+        const res = await customInstance({ url: '/api/v1/people-management/ponto/batidas/me' }) as unknown as { batidas?: PunchRecord[]; items?: PunchRecord[] } | PunchRecord[];
         if (Array.isArray(res)) return res;
-        return (res as Record<string, unknown>)?.items as PunchRecord[] ?? (res as Record<string, unknown>)?.batidas as PunchRecord[] ?? [];
+        return (res as Record<string, unknown>)?.batidas as PunchRecord[] ?? (res as Record<string, unknown>)?.items as PunchRecord[] ?? [];
       } catch (err) {
         console.error('fetchTodayPunches:', err);
         return [];
@@ -74,11 +73,17 @@ export default function BaterPontoPage() {
   });
 
   const punchMutation = useMutation({
-    mutationFn: (body: BatidaPayload) => customInstance({
-      url: '/api/v1/people-management/ponto/batida',
-      method: 'POST',
-      data: body,
-    }),
+    mutationFn: (body: BatidaPayload) => {
+      // Build query string for optional GPS coords
+      const params = new URLSearchParams();
+      if (body.latitude != null) params.set('latitude', String(body.latitude));
+      if (body.longitude != null) params.set('longitude', String(body.longitude));
+      const qs = params.toString();
+      return customInstance({
+        url: `/api/v1/people-management/ponto/batida/me${qs ? '?' + qs : ''}`,
+        method: 'POST',
+      });
+    },
     onSuccess: () => {
       setPunched(true);
       setTimeout(() => setPunched(false), 3000);
@@ -107,7 +112,14 @@ export default function BaterPontoPage() {
 
       {punchMutation.isError && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-          Erro ao registrar batida: {(punchMutation.error as Error).message}
+          {(() => {
+            const err = punchMutation.error as any;
+            const detail = err?.response?.data?.detail || err?.message || 'Erro desconhecido';
+            if (detail.includes('não encontrado') || detail.includes('not found')) {
+              return 'Seu usuário não está vinculado a um funcionário. Verifique se o e-mail do seu login é o mesmo cadastrado no seu perfil de funcionário.';
+            }
+            return `Erro ao registrar batida: ${detail}`;
+          })()}
         </div>
       )}
 

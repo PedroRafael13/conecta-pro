@@ -2,7 +2,10 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
-import { FolderOpen, Loader2, FileText, Search, AlertTriangle } from 'lucide-react';
+import {
+  FolderOpen, Loader2, FileText, AlertTriangle, CheckCircle2,
+  Clock, Send, Eye, Download, Users, ChevronRight,
+} from 'lucide-react';
 import { toast } from 'sonner';
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL || '') + '/api/v1/portal';
@@ -169,6 +172,26 @@ export default function KitsPage() {
         </div>
       )}
 
+      {/* Summary stats */}
+      {!loading && kits.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {[
+            { label: 'Total', value: total, color: 'text-gray-700', bg: 'bg-gray-50', icon: FolderOpen },
+            { label: 'Aprovados', value: kits.filter(k => k.status === 'aprovado').length, color: 'text-emerald-700', bg: 'bg-emerald-50', icon: CheckCircle2 },
+            { label: 'Pendentes', value: kits.filter(k => ['enviado','conferido'].includes(k.status)).length, color: 'text-amber-700', bg: 'bg-amber-50', icon: Clock },
+            { label: 'Em montagem', value: kits.filter(k => k.status === 'em_montagem').length, color: 'text-blue-700', bg: 'bg-blue-50', icon: Send },
+          ].map(({ label, value, color, bg, icon: Icon }) => (
+            <div key={label} className={`${bg} rounded-xl p-4 flex items-center gap-3`}>
+              <Icon className={`h-5 w-5 ${color}`} />
+              <div>
+                <p className={`text-xl font-bold ${color}`}>{value}</p>
+                <p className="text-xs text-gray-500">{label}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Content */}
       {loading ? (
         <div className="flex items-center justify-center py-20">
@@ -179,59 +202,70 @@ export default function KitsPage() {
           <FolderOpen className="h-12 w-12 text-gray-300 mx-auto mb-4" />
           <p className="text-gray-500 font-medium">Nenhum kit encontrado.</p>
           <p className="text-gray-400 text-sm mt-1">
-            {statusFilter
-              ? 'Tente selecionar outro filtro.'
-              : 'Seus kits aparecerao aqui quando disponiveis.'}
+            {statusFilter ? 'Tente selecionar outro filtro.' : 'Seus kits aparecerao aqui quando disponiveis.'}
           </p>
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {kits.map((kit) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {kits.map((kit) => {
+              const pct = Number(kit.completion_percentage) || 0;
+              const canApprove = ['enviado', 'conferido'].includes(kit.status);
+              return (
               <Link
                 key={kit.id}
                 href={`/area-cliente/kits/${kit.id}`}
                 className={`bg-white rounded-xl shadow-sm border border-gray-200 border-l-4 ${
                   cardBorderColors[kit.status] || 'border-l-gray-400'
-                } p-6 hover:shadow-md transition-shadow group`}
+                } p-5 hover:shadow-md transition-all group relative`}
               >
-                <div className="flex items-start justify-between mb-4">
+                {canApprove && (
+                  <span className="absolute top-3 right-3 flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
+                  </span>
+                )}
+                <div className="flex items-start justify-between mb-3 pr-4">
                   <div>
-                    <p className="text-lg font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors">
+                    <p className="text-base font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors capitalize">
                       {formatMonth(kit.reference_month)}
                     </p>
-                    <p className="text-xs text-gray-400 mt-0.5">Mes de referencia</p>
+                    <p className="text-xs text-gray-400 mt-0.5">Mês de referência</p>
                   </div>
-                  <span
-                    className={`text-xs font-medium px-2.5 py-1 rounded-full border ${
-                      statusColors[kit.status] || 'bg-gray-100 text-gray-600 border-gray-200'
-                    }`}
-                  >
+                  <span className={`text-xs font-medium px-2.5 py-1 rounded-full border ${statusColors[kit.status] || 'bg-gray-100 text-gray-600 border-gray-200'}`}>
                     {statusLabels[kit.status] || kit.status}
                   </span>
                 </div>
 
-                {/* Progress */}
+                {/* Progress bar */}
                 <div className="mb-4">
                   <div className="flex justify-between text-xs text-gray-500 mb-1">
-                    <span>Conclusao</span>
-                    <span className="font-medium">{Number(kit.completion_percentage) || 0}%</span>
+                    <span>Conclusão</span>
+                    <span className="font-semibold">{pct}%</span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="w-full bg-gray-100 rounded-full h-2">
                     <div
-                      className="bg-indigo-600 h-2 rounded-full transition-all"
-                      style={{ width: `${Number(kit.completion_percentage) || 0}%` }}
+                      className={`h-2 rounded-full transition-all ${pct === 100 ? 'bg-emerald-500' : pct > 60 ? 'bg-indigo-500' : 'bg-amber-400'}`}
+                      style={{ width: `${pct}%` }}
                     />
                   </div>
                 </div>
 
-                {/* Doc count */}
-                <div className="flex items-center gap-2 text-sm text-gray-500">
-                  <FileText className="h-4 w-4" />
-                  <span>{kit.total_documents ?? 0} documentos</span>
+                <div className="flex items-center justify-between text-xs text-gray-500">
+                  <div className="flex items-center gap-3">
+                    <span className="flex items-center gap-1">
+                      <FileText className="h-3.5 w-3.5" />{kit.total_documents ?? 0} docs
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Users className="h-3.5 w-3.5" />{kit.total_employees ?? 0} func.
+                    </span>
+                  </div>
+                  <span className="flex items-center gap-1 text-indigo-600 font-medium group-hover:gap-1.5 transition-all">
+                    {canApprove ? 'Aprovar' : 'Ver'} <ChevronRight className="h-3.5 w-3.5" />
+                  </span>
                 </div>
               </Link>
-            ))}
+            )})}
           </div>
 
           {/* Pagination */}
