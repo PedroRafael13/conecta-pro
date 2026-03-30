@@ -1,20 +1,77 @@
 """
 Client Schemas - Pydantic Models
 Sprint 30: Cadastro de Clientes/Condomínios
+
+NOTA: Sincronizado com os models reais em 29/03/2026.
+Enums foram substituídos por strings para corresponder ao banco de dados.
 """
 
 import re
 from datetime import date, datetime
 from decimal import Decimal
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
-from modules.clients.models.client import ClientSegment, ClientStatus, ClientType, DocumentType
-from modules.clients.models.client_contract import ContractServiceType, ServiceStatus
-from modules.clients.models.condominium import AdministrationType, CondominiumStatus, CondominiumType
-from modules.clients.models.integration_settings import IntegrationType, SyncDirection, SyncStatus
-from modules.clients.models.unit import UnitStatus, UnitType
+# =============================================================================
+# Valores válidos (correspondem aos enums do banco)
+# =============================================================================
+
+ClientTypeValues = Literal["pf", "pj", "condominium", "holding", "franchise", "government", "other"]
+ClientStatusValues = Literal["prospect", "active", "suspended", "blocked", "cancelled", "defaulter", "churned"]
+ClientSegmentValues = Literal["small", "medium", "large", "enterprise", "vip", "strategic"]
+DocumentTypeValues = Literal["cpf", "cnpj", "passport", "rg", "other"]
+
+CondominiumTypeValues = Literal[
+    "residential", "commercial", "mixed", "industrial", "horizontal", "vertical", "subdivision"
+]
+CondominiumStatusValues = Literal["active", "inactive", "implementing", "suspended", "closed"]
+AdministrationTypeValues = Literal["propria", "administradora", "sindico_profissional", "autogestao"]
+
+UnitTypeValues = Literal[
+    "apartment",
+    "house",
+    "store",
+    "office",
+    "warehouse",
+    "parking",
+    "storage",
+    "penthouse",
+    "duplex",
+    "triplex",
+    "garden",
+    "rooftop",
+    "common_area",
+    "commercial",
+]
+UnitStatusValues = Literal["available", "occupied", "vacant", "renovation", "blocked", "reserved", "defaulter"]
+
+ContractServiceTypeValues = Literal[
+    "portaria_remota",
+    "controle_acesso",
+    "cftv",
+    "alarme",
+    "cerca_eletrica",
+    "monitoramento_24h",
+    "app_morador",
+    "assembleia_virtual",
+    "manutencao",
+    "limpeza",
+    "jardinagem",
+    "administracao",
+    "consultoria",
+    "integracao",
+    "suporte",
+]
+ServiceStatusValues = Literal["pending", "implantation", "active", "suspended", "cancelled", "finished"]
+
+IntegrationTypeValues = Literal[
+    "guardian", "plus", "erp_external", "banking", "nfe", "whatsapp", "email", "sms", "webhook"
+]
+SyncStatusValues = Literal["pending", "syncing", "synced", "error", "disabled"]
+SyncDirectionValues = Literal["push", "pull", "bidirectional"]
+
 
 # =============================================================================
 # CLIENT SCHEMAS
@@ -24,54 +81,54 @@ from modules.clients.models.unit import UnitStatus, UnitType
 class ClientBase(BaseModel):
     """Base schema for Client."""
 
-    type: ClientType = Field(default=ClientType.CONDOMINIO)
-    segment: ClientSegment | None = None
-    legal_name: str = Field(..., min_length=2, max_length=200)
-    trade_name: str | None = Field(None, max_length=200)
-    document_type: DocumentType = Field(default=DocumentType.CNPJ)
+    client_type: ClientTypeValues = Field(default="pj", alias="type")
+    segment: ClientSegmentValues | None = None
+    name: str = Field(..., min_length=2, max_length=200, alias="legal_name")
+    trading_name: str | None = Field(None, max_length=200, alias="trade_name")
+    document_type: DocumentTypeValues = Field(default="cnpj")
     document_number: str = Field(..., min_length=11, max_length=20)
-    state_registration: str | None = Field(None, max_length=20)
-    municipal_registration: str | None = Field(None, max_length=20)
+    state_registration: str | None = Field(None, max_length=30)
+    municipal_registration: str | None = Field(None, max_length=30)
 
     # Endereço
-    address_street: str | None = Field(None, max_length=200)
+    address_street: str | None = Field(None, max_length=255)
     address_number: str | None = Field(None, max_length=20)
     address_complement: str | None = Field(None, max_length=100)
     address_neighborhood: str | None = Field(None, max_length=100)
     address_city: str | None = Field(None, max_length=100)
     address_state: str | None = Field(None, max_length=2)
     address_zipcode: str | None = Field(None, max_length=10)
-    latitude: Decimal | None = None
-    longitude: Decimal | None = None
 
     # Contatos
     phone: str | None = Field(None, max_length=20)
-    phone_secondary: str | None = Field(None, max_length=20)
+    mobile: str | None = Field(None, max_length=20)
     whatsapp: str | None = Field(None, max_length=20)
-    email: str | None = Field(None, max_length=200)
-    email_billing: str | None = Field(None, max_length=200)
-    website: str | None = Field(None, max_length=200)
+    email: str | None = Field(None, max_length=255)
+    website: str | None = Field(None, max_length=255)
 
-    # Contato principal
-    contact_name: str | None = Field(None, max_length=100)
-    contact_phone: str | None = Field(None, max_length=20)
-    contact_email: str | None = Field(None, max_length=200)
-    contact_role: str | None = Field(None, max_length=50)
+    # Contatos financeiro/técnico
+    financial_contact_name: str | None = Field(None, max_length=200)
+    financial_contact_email: str | None = Field(None, max_length=255)
+    financial_contact_phone: str | None = Field(None, max_length=20)
+    technical_contact_name: str | None = Field(None, max_length=200)
+    technical_contact_email: str | None = Field(None, max_length=255)
+    technical_contact_phone: str | None = Field(None, max_length=20)
 
     # Dados financeiros
     payment_terms: int | None = Field(None, ge=0, le=365)
     credit_limit: Decimal | None = Field(None, ge=0)
+    billing_day: int | None = Field(None, ge=1, le=31)
 
-    # Dados comerciais
+    # Responsáveis
     sales_rep_id: UUID | None = None
-    sales_rep_name: str | None = Field(None, max_length=100)
-    acquisition_source: str | None = Field(None, max_length=50)
+    account_manager_id: UUID | None = None
 
     # Configurações
-    settings: dict | None = None
-    tags: list[str] | None = None
+    tags: dict | list | None = None
     notes: str | None = None
     is_vip: bool = False
+
+    model_config = {"populate_by_name": True}
 
     @field_validator("document_number")
     @classmethod
@@ -95,47 +152,48 @@ class ClientCreate(ClientBase):
 class ClientUpdate(BaseModel):
     """Schema for updating a client."""
 
-    type: ClientType | None = None
-    status: ClientStatus | None = None
-    segment: ClientSegment | None = None
-    legal_name: str | None = Field(None, min_length=2, max_length=200)
-    trade_name: str | None = Field(None, max_length=200)
+    client_type: ClientTypeValues | None = Field(None, alias="type")
+    status: ClientStatusValues | None = None
+    segment: ClientSegmentValues | None = None
+    name: str | None = Field(None, min_length=2, max_length=200, alias="legal_name")
+    trading_name: str | None = Field(None, max_length=200, alias="trade_name")
     document_number: str | None = Field(None, max_length=20)
-    state_registration: str | None = Field(None, max_length=20)
-    municipal_registration: str | None = Field(None, max_length=20)
+    state_registration: str | None = Field(None, max_length=30)
+    municipal_registration: str | None = Field(None, max_length=30)
 
-    address_street: str | None = Field(None, max_length=200)
+    address_street: str | None = Field(None, max_length=255)
     address_number: str | None = Field(None, max_length=20)
     address_complement: str | None = Field(None, max_length=100)
     address_neighborhood: str | None = Field(None, max_length=100)
     address_city: str | None = Field(None, max_length=100)
     address_state: str | None = Field(None, max_length=2)
     address_zipcode: str | None = Field(None, max_length=10)
-    latitude: Decimal | None = None
-    longitude: Decimal | None = None
 
     phone: str | None = Field(None, max_length=20)
-    phone_secondary: str | None = Field(None, max_length=20)
+    mobile: str | None = Field(None, max_length=20)
     whatsapp: str | None = Field(None, max_length=20)
-    email: str | None = Field(None, max_length=200)
-    email_billing: str | None = Field(None, max_length=200)
-    website: str | None = Field(None, max_length=200)
+    email: str | None = Field(None, max_length=255)
+    website: str | None = Field(None, max_length=255)
 
-    contact_name: str | None = Field(None, max_length=100)
-    contact_phone: str | None = Field(None, max_length=20)
-    contact_email: str | None = Field(None, max_length=200)
-    contact_role: str | None = Field(None, max_length=50)
+    financial_contact_name: str | None = Field(None, max_length=200)
+    financial_contact_email: str | None = Field(None, max_length=255)
+    financial_contact_phone: str | None = Field(None, max_length=20)
+    technical_contact_name: str | None = Field(None, max_length=200)
+    technical_contact_email: str | None = Field(None, max_length=255)
+    technical_contact_phone: str | None = Field(None, max_length=20)
 
     payment_terms: int | None = Field(None, ge=0, le=365)
     credit_limit: Decimal | None = Field(None, ge=0)
+    billing_day: int | None = Field(None, ge=1, le=31)
 
     sales_rep_id: UUID | None = None
-    sales_rep_name: str | None = Field(None, max_length=100)
+    account_manager_id: UUID | None = None
 
-    settings: dict | None = None
-    tags: list[str] | None = None
+    tags: dict | list | None = None
     notes: str | None = None
     is_vip: bool | None = None
+
+    model_config = {"populate_by_name": True}
 
 
 class ClientResponse(BaseModel):
@@ -143,51 +201,51 @@ class ClientResponse(BaseModel):
 
     id: UUID
     code: str
-    type: ClientType
-    status: ClientStatus
-    segment: ClientSegment | None
-    legal_name: str
-    trade_name: str | None
-    document_type: DocumentType
-    document_number: str
-    formatted_document: str
-    display_name: str
-    full_address: str
+    client_type: str | None = Field(None, alias="type")
+    status: str | None = None
+    segment: str | None = None
+    name: str | None = Field(None, alias="legal_name")
+    trading_name: str | None = Field(None, alias="trade_name")
+    document_type: str | None = None
+    document_number: str | None = None
+    formatted_document: str | None = None
+    display_name: str | None = None
+    full_address: str | None = None
 
-    address_street: str | None
-    address_number: str | None
-    address_complement: str | None
-    address_neighborhood: str | None
-    address_city: str | None
-    address_state: str | None
-    address_zipcode: str | None
+    address_street: str | None = None
+    address_number: str | None = None
+    address_complement: str | None = None
+    address_neighborhood: str | None = None
+    address_city: str | None = None
+    address_state: str | None = None
+    address_zipcode: str | None = None
 
-    phone: str | None
-    email: str | None
-    contact_name: str | None
+    phone: str | None = None
+    email: str | None = None
+    financial_contact_name: str | None = None
 
-    payment_terms: int | None
-    credit_limit: Decimal | None
-    current_balance: Decimal | None
-    is_defaulter: bool
-    total_debt: Decimal | None
+    payment_terms: int | None = None
+    credit_limit: Decimal | None = None
+    is_defaulter: bool = False
+    total_debt: Decimal | None = None
 
-    total_contracts: int
-    active_contracts: int
-    total_revenue: Decimal | None
-    satisfaction_score: Decimal | None
-    health_score: int
+    total_contracts: int | None = 0
+    active_contracts: int | None = 0
+    total_revenue: Decimal | None = None
+    satisfaction_score: float | None = None
+    health_score: float | None = None
 
-    plus_enabled: bool
+    plus_enabled: bool = False
+    guardian_enabled: bool = False
 
-    is_active: bool
-    is_vip: bool
-    tags: list[str] | None
+    is_active: bool = True
+    is_vip: bool = False
+    tags: dict | list | None = None
 
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
-    model_config = {"from_attributes": True}
+    model_config = {"from_attributes": True, "populate_by_name": True}
 
 
 class ClientListResponse(BaseModel):
@@ -195,23 +253,23 @@ class ClientListResponse(BaseModel):
 
     id: UUID
     code: str
-    type: ClientType
-    status: ClientStatus
-    legal_name: str
-    trade_name: str | None
-    display_name: str
-    document_number: str
-    address_city: str | None
-    address_state: str | None
-    phone: str | None
-    email: str | None
-    is_defaulter: bool
-    active_contracts: int
-    health_score: int
-    is_vip: bool
-    created_at: datetime
+    client_type: str | None = Field(None, alias="type")
+    status: str | None = None
+    name: str | None = Field(None, alias="legal_name")
+    trading_name: str | None = Field(None, alias="trade_name")
+    display_name: str | None = None
+    document_number: str | None = None
+    address_city: str | None = None
+    address_state: str | None = None
+    phone: str | None = None
+    email: str | None = None
+    is_defaulter: bool = False
+    active_contracts: int | None = 0
+    health_score: float | None = None
+    is_vip: bool = False
+    created_at: datetime | None = None
 
-    model_config = {"from_attributes": True}
+    model_config = {"from_attributes": True, "populate_by_name": True}
 
 
 class ClientStats(BaseModel):
@@ -232,9 +290,9 @@ class ClientStats(BaseModel):
 class ClientFilter(BaseModel):
     """Schema for filtering clients."""
 
-    type: ClientType | None = None
-    status: ClientStatus | None = None
-    segment: ClientSegment | None = None
+    client_type: str | None = Field(None, alias="type")
+    status: str | None = None
+    segment: str | None = None
     is_defaulter: bool | None = None
     is_vip: bool | None = None
     plus_enabled: bool | None = None
@@ -242,6 +300,8 @@ class ClientFilter(BaseModel):
     state: str | None = None
     sales_rep_id: UUID | None = None
     search: str | None = None
+
+    model_config = {"populate_by_name": True}
 
 
 # =============================================================================
@@ -253,34 +313,28 @@ class CondominiumBase(BaseModel):
     """Base schema for Condominium."""
 
     name: str = Field(..., min_length=2, max_length=200)
-    type: CondominiumType = Field(default=CondominiumType.RESIDENTIAL)
-    administration_type: AdministrationType | None = None
-    cnpj: str | None = Field(None, max_length=20)
+    condominium_type: CondominiumTypeValues = Field(default="residential", alias="type")
+    administration_type: AdministrationTypeValues | None = None
+    cnpj: str | None = Field(None, max_length=18)
 
-    address_street: str = Field(..., min_length=2, max_length=200)
+    address_street: str = Field(..., min_length=2, max_length=255)
     address_number: str | None = Field(None, max_length=20)
     address_complement: str | None = Field(None, max_length=100)
     address_neighborhood: str | None = Field(None, max_length=100)
     address_city: str = Field(..., min_length=2, max_length=100)
     address_state: str = Field(..., min_length=2, max_length=2)
     address_zipcode: str | None = Field(None, max_length=10)
-    latitude: Decimal | None = None
-    longitude: Decimal | None = None
+    latitude: float | None = None
+    longitude: float | None = None
 
-    phone: str | None = Field(None, max_length=20)
-    phone_portaria: str | None = Field(None, max_length=20)
-    email: str | None = Field(None, max_length=200)
-
-    syndic_name: str | None = Field(None, max_length=100)
+    syndic_name: str | None = Field(None, max_length=200)
     syndic_phone: str | None = Field(None, max_length=20)
-    syndic_email: str | None = Field(None, max_length=200)
+    syndic_email: str | None = Field(None, max_length=255)
 
     total_units: int = Field(default=0, ge=0)
     total_towers: int | None = Field(None, ge=0)
     total_floors: int | None = Field(None, ge=0)
-    total_elevators: int | None = Field(None, ge=0)
-    total_parking_spots: int | None = Field(None, ge=0)
-    total_area_m2: Decimal | None = Field(None, ge=0)
+    total_parking_spaces: int | None = Field(None, ge=0)
 
     has_pool: bool = False
     has_gym: bool = False
@@ -290,9 +344,10 @@ class CondominiumBase(BaseModel):
     has_cctv: bool = False
     has_access_control: bool = False
 
-    settings: dict | None = None
-    tags: list[str] | None = None
+    tags: dict | list | None = None
     notes: str | None = None
+
+    model_config = {"populate_by_name": True}
 
 
 class CondominiumCreate(CondominiumBase):
@@ -305,12 +360,12 @@ class CondominiumUpdate(BaseModel):
     """Schema for updating a condominium."""
 
     name: str | None = Field(None, min_length=2, max_length=200)
-    type: CondominiumType | None = None
-    status: CondominiumStatus | None = None
-    administration_type: AdministrationType | None = None
-    cnpj: str | None = Field(None, max_length=20)
+    condominium_type: CondominiumTypeValues | None = Field(None, alias="type")
+    status: CondominiumStatusValues | None = None
+    administration_type: AdministrationTypeValues | None = None
+    cnpj: str | None = Field(None, max_length=18)
 
-    address_street: str | None = Field(None, max_length=200)
+    address_street: str | None = Field(None, max_length=255)
     address_number: str | None = Field(None, max_length=20)
     address_complement: str | None = Field(None, max_length=100)
     address_neighborhood: str | None = Field(None, max_length=100)
@@ -318,14 +373,11 @@ class CondominiumUpdate(BaseModel):
     address_state: str | None = Field(None, max_length=2)
     address_zipcode: str | None = Field(None, max_length=10)
 
-    phone: str | None = Field(None, max_length=20)
-    email: str | None = Field(None, max_length=200)
-
-    syndic_name: str | None = Field(None, max_length=100)
+    syndic_name: str | None = Field(None, max_length=200)
     syndic_phone: str | None = Field(None, max_length=20)
-    syndic_email: str | None = Field(None, max_length=200)
-    syndic_start_date: date | None = None
-    syndic_end_date: date | None = None
+    syndic_email: str | None = Field(None, max_length=255)
+    syndic_mandate_start: date | None = None
+    syndic_mandate_end: date | None = None
 
     total_units: int | None = Field(None, ge=0)
     total_towers: int | None = Field(None, ge=0)
@@ -337,10 +389,10 @@ class CondominiumUpdate(BaseModel):
     has_cctv: bool | None = None
     has_access_control: bool | None = None
 
-    settings: dict | None = None
-    tags: list[str] | None = None
+    tags: dict | list | None = None
     notes: str | None = None
-    is_premium: bool | None = None
+
+    model_config = {"populate_by_name": True}
 
 
 class CondominiumResponse(BaseModel):
@@ -350,9 +402,9 @@ class CondominiumResponse(BaseModel):
     code: str | None = None
     client_id: UUID | None = None
     name: str | None = None
-    condominium_type: CondominiumType | None = None
-    status: CondominiumStatus | None = None
-    administration_type: AdministrationType | None = None
+    condominium_type: str | None = None
+    status: str | None = None
+    administration_type: str | None = None
     cnpj: str | None = None
     full_address: str | None = None
     address_city: str | None = None
@@ -387,8 +439,8 @@ class CondominiumListResponse(BaseModel):
     code: str | None = None
     client_id: UUID | None = None
     name: str | None = None
-    condominium_type: CondominiumType | None = None
-    status: CondominiumStatus | None = None
+    condominium_type: str | None = None
+    status: str | None = None
     address_city: str | None = None
     address_state: str | None = None
     total_units: int | None = 0
@@ -421,27 +473,29 @@ class CondominiumStats(BaseModel):
 class UnitBase(BaseModel):
     """Base schema for Unit."""
 
-    number: str = Field(..., min_length=1, max_length=20)
-    block: str | None = Field(None, max_length=20)
+    unit_number: str = Field(..., min_length=1, max_length=20, alias="number")
+    block: str | None = Field(None, max_length=50)
     tower: str | None = Field(None, max_length=50)
     floor: int | None = None
-    type: UnitType = Field(default=UnitType.APARTAMENTO)
+    unit_type: UnitTypeValues = Field(default="apartment", alias="type")
 
-    area_m2: Decimal | None = Field(None, ge=0)
+    private_area: float | None = Field(None, ge=0, alias="area_m2")
     bedrooms: int | None = Field(None, ge=0)
     bathrooms: int | None = Field(None, ge=0)
-    parking_spots: int | None = Field(None, ge=0)
+    parking_spaces: int | None = Field(None, ge=0, alias="parking_spots")
 
     owner_name: str | None = Field(None, max_length=200)
     owner_document: str | None = Field(None, max_length=20)
     owner_phone: str | None = Field(None, max_length=20)
-    owner_email: str | None = Field(None, max_length=200)
+    owner_email: str | None = Field(None, max_length=255)
 
-    monthly_fee: Decimal | None = Field(None, ge=0)
-    fraction: Decimal | None = Field(None, ge=0, le=1)
+    condominium_fee: Decimal | None = Field(None, ge=0, alias="monthly_fee")
+    extra_fee: Decimal | None = Field(None, ge=0)
 
     notes: str | None = None
-    tags: list[str] | None = None
+    tags: dict | list | None = None
+
+    model_config = {"populate_by_name": True}
 
 
 class UnitCreate(UnitBase):
@@ -453,90 +507,93 @@ class UnitCreate(UnitBase):
 class UnitUpdate(BaseModel):
     """Schema for updating a unit."""
 
-    number: str | None = Field(None, max_length=20)
-    block: str | None = Field(None, max_length=20)
+    unit_number: str | None = Field(None, max_length=20, alias="number")
+    block: str | None = Field(None, max_length=50)
     tower: str | None = Field(None, max_length=50)
     floor: int | None = None
-    type: UnitType | None = None
-    status: UnitStatus | None = None
+    unit_type: UnitTypeValues | None = Field(None, alias="type")
+    status: UnitStatusValues | None = None
 
-    area_m2: Decimal | None = Field(None, ge=0)
+    private_area: float | None = Field(None, ge=0, alias="area_m2")
     bedrooms: int | None = Field(None, ge=0)
     bathrooms: int | None = Field(None, ge=0)
-    parking_spots: int | None = Field(None, ge=0)
+    parking_spaces: int | None = Field(None, ge=0, alias="parking_spots")
 
     owner_name: str | None = Field(None, max_length=200)
     owner_document: str | None = Field(None, max_length=20)
     owner_phone: str | None = Field(None, max_length=20)
-    owner_email: str | None = Field(None, max_length=200)
+    owner_email: str | None = Field(None, max_length=255)
 
     resident_name: str | None = Field(None, max_length=200)
     resident_phone: str | None = Field(None, max_length=20)
-    resident_email: str | None = Field(None, max_length=200)
-    is_tenant: bool | None = None
+    resident_email: str | None = Field(None, max_length=255)
+    resident_type: str | None = Field(None, max_length=20)
 
-    monthly_fee: Decimal | None = Field(None, ge=0)
+    condominium_fee: Decimal | None = Field(None, ge=0, alias="monthly_fee")
+    extra_fee: Decimal | None = Field(None, ge=0)
     notes: str | None = None
-    tags: list[str] | None = None
+    tags: dict | list | None = None
+
+    model_config = {"populate_by_name": True}
 
 
 class UnitResponse(BaseModel):
     """Schema for unit response."""
 
     id: UUID
-    code: str
+    code: str | None = None
     condominium_id: UUID
-    number: str
-    block: str | None
-    tower: str | None
-    floor: int | None
-    type: UnitType
-    status: UnitStatus
-    display_name: str
-    short_name: str
+    unit_number: str | None = Field(None, alias="number")
+    block: str | None = None
+    tower: str | None = None
+    floor: int | None = None
+    unit_type: str | None = Field(None, alias="type")
+    status: str | None = None
+    display_name: str | None = None
+    short_name: str | None = None
 
-    area_m2: Decimal | None
-    bedrooms: int | None
-    parking_spots: int | None
+    private_area: float | None = Field(None, alias="area_m2")
+    bedrooms: int | None = None
+    parking_spaces: int | None = Field(None, alias="parking_spots")
 
-    owner_name: str | None
-    resident_name: str | None
-    current_resident: str | None
-    is_tenant: bool
-    is_occupied: bool
+    owner_name: str | None = None
+    resident_name: str | None = None
+    current_resident: str | None = None
+    is_tenant: bool = False
+    is_occupied: bool = False
 
-    monthly_fee: Decimal | None
-    total_fee: Decimal
-    is_defaulter: bool
-    debt_amount: Decimal | None
+    condominium_fee: Decimal | None = Field(None, alias="monthly_fee")
+    total_fee: Decimal | None = None
+    is_defaulter: bool = False
+    debt_amount: Decimal | None = None
 
-    has_access_credentials: bool
-    total_authorized_persons: int
-    total_vehicles: int
+    has_access_credentials: bool = False
+    total_authorized_persons: int = 0
+    total_vehicles: int = 0
 
-    is_active: bool
-    created_at: datetime
+    is_active: bool = True
+    created_at: datetime | None = None
 
-    model_config = {"from_attributes": True}
+    model_config = {"from_attributes": True, "populate_by_name": True}
 
 
 class UnitListResponse(BaseModel):
     """Schema for unit list response."""
 
     id: UUID
-    code: str
-    number: str
-    block: str | None
-    tower: str | None
-    type: UnitType
-    status: UnitStatus
-    display_name: str
-    current_resident: str | None
-    is_occupied: bool
-    is_defaulter: bool
-    monthly_fee: Decimal | None
+    code: str | None = None
+    unit_number: str | None = Field(None, alias="number")
+    block: str | None = None
+    tower: str | None = None
+    unit_type: str | None = Field(None, alias="type")
+    status: str | None = None
+    display_name: str | None = None
+    current_resident: str | None = None
+    is_occupied: bool = False
+    is_defaulter: bool = False
+    condominium_fee: Decimal | None = Field(None, alias="monthly_fee")
 
-    model_config = {"from_attributes": True}
+    model_config = {"from_attributes": True, "populate_by_name": True}
 
 
 class UnitStats(BaseModel):
@@ -560,20 +617,16 @@ class UnitStats(BaseModel):
 class ClientContractBase(BaseModel):
     """Base schema for ClientContract."""
 
-    service_type: ContractServiceType
+    service_type: ContractServiceTypeValues
     description: str | None = Field(None, max_length=500)
-    scope: str | None = None
     monthly_value: Decimal | None = Field(None, ge=0)
-    setup_fee: Decimal | None = Field(None, ge=0)
-    discount_percentage: Decimal | None = Field(None, ge=0, le=100)
+    implantation_value: Decimal | None = Field(None, ge=0)
+    discount_percentage: float | None = Field(None, ge=0, le=100)
     start_date: date | None = None
     end_date: date | None = None
-    sla_response_time_minutes: int | None = Field(None, ge=0)
-    sla_resolution_time_hours: int | None = Field(None, ge=0)
-    is_24h: bool = False
-    auto_renew: bool = True
-    settings: dict | None = None
-    features: list[str] | None = None
+    sla_response_time: int | None = Field(None, ge=0)
+    sla_resolution_time: int | None = Field(None, ge=0)
+    auto_renewal: bool = False
     notes: str | None = None
 
 
@@ -581,26 +634,23 @@ class ClientContractCreate(ClientContractBase):
     """Schema for creating a client contract."""
 
     client_id: UUID
-    contract_id: UUID | None = None
+    contract_number: str | None = None
     condominium_id: UUID | None = None
 
 
 class ClientContractUpdate(BaseModel):
     """Schema for updating a client contract."""
 
-    service_type: ContractServiceType | None = None
-    status: ServiceStatus | None = None
+    service_type: ContractServiceTypeValues | None = None
+    status: ServiceStatusValues | None = None
     description: str | None = Field(None, max_length=500)
-    scope: str | None = None
     monthly_value: Decimal | None = Field(None, ge=0)
-    discount_percentage: Decimal | None = Field(None, ge=0, le=100)
+    discount_percentage: float | None = Field(None, ge=0, le=100)
     end_date: date | None = None
-    sla_response_time_minutes: int | None = Field(None, ge=0)
-    sla_resolution_time_hours: int | None = Field(None, ge=0)
-    settings: dict | None = None
-    features: list[str] | None = None
+    sla_response_time: int | None = Field(None, ge=0)
+    sla_resolution_time: int | None = Field(None, ge=0)
     notes: str | None = None
-    auto_renew: bool | None = None
+    auto_renewal: bool | None = None
 
 
 class ClientContractResponse(BaseModel):
@@ -608,22 +658,22 @@ class ClientContractResponse(BaseModel):
 
     id: UUID
     client_id: UUID
-    contract_id: UUID | None
-    condominium_id: UUID | None
-    service_type: ContractServiceType
-    status: ServiceStatus
-    description: str | None
-    monthly_value: Decimal | None
-    final_value: Decimal | None
-    start_date: date | None
-    end_date: date | None
-    days_until_end: int | None
-    is_expiring_soon: bool
-    is_electronic_security_service: bool
-    is_plus_service: bool
-    is_active: bool
-    is_main_service: bool
-    created_at: datetime
+    contract_number: str | None = None
+    condominium_id: UUID | None = None
+    service_type: str | None = None
+    status: str | None = None
+    description: str | None = None
+    monthly_value: Decimal | None = None
+    final_value: Decimal | None = None
+    start_date: date | None = None
+    end_date: date | None = None
+    days_until_end: int | None = None
+    is_expiring_soon: bool = False
+    is_electronic_security_service: bool = False
+    is_plus_service: bool = False
+    is_active: bool = True
+    is_main_service: bool = False
+    created_at: datetime | None = None
 
     model_config = {"from_attributes": True}
 
@@ -636,15 +686,12 @@ class ClientContractResponse(BaseModel):
 class IntegrationSettingsBase(BaseModel):
     """Base schema for IntegrationSettings."""
 
-    integration_type: IntegrationType
+    integration_type: IntegrationTypeValues
     name: str = Field(..., min_length=2, max_length=100)
     description: str | None = Field(None, max_length=500)
-    sync_direction: SyncDirection = Field(default=SyncDirection.BIDIRECTIONAL)
+    sync_direction: SyncDirectionValues = Field(default="bidirectional")
     api_url: str | None = Field(None, max_length=500)
     sync_interval_minutes: int | None = Field(None, ge=1)
-    auto_sync: bool = True
-    sync_on_change: bool = True
-    settings: dict | None = None
     notes: str | None = None
 
 
@@ -652,10 +699,11 @@ class IntegrationSettingsCreate(IntegrationSettingsBase):
     """Schema for creating integration settings."""
 
     client_id: UUID
-    api_key: str | None = Field(None, max_length=500)
-    api_secret: str | None = Field(None, max_length=500)
+    condominium_id: UUID | None = None
+    api_key: str | None = Field(None, max_length=255)
+    api_secret: str | None = Field(None, max_length=255)
     webhook_url: str | None = Field(None, max_length=500)
-    webhook_secret: str | None = Field(None, max_length=200)
+    webhook_secret: str | None = Field(None, max_length=255)
 
 
 class IntegrationSettingsUpdate(BaseModel):
@@ -663,17 +711,16 @@ class IntegrationSettingsUpdate(BaseModel):
 
     name: str | None = Field(None, max_length=100)
     description: str | None = Field(None, max_length=500)
-    sync_direction: SyncDirection | None = None
+    sync_direction: SyncDirectionValues | None = None
     api_url: str | None = Field(None, max_length=500)
-    api_key: str | None = Field(None, max_length=500)
-    api_secret: str | None = Field(None, max_length=500)
+    api_key: str | None = Field(None, max_length=255)
+    api_secret: str | None = Field(None, max_length=255)
     webhook_url: str | None = Field(None, max_length=500)
     sync_interval_minutes: int | None = Field(None, ge=1)
-    auto_sync: bool | None = None
-    sync_on_change: bool | None = None
-    settings: dict | None = None
     notes: str | None = None
-    is_enabled: bool | None = None
+    enabled: bool | None = Field(None, alias="is_enabled")
+
+    model_config = {"populate_by_name": True}
 
 
 class IntegrationSettingsResponse(BaseModel):
@@ -681,25 +728,26 @@ class IntegrationSettingsResponse(BaseModel):
 
     id: UUID
     client_id: UUID
-    integration_type: IntegrationType
-    name: str
-    description: str | None
-    sync_status: SyncStatus
-    sync_direction: SyncDirection
-    api_url: str | None
-    external_client_id: str | None
-    webhook_url: str | None
-    sync_interval_minutes: int | None
-    last_sync_at: datetime | None
-    last_sync_success_at: datetime | None
-    last_sync_error: str | None
-    success_rate: float
-    total_syncs: int
-    records_synced: int
-    is_configured: bool
-    is_enabled: bool
-    is_active: bool
-    auto_sync: bool
-    created_at: datetime
+    condominium_id: UUID | None = None
+    integration_type: str | None = None
+    name: str | None = None
+    description: str | None = None
+    sync_status: str | None = None
+    sync_direction: str | None = None
+    api_url: str | None = None
+    external_client_id: str | None = None
+    webhook_url: str | None = None
+    sync_interval_minutes: int | None = None
+    last_sync_at: datetime | None = None
+    last_sync_success_at: datetime | None = None
+    last_sync_error: str | None = None
+    success_rate: float = 0.0
+    total_syncs: int = 0
+    records_synced: int = 0
+    is_configured: bool = False
+    is_enabled: bool = False
+    is_active: bool = True
+    auto_sync: bool = False
+    created_at: datetime | None = None
 
     model_config = {"from_attributes": True}

@@ -69,6 +69,32 @@ class PCMSOService:
         self.db.commit()
         self.db.refresh(exam)
 
+        # Publish event (fire-and-forget, non-blocking)
+        try:
+            import asyncio
+
+            from infrastructure.message_bus.events import Event, EventType, publish_event
+
+            event = Event(
+                type=EventType.EXAME_AGENDADO,
+                source="health_occupational.pcmso_service",
+                data={
+                    "exame_id": str(exam.id),
+                    "funcionario_id": str(exam.funcionario_id),
+                    "tipo_exame": exam.tipo_exame,
+                    "data_agendamento": exam.data_agendamento.isoformat() if exam.data_agendamento else None,
+                    "funcao": exam.funcao,
+                    "setor": exam.setor,
+                },
+            )
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                loop.create_task(publish_event(event))
+            else:
+                asyncio.run(publish_event(event))
+        except Exception as _pub_err:
+            logger.warning("Falha ao publicar evento EXAME_AGENDADO: %s", _pub_err)
+
         logger.info(
             "Exame agendado: funcionario=%s, tipo=%s, data=%s",
             request.funcionario_id,
@@ -248,6 +274,30 @@ class PCMSOService:
         self.db.add(aso)
         self.db.commit()
         self.db.refresh(aso)
+
+        try:
+            import asyncio
+
+            from infrastructure.message_bus.events import Event, EventType, publish_event
+
+            event = Event(
+                type=EventType.ASO_EMITIDO,
+                source="health_occupational.pcmso_service",
+                data={
+                    "aso_id": str(aso.id),
+                    "exame_id": str(aso.exame_id),
+                    "numero_aso": aso.numero_aso,
+                    "resultado": aso.resultado,
+                    "data_vencimento": aso.data_vencimento.isoformat() if aso.data_vencimento else None,
+                },
+            )
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                loop.create_task(publish_event(event))
+            else:
+                asyncio.run(publish_event(event))
+        except Exception as _pub_err:
+            logger.warning("Falha ao publicar evento ASO_EMITIDO: %s", _pub_err)
 
         logger.info(
             "ASO emitido: numero=%s, exame=%s, resultado=%s",

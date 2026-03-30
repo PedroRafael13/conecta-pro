@@ -1,6 +1,9 @@
 """
 Unit Model - Cadastro de Unidades
 Sprint 30: Cadastro de Clientes/Condomínios
+
+NOTA: Este model foi sincronizado com o banco de dados real em 29/03/2026.
+Colunas correspondem EXATAMENTE ao schema da tabela units.
 """
 
 from datetime import date, datetime
@@ -14,16 +17,15 @@ from sqlalchemy import (
     Column,
     Date,
     DateTime,
-    Enum,
+    Float,
     ForeignKey,
-    Index,
     Integer,
     Numeric,
     String,
     Text,
     UniqueConstraint,
 )
-from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 
 from core.database import Base
@@ -35,37 +37,37 @@ if TYPE_CHECKING:
 class UnitType(StrEnum):
     """Tipo de unidade."""
 
-    APARTAMENTO = "apartamento"  # pragma: allowlist secret
-    CASA = "casa"
-    SALA_COMERCIAL = "sala_comercial"
-    LOJA = "loja"
-    COBERTURA = "cobertura"
+    APARTMENT = "apartment"
+    HOUSE = "house"
+    STORE = "store"
+    OFFICE = "office"
+    WAREHOUSE = "warehouse"
+    PARKING = "parking"
+    STORAGE = "storage"
+    PENTHOUSE = "penthouse"
     DUPLEX = "duplex"
     TRIPLEX = "triplex"
-    STUDIO = "studio"
-    KITNET = "kitnet"
-    GARAGEM = "garagem"
-    DEPOSITO = "deposito"
-    GALPAO = "galpao"
-    TERRENO = "terreno"
-    OUTRO = "outro"
+    GARDEN = "garden"
+    ROOFTOP = "rooftop"
+    COMMON_AREA = "common_area"
+    COMMERCIAL = "commercial"
 
 
 class UnitStatus(StrEnum):
     """Status da unidade."""
 
-    DISPONIVEL = "disponivel"
-    OCUPADA = "ocupada"
-    ALUGADA = "alugada"
-    VENDA = "venda"
-    REFORMA = "reforma"
-    BLOQUEADA = "bloqueada"
-    INATIVA = "inativa"
+    AVAILABLE = "available"
+    OCCUPIED = "occupied"
+    VACANT = "vacant"
+    RENOVATION = "renovation"
+    BLOCKED = "blocked"
+    RESERVED = "reserved"
+    DEFAULTER = "defaulter"
 
 
 class Unit(Base):
     """
-    Model de Unidade.
+    Model de Unidade — sincronizado com banco real.
 
     Representa uma unidade (apartamento, sala, etc.) dentro de um condomínio.
     """
@@ -79,83 +81,69 @@ class Unit(Base):
     )
 
     # Identificação da unidade
-    code = Column(String(20), nullable=False)
-    number = Column(String(20), nullable=False)
-    block = Column(String(20), nullable=True)
-    tower = Column(String(50), nullable=True)
+    code = Column(String(50), nullable=False)
+    unit_number = Column("unit_number", String(20), nullable=False, index=True)
+    block = Column(String(50), nullable=True, index=True)
+    tower = Column(String(50), nullable=True, index=True)
     floor = Column(Integer, nullable=True)
 
-    # Tipo e status
-    type = Column(Enum(UnitType), nullable=False, default=UnitType.APARTAMENTO)
-    status = Column(Enum(UnitStatus), nullable=False, default=UnitStatus.DISPONIVEL)
+    # Tipo e status — strings, não enums SQLAlchemy
+    unit_type = Column("unit_type", String(30), nullable=False)
+    status = Column("status", String(30), nullable=False, default="available")
 
     # Características
-    area_m2 = Column(Numeric(10, 2), nullable=True)
+    private_area = Column(Float, nullable=True)
+    total_area = Column(Float, nullable=True)
     bedrooms = Column(Integer, nullable=True)
     bathrooms = Column(Integer, nullable=True)
-    parking_spots = Column(Integer, nullable=True, default=0)
-    has_balcony = Column(Boolean, nullable=False, default=False)
-    has_service_area = Column(Boolean, nullable=False, default=False)
-    has_storage = Column(Boolean, nullable=False, default=False)
-    floor_type = Column(String(50), nullable=True)
-    position = Column(String(50), nullable=True)
+    parking_spaces = Column(Integer, nullable=True)
 
     # Proprietário
     owner_name = Column(String(200), nullable=True)
-    owner_document = Column(String(20), nullable=True)
+    owner_document = Column(String(20), nullable=True, index=True)
+    owner_email = Column(String(255), nullable=True)
     owner_phone = Column(String(20), nullable=True)
-    owner_email = Column(String(200), nullable=True)
-    ownership_start_date = Column(Date, nullable=True)
+    owner_mobile = Column(String(20), nullable=True)
 
     # Morador/Inquilino atual
     resident_name = Column(String(200), nullable=True)
-    resident_document = Column(String(20), nullable=True)
+    resident_document = Column(String(20), nullable=True, index=True)
+    resident_email = Column(String(255), nullable=True)
     resident_phone = Column(String(20), nullable=True)
-    resident_email = Column(String(200), nullable=True)
-    resident_start_date = Column(Date, nullable=True)
-    resident_end_date = Column(Date, nullable=True)
-    is_tenant = Column(Boolean, nullable=False, default=False)
-
-    # Contatos adicionais
-    emergency_contact_name = Column(String(100), nullable=True)
-    emergency_contact_phone = Column(String(20), nullable=True)
-
-    # Vagas de garagem
-    parking_spot_numbers = Column(ARRAY(String), nullable=True, default=list)
+    resident_mobile = Column(String(20), nullable=True)
+    resident_type = Column(String(20), nullable=True)
 
     # Financeiro
-    monthly_fee = Column(Numeric(12, 2), nullable=True)
-    extra_fee = Column(Numeric(12, 2), nullable=True, default=0)
-    fraction = Column(Numeric(8, 6), nullable=True)
-    is_defaulter = Column(Boolean, nullable=False, default=False)
-    debt_amount = Column(Numeric(12, 2), nullable=True, default=0)
+    condominium_fee = Column(Numeric(10, 2), nullable=True)
+    extra_fee = Column(Numeric(10, 2), nullable=True)
+    is_defaulter = Column(Boolean, nullable=False, default=False, index=True)
+    debt_amount = Column(Numeric(15, 2), nullable=True)
     last_payment_date = Column(Date, nullable=True)
 
     # Acesso
-    access_card_number = Column(String(50), nullable=True)
-    access_tag_number = Column(String(50), nullable=True)
+    access_card = Column(String(50), nullable=True)
+    access_tag = Column(String(50), nullable=True)
     biometric_registered = Column(Boolean, nullable=False, default=False)
     facial_registered = Column(Boolean, nullable=False, default=False)
-    total_authorized_persons = Column(Integer, nullable=False, default=0)
-    total_vehicles = Column(Integer, nullable=False, default=0)
-    total_pets = Column(Integer, nullable=False, default=0)
+    app_registered = Column(Boolean, nullable=False, default=False)
 
-    # Integrações
-    plus_unit_id = Column(String(50), nullable=True)
+    # Veículos e contato de emergência
+    vehicles = Column(JSONB, nullable=True)
+    emergency_contact_name = Column(String(200), nullable=True)
+    emergency_contact_phone = Column(String(20), nullable=True)
+    emergency_contact_relationship = Column(String(50), nullable=True)
 
-    # Configurações
-    settings = Column(JSONB, nullable=True, default=dict)
+    # Metadata
     notes = Column(Text, nullable=True)
-    tags = Column(ARRAY(String), nullable=True, default=list)
+    tags = Column(JSONB, nullable=True)
+    extra_metadata = Column("metadata", JSONB, nullable=True)
 
-    # Flags
-    is_active = Column(Boolean, nullable=False, default=True)
-    receives_correspondence = Column(Boolean, nullable=False, default=True)
-    allows_pets = Column(Boolean, nullable=False, default=True)
+    # Flags — banco usa 'ativo' não 'is_active'
+    ativo = Column(Boolean, nullable=False, default=True)
 
     # Auditoria
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, nullable=False, server_default="now()")
+    updated_at = Column(DateTime, nullable=False, server_default="now()", onupdate=datetime.utcnow)
     created_by = Column(UUID(as_uuid=True), nullable=True)
     updated_by = Column(UUID(as_uuid=True), nullable=True)
 
@@ -163,18 +151,26 @@ class Unit(Base):
     condominium: "Condominium" = relationship("Condominium", back_populates="units")
 
     # Índices e constraints
-    __table_args__ = (
-        UniqueConstraint("condominium_id", "code", name="uq_units_condominium_code"),
-        Index("ix_units_condominium_block", "condominium_id", "block"),
-        Index("ix_units_condominium_tower", "condominium_id", "tower"),
-        Index("ix_units_status", "status"),
-        Index("ix_units_owner_document", "owner_document"),
-        Index("ix_units_resident_document", "resident_document"),
-        Index("ix_units_defaulter", "is_defaulter"),
-    )
+    __table_args__ = (UniqueConstraint("condominium_id", "code", name="uq_units_condominium_code"),)
 
     def __repr__(self) -> str:
-        return f"<Unit(id={self.id}, code={self.code}, number={self.number})>"
+        return f"<Unit(id={self.id}, code={self.code}, unit_number={self.unit_number})>"
+
+    # Properties computadas (não são colunas)
+    @property
+    def is_active(self) -> bool:
+        """Alias para ativo."""
+        return bool(self.ativo)
+
+    @property
+    def number(self) -> str:
+        """Alias para unit_number (compatibilidade)."""
+        return self.unit_number or ""
+
+    @property
+    def type(self) -> str:
+        """Alias para unit_type."""
+        return self.unit_type or ""
 
     @property
     def display_name(self) -> str:
@@ -186,63 +182,87 @@ class Unit(Base):
             parts.append(f"Bloco {self.block}")
         if self.floor:
             parts.append(f"{self.floor}° andar")
-        parts.append(f"Unidade {self.number}")
+        parts.append(f"Unidade {self.unit_number}")
         return " - ".join(parts)
 
     @property
     def short_name(self) -> str:
         """Nome curto."""
         if self.block:
-            return f"{self.block}-{self.number}"
-        return self.number
+            return f"{self.block}-{self.unit_number}"
+        return self.unit_number or ""
 
     @property
     def is_occupied(self) -> bool:
         """Verifica se a unidade está ocupada."""
-        return self.status in (UnitStatus.OCUPADA, UnitStatus.ALUGADA)
+        return self.status in ("occupied", "reserved")
 
     @property
     def current_resident(self) -> str | None:
-        """Morador atual (ou proprietário se não houver inquilino)."""
-        if self.is_tenant and self.resident_name:
+        """Morador atual (ou proprietário se não houver morador)."""
+        if self.resident_name:
             return self.resident_name
         return self.owner_name
 
     @property
     def current_contact_phone(self) -> str | None:
         """Telefone de contato atual."""
-        if self.is_tenant and self.resident_phone:
+        if self.resident_phone:
             return self.resident_phone
         return self.owner_phone
 
     @property
     def current_contact_email(self) -> str | None:
         """Email de contato atual."""
-        if self.is_tenant and self.resident_email:
+        if self.resident_email:
             return self.resident_email
         return self.owner_email
 
     @property
-    def residency_days(self) -> int | None:
-        """Dias de residência do morador atual."""
-        start = self.resident_start_date if self.is_tenant else self.ownership_start_date
-        if not start:
-            return None
-        return (date.today() - start).days
+    def is_tenant(self) -> bool:
+        """Verifica se o morador é inquilino."""
+        return self.resident_type == "tenant" if self.resident_type else False
+
+    @property
+    def monthly_fee(self) -> Decimal | None:
+        """Alias para condominium_fee."""
+        return self.condominium_fee
 
     @property
     def has_access_credentials(self) -> bool:
         """Verifica se tem credenciais de acesso cadastradas."""
-        return bool(
-            self.access_card_number or self.access_tag_number or self.biometric_registered or self.facial_registered
-        )
+        return bool(self.access_card or self.access_tag or self.biometric_registered or self.facial_registered)
 
     @property
     def total_fee(self) -> Decimal:
         """Taxa total (mensal + extra)."""
-        monthly = self.monthly_fee or Decimal("0")
+        monthly = self.condominium_fee or Decimal("0")
         extra = self.extra_fee or Decimal("0")
         return monthly + extra
+
+    @property
+    def area_m2(self) -> float | None:
+        """Alias para private_area (compatibilidade)."""
+        return self.private_area
+
+    @property
+    def parking_spots(self) -> int | None:
+        """Alias para parking_spaces (compatibilidade)."""
+        return self.parking_spaces
+
+    @property
+    def total_authorized_persons(self) -> int:
+        """Placeholder — não existe no banco."""
+        return 0
+
+    @property
+    def total_vehicles(self) -> int:
+        """Contagem de veículos do JSONB."""
+        if not self.vehicles:
+            return 0
+        if isinstance(self.vehicles, list):
+            return len(self.vehicles)
+        return 0
 
     def set_owner(
         self,
@@ -250,14 +270,12 @@ class Unit(Base):
         document: str | None = None,
         phone: str | None = None,
         email: str | None = None,
-        start_date: date | None = None,
     ) -> None:
         """Define o proprietário."""
         self.owner_name = name
         self.owner_document = document
         self.owner_phone = phone
         self.owner_email = email
-        self.ownership_start_date = start_date or date.today()
         self.updated_at = datetime.utcnow()
 
     def set_resident(
@@ -266,19 +284,15 @@ class Unit(Base):
         document: str | None = None,
         phone: str | None = None,
         email: str | None = None,
-        start_date: date | None = None,
-        end_date: date | None = None,
-        is_tenant: bool = False,
+        resident_type: str = "owner",
     ) -> None:
         """Define o morador/inquilino."""
         self.resident_name = name
         self.resident_document = document
         self.resident_phone = phone
         self.resident_email = email
-        self.resident_start_date = start_date or date.today()
-        self.resident_end_date = end_date
-        self.is_tenant = is_tenant
-        self.status = UnitStatus.ALUGADA if is_tenant else UnitStatus.OCUPADA
+        self.resident_type = resident_type
+        self.status = "occupied"
         self.updated_at = datetime.utcnow()
 
     def clear_resident(self) -> None:
@@ -287,10 +301,9 @@ class Unit(Base):
         self.resident_document = None
         self.resident_phone = None
         self.resident_email = None
-        self.resident_start_date = None
-        self.resident_end_date = None
-        self.is_tenant = False
-        self.status = UnitStatus.DISPONIVEL
+        self.resident_mobile = None
+        self.resident_type = None
+        self.status = "available"
         self.updated_at = datetime.utcnow()
 
     def set_defaulter(self, amount: Decimal) -> None:
@@ -308,62 +321,29 @@ class Unit(Base):
 
     def block_unit(self, reason: str | None = None) -> None:
         """Bloqueia a unidade."""
-        self.status = UnitStatus.BLOQUEADA
+        self.status = "blocked"
         if reason:
             self.notes = f"{self.notes or ''}\n[BLOQUEADO] {datetime.now()}: {reason}".strip()
         self.updated_at = datetime.utcnow()
 
     def unblock(self) -> None:
         """Desbloqueia a unidade."""
-        if self.is_occupied:
-            self.status = UnitStatus.ALUGADA if self.is_tenant else UnitStatus.OCUPADA
+        if self.resident_name:
+            self.status = "occupied"
         else:
-            self.status = UnitStatus.DISPONIVEL
+            self.status = "available"
         self.updated_at = datetime.utcnow()
 
     def activate(self) -> None:
         """Ativa a unidade."""
-        self.is_active = True
-        if self.status == UnitStatus.INATIVA:
-            self.status = UnitStatus.DISPONIVEL
+        self.ativo = True
+        if self.status == "blocked":
+            self.status = "available"
         self.updated_at = datetime.utcnow()
 
     def deactivate(self) -> None:
         """Desativa a unidade."""
-        self.is_active = False
-        self.status = UnitStatus.INATIVA
-        self.updated_at = datetime.utcnow()
-
-    def register_access_card(self, card_number: str) -> None:
-        """Registra cartão de acesso."""
-        self.access_card_number = card_number
-        self.updated_at = datetime.utcnow()
-
-    def register_access_tag(self, tag_number: str) -> None:
-        """Registra tag de acesso."""
-        self.access_tag_number = tag_number
-        self.updated_at = datetime.utcnow()
-
-    def register_biometric(self) -> None:
-        """Marca biometria como registrada."""
-        self.biometric_registered = True
-        self.updated_at = datetime.utcnow()
-
-    def register_facial(self) -> None:
-        """Marca facial como registrado."""
-        self.facial_registered = True
-        self.updated_at = datetime.utcnow()
-
-    def update_counts(
-        self, authorized_persons: int | None = None, vehicles: int | None = None, pets: int | None = None
-    ) -> None:
-        """Atualiza contadores."""
-        if authorized_persons is not None:
-            self.total_authorized_persons = authorized_persons
-        if vehicles is not None:
-            self.total_vehicles = vehicles
-        if pets is not None:
-            self.total_pets = pets
+        self.ativo = False
         self.updated_at = datetime.utcnow()
 
     @staticmethod

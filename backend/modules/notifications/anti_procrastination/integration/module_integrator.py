@@ -11,7 +11,7 @@ Data: 2026-01-10
 
 import logging
 from collections.abc import Callable
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from typing import Any
 
 from sqlalchemy.orm import Session
@@ -157,37 +157,116 @@ class ModuleIntegrator:
         return tasks
 
     async def _collect_health_tasks(self) -> list[PendingTaskData]:
-        """Coleta tarefas do módulo Health Occupational."""
+        """Coleta tarefas reais do módulo Health Ocupacional."""
         tasks = []
+        hoje = date.today()
+        limite_30d = hoje + timedelta(days=30)
+        limite_7d = hoje + timedelta(days=7)
 
-        # Mock: Exames médicos vencendo
-        tasks.append(
-            PendingTaskData(
-                title="Agendar exames médicos para 8 funcionários",
-                description="Exames periódicos vencendo em 15 dias",
-                source_module="health_occupational",
-                source_id="medical_exams_003",
-                category=TaskCategory.HR,
-                priority=TaskPriority.HIGH,
-                department=Department.HR,
-                due_date=date.today(),
-                created_at=datetime.utcnow(),
-            )
-        )
+        try:
+            from sqlalchemy import text
 
-        # Mock: EPIs vencidos
-        tasks.append(
-            PendingTaskData(
-                title="Substituir EPIs vencidos - Setor Produção",
-                description="12 EPIs com certificado vencido",
-                source_module="health_occupational",
-                source_id="epi_expired_004",
-                category=TaskCategory.HEALTH_SAFETY,
-                priority=TaskPriority.CRITICAL,
-                department=Department.OPERATIONS,
-                created_at=datetime.utcnow(),
-            )
-        )
+            from core.database import get_sync_session
+
+            with get_sync_session() as db:
+                # ASOs vencendo nos próximos 30 dias
+                try:
+                    result = db.execute(
+                        text(
+                            "SELECT COUNT(*) as total, "
+                            "SUM(CASE WHEN data_vencimento <= :limite_7d THEN 1 ELSE 0 END) as criticos "
+                            "FROM health_asos "
+                            "WHERE ativo = TRUE AND cancelado = FALSE "
+                            "AND data_vencimento BETWEEN :hoje AND :limite_30d"
+                        ),
+                        {"hoje": hoje, "limite_30d": limite_30d, "limite_7d": limite_7d},
+                    )
+                    row = result.fetchone()
+                    total_asos = row.total if row and row.total else 0
+                    criticos_asos = row.criticos if row and row.criticos else 0
+
+                    if total_asos > 0:
+                        tasks.append(
+                            PendingTaskData(
+                                title=f"Renovar {total_asos} ASOs vencendo em 30 dias",
+                                description=f"{criticos_asos} críticos (≤7 dias), {total_asos - criticos_asos} atenção",
+                                source_module="health_occupational",
+                                source_id="asos_vencendo",
+                                category=TaskCategory.HR,
+                                priority=TaskPriority.CRITICAL if criticos_asos > 0 else TaskPriority.HIGH,
+                                department=Department.HR,
+                                due_date=hoje + timedelta(days=7) if criticos_asos > 0 else hoje + timedelta(days=30),
+                                created_at=datetime.utcnow(),
+                            )
+                        )
+                except Exception as e:
+                    logger.warning("health_tasks: erro ASOs: %s", e)
+
+                # EPIs vencendo nos próximos 30 dias
+                try:
+                    result = db.execute(
+                        text(
+                            "SELECT COUNT(*) as total "
+                            "FROM health_epi_deliveries "
+                            "WHERE devolvido = FALSE "
+                            "AND data_validade BETWEEN :hoje AND :limite_30d"
+                        ),
+                        {"hoje": hoje, "limite_30d": limite_30d},
+                    )
+                    row = result.fetchone()
+                    total_epis = row.total if row and row.total else 0
+
+                    if total_epis > 0:
+                        tasks.append(
+                            PendingTaskData(
+                                title=f"Substituir {total_epis} EPIs com validade vencendo",
+                                description=f"{total_epis} EPIs vencendo nos próximos 30 dias — substituição obrigatória (NR-6)",
+                                source_module="health_occupational",
+                                source_id="epis_vencendo",
+                                category=TaskCategory.HEALTH_SAFETY,
+                                priority=TaskPriority.HIGH,
+                                department=Department.OPERATIONS,
+                                due_date=limite_30d,
+                                created_at=datetime.utcnow(),
+                            )
+                        )
+                except Exception as e:
+                    logger.warning("health_tasks: erro EPIs: %s", e)
+
+                # Exames agendados mas não confirmados (> 3 dias)
+                try:
+                    limite_atraso = hoje - timedelta(days=3)
+                    result = db.execute(
+                        text(
+                            "SELECT COUNT(*) as total "
+                            "FROM health_medical_exams "
+                            "WHERE status = 'agendado' "
+                            "AND data_agendamento < :limite_atraso"
+                        ),
+                        {"limite_atraso": limite_atraso},
+                    )
+                    row = result.fetchone()
+                    total_exames = row.total if row and row.total else 0
+
+                    if total_exames > 0:
+                        tasks.append(
+                            PendingTaskData(
+                                title=f"Confirmar {total_exames} exames médicos pendentes",
+                                description=f"{total_exames} exames agendados há mais de 3 dias aguardam confirmação",
+                                source_module="health_occupational",
+                                source_id="exames_pendentes_confirmacao",
+                                category=TaskCategory.HR,
+                                priority=TaskPriority.MEDIUM,
+                                department=Department.HR,
+                                due_date=hoje,
+                                created_at=datetime.utcnow(),
+                            )
+                        )
+                except Exception as e:
+                    logger.warning("health_tasks: erro exames: %s", e)
+
+        except Exception as e:
+            logger.warning("_collect_health_tasks falhou: %s", e)
 
         return tasks
 

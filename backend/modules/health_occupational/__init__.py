@@ -126,3 +126,13 @@ __all__ = [
 
 __version__ = "2.0.0"
 __author__ = "Conecta PRO Team"
+
+# Registrar subscribers de eventos RH na inicialização
+try:
+    from modules.health_occupational.integrations.hr_events import register_hr_event_subscribers
+
+    register_hr_event_subscribers()
+except Exception as _e:
+    import logging as _log
+
+    _log.getLogger(__name__).warning("Health Occupational: falha ao registrar subscribers: %s", _e)

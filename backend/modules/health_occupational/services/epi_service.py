@@ -235,6 +235,31 @@ class EPIService:
         self.db.commit()
         self.db.refresh(delivery)
 
+        try:
+            import asyncio
+
+            from infrastructure.message_bus.events import Event, EventType, publish_event
+
+            event = Event(
+                type=EventType.EPI_ENTREGUE,
+                source="health_occupational.epi_service",
+                data={
+                    "entrega_id": str(delivery.id),
+                    "epi_id": str(delivery.epi_id),
+                    "funcionario_id": str(delivery.funcionario_id),
+                    "quantidade": delivery.quantidade,
+                    "motivo": delivery.motivo,
+                    "data_validade": delivery.data_validade.isoformat() if delivery.data_validade else None,
+                },
+            )
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                loop.create_task(publish_event(event))
+            else:
+                asyncio.run(publish_event(event))
+        except Exception as _pub_err:
+            logger.warning("Falha ao publicar evento EPI_ENTREGUE: %s", _pub_err)
+
         logger.info(
             "Entrega de EPI registrada: funcionario=%s, epi=%s, qtd=%d",
             request.funcionario_id,

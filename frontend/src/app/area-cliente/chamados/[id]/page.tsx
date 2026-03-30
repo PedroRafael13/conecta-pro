@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useEffect, useState, FormEvent } from 'react';
+import React, { useEffect, useState, useCallback, FormEvent, useRef } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import {
-  ArrowLeft, Send, Loader2, XCircle, Paperclip, Download,
+  ArrowLeft, Send, Loader2, XCircle, Paperclip, Download, AlertTriangle,
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL || '') + '/api/v1/portal';
 
@@ -17,21 +18,26 @@ function getPortalHeaders() {
   };
 }
 
-interface TicketDetail {
-  id: number;
-  assunto: string;
-  status: string;
-  prioridade: string;
-  data_abertura: string;
-}
-
-interface Message {
-  id: number;
+interface TicketMessage {
+  id: string;
+  ticket_id: string;
   sender_name: string;
-  sender_type: 'client' | 'internal';
+  sender_type: string; // CLIENT or INTERNAL
   message: string;
   created_at: string;
-  attachments?: { nome: string; url: string }[];
+  attachments?: { name: string; url: string }[] | null;
+}
+
+interface TicketDetail {
+  id: string;
+  subject: string;
+  description: string;
+  status: string;
+  priority: string;
+  created_at: string;
+  updated_at: string;
+  closed_at: string | null;
+  messages: TicketMessage[];
 }
 
 const statusLabels: Record<string, string> = {
@@ -81,33 +87,55 @@ export default function ChamadoDetailPage() {
   const params = useParams();
   const ticketId = params.id as string;
   const [ticket, setTicket] = useState<TicketDetail | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [replyText, setReplyText] = useState('');
   const [sending, setSending] = useState(false);
   const [closing, setClosing] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    fetchTicket();
-  }, [ticketId]);
-
-  async function fetchTicket() {
+  const fetchTicket = useCallback(async () => {
+    setLoading(true);
+    setError('');
     try {
-      const [ticketRes, msgsRes] = await Promise.all([
-        fetch(`${API_BASE}/tickets/${ticketId}`, { headers: getPortalHeaders() }),
-        fetch(`${API_BASE}/tickets/${ticketId}/messages`, { headers: getPortalHeaders() }),
-      ]);
-      if (ticketRes.ok) setTicket(await ticketRes.json());
-      if (msgsRes.ok) {
-        const data = await msgsRes.json();
-        setMessages(Array.isArray(data) ? data : data.items || []);
+      const res = await fetch(`${API_BASE}/tickets/${ticketId}`, {
+        headers: getPortalHeaders(),
+      });
+
+      if (res.status === 401) {
+        toast.error('Sessao expirada. Faca login novamente.', { duration: 5000 });
+        return;
       }
+
+      if (res.status === 404) {
+        setError('Chamado nao encontrado.');
+        return;
+      }
+
+      if (!res.ok) {
+        setError('Erro ao carregar chamado.');
+        return;
+      }
+
+      const data: TicketDetail = await res.json();
+      setTicket(data);
     } catch {
-      // silently handle
+      setError('Erro ao carregar chamado.');
+      toast.error('Erro ao carregar chamado. Verifique sua conexao.', { duration: 5000 });
     } finally {
       setLoading(false);
     }
-  }
+  }, [ticketId]);
+
+  useEffect(() => {
+    fetchTicket();
+  }, [fetchTicket]);
+
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [ticket?.messages]);
 
   async function handleSendMessage(e: FormEvent) {
     e.preventDefault();
@@ -120,12 +148,16 @@ export default function ChamadoDetailPage() {
         body: JSON.stringify({ message: replyText.trim() }),
       });
       if (res.ok) {
-        const newMsg = await res.json();
-        setMessages((prev) => [...prev, newMsg]);
+        const updatedTicket: TicketDetail = await res.json();
+        setTicket(updatedTicket);
         setReplyText('');
+        toast.success('Mensagem enviada com sucesso!', { duration: 4000 });
+      } else {
+        const data = await res.json().catch(() => null);
+        toast.error(data?.detail || 'Erro ao enviar mensagem.', { duration: 5000 });
       }
     } catch {
-      // silently handle
+      toast.error('Erro ao enviar mensagem. Tente novamente.', { duration: 5000 });
     } finally {
       setSending(false);
     }
@@ -136,14 +168,19 @@ export default function ChamadoDetailPage() {
     setClosing(true);
     try {
       const res = await fetch(`${API_BASE}/tickets/${ticketId}/close`, {
-        method: 'POST',
+        method: 'PATCH',
         headers: getPortalHeaders(),
       });
       if (res.ok) {
-        setTicket((prev) => (prev ? { ...prev, status: 'FECHADO' } : prev));
+        const updatedTicket: TicketDetail = await res.json();
+        setTicket(updatedTicket);
+        toast.success('Chamado fechado com sucesso.', { duration: 4000 });
+      } else {
+        const data = await res.json().catch(() => null);
+        toast.error(data?.detail || 'Erro ao fechar chamado.', { duration: 5000 });
       }
     } catch {
-      // silently handle
+      toast.error('Erro ao fechar chamado. Tente novamente.', { duration: 5000 });
     } finally {
       setClosing(false);
     }
@@ -157,10 +194,22 @@ export default function ChamadoDetailPage() {
     );
   }
 
+  if (error && !ticket) {
+    return (
+      <div className="text-center py-20">
+        <AlertTriangle className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+        <p className="text-gray-500">{error}</p>
+        <Link href="/area-cliente/chamados" className="text-indigo-600 hover:underline text-sm mt-2 inline-block">
+          Voltar para Chamados
+        </Link>
+      </div>
+    );
+  }
+
   if (!ticket) {
     return (
       <div className="text-center py-20">
-        <p className="text-gray-500">Chamado não encontrado.</p>
+        <p className="text-gray-500">Chamado nao encontrado.</p>
         <Link href="/area-cliente/chamados" className="text-indigo-600 hover:underline text-sm mt-2 inline-block">
           Voltar para Chamados
         </Link>
@@ -169,9 +218,10 @@ export default function ChamadoDetailPage() {
   }
 
   const isClosed = ticket.status === 'FECHADO';
+  const messages = ticket.messages || [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-28">
       {/* Back */}
       <Link
         href="/area-cliente/chamados"
@@ -185,12 +235,15 @@ export default function ChamadoDetailPage() {
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div>
-            <h1 className="text-xl font-bold text-gray-900">{ticket.assunto}</h1>
+            <h1 className="text-xl font-bold text-gray-900">{ticket.subject}</h1>
             <p className="text-xs text-gray-400 mt-1">
-              Aberto em {formatDateTime(ticket.data_abertura)}
+              Aberto em {formatDateTime(ticket.created_at)}
             </p>
+            {ticket.description && (
+              <p className="text-sm text-gray-600 mt-3">{ticket.description}</p>
+            )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <span
               className={`text-xs font-medium px-2.5 py-1 rounded-full ${
                 statusColors[ticket.status] || 'bg-gray-100 text-gray-600'
@@ -200,10 +253,10 @@ export default function ChamadoDetailPage() {
             </span>
             <span
               className={`text-xs font-medium px-2.5 py-1 rounded-full ${
-                priorityColors[ticket.prioridade] || 'bg-gray-100 text-gray-600'
+                priorityColors[ticket.priority] || 'bg-gray-100 text-gray-600'
               }`}
             >
-              {priorityLabels[ticket.prioridade] || ticket.prioridade}
+              {priorityLabels[ticket.priority] || ticket.priority}
             </span>
           </div>
         </div>
@@ -211,13 +264,15 @@ export default function ChamadoDetailPage() {
 
       {/* Messages */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h2 className="text-sm font-semibold text-gray-700 mb-4">Conversação</h2>
+        <h2 className="text-sm font-semibold text-gray-700 mb-4">
+          Conversacao ({messages.length} {messages.length === 1 ? 'mensagem' : 'mensagens'})
+        </h2>
         <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
           {messages.length === 0 ? (
             <p className="text-center text-gray-400 text-sm py-8">Nenhuma mensagem ainda.</p>
           ) : (
             messages.map((msg) => {
-              const isClient = msg.sender_type === 'client';
+              const isClient = msg.sender_type === 'CLIENT';
               return (
                 <div
                   key={msg.id}
@@ -251,7 +306,7 @@ export default function ChamadoDetailPage() {
                             className="flex items-center gap-1.5 text-xs text-indigo-600 hover:text-indigo-800"
                           >
                             <Paperclip className="h-3 w-3" />
-                            {att.nome}
+                            {att.name}
                             <Download className="h-3 w-3" />
                           </a>
                         ))}
@@ -262,6 +317,7 @@ export default function ChamadoDetailPage() {
               );
             })
           )}
+          <div ref={messagesEndRef} />
         </div>
       </div>
 
@@ -307,7 +363,7 @@ export default function ChamadoDetailPage() {
         </div>
       ) : (
         <div className="bg-gray-50 rounded-xl border border-gray-200 p-6 text-center text-sm text-gray-500">
-          Este chamado foi fechado. Para novas solicitações, abra um novo chamado.
+          Este chamado foi fechado{ticket.closed_at ? ` em ${formatDateTime(ticket.closed_at)}` : ''}. Para novas solicitacoes, abra um novo chamado.
         </div>
       )}
     </div>

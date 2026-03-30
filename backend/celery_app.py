@@ -30,6 +30,7 @@ app = Celery(
         "modules.bidding.tasks",
         "modules.people_management.sst.tasks",
         "modules.people_management.ged.tasks",
+        "modules.health_occupational.tasks",
     ],
 )
 
@@ -98,9 +99,15 @@ app.conf.task_routes = {
     # SST - Afastamentos
     "sst.verificar_afastamentos_vencidos": {"queue": "operacional"},
     "sst.verificar_inss_pendente": {"queue": "operacional"},
+    # SST - Saúde Ocupacional (health_occupational)
+    "sst.verificar_asos_vencendo": {"queue": "operacional"},
+    "sst.verificar_epis_vencendo": {"queue": "operacional"},
+    "sst.verificar_exames_pendentes": {"queue": "operacional"},
     # GED - Kits e CNDs (roteadas para worker operacional)
     "ged.auto_collect_documents": {"queue": "operacional"},
     "ged.sync_cnds": {"queue": "operacional"},
+    # People Management - Escalas Sólides
+    "integrations.sync_work_schedules_from_solides": {"queue": "integrations"},
 }
 
 # Configurações gerais
@@ -271,6 +278,27 @@ app.conf.beat_schedule = {
         "options": {"queue": "operacional"},
     },
     # =========================================================================
+    # SST - SAÚDE OCUPACIONAL (health_occupational) — Alertas automáticos
+    # =========================================================================
+    # Verifica ASOs vencendo diariamente às 07:00
+    "sst-verificar-asos-vencendo-daily": {
+        "task": "sst.verificar_asos_vencendo",
+        "schedule": crontab(hour="7", minute="0"),
+        "options": {"queue": "operacional"},
+    },
+    # Verifica EPIs vencendo diariamente às 07:30
+    "sst-verificar-epis-vencendo-daily": {
+        "task": "sst.verificar_epis_vencendo",
+        "schedule": crontab(hour="7", minute="30"),
+        "options": {"queue": "operacional"},
+    },
+    # Verifica exames periódicos pendentes diariamente às 08:00
+    "sst-verificar-exames-pendentes-daily": {
+        "task": "sst.verificar_exames_pendentes",
+        "schedule": crontab(hour="8", minute="0"),
+        "options": {"queue": "operacional"},
+    },
+    # =========================================================================
     # GED - KITS DOCUMENTAIS E CERTIDÕES
     # =========================================================================
     # Sincronização diária de CNDs renovadas (06:00)
@@ -285,6 +313,12 @@ app.conf.beat_schedule = {
         "schedule": crontab(day_of_month="1", hour="2", minute="0"),
         "args": [None],  # reference_month=None → usa mês atual
         "options": {"queue": "operacional"},
+    },
+    # Sincronização de escalas de trabalho do Sólides a cada 6 horas
+    "sync-work-schedules-solides": {
+        "task": "integrations.sync_work_schedules_from_solides",
+        "schedule": crontab(hour="*/6"),
+        "options": {"queue": "integrations"},
     },
 }
 

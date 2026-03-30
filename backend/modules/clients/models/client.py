@@ -1,17 +1,20 @@
 """
 Client Model - Cadastro de Clientes
 Sprint 30: Cadastro de Clientes/Condomínios
+
+NOTA: Este model foi sincronizado com o banco de dados real em 29/03/2026.
+Colunas correspondem EXATAMENTE ao schema da tabela clients.
 """
 
 import re
-from datetime import date, datetime
+from datetime import datetime
 from decimal import Decimal
 from enum import StrEnum
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
-from sqlalchemy import Boolean, CheckConstraint, Column, Date, DateTime, Enum, Index, Integer, Numeric, String, Text
-from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
+from sqlalchemy import Boolean, Column, Date, DateTime, Float, Integer, Numeric, String, Text
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 
 from core.database import Base
@@ -22,54 +25,42 @@ if TYPE_CHECKING:
     from modules.clients.models.integration_settings import IntegrationSettings
 
 
+# Enums para compatibilidade com controller (não são colunas SQLAlchemy)
 class ClientType(StrEnum):
-    """Tipo de cliente."""
-
     CONDOMINIO = "condominio"
     EMPRESA = "empresa"
-    RESIDENCIAL = "residencial"
-    COMERCIAL = "comercial"
-    INDUSTRIAL = "industrial"
-    PUBLICO = "publico"
-    OUTRO = "outro"
+    PESSOA_FISICA = "pessoa_fisica"
+    ORGAO_PUBLICO = "orgao_publico"
 
 
 class ClientStatus(StrEnum):
-    """Status do cliente."""
-
     PROSPECT = "prospect"
     ATIVO = "ativo"
     INATIVO = "inativo"
     SUSPENSO = "suspenso"
     BLOQUEADO = "bloqueado"
-    CANCELADO = "cancelado"
     INADIMPLENTE = "inadimplente"
+    ENCERRADO = "encerrado"
 
 
 class ClientSegment(StrEnum):
-    """Segmento do cliente."""
-
-    PEQUENO = "pequeno"
-    MEDIO = "medio"
-    GRANDE = "grande"
-    ENTERPRISE = "enterprise"
-    GOVERNO = "governo"
-    ONG = "ong"
+    RESIDENCIAL = "residencial"
+    COMERCIAL = "comercial"
+    INDUSTRIAL = "industrial"
+    PUBLICO = "publico"
+    MISTO = "misto"
 
 
 class DocumentType(StrEnum):
-    """Tipo de documento."""
-
     CPF = "cpf"
     CNPJ = "cnpj"
-    RG = "rg"
-    INSCRICAO_ESTADUAL = "inscricao_estadual"
-    INSCRICAO_MUNICIPAL = "inscricao_municipal"
+    PASSAPORTE = "passaporte"
+    OUTRO = "outro"
 
 
 class Client(Base):
     """
-    Model de Cliente.
+    Model de Cliente — sincronizado com banco real.
 
     Representa uma empresa, condomínio ou pessoa física que contrata
     serviços da Conecta Mais.
@@ -81,88 +72,100 @@ class Client(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     code = Column(String(20), unique=True, nullable=False, index=True)
 
-    # Dados cadastrais
-    type = Column("client_type", Enum(ClientType), nullable=False, default=ClientType.CONDOMINIO)
-    status = Column(Enum(ClientStatus), nullable=False, default=ClientStatus.PROSPECT)
-    segment = Column(Enum(ClientSegment), nullable=True)
-
-    # Razão social / Nome
-    legal_name = Column(String(200), nullable=False)
-    trade_name = Column(String(200), nullable=True)
-
-    # Documentos
-    document_type = Column(Enum(DocumentType), nullable=False, default=DocumentType.CNPJ)
+    # Dados cadastrais — banco usa strings, não enums SQLAlchemy
+    name = Column(String(200), nullable=False)
+    trading_name = Column(String(200), nullable=True)
+    client_type = Column("client_type", String(30), nullable=False)
+    document_type = Column("document_type", String(30), nullable=False)
     document_number = Column(String(20), nullable=False, index=True)
-    state_registration = Column(String(20), nullable=True)
-    municipal_registration = Column(String(20), nullable=True)
+    state_registration = Column(String(30), nullable=True)
+    municipal_registration = Column(String(30), nullable=True)
 
-    # Endereço
-    address_street = Column(String(200), nullable=True)
+    # Contatos
+    email = Column(String(255), nullable=False)
+    phone = Column(String(20), nullable=True)
+    mobile = Column(String(20), nullable=True)
+    whatsapp = Column(String(20), nullable=True)
+    website = Column(String(255), nullable=True)
+
+    # Endereço principal
+    address_street = Column(String(255), nullable=True)
     address_number = Column(String(20), nullable=True)
     address_complement = Column(String(100), nullable=True)
     address_neighborhood = Column(String(100), nullable=True)
     address_city = Column(String(100), nullable=True)
     address_state = Column(String(2), nullable=True)
     address_zipcode = Column(String(10), nullable=True)
-    address_country = Column(String(50), nullable=True, default="Brasil")
-    latitude = Column(Numeric(10, 8), nullable=True)
-    longitude = Column(Numeric(11, 8), nullable=True)
+    address_country = Column(String(50), nullable=True)
 
-    # Contatos
-    phone = Column(String(20), nullable=True)
-    phone_secondary = Column(String(20), nullable=True)
-    whatsapp = Column(String(20), nullable=True)
-    email = Column(String(200), nullable=True)
-    email_billing = Column(String(200), nullable=True)
-    website = Column(String(200), nullable=True)
+    # Endereço cobrança
+    billing_address_street = Column(String(255), nullable=True)
+    billing_address_number = Column(String(20), nullable=True)
+    billing_address_complement = Column(String(100), nullable=True)
+    billing_address_neighborhood = Column(String(100), nullable=True)
+    billing_address_city = Column(String(100), nullable=True)
+    billing_address_state = Column(String(2), nullable=True)
+    billing_address_zipcode = Column(String(10), nullable=True)
 
-    # Contato principal
-    contact_name = Column(String(100), nullable=True)
-    contact_phone = Column(String(20), nullable=True)
-    contact_email = Column(String(200), nullable=True)
-    contact_role = Column(String(50), nullable=True)
+    # Contatos financeiro e técnico
+    financial_contact_name = Column(String(200), nullable=True)
+    financial_contact_email = Column(String(255), nullable=True)
+    financial_contact_phone = Column(String(20), nullable=True)
+    technical_contact_name = Column(String(200), nullable=True)
+    technical_contact_email = Column(String(255), nullable=True)
+    technical_contact_phone = Column(String(20), nullable=True)
+
+    # Status e segmento — strings
+    status = Column("status", String(30), nullable=False)
+    segment = Column("segment", String(30), nullable=True)
+
+    # Datas contratuais
+    contract_start_date = Column(Date, nullable=True)
+    contract_end_date = Column(Date, nullable=True)
+    first_billing_date = Column(Date, nullable=True)
+    last_billing_date = Column(Date, nullable=True)
 
     # Dados financeiros
-    payment_terms = Column(Integer, nullable=True, default=30)
-    credit_limit = Column(Numeric(15, 2), nullable=True, default=0)
-    current_balance = Column(Numeric(15, 2), nullable=True, default=0)
-    is_defaulter = Column(Boolean, nullable=False, default=False)
-    default_since = Column(Date, nullable=True)
-    total_debt = Column(Numeric(15, 2), nullable=True, default=0)
-
-    # Dados comerciais
-    sales_rep_id = Column(UUID(as_uuid=True), nullable=True)
-    sales_rep_name = Column(String(100), nullable=True)
-    acquisition_source = Column(String(50), nullable=True)
-    acquisition_date = Column(Date, nullable=True)
-    first_contract_date = Column(Date, nullable=True)
+    credit_limit = Column(Numeric(15, 2), nullable=True)
+    payment_terms = Column(Integer, nullable=True)
+    billing_day = Column(Integer, nullable=True)
+    total_revenue = Column(Numeric(15, 2), nullable=True)
+    total_debt = Column(Numeric(15, 2), nullable=True)
 
     # Métricas
-    total_contracts = Column(Integer, nullable=False, default=0)
-    active_contracts = Column(Integer, nullable=False, default=0)
-    total_revenue = Column(Numeric(15, 2), nullable=True, default=0)
-    average_ticket = Column(Numeric(15, 2), nullable=True, default=0)
-    satisfaction_score = Column(Numeric(3, 2), nullable=True)
-    nps_score = Column(Integer, nullable=True)
+    health_score = Column(Float, nullable=True)
+    satisfaction_score = Column(Float, nullable=True)
+    engagement_score = Column(Float, nullable=True)
 
     # Integrações
+    guardian_enabled = Column(Boolean, nullable=False, default=False)
     plus_enabled = Column(Boolean, nullable=False, default=False)
+    guardian_client_id = Column(String(50), nullable=True)
     plus_client_id = Column(String(50), nullable=True)
-    external_id = Column(String(50), nullable=True)
 
-    # Configurações
-    settings = Column(JSONB, nullable=True, default=dict)
-    tags = Column(ARRAY(String), nullable=True, default=list)
+    # Metadata
     notes = Column(Text, nullable=True)
+    tags = Column(JSONB, nullable=True)
+    extra_metadata = Column("metadata", JSONB, nullable=True)
 
-    # Flags
-    is_active = Column(Boolean, nullable=False, default=True)
+    # Responsáveis
+    account_manager_id = Column(UUID(as_uuid=True), nullable=True)
+    sales_rep_id = Column(UUID(as_uuid=True), nullable=True)
+
+    # Flags — banco usa 'ativo' não 'is_active'
+    ativo = Column(Boolean, nullable=False, default=True)
+    is_defaulter = Column(Boolean, nullable=False, default=False)
     is_vip = Column(Boolean, nullable=False, default=False)
-    requires_approval = Column(Boolean, nullable=False, default=False)
+    default_since = Column(DateTime(timezone=True), nullable=True)
+    default_amount = Column(Numeric(15, 2), nullable=True)
+
+    # CRM
+    lead_id = Column(UUID(as_uuid=True), nullable=True)
+    crm_origin = Column(String(50), nullable=True, default="direto")
 
     # Auditoria
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, nullable=False, server_default="now()")
+    updated_at = Column(DateTime, nullable=False, server_default="now()", onupdate=datetime.utcnow)
     created_by = Column(UUID(as_uuid=True), nullable=True)
     updated_by = Column(UUID(as_uuid=True), nullable=True)
 
@@ -177,23 +180,34 @@ class Client(Base):
         "IntegrationSettings", back_populates="client", cascade="all, delete-orphan"
     )
 
-    # Índices
-    __table_args__ = (
-        Index("ix_clients_document", "document_type", "document_number"),
-        Index("ix_clients_status_type", "status", "client_type"),
-        Index("ix_clients_segment", "segment"),
-        Index("ix_clients_sales_rep", "sales_rep_id"),
-        Index("ix_clients_defaulter", "is_defaulter"),
-        CheckConstraint("credit_limit >= 0", name="ck_clients_credit_limit_positive"),
-    )
-
     def __repr__(self) -> str:
-        return f"<Client(id={self.id}, code={self.code}, legal_name={self.legal_name})>"
+        return f"<Client(id={self.id}, code={self.code}, name={self.name})>"
+
+    # Properties computadas (não são colunas)
+    @property
+    def is_active(self) -> bool:
+        """Alias para ativo."""
+        return bool(self.ativo)
+
+    @property
+    def type(self) -> str:
+        """Alias para client_type."""
+        return self.client_type
+
+    @property
+    def legal_name(self) -> str:
+        """Alias para name."""
+        return self.name
+
+    @property
+    def trade_name(self) -> str | None:
+        """Alias para trading_name."""
+        return self.trading_name
 
     @property
     def display_name(self) -> str:
         """Nome para exibição."""
-        return self.trade_name or self.legal_name
+        return self.trading_name or self.name
 
     @property
     def formatted_document(self) -> str:
@@ -204,9 +218,9 @@ class Client(Base):
 
         doc = re.sub(r"\D", "", doc)
 
-        if self.document_type == DocumentType.CPF and len(doc) == 11:
+        if self.document_type == "cpf" and len(doc) == 11:
             return f"{doc[:3]}.{doc[3:6]}.{doc[6:9]}-{doc[9:]}"
-        elif self.document_type == DocumentType.CNPJ and len(doc) == 14:
+        elif self.document_type == "cnpj" and len(doc) == 14:
             return f"{doc[:2]}.{doc[2:5]}.{doc[5:8]}/{doc[8:12]}-{doc[12:]}"
 
         return doc
@@ -237,28 +251,27 @@ class Client(Base):
     @property
     def is_company(self) -> bool:
         """Verifica se é pessoa jurídica."""
-        return self.document_type == DocumentType.CNPJ
+        return self.document_type == "cnpj"
 
     @property
     def days_as_defaulter(self) -> int | None:
         """Dias como inadimplente."""
         if not self.is_defaulter or not self.default_since:
             return None
-        return (date.today() - self.default_since).days
+        return (datetime.now(tz=self.default_since.tzinfo) - self.default_since).days
 
     @property
-    def health_score(self) -> int:
-        """Score de saúde do cliente (0-100)."""
+    def computed_health_score(self) -> int:
+        """Score de saúde do cliente computado (0-100)."""
         score = 100
 
-        # Penalidades
-        if self.status == ClientStatus.INADIMPLENTE:
+        if self.status == "defaulter":
             score -= 40
-        elif self.status == ClientStatus.SUSPENSO:
+        elif self.status == "suspended":
             score -= 30
-        elif self.status == ClientStatus.BLOQUEADO:
+        elif self.status == "blocked":
             score -= 50
-        elif self.status != ClientStatus.ATIVO:
+        elif self.status != "active":
             score -= 20
 
         if self.is_defaulter:
@@ -270,41 +283,55 @@ class Client(Base):
             elif days > 30:
                 score -= 10
 
-        # Bônus
         if self.is_vip:
             score += 10
 
-        if self.satisfaction_score and self.satisfaction_score >= 4.5:
-            score += 5
-
-        if self.active_contracts >= 3:
-            score += 5
-
         return max(0, min(100, score))
+
+    # Computed properties for backwards compatibility with schemas
+    @property
+    def active_contracts(self) -> int:
+        """Contratos ativos."""
+        try:
+            if not self.contracts:
+                return 0
+            return sum(1 for c in self.contracts if getattr(c, "status", "") == "active")
+        except Exception:
+            return 0
+
+    @property
+    def total_contracts(self) -> int:
+        """Total de contratos."""
+        try:
+            if not self.contracts:
+                return 0
+            return len(self.contracts)
+        except Exception:
+            return 0
 
     def activate(self) -> None:
         """Ativa o cliente."""
-        self.status = ClientStatus.ATIVO
-        self.is_active = True
+        self.status = "active"
+        self.ativo = True
         self.updated_at = datetime.utcnow()
 
     def deactivate(self) -> None:
         """Desativa o cliente."""
-        self.status = ClientStatus.INATIVO
-        self.is_active = False
+        self.status = "inactive"
+        self.ativo = False
         self.updated_at = datetime.utcnow()
 
     def suspend(self, reason: str | None = None) -> None:
         """Suspende o cliente."""
-        self.status = ClientStatus.SUSPENSO
+        self.status = "suspended"
         if reason:
             self.notes = f"{self.notes or ''}\n[SUSPENSO] {datetime.now()}: {reason}".strip()
         self.updated_at = datetime.utcnow()
 
     def block(self, reason: str | None = None) -> None:
         """Bloqueia o cliente."""
-        self.status = ClientStatus.BLOQUEADO
-        self.is_active = False
+        self.status = "blocked"
+        self.ativo = False
         if reason:
             self.notes = f"{self.notes or ''}\n[BLOQUEADO] {datetime.now()}: {reason}".strip()
         self.updated_at = datetime.utcnow()
@@ -312,27 +339,20 @@ class Client(Base):
     def set_defaulter(self, debt_amount: Decimal) -> None:
         """Marca como inadimplente."""
         self.is_defaulter = True
-        self.default_since = date.today()
+        self.default_since = datetime.now()
+        self.default_amount = debt_amount
         self.total_debt = debt_amount
-        self.status = ClientStatus.INADIMPLENTE
+        self.status = "defaulter"
         self.updated_at = datetime.utcnow()
 
     def clear_default(self) -> None:
         """Remove status de inadimplente."""
         self.is_defaulter = False
         self.default_since = None
+        self.default_amount = None
         self.total_debt = Decimal("0")
-        if self.status == ClientStatus.INADIMPLENTE:
-            self.status = ClientStatus.ATIVO
-        self.updated_at = datetime.utcnow()
-
-    def update_metrics(self, total_contracts: int, active_contracts: int, total_revenue: Decimal) -> None:
-        """Atualiza métricas do cliente."""
-        self.total_contracts = total_contracts
-        self.active_contracts = active_contracts
-        self.total_revenue = total_revenue
-        if total_contracts > 0:
-            self.average_ticket = total_revenue / total_contracts
+        if self.status == "defaulter":
+            self.status = "active"
         self.updated_at = datetime.utcnow()
 
     def enable_plus(self, client_id: str) -> None:
@@ -358,7 +378,6 @@ class Client(Base):
         if cnpj == cnpj[0] * 14:
             return False
 
-        # Validação dos dígitos verificadores
         def calc_digit(cnpj_part: str, weights: list[int]) -> int:
             total = sum(int(d) * w for d, w in zip(cnpj_part, weights, strict=False))
             remainder = total % 11
@@ -383,7 +402,6 @@ class Client(Base):
         if cpf == cpf[0] * 11:
             return False
 
-        # Validação dos dígitos verificadores
         def calc_digit(cpf_part: str, factor: int) -> int:
             total = sum(int(d) * (factor - i) for i, d in enumerate(cpf_part))
             remainder = (total * 10) % 11

@@ -179,7 +179,7 @@ class ClientService:
 
     async def get_client_stats(self) -> dict:
         """Get client statistics."""
-        return await self.repository.get_client_stats()
+        return self.repository.get_client_stats()
 
     # =========================================================================
     # CONDOMINIUM METHODS

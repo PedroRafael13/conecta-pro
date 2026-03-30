@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
-import { Plus, MessageSquare, Loader2 } from 'lucide-react';
+import { Plus, MessageSquare, Loader2, AlertTriangle } from 'lucide-react';
+import { toast } from 'sonner';
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL || '') + '/api/v1/portal';
 
@@ -15,12 +16,20 @@ function getPortalHeaders() {
 }
 
 interface Ticket {
-  id: number;
-  assunto: string;
+  id: string;
+  subject: string;
   status: string;
-  prioridade: string;
-  data_abertura: string;
-  ultima_atualizacao: string;
+  priority: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface PaginatedResponse {
+  items: Ticket[];
+  total: number;
+  page: number;
+  page_size: number;
+  pages: number;
 }
 
 const statusLabels: Record<string, string> = {
@@ -54,6 +63,7 @@ const priorityColors: Record<string, string> = {
 const filterTabs = [
   { key: '', label: 'Todos' },
   { key: 'ABERTO', label: 'Abertos' },
+  { key: 'EM_ANDAMENTO', label: 'Em Andamento' },
   { key: 'RESPONDIDO', label: 'Respondidos' },
   { key: 'FECHADO', label: 'Fechados' },
 ];
@@ -76,38 +86,66 @@ function formatDate(dateStr: string): string {
 export default function ChamadosPage() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [activeFilter, setActiveFilter] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const [total, setTotal] = useState(0);
+  const pageSize = 20;
 
-  useEffect(() => {
-    fetchTickets();
-  }, [activeFilter]);
-
-  async function fetchTickets() {
+  const fetchTickets = useCallback(async () => {
     setLoading(true);
+    setError('');
     try {
       const params = new URLSearchParams();
+      params.set('skip', String((currentPage - 1) * pageSize));
+      params.set('limit', String(pageSize));
       if (activeFilter) params.set('status', activeFilter);
+
       const res = await fetch(`${API_BASE}/tickets?${params.toString()}`, {
         headers: getPortalHeaders(),
       });
-      if (res.ok) {
-        const data = await res.json();
-        setTickets(Array.isArray(data) ? data : data.items || []);
+
+      if (res.status === 401) {
+        toast.error('Sessao expirada. Faca login novamente.', { duration: 5000 });
+        return;
       }
+
+      if (!res.ok) {
+        throw new Error('Erro ao carregar chamados.');
+      }
+
+      const data: PaginatedResponse = await res.json();
+      setTickets(data.items || []);
+      setTotal(data.total || 0);
+      setTotalPages(data.pages || 0);
     } catch {
-      // silently handle
+      setError('Erro ao carregar chamados.');
+      toast.error('Erro ao carregar chamados. Verifique sua conexao.', { duration: 5000 });
     } finally {
       setLoading(false);
     }
+  }, [activeFilter, currentPage]);
+
+  useEffect(() => {
+    fetchTickets();
+  }, [fetchTickets]);
+
+  function handleFilterChange(newFilter: string) {
+    setActiveFilter(newFilter);
+    setCurrentPage(1);
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-28">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Chamados</h1>
-          <p className="text-gray-500 text-sm mt-1">Gerencie suas solicitações e acompanhe respostas.</p>
+          <p className="text-gray-500 text-sm mt-1">
+            Gerencie suas solicitacoes e acompanhe respostas.
+            {total > 0 && <span className="ml-1 font-medium">({total} chamados)</span>}
+          </p>
         </div>
         <Link
           href="/area-cliente/chamados/novo"
@@ -119,11 +157,11 @@ export default function ChamadosPage() {
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg w-fit">
+      <div className="flex flex-wrap gap-1 bg-gray-100 p-1 rounded-lg w-fit">
         {filterTabs.map((tab) => (
           <button
             key={tab.key}
-            onClick={() => setActiveFilter(tab.key)}
+            onClick={() => handleFilterChange(tab.key)}
             className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
               activeFilter === tab.key
                 ? 'bg-white text-indigo-700 shadow-sm'
@@ -134,6 +172,17 @@ export default function ChamadosPage() {
           </button>
         ))}
       </div>
+
+      {/* Error */}
+      {error && (
+        <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+          <AlertTriangle className="h-5 w-5 flex-shrink-0" />
+          <span>{error}</span>
+          <button onClick={fetchTickets} className="ml-auto text-red-600 hover:text-red-800 font-medium underline">
+            Tentar novamente
+          </button>
+        </div>
+      )}
 
       {/* Content */}
       {loading ? (
@@ -147,58 +196,83 @@ export default function ChamadosPage() {
           <p className="text-gray-400 text-sm mt-1">Abra um novo chamado para entrar em contato conosco.</p>
         </div>
       ) : (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          {/* Table header */}
-          <div className="hidden sm:grid grid-cols-12 gap-4 px-6 py-3 bg-gray-50 border-b border-gray-200 text-xs font-medium text-gray-500 uppercase tracking-wider">
-            <div className="col-span-4">Assunto</div>
-            <div className="col-span-2">Status</div>
-            <div className="col-span-2">Prioridade</div>
-            <div className="col-span-2">Abertura</div>
-            <div className="col-span-2">Atualização</div>
+        <>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            {/* Table header */}
+            <div className="hidden sm:grid grid-cols-12 gap-4 px-6 py-3 bg-gray-50 border-b border-gray-200 text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <div className="col-span-4">Assunto</div>
+              <div className="col-span-2">Status</div>
+              <div className="col-span-2">Prioridade</div>
+              <div className="col-span-2">Abertura</div>
+              <div className="col-span-2">Atualizacao</div>
+            </div>
+
+            {/* Table rows */}
+            <div className="divide-y divide-gray-100">
+              {tickets.map((ticket) => (
+                <Link
+                  key={ticket.id}
+                  href={`/area-cliente/chamados/${ticket.id}`}
+                  className="grid grid-cols-1 sm:grid-cols-12 gap-2 sm:gap-4 px-6 py-4 hover:bg-gray-50 transition-colors items-center"
+                >
+                  <div className="sm:col-span-4">
+                    <p className="text-sm font-medium text-gray-900 truncate">{ticket.subject}</p>
+                    <p className="text-xs text-gray-400 sm:hidden mt-1">
+                      {formatDate(ticket.created_at)}
+                    </p>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <span
+                      className={`inline-block text-xs font-medium px-2.5 py-0.5 rounded-full ${
+                        statusColors[ticket.status] || 'bg-gray-100 text-gray-600'
+                      }`}
+                    >
+                      {statusLabels[ticket.status] || ticket.status}
+                    </span>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <span
+                      className={`inline-block text-xs font-medium px-2.5 py-0.5 rounded-full ${
+                        priorityColors[ticket.priority] || 'bg-gray-100 text-gray-600'
+                      }`}
+                    >
+                      {priorityLabels[ticket.priority] || ticket.priority}
+                    </span>
+                  </div>
+                  <div className="hidden sm:block sm:col-span-2 text-xs text-gray-500">
+                    {formatDate(ticket.created_at)}
+                  </div>
+                  <div className="hidden sm:block sm:col-span-2 text-xs text-gray-500">
+                    {formatDate(ticket.updated_at)}
+                  </div>
+                </Link>
+              ))}
+            </div>
           </div>
 
-          {/* Table rows */}
-          <div className="divide-y divide-gray-100">
-            {tickets.map((ticket) => (
-              <Link
-                key={ticket.id}
-                href={`/area-cliente/chamados/${ticket.id}`}
-                className="grid grid-cols-1 sm:grid-cols-12 gap-2 sm:gap-4 px-6 py-4 hover:bg-gray-50 transition-colors items-center"
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 mt-6">
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage <= 1}
+                className="px-3 py-1.5 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                <div className="sm:col-span-4">
-                  <p className="text-sm font-medium text-gray-900 truncate">{ticket.assunto}</p>
-                  <p className="text-xs text-gray-400 sm:hidden mt-1">
-                    {formatDate(ticket.data_abertura)}
-                  </p>
-                </div>
-                <div className="sm:col-span-2">
-                  <span
-                    className={`inline-block text-xs font-medium px-2.5 py-0.5 rounded-full ${
-                      statusColors[ticket.status] || 'bg-gray-100 text-gray-600'
-                    }`}
-                  >
-                    {statusLabels[ticket.status] || ticket.status}
-                  </span>
-                </div>
-                <div className="sm:col-span-2">
-                  <span
-                    className={`inline-block text-xs font-medium px-2.5 py-0.5 rounded-full ${
-                      priorityColors[ticket.prioridade] || 'bg-gray-100 text-gray-600'
-                    }`}
-                  >
-                    {priorityLabels[ticket.prioridade] || ticket.prioridade}
-                  </span>
-                </div>
-                <div className="hidden sm:block sm:col-span-2 text-xs text-gray-500">
-                  {formatDate(ticket.data_abertura)}
-                </div>
-                <div className="hidden sm:block sm:col-span-2 text-xs text-gray-500">
-                  {formatDate(ticket.ultima_atualizacao)}
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
+                Anterior
+              </button>
+              <span className="text-sm text-gray-600">
+                Pagina {currentPage} de {totalPages}
+              </span>
+              <button
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage >= totalPages}
+                className="px-3 py-1.5 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Proxima
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

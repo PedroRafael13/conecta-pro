@@ -94,9 +94,10 @@ class ClientRepository:
         params: dict = {}
 
         if filters:
-            if filters.type:
+            ftype = filters.client_type if hasattr(filters, "client_type") else None
+            if ftype:
                 where_clauses.append("client_type = :ftype")
-                params["ftype"] = filters.type.value if hasattr(filters.type, "value") else filters.type
+                params["ftype"] = ftype.value if hasattr(ftype, "value") else ftype
             if filters.status:
                 where_clauses.append("status = :fstatus")
                 params["fstatus"] = filters.status.value if hasattr(filters.status, "value") else filters.status
@@ -204,32 +205,28 @@ class ClientRepository:
         logger.info("Client deleted: %s", client.code)
         return True
 
-    async def get_client_stats(self) -> dict:
+    def get_client_stats(self) -> dict:
         """Get client statistics using only columns that exist in the database."""
         from sqlalchemy import text
 
         # Use raw SQL to avoid ORM column mapping issues (migrations pending)
-        total_result = await self.db.execute(text("SELECT count(*) FROM clients"))
-        total = total_result.scalar() or 0
+        total = self.db.execute(text("SELECT count(*) FROM clients")).scalar() or 0
+        active = self.db.execute(text("SELECT count(*) FROM clients WHERE ativo = true")).scalar() or 0
+        inactive = self.db.execute(text("SELECT count(*) FROM clients WHERE ativo = false")).scalar() or 0
 
-        active_result = await self.db.execute(text("SELECT count(*) FROM clients WHERE status = 'active'"))
-        active = active_result.scalar() or 0
-
-        inactive_result = await self.db.execute(
-            text("SELECT count(*) FROM clients WHERE status IN ('suspended', 'blocked', 'cancelled', 'churned')")
-        )
-        inactive = inactive_result.scalar() or 0
-
-        by_status_result = await self.db.execute(text("SELECT status, count(*) FROM clients GROUP BY status"))
-        by_status = {(row[0] or "none"): row[1] for row in by_status_result}
-
-        by_segment_result = await self.db.execute(
-            text("SELECT segment, count(*) FROM clients WHERE segment IS NOT NULL GROUP BY segment")
-        )
-        by_segment = {(row[0] or "none"): row[1] for row in by_segment_result}
-
-        revenue_result = await self.db.execute(text("SELECT COALESCE(sum(total_revenue), 0) FROM clients"))
-        total_revenue = revenue_result.scalar() or Decimal("0")
+        by_status = {
+            (row[0] or "none"): row[1]
+            for row in self.db.execute(text("SELECT status, count(*) FROM clients GROUP BY status"))
+        }
+        by_segment = {
+            (row[0] or "none"): row[1]
+            for row in self.db.execute(
+                text("SELECT segment, count(*) FROM clients WHERE segment IS NOT NULL GROUP BY segment")
+            )
+        }
+        total_revenue = self.db.execute(
+            text("SELECT COALESCE(sum(total_revenue), 0) FROM clients")
+        ).scalar() or Decimal("0")
 
         return {
             "total_clients": total,

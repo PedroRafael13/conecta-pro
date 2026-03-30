@@ -4,6 +4,7 @@ import React, { useEffect, useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Send, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL || '') + '/api/v1/portal';
 
@@ -16,8 +17,8 @@ function getPortalHeaders() {
 }
 
 interface KitOption {
-  id: number;
-  mes_referencia: string;
+  id: string;
+  reference_month: string;
 }
 
 const priorityOptions = [
@@ -27,12 +28,22 @@ const priorityOptions = [
   { value: 'URGENTE', label: 'Urgente' },
 ];
 
+function formatMonth(dateStr: string): string {
+  if (!dateStr) return '-';
+  try {
+    const d = new Date(dateStr + (dateStr.length <= 10 ? 'T00:00:00' : ''));
+    return d.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+  } catch {
+    return dateStr;
+  }
+}
+
 export default function NovoChamadoPage() {
   const router = useRouter();
-  const [assunto, setAssunto] = useState('');
+  const [subject, setSubject] = useState('');
   const [kitId, setKitId] = useState('');
-  const [prioridade, setPrioridade] = useState('NORMAL');
-  const [descricao, setDescricao] = useState('');
+  const [priority, setPriority] = useState('NORMAL');
+  const [description, setDescription] = useState('');
   const [kits, setKits] = useState<KitOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -40,14 +51,14 @@ export default function NovoChamadoPage() {
   useEffect(() => {
     async function fetchKits() {
       try {
-        const res = await fetch(`${API_BASE}/kits`, { headers: getPortalHeaders() });
+        const res = await fetch(`${API_BASE}/kits?limit=100`, { headers: getPortalHeaders() });
         if (res.ok) {
           const data = await res.json();
           const items: KitOption[] = Array.isArray(data) ? data : data.items || [];
           setKits(items);
         }
       } catch {
-        // silently handle
+        // Kit list is optional, silently handle
       }
     }
     fetchKits();
@@ -57,23 +68,35 @@ export default function NovoChamadoPage() {
     e.preventDefault();
     setError('');
 
-    if (!assunto.trim()) {
+    if (!subject.trim()) {
       setError('Informe o assunto do chamado.');
+      toast.error('Informe o assunto do chamado.', { duration: 5000 });
       return;
     }
-    if (!descricao.trim()) {
+    if (subject.trim().length < 3) {
+      setError('O assunto deve ter pelo menos 3 caracteres.');
+      toast.error('O assunto deve ter pelo menos 3 caracteres.', { duration: 5000 });
+      return;
+    }
+    if (!description.trim()) {
       setError('Descreva o motivo do chamado.');
+      toast.error('Descreva o motivo do chamado.', { duration: 5000 });
+      return;
+    }
+    if (description.trim().length < 10) {
+      setError('A descricao deve ter pelo menos 10 caracteres.');
+      toast.error('A descricao deve ter pelo menos 10 caracteres.', { duration: 5000 });
       return;
     }
 
     setLoading(true);
     try {
       const body: Record<string, unknown> = {
-        assunto: assunto.trim(),
-        prioridade,
-        descricao: descricao.trim(),
+        subject: subject.trim(),
+        priority,
+        description: description.trim(),
       };
-      if (kitId) body.kit_id = Number(kitId);
+      if (kitId) body.kit_id = kitId;
 
       const res = await fetch(`${API_BASE}/tickets`, {
         method: 'POST',
@@ -81,22 +104,29 @@ export default function NovoChamadoPage() {
         body: JSON.stringify(body),
       });
 
+      if (res.status === 401) {
+        toast.error('Sessao expirada. Faca login novamente.', { duration: 5000 });
+        return;
+      }
+
       if (!res.ok) {
         const data = await res.json().catch(() => null);
         throw new Error(data?.detail || 'Erro ao criar chamado.');
       }
 
+      toast.success('Chamado criado com sucesso! Nossa equipe respondera em breve.', { duration: 4000 });
       router.push('/area-cliente/chamados');
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Erro ao enviar chamado. Tente novamente.';
       setError(message);
+      toast.error(message, { duration: 5000 });
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-6 max-w-2xl pb-28">
       {/* Back */}
       <Link
         href="/area-cliente/chamados"
@@ -109,7 +139,7 @@ export default function NovoChamadoPage() {
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Novo Chamado</h1>
         <p className="text-gray-500 text-sm mt-1">
-          Preencha os dados abaixo para abrir uma solicitação.
+          Preencha os dados abaixo para abrir uma solicitacao.
         </p>
       </div>
 
@@ -124,16 +154,18 @@ export default function NovoChamadoPage() {
       <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5">
         {/* Subject */}
         <div>
-          <label htmlFor="assunto" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-1">
             Assunto *
           </label>
           <input
-            id="assunto"
+            id="subject"
             type="text"
-            value={assunto}
-            onChange={(e) => setAssunto(e.target.value)}
-            placeholder="Resumo da sua solicitação"
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            placeholder="Resumo da sua solicitacao"
             required
+            minLength={3}
+            maxLength={200}
             className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-gray-900 placeholder-gray-400"
           />
         </div>
@@ -152,7 +184,7 @@ export default function NovoChamadoPage() {
             <option value="">Nenhum kit selecionado</option>
             {kits.map((kit) => (
               <option key={kit.id} value={kit.id}>
-                Kit {kit.mes_referencia}
+                Kit {formatMonth(kit.reference_month)}
               </option>
             ))}
           </select>
@@ -160,13 +192,13 @@ export default function NovoChamadoPage() {
 
         {/* Priority */}
         <div>
-          <label htmlFor="prioridade" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="priority" className="block text-sm font-medium text-gray-700 mb-1">
             Prioridade
           </label>
           <select
-            id="prioridade"
-            value={prioridade}
-            onChange={(e) => setPrioridade(e.target.value)}
+            id="priority"
+            value={priority}
+            onChange={(e) => setPriority(e.target.value)}
             className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-gray-900 bg-white"
           >
             {priorityOptions.map((opt) => (
@@ -179,18 +211,21 @@ export default function NovoChamadoPage() {
 
         {/* Description */}
         <div>
-          <label htmlFor="descricao" className="block text-sm font-medium text-gray-700 mb-1">
-            Descrição *
+          <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+            Descricao *
           </label>
           <textarea
-            id="descricao"
-            value={descricao}
-            onChange={(e) => setDescricao(e.target.value)}
+            id="description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
             placeholder="Descreva com detalhes o motivo do seu chamado..."
             rows={5}
             required
+            minLength={10}
+            maxLength={5000}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none resize-none text-gray-900 placeholder-gray-400"
           />
+          <p className="text-xs text-gray-400 mt-1">{description.length}/5000 caracteres</p>
         </div>
 
         {/* Submit */}
