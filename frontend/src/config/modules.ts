@@ -471,12 +471,12 @@ export const modules: Module[] = [
 export const moduleCategories: ModuleCategory[] = [
   {
     id: 'negocios',
-    title: 'Negocios',
+    title: 'Negócios',
     modules: modules.filter(m => ['crm', 'marketing', 'licitacoes'].includes(m.id)),
   },
   {
     id: 'pessoas',
-    title: 'Gestao de Pessoas',
+    title: 'Gestão de Pessoas',
     modules: modules.filter(m => ['dp', 'rh', 'ged', 'operacoes', 'sst', 'ponto', 'portal-funcionario', 'area-cliente'].includes(m.id)),
   },
   {
@@ -486,12 +486,12 @@ export const moduleCategories: ModuleCategory[] = [
   },
   {
     id: 'inteligencia',
-    title: 'Inteligencia & Patrimonio',
+    title: 'Inteligência & Patrimônio',
     modules: modules.filter(m => ['inteligencia', 'patrimonio'].includes(m.id)),
   },
   {
     id: 'administracao',
-    title: 'Administracao',
+    title: 'Administração',
     modules: modules.filter(m => ['administrativo', 'config'].includes(m.id)),
   },
 ];
