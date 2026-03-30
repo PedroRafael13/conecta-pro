@@ -215,6 +215,7 @@ class TimeEntryStats(BaseModel):
 class TimeEntryDaySummary(BaseModel):
     """Resumo do dia."""
 
+    employee_id: str | None = None
     date: date
     entries: list[TimeEntryListResponse] = []
     total_entries: int = 0

@@ -247,7 +247,7 @@ async def update_overtime(
             detail="Hora extra não encontrada",
         )
 
-    if overtime.status == OvertimeStatus.APROVADO:
+    if overtime.status == OvertimeStatus.APROVADA:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Hora extra já aprovada não pode ser alterada",
@@ -319,7 +319,7 @@ async def approve_overtime(
             detail="Hora extra não encontrada",
         )
 
-    if overtime.status not in [OvertimeStatus.PENDENTE, OvertimeStatus.PRE_APROVADO]:
+    if overtime.status not in [OvertimeStatus.PENDENTE, OvertimeStatus.EM_ANALISE]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Hora extra com status '{overtime.status.value}' não pode ser aprovada",
@@ -359,7 +359,7 @@ async def reject_overtime(
             detail="Hora extra não encontrada",
         )
 
-    if overtime.status == OvertimeStatus.APROVADO:
+    if overtime.status == OvertimeStatus.APROVADA:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Hora extra já aprovada não pode ser rejeitada",
@@ -398,7 +398,7 @@ async def compensate_overtime(
             detail="Hora extra não encontrada",
         )
 
-    if overtime.status != OvertimeStatus.APROVADO:
+    if overtime.status != OvertimeStatus.APROVADA:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Apenas horas extras aprovadas podem ser compensadas",
@@ -442,7 +442,7 @@ async def mark_overtime_paid(
             detail="Hora extra não encontrada",
         )
 
-    if overtime.status != OvertimeStatus.APROVADO:
+    if overtime.status != OvertimeStatus.APROVADA:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Apenas horas extras aprovadas podem ser marcadas como pagas",
@@ -485,7 +485,7 @@ async def delete_overtime(
             detail="Hora extra não encontrada",
         )
 
-    if overtime.status == OvertimeStatus.APROVADO and (overtime.is_paid or overtime.is_compensated):
+    if overtime.status == OvertimeStatus.APROVADA and (overtime.is_paid or overtime.is_compensated):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Não é possível excluir hora extra já paga ou compensada",

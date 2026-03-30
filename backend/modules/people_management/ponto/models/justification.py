@@ -16,7 +16,7 @@ from sqlalchemy import (
 
 try:
     from core.database import Base
-except ImportError:
+except ImportError:  # pragma: no cover
     from sqlalchemy.orm import declarative_base
 
     Base = declarative_base()

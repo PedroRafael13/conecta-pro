@@ -254,27 +254,21 @@ class TestSyncOffline:
 
     @pytest.mark.asyncio
     async def test_sync_com_erro(self, service, mock_db):
-        # Primeiro execute (check duplicata): sem duplicata
-        # Mas registrar_batida falhara
-        call_count = [0]
-
-        async def side_effect(*args, **kwargs):
-            call_count[0] += 1
-            if call_count[0] == 1:
-                # Check duplicata
-                r = MagicMock()
-                r.scalar_one_or_none.return_value = None
-                return r
-            else:
-                raise Exception("DB error simulado")
-
-        mock_db.execute = AsyncMock(side_effect=side_effect)
+        # Check duplicata: nao encontra
+        fake_result = MagicMock()
+        fake_result.scalar_one_or_none.return_value = None
+        mock_db.execute.return_value = fake_result
+        # flush falha dentro de registrar_batida
+        mock_db.flush = AsyncMock(side_effect=Exception("DB write error"))
 
         punches = [
             PunchCreate(employee_id=1, punch_type="entrada", timestamp="2026-03-13T08:00:00"),
         ]
         result = await service.sync_offline_punches(punches)
-        assert result["total_errors"] >= 0  # Pode ou nao capturar o erro
+        assert result["total_received"] == 1
+        assert result["total_synced"] == 0
+        assert result["total_errors"] == 1
+        assert "DB write error" in result["errors"][0]["error"]
 
     @pytest.mark.asyncio
     async def test_sync_sem_timestamp_usa_utcnow(self, service, mock_db):

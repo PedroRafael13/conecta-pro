@@ -85,7 +85,7 @@ class JustificationResponse(BaseModel):
     reason: str
     category: str
     status: str
-    created_at: str
+    created_at: str | None = None
     reviewed_by: str | None = None
 
     model_config = {"from_attributes": True}
@@ -115,11 +115,11 @@ class MonthlyClosingResponse(BaseModel):
     employee_id: int
     month: int
     year: int
-    total_horas_trabalhadas: float
-    total_horas_extras_50: float
-    total_horas_extras_100: float
-    total_faltas: int
-    total_atrasos_minutos: float
-    fechado: bool
+    total_horas_trabalhadas: float = 0.0
+    total_horas_extras_50: float = 0.0
+    total_horas_extras_100: float = 0.0
+    total_faltas: int = 0
+    total_atrasos_minutos: float = 0.0
+    fechado: bool = False
 
     model_config = {"from_attributes": True}

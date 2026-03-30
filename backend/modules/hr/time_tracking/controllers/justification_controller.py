@@ -420,7 +420,7 @@ async def partial_approve_justification(
             detail=f"Justificativa com status '{justification.status.value}' não pode ser aprovada",
         )
 
-    justification.status = JustificationStatus.APROVADO_PARCIAL
+    justification.status = JustificationStatus.APROVADA_PARCIAL
     justification.partial_approved_days = data.approved_days
     justification.partial_approved_minutes = data.approved_minutes
     justification.approved_by_id = current_user.get("sub")
@@ -455,8 +455,8 @@ async def reject_justification(
         )
 
     if justification.status in [
-        JustificationStatus.APROVADO,
-        JustificationStatus.REJEITADO,
+        JustificationStatus.APROVADA,
+        JustificationStatus.REJEITADA,
     ]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -497,8 +497,8 @@ async def verify_justification(
         )
 
     if justification.status not in [
-        JustificationStatus.APROVADO,
-        JustificationStatus.APROVADO_PARCIAL,
+        JustificationStatus.APROVADA,
+        JustificationStatus.APROVADA_PARCIAL,
     ]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -591,7 +591,7 @@ async def delete_justification(
             detail="Justificativa não encontrada",
         )
 
-    if justification.status == JustificationStatus.APROVADO and justification.is_verified:
+    if justification.status == JustificationStatus.APROVADA and justification.is_verified:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Não é possível excluir justificativa aprovada e verificada",

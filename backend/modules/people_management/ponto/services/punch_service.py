@@ -112,6 +112,11 @@ class PunchService:
         self.db.add(punch)
         await self.db.flush()
 
+        # Push bidirecional para Sólides (não bloqueia se falhar)
+        await self._push_punch_to_solides(
+            data.employee_id, data.punch_type, str(timestamp), status, data.device_type or "web"
+        )
+
         logger.info(
             "Batida registrada no banco: %s employee=%s type=%s",
             punch_id,
@@ -238,6 +243,9 @@ class PunchService:
         self.db.add(justification)
         await self.db.flush()
 
+        # Push bidirecional para Sólides (não bloqueia se falhar)
+        await self._push_justification_to_solides(data.employee_id, data.justification_type, data.reason, data.category)
+
         logger.info("Justificativa criada: %s", justification.justification_id)
         return justification.to_dict()
 
@@ -333,6 +341,11 @@ class PunchService:
             month=month,
             year=year,
             total_horas_trabalhadas=dias_trabalhados * 8.0,
+            total_horas_extras_50=0.0,
+            total_horas_extras_100=0.0,
+            total_horas_noturnas=0.0,
+            total_faltas=0,
+            total_atrasos_minutos=0.0,
             total_dias_trabalhados=dias_trabalhados,
             fechado=True,
             fechado_por=fechado_por,
@@ -350,6 +363,89 @@ class PunchService:
             dias_trabalhados,
         )
         return closing.to_dict()
+
+    # =========================================================================
+    # PUSH SÓLIDES (Conecta PRO → Sólides)
+    # =========================================================================
+
+    async def _push_punch_to_solides(
+        self,
+        employee_id: str | int,
+        punch_type: str,
+        punch_timestamp: str,
+        status: str,
+        device_type: str,
+    ) -> None:
+        """Push batida para Sólides via connector — nunca bloqueia em caso de erro."""
+        import os
+
+        api_token = os.getenv("SOLIDES_API_TOKEN")
+        if not api_token:
+            return  # Integração não configurada
+
+        try:
+            result = await self.db.execute(
+                text("SELECT solides_id FROM solides_employees WHERE employee_id::text = :eid LIMIT 1"),
+                {"eid": str(employee_id)},
+            )
+            row = result.first()
+            if not row or not row[0]:
+                logger.debug("Push Sólides: employee %s sem solides_id mapeado", employee_id)
+                return
+
+            solides_employee_id = str(row[0])
+
+            from modules.integrations.connectors.solides.connector import SolidesConnector
+
+            connector = SolidesConnector(credentials={"api_token": api_token})
+            await connector.push_punch_as_occurrence(
+                employee_solides_id=solides_employee_id,
+                punch_type=punch_type,
+                punch_timestamp=punch_timestamp,
+                status=status,
+                device_type=device_type,
+            )
+        except Exception as e:
+            logger.warning("Push Sólides (batida) falhou — não crítico: %s", e)
+
+    async def _push_justification_to_solides(
+        self,
+        employee_id: int,
+        justification_type: str,
+        reason: str,
+        category: str,
+    ) -> None:
+        """Push justificativa para Sólides como absenteísmo — nunca bloqueia em caso de erro."""
+        import os
+
+        api_token = os.getenv("SOLIDES_API_TOKEN")
+        if not api_token:
+            return
+
+        try:
+            result = await self.db.execute(
+                text("SELECT solides_id FROM solides_employees WHERE employee_id::text = :eid LIMIT 1"),
+                {"eid": str(employee_id)},
+            )
+            row = result.first()
+            if not row or not row[0]:
+                return
+
+            solides_employee_id = str(row[0])
+            start_date = datetime.utcnow().date().isoformat()
+
+            from modules.integrations.connectors.solides.connector import SolidesConnector
+
+            connector = SolidesConnector(credentials={"api_token": api_token})
+            await connector.push_justification_as_absence(
+                employee_solides_id=solides_employee_id,
+                justification_type=justification_type,
+                reason=reason,
+                category=category,
+                start_date=start_date,
+            )
+        except Exception as e:
+            logger.warning("Push Sólides (justificativa) falhou — não crítico: %s", e)
 
     # =========================================================================
     # GEOFENCE

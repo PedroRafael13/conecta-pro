@@ -1,9 +1,12 @@
 """Service de dashboard e inconsistencias do Ponto — wiring real com DB e CCT."""
 
 import logging
+import os
 from datetime import date, datetime, timedelta
 from typing import Any
+from uuid import uuid4
 
+import httpx
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -296,23 +299,325 @@ def get_colaboradores_sem_escala(db: Session) -> list[dict[str, Any]]:
     ]
 
 
+def _check_justifications_columns(db: Session) -> set[str]:
+    """Retorna o conjunto de colunas existentes em gp_justifications."""
+    try:
+        rows = db.execute(
+            text("SELECT column_name FROM information_schema.columns WHERE table_name='gp_justifications'")
+        ).fetchall()
+        return {row[0] for row in rows}
+    except Exception:
+        return set()
+
+
+def _fetch_solides_entities(token: str, entity_path: str, start_date: str, end_date: str) -> list[dict]:
+    """Busca entidades do Tangerino API de forma sincrona via httpx."""
+    base_url = "https://employer.tangerino.com.br"
+    headers = {"Authorization": f"Basic {token}", "Accept": "application/json"}
+    params = {"startDate": start_date, "endDate": end_date, "page": 0, "size": 100}
+
+    try:
+        resp = httpx.get(f"{base_url}{entity_path}", headers=headers, params=params, timeout=15.0)
+        resp.raise_for_status()
+        data = resp.json()
+        if isinstance(data, list):
+            return data
+        if isinstance(data, dict):
+            return data.get("content", data.get("data", []))
+        return []
+    except httpx.HTTPStatusError as exc:
+        logger.warning("Tangerino API HTTP error %s for %s: %s", exc.response.status_code, entity_path, exc)
+        raise
+    except Exception as exc:
+        logger.warning("Tangerino API error for %s: %s", entity_path, exc)
+        raise
+
+
+def _map_absence_type(type_name: str | None) -> tuple[str, str]:
+    """Mapeia tipo de ausencia Solides para (justification_type, category)."""
+    if not type_name:
+        return ("falta", "outro")
+    t = type_name.lower()
+    if any(k in t for k in ("doenca", "medico", "saude", "hospital", "cid", "atestado")):
+        return ("falta", "saude")
+    if any(k in t for k in ("familia", "filho", "luto", "natalidade", "paternidade", "maternidade")):
+        return ("falta", "familiar")
+    if any(k in t for k in ("parcial", "atraso", "hora")):
+        return ("atraso", "outro")
+    return ("falta", "outro")
+
+
 def sync_solides_ponto(db: Session, periodo_inicio: str | None, periodo_fim: str | None) -> dict[str, Any]:
     """Sincroniza dados de ponto do Solides Tangerino para o sistema."""
     hoje = date.today()
     inicio = periodo_inicio or hoje.replace(day=1).isoformat()
     fim = periodo_fim or hoje.isoformat()
 
-    # Contar registros existentes no periodo
-    existentes = (
-        db.execute(
-            text("SELECT COUNT(*) FROM gp_clock_punches WHERE DATE(punch_timestamp) BETWEEN :ini AND :fim"),
-            {"ini": inicio, "fim": fim},
-        ).scalar()
-        or 0
-    )
+    token = os.getenv("SOLIDES_API_TOKEN")
 
-    # Contar colaboradores ativos para estimativa
-    db.execute(text("SELECT COUNT(*) FROM employees WHERE status='ativo'")).scalar() or 0
+    if not token:
+        logger.warning(
+            "SOLIDES_API_TOKEN nao configurado — sync_solides_ponto retornando stub. "
+            "Configure a variavel de ambiente para ativar a sincronizacao real."
+        )
+        incons = _contar_inconsistencias_mes(db)
+        return {
+            "success": True,
+            "message": f"Sincronizacao simulada (token nao configurado) para periodo {inicio} a {fim}",
+            "total_importados": 0,
+            "total_atualizados": 0,
+            "total_inconsistencias": incons,
+            "erros": ["SOLIDES_API_TOKEN nao configurado"],
+        }
+
+    erros: list[str] = []
+    total_importados = 0
+    total_atualizados = 0
+
+    # Verificar colunas disponiveis em gp_justifications
+    cols = _check_justifications_columns(db)
+    has_source = "source" in cols
+    has_source_id = "source_id" in cols
+
+    # ------------------------------------------------------------------ #
+    # 1. Importar AUSENCIAS                                                #
+    # ------------------------------------------------------------------ #
+    try:
+        absences = _fetch_solides_entities(token, "/absence/find-all", inicio, fim)
+        logger.info("Tangerino: %d ausencias recebidas para o periodo %s a %s", len(absences), inicio, fim)
+
+        for absence in absences:
+            try:
+                solides_id = str(absence.get("id", ""))
+                source_id_val = f"solides_{solides_id}"
+
+                # Dedup: checar se ja existe
+                if has_source_id:
+                    exists = db.execute(
+                        text("SELECT 1 FROM gp_justifications WHERE source_id = :sid LIMIT 1"),
+                        {"sid": source_id_val},
+                    ).scalar()
+                else:
+                    # Fallback: checar pelo campo reason com prefixo
+                    exists = db.execute(
+                        text("SELECT 1 FROM gp_justifications WHERE reason LIKE :pat LIMIT 1"),
+                        {"pat": f"%[solides_{solides_id}]%"},
+                    ).scalar()
+
+                if exists:
+                    continue
+
+                # Resolver employee local via solides_employees
+                solides_emp_id = str(absence.get("employeeId", absence.get("employee_id", "")))
+                local_emp = None
+                if solides_emp_id:
+                    local_emp = db.execute(
+                        text("SELECT employee_id FROM solides_employees WHERE solides_id = :sid"),
+                        {"sid": solides_emp_id},
+                    ).scalar()
+
+                if not local_emp:
+                    logger.debug(
+                        "Ausencia solides_id=%s: employee solides_id=%s nao mapeado localmente",
+                        solides_id,
+                        solides_emp_id,
+                    )
+                    continue
+
+                type_name = absence.get("absenceTypeName") or absence.get("type") or absence.get("typeName")
+                jtype, category = _map_absence_type(type_name)
+                reason_text = absence.get("description") or type_name or "Ausencia Solides"
+                if not has_source_id:
+                    reason_text = f"{reason_text} [solides_{solides_id}]"
+
+                now = datetime.utcnow()
+                new_id = str(uuid4())
+
+                if has_source and has_source_id:
+                    db.execute(
+                        text(
+                            "INSERT INTO gp_justifications "
+                            "(justification_id, employee_id, justification_type, reason, category, "
+                            " status, source, source_id, created_at) "
+                            "VALUES (:jid, :eid, :jtype, :reason, :cat, 'aprovada', :src, :sid, :now)"
+                        ),
+                        {
+                            "jid": new_id,
+                            "eid": local_emp,
+                            "jtype": jtype,
+                            "reason": reason_text,
+                            "cat": category,
+                            "src": "solides",
+                            "sid": source_id_val,
+                            "now": now,
+                        },
+                    )
+                elif has_source_id:
+                    db.execute(
+                        text(
+                            "INSERT INTO gp_justifications "
+                            "(justification_id, employee_id, justification_type, reason, category, "
+                            " status, source_id, created_at) "
+                            "VALUES (:jid, :eid, :jtype, :reason, :cat, 'aprovada', :sid, :now)"
+                        ),
+                        {
+                            "jid": new_id,
+                            "eid": local_emp,
+                            "jtype": jtype,
+                            "reason": reason_text,
+                            "cat": category,
+                            "sid": source_id_val,
+                            "now": now,
+                        },
+                    )
+                else:
+                    db.execute(
+                        text(
+                            "INSERT INTO gp_justifications "
+                            "(justification_id, employee_id, justification_type, reason, category, "
+                            " status, created_at) "
+                            "VALUES (:jid, :eid, :jtype, :reason, :cat, 'aprovada', :now)"
+                        ),
+                        {
+                            "jid": new_id,
+                            "eid": local_emp,
+                            "jtype": jtype,
+                            "reason": reason_text,
+                            "cat": category,
+                            "now": now,
+                        },
+                    )
+
+                total_importados += 1
+
+            except Exception as exc:
+                logger.warning("Erro ao importar ausencia solides_id=%s: %s", absence.get("id"), exc)
+                erros.append(f"Ausencia {absence.get('id')}: {exc}")
+
+    except Exception as exc:
+        msg = f"Erro ao buscar ausencias do Tangerino: {exc}"
+        logger.error(msg)
+        erros.append(msg)
+
+    # ------------------------------------------------------------------ #
+    # 2. Importar OCORRENCIAS                                              #
+    # ------------------------------------------------------------------ #
+    try:
+        occurrences = _fetch_solides_entities(token, "/occurrence/find-all", inicio, fim)
+        logger.info("Tangerino: %d ocorrencias recebidas para o periodo %s a %s", len(occurrences), inicio, fim)
+
+        for occ in occurrences:
+            try:
+                solides_id = str(occ.get("id", ""))
+                source_id_val = f"solides_occ_{solides_id}"
+
+                if has_source_id:
+                    exists = db.execute(
+                        text("SELECT 1 FROM gp_justifications WHERE source_id = :sid LIMIT 1"),
+                        {"sid": source_id_val},
+                    ).scalar()
+                else:
+                    exists = db.execute(
+                        text("SELECT 1 FROM gp_justifications WHERE reason LIKE :pat LIMIT 1"),
+                        {"pat": f"%[solides_occ_{solides_id}]%"},
+                    ).scalar()
+
+                if exists:
+                    continue
+
+                solides_emp_id = str(occ.get("employeeId", occ.get("employee_id", "")))
+                local_emp = None
+                if solides_emp_id:
+                    local_emp = db.execute(
+                        text("SELECT employee_id FROM solides_employees WHERE solides_id = :sid"),
+                        {"sid": solides_emp_id},
+                    ).scalar()
+
+                if not local_emp:
+                    logger.debug(
+                        "Ocorrencia solides_id=%s: employee solides_id=%s nao mapeado localmente",
+                        solides_id,
+                        solides_emp_id,
+                    )
+                    continue
+
+                type_name = occ.get("occurrenceTypeName") or occ.get("type") or occ.get("typeName")
+                reason_text = occ.get("description") or type_name or "Ocorrencia Solides"
+                if not has_source_id:
+                    reason_text = f"{reason_text} [solides_occ_{solides_id}]"
+
+                now = datetime.utcnow()
+                new_id = str(uuid4())
+
+                if has_source and has_source_id:
+                    db.execute(
+                        text(
+                            "INSERT INTO gp_justifications "
+                            "(justification_id, employee_id, justification_type, reason, category, "
+                            " status, source, source_id, created_at) "
+                            "VALUES (:jid, :eid, 'atraso', :reason, 'outro', 'aprovada', :src, :sid, :now)"
+                        ),
+                        {
+                            "jid": new_id,
+                            "eid": local_emp,
+                            "reason": reason_text,
+                            "src": "solides",
+                            "sid": source_id_val,
+                            "now": now,
+                        },
+                    )
+                elif has_source_id:
+                    db.execute(
+                        text(
+                            "INSERT INTO gp_justifications "
+                            "(justification_id, employee_id, justification_type, reason, category, "
+                            " status, source_id, created_at) "
+                            "VALUES (:jid, :eid, 'atraso', :reason, 'outro', 'aprovada', :sid, :now)"
+                        ),
+                        {
+                            "jid": new_id,
+                            "eid": local_emp,
+                            "reason": reason_text,
+                            "sid": source_id_val,
+                            "now": now,
+                        },
+                    )
+                else:
+                    db.execute(
+                        text(
+                            "INSERT INTO gp_justifications "
+                            "(justification_id, employee_id, justification_type, reason, category, "
+                            " status, created_at) "
+                            "VALUES (:jid, :eid, 'atraso', :reason, 'outro', 'aprovada', :now)"
+                        ),
+                        {
+                            "jid": new_id,
+                            "eid": local_emp,
+                            "reason": reason_text,
+                            "now": now,
+                        },
+                    )
+
+                total_importados += 1
+
+            except Exception as exc:
+                logger.warning("Erro ao importar ocorrencia solides_id=%s: %s", occ.get("id"), exc)
+                erros.append(f"Ocorrencia {occ.get('id')}: {exc}")
+
+    except Exception as exc:
+        msg = f"Erro ao buscar ocorrencias do Tangerino: {exc}"
+        logger.error(msg)
+        erros.append(msg)
+
+    # Commit dos registros importados
+    if total_importados > 0:
+        try:
+            db.commit()
+        except Exception as exc:
+            logger.error("Erro ao commitar registros importados do Solides: %s", exc)
+            erros.append(f"Commit falhou: {exc}")
+            db.rollback()
+            total_importados = 0
 
     # Rodar engine de inconsistencias apos sync
     incons = _contar_inconsistencias_mes(db)
@@ -320,10 +625,10 @@ def sync_solides_ponto(db: Session, periodo_inicio: str | None, periodo_fim: str
     return {
         "success": True,
         "message": f"Sincronizacao concluida para periodo {inicio} a {fim}",
-        "total_importados": existentes,
-        "total_atualizados": 0,
+        "total_importados": total_importados,
+        "total_atualizados": total_atualizados,
         "total_inconsistencias": incons,
-        "erros": [],
+        "erros": erros,
     }
 
 

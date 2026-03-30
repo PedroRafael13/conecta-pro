@@ -8,9 +8,9 @@ Processa eventos de webhook recebidos do Sólides.
 import logging
 from datetime import datetime
 from typing import Any
-from uuid import UUID
+from uuid import UUID, uuid4
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.integrations.connectors.solides.connector import SolidesConnector
@@ -267,8 +267,6 @@ class SolidesWebhookHandler:
 
         # Inativar imediatamente pelo solides_id
         try:
-            from sqlalchemy import text
-
             await self.db.execute(
                 text("UPDATE employees SET status = 'inativo' WHERE solides_id = :sid"),
                 {"sid": solides_id},
@@ -285,27 +283,187 @@ class SolidesWebhookHandler:
 
     async def _handle_new_occurrence(self, condominio_id: UUID | None, payload: dict[str, Any]) -> None:
         """
-        Processa evento de nova ocorrência.
+        Processa evento de nova ocorrência — persiste em gp_justifications.
         """
-        if not condominio_id:
-            return
-
         ocorrencia_data = payload.get("data", payload)
-        solides_id = str(ocorrencia_data.get("id"))
+        solides_id = str(ocorrencia_data.get("id", ""))
+        solides_employee_id = str(ocorrencia_data.get("employeeId") or ocorrencia_data.get("employee_id", ""))
+        occurrence_type = ocorrencia_data.get("type", "")
+        description = ocorrencia_data.get("description") or ocorrencia_data.get(
+            "descricao", "Ocorrência registrada no Sólides"
+        )
 
         logger.info(f"[Solides Webhook] Processando nova ocorrência {solides_id}")
 
+        try:
+            # Resolver employee_id local
+            result = await self.db.execute(
+                text("SELECT employee_id FROM solides_employees WHERE solides_id::text = :sid LIMIT 1"),
+                {"sid": solides_employee_id},
+            )
+            row = result.fetchone()
+            if not row:
+                logger.warning(f"[Solides Webhook] Ocorrência {solides_id}: employee {solides_employee_id} não mapeado")
+                return
+            local_id = row[0]
+
+            # Verificar duplicata
+            source_id = f"solides_occ_{solides_id}"
+            dup = await self.db.execute(
+                text("SELECT 1 FROM gp_justifications WHERE source_id = :source_id LIMIT 1"),
+                {"source_id": source_id},
+            )
+            if dup.fetchone():
+                logger.info(f"[Solides Webhook] Ocorrência {solides_id} já processada")
+                return
+
+            # Mapear tipo para categoria
+            occ_lower = occurrence_type.lower()
+            if "advertencia" in occ_lower:
+                category, justification_type = "outro", "atraso"
+            elif "atestado" in occ_lower:
+                category, justification_type = "saude", "falta"
+            else:
+                category, justification_type = "outro", "atraso"
+
+            jid = str(uuid4())
+            try:
+                await self.db.execute(
+                    text(
+                        "INSERT INTO gp_justifications "
+                        "(justification_id, employee_id, justification_type, reason, category, status, source, source_id, created_at) "
+                        "VALUES (:jid, :eid, :jtype, :reason, :cat, 'aprovada', 'solides', :source_id, NOW())"
+                    ),
+                    {
+                        "jid": jid,
+                        "eid": local_id,
+                        "jtype": justification_type,
+                        "reason": description,
+                        "cat": category,
+                        "source_id": source_id,
+                    },
+                )
+            except Exception as col_err:
+                from sqlalchemy.exc import ProgrammingError
+
+                if isinstance(col_err, ProgrammingError):
+                    await self.db.execute(
+                        text(
+                            "INSERT INTO gp_justifications "
+                            "(justification_id, employee_id, justification_type, reason, category, status, created_at) "
+                            "VALUES (:jid, :eid, :jtype, :reason, :cat, 'aprovada', NOW())"
+                        ),
+                        {
+                            "jid": jid,
+                            "eid": local_id,
+                            "jtype": justification_type,
+                            "reason": description,
+                            "cat": category,
+                        },
+                    )
+                else:
+                    raise
+
+            await self.db.flush()
+            logger.info(f"[Solides Webhook] Ocorrência {solides_id} processada para employee {local_id}")
+
+        except Exception as e:
+            logger.error(f"[Solides Webhook] Erro ao processar ocorrência {solides_id}: {e}")
+            raise
+
     async def _handle_new_absence(self, condominio_id: UUID | None, payload: dict[str, Any]) -> None:
         """
-        Processa evento de novo absenteísmo.
+        Processa evento de novo absenteísmo — persiste em gp_justifications.
         """
-        if not condominio_id:
-            return
-
         absenteismo_data = payload.get("data", payload)
-        solides_id = str(absenteismo_data.get("id"))
+        solides_id = str(absenteismo_data.get("id", ""))
+        solides_employee_id = str(absenteismo_data.get("employeeId") or absenteismo_data.get("employee_id", ""))
+        absence_type = absenteismo_data.get("type", "")
+        description = (
+            absenteismo_data.get("description") or absenteismo_data.get("descricao") or f"Absenteísmo: {absence_type}"
+        )
 
         logger.info(f"[Solides Webhook] Processando novo absenteísmo {solides_id}")
+
+        try:
+            # Resolver employee_id local
+            result = await self.db.execute(
+                text("SELECT employee_id FROM solides_employees WHERE solides_id::text = :sid LIMIT 1"),
+                {"sid": solides_employee_id},
+            )
+            row = result.fetchone()
+            if not row:
+                logger.warning(
+                    f"[Solides Webhook] Absenteísmo {solides_id}: employee {solides_employee_id} não mapeado"
+                )
+                return
+            local_id = row[0]
+
+            # Verificar duplicata
+            source_id = f"solides_abs_{solides_id}"
+            dup = await self.db.execute(
+                text("SELECT 1 FROM gp_justifications WHERE source_id = :source_id LIMIT 1"),
+                {"source_id": source_id},
+            )
+            if dup.fetchone():
+                logger.info(f"[Solides Webhook] Absenteísmo {solides_id} já processado")
+                return
+
+            # Mapear tipo para categoria
+            abs_upper = absence_type.upper()
+            if abs_upper in ("DOENCA", "ATESTADO"):
+                category, justification_type = "saude", "falta"
+            elif abs_upper == "LICENCA":
+                category, justification_type = "familiar", "falta"
+            elif abs_upper == "ATRASO":
+                category, justification_type = "transito", "atraso"
+            else:
+                category, justification_type = "outro", "falta"
+
+            jid = str(uuid4())
+            try:
+                await self.db.execute(
+                    text(
+                        "INSERT INTO gp_justifications "
+                        "(justification_id, employee_id, justification_type, reason, category, status, source, source_id, created_at) "
+                        "VALUES (:jid, :eid, :jtype, :reason, :cat, 'aprovada', 'solides', :source_id, NOW())"
+                    ),
+                    {
+                        "jid": jid,
+                        "eid": local_id,
+                        "jtype": justification_type,
+                        "reason": description,
+                        "cat": category,
+                        "source_id": source_id,
+                    },
+                )
+            except Exception as col_err:
+                from sqlalchemy.exc import ProgrammingError
+
+                if isinstance(col_err, ProgrammingError):
+                    await self.db.execute(
+                        text(
+                            "INSERT INTO gp_justifications "
+                            "(justification_id, employee_id, justification_type, reason, category, status, created_at) "
+                            "VALUES (:jid, :eid, :jtype, :reason, :cat, 'aprovada', NOW())"
+                        ),
+                        {
+                            "jid": jid,
+                            "eid": local_id,
+                            "jtype": justification_type,
+                            "reason": description,
+                            "cat": category,
+                        },
+                    )
+                else:
+                    raise
+
+            await self.db.flush()
+            logger.info(f"[Solides Webhook] Absenteísmo {solides_id} processado para employee {local_id}")
+
+        except Exception as e:
+            logger.error(f"[Solides Webhook] Erro ao processar absenteísmo {solides_id}: {e}")
+            raise
 
     async def _handle_survey_response(self, condominio_id: UUID | None, payload: dict[str, Any]) -> None:
         """

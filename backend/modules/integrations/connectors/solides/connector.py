@@ -666,6 +666,135 @@ class SolidesConnector(BaseConnector):
         result = await self.fetch_entities("cost_centers")
         return result.data if result.success else []
 
+    # ==================== PUSH (Conecta PRO → Sólides) ====================
+
+    async def push_punch_as_occurrence(
+        self,
+        employee_solides_id: str,
+        punch_type: str,
+        punch_timestamp: str,
+        status: str = "normal",
+        device_type: str = "web",
+    ) -> EntityResult:
+        """Envia batida de ponto ao Sólides como ocorrência de registro.
+
+        Mantém espelho bidirecional: batidas registradas no Conecta PRO
+        são espelhadas no Sólides como ocorrências de ponto.
+
+        Args:
+            employee_solides_id: ID do funcionário no Sólides.
+            punch_type: Tipo da batida (entrada|saida_almoco|retorno_almoco|saida).
+            punch_timestamp: Timestamp ISO da batida.
+            status: Status da batida (normal|offline|fora_local).
+            device_type: Dispositivo usado (web|mobile|tablet).
+
+        Returns:
+            EntityResult com resultado do push.
+        """
+        tipo_map = {
+            "entrada": "Entrada",
+            "saida_almoco": "Saída para almoço",
+            "retorno_almoco": "Retorno do almoço",
+            "saida": "Saída",
+        }
+        descricao = tipo_map.get(punch_type, punch_type.replace("_", " ").title())
+
+        try:
+            dt = datetime.fromisoformat(punch_timestamp.replace("Z", "+00:00"))
+            occurrence_date = dt.date()
+        except (ValueError, AttributeError):
+            occurrence_date = datetime.utcnow().date()
+
+        occurrence_data = {
+            "employeeId": int(employee_solides_id) if str(employee_solides_id).isdigit() else employee_solides_id,
+            "type": f"PONTO_{punch_type.upper()}",
+            "description": f"{descricao} via Conecta PRO [{device_type}] — {punch_timestamp}",
+            "date": occurrence_date.isoformat(),
+            "metadata": {
+                "source": "conecta_pro",
+                "punch_type": punch_type,
+                "status": status,
+                "device_type": device_type,
+                "timestamp": punch_timestamp,
+            },
+        }
+
+        try:
+            result = await self.create_entity("occurrences", occurrence_data)
+            if result.success:
+                logger.info(
+                    "[SolidesConnector] Batida %s do employee %s enviada ao Sólides",
+                    punch_type,
+                    employee_solides_id,
+                )
+            else:
+                logger.warning(
+                    "[SolidesConnector] Falha ao enviar batida %s ao Sólides: %s",
+                    punch_type,
+                    result.error,
+                )
+            return result
+        except Exception as e:
+            logger.warning("[SolidesConnector] Erro ao enviar batida ao Sólides: %s", e)
+            return EntityResult(success=False, action="error", error=str(e))
+
+    async def push_justification_as_absence(
+        self,
+        employee_solides_id: str,
+        justification_type: str,
+        reason: str,
+        category: str,
+        start_date: str,
+    ) -> EntityResult:
+        """Envia justificativa do Conecta PRO ao Sólides como absenteísmo.
+
+        Args:
+            employee_solides_id: ID do funcionário no Sólides.
+            justification_type: Tipo da justificativa (atraso|falta).
+            reason: Motivo da justificativa.
+            category: Categoria (transito|saude|familiar|etc).
+            start_date: Data do absenteísmo (YYYY-MM-DD).
+
+        Returns:
+            EntityResult com resultado.
+        """
+        tipo_map = {
+            "saude": "DOENCA",
+            "familiar": "LICENCA_FAMILIAR",
+            "transito": "ATRASO",
+            "transporte_publico": "ATRASO",
+            "acidente": "ACIDENTE",
+            "outro": "OUTRO",
+        }
+        absence_type = tipo_map.get(category, "OUTRO")
+
+        absence_data = {
+            "employeeId": int(employee_solides_id) if str(employee_solides_id).isdigit() else employee_solides_id,
+            "type": absence_type,
+            "startDate": start_date,
+            "endDate": start_date,
+            "description": f"[Conecta PRO] {reason}",
+            "justified": True,
+        }
+
+        try:
+            result = await self.create_entity("absences", absence_data)
+            if result.success:
+                logger.info(
+                    "[SolidesConnector] Justificativa %s do employee %s enviada ao Sólides",
+                    justification_type,
+                    employee_solides_id,
+                )
+            else:
+                logger.warning(
+                    "[SolidesConnector] Falha ao enviar justificativa ao Sólides: %s",
+                    result.error,
+                )
+            return result
+        except Exception as e:
+            logger.warning("[SolidesConnector] Erro ao enviar justificativa ao Sólides: %s", e)
+            return EntityResult(success=False, action="error", error=str(e))
+
     # ==================== WEBHOOKS ====================
 
     async def validate_webhook(self, headers: dict[str, str], body: bytes) -> bool:
