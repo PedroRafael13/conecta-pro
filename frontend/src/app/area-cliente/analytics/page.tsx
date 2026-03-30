@@ -239,8 +239,10 @@ export default function AnalyticsPage() {
                 <XAxis dataKey="month" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} />
                 <Tooltip
-                  formatter={(value: number, name: string): [string | number, string] =>
-                    name === 'completion_pct' ? [`${value}%`, 'Conclusão'] : [value, 'Documentos']
+                  formatter={(value: unknown, name: unknown): [string | number, string] =>
+                    name === 'completion_pct'
+                      ? [`${value as number}%`, 'Conclusão']
+                      : [value as number, 'Documentos']
                   }
                 />
                 <Bar dataKey="documents" name="Documentos" radius={[4, 4, 0, 0]}>
