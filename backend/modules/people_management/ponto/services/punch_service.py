@@ -393,16 +393,18 @@ class PunchService:
             return  # Integração não configurada
 
         try:
-            result = await self.db.execute(
-                text("SELECT solides_id FROM solides_employees WHERE employee_id::text = :eid LIMIT 1"),
-                {"eid": str(employee_id)},
-            )
-            row = result.first()
-            if not row or not row[0]:
-                logger.debug("Push Sólides: employee %s sem solides_id mapeado", employee_id)
-                return
+            # Use savepoint to isolate Sólides query — prevents aborting the main transaction on failure
+            async with self.db.begin_nested():
+                result = await self.db.execute(
+                    text("SELECT solides_id FROM solides_employees WHERE employee_id::text = :eid LIMIT 1"),
+                    {"eid": str(employee_id)},
+                )
+                row = result.first()
+                if not row or not row[0]:
+                    logger.debug("Push Sólides: employee %s sem solides_id mapeado", employee_id)
+                    return
 
-            solides_employee_id = str(row[0])
+                solides_employee_id = str(row[0])
 
             from modules.integrations.connectors.solides.connector import SolidesConnector
 
