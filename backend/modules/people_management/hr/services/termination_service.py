@@ -226,4 +226,31 @@ class TerminationService:
         await self.db.flush()
         await self.db.refresh(termination)
         logger.info("Rescisão %s concluída", termination_id)
+
+        # Publicar evento de funcionário demitido no message bus
+        try:
+            import asyncio
+
+            from infrastructure.message_bus.events import Event, EventType, publish_event
+
+            event = Event(
+                type=EventType.FUNCIONARIO_DEMITIDO,
+                source="people_management.termination_service",
+                data={
+                    "funcionario_id": str(termination.employee_id),
+                    "termination_id": str(termination_id),
+                    "tipo_rescisao": termination.type,
+                    "ultimo_dia": str(termination.last_working_day) if termination.last_working_day else None,
+                    "cargo": employee.cargo if employee else None,
+                    "departamento": employee.departamento if employee else None,
+                },
+            )
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                loop.create_task(publish_event(event))
+            else:
+                asyncio.run(publish_event(event))
+        except Exception as _pub_err:
+            logger.warning("Falha ao publicar FUNCIONARIO_DEMITIDO: %s", _pub_err)
+
         return termination

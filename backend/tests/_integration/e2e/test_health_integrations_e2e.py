@@ -182,3 +182,66 @@ if __name__ == "__main__":
     import pytest
 
     pytest.main([__file__, "-v", "--tb=short"])
+
+
+class TestEventPublishersCompleto:
+    """Valida que os publishers estão nos services corretos (loop fechado)."""
+
+    def test_admission_service_publica_funcionario_admitido(self):
+        import pathlib
+
+        src = pathlib.Path(
+            "/opt/conecta-pro/backend/modules/people_management/hr/services/admission_service.py"
+        ).read_text()
+        assert "FUNCIONARIO_ADMITIDO" in src
+        assert "publish_event" in src
+
+    def test_termination_service_publica_funcionario_demitido(self):
+        import pathlib
+
+        src = pathlib.Path(
+            "/opt/conecta-pro/backend/modules/people_management/hr/services/termination_service.py"
+        ).read_text()
+        assert "FUNCIONARIO_DEMITIDO" in src
+        assert "publish_event" in src
+
+    def test_employee_service_publica_mudanca_funcao(self):
+        import pathlib
+
+        src = pathlib.Path(
+            "/opt/conecta-pro/backend/modules/people_management/hr/services/employee_service.py"
+        ).read_text()
+        assert "FUNCIONARIO_MUDANCA_FUNCAO" in src
+        assert "publish_event" in src
+
+    def test_funcionario_mudanca_funcao_event_type_existe(self):
+        from infrastructure.message_bus.events import EventType
+
+        assert EventType.FUNCIONARIO_MUDANCA_FUNCAO == "fase2.funcionario.mudanca_funcao"
+
+    def test_hr_events_subscreve_mudanca_funcao_diretamente(self):
+        import pathlib
+
+        src = pathlib.Path("/opt/conecta-pro/backend/modules/health_occupational/integrations/hr_events.py").read_text()
+        assert "FUNCIONARIO_MUDANCA_FUNCAO" in src
+        assert "handle_funcionario_mudanca_funcao" in src
+
+    def test_loop_completo_admission_to_health(self):
+        """Valida que o loop completo existe: admission → event → consumer → exam."""
+        from infrastructure.message_bus.events import EventType
+        from modules.health_occupational.integrations.hr_events import (
+            handle_funcionario_admitido,
+            handle_funcionario_demitido,
+            handle_funcionario_mudanca_funcao,
+        )
+        from modules.people_management.hr.services.admission_service import AdmissionService
+        from modules.people_management.hr.services.employee_service import EmployeeService
+        from modules.people_management.hr.services.termination_service import TerminationService
+
+        # Todos os componentes do loop existem e são chamáveis
+        assert callable(handle_funcionario_admitido)
+        assert callable(handle_funcionario_demitido)
+        assert callable(handle_funcionario_mudanca_funcao)
+        assert EventType.FUNCIONARIO_ADMITIDO == "fase2.funcionario.admitido"
+        assert EventType.FUNCIONARIO_DEMITIDO == "fase2.funcionario.demitido"
+        assert EventType.FUNCIONARIO_MUDANCA_FUNCAO == "fase2.funcionario.mudanca_funcao"

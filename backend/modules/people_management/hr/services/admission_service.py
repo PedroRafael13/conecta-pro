@@ -261,4 +261,31 @@ class AdmissionService:
             admission_id,
             employee.id,
         )
+
+        # Publicar evento de funcionário admitido no message bus
+        try:
+            import asyncio
+
+            from infrastructure.message_bus.events import Event, EventType, publish_event
+
+            event = Event(
+                type=EventType.FUNCIONARIO_ADMITIDO,
+                source="people_management.admission_service",
+                data={
+                    "funcionario_id": str(employee.id),
+                    "nome": employee.nome,
+                    "cargo": employee.cargo or "",
+                    "departamento": employee.departamento or "",
+                    "data_admissao": str(employee.data_admissao) if employee.data_admissao else None,
+                    "admission_id": str(admission_id),
+                },
+            )
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                loop.create_task(publish_event(event))
+            else:
+                asyncio.run(publish_event(event))
+        except Exception as _pub_err:
+            logger.warning("Falha ao publicar FUNCIONARIO_ADMITIDO: %s", _pub_err)
+
         return {"admission": admission, "employee": employee}

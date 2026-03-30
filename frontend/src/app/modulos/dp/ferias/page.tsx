@@ -101,6 +101,7 @@ export default function FeriasPage() {
   const [vacationBalance, setVacationBalance] = useState<Record<string, any> | null>(null);
   const [balanceLoading, setBalanceLoading] = useState(false);
   const [showRejectInput, setShowRejectInput] = useState(false);
+  const [syncingSolides, setSyncingSolides] = useState(false);
 
   // Status counts from API
   const [statusCounts, setStatusCounts] = useState({ pendente: 0, aprovado: 0, rejeitado: 0, cancelado: 0, total: 0 });
@@ -349,6 +350,27 @@ export default function FeriasPage() {
     }
   };
 
+  const handleSyncSolides = async () => {
+    setSyncingSolides(true);
+    try {
+      const res = await fetch(`${API_BASE}/vacations/sync-solides`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+      });
+      const data = await res.json().catch(() => null);
+      if (res.ok && data?.success) {
+        toast.success(`Sync Sólides: ${data.total_importadas ?? 0} importadas, ${data.total_atualizadas ?? 0} atualizadas`, { duration: 5000 });
+        setRefreshKey(k => k + 1);
+      } else {
+        toast.error(data?.reason || data?.detail || 'Erro ao sincronizar com Sólides', { duration: 5000 });
+      }
+    } catch {
+      toast.error('Erro de conexão ao sincronizar Sólides', { duration: 5000 });
+    } finally {
+      setSyncingSolides(false);
+    }
+  };
+
   return (
     <div className="space-y-6 pb-28">
       {/* Header */}
@@ -365,9 +387,15 @@ export default function FeriasPage() {
             <p className="text-muted-foreground">Programacao e controle de ferias dos colaboradores</p>
           </div>
         </div>
-        <Button type="button" size="sm" onClick={() => setShowForm(true)}>
-          <Plus className="h-4 w-4 mr-1" /> Solicitar Ferias
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button type="button" size="sm" variant="outline" onClick={handleSyncSolides} disabled={syncingSolides}>
+            {syncingSolides ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Calendar className="h-4 w-4 mr-1" />}
+            Sync Sólides
+          </Button>
+          <Button type="button" size="sm" onClick={() => setShowForm(true)}>
+            <Plus className="h-4 w-4 mr-1" /> Solicitar Ferias
+          </Button>
+        </div>
       </div>
 
       {/* Status Summary Cards */}

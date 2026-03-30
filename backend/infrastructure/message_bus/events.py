@@ -48,6 +48,7 @@ class EventType(StrEnum):
     # Fase 2 - Gestao Empresarial
     FUNCIONARIO_ADMITIDO = "fase2.funcionario.admitido"
     FUNCIONARIO_DEMITIDO = "fase2.funcionario.demitido"
+    FUNCIONARIO_MUDANCA_FUNCAO = "fase2.funcionario.mudanca_funcao"
     FOLHA_PROCESSADA = "fase2.folha.processada"
     PONTO_REGISTRADO = "fase2.ponto.registrado"
     LANCAMENTO_CONTABIL = "fase2.contabilidade.lancamento"

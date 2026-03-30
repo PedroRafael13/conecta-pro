@@ -181,17 +181,16 @@ def register_hr_event_subscribers() -> None:
 
         subscribe_to_event(EventType.FUNCIONARIO_ADMITIDO, handle_funcionario_admitido)
         subscribe_to_event(EventType.FUNCIONARIO_DEMITIDO, handle_funcionario_demitido)
+        subscribe_to_event(EventType.FUNCIONARIO_MUDANCA_FUNCAO, handle_funcionario_mudanca_funcao)
 
-        # Mudança de função via padrão (transferido e promovido mapeiam para o mesmo handler)
-        # EventType não tem FUNCIONARIO_MUDANCA_FUNCAO mas pode vir como PONTO_REGISTRADO com tipo
-        # Usar padrão fase2.* para capturar eventos relevantes
+        # Padrão genérico como fallback para outros subtipos de fase2.funcionario.*
         from infrastructure.message_bus.events import subscribe_to_pattern
 
         subscribe_to_pattern("fase2.funcionario.*", _handle_fase2_funcionario_generic)
 
         logger.info(
             "✅ Health Occupational: subscribers de eventos RH registrados "
-            "(FUNCIONARIO_ADMITIDO, FUNCIONARIO_DEMITIDO, fase2.funcionario.*)"
+            "(FUNCIONARIO_ADMITIDO, FUNCIONARIO_DEMITIDO, FUNCIONARIO_MUDANCA_FUNCAO, fase2.funcionario.*)"
         )
     except Exception as exc:
         logger.warning("Health Occupational: não foi possível registrar subscribers de eventos RH: %s", exc)
@@ -207,8 +206,12 @@ async def _handle_fase2_funcionario_generic(message: Any) -> None:
         payload = message.payload if hasattr(message, "payload") else {}
         data = payload.get("data", {}) if isinstance(payload, dict) else {}
 
-        # Já tratados individualmente
-        if topic in ("fase2.funcionario.admitido", "fase2.funcionario.demitido"):
+        # Já tratados individualmente por subscribers diretos
+        if topic in (
+            "fase2.funcionario.admitido",
+            "fase2.funcionario.demitido",
+            "fase2.funcionario.mudanca_funcao",
+        ):
             return
 
         # Verificar se é mudança de função

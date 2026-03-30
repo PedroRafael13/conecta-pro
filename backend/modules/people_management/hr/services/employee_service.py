@@ -162,10 +162,47 @@ class EmployeeService:
             return None
 
         update_data = {k: v for k, v in data.items() if v is not None}
+
+        # Captura cargo anterior para detectar mudança de função
+        cargo_anterior = employee.cargo
+        departamento_anterior = employee.departamento
+
         for key, value in update_data.items():
             if hasattr(employee, key):
                 setattr(employee, key, value)
 
         await self.db.flush()
         await self.db.refresh(employee)
+
+        # Publicar evento de mudança de função se cargo ou departamento mudou
+        cargo_novo = employee.cargo
+        departamento_novo = employee.departamento
+        if (cargo_novo and cargo_novo != cargo_anterior) or (
+            departamento_novo and departamento_novo != departamento_anterior
+        ):
+            try:
+                import asyncio
+
+                from infrastructure.message_bus.events import Event, EventType, publish_event
+
+                event = Event(
+                    type=EventType.FUNCIONARIO_MUDANCA_FUNCAO,
+                    source="people_management.employee_service",
+                    data={
+                        "funcionario_id": str(employee.id),
+                        "nome": employee.nome,
+                        "cargo_anterior": cargo_anterior or "",
+                        "cargo_novo": cargo_novo or "",
+                        "departamento_anterior": departamento_anterior or "",
+                        "departamento_novo": departamento_novo or "",
+                    },
+                )
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    loop.create_task(publish_event(event))
+                else:
+                    asyncio.run(publish_event(event))
+            except Exception as _pub_err:
+                logger.warning("Falha ao publicar FUNCIONARIO_MUDANCA_FUNCAO: %s", _pub_err)
+
         return employee

@@ -1,8 +1,9 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { Shield, Calendar, ArrowLeft, Search, Plus, Filter, ChevronLeft, ChevronRight, Eye, CheckCircle, Send, Clock, AlertCircle, Trash2, CalendarDays, FileText } from 'lucide-react';
+import { Shield, Calendar, ArrowLeft, Search, Plus, Filter, ChevronLeft, ChevronRight, Eye, CheckCircle, Send, Clock, AlertCircle, Trash2, CalendarDays, FileText, RefreshCw, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 ;
@@ -19,6 +20,16 @@ import { TemplateManager } from '@/features/escalas/components/TemplateManager';
 import { ExportButton } from '@/components/ui/export-button';
 import type { Scale, ScaleStatus, ScaleType, Post } from '@/types/operacional';
 import { SCALE_TYPE_LABELS, SCALE_STATUS_LABELS } from '@/types/operacional';
+
+const API_PONTO = '/api/v1/people-management/ponto';
+
+function getAuthHeaders() {
+  const token = typeof window !== 'undefined' ? (localStorage.getItem('access_token') || localStorage.getItem('token')) : null;
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+}
 
 export default function EscalasPage() {
   const router = useRouter();
@@ -37,6 +48,30 @@ export default function EscalasPage() {
   } = useScales(1, 10);
   const { posts } = usePosts({ initialPageSize: 100 });
   const { deleteScale, submitForApproval, approveScale, publishScale, isLoading: operationLoading } = useScaleOperations();
+
+  const [syncingEscalas, setSyncingEscalas] = useState(false);
+
+  const handleSyncEscalas = async () => {
+    setSyncingEscalas(true);
+    try {
+      const res = await fetch(`${API_PONTO}/sync-escalas`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+      });
+      const data = await res.json().catch(() => null);
+      if (res.ok) {
+        const updated = data?.total_atualizados ?? data?.updated ?? 0;
+        toast.success(`Escalas Sólides: ${updated} colaboradores atualizados`, { duration: 5000 });
+        refresh();
+      } else {
+        toast.error(data?.detail || 'Erro ao sincronizar escalas do Sólides', { duration: 5000 });
+      }
+    } catch {
+      toast.error('Erro de conexão ao sincronizar escalas', { duration: 5000 });
+    } finally {
+      setSyncingEscalas(false);
+    }
+  };
 
   // Modal states
   const [showGenerateModal, setShowGenerateModal] = useState(false);
@@ -214,6 +249,14 @@ export default function EscalasPage() {
                 variant="outline"
                 buttonText="Exportar"
               />
+              <Button
+                variant="outline"
+                onClick={handleSyncEscalas}
+                disabled={syncingEscalas}
+              >
+                {syncingEscalas ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
+                Sync Sólides
+              </Button>
               <Button
                 variant="outline"
                 onClick={() => setShowTemplatesModal(true)}
