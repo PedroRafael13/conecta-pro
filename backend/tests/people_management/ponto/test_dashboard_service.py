@@ -341,26 +341,41 @@ class TestColaboradoresSemEscala:
 
 
 class TestSyncSolides:
-    def test_sync_basico(self, mock_db):
-        call_count = [0]
+    def test_sync_sem_token_retorna_stub(self, mock_db):
+        """Sem SOLIDES_API_TOKEN configurado, retorna stub com total_importados=0."""
+        result_mock = MagicMock()
+        result_mock.scalar.return_value = 0
+        result_mock.fetchall.return_value = []
+        mock_db.execute = MagicMock(return_value=result_mock)
 
-        def side_effect(query, params=None):
-            call_count[0] += 1
-            result = MagicMock()
-            if call_count[0] == 1:
-                result.scalar.return_value = 50  # existentes
-            elif call_count[0] == 2:
-                result.scalar.return_value = 44  # colaboradores ativos
-            else:
-                # _contar_inconsistencias queries
-                result.scalar.return_value = 0
-            return result
+        import os
 
-        mock_db.execute = MagicMock(side_effect=side_effect)
+        os.environ.pop("SOLIDES_API_TOKEN", None)
 
         result = sync_solides_ponto(mock_db, None, None)
         assert result["success"] is True
-        assert result["total_importados"] == 50
+        assert result["total_importados"] == 0
+        assert "erros" in result
+
+    def test_sync_com_token_chama_api(self, mock_db):
+        """Com SOLIDES_API_TOKEN configurado, tenta chamar API Tangerino."""
+
+        result_mock = MagicMock()
+        result_mock.scalar.return_value = 0
+        result_mock.fetchall.return_value = []
+        mock_db.execute = MagicMock(return_value=result_mock)
+
+        with (
+            patch.dict("os.environ", {"SOLIDES_API_TOKEN": "fake-token-123"}),
+            patch(
+                "modules.people_management.ponto.services.dashboard_service._fetch_solides_entities",
+                return_value=[],
+            ) as mock_fetch,
+        ):
+            result = sync_solides_ponto(mock_db, "2026-03-01", "2026-03-31")
+            assert result["success"] is True
+            # Deve ter chamado a API para absences e occurrences
+            assert mock_fetch.call_count == 2
 
 
 # ========================================================================
