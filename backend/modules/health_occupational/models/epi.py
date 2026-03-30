@@ -61,7 +61,7 @@ class EPI(Base):
     Modelo base para tipos de EPIs disponiveis.
     """
 
-    __tablename__ = "health_epis"
+    __tablename__ = "health_epi_catalog"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
@@ -107,8 +107,8 @@ class EPI(Base):
     created_by = Column(UUID(as_uuid=True), nullable=True)
 
     # Relacionamentos
-    entregas = relationship("EPIDelivery", back_populates="epi")
-    estoque = relationship("EPIInventory", back_populates="epi", uselist=False)
+    entregas = relationship("EPIDelivery", back_populates="epi", foreign_keys="[EPIDelivery.epi_id]")
+    estoque = relationship("EPIInventory", back_populates="epi", uselist=False, foreign_keys="[EPIInventory.epi_id]")
 
     # Indices
     __table_args__ = (
@@ -139,7 +139,7 @@ class EPIDelivery(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
     # Referencias
-    epi_id = Column(UUID(as_uuid=True), ForeignKey("health_epis.id"), nullable=False, index=True)
+    epi_id = Column(UUID(as_uuid=True), ForeignKey("health_epi_catalog.id"), nullable=False, index=True)
     funcionario_id = Column(UUID(as_uuid=True), nullable=False, index=True)
 
     # Dados da entrega
@@ -217,7 +217,7 @@ class EPIInventory(Base):
     __tablename__ = "health_epi_inventory"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    epi_id = Column(UUID(as_uuid=True), ForeignKey("health_epis.id"), nullable=False, unique=True)
+    epi_id = Column(UUID(as_uuid=True), ForeignKey("health_epi_catalog.id"), nullable=False, unique=True)
 
     # Quantidades
     quantidade_atual = Column(Integer, nullable=False, default=0)

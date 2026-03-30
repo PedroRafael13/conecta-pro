@@ -154,6 +154,52 @@ async def get_contract_alerts(
     return service.get_contract_alerts(contracts, days_ahead=days_ahead)
 
 
+# ============== Contract Template Endpoints (antes de /{contract_id} para evitar captura) ==============
+
+
+@router.post(
+    "/templates",
+    response_model=ContractTemplateResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_template(
+    data: ContractTemplateCreate,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    db: AsyncSession = Depends(get_db),
+) -> ContractTemplateResponse:
+    """
+    Cria template de contrato.
+    """
+    repo = ContractRepository(db)
+    template = await repo.create_template(data)
+    logger.info(f"Template criado por {current_user.email}: {template.name}")
+    return ContractTemplateResponse.model_validate(template)
+
+
+@router.get("/templates", response_model=ContractTemplateListResponse)
+async def list_templates(
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    db: AsyncSession = Depends(get_db),
+    service_type: ServiceType | None = None,
+    approved_only: bool = False,
+) -> ContractTemplateListResponse:
+    """
+    Lista templates de contrato.
+    """
+    repo = ContractRepository(db)
+    templates = await repo.list_templates(
+        service_type=service_type.value if service_type else None,
+        approved_only=approved_only,
+    )
+    return ContractTemplateListResponse(
+        items=[ContractTemplateResponse.model_validate(t) for t in templates],
+        total=len(templates),
+    )
+
+
+# ============== Contract by ID (deve vir DEPOIS de rotas estáticas) ==============
+
+
 @router.get("/{contract_id}", response_model=ContractDetailResponse)
 async def get_contract(
     contract_id: str,
@@ -530,47 +576,7 @@ async def sign_addendum(
     return ContractAddendumResponse.model_validate(addendum)
 
 
-# ============== Contract Template Endpoints ==============
-
-
-@router.post(
-    "/templates",
-    response_model=ContractTemplateResponse,
-    status_code=status.HTTP_201_CREATED,
-)
-async def create_template(
-    data: ContractTemplateCreate,
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
-    db: AsyncSession = Depends(get_db),
-) -> ContractTemplateResponse:
-    """
-    Cria template de contrato.
-    """
-    repo = ContractRepository(db)
-    template = await repo.create_template(data)
-    logger.info(f"Template criado por {current_user.email}: {template.name}")
-    return ContractTemplateResponse.model_validate(template)
-
-
-@router.get("/templates", response_model=ContractTemplateListResponse)
-async def list_templates(
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
-    db: AsyncSession = Depends(get_db),
-    service_type: ServiceType | None = None,
-    approved_only: bool = False,
-) -> ContractTemplateListResponse:
-    """
-    Lista templates de contrato.
-    """
-    repo = ContractRepository(db)
-    templates = await repo.list_templates(
-        service_type=service_type.value if service_type else None,
-        approved_only=approved_only,
-    )
-    return ContractTemplateListResponse(
-        items=[ContractTemplateResponse.model_validate(t) for t in templates],
-        total=len(templates),
-    )
+# (create_template e list_templates movidos para antes de /{contract_id} — ver acima)
 
 
 @router.get("/templates/{template_id}", response_model=ContractTemplateResponse)

@@ -778,7 +778,7 @@ try:
         router as admin_cct_router,
     )
 
-    api_router.include_router(admin_cct_router, prefix="/api/v1/people-management")
+    api_router.include_router(admin_cct_router, prefix="/people-management")
     logger.info("Admin CCT DB: OK (CRUD convenções, cargos, feriados, benefícios)")
 except Exception as e:
     logger.warning(f"Admin CCT DB: {e}")
@@ -792,7 +792,7 @@ try:
         router as dp_payslips_router,
     )
 
-    api_router.include_router(dp_payslips_router, prefix="/api/v1/people-management")
+    api_router.include_router(dp_payslips_router, prefix="/people-management")
     logger.info("DP Payslips: OK (criar/publicar/importar contracheques)")
 except Exception as e:
     logger.warning(f"DP Payslips: {e}")

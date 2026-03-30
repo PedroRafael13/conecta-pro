@@ -46,4 +46,52 @@ try:
 except ImportError as e:
     logger.warning("Portal: falha ao importar access_management_controller: %s", e)
 
+try:
+    from .controllers.assistant_controller import router as assistant_router
+
+    router.include_router(assistant_router)
+    logger.info("Portal: assistant_controller registrado")
+except ImportError as e:
+    logger.warning("Portal: falha ao importar assistant_controller: %s", e)
+
 __all__ = ["router"]
+
+try:
+    from .controllers.notifications_controller import router as notifications_router
+
+    router.include_router(notifications_router)
+    logger.info("Portal: notifications_controller registrado")
+except ImportError as e:
+    logger.warning("Portal: falha ao importar notifications_controller: %s", e)
+
+try:
+    from .controllers.analytics_controller import router as analytics_router
+
+    router.include_router(analytics_router)
+    logger.info("Portal: analytics_controller registrado")
+except ImportError as e:
+    logger.warning("Portal: falha ao importar analytics_controller: %s", e)
+
+try:
+    from .controllers.whatsapp_controller import router as whatsapp_router
+
+    router.include_router(whatsapp_router)
+    logger.info("Portal: whatsapp_controller registrado")
+except ImportError as e:
+    logger.warning("Portal: falha ao importar whatsapp_controller: %s", e)
+
+try:
+    from .controllers.kit_approval_controller import router as kit_approval_router
+
+    router.include_router(kit_approval_router)
+    logger.info("Portal: kit_approval_controller registrado")
+except ImportError as e:
+    logger.warning("Portal: falha ao importar kit_approval_controller: %s", e)
+
+try:
+    from .controllers.mcp_controller import router as mcp_router
+
+    router.include_router(mcp_router)
+    logger.info("Portal: mcp_controller registrado")
+except ImportError as e:
+    logger.warning("Portal: falha ao importar mcp_controller: %s", e)

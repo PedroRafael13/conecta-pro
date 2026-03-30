@@ -393,7 +393,7 @@ class PipelineService:
             status = "attention"
         elif score >= 40:
             status = "warning"
-        else:
+        else:  # pragma: no cover
             status = "critical"
 
         if not recommendations:

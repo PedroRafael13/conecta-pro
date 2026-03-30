@@ -331,6 +331,77 @@ async def get_seller_commission_stats(
     return stats
 
 
+# ============== Summary Endpoints (devem vir antes de /{commission_id}) ==============
+
+
+@router.get("/summaries", response_model=list[CommissionSummaryResponse])
+async def list_commission_summaries(
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    db: AsyncSession = Depends(get_db),
+    seller_id: str | None = None,
+    year: int | None = None,
+    month: int | None = None,
+    is_closed: bool | None = None,
+) -> list[CommissionSummaryResponse]:
+    """Lista resumos mensais de comissões."""
+    repo = CommissionRepository(db)
+
+    filters = CommissionSummaryFilter(
+        seller_id=seller_id,
+        year=year,
+        month=month,
+        is_closed=is_closed,
+    )
+
+    summaries = await repo.list_summaries(filters)
+    return [CommissionSummaryResponse.model_validate(s) for s in summaries]
+
+
+@router.get(
+    "/summaries/{seller_id}/{year}/{month}",
+    response_model=CommissionSummaryResponse,
+)
+async def get_commission_summary(
+    seller_id: str,
+    year: int,
+    month: int,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    db: AsyncSession = Depends(get_db),
+) -> CommissionSummaryResponse:
+    """Busca ou cria resumo mensal de um vendedor."""
+    repo = CommissionRepository(db)
+    summary = await repo.update_summary(seller_id, year, month)
+    return CommissionSummaryResponse.model_validate(summary)
+
+
+@router.post(
+    "/summaries/{seller_id}/{year}/{month}/close",
+    response_model=CommissionSummaryResponse,
+)
+async def close_commission_summary(
+    seller_id: str,
+    year: int,
+    month: int,
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+) -> CommissionSummaryResponse:
+    """Fecha resumo mensal (impede alterações)."""
+    repo = CommissionRepository(db)
+    summary = await repo.close_summary(seller_id, year, month)
+
+    if not summary:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Resumo não encontrado",
+        )
+
+    logger.info(f"Summary {seller_id}/{year}/{month} fechado por {current_user.email}")
+    return CommissionSummaryResponse.model_validate(summary)
+
+
+# ============== Commission by ID (deve vir DEPOIS de rotas estáticas) ==============
+
+
 @router.get("/{commission_id}", response_model=CommissionDetailResponse)
 async def get_commission(
     commission_id: str,
@@ -505,69 +576,4 @@ async def confirm_commission_payment(
     return CommissionPaymentResponse.model_validate(payment)
 
 
-# ============== Summary Endpoints ==============
-
-
-@router.get("/summaries", response_model=list[CommissionSummaryResponse])
-async def list_commission_summaries(
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
-    db: AsyncSession = Depends(get_db),
-    seller_id: str | None = None,
-    year: int | None = None,
-    month: int | None = None,
-    is_closed: bool | None = None,
-) -> list[CommissionSummaryResponse]:
-    """Lista resumos mensais de comissões."""
-    repo = CommissionRepository(db)
-
-    filters = CommissionSummaryFilter(
-        seller_id=seller_id,
-        year=year,
-        month=month,
-        is_closed=is_closed,
-    )
-
-    summaries = await repo.list_summaries(filters)
-    return [CommissionSummaryResponse.model_validate(s) for s in summaries]
-
-
-@router.get(
-    "/summaries/{seller_id}/{year}/{month}",
-    response_model=CommissionSummaryResponse,
-)
-async def get_commission_summary(
-    seller_id: str,
-    year: int,
-    month: int,
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
-    db: AsyncSession = Depends(get_db),
-) -> CommissionSummaryResponse:
-    """Busca ou cria resumo mensal de um vendedor."""
-    repo = CommissionRepository(db)
-    summary = await repo.update_summary(seller_id, year, month)
-    return CommissionSummaryResponse.model_validate(summary)
-
-
-@router.post(
-    "/summaries/{seller_id}/{year}/{month}/close",
-    response_model=CommissionSummaryResponse,
-)
-async def close_commission_summary(
-    seller_id: str,
-    year: int,
-    month: int,
-    current_user: CurrentActiveUser,
-    db: AsyncSession = Depends(get_db),
-) -> CommissionSummaryResponse:
-    """Fecha resumo mensal (impede alterações)."""
-    repo = CommissionRepository(db)
-    summary = await repo.close_summary(seller_id, year, month)
-
-    if not summary:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Resumo não encontrado",
-        )
-
-    logger.info(f"Summary {seller_id}/{year}/{month} fechado por {current_user.email}")
-    return CommissionSummaryResponse.model_validate(summary)
+# (Summary endpoints movidos para antes de /{commission_id} — ver acima)
