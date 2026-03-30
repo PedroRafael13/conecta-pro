@@ -770,10 +770,38 @@ except Exception as e:
     logger.warning(f"Modulo CCT 2026: {e}")
 
 
+# =============================================================================
+# 13. CCT DB ADMIN — Admin endpoints para gerenciar CCT no banco
+# =============================================================================
+try:
+    from modules.people_management.cct.controllers.admin_cct_controller import (
+        router as admin_cct_router,
+    )
+
+    api_router.include_router(admin_cct_router, prefix="/api/v1/people-management")
+    logger.info("Admin CCT DB: OK (CRUD convenções, cargos, feriados, benefícios)")
+except Exception as e:
+    logger.warning(f"Admin CCT DB: {e}")
+
+
+# =============================================================================
+# 14. DP PAYSLIPS — Endpoint para DP publicar contracheques
+# =============================================================================
+try:
+    from modules.people_management.employee_portal.controllers.dp_payslips_controller import (
+        router as dp_payslips_router,
+    )
+
+    api_router.include_router(dp_payslips_router, prefix="/api/v1/people-management")
+    logger.info("DP Payslips: OK (criar/publicar/importar contracheques)")
+except Exception as e:
+    logger.warning(f"DP Payslips: {e}")
+
+
 # Incluir router principal
 app.include_router(api_router)
 
-logger.info("=== API CONECTA PRO INICIADA (11 módulos) ===")
+logger.info("=== API CONECTA PRO INICIADA (13 módulos) ===")
 
 
 if __name__ == "__main__":

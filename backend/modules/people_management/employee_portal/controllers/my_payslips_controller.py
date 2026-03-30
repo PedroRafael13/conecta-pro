@@ -20,8 +20,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.database import get_db
 from modules.people_management.employee_portal.auth import CurrentEmployeeId
 from modules.people_management.employee_portal.schemas.payslip import MyPayslipResponse
-from modules.people_management.employee_portal.services.document_view_service import (
-    DocumentViewService,
+from modules.people_management.employee_portal.services.payslip_portal_service import (
+    PayslipPortalService,
 )
 
 logger = logging.getLogger(__name__)
@@ -42,11 +42,9 @@ async def get_my_payslips(
 ) -> Any:
     """Retorna contracheques do funcionario autenticado."""
     target_year = year or datetime.utcnow().year
-    service = DocumentViewService(db)
-    payslips = await service.get_my_payslips(
-        employee_id=employee_id,
-        year=target_year,
-    )
+    service = PayslipPortalService(db)
+    result = await service.get_payslips_list(employee_id=employee_id, year=target_year)
+    payslips = result.get("payslips", [])
     return [MyPayslipResponse(**p) for p in payslips]
 
 
@@ -63,20 +61,14 @@ async def get_payslip_by_month(
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Retorna contracheque de um mes/ano especifico."""
-    service = DocumentViewService(db)
-    payslips = await service.get_my_payslips(
-        employee_id=employee_id,
-        year=year,
-    )
-
-    for p in payslips:
-        if p.get("month") == month:
-            return MyPayslipResponse(**p)
-
-    raise HTTPException(
-        status_code=http_status.HTTP_404_NOT_FOUND,
-        detail=f"Contracheque de {month:02d}/{year} nao encontrado.",
-    )
+    service = PayslipPortalService(db)
+    data = await service.get_payslip_detail(employee_id=employee_id, month=month, year=year)
+    if not data:
+        raise HTTPException(
+            status_code=http_status.HTTP_404_NOT_FOUND,
+            detail=f"Contracheque de {month:02d}/{year} nao encontrado.",
+        )
+    return MyPayslipResponse(**data)
 
 
 @router.get(
@@ -91,14 +83,8 @@ async def get_payslip_pdf(
     db: AsyncSession = Depends(get_db),
 ) -> StreamingResponse:
     """Gera PDF do contracheque de um mes/ano especifico."""
-    service = DocumentViewService(db)
-    payslips = await service.get_my_payslips(employee_id=employee_id, year=year)
-
-    payslip_data = None
-    for p in payslips:
-        if p.get("month") == month:
-            payslip_data = p
-            break
+    service = PayslipPortalService(db)
+    payslip_data = await service.get_payslip_detail(employee_id=employee_id, month=month, year=year)
 
     if not payslip_data:
         raise HTTPException(

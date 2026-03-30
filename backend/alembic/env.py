@@ -69,6 +69,14 @@ from modules.operacional.models import (  # noqa: F401
     TimeBank,
 )
 
+# People Management - CCT DB models
+from modules.people_management.cct.models.cct_models import (  # noqa: F401
+    CCTBeneficio,
+    CCTCargo,
+    CCTConvencao,
+    CCTFeriado,
+)
+
 # People Management - Portal models
 from modules.people_management.employee_portal.models import (  # noqa: F401
     PortalAccess,

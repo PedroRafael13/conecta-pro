@@ -14,6 +14,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
 from modules.people_management.employee_portal.auth import CurrentEmployeeId
+from modules.people_management.employee_portal.utils.portal_cache import (
+    CACHE_TTLS,
+    portal_cache_get,
+    portal_cache_set,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +31,15 @@ async def get_meu_perfil(
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Retorna perfil completo do funcionario autenticado."""
+    eid = str(employee_id)
+
+    # Tentar cache primeiro (TTL 5 min)
+    cached = await portal_cache_get(eid, "perfil")
+    if cached is not None:
+        return cached
+
+    result_data: dict[str, Any] = {"employee_id": eid, "nome": "Funcionario", "status": "ativo"}
+
     try:
         from sqlalchemy import select
 
@@ -35,7 +49,7 @@ async def get_meu_perfil(
         emp = result.scalar_one_or_none()
 
         if emp:
-            return {
+            result_data = {
                 "employee_id": str(emp.id),
                 "nome": emp.nome,
                 "cargo": getattr(emp, "cargo", None),
@@ -52,7 +66,8 @@ async def get_meu_perfil(
     except ImportError:
         pass
 
-    return {"employee_id": employee_id, "nome": "Funcionario", "status": "ativo"}
+    await portal_cache_set(eid, "perfil", result_data, ttl=CACHE_TTLS["perfil"])
+    return result_data
 
 
 @router.get("/contrato")
@@ -61,6 +76,15 @@ async def get_meu_contrato(
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Retorna dados contratuais do funcionario."""
+    eid = str(employee_id)
+
+    # Tentar cache primeiro (TTL 5 min)
+    cached = await portal_cache_get(eid, "contrato")
+    if cached is not None:
+        return cached
+
+    result_data: dict[str, Any] = {"employee_id": eid, "tipo_contrato": "CLT"}
+
     try:
         from sqlalchemy import select
 
@@ -74,7 +98,7 @@ async def get_meu_contrato(
             cargo = getattr(emp, "cargo", "") or ""
 
             # Validar contra piso CCT
-            piso_info = {}
+            piso_info: dict[str, Any] = {}
             try:
                 from modules.cct.validators.salary_validator import SalaryValidator
 
@@ -82,7 +106,7 @@ async def get_meu_contrato(
             except ImportError:
                 pass
 
-            return {
+            result_data = {
                 "employee_id": str(emp.id),
                 "tipo_contrato": getattr(emp, "tipo_contrato", "CLT"),
                 "regime_trabalho": getattr(emp, "regime_trabalho", None),
@@ -99,4 +123,5 @@ async def get_meu_contrato(
     except ImportError:
         pass
 
-    return {"employee_id": employee_id, "tipo_contrato": "CLT"}
+    await portal_cache_set(eid, "contrato", result_data, ttl=CACHE_TTLS["contrato"])
+    return result_data

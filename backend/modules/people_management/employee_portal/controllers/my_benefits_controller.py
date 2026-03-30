@@ -13,6 +13,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
 from modules.people_management.employee_portal.auth import CurrentEmployeeId
+from modules.people_management.employee_portal.utils.portal_cache import (
+    CACHE_TTLS,
+    portal_cache_get,
+    portal_cache_set,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +30,13 @@ async def get_my_benefits(
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Retorna beneficios do funcionario com valores da CCT 2026."""
+    eid = str(employee_id)
+
+    # Tentar cache primeiro (TTL 1 hora — dados de beneficios mudam raramente)
+    cached = await portal_cache_get(eid, "beneficios")
+    if cached is not None:
+        return cached
+
     from modules.cct.models.benefits import BENEFICIOS_OBRIGATORIOS_CCT
 
     # Buscar dados do colaborador
@@ -93,11 +105,14 @@ async def get_my_benefits(
             }
         )
 
-    return {
-        "employee_id": employee_id,
+    result_data = {
+        "employee_id": eid,
         "cargo": cargo,
         "salario_base": salario_base,
         "beneficios_ativos": beneficios_ativos,
         "beneficios_cct": beneficios_cct,
         "cct": "SINDECOMPRESTS/SINDICOND-AM 2026",
     }
+
+    await portal_cache_set(eid, "beneficios", result_data, ttl=CACHE_TTLS["beneficios"])
+    return result_data
