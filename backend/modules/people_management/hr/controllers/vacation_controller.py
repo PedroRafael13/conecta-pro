@@ -139,6 +139,27 @@ async def get_vacation(
     return vacation
 
 
+@router.post("/sync-solides")
+async def sync_ferias_solides(
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+    periodo_inicio: str | None = Query(None, description="YYYY-MM-DD"),
+    periodo_fim: str | None = Query(None, description="YYYY-MM-DD"),
+) -> Any:
+    """Sincroniza férias do Sólides Tangerino para o módulo de férias do DP."""
+    service = VacationService(db)
+    try:
+        result = await service.sync_vacations_from_solides(
+            periodo_inicio=periodo_inicio,
+            periodo_fim=periodo_fim,
+        )
+        if result.get("success"):
+            await db.commit()
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.post("/{vacation_id}/approve")
 async def approve_vacation(
     vacation_id: str,

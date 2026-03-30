@@ -360,28 +360,57 @@ class PayrollService:
     async def _get_faltas_atrasos(self, employee_id: str | UUID, month: int, year: int) -> tuple[int, int]:
         """Busca faltas e atrasos do ponto eletrônico.
 
+        Fonte primária: gp_justifications (local + sincronizado do Sólides).
+        Fonte secundária: solides_absences (staging — pode não existir).
+
         Returns:
             Tuple (dias_falta, minutos_atraso).
         """
+        faltas_total = 0
+        atrasos_total = 0
+
+        # Fonte 1: gp_justifications (sempre disponível, inclui dados do Sólides)
         try:
-            # Buscar faltas (dias sem batida e sem justificativa)
             result = await self.db.execute(
                 text(
                     "SELECT "
-                    "  COALESCE(SUM(CASE WHEN tipo = 'falta' THEN 1 ELSE 0 END), 0) as faltas, "
-                    "  COALESCE(SUM(CASE WHEN tipo = 'atraso' THEN minutos ELSE 0 END), 0) as atrasos "
-                    "FROM solides_absences "
-                    "WHERE employee_id = :eid "
-                    "AND EXTRACT(MONTH FROM data) = :m "
-                    "AND EXTRACT(YEAR FROM data) = :y "
-                    "AND justificada = false"
+                    "  COALESCE(SUM(CASE WHEN justification_type = 'falta' THEN 1 ELSE 0 END), 0), "
+                    "  COALESCE(SUM(CASE WHEN justification_type = 'atraso' THEN 60 ELSE 0 END), 0) "
+                    "FROM gp_justifications "
+                    "WHERE employee_id::text = :eid "
+                    "  AND status IN ('aprovada', 'pendente') "
+                    "  AND EXTRACT(MONTH FROM created_at) = :m "
+                    "  AND EXTRACT(YEAR FROM created_at) = :y"
                 ),
                 {"eid": str(employee_id), "m": month, "y": year},
             )
             row = result.fetchone()
             if row:
-                return int(row[0] or 0), int(row[1] or 0)
+                faltas_total += int(row[0] or 0)
+                atrasos_total += int(row[1] or 0)
         except Exception as e:
-            logger.debug("Faltas/atrasos nao encontrados para %s: %s", employee_id, e)
+            logger.debug("gp_justifications nao acessivel para %s: %s", employee_id, e)
 
-        return 0, 0
+        # Fonte 2: solides_absences staging (pode não existir)
+        try:
+            result = await self.db.execute(
+                text(
+                    "SELECT "
+                    "  COALESCE(SUM(CASE WHEN tipo = 'falta' THEN 1 ELSE 0 END), 0), "
+                    "  COALESCE(SUM(CASE WHEN tipo = 'atraso' THEN minutos ELSE 0 END), 0) "
+                    "FROM solides_absences "
+                    "WHERE employee_id = :eid "
+                    "  AND EXTRACT(MONTH FROM data) = :m "
+                    "  AND EXTRACT(YEAR FROM data) = :y "
+                    "  AND justificada = false"
+                ),
+                {"eid": str(employee_id), "m": month, "y": year},
+            )
+            row = result.fetchone()
+            if row:
+                faltas_total += int(row[0] or 0)
+                atrasos_total += int(row[1] or 0)
+        except Exception as e:
+            logger.debug("solides_absences nao acessivel para %s: %s", employee_id, e)
+
+        return faltas_total, atrasos_total

@@ -59,6 +59,10 @@ class JustificationModel(Base):
     # Anexos (fotos, documentos)
     attachments = Column(JSON, nullable=True, default=list)
 
+    # Integração Sólides — rastreabilidade da origem
+    source = Column(String(50), nullable=True, default=None)
+    source_id = Column(String(200), nullable=True, default=None, index=True)
+
     # Revisao
     reviewed_by = Column(String(36), nullable=True)
     reviewed_at = Column(DateTime, nullable=True)
@@ -81,6 +85,8 @@ class JustificationModel(Base):
             "category": self.category,
             "status": self.status,
             "attachments": self.attachments or [],
+            "source": self.source,
+            "source_id": self.source_id,
             "reviewed_by": self.reviewed_by,
             "reviewed_at": self.reviewed_at.isoformat() if self.reviewed_at else None,
             "created_at": self.created_at.isoformat() if self.created_at else None,

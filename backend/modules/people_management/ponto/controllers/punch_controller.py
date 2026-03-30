@@ -217,6 +217,14 @@ def sincronizar_solides(
     return SyncSolidesResponse(**data)
 
 
+@router.post("/sync-escalas", summary="Sincronizar escalas de trabalho do Sólides")
+def sync_escalas(
+    db: Session = Depends(get_sync_db_dependency),
+) -> dict[str, Any]:
+    """Sincroniza escalas de trabalho do Sólides para employees.escala_padrao."""
+    return dashboard_service.sync_escalas_from_solides(db)
+
+
 @router.post("/ajuste", summary="Ajuste manual de ponto pelo DP")
 def ajuste_ponto(
     request: AjusteRequest,

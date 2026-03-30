@@ -632,6 +632,103 @@ def sync_solides_ponto(db: Session, periodo_inicio: str | None, periodo_fim: str
     }
 
 
+def sync_escalas_from_solides(db: Session) -> dict[str, Any]:
+    """Sincroniza escalas de trabalho do Sólides para employees.escala_padrao.
+
+    Busca work_schedules do Tangerino e atualiza employees via solides_id.
+    """
+    api_token = os.getenv("SOLIDES_API_TOKEN")
+    if not api_token:
+        logger.warning("SOLIDES_API_TOKEN não configurado — sync_escalas ignorado")
+        return {"success": True, "total_atualizados": 0, "erros": []}
+
+    base_url = "https://employer.tangerino.com.br"
+    headers = {"Authorization": f"Basic {api_token}", "Accept": "application/json"}
+    atualizados = 0
+    erros: list[dict[str, Any]] = []
+
+    try:
+        # Buscar todos os colaboradores com suas escalas
+        resp = httpx.get(
+            f"{base_url}/employee/find-all",
+            headers=headers,
+            params={"page": 0, "size": 200},
+            timeout=30.0,
+        )
+        if resp.status_code != 200:
+            logger.warning("Sólides /employee/find-all retornou %d", resp.status_code)
+            return {
+                "success": False,
+                "total_atualizados": 0,
+                "erros": [{"error": f"HTTP {resp.status_code}"}],
+            }
+
+        data = resp.json()
+        employees = data.get("content", data) if isinstance(data, dict) else data
+
+        for emp in employees:
+            solides_id = str(emp.get("id", ""))
+            if not solides_id:
+                continue
+
+            # Pegar escala do colaborador — campo workSchedule ou workScaleType
+            work_schedule = (
+                emp.get("workScaleType") or emp.get("workSchedule") or emp.get("escala") or emp.get("scheduleType")
+            )
+
+            if not work_schedule:
+                # Tentar buscar via work-schedule separado
+                ws = emp.get("workSchedule") or {}
+                work_schedule = ws.get("name") or ws.get("type") if isinstance(ws, dict) else None
+
+            if not work_schedule:
+                continue
+
+            # Mapear tipo de escala Sólides para formato Conecta PRO
+            escala_map = {
+                "12X36": "12x36",
+                "12x36": "12x36",
+                "DOZE_TRINTA_SEIS": "12x36",
+                "5X2": "5x2",
+                "5x2": "5x2",
+                "CINCO_DOIS": "5x2",
+                "6X1": "6x1",
+                "6x1": "6x1",
+                "SEIS_UM": "6x1",
+                "PLANTAO": "plantao",
+                "ESCALA_LIVRE": "livre",
+            }
+            escala_padrao = escala_map.get(str(work_schedule).upper(), str(work_schedule).lower()[:20])
+
+            try:
+                r = db.execute(
+                    text(
+                        "UPDATE employees SET escala_padrao = :escala "
+                        "WHERE solides_id = :sid "
+                        "AND (escala_padrao IS NULL OR escala_padrao != :escala)"
+                    ),
+                    {"escala": escala_padrao, "sid": solides_id},
+                )
+                if r.rowcount > 0:
+                    atualizados += 1
+            except Exception as e:
+                erros.append({"solides_id": solides_id, "error": str(e)[:100]})
+
+        if atualizados > 0:
+            db.commit()
+
+    except Exception as e:
+        logger.warning("Erro ao sincronizar escalas do Sólides: %s", e)
+        erros.append({"error": str(e)[:200]})
+
+    logger.info("[Sólides] Escalas sincronizadas: %d atualizadas, %d erros", atualizados, len(erros))
+    return {
+        "success": True,
+        "total_atualizados": atualizados,
+        "erros": erros,
+    }
+
+
 def registrar_ajuste(db: Session, ajuste: dict[str, Any]) -> dict[str, Any]:
     """Registra ajuste manual de ponto pelo DP."""
     from uuid import uuid4

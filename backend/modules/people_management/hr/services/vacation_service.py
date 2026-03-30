@@ -11,7 +11,7 @@ from datetime import date
 from decimal import Decimal
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.operacional.models.employee import Employee
@@ -227,4 +227,129 @@ class VacationService:
             "vacation_id": str(vacation_id),
             "status": "approved",
             "message": "Férias aprovadas com sucesso",
+        }
+
+    async def sync_vacations_from_solides(
+        self,
+        employee_id: str | None = None,
+        periodo_inicio: str | None = None,
+        periodo_fim: str | None = None,
+    ) -> dict:
+        """Sincroniza férias do Sólides para o sistema de férias do DP.
+
+        Busca absences do tipo FERIAS/VACATION e cria registros locais
+        em gp_justifications, evitando duplicatas via source_id.
+
+        Returns:
+            Dict com total_importadas, total_atualizadas, erros.
+        """
+        import os
+        from datetime import date
+        from uuid import uuid4
+
+        import httpx
+
+        api_token = os.getenv("SOLIDES_API_TOKEN")
+        if not api_token:
+            logger.warning("sync_vacations_from_solides: SOLIDES_API_TOKEN não configurado")
+            return {"success": False, "reason": "no_token", "total_importadas": 0}
+
+        hoje = date.today()
+        inicio = periodo_inicio or hoje.replace(day=1).isoformat()
+        fim = periodo_fim or hoje.isoformat()
+
+        importadas = 0
+        atualizadas = 0
+        erros: list[dict] = []
+
+        try:
+            base_url = os.getenv("SOLIDES_BASE_URL", "https://employer.tangerino.com.br")
+            headers = {"Authorization": f"Basic {api_token}", "Accept": "application/json"}
+            params: dict = {"startDate": inicio, "endDate": fim, "page": 0, "size": 200}
+            if employee_id:
+                params["employeeId"] = employee_id
+
+            resp = httpx.get(f"{base_url}/absence/find-all", headers=headers, params=params, timeout=30)
+            if resp.status_code != 200:
+                return {"success": False, "reason": f"api_{resp.status_code}", "total_importadas": 0}
+
+            data = resp.json()
+            absences = data if isinstance(data, list) else data.get("content", data.get("data", []))
+
+            ferias_types = {"FERIAS", "VACATION", "FÉRIAS", "ANNUAL_LEAVE", "FOLGA"}
+            ferias = [
+                a
+                for a in absences
+                if str(a.get("type", "")).upper() in ferias_types
+                or "FERIA" in str(a.get("type", "")).upper()
+                or "VACATION" in str(a.get("type", "")).upper()
+            ]
+
+            for absence in ferias:
+                try:
+                    solides_id = str(absence.get("id", ""))
+                    solides_emp_id = str(absence.get("employeeId") or absence.get("employee_id", ""))
+                    start_raw = absence.get("startDate") or absence.get("start_date", "")
+                    end_raw = absence.get("endDate") or absence.get("end_date", start_raw)
+                    if not start_raw:
+                        continue
+
+                    row = (
+                        await self.db.execute(
+                            text("SELECT employee_id FROM solides_employees WHERE solides_id::text = :sid LIMIT 1"),
+                            {"sid": solides_emp_id},
+                        )
+                    ).fetchone()
+                    if not row:
+                        continue
+                    local_emp_id = row[0]
+
+                    source_id = f"solides_ferias_{solides_id}"
+                    dup = (
+                        await self.db.execute(
+                            text("SELECT 1 FROM gp_justifications WHERE source_id = :sid LIMIT 1"),
+                            {"sid": source_id},
+                        )
+                    ).fetchone()
+                    if dup:
+                        atualizadas += 1
+                        continue
+
+                    await self.db.execute(
+                        text("""
+                            INSERT INTO gp_justifications
+                            (justification_id, employee_id, justification_type, reason, category,
+                             status, source, source_id, created_at)
+                            VALUES (:jid, :eid, 'falta',
+                                    :reason, 'outro', 'aprovada', 'solides', :source_id, NOW())
+                        """),
+                        {
+                            "jid": str(uuid4()),
+                            "eid": local_emp_id,
+                            "reason": f"Férias Sólides: {start_raw[:10]} a {end_raw[:10] if end_raw else start_raw[:10]}",
+                            "source_id": source_id,
+                        },
+                    )
+                    await self.db.flush()
+                    importadas += 1
+
+                except Exception as e:
+                    erros.append({"absence_id": str(absence.get("id", "")), "error": str(e)[:200]})
+
+        except Exception as e:
+            logger.error("sync_vacations_from_solides erro: %s", e)
+            return {"success": False, "error": str(e), "total_importadas": 0}
+
+        logger.info(
+            "sync_vacations_from_solides: %d importadas, %d atualizadas, %d erros",
+            importadas,
+            atualizadas,
+            len(erros),
+        )
+        return {
+            "success": True,
+            "total_importadas": importadas,
+            "total_atualizadas": atualizadas,
+            "total_erros": len(erros),
+            "erros": erros,
         }

@@ -795,6 +795,47 @@ class SolidesConnector(BaseConnector):
             logger.warning("[SolidesConnector] Erro ao enviar justificativa ao Sólides: %s", e)
             return EntityResult(success=False, action="error", error=str(e))
 
+    async def update_absence_status(
+        self,
+        absence_solides_id: str,
+        approved: bool,
+        reviewer_notes: str | None = None,
+    ) -> EntityResult:
+        """Atualiza status de absenteísmo no Sólides (aprovado/rejeitado).
+
+        Args:
+            absence_solides_id: ID do absenteísmo no Sólides (do source_id).
+            approved: True = aprovado, False = rejeitado.
+            reviewer_notes: Observações do revisor.
+
+        Returns:
+            EntityResult com resultado.
+        """
+        status_data = {
+            "status": "APPROVED" if approved else "REJECTED",
+        }
+        if reviewer_notes:
+            status_data["reviewNotes"] = reviewer_notes
+
+        try:
+            result = await self.update_entity("absences", absence_solides_id, status_data)
+            if result.success:
+                logger.info(
+                    "[SolidesConnector] Absence %s marcada como %s no Sólides",
+                    absence_solides_id,
+                    "APPROVED" if approved else "REJECTED",
+                )
+            else:
+                logger.warning(
+                    "[SolidesConnector] Falha ao atualizar absence %s: %s",
+                    absence_solides_id,
+                    result.error,
+                )
+            return result
+        except Exception as e:
+            logger.warning("[SolidesConnector] Erro ao atualizar absence status: %s", e)
+            return EntityResult(success=False, action="error", error=str(e))
+
     # ==================== WEBHOOKS ====================
 
     async def validate_webhook(self, headers: dict[str, str], body: bytes) -> bool:

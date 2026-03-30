@@ -35,11 +35,11 @@ def run_async(coro):
 
 
 def _propagate_employees_to_db(solides_employees: list[dict]) -> dict:
-    """Propaga dados do Tangerino para tabela employees (por CPF).
+    """Propaga dados do Sólides para tabela employees (por CPF).
 
-    Atualiza campos pessoais (nascimento, sexo, PIS, admissao, solides_id).
-    NAO toca em cargo e salario (mantidos do cadastro interno).
-    Inativa funcionarios que nao estao mais no Solides.
+    Atualiza campos pessoais (nascimento, sexo, PIS, admissao, solides_id, cargo).
+    Propaga terminationDate → data_demissao + status='inativo' imediatamente.
+    Inativa (com data_demissao=CURRENT_DATE) funcionarios que desapareceram do Solides.
 
     Returns:
         Dict com estatisticas de propagacao.
@@ -84,6 +84,18 @@ def _propagate_employees_to_db(solides_employees: list[dict]) -> dict:
                 except Exception:
                     pass
 
+            # Parse terminationDate (demissão)
+            termination = None
+            td = emp.get("terminationDate")
+            if td:
+                try:
+                    if isinstance(td, (int, float)):
+                        termination = datetime.fromtimestamp(td / 1000).date()
+                    elif isinstance(td, str):
+                        termination = datetime.fromisoformat(td[:10]).date()
+                except Exception:
+                    pass
+
             # Gender (varchar(1))
             gender = emp.get("gender", "")
             sexo = None
@@ -117,8 +129,55 @@ def _propagate_employees_to_db(solides_employees: list[dict]) -> dict:
                 sets.append("nome = :nome")
                 params["nome"] = name
 
+            # Parse jobRole / cargo do Sólides
+            cargo_solides = emp.get("jobRole", {})
+            if isinstance(cargo_solides, dict):
+                cargo_nome = cargo_solides.get("name", "")
+            elif isinstance(cargo_solides, str):
+                cargo_nome = cargo_solides
+            else:
+                cargo_nome = ""
+            if cargo_nome:
+                sets.append("cargo = :cargo")
+                params["cargo"] = cargo_nome[:100]
+
+            if termination:
+                sets.append("data_demissao = :td")
+                params["td"] = termination
+                sets.append("status = :st")
+                params["st"] = "inativo"
+
+            # Escala de trabalho (workSchedule)
+            work_schedule_data = emp.get("workSchedule") or emp.get("work_schedule") or {}
+            if isinstance(work_schedule_data, dict):
+                schedule_name = work_schedule_data.get("name", "") or work_schedule_data.get("description", "")
+            elif isinstance(work_schedule_data, str):
+                schedule_name = work_schedule_data
+            else:
+                schedule_name = ""
+
+            if schedule_name:
+                sched_upper = schedule_name.upper()
+                if "12" in sched_upper and "36" in sched_upper:
+                    escala = "12x36"
+                elif "44" in sched_upper or "8H" in sched_upper or "8 H" in sched_upper:
+                    escala = "44h"
+                elif "36" in sched_upper and "H" in sched_upper:
+                    escala = "36h"
+                elif "30" in sched_upper:
+                    escala = "30h"
+                elif "24" in sched_upper and "72" in sched_upper:
+                    escala = "24x72"
+                else:
+                    escala = schedule_name[:30]  # Usar nome original truncado
+
+                sets.append("escala_padrao = :escala")
+                params["escala"] = escala
+
             if sets:
-                sql = f"UPDATE employees SET {', '.join(sets)} WHERE cpf = :cpf AND status = 'ativo'"
+                # Se há demissão, atualizar mesmo que já esteja inativo (para garantir data_demissao)
+                status_filter = "AND status IN ('ativo', 'inativo')" if termination else "AND status = 'ativo'"
+                sql = f"UPDATE employees SET {', '.join(sets)} WHERE cpf = :cpf {status_filter}"
                 r = conn.execute(text(sql), params)
                 if r.rowcount > 0:
                     updated += 1
@@ -129,9 +188,9 @@ def _propagate_employees_to_db(solides_employees: list[dict]) -> dict:
         if cpfs_solides:
             cpf_list = ",".join(f"'{c}'" for c in cpfs_solides)
             inact_sql = text(
-                f"UPDATE employees SET status = 'inativo' "
+                f"UPDATE employees SET status = 'inativo', data_demissao = CURRENT_DATE "
                 f"WHERE solides_id IS NOT NULL AND cpf NOT IN ({cpf_list}) "
-                f"AND status = 'ativo'"
+                f"AND status = 'ativo' AND data_demissao IS NULL"
             )
             r = conn.execute(inact_sql)
             inactivated = r.rowcount
@@ -447,6 +506,93 @@ def cleanup_old_webhook_logs(days: int = 7):
 
     # Placeholder - implementar com banco de dados
     return {"deleted_webhooks": 0, "message": f"Cleanup de webhooks > {days} dias"}
+
+
+# ==================== WORK SCHEDULE SYNC ====================
+
+
+@shared_task(name="integrations.sync_work_schedules_from_solides", bind=True, max_retries=2)
+def sync_work_schedules_from_solides(self) -> dict:
+    """Sincroniza escalas de trabalho do Sólides para employees.escala_padrao."""
+    import os
+
+    api_token = os.getenv("SOLIDES_API_TOKEN")
+    if not api_token:
+        logger.warning("[Solides] SOLIDES_API_TOKEN não configurado — pulando sync de escalas")
+        return {"success": False, "reason": "no_token"}
+
+    try:
+        db_url = os.environ.get("DATABASE_URL", "").replace("+asyncpg", "")
+        if not db_url:
+            return {"success": False, "reason": "no_db_url"}
+
+        from sqlalchemy import create_engine
+        from sqlalchemy import text as sa_text
+
+        engine = create_engine(db_url)
+
+        # Buscar escalas do Sólides de forma síncrona via httpx
+        import httpx
+
+        headers = {"Authorization": f"Basic {api_token}", "Accept": "application/json"}
+        base_url = os.getenv("SOLIDES_BASE_URL", "https://employer.tangerino.com.br")
+
+        resp = httpx.get(f"{base_url}/work-schedule", headers=headers, timeout=30)
+        if resp.status_code != 200:
+            logger.warning("[Solides] Erro ao buscar work-schedules: %s", resp.status_code)
+            return {"success": False, "reason": f"api_error_{resp.status_code}"}
+
+        data = resp.json()
+        schedules = data if isinstance(data, list) else data.get("content", data.get("data", []))
+
+        # Mapear id → nome normalizado
+        schedule_map = {}
+        for s in schedules:
+            sid = str(s.get("id", ""))
+            name = s.get("name", "") or s.get("description", "")
+            if sid and name:
+                sched_upper = name.upper()
+                if "12" in sched_upper and "36" in sched_upper:
+                    schedule_map[sid] = "12x36"
+                elif "44" in sched_upper or "8H" in sched_upper:
+                    schedule_map[sid] = "44h"
+                elif "24" in sched_upper and "72" in sched_upper:
+                    schedule_map[sid] = "24x72"
+                else:
+                    schedule_map[sid] = name[:30]
+
+        # Buscar employees com solides_id e atualizar escala
+        updated = 0
+        with engine.connect() as conn:
+            # Buscar employees com solides_id mapeado
+            rows = conn.execute(
+                sa_text(
+                    "SELECT e.id, se.extra_data "
+                    "FROM employees e "
+                    "JOIN solides_employees se ON se.employee_id = e.id "
+                    "WHERE e.status = 'ativo'"
+                )
+            ).fetchall()
+
+            for row in rows:
+                emp_id = row[0]
+                extra = row[1] or {}
+                sched_id = str(extra.get("workScheduleId", "") or extra.get("work_schedule_id", ""))
+                if sched_id and sched_id in schedule_map:
+                    conn.execute(
+                        sa_text("UPDATE employees SET escala_padrao = :e WHERE id = :id"),
+                        {"e": schedule_map[sched_id], "id": emp_id},
+                    )
+                    updated += 1
+
+            conn.commit()
+
+        logger.info("[Solides] Escalas sincronizadas: %d colaboradores atualizados", updated)
+        return {"success": True, "updated": updated, "schedules_found": len(schedule_map)}
+
+    except Exception as e:
+        logger.error("[Solides] Erro ao sincronizar escalas: %s", e)
+        return {"success": False, "error": str(e)}
 
 
 # ==================== HELPER FUNCTIONS ====================

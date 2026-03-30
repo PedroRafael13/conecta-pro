@@ -283,6 +283,15 @@ class PunchService:
         justification.review_notes = notes
 
         await self.db.flush()
+
+        # Push bidirecional: envia status de revisão para Sólides
+        await self._push_justification_review_to_solides(
+            justification_id=justification_id,
+            source_id=justification.source_id if hasattr(justification, "source_id") else None,
+            approved=(action == "aprovar"),
+            reviewer_notes=notes,
+        )
+
         return justification.to_dict()
 
     async def get_justificativas_pendentes(self, employee_id: int | None = None) -> list[dict[str, Any]]:
@@ -446,6 +455,56 @@ class PunchService:
             )
         except Exception as e:
             logger.warning("Push Sólides (justificativa) falhou — não crítico: %s", e)
+
+    async def _push_justification_review_to_solides(
+        self,
+        justification_id: str,
+        source_id: str | None,
+        approved: bool,
+        reviewer_notes: str | None,
+    ) -> None:
+        """Push de aprovação/rejeição de justificativa para Sólides — nunca bloqueia."""
+        import os
+
+        api_token = os.getenv("SOLIDES_API_TOKEN")
+        if not api_token:
+            return
+
+        # Extrair o ID do Sólides do source_id (formato: "solides_abs_123" ou "solides_occ_123")
+        if not source_id:
+            # Tentar buscar do DB
+            try:
+                result = await self.db.execute(
+                    text("SELECT source_id FROM gp_justifications WHERE justification_id = :jid LIMIT 1"),
+                    {"jid": justification_id},
+                )
+                row = result.fetchone()
+                if row:
+                    source_id = row[0]
+            except Exception:
+                return
+
+        if not source_id or not source_id.startswith("solides_"):
+            return  # Justificativa local, não do Sólides
+
+        # Extrair ID Sólides do source_id
+        # Formatos: "solides_abs_123" → "123" | "solides_occ_123" → "123"
+        parts = source_id.split("_")
+        if len(parts) < 3:
+            return
+        solides_absence_id = parts[-1]
+
+        try:
+            from modules.integrations.connectors.solides.connector import SolidesConnector
+
+            connector = SolidesConnector(credentials={"api_token": api_token})
+            await connector.update_absence_status(
+                absence_solides_id=solides_absence_id,
+                approved=approved,
+                reviewer_notes=reviewer_notes,
+            )
+        except Exception as e:
+            logger.warning("Push review Sólides falhou — não crítico: %s", e)
 
     # =========================================================================
     # GEOFENCE
