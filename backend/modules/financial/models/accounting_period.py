@@ -11,7 +11,6 @@ from sqlalchemy import (
     Date,
     DateTime,
     Enum,
-    ForeignKey,
     Integer,
     Numeric,
     String,
@@ -72,12 +71,7 @@ class AccountingPeriod(Base):
     # Multi-tenant
     condominio_id = Column(UUID(as_uuid=True), nullable=False, index=True)
 
-    # Referência ao Plano de Contas
-    chart_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("fin_charts_of_accounts.id"),
-        nullable=True,
-    )
+    # chart_id removido: não existe na tabela fin_accounting_periods
 
     # Identificação do Período
     code = Column(String(20), nullable=False)  # Ex: "2024-01", "2024-Q1"
@@ -104,8 +98,10 @@ class AccountingPeriod(Base):
     # Datas
     start_date = Column(Date, nullable=False)
     end_date = Column(Date, nullable=False)
-    opening_date = Column(DateTime(timezone=True), nullable=True)  # Quando foi aberto
-    closing_date = Column(DateTime(timezone=True), nullable=True)  # Quando foi fechado
+    opened_at = Column(DateTime(timezone=True), nullable=True)  # Quando foi aberto (era opening_date)
+    opened_by = Column(UUID(as_uuid=True), nullable=True)  # Quem abriu
+    closed_at = Column(DateTime(timezone=True), nullable=True)  # Quando foi fechado (era closing_date)
+    # opening_date e closing_date removidos: banco usa opened_at e closed_at
 
     # Tipo de Fechamento
     closing_type = Column(
@@ -117,21 +113,13 @@ class AccountingPeriod(Base):
     total_entries = Column(Integer, default=0, nullable=False)
     total_debit = Column(Numeric(18, 2), default=Decimal("0"), nullable=False)
     total_credit = Column(Numeric(18, 2), default=Decimal("0"), nullable=False)
-    total_documents = Column(Integer, default=0, nullable=False)
-
-    # Saldos de abertura e fechamento
-    opening_balance_total = Column(Numeric(18, 2), default=Decimal("0"), nullable=False)
-    closing_balance_total = Column(Numeric(18, 2), default=Decimal("0"), nullable=False)
-
-    # Resultado do período
-    period_revenue = Column(Numeric(18, 2), default=Decimal("0"), nullable=False)
-    period_expenses = Column(Numeric(18, 2), default=Decimal("0"), nullable=False)
-    period_result = Column(Numeric(18, 2), default=Decimal("0"), nullable=False)
+    # total_documents, opening_balance_total, closing_balance_total removidos: não existem
+    # period_revenue, period_expenses, period_result removidos: não existem
 
     # Fechamento
     closed_by = Column(UUID(as_uuid=True), nullable=True)
     closing_notes = Column(Text, nullable=True)
-    closing_journal_id = Column(UUID(as_uuid=True), nullable=True)  # Lançamento de encerramento
+    # closing_journal_id removido: não existe na tabela
 
     # Reabertura
     reopened_by = Column(UUID(as_uuid=True), nullable=True)
@@ -139,11 +127,7 @@ class AccountingPeriod(Base):
     reopen_reason = Column(Text, nullable=True)
     reopen_count = Column(Integer, default=0, nullable=False)
 
-    # Aprovação
-    requires_approval = Column(Boolean, default=True, nullable=False)
-    approved_by = Column(UUID(as_uuid=True), nullable=True)
-    approved_at = Column(DateTime(timezone=True), nullable=True)
-    approval_notes = Column(Text, nullable=True)
+    # Aprovação removida: requires_approval, approved_by, approved_at, approval_notes não existem
 
     # SPED
     sped_transmitted = Column(Boolean, default=False, nullable=False)
@@ -151,13 +135,15 @@ class AccountingPeriod(Base):
     sped_receipt = Column(String(100), nullable=True)
 
     # Integração
-    external_code = Column(String(50), nullable=True)
+    external_reference = Column(String(50), nullable=True)  # era external_code no modelo antigo
     integration_data = Column(JSONB, nullable=True)
 
     # Flags
-    is_initial = Column(Boolean, default=False, nullable=False)  # Período inicial
+    # is_initial removido: não existe na tabela
     is_adjustment = Column(Boolean, default=False, nullable=False)  # Período de ajuste
-    allows_entries = Column(Boolean, default=True, nullable=False)
+    is_closing = Column(Boolean, default=False, nullable=False)  # É período de fechamento
+    is_opening = Column(Boolean, default=False, nullable=False)  # É período de abertura
+    allow_posting = Column(Boolean, default=True, nullable=False)  # Permite lançamentos
     active = Column(Boolean, default=True, nullable=False)
 
     # Observações

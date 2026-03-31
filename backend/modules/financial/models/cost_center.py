@@ -88,11 +88,12 @@ class CostCenter(Base):
     # Identificação
     code = Column(String(20), nullable=False, index=True)
     name = Column(String(100), nullable=False)
-    short_name = Column(String(30), nullable=True)
+    # short_name removido: coluna não existe na tabela fin_cost_centers
     description = Column(Text, nullable=True)
 
     # Tipo e Status
-    cost_center_type = Column(
+    # cost_center_type removido: coluna chama-se center_type no banco
+    center_type = Column(
         Enum(CostCenterType, name="costcentertype", create_type=True),
         nullable=False,
         default=CostCenterType.ADMINISTRATIVE,
@@ -103,21 +104,23 @@ class CostCenter(Base):
         default=CostCenterStatus.ACTIVE,
     )
 
-    # Nível e Ordem
+    # Nível e Caminho
     level = Column(Integer, nullable=False, default=1)
-    order_index = Column(Integer, nullable=True)
-    path = Column(String(200), nullable=True)
+    full_path = Column(String(500), nullable=True)
+    # order_index removido: não existe na tabela
+    # path removido: chama-se full_path no banco
 
     # Responsável
     manager_id = Column(UUID(as_uuid=True), nullable=True)
-    manager_name = Column(String(100), nullable=True)
+    # manager_name removido: não existe na tabela
     department = Column(String(100), nullable=True)
 
-    # Orçamento
-    budget_annual = Column(Numeric(18, 2), default=Decimal("0"), nullable=False)
-    budget_monthly = Column(Numeric(18, 2), default=Decimal("0"), nullable=False)
-    budget_used = Column(Numeric(18, 2), default=Decimal("0"), nullable=False)
-    budget_available = Column(Numeric(18, 2), default=Decimal("0"), nullable=False)
+    # Orçamento (mapeados para nomes reais do banco)
+    budget_amount = Column(Numeric(18, 2), default=Decimal("0"), nullable=False)
+    actual_amount = Column(Numeric(18, 2), default=Decimal("0"), nullable=False)
+    budget_year = Column(Integer, nullable=True)
+    budget_alert_percent = Column(Numeric(5, 2), nullable=True)
+    # budget_annual, budget_monthly, budget_used, budget_available removidos: não existem
 
     # Rateio
     allocation_method = Column(
@@ -126,39 +129,31 @@ class CostCenter(Base):
         default=AllocationMethod.DIRECT,
     )
     allocation_percentage = Column(Numeric(5, 2), default=Decimal("100"), nullable=False)
-    allocation_base = Column(String(50), nullable=True)
+    allocation_basis = Column(String(50), nullable=True)
+    allocation_value = Column(Numeric(18, 2), nullable=True)
+    # allocation_base removido: chama-se allocation_basis no banco
+    # headcount, area_m2 removidos: não existem na tabela
 
-    # Métricas para rateio
-    headcount = Column(Integer, default=0, nullable=False)
-    area_m2 = Column(Numeric(12, 2), default=Decimal("0"), nullable=False)
-
-    # Totais acumulados
-    total_debit = Column(Numeric(18, 2), default=Decimal("0"), nullable=False)
-    total_credit = Column(Numeric(18, 2), default=Decimal("0"), nullable=False)
-    current_balance = Column(Numeric(18, 2), default=Decimal("0"), nullable=False)
-
-    # Período atual
-    period_debit = Column(Numeric(18, 2), default=Decimal("0"), nullable=False)
-    period_credit = Column(Numeric(18, 2), default=Decimal("0"), nullable=False)
+    # Totais removidos (não existem na tabela): total_debit, total_credit,
+    # current_balance, period_debit, period_credit
 
     # Controle de período
     valid_from = Column(DateTime(timezone=True), nullable=True)
     valid_until = Column(DateTime(timezone=True), nullable=True)
 
-    # Última movimentação
-    last_movement_date = Column(DateTime(timezone=True), nullable=True)
+    # Última movimentação removido: last_movement_date não existe
 
     # Integração
     external_code = Column(String(50), nullable=True)
-    legacy_code = Column(String(50), nullable=True)
+    # legacy_code removido: não existe na tabela
     integration_data = Column(JSONB, nullable=True)
 
     # Flags
-    is_default = Column(Boolean, default=False, nullable=False)
-    requires_approval = Column(Boolean, default=False, nullable=False)
-    approval_limit = Column(Numeric(18, 2), nullable=True)
-    allows_over_budget = Column(Boolean, default=False, nullable=False)
+    is_productive = Column(Boolean, default=True, nullable=False)
+    is_allocatable = Column(Boolean, default=True, nullable=False)
+    accepts_entries = Column(Boolean, default=True, nullable=False)
     active = Column(Boolean, default=True, nullable=False)
+    # is_default, requires_approval, approval_limit, allows_over_budget removidos: não existem
 
     # Observações
     notes = Column(Text, nullable=True)

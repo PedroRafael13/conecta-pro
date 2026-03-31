@@ -170,7 +170,7 @@ class JournalEntry(Base):
     # Flags
     is_template = Column(Boolean, default=False, nullable=False)  # É template
     is_recurring = Column(Boolean, default=False, nullable=False)  # É recorrente
-    balanced_flag = Column(Boolean, default=True, nullable=False)  # Está balanceado
+    is_balanced = Column(Boolean, default=True, nullable=False)  # Está balanceado (era balanced_flag no modelo antigo)
     active = Column(Boolean, default=True, nullable=False)
 
     # Observações
@@ -208,14 +208,10 @@ class JournalEntry(Base):
         return f"<JournalEntry {self.entry_number} - {self.status.value}>"
 
     @property
-    def is_balanced(self) -> bool:
-        """Verifica se o lançamento está balanceado."""
-        return self.total_debit == self.total_credit
-
-    @property
     def can_post(self) -> bool:
         """Verifica se pode ser contabilizado."""
-        return self.status in [EntryStatus.DRAFT, EntryStatus.APPROVED] and self.is_balanced and self.line_count > 0
+        balanced = self.is_balanced if self.is_balanced is not None else (self.total_debit == self.total_credit)
+        return self.status in [EntryStatus.DRAFT, EntryStatus.APPROVED] and balanced and self.line_count > 0
 
     @property
     def can_reverse(self) -> bool:

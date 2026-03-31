@@ -127,7 +127,7 @@ async def get_active_chart(
 ) -> ChartOfAccountsResponse:
     """Retorna plano de contas ativo."""
     repo = ChartOfAccountsRepository(db)
-    chart = repo.get_active(_current_user["condominio_id"])
+    chart = repo.get_active(getattr(_current_user, "condominio_id", None))
 
     if not chart:
         raise HTTPException(
@@ -146,7 +146,7 @@ async def get_chart_stats(
     """Retorna estatisticas dos planos de contas."""
     try:
         repo = ChartOfAccountsRepository(db)
-        stats = repo.get_stats(_current_user["condominio_id"])
+        stats = repo.get_stats(getattr(_current_user, "condominio_id", None))
         return ChartStats(**stats)
     except Exception as e:
         logger.error(f"Erro ao obter estatisticas: {e}")
@@ -167,7 +167,7 @@ async def create_chart(
         repo = ChartOfAccountsRepository(db)
 
         # Verifica codigo duplicado
-        existing = repo.get_by_code(data.code, _current_user["condominio_id"])
+        existing = repo.get_by_code(data.code, getattr(_current_user, "condominio_id", None))
         if existing:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -175,9 +175,9 @@ async def create_chart(
             )
 
         chart = ChartOfAccounts(
-            condominio_id=_current_user["condominio_id"],
+            condominio_id=getattr(_current_user, "condominio_id", None),
             status=ChartStatus.DRAFT,
-            created_by=_current_user["id"],
+            created_by=_current_user.id,
             **data.model_dump(exclude={"chart_type", "standard"}),
         )
 
@@ -212,7 +212,7 @@ async def get_chart(
     repo = ChartOfAccountsRepository(db)
     chart = repo.get_by_id(chart_id)
 
-    if not chart or chart.condominio_id != _current_user["condominio_id"]:
+    if not chart or chart.condominio_id != getattr(_current_user, "condominio_id", None):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Plano de contas nao encontrado",
@@ -233,7 +233,7 @@ async def update_chart(
         repo = ChartOfAccountsRepository(db)
         chart = repo.get_by_id(chart_id)
 
-        if not chart or chart.condominio_id != _current_user["condominio_id"]:
+        if not chart or chart.condominio_id != getattr(_current_user, "condominio_id", None):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Plano de contas nao encontrado",
@@ -243,7 +243,7 @@ async def update_chart(
         for field, value in update_data.items():
             setattr(chart, field, value)
 
-        chart.updated_by = _current_user["id"]
+        chart.updated_by = _current_user.id
         chart = repo.update(chart)
         db.commit()
 
@@ -270,21 +270,21 @@ async def activate_chart(
         repo = ChartOfAccountsRepository(db)
         chart = repo.get_by_id(chart_id)
 
-        if not chart or chart.condominio_id != _current_user["condominio_id"]:
+        if not chart or chart.condominio_id != getattr(_current_user, "condominio_id", None):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Plano de contas nao encontrado",
             )
 
         # Desativa plano ativo atual
-        current_active = repo.get_active(_current_user["condominio_id"])
+        current_active = repo.get_active(getattr(_current_user, "condominio_id", None))
         if current_active and current_active.id != chart.id:
             current_active.status = ChartStatus.INACTIVE
             repo.update(current_active)
 
         chart.status = ChartStatus.ACTIVE
         chart.activated_at = datetime.utcnow()
-        chart.activated_by = _current_user["id"]
+        chart.activated_by = _current_user.id
         repo.update(chart)
         db.commit()
 
@@ -401,9 +401,9 @@ async def create_account(
             )
 
         account = AccountingAccount(
-            condominio_id=_current_user["condominio_id"],
+            condominio_id=getattr(_current_user, "condominio_id", None),
             status=AccountStatus.ACTIVE,
-            created_by=_current_user["id"],
+            created_by=_current_user.id,
             **data.model_dump(exclude={"account_type", "nature", "classification"}),
         )
 
@@ -440,7 +440,7 @@ async def get_account(
     repo = AccountingAccountRepository(db)
     account = repo.get_by_id(account_id)
 
-    if not account or account.condominio_id != _current_user["condominio_id"]:
+    if not account or account.condominio_id != getattr(_current_user, "condominio_id", None):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Conta nao encontrada",
@@ -461,7 +461,7 @@ async def update_account(
         repo = AccountingAccountRepository(db)
         account = repo.get_by_id(account_id)
 
-        if not account or account.condominio_id != _current_user["condominio_id"]:
+        if not account or account.condominio_id != getattr(_current_user, "condominio_id", None):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Conta nao encontrada",
@@ -471,7 +471,7 @@ async def update_account(
         for field, value in update_data.items():
             setattr(account, field, value)
 
-        account.updated_by = _current_user["id"]
+        account.updated_by = _current_user.id
         account = repo.update(account)
         db.commit()
 
@@ -501,7 +501,7 @@ async def get_account_balance(
         line_repo = JournalEntryLineRepository(db)
 
         account = acc_repo.get_by_id(account_id)
-        if not account or account.condominio_id != _current_user["condominio_id"]:
+        if not account or account.condominio_id != getattr(_current_user, "condominio_id", None):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Conta nao encontrada",
@@ -544,7 +544,7 @@ async def list_cost_centers(
     try:
         repo = CostCenterRepository(db)
         centers = repo.list_all(
-            condominio_id=_current_user["condominio_id"],
+            condominio_id=getattr(_current_user, "condominio_id", None),
             center_type=center_type,
             status=center_status,
             parent_id=parent_id,
@@ -568,7 +568,7 @@ async def get_cost_center_stats(
     """Retorna estatisticas dos centros de custo."""
     try:
         repo = CostCenterRepository(db)
-        stats = repo.get_stats(_current_user["condominio_id"])
+        stats = repo.get_stats(getattr(_current_user, "condominio_id", None))
         return CostCenterStats(**stats)
     except Exception as e:
         logger.error(f"Erro ao obter estatisticas: {e}")
@@ -589,7 +589,7 @@ async def create_cost_center(
         repo = CostCenterRepository(db)
 
         # Verifica codigo duplicado
-        existing = repo.get_by_code(data.code, _current_user["condominio_id"])
+        existing = repo.get_by_code(data.code, getattr(_current_user, "condominio_id", None))
         if existing:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -597,9 +597,9 @@ async def create_cost_center(
             )
 
         center = CostCenter(
-            condominio_id=_current_user["condominio_id"],
+            condominio_id=getattr(_current_user, "condominio_id", None),
             status=CostCenterStatus.ACTIVE,
-            created_by=_current_user["id"],
+            created_by=_current_user.id,
             **data.model_dump(exclude={"center_type", "allocation_method"}),
         )
 
@@ -634,7 +634,7 @@ async def get_cost_center(
     repo = CostCenterRepository(db)
     center = repo.get_by_id(center_id)
 
-    if not center or center.condominio_id != _current_user["condominio_id"]:
+    if not center or center.condominio_id != getattr(_current_user, "condominio_id", None):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Centro de custo nao encontrado",
@@ -655,7 +655,7 @@ async def update_cost_center(
         repo = CostCenterRepository(db)
         center = repo.get_by_id(center_id)
 
-        if not center or center.condominio_id != _current_user["condominio_id"]:
+        if not center or center.condominio_id != getattr(_current_user, "condominio_id", None):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Centro de custo nao encontrado",
@@ -665,7 +665,7 @@ async def update_cost_center(
         for field, value in update_data.items():
             setattr(center, field, value)
 
-        center.updated_by = _current_user["id"]
+        center.updated_by = _current_user.id
         center = repo.update(center)
         db.commit()
 
@@ -700,7 +700,7 @@ async def list_periods(
     try:
         repo = AccountingPeriodRepository(db)
         periods = repo.list_all(
-            condominio_id=_current_user["condominio_id"],
+            condominio_id=getattr(_current_user, "condominio_id", None),
             year=year,
             period_type=period_type,
             status=period_status,
@@ -723,7 +723,7 @@ async def get_current_period(
 ) -> AccountingPeriodResponse:
     """Retorna periodo contabil atual."""
     repo = AccountingPeriodRepository(db)
-    period = repo.get_current(_current_user["condominio_id"])
+    period = repo.get_current(getattr(_current_user, "condominio_id", None))
 
     if not period:
         raise HTTPException(
@@ -743,7 +743,7 @@ async def get_period_stats(
     """Retorna estatisticas dos periodos."""
     try:
         repo = AccountingPeriodRepository(db)
-        stats = repo.get_stats(_current_user["condominio_id"], year)
+        stats = repo.get_stats(getattr(_current_user, "condominio_id", None), year)
         return PeriodStats(**stats)
     except Exception as e:
         logger.error(f"Erro ao obter estatisticas: {e}")
@@ -764,7 +764,7 @@ async def create_period(
         repo = AccountingPeriodRepository(db)
 
         # Verifica codigo duplicado
-        existing = repo.get_by_code(data.code, _current_user["condominio_id"])
+        existing = repo.get_by_code(data.code, getattr(_current_user, "condominio_id", None))
         if existing:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -772,9 +772,9 @@ async def create_period(
             )
 
         period = AccountingPeriod(
-            condominio_id=_current_user["condominio_id"],
+            condominio_id=getattr(_current_user, "condominio_id", None),
             status=PeriodStatus.PENDING,
-            created_by=_current_user["id"],
+            created_by=_current_user.id,
             **data.model_dump(exclude={"period_type"}),
         )
 
@@ -807,7 +807,7 @@ async def get_period(
     repo = AccountingPeriodRepository(db)
     period = repo.get_by_id(period_id)
 
-    if not period or period.condominio_id != _current_user["condominio_id"]:
+    if not period or period.condominio_id != getattr(_current_user, "condominio_id", None):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Periodo nao encontrado",
@@ -827,7 +827,7 @@ async def open_period(
         repo = AccountingPeriodRepository(db)
         period = repo.get_by_id(period_id)
 
-        if not period or period.condominio_id != _current_user["condominio_id"]:
+        if not period or period.condominio_id != getattr(_current_user, "condominio_id", None):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Periodo nao encontrado",
@@ -840,7 +840,7 @@ async def open_period(
             )
 
         period.status = PeriodStatus.OPEN
-        period.opened_by = _current_user["id"]
+        period.opened_by = _current_user.id
         period.opened_at = datetime.utcnow()
         repo.update(period)
         db.commit()
@@ -869,7 +869,7 @@ async def close_period(
         repo = AccountingPeriodRepository(db)
         period = repo.get_by_id(period_id)
 
-        if not period or period.condominio_id != _current_user["condominio_id"]:
+        if not period or period.condominio_id != getattr(_current_user, "condominio_id", None):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Periodo nao encontrado",
@@ -883,7 +883,7 @@ async def close_period(
 
         repo.close_period(
             period,
-            closed_by=_current_user["id"],
+            closed_by=_current_user.id,
             closing_type=data.closing_type,
             notes=data.notes,
         )
@@ -913,7 +913,7 @@ async def reopen_period(
         repo = AccountingPeriodRepository(db)
         period = repo.get_by_id(period_id)
 
-        if not period or period.condominio_id != _current_user["condominio_id"]:
+        if not period or period.condominio_id != getattr(_current_user, "condominio_id", None):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Periodo nao encontrado",
@@ -927,7 +927,7 @@ async def reopen_period(
 
         repo.reopen_period(
             period,
-            reopened_by=_current_user["id"],
+            reopened_by=_current_user.id,
             reason=data.reason,
         )
         db.commit()
@@ -966,7 +966,7 @@ async def list_journal_entries(
     try:
         repo = JournalEntryRepository(db)
         entries = repo.list_all(
-            condominio_id=_current_user["condominio_id"],
+            condominio_id=getattr(_current_user, "condominio_id", None),
             period_id=period_id,
             entry_type=entry_type,
             status=entry_status,
@@ -993,7 +993,7 @@ async def list_pending_approval(
     """Lista lancamentos pendentes de aprovacao."""
     try:
         repo = JournalEntryRepository(db)
-        entries = repo.list_pending_approval(_current_user["condominio_id"])
+        entries = repo.list_pending_approval(getattr(_current_user, "condominio_id", None))
         return [JournalEntryListResponse.model_validate(e) for e in entries]
     except Exception as e:
         logger.error(f"Erro ao listar lancamentos: {e}")
@@ -1012,7 +1012,7 @@ async def get_journal_stats(
     """Retorna estatisticas dos lancamentos."""
     try:
         repo = JournalEntryRepository(db)
-        stats = repo.get_stats(_current_user["condominio_id"], period_id)
+        stats = repo.get_stats(getattr(_current_user, "condominio_id", None), period_id)
         return JournalStats(**stats)
     except Exception as e:
         logger.error(f"Erro ao obter estatisticas: {e}")
@@ -1035,7 +1035,7 @@ async def create_journal_entry(
 
         # Verifica periodo
         period = period_repo.get_by_id(data.period_id)
-        if not period or period.condominio_id != _current_user["condominio_id"]:
+        if not period or period.condominio_id != getattr(_current_user, "condominio_id", None):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Periodo nao encontrado",
@@ -1057,13 +1057,13 @@ async def create_journal_entry(
                 detail=f"Lancamento desbalanceado: Debito={total_debit}, Credito={total_credit}",
             )
 
-        entry_number = repo.generate_next_number(_current_user["condominio_id"])
+        entry_number = repo.generate_next_number(getattr(_current_user, "condominio_id", None))
 
         entry = JournalEntry(
-            condominio_id=_current_user["condominio_id"],
+            condominio_id=getattr(_current_user, "condominio_id", None),
             entry_number=entry_number,
             status=EntryStatus.DRAFT,
-            created_by=_current_user["id"],
+            created_by=_current_user.id,
             **data.model_dump(exclude={"entry_type", "origin", "lines"}),
         )
 
@@ -1107,7 +1107,7 @@ async def get_journal_entry(
     repo = JournalEntryRepository(db)
     entry = repo.get_by_id(entry_id)
 
-    if not entry or entry.condominio_id != _current_user["condominio_id"]:
+    if not entry or entry.condominio_id != getattr(_current_user, "condominio_id", None):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Lancamento nao encontrado",
@@ -1127,7 +1127,7 @@ async def get_entry_lines(
     line_repo = JournalEntryLineRepository(db)
 
     entry = entry_repo.get_by_id(entry_id, include_lines=False)
-    if not entry or entry.condominio_id != _current_user["condominio_id"]:
+    if not entry or entry.condominio_id != getattr(_current_user, "condominio_id", None):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Lancamento nao encontrado",
@@ -1148,7 +1148,7 @@ async def post_journal_entry(
         repo = JournalEntryRepository(db)
         entry = repo.get_by_id(entry_id)
 
-        if not entry or entry.condominio_id != _current_user["condominio_id"]:
+        if not entry or entry.condominio_id != getattr(_current_user, "condominio_id", None):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Lancamento nao encontrado",
@@ -1160,7 +1160,7 @@ async def post_journal_entry(
                 detail="Lancamento nao pode ser contabilizado",
             )
 
-        repo.post_entry(entry, _current_user["id"])
+        repo.post_entry(entry, _current_user.id)
         db.commit()
 
         return {"message": "Lancamento contabilizado com sucesso"}
@@ -1187,7 +1187,7 @@ async def approve_journal_entry(
         repo = JournalEntryRepository(db)
         entry = repo.get_by_id(entry_id)
 
-        if not entry or entry.condominio_id != _current_user["condominio_id"]:
+        if not entry or entry.condominio_id != getattr(_current_user, "condominio_id", None):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Lancamento nao encontrado",
@@ -1199,7 +1199,7 @@ async def approve_journal_entry(
                 detail="Lancamento nao pode ser aprovado",
             )
 
-        repo.approve_entry(entry, _current_user["id"], data.notes)
+        repo.approve_entry(entry, _current_user.id, data.notes)
         db.commit()
 
         return {"message": "Lancamento aprovado com sucesso"}
@@ -1226,7 +1226,7 @@ async def reject_journal_entry(
         repo = JournalEntryRepository(db)
         entry = repo.get_by_id(entry_id)
 
-        if not entry or entry.condominio_id != _current_user["condominio_id"]:
+        if not entry or entry.condominio_id != getattr(_current_user, "condominio_id", None):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Lancamento nao encontrado",
@@ -1238,7 +1238,7 @@ async def reject_journal_entry(
                 detail="Lancamento nao pode ser rejeitado",
             )
 
-        repo.reject_entry(entry, _current_user["id"], reason)
+        repo.reject_entry(entry, _current_user.id, reason)
         db.commit()
 
         return {"message": "Lancamento rejeitado"}
@@ -1266,7 +1266,7 @@ async def reverse_journal_entry(
         line_repo = JournalEntryLineRepository(db)
 
         entry = repo.get_by_id(entry_id)
-        if not entry or entry.condominio_id != _current_user["condominio_id"]:
+        if not entry or entry.condominio_id != getattr(_current_user, "condominio_id", None):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Lancamento nao encontrado",
@@ -1279,10 +1279,10 @@ async def reverse_journal_entry(
             )
 
         # Cria lancamento de estorno
-        reversal_number = repo.generate_next_number(_current_user["condominio_id"])
+        reversal_number = repo.generate_next_number(getattr(_current_user, "condominio_id", None))
 
         reversal_entry = JournalEntry(
-            condominio_id=_current_user["condominio_id"],
+            condominio_id=getattr(_current_user, "condominio_id", None),
             period_id=entry.period_id,
             entry_number=reversal_number,
             description=f"Estorno de {entry.entry_number}: {data.reason}",
@@ -1292,7 +1292,7 @@ async def reverse_journal_entry(
             entry_date=data.reversal_date or date.today(),
             competence_date=entry.competence_date,
             is_reversal=True,
-            created_by=_current_user["id"],
+            created_by=_current_user.id,
         )
 
         # Inverte partidas
@@ -1349,7 +1349,7 @@ async def list_trial_balances(
     try:
         repo = TrialBalanceRepository(db)
         balances = repo.list_all(
-            condominio_id=_current_user["condominio_id"],
+            condominio_id=getattr(_current_user, "condominio_id", None),
             chart_id=chart_id,
             balance_type=balance_type,
             status=balance_status,
@@ -1373,7 +1373,7 @@ async def get_latest_balance(
 ) -> TrialBalanceResponse:
     """Retorna ultimo balancete."""
     repo = TrialBalanceRepository(db)
-    balance = repo.get_latest(_current_user["condominio_id"])
+    balance = repo.get_latest(getattr(_current_user, "condominio_id", None))
 
     if not balance:
         raise HTTPException(
@@ -1393,7 +1393,7 @@ async def get_balance_stats(
     """Retorna estatisticas dos balancetes."""
     try:
         repo = TrialBalanceRepository(db)
-        stats = repo.get_stats(_current_user["condominio_id"], year)
+        stats = repo.get_stats(getattr(_current_user, "condominio_id", None), year)
         return BalanceStats(**stats)
     except Exception as e:
         logger.error(f"Erro ao obter estatisticas: {e}")
@@ -1419,23 +1419,23 @@ async def create_trial_balance(
 
         # Verifica plano de contas
         chart = chart_repo.get_by_id(data.chart_id)
-        if not chart or chart.condominio_id != _current_user["condominio_id"]:
+        if not chart or chart.condominio_id != getattr(_current_user, "condominio_id", None):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Plano de contas nao encontrado",
             )
 
         code = repo.generate_next_code(
-            _current_user["condominio_id"],
+            getattr(_current_user, "condominio_id", None),
             data.year,
             data.month or data.reference_date.month,
         )
 
         balance = TrialBalance(
-            condominio_id=_current_user["condominio_id"],
+            condominio_id=getattr(_current_user, "condominio_id", None),
             code=code,
             status=BalanceStatus.DRAFT,
-            created_by=_current_user["id"],
+            created_by=_current_user.id,
             **data.model_dump(exclude={"balance_type", "balance_period"}),
         )
 
@@ -1470,7 +1470,7 @@ async def get_trial_balance(
     repo = TrialBalanceRepository(db)
     balance = repo.get_by_id(balance_id)
 
-    if not balance or balance.condominio_id != _current_user["condominio_id"]:
+    if not balance or balance.condominio_id != getattr(_current_user, "condominio_id", None):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Balancete nao encontrado",
@@ -1493,7 +1493,7 @@ async def get_balance_items(
     item_repo = TrialBalanceItemRepository(db)
 
     balance = balance_repo.get_by_id(balance_id)
-    if not balance or balance.condominio_id != _current_user["condominio_id"]:
+    if not balance or balance.condominio_id != getattr(_current_user, "condominio_id", None):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Balancete nao encontrado",
@@ -1517,7 +1517,7 @@ async def generate_trial_balance(  # pylint: disable=too-many-locals
         line_repo = JournalEntryLineRepository(db)
 
         balance = balance_repo.get_by_id(balance_id)
-        if not balance or balance.condominio_id != _current_user["condominio_id"]:
+        if not balance or balance.condominio_id != getattr(_current_user, "condominio_id", None):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Balancete nao encontrado",
@@ -1580,7 +1580,7 @@ async def generate_trial_balance(  # pylint: disable=too-many-locals
         end_time = datetime.utcnow()
         balance.status = BalanceStatus.GENERATED
         balance.generated_at = end_time
-        balance.generated_by = _current_user["id"]
+        balance.generated_by = _current_user.id
         balance.generation_time_ms = int((end_time - start_time).total_seconds() * 1000)
         balance.total_accounts = len(items)
         balance.total_analytical = len(items)
@@ -1621,7 +1621,7 @@ async def approve_trial_balance(
         repo = TrialBalanceRepository(db)
         balance = repo.get_by_id(balance_id)
 
-        if not balance or balance.condominio_id != _current_user["condominio_id"]:
+        if not balance or balance.condominio_id != getattr(_current_user, "condominio_id", None):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Balancete nao encontrado",
@@ -1633,7 +1633,7 @@ async def approve_trial_balance(
                 detail="Balancete nao pode ser aprovado",
             )
 
-        repo.approve(balance, _current_user["id"], notes)
+        repo.approve(balance, _current_user.id, notes)
         db.commit()
 
         return {"message": "Balancete aprovado com sucesso"}
@@ -1659,7 +1659,7 @@ async def publish_trial_balance(
         repo = TrialBalanceRepository(db)
         balance = repo.get_by_id(balance_id)
 
-        if not balance or balance.condominio_id != _current_user["condominio_id"]:
+        if not balance or balance.condominio_id != getattr(_current_user, "condominio_id", None):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Balancete nao encontrado",
@@ -1671,7 +1671,7 @@ async def publish_trial_balance(
                 detail="Balancete nao pode ser publicado",
             )
 
-        repo.publish(balance, _current_user["id"])
+        repo.publish(balance, _current_user.id)
         db.commit()
 
         return {"message": "Balancete publicado com sucesso"}
