@@ -1,59 +1,118 @@
 #!/bin/bash
-# Monitor Startup — executado no @reboot após delay inicial
-# Aguarda backend ficar disponível antes de iniciar primeiro ciclo
-# Timeout: 3 minutos
+# ═══════════════════════════════════════════════
+# Monitor Startup — Conecta PRO
+# Executado via @reboot cron (sleep 90 primeiro)
+# Aguarda: rede → Docker → backend
+# ═══════════════════════════════════════════════
 
 BOT_TOKEN="${MONITOR_BOT_TOKEN:-8562364686:AAESOC6uXddwShWSs3_1-qJ4lBiZHBiSuBQ}"  # pragma: allowlist secret
 CHAT_ID="${MONITOR_CHAT_ID:-5536961034}"
-BACKEND_URL="http://127.0.0.1:8080/health"
-MAX_WAIT=180   # 3 minutos
-INTERVAL=10    # checar a cada 10s
-LOG="/opt/conecta-pro/logs/monitor.log"
+STARTUP_LOG="/opt/conecta-pro/logs/startup.log"
+HORA=$(date '+%d/%m/%Y %H:%M')
 
 log() {
-    echo "[$(date '+%H:%M:%S')] $1" | tee -a "$LOG"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" >> "$STARTUP_LOG"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"
 }
 
-telegram_notify() {
+telegram() {
     curl -sf -X POST \
-      "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
-      -H "Content-Type: application/json" \
-      -d "{\"chat_id\":\"${CHAT_ID}\",\"text\":\"$1\",\"parse_mode\":\"HTML\"}" \
-      > /dev/null 2>&1
+        "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
+        -H "Content-Type: application/json" \
+        -d "{\"chat_id\":\"${CHAT_ID}\",\"text\":\"$1\",\"parse_mode\":\"HTML\"}" \
+        > /dev/null 2>&1
 }
 
-log "=== Monitor Startup iniciado ==="
-log "Aguardando backend em ${BACKEND_URL} (max ${MAX_WAIT}s)..."
+log "=== Monitor Startup iniciando ==="
 
-elapsed=0
-while [ $elapsed -lt $MAX_WAIT ]; do
-    if curl -sf --max-time 5 "$BACKEND_URL" > /dev/null 2>&1; then
-        log "✅ Backend disponível após ${elapsed}s — iniciando primeiro ciclo"
+# ── PASSO 1: Aguardar rede ─────────────────────
+log "Aguardando rede..."
+NET_OK=0
+for i in $(seq 1 30); do
+    if ping -c1 -W2 8.8.8.8 > /dev/null 2>&1; then
+        NET_OK=1
+        log "Rede disponível (tentativa $i)"
         break
     fi
-    sleep $INTERVAL
-    elapsed=$((elapsed + INTERVAL))
-    log "⏳ Aguardando backend... ${elapsed}s/${MAX_WAIT}s"
+    sleep 5
 done
 
-if [ $elapsed -ge $MAX_WAIT ]; then
-    log "❌ Backend não respondeu em ${MAX_WAIT}s — abortando ciclo inicial"
-    telegram_notify "⚠️ <b>MONITOR STARTUP FALHOU</b>
-Backend não respondeu em ${MAX_WAIT}s após reboot.
-Verifique os containers: docker compose ps
-Hora: $(date '+%d/%m %H:%M')"
+if [ "$NET_OK" = "0" ]; then
+    log "ERRO: Rede não disponível após 150s"
+    telegram "⚠️ <b>MONITOR STARTUP — ALERTA</b>%0A%0A🌐 Rede indisponível após reboot%0A⏰ $HORA%0A%0A❌ Monitor não pôde iniciar"
     exit 1
 fi
 
-# Executar primeiro ciclo de monitoramento
-log "🚀 Executando primeiro ciclo de monitoramento..."
+# ── PASSO 2: Aguardar Docker ───────────────────
+log "Aguardando Docker..."
+DOCKER_OK=0
+for i in $(seq 1 24); do
+    if docker info > /dev/null 2>&1; then
+        DOCKER_OK=1
+        log "Docker disponível (tentativa $i)"
+        break
+    fi
+    sleep 5
+done
+
+if [ "$DOCKER_OK" = "0" ]; then
+    log "ERRO: Docker não disponível após 120s"
+    telegram "⚠️ <b>MONITOR STARTUP — ALERTA</b>%0A%0A🐳 Docker indisponível após reboot%0A⏰ $HORA%0A%0A❌ Monitor não pôde iniciar"
+    exit 1
+fi
+
+# ── PASSO 3: Aguardar backend ──────────────────
+log "Aguardando backend (127.0.0.1:8080)..."
+BACKEND_OK=0
+for i in $(seq 1 36); do
+    CODE=$(curl -sf -o /dev/null -w "%{http_code}" \
+        http://127.0.0.1:8080/health 2>/dev/null || echo "0")
+    if [ "$CODE" = "200" ]; then
+        BACKEND_OK=1
+        log "Backend disponível após ${i}x10s"
+        break
+    fi
+    sleep 10
+done
+
+if [ "$BACKEND_OK" = "0" ]; then
+    log "AVISO: Backend não respondeu em 360s — continuando mesmo assim"
+    telegram "⚠️ <b>MONITOR STARTUP — AVISO</b>%0A%0A🔧 Backend lento após reboot%0A⏰ $HORA%0AMonitor iniciando mesmo assim..."
+fi
+
+# ── PASSO 4: Notificar Jordan ──────────────────
+UPTIME=$(uptime -p 2>/dev/null | sed 's/up //' || echo "N/A")
+CONTAINERS=$(docker ps --format '{{.Names}}' 2>/dev/null | wc -l || echo "?")
+BACKEND_LINHA="$([ "$BACKEND_OK" = "1" ] && echo "✅ Backend: Online" || echo "⚠️ Backend: Lento")"
+
+MSG="🟢 <b>MONITOR ONLINE — REBOOT DETECTADO</b>
+━━━━━━━━━━━━━━━━━━━
+⏰ <b>$HORA</b>
+
+✅ Rede: OK
+✅ Docker: OK
+$BACKEND_LINHA
+
+🐳 Containers ativos: $CONTAINERS
+⏱️ Uptime: $UPTIME
+
+🔄 Iniciando primeiro ciclo de auditoria..."
+
+telegram "$MSG"
+log "Notificação de startup enviada ao Telegram"
+
+# ── PASSO 5: Primeiro ciclo de auditoria ──────
+log "Executando primeiro ciclo de auditoria..."
 MONITOR_BOT_TOKEN="$BOT_TOKEN" \
 MONITOR_CHAT_ID="$CHAT_ID" \
-/usr/bin/python3 /opt/conecta-pro/agents/skills_agent.py >> "$LOG" 2>&1
+/usr/bin/python3 /opt/conecta-pro/agents/skills_agent.py \
+    >> "$STARTUP_LOG" 2>&1
 
-exit_code=$?
-if [ $exit_code -eq 0 ]; then
-    log "✅ Primeiro ciclo concluído com sucesso"
+EXIT_CODE=$?
+if [ "$EXIT_CODE" = "0" ]; then
+    log "Primeiro ciclo concluído com sucesso"
 else
-    log "⚠️ Primeiro ciclo terminou com código $exit_code"
+    log "AVISO: Primeiro ciclo terminou com código $EXIT_CODE"
 fi
+
+log "=== Monitor Startup finalizado ==="
