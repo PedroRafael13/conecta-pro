@@ -249,7 +249,7 @@ async def delete_document(
 ) -> None:
     """Remove documento."""
     service = DocumentService(db)
-    if not await service.delete(document_id):
+    if not await service.delete(str(document_id)):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado")
 
 
@@ -291,7 +291,7 @@ async def get_by_folder(
 ) -> list[DocumentResponse]:
     """Retorna documentos de uma pasta."""
     service = DocumentService(db)
-    return await service.get_by_folder(folder_id, page, page_size)
+    return await service.get_by_folder(str(folder_id), page, page_size)
 
 
 @router.get("/pending/approval", response_model=list[DocumentResponse])
@@ -354,7 +354,7 @@ async def approve_document(
     """Aprova documento."""
     service = DocumentService(db)
     document = await service.approve(
-        document_id, str(current_user.id) if hasattr(current_user, "id") else current_user["id"]
+        str(document_id), str(current_user.id) if hasattr(current_user, "id") else current_user["id"]
     )
     if not document:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado")
@@ -370,7 +370,7 @@ async def reject_document(
 ) -> DocumentResponse:
     """Rejeita documento."""
     service = DocumentService(db)
-    document = await service.reject(document_id, reason)
+    document = await service.reject(str(document_id), reason)
     if not document:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado")
     return document
@@ -384,7 +384,7 @@ async def publish_document(
 ) -> DocumentResponse:
     """Publica documento."""
     service = DocumentService(db)
-    document = await service.publish(document_id)
+    document = await service.publish(str(document_id))
     if not document:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado")
     return document
@@ -399,7 +399,7 @@ async def archive_document(
     """Arquiva documento."""
     service = DocumentService(db)
     document = await service.archive(
-        document_id, str(current_user.id) if hasattr(current_user, "id") else current_user["id"]
+        str(document_id), str(current_user.id) if hasattr(current_user, "id") else current_user["id"]
     )
     if not document:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado")
@@ -414,7 +414,7 @@ async def unarchive_document(
 ) -> DocumentResponse:
     """Desarquiva documento."""
     service = DocumentService(db)
-    document = await service.unarchive(document_id)
+    document = await service.unarchive(str(document_id))
     if not document:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado")
     return document
@@ -430,7 +430,7 @@ async def move_document(
     """Move documento para outra pasta."""
     service = DocumentService(db)
     try:
-        document = await service.move(document_id, folder_id)
+        document = await service.move(str(document_id), folder_id)
         if not document:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -449,7 +449,7 @@ async def view_document(
 ) -> DocumentResponse:
     """Registra visualização."""
     service = DocumentService(db)
-    document = await service.view(document_id)
+    document = await service.view(str(document_id))
     if not document:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado")
     return document
@@ -463,7 +463,7 @@ async def register_download(
 ) -> DocumentResponse:
     """Registra download."""
     service = DocumentService(db)
-    document = await service.download(document_id)
+    document = await service.download(str(document_id))
     if not document:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado")
     return document
@@ -477,7 +477,7 @@ async def download_file(
 ) -> FileResponse:
     """Faz download do arquivo do documento."""
     service = DocumentService(db)
-    document = await service.get_by_id(document_id)
+    document = await service.get_by_id(str(document_id))
     if not document:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado")
 
@@ -486,7 +486,7 @@ async def download_file(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Arquivo não encontrado no sistema")
 
     # Registra o download
-    await service.download(document_id)
+    await service.download(str(document_id))
 
     return FileResponse(
         path=str(file_path),
@@ -503,7 +503,7 @@ async def get_preview_url(
 ) -> dict[str, str]:
     """Retorna URL de preview do documento."""
     service = DocumentService(db)
-    document = await service.get_by_id(document_id)
+    document = await service.get_by_id(str(document_id))
     if not document:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado")
 
@@ -523,12 +523,12 @@ async def get_view_url(
 ) -> dict[str, str]:
     """Retorna URL de visualização do documento."""
     service = DocumentService(db)
-    document = await service.get_by_id(document_id)
+    document = await service.get_by_id(str(document_id))
     if not document:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado")
 
     # Registra a visualização
-    await service.view(document_id)
+    await service.view(str(document_id))
 
     # URL para visualização (pode ser adaptado para viewer específico por tipo)
     view_url = f"/api/v1/ged/documents/{document_id}/download"
@@ -568,7 +568,7 @@ async def submit_for_approval(
 ) -> DocumentResponse:
     """Submete documento para aprovação."""
     service = DocumentService(db)
-    document = await service.submit_for_approval(document_id)
+    document = await service.submit_for_approval(str(document_id))
     if not document:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado")
     return document
@@ -584,7 +584,7 @@ async def create_new_version(
     """Cria nova versão do documento."""
     service = DocumentService(db)
     document = await service.create_new_version(
-        document_id=document_id,
+        document_id=str(document_id),
         file_name=data.file_name,
         file_path=data.file_path,
         file_size_bytes=data.file_size_bytes,
@@ -631,7 +631,7 @@ async def analyze_ocr(
 ) -> DocumentOCRResult:
     """Analisa texto OCR do documento."""
     service = DocumentAIService(db)
-    result = await service.analyze_ocr_text(document_id, ocr_text)
+    result = await service.analyze_ocr_text(str(document_id), ocr_text)
     return DocumentOCRResult(**result)
 
 

@@ -97,7 +97,7 @@ class AnnouncementRepository:
             priority=data.priority.value,
             category=data.category.value,
             publish_at=data.publish_at,
-            expires_at=data.expires_at,
+            data_expiracao=data.expires_at,
             requires_acknowledgment=data.requires_acknowledgment,
             attachments=attachments,
             status=status,

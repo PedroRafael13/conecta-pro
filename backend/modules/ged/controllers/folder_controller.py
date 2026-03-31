@@ -1,6 +1,7 @@
 """Controller para Folder."""
 
 import logging
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -62,13 +63,13 @@ async def create_folder(
 
 @router.get("/{folder_id}", response_model=FolderResponse)
 async def get_folder(
-    folder_id: str,
+    folder_id: UUID,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> FolderResponse:
     """Busca pasta por ID."""
     service = FolderService(db)
-    folder = await service.get_by_id(folder_id)
+    folder = await service.get_by_id(str(folder_id))
     if not folder:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Pasta não encontrada")
     return folder
@@ -90,7 +91,7 @@ async def get_folder_by_code(
 
 @router.put("/{folder_id}", response_model=FolderResponse)
 async def update_folder(
-    folder_id: str,
+    folder_id: UUID,
     data: FolderUpdate,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
@@ -98,7 +99,7 @@ async def update_folder(
     """Atualiza pasta."""
     service = FolderService(db)
     try:
-        folder = await service.update(folder_id, data)
+        folder = await service.update(str(folder_id), data)
         if not folder:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Pasta não encontrada")
         return folder
@@ -119,14 +120,14 @@ async def update_folder(
 
 @router.delete("/{folder_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_folder(
-    folder_id: str,
+    folder_id: UUID,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> None:
     """Remove pasta."""
     service = FolderService(db)
     try:
-        if not await service.delete(folder_id):
+        if not await service.delete(str(folder_id)):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Pasta não encontrada")
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
@@ -169,13 +170,13 @@ async def get_root_folders(
 
 @router.get("/{folder_id}/children", response_model=list[FolderResponse])
 async def get_children(
-    folder_id: str,
+    folder_id: UUID,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> list[FolderResponse]:
     """Retorna subpastas."""
     service = FolderService(db)
-    return await service.get_children(folder_id)
+    return await service.get_children(str(folder_id))
 
 
 @router.get("/tree/view", response_model=list[FolderTreeNode])
@@ -204,13 +205,13 @@ async def get_by_type(
 
 @router.post("/{folder_id}/archive", response_model=FolderResponse)
 async def archive_folder(
-    folder_id: str,
+    folder_id: UUID,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ) -> FolderResponse:
     """Arquiva pasta."""
     service = FolderService(db)
-    folder = await service.archive(folder_id, _uid(current_user))
+    folder = await service.archive(str(folder_id), _uid(current_user))
     if not folder:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Pasta não encontrada")
     return folder
@@ -218,7 +219,7 @@ async def archive_folder(
 
 @router.post("/{folder_id}/unarchive", response_model=FolderResponse)
 async def unarchive_folder(
-    folder_id: str,
+    folder_id: UUID,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> FolderResponse:
@@ -232,7 +233,7 @@ async def unarchive_folder(
 
 @router.post("/{folder_id}/block", response_model=FolderResponse)
 async def block_folder(
-    folder_id: str,
+    folder_id: UUID,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> FolderResponse:
@@ -246,7 +247,7 @@ async def block_folder(
 
 @router.post("/{folder_id}/unblock", response_model=FolderResponse)
 async def unblock_folder(
-    folder_id: str,
+    folder_id: UUID,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> FolderResponse:
@@ -260,7 +261,7 @@ async def unblock_folder(
 
 @router.post("/{folder_id}/move", response_model=FolderResponse)
 async def move_folder(
-    folder_id: str,
+    folder_id: UUID,
     new_parent_id: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
@@ -278,7 +279,7 @@ async def move_folder(
 
 @router.post("/{folder_id}/permissions/grant", response_model=FolderResponse)
 async def grant_permission(
-    folder_id: str,
+    folder_id: UUID,
     user_id: str = Query(...),
     permission: FolderPermission = Query(...),
     db: AsyncSession = Depends(get_db),
@@ -294,7 +295,7 @@ async def grant_permission(
 
 @router.post("/{folder_id}/permissions/revoke", response_model=FolderResponse)
 async def revoke_permission(
-    folder_id: str,
+    folder_id: UUID,
     user_id: str = Query(...),
     permission: FolderPermission = Query(...),
     db: AsyncSession = Depends(get_db),
@@ -310,7 +311,7 @@ async def revoke_permission(
 
 @router.get("/{folder_id}/permissions/check")
 async def check_permission(
-    folder_id: str,
+    folder_id: UUID,
     user_id: str = Query(...),
     permission: FolderPermission = Query(...),
     db: AsyncSession = Depends(get_db),

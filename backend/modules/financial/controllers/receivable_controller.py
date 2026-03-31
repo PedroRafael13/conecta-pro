@@ -341,21 +341,6 @@ async def write_off_account(
 
 
 @router.get(
-    "/{account_id}/installments",
-    response_model=list[ReceivableInstallmentResponse],
-    summary="Listar parcelas",
-)
-async def list_installments(
-    account_id: UUID,
-    service: ReceivableService = Depends(get_service),
-    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> list[ReceivableInstallmentResponse]:
-    """Lista parcelas de uma conta."""
-    installments = await service.list_installments(account_id)
-    return [ReceivableInstallmentResponse.model_validate(i) for i in installments]
-
-
-@router.get(
     "/installments/pending",
     response_model=list[ReceivableInstallmentResponse],
     summary="Parcelas pendentes",
@@ -369,6 +354,21 @@ async def get_pending_installments(
 ) -> list[ReceivableInstallmentResponse]:
     """Retorna parcelas pendentes."""
     installments = await service.get_pending_installments(condominio_id, due_date_start, due_date_end)
+    return [ReceivableInstallmentResponse.model_validate(i) for i in installments]
+
+
+@router.get(
+    "/{account_id}/installments",
+    response_model=list[ReceivableInstallmentResponse],
+    summary="Listar parcelas",
+)
+async def list_installments(
+    account_id: UUID,
+    service: ReceivableService = Depends(get_service),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
+) -> list[ReceivableInstallmentResponse]:
+    """Lista parcelas de uma conta."""
+    installments = await service.list_installments(account_id)
     return [ReceivableInstallmentResponse.model_validate(i) for i in installments]
 
 

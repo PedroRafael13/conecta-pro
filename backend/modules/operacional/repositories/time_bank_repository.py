@@ -407,3 +407,20 @@ class TimeBankRepository:
             expiring_soon=expiring_soon,
             entries_count=len(entries),
         )
+
+    async def get_stats(self, employee_id: str) -> dict:
+        """Retorna estatísticas resumidas do banco de horas de um funcionário."""
+        result = await self.db.execute(
+            select(
+                func.count(TimeBank.id).label("total_entries"),
+                func.sum(TimeBank.hours).label("total_hours"),
+            ).where(
+                TimeBank.employee_id == employee_id,
+                TimeBank.is_active.is_(True),
+            )
+        )
+        row = result.first()
+        return {
+            "total_entries": row.total_entries or 0,
+            "total_hours": float(row.total_hours or 0),
+        }

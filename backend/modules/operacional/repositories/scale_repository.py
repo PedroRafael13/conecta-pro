@@ -9,6 +9,7 @@ from uuid import uuid4
 
 from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from core.logging import logger
 from modules.operacional.models.scale import Scale, ScaleStatus
@@ -151,7 +152,9 @@ class ScaleRepository:
         Returns:
             Scale ou None
         """
-        result = await self.db.execute(select(Scale).where(Scale.id == scale_id, Scale.is_active.is_(True)))
+        result = await self.db.execute(
+            select(Scale).options(selectinload(Scale.shifts)).where(Scale.id == scale_id, Scale.is_active.is_(True))
+        )
         return result.scalar_one_or_none()
 
     async def get_by_code(self, code: str) -> Scale | None:
