@@ -315,6 +315,63 @@ class BankTransactionRepository:
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
+    async def list_with_filters(
+        self,
+        filters: dict | None = None,
+        page: int = 1,
+        per_page: int = 20,
+    ) -> dict:
+        """Lista transacoes com filtros dinamicos e paginacao."""
+        filters = filters or {}
+        query = select(BankTransaction).where(BankTransaction.ativo.is_(True))  # noqa: E712
+
+        # Filtros dinamicos baseados nos campos reais do model
+        if filters.get("bank_account_id"):
+            query = query.where(BankTransaction.bank_account_id == filters["bank_account_id"])
+        if filters.get("transaction_type"):
+            query = query.where(BankTransaction.transaction_type == filters["transaction_type"])
+        if filters.get("category"):
+            query = query.where(BankTransaction.category == filters["category"])
+        if filters.get("status"):
+            query = query.where(BankTransaction.status == filters["status"])
+        if filters.get("reconciliation_status"):
+            query = query.where(BankTransaction.reconciliation_status == filters["reconciliation_status"])
+        if filters.get("origin"):
+            query = query.where(BankTransaction.origin == filters["origin"])
+        if filters.get("source_type"):
+            query = query.where(BankTransaction.source_type == filters["source_type"])
+        if filters.get("start_date"):
+            query = query.where(BankTransaction.transaction_date >= filters["start_date"])
+        if filters.get("end_date"):
+            query = query.where(BankTransaction.transaction_date <= filters["end_date"])
+        if filters.get("min_amount"):
+            query = query.where(BankTransaction.amount >= filters["min_amount"])
+        if filters.get("max_amount"):
+            query = query.where(BankTransaction.amount <= filters["max_amount"])
+        if filters.get("counterparty_name"):
+            query = query.where(BankTransaction.counterparty_name.ilike(f"%{filters['counterparty_name']}%"))
+        if filters.get("is_transfer") is not None:
+            query = query.where(BankTransaction.is_transfer == filters["is_transfer"])
+
+        # Total (subquery para evitar re-execucao com ordenacao)
+        count_q = select(func.count()).select_from(query.subquery())
+        total = await self.session.scalar(count_q) or 0
+
+        # Paginacao
+        query = query.order_by(BankTransaction.transaction_date.desc())
+        offset = (page - 1) * per_page
+        query = query.offset(offset).limit(per_page)
+        result = await self.session.execute(query)
+        items = list(result.scalars().all())
+
+        return {
+            "items": items,
+            "total": total,
+            "page": page,
+            "per_page": per_page,
+            "pages": max(1, (total + per_page - 1) // per_page),
+        }
+
 
 class BankReconciliationRepository:
     """Repository para conciliacoes bancarias."""
