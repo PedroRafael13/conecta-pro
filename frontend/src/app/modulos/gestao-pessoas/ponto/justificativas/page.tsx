@@ -21,11 +21,17 @@ interface Justificativa {
   has_attachment?: boolean;
 }
 
+interface Employee {
+  id: string;
+  nome?: string;
+  name?: string;
+}
+
 interface JustificativaPayload {
-  employee_id: number;
-  data: string;
-  tipo: string;
-  motivo: string;
+  employee_id: string;
+  justification_type: string;
+  reason: string;
+  category: string;
 }
 
 const statusConfig: Record<string, { label: string; classes: string }> = {
@@ -39,7 +45,16 @@ export default function JustificativasPage() {
   const [filtro, setFiltro] = useState('todos');
   const [busca, setBusca] = useState('');
   const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState({ employee_id: '', data: '', tipo: 'Falta', motivo: '' });
+  const [formData, setFormData] = useState({ employee_id: '', justification_type: 'atraso', reason: '', category: 'outro' });
+
+  const { data: employees } = useQuery<Employee[]>({
+    queryKey: ['ponto', 'employees-list'],
+    queryFn: async () => {
+      const res = await customInstance({ url: '/api/v1/people-management/hr/employees', params: { page_size: 200 } }) as unknown as { items?: Employee[] } | Employee[];
+      return Array.isArray(res) ? res : res?.items ?? [];
+    },
+    staleTime: 60000,
+  });
 
   const { data: rawData, isLoading, error } = useQuery<Justificativa[]>({
     queryKey: ['ponto', 'justificativas', 'pendentes'],
@@ -63,7 +78,7 @@ export default function JustificativasPage() {
     }),
     onSuccess: () => {
       setShowForm(false);
-      setFormData({ employee_id: '', data: '', tipo: 'Falta', motivo: '' });
+      setFormData({ employee_id: '', justification_type: 'atraso', reason: '', category: 'outro' });
       queryClient.invalidateQueries({ queryKey: ['ponto', 'justificativas'] });
     },
   });
@@ -78,12 +93,12 @@ export default function JustificativasPage() {
 
   function handleSubmitJustificativa(e: React.FormEvent) {
     e.preventDefault();
-    if (!formData.employee_id || !formData.data || !formData.motivo) return;
+    if (!formData.employee_id || !formData.reason) return;
     createMutation.mutate({
-      employee_id: Number(formData.employee_id),
-      data: formData.data,
-      tipo: formData.tipo,
-      motivo: formData.motivo,
+      employee_id: formData.employee_id,
+      justification_type: formData.justification_type,
+      reason: formData.reason,
+      category: formData.category,
     });
   }
 
@@ -224,44 +239,52 @@ export default function JustificativasPage() {
               )}
               <form onSubmit={handleSubmitJustificativa} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">ID do Colaborador</label>
-                  <input
-                    type="number"
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Colaborador</label>
+                  <select
                     value={formData.employee_id}
                     onChange={(e) => setFormData({ ...formData, employee_id: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Data</label>
-                  <input
-                    type="date"
-                    value={formData.data}
-                    onChange={(e) => setFormData({ ...formData, data: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
+                  >
+                    <option value="">Selecione...</option>
+                    {(employees ?? []).map((emp) => (
+                      <option key={emp.id} value={emp.id}>{emp.nome || emp.name || emp.id}</option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
                   <select
-                    value={formData.tipo}
-                    onChange={(e) => setFormData({ ...formData, tipo: e.target.value })}
+                    value={formData.justification_type}
+                    onChange={(e) => setFormData({ ...formData, justification_type: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="Falta">Falta</option>
-                    <option value="Atraso">Atraso</option>
-                    <option value="Saida Antecipada">Saida Antecipada</option>
-                    <option value="Esquecimento">Esquecimento</option>
+                    <option value="atraso">Atraso</option>
+                    <option value="falta">Falta</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
+                  <select
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="transito">Trânsito</option>
+                    <option value="saude">Saúde</option>
+                    <option value="familiar">Familiar</option>
+                    <option value="transporte_publico">Transporte Público</option>
+                    <option value="acidente">Acidente</option>
+                    <option value="outro">Outro</option>
                   </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Motivo</label>
                   <textarea
-                    value={formData.motivo}
-                    onChange={(e) => setFormData({ ...formData, motivo: e.target.value })}
+                    value={formData.reason}
+                    onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
                     rows={3}
+                    placeholder="Descreva o motivo (mínimo 5 caracteres)"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
                   />

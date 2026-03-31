@@ -7,14 +7,14 @@ import { Hourglass, TrendingUp, TrendingDown, Search, Download, Minus, Loader2 }
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface Employee {
-  id: number;
+  id: string;
   name?: string;
   nome?: string;
   full_name?: string;
 }
 
 interface BancoHorasData {
-  employee_id: number;
+  employee_id: string;
   employee_name?: string;
   saldo_horas?: number;
   saldo?: string;
@@ -41,7 +41,7 @@ interface BancoHorasEntry {
 
 export default function BancoHorasPage() {
   const [busca, setBusca] = useState('');
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | null>(null);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
 
   const { data: employees, isLoading: loadingEmployees } = useQuery<Employee[]>({
     queryKey: ['ponto', 'employees'],
@@ -117,7 +117,7 @@ export default function BancoHorasPage() {
         ) : (
           <select
             value={selectedEmployeeId ?? ''}
-            onChange={(e) => setSelectedEmployeeId(e.target.value ? Number(e.target.value) : null)}
+            onChange={(e) => setSelectedEmployeeId(e.target.value || null)}
             className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">Selecionar colaborador...</option>

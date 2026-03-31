@@ -68,7 +68,7 @@ class PunchSyncResponse(BaseModel):
 class JustificationCreate(BaseModel):
     """Schema para criar justificativa."""
 
-    employee_id: int
+    employee_id: str
     punch_id: str | None = None
     justification_type: str = Field(..., description="atraso|falta")
     reason: str = Field(..., min_length=5)
@@ -80,7 +80,7 @@ class JustificationResponse(BaseModel):
     """Resposta de justificativa."""
 
     justification_id: str
-    employee_id: int
+    employee_id: str
     type: str
     reason: str
     category: str

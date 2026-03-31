@@ -7,7 +7,7 @@ import { FileText, Download, ChevronLeft, ChevronRight, Printer, Loader2 } from 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface Employee {
-  id: number;
+  id: string;
   name?: string;
   nome?: string;
   full_name?: string;
@@ -27,7 +27,7 @@ interface EspelhoDay {
 }
 
 interface EspelhoData {
-  employee_id: number;
+  employee_id: string;
   employee_name?: string;
   competencia?: string;
   jornada?: string;
@@ -39,7 +39,7 @@ interface EspelhoData {
 }
 
 export default function EspelhoPontoPage() {
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | null>(null);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
   const now = new Date();
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [year, setYear] = useState(now.getFullYear());
@@ -61,7 +61,7 @@ export default function EspelhoPontoPage() {
     queryKey: ['ponto', 'espelho', selectedEmployeeId, month, year],
     queryFn: () => customInstance({
       url: `/api/v1/people-management/ponto/espelho/${selectedEmployeeId}`,
-      params: { mes: month, ano: year },
+      params: { month, year },
     }) as Promise<EspelhoData>,
     enabled: !!selectedEmployeeId,
     staleTime: 30000,
@@ -126,7 +126,7 @@ export default function EspelhoPontoPage() {
             ) : (
               <select
                 value={selectedEmployeeId ?? ''}
-                onChange={(e) => setSelectedEmployeeId(e.target.value ? Number(e.target.value) : null)}
+                onChange={(e) => setSelectedEmployeeId(e.target.value || null)}
                 className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Selecionar...</option>

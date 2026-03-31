@@ -45,7 +45,7 @@ class JustificationModel(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     justification_id = Column(String(36), unique=True, nullable=False, index=True)
     punch_id = Column(String(36), nullable=True, index=True)
-    employee_id = Column(Integer, nullable=False, index=True)
+    employee_id = Column(String(36), nullable=False, index=True)
 
     justification_type = Column(String(20), nullable=False)  # atraso, falta
     reason = Column(Text, nullable=False)
