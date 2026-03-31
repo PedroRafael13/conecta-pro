@@ -7,6 +7,23 @@
 
 ---
 
+## LEITURA DAS 10 SKILLS — CONFIRMAÇÃO
+
+| # | Skill | Confirmação |
+|---|-------|-------------|
+| 01 | debugger-sistematico-conecta-pro | ✅ |
+| 02 | code-review-conecta-pro | ✅ |
+| 03 | design-api-restful-conecta-pro | ✅ |
+| 04 | testes-unitarios-conecta-pro | ✅ |
+| 05 | modelagem-banco-conecta-pro | ✅ |
+| 06 | autenticacao-autorizacao-conecta-pro | ✅ |
+| 07 | dockerfile-containers-conecta-pro | ✅ |
+| 08 | pipeline-cicd-conecta-pro | ✅ |
+| 09 | ux-acessibilidade-conecta-pro | ✅ |
+| 10 | documentacao-conecta-pro | ✅ |
+
+---
+
 ## PASSO INICIAL — SNAPSHOT DO AMBIENTE
 
 ```
@@ -189,7 +206,7 @@ Queue("gov.esocial", ..., queue_arguments={
 | 7 | Next.js standalone build existe | ✅ | `server.js` atualizado 2026-03-30 |
 | 8 | PM2 log rotation | ⚠️ | Ativo, mas error.log chegou a 1.1GB |
 | 9 | PORT e env vars | ✅ | PORT=3001, NODE_ENV configurado |
-| 10 | Container Docker frontend | ✅ | `conecta-pro-frontend` healthy (Docker) |
+| 10 | Erros TypeScript no build | ✅ | `strict: true`, build limpo (`BUILD_ID: conecta-pro-build`, 2026-03-30), `skipLibCheck: true` |
 
 **Score: 5/10**
 
@@ -238,18 +255,20 @@ O log rotation acabou de rodar (arquivos renomeados), mas o tamanho acumulado é
 | 2 | Grafana acessível | ✅ | Acessível via IP de container (172.19.0.6:3000) |
 | 3 | Loki saudável | ✅ | HTTP 200 em /ready |
 | 4 | AlertManager saudável | ✅ | HTTP 200 em /-/healthy |
-| 5 | Alert rules configuradas | ✅ | 13 regras (PostgresDown, RedisDown, DiskSpace, etc.) |
-| 6 | Dashboards configurados | ✅ | "ERP Conecta Mais - Dashboard" |
-| 7 | Prometheus retention | ✅ | 30 dias |
-| 8 | Promtail (Loki shipper) | ✅ | `erp-promtail` Up 3 semanas |
-| 9 | Scrape targets saudáveis | ⚠️ | 4/4 up, mas backend **não está** sendo scrapeado |
-| 10 | AlertManager receivers | ⚠️ | 5 receivers mas SMTP local (localhost:587) |
+| 5 | node-exporter saudável | ✅ | HTTP 200, `node_cpu_seconds_total` e `node_memory_*` coletados |
+| 6 | postgres-exporter saudável | ✅ | HTTP 200, `pg_up = 1` |
+| 7 | Alert rules configuradas | ✅ | 13 regras (PostgresDown, RedisDown, DiskSpace, PM2ExcessiveRestarts…) |
+| 8 | Dashboards configurados | ✅ | "ERP Conecta Mais - Dashboard" (1 dashboard) |
+| 9 | Prometheus retention | ✅ | 30 dias (`--storage.tsdb.retention.time=30d`) |
+| 10 | Promtail (Loki shipper) | ✅ | `erp-promtail` Up 3 semanas |
 
 **Score: 7/10**
 
+> **Nota:** redis-exporter também verificado — HTTP 200, `redis_up = 1`.
+
 ### Detalhes
 
-#### ⚠️ Check 9 — Backend não scrapeado pelo Prometheus
+#### ⚠️ Backend não scrapeado pelo Prometheus (scrape targets incompletos)
 ```yaml
 # prometheus.yml — backend está COMENTADO:
 # - job_name: 'erp-backend'
