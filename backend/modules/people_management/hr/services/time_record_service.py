@@ -92,8 +92,6 @@ class TimeRecordService:
             params["date_to"] = date_to
 
         where_sql = " AND ".join(where_clauses) if where_clauses else "1=1"
-        # safe — where_sql é montado apenas de cláusulas hardcoded com placeholders (:emp_id, :date_from, :date_to);
-        # nenhum valor de usuário é interpolado diretamente na string SQL.
 
         # Count total distinct days
         count_sql = text(f"""
@@ -579,9 +577,6 @@ class TimeRecordService:
         if sets:
             sets.append("updated_at = :updated_at")
             set_sql = ", ".join(sets)
-            # safe — set_sql é montado apenas de strings hardcoded ("status = :new_status",
-            # "justification_id = :jid", "updated_at = :updated_at"); valores de usuário
-            # entram como parâmetros nomeados, nunca interpolados diretamente.
             await self.db.execute(
                 text(f"UPDATE gp_clock_punches SET {set_sql} WHERE punch_id = :rid"),
                 params,

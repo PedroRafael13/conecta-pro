@@ -86,8 +86,6 @@ async def list_kits(
         params["year"] = year
 
     where = " AND ".join(conditions) if conditions else "1=1"
-    # safe — where é montado apenas de cláusulas hardcoded com placeholders nomeados
-    # (:client_id, :status, :month, :year); nenhum valor de usuário é interpolado diretamente.
     query = text(
         f"SELECT gk.*, gc.name as client_name FROM ged_document_kits gk "
         f"LEFT JOIN ged_clients gc ON gk.client_id = gc.id "

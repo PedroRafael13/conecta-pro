@@ -71,10 +71,11 @@ async def create_account(
 
 @router.get(
     "",
+    response_model=list[PayableAccountListResponse],
     summary="Listar contas a pagar",
 )
 async def list_accounts(  # pylint: disable=too-many-locals
-    condominio_id: UUID | None = Query(None, description="ID do condomínio"),
+    condominio_id: UUID,
     search: str | None = Query(None, description="Busca na descrição"),
     supplier_id: UUID | None = Query(None, description="Filtrar por fornecedor"),
     category_id: UUID | None = Query(None, description="Filtrar por categoria"),
@@ -89,16 +90,8 @@ async def list_accounts(  # pylint: disable=too-many-locals
     limit: int = Query(100, ge=1, le=500),
     service: PayableService = Depends(get_service),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> dict[str, Any]:
-    """Lista contas a pagar com filtros, retornando wrapper paginado."""
-    if not condominio_id:
-        raise HTTPException(
-            status_code=422,
-            detail={
-                "code": "CONDOMINIO_REQUIRED",
-                "message": "Informe condominio_id ou faça login com um usuário vinculado a um condomínio.",
-            },
-        )
+) -> list[PayableAccountListResponse]:
+    """Lista contas a pagar com filtros."""
     filters = PayableAccountFilter(
         search=search,
         supplier_id=supplier_id,
@@ -112,15 +105,10 @@ async def list_accounts(  # pylint: disable=too-many-locals
         max_value=str(max_value) if max_value else None,
     )
 
-    accounts, total = await service.list_accounts(condominio_id, filters, skip, limit)
-    page = (skip // limit) + 1 if limit else 1
-    return {
-        "items": [PayableAccountListResponse.model_validate(a) for a in accounts],
-        "total": total,
-        "page": page,
-        "per_page": limit,
-        "skip": skip,
-    }
+    accounts, _total = await service.list_accounts(condominio_id, filters, skip, limit)
+
+    # Header com total
+    return [PayableAccountListResponse.model_validate(a) for a in accounts]
 
 
 @router.get(
@@ -159,21 +147,13 @@ async def get_overdue(
     summary="Contas a vencer",
 )
 async def get_due_soon(
-    condominio_id: UUID | None = Query(None, description="ID do condomínio"),
+    condominio_id: UUID,
     days: int = Query(7, ge=1, le=90, description="Dias para vencimento"),
     limit: int = Query(100, ge=1, le=500),
     service: PayableService = Depends(get_service),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> list[PayableAccountListResponse]:
     """Retorna contas a vencer nos próximos dias."""
-    if not condominio_id:
-        raise HTTPException(
-            status_code=422,
-            detail={
-                "code": "CONDOMINIO_REQUIRED",
-                "message": "Informe condominio_id ou faça login com um usuário vinculado a um condomínio.",
-            },
-        )
     accounts = await service.get_due_soon_accounts(condominio_id, days, limit)
     return [PayableAccountListResponse.model_validate(a) for a in accounts]
 
@@ -364,21 +344,13 @@ async def list_installments(
     summary="Parcelas pendentes",
 )
 async def get_pending_installments(
-    condominio_id: UUID | None = Query(None, description="ID do condomínio"),
+    condominio_id: UUID,
     due_date_start: date | None = Query(None),
     due_date_end: date | None = Query(None),
     service: PayableService = Depends(get_service),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> list[PayableInstallmentResponse]:
     """Retorna parcelas pendentes."""
-    if not condominio_id:
-        raise HTTPException(
-            status_code=422,
-            detail={
-                "code": "CONDOMINIO_REQUIRED",
-                "message": "Informe condominio_id ou faça login com um usuário vinculado a um condomínio.",
-            },
-        )
     installments = await service.get_pending_installments(condominio_id, due_date_start, due_date_end)
     return [PayableInstallmentResponse.model_validate(i) for i in installments]
 
@@ -527,19 +499,11 @@ async def reconcile_payment(
     summary="Pagamentos pendentes de reconciliação",
 )
 async def get_pending_reconciliation(
-    condominio_id: UUID | None = Query(None, description="ID do condomínio"),
+    condominio_id: UUID,
     service: PayableService = Depends(get_service),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> list[PayablePaymentResponse]:
     """Retorna pagamentos pendentes de reconciliação."""
-    if not condominio_id:
-        raise HTTPException(
-            status_code=422,
-            detail={
-                "code": "CONDOMINIO_REQUIRED",
-                "message": "Informe condominio_id ou faça login com um usuário vinculado a um condomínio.",
-            },
-        )
     payments = await service.get_pending_reconciliation(condominio_id)
     return [PayablePaymentResponse.model_validate(p) for p in payments]
 
@@ -552,20 +516,12 @@ async def get_pending_reconciliation(
     summary="Processar contas recorrentes",
 )
 async def process_recurring(
-    condominio_id: UUID | None = Query(None, description="ID do condomínio"),
+    condominio_id: UUID,
     reference_date: date | None = None,
     service: PayableService = Depends(get_service),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict[str, Any]:
     """Processa contas recorrentes e gera novas."""
-    if not condominio_id:
-        raise HTTPException(
-            status_code=422,
-            detail={
-                "code": "CONDOMINIO_REQUIRED",
-                "message": "Informe condominio_id ou faça login com um usuário vinculado a um condomínio.",
-            },
-        )
     accounts = await service.process_recurring_accounts(condominio_id, reference_date)
     return {
         "created_count": len(accounts),
