@@ -3,8 +3,8 @@
 Skills Agent — Conecta PRO Monitor Bot
 @conecta_pro_monitor_bot | Ciclo: 30 minutos
 
-Audita o sistema usando as 10 skills, calcula score por módulo
-e envia relatório via Telegram para Jordan.
+Audita o sistema usando as 10 skills, calcula score por módulo,
+persiste estado entre ciclos e envia relatório via Telegram.
 """
 
 import json
@@ -18,6 +18,31 @@ import urllib.request
 import urllib.error
 
 # ─────────────────────────────────────────────────────
+# ESTADO PERSISTENTE
+# ─────────────────────────────────────────────────────
+
+sys.path.insert(0, "/opt/conecta-pro/agents")
+try:
+    from monitor_state import (
+        registrar_ciclo,
+        houve_regressao,
+        ja_tentou_e_falhou,
+        get_tendencia,
+        get_resumo_estado,
+        load_state,
+    )
+    MONITOR_STATE_OK = True
+except ImportError as e:
+    print(f"[monitor_state] indisponível: {e}")
+    def registrar_ciclo(s, ok, fail, bugs): return {}
+    def houve_regressao(s): return False, 0.0, 0.0
+    def ja_tentou_e_falhou(n): return False
+    def get_tendencia(): return "→"
+    def get_resumo_estado(): return ""
+    def load_state(): return {}
+    MONITOR_STATE_OK = False
+
+# ─────────────────────────────────────────────────────
 # CONFIGURAÇÃO
 # ─────────────────────────────────────────────────────
 
@@ -29,23 +54,10 @@ REPORT_DIR = "/opt/conecta-pro/reports/monitor"
 os.makedirs(REPORT_DIR, exist_ok=True)
 
 # ─────────────────────────────────────────────────────
-# ESTADO PERSISTENTE
-# ─────────────────────────────────────────────────────
-
-sys.path.insert(0, "/opt/conecta-pro/agents")
-try:
-    from monitor_state import registrar_ciclo, houve_regressao, load_state
-except ImportError:
-    def registrar_ciclo(score, erros): return {}
-    def houve_regressao(score): return False
-    def load_state(): return {}
-
-# ─────────────────────────────────────────────────────
 # HELPERS
 # ─────────────────────────────────────────────────────
 
 def telegram_send(text: str) -> bool:
-    """Envia mensagem HTML ao Telegram."""
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
     payload = json.dumps({
         "chat_id": CHAT_ID,
@@ -53,18 +65,18 @@ def telegram_send(text: str) -> bool:
         "parse_mode": "HTML",
     }).encode()
     try:
-        req = urllib.request.Request(url, data=payload,
-                                     headers={"Content-Type": "application/json"})
+        req = urllib.request.Request(
+            url, data=payload,
+            headers={"Content-Type": "application/json"}
+        )
         with urllib.request.urlopen(req, timeout=15) as r:
-            result = json.loads(r.read())
-            return result.get("ok", False)
+            return json.loads(r.read()).get("ok", False)
     except Exception as e:
         print(f"[telegram_send] erro: {e}")
         return False
 
 
 def get_token() -> str:
-    """Autentica e retorna JWT."""
     try:
         data = b"username=egonzaga%40conectamais.pro&password=Admin%40123"
         req = urllib.request.Request(
@@ -79,9 +91,10 @@ def get_token() -> str:
 
 
 def http_get(url: str, token: str) -> tuple[int, dict]:
-    """GET autenticado. Retorna (status_code, body)."""
     try:
-        req = urllib.request.Request(url, headers={"Authorization": f"Bearer {token}"})
+        req = urllib.request.Request(
+            url, headers={"Authorization": f"Bearer {token}"}
+        )
         with urllib.request.urlopen(req, timeout=8) as r:
             return r.status, json.loads(r.read())
     except urllib.error.HTTPError as e:
@@ -106,7 +119,7 @@ def check_containers() -> dict:
     try:
         out = subprocess.check_output(
             ["docker", "ps", "--format", "{{.Names}}|{{.Status}}"],
-            timeout=10
+            timeout=10,
         ).decode()
     except Exception:
         return {"ok": 0, "fail": CRITICAL_CONTAINERS[:], "total": len(CRITICAL_CONTAINERS)}
@@ -192,7 +205,7 @@ def check_database() -> dict:
             ["docker", "exec", "conecta-pro-postgres",
              "psql", "-U", "postgres", "-d", "conecta_pro",
              "-c", "SELECT COUNT(*) FROM users; SELECT COUNT(*) FROM communication_announcements;"],
-            timeout=10
+            timeout=10,
         ).decode()
         lines = [l.strip() for l in out.splitlines() if l.strip().lstrip("-").isdigit()]
         users = int(lines[0]) if len(lines) > 0 else -1
@@ -210,7 +223,7 @@ def check_recent_errors() -> dict:
     try:
         out = subprocess.check_output(
             ["docker", "logs", "--tail", "200", "conecta-pro-backend"],
-            timeout=15, stderr=subprocess.STDOUT
+            timeout=15, stderr=subprocess.STDOUT,
         ).decode()
         errors_500 = out.count("500 Internal Server Error")
         errors_exc = out.count("ERROR")
@@ -229,7 +242,7 @@ def compute_global_score(containers: dict, endpoints: dict[str, dict],
     scores = []
     c_score = (containers.get("ok", 0) / containers.get("total", 4)) * 10
     scores.extend([c_score, c_score])  # peso 2 para containers
-    for m, r in endpoints.items():
+    for r in endpoints.values():
         scores.append(r["score"])
     scores.append(10.0 if db.get("ok") else 3.0)
     e500 = errs.get("errors_500", 0)
@@ -239,7 +252,7 @@ def compute_global_score(containers: dict, endpoints: dict[str, dict],
 
 
 # ─────────────────────────────────────────────────────
-# FORMATAÇÃO DA MENSAGEM TELEGRAM
+# FORMATAÇÃO DA MENSAGEM
 # ─────────────────────────────────────────────────────
 
 def score_emoji(s: float) -> str:
@@ -251,19 +264,17 @@ def score_emoji(s: float) -> str:
 
 def build_message(containers: dict, endpoints: dict[str, dict], db: dict,
                   errs: dict, global_score: float, duration: float,
-                  ciclos: int, regressao: bool) -> str:
+                  ciclos: int) -> str:
     now = datetime.now().strftime("%d/%m/%Y %H:%M")
     emoji = score_emoji(global_score)
+    tendencia = get_tendencia()
 
     lines = [
         f"{emoji} <b>MONITOR CONECTA PRO</b> — {now}",
-        f"📊 Score global: <b>{global_score}/10</b>  |  🔄 Ciclo #{ciclos}",
+        f"📊 Score global: <b>{global_score}/10</b>  |  📈 {tendencia}",
+        f"🔄 Ciclo #{ciclos}",
         "",
     ]
-
-    if regressao:
-        state = load_state()
-        lines.insert(0, f"⚠️ <b>REGRESSÃO DETECTADA!</b> {state.get('score_anterior', 0)} → {global_score}\n")
 
     c_ok = containers.get("ok", 0)
     c_tot = containers.get("total", 4)
@@ -279,23 +290,24 @@ def build_message(containers: dict, endpoints: dict[str, dict], db: dict,
         lines.append(f"🗄 Banco: ❌ {db.get('error', '?')[:40]}")
 
     e500 = errs.get("errors_500", 0)
-    if e500 == 0:
-        lines.append("⚡ Erros 500: ✅ nenhum")
-    else:
-        lines.append(f"⚡ Erros 500: ⚠️ {e500} nas últimas 200 linhas")
+    lines.append("⚡ Erros 500: ✅ nenhum" if e500 == 0
+                 else f"⚡ Erros 500: ⚠️ {e500} nas últimas 200 linhas")
 
     lines.append("")
     lines.append("📦 <b>Módulos</b>")
-
     for module, r in endpoints.items():
         em = score_emoji(r["score"])
         lines.append(f"  {em} {module}: {r['ok']}/{r['total']} ({r['score']}/10)")
         for err in r["errors"][:2]:
             lines.append(f"    ↳ ❌ {err}")
 
+    resumo = get_resumo_estado()
+    if resumo.strip():
+        lines.append("")
+        lines.append(resumo.strip())
+
     lines.append("")
     lines.append(f"⏱ Concluído em {duration:.1f}s | próxima em ~30min")
-
     return "\n".join(lines)
 
 
@@ -307,6 +319,7 @@ def main():
     t0 = time.time()
     print(f"[{datetime.now():%H:%M:%S}] Skills Agent iniciando...")
 
+    # Coleta
     containers = check_containers()
     print(f"  → containers: {containers['ok']}/{containers['total']}")
 
@@ -326,31 +339,47 @@ def main():
     global_score = compute_global_score(containers, endpoints, db, errs)
     duration = time.time() - t0
 
-    # Detectar regressão ANTES de registrar
-    regressao = houve_regressao(global_score)
+    # Coletar bugs ativos (endpoints com erro)
+    bugs_ativos = []
+    for r in endpoints.values():
+        bugs_ativos.extend(r["errors"])
 
-    # Coletar endpoints com erro para o estado
-    endpoints_com_erro = []
-    for mod, r in endpoints.items():
-        endpoints_com_erro.extend(r["errors"])
+    # Detectar regressão ANTES de registrar
+    regrediu, score_ref, diff = houve_regressao(global_score)
 
     # Registrar no estado persistente
-    state = registrar_ciclo(global_score, endpoints_com_erro)
+    state = registrar_ciclo(
+        global_score,
+        [],          # correcoes_ok (sem auto-correção por ora)
+        [],          # correcoes_falha
+        bugs_ativos,
+    )
     ciclos = state.get("ciclos_executados", 1)
 
+    print(f"  → score: {global_score}/10 | ciclo #{ciclos} | regressão: {regrediu}")
+
+    # Alerta de regressão (mensagem separada)
+    if regrediu:
+        telegram_send(
+            f"⚠️ <b>REGRESSÃO DETECTADA!</b>\n"
+            f"Score: {score_ref} → {global_score} ({diff:+.1f})\n"
+            f"Verifique os endpoints com erro."
+        )
+
     # Salvar relatório JSON
+    report_path = f"{REPORT_DIR}/cycle_{datetime.now():%Y%m%d_%H%M%S}.json"
     report = {
         "timestamp": datetime.now().isoformat(),
         "global_score": global_score,
         "duration_seconds": round(duration, 1),
         "ciclo": ciclos,
-        "regressao": regressao,
+        "regressao": regrediu,
+        "tendencia": get_tendencia(),
         "containers": containers,
         "endpoints": endpoints,
         "database": db,
         "errors": errs,
     }
-    report_path = f"{REPORT_DIR}/cycle_{datetime.now():%Y%m%d_%H%M%S}.json"
     with open(report_path, "w") as f:
         json.dump(report, f, indent=2, default=str)
 
@@ -359,19 +388,8 @@ def main():
         os.remove(latest)
     os.symlink(report_path, latest)
 
-    print(f"  → score: {global_score}/10  |  ciclo #{ciclos}  |  regressão: {regressao}")
-
-    # Alerta de regressão separado
-    if regressao:
-        score_ant = load_state().get("score_anterior", 0)
-        telegram_send(
-            f"⚠️ <b>REGRESSÃO DETECTADA!</b>\n"
-            f"Score: {score_ant} → {global_score}\n"
-            f"Verifique os endpoints com erro acima."
-        )
-
-    # Relatório principal
-    msg = build_message(containers, endpoints, db, errs, global_score, duration, ciclos, regressao)
+    # Enviar relatório
+    msg = build_message(containers, endpoints, db, errs, global_score, duration, ciclos)
     ok = telegram_send(msg)
     print(f"  → Telegram: {'✅' if ok else '❌'}")
 
