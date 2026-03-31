@@ -22,12 +22,12 @@ async def listar_cargos_cct(db: AsyncSession = Depends(get_async_session)):
     """Lista todos os cargos da CCT 2026 SINDECOMPRESTS."""
     result = await db.execute(
         text("""
-        SELECT id, nome_cargo, cbo, salario_base,
-               adicional_insalubridade, adicional_periculosidade,
-               escala_padrao, divisor_horas, ativo
+        SELECT id, cargo_nome, piso_salarial,
+               adicional_insalubridade_percentual, adicional_periculosidade_percentual,
+               adicional_noturno_percentual, jornada_semanal_horas, is_active
         FROM cct_cargos
-        WHERE ativo = true
-        ORDER BY salario_base DESC
+        WHERE is_active = true
+        ORDER BY piso_salarial DESC
     """)
     )
     rows = result.fetchall()
@@ -36,13 +36,12 @@ async def listar_cargos_cct(db: AsyncSession = Depends(get_async_session)):
         "cargos": [
             {
                 "id": r[0],
-                "nome_cargo": r[1],
-                "cbo": r[2],
-                "salario_base": float(r[3]) if r[3] else 0,
-                "adicional_insalubridade": float(r[4]) if r[4] else 0,
-                "adicional_periculosidade": float(r[5]) if r[5] else 0,
-                "escala_padrao": r[6],
-                "divisor_horas": r[7],
+                "cargo_nome": r[1],
+                "piso_salarial": float(r[2]) if r[2] else 0,
+                "adicional_insalubridade_percentual": float(r[3]) if r[3] else 0,
+                "adicional_periculosidade_percentual": float(r[4]) if r[4] else 0,
+                "adicional_noturno_percentual": float(r[5]) if r[5] else 0,
+                "jornada_semanal_horas": r[6],
             }
             for r in rows
         ],
@@ -59,11 +58,11 @@ async def listar_funcionarios_cct(db: AsyncSession = Depends(get_async_session))
         text("""
         SELECT
             e.id, e.nome, e.cargo, e.salario_base,
-            c.nome_cargo as cargo_cct, c.salario_base as piso_cct,
-            c.adicional_periculosidade, c.escala_padrao,
-            CASE WHEN e.salario_base >= c.salario_base THEN 'conforme' ELSE 'abaixo_piso' END as status
+            c.cargo_nome as cargo_cct, c.piso_salarial as piso_cct,
+            c.adicional_periculosidade_percentual,
+            CASE WHEN e.salario_base >= c.piso_salarial THEN 'conforme' ELSE 'abaixo_piso' END as status
         FROM employees e
-        JOIN cct_cargos c ON e.cct_cargo_id = c.id
+        JOIN cct_cargos c ON e.cct_cargo_id::text = c.id::text
         WHERE e.is_active = true
         ORDER BY e.cargo, e.nome
     """)
@@ -79,9 +78,8 @@ async def listar_funcionarios_cct(db: AsyncSession = Depends(get_async_session))
                 "salario_atual": float(r[3]) if r[3] else 0,
                 "cargo_cct": r[4],
                 "piso_cct": float(r[5]) if r[5] else 0,
-                "adicional_periculosidade": float(r[6]) if r[6] else 0,
-                "escala": r[7],
-                "status_cct": r[8],
+                "adicional_periculosidade_percentual": float(r[6]) if r[6] else 0,
+                "status_cct": r[7],
             }
             for r in rows
         ],
@@ -96,12 +94,12 @@ async def verificar_conformidade(db: AsyncSession = Depends(get_async_session)):
         text("""
         SELECT
             e.nome, e.cargo, e.salario_base,
-            c.nome_cargo, c.salario_base as piso,
-            c.salario_base - e.salario_base as diferenca
+            c.cargo_nome, c.piso_salarial as piso,
+            c.piso_salarial - e.salario_base as diferenca
         FROM employees e
-        JOIN cct_cargos c ON e.cct_cargo_id = c.id
-        WHERE e.is_active = true AND e.salario_base < c.salario_base
-        ORDER BY (c.salario_base - e.salario_base) DESC
+        JOIN cct_cargos c ON e.cct_cargo_id::text = c.id::text
+        WHERE e.is_active = true AND e.salario_base < c.piso_salarial
+        ORDER BY (c.piso_salarial - e.salario_base) DESC
     """)
     )
     abaixo = result.fetchall()
@@ -135,10 +133,10 @@ async def resumo_cct(db: AsyncSession = Depends(get_async_session)):
         SELECT
             COUNT(*) as total,
             COUNT(cct_cargo_id) as vinculados,
-            SUM(CASE WHEN e.salario_base < c.salario_base THEN 1 ELSE 0 END) as abaixo_piso,
-            SUM(CASE WHEN e.salario_base < c.salario_base THEN c.salario_base - e.salario_base ELSE 0 END) as custo_adequacao
+            SUM(CASE WHEN e.salario_base < c.piso_salarial THEN 1 ELSE 0 END) as abaixo_piso,
+            SUM(CASE WHEN e.salario_base < c.piso_salarial THEN c.piso_salarial - e.salario_base ELSE 0 END) as custo_adequacao
         FROM employees e
-        LEFT JOIN cct_cargos c ON e.cct_cargo_id = c.id
+        LEFT JOIN cct_cargos c ON e.cct_cargo_id::text = c.id::text
         WHERE e.is_active = true
     """)
     )
