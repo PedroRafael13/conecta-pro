@@ -146,11 +146,7 @@ class AgenteComunicados(BaseAgent):
     SUBMODULO = "comunicados"
     ENDPOINTS = [
         '/api/v1/operacional/comunicados',
-        {
-            'path': '/api/v1/operacional/'
-                    'comunicados/nao-lidos',
-            'esperado': 500
-        }
+        '/api/v1/operacional/comunicados/nao-lidos',
     ]
     CONHECE_BUGS = [
         {
@@ -163,12 +159,6 @@ class AgenteComunicados(BaseAgent):
             'descricao': 'Tenant ID mismatch — '
                          '10 comunicados invisíveis',
             'corrigido': True,
-            'auto_corrigivel': False
-        },
-        {
-            'descricao': '/comunicados/nao-lidos '
-                         '→ 500 (bug no service)',
-            'corrigido': False,
             'auto_corrigivel': False
         }
     ]
@@ -312,21 +302,11 @@ class AgenteEnviosGED(BaseAgent):
     ENDPOINTS = [
         '/api/v1/ged/kits',
         {
-            'path': '/api/v1/ged/kits/'
-                    'inexistente/send',
-            'method': 'POST',
-            'esperado': 500
+            'path': '/api/v1/ged/kits/inexistente/send',
+            'esperado': 404
         }
     ]
-    CONHECE_BUGS = [
-        {
-            'descricao': 'POST kits/{id}/send '
-                         '→ 500 para id inválido '
-                         '(falta validação UUID)',
-            'corrigido': False,
-            'auto_corrigivel': False
-        }
-    ]
+    CONHECE_BUGS = []
 
 
 class AgenteAssinaturasGED(BaseAgent):
