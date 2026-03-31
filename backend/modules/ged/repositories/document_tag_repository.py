@@ -91,6 +91,16 @@ class DocumentTagRepository:
         await self.session.flush()
         return True
 
+    async def soft_delete(self, tag_id: str) -> bool:
+        """Desativa tag (soft delete)."""
+        tag = await self.get_by_id(tag_id)
+        if not tag or tag.is_system:
+            return False
+
+        tag.deactivate()
+        await self.session.flush()
+        return True
+
     async def list_with_filters(
         self,
         filters: DocumentTagFilter | None = None,
@@ -267,6 +277,17 @@ class DocumentTagRepository:
         )
         result = await self.session.execute(query)
         return [row[0] for row in result.fetchall()]
+
+    async def is_associated(self, tag_id: str, document_id: str) -> bool:
+        """Verifica se uma tag está associada a um documento."""
+        query = select(document_tag_association).where(
+            and_(
+                document_tag_association.c.tag_id == tag_id,
+                document_tag_association.c.document_id == document_id,
+            )
+        )
+        result = await self.session.execute(query)
+        return result.first() is not None
 
     async def deactivate(self, tag_id: str) -> DocumentTag | None:
         """Desativa tag."""

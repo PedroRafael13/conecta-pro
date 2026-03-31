@@ -242,6 +242,27 @@ class DocumentShareRepository:
         await self.session.flush()
         return count
 
+    async def expire_overdue(self) -> int:
+        """Expira shares com data de vencimento ultrapassada."""
+        now = datetime.utcnow()
+        query = select(DocumentShare).where(
+            and_(
+                DocumentShare.status == ShareStatus.ATIVO,
+                DocumentShare.is_perpetual.is_(False),
+                DocumentShare.expires_at < now,
+            )
+        )
+        result = await self.session.execute(query)
+        shares = result.scalars().all()
+
+        count = 0
+        for share in shares:
+            share.check_and_expire()
+            count += 1
+
+        await self.session.flush()
+        return count
+
     async def send_notification(self, share_id: str) -> DocumentShare | None:
         """Marca notificação como enviada."""
         share = await self.get_by_id(share_id)
