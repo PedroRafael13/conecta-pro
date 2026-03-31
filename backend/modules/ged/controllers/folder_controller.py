@@ -225,7 +225,7 @@ async def unarchive_folder(
 ) -> FolderResponse:
     """Desarquiva pasta."""
     service = FolderService(db)
-    folder = await service.unarchive(folder_id)
+    folder = await service.unarchive(str(folder_id))
     if not folder:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Pasta não encontrada")
     return folder
@@ -239,7 +239,7 @@ async def block_folder(
 ) -> FolderResponse:
     """Bloqueia pasta."""
     service = FolderService(db)
-    folder = await service.block(folder_id)
+    folder = await service.block(str(folder_id))
     if not folder:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Pasta não encontrada")
     return folder
@@ -253,7 +253,7 @@ async def unblock_folder(
 ) -> FolderResponse:
     """Desbloqueia pasta."""
     service = FolderService(db)
-    folder = await service.unblock(folder_id)
+    folder = await service.unblock(str(folder_id))
     if not folder:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Pasta não encontrada")
     return folder
@@ -269,7 +269,7 @@ async def move_folder(
     """Move pasta."""
     service = FolderService(db)
     try:
-        folder = await service.move(folder_id, new_parent_id)
+        folder = await service.move(str(folder_id), new_parent_id)
         if not folder:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Pasta não encontrada")
         return folder
@@ -287,7 +287,7 @@ async def grant_permission(
 ) -> FolderResponse:
     """Concede permissão."""
     service = FolderService(db)
-    folder = await service.grant_permission(folder_id, user_id, permission)
+    folder = await service.grant_permission(str(folder_id), user_id, permission)
     if not folder:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Pasta não encontrada")
     return folder
@@ -303,7 +303,7 @@ async def revoke_permission(
 ) -> FolderResponse:
     """Revoga permissão."""
     service = FolderService(db)
-    folder = await service.revoke_permission(folder_id, user_id, permission)
+    folder = await service.revoke_permission(str(folder_id), user_id, permission)
     if not folder:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Pasta não encontrada")
     return folder
@@ -319,7 +319,7 @@ async def check_permission(
 ) -> dict[str, bool]:
     """Verifica permissão."""
     service = FolderService(db)
-    has_permission = await service.check_permission(folder_id, user_id, permission)
+    has_permission = await service.check_permission(str(folder_id), user_id, permission)
     return {"has_permission": has_permission}
 
 

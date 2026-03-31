@@ -479,7 +479,7 @@ class DocumentAIService:
         expiring_soon = stats.get("expiring_soon", 0)
 
         # Score de saúde documental
-        total = stats.get("total_documents", 1)
+        total = stats.get("total_documents") or 1
         health_penalties = (
             (pending_approval / total * 20)
             + (pending_signature / total * 15)

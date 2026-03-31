@@ -3,6 +3,7 @@ Controller (endpoints) para Post.
 """
 
 from typing import Any
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -135,7 +136,7 @@ async def get_post_stats(
     dependencies=[require_operacional_permission(Permission.POSTS_VIEW)],
 )
 async def get_post(
-    post_id: str,
+    post_id: UUID,
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> PostResponse:
@@ -143,7 +144,7 @@ async def get_post(
     Busca posto por ID.
     """
     repo = PostRepository(db)
-    post: Any = await repo.get_by_id(post_id)
+    post: Any = await repo.get_by_id(str(post_id))
 
     if not post:
         raise HTTPException(
@@ -160,7 +161,7 @@ async def get_post(
     dependencies=[require_operacional_permission(Permission.POSTS_EDIT)],
 )
 async def update_post(
-    post_id: str,
+    post_id: UUID,
     data: PostUpdate,
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
@@ -169,7 +170,7 @@ async def update_post(
     Atualiza um posto.
     """
     repo = PostRepository(db)
-    post: Any = await repo.update(post_id, data)
+    post: Any = await repo.update(str(post_id), data)
 
     if not post:
         raise HTTPException(
@@ -193,7 +194,7 @@ async def update_post(
     dependencies=[require_operacional_permission(Permission.POSTS_DELETE)],
 )
 async def delete_post(
-    post_id: str,
+    post_id: UUID,
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> None:
@@ -201,7 +202,7 @@ async def delete_post(
     Remove um posto (soft delete).
     """
     repo = PostRepository(db)
-    deleted: bool = await repo.delete(post_id)
+    deleted: bool = await repo.delete(str(post_id))
 
     if not deleted:
         raise HTTPException(

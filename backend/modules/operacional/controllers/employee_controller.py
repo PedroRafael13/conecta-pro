@@ -6,6 +6,7 @@ Integração com Solides DP (Tangerino) para dados em tempo real.
 import logging
 import os
 from typing import Any
+from uuid import UUID
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -203,7 +204,7 @@ async def create_employee(
     dependencies=[require_operacional_permission(Permission.EMPLOYEES_EDIT)],
 )
 async def update_employee(
-    employee_id: str,
+    employee_id: UUID,
     data: EmployeeUpdate,
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
@@ -212,7 +213,7 @@ async def update_employee(
     Atualiza dados de um funcionário.
     """
     # Busca funcionário
-    result = await db.execute(select(Employee).where(Employee.id == employee_id))
+    result = await db.execute(select(Employee).where(Employee.id == str(employee_id)))
     employee: Employee | None = result.scalar_one_or_none()
 
     if not employee:
