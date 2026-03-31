@@ -29,6 +29,18 @@ REPORT_DIR = "/opt/conecta-pro/reports/monitor"
 os.makedirs(REPORT_DIR, exist_ok=True)
 
 # ─────────────────────────────────────────────────────
+# ESTADO PERSISTENTE
+# ─────────────────────────────────────────────────────
+
+sys.path.insert(0, "/opt/conecta-pro/agents")
+try:
+    from monitor_state import registrar_ciclo, houve_regressao, load_state
+except ImportError:
+    def registrar_ciclo(score, erros): return {}
+    def houve_regressao(score): return False
+    def load_state(): return {}
+
+# ─────────────────────────────────────────────────────
 # HELPERS
 # ─────────────────────────────────────────────────────
 
@@ -89,6 +101,7 @@ CRITICAL_CONTAINERS = [
     "conecta-pro-redis",
 ]
 
+
 def check_containers() -> dict:
     try:
         out = subprocess.check_output(
@@ -96,7 +109,7 @@ def check_containers() -> dict:
             timeout=10
         ).decode()
     except Exception:
-        return {"ok": 0, "fail": CRITICAL_CONTAINERS[:], "raw": "docker indisponível"}
+        return {"ok": 0, "fail": CRITICAL_CONTAINERS[:], "total": len(CRITICAL_CONTAINERS)}
 
     running = {}
     for line in out.strip().splitlines():
@@ -160,17 +173,12 @@ def check_endpoints(token: str) -> dict[str, dict]:
             if code in (200, 201, 204):
                 ok += 1
             elif code == 401:
-                ok += 1          # endpoint existe, só precisa de auth portal
+                ok += 1  # endpoint existe, só precisa de auth portal
             else:
                 errors.append(f"{ep} → {code}")
         total = len(endpoints)
         score = round((ok / total) * 10, 1) if total else 0
-        results[module] = {
-            "ok": ok,
-            "total": total,
-            "score": score,
-            "errors": errors,
-        }
+        results[module] = {"ok": ok, "total": total, "score": score, "errors": errors}
     return results
 
 
@@ -207,11 +215,7 @@ def check_recent_errors() -> dict:
         errors_500 = out.count("500 Internal Server Error")
         errors_exc = out.count("ERROR")
         lines_500 = [l for l in out.splitlines() if "500 Internal Server Error" in l][-3:]
-        return {
-            "errors_500": errors_500,
-            "errors_general": errors_exc,
-            "last_500": lines_500,
-        }
+        return {"errors_500": errors_500, "errors_general": errors_exc, "last_500": lines_500}
     except Exception:
         return {"errors_500": -1, "errors_general": -1, "last_500": []}
 
@@ -220,24 +224,16 @@ def check_recent_errors() -> dict:
 # SCORE GLOBAL
 # ─────────────────────────────────────────────────────
 
-def compute_global_score(containers: dict, endpoints: dict[str, dict], db: dict, errs: dict) -> float:
+def compute_global_score(containers: dict, endpoints: dict[str, dict],
+                         db: dict, errs: dict) -> float:
     scores = []
-
-    # Containers (peso 2)
     c_score = (containers.get("ok", 0) / containers.get("total", 4)) * 10
-    scores.extend([c_score, c_score])
-
-    # Endpoints (peso 1 cada)
+    scores.extend([c_score, c_score])  # peso 2 para containers
     for m, r in endpoints.items():
         scores.append(r["score"])
-
-    # DB (peso 1)
     scores.append(10.0 if db.get("ok") else 3.0)
-
-    # Erros 500 (penalidade)
     e500 = errs.get("errors_500", 0)
     penalty = min(e500 * 0.3, 2.0)
-
     avg = sum(scores) / len(scores) if scores else 0
     return max(0, round(avg - penalty, 1))
 
@@ -246,8 +242,6 @@ def compute_global_score(containers: dict, endpoints: dict[str, dict], db: dict,
 # FORMATAÇÃO DA MENSAGEM TELEGRAM
 # ─────────────────────────────────────────────────────
 
-STATUS_EMOJI = {10: "🟢", 8: "🟡", 5: "🟠", 0: "🔴"}
-
 def score_emoji(s: float) -> str:
     if s >= 9: return "🟢"
     if s >= 7: return "🟡"
@@ -255,25 +249,23 @@ def score_emoji(s: float) -> str:
     return "🔴"
 
 
-def build_message(
-    containers: dict,
-    endpoints: dict[str, dict],
-    db: dict,
-    errs: dict,
-    global_score: float,
-    duration: float,
-) -> str:
+def build_message(containers: dict, endpoints: dict[str, dict], db: dict,
+                  errs: dict, global_score: float, duration: float,
+                  ciclos: int, regressao: bool) -> str:
     now = datetime.now().strftime("%d/%m/%Y %H:%M")
     emoji = score_emoji(global_score)
 
     lines = [
         f"{emoji} <b>MONITOR CONECTA PRO</b> — {now}",
-        f"📊 Score global: <b>{global_score}/10</b>",
+        f"📊 Score global: <b>{global_score}/10</b>  |  🔄 Ciclo #{ciclos}",
         "",
     ]
 
-    # Containers
-    c_ok  = containers.get("ok", 0)
+    if regressao:
+        state = load_state()
+        lines.insert(0, f"⚠️ <b>REGRESSÃO DETECTADA!</b> {state.get('score_anterior', 0)} → {global_score}\n")
+
+    c_ok = containers.get("ok", 0)
     c_tot = containers.get("total", 4)
     c_fail = containers.get("fail", [])
     c_line = f"🐳 Containers: {c_ok}/{c_tot}"
@@ -281,13 +273,11 @@ def build_message(
         c_line += f" ⚠️ ({', '.join(c_fail)})"
     lines.append(c_line)
 
-    # Banco
     if db.get("ok"):
-        lines.append(f"🗄 Banco: ✅ ({db.get('users',0)} users)")
+        lines.append(f"🗄 Banco: ✅ ({db.get('users', 0)} users)")
     else:
-        lines.append(f"🗄 Banco: ❌ {db.get('error','?')[:40]}")
+        lines.append(f"🗄 Banco: ❌ {db.get('error', '?')[:40]}")
 
-    # Erros backend
     e500 = errs.get("errors_500", 0)
     if e500 == 0:
         lines.append("⚡ Erros 500: ✅ nenhum")
@@ -299,13 +289,12 @@ def build_message(
 
     for module, r in endpoints.items():
         em = score_emoji(r["score"])
-        line = f"  {em} {module}: {r['ok']}/{r['total']} ({r['score']}/10)"
-        lines.append(line)
+        lines.append(f"  {em} {module}: {r['ok']}/{r['total']} ({r['score']}/10)")
         for err in r["errors"][:2]:
             lines.append(f"    ↳ ❌ {err}")
 
     lines.append("")
-    lines.append(f"⏱ Auditoria concluída em {duration:.1f}s | próxima em ~30min")
+    lines.append(f"⏱ Concluído em {duration:.1f}s | próxima em ~30min")
 
     return "\n".join(lines)
 
@@ -318,38 +307,44 @@ def main():
     t0 = time.time()
     print(f"[{datetime.now():%H:%M:%S}] Skills Agent iniciando...")
 
-    # 1. Containers
-    print("  → verificando containers...")
     containers = check_containers()
+    print(f"  → containers: {containers['ok']}/{containers['total']}")
 
-    # 2. Token
-    print("  → autenticando...")
     token = get_token()
     if not token:
-        print("  ⚠️  token vazio — endpoints serão marcados como 0")
+        print("  ⚠️  token vazio")
 
-    # 3. Endpoints
     print("  → auditando endpoints...")
     endpoints = check_endpoints(token)
 
-    # 4. Banco
-    print("  → checando banco de dados...")
+    print("  → checando banco...")
     db = check_database()
 
-    # 5. Erros recentes
-    print("  → lendo logs do backend...")
+    print("  → lendo logs...")
     errs = check_recent_errors()
 
-    # 6. Score global
     global_score = compute_global_score(containers, endpoints, db, errs)
-
     duration = time.time() - t0
 
-    # 7. Salvar relatório JSON
+    # Detectar regressão ANTES de registrar
+    regressao = houve_regressao(global_score)
+
+    # Coletar endpoints com erro para o estado
+    endpoints_com_erro = []
+    for mod, r in endpoints.items():
+        endpoints_com_erro.extend(r["errors"])
+
+    # Registrar no estado persistente
+    state = registrar_ciclo(global_score, endpoints_com_erro)
+    ciclos = state.get("ciclos_executados", 1)
+
+    # Salvar relatório JSON
     report = {
         "timestamp": datetime.now().isoformat(),
         "global_score": global_score,
         "duration_seconds": round(duration, 1),
+        "ciclo": ciclos,
+        "regressao": regressao,
         "containers": containers,
         "endpoints": endpoints,
         "database": db,
@@ -359,19 +354,26 @@ def main():
     with open(report_path, "w") as f:
         json.dump(report, f, indent=2, default=str)
 
-    # Symlink latest
     latest = f"{REPORT_DIR}/latest.json"
     if os.path.islink(latest):
         os.remove(latest)
     os.symlink(report_path, latest)
 
-    print(f"  → relatório salvo: {report_path}")
-    print(f"  → score global: {global_score}/10")
+    print(f"  → score: {global_score}/10  |  ciclo #{ciclos}  |  regressão: {regressao}")
 
-    # 8. Enviar Telegram
-    msg = build_message(containers, endpoints, db, errs, global_score, duration)
+    # Alerta de regressão separado
+    if regressao:
+        score_ant = load_state().get("score_anterior", 0)
+        telegram_send(
+            f"⚠️ <b>REGRESSÃO DETECTADA!</b>\n"
+            f"Score: {score_ant} → {global_score}\n"
+            f"Verifique os endpoints com erro acima."
+        )
+
+    # Relatório principal
+    msg = build_message(containers, endpoints, db, errs, global_score, duration, ciclos, regressao)
     ok = telegram_send(msg)
-    print(f"  → Telegram: {'✅ enviado' if ok else '❌ falhou'}")
+    print(f"  → Telegram: {'✅' if ok else '❌'}")
 
     return 0 if ok else 1
 
