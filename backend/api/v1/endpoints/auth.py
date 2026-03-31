@@ -108,10 +108,13 @@ async def login(
     user.last_login = datetime.utcnow().isoformat()
     await db.commit()
 
-    # Gerar tokens
+    # Gerar tokens — incluir condominio_id no payload para fallback JWT
+    extra: dict = {"email": user.email, "role": user.role}
+    if getattr(user, "condominio_id", None):
+        extra["condominio_id"] = str(user.condominio_id)
     access_token = create_access_token(
         subject=str(user.id),
-        extra_data={"email": user.email, "role": user.role},
+        extra_data=extra,
     )
     user_refresh_token = create_refresh_token(subject=str(user.id))
 
@@ -158,10 +161,13 @@ async def refresh_token(
                 detail="Usuario nao encontrado ou inativo",
             )
 
-        # Gerar novos tokens
+        # Gerar novos tokens — incluir condominio_id no payload
+        extra_refresh: dict = {"email": user.email, "role": user.role}
+        if getattr(user, "condominio_id", None):
+            extra_refresh["condominio_id"] = str(user.condominio_id)
         access_token = create_access_token(
             subject=str(user.id),
-            extra_data={"email": user.email, "role": user.role},
+            extra_data=extra_refresh,
         )
         new_refresh_token = create_refresh_token(subject=str(user.id))
 

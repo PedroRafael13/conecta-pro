@@ -2,10 +2,12 @@
 Modelo de usuário com RBAC.
 """
 
+import uuid as uuid_module
 from enum import StrEnum
 
 from sqlalchemy import String, Text
 from sqlalchemy.dialects.postgresql import ARRAY
+from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import BaseModel
@@ -76,6 +78,13 @@ class User(BaseModel):
         ARRAY(String),
         default=list,
         nullable=True,
+    )
+
+    # Multi-tenant
+    condominio_id: Mapped[uuid_module.UUID | None] = mapped_column(
+        PGUUID(as_uuid=True),
+        nullable=True,
+        index=True,
     )
 
     # OAuth providers

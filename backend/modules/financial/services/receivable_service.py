@@ -268,13 +268,21 @@ class ReceivableService:
         user_id: UUID,
     ) -> tuple[int, int, list[UUID]]:
         """Processa recebimento em lote."""
+        from sqlalchemy import select as sa_select
+
         success_count = 0
         error_count = 0
         payment_ids = []
 
+        # 1 query para buscar todas as parcelas — evita N+1
+        result = await self.session.execute(
+            sa_select(ReceivableInstallment).where(ReceivableInstallment.id.in_(request.installment_ids))
+        )
+        installments_map = {str(inst.id): inst for inst in result.scalars().all()}
+
         for installment_id in request.installment_ids:
             try:
-                installment = await self.installment_repo.get_by_id(installment_id)
+                installment = installments_map.get(str(installment_id))
                 if not installment:
                     error_count += 1
                     continue

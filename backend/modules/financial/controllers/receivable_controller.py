@@ -82,11 +82,10 @@ async def create_account(
 
 @router.get(
     "",
-    response_model=list[ReceivableAccountListResponse],
     summary="Listar contas a receber",
 )
 async def list_accounts(  # pylint: disable=too-many-locals
-    condominio_id: UUID,
+    condominio_id: UUID | None = Query(None, description="ID do condomínio"),
     search: str | None = Query(None, description="Busca na descricao"),
     customer_id: UUID | None = Query(None, description="Filtrar por cliente"),
     unidade_id: UUID | None = Query(None, description="Filtrar por unidade"),
@@ -101,9 +100,19 @@ async def list_accounts(  # pylint: disable=too-many-locals
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     service: ReceivableService = Depends(get_service),
-    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> list[ReceivableAccountListResponse]:
-    """Lista contas a receber com filtros."""
+    current_user=Depends(get_current_user),
+) -> dict[str, Any]:
+    """Lista contas a receber com filtros, retornando wrapper paginado."""
+    # Gap 1: fallback JWT — inferir condominio_id do usuário logado
+    effective_cid = condominio_id or getattr(current_user, "condominio_id", None)
+    if not effective_cid:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "code": "CONDOMINIO_REQUIRED",
+                "message": "Informe condominio_id ou faça login com um usuário vinculado a um condomínio.",
+            },
+        )
     filters = ReceivableAccountFilter(
         search=search,
         customer_id=customer_id,
@@ -118,8 +127,18 @@ async def list_accounts(  # pylint: disable=too-many-locals
         max_value=str(max_value) if max_value else None,
     )
 
-    accounts, _total = await service.list_accounts(condominio_id, filters, skip, limit)
-    return [ReceivableAccountListResponse.model_validate(a) for a in accounts]
+    accounts, total = await service.list_accounts(effective_cid, filters, skip, limit)
+    page = (skip // limit) + 1 if limit else 1
+    # Gap 3: formato {data, meta} conforme spec
+    return {
+        "data": [ReceivableAccountListResponse.model_validate(a) for a in accounts],
+        "meta": {
+            "total": total,
+            "page": page,
+            "per_page": limit,
+            "total_pages": (total + limit - 1) // limit if limit else 1,
+        },
+    }
 
 
 @router.get(
@@ -346,13 +365,21 @@ async def write_off_account(
     summary="Parcelas pendentes",
 )
 async def get_pending_installments(
-    condominio_id: UUID,
+    condominio_id: UUID | None = Query(None, description="ID do condomínio"),
     due_date_start: date | None = Query(None),
     due_date_end: date | None = Query(None),
     service: ReceivableService = Depends(get_service),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> list[ReceivableInstallmentResponse]:
     """Retorna parcelas pendentes."""
+    if not condominio_id:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "code": "CONDOMINIO_REQUIRED",
+                "message": "Informe condominio_id ou faça login com um usuário vinculado a um condomínio.",
+            },
+        )
     installments = await service.get_pending_installments(condominio_id, due_date_start, due_date_end)
     return [ReceivableInstallmentResponse.model_validate(i) for i in installments]
 
@@ -602,11 +629,19 @@ async def reconcile_payment(
     summary="Recebimentos pendentes de reconciliacao",
 )
 async def get_pending_reconciliation(
-    condominio_id: UUID,
+    condominio_id: UUID | None = Query(None, description="ID do condomínio"),
     service: ReceivableService = Depends(get_service),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> list[ReceivablePaymentResponse]:
     """Retorna recebimentos pendentes de reconciliacao."""
+    if not condominio_id:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "code": "CONDOMINIO_REQUIRED",
+                "message": "Informe condominio_id ou faça login com um usuário vinculado a um condomínio.",
+            },
+        )
     payments = await service.get_pending_reconciliation(condominio_id)
     return [ReceivablePaymentResponse.model_validate(p) for p in payments]
 
@@ -730,12 +765,20 @@ async def get_customer_risk(
     summary="Prioridades de cobranca (IA)",
 )
 async def get_collection_priorities(
-    condominio_id: UUID,
+    condominio_id: UUID | None = Query(None, description="ID do condomínio"),
     limit: int = Query(20, ge=1, le=100),
     ai_service: ReceivableAIService = Depends(get_ai_service),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> list[dict[str, Any]]:
     """Retorna lista priorizada de cobrancas usando IA."""
+    if not condominio_id:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "code": "CONDOMINIO_REQUIRED",
+                "message": "Informe condominio_id ou faça login com um usuário vinculado a um condomínio.",
+            },
+        )
     priorities = await ai_service.get_collection_priorities(condominio_id, limit)
     return [
         {
@@ -758,12 +801,20 @@ async def get_collection_priorities(
     summary="Previsao de fluxo de caixa (IA)",
 )
 async def get_cash_flow_forecast(
-    condominio_id: UUID,
+    condominio_id: UUID | None = Query(None, description="ID do condomínio"),
     months: int = Query(6, ge=1, le=12, description="Meses de previsao"),
     ai_service: ReceivableAIService = Depends(get_ai_service),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict[str, Any]:
     """Retorna previsao de fluxo de caixa usando IA."""
+    if not condominio_id:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "code": "CONDOMINIO_REQUIRED",
+                "message": "Informe condominio_id ou faça login com um usuário vinculado a um condomínio.",
+            },
+        )
     forecast = await ai_service.forecast_cash_flow(condominio_id, months)
     return {
         "condominio_id": str(forecast.condominio_id),
@@ -789,11 +840,19 @@ async def get_cash_flow_forecast(
     summary="Analise de inadimplencia (IA)",
 )
 async def get_delinquency_analysis(
-    condominio_id: UUID,
+    condominio_id: UUID | None = Query(None, description="ID do condomínio"),
     ai_service: ReceivableAIService = Depends(get_ai_service),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict[str, Any]:
     """Retorna analise de inadimplencia usando IA."""
+    if not condominio_id:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "code": "CONDOMINIO_REQUIRED",
+                "message": "Informe condominio_id ou faça login com um usuário vinculado a um condomínio.",
+            },
+        )
     analysis = await ai_service.analyze_delinquency(condominio_id)
     return {
         "condominio_id": str(analysis.condominio_id),

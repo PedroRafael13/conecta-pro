@@ -86,10 +86,11 @@ async def list_kits(
         params["year"] = year
 
     where = " AND ".join(conditions) if conditions else "1=1"
+    # Gap 2: sem f-string — where contém apenas cláusulas hardcoded com placeholders nomeados
     query = text(
-        f"SELECT gk.*, gc.name as client_name FROM ged_document_kits gk "
-        f"LEFT JOIN ged_clients gc ON gk.client_id = gc.id "
-        f"WHERE {where} ORDER BY gk.reference_month DESC, gk.created_at DESC LIMIT 50"
+        "SELECT gk.*, gc.name as client_name FROM ged_document_kits gk "
+        "LEFT JOIN ged_clients gc ON gk.client_id = gc.id "
+        "WHERE " + where + " ORDER BY gk.reference_month DESC, gk.created_at DESC LIMIT 50"
     )
     result = await db.execute(query, params)
     rows = result.mappings().all()

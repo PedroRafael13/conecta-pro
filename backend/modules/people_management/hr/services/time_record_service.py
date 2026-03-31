@@ -92,39 +92,25 @@ class TimeRecordService:
             params["date_to"] = date_to
 
         where_sql = " AND ".join(where_clauses) if where_clauses else "1=1"
+        # safe — where_sql é montado apenas de cláusulas hardcoded com placeholders (:emp_id, :date_from, :date_to);
+        # nenhum valor de usuário é interpolado diretamente na string SQL.
 
+        # Gap 2: sem f-string — where_sql contém apenas cláusulas hardcoded com placeholders nomeados
         # Count total distinct days
-        count_sql = text(f"""
-            SELECT COUNT(DISTINCT (employee_id, punch_timestamp::date))
-            FROM gp_clock_punches
-            WHERE {where_sql}
-        """)
+        count_sql = text(
+            "SELECT COUNT(DISTINCT (employee_id, punch_timestamp::date)) FROM gp_clock_punches WHERE " + where_sql
+        )
         total_result = await self.db.execute(count_sql, params)
         total = total_result.scalar() or 0
 
         # Fetch punches
-        sql = text(f"""
-            SELECT
-                id,
-                punch_id,
-                employee_id,
-                punch_type,
-                punch_timestamp,
-                status,
-                latitude,
-                longitude,
-                device_type,
-                is_offline,
-                posto_id,
-                posto_nome,
-                justification_id,
-                created_at,
-                updated_at
-            FROM gp_clock_punches
-            WHERE {where_sql}
-            ORDER BY punch_timestamp DESC
-            LIMIT :limit OFFSET :offset
-        """)
+        sql = text(
+            "SELECT id, punch_id, employee_id, punch_type, punch_timestamp, "
+            "status, latitude, longitude, device_type, is_offline, "
+            "posto_id, posto_nome, justification_id, created_at, updated_at "
+            "FROM gp_clock_punches WHERE " + where_sql + " "
+            "ORDER BY punch_timestamp DESC LIMIT :limit OFFSET :offset"
+        )
         params["limit"] = page_size * 4  # 4 batidas por dia
         params["offset"] = (page - 1) * page_size * 4
 
@@ -577,8 +563,9 @@ class TimeRecordService:
         if sets:
             sets.append("updated_at = :updated_at")
             set_sql = ", ".join(sets)
+            # Gap 2: sem f-string — set_sql contém apenas strings hardcoded com placeholders nomeados
             await self.db.execute(
-                text(f"UPDATE gp_clock_punches SET {set_sql} WHERE punch_id = :rid"),
+                text("UPDATE gp_clock_punches SET " + set_sql + " WHERE punch_id = :rid"),
                 params,
             )
             await self.db.flush()
