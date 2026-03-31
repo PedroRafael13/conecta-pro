@@ -364,13 +364,14 @@ class AnnouncementRepository:
             Tupla (comunicados, total)
         """
         # Comunicados publicados e nao expirados
+        # Nota: usar data_expiracao (coluna real) em vez de expires_at (@property)
         query = select(Announcement).where(
             Announcement.tenant_id == tenant_id,
             Announcement.is_active.is_(True),
             Announcement.status == AnnouncementStatus.PUBLISHED.value,
             or_(
-                Announcement.expires_at.is_(None),
-                Announcement.expires_at > datetime.utcnow(),
+                Announcement.data_expiracao.is_(None),
+                Announcement.data_expiracao > datetime.utcnow(),
             ),
         )
 
@@ -563,7 +564,7 @@ class AnnouncementRepository:
         result = await self.db.execute(
             select(Announcement).where(
                 Announcement.status == AnnouncementStatus.PUBLISHED.value,
-                Announcement.expires_at <= datetime.utcnow(),
+                Announcement.data_expiracao <= datetime.utcnow(),  # coluna real, nao @property
                 Announcement.is_active.is_(True),
             )
         )
