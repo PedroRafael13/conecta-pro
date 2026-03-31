@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.auth.dependencies import get_current_user
 from core.database import get_db
 
 # Import real transmitter
@@ -177,6 +178,7 @@ async def list_esocial_events() -> StandardResponse:
     description="Retorna histórico de eventos eSocial transmitidos, com filtros opcionais.",
 )
 async def listar_eventos(
+    current_user=Depends(get_current_user),
     tipo_evento: str | None = Query(None, description="Filtrar por tipo (ex: S-2200)"),
     status_filter: str | None = Query(None, alias="status", description="Filtrar por status"),
     data_inicial: str | None = Query(None, description="Data inicial (YYYY-MM-DD)"),

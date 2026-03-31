@@ -230,6 +230,224 @@ async def get_employee_history(
     return [DisciplinaryActionResponse.model_validate(a) for a in actions]
 
 
+# =============================================================================
+# ROTAS ESTATICAS - devem vir ANTES de /{action_id}
+# =============================================================================
+
+
+@router.post(
+    "/medidas-administrativas/gerar-documento",
+    response_model=GenerateDocumentResponse,
+    summary="Gerar documento",
+    description="Gera documento a partir de template",
+)
+async def generate_document(
+    current_user: CurrentActiveUser,
+    action_id: str = Query(..., description="ID da medida"),
+    db: AsyncSession = Depends(get_db),
+    request: GenerateDocumentRequest | None = None,
+) -> GenerateDocumentResponse:
+    """Gera documento a partir de template."""
+    try:
+        service = get_disciplinary_service(db)
+        return await service.generate_document(
+            action_id=action_id,
+            tenant_id=get_tenant_id(current_user),
+            request=request,
+        )
+
+    except DisciplinaryNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Medida disciplinar nao encontrada",
+        )
+    except DisciplinaryValidationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(e),
+        )
+
+
+# =============================================================================
+# TEMPLATES — estáticas antes de /{action_id}
+# =============================================================================
+
+
+@router.get(
+    "/medidas-administrativas/templates",
+    response_model=TemplateListResponse,
+    summary="Listar templates",
+    description="Lista templates de documentos disciplinares",
+)
+async def list_templates(
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+    action_type: DisciplinaryActionType | None = None,
+) -> TemplateListResponse:
+    """Lista templates de documentos."""
+    service = get_template_service(db)
+    return await service.list(
+        tenant_id=get_tenant_id(current_user),
+        action_type=action_type.value if action_type else None,
+    )
+
+
+@router.post(
+    "/medidas-administrativas/templates",
+    response_model=TemplateResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Criar template",
+    description="Cria um novo template de documento",
+)
+async def create_template(
+    data: TemplateCreate,
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+) -> TemplateResponse:
+    """Cria um novo template."""
+    service = get_template_service(db)
+    template = await service.create(
+        data=data,
+        tenant_id=get_tenant_id(current_user),
+        created_by=current_user.id,
+    )
+    return TemplateResponse.model_validate(template)
+
+
+@router.get(
+    "/medidas-administrativas/templates/{template_id}",
+    response_model=TemplateResponse,
+    summary="Buscar template",
+    description="Busca um template por ID",
+)
+async def get_template(
+    template_id: str,
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+) -> TemplateResponse:
+    """Busca template por ID."""
+    try:
+        service = get_template_service(db)
+        template = await service.get_by_id(template_id, get_tenant_id(current_user))
+        return TemplateResponse.model_validate(template)
+
+    except TemplateNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Template nao encontrado",
+        )
+
+
+@router.patch(
+    "/medidas-administrativas/templates/{template_id}",
+    response_model=TemplateResponse,
+    summary="Atualizar template",
+    description="Atualiza um template existente",
+)
+async def update_template(
+    template_id: str,
+    data: TemplateUpdate,
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+) -> TemplateResponse:
+    """Atualiza um template."""
+    try:
+        service = get_template_service(db)
+        template = await service.update(
+            template_id=template_id,
+            tenant_id=get_tenant_id(current_user),
+            data=data,
+        )
+        return TemplateResponse.model_validate(template)
+
+    except TemplateNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Template nao encontrado",
+        )
+
+
+@router.delete(
+    "/medidas-administrativas/templates/{template_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Remover template",
+    description="Remove um template (soft delete)",
+)
+async def delete_template(
+    template_id: str,
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+) -> None:
+    """Remove um template."""
+    try:
+        service = get_template_service(db)
+        await service.delete(template_id, get_tenant_id(current_user))
+
+    except TemplateNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Template nao encontrado",
+        )
+
+
+# =============================================================================
+# IA - RECOMENDACOES — estáticas antes de /{action_id}
+# =============================================================================
+
+
+@router.post(
+    "/medidas-administrativas/ia/recomendar",
+    response_model=RecommendationResponse,
+    summary="Obter recomendacao de medida",
+    description="Utiliza IA para recomendar tipo de medida baseado no historico",
+)
+async def get_recommendation(
+    request: RecommendationRequest,
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+) -> RecommendationResponse:
+    """Obtem recomendacao de medida disciplinar."""
+    advisor = get_disciplinary_advisor(db)
+    return await advisor.recommend_action(request, get_tenant_id(current_user))
+
+
+@router.post(
+    "/medidas-administrativas/ia/validar-conformidade",
+    response_model=LegalComplianceResponse,
+    summary="Validar conformidade legal",
+    description="Valida conformidade da medida com CLT",
+)
+async def validate_compliance(
+    request: LegalComplianceRequest,
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+) -> LegalComplianceResponse:
+    """Valida conformidade legal da medida."""
+    advisor = get_disciplinary_advisor(db)
+    return await advisor.validate_legal_compliance(request, get_tenant_id(current_user))
+
+
+@router.post(
+    "/medidas-administrativas/ia/verificar-proporcionalidade",
+    response_model=ProportionalityCheckResponse,
+    summary="Verificar proporcionalidade",
+    description="Verifica se medida e proporcional ao historico",
+)
+async def check_proportionality(
+    request: ProportionalityCheckRequest,
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+) -> ProportionalityCheckResponse:
+    """Verifica proporcionalidade da medida."""
+    advisor = get_disciplinary_advisor(db)
+    return await advisor.check_proportionality(request)
+
+
+# =============================================================================
+# ROTAS DINAMICAS — /{action_id} por último
+# =============================================================================
+
+
 @router.get(
     "/medidas-administrativas/{action_id}",
     response_model=DisciplinaryActionDetailResponse,
@@ -508,161 +726,6 @@ async def refuse_signature(
         )
 
 
-@router.post(
-    "/medidas-administrativas/gerar-documento",
-    response_model=GenerateDocumentResponse,
-    summary="Gerar documento",
-    description="Gera documento a partir de template",
-)
-async def generate_document(
-    current_user: CurrentActiveUser,
-    action_id: str = Query(..., description="ID da medida"),
-    db: AsyncSession = Depends(get_db),
-    request: GenerateDocumentRequest | None = None,
-) -> GenerateDocumentResponse:
-    """Gera documento a partir de template."""
-    try:
-        service = get_disciplinary_service(db)
-        return await service.generate_document(
-            action_id=action_id,
-            tenant_id=get_tenant_id(current_user),
-            request=request,
-        )
-
-    except DisciplinaryNotFoundError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Medida disciplinar nao encontrada",
-        )
-    except DisciplinaryValidationError as e:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=str(e),
-        )
-
-
-# =============================================================================
-# TEMPLATES
-# =============================================================================
-
-
-@router.get(
-    "/medidas-administrativas/templates",
-    response_model=TemplateListResponse,
-    summary="Listar templates",
-    description="Lista templates de documentos disciplinares",
-)
-async def list_templates(
-    current_user: CurrentActiveUser,
-    db: AsyncSession = Depends(get_db),
-    action_type: DisciplinaryActionType | None = None,
-) -> TemplateListResponse:
-    """Lista templates de documentos."""
-    service = get_template_service(db)
-    return await service.list(
-        tenant_id=get_tenant_id(current_user),
-        action_type=action_type.value if action_type else None,
-    )
-
-
-@router.post(
-    "/medidas-administrativas/templates",
-    response_model=TemplateResponse,
-    status_code=status.HTTP_201_CREATED,
-    summary="Criar template",
-    description="Cria um novo template de documento",
-)
-async def create_template(
-    data: TemplateCreate,
-    current_user: CurrentActiveUser,
-    db: AsyncSession = Depends(get_db),
-) -> TemplateResponse:
-    """Cria um novo template."""
-    service = get_template_service(db)
-    template = await service.create(
-        data=data,
-        tenant_id=get_tenant_id(current_user),
-        created_by=current_user.id,
-    )
-    return TemplateResponse.model_validate(template)
-
-
-@router.get(
-    "/medidas-administrativas/templates/{template_id}",
-    response_model=TemplateResponse,
-    summary="Buscar template",
-    description="Busca um template por ID",
-)
-async def get_template(
-    template_id: str,
-    current_user: CurrentActiveUser,
-    db: AsyncSession = Depends(get_db),
-) -> TemplateResponse:
-    """Busca template por ID."""
-    try:
-        service = get_template_service(db)
-        template = await service.get_by_id(template_id, get_tenant_id(current_user))
-        return TemplateResponse.model_validate(template)
-
-    except TemplateNotFoundError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Template nao encontrado",
-        )
-
-
-@router.patch(
-    "/medidas-administrativas/templates/{template_id}",
-    response_model=TemplateResponse,
-    summary="Atualizar template",
-    description="Atualiza um template existente",
-)
-async def update_template(
-    template_id: str,
-    data: TemplateUpdate,
-    current_user: CurrentActiveUser,
-    db: AsyncSession = Depends(get_db),
-) -> TemplateResponse:
-    """Atualiza um template."""
-    try:
-        service = get_template_service(db)
-        template = await service.update(
-            template_id=template_id,
-            tenant_id=get_tenant_id(current_user),
-            data=data,
-        )
-        return TemplateResponse.model_validate(template)
-
-    except TemplateNotFoundError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Template nao encontrado",
-        )
-
-
-@router.delete(
-    "/medidas-administrativas/templates/{template_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    summary="Remover template",
-    description="Remove um template (soft delete)",
-)
-async def delete_template(
-    template_id: str,
-    current_user: CurrentActiveUser,
-    db: AsyncSession = Depends(get_db),
-) -> None:
-    """Remove um template."""
-    try:
-        service = get_template_service(db)
-        await service.delete(template_id, get_tenant_id(current_user))
-
-    except TemplateNotFoundError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Template nao encontrado",
-        )
-
-
 # =============================================================================
 # ASSINATURAS
 # =============================================================================
@@ -692,6 +755,23 @@ async def verify_signature(
 
 
 @router.get(
+    "/assinaturas/documento/{document_id}",
+    response_model=list[SignatureResponse],
+    summary="Listar assinaturas do documento",
+    description="Lista todas as assinaturas de um documento",
+)
+async def get_document_signatures(
+    document_id: str,
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+) -> list[SignatureResponse]:
+    """Lista assinaturas de um documento."""
+    service = get_signature_service(db)
+    signatures = await service.get_by_document(document_id, get_tenant_id(current_user))
+    return [SignatureResponse.model_validate(s) for s in signatures]
+
+
+@router.get(
     "/assinaturas/{signature_id}",
     response_model=SignatureResponse,
     summary="Buscar assinatura",
@@ -713,73 +793,3 @@ async def get_signature(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Assinatura nao encontrada",
         )
-
-
-@router.get(
-    "/assinaturas/documento/{document_id}",
-    response_model=list[SignatureResponse],
-    summary="Listar assinaturas do documento",
-    description="Lista todas as assinaturas de um documento",
-)
-async def get_document_signatures(
-    document_id: str,
-    current_user: CurrentActiveUser,
-    db: AsyncSession = Depends(get_db),
-) -> list[SignatureResponse]:
-    """Lista assinaturas de um documento."""
-    service = get_signature_service(db)
-    signatures = await service.get_by_document(document_id, get_tenant_id(current_user))
-    return [SignatureResponse.model_validate(s) for s in signatures]
-
-
-# =============================================================================
-# IA - RECOMENDACOES
-# =============================================================================
-
-
-@router.post(
-    "/medidas-administrativas/ia/recomendar",
-    response_model=RecommendationResponse,
-    summary="Obter recomendacao de medida",
-    description="Utiliza IA para recomendar tipo de medida baseado no historico",
-)
-async def get_recommendation(
-    request: RecommendationRequest,
-    current_user: CurrentActiveUser,
-    db: AsyncSession = Depends(get_db),
-) -> RecommendationResponse:
-    """Obtem recomendacao de medida disciplinar."""
-    advisor = get_disciplinary_advisor(db)
-    return await advisor.recommend_action(request, get_tenant_id(current_user))
-
-
-@router.post(
-    "/medidas-administrativas/ia/validar-conformidade",
-    response_model=LegalComplianceResponse,
-    summary="Validar conformidade legal",
-    description="Valida conformidade da medida com CLT",
-)
-async def validate_compliance(
-    request: LegalComplianceRequest,
-    current_user: CurrentActiveUser,
-    db: AsyncSession = Depends(get_db),
-) -> LegalComplianceResponse:
-    """Valida conformidade legal da medida."""
-    advisor = get_disciplinary_advisor(db)
-    return await advisor.validate_legal_compliance(request, get_tenant_id(current_user))
-
-
-@router.post(
-    "/medidas-administrativas/ia/verificar-proporcionalidade",
-    response_model=ProportionalityCheckResponse,
-    summary="Verificar proporcionalidade",
-    description="Verifica se medida e proporcional ao historico",
-)
-async def check_proportionality(
-    request: ProportionalityCheckRequest,
-    current_user: CurrentActiveUser,
-    db: AsyncSession = Depends(get_db),
-) -> ProportionalityCheckResponse:
-    """Verifica proporcionalidade da medida."""
-    advisor = get_disciplinary_advisor(db)
-    return await advisor.check_proportionality(request)

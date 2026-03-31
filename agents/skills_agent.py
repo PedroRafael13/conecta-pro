@@ -42,6 +42,17 @@ except ImportError as e:
     def load_state(): return {}
     MONITOR_STATE_OK = False
 
+# Detector de regressão avançado
+try:
+    from regression_detector import analisar_e_alertar
+    from regression_detector import get_relatorio_regressoes
+    REGRESSION_OK = True
+except ImportError as e:
+    print(f"[regression_detector] indisponível: {e}")
+    def analisar_e_alertar(score, modulos): return {}
+    def get_relatorio_regressoes(): return ""
+    REGRESSION_OK = False
+
 # ─────────────────────────────────────────────────────
 # CONFIGURAÇÃO
 # ─────────────────────────────────────────────────────
@@ -344,8 +355,10 @@ def main():
     for r in endpoints.values():
         bugs_ativos.extend(r["errors"])
 
-    # Detectar regressão ANTES de registrar
-    regrediu, score_ref, diff = houve_regressao(global_score)
+    # Detectar regressão avançada ANTES de registrar
+    scores_por_modulo = {mod: r["score"] for mod, r in endpoints.items()}
+    analise = analisar_e_alertar(global_score, scores_por_modulo)
+    regrediu = analise.get("tem_regressao", False)
 
     # Registrar no estado persistente
     state = registrar_ciclo(
@@ -356,15 +369,8 @@ def main():
     )
     ciclos = state.get("ciclos_executados", 1)
 
-    print(f"  → score: {global_score}/10 | ciclo #{ciclos} | regressão: {regrediu}")
-
-    # Alerta de regressão (mensagem separada)
-    if regrediu:
-        telegram_send(
-            f"⚠️ <b>REGRESSÃO DETECTADA!</b>\n"
-            f"Score: {score_ref} → {global_score} ({diff:+.1f})\n"
-            f"Verifique os endpoints com erro."
-        )
+    reverteu = analise.get("reverteu", False)
+    print(f"  → score: {global_score}/10 | ciclo #{ciclos} | regressão: {regrediu} | reverteu: {reverteu}")
 
     # Salvar relatório JSON
     report_path = f"{REPORT_DIR}/cycle_{datetime.now():%Y%m%d_%H%M%S}.json"

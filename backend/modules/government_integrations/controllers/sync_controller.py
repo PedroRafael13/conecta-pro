@@ -15,7 +15,7 @@ from typing import Any
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
 
@@ -167,7 +167,7 @@ class StatusSyncResponse(BaseModel):
 _sync_manager: SyncManager | None = None
 
 
-def get_sync_manager(db: Session = Depends(get_db)) -> SyncManager:
+def get_sync_manager(db: AsyncSession = Depends(get_db)) -> SyncManager:  # type: ignore[arg-type]
     """Obtém instância do SyncManager."""
     global _sync_manager
     if _sync_manager is None:
@@ -420,7 +420,7 @@ async def obter_historico(
     servico: ServicoEnum | None = None,
     limite: int = Query(default=50, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Obtém histórico de sincronizações.
@@ -539,7 +539,7 @@ async def cancelar_job(
 async def configurar_agendamento(
     request: AgendamentoRequest,
     sync_manager: SyncManager = Depends(get_sync_manager),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Configura agendamento automático para um serviço.
@@ -611,7 +611,7 @@ async def configurar_agendamento(
 )
 async def listar_agendamentos(
     cnpj: str,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     """Lista todos os agendamentos de sincronização."""
     try:
@@ -644,7 +644,7 @@ async def listar_agendamentos(
 async def remover_agendamento(
     cnpj: str,
     servico: ServicoEnum,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     sync_manager: SyncManager = Depends(get_sync_manager),
 ):
     """Remove agendamento de sincronização."""
@@ -686,7 +686,7 @@ async def remover_agendamento(
 async def configurar_integracao(
     request: ConfiguracaoEmpresaRequest,
     sync_manager: SyncManager = Depends(get_sync_manager),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Configura integração governamental para uma empresa.
@@ -757,7 +757,7 @@ async def configurar_integracao(
 )
 async def obter_configuracao(
     cnpj: str,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     """Obtém configuração de integração."""
     try:
@@ -812,7 +812,7 @@ async def listar_documentos(
     data_final: date | None = None,
     limite: int = Query(default=100, ge=1, le=1000),
     offset: int = Query(default=0, ge=0),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     """Lista documentos fiscais (NF-e, CT-e, NFS-e, etc)."""
     try:
@@ -865,7 +865,7 @@ async def listar_eventos_esocial(
     periodo: str | None = None,
     limite: int = Query(default=100, ge=1, le=1000),
     offset: int = Query(default=0, ge=0),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     """Lista eventos eSocial."""
     try:
@@ -909,7 +909,7 @@ async def listar_eventos_esocial(
 @router.get("/dados/certidoes/{cnpj}", summary="Listar certidões", description="Lista certidões sincronizadas")
 async def listar_certidoes(
     cnpj: str,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     """Lista certidões (CND, CNDT, CRF, etc)."""
     try:
@@ -955,7 +955,7 @@ async def listar_guias(
     data_inicial: date | None = None,
     data_final: date | None = None,
     limite: int = Query(default=100, ge=1, le=500),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     """Lista guias de recolhimento."""
     try:

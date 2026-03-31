@@ -8,7 +8,7 @@ import uuid
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
@@ -48,7 +48,7 @@ from modules.ai.meeting_assistant.services import (
 router = APIRouter(prefix="/meeting-assistant", tags=["AI Meeting Assistant"])
 
 
-def get_repository(db: Session = Depends(get_db)) -> MeetingAssistantRepository:
+def get_repository(db: AsyncSession = Depends(get_db)) -> MeetingAssistantRepository:  # type: ignore[arg-type]
     return MeetingAssistantRepository(db)
 
 

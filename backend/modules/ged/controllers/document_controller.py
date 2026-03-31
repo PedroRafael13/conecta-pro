@@ -4,6 +4,7 @@ import hashlib
 import logging
 from pathlib import Path
 from typing import Any
+from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, Query, UploadFile, status
 from fastapi.responses import FileResponse
@@ -199,13 +200,13 @@ async def search_documents(
 
 @router.get("/{document_id}", response_model=DocumentResponse)
 async def get_document(
-    document_id: str,
+    document_id: UUID,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> DocumentResponse:
     """Busca documento por ID."""
     service = DocumentService(db)
-    document = await service.get_by_id(document_id)
+    document = await service.get_by_id(str(document_id))
     if not document:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado")
     return document
@@ -227,14 +228,14 @@ async def get_document_by_code(
 
 @router.put("/{document_id}", response_model=DocumentResponse)
 async def update_document(
-    document_id: str,
+    document_id: UUID,
     data: DocumentUpdate,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> DocumentResponse:
     """Atualiza documento."""
     service = DocumentService(db)
-    document = await service.update(document_id, data)
+    document = await service.update(str(document_id), data)
     if not document:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado")
     return document
@@ -242,7 +243,7 @@ async def update_document(
 
 @router.delete("/{document_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_document(
-    document_id: str,
+    document_id: UUID,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> None:
@@ -282,7 +283,7 @@ async def list_documents(
 
 @router.get("/folder/{folder_id}", response_model=list[DocumentResponse])
 async def get_by_folder(
-    folder_id: str,
+    folder_id: UUID,
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
@@ -346,7 +347,7 @@ async def get_expiring_soon(
 
 @router.post("/{document_id}/approve", response_model=DocumentResponse)
 async def approve_document(
-    document_id: str,
+    document_id: UUID,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ) -> DocumentResponse:
@@ -362,7 +363,7 @@ async def approve_document(
 
 @router.post("/{document_id}/reject", response_model=DocumentResponse)
 async def reject_document(
-    document_id: str,
+    document_id: UUID,
     reason: str = Query(..., min_length=1),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
@@ -377,7 +378,7 @@ async def reject_document(
 
 @router.post("/{document_id}/publish", response_model=DocumentResponse)
 async def publish_document(
-    document_id: str,
+    document_id: UUID,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> DocumentResponse:
@@ -391,7 +392,7 @@ async def publish_document(
 
 @router.post("/{document_id}/archive", response_model=DocumentResponse)
 async def archive_document(
-    document_id: str,
+    document_id: UUID,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ) -> DocumentResponse:
@@ -407,7 +408,7 @@ async def archive_document(
 
 @router.post("/{document_id}/unarchive", response_model=DocumentResponse)
 async def unarchive_document(
-    document_id: str,
+    document_id: UUID,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> DocumentResponse:
@@ -421,7 +422,7 @@ async def unarchive_document(
 
 @router.post("/{document_id}/move", response_model=DocumentResponse)
 async def move_document(
-    document_id: str,
+    document_id: UUID,
     folder_id: str = Query(...),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
@@ -442,7 +443,7 @@ async def move_document(
 
 @router.post("/{document_id}/view", response_model=DocumentResponse)
 async def view_document(
-    document_id: str,
+    document_id: UUID,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> DocumentResponse:
@@ -456,7 +457,7 @@ async def view_document(
 
 @router.post("/{document_id}/download", response_model=DocumentResponse)
 async def register_download(
-    document_id: str,
+    document_id: UUID,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> DocumentResponse:
@@ -470,7 +471,7 @@ async def register_download(
 
 @router.get("/{document_id}/download")
 async def download_file(
-    document_id: str,
+    document_id: UUID,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> FileResponse:
@@ -496,7 +497,7 @@ async def download_file(
 
 @router.get("/{document_id}/preview")
 async def get_preview_url(
-    document_id: str,
+    document_id: UUID,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict[str, str]:
@@ -516,7 +517,7 @@ async def get_preview_url(
 
 @router.get("/{document_id}/view-url")
 async def get_view_url(
-    document_id: str,
+    document_id: UUID,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict[str, str]:
@@ -561,7 +562,7 @@ async def get_stats(
 
 @router.post("/{document_id}/submit-approval", response_model=DocumentResponse)
 async def submit_for_approval(
-    document_id: str,
+    document_id: UUID,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> DocumentResponse:
@@ -575,7 +576,7 @@ async def submit_for_approval(
 
 @router.post("/{document_id}/new-version", response_model=DocumentResponse)
 async def create_new_version(
-    document_id: str,
+    document_id: UUID,
     data: DocumentUploadRequest,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),
@@ -623,7 +624,7 @@ async def classify_document(
 
 @router.post("/{document_id}/ai/analyze-ocr", response_model=DocumentOCRResult)
 async def analyze_ocr(
-    document_id: str,
+    document_id: UUID,
     ocr_text: str = Query(..., min_length=1),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument

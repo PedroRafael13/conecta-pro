@@ -6,6 +6,7 @@ from typing import Any
 from fastapi import APIRouter, Body, Depends, File, HTTPException, Query, UploadFile
 from sqlalchemy.orm import Session
 
+from core.auth.dependencies import get_current_user
 from core.database.session import get_sync_db_dependency
 
 from ..schemas.folha_schemas import (
@@ -28,7 +29,8 @@ router = APIRouter(prefix="/folha", tags=["Folha de Pagamento"])
     response_model=DashboardFolhaResponse,
     summary="Dashboard gerencial da folha",
 )
-def folha_dashboard(
+async def folha_dashboard(
+    current_user=Depends(get_current_user),
     mes: int = Query(default=None, ge=1, le=12),
     ano: int = Query(default=None, ge=2020),
     db: Session = Depends(get_sync_db_dependency),
@@ -46,10 +48,11 @@ def folha_dashboard(
     response_model=HoleriteResponse,
     summary="Calcular holerite de um colaborador",
 )
-def calcular_holerite(
+async def calcular_holerite(
     employee_id: str,
     mes: int,
     ano: int,
+    current_user=Depends(get_current_user),
     db: Session = Depends(get_sync_db_dependency),
 ) -> HoleriteResponse:
     """Calcula holerite completo com base na CCT 2026."""
@@ -64,9 +67,10 @@ def calcular_holerite(
     response_model=FolhaBatchResponse,
     summary="Calcular folha de todos os colaboradores",
 )
-def calcular_batch(
+async def calcular_batch(
     mes: int,
     ano: int,
+    current_user=Depends(get_current_user),
     db: Session = Depends(get_sync_db_dependency),
 ) -> FolhaBatchResponse:
     """Calcula folha completa para todos os colaboradores ativos."""

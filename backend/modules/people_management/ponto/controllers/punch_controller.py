@@ -8,7 +8,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 
-from core.auth.dependencies import CurrentActiveUser
+from core.auth.dependencies import CurrentActiveUser, get_current_user
 from core.database.session import get_db, get_sync_db_dependency
 
 from ..schemas.dashboard_schemas import (
@@ -265,7 +265,8 @@ async def fechar_mes(
     response_model=DashboardPontoResponse,
     summary="Dashboard gerencial do ponto",
 )
-def ponto_dashboard(
+async def ponto_dashboard(
+    current_user=Depends(get_current_user),
     db: Session = Depends(get_sync_db_dependency),
 ) -> DashboardPontoResponse:
     """Visao gerencial com dados reais: presenca, inconsistencias, banco de horas."""
@@ -278,7 +279,8 @@ def ponto_dashboard(
     response_model=InconsistenciaResumoResponse,
     summary="Relatorio de inconsistencias CCT",
 )
-def relatorio_inconsistencias(
+async def relatorio_inconsistencias(
+    current_user=Depends(get_current_user),
     periodo_inicio: str | None = Query(None, description="YYYY-MM-DD"),
     periodo_fim: str | None = Query(None, description="YYYY-MM-DD"),
     db: Session = Depends(get_sync_db_dependency),
@@ -293,8 +295,9 @@ def relatorio_inconsistencias(
     response_model=BancoHorasResponse,
     summary="Saldo banco de horas",
 )
-def banco_horas(
+async def banco_horas(
     employee_id: str,
+    current_user=Depends(get_current_user),
     db: Session = Depends(get_sync_db_dependency),
 ) -> BancoHorasResponse:
     """Retorna saldo de banco de horas com prazo CCT (6 meses)."""
@@ -309,7 +312,8 @@ def banco_horas(
     response_model=SyncSolidesResponse,
     summary="Sincronizar ponto com Solides Tangerino",
 )
-def sincronizar_solides(
+async def sincronizar_solides(
+    current_user=Depends(get_current_user),
     request: SyncSolidesRequest = Body(default=SyncSolidesRequest()),
     db: Session = Depends(get_sync_db_dependency),
 ) -> SyncSolidesResponse:
@@ -319,7 +323,8 @@ def sincronizar_solides(
 
 
 @router.post("/sync-escalas", summary="Sincronizar escalas de trabalho do Sólides")
-def sync_escalas(
+async def sync_escalas(
+    current_user=Depends(get_current_user),
     db: Session = Depends(get_sync_db_dependency),
 ) -> dict[str, Any]:
     """Sincroniza escalas de trabalho do Sólides para employees.escala_padrao."""
@@ -327,8 +332,9 @@ def sync_escalas(
 
 
 @router.post("/ajuste", summary="Ajuste manual de ponto pelo DP")
-def ajuste_ponto(
+async def ajuste_ponto(
     request: AjusteRequest,
+    current_user=Depends(get_current_user),
     db: Session = Depends(get_sync_db_dependency),
 ) -> dict[str, Any]:
     """Registra ajuste manual de ponto (somente DP)."""
@@ -340,7 +346,8 @@ def ajuste_ponto(
     response_model=list[ColaboradorSemEscalaResponse],
     summary="Colaboradores sem escala definida",
 )
-def colaboradores_sem_escala(
+async def colaboradores_sem_escala(
+    current_user=Depends(get_current_user),
     db: Session = Depends(get_sync_db_dependency),
 ) -> list[ColaboradorSemEscalaResponse]:
     """Lista colaboradores ativos sem escala — necessitam correcao."""

@@ -182,7 +182,7 @@ async def get_performance_scores(
                         COALESCE(
                             (SELECT SUM(t.hours)
                              FROM time_bank t
-                             WHERE t.employee_id = e.id::text
+                             WHERE t.employee_id = e.id
                                AND t.status = 'approved'
                                AND t.is_active = true),
                             0
@@ -190,7 +190,7 @@ async def get_performance_scores(
                         COALESCE(
                             (SELECT COUNT(o.id)
                              FROM occurrences o
-                             WHERE o.employee_id = e.id::text
+                             WHERE o.employee_id = e.id
                                AND o.created_at >= NOW() - INTERVAL '90 days'),
                             0
                         ) AS recent_occurrences

@@ -56,6 +56,15 @@ except:
     print('?')
 " 2>/dev/null)
 
+REGRESSOES=$(python3 -c "
+import json
+try:
+    h = json.load(open('/opt/conecta-pro/reports/regressoes.json'))
+    print(len(h))
+except:
+    print(0)
+" 2>/dev/null)
+
 UPTIME=$(uptime -p 2>/dev/null || uptime | awk -F'up ' '{print $2}' | awk -F',' '{print $1}')
 
 MSG="💚 <b>HEARTBEAT — MONITOR ATIVO</b>
@@ -64,6 +73,7 @@ MSG="💚 <b>HEARTBEAT — MONITOR ATIVO</b>
 📈 Tendência: ${TENDENCIA}
 🏆 Melhor score: ${MELHOR}/10
 🔄 Ciclos executados: $CICLOS
+📉 Regressões registradas: $REGRESSOES
 ⚙️ Uptime: $UPTIME
 ✅ Sistema operacional — próximo ciclo em breve"
 

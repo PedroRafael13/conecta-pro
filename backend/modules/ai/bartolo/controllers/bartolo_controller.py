@@ -515,7 +515,9 @@ async def get_stats(
 
 
 @bartolo_router.get("/health")
-async def health_check():
+async def health_check(
+    current_user: User = Depends(get_current_user),
+):
     """
     Health check do Bartolo.
     """
