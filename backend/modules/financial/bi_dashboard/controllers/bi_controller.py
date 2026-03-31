@@ -10,7 +10,7 @@ from fastapi import status as http_status
 from sqlalchemy.orm import Session
 
 from core.auth.dependencies import get_current_user
-from core.database.session import get_db
+from core.database.session import get_sync_db_dependency as get_db
 from modules.financial.bi_dashboard.models import (
     AlertLevel,
     DashboardStatus,
@@ -41,7 +41,6 @@ from modules.financial.bi_dashboard.schemas import (
     DashboardStats,
     DashboardUpdate,
     KPICreate,
-    KPIFilters,
     KPIHistory,
     KPIResponse,
     KPISummary,
@@ -530,29 +529,89 @@ async def create_kpi(
     return kpi
 
 
-@router.get("/kpis", response_model=list[KPIResponse])
+@router.get("/kpis")
 async def list_kpis(
     condominio_id: UUID = Query(...),
     categoria: KPICategory | None = None,
     status: KPIStatus | None = None,
     alert_level: AlertLevel | None = None,
-    show_in_summary: bool | None = None,
     search: str | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
 ):
-    """Lista KPIs com filtros."""
-    repo = KPIRepository(db)
-    filters = KPIFilters(
-        categoria=categoria,
-        status=status,
-        alert_level=alert_level,
-        show_in_summary=show_in_summary,
-        search=search,
-    )
-    items, _ = repo.list_all(condominio_id, filters, skip, limit)
-    return items
+    """Lista KPIs com filtros (raw SQL para compatibilidade com schema atual)."""
+    from sqlalchemy import text
+
+    try:
+        where_clauses = ["condominio_id = :condominio_id"]
+        params: dict = {"condominio_id": str(condominio_id)}
+
+        if categoria:
+            where_clauses.append("categoria = :categoria")
+            params["categoria"] = str(categoria)
+        if status:
+            where_clauses.append("status = :status")
+            params["status"] = str(status)
+        if alert_level:
+            where_clauses.append("alert_level = :alert_level")
+            params["alert_level"] = str(alert_level)
+        if search:
+            where_clauses.append("(nome ILIKE :search OR codigo ILIKE :search)")
+            params["search"] = f"%{search}%"
+
+        where_sql = " AND ".join(where_clauses)
+
+        rows = db.execute(
+            text(
+                f"""
+                SELECT id, condominio_id, codigo, nome, descricao,
+                       categoria, status, frequencia, formula,
+                       valor_atual, valor_anterior, variacao_percent,
+                       tendencia, alert_level, meta_valor, historico,
+                       ultima_atualizacao, created_at, updated_at
+                FROM financial_kpis
+                WHERE {where_sql}
+                ORDER BY id
+                OFFSET :skip LIMIT :limit
+                """
+            ),
+            {**params, "skip": skip, "limit": limit},
+        ).fetchall()
+
+        result = []
+        for row in rows:
+            result.append(
+                {
+                    "id": str(row.id),
+                    "condominio_id": str(row.condominio_id),
+                    "codigo": row.codigo,
+                    "nome": row.nome,
+                    "descricao": row.descricao,
+                    "categoria": row.categoria,
+                    "status": row.status,
+                    "frequencia": row.frequencia,
+                    "formula": row.formula,
+                    "valor_atual": float(row.valor_atual) if row.valor_atual is not None else None,
+                    "valor_anterior": float(row.valor_anterior) if row.valor_anterior is not None else None,
+                    "variacao_percent": float(row.variacao_percent) if row.variacao_percent is not None else None,
+                    "tendencia": row.tendencia,
+                    "alert_level": row.alert_level,
+                    "meta_valor": float(row.meta_valor) if row.meta_valor is not None else None,
+                    "ultima_atualizacao": row.ultima_atualizacao.isoformat() if row.ultima_atualizacao else None,
+                    "created_at": row.created_at.isoformat() if row.created_at else None,
+                    "updated_at": row.updated_at.isoformat() if row.updated_at else None,
+                }
+            )
+
+        return result
+    except Exception as e:
+        logger.error(f"Erro ao listar KPIs: {e}")
+        raise HTTPException(
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao listar KPIs: {str(e)}",
+        )
 
 
 @router.get("/kpis/{kpi_id}", response_model=KPIResponse)
@@ -1137,3 +1196,628 @@ async def compare_periods(
         current_days,
         previous_days,
     )
+
+
+# =============================================================================
+# BI ANALYTICS ENDPOINTS (Frontend dashboard)
+# =============================================================================
+
+
+@router.get("/kpis-summary")
+async def get_bi_kpis_summary(
+    condominio_id: UUID = Query(...),
+    period_days: int = Query(30, ge=1, le=365),
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """Retorna KPIs resumidos para o BI Dashboard."""
+    from sqlalchemy import func
+
+    try:
+        from modules.financial.models.payable_account import PayableAccount
+        from modules.financial.models.receivable_account import ReceivableAccount, ReceivableStatus
+
+        cutoff = datetime.utcnow().date()
+
+        total_receivable = db.query(func.coalesce(func.sum(ReceivableAccount.net_value), 0)).filter(
+            ReceivableAccount.condominio_id == condominio_id,
+            ReceivableAccount.status == ReceivableStatus.PENDENTE.value,
+        ).scalar() or Decimal("0")
+
+        overdue_receivable = db.query(func.coalesce(func.sum(ReceivableAccount.net_value), 0)).filter(
+            ReceivableAccount.condominio_id == condominio_id,
+            ReceivableAccount.status == ReceivableStatus.PENDENTE.value,
+            ReceivableAccount.due_date < cutoff,
+        ).scalar() or Decimal("0")
+
+        total_payable = db.query(func.coalesce(func.sum(PayableAccount.net_value), 0)).filter(
+            PayableAccount.condominio_id == condominio_id,
+            PayableAccount.status == "pendente",
+        ).scalar() or Decimal("0")
+
+        return {
+            "total_receivable": float(total_receivable),
+            "overdue_receivable": float(overdue_receivable),
+            "total_payable": float(total_payable),
+            "default_rate": (float(overdue_receivable / total_receivable * 100) if total_receivable > 0 else 0.0),
+            "period_days": period_days,
+            "generated_at": datetime.utcnow().isoformat(),
+        }
+    except Exception as e:
+        logger.warning(f"Erro ao calcular KPIs BI: {e}")
+        return {
+            "total_receivable": 0.0,
+            "overdue_receivable": 0.0,
+            "total_payable": 0.0,
+            "default_rate": 0.0,
+            "period_days": period_days,
+            "generated_at": datetime.utcnow().isoformat(),
+        }
+
+
+@router.get("/cashflow-analysis")
+async def get_cashflow_analysis(
+    condominio_id: UUID = Query(...),
+    period_days: int = Query(30, ge=1, le=365),
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """Analise de fluxo de caixa para o periodo."""
+    from sqlalchemy import func
+
+    try:
+        from modules.financial.models.cashflow_entry import CashFlowEntry, CashFlowEntryType
+
+        start_date = datetime.utcnow().date()
+        from datetime import timedelta
+
+        end_date = start_date + timedelta(days=period_days)
+
+        inflows = db.query(func.coalesce(func.sum(CashFlowEntry.expected_amount), 0)).filter(
+            CashFlowEntry.condominio_id == condominio_id,
+            CashFlowEntry.entry_type == CashFlowEntryType.ENTRADA.value,
+            CashFlowEntry.entry_date >= start_date,
+            CashFlowEntry.entry_date <= end_date,
+        ).scalar() or Decimal("0")
+
+        outflows = db.query(func.coalesce(func.sum(CashFlowEntry.expected_amount), 0)).filter(
+            CashFlowEntry.condominio_id == condominio_id,
+            CashFlowEntry.entry_type == CashFlowEntryType.SAIDA.value,
+            CashFlowEntry.entry_date >= start_date,
+            CashFlowEntry.entry_date <= end_date,
+        ).scalar() or Decimal("0")
+
+        return {
+            "period_days": period_days,
+            "total_inflows": float(inflows),
+            "total_outflows": float(outflows),
+            "net_cashflow": float(inflows) - float(outflows),
+            "generated_at": datetime.utcnow().isoformat(),
+        }
+    except Exception as e:
+        logger.warning(f"Erro na analise de cashflow: {e}")
+        return {
+            "period_days": period_days,
+            "total_inflows": 0.0,
+            "total_outflows": 0.0,
+            "net_cashflow": 0.0,
+            "generated_at": datetime.utcnow().isoformat(),
+        }
+
+
+@router.get("/receivables-aging")
+async def get_receivables_aging(
+    condominio_id: UUID = Query(...),
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """Aging de contas a receber (vencidas por faixa)."""
+    from datetime import timedelta
+
+    from sqlalchemy import func
+
+    try:
+        from modules.financial.models.receivable_account import ReceivableAccount, ReceivableStatus
+
+        today = datetime.utcnow().date()
+
+        buckets = {
+            "a_vencer": (None, today),
+            "0_30": (today - timedelta(days=30), today),
+            "31_60": (today - timedelta(days=60), today - timedelta(days=31)),
+            "61_90": (today - timedelta(days=90), today - timedelta(days=61)),
+            "acima_90": (None, today - timedelta(days=91)),
+        }
+
+        result = {}
+        for label, (date_from, date_to) in buckets.items():
+            q = db.query(
+                func.count(ReceivableAccount.id),
+                func.coalesce(func.sum(ReceivableAccount.net_value), 0),
+            ).filter(
+                ReceivableAccount.condominio_id == condominio_id,
+                ReceivableAccount.status == ReceivableStatus.PENDENTE.value,
+            )
+
+            if label == "a_vencer":
+                q = q.filter(ReceivableAccount.due_date >= today)
+            elif label == "acima_90":
+                q = q.filter(ReceivableAccount.due_date < date_to)
+            else:
+                q = q.filter(
+                    ReceivableAccount.due_date >= date_from,
+                    ReceivableAccount.due_date < date_to,
+                )
+
+            count, total = q.one()
+            result[label] = {"count": count, "total": float(total)}
+
+        result["generated_at"] = datetime.utcnow().isoformat()
+        return result
+    except Exception as e:
+        logger.warning(f"Erro no aging de recebiveis: {e}")
+        return {
+            "a_vencer": {"count": 0, "total": 0.0},
+            "0_30": {"count": 0, "total": 0.0},
+            "31_60": {"count": 0, "total": 0.0},
+            "61_90": {"count": 0, "total": 0.0},
+            "acima_90": {"count": 0, "total": 0.0},
+            "generated_at": datetime.utcnow().isoformat(),
+        }
+
+
+@router.get("/payables-aging")
+async def get_payables_aging(
+    condominio_id: UUID = Query(...),
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """Aging de contas a pagar (vencidas por faixa)."""
+    from datetime import timedelta
+
+    from sqlalchemy import func
+
+    try:
+        from modules.financial.models.payable_account import PayableAccount
+
+        today = datetime.utcnow().date()
+
+        buckets = {
+            "a_vencer": "a_vencer",
+            "0_30": (today - timedelta(days=30), today),
+            "31_60": (today - timedelta(days=60), today - timedelta(days=31)),
+            "61_90": (today - timedelta(days=90), today - timedelta(days=61)),
+            "acima_90": "acima_90",
+        }
+
+        result = {}
+        for label, spec in buckets.items():
+            q = db.query(
+                func.count(PayableAccount.id),
+                func.coalesce(func.sum(PayableAccount.net_value), 0),
+            ).filter(
+                PayableAccount.condominio_id == condominio_id,
+                PayableAccount.status == "pendente",
+            )
+
+            if label == "a_vencer":
+                q = q.filter(PayableAccount.due_date >= today)
+            elif label == "acima_90":
+                q = q.filter(PayableAccount.due_date < today - timedelta(days=91))
+            else:
+                date_from, date_to = spec
+                q = q.filter(
+                    PayableAccount.due_date >= date_from,
+                    PayableAccount.due_date < date_to,
+                )
+
+            count, total = q.one()
+            result[label] = {"count": count, "total": float(total)}
+
+        result["generated_at"] = datetime.utcnow().isoformat()
+        return result
+    except Exception as e:
+        logger.warning(f"Erro no aging de pagaveis: {e}")
+        return {
+            "a_vencer": {"count": 0, "total": 0.0},
+            "0_30": {"count": 0, "total": 0.0},
+            "31_60": {"count": 0, "total": 0.0},
+            "61_90": {"count": 0, "total": 0.0},
+            "acima_90": {"count": 0, "total": 0.0},
+            "generated_at": datetime.utcnow().isoformat(),
+        }
+
+
+@router.get("/cost-analysis")
+async def get_cost_analysis(
+    condominio_id: UUID = Query(...),
+    period_days: int = Query(30, ge=1, le=365),
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """Analise de custos por categoria."""
+    from datetime import timedelta
+
+    from sqlalchemy import func
+
+    try:
+        from modules.financial.models.payable_account import PayableAccount
+
+        cutoff = datetime.utcnow().date() - timedelta(days=period_days)
+
+        count_q = (
+            db.query(func.count(PayableAccount.id))
+            .filter(
+                PayableAccount.condominio_id == condominio_id,
+                PayableAccount.due_date >= cutoff,
+            )
+            .scalar()
+            or 0
+        )
+
+        total_q = db.query(func.coalesce(func.sum(PayableAccount.net_value), 0)).filter(
+            PayableAccount.condominio_id == condominio_id,
+            PayableAccount.due_date >= cutoff,
+        ).scalar() or Decimal("0")
+
+        return {
+            "period_days": period_days,
+            "total_invoices": count_q,
+            "total_cost": float(total_q),
+            "generated_at": datetime.utcnow().isoformat(),
+        }
+    except Exception as e:
+        logger.warning(f"Erro na analise de custos: {e}")
+        return {
+            "period_days": period_days,
+            "categories": [],
+            "total_cost": 0.0,
+            "generated_at": datetime.utcnow().isoformat(),
+        }
+
+
+@router.get("/revenue-analysis")
+async def get_revenue_analysis(
+    condominio_id: UUID = Query(...),
+    period_days: int = Query(30, ge=1, le=365),
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """Analise de receitas por categoria."""
+    from datetime import timedelta
+
+    from sqlalchemy import func
+
+    try:
+        from modules.financial.models.receivable_account import ReceivableAccount, ReceivableStatus
+
+        cutoff = datetime.utcnow().date() - timedelta(days=period_days)
+
+        total_billed = db.query(func.coalesce(func.sum(ReceivableAccount.gross_value), 0)).filter(
+            ReceivableAccount.condominio_id == condominio_id,
+            ReceivableAccount.due_date >= cutoff,
+        ).scalar() or Decimal("0")
+
+        total_received = db.query(func.coalesce(func.sum(ReceivableAccount.paid_value), 0)).filter(
+            ReceivableAccount.condominio_id == condominio_id,
+            ReceivableAccount.status == ReceivableStatus.PAGA.value,
+            ReceivableAccount.due_date >= cutoff,
+        ).scalar() or Decimal("0")
+
+        return {
+            "period_days": period_days,
+            "total_billed": float(total_billed),
+            "total_received": float(total_received),
+            "collection_rate": (float(total_received / total_billed * 100) if total_billed > 0 else 0.0),
+            "generated_at": datetime.utcnow().isoformat(),
+        }
+    except Exception as e:
+        logger.warning(f"Erro na analise de receitas: {e}")
+        return {
+            "period_days": period_days,
+            "total_billed": 0.0,
+            "total_received": 0.0,
+            "collection_rate": 0.0,
+            "generated_at": datetime.utcnow().isoformat(),
+        }
+
+
+@router.get("/profitability")
+async def get_profitability(
+    condominio_id: UUID = Query(...),
+    period_days: int = Query(30, ge=1, le=365),
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """Analise de lucratividade do periodo."""
+    from datetime import timedelta
+
+    from sqlalchemy import func
+
+    try:
+        from modules.financial.models.payable_account import PayableAccount
+        from modules.financial.models.receivable_account import ReceivableAccount, ReceivableStatus
+
+        cutoff = datetime.utcnow().date() - timedelta(days=period_days)
+
+        revenue = db.query(func.coalesce(func.sum(ReceivableAccount.paid_value), 0)).filter(
+            ReceivableAccount.condominio_id == condominio_id,
+            ReceivableAccount.status == ReceivableStatus.PAGA.value,
+            ReceivableAccount.due_date >= cutoff,
+        ).scalar() or Decimal("0")
+
+        costs = db.query(func.coalesce(func.sum(PayableAccount.net_value), 0)).filter(
+            PayableAccount.condominio_id == condominio_id,
+            PayableAccount.status == "paga",
+            PayableAccount.due_date >= cutoff,
+        ).scalar() or Decimal("0")
+
+        gross_profit = float(revenue) - float(costs)
+        margin = (gross_profit / float(revenue) * 100) if float(revenue) > 0 else 0.0
+
+        return {
+            "period_days": period_days,
+            "revenue": float(revenue),
+            "costs": float(costs),
+            "gross_profit": gross_profit,
+            "margin_percent": margin,
+            "generated_at": datetime.utcnow().isoformat(),
+        }
+    except Exception as e:
+        logger.warning(f"Erro na analise de lucratividade: {e}")
+        return {
+            "period_days": period_days,
+            "revenue": 0.0,
+            "costs": 0.0,
+            "gross_profit": 0.0,
+            "margin_percent": 0.0,
+            "generated_at": datetime.utcnow().isoformat(),
+        }
+
+
+@router.get("/alerts")
+async def get_bi_alerts(
+    condominio_id: UUID = Query(...),
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """Lista alertas financeiros ativos para o condominio."""
+    from sqlalchemy import func
+
+    alerts = []
+
+    try:
+        from modules.financial.models.receivable_account import ReceivableAccount, ReceivableStatus
+
+        today = datetime.utcnow().date()
+
+        overdue_count = (
+            db.query(func.count(ReceivableAccount.id))
+            .filter(
+                ReceivableAccount.condominio_id == condominio_id,
+                ReceivableAccount.status == ReceivableStatus.PENDENTE.value,
+                ReceivableAccount.due_date < today,
+            )
+            .scalar()
+            or 0
+        )
+
+        overdue_value = db.query(func.coalesce(func.sum(ReceivableAccount.net_value), 0)).filter(
+            ReceivableAccount.condominio_id == condominio_id,
+            ReceivableAccount.status == ReceivableStatus.PENDENTE.value,
+            ReceivableAccount.due_date < today,
+        ).scalar() or Decimal("0")
+
+        if overdue_count > 0:
+            level = "critico" if overdue_count > 10 else "alto" if overdue_count > 5 else "medio"
+            alerts.append(
+                {
+                    "type": "inadimplencia",
+                    "level": level,
+                    "title": "Contas a receber vencidas",
+                    "description": f"{overdue_count} titulos vencidos totalizando R$ {float(overdue_value):,.2f}",
+                    "value": float(overdue_value),
+                    "count": overdue_count,
+                }
+            )
+
+    except Exception as e:
+        logger.warning(f"Erro ao buscar alertas BI: {e}")
+
+    return {"alerts": alerts, "total": len(alerts), "generated_at": datetime.utcnow().isoformat()}
+
+
+@router.get("/performance-dashboard")
+async def get_performance_dashboard(
+    condominio_id: UUID = Query(...),
+    period_days: int = Query(30, ge=1, le=365),
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """Dashboard consolidado de performance financeira."""
+    from datetime import timedelta
+
+    from sqlalchemy import func
+
+    try:
+        from modules.financial.models.payable_account import PayableAccount
+        from modules.financial.models.receivable_account import ReceivableAccount, ReceivableStatus
+
+        cutoff = datetime.utcnow().date() - timedelta(days=period_days)
+        today = datetime.utcnow().date()
+
+        total_receivable = db.query(func.coalesce(func.sum(ReceivableAccount.net_value), 0)).filter(
+            ReceivableAccount.condominio_id == condominio_id,
+            ReceivableAccount.status == ReceivableStatus.PENDENTE.value,
+        ).scalar() or Decimal("0")
+
+        overdue_receivable = db.query(func.coalesce(func.sum(ReceivableAccount.net_value), 0)).filter(
+            ReceivableAccount.condominio_id == condominio_id,
+            ReceivableAccount.status == ReceivableStatus.PENDENTE.value,
+            ReceivableAccount.due_date < today,
+        ).scalar() or Decimal("0")
+
+        total_payable = db.query(func.coalesce(func.sum(PayableAccount.net_value), 0)).filter(
+            PayableAccount.condominio_id == condominio_id,
+            PayableAccount.status == "pendente",
+        ).scalar() or Decimal("0")
+
+        revenue = db.query(func.coalesce(func.sum(ReceivableAccount.paid_value), 0)).filter(
+            ReceivableAccount.condominio_id == condominio_id,
+            ReceivableAccount.status == ReceivableStatus.PAGA.value,
+            ReceivableAccount.due_date >= cutoff,
+        ).scalar() or Decimal("0")
+
+        default_rate = float(overdue_receivable / total_receivable * 100) if float(total_receivable) > 0 else 0.0
+
+        score = max(0, 100 - int(default_rate) - (10 if float(total_payable) > float(revenue) else 0))
+
+        return {
+            "period_days": period_days,
+            "score": score,
+            "total_receivable": float(total_receivable),
+            "overdue_receivable": float(overdue_receivable),
+            "total_payable": float(total_payable),
+            "revenue_period": float(revenue),
+            "default_rate": default_rate,
+            "health": "excelente" if score >= 80 else "bom" if score >= 60 else "atencao" if score >= 40 else "critico",
+            "generated_at": datetime.utcnow().isoformat(),
+        }
+    except Exception as e:
+        logger.warning(f"Erro no performance dashboard: {e}")
+        return {
+            "period_days": period_days,
+            "score": 0,
+            "total_receivable": 0.0,
+            "overdue_receivable": 0.0,
+            "total_payable": 0.0,
+            "revenue_period": 0.0,
+            "default_rate": 0.0,
+            "health": "sem_dados",
+            "generated_at": datetime.utcnow().isoformat(),
+        }
+
+
+@router.get("/trends")
+async def get_financial_trends(
+    condominio_id: UUID = Query(...),
+    months: int = Query(6, ge=1, le=24),
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """Tendencias financeiras mensais."""
+    from datetime import timedelta
+
+    from sqlalchemy import func
+
+    try:
+        from modules.financial.models.receivable_account import ReceivableAccount, ReceivableStatus
+
+        result = []
+        today = datetime.utcnow().date()
+
+        for i in range(months - 1, -1, -1):
+            month_start = (today.replace(day=1) - timedelta(days=i * 28)).replace(day=1)
+            if month_start.month == 12:
+                month_end = month_start.replace(year=month_start.year + 1, month=1, day=1)
+            else:
+                month_end = month_start.replace(month=month_start.month + 1, day=1)
+
+            revenue = (
+                db.query(func.coalesce(func.sum(ReceivableAccount.paid_value), 0))
+                .filter(
+                    ReceivableAccount.condominio_id == condominio_id,
+                    ReceivableAccount.status == ReceivableStatus.PAGA.value,
+                    ReceivableAccount.due_date >= month_start,
+                    ReceivableAccount.due_date < month_end,
+                )
+                .scalar()
+                or 0
+            )
+
+            result.append(
+                {
+                    "period": month_start.strftime("%Y-%m"),
+                    "revenue": float(revenue),
+                }
+            )
+
+        return {
+            "months": months,
+            "data": result,
+            "generated_at": datetime.utcnow().isoformat(),
+        }
+    except Exception as e:
+        logger.warning(f"Erro nas tendencias financeiras: {e}")
+        return {
+            "months": months,
+            "data": [],
+            "generated_at": datetime.utcnow().isoformat(),
+        }
+
+
+@router.get("/comparison")
+async def get_period_comparison(
+    condominio_id: UUID = Query(...),
+    current_period_days: int = Query(30, ge=1, le=365),
+    previous_period_days: int = Query(30, ge=1, le=365),
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """Comparacao entre dois periodos financeiros."""
+    from datetime import timedelta
+
+    from sqlalchemy import func
+
+    try:
+        from modules.financial.models.receivable_account import ReceivableAccount, ReceivableStatus
+
+        today = datetime.utcnow().date()
+        current_start = today - timedelta(days=current_period_days)
+        previous_start = current_start - timedelta(days=previous_period_days)
+        previous_end = current_start
+
+        current_revenue = db.query(func.coalesce(func.sum(ReceivableAccount.paid_value), 0)).filter(
+            ReceivableAccount.condominio_id == condominio_id,
+            ReceivableAccount.status == ReceivableStatus.PAGA.value,
+            ReceivableAccount.due_date >= current_start,
+            ReceivableAccount.due_date <= today,
+        ).scalar() or Decimal("0")
+
+        previous_revenue = db.query(func.coalesce(func.sum(ReceivableAccount.paid_value), 0)).filter(
+            ReceivableAccount.condominio_id == condominio_id,
+            ReceivableAccount.status == ReceivableStatus.PAGA.value,
+            ReceivableAccount.due_date >= previous_start,
+            ReceivableAccount.due_date < previous_end,
+        ).scalar() or Decimal("0")
+
+        variation = (
+            float((current_revenue - previous_revenue) / previous_revenue * 100) if float(previous_revenue) > 0 else 0.0
+        )
+
+        return {
+            "current_period": {
+                "days": current_period_days,
+                "start": current_start.isoformat(),
+                "end": today.isoformat(),
+                "revenue": float(current_revenue),
+            },
+            "previous_period": {
+                "days": previous_period_days,
+                "start": previous_start.isoformat(),
+                "end": previous_end.isoformat(),
+                "revenue": float(previous_revenue),
+            },
+            "variation_percent": variation,
+            "trend": "up" if variation > 0 else "down" if variation < 0 else "stable",
+            "generated_at": datetime.utcnow().isoformat(),
+        }
+    except Exception as e:
+        logger.warning(f"Erro na comparacao de periodos: {e}")
+        return {
+            "current_period": {"days": current_period_days, "revenue": 0.0},
+            "previous_period": {"days": previous_period_days, "revenue": 0.0},
+            "variation_percent": 0.0,
+            "trend": "stable",
+            "generated_at": datetime.utcnow().isoformat(),
+        }
