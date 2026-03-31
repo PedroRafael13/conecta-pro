@@ -207,7 +207,7 @@ async def get_stats(
     Cache: 4 minutos
     """
     repo = TimeBankRepository(db)
-    return await repo.get_stats()
+    return await repo.get_global_stats()
 
 
 @router.get(

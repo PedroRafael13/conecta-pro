@@ -424,3 +424,70 @@ class TimeBankRepository:
             "total_entries": row.total_entries or 0,
             "total_hours": float(row.total_hours or 0),
         }
+
+    async def get_global_stats(self) -> dict:
+        """Retorna estatísticas globais do banco de horas (todos os funcionários)."""
+        from modules.operacional.models.time_bank import TimeBankEntryType
+
+        # Totais por tipo de entrada
+        result_types = await self.db.execute(
+            select(
+                TimeBank.entry_type,
+                func.sum(TimeBank.hours).label("total"),
+            )
+            .where(TimeBank.is_active.is_(True))
+            .group_by(TimeBank.entry_type)
+        )
+        by_type = {row.entry_type: float(row.total or 0) for row in result_types}
+
+        # Totais por status
+        result_status = await self.db.execute(
+            select(
+                TimeBank.status,
+                func.count(TimeBank.id).label("count"),
+            )
+            .where(TimeBank.is_active.is_(True))
+            .group_by(TimeBank.status)
+        )
+        by_status = {row.status: row.count for row in result_status}
+
+        # Funcionários únicos com saldo
+        result_emps = await self.db.execute(
+            select(func.count(func.distinct(TimeBank.employee_id))).where(TimeBank.is_active.is_(True))
+        )
+        total_employees = result_emps.scalar() or 0
+
+        # Saldo médio (créditos - débitos) por funcionário
+        result_balance = await self.db.execute(
+            select(
+                TimeBank.employee_id,
+                func.sum(
+                    func.case(
+                        (TimeBank.entry_type == TimeBankEntryType.CREDIT, TimeBank.hours),
+                        else_=0,
+                    )
+                ).label("credit"),
+                func.sum(
+                    func.case(
+                        (TimeBank.entry_type == TimeBankEntryType.DEBIT, TimeBank.hours),
+                        else_=0,
+                    )
+                ).label("debit"),
+            )
+            .where(TimeBank.is_active.is_(True))
+            .group_by(TimeBank.employee_id)
+        )
+        rows = result_balance.all()
+        avg_balance = sum(float(r.credit or 0) - float(r.debit or 0) for r in rows) / len(rows) if rows else 0.0
+
+        return {
+            "total_employees": total_employees,
+            "total_credit_hours": by_type.get(TimeBankEntryType.CREDIT, 0.0),
+            "total_debit_hours": by_type.get(TimeBankEntryType.DEBIT, 0.0),
+            "total_compensated_hours": by_type.get(TimeBankEntryType.COMPENSATION, 0.0),
+            "total_expired_hours": by_type.get(TimeBankEntryType.EXPIRATION, 0.0),
+            "total_pending_hours": by_type.get(TimeBankEntryType.ADJUSTMENT, 0.0),
+            "avg_balance": round(avg_balance, 2),
+            "by_status": by_status,
+            "by_entry_type": by_type,
+        }
