@@ -7,8 +7,12 @@ import os
 from datetime import datetime
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Path, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
 from pydantic import BaseModel, Field
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from core.database import get_db
 
 # Import real transmitter
 from ..core.esocial_transmitter import (
@@ -489,15 +493,11 @@ async def transmitir_s1000(request: TransmitirS1000Request) -> StandardResponse:
     response_model=StandardResponse,
     summary="Identifica gaps nos dados dos funcionários para S-2200",
 )
-async def gaps_funcionarios() -> StandardResponse:
+async def gaps_funcionarios(db: AsyncSession = Depends(get_db)) -> StandardResponse:
     """Verifica quais campos obrigatórios do S-2200 estão faltando nos funcionários."""
     try:
-        from core.database import get_db_sync
-
-        db = next(get_db_sync())
-
-        result = db.execute(
-            __import__("sqlalchemy").text("""
+        result = await db.execute(
+            text("""
             SELECT
                 COUNT(*) FILTER (WHERE is_active) as total_ativos,
                 COUNT(*) FILTER (WHERE is_active AND cpf IS NOT NULL AND cpf != '') as com_cpf,
