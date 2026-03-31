@@ -28,11 +28,41 @@ except:
     print('?')
 " 2>/dev/null)
 
+TENDENCIA=$(python3 -c "
+import json, sys
+try:
+    s = json.load(open('$STATE_FILE'))
+    h = s.get('score_historico', [])
+    if len(h) < 4:
+        print('→ iniciando')
+        sys.exit()
+    ultimos = h[-12:]
+    diff = ultimos[-1]['score'] - ultimos[0]['score']
+    if diff > 0.3: print(f'↑ subindo (+{diff:.1f})')
+    elif diff < -0.3: print(f'↓ caindo ({diff:.1f})')
+    else:
+        sinal = '+' if diff >= 0 else ''
+        print(f'→ estável ({sinal}{diff:.1f})')
+except:
+    print('→ ?')
+" 2>/dev/null)
+
+MELHOR=$(python3 -c "
+import json, sys
+try:
+    s = json.load(open('$STATE_FILE'))
+    print(s.get('melhor_score', '?'))
+except:
+    print('?')
+" 2>/dev/null)
+
 UPTIME=$(uptime -p 2>/dev/null || uptime | awk -F'up ' '{print $2}' | awk -F',' '{print $1}')
 
 MSG="💚 <b>HEARTBEAT — MONITOR ATIVO</b>
 ⏰ $HORA
-📊 Score atual: ${SCORE}/10
+📊 Score atual: <b>${SCORE}/10</b>
+📈 Tendência: ${TENDENCIA}
+🏆 Melhor score: ${MELHOR}/10
 🔄 Ciclos executados: $CICLOS
 ⚙️ Uptime: $UPTIME
 ✅ Sistema operacional — próximo ciclo em breve"
@@ -43,4 +73,4 @@ curl -sf -X POST \
   -d "{\"chat_id\":\"${CHAT_ID}\",\"text\":\"${MSG}\",\"parse_mode\":\"HTML\"}" \
   > /dev/null 2>&1
 
-echo "[$(date '+%H:%M:%S')] Heartbeat enviado"
+echo "[$(date '+%H:%M:%S')] Heartbeat enviado | score=${SCORE} | ciclos=${CICLOS} | tendencia=${TENDENCIA}"
