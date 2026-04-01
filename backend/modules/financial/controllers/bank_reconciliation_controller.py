@@ -32,7 +32,6 @@ from modules.financial.schemas import (
     ReconciliationItemMatch,
     StatementImport,
 )
-from modules.financial.schemas.cashflow import BankReconciliationFilter
 
 logger = logging.getLogger(__name__)
 
@@ -117,14 +116,7 @@ async def list_reconciliations(
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> list[BankReconciliationResponse]:
     """Lista conciliações com filtros."""
-    filters = BankReconciliationFilter(
-        bank_account_id=bank_account_id,
-        status=reconciliation_status,
-        period_type=period_type,
-        start_date=start_date,
-        end_date=end_date,
-    )
-    reconciliations = await repo.list_with_filters(filters, skip=skip, limit=limit)
+    reconciliations = await repo.list(bank_account_id=bank_account_id, skip=skip, limit=limit)
     return [BankReconciliationResponse.model_validate(r) for r in reconciliations]
 
 

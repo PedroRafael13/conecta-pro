@@ -55,7 +55,6 @@ from modules.financial.schemas.accounting_schemas import (
     AccountTreeResponse,
     BalanceStats,
     ChartOfAccountsCreate,
-    ChartOfAccountsListResponse,
     ChartOfAccountsResponse,
     ChartOfAccountsUpdate,
     ChartStats,
@@ -90,7 +89,7 @@ router = APIRouter(prefix="/accounting", tags=["Contabilidade"])
 # =============================================================================
 
 
-@router.get("/charts", response_model=list[ChartOfAccountsListResponse])
+@router.get("/charts", response_model=list[ChartOfAccountsResponse])
 async def list_charts(
     condominio_id: uuid.UUID | None = Query(None),
     chart_type: ChartType | None = None,
@@ -99,7 +98,7 @@ async def list_charts(
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_sync_db_dependency),
     _current_user: dict = Depends(get_current_user),
-) -> list[ChartOfAccountsListResponse]:
+) -> list[ChartOfAccountsResponse]:
     """Lista planos de contas."""
     try:
         repo = ChartOfAccountsRepository(db)
@@ -111,7 +110,7 @@ async def list_charts(
             skip=skip,
             limit=limit,
         )
-        return [ChartOfAccountsListResponse.model_validate(c) for c in charts]
+        return [ChartOfAccountsResponse.model_validate(c) for c in charts]
     except Exception as e:
         logger.error(f"Erro ao listar planos de contas: {e}")
         raise HTTPException(

@@ -119,8 +119,9 @@ async def list_transactions(
         min_amount=min_amount,
         max_amount=max_amount,
     )
-    transactions = await repo.list_with_filters(filters, skip=skip, limit=limit)
-    return [BankTransactionResponse.model_validate(t) for t in transactions]
+    page = (skip // limit) + 1 if limit > 0 else 1
+    result = await repo.list_with_filters(filters.model_dump(exclude_none=True), page=page, per_page=limit)
+    return [BankTransactionResponse.model_validate(t) for t in result["items"]]
 
 
 @router.get(

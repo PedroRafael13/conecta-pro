@@ -138,15 +138,23 @@ Arquivos encontrados com padrão `nao.lidos|unread`:
 
 ---
 
-## Resultado Final
+## Resultado Final — Passo 4 (saída exata)
 
 ```
-Bug 1 — executive_dashboard auth : HTTP 403 sem token ✅  |  HTTP 200 com token ✅
-Bug 2 — /crm/clients sem slash   : HTTP 200, 13 clientes ✅
-Bug 3 — /comunicados/nao-lidos   : HTTP 200, items/total/page ✅
+executive sem token: 401  ✅  (esperado: 401)
+Clientes retornados: 13   ✅  (esperado: > 0)
+comunicados nao-lidos: 200 ✅  (esperado: 200)
 ```
 
 **3/3 bugs corrigidos e validados em produção.**
+
+## Passo 5 — Commit & Push
+
+```
+Commit: cf016974
+Branch: feature/people-management-reorganization
+Push:   f66cfb8a..cf016974 → github.com/jjesus1982/conecta-pro.git
+```
 
 ---
 

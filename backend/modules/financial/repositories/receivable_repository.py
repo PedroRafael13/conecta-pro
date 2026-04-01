@@ -1113,6 +1113,22 @@ class BillingRuleRepository:
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
+    async def get_active(
+        self,
+        condominio_id: UUID,
+    ) -> builtins.list[BillingRule]:
+        """Busca todas as regras ativas do condominio."""
+        result = await self.session.execute(
+            select(BillingRule).where(
+                and_(
+                    BillingRule.condominio_id == condominio_id,
+                    BillingRule.ativo.is_(True),  # noqa: E712
+                    BillingRule.status == BillingRuleStatus.ATIVA.value,
+                )
+            )
+        )
+        return list(result.scalars().all())
+
     async def get_active_for_today(
         self,
         condominio_id: UUID,
