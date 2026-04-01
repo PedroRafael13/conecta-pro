@@ -282,7 +282,7 @@ export function CompletePageExample() {
                   type="search"
                   placeholder="Buscar..."
                   className="px-4 py-2 border rounded"
-                />
+                 aria-label="Buscar..." />
               </div>
 
               <div data-tour="notifications">

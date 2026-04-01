@@ -129,7 +129,7 @@ export function CashflowFormModal({
             onChange={handleChange}
             placeholder="Ex: Pagamento de fornecedor X"
             required
-          />
+           aria-label="Ex: Pagamento de fornecedor X" />
         </div>
 
         {/* Tipo e Valor */}
@@ -144,7 +144,7 @@ export function CashflowFormModal({
               onChange={handleChange}
               className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))]"
               required
-            >
+             aria-label="Entry Type">
               <option value="income">Entrada</option>
               <option value="expense">Saida</option>
             </select>
@@ -162,7 +162,7 @@ export function CashflowFormModal({
               min={0.01}
               step={0.01}
               required
-            />
+             aria-label="0,00" />
           </div>
         </div>
 
@@ -178,7 +178,7 @@ export function CashflowFormModal({
               value={formData.date}
               onChange={handleChange}
               required
-            />
+             aria-label="Date" />
           </div>
           <div>
             <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
@@ -189,7 +189,7 @@ export function CashflowFormModal({
               value={formData.category}
               onChange={handleChange}
               className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))]"
-            >
+             aria-label="Category">
               <option value="">Selecione...</option>
               {CATEGORIES.map((cat) => (
                 <option key={cat} value={cat}>
@@ -212,7 +212,7 @@ export function CashflowFormModal({
             rows={3}
             placeholder="Observacoes adicionais sobre o lancamento..."
             className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))] resize-none"
-          />
+           aria-label="Observacoes adicionais sobre o lancamento..." />
         </div>
 
         <ModalFooter>

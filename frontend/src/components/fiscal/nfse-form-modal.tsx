@@ -114,7 +114,7 @@ export function NfseFormModal({ isOpen, onClose, onSubmit, isLoading = false }: 
               onChange={handleChange}
               placeholder="Ex: 001"
               required
-            />
+             aria-label="Ex: 001" />
           </div>
           <div>
             <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
@@ -125,7 +125,7 @@ export function NfseFormModal({ isOpen, onClose, onSubmit, isLoading = false }: 
               value={formData.serie_rps}
               onChange={handleChange}
               placeholder="Ex: A"
-            />
+             aria-label="Ex: A" />
           </div>
         </div>
 
@@ -140,7 +140,7 @@ export function NfseFormModal({ isOpen, onClose, onSubmit, isLoading = false }: 
               onChange={handleChange}
               placeholder="00.000.000/0000-00"
               required
-            />
+             aria-label="00.000.000/0000-00" />
           </div>
           <div>
             <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
@@ -152,7 +152,7 @@ export function NfseFormModal({ isOpen, onClose, onSubmit, isLoading = false }: 
               onChange={handleChange}
               placeholder="Razao Social"
               required
-            />
+             aria-label="Razao Social" />
           </div>
         </div>
 
@@ -168,7 +168,7 @@ export function NfseFormModal({ isOpen, onClose, onSubmit, isLoading = false }: 
             placeholder="Descreva o servico prestado..."
             className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))] resize-none"
             required
-          />
+           aria-label="Descreva o servico prestado..." />
         </div>
 
         <div className="grid grid-cols-3 gap-4">
@@ -185,7 +185,7 @@ export function NfseFormModal({ isOpen, onClose, onSubmit, isLoading = false }: 
               step={0.01}
               placeholder="0,00"
               required
-            />
+             aria-label="0,00" />
           </div>
           <div>
             <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
@@ -200,7 +200,7 @@ export function NfseFormModal({ isOpen, onClose, onSubmit, isLoading = false }: 
               max={100}
               step={0.01}
               placeholder="0,00"
-            />
+             aria-label="0,00" />
           </div>
           <div>
             <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
@@ -211,7 +211,7 @@ export function NfseFormModal({ isOpen, onClose, onSubmit, isLoading = false }: 
               value={formData.codigo_servico}
               onChange={handleChange}
               placeholder="Ex: 17.01"
-            />
+             aria-label="Ex: 17.01" />
           </div>
         </div>
 

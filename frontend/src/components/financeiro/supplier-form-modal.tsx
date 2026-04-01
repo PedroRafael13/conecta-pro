@@ -179,7 +179,7 @@ export function SupplierFormModal({
             onChange={handleChange}
             placeholder="Nome completo ou razao social"
             required
-          />
+           aria-label="Nome completo ou razao social" />
         </div>
 
         {/* Documento e Email */}
@@ -194,7 +194,7 @@ export function SupplierFormModal({
               onChange={handleDocumentChange}
               placeholder="00.000.000/0000-00"
               maxLength={18}
-            />
+             aria-label="00.000.000/0000-00" />
           </div>
           <div>
             <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
@@ -206,7 +206,7 @@ export function SupplierFormModal({
               value={formData.email}
               onChange={handleChange}
               placeholder="contato@fornecedor.com"
-            />
+             aria-label="contato@fornecedor.com" />
           </div>
         </div>
 
@@ -222,7 +222,7 @@ export function SupplierFormModal({
               onChange={handlePhoneChange}
               placeholder="(00) 00000-0000"
               maxLength={15}
-            />
+             aria-label="(00) 00000-0000" />
           </div>
           <div>
             <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
@@ -233,7 +233,7 @@ export function SupplierFormModal({
               value={formData.category}
               onChange={handleChange}
               className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))]"
-            >
+             aria-label="Category">
               <option value="">Selecione...</option>
               {SUPPLIER_CATEGORIES.map((cat) => (
                 <option key={cat} value={cat}>
@@ -254,7 +254,7 @@ export function SupplierFormModal({
             value={formData.address}
             onChange={handleChange}
             placeholder="Rua, numero, bairro, cidade - UF"
-          />
+           aria-label="Rua, numero, bairro, cidade - UF" />
         </div>
 
         {/* Observacoes */}
@@ -269,7 +269,7 @@ export function SupplierFormModal({
             rows={3}
             placeholder="Informacoes adicionais sobre o fornecedor..."
             className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))] resize-none"
-          />
+           aria-label="Informacoes adicionais sobre o fornecedor..." />
         </div>
 
         <ModalFooter>

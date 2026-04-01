@@ -513,7 +513,7 @@ export default function CandidaturasPage() {
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label>Motivo *</Label>
-              <Select value={rejectReason} onValueChange={setRejectReason}>
+              <Select value={rejectReason} onValueChange={setRejectReason} aria-label="Reject Reason">
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="perfil_inadequado">Perfil inadequado</SelectItem>

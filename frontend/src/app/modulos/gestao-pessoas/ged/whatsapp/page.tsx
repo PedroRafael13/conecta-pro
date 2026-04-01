@@ -464,7 +464,7 @@ export default function WhatsAppPage() {
               </div>
               <div className="space-y-1.5">
                 <Label>Mes referencia</Label>
-                <Select value={kitMonth} onValueChange={setKitMonth}>
+                <Select value={kitMonth} onValueChange={setKitMonth} aria-label="Kit Month">
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {MONTHS.map((m, i) => <SelectItem key={i} value={String(i + 1)}>{m}</SelectItem>)}

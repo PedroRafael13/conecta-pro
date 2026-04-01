@@ -69,14 +69,14 @@ export default function NfseEntradaPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Select value={ano} onValueChange={setAno}>
+          <Select value={ano} onValueChange={setAno} aria-label="Ano">
             <SelectTrigger className="w-[90px]"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="2025">2025</SelectItem>
               <SelectItem value="2026">2026</SelectItem>
             </SelectContent>
           </Select>
-          <Select value={mes} onValueChange={setMes}>
+          <Select value={mes} onValueChange={setMes} aria-label="Mes">
             <SelectTrigger className="w-[120px]"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos</SelectItem>

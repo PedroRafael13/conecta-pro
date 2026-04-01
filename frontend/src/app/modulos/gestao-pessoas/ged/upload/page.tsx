@@ -388,7 +388,7 @@ export default function UploadPage() {
                   className="hidden"
                   accept={ACCEPTED_EXTENSIONS}
                   onChange={handleFileSelect}
-                />
+                 aria-label="File" />
                 {selectedFile ? (
                   <div className="space-y-2">
                     {(() => {
@@ -450,7 +450,7 @@ export default function UploadPage() {
                   </div>
                   <div className="space-y-1.5">
                     <Label>Pasta de destino</Label>
-                    <Select value={selectedFolder} onValueChange={setSelectedFolder}>
+                    <Select value={selectedFolder} onValueChange={setSelectedFolder} aria-label="Selected Folder">
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione a pasta" />
                       </SelectTrigger>

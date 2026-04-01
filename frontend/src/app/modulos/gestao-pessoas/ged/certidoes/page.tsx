@@ -354,7 +354,7 @@ export default function CertidoesPage() {
                 className="pl-10"
               />
             </div>
-            <Select value={filterType} onValueChange={setFilterType}>
+            <Select value={filterType} onValueChange={setFilterType} aria-label="Filter Type">
               <SelectTrigger className="w-[200px]">
                 <SelectValue placeholder="Tipo" />
               </SelectTrigger>
@@ -365,7 +365,7 @@ export default function CertidoesPage() {
                 ))}
               </SelectContent>
             </Select>
-            <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <Select value={filterStatus} onValueChange={setFilterStatus} aria-label="Filter Status">
               <SelectTrigger className="w-[160px]">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>

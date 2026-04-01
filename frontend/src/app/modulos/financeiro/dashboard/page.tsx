@@ -235,7 +235,7 @@ export default function DashboardFinanceiroPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Select value={periodo} onValueChange={setPeriodo}>
+          <Select value={periodo} onValueChange={setPeriodo} aria-label="Periodo">
             <SelectTrigger className="w-[180px]">
               <Calendar className="h-4 w-4 mr-2" />
               <SelectValue placeholder="Período" />

@@ -309,7 +309,7 @@ function LoginContent() {
               </div>
               <div className="flex items-center justify-between mt-2.5">
                 <label className="flex items-center gap-2 cursor-pointer" style={{ fontSize: 13, color: '#6B7280' }}>
-                  <input type="checkbox" style={{ accentColor: '#F97316' }} />
+                  <input type="checkbox" style={{ accentColor: '#F97316' }}  aria-label="Checkbox" />
                   Lembrar-me
                 </label>
                 <Link href="/forgot-password" style={{ fontSize: 13, fontWeight: 600, color: '#F97316' }}>

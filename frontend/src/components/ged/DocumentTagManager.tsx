@@ -324,7 +324,7 @@ export function DocumentTagManager({
 
                 <div>
                   <Label>Cor</Label>
-                  <Select value={newTagColor} onValueChange={setNewTagColor}>
+                  <Select value={newTagColor} onValueChange={setNewTagColor} aria-label="New Tag Color">
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
