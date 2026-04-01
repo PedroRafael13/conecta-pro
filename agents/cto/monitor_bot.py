@@ -150,7 +150,11 @@ def cmd_ajuda(chat_id: int):
         "`/diagnostico [tipo]` — Investigar causa raiz\n"
         "`/relatorio` — Relatório matinal agora\n"
         "`/aprender` — Atualizar conhecimento do banco\n"
-        "`/anomalias` — Ver mudanças detectadas\n\n"
+        "`/anomalias` — Ver mudanças detectadas\n"
+        "`/memoria` — Memória de longo prazo\n"
+        "`/licoes` — Últimas lições aprendidas\n"
+        "`/frageis` — Componentes mais problemáticos\n"
+        "`/relatorio_semanal` — Relatório de 7 dias\n\n"
         "*Linguagem natural:*\n"
         "Apenas descreva o problema:\n"
         "_Redis caiu_, _Postgres lento_, _Celery parou_\n\n"
@@ -515,6 +519,78 @@ def cmd_aprender(chat_id: int):
         send(f"⚠️ Erro no aprendizado: {e}", chat_id=chat_id)
 
 
+def cmd_memoria(chat_id: int):
+    """Resumo da memória de longo prazo."""
+    try:
+        from memoria_longa import MemóriaLonga
+        mem = MemóriaLonga()
+        r = mem.resumo()
+        msg = (
+            f"🧠 *Memória de longo prazo:*\n\n"
+            f"✅ Soluções validadas: {r['solucoes']}\n"
+            f"⚠️ Componentes frágeis: {r['componentes_frageis']}\n"
+            f"📚 Lições aprendidas: {r['licoes']}\n"
+            f"📋 Fatos do sistema: {r['fatos']}\n"
+        )
+        frageis = r.get("top_frageis", [])
+        if frageis:
+            msg += "\n*Mais frágeis:*\n"
+            for f in frageis:
+                msg += f"  • `{f['componente']}`: {f['total_falhas']}x\n"
+        send(msg, chat_id=chat_id)
+    except Exception as e:
+        send(f"⚠️ {e}", chat_id=chat_id)
+
+
+def cmd_relatorio_semanal(chat_id: int):
+    """Relatório semanal de tickets."""
+    try:
+        from ticket_manager import TicketManager
+        tm = TicketManager()
+        relatorio = tm.relatorio_periodo(dias=7)
+        send(relatorio, chat_id=chat_id)
+    except Exception as e:
+        send(f"⚠️ {e}", chat_id=chat_id)
+
+
+def cmd_licoes(chat_id: int):
+    """Lista lições aprendidas recentes."""
+    try:
+        from memoria_longa import MemóriaLonga
+        mem = MemóriaLonga()
+        licoes = mem.dados.get("licoes_aprendidas", [])[-5:]
+        if not licoes:
+            send("ℹ️ Sem lições registradas ainda.", chat_id=chat_id)
+            return
+        msg = "📚 *Últimas lições aprendidas:*\n\n"
+        for lc in reversed(licoes):
+            msg += f"• _{lc['licao'][:80]}_\n"
+            msg += f"  `{lc['registrado_em'][:10]}`\n\n"
+        send(msg, chat_id=chat_id)
+    except Exception as e:
+        send(f"⚠️ {e}", chat_id=chat_id)
+
+
+def cmd_frageis(chat_id: int):
+    """Lista componentes mais frágeis."""
+    try:
+        from memoria_longa import MemóriaLonga
+        mem = MemóriaLonga()
+        frageis = mem.componentes_mais_frageis(5)
+        if not frageis:
+            send("✅ Sem componentes frágeis registrados.", chat_id=chat_id)
+            return
+        msg = "⚠️ *Componentes mais frágeis:*\n\n"
+        for c in frageis:
+            msg += (
+                f"🔧 `{c['componente']}`: "
+                f"{c['total_falhas']} falhas\n"
+            )
+        send(msg, chat_id=chat_id)
+    except Exception as e:
+        send(f"⚠️ {e}", chat_id=chat_id)
+
+
 def cmd_anomalias(chat_id: int):
     """Lista mudanças e anomalias detectadas recentemente."""
     f = CTO_DIR / "memory" / "mudancas_detectadas.json"
@@ -598,6 +674,14 @@ def processar_update(update: dict):
         cmd_aprender(chat_id)
     elif tl.startswith("/anomalias"):
         cmd_anomalias(chat_id)
+    elif tl.startswith("/memoria"):
+        cmd_memoria(chat_id)
+    elif tl.startswith("/relatorio_semanal"):
+        cmd_relatorio_semanal(chat_id)
+    elif tl.startswith("/licoes"):
+        cmd_licoes(chat_id)
+    elif tl.startswith("/frageis"):
+        cmd_frageis(chat_id)
     else:
         # Linguagem natural
         handle_natural_language(text, chat_id)

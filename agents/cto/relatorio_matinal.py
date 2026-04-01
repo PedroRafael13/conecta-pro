@@ -55,8 +55,10 @@ def gerar_relatorio() -> str:
     data_fmt = agora.strftime("%d/%m/%Y")
     secoes   = []
 
+    hora_fmt = agora.strftime("%H:%M")
+
     # ─── CABEÇALHO ───────────────────────────────────────────────────────────
-    secoes.append(f"☀️ *Bom dia Jordan!*\n📅 {data_fmt} — Relatório matinal do CTO\n")
+    secoes.append(f"🤖 *CTO — Relatório Matinal*\n📅 {data_fmt} {hora_fmt}\n")
 
     # ─── 1. NOITE ─────────────────────────────────────────────────────────────
     tickets_noite = []
@@ -123,25 +125,6 @@ def gerar_relatorio() -> str:
                     emoji = {"critica": "🔴", "alta": "⚠️"}.get(m["urgencia"], "ℹ️")
                     secoes.append(f"  {emoji} {m['mensagem']}")
                 secoes.append("")
-        except Exception:
-            pass
-
-    # ─── 4. SNAPSHOT CONECTA MAIS ─────────────────────────────────────────────
-    negocio_file = KNOWLEDGE_DIR / "negocio.json"
-    if negocio_file.exists():
-        try:
-            neg      = json.loads(negocio_file.read_text())
-            clientes = neg.get("clientes", {})
-            func     = neg.get("funcionarios", {})
-            fin      = neg.get("financeiro", {})
-
-            secoes.append(
-                f"🏢 *Conecta Mais:*\n"
-                f"  👥 {clientes.get('total_ativos','?')} clientes | "
-                f"{func.get('total_ativos','?')} funcionários\n"
-                f"  💰 A pagar: R$ {float(fin.get('valor_pagar',0)):,.0f} | "
-                f"A receber: R$ {float(fin.get('valor_receber',0)):,.0f}\n"
-            )
         except Exception:
             pass
 

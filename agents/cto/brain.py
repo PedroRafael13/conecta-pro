@@ -149,6 +149,27 @@ class CTOBrain:
             }],
         }
 
+        # Preferir TicketManager (Sprint 3) se disponível
+        tm = CTOBrain._get_ticket_mgr()
+        if tm:
+            result = tm.criar(
+                titulo=titulo,
+                descricao=descricao,
+                severidade=severidade,
+                categoria=categoria,
+                causa_raiz=causa_raiz,
+                solucao_proposta=solucao_proposta,
+                auto_resolvido=auto_resolvido,
+                requer_jordan=requer_jordan,
+            )
+            # Sincronizar contador local
+            self.proximo_ticket += 1
+            self.memoria["total_tickets"] = self.proximo_ticket - 1
+            if auto_resolvido:
+                self.memoria["incidentes_resolvidos"] += 1
+            self._salvar_memoria()
+            return result
+
         (TICKETS_DIR / f"{ticket['numero']}.json").write_text(
             json.dumps(ticket, indent=2, ensure_ascii=False, default=str)
         )
@@ -215,15 +236,20 @@ class CTOBrain:
         n_clientes = negocio.get("clientes", {}).get("total_ativos", 13)
         n_func = negocio.get("funcionarios", {}).get("total_ativos", 41)
 
+        # Consultar memória de longo prazo
+        mem = CTOBrain._get_memoria_longa()
+        solucao_conhecida = mem.consultar_solucao(problema) if mem else None
+
         diag = {
             "problema": problema,
             "timestamp": datetime.now().isoformat(),
             "causa_raiz": "",
             "contexto_negocio": "",
-            "solucao_recomendada": "",
+            "solucao_recomendada": solucao_conhecida or "",
             "urgencia": "media",
             "requer_jordan": False,
             "acoes_possiveis": [],
+            "solucao_da_memoria": solucao_conhecida is not None,
         }
 
         p = problema.lower()
@@ -347,47 +373,134 @@ class CTOBrain:
     # ─── TELEGRAM ─────────────────────────────────────
 
     def resumo_para_telegram(self) -> str:
-        """Resumo executivo diário — tom de CTO."""
+        """
+        Resumo TÉCNICO para o Telegram.
+        CTO = suporte técnico. NÃO envia dados de negócio.
+        Dados de negócio ficam no Assistente Pessoal.
+        """
+        import urllib.request
+        import urllib.error
+
         now = datetime.now()
-        negocio = self.conhecimento.get("negocio", {})
+        hora = now.strftime("%H:%M")
+        data = now.strftime("%d/%m")
 
-        clientes = negocio.get("clientes", {}).get("total_ativos", 13)
-        func = negocio.get("funcionarios", {}).get("total_ativos", 41)
-        valor_pagar = negocio.get("financeiro", {}).get("valor_pagar", 0)
-        valor_receber = negocio.get("financeiro", {}).get("valor_receber", 0)
-        batidas_hoje = negocio.get("operacional", {}).get("batidas_hoje", 0)
-
-        alertas = self.conhecimento.get("alertas_ativos", [])
-        tickets_abertos = sum(
-            1 for f in TICKETS_DIR.glob("*.json")
-            if json.loads(f.read_text()).get("status") == "aberto"
+        # Containers
+        r = subprocess.run(
+            "docker ps --filter status=running --format '{{.Names}}' | wc -l",
+            shell=True, capture_output=True, text=True,
         )
+        containers_ativos = r.stdout.strip()
+
+        # Backend health
+        try:
+            req = urllib.request.Request("http://127.0.0.1:8080/health")
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                health = json.loads(resp.read())
+            status_backend = health.get("status", "?")
+        except Exception:
+            status_backend = "offline"
+
+        # Swap
+        r2 = subprocess.run(
+            "free -m | awk 'NR==3{print $3}'",
+            shell=True, capture_output=True, text=True,
+        )
+        swap_mb = int(r2.stdout.strip() or 0)
+
+        # CPU load
+        r3 = subprocess.run(
+            "cat /proc/loadavg | awk '{print $1}'",
+            shell=True, capture_output=True, text=True,
+        )
+        cpu_load = r3.stdout.strip() or "0"
+
+        # Tickets abertos
+        tickets_abertos = 0
+        for f in TICKETS_DIR.glob("*.json"):
+            try:
+                if json.loads(f.read_text()).get("status") == "aberto":
+                    tickets_abertos += 1
+            except Exception:
+                pass
+
+        # Último score do monitor
+        monitor_state_file = Path("/opt/conecta-pro/reports/monitor_state.json")
+        score = "?"
+        ciclos = "?"
+        correcoes = "?"
+        if monitor_state_file.exists():
+            try:
+                ms = json.loads(monitor_state_file.read_text())
+                score = ms.get("score_anterior", "?")
+                ciclos = ms.get("ciclos", "?")
+                correcoes = ms.get("correcoes_totais", "?")
+            except Exception:
+                pass
+
+        emoji_backend = "✅" if status_backend == "healthy" else "🔴"
+        try:
+            cpu_f = float(cpu_load)
+            emoji_cpu = "🔴" if cpu_f > 7 else ("⚠️" if cpu_f > 5 else "✅")
+        except ValueError:
+            emoji_cpu = "❓"
+        emoji_swap = "🔴" if swap_mb > 3000 else ("⚠️" if swap_mb > 2000 else "✅")
 
         linhas = [
-            f"📊 *Conecta Mais — {now.strftime('%d/%m %H:%M')}*\n",
-            f"👥 {clientes} clientes | {func} funcionários",
-            f"💰 A pagar: R$ {valor_pagar:,.0f} | A receber: R$ {valor_receber:,.0f}",
-            f"🕐 Batidas hoje: {batidas_hoje}",
+            f"🤖 *CTO — {data} {hora}*\n",
+            f"─────────────────",
+            f"{emoji_backend} Backend: `{status_backend}`",
+            f"🐳 Containers: `{containers_ativos}` ativos",
+            f"{emoji_cpu} CPU load: `{cpu_load}`",
+            f"{emoji_swap} Swap: `{swap_mb}MB`",
+            f"",
+            f"📊 Monitor:",
+            f"  Score: `{score}/10`",
+            f"  Ciclos: `{ciclos}`",
+            f"  Autocorreções: `{correcoes}`",
         ]
 
-        if alertas:
-            criticos = [a for a in alertas if a["urgencia"] == "critica"]
-            altos = [a for a in alertas if a["urgencia"] == "alta"]
-            if criticos:
-                linhas.append(f"\n🔴 *Crítico ({len(criticos)}):*")
-                for a in criticos:
-                    linhas.append(f"  • {a['mensagem']}")
-            if altos:
-                linhas.append(f"⚠️ *Atenção ({len(altos)}):*")
-                for a in altos:
-                    linhas.append(f"  • {a['mensagem']}")
-        else:
-            linhas.append("\n✅ Sem alertas ativos")
-
         if tickets_abertos:
-            linhas.append(f"\n📋 {tickets_abertos} ticket(s) aberto(s)")
+            linhas.append("")
+            linhas.append(f"🎫 Tickets abertos: `{tickets_abertos}`")
+            linhas.append("_Use /tickets para ver detalhes_")
+        else:
+            linhas.append("")
+            linhas.append("✅ Sem tickets abertos")
+
+        linhas.append("")
+        linhas.append("_/ajuda para comandos_")
 
         return "\n".join(linhas)
+
+    # ─── SPRINT 3 — MEMÓRIA LONGA + TICKET MANAGER ───────────────────────────
+
+    _memoria_longa_instance = None
+    _ticket_mgr_instance = None
+
+    @classmethod
+    def _get_memoria_longa(cls):
+        if cls._memoria_longa_instance is None:
+            try:
+                import sys as _sys
+                _sys.path.insert(0, str(CTO_DIR))
+                from memoria_longa import MemóriaLonga
+                cls._memoria_longa_instance = MemóriaLonga()
+            except Exception:
+                pass
+        return cls._memoria_longa_instance
+
+    @classmethod
+    def _get_ticket_mgr(cls):
+        if cls._ticket_mgr_instance is None:
+            try:
+                import sys as _sys
+                _sys.path.insert(0, str(CTO_DIR))
+                from ticket_manager import TicketManager
+                cls._ticket_mgr_instance = TicketManager()
+            except Exception:
+                pass
+        return cls._ticket_mgr_instance
 
     # ─── SPRINT 2 — DIAGNÓSTICO AVANÇADO + APRENDIZADO ────────────────────────
 
