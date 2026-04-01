@@ -253,15 +253,27 @@ def executar_ciclo():
     logger.info("=" * 60)
 
     # Token compartilhado — evita rate limit
-    token = obter_token_compartilhado()
-    if not token:
+    token_atual = obter_token_compartilhado()
+    if not token_atual:
         logger.warning("⚠️ Token não obtido — agentes usarão obter_token() individual")
 
     resultados = []
     scores = []
 
-    for nome_modulo, arquivo in ORCHESTRATORS:
-        logger.info(f"\n▶ Executando: {nome_modulo} ({arquivo}.py)")
+    for idx, (nome_modulo, arquivo) in enumerate(ORCHESTRATORS):
+        logger.info(f"\n▶ [{idx + 1}/{len(ORCHESTRATORS)}] Executando: {nome_modulo} ({arquivo}.py)")
+
+        # Verifica/renova token antes de cada módulo
+        if not _token_valido(token_atual):
+            logger.warning(f"[TOKEN] Inválido antes de '{nome_modulo}' — renovando...")
+            novo = _obter_token_com_retry()
+            if novo:
+                token_atual = novo
+                _injetar_token(token_atual)
+                logger.info(f"[TOKEN] Renovado com sucesso antes de '{nome_modulo}'")
+            else:
+                logger.error(f"[TOKEN] Falhou renovar antes de '{nome_modulo}' — tentando mesmo assim")
+
         try:
             OrcClass = carregar_orquestrador(arquivo)
             orc = OrcClass()
