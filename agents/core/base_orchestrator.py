@@ -12,6 +12,7 @@ Cada orquestrador de módulo:
 """
 import json
 import logging
+import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -43,11 +44,33 @@ class BaseOrchestrator:
         self.bugs_totais = []
         self.timestamp = datetime.now()
 
+    def _obter_token_compartilhado(self) -> str:
+        """Obtém token JWT único — compartilhado com todos os agentes do módulo."""
+        try:
+            r = subprocess.run([
+                'curl', '-sf', '-X', 'POST',
+                'http://127.0.0.1:8080/api/v1/auth/login',
+                '-H',
+                'Content-Type: application/x-www-form-urlencoded',
+                '-d',
+                'username=jjesus@conectamais.pro&password=Jordan0612'
+            ], capture_output=True, text=True, timeout=15)
+            token = json.loads(r.stdout).get('access_token', '')
+            if token:
+                logger.info(f"[{self.MODULO}] Token compartilhado obtido")
+            return token
+        except Exception as e:
+            logger.error(f"[{self.MODULO}] Erro ao obter token: {e}")
+            return ''
+
     def executar(self) -> dict:
         """
         Executar todos os agentes do módulo
         e consolidar resultado.
         """
+        # Token único obtido UMA VEZ — injetado em todos os agentes
+        token_compartilhado = self._obter_token_compartilhado()
+
         logger.info(
             f"[{self.MODULO}] Iniciando "
             f"{len(self.AGENTES)} agentes...")
@@ -55,7 +78,7 @@ class BaseOrchestrator:
         scores = []
         for AgenteClass in self.AGENTES:
             try:
-                agente = AgenteClass()
+                agente = AgenteClass(token=token_compartilhado)
                 resultado = agente.executar()
                 scores.append(
                     resultado.get('score', 0.0))
