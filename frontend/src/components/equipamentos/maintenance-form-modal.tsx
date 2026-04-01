@@ -2,6 +2,7 @@
 
 import { AlertCircle, Loader2, Save } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
+import { useForm, Controller } from 'react-hook-form';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,17 +28,6 @@ interface FormData {
   observacoes: string;
 }
 
-const defaultFormData: FormData = {
-  equipment_name: '',
-  maintenance_type: 'preventiva',
-  priority: 'medium',
-  technician_name: '',
-  scheduled_date: '',
-  description: '',
-  observacoes: '',
-};
-
-// Form state factory
 const createFormData = (maintenance?: any): FormData => ({
   equipment_name: maintenance?.equipment_name || '',
   maintenance_type: maintenance?.maintenance_type || 'preventiva',
@@ -57,72 +47,33 @@ export function MaintenanceFormModal({
   onSubmit,
   isLoading = false,
 }: MaintenanceFormModalProps) {
-  const [formData, setFormData] = useState<FormData>(defaultFormData);
-  const [error, setError] = useState<string | null>(null);
-
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const isEditing = !!maintenance;
 
-  const formKey = useMemo(() => {
-    return maintenance?.id || maintenance?.codigo || 'new';
-  }, [maintenance]);
+  const formKey = useMemo(() => maintenance?.id || maintenance?.codigo || 'new', [maintenance]);
+
+  const {
+    register,
+    handleSubmit,
+    control,
+    reset,
+    formState: { errors },
+  } = useForm<FormData>({ defaultValues: createFormData(maintenance) });
 
   useEffect(() => {
     if (isOpen) {
-      if (maintenance) {
-
-        setFormData(createFormData(maintenance));
-      } else {
-
-        setFormData(defaultFormData);
-      }
-
-      setError(null);
+      reset(createFormData(maintenance));
+      setSubmitError(null);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentional deps
   }, [isOpen, formKey]);
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    setError(null);
-  };
-
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    setError(null);
-  };
-
-  const validateForm = (): boolean => {
-    if (!formData.equipment_name.trim()) {
-      setError('Nome do equipamento é obrigatório');
-      return false;
-    }
-    if (!formData.maintenance_type) {
-      setError('Tipo de manutenção é obrigatório');
-      return false;
-    }
-    if (!formData.priority) {
-      setError('Prioridade é obrigatória');
-      return false;
-    }
-    if (!formData.scheduled_date) {
-      setError('Data agendada é obrigatória');
-      return false;
-    }
-    return true;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validateForm()) return;
-
-    setError(null);
+  const onFormSubmit = async (data: FormData) => {
+    setSubmitError(null);
     try {
-      await onSubmit(formData);
+      await onSubmit(data);
     } catch (err: any) {
-      setError(err?.message || 'Erro ao salvar manutenção');
+      setSubmitError(err?.message || 'Erro ao salvar manutenção');
     }
   };
 
@@ -138,11 +89,11 @@ export function MaintenanceFormModal({
       }
       size="lg"
     >
-      <form onSubmit={handleSubmit} className="space-y-5">
-        {error && (
+      <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-5">
+        {submitError && (
           <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 flex items-center gap-2 text-red-500 text-sm">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
-            {error}
+            {submitError}
           </div>
         )}
 
@@ -151,48 +102,59 @@ export function MaintenanceFormModal({
           <Label htmlFor="equipment_name">Equipamento *</Label>
           <Input
             id="equipment_name"
-            name="equipment_name"
-            value={formData.equipment_name}
-            onChange={handleChange}
             placeholder="Nome do equipamento"
-           aria-label="Nome do equipamento" />
+            aria-label="Nome do equipamento"
+            className={errors.equipment_name ? 'border-red-500' : ''}
+            {...register('equipment_name', { required: 'Nome do equipamento é obrigatório' })}
+          />
+          {errors.equipment_name && (
+            <p className="text-xs text-red-500">{errors.equipment_name.message}</p>
+          )}
         </div>
 
         {/* Tipo e Prioridade */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>Tipo de Manutenção *</Label>
-            <Select
-              value={formData.maintenance_type}
-              onValueChange={(value) => handleSelectChange('maintenance_type', value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione o tipo" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="preventiva">Preventiva</SelectItem>
-                <SelectItem value="corretiva">Corretiva</SelectItem>
-                <SelectItem value="emergencial">Emergencial</SelectItem>
-              </SelectContent>
-            </Select>
+            <Controller
+              name="maintenance_type"
+              control={control}
+              rules={{ required: 'Tipo de manutenção é obrigatório' }}
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="preventiva">Preventiva</SelectItem>
+                    <SelectItem value="corretiva">Corretiva</SelectItem>
+                    <SelectItem value="emergencial">Emergencial</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            />
           </div>
 
           <div className="space-y-2">
             <Label>Prioridade *</Label>
-            <Select
-              value={formData.priority}
-              onValueChange={(value) => handleSelectChange('priority', value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione a prioridade" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="low">Baixa</SelectItem>
-                <SelectItem value="medium">Média</SelectItem>
-                <SelectItem value="high">Alta</SelectItem>
-                <SelectItem value="critical">Crítica</SelectItem>
-              </SelectContent>
-            </Select>
+            <Controller
+              name="priority"
+              control={control}
+              rules={{ required: 'Prioridade é obrigatória' }}
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a prioridade" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Baixa</SelectItem>
+                    <SelectItem value="medium">Média</SelectItem>
+                    <SelectItem value="high">Alta</SelectItem>
+                    <SelectItem value="critical">Crítica</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            />
           </div>
         </div>
 
@@ -202,22 +164,24 @@ export function MaintenanceFormModal({
             <Label htmlFor="technician_name">Técnico Responsável</Label>
             <Input
               id="technician_name"
-              name="technician_name"
-              value={formData.technician_name}
-              onChange={handleChange}
               placeholder="Nome do técnico"
-             aria-label="Nome do técnico" />
+              aria-label="Nome do técnico"
+              {...register('technician_name')}
+            />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="scheduled_date">Data Agendada *</Label>
             <Input
               id="scheduled_date"
-              name="scheduled_date"
               type="date"
-              value={formData.scheduled_date}
-              onChange={handleChange}
-             aria-label="Scheduled Date" />
+              aria-label="Data agendada"
+              className={errors.scheduled_date ? 'border-red-500' : ''}
+              {...register('scheduled_date', { required: 'Data agendada é obrigatória' })}
+            />
+            {errors.scheduled_date && (
+              <p className="text-xs text-red-500">{errors.scheduled_date.message}</p>
+            )}
           </div>
         </div>
 
@@ -226,12 +190,11 @@ export function MaintenanceFormModal({
           <Label htmlFor="description">Descrição</Label>
           <Textarea
             id="description"
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
             placeholder="Descreva a manutenção a ser realizada..."
             rows={3}
-           aria-label="Descreva a manutenção a ser realizada..." />
+            aria-label="Descrição da manutenção"
+            {...register('description')}
+          />
         </div>
 
         {/* Observações */}
@@ -239,12 +202,11 @@ export function MaintenanceFormModal({
           <Label htmlFor="observacoes">Observações</Label>
           <Textarea
             id="observacoes"
-            name="observacoes"
-            value={formData.observacoes}
-            onChange={handleChange}
             placeholder="Observações adicionais..."
             rows={3}
-           aria-label="Observações adicionais..." />
+            aria-label="Observações adicionais"
+            {...register('observacoes')}
+          />
         </div>
 
         <ModalFooter>

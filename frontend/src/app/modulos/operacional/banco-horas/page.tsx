@@ -28,7 +28,14 @@ import {
   TIME_BANK_STATUS_COLORS,
   ALERT_SEVERITY_COLORS,
 } from '@/lib/services/time-bank';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import dynamic from 'next/dynamic';
+import { Skeleton } from '@/components/ui/skeleton';
+
+// Lazy load recharts — reduz chunk inicial em ~200KB
+const BalanceChart = dynamic(() => import('./balance-chart'), {
+  ssr: false,
+  loading: () => <Skeleton className="w-full h-[200px]" />,
+});
 
 export default function BancoHorasPage() {
   const router = useRouter();
@@ -324,19 +331,7 @@ export default function BancoHorasPage() {
         {balanceChartData.length > 0 && (
           <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl p-4 mb-6">
             <h2 className="text-sm font-semibold text-[hsl(var(--foreground))] mb-4">Saldo por Colaborador</h2>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={balanceChartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `${v}h`} />
-                <Tooltip formatter={(v: any) => [`${Number(v).toFixed(1)}h`, 'Saldo']} />
-                <Bar dataKey="balance" radius={[4, 4, 0, 0]}>
-                  {balanceChartData.map((entry, i) => (
-                    <Cell key={i} fill={entry.balance >= 0 ? '#22c55e' : '#ef4444'} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+            <BalanceChart data={balanceChartData} />
           </div>
         )}
 
