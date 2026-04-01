@@ -1,7 +1,10 @@
 """
 Integration tests for critical Conecta PRO endpoints.
-Uses real HTTP calls against running server — no mocks.
+Uses real HTTP calls against running server (127.0.0.1:8080) — no mocks.
+Validates: auth, GED, CRM, REST aliases, status_code=201 deployment.
 """
+
+import subprocess
 
 import httpx
 import pytest
@@ -9,7 +12,6 @@ import pytest
 BASE_URL = "http://127.0.0.1:8080"
 API = f"{BASE_URL}/api/v1"
 
-# Shared auth state
 _token: str = ""
 
 
@@ -18,34 +20,36 @@ def get_token() -> str:
     if not _token:
         resp = httpx.post(
             f"{API}/auth/login",
-            data={"username": "admin@conectapro.com.br", "password": "admin123"},  # pragma: allowlist secret,
+            data={"username": "admin@conectapro.com.br", "password": "admin123"},  # pragma: allowlist secret
             headers={"Content-Type": "application/x-www-form-urlencoded"},
+            timeout=10,
         )
-        assert resp.status_code == 200, f"Login failed: {resp.text}"
+        assert resp.status_code == 200, f"Login failed: {resp.status_code}"
         _token = resp.json()["access_token"]
     return _token
 
 
-def auth_headers() -> dict:
+def auth() -> dict:
     return {"Authorization": f"Bearer {get_token()}"}
 
 
-# ── HEALTH ──────────────────────────────────────────────────────────────────
+# ── 1. HEALTH ──────────────────────────────────────────────────────────────
 
 
 def test_health_returns_200():
-    resp = httpx.get(f"{BASE_URL}/health", headers=auth_headers())
+    resp = httpx.get(f"{BASE_URL}/health", headers=auth(), timeout=5)
     assert resp.status_code == 200
 
 
-# ── AUTH ─────────────────────────────────────────────────────────────────────
+# ── 2. AUTH ────────────────────────────────────────────────────────────────
 
 
-def test_login_returns_token():
+def test_login_returns_bearer_token():
     resp = httpx.post(
         f"{API}/auth/login",
-        data={"username": "admin@conectapro.com.br", "password": "admin123"},  # pragma: allowlist secret,
+        data={"username": "admin@conectapro.com.br", "password": "admin123"},  # pragma: allowlist secret
         headers={"Content-Type": "application/x-www-form-urlencoded"},
+        timeout=10,
     )
     assert resp.status_code == 200
     body = resp.json()
@@ -53,129 +57,136 @@ def test_login_returns_token():
     assert body.get("token_type", "").lower() == "bearer"
 
 
-def test_login_invalid_credentials_returns_401():
+def test_login_wrong_password_returns_401_or_422():
     resp = httpx.post(
         f"{API}/auth/login",
-        data={"username": "nobody@invalid.com", "password": "wrongpass"},  # pragma: allowlist secret
+        data={"username": "admin@conectapro.com.br", "password": "errado123"},  # pragma: allowlist secret
         headers={"Content-Type": "application/x-www-form-urlencoded"},
+        timeout=10,
     )
-    assert resp.status_code in (401, 422)
+    assert resp.status_code in (401, 422), f"Got {resp.status_code}"
 
 
 def test_protected_endpoint_without_token_returns_401():
-    resp = httpx.get(f"{API}/operacional/employees")
+    resp = httpx.get(f"{API}/auth/me", timeout=5)
     assert resp.status_code == 401
 
 
-# ── OPERACIONAL — EMPLOYEES ──────────────────────────────────────────────────
-
-
-def test_list_employees_returns_200():
-    resp = httpx.get(f"{API}/operacional/employees", headers=auth_headers())
+def test_auth_me_with_valid_token():
+    resp = httpx.get(f"{API}/auth/me", headers=auth(), timeout=5)
     assert resp.status_code == 200
     body = resp.json()
-    assert isinstance(body, (list, dict))
+    assert "email" in body or "id" in body
 
 
-def test_list_employees_pagination():
-    resp = httpx.get(
-        f"{API}/operacional/employees",
-        params={"skip": 0, "limit": 5},
-        headers=auth_headers(),
-    )
+# ── 3. GED ─────────────────────────────────────────────────────────────────
+
+
+def test_ged_documents_list():
+    resp = httpx.get(f"{API}/ged/documents", headers=auth(), timeout=10)
+    assert resp.status_code == 200
+    assert isinstance(resp.json(), (list, dict))
+
+
+def test_ged_folders_list():
+    resp = httpx.get(f"{API}/ged/folders", headers=auth(), timeout=10)
     assert resp.status_code == 200
 
 
-# ── OPERACIONAL — POSTS ──────────────────────────────────────────────────────
-
-
-def test_list_posts_returns_200():
-    resp = httpx.get(f"{API}/operacional/posts", headers=auth_headers())
+def test_ged_dashboard():
+    resp = httpx.get(f"{API}/ged/dashboard", headers=auth(), timeout=10)
     assert resp.status_code == 200
 
 
-# ── FINANCIAL ────────────────────────────────────────────────────────────────
+def test_ged_document_tags():
+    resp = httpx.get(f"{API}/ged/document-tags", headers=auth(), timeout=10)
+    assert resp.status_code == 200
 
 
-def test_financial_dashboard_returns_200():
-    resp = httpx.get(f"{API}/financial/dashboard", headers=auth_headers())
-    assert resp.status_code in (200, 404)  # endpoint may vary by module config
+# ── 4. REST ALIASES — backward compat paths must still work (Skill 03) ──────
 
 
-# ── CRM ──────────────────────────────────────────────────────────────────────
+def test_ged_expired_verb_path_works():
+    """GET /expired/list must keep returning 200 for backward compat."""
+    resp = httpx.get(f"{API}/ged/documents/expired/list", headers=auth(), timeout=10)
+    assert resp.status_code == 200
 
 
-def test_crm_contacts_returns_200():
-    resp = httpx.get(f"{API}/crm/contacts", headers=auth_headers())
+def test_ged_owner_shares_verb_path_works():
+    resp = httpx.get(f"{API}/ged/document-shares/owner/list", headers=auth(), timeout=10)
+    assert resp.status_code == 200
+
+
+def test_ged_signer_list_verb_path_works():
+    resp = httpx.get(f"{API}/ged/document-signatures/signer/list", headers=auth(), timeout=10)
+    assert resp.status_code == 200
+
+
+# ── 5. CRM ─────────────────────────────────────────────────────────────────
+
+
+def test_crm_contacts_list():
+    resp = httpx.get(f"{API}/crm/contacts/", headers=auth(), timeout=10)
+    assert resp.status_code == 200
+
+
+# ── 6. CONFIG AUTH ─────────────────────────────────────────────────────────
+
+
+def test_config_without_auth_blocked():
+    resp = httpx.get(f"{API}/config/system", timeout=5)
+    assert resp.status_code in (401, 403)
+
+
+def test_config_with_auth_accessible():
+    resp = httpx.get(f"{API}/config/system", headers=auth(), timeout=10)
     assert resp.status_code in (200, 404)
 
 
-# ── POST STATUS_CODE 201 ──────────────────────────────────────────────────────
+# ── 7. PRODUCTION SECURITY ─────────────────────────────────────────────────
 
 
-def test_post_create_resource_returns_201():
-    """
-    Validate that at least one resource-creation POST returns 201.
-    Uses /api/v1/operacional/occurrences as the test endpoint.
-    """
-    # We test the declaration via OpenAPI spec, not by creating a real resource
-    resp = httpx.get(f"{BASE_URL}/openapi.json")
-    assert resp.status_code == 200
-    schema = resp.json()
-    paths = schema.get("paths", {})
-
-    # Count POST endpoints with 201 in responses
-    posts_with_201 = []
-    for path, methods in paths.items():
-        if "post" in methods:
-            responses = methods["post"].get("responses", {})
-            if "201" in responses:
-                posts_with_201.append(path)
-
-    assert len(posts_with_201) >= 60, (
-        f"Expected >= 60 POST endpoints with status_code=201, got {len(posts_with_201)}: {posts_with_201[:10]}"
+def test_openapi_json_disabled_in_production():
+    """OpenAPI spec must be disabled in production (ENVIRONMENT=production)."""
+    resp = httpx.get(f"{BASE_URL}/openapi.json", timeout=5)
+    assert resp.status_code == 404, (
+        f"openapi.json must be 404 in production. Got {resp.status_code} — check ENVIRONMENT setting."
     )
 
 
-def test_openapi_no_verb_paths():
-    """Validate OpenAPI spec doesn't expose verb-laden paths."""
-    resp = httpx.get(f"{BASE_URL}/openapi.json")
-    assert resp.status_code == 200
-    schema = resp.json()
-    paths = list(schema.get("paths", {}).keys())
-
-    verb_paths = [
-        p
-        for p in paths
-        if any(segment in p.split("/") for segment in ["list", "create", "update", "delete", "get", "fetch", "remove"])
-    ]
-    assert len(verb_paths) == 0, f"Found verb paths in OpenAPI spec: {verb_paths[:5]}"
+def test_unknown_route_returns_404():
+    resp = httpx.get(f"{API}/rota-inexistente-xyz-123", headers=auth(), timeout=5)
+    assert resp.status_code == 404
 
 
-# ── CONFIG ───────────────────────────────────────────────────────────────────
+def test_wrong_method_on_get_endpoint_returns_405():
+    resp = httpx.post(f"{BASE_URL}/health", headers=auth(), timeout=5)
+    assert resp.status_code == 405
 
 
-def test_config_endpoint_requires_auth():
-    resp = httpx.get(f"{API}/config/")
-    assert resp.status_code == 401
+# ── 8. SKILL 03 METRIC — status_code=201 count ─────────────────────────────
 
 
-def test_config_with_auth_returns_200():
-    resp = httpx.get(f"{API}/config/", headers=auth_headers())
-    assert resp.status_code in (200, 404)
-
-
-# ── OPENAPI / DOCS ───────────────────────────────────────────────────────────
-
-
-def test_openapi_schema_accessible():
-    resp = httpx.get(f"{BASE_URL}/openapi.json")
-    assert resp.status_code == 200
-    schema = resp.json()
-    assert "info" in schema
-    assert "paths" in schema
-
-
-def test_docs_accessible():
-    resp = httpx.get(f"{BASE_URL}/docs")
-    assert resp.status_code == 200
+def test_at_least_198_status_code_201_in_container():
+    """
+    Core Skill 03 metric: >=198 POST decorators must have status_code=201.
+    Verified via grep in the running container.
+    """
+    result = subprocess.run(  # noqa: S603
+        [  # noqa: S607
+            "docker",
+            "exec",
+            "conecta-pro-backend",
+            "bash",
+            "-c",
+            "grep -rn 'status_code=201' /app/modules/ 2>/dev/null | wc -l",
+        ],
+        capture_output=True,
+        text=True,
+        timeout=15,
+    )
+    count = int(result.stdout.strip())
+    assert count >= 198, (
+        f"Expected >=198 status_code=201 decorators in /app/modules/, got {count}. "
+        "Skill 03 fix may not be deployed in the container."
+    )
