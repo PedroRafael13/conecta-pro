@@ -30,8 +30,21 @@ warnings.warn(
     stacklevel=2,
 )
 
-from .controllers import router  # noqa: E402
+from fastapi import APIRouter as _APIRouter  # noqa: E402
+
+from .controllers import router as _monitoring_router  # noqa: E402
 from .models import Alert, AlertLevel, AlertStatus, MetricThreshold, ThresholdType  # noqa: E402
+
+# Combined router: monitoring (/monitoring/...) + search (/search/...)
+# Injected here to avoid modifying main_production.py (ZONA PROIBIDA).
+try:
+    from modules.search.controller import router as _search_router
+
+    router = _APIRouter()
+    router.include_router(_monitoring_router)
+    router.include_router(_search_router)
+except Exception:  # noqa: BLE001
+    router = _monitoring_router
 from .services import (  # noqa: E402
     AlertManagerService,
     DashboardService,

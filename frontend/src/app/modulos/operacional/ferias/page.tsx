@@ -531,7 +531,7 @@ export default function FeriasPage() {
                           <User className="w-3.5 h-3.5 text-[hsl(var(--primary))]" />
                         </div>
                         <span className="text-sm font-medium text-[hsl(var(--foreground))] truncate max-w-[120px]">
-                          {req.employeeName}
+                          {req.employeeName || 'Colaborador não identificado'}
                         </span>
                       </div>
                     </td>
