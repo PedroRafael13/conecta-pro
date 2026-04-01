@@ -79,6 +79,18 @@ except ImportError as e:
     _REMEDIATOR = None
     CONHECIMENTO_OK = False
 
+# ── CTOBrain (Sprint 1 — conhecimento do negócio + tickets) ───────────────────
+try:
+    import sys as _sys
+    _sys.path.insert(0, str(Path(__file__).parent / "cto"))
+    from brain import CTOBrain
+    _CTO_BRAIN = CTOBrain()
+    CTO_BRAIN_OK = True
+except Exception as e:
+    print(f"[cto_brain] indisponível: {e}")
+    _CTO_BRAIN = None
+    CTO_BRAIN_OK = False
+
 # ── Carrega base classes do .pyc se .py ausente (orchestrator_geral legacy) ───
 def _load_pyc(name: str, pyc_path: Path):
     loader = importlib.machinery.SourcelessFileLoader(name, str(pyc_path))
@@ -481,6 +493,26 @@ def ciclo_rapido(token: str, estado: dict) -> tuple[float, dict]:
             + "\n".join(f"  • {e}" for e in erros[:10])
         )
         telegram(msg)
+
+        # CTOBrain: abrir ticket de regressão automaticamente
+        if CTO_BRAIN_OK:
+            try:
+                ticket = _CTO_BRAIN.criar_ticket(
+                    titulo=f"Regressão score {score_anterior}→{score}",
+                    descricao=(
+                        f"Score caiu {delta:+.1f} pontos.\n"
+                        f"Commit: {ultimo_commit}\n"
+                        f"Erros: {'; '.join(erros[:5])}"
+                    ),
+                    severidade="critica" if delta <= -3.0 else "alta",
+                    categoria="regressao",
+                    causa_raiz=f"Possível regressão por commit: {ultimo_commit}",
+                    solucao_proposta="Revisar último commit e fazer rollback se necessário",
+                    requer_jordan=True,
+                )
+                logger.info(f"[CTOBrain] Ticket {ticket['numero']} criado para regressão")
+            except Exception as e:
+                logger.error(f"[CTOBrain] Erro ao criar ticket: {e}")
 
     elif erros:
         # Aprender com erros detectados e tentar auto-remediar

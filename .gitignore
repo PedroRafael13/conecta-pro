@@ -96,3 +96,10 @@ agents/dashboard_data.json
 
 # Dados de runtime do PatternLearner (gerados automaticamente)
 agents/knowledge/*.json
+
+# Dados de runtime do CTOBrain (tickets, memória, knowledge — gerados automaticamente)
+agents/cto/tickets/*.json
+agents/cto/memory/*.json
+agents/cto/knowledge/*.json
+agents/cto/brain/
+agents/cto/*.log
