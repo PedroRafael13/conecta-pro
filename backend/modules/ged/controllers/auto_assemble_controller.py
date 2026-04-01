@@ -45,6 +45,7 @@ async def auto_assemble_kits(
 
 
 @router.get("/kits")
+@router.get("/kits/", include_in_schema=False)
 async def list_kits(
     client_id: str | None = Query(None),
     status: str | None = Query(None),
@@ -262,7 +263,17 @@ async def send_kit(
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Envia kit ao cliente (muda status para 'enviado')."""
+    import uuid
+
     from sqlalchemy import text
+
+    try:
+        uuid.UUID(kit_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=422,
+            detail={"code": "INVALID_UUID", "message": f"ID de kit inválido: '{kit_id}'"},
+        )
 
     result = await db.execute(
         text("SELECT id, status FROM ged_document_kits WHERE id = :id"),
@@ -287,7 +298,17 @@ async def approve_kit(
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Aprova kit (muda status para 'aprovado')."""
+    import uuid
+
     from sqlalchemy import text
+
+    try:
+        uuid.UUID(kit_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=422,
+            detail={"code": "INVALID_UUID", "message": f"ID de kit inválido: '{kit_id}'"},
+        )
 
     result = await db.execute(
         text("SELECT id, status FROM ged_document_kits WHERE id = :id"),

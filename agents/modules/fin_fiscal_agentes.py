@@ -211,29 +211,51 @@ class AgenteNFe(BaseAgent):
     MODULO = "fiscal_contabil"
     SUBMODULO = "nfe"
     ENDPOINTS = [
-        '/api/v1/government/sefaz/nfe/list',
+        '/api/v1/government/sefaz-am/status',
+        '/api/v1/government/nfse-nacional/status',
     ]
-    CONHECE_BUGS = []
+    CONHECE_BUGS = [
+        {
+            'descricao': 'SEFAZ nfe/list ausente '
+                         '— apenas POST emitir/consultar',
+            'corrigido': False,
+            'auto_corrigivel': False
+        }
+    ]
 
 
 class AgenteNFSe(BaseAgent):
     MODULO = "fiscal_contabil"
     SUBMODULO = "nfse"
     ENDPOINTS = [
-        '/api/v1/government/nfse/list',
-        '/api/v1/government/nfse-manaus/list',
+        '/api/v1/government/nfse-manaus/consultar/rps/1',
+        '/api/v1/government/simples-nacional/status',
     ]
-    CONHECE_BUGS = []
+    CONHECE_BUGS = [
+        {
+            'descricao': 'nfse/list e nfse-manaus/list '
+                         'ausentes (rotas 404)',
+            'corrigido': False,
+            'auto_corrigivel': False
+        }
+    ]
 
 
 class AgenteCertidoes(BaseAgent):
     MODULO = "fiscal_contabil"
     SUBMODULO = "certidoes"
     ENDPOINTS = [
-        '/api/v1/government/certificates',
-        '/api/v1/government/ecac/certidoes',
+        '/api/v1/government/certificates/',
+        '/api/v1/government/ecac/status',
     ]
-    CONHECE_BUGS = []
+    CONHECE_BUGS = [
+        {
+            'descricao': 'ecac/certidoes ausente '
+                         '— usar ecac/status',
+            'corrigido': False,
+            'auto_corrigivel': False
+        }
+    ]
 
 
 class AgenteESocialFiscal(BaseAgent):
@@ -285,7 +307,14 @@ class AgenteEFDReinf(BaseAgent):
     MODULO = "fiscal_contabil"
     SUBMODULO = "efd_reinf"
     ENDPOINTS = [
-        '/api/v1/government/reinf/status',
-        '/api/v1/government/reinf/r1000',
+        '/api/v1/government/efd-reinf/status',
+        '/api/v1/government/efd-reinf/classificacoes-tributarias',
     ]
-    CONHECE_BUGS = []
+    CONHECE_BUGS = [
+        {
+            'descricao': 'reinf/status e reinf/r1000 '
+                         'ausentes — prefixo correto: efd-reinf',
+            'corrigido': False,
+            'auto_corrigivel': False
+        }
+    ]

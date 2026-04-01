@@ -29,6 +29,7 @@ router = APIRouter(tags=["GED - Config & Reports"])
 
 
 @router.get("/clients")
+@router.get("/clients/", include_in_schema=False)
 async def list_ged_clients(
     current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),

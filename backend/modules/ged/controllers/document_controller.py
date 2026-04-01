@@ -254,6 +254,7 @@ async def delete_document(
 
 
 @router.get("", response_model=DocumentListResponse)
+@router.get("/", response_model=DocumentListResponse, include_in_schema=False)
 async def list_documents(
     folder_id: str | None = Query(None),
     condominium_id: str | None = Query(None),

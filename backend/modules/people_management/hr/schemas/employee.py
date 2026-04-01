@@ -27,6 +27,7 @@ class DPEmployeeRead(BaseModel):
     cargo: str | None = None
     departamento: str | None = None
     status: str | None = None
+    is_active: bool | None = None
     data_admissao: date | None = None
     data_demissao: date | None = None
     salario_base: float | None = None
