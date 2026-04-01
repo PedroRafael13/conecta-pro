@@ -2,7 +2,7 @@
 PerformanceAgent — Monitora performance do sistema.
 Mede tempo de resposta e detecta degradação.
 """
-import json
+
 import subprocess
 import time
 import urllib.error
@@ -53,8 +53,10 @@ class PerformanceAgent:
             "status": status,
             "tempo_ms": tempo_ms,
             "classificacao": (
-                "critico" if tempo_ms > LIMITE_CRITICO_MS
-                else "lento" if tempo_ms > LIMITE_LENTO_MS
+                "critico"
+                if tempo_ms > LIMITE_CRITICO_MS
+                else "lento"
+                if tempo_ms > LIMITE_LENTO_MS
                 else "ok"
             ),
         }
@@ -62,16 +64,25 @@ class PerformanceAgent:
     def verificar_memoria_container(self) -> dict:
         try:
             result = subprocess.run(
-                ["docker", "stats", "--no-stream", "--format",
-                 "{{.Name}}\t{{.MemUsage}}\t{{.MemPerc}}\t{{.CPUPerc}}"],
-                capture_output=True, text=True, timeout=10,
+                [
+                    "docker",
+                    "stats",
+                    "--no-stream",
+                    "--format",
+                    "{{.Name}}\t{{.MemUsage}}\t{{.MemPerc}}\t{{.CPUPerc}}",
+                ],
+                capture_output=True,
+                text=True,
+                timeout=10,
             )
             containers = {}
             for line in result.stdout.strip().split("\n"):
                 parts = line.split("\t")
                 if len(parts) >= 4:
                     containers[parts[0]] = {
-                        "memoria": parts[1], "mem_pct": parts[2], "cpu_pct": parts[3]
+                        "memoria": parts[1],
+                        "mem_pct": parts[2],
+                        "cpu_pct": parts[3],
                     }
             return containers
         except Exception as e:
@@ -97,12 +108,17 @@ class PerformanceAgent:
             "memoria_containers": self.verificar_memoria_container(),
             "detalhes": medicoes,
             "bugs": [
-                {"tipo": f"endpoint_{m['classificacao']}", "endpoint": m["endpoint"],
-                 "tempo_ms": m["tempo_ms"],
-                 "descricao": f"Endpoint {m['classificacao']}: {m['endpoint']} ({m['tempo_ms']}ms)",
-                 "autocorrigivel": False}
+                {
+                    "tipo": f"endpoint_{m['classificacao']}",
+                    "endpoint": m["endpoint"],
+                    "tempo_ms": m["tempo_ms"],
+                    "descricao": f"Endpoint {m['classificacao']}: {m['endpoint']} ({m['tempo_ms']}ms)",
+                    "autocorrigivel": False,
+                }
                 for m in lentos
             ],
         }
-        print(f"  Médio: {tempo_medio}ms, Lentos: {len(lentos)}, Score: {resultado['score']}/10")
+        print(
+            f"  Médio: {tempo_medio}ms, Lentos: {len(lentos)}, Score: {resultado['score']}/10"
+        )
         return resultado

@@ -3,6 +3,7 @@ SecurityAgent v2 — Testes avançados de segurança.
 Detecta: SQL injection, XSS, força bruta, enumeração, IDOR, headers, rate limit.
 NÃO faz pentesting agressivo — apenas verificações seguras e não destrutivas.
 """
+
 import json as _json
 import time
 import urllib.error
@@ -91,11 +92,13 @@ class SecurityAgent:
         for endpoint in ENDPOINTS_PRIVADOS:
             status, _, _ = self._request(endpoint, token=None)
             if status == 200:
-                vulneraveis.append({
-                    "endpoint": endpoint,
-                    "descricao": f"Endpoint exposto sem autenticação: {endpoint}",
-                    "severidade": "CRITICO",
-                })
+                vulneraveis.append(
+                    {
+                        "endpoint": endpoint,
+                        "descricao": f"Endpoint exposto sem autenticação: {endpoint}",
+                        "severidade": "CRITICO",
+                    }
+                )
         return vulneraveis
 
     # ── 2. SQL Injection ────────────────────────────────────────────────────
@@ -110,25 +113,34 @@ class SecurityAgent:
         ]
         for endpoint in endpoints_busca:
             for payload in SQL_PAYLOADS:
-                q = urllib.parse.urlencode({"search": payload, "q": payload, "name": payload})
+                q = urllib.parse.urlencode(
+                    {"search": payload, "q": payload, "name": payload}
+                )
                 status, _, body = self._request(f"{endpoint}?{q}", token=self.token)
                 body_str = body.decode("utf-8", errors="ignore")
                 # 500 = possível SQL não tratado; erro de DB na resposta = vazamento
                 if status == 500:
-                    vulnerabilidades.append({
-                        "endpoint": endpoint,
-                        "payload": payload,
-                        "descricao": f"SQL injection possível — status 500 em {endpoint}",
-                        "severidade": "CRITICO",
-                    })
+                    vulnerabilidades.append(
+                        {
+                            "endpoint": endpoint,
+                            "payload": payload,
+                            "descricao": f"SQL injection possível — status 500 em {endpoint}",
+                            "severidade": "CRITICO",
+                        }
+                    )
                     break  # 1 achado por endpoint é suficiente
-                elif any(kw in body_str.lower() for kw in ["syntax error", "pg::", "sqlalchemy", "psycopg"]):
-                    vulnerabilidades.append({
-                        "endpoint": endpoint,
-                        "payload": payload,
-                        "descricao": f"Vazamento de erro SQL em {endpoint}",
-                        "severidade": "ALTO",
-                    })
+                elif any(
+                    kw in body_str.lower()
+                    for kw in ["syntax error", "pg::", "sqlalchemy", "psycopg"]
+                ):
+                    vulnerabilidades.append(
+                        {
+                            "endpoint": endpoint,
+                            "payload": payload,
+                            "descricao": f"Vazamento de erro SQL em {endpoint}",
+                            "severidade": "ALTO",
+                        }
+                    )
                     break
         return vulnerabilidades
 
@@ -144,26 +156,34 @@ class SecurityAgent:
         for endpoint in endpoints_xss:
             for payload in XSS_PAYLOADS:
                 q = urllib.parse.urlencode({"search": payload, "name": payload})
-                status, headers, body = self._request(f"{endpoint}?{q}", token=self.token)
+                status, headers, body = self._request(
+                    f"{endpoint}?{q}", token=self.token
+                )
                 body_str = body.decode("utf-8", errors="ignore")
-                content_type = headers.get("Content-Type", headers.get("content-type", ""))
+                content_type = headers.get(
+                    "Content-Type", headers.get("content-type", "")
+                )
                 # XSS crítico: payload refletido em HTML sem escape
                 if payload in body_str and "text/html" in content_type:
-                    vulnerabilidades.append({
-                        "endpoint": endpoint,
-                        "payload": payload,
-                        "descricao": f"XSS refletido em {endpoint}",
-                        "severidade": "CRITICO",
-                    })
+                    vulnerabilidades.append(
+                        {
+                            "endpoint": endpoint,
+                            "payload": payload,
+                            "descricao": f"XSS refletido em {endpoint}",
+                            "severidade": "CRITICO",
+                        }
+                    )
                     break
                 # XSS médio: payload refletido em JSON (risco menor)
                 elif payload in body_str and "application/json" in content_type:
-                    vulnerabilidades.append({
-                        "endpoint": endpoint,
-                        "payload": payload,
-                        "descricao": f"Payload XSS refletido em JSON {endpoint} — verificar escaping no frontend",
-                        "severidade": "MEDIO",
-                    })
+                    vulnerabilidades.append(
+                        {
+                            "endpoint": endpoint,
+                            "payload": payload,
+                            "descricao": f"Payload XSS refletido em JSON {endpoint} — verificar escaping no frontend",
+                            "severidade": "MEDIO",
+                        }
+                    )
                     break
         return vulnerabilidades
 
@@ -174,10 +194,12 @@ class SecurityAgent:
         vulnerabilidades = []
         ultimo_status = 0
         for i in range(6):
-            payload = urllib.parse.urlencode({
-                "username": "admin@conectapro.com.br",
-                "password": f"senha_errada_{i}",  # pragma: allowlist secret
-            }).encode()
+            payload = urllib.parse.urlencode(
+                {
+                    "username": "admin@conectapro.com.br",
+                    "password": f"senha_errada_{i}",  # pragma: allowlist secret
+                }
+            ).encode()
             status, _, _ = self._request(
                 "/api/v1/auth/login",
                 method="POST",
@@ -190,11 +212,13 @@ class SecurityAgent:
             time.sleep(0.3)
 
         if ultimo_status not in (429, 423):
-            vulnerabilidades.append({
-                "endpoint": "/api/v1/auth/login",
-                "descricao": f"Força bruta não bloqueada após 6 tentativas (último status: {ultimo_status})",
-                "severidade": "ALTO",
-            })
+            vulnerabilidades.append(
+                {
+                    "endpoint": "/api/v1/auth/login",
+                    "descricao": f"Força bruta não bloqueada após 6 tentativas (último status: {ultimo_status})",
+                    "severidade": "ALTO",
+                }
+            )
         return vulnerabilidades
 
     # ── 5. Enumeração de usuários ────────────────────────────────────────────
@@ -207,10 +231,12 @@ class SecurityAgent:
         vulnerabilidades = []
 
         def medir(username: str) -> float:
-            payload = urllib.parse.urlencode({
-                "username": username,
-                "password": "senha_invalida_auditoria",  # pragma: allowlist secret
-            }).encode()
+            payload = urllib.parse.urlencode(
+                {
+                    "username": username,
+                    "password": "senha_invalida_auditoria",  # pragma: allowlist secret
+                }
+            ).encode()
             t0 = time.time()
             self._request(
                 "/api/v1/auth/login",
@@ -227,14 +253,16 @@ class SecurityAgent:
         diff = abs(t_existente - t_inexistente)
 
         if diff > 0.5:
-            vulnerabilidades.append({
-                "endpoint": "/api/v1/auth/login",
-                "descricao": (
-                    f"Possível enumeração de usuários por timing — "
-                    f"diferença: {diff:.2f}s (existente={t_existente:.2f}s, inexistente={t_inexistente:.2f}s)"
-                ),
-                "severidade": "MEDIO",
-            })
+            vulnerabilidades.append(
+                {
+                    "endpoint": "/api/v1/auth/login",
+                    "descricao": (
+                        f"Possível enumeração de usuários por timing — "
+                        f"diferença: {diff:.2f}s (existente={t_existente:.2f}s, inexistente={t_inexistente:.2f}s)"
+                    ),
+                    "severidade": "MEDIO",
+                }
+            )
         return vulnerabilidades
 
     # ── 6. Headers de segurança ─────────────────────────────────────────────
@@ -250,11 +278,13 @@ class SecurityAgent:
         headers_lower = {k.lower(): v for k, v in headers.items()}
         for header in SECURITY_HEADERS:
             if header not in headers_lower:
-                ausentes.append({
-                    "header": header,
-                    "descricao": f"Header de segurança ausente: {header}",
-                    "severidade": "MEDIO",
-                })
+                ausentes.append(
+                    {
+                        "header": header,
+                        "descricao": f"Header de segurança ausente: {header}",
+                        "severidade": "MEDIO",
+                    }
+                )
         return ausentes
 
     # ── 7. IDOR ─────────────────────────────────────────────────────────────
@@ -265,29 +295,37 @@ class SecurityAgent:
         for endpoint in ENDPOINTS_IDOR:
             status, _, body = self._request(endpoint, token=self.token)
             if status == 200 and len(body) > 50:
-                vulnerabilidades.append({
-                    "endpoint": endpoint,
-                    "descricao": f"Possível IDOR: UUID inexistente retornou dados em {endpoint}",
-                    "severidade": "ALTO",
-                })
+                vulnerabilidades.append(
+                    {
+                        "endpoint": endpoint,
+                        "descricao": f"Possível IDOR: UUID inexistente retornou dados em {endpoint}",
+                        "severidade": "ALTO",
+                    }
+                )
         return vulnerabilidades
 
     # ── 8. Registro sem auth ────────────────────────────────────────────────
 
     def testar_registro_sem_auth(self) -> list:
         """POST /auth/register sem token não deve criar usuário admin."""
-        payload = _json.dumps({
-            "email": "audit_test@conectamais.pro",
-            "password": "AuditTest@2026",  # pragma: allowlist secret
-            "role": "admin",
-        }).encode()
-        status, _, _ = self._request("/api/v1/auth/register", token=None, method="POST", data=payload)
+        payload = _json.dumps(
+            {
+                "email": "audit_test@conectamais.pro",
+                "password": "AuditTest@2026",  # pragma: allowlist secret
+                "role": "admin",
+            }
+        ).encode()
+        status, _, _ = self._request(
+            "/api/v1/auth/register", token=None, method="POST", data=payload
+        )
         if status in (200, 201):
-            return [{
-                "endpoint": "/api/v1/auth/register",
-                "descricao": "CRÍTICO: /register cria usuário admin sem autenticação",
-                "severidade": "CRITICO",
-            }]
+            return [
+                {
+                    "endpoint": "/api/v1/auth/register",
+                    "descricao": "CRÍTICO: /register cria usuário admin sem autenticação",
+                    "severidade": "CRITICO",
+                }
+            ]
         return []
 
     # ── 9. Rate limit geral ─────────────────────────────────────────────────
@@ -303,11 +341,13 @@ class SecurityAgent:
                 break
 
         if not got_429:
-            vulnerabilidades.append({
-                "endpoint": "/api/v1/ged/documents",
-                "descricao": "Rate limiting não acionado após 20 requisições rápidas",
-                "severidade": "BAIXO",
-            })
+            vulnerabilidades.append(
+                {
+                    "endpoint": "/api/v1/ged/documents",
+                    "descricao": "Rate limiting não acionado após 20 requisições rápidas",
+                    "severidade": "BAIXO",
+                }
+            )
         return vulnerabilidades
 
     # ── Orquestrador ────────────────────────────────────────────────────────
@@ -316,15 +356,15 @@ class SecurityAgent:
         print("🔍 SecurityAgent v2: executando testes avançados de segurança...")
 
         testes = [
-            ("auth_endpoints",      self.testar_auth_endpoints),
-            ("sql_injection",       self.testar_sql_injection),
-            ("xss",                 self.testar_xss),
-            ("forca_bruta",         self.testar_forca_bruta),
+            ("auth_endpoints", self.testar_auth_endpoints),
+            ("sql_injection", self.testar_sql_injection),
+            ("xss", self.testar_xss),
+            ("forca_bruta", self.testar_forca_bruta),
             ("enumeracao_usuarios", self.testar_enumeracao_usuarios),
-            ("headers_seguranca",   self.testar_headers_seguranca),
-            ("idor",                self.testar_idor),
-            ("registro_sem_auth",   self.testar_registro_sem_auth),
-            ("rate_limit_api",      self.testar_rate_limit_api),
+            ("headers_seguranca", self.testar_headers_seguranca),
+            ("idor", self.testar_idor),
+            ("registro_sem_auth", self.testar_registro_sem_auth),
+            ("rate_limit_api", self.testar_rate_limit_api),
         ]
 
         todos_bugs = []
@@ -341,17 +381,21 @@ class SecurityAgent:
                 detalhes[nome] = 0
 
         criticos = [b for b in todos_bugs if b.get("severidade") == "CRITICO"]
-        altos    = [b for b in todos_bugs if b.get("severidade") == "ALTO"]
-        medios   = [b for b in todos_bugs if b.get("severidade") == "MEDIO"]
-        baixos   = [b for b in todos_bugs if b.get("severidade") == "BAIXO"]
+        altos = [b for b in todos_bugs if b.get("severidade") == "ALTO"]
+        medios = [b for b in todos_bugs if b.get("severidade") == "MEDIO"]
+        baixos = [b for b in todos_bugs if b.get("severidade") == "BAIXO"]
 
-        score = max(0.0, min(10.0,
-            10.0
-            - len(criticos) * 4.0
-            - len(altos)    * 2.0
-            - len(medios)   * 0.5
-            - len(baixos)   * 0.2
-        ))
+        score = max(
+            0.0,
+            min(
+                10.0,
+                10.0
+                - len(criticos) * 4.0
+                - len(altos) * 2.0
+                - len(medios) * 0.5
+                - len(baixos) * 0.2,
+            ),
+        )
 
         resultado = {
             "agente": "security",
@@ -376,7 +420,9 @@ class SecurityAgent:
             ],
         }
 
-        print(f"\n  Score segurança: {resultado['score']}/10 | "
-              f"🔴 {len(criticos)} críticos | 🟠 {len(altos)} altos | "
-              f"🟡 {len(medios)} médios | 🟢 {len(baixos)} baixos")
+        print(
+            f"\n  Score segurança: {resultado['score']}/10 | "
+            f"🔴 {len(criticos)} críticos | 🟠 {len(altos)} altos | "
+            f"🟡 {len(medios)} médios | 🟢 {len(baixos)} baixos"
+        )
         return resultado

@@ -2,6 +2,7 @@
 ContractAgent — Valida se os payloads que o frontend envia
 batem com os schemas que o backend espera.
 """
+
 import json
 import re
 import urllib.request
@@ -59,9 +60,9 @@ class ContractAgent:
         campos = []
         endpoint_slug = endpoint_path.split("/")[-1].replace("-", "_")
         patterns = [
-            re.compile(r'body:\s*JSON\.stringify\(\s*\{([^}]+)\}', re.DOTALL),
-            re.compile(r'(?:data|body|payload):\s*\{([^}]+)\}', re.DOTALL),
-            re.compile(r'JSON\.stringify\(\s*\{([^}]+)\}', re.DOTALL),
+            re.compile(r"body:\s*JSON\.stringify\(\s*\{([^}]+)\}", re.DOTALL),
+            re.compile(r"(?:data|body|payload):\s*\{([^}]+)\}", re.DOTALL),
+            re.compile(r"JSON\.stringify\(\s*\{([^}]+)\}", re.DOTALL),
         ]
         for fpath in FRONTEND_DIR.rglob("*.tsx"):
             if "node_modules" in str(fpath):
@@ -96,11 +97,13 @@ class ContractAgent:
             faltando = obrigatorios - campos_frontend
             sobrando = campos_frontend - campos_esperados
             if faltando or sobrando:
-                mismatches.append({
-                    "endpoint": f"{method} {path}",
-                    "campos_faltando": list(faltando),
-                    "campos_sobrando": list(sobrando),
-                })
+                mismatches.append(
+                    {
+                        "endpoint": f"{method} {path}",
+                        "campos_faltando": list(faltando),
+                        "campos_sobrando": list(sobrando),
+                    }
+                )
             else:
                 ok += 1
 

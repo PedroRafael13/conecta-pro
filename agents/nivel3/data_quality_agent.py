@@ -2,6 +2,7 @@
 DataQualityAgent — Verifica integridade e qualidade dos dados.
 Detecta: CPFs/CNPJs inválidos, duplicatas, campos vazios.
 """
+
 import json
 import re
 import urllib.request
@@ -67,12 +68,24 @@ class DataQualityAgent:
             nome = f.get("nome") or f.get("name", "?")
             cpf = f.get("cpf", "")
             if cpf and not validar_cpf(cpf):
-                problemas.append({"tabela": "employees", "id": fid, "campo": "cpf",
-                                   "descricao": f"CPF inválido: {nome}"})
+                problemas.append(
+                    {
+                        "tabela": "employees",
+                        "id": fid,
+                        "campo": "cpf",
+                        "descricao": f"CPF inválido: {nome}",
+                    }
+                )
             if cpf:
                 if cpf in cpfs_vistos:
-                    problemas.append({"tabela": "employees", "id": fid, "campo": "cpf",
-                                       "descricao": f"CPF duplicado: {nome} e {cpfs_vistos[cpf]}"})
+                    problemas.append(
+                        {
+                            "tabela": "employees",
+                            "id": fid,
+                            "campo": "cpf",
+                            "descricao": f"CPF duplicado: {nome} e {cpfs_vistos[cpf]}",
+                        }
+                    )
                 else:
                     cpfs_vistos[cpf] = nome
             is_active = f.get("is_active")
@@ -80,11 +93,15 @@ class DataQualityAgent:
             if is_active is not None and status:
                 esperado = status in ["ativo", "active"]
                 if bool(is_active) != esperado:
-                    problemas.append({
-                        "tabela": "employees", "id": fid, "campo": "is_active",
-                        "descricao": f"is_active diverge de status: {nome} (is_active={is_active}, status={status})",
-                        "autocorrigivel": True,
-                    })
+                    problemas.append(
+                        {
+                            "tabela": "employees",
+                            "id": fid,
+                            "campo": "is_active",
+                            "descricao": f"is_active diverge de status: {nome} (is_active={is_active}, status={status})",
+                            "autocorrigivel": True,
+                        }
+                    )
         return problemas
 
     def verificar_clientes(self) -> list:
@@ -95,8 +112,14 @@ class DataQualityAgent:
             nome = c.get("nome") or c.get("name", "?")
             cnpj = c.get("cnpj", "")
             if cnpj and not validar_cnpj(cnpj):
-                problemas.append({"tabela": "clients", "id": cid, "campo": "cnpj",
-                                   "descricao": f"CNPJ inválido: {nome}"})
+                problemas.append(
+                    {
+                        "tabela": "clients",
+                        "id": cid,
+                        "campo": "cnpj",
+                        "descricao": f"CNPJ inválido: {nome}",
+                    }
+                )
         return problemas
 
     def verificar_alocacoes(self) -> list:
@@ -105,11 +128,23 @@ class DataQualityAgent:
         for a in self._items(data):
             aid = a.get("id", "?")
             if not a.get("employee_id") and not a.get("funcionario_id"):
-                problemas.append({"tabela": "allocations", "id": aid, "campo": "employee_id",
-                                   "descricao": "Alocação sem funcionário vinculado"})
+                problemas.append(
+                    {
+                        "tabela": "allocations",
+                        "id": aid,
+                        "campo": "employee_id",
+                        "descricao": "Alocação sem funcionário vinculado",
+                    }
+                )
             if not a.get("post_id") and not a.get("posto_id"):
-                problemas.append({"tabela": "allocations", "id": aid, "campo": "post_id",
-                                   "descricao": "Alocação sem posto vinculado"})
+                problemas.append(
+                    {
+                        "tabela": "allocations",
+                        "id": aid,
+                        "campo": "post_id",
+                        "descricao": "Alocação sem posto vinculado",
+                    }
+                )
         return problemas
 
     def auditar(self) -> dict:
@@ -126,9 +161,17 @@ class DataQualityAgent:
             "total_problemas": len(todos),
             "autocorrigiveis": autocorrigiveis,
             "problemas": todos[:20],
-            "bugs": [{"tipo": p.get("campo", "data"), "tabela": p.get("tabela"),
-                      "descricao": p.get("descricao"), "autocorrigivel": p.get("autocorrigivel", False)}
-                     for p in todos[:10]],
+            "bugs": [
+                {
+                    "tipo": p.get("campo", "data"),
+                    "tabela": p.get("tabela"),
+                    "descricao": p.get("descricao"),
+                    "autocorrigivel": p.get("autocorrigivel", False),
+                }
+                for p in todos[:10]
+            ],
         }
-        print(f"  Problemas: {len(todos)} ({autocorrigiveis} autocorrigíveis), Score: {resultado['score']}/10")
+        print(
+            f"  Problemas: {len(todos)} ({autocorrigiveis} autocorrigíveis), Score: {resultado['score']}/10"
+        )
         return resultado

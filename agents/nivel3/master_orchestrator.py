@@ -3,10 +3,11 @@ MasterOrchestrator — Coordena TODOS os agentes dos 3 níveis.
 Gera o relatório completo para Jordan via Telegram.
 
 Ciclos:
-- 30min: Compliance + DataQuality (lightweight)
-- Diário (2h): + Performance + Security + Coverage + Contract
+- 30min: Compliance + DataQuality + DataValidator + LogMonitor (lightweight)
+- Diário (2h): + Performance + Security + Coverage + Contract + Trend + Load
 - Semanal (domingo 3h): + Business + AuditAgent completo
 """
+
 import json
 import subprocess
 import sys
@@ -17,7 +18,9 @@ sys.path.insert(0, "/opt/conecta-pro/agents/core")
 sys.path.insert(0, "/opt/conecta-pro/agents/nivel3")
 sys.path.insert(0, "/opt/conecta-pro/agents")
 
-TELEGRAM_TOKEN = "8562364686:AAESOC6uXddwShWSs3_1-qJ4lBiZHBiSuBQ"  # pragma: allowlist secret
+TELEGRAM_TOKEN = (
+    "8562364686:AAESOC6uXddwShWSs3_1-qJ4lBiZHBiSuBQ"  # pragma: allowlist secret
+)
 TELEGRAM_CHAT = "5536961034"
 REPORTS_DIR = Path("/opt/conecta-pro/reports/master")
 
@@ -27,7 +30,9 @@ def _obter_token() -> str:
         "curl -sf -X POST http://127.0.0.1:8080/api/v1/auth/login "
         "-H 'Content-Type: application/x-www-form-urlencoded' "
         "-d 'username=jjesus@conectamais.pro&password=Jordan0612'",  # pragma: allowlist secret
-        shell=True, capture_output=True, text=True,
+        shell=True,
+        capture_output=True,
+        text=True,
     )
     try:
         return json.loads(r.stdout).get("access_token", "")
@@ -45,7 +50,7 @@ class MasterOrchestrator:
 
     def _telegram(self, mensagem: str):
         subprocess.run(
-            f'curl -sf -X POST '
+            f"curl -sf -X POST "
             f'"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage" '
             f'-d "chat_id={TELEGRAM_CHAT}&parse_mode=HTML" '
             f'--data-urlencode "text={mensagem}" > /dev/null',
@@ -61,34 +66,59 @@ class MasterOrchestrator:
 
     def executar(self) -> dict:
         inicio = datetime.now()
-        print(f"\n{'='*60}")
-        print(f"MASTER ORCHESTRATOR — {self.ciclo.upper()} — {inicio.strftime('%Y-%m-%d %H:%M')}")
-        print(f"{'='*60}")
+        print(f"\n{'=' * 60}")
+        print(
+            f"MASTER ORCHESTRATOR — {self.ciclo.upper()} — {inicio.strftime('%Y-%m-%d %H:%M')}"
+        )
+        print(f"{'=' * 60}")
 
         resultados = {}
 
         from compliance_agent import ComplianceAgent
         from data_quality_agent import DataQualityAgent
+        from data_validator_agent import DataValidatorAgent
+        from log_monitor_agent import LogMonitorAgent
 
+        # Ciclo 30min: agentes leves
         print("\n[N3] ComplianceAgent...")
-        resultados["compliance"] = self._rodar("compliance", ComplianceAgent, self.token)
+        resultados["compliance"] = self._rodar(
+            "compliance", ComplianceAgent, self.token
+        )
         print("\n[N3] DataQualityAgent...")
-        resultados["data_quality"] = self._rodar("data_quality", DataQualityAgent, self.token)
+        resultados["data_quality"] = self._rodar(
+            "data_quality", DataQualityAgent, self.token
+        )
+        print("\n[N3] DataValidatorAgent...")
+        resultados["data_validator"] = self._rodar(
+            "data_validator", DataValidatorAgent, self.token
+        )
+        print("\n[N3] LogMonitorAgent...")
+        resultados["log_monitor"] = self._rodar(
+            "log_monitor", LogMonitorAgent, self.token
+        )
 
         if self.ciclo in ["diario", "semanal"]:
             from performance_agent import PerformanceAgent
             from security_agent import SecurityAgent
             from coverage_agent import CoverageAgent
             from contract_agent import ContractAgent
+            from trend_agent import TrendAgent
+            from load_agent import LoadAgent
 
             print("\n[N3] PerformanceAgent...")
-            resultados["performance"] = self._rodar("performance", PerformanceAgent, self.token)
+            resultados["performance"] = self._rodar(
+                "performance", PerformanceAgent, self.token
+            )
             print("\n[N3] SecurityAgent...")
             resultados["security"] = self._rodar("security", SecurityAgent, self.token)
             print("\n[N3] CoverageAgent...")
             resultados["coverage"] = self._rodar("coverage", CoverageAgent, self.token)
             print("\n[N3] ContractAgent...")
             resultados["contract"] = self._rodar("contract", ContractAgent, self.token)
+            print("\n[N3] TrendAgent...")
+            resultados["trend"] = self._rodar("trend", TrendAgent, self.token)
+            print("\n[N3] LoadAgent...")
+            resultados["load"] = self._rodar("load", LoadAgent, self.token)
 
         if self.ciclo == "semanal":
             from business_agent import BusinessAgent
@@ -98,22 +128,38 @@ class MasterOrchestrator:
             print("\n[N2] AuditAgent...")
             try:
                 from audit_orchestrator import AuditOrchestrator
-                resultados["auditoria"] = AuditOrchestrator(token=self.token).auditar_todos(
-                    skills=[3, 6, 9, 10], auto_fix=True
-                )
+
+                resultados["auditoria"] = AuditOrchestrator(
+                    token=self.token
+                ).auditar_todos(skills=[3, 6, 9, 10], auto_fix=True)
             except Exception as e:
                 resultados["auditoria"] = {"score": 0, "bugs": [], "erro": str(e)}
 
         duracao = (datetime.now() - inicio).seconds
         self._enviar_relatorio(resultados, duracao, inicio)
 
-        report_path = REPORTS_DIR / f"master_{self.ciclo}_{inicio.strftime('%Y%m%d_%H%M')}.json"
-        report_path.write_text(json.dumps(
-            {"ciclo": self.ciclo, "timestamp": inicio.isoformat(), "duracao_s": duracao,
-             "resultados": {k: {"score": v.get("score", 0), "bugs": len(v.get("bugs", [])),
-                                "erro": v.get("erro")} for k, v in resultados.items()}},
-            indent=2, ensure_ascii=False,
-        ))
+        report_path = (
+            REPORTS_DIR / f"master_{self.ciclo}_{inicio.strftime('%Y%m%d_%H%M')}.json"
+        )
+        report_path.write_text(
+            json.dumps(
+                {
+                    "ciclo": self.ciclo,
+                    "timestamp": inicio.isoformat(),
+                    "duracao_s": duracao,
+                    "resultados": {
+                        k: {
+                            "score": v.get("score", 0),
+                            "bugs": len(v.get("bugs", [])),
+                            "erro": v.get("erro"),
+                        }
+                        for k, v in resultados.items()
+                    },
+                },
+                indent=2,
+                ensure_ascii=False,
+            )
+        )
         return resultados
 
     def _enviar_relatorio(self, resultados: dict, duracao: int, inicio: datetime):
@@ -121,18 +167,31 @@ class MasterOrchestrator:
             return "✅" if s >= 9 else "⚠️" if s >= 7 else "❌"
 
         labels = {
-            "compliance": "Compliance", "data_quality": "Qualidade Dados",
-            "performance": "Performance", "security": "Segurança",
-            "coverage": "Cobertura API", "contract": "Contratos",
-            "business": "Negócio", "auditoria": "Auditoria Código",
+            "compliance": "Compliance",
+            "data_quality": "Qualidade Dados",
+            "data_validator": "Validação API",
+            "log_monitor": "Monitor Logs",
+            "performance": "Performance",
+            "security": "Segurança",
+            "coverage": "Cobertura UI",
+            "contract": "Contratos",
+            "trend": "Tendência Perf",
+            "load": "Carga",
+            "business": "Negócio",
+            "auditoria": "Auditoria Código",
         }
-        linhas = [f"📊 <b>CONECTA PRO — {self.ciclo.upper()}</b>",
-                  f"📅 {inicio.strftime('%d/%m/%Y %H:%M')}", ""]
+        linhas = [
+            f"📊 <b>CONECTA PRO — {self.ciclo.upper()}</b>",
+            f"📅 {inicio.strftime('%d/%m/%Y %H:%M')}",
+            "",
+        ]
         for nome, res in resultados.items():
             score = res.get("score", 0)
             n_bugs = len(res.get("bugs", []))
             sufixo = f" ({n_bugs} issues)" if n_bugs else ""
-            linhas.append(f"{emoji(score)} <b>{labels.get(nome, nome)}:</b> {score}/10{sufixo}")
+            linhas.append(
+                f"{emoji(score)} <b>{labels.get(nome, nome)}:</b> {score}/10{sufixo}"
+            )
 
         jordan_items = [
             f"  → {b.get('descricao', '?')[:60]}"
