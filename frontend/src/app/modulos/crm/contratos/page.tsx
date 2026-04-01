@@ -290,7 +290,7 @@ export default function ContratosPage() {
                   <TableHead>Valor Mensal</TableHead>
                   <TableHead>Inicio</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="w-[80px]">Acoes</TableHead>
+                  <TableHead className="w-[80px]">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -329,7 +329,7 @@ export default function ContratosPage() {
                             Ver detalhes
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            onClick={() => toast.info('Edicao de contrato em desenvolvimento')}
+                            onClick={() => toast.info('Edição de contrato em desenvolvimento')}
                           >
                             <Edit className="h-4 w-4 mr-2" />
                             Editar

@@ -280,7 +280,7 @@ export default function CertidoesPage() {
                       Status
                     </th>
                     <th className="w-16 p-4 text-sm font-medium text-[hsl(var(--muted-foreground))]">
-                      Acoes
+                      Ações
                     </th>
                   </tr>
                 </thead>

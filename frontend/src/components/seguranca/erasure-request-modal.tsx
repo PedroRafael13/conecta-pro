@@ -22,9 +22,9 @@ interface ErasureRequestModalProps {
 }
 
 const typeLabels: Record<string, string> = {
-  full: 'Exclusao Completa',
-  personal: 'Exclusao de Dados Pessoais',
-  transactional: 'Exclusao de Dados Transacionais',
+  full: 'Exclusão Completa',
+  personal: 'Exclusão de Dados Pessoais',
+  transactional: 'Exclusão de Dados Transacionais',
 };
 
 const typeDescriptions: Record<string, string> = {
@@ -166,7 +166,7 @@ export function ErasureRequestModal({
               Processando...
             </>
           ) : (
-            'Solicitar Exclusao'
+            'Solicitar Exclusão'
           )}
         </Button>
       </ModalFooter>

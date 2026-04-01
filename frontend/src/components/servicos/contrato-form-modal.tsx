@@ -130,7 +130,7 @@ export function ContratoFormModal({
             />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="data_inicio">Data Inicio</Label>
+            <Label htmlFor="data_inicio">Data Início</Label>
             <Input
               id="data_inicio"
               type="date"
@@ -149,12 +149,12 @@ export function ContratoFormModal({
           </div>
         </div>
         <div className="grid gap-2">
-          <Label htmlFor="observacoes">Observacoes</Label>
+          <Label htmlFor="observacoes">Observações</Label>
           <Textarea
             id="observacoes"
             value={form.observacoes}
             onChange={(e) => setForm({ ...form, observacoes: e.target.value })}
-            placeholder="Observacoes sobre o contrato..."
+            placeholder="Observações sobre o contrato..."
             rows={3}
           />
         </div>

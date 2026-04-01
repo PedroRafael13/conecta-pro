@@ -142,7 +142,7 @@ export function ReimbursementDetailModal({
           </div>
         </div>
 
-        {/* Informacoes */}
+        {/* Informações */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-3">
             <div className="flex items-center gap-2">
@@ -346,10 +346,10 @@ export function ReimbursementDetailModal({
           </div>
         )}
 
-        {/* Observacoes */}
+        {/* Observações */}
         {request.notes && (
           <div>
-            <h4 className="text-sm font-medium text-[hsl(var(--foreground))] mb-2">Observacoes</h4>
+            <h4 className="text-sm font-medium text-[hsl(var(--foreground))] mb-2">Observações</h4>
             <p className="text-sm text-[hsl(var(--muted-foreground))] bg-[hsl(var(--muted))] p-3 rounded-lg whitespace-pre-wrap">
               {request.notes}
             </p>

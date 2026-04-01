@@ -300,7 +300,7 @@ export default function ContratosPage() {
                   <TableHead>Status</TableHead>
                   <TableHead>Valor Mensal</TableHead>
                   <TableHead>Data Fim</TableHead>
-                  <TableHead className="w-[80px]">Acoes</TableHead>
+                  <TableHead className="w-[80px]">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

@@ -35,7 +35,7 @@ interface PermissionGuardProps {
  * @example
  * // Proteger por role
  * <PermissionGuard role="admin">
- *   <Button>Configuracoes Admin</Button>
+ *   <Button>Configurações Admin</Button>
  * </PermissionGuard>
  *
  * @example

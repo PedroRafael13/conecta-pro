@@ -248,7 +248,7 @@ export default function GedClientesPage() {
                   <th className="text-left py-3 px-4 font-medium text-gray-500">CNPJ</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-500">Contato</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-500">Portal</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-500">Acoes</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-500">Ações</th>
                 </tr>
               </thead>
               <tbody>

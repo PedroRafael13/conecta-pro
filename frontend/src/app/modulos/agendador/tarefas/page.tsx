@@ -475,7 +475,7 @@ export default function TarefasPage() {
                   <TableHead>Status</TableHead>
                   <TableHead>Ultima Execucao</TableHead>
                   <TableHead>Proxima Execucao</TableHead>
-                  <TableHead className="text-right">Acoes</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -651,7 +651,7 @@ export default function TarefasPage() {
       <Dialog open={!!deleteConfirmId} onOpenChange={(open) => !open && setDeleteConfirmId(null)}>
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>
-            <DialogTitle>Confirmar Exclusao</DialogTitle>
+            <DialogTitle>Confirmar Exclusão</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
             Tem certeza que deseja excluir esta tarefa? Esta acao nao pode ser desfeita.

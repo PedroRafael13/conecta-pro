@@ -29,8 +29,8 @@ const statusConfig: Record<string, { label: string; className: string }> = {
 };
 
 const typeConfig: Record<string, string> = {
-  medical_leave: 'Licenca Medica',
-  medica: 'Licenca Medica',
+  medical_leave: 'Licença Médica',
+  medica: 'Licença Médica',
   maternidade: 'Maternidade',
   maternity: 'Maternidade',
   paternidade: 'Paternidade',
@@ -47,7 +47,7 @@ const typeConfig: Record<string, string> = {
 };
 
 const leaveTypeOptions = [
-  { value: 'medica', label: 'Licenca Medica' },
+  { value: 'medica', label: 'Licença Médica' },
   { value: 'maternidade', label: 'Maternidade' },
   { value: 'paternidade', label: 'Paternidade' },
   { value: 'acidente', label: 'Acidente de Trabalho' },
@@ -200,7 +200,7 @@ export default function LicencasPage() {
         setFormData({ employee_id: '', leave_type: 'medica', start_date: '', end_date: '', cid: '', notes: '' });
         setFormErrors({});
         setRefreshKey(k => k + 1);
-        toast.success('Licenca registrada com sucesso!', { duration: 4000 });
+        toast.success('Licença registrada com sucesso!', { duration: 4000 });
       } else {
         const err = await res.json().catch(() => null);
         toast.error(err?.detail || 'Erro ao registrar licenca', { duration: 5000 });
@@ -218,7 +218,7 @@ export default function LicencasPage() {
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">
               <CalendarDays className="h-6 w-6" />
-              Licencas e Afastamentos
+              Licenças e Afastamentos
             </h1>
             <p className="text-muted-foreground">Controle de licencas e afastamentos</p>
           </div>
@@ -228,7 +228,7 @@ export default function LicencasPage() {
             <Filter className="h-4 w-4 mr-1" /> Todos
           </Button>
           <Button type="button" size="sm" onClick={() => setShowForm(true)}>
-            <Plus className="h-4 w-4 mr-1" /> Nova Licenca
+            <Plus className="h-4 w-4 mr-1" /> Nova Licença
           </Button>
         </div>
       </div>
@@ -250,7 +250,7 @@ export default function LicencasPage() {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle>Nova Licenca</CardTitle>
+              <CardTitle>Nova Licença</CardTitle>
               <Button type="button" variant="ghost" size="sm" onClick={() => setShowForm(false)}><X className="h-4 w-4" /></Button>
             </div>
           </CardHeader>
@@ -267,7 +267,7 @@ export default function LicencasPage() {
                 {formErrors.employee_id && <p className="text-red-500 text-xs mt-1">{formErrors.employee_id}</p>}
               </div>
               <div>
-                <label className="text-sm font-medium mb-1 block">Tipo de Licenca</label>
+                <label className="text-sm font-medium mb-1 block">Tipo de Licença</label>
                 <select value={formData.leave_type} onChange={e => setFormData(p => ({ ...p, leave_type: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm">
                   {leaveTypeOptions.map(opt => (
                     <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -275,7 +275,7 @@ export default function LicencasPage() {
                 </select>
               </div>
               <div>
-                <label className="text-sm font-medium mb-1 block">Data Inicio *</label>
+                <label className="text-sm font-medium mb-1 block">Data Início *</label>
                 <input type="date" value={formData.start_date} onChange={e => { setFormData(p => ({ ...p, start_date: e.target.value })); setFormErrors(p => ({ ...p, start_date: '' })); }} className={`w-full px-3 py-2 border rounded-md text-sm ${formErrors.start_date ? 'border-red-500' : ''}`} />
                 {formErrors.start_date && <p className="text-red-500 text-xs mt-1">{formErrors.start_date}</p>}
               </div>
@@ -290,14 +290,14 @@ export default function LicencasPage() {
                 </div>
               )}
               <div className="md:col-span-2">
-                <label className="text-sm font-medium mb-1 block">Observacoes</label>
-                <textarea value={formData.notes} onChange={e => setFormData(p => ({ ...p, notes: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm" rows={3} placeholder="Observacoes adicionais" />
+                <label className="text-sm font-medium mb-1 block">Observações</label>
+                <textarea value={formData.notes} onChange={e => setFormData(p => ({ ...p, notes: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm" rows={3} placeholder="Observações adicionais" />
               </div>
             </div>
             <div className="flex gap-2 mt-4">
               <Button type="button" size="sm" disabled={saving} onClick={handleCreate}>
                 {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />}
-                {saving ? 'Salvando...' : 'Registrar Licenca'}
+                {saving ? 'Salvando...' : 'Registrar Licença'}
               </Button>
               <Button type="button" variant="outline" size="sm" onClick={() => setShowForm(false)}>Cancelar</Button>
             </div>
@@ -308,7 +308,7 @@ export default function LicencasPage() {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>Licencas Registradas</CardTitle>
+            <CardTitle>Licenças Registradas</CardTitle>
             <div className="relative w-64">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <input

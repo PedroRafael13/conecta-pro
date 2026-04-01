@@ -220,7 +220,7 @@ export default function SolidesPage() {
       {activeTab === 'status' && (
         <Card>
           <CardHeader>
-            <CardTitle>Configuracao da Integracao</CardTitle>
+            <CardTitle>Configuração da Integração</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -247,7 +247,7 @@ export default function SolidesPage() {
             </div>
             {config && (
               <div className="border-t pt-4 mt-4">
-                <h4 className="font-medium mb-3">Dados da Configuracao</h4>
+                <h4 className="font-medium mb-3">Dados da Configuração</h4>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label className="text-muted-foreground text-xs">API URL</Label>

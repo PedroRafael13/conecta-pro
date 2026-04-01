@@ -235,7 +235,7 @@ export default function APIKeysPage() {
                   <TableHead>Status</TableHead>
                   <TableHead>Criada em</TableHead>
                   <TableHead>Expira em</TableHead>
-                  <TableHead className="w-[80px]">Acoes</TableHead>
+                  <TableHead className="w-[80px]">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

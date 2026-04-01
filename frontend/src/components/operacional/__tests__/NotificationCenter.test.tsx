@@ -152,19 +152,19 @@ describe('NotificationCenter', () => {
   describe('abertura e fechamento do dropdown', () => {
     it('dropdown esta oculto por padrao', () => {
       render(<NotificationCenter />);
-      expect(screen.queryByText('Notificacoes')).not.toBeInTheDocument();
+      expect(screen.queryByText('Notificações')).not.toBeInTheDocument();
     });
 
     it('abre dropdown ao clicar no sino', () => {
       render(<NotificationCenter />);
       fireEvent.click(screen.getByRole('button', { name: /notificacoes/i }));
-      expect(screen.getByText('Notificacoes')).toBeInTheDocument();
+      expect(screen.getByText('Notificações')).toBeInTheDocument();
     });
 
     it('fecha dropdown ao clicar no botao X', () => {
       render(<NotificationCenter />);
       fireEvent.click(screen.getByRole('button', { name: /notificacoes/i }));
-      expect(screen.getByText('Notificacoes')).toBeInTheDocument();
+      expect(screen.getByText('Notificações')).toBeInTheDocument();
       // Clica no botao de fechar (X)
       const closeButtons = screen.getAllByRole('button');
       const xButton = closeButtons.find((b) => {
@@ -177,7 +177,7 @@ describe('NotificationCenter', () => {
       });
       if (xButton) {
         fireEvent.click(xButton);
-        expect(screen.queryByText('Notificacoes')).not.toBeInTheDocument();
+        expect(screen.queryByText('Notificações')).not.toBeInTheDocument();
       }
     });
 

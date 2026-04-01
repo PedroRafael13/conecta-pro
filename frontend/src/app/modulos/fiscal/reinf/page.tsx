@@ -42,7 +42,7 @@ const tipoEventos = [
 ];
 
 const tipoEventoLabels: Record<string, string> = {
-  'R-1000': 'Informacoes do Contribuinte',
+  'R-1000': 'Informações do Contribuinte',
   'R-2010': 'Retencao Contribuicao Previdenciaria',
   'R-2099': 'Fechamento dos Eventos Periodicos',
   'R-4010': 'Pagamentos/Creditos a PF',
@@ -162,7 +162,7 @@ export default function ReinfPage() {
         <div>
           <h1 className="text-2xl font-bold text-[hsl(var(--foreground))]">EFD-Reinf</h1>
           <p className="text-sm text-[hsl(var(--muted-foreground))]">
-            Escrituracao Fiscal Digital de Retencoes e Informacoes
+            Escrituracao Fiscal Digital de Retencoes e Informações
           </p>
         </div>
       </div>
@@ -344,7 +344,7 @@ export default function ReinfPage() {
                       Tipo Evento
                     </th>
                     <th className="text-left p-4 text-sm font-medium text-[hsl(var(--muted-foreground))]">
-                      Competencia
+                      Competência
                     </th>
                     <th className="text-left p-4 text-sm font-medium text-[hsl(var(--muted-foreground))]">
                       Status
@@ -353,7 +353,7 @@ export default function ReinfPage() {
                       Data
                     </th>
                     <th className="w-24 p-4 text-sm font-medium text-[hsl(var(--muted-foreground))]">
-                      Acoes
+                      Ações
                     </th>
                   </tr>
                 </thead>

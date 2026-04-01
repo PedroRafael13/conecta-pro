@@ -453,7 +453,7 @@ export default function ReembolsosOperacionalPage() {
                         Aprovação
                       </th>
                       <th className="px-4 py-3 text-right text-xs font-medium text-[hsl(var(--muted-foreground))] uppercase tracking-wider">
-                        Acoes
+                        Ações
                       </th>
                     </tr>
                   </thead>

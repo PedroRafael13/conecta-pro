@@ -186,7 +186,7 @@ export default function BancoHorasPage() {
                       <th className="text-center py-3 px-4 font-medium text-gray-500">Creditos</th>
                       <th className="text-center py-3 px-4 font-medium text-gray-500">Debitos</th>
                       <th className="text-center py-3 px-4 font-medium text-gray-500">Saldo</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-500">Ultima Atualizacao</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-500">Última Atualização</th>
                     </tr>
                   </thead>
                   <tbody>

@@ -483,7 +483,7 @@ export function OccurrenceFormModal({
             <li><strong>Leve:</strong> Advertencia verbal</li>
             <li><strong>Moderada:</strong> Advertencia escrita</li>
             <li><strong>Grave:</strong> Suspensao</li>
-            <li><strong>Gravissima:</strong> Demissao</li>
+            <li><strong>Gravíssima:</strong> Demissão</li>
           </ul>
         </div>
 

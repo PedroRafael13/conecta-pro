@@ -315,7 +315,7 @@ export default function WorkflowsPage() {
                   <TableHead>Status</TableHead>
                   <TableHead>Execucoes</TableHead>
                   <TableHead>Sucesso / Falha</TableHead>
-                  <TableHead className="w-[80px]">Acoes</TableHead>
+                  <TableHead className="w-[80px]">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -444,7 +444,7 @@ export default function WorkflowsPage() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Confirmar Exclusao</DialogTitle>
+            <DialogTitle>Confirmar Exclusão</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
             Tem certeza que deseja deletar o workflow{' '}

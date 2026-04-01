@@ -550,7 +550,7 @@ export default function CertidoesPage() {
                   <TableHead>Dias Restantes</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Consultar</TableHead>
-                  <TableHead className="w-[80px]">Acoes</TableHead>
+                  <TableHead className="w-[80px]">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

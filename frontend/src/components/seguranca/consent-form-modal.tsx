@@ -196,12 +196,12 @@ export function ConsentFormModal({
           )}
         </div>
 
-        {/* Observacoes */}
+        {/* Observações */}
         <div className="space-y-2">
-          <Label htmlFor="observacoes">Observacoes</Label>
+          <Label htmlFor="observacoes">Observações</Label>
           <Textarea
             id="observacoes"
-            placeholder="Observacoes adicionais sobre o consentimento..."
+            placeholder="Observações adicionais sobre o consentimento..."
             rows={3}
             {...register('observacoes')}
           />

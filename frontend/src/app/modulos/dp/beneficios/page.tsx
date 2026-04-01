@@ -255,7 +255,7 @@ export default function BeneficiosPage() {
         setShowForm(false);
         resetForm();
         setRefreshKey(k => k + 1);
-        toast.success(editingId ? 'Beneficio atualizado com sucesso!' : 'Beneficio criado com sucesso!', { duration: 4000 });
+        toast.success(editingId ? 'Benefício atualizado com sucesso!' : 'Benefício criado com sucesso!', { duration: 4000 });
       } else {
         const err = await res.json().catch(() => null);
         toast.error(err?.detail || 'Erro ao salvar beneficio', { duration: 5000 });
@@ -269,7 +269,7 @@ export default function BeneficiosPage() {
       const res = await fetch(`${API_BASE}/benefits/${id}`, { method: 'DELETE', headers: getAuthHeaders() });
       if (res.ok) {
         setRefreshKey(k => k + 1);
-        toast.success('Beneficio cancelado', { duration: 4000 });
+        toast.success('Benefício cancelado', { duration: 4000 });
       } else {
         const err = await res.json().catch(() => null);
         toast.error(err?.detail || 'Erro ao cancelar beneficio', { duration: 5000 });
@@ -287,9 +287,9 @@ export default function BeneficiosPage() {
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">
               <Gift className="h-6 w-6" />
-              Gestao de Beneficios
+              Gestão de Benefícios
             </h1>
-            <p className="text-muted-foreground">Beneficios oferecidos aos colaboradores</p>
+            <p className="text-muted-foreground">Benefícios oferecidos aos colaboradores</p>
           </div>
         </div>
         <div className="flex gap-2">
@@ -297,7 +297,7 @@ export default function BeneficiosPage() {
             <Filter className="h-4 w-4 mr-1" /> Todos
           </Button>
           <Button type="button" size="sm" onClick={() => { resetForm(); setShowForm(true); }}>
-            <Plus className="h-4 w-4 mr-1" /> Novo Beneficio
+            <Plus className="h-4 w-4 mr-1" /> Novo Benefício
           </Button>
         </div>
       </div>
@@ -329,7 +329,7 @@ export default function BeneficiosPage() {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle>{editingId ? 'Editar Beneficio' : 'Novo Beneficio'}</CardTitle>
+              <CardTitle>{editingId ? 'Editar Benefício' : 'Novo Benefício'}</CardTitle>
               <Button type="button" variant="ghost" size="sm" onClick={() => { setShowForm(false); resetForm(); }}><X className="h-4 w-4" /></Button>
             </div>
           </CardHeader>
@@ -371,7 +371,7 @@ export default function BeneficiosPage() {
                 <input type="number" step="0.01" value={formData.employee_contribution} onChange={e => setFormData(p => ({ ...p, employee_contribution: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm" placeholder="0.00" />
               </div>
               <div>
-                <label className="text-sm font-medium mb-1 block">Data Inicio</label>
+                <label className="text-sm font-medium mb-1 block">Data Início</label>
                 <input type="date" value={formData.start_date} onChange={e => setFormData(p => ({ ...p, start_date: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm" />
               </div>
               <div>
@@ -383,14 +383,14 @@ export default function BeneficiosPage() {
                 <input type="text" value={formData.card_number} onChange={e => setFormData(p => ({ ...p, card_number: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm" placeholder="Numero do cartao beneficio" />
               </div>
               <div className="md:col-span-2">
-                <label className="text-sm font-medium mb-1 block">Observacoes</label>
-                <textarea value={formData.notes} onChange={e => setFormData(p => ({ ...p, notes: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm" rows={2} placeholder="Observacoes adicionais" />
+                <label className="text-sm font-medium mb-1 block">Observações</label>
+                <textarea value={formData.notes} onChange={e => setFormData(p => ({ ...p, notes: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm" rows={2} placeholder="Observações adicionais" />
               </div>
             </div>
             <div className="flex gap-2 mt-4">
               <Button type="button" size="sm" disabled={saving} onClick={handleSave}>
                 {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />}
-                {saving ? 'Salvando...' : editingId ? 'Atualizar Beneficio' : 'Criar Beneficio'}
+                {saving ? 'Salvando...' : editingId ? 'Atualizar Benefício' : 'Criar Benefício'}
               </Button>
               <Button type="button" variant="outline" size="sm" onClick={() => { setShowForm(false); resetForm(); }}>Cancelar</Button>
             </div>
@@ -424,7 +424,7 @@ export default function BeneficiosPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <DollarSign className="h-5 w-5 text-blue-600" />
-                    <span className="text-sm font-medium">Custo Total de Beneficios do Colaborador</span>
+                    <span className="text-sm font-medium">Custo Total de Benefícios do Colaborador</span>
                   </div>
                   <Button variant="ghost" size="sm" onClick={() => { setSelectedEmployeeTotal(null); setEmployeeTotal(null); }}>
                     <X className="h-4 w-4" />
@@ -436,7 +436,7 @@ export default function BeneficiosPage() {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-2 text-sm">
                     <div><span className="text-muted-foreground">Custo empresa:</span><br /><span className="font-bold text-blue-700">{fmt(employeeTotal.total_company ?? employeeTotal.company_total ?? employeeTotal.total_empresa)}</span></div>
                     <div><span className="text-muted-foreground">Desc. funcionario:</span><br /><span className="font-bold">{fmt(employeeTotal.total_employee ?? employeeTotal.employee_total ?? employeeTotal.total_funcionario)}</span></div>
-                    <div><span className="text-muted-foreground">Beneficios ativos:</span><br /><span className="font-bold">{employeeTotal.active_count ?? employeeTotal.total_benefits ?? employeeTotal.total_ativos ?? '-'}</span></div>
+                    <div><span className="text-muted-foreground">Benefícios ativos:</span><br /><span className="font-bold">{employeeTotal.active_count ?? employeeTotal.total_benefits ?? employeeTotal.total_ativos ?? '-'}</span></div>
                     <div><span className="text-muted-foreground">Custo total:</span><br /><span className="font-bold text-green-700">{fmt(employeeTotal.grand_total ?? employeeTotal.total ?? ((employeeTotal.total_company || 0) + (employeeTotal.total_employee || 0)))}</span></div>
                   </div>
                 ) : (
@@ -449,7 +449,7 @@ export default function BeneficiosPage() {
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle>Beneficios por Colaborador</CardTitle>
+                <CardTitle>Benefícios por Colaborador</CardTitle>
                 <div className="relative w-64">
                   <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                   <input
@@ -468,7 +468,7 @@ export default function BeneficiosPage() {
                   <Inbox className="h-12 w-12 mb-3" />
                   <p className="font-medium">Nenhum beneficio encontrado</p>
                   <p className="text-sm text-muted-foreground mt-1">
-                    {searchTerm ? 'Tente outra busca.' : 'Clique em "Novo Beneficio" para adicionar.'}
+                    {searchTerm ? 'Tente outra busca.' : 'Clique em "Novo Benefício" para adicionar.'}
                   </p>
                 </div>
               ) : (
@@ -483,7 +483,7 @@ export default function BeneficiosPage() {
                         <TableHead>Desc. Funcionario</TableHead>
                         <TableHead className="cursor-pointer select-none" onClick={() => handleSort('start_date')}>Vigencia{sortIcon('start_date')}</TableHead>
                         <TableHead className="cursor-pointer select-none" onClick={() => handleSort('status')}>Status{sortIcon('status')}</TableHead>
-                        <TableHead>Acoes</TableHead>
+                        <TableHead>Ações</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>

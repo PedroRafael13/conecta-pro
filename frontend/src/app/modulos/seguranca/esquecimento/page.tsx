@@ -163,7 +163,7 @@ export default function EsquecimentoPage() {
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => handleOpenForm('full')}>
                 <Trash2 className="h-4 w-4 mr-2" />
-                Exclusao Completa
+                Exclusão Completa
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleOpenForm('personal')}>
                 <AlertCircle className="h-4 w-4 mr-2" />
@@ -270,7 +270,7 @@ export default function EsquecimentoPage() {
                   <TableHead>Status</TableHead>
                   <TableHead>Solicitado em</TableHead>
                   <TableHead>Concluido em</TableHead>
-                  <TableHead className="w-[60px]">Acoes</TableHead>
+                  <TableHead className="w-[60px]">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

@@ -120,7 +120,7 @@ export default function FuncionariosPage() {
         method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(payload),
       });
       if (res.ok) {
-        toast.success('Deducao criada com sucesso!', { duration: 4000 });
+        toast.success('Dedução criada com sucesso!', { duration: 4000 });
         setShowDeductionForm(false);
         setDeductionForm({ tipo: 'consignado', descricao: '', valor: '', percentual: '', base_calculo: 'fixo', total_parcelas: '', data_inicio: '', data_fim: '' });
         await loadDeductions(editingId);
@@ -474,9 +474,9 @@ export default function FuncionariosPage() {
               {activeTab === 'deducoes' && (
                 <div className="col-span-full space-y-4">
                   <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium">Deducoes do funcionario (consignados, pensoes, emprestimos)</p>
+                    <p className="text-sm font-medium">Deduções do funcionário (consignados, pensoes, emprestimos)</p>
                     <Button size="sm" variant="outline" onClick={() => setShowDeductionForm(true)}>
-                      <Plus className="h-4 w-4 mr-1" /> Nova Deducao
+                      <Plus className="h-4 w-4 mr-1" /> Nova Dedução
                     </Button>
                   </div>
                   {showDeductionForm && (
@@ -496,7 +496,7 @@ export default function FuncionariosPage() {
                           <input type="text" value={deductionForm.descricao} onChange={e => setDeductionForm(p => ({ ...p, descricao: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm" placeholder="Ex: Emprestimo BMG" />
                         </div>
                         <div>
-                          <label className="text-sm font-medium mb-1 block">Base Calculo</label>
+                          <label className="text-sm font-medium mb-1 block">Base Cálculo</label>
                           <select value={deductionForm.base_calculo} onChange={e => setDeductionForm(p => ({ ...p, base_calculo: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm">
                             <option value="fixo">Valor Fixo</option>
                             <option value="bruto">% Salario Bruto</option>
@@ -516,7 +516,7 @@ export default function FuncionariosPage() {
                           <input type="number" min="1" value={deductionForm.total_parcelas} onChange={e => setDeductionForm(p => ({ ...p, total_parcelas: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm" placeholder="Ex: 36" />
                         </div>
                         <div>
-                          <label className="text-sm font-medium mb-1 block">Data Inicio *</label>
+                          <label className="text-sm font-medium mb-1 block">Data Início *</label>
                           <input type="date" value={deductionForm.data_inicio} onChange={e => setDeductionForm(p => ({ ...p, data_inicio: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm" />
                         </div>
                         <div>
@@ -527,7 +527,7 @@ export default function FuncionariosPage() {
                       <div className="flex gap-2">
                         <Button size="sm" disabled={deductionSaving} onClick={handleCreateDeduction}>
                           {deductionSaving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />}
-                          {deductionSaving ? 'Salvando...' : 'Criar Deducao'}
+                          {deductionSaving ? 'Salvando...' : 'Criar Dedução'}
                         </Button>
                         <Button variant="outline" size="sm" onClick={() => setShowDeductionForm(false)}>Cancelar</Button>
                       </div>
@@ -572,7 +572,7 @@ export default function FuncionariosPage() {
                     <div className="border rounded-md p-3 bg-blue-50/50 space-y-2">
                       <p className="text-sm font-medium text-blue-800">Resumo do Perfil Completo</p>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-                        {profileData.benefits_count != null && <div><span className="text-muted-foreground">Beneficios ativos:</span><br /><span className="font-bold">{profileData.benefits_count}</span></div>}
+                        {profileData.benefits_count != null && <div><span className="text-muted-foreground">Benefícios ativos:</span><br /><span className="font-bold">{profileData.benefits_count}</span></div>}
                         {profileData.contract_type && <div><span className="text-muted-foreground">Tipo contrato:</span><br /><span className="font-bold">{profileData.contract_type}</span></div>}
                         {profileData.contract_start_date && <div><span className="text-muted-foreground">Inicio contrato:</span><br /><span className="font-bold">{profileData.contract_start_date}</span></div>}
                         {profileData.base_salary != null && <div><span className="text-muted-foreground">Salario base:</span><br /><span className="font-bold">R$ {Number(profileData.base_salary).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span></div>}

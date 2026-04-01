@@ -104,12 +104,12 @@ const OportunidadeFormModal: React.FC<OportunidadeFormModalProps> = ({
         data-testid="input-responsavel"
       />
 
-      <label htmlFor="observacoes">Observacoes</label>
+      <label htmlFor="observacoes">Observações</label>
       <textarea
         id="observacoes"
         value={form.observacoes}
         onChange={(e) => setForm({ ...form, observacoes: e.target.value })}
-        placeholder="Observacoes sobre a oportunidade..."
+        placeholder="Observações sobre a oportunidade..."
         data-testid="input-observacoes"
       />
 

@@ -91,7 +91,7 @@ export function OccurrenceResolveModal({
 
   const validateForm = (): boolean => {
     if (!formData.resolution_notes.trim()) {
-      setError('Observacoes da resolucao sao obrigatorias');
+      setError('Observações da resolucao sao obrigatorias');
       return false;
     }
     return true;
@@ -153,10 +153,10 @@ export function OccurrenceResolveModal({
           </p>
         </div>
 
-        {/* Observacoes da Resolucao */}
+        {/* Observações da Resolucao */}
         <div>
           <label className="block text-sm font-medium text-[hsl(var(--foreground))] mb-1">
-            Observacoes da Resolucao *
+            Observações da Resolucao *
           </label>
           <textarea
             name="resolution_notes"

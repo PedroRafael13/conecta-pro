@@ -84,7 +84,7 @@ export function BankTransactionDetailModal({
       isOpen={isOpen}
       onClose={onClose}
       title="Detalhes da Transacao"
-      description="Informacoes completas da transacao bancaria"
+      description="Informações completas da transacao bancaria"
       size="md"
     >
       <div className="space-y-4">

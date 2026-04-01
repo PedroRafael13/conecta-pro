@@ -75,7 +75,7 @@ export function DctfwebDetailModal({ isOpen, onClose, declaracao }: DctfwebDetai
       isOpen={isOpen}
       onClose={onClose}
       title="Detalhes da DCTFWeb"
-      description={`Competencia: ${declaracao.competencia || '-'}`}
+      description={`Competência: ${declaracao.competencia || '-'}`}
       size="lg"
     >
       <div className="space-y-6">
@@ -92,7 +92,7 @@ export function DctfwebDetailModal({ isOpen, onClose, declaracao }: DctfwebDetai
           <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-lg p-4">
             <div className="flex items-center gap-2 mb-2">
               <Calendar className="w-4 h-4 text-[hsl(var(--muted-foreground))]" />
-              <span className="text-sm font-medium text-[hsl(var(--foreground))]">Competencia</span>
+              <span className="text-sm font-medium text-[hsl(var(--foreground))]">Competência</span>
             </div>
             <p className="text-[hsl(var(--foreground))]">{declaracao.competencia || '-'}</p>
           </div>
@@ -169,10 +169,10 @@ export function DctfwebDetailModal({ isOpen, onClose, declaracao }: DctfwebDetai
           </div>
         )}
 
-        {/* Observacoes */}
+        {/* Observações */}
         {declaracao.observacoes && (
           <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-lg p-4">
-            <span className="text-sm font-medium text-[hsl(var(--foreground))]">Observacoes</span>
+            <span className="text-sm font-medium text-[hsl(var(--foreground))]">Observações</span>
             <p className="text-sm text-[hsl(var(--foreground))] mt-2 whitespace-pre-wrap">
               {declaracao.observacoes}
             </p>

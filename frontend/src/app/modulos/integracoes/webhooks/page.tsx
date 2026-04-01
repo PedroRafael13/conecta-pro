@@ -237,7 +237,7 @@ export default function WebhooksPage() {
                   <TableHead>Eventos</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Ultimo disparo</TableHead>
-                  <TableHead className="w-[80px]">Acoes</TableHead>
+                  <TableHead className="w-[80px]">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

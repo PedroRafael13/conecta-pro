@@ -41,7 +41,7 @@ export default function AjudaMedicamentoPage() {
             Ajuda Medicamento
           </h1>
           <p className="text-muted-foreground">
-            Beneficio previsto em convencao coletiva para colaboradores afastados
+            Benefício previsto em convenção coletiva para colaboradores afastados
           </p>
         </div>
         <Button variant="outline" onClick={handleRefresh} disabled={isLoading}>
@@ -149,7 +149,7 @@ export default function AjudaMedicamentoPage() {
                 <TableRow>
                   <TableHead>Nome</TableHead>
                   <TableHead>Cargo</TableHead>
-                  <TableHead>Data Inicio Afastamento</TableHead>
+                  <TableHead>Data Início Afastamento</TableHead>
                   <TableHead>Valor Mensal</TableHead>
                 </TableRow>
               </TableHeader>

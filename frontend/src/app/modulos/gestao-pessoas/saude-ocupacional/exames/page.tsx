@@ -159,7 +159,7 @@ export default function ExamesPage() {
                       <SelectItem value="admissional">Admissional</SelectItem>
                       <SelectItem value="periodico">Periodico</SelectItem>
                       <SelectItem value="retorno_trabalho">Retorno ao Trabalho</SelectItem>
-                      <SelectItem value="mudanca_funcao">Mudanca de Funcao</SelectItem>
+                      <SelectItem value="mudanca_funcao">Mudanca de Função</SelectItem>
                       <SelectItem value="demissional">Demissional</SelectItem>
                     </SelectContent>
                   </Select>
@@ -183,12 +183,12 @@ export default function ExamesPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="observacoes">Observacoes</Label>
+                  <Label htmlFor="observacoes">Observações</Label>
                   <Input
                     id="observacoes"
                     value={formData.observacoes}
                     onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
-                    placeholder="Observacoes adicionais"
+                    placeholder="Observações adicionais"
                   />
                 </div>
               </div>

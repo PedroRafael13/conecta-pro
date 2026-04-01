@@ -129,7 +129,7 @@ export default function CentralRelatoriosPage() {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (doc as any).autoTable({
             startY: yPos,
-            head: [['Certidao', 'Situacao', 'Validade', 'Dias', 'Status']],
+            head: [['Certidao', 'Situação', 'Validade', 'Dias', 'Status']],
             body: tableData,
             styles: { fontSize: 8 },
             headStyles: { fillColor: [10, 37, 64] },

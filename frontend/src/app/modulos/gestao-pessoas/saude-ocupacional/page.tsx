@@ -65,7 +65,7 @@ const subPages = [
   },
   {
     title: 'Ajuda Medicamento',
-    description: 'Beneficio CCT Clausula 15a - Auxilio medicamento R$ 300/mes',
+    description: 'Benefício CCT Clausula 15a - Auxilio medicamento R$ 300/mes',
     icon: Pill,
     href: '/modulos/gestao-pessoas/saude-ocupacional/ajuda-medicamento',
     color: 'text-emerald-600',

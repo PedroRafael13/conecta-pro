@@ -148,7 +148,7 @@ export function FeatureFlagDetailModal({
                 />
               </div>
               <div className="grid gap-2">
-                <Label className="text-xs">Data Inicio</Label>
+                <Label className="text-xs">Data Início</Label>
                 <Input
                   type="date"
                   value={gradualForm.start_date}

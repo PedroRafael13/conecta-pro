@@ -58,7 +58,7 @@ export function AllocationDetailModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Detalhes da Alocacao"
+      title="Detalhes da Alocação"
       description={allocation.id}
       size="lg"
     >
@@ -69,7 +69,7 @@ export function AllocationDetailModal({
               {ALLOCATION_STATUS_LABELS[allocation.status as AllocationStatus] || allocation.status}
             </span>
             <p className="text-sm text-[hsl(var(--muted-foreground))] mt-2">
-              Alocacao {allocation.is_current ? 'vigente' : 'nao vigente'}
+              Alocação {allocation.is_current ? 'vigente' : 'nao vigente'}
             </p>
           </div>
           <div className="text-right text-xs text-[hsl(var(--muted-foreground))]">
@@ -127,12 +127,12 @@ export function AllocationDetailModal({
           <div>
             <h3 className="text-sm font-medium text-[hsl(var(--foreground))] mb-2 flex items-center gap-2">
               <FileText className="w-4 h-4" />
-              Observacoes
+              Observações
             </h3>
             <div className="bg-[hsl(var(--muted))]/50 rounded-lg p-3 text-sm text-[hsl(var(--foreground))] space-y-2">
               {allocation.role && (
                 <p>
-                  <span className="text-[hsl(var(--muted-foreground))]">Funcao:</span> {allocation.role}
+                  <span className="text-[hsl(var(--muted-foreground))]">Função:</span> {allocation.role}
                 </p>
               )}
               {allocation.notes && (
@@ -156,7 +156,7 @@ export function AllocationDetailModal({
         </Button>
         {onTerminate && allocation.status === 'active' && (
           <Button variant="primary" onClick={onTerminate}>
-            Encerrar Alocacao
+            Encerrar Alocação
           </Button>
         )}
       </ModalFooter>

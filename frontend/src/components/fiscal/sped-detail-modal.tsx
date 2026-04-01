@@ -181,12 +181,12 @@ export function SpedDetailModal({ isOpen, onClose, sped }: SpedDetailModalProps)
           </div>
         )}
 
-        {/* Observacoes */}
+        {/* Observações */}
         {sped.observacoes && (
           <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-lg p-4">
             <div className="flex items-center gap-2 mb-2">
               <FileText className="w-4 h-4 text-[hsl(var(--muted-foreground))]" />
-              <span className="text-sm font-medium text-[hsl(var(--foreground))]">Observacoes</span>
+              <span className="text-sm font-medium text-[hsl(var(--foreground))]">Observações</span>
             </div>
             <p className="text-sm text-[hsl(var(--foreground))] whitespace-pre-wrap">
               {sped.observacoes}

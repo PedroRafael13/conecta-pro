@@ -121,12 +121,12 @@ export default function FechamentoPage() {
 
       {fechamentoMutation.isSuccess && (
         <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm">
-          Competencia fechada com sucesso!
+          Competência fechada com sucesso!
         </div>
       )}
 
       <div className="flex items-center gap-4">
-        <label className="text-sm text-gray-600">Competencia:</label>
+        <label className="text-sm text-gray-600">Competência:</label>
         <select
           value={selectedMonth}
           onChange={(e) => setSelectedMonth(Number(e.target.value))}
@@ -221,7 +221,7 @@ export default function FechamentoPage() {
           className="px-6 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors flex items-center gap-2"
         >
           <Lock className="h-4 w-4" />
-          Fechar Competencia
+          Fechar Competência
         </button>
       </div>
 

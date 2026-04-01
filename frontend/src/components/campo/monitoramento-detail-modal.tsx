@@ -51,7 +51,7 @@ export function MonitoramentoDetailModal({ isOpen, onClose, evento }: Monitorame
       isOpen={isOpen}
       onClose={onClose}
       title="Detalhes do Evento"
-      description="Informacoes do evento de monitoramento"
+      description="Informações do evento de monitoramento"
       size="lg"
     >
       <div className="grid grid-cols-2 gap-6">

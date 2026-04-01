@@ -67,7 +67,7 @@ const subModules: SubModule[] = [
     bgColor: 'bg-emerald-50',
   },
   {
-    title: 'Ponto Eletronico',
+    title: 'Ponto Eletrônico',
     description: 'Batida facial, geolocalizacao, offline e justificativas',
     href: '/modulos/gestao-pessoas/ponto',
     icon: Clock,

@@ -16,7 +16,7 @@ interface AuditDetailModalProps {
 const ACTION_LABELS: Record<string, string> = {
   data_access: 'Acesso a Dados',
   data_modification: 'Modificacao de Dados',
-  data_deletion: 'Exclusao de Dados',
+  data_deletion: 'Exclusão de Dados',
   data_export: 'Exportacao de Dados',
   security_incident: 'Incidente de Seguranca',
 };

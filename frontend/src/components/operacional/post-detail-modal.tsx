@@ -138,7 +138,7 @@ export function PostDetailModal({
           )}
         </div>
 
-        {/* Informacoes Grid */}
+        {/* Informações Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Turno */}
           <div>
@@ -332,12 +332,12 @@ export function PostDetailModal({
           </div>
         )}
 
-        {/* Observacoes */}
+        {/* Observações */}
         {post.notes && (
           <div>
             <h3 className="text-sm font-medium text-[hsl(var(--foreground))] mb-3 flex items-center gap-2">
               <FileText className="w-4 h-4" />
-              Observacoes
+              Observações
             </h3>
             <div className="bg-[hsl(var(--muted))]/50 rounded-lg p-3">
               <p className="text-sm text-[hsl(var(--foreground))] whitespace-pre-wrap">

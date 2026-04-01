@@ -175,10 +175,10 @@ export function CertidaoDetailModal({ isOpen, onClose, certidao }: CertidaoDetai
           </div>
         </div>
 
-        {/* Observacoes */}
+        {/* Observações */}
         {certidao.observacoes && (
           <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-lg p-4">
-            <span className="text-sm font-medium text-[hsl(var(--foreground))]">Observacoes</span>
+            <span className="text-sm font-medium text-[hsl(var(--foreground))]">Observações</span>
             <p className="text-sm text-[hsl(var(--foreground))] mt-2 whitespace-pre-wrap">
               {certidao.observacoes}
             </p>

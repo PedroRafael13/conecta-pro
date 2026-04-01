@@ -36,11 +36,11 @@ const statusConfig: Record<string, { label: string; className: string }> = {
 };
 
 const tipoConfig: Record<string, { label: string; description: string }> = {
-  'S-1000': { label: 'S-1000', description: 'Informacoes do Empregador' },
+  'S-1000': { label: 'S-1000', description: 'Informações do Empregador' },
   'S-1200': { label: 'S-1200', description: 'Remuneracao do Trabalhador' },
   'S-1210': { label: 'S-1210', description: 'Pagamentos de Rendimentos' },
   'S-2190': { label: 'S-2190', description: 'Registro Preliminar' },
-  'S-2200': { label: 'S-2200', description: 'Cadastramento Inicial / Admissao' },
+  'S-2200': { label: 'S-2200', description: 'Cadastramento Inicial / Admissão' },
   'S-2205': { label: 'S-2205', description: 'Alteracao de Dados Cadastrais' },
   'S-2206': { label: 'S-2206', description: 'Alteracao de Contrato' },
   'S-2230': { label: 'S-2230', description: 'Afastamento Temporario' },
@@ -48,7 +48,7 @@ const tipoConfig: Record<string, { label: string; description: string }> = {
   'S-2300': { label: 'S-2300', description: 'Trabalhador Sem Vinculo' },
   'S-2399': { label: 'S-2399', description: 'Termino TSV' },
   'S-2500': { label: 'S-2500', description: 'Processo Trabalhista' },
-  'S-3000': { label: 'S-3000', description: 'Exclusao de Eventos' },
+  'S-3000': { label: 'S-3000', description: 'Exclusão de Eventos' },
 };
 
 const PAGE_SIZE = 12;
@@ -105,7 +105,7 @@ export default function ESocialPage() {
             (admData.items || admData || []).forEach((a: any) => {
               evts.push({
                 id: a.id,
-                evento: `Admissao - ${a.nome || a.candidate_name || 'N/A'}`,
+                evento: `Admissão - ${a.nome || a.candidate_name || 'N/A'}`,
                 tipo: 'S-2200',
                 colaborador: a.nome || a.candidate_name,
                 cpf: a.cpf || '',
@@ -251,7 +251,7 @@ export default function ESocialPage() {
               <ShieldCheck className="h-6 w-6" />
               eSocial - Eventos
             </h1>
-            <p className="text-muted-foreground">Gestao de eventos e obrigacoes do eSocial</p>
+            <p className="text-muted-foreground">Gestão de eventos e obrigações do eSocial</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -412,7 +412,7 @@ export default function ESocialPage() {
                         <TableHead className="cursor-pointer select-none" onClick={() => handleSort('status')}>Status{sortIcon('status')}</TableHead>
                         <TableHead className="cursor-pointer select-none" onClick={() => handleSort('data')}>Data{sortIcon('data')}</TableHead>
                         <TableHead>Protocolo</TableHead>
-                        <TableHead>Acoes</TableHead>
+                        <TableHead>Ações</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>

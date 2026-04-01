@@ -582,7 +582,7 @@ export default function OportunidadesPage() {
                     Status
                   </th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-[hsl(var(--muted-foreground))] uppercase">
-                    Acoes
+                    Ações
                   </th>
                 </tr>
               </thead>
@@ -765,7 +765,7 @@ export default function OportunidadesPage() {
                   disabled={scoutMutation.isPending}
                 />
                 <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">
-                  Separe as palavras-chave com virgula
+                  Separe as palavras-chave com vírgula
                 </p>
               </div>
 

@@ -266,7 +266,7 @@ export default function FeatureFlagsPage() {
                   <TableHead>Status</TableHead>
                   <TableHead>Rollout</TableHead>
                   <TableHead>Categoria</TableHead>
-                  <TableHead className="w-[80px]">Acoes</TableHead>
+                  <TableHead className="w-[80px]">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

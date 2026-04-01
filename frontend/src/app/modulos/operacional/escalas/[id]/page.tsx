@@ -260,7 +260,7 @@ export default function ScaleDetailPage() {
             {/* Left Column */}
             <div>
               <h2 className="text-sm font-medium text-[hsl(var(--muted-foreground))] mb-4">
-                Informacoes da Escala
+                Informações da Escala
               </h2>
 
               <div className="space-y-3">
@@ -371,7 +371,7 @@ export default function ScaleDetailPage() {
 
               {scale.notes && (
                 <div className="mt-4 p-3 bg-[hsl(var(--muted))]/30 rounded-lg">
-                  <p className="text-xs text-[hsl(var(--muted-foreground))] mb-1">Observacoes</p>
+                  <p className="text-xs text-[hsl(var(--muted-foreground))] mb-1">Observações</p>
                   <p className="text-sm text-[hsl(var(--foreground))]">{scale.notes}</p>
                 </div>
               )}

@@ -261,10 +261,10 @@ export function ReimbursementFormModal({
           </div>
         )}
 
-        {/* Informacoes Basicas */}
+        {/* Informações Basicas */}
         <div>
           <h3 className="text-sm font-medium text-[hsl(var(--foreground))] mb-4">
-            Informacoes Basicas
+            Informações Basicas
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
@@ -281,7 +281,7 @@ export function ReimbursementFormModal({
             </div>
             <div>
               <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
-                Data Inicio *
+                Data Início *
               </label>
               <Input
                 type="date"
@@ -516,19 +516,19 @@ export function ReimbursementFormModal({
           </div>
         </div>
 
-        {/* Observacoes */}
+        {/* Observações */}
         <div>
           <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
-            Observacoes
+            Observações
           </label>
           <textarea
             name="notes"
             value={formData.notes}
             onChange={handleChange}
             rows={2}
-            placeholder="Observacoes adicionais..."
+            placeholder="Observações adicionais..."
             className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))] resize-none"
-           aria-label="Observacoes adicionais..." />
+           aria-label="Observações adicionais..." />
         </div>
 
         <ModalFooter>

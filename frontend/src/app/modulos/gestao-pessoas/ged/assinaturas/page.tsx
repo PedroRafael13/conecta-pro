@@ -401,7 +401,7 @@ export default function AssinaturasPage() {
                       <th className="text-left p-3 font-medium text-muted-foreground">Signatario</th>
                       <th className="text-left p-3 font-medium text-muted-foreground">Status</th>
                       <th className="text-left p-3 font-medium text-muted-foreground">Data</th>
-                      <th className="text-left p-3 font-medium text-muted-foreground">Acoes</th>
+                      <th className="text-left p-3 font-medium text-muted-foreground">Ações</th>
                     </tr>
                   </thead>
                   <tbody>{pending.map((sig) => renderSignatureRow(sig, true))}</tbody>

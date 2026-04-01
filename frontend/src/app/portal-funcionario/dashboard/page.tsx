@@ -27,10 +27,10 @@ export default function PortalDashboardPage() {
 
   const cards = [
     { icon: FileText, label: 'Contracheques', desc: 'Holerites e demonstrativos', href: '/portal-funcionario/contracheques', color: 'bg-blue-50 text-blue-600' },
-    { icon: Calendar, label: 'Ferias', desc: 'Saldo e solicitacoes', href: '/portal-funcionario/ferias', color: 'bg-green-50 text-green-600' },
+    { icon: Calendar, label: 'Férias', desc: 'Saldo e solicitacoes', href: '/portal-funcionario/ferias', color: 'bg-green-50 text-green-600' },
     { icon: FolderOpen, label: 'Documentos', desc: 'Declaracoes e comprovantes', href: '/portal-funcionario/documentos', color: 'bg-purple-50 text-purple-600' },
     { icon: GraduationCap, label: 'Treinamentos', desc: 'Certificados e cursos', href: '/portal-funcionario/treinamentos', color: 'bg-orange-50 text-orange-600' },
-    { icon: Bell, label: 'Notificacoes', desc: 'Avisos e comunicados', href: '/portal-funcionario/notificacoes', color: 'bg-pink-50 text-pink-600' },
+    { icon: Bell, label: 'Notificações', desc: 'Avisos e comunicados', href: '/portal-funcionario/notificacoes', color: 'bg-pink-50 text-pink-600' },
     { icon: User, label: 'Meus Dados', desc: 'Dados pessoais e contato', href: '/portal-funcionario/dados-pessoais', color: 'bg-teal-50 text-teal-600' },
   ];
 

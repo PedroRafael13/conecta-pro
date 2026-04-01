@@ -349,7 +349,7 @@ export default function ContatosPage() {
                   <TableHead>Telefone</TableHead>
                   <TableHead>Cargo</TableHead>
                   <TableHead>Cliente</TableHead>
-                  <TableHead className="w-[80px]">Acoes</TableHead>
+                  <TableHead className="w-[80px]">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

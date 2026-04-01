@@ -45,7 +45,7 @@ const sameDay = (a: Date, b: Date) =>
   a.getMonth() === b.getMonth() &&
   a.getDate() === b.getDate();
 
-// Funcao para determinar cor do status
+// Função para determinar cor do status
 const getStatusColor = (status: Shift['status']) => {
   switch (status) {
     case 'completed':

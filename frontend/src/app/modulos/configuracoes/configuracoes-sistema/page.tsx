@@ -85,7 +85,7 @@ export default function ConfiguracoesSistemaPage() {
       <div>
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <Settings className="h-6 w-6" />
-          Configuracoes do Sistema
+          Configurações do Sistema
         </h1>
         <p className="text-muted-foreground">Configs globais e settings por tenant</p>
       </div>

@@ -56,7 +56,7 @@ const statusConfig: Record<string, { label: string; color: string; icon: React.R
 };
 
 const tipoEventoLabels: Record<string, string> = {
-  'R-1000': 'R-1000 - Informacoes do Contribuinte',
+  'R-1000': 'R-1000 - Informações do Contribuinte',
   'R-2010': 'R-2010 - Retencao Contribuicao Previdenciaria',
   'R-2099': 'R-2099 - Fechamento dos Eventos',
   'R-4010': 'R-4010 - Pagamentos/Creditos PF',
@@ -119,7 +119,7 @@ export function ReinfDetailModal({ isOpen, onClose, evento }: ReinfDetailModalPr
           <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-lg p-4">
             <div className="flex items-center gap-2 mb-2">
               <Calendar className="w-4 h-4 text-[hsl(var(--muted-foreground))]" />
-              <span className="text-sm font-medium text-[hsl(var(--foreground))]">Competencia</span>
+              <span className="text-sm font-medium text-[hsl(var(--foreground))]">Competência</span>
             </div>
             <p className="text-[hsl(var(--foreground))]">{evento.competencia || '-'}</p>
           </div>

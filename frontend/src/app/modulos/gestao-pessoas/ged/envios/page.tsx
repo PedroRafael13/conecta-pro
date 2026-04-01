@@ -90,8 +90,8 @@ const statusConfig: Record<string, { label: string; color: string }> = {
 };
 
 const typeLabels: Record<string, string> = {
-  ADMISSAO: 'Admissao',
-  DEMISSAO: 'Demissao',
+  ADMISSAO: 'Admissão',
+  DEMISSAO: 'Demissão',
   MENSAL: 'Mensal',
   AFASTAMENTO: 'Afastamento',
   OUTRO: 'Outro',

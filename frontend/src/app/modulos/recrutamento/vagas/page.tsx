@@ -356,7 +356,7 @@ export default function VagasPage() {
                   <TableHead>Vagas</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Criado em</TableHead>
-                  <TableHead className="text-right">Acoes</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -573,8 +573,8 @@ export default function VagasPage() {
               <Textarea value={formData.responsibilities} onChange={(e) => setFormData({ ...formData, responsibilities: e.target.value })} placeholder="Responsabilidades da funcao" rows={2} />
             </div>
             <div className="space-y-2">
-              <Label>Beneficios</Label>
-              <Textarea value={formData.benefits} onChange={(e) => setFormData({ ...formData, benefits: e.target.value })} placeholder="Beneficios oferecidos" rows={2} />
+              <Label>Benefícios</Label>
+              <Textarea value={formData.benefits} onChange={(e) => setFormData({ ...formData, benefits: e.target.value })} placeholder="Benefícios oferecidos" rows={2} />
             </div>
           </div>
           <DialogFooter>

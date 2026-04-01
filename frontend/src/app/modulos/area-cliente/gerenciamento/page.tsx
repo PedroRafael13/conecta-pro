@@ -389,7 +389,7 @@ export default function GerenciamentoAcessosPage() {
                   <th className="text-left p-3 font-medium">CNPJ</th>
                   <th className="text-left p-3 font-medium">Status Portal</th>
                   <th className="text-left p-3 font-medium">Ultimo Acesso</th>
-                  <th className="text-right p-3 font-medium">Acoes</th>
+                  <th className="text-right p-3 font-medium">Ações</th>
                 </tr>
               </thead>
               <tbody>

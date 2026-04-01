@@ -305,7 +305,7 @@ export default function EPIPage() {
                       <TableHead>Fabricante</TableHead>
                       <TableHead>Validade CA</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead className="w-[100px]">Acoes</TableHead>
+                      <TableHead className="w-[100px]">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -380,7 +380,7 @@ export default function EPIPage() {
                       <TableHead>Quantidade</TableHead>
                       <TableHead>Minimo</TableHead>
                       <TableHead>Lote</TableHead>
-                      <TableHead>Situacao</TableHead>
+                      <TableHead>Situação</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>

@@ -66,7 +66,7 @@ export default function IAPage() {
     },
     {
       title: 'Otimizacao de Escalas',
-      description: 'Alocacao otimizada de colaboradores em postos considerando competencias e custos.',
+      description: 'Alocação otimizada de colaboradores em postos considerando competencias e custos.',
       icon: CalendarClock,
       color: 'text-purple-400',
       bgColor: 'bg-purple-900/30',

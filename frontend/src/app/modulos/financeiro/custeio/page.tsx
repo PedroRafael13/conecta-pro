@@ -497,7 +497,7 @@ export default function CusteioABCPage() {
                 <TableHead>Tipo</TableHead>
                 <TableHead>Unidade</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="text-right">Acoes</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -544,7 +544,7 @@ export default function CusteioABCPage() {
                 <TableHead>Centro de Custo</TableHead>
                 <TableHead>Custo Total</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="text-right">Acoes</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -591,7 +591,7 @@ export default function CusteioABCPage() {
                 <TableHead>Tipo</TableHead>
                 <TableHead>Custo Total</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="text-right">Acoes</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -639,7 +639,7 @@ export default function CusteioABCPage() {
                 <TableHead>Custo Direto</TableHead>
                 <TableHead>Custo Indireto</TableHead>
                 <TableHead>Custo Total</TableHead>
-                <TableHead className="text-right">Acoes</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

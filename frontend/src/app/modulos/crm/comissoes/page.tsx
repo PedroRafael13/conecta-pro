@@ -294,7 +294,7 @@ export default function ComissoesPage() {
                     <TableHead>Valor Venda</TableHead>
                     <TableHead>Comissao</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="w-[80px]">Acoes</TableHead>
+                    <TableHead className="w-[80px]">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -330,7 +330,7 @@ export default function ComissoesPage() {
                               Ver detalhes
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              onClick={() => toast.info('Edicao de comissao em desenvolvimento')}
+                              onClick={() => toast.info('Edição de comissao em desenvolvimento')}
                             >
                               <Edit className="h-4 w-4 mr-2" />
                               Editar
@@ -338,7 +338,7 @@ export default function ComissoesPage() {
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                               className="text-destructive"
-                              onClick={() => toast.info('Exclusao de comissao em desenvolvimento')}
+                              onClick={() => toast.info('Exclusão de comissao em desenvolvimento')}
                             >
                               <Trash2 className="h-4 w-4 mr-2" />
                               Deletar
@@ -379,7 +379,7 @@ export default function ComissoesPage() {
                     <TableHead>Trigger</TableHead>
                     <TableHead>Vigencia</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="w-[80px]">Acoes</TableHead>
+                    <TableHead className="w-[80px]">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -422,7 +422,7 @@ export default function ComissoesPage() {
                               Ver detalhes
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              onClick={() => toast.info('Edicao de regra em desenvolvimento')}
+                              onClick={() => toast.info('Edição de regra em desenvolvimento')}
                             >
                               <Edit className="h-4 w-4 mr-2" />
                               Editar
@@ -430,7 +430,7 @@ export default function ComissoesPage() {
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                               className="text-destructive"
-                              onClick={() => toast.info('Exclusao de regra em desenvolvimento')}
+                              onClick={() => toast.info('Exclusão de regra em desenvolvimento')}
                             >
                               <Trash2 className="h-4 w-4 mr-2" />
                               Deletar

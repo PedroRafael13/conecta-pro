@@ -36,7 +36,7 @@ export function CheckinDetailModal({ isOpen, onClose, checkin }: CheckinDetailMo
       isOpen={isOpen}
       onClose={onClose}
       title="Detalhes do Check-in"
-      description="Informacoes completas do registro"
+      description="Informações completas do registro"
       size="lg"
     >
       <div className="grid grid-cols-2 gap-6">
@@ -100,11 +100,11 @@ export function CheckinDetailModal({ isOpen, onClose, checkin }: CheckinDetailMo
         </div>
       </div>
 
-      {/* Observacoes */}
+      {/* Observações */}
       <div className="mt-6 space-y-1">
         <Label className="text-muted-foreground text-xs flex items-center gap-1">
           <FileText className="w-3 h-3" />
-          Observacoes
+          Observações
         </Label>
         <div className="p-3 rounded-lg bg-[hsl(var(--muted))]/30 border border-[hsl(var(--border))]">
           <p className="text-sm text-[hsl(var(--foreground))]">

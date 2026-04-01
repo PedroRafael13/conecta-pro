@@ -189,15 +189,15 @@ export function ComodatoFormModal({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="observacoes">Observacoes</Label>
+          <Label htmlFor="observacoes">Observações</Label>
           <Textarea
             id="observacoes"
             name="observacoes"
             value={formData.observacoes}
             onChange={handleChange}
-            placeholder="Observacoes adicionais..."
+            placeholder="Observações adicionais..."
             rows={3}
-           aria-label="Observacoes Adicionais..." />
+           aria-label="Observações Adicionais..." />
         </div>
 
         <ModalFooter>

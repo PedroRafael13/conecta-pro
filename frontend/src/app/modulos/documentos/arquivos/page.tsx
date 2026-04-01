@@ -292,7 +292,7 @@ export default function ArquivosPage() {
     setSelectedCategory('outros');
   };
 
-  // Acoes do documento
+  // Ações do documento
   const handleView = async (doc: Document) => {
     try {
       const viewData = await getViewUrlApiV1GedDocumentsDocumentIdViewUrlGet(doc.id);

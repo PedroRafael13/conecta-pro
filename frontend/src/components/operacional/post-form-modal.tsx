@@ -128,14 +128,14 @@ export function PostFormModal({
     setShowRestoreAlert(false);
   };
 
-  // Funcao para aplicar mascara no CEP
+  // Função para aplicar mascara no CEP
   const formatCep = (value: string): string => {
     const cleaned = value.replace(/\D/g, '');
     if (cleaned.length <= 5) return cleaned;
     return `${cleaned.slice(0, 5)}-${cleaned.slice(5, 8)}`;
   };
 
-  // Funcao para buscar CEP na API ViaCEP
+  // Função para buscar CEP na API ViaCEP
   const fetchCep = async (cep: string) => {
     const cleanCep = cep.replace(/\D/g, '');
     if (cleanCep.length !== 8) return;

@@ -154,7 +154,7 @@ export default function OnboardingPage() {
                   <thead>
                     <tr className="border-b border-gray-800">
                       <th className="text-left p-4 text-muted-foreground font-medium">Colaborador</th>
-                      <th className="text-left p-4 text-muted-foreground font-medium">Data Admissao</th>
+                      <th className="text-left p-4 text-muted-foreground font-medium">Data Admissão</th>
                       <th className="text-center p-4 text-muted-foreground font-medium">Progresso</th>
                       <th className="text-center p-4 text-muted-foreground font-medium">Etapas</th>
                       <th className="text-center p-4 text-muted-foreground font-medium">Status</th>

@@ -130,7 +130,7 @@ export function PurchaseDetailModal({ isOpen, onClose, item, type }: PurchaseDet
                 </Badge>
               </div>
               <div className="bg-[hsl(var(--muted))]/50 rounded-lg p-3">
-                <p className="text-xs text-[hsl(var(--muted-foreground))] mb-1">Data de Criacao</p>
+                <p className="text-xs text-[hsl(var(--muted-foreground))] mb-1">Data de Criação</p>
                 <p className="text-sm font-medium text-[hsl(var(--foreground))]">
                   {formatDate(item.created_at)}
                 </p>
@@ -171,13 +171,13 @@ export function PurchaseDetailModal({ isOpen, onClose, item, type }: PurchaseDet
                 </p>
               </div>
               <div className="bg-[hsl(var(--muted))]/50 rounded-lg p-3">
-                <p className="text-xs text-[hsl(var(--muted-foreground))] mb-1">Data de Criacao</p>
+                <p className="text-xs text-[hsl(var(--muted-foreground))] mb-1">Data de Criação</p>
                 <p className="text-sm font-medium text-[hsl(var(--foreground))]">
                   {formatDate(item.created_at)}
                 </p>
               </div>
               <div className="bg-[hsl(var(--muted))]/50 rounded-lg p-3">
-                <p className="text-xs text-[hsl(var(--muted-foreground))] mb-1">Ultima Atualizacao</p>
+                <p className="text-xs text-[hsl(var(--muted-foreground))] mb-1">Última Atualização</p>
                 <p className="text-sm font-medium text-[hsl(var(--foreground))]">
                   {formatDate(item.updated_at)}
                 </p>

@@ -354,7 +354,7 @@ export default function OportunidadesPage() {
                   <TableHead>Estagio</TableHead>
                   <TableHead>Valor</TableHead>
                   <TableHead>Probabilidade</TableHead>
-                  <TableHead className="w-[80px]">Acoes</TableHead>
+                  <TableHead className="w-[80px]">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

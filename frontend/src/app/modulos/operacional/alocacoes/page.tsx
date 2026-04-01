@@ -319,7 +319,7 @@ export default function AlocacoesPage() {
               />
               <Button variant="primary" size="sm" onClick={() => setShowFormModal(true)}>
                 <Plus className="w-4 h-4 mr-2" />
-                Nova Alocacao
+                Nova Alocação
               </Button>
             </div>
           </div>
@@ -494,7 +494,7 @@ export default function AlocacoesPage() {
             </p>
             <Button onClick={() => setShowFormModal(true)}>
               <Plus className="w-4 h-4 mr-2" />
-              Nova Alocacao
+              Nova Alocação
             </Button>
           </div>
         ) : (
@@ -535,7 +535,7 @@ export default function AlocacoesPage() {
                         Status
                       </th>
                       <th className="px-4 py-3 text-right text-xs font-medium text-[hsl(var(--muted-foreground))] uppercase tracking-wider">
-                        Acoes
+                        Ações
                       </th>
                     </tr>
                   </thead>
@@ -680,7 +680,7 @@ export default function AlocacoesPage() {
       <Modal
         isOpen={showTerminateModal}
         onClose={() => setShowTerminateModal(false)}
-        title="Encerrar Alocacao"
+        title="Encerrar Alocação"
         description="Informe data e motivo do encerramento"
         size="sm"
       >
@@ -714,7 +714,7 @@ export default function AlocacoesPage() {
           </div>
           <div>
             <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
-              Observacoes
+              Observações
             </label>
             <textarea
               value={terminateData.notes || ''}

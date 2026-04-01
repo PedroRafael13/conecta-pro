@@ -102,7 +102,7 @@ export function PayableDetailModal({ isOpen, onClose, payable }: PayableDetailMo
 
         {payable.observacoes && (
           <div>
-            <p className="text-sm text-[hsl(var(--muted-foreground))]">Observacoes</p>
+            <p className="text-sm text-[hsl(var(--muted-foreground))]">Observações</p>
             <p className="font-medium whitespace-pre-wrap">{payable.observacoes}</p>
           </div>
         )}

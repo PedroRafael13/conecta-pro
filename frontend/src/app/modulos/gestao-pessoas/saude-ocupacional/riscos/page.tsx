@@ -336,12 +336,12 @@ export default function RiscosPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Setor</TableHead>
-                  <TableHead>Funcao</TableHead>
+                  <TableHead>Função</TableHead>
                   <TableHead>Agente de Risco</TableHead>
                   <TableHead>Categoria</TableHead>
                   <TableHead>Nivel</TableHead>
                   <TableHead>Fonte Geradora</TableHead>
-                  <TableHead className="w-[100px]">Acoes</TableHead>
+                  <TableHead className="w-[100px]">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -402,7 +402,7 @@ export default function RiscosPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="funcao">Funcao</Label>
+                <Label htmlFor="funcao">Função</Label>
                 <Input
                   id="funcao"
                   value={formData.funcao}
@@ -502,12 +502,12 @@ export default function RiscosPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="observacoes">Observacoes</Label>
+              <Label htmlFor="observacoes">Observações</Label>
               <Input
                 id="observacoes"
                 value={formData.observacoes}
                 onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
-                placeholder="Observacoes adicionais"
+                placeholder="Observações adicionais"
               />
             </div>
           </div>

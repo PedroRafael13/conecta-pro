@@ -26,7 +26,7 @@ export function NotificationCenter({ className = '' }: NotificationCenterProps) 
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Notificacoes
+  // Notificações
   const {
     notifications,
     isLoading,
@@ -111,7 +111,7 @@ export function NotificationCenter({ className = '' }: NotificationCenterProps) 
       <button
         onClick={handleToggle}
         className="relative p-2 rounded-lg hover:bg-[hsl(var(--muted))] transition-colors"
-        aria-label="Notificacoes"
+        aria-label="Notificações"
       >
         <Bell className="w-5 h-5 text-[hsl(var(--muted-foreground))]" />
         {totalBadge > 0 && (
@@ -128,7 +128,7 @@ export function NotificationCenter({ className = '' }: NotificationCenterProps) 
           <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 border-b border-[hsl(var(--border))] bg-[hsl(var(--card))]">
             <div className="flex items-center gap-2">
               <Bell className="w-5 h-5 text-[hsl(var(--primary))]" />
-              <h3 className="font-semibold text-[hsl(var(--foreground))]">Notificacoes</h3>
+              <h3 className="font-semibold text-[hsl(var(--foreground))]">Notificações</h3>
               {unreadTotal > 0 && (
                 <span className="px-2 py-0.5 rounded-full bg-red-500/10 text-red-500 text-xs font-medium">
                   {unreadTotal} novas
@@ -194,7 +194,7 @@ export function NotificationCenter({ className = '' }: NotificationCenterProps) 
               </div>
             )}
 
-            {/* Notificacoes */}
+            {/* Notificações */}
             {!isLoading && notifications.length > 0 && (
               <div className="divide-y divide-[hsl(var(--border))]">
                 {notifications.map((notification) => (

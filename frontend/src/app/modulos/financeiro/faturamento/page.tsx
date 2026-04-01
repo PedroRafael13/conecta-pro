@@ -687,7 +687,7 @@ export default function FaturamentoPage() {
                       { label: 'Valor Base', value: medResult.valor_base, icon: <DollarSign className="w-4 h-4" />, color: 'text-[hsl(var(--foreground))]' },
                       { label: 'Adicional HE', value: medResult.adicional_he, icon: <TrendingUp className="w-4 h-4" />, color: 'text-amber-500' },
                       { label: 'Adicional Noturno', value: medResult.adicional_noturno, icon: <TrendingUp className="w-4 h-4" />, color: 'text-blue-500' },
-                      { label: 'Deducoes', value: -medResult.deducoes, icon: <TrendingDown className="w-4 h-4" />, color: 'text-green-500' },
+                      { label: 'Deduções', value: -medResult.deducoes, icon: <TrendingDown className="w-4 h-4" />, color: 'text-green-500' },
                     ].map(({ label, value, icon, color }) => (
                       <div key={label} className="flex items-center justify-between py-2 border-b border-[hsl(var(--border))]">
                         <div className="flex items-center gap-2 text-sm text-[hsl(var(--muted-foreground))]">
@@ -788,7 +788,7 @@ export default function FaturamentoPage() {
                         <TableHead>Valor / Percentual</TableHead>
                         <TableHead>Periodicidade</TableHead>
                         <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Acoes</TableHead>
+                        <TableHead className="text-right">Ações</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>

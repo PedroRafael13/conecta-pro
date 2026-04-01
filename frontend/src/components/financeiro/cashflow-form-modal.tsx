@@ -200,19 +200,19 @@ export function CashflowFormModal({
           </div>
         </div>
 
-        {/* Observacoes */}
+        {/* Observações */}
         <div>
           <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
-            Observacoes
+            Observações
           </label>
           <textarea
             name="observacoes"
             value={formData.observacoes}
             onChange={handleChange}
             rows={3}
-            placeholder="Observacoes adicionais sobre o lancamento..."
+            placeholder="Observações adicionais sobre o lancamento..."
             className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))] resize-none"
-           aria-label="Observacoes adicionais sobre o lancamento..." />
+           aria-label="Observações adicionais sobre o lancamento..." />
         </div>
 
         <ModalFooter>

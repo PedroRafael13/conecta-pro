@@ -289,7 +289,7 @@ export default function KitsListPage() {
                     <th className="text-left py-3 px-4 font-medium text-gray-500">Docs</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-500">Assinados</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-500">Conclusao</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-500">Acoes</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-500">Ações</th>
                   </tr>
                 </thead>
                 <tbody>

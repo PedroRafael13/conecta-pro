@@ -327,7 +327,7 @@ export default function BiDashboardPage() {
 
       // Fiscal sheet
       if (bi?.fiscal.proximas) {
-        const fData = [['Tipo', 'Obrigacao', 'Competencia', 'Vencimento', 'Valor']];
+        const fData = [['Tipo', 'Obrigacao', 'Competência', 'Vencimento', 'Valor']];
         bi.fiscal.proximas.forEach(o => fData.push([o.tipo, o.nome, o.competencia, o.vencimento, String(o.valor)]));
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(fData), 'Fiscal');
       }

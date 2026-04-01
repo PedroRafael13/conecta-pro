@@ -170,7 +170,7 @@ export default function DctfwebPage() {
       {/* Period Selector */}
       <div className="flex items-center gap-4 p-4 bg-[hsl(var(--muted))] rounded-lg">
         <div>
-          <label className="block text-xs text-[hsl(var(--muted-foreground))] mb-1">Competencia</label>
+          <label className="block text-xs text-[hsl(var(--muted-foreground))] mb-1">Competência</label>
           <div className="flex gap-2">
             <select
               value={mesSelecionado}
@@ -292,7 +292,7 @@ export default function DctfwebPage() {
                 <thead>
                   <tr className="border-b border-[hsl(var(--border))]">
                     <th className="text-left p-4 text-sm font-medium text-[hsl(var(--muted-foreground))]">
-                      Competencia
+                      Competência
                     </th>
                     <th className="text-left p-4 text-sm font-medium text-[hsl(var(--muted-foreground))]">
                       Tipo
@@ -307,7 +307,7 @@ export default function DctfwebPage() {
                       Data
                     </th>
                     <th className="w-24 p-4 text-sm font-medium text-[hsl(var(--muted-foreground))]">
-                      Acoes
+                      Ações
                     </th>
                   </tr>
                 </thead>

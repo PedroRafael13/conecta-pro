@@ -258,7 +258,7 @@ export default function ContabilidadePage() {
                   <TableHead>Nome</TableHead>
                   <TableHead>Tipo</TableHead>
                   <TableHead>Natureza</TableHead>
-                  <TableHead className="text-right">Acoes</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -379,7 +379,7 @@ export default function ContabilidadePage() {
                   <TableHead>Debito</TableHead>
                   <TableHead>Credito</TableHead>
                   <TableHead>Valor</TableHead>
-                  <TableHead className="text-right">Acoes</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

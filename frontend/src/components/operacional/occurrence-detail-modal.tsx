@@ -217,7 +217,7 @@ export function OccurrenceDetailModal({
               </p>
               {occurrence.resolution_notes && (
                 <p className="text-[hsl(var(--foreground))]">
-                  <strong>Observacoes:</strong> {occurrence.resolution_notes}
+                  <strong>Observações:</strong> {occurrence.resolution_notes}
                 </p>
               )}
               {occurrence.corrective_action && (

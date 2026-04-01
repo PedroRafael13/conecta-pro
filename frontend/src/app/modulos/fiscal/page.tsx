@@ -98,7 +98,7 @@ export default function FiscalDashboardPage() {
     },
     {
       title: 'EFD-Reinf',
-      description: 'Escrituracao Fiscal Digital de Retencoes e Informacoes',
+      description: 'Escrituracao Fiscal Digital de Retencoes e Informações',
       icon: FileCode,
       href: '/modulos/fiscal/reinf',
       color: 'text-cyan-600',

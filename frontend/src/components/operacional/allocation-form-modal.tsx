@@ -161,7 +161,7 @@ export function AllocationFormModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Nova Alocacao"
+      title="Nova Alocação"
       description="Vincule um funcionario a um posto"
       size="lg"
     >
@@ -261,7 +261,7 @@ export function AllocationFormModal({
 
           <div>
             <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
-              Funcao
+              Função
             </label>
             <Input
               name="role"
@@ -323,7 +323,7 @@ export function AllocationFormModal({
               onChange={handleChange}
               className="rounded border-[hsl(var(--border))]"
              aria-label="Is Primary" />
-            Alocacao principal
+            Alocação principal
           </label>
           <label className="flex items-center gap-2 text-sm">
             <input
@@ -333,13 +333,13 @@ export function AllocationFormModal({
               onChange={handleChange}
               className="rounded border-[hsl(var(--border))]"
              aria-label="Is Temporary" />
-            Alocacao temporaria
+            Alocação temporaria
           </label>
         </div>
 
         <div>
           <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
-            Observacoes
+            Observações
           </label>
           <textarea
             name="notes"
@@ -356,7 +356,7 @@ export function AllocationFormModal({
           </Button>
           <Button type="submit" variant="primary" disabled={isLoading}>
             {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            Criar Alocacao
+            Criar Alocação
           </Button>
         </ModalFooter>
       </form>

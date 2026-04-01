@@ -329,7 +329,7 @@ export function ScaleGenerateModal({
         <div className="bg-[hsl(var(--muted))]/50 rounded-xl p-4">
           <h3 className="text-sm font-medium text-[hsl(var(--foreground))] mb-3 flex items-center gap-2">
             <Settings className="w-4 h-4" />
-            Configuracoes da Escala
+            Configurações da Escala
           </h3>
           <div className="space-y-3">
             <label className="flex items-center gap-2">

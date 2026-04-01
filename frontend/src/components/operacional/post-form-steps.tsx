@@ -201,7 +201,7 @@ export function StepConfiguracao({ formData, onChange }: StepProps) {
       </div>
       <div>
         <label htmlFor="field-post-notes" className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
-          Observacoes sobre o turno
+          Observações sobre o turno
         </label>
         <textarea
           id="field-post-notes"

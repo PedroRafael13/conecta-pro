@@ -279,7 +279,7 @@ export default function PontoPage() {
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">
               <Clock className="h-6 w-6" />
-              Ponto Eletronico
+              Ponto Eletrônico
             </h1>
             <p className="text-muted-foreground">Registro e controle de ponto dos colaboradores</p>
           </div>
@@ -482,7 +482,7 @@ export default function PontoPage() {
                         <TableHead>Saida</TableHead>
                         <TableHead>Total Horas</TableHead>
                         <TableHead className="cursor-pointer select-none" onClick={() => handleSort('status')}>Status{sortIcon('status')}</TableHead>
-                        <TableHead>Acoes</TableHead>
+                        <TableHead>Ações</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>

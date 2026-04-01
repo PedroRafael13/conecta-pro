@@ -81,7 +81,7 @@ export function SupplierDetailModal({
           </div>
         </div>
 
-        {/* Informacoes */}
+        {/* Informações */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {supplier.document && (
             <div className="flex items-start gap-3">
@@ -159,10 +159,10 @@ export function SupplierDetailModal({
           )}
         </div>
 
-        {/* Observacoes */}
+        {/* Observações */}
         {(supplier.observacoes || supplier.notes) && (
           <div className="bg-[hsl(var(--muted))] rounded-lg p-4">
-            <p className="text-xs text-[hsl(var(--muted-foreground))] mb-1">Observacoes</p>
+            <p className="text-xs text-[hsl(var(--muted-foreground))] mb-1">Observações</p>
             <p className="text-sm text-[hsl(var(--foreground))]">
               {supplier.observacoes || supplier.notes}
             </p>

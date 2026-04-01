@@ -56,7 +56,7 @@ export default function PortalLoginPage() {
 
   const features = [
     { icon: FileText, label: 'Contracheques', desc: 'Acesse seus holerites a qualquer momento' },
-    { icon: Calendar, label: 'Ferias e Licencas', desc: 'Consulte saldo e faca solicitacoes' },
+    { icon: Calendar, label: 'Férias e Licenças', desc: 'Consulte saldo e faca solicitacoes' },
     { icon: FolderOpen, label: 'Documentos', desc: 'Baixe declaracoes e comprovantes' },
   ];
 

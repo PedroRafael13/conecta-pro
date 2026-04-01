@@ -135,12 +135,12 @@ const PayableFormModal: React.FC<PayableFormModalProps> = ({
           ))}
         </select>
 
-        <label htmlFor="observacoes">Observacoes</label>
+        <label htmlFor="observacoes">Observações</label>
         <textarea
           id="observacoes"
           value={form.observacoes}
           onChange={(e) => updateField('observacoes', e.target.value)}
-          placeholder="Observacoes adicionais..."
+          placeholder="Observações adicionais..."
           data-testid="input-observacoes"
         />
 

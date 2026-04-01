@@ -44,7 +44,7 @@ interface AuditLogsData {
 const ACTION_LABELS: Record<string, string> = {
   data_access: 'Acesso a Dados',
   data_modification: 'Modificacao de Dados',
-  data_deletion: 'Exclusao de Dados',
+  data_deletion: 'Exclusão de Dados',
   data_export: 'Exportacao de Dados',
   security_incident: 'Incidente de Seguranca',
 };
@@ -219,10 +219,10 @@ export default function AuditoriaLGPDPage() {
                   <SelectValue placeholder="Acao" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todas as Acoes</SelectItem>
+                  <SelectItem value="all">Todas as Ações</SelectItem>
                   <SelectItem value="data_access">Acesso a Dados</SelectItem>
                   <SelectItem value="data_modification">Modificacao de Dados</SelectItem>
-                  <SelectItem value="data_deletion">Exclusao de Dados</SelectItem>
+                  <SelectItem value="data_deletion">Exclusão de Dados</SelectItem>
                   <SelectItem value="data_export">Exportacao de Dados</SelectItem>
                   <SelectItem value="security_incident">Incidente de Seguranca</SelectItem>
                 </SelectContent>
@@ -321,7 +321,7 @@ export default function AuditoriaLGPDPage() {
                         Detalhes
                       </th>
                       <th className="px-4 py-3 text-right text-xs font-medium text-[hsl(var(--muted-foreground))] uppercase">
-                        Acoes
+                        Ações
                       </th>
                     </tr>
                   </thead>

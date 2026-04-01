@@ -110,11 +110,11 @@ export function ComodatoDetailModal({
           </div>
         )}
 
-        {/* Observacoes */}
+        {/* Observações */}
         {comodato.observacoes && (
           <div>
             <h3 className="text-sm font-medium text-[hsl(var(--foreground))] mb-2">
-              Observacoes
+              Observações
             </h3>
             <div className="bg-[hsl(var(--muted))]/50 rounded-lg p-3 text-sm text-[hsl(var(--foreground))] whitespace-pre-wrap">
               {comodato.observacoes}

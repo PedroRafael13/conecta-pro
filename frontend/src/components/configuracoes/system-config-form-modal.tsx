@@ -69,7 +69,7 @@ export function SystemConfigFormModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={isEditing ? 'Editar Configuracao' : 'Nova Configuracao'}
+      title={isEditing ? 'Editar Configuração' : 'Nova Configuração'}
       size="lg"
     >
       <div className="grid gap-4">

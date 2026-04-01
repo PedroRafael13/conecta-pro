@@ -263,7 +263,7 @@ export default function EstoquePage() {
                   <TableHead>Qtd Estoque</TableHead>
                   <TableHead>Qtd Minima</TableHead>
                   <TableHead>Unidade</TableHead>
-                  <TableHead className="text-right">Acoes</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

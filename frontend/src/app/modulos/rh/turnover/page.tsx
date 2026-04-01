@@ -190,7 +190,7 @@ export default function TurnoverPage() {
                       <th className="text-center p-4 text-muted-foreground font-medium">Score de Risco</th>
                       <th className="text-center p-4 text-muted-foreground font-medium">Nivel</th>
                       <th className="text-left p-4 text-muted-foreground font-medium">Fatores Principais</th>
-                      <th className="text-left p-4 text-muted-foreground font-medium">Acoes Sugeridas</th>
+                      <th className="text-left p-4 text-muted-foreground font-medium">Ações Sugeridas</th>
                     </tr>
                   </thead>
                   <tbody>

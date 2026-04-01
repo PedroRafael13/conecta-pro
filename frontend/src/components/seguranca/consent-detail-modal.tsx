@@ -170,11 +170,11 @@ export function ConsentDetailModal({ isOpen, onClose, consent }: ConsentDetailMo
           </div>
         </div>
 
-        {/* Observacoes (se houver) */}
+        {/* Observações (se houver) */}
         {consent.observacoes && (
           <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-lg p-4">
             <span className="text-sm font-medium text-[hsl(var(--foreground))] block mb-2">
-              Observacoes
+              Observações
             </span>
             <p className="text-sm text-[hsl(var(--muted-foreground))] whitespace-pre-wrap">
               {consent.observacoes}
@@ -186,7 +186,7 @@ export function ConsentDetailModal({ isOpen, onClose, consent }: ConsentDetailMo
         {consent.status === 'revoked' && (
           <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
             <span className="text-sm font-medium text-red-500 block mb-2">
-              Informacoes da Revogacao
+              Informações da Revogacao
             </span>
             <div className="space-y-1 text-sm">
               {consent.revoked_at && (

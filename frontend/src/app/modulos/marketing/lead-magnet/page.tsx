@@ -53,7 +53,7 @@ export default function LeadMagnetPage() {
       {leads.length > 0 && (
         <div className="bg-white rounded-xl border overflow-hidden">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50"><tr><th className="text-left p-3">Lead</th><th className="text-left p-3">Email</th><th className="text-left p-3">Campanha</th><th className="text-left p-3">Status</th><th className="text-left p-3">Acoes</th></tr></thead>
+            <thead className="bg-gray-50"><tr><th className="text-left p-3">Lead</th><th className="text-left p-3">Email</th><th className="text-left p-3">Campanha</th><th className="text-left p-3">Status</th><th className="text-left p-3">Ações</th></tr></thead>
             <tbody>{leads.map((l: any) => (
               <tr key={l.id} className="border-t hover:bg-gray-50">
                 <td className="p-3 font-medium">{l.name}</td>

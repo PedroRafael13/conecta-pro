@@ -64,8 +64,8 @@ const portalModules: SubModule[] = [
     external: true,
   },
   {
-    title: 'Configuracoes do Portal',
-    description: 'Configuracoes gerais do portal externo do cliente',
+    title: 'Configurações do Portal',
+    description: 'Configurações gerais do portal externo do cliente',
     href: '/area-cliente/configuracoes',
     icon: Settings,
     color: 'text-gray-600',

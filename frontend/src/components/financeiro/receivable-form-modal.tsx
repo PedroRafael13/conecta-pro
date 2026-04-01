@@ -165,12 +165,12 @@ export function ReceivableFormModal({
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="observacoes">Observacoes</Label>
+            <Label htmlFor="observacoes">Observações</Label>
             <Textarea
               id="observacoes"
               value={form.observacoes}
               onChange={(e) => updateField('observacoes', e.target.value)}
-              placeholder="Observacoes adicionais..."
+              placeholder="Observações adicionais..."
               rows={3}
             />
           </div>

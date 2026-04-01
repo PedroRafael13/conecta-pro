@@ -47,7 +47,7 @@ export default function DPDashboardPage() {
           if (allRes.ok) {
             const allData = await allRes.json();
             const items = allData.items || allData || [];
-            vacCount = items.filter((e: any) => e.status === 'ferias' || e.status === 'Ferias' || e.status === 'Férias').length;
+            vacCount = items.filter((e: any) => e.status === 'ferias' || e.status === 'Férias' || e.status === 'Férias').length;
             payrollTotal = items.reduce((sum: number, e: any) => sum + (parseFloat(e.salario_base) || 0), 0);
           }
         } catch { /* ignore */ }

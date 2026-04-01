@@ -405,7 +405,7 @@ export default function CertidoesPage() {
                     <th className="text-left p-3 font-medium text-muted-foreground">Validade</th>
                     <th className="text-center p-3 font-medium text-muted-foreground">Dias</th>
                     <th className="text-left p-3 font-medium text-muted-foreground">Status</th>
-                    <th className="text-left p-3 font-medium text-muted-foreground">Acoes</th>
+                    <th className="text-left p-3 font-medium text-muted-foreground">Ações</th>
                   </tr>
                 </thead>
                 <tbody>

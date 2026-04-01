@@ -446,7 +446,7 @@ export default function EntrevistasPage() {
                   <TableHead>Local / Link</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Resultado</TableHead>
-                  <TableHead className="text-right">Acoes</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

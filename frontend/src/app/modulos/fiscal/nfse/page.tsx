@@ -275,7 +275,7 @@ export default function NfsePage() {
                       Data
                     </th>
                     <th className="w-24 p-4 text-sm font-medium text-[hsl(var(--muted-foreground))]">
-                      Acoes
+                      Ações
                     </th>
                   </tr>
                 </thead>

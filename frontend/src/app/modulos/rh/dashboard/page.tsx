@@ -203,7 +203,7 @@ export default function DashboardRHPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-medium">Distribuicao por Funcao</CardTitle>
+            <CardTitle className="text-sm font-medium">Distribuicao por Função</CardTitle>
           </CardHeader>
           <CardContent>
             {turnoData.length > 0 ? (

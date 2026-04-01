@@ -128,7 +128,7 @@ export function WebhookFormModal({
             placeholder="user.created, order.completed, payment.received"
           />
           <p className="text-xs text-muted-foreground">
-            Separe os eventos por virgula
+            Separe os eventos por vírgula
           </p>
         </div>
 

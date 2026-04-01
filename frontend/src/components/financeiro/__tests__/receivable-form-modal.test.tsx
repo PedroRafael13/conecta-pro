@@ -127,7 +127,7 @@ const ReceivableFormModal: React.FC<ReceivableFormModalProps> = ({
           ))}
         </select>
 
-        <label htmlFor="observacoes">Observacoes</label>
+        <label htmlFor="observacoes">Observações</label>
         <textarea
           id="observacoes"
           value={form.observacoes}

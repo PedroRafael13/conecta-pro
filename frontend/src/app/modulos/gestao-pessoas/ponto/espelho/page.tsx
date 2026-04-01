@@ -107,7 +107,7 @@ export default function EspelhoPontoPage() {
 
       <Card className="border border-gray-200">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-lg font-semibold">Competencia</CardTitle>
+          <CardTitle className="text-lg font-semibold">Competência</CardTitle>
           <div className="flex items-center gap-4">
             <button type="button" className="p-1 hover:bg-gray-100 rounded" onClick={handlePrevMonth}>
               <ChevronLeft className="h-5 w-5 text-gray-600" />

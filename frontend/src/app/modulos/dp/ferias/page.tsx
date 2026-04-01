@@ -382,9 +382,9 @@ export default function FeriasPage() {
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">
               <Sun className="h-6 w-6" />
-              Gestao de Ferias
+              Gestão de Férias
             </h1>
-            <p className="text-muted-foreground">Programacao e controle de ferias dos colaboradores</p>
+            <p className="text-muted-foreground">Programação e controle de férias dos colaboradores</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -393,7 +393,7 @@ export default function FeriasPage() {
             Sync Sólides
           </Button>
           <Button type="button" size="sm" onClick={() => setShowForm(true)}>
-            <Plus className="h-4 w-4 mr-1" /> Solicitar Ferias
+            <Plus className="h-4 w-4 mr-1" /> Solicitar Férias
           </Button>
         </div>
       </div>
@@ -470,7 +470,7 @@ export default function FeriasPage() {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle>Solicitar Ferias / Afastamento</CardTitle>
+              <CardTitle>Solicitar Férias / Afastamento</CardTitle>
               <Button type="button" variant="ghost" size="sm" onClick={() => { setShowForm(false); setFormErrors({}); }}>
                 <X className="h-4 w-4" />
               </Button>
@@ -499,14 +499,14 @@ export default function FeriasPage() {
                   onChange={e => setFormData(p => ({ ...p, type: e.target.value }))}
                   className="w-full px-3 py-2 border rounded-md text-sm"
                 >
-                  <option value="ferias">Ferias</option>
+                  <option value="ferias">Férias</option>
                   <option value="afastamento">Afastamento</option>
-                  <option value="licenca">Licenca</option>
+                  <option value="licenca">Licença</option>
                   <option value="folga">Folga</option>
                 </select>
               </div>
               <div>
-                <label className="text-sm font-medium mb-1 block">Data Inicio *</label>
+                <label className="text-sm font-medium mb-1 block">Data Início *</label>
                 <input
                   type="date"
                   value={formData.start_date}
@@ -539,24 +539,24 @@ export default function FeriasPage() {
                   value={formData.reason}
                   onChange={e => setFormData(p => ({ ...p, reason: e.target.value }))}
                   className="w-full px-3 py-2 border rounded-md text-sm"
-                  placeholder="Motivo da solicitacao"
+                  placeholder="Motivo da solicitação"
                 />
               </div>
               <div>
-                <label className="text-sm font-medium mb-1 block">Observacoes</label>
+                <label className="text-sm font-medium mb-1 block">Observações</label>
                 <input
                   type="text"
                   value={formData.notes}
                   onChange={e => setFormData(p => ({ ...p, notes: e.target.value }))}
                   className="w-full px-3 py-2 border rounded-md text-sm"
-                  placeholder="Observacoes adicionais"
+                  placeholder="Observações adicionais"
                 />
               </div>
             </div>
             <div className="flex gap-2 mt-4">
               <Button type="button" size="sm" disabled={saving} onClick={handleCreate}>
                 {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />}
-                {saving ? 'Salvando...' : 'Criar Solicitacao'}
+                {saving ? 'Salvando...' : 'Criar Solicitação'}
               </Button>
               <Button type="button" variant="outline" size="sm" onClick={() => { setShowForm(false); setFormErrors({}); }}>Cancelar</Button>
             </div>
@@ -568,7 +568,7 @@ export default function FeriasPage() {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>Solicitacoes de Ferias</CardTitle>
+            <CardTitle>Solicitações de Férias</CardTitle>
             <div className="relative w-64">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <input
@@ -591,7 +591,7 @@ export default function FeriasPage() {
               <Inbox className="h-12 w-12 mb-3" />
               <p className="font-medium">Nenhuma solicitacao de ferias encontrada</p>
               <p className="text-sm text-muted-foreground mt-1">
-                {searchTerm ? 'Tente outra busca.' : filtroStatus !== 'todos' ? 'Nenhum registro com esse status.' : 'Clique em "Solicitar Ferias" para criar uma solicitacao.'}
+                {searchTerm ? 'Tente outra busca.' : filtroStatus !== 'todos' ? 'Nenhum registro com esse status.' : 'Clique em "Solicitar Férias" para criar uma solicitacao.'}
               </p>
             </div>
           ) : (
@@ -605,7 +605,7 @@ export default function FeriasPage() {
                     <TableHead>Dias</TableHead>
                     <TableHead className="cursor-pointer select-none" onClick={() => handleSort('status')}>Status{sortIcon('status')}</TableHead>
                     <TableHead className="cursor-pointer select-none" onClick={() => handleSort('created_at')}>Criado em{sortIcon('created_at')}</TableHead>
-                    <TableHead>Acoes</TableHead>
+                    <TableHead>Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -672,7 +672,7 @@ export default function FeriasPage() {
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
                   <Sun className="h-5 w-5" />
-                  Detalhes da Solicitacao
+                  Detalhes da Solicitação
                 </CardTitle>
                 <Button type="button" variant="ghost" size="sm" onClick={() => { setShowDetail(false); setSelectedVacation(null); setShowRejectInput(false); }}>
                   <X className="h-4 w-4" />
@@ -703,7 +703,7 @@ export default function FeriasPage() {
                   <p className="font-medium">{selectedVacation.days || '-'}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Data Inicio</p>
+                  <p className="text-sm text-muted-foreground">Data Início</p>
                   <p className="font-medium">{formatDate(selectedVacation.start_date)}</p>
                 </div>
                 <div>
@@ -718,7 +718,7 @@ export default function FeriasPage() {
                 )}
                 {selectedVacation.notes && (
                   <div className="md:col-span-2">
-                    <p className="text-sm text-muted-foreground">Observacoes</p>
+                    <p className="text-sm text-muted-foreground">Observações</p>
                     <p className="font-medium">{selectedVacation.notes}</p>
                   </div>
                 )}
@@ -746,7 +746,7 @@ export default function FeriasPage() {
 
               {/* Vacation Balance */}
               <div className="border rounded-md p-3 bg-muted/30">
-                <p className="text-sm font-medium mb-2 flex items-center gap-1"><UserCheck className="h-4 w-4" /> Saldo de Ferias</p>
+                <p className="text-sm font-medium mb-2 flex items-center gap-1"><UserCheck className="h-4 w-4" /> Saldo de Férias</p>
                 {balanceLoading ? (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Carregando saldo...</div>
                 ) : vacationBalance ? (
@@ -821,7 +821,7 @@ export default function FeriasPage() {
                     disabled={actionLoading}
                     onClick={handleCancel}
                   >
-                    <AlertTriangle className="h-4 w-4 mr-1" /> Cancelar Solicitacao
+                    <AlertTriangle className="h-4 w-4 mr-1" /> Cancelar Solicitação
                   </Button>
                 )}
                 <Button type="button" variant="ghost" size="sm" onClick={() => { setShowDetail(false); setSelectedVacation(null); setShowRejectInput(false); }}>

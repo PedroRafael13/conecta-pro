@@ -257,19 +257,19 @@ export function SupplierFormModal({
            aria-label="Rua, numero, bairro, cidade - UF" />
         </div>
 
-        {/* Observacoes */}
+        {/* Observações */}
         <div>
           <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
-            Observacoes
+            Observações
           </label>
           <textarea
             name="observacoes"
             value={formData.observacoes}
             onChange={handleChange}
             rows={3}
-            placeholder="Informacoes adicionais sobre o fornecedor..."
+            placeholder="Informações adicionais sobre o fornecedor..."
             className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))] resize-none"
-           aria-label="Informacoes adicionais sobre o fornecedor..." />
+           aria-label="Informações adicionais sobre o fornecedor..." />
         </div>
 
         <ModalFooter>

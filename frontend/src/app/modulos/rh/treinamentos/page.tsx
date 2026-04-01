@@ -146,7 +146,7 @@ export default function TreinamentosPage() {
                   <thead>
                     <tr className="border-b border-gray-800">
                       <th className="text-left p-4 text-muted-foreground font-medium">Curso</th>
-                      <th className="text-left p-4 text-muted-foreground font-medium">Data Inicio</th>
+                      <th className="text-left p-4 text-muted-foreground font-medium">Data Início</th>
                       <th className="text-left p-4 text-muted-foreground font-medium">Data Fim</th>
                       <th className="text-left p-4 text-muted-foreground font-medium">Local</th>
                       <th className="text-left p-4 text-muted-foreground font-medium">Instrutor</th>
@@ -232,7 +232,7 @@ export default function TreinamentosPage() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-sm text-muted-foreground">Data Inicio *</label>
+                  <label className="text-sm text-muted-foreground">Data Início *</label>
                   <input type="date" className="w-full mt-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm"
                     value={form.start_date} onChange={(e) => setForm({ ...form, start_date: e.target.value })} />
                 </div>

@@ -101,7 +101,7 @@ export function ContratoDetailModal({
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <Label className="text-muted-foreground text-xs">Data Inicio</Label>
+            <Label className="text-muted-foreground text-xs">Data Início</Label>
             <p className="text-sm">{formatDate(contrato.data_inicio || contrato.start_date)}</p>
           </div>
           <div>
@@ -112,7 +112,7 @@ export function ContratoDetailModal({
 
         {(contrato.observacoes || contrato.notes) && (
           <div>
-            <Label className="text-muted-foreground text-xs">Observacoes</Label>
+            <Label className="text-muted-foreground text-xs">Observações</Label>
             <p className="text-sm mt-1 whitespace-pre-wrap">
               {contrato.observacoes || contrato.notes}
             </p>

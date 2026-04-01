@@ -47,7 +47,7 @@ export function ComunicadoDetailModal({ isOpen, onClose, comunicado }: Comunicad
       isOpen={isOpen}
       onClose={onClose}
       title="Detalhes do Comunicado"
-      description="Informacoes completas do comunicado"
+      description="Informações completas do comunicado"
       size="lg"
     >
       <div className="grid grid-cols-2 gap-6">

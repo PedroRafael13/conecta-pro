@@ -204,7 +204,7 @@ export default function KitsPage() {
                   id="name"
                   value={formData.nome}
                   onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                  placeholder="Ex: Kit Admissao de Funcionario"
+                  placeholder="Ex: Kit Admissão de Funcionario"
                 />
               </div>
               <div className="space-y-2">
@@ -423,7 +423,7 @@ export default function KitsPage() {
         </Dialog>
       )}
 
-      {/* Modal de Edicao */}
+      {/* Modal de Edição */}
       {editingKit && (
         <Dialog open={!!editingKit} onOpenChange={() => setEditingKit(null)}>
           <DialogContent>
@@ -437,7 +437,7 @@ export default function KitsPage() {
                   id="edit-name"
                   value={formData.nome}
                   onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                  placeholder="Ex: Kit Admissao de Funcionario"
+                  placeholder="Ex: Kit Admissão de Funcionario"
                 />
               </div>
               <div className="space-y-2">

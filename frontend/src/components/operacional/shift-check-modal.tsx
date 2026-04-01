@@ -117,7 +117,7 @@ export function ShiftCheckModal({
 
         <div>
           <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
-            Observacoes
+            Observações
           </label>
           <textarea
             value={notes}

@@ -291,7 +291,7 @@ export default function PIADPIAPage() {
                   <TableHead>Nivel Risco</TableHead>
                   <TableHead>Responsavel</TableHead>
                   <TableHead>Data</TableHead>
-                  <TableHead className="w-[60px]">Acoes</TableHead>
+                  <TableHead className="w-[60px]">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

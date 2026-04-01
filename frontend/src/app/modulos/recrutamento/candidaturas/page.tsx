@@ -380,8 +380,8 @@ export default function CandidaturasPage() {
                   <TableHead>Etapa</TableHead>
                   <TableHead>Score</TableHead>
                   <TableHead>Data Inscricao</TableHead>
-                  <TableHead>Ultima Atualizacao</TableHead>
-                  <TableHead className="text-right">Acoes</TableHead>
+                  <TableHead>Última Atualização</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -549,11 +549,11 @@ export default function CandidaturasPage() {
               <Input type="number" min={1} value={proposalData.amount} onChange={(e) => setProposalData({ ...proposalData, amount: e.target.value })} placeholder="Ex: 2500" />
             </div>
             <div className="space-y-2">
-              <Label>Beneficios (separados por virgula)</Label>
+              <Label>Benefícios (separados por vírgula)</Label>
               <Input value={proposalData.benefits} onChange={(e) => setProposalData({ ...proposalData, benefits: e.target.value })} placeholder="VT, VR, Plano de Saude" />
             </div>
             <div className="space-y-2">
-              <Label>Observacoes</Label>
+              <Label>Observações</Label>
               <Input value={proposalData.notes} onChange={(e) => setProposalData({ ...proposalData, notes: e.target.value })} placeholder="Notas adicionais" />
             </div>
           </div>

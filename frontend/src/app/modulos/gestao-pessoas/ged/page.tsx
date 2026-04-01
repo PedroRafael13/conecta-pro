@@ -234,7 +234,7 @@ export default function GEDDashboardPage() {
                   <th className="text-left py-3 px-4 font-medium text-gray-500">Mes Ref</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-500">Status</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-500">Conclusao</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-500">Acoes</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-500">Ações</th>
                 </tr>
               </thead>
               <tbody>

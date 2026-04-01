@@ -212,8 +212,8 @@ export default function DocumentosPage() {
                 <input type="date" value={formData.expiry_date} onChange={e => setFormData(p => ({ ...p, expiry_date: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm" />
               </div>
               <div className="md:col-span-2">
-                <label className="text-sm font-medium mb-1 block">Observacoes</label>
-                <textarea value={formData.notes} onChange={e => setFormData(p => ({ ...p, notes: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm" rows={3} placeholder="Observacoes adicionais" />
+                <label className="text-sm font-medium mb-1 block">Observações</label>
+                <textarea value={formData.notes} onChange={e => setFormData(p => ({ ...p, notes: e.target.value }))} className="w-full px-3 py-2 border rounded-md text-sm" rows={3} placeholder="Observações adicionais" />
               </div>
             </div>
             <div className="flex gap-2 mt-4">
@@ -293,7 +293,7 @@ export default function DocumentosPage() {
                     <TableHead className="cursor-pointer select-none" onClick={() => handleSort('type')}>Tipo{sortIcon('type')}</TableHead>
                     <TableHead className="cursor-pointer select-none" onClick={() => handleSort('status')}>Status{sortIcon('status')}</TableHead>
                     <TableHead>ID</TableHead>
-                    <TableHead>Acoes</TableHead>
+                    <TableHead>Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

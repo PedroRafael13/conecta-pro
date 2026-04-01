@@ -285,7 +285,7 @@ export default function AgendamentosPage() {
                   <TableHead>Tipo</TableHead>
                   <TableHead>Responsavel</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="w-[80px]">Acoes</TableHead>
+                  <TableHead className="w-[80px]">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

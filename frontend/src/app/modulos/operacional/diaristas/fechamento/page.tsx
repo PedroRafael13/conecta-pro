@@ -137,13 +137,13 @@ export default function FechamentoFolhaPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Seletor de Competencia */}
+        {/* Seletor de Competência */}
         <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl p-4 mb-6">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <Calendar className="w-5 h-5 text-[hsl(var(--muted-foreground))]" />
               <label className="text-sm font-medium text-[hsl(var(--foreground))]">
-                Competencia:
+                Competência:
               </label>
             </div>
             <input

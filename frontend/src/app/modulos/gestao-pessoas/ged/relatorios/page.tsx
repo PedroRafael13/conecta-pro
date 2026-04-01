@@ -170,7 +170,7 @@ export default function RelatoriosPage() {
           <div className="flex flex-wrap items-end gap-4">
             <Calendar className="h-5 w-5 text-gray-400 mb-1" />
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Data Inicio</label>
+              <label className="block text-xs text-gray-500 mb-1">Data Início</label>
               <input
                 type="date"
                 value={startDate}

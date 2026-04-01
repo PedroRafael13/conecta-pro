@@ -24,7 +24,7 @@ const tipoEventos = [
   { value: 'S-1010', label: 'S-1010 - Rubricas' },
   { value: 'S-1200', label: 'S-1200 - Remuneracao' },
   { value: 'S-1210', label: 'S-1210 - Pagamentos' },
-  { value: 'S-2200', label: 'S-2200 - Admissao' },
+  { value: 'S-2200', label: 'S-2200 - Admissão' },
   { value: 'S-2206', label: 'S-2206 - Alt. Contratual' },
   { value: 'S-2299', label: 'S-2299 - Desligamento' },
   { value: 'S-2300', label: 'S-2300 - TSV Inicio' },
@@ -296,7 +296,7 @@ export default function EsocialPage() {
                       Protocolo
                     </th>
                     <th className="w-32 p-4 text-sm font-medium text-[hsl(var(--muted-foreground))]">
-                      Acoes
+                      Ações
                     </th>
                   </tr>
                 </thead>

@@ -124,7 +124,7 @@ export function PIADetailModal({ isOpen, onClose, pia }: PIADetailModalProps) {
           </div>
         )}
 
-        {/* Data de Criacao */}
+        {/* Data de Criação */}
         <div>
           <p className="text-sm text-[hsl(var(--muted-foreground))]">Criado em</p>
           <p className="text-base mt-1">

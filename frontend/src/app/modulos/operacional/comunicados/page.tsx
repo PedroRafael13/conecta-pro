@@ -65,7 +65,7 @@ const getReadCount = (id: string) => {
 const ANNOUNCEMENT_TEMPLATES = [
   { id: 't1', title: 'Escala Extra — Feriado', body: 'Informamos que havera escala extra no proximo feriado. Todos os colaboradores escalados devem confirmar presenca ate [DATA].', category: 'operacional', priority: 'alta' },
   { id: 't2', title: 'Reuniao Obrigatoria', body: 'Convocamos todos os colaboradores para reuniao obrigatoria em [DATA] as [HORA] no [LOCAL].', category: 'administrativa', priority: 'alta' },
-  { id: 't3', title: 'Atualizacao de EPI', body: 'Lembramos que os EPIs devem ser renovados. Compareça ao almoxarifado com sua matricula ate [DATA].', category: 'operacional', priority: 'normal' },
+  { id: 't3', title: 'Atualização de EPI', body: 'Lembramos que os EPIs devem ser renovados. Compareça ao almoxarifado com sua matricula ate [DATA].', category: 'operacional', priority: 'normal' },
   { id: 't4', title: 'Aviso de Pagamento', body: 'Informamos que o pagamento referente a [MES] sera processado em [DATA].', category: 'administrativa', priority: 'normal' },
 ] as const;
 
@@ -459,7 +459,7 @@ export default function ComunicadosPage() {
                         Confirmacoes
                       </th>
                       <th className="px-4 py-3 text-right text-xs font-medium text-[hsl(var(--muted-foreground))] uppercase">
-                        Acoes
+                        Ações
                       </th>
                     </tr>
                   </thead>

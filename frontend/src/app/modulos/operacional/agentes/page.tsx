@@ -279,7 +279,7 @@ export default function AgentesPage() {
                   <option value="">Todos</option>
                   <option value="ativo">Ativo</option>
                   <option value="inativo">Inativo</option>
-                  <option value="ferias">Ferias</option>
+                  <option value="ferias">Férias</option>
                   <option value="afastado">Afastado</option>
                   <option value="desligado">Desligado</option>
                 </select>
@@ -329,7 +329,7 @@ export default function AgentesPage() {
                         Status
                       </th>
                       <th className="px-4 py-3 text-right text-xs font-medium text-[hsl(var(--muted-foreground))] uppercase tracking-wider">
-                        Acoes
+                        Ações
                       </th>
                     </tr>
                   </thead>

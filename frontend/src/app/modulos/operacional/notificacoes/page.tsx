@@ -56,7 +56,7 @@ export default function NotificacoesPage() {
   const router = useRouter();
   const { isLoading: authLoading, isAuthenticated } = useAuth();
 
-  // Notificacoes
+  // Notificações
   const {
     notifications,
     total,
@@ -187,7 +187,7 @@ export default function NotificacoesPage() {
                 </div>
                 <div>
                   <h1 className="text-lg font-semibold text-[hsl(var(--foreground))]">
-                    Notificacoes
+                    Notificações
                   </h1>
                   <p className="text-xs text-[hsl(var(--muted-foreground))]">
                     {unreadTotal} nao lidas

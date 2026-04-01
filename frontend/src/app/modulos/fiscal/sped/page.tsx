@@ -214,7 +214,7 @@ export default function SpedPage() {
                   Status
                 </th>
                 <th className="w-32 p-3 text-sm font-medium text-[hsl(var(--muted-foreground))]">
-                  Acoes
+                  Ações
                 </th>
               </tr>
             </thead>
@@ -361,7 +361,7 @@ export default function SpedPage() {
                 <div>
                   <h3 className="font-semibold text-[hsl(var(--foreground))]">EFD-Reinf</h3>
                   <p className="text-sm text-[hsl(var(--muted-foreground))]">
-                    Escrituracao Fiscal Digital de Retencoes e Informacoes
+                    Escrituracao Fiscal Digital de Retencoes e Informações
                   </p>
                 </div>
               </div>

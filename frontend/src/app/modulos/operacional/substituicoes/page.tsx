@@ -445,7 +445,7 @@ export default function SubstituicoesPage() {
                         Custo
                       </th>
                       <th className="px-4 py-3 text-right text-xs font-medium text-[hsl(var(--muted-foreground))] uppercase">
-                        Acoes
+                        Ações
                       </th>
                     </tr>
                   </thead>
