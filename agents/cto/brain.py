@@ -388,3 +388,54 @@ class CTOBrain:
             linhas.append(f"\n📋 {tickets_abertos} ticket(s) aberto(s)")
 
         return "\n".join(linhas)
+
+    # ─── SPRINT 2 — DIAGNÓSTICO AVANÇADO + APRENDIZADO ────────────────────────
+
+    # Instâncias lazy (carregadas só quando necessário)
+    _diagnostico_instance = None
+    _aprendizado_instance = None
+
+    def diagnosticar_avancado(
+        self, tipo: str, contexto: dict = None
+    ) -> dict:
+        """
+        Diagnóstico avançado usando logs reais, commits e banco.
+        Sprint 2 — correlaciona evidências reais antes de recomendar ação.
+        """
+        if CTOBrain._diagnostico_instance is None:
+            try:
+                import sys as _sys
+                _sys.path.insert(0, str(CTO_DIR))
+                from diagnostico import DiagnosticoAvancado
+                CTOBrain._diagnostico_instance = DiagnosticoAvancado()
+            except Exception:
+                return self.diagnosticar(tipo, contexto or {})
+
+        d = CTOBrain._diagnostico_instance
+        ctx = contexto or {}
+
+        if tipo == "regressao":
+            return d.investigar_regressao(
+                score_antes=ctx.get("score_antes", 10.0),
+                score_depois=ctx.get("score_depois", 0.0),
+                endpoints_afetados=ctx.get("erros", []),
+            )
+        elif tipo == "performance":
+            return d.investigar_performance(
+                endpoint=ctx.get("endpoint", ""),
+                tempo_ms=ctx.get("tempo_ms", 0),
+            )
+        else:
+            return self.diagnosticar(tipo, ctx)
+
+    def executar_aprendizado(self) -> dict:
+        """Executa ciclo de aprendizado contínuo (Sprint 2)."""
+        if CTOBrain._aprendizado_instance is None:
+            try:
+                import sys as _sys
+                _sys.path.insert(0, str(CTO_DIR))
+                from aprendizado import AprendizadoContinuo
+                CTOBrain._aprendizado_instance = AprendizadoContinuo()
+            except Exception as e:
+                return {"erro": str(e), "mudancas": []}
+        return CTOBrain._aprendizado_instance.executar()

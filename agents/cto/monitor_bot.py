@@ -146,7 +146,11 @@ def cmd_ajuda(chat_id: int):
         "`/tickets` — Tickets abertos\n"
         "`/ticket CTO-0001` — Detalhe de um ticket\n"
         "`/sistema` — CPU, RAM, disco, swap\n"
-        "`/padroes` — Padrões aprendidos\n\n"
+        "`/padroes` — Padrões aprendidos\n"
+        "`/diagnostico [tipo]` — Investigar causa raiz\n"
+        "`/relatorio` — Relatório matinal agora\n"
+        "`/aprender` — Atualizar conhecimento do banco\n"
+        "`/anomalias` — Ver mudanças detectadas\n\n"
         "*Linguagem natural:*\n"
         "Apenas descreva o problema:\n"
         "_Redis caiu_, _Postgres lento_, _Celery parou_\n\n"
@@ -437,6 +441,105 @@ def _inferir_tipo(texto: str) -> Optional[str]:
     return None
 
 
+# ─── Comandos Sprint 2 ───────────────────────────────────────────────────────
+
+def cmd_diagnostico(chat_id: int, tipo: str):
+    """Diagnóstico avançado sob demanda — correlaciona logs, commits e banco."""
+    send("🔍 Investigando... aguarde.", chat_id=chat_id)
+    brain = get_brain()
+    if not brain:
+        send("❌ CTOBrain indisponível.", chat_id=chat_id)
+        return
+    try:
+        diag = brain.diagnosticar_avancado(tipo, contexto={"tipo": tipo})
+        evidencias = diag.get("evidencias", [])
+        msg = (
+            f"🔍 *Diagnóstico: {tipo}*\n\n"
+            f"*Causa raiz:* {diag.get('causa_raiz','?')[:150]}\n"
+        )
+        if evidencias:
+            msg += "\n*Evidências:*\n"
+            for e in evidencias[:3]:
+                msg += f"  • {e[:80]}\n"
+        acao = diag.get("acao_recomendada", "") or diag.get("solucao_recomendada", "")
+        if acao:
+            msg += f"\n💡 *Ação:* {acao[:120]}"
+        conf = diag.get("confianca", 0)
+        if conf:
+            msg += f"\n📊 Confiança: {conf}%"
+        if diag.get("requer_jordan"):
+            msg += "\n⚠️ _Requer ação manual_"
+        send(msg, chat_id=chat_id)
+    except Exception as e:
+        send(f"⚠️ Erro no diagnóstico: {e}", chat_id=chat_id)
+
+
+def cmd_relatorio(chat_id: int):
+    """Envia relatório matinal sob demanda."""
+    send("📊 Gerando relatório...", chat_id=chat_id)
+    try:
+        import sys as _sys
+        _sys.path.insert(0, str(CTO_DIR))
+        from relatorio_matinal import gerar_relatorio
+        relatorio = gerar_relatorio()
+        send(relatorio, chat_id=chat_id)
+    except Exception as e:
+        send(f"⚠️ Erro ao gerar relatório: {e}", chat_id=chat_id)
+
+
+def cmd_aprender(chat_id: int):
+    """Força ciclo de aprendizado contínuo agora."""
+    send("🧠 Aprendendo com o banco...", chat_id=chat_id)
+    brain = get_brain()
+    if not brain:
+        send("❌ CTOBrain indisponível.", chat_id=chat_id)
+        return
+    try:
+        resultado  = brain.executar_aprendizado()
+        mudancas   = resultado.get("mudancas", [])
+        snap_m     = resultado.get("snapshot", {}).get("metricas", {})
+        func_ativ  = (snap_m.get("funcionarios") or {}).get("ativos", "?")
+        msg = (
+            f"✅ *Aprendizado concluído*\n\n"
+            f"Snapshot salvo\n"
+            f"Funcionários ativos: {func_ativ}\n"
+            f"Mudanças detectadas: {len(mudancas)}"
+        )
+        if mudancas:
+            msg += "\n\n*Mudanças:*"
+            for m in mudancas[:4]:
+                emoji = {"critica": "🔴", "alta": "⚠️"}.get(m["urgencia"], "ℹ️")
+                msg += f"\n  {emoji} {m['mensagem']}"
+        send(msg, chat_id=chat_id)
+    except Exception as e:
+        send(f"⚠️ Erro no aprendizado: {e}", chat_id=chat_id)
+
+
+def cmd_anomalias(chat_id: int):
+    """Lista mudanças e anomalias detectadas recentemente."""
+    f = CTO_DIR / "memory" / "mudancas_detectadas.json"
+    if not f.exists():
+        send("ℹ️ Nenhuma anomalia registrada ainda.", chat_id=chat_id)
+        return
+    try:
+        historico = json.loads(f.read_text())
+        if not historico:
+            send("✅ Sem anomalias registradas.", chat_id=chat_id)
+            return
+        recentes = historico[-5:]
+        msg = "📈 *Anomalias recentes:*\n\n"
+        for entry in recentes:
+            ts = entry["timestamp"][:16].replace("T", " ")
+            msg += f"_{ts}_\n"
+            for m in entry["mudancas"][:3]:
+                emoji = {"critica": "🔴", "alta": "⚠️"}.get(m["urgencia"], "ℹ️")
+                msg += f"  {emoji} {m['mensagem']}\n"
+            msg += "\n"
+        send(msg, chat_id=chat_id)
+    except Exception as e:
+        send(f"⚠️ Erro: {e}", chat_id=chat_id)
+
+
 # ─── Loop principal ───────────────────────────────────────────────────────────
 
 def processar_update(update: dict):
@@ -485,6 +588,16 @@ def processar_update(update: dict):
         cmd_sistema(chat_id)
     elif tl.startswith("/padroes"):
         cmd_padroes(chat_id)
+    elif tl.startswith("/diagnostico"):
+        parts = text.split(maxsplit=1)
+        tipo = parts[1] if len(parts) > 1 else "geral"
+        cmd_diagnostico(chat_id, tipo)
+    elif tl.startswith("/relatorio"):
+        cmd_relatorio(chat_id)
+    elif tl.startswith("/aprender"):
+        cmd_aprender(chat_id)
+    elif tl.startswith("/anomalias"):
+        cmd_anomalias(chat_id)
     else:
         # Linguagem natural
         handle_natural_language(text, chat_id)
@@ -500,9 +613,10 @@ def run():
         try:
             resumo = brain.resumo_para_telegram()
             send(
-                f"🚀 *CTO Autônomo — Sprint 1 Online*\n\n"
+                f"🚀 *CTO Autônomo — Sprint 2 Online*\n\n"
                 f"{resumo}\n\n"
-                f"Use /ajuda para comandos.",
+                f"Novos: /diagnostico /relatorio /aprender /anomalias\n"
+                f"Use /ajuda para todos os comandos.",
             )
             logger.info("Startup notification enviada.")
         except Exception as e:
