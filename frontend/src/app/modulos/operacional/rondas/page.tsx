@@ -347,7 +347,7 @@ export default function RondasPage() {
               <Input
                 placeholder="Buscar por código, inspetor..."
                 value={searchTerm}
-                onChange={(e) = aria-label="Buscar Por Código, Inspetor..."> setSearchTerm(e.target.value)}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
               />
             </div>

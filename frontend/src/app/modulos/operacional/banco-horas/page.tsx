@@ -427,7 +427,7 @@ export default function BancoHorasPage() {
               <Input
                 type="date"
                 value={selectedDate}
-                onChange={(e) = aria-label="Date"> setSelectedDate(e.target.value)}
+                onChange={(e) => setSelectedDate(e.target.value)}
                 className="w-auto"
               />
             </div>

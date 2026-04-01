@@ -939,7 +939,7 @@ export default function RelatoriosPage() {
                   <input
                     type="month"
                     value={relatorioPeriodo}
-                    onChange={(e) = aria-label="Month"> setRelatorioPeriodo(e.target.value)}
+                    onChange={(e) => setRelatorioPeriodo(e.target.value)}
                     className="border border-[hsl(var(--border))] rounded-lg px-3 py-2 text-sm bg-[hsl(var(--card))] text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                   <Button

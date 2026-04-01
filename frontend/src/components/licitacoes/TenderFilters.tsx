@@ -93,7 +93,7 @@ export function TenderFilters({
         <Input
           placeholder="Buscar por número, órgão, objeto..."
           value={filters.termo_busca || ''}
-          onChange={(e) = aria-label="Buscar Por Número, Órgão, Objeto..."> handleChange('termo_busca', e.target.value)}
+          onChange={(e) => handleChange('termo_busca', e.target.value)}
           className="pl-10"
         />
       </div>
@@ -187,7 +187,7 @@ export function TenderFilters({
             type="number"
             placeholder="0,00"
             value={filters.valor_min || ''}
-            onChange={(e) = aria-label="0,00">
+            onChange={(e) =>
               handleChange('valor_min', e.target.value ? parseFloat(e.target.value) : undefined)
             }
             min="0"
@@ -202,7 +202,7 @@ export function TenderFilters({
             type="number"
             placeholder="0,00"
             value={filters.valor_max || ''}
-            onChange={(e) = aria-label="0,00">
+            onChange={(e) =>
               handleChange('valor_max', e.target.value ? parseFloat(e.target.value) : undefined)
             }
             min="0"

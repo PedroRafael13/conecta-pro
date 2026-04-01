@@ -337,7 +337,7 @@ export default function PropostasPage() {
                   <Input
                     type="number"
                     value={formData.total_value}
-                    onChange={(e) = aria-label="Number"> setFormData({ ...formData, total_value: Number(e.target.value) })}
+                    onChange={(e) => setFormData({ ...formData, total_value: Number(e.target.value) })}
                     placeholder="0,00"
                   />
                 </div>

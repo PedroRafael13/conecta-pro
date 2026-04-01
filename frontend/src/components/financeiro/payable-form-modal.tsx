@@ -132,7 +132,7 @@ export function PayableFormModal({
                 step="0.01"
                 min="0.01"
                 value={form.amount}
-                onChange={(e) = aria-label="Number"> updateField('amount', e.target.value)}
+                onChange={(e) => updateField('amount', e.target.value)}
                 placeholder="0,00"
                 required
               />
@@ -144,7 +144,7 @@ export function PayableFormModal({
                 id="due_date"
                 type="date"
                 value={form.due_date}
-                onChange={(e) = aria-label="Date"> updateField('due_date', e.target.value)}
+                onChange={(e) => updateField('due_date', e.target.value)}
                 required
               />
             </div>

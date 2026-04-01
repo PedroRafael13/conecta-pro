@@ -247,7 +247,7 @@ export default function ConfiguracoesPage() {
             <input
               type="text"
               value={driveConfig.folder_id}
-              onChange={(e) = aria-label="Text"> setDriveConfig({ ...driveConfig, folder_id: e.target.value })}
+              onChange={(e) => setDriveConfig({ ...driveConfig, folder_id: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
               placeholder="ID da pasta no Google Drive"
             />
@@ -403,7 +403,7 @@ export default function ConfiguracoesPage() {
             <input
               type="text"
               value={schedule.cron_expression}
-              onChange={(e) = aria-label="Text"> setSchedule({ ...schedule, cron_expression: e.target.value })}
+              onChange={(e) => setSchedule({ ...schedule, cron_expression: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
               placeholder="0 6 1 * *"
             />

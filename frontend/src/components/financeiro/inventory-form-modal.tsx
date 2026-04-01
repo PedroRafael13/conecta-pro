@@ -96,7 +96,7 @@ export function InventoryFormModal({ isOpen, onClose, onSubmit, isLoading = fals
                 type="number"
                 min="1"
                 value={formData.quantity}
-                onChange={(e) = aria-label="Number"> handleChange('quantity', e.target.value)}
+                onChange={(e) => handleChange('quantity', e.target.value)}
                 placeholder="0"
                 required
               />

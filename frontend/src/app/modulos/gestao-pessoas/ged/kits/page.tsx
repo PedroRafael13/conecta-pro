@@ -252,7 +252,7 @@ export default function KitsListPage() {
             <Filter className="h-4 w-4 text-gray-400" />
             <div>
               <label className="block text-xs text-gray-500 mb-1">Mes Referencia</label>
-              <input type="month" value={filterMonth} onChange={(e) = aria-label="Month"> setFilterMonth(e.target.value)} className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm outline-none" />
+              <input type="month" value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)} className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm outline-none" />
             </div>
             <div>
               <label className="block text-xs text-gray-500 mb-1">Status</label>
@@ -361,7 +361,7 @@ export default function KitsListPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Mês Referência *</label>
-                <input type="month" value={newKitMonth} onChange={e = aria-label="Month"> setNewKitMonth(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+                <input type="month" value={newKitMonth} onChange={e => setNewKitMonth(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" />
               </div>
             </div>
             <div className="flex justify-end gap-2 mt-6">

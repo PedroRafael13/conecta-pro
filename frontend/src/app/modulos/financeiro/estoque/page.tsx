@@ -233,7 +233,7 @@ export default function EstoquePage() {
               type="search"
               placeholder="Buscar..."
               value={searchTerm}
-              onChange={(e) = aria-label="Buscar..."> setSearchTerm(e.target.value)}
+              onChange={(e) => setSearchTerm(e.target.value)}
               icon={<Search className="w-4 h-4" />}
             />
           </div>

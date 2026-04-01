@@ -324,7 +324,7 @@ export default function IAHubPage() {
             placeholder="Cole aqui o texto do edital para analise automatica..."
             className="min-h-[150px] font-mono text-sm"
             value={editalText}
-            onChange={(e) = aria-label="Cole Aqui O Texto Do Edital Para Analise Automatica..."> setEditalText(e.target.value)}
+            onChange={(e) => setEditalText(e.target.value)}
           />
           <div className="flex gap-2">
             <Button

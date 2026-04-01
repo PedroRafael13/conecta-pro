@@ -590,7 +590,7 @@ export default function ContratoDetalhePage() {
                 id="competencia"
                 type="month"
                 value={medicaoForm.competencia}
-                onChange={(e) = aria-label="Month">
+                onChange={(e) =>
                   setMedicaoForm({ ...medicaoForm, competencia: e.target.value })
                 }
                 required
@@ -606,7 +606,7 @@ export default function ContratoDetalhePage() {
                   id="periodo_inicio"
                   type="date"
                   value={medicaoForm.periodo_inicio}
-                  onChange={(e) = aria-label="Date">
+                  onChange={(e) =>
                     setMedicaoForm({ ...medicaoForm, periodo_inicio: e.target.value })
                   }
                 />
@@ -617,7 +617,7 @@ export default function ContratoDetalhePage() {
                   id="periodo_fim"
                   type="date"
                   value={medicaoForm.periodo_fim}
-                  onChange={(e) = aria-label="Date">
+                  onChange={(e) =>
                     setMedicaoForm({ ...medicaoForm, periodo_fim: e.target.value })
                   }
                 />
@@ -631,7 +631,7 @@ export default function ContratoDetalhePage() {
                 step="0.01"
                 min="0"
                 value={medicaoForm.valor_bruto}
-                onChange={(e) = aria-label="Number">
+                onChange={(e) =>
                   setMedicaoForm({ ...medicaoForm, valor_bruto: e.target.value })
                 }
                 required

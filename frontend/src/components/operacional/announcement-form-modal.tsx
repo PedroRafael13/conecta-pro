@@ -257,7 +257,7 @@ export function AnnouncementFormModal({
               <Input
                 type="datetime-local"
                 value={formData.publish_at?.slice(0, 16) || ''}
-                onChange={(e) = aria-label="Datetime Local">
+                onChange={(e) =>
                   setFormData({
                     ...formData,
                     publish_at: e.target.value ? new Date(e.target.value).toISOString() : undefined,
@@ -272,7 +272,7 @@ export function AnnouncementFormModal({
               <Input
                 type="datetime-local"
                 value={formData.expires_at?.slice(0, 16) || ''}
-                onChange={(e) = aria-label="Datetime Local">
+                onChange={(e) =>
                   setFormData({
                     ...formData,
                     expires_at: e.target.value ? new Date(e.target.value).toISOString() : undefined,
@@ -288,7 +288,7 @@ export function AnnouncementFormModal({
               type="checkbox"
               id="requires_acknowledgment"
               checked={formData.requires_acknowledgment}
-              onChange={(e) = aria-label="Checkbox">
+              onChange={(e) =>
                 setFormData({ ...formData, requires_acknowledgment: e.target.checked })
               }
               className="w-4 h-4 rounded border-[hsl(var(--border))]"

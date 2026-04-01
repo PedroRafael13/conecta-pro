@@ -364,7 +364,7 @@ export default function ComunicadosPage() {
               <Input
                 placeholder="Buscar por titulo ou conteudo..."
                 value={searchTerm}
-                onChange={(e) = aria-label="Buscar Por Titulo Ou Conteudo..."> setSearchTerm(e.target.value)}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
               />
             </div>

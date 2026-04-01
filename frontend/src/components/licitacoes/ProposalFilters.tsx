@@ -88,7 +88,7 @@ export function ProposalFilters({
               id="data-inicio-filter"
               type="date"
               value={filters.data_inicio || ''}
-              onChange={(e) = aria-label="Date"> handleFilterChange('data_inicio', e.target.value)}
+              onChange={(e) => handleFilterChange('data_inicio', e.target.value)}
             />
           </div>
 
@@ -99,7 +99,7 @@ export function ProposalFilters({
               id="data-fim-filter"
               type="date"
               value={filters.data_fim || ''}
-              onChange={(e) = aria-label="Date"> handleFilterChange('data_fim', e.target.value)}
+              onChange={(e) => handleFilterChange('data_fim', e.target.value)}
             />
           </div>
 
@@ -112,7 +112,7 @@ export function ProposalFilters({
               step="0.01"
               placeholder="0.00"
               value={filters.valor_min || ''}
-              onChange={(e) = aria-label="0.00">
+              onChange={(e) =>
                 handleFilterChange(
                   'valor_min',
                   e.target.value ? parseFloat(e.target.value) : undefined
@@ -130,7 +130,7 @@ export function ProposalFilters({
               step="0.01"
               placeholder="0.00"
               value={filters.valor_max || ''}
-              onChange={(e) = aria-label="0.00">
+              onChange={(e) =>
                 handleFilterChange(
                   'valor_max',
                   e.target.value ? parseFloat(e.target.value) : undefined

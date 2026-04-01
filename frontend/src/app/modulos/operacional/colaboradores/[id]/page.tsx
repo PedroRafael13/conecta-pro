@@ -717,7 +717,7 @@ export default function ColaboradorPerfilPage() {
                 <Input
                   type="date"
                   value={docForm.expiration}
-                  onChange={(e) = aria-label="Date"> setDocForm({ ...docForm, expiration: e.target.value })}
+                  onChange={(e) => setDocForm({ ...docForm, expiration: e.target.value })}
                 />
               </div>
               <Button onClick={handleAddDocument} className="w-full">

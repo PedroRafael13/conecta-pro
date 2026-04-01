@@ -83,7 +83,7 @@ export function ShiftCheckModal({
             <Input
               type="datetime-local"
               value={dateTime}
-              onChange={(e) = aria-label="Datetime Local"> setDateTime(e.target.value)}
+              onChange={(e) => setDateTime(e.target.value)}
             />
           </div>
         )}
@@ -97,7 +97,7 @@ export function ShiftCheckModal({
               type="number"
               min={0}
               value={breakMinutes}
-              onChange={(e) = aria-label="Number"> setBreakMinutes(Number(e.target.value) || 0)}
+              onChange={(e) => setBreakMinutes(Number(e.target.value) || 0)}
             />
           </div>
         )}

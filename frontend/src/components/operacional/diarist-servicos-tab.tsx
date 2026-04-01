@@ -36,7 +36,7 @@ export function DiaristServicosTab({
               <input
                 type="checkbox"
                 checked={formData.tipos_servico.includes(tipo.value)}
-                onChange={() = aria-label="Checkbox"> onTipoServicoChange(tipo.value)}
+                onChange={() => onTipoServicoChange(tipo.value)}
                 className="w-4 h-4 rounded"
               />
               <span className="text-sm text-[hsl(var(--foreground))]">{tipo.label}</span>
@@ -62,7 +62,7 @@ export function DiaristServicosTab({
               <input
                 type="checkbox"
                 checked={formData.dias_disponiveis.includes(dia.value)}
-                onChange={() = aria-label="Checkbox"> onDiaDisponivelChange(dia.value)}
+                onChange={() => onDiaDisponivelChange(dia.value)}
                 className="sr-only"
               />
               <span className="text-sm">{dia.label}</span>

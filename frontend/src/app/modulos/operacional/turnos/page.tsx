@@ -354,7 +354,7 @@ export default function TurnosPage() {
                   <input
                     type="checkbox"
                     checked={filters.is_filled === false}
-                    onChange={(e) = aria-label="Checkbox">
+                    onChange={(e) =>
                       setFilters({
                         ...filters,
                         is_filled: e.target.checked ? false : undefined,
@@ -372,7 +372,7 @@ export default function TurnosPage() {
                 <Input
                   type="date"
                   value={filters.start_date || dateRange.start}
-                  onChange={(e) = aria-label="Date"> setFilters({ ...filters, start_date: e.target.value || undefined })}
+                  onChange={(e) => setFilters({ ...filters, start_date: e.target.value || undefined })}
                 />
               </div>
               <div>
@@ -382,7 +382,7 @@ export default function TurnosPage() {
                 <Input
                   type="date"
                   value={filters.end_date || dateRange.end}
-                  onChange={(e) = aria-label="Date"> setFilters({ ...filters, end_date: e.target.value || undefined })}
+                  onChange={(e) => setFilters({ ...filters, end_date: e.target.value || undefined })}
                 />
               </div>
             </div>

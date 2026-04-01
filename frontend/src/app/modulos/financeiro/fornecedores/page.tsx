@@ -270,7 +270,7 @@ export default function FornecedoresPage() {
             type="search"
             placeholder="Buscar por nome, CNPJ/CPF ou email..."
             value={search}
-            onChange={(e) = aria-label="Buscar Por Nome,  C N P J/ C P F Ou Email..."> setSearch(e.target.value)}
+            onChange={(e) => setSearch(e.target.value)}
             icon={<Search className="w-4 h-4" />}
           />
         </div>

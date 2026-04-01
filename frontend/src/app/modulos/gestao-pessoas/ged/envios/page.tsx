@@ -546,7 +546,7 @@ export default function EnviosPage() {
                     id="email"
                     type="email"
                     value={sendEmail}
-                    onChange={(e) = aria-label="Email"> setSendEmail(e.target.value)}
+                    onChange={(e) => setSendEmail(e.target.value)}
                     placeholder="cliente@empresa.com"
                   />
                 </div>

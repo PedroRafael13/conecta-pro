@@ -147,7 +147,7 @@ export function DocumentApprovalDialog({
             <Textarea
               placeholder="Descreva o motivo caso vá rejeitar o documento"
               value={rejectionReason}
-              onChange={(e) = aria-label="Descreva O Motivo Caso Vá Rejeitar O Documento"> setRejectionReason(e.target.value)}
+              onChange={(e) => setRejectionReason(e.target.value)}
               rows={4}
             />
           </div>

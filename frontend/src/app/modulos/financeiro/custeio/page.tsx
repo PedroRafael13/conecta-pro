@@ -235,7 +235,7 @@ function AddCostModal({ isOpen, onClose }: AddCostModalProps) {
               type="text"
               placeholder="Ex: Condomínio Solar das Águas"
               value={form.contrato}
-              onChange={(e) = aria-label="Ex:  Condomínio  Solar Das Águas"> handleChange('contrato', e.target.value)}
+              onChange={(e) => handleChange('contrato', e.target.value)}
               className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-sm text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]/40"
             />
           </div>
@@ -264,7 +264,7 @@ function AddCostModal({ isOpen, onClose }: AddCostModalProps) {
             <input
               type="month"
               value={form.mes_referencia}
-              onChange={(e) = aria-label="Month"> handleChange('mes_referencia', e.target.value)}
+              onChange={(e) => handleChange('mes_referencia', e.target.value)}
               className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-sm text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]/40"
             />
           </div>
@@ -282,7 +282,7 @@ function AddCostModal({ isOpen, onClose }: AddCostModalProps) {
                 step="0.01"
                 placeholder="0,00"
                 value={form.valor_contrato}
-                onChange={(e) = aria-label="0,00"> handleChange('valor_contrato', e.target.value)}
+                onChange={(e) => handleChange('valor_contrato', e.target.value)}
                 className="w-full pl-8 pr-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-sm text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]/40"
               />
             </div>
@@ -300,7 +300,7 @@ function AddCostModal({ isOpen, onClose }: AddCostModalProps) {
                 step="0.01"
                 placeholder="0,00"
                 value={form.custo_mao_obra}
-                onChange={(e) = aria-label="0,00"> handleChange('custo_mao_obra', e.target.value)}
+                onChange={(e) => handleChange('custo_mao_obra', e.target.value)}
                 className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-sm text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]/40"
               />
             </div>
@@ -316,7 +316,7 @@ function AddCostModal({ isOpen, onClose }: AddCostModalProps) {
                 step="0.01"
                 placeholder="0,00"
                 value={form.custo_materiais}
-                onChange={(e) = aria-label="0,00"> handleChange('custo_materiais', e.target.value)}
+                onChange={(e) => handleChange('custo_materiais', e.target.value)}
                 className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-sm text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]/40"
               />
             </div>
@@ -332,7 +332,7 @@ function AddCostModal({ isOpen, onClose }: AddCostModalProps) {
                 step="0.01"
                 placeholder="0,00"
                 value={form.custo_overhead}
-                onChange={(e) = aria-label="0,00"> handleChange('custo_overhead', e.target.value)}
+                onChange={(e) => handleChange('custo_overhead', e.target.value)}
                 className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-sm text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]/40"
               />
             </div>
@@ -906,7 +906,7 @@ export default function CusteioABCPage() {
               <div className="flex-1">
                 <Input
                   type="search"
-                  placeholder={`Buscar ${TABS.find(t = aria-label="Search"> t.key === activeTab)?.label.toLowerCase()}...`}
+                  placeholder={`Buscar ${TABS.find(t => t.key === activeTab)?.label.toLowerCase()}...`}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   icon={<Search className="w-4 h-4" />}

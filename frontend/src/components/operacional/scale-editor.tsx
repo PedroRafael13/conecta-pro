@@ -324,7 +324,7 @@ export function ScaleEditor({ scale, shifts, employees, onRefresh }: ScaleEditor
               <Input
                 type="time"
                 value={formData.planned_start_time}
-                onChange={(e) = aria-label="Time"> setFormData({ ...formData, planned_start_time: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, planned_start_time: e.target.value })}
               />
             </div>
             <div>
@@ -334,7 +334,7 @@ export function ScaleEditor({ scale, shifts, employees, onRefresh }: ScaleEditor
               <Input
                 type="time"
                 value={formData.planned_end_time}
-                onChange={(e) = aria-label="Time"> setFormData({ ...formData, planned_end_time: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, planned_end_time: e.target.value })}
               />
             </div>
           </div>
@@ -348,7 +348,7 @@ export function ScaleEditor({ scale, shifts, employees, onRefresh }: ScaleEditor
               min="0"
               max="120"
               value={formData.planned_break_minutes}
-              onChange={(e) = aria-label="Number"> setFormData({ ...formData, planned_break_minutes: Number(e.target.value) })}
+              onChange={(e) => setFormData({ ...formData, planned_break_minutes: Number(e.target.value) })}
             />
           </div>
 
@@ -357,7 +357,7 @@ export function ScaleEditor({ scale, shifts, employees, onRefresh }: ScaleEditor
               <input
                 type="checkbox"
                 checked={formData.is_off_day}
-                onChange={(e) = aria-label="Checkbox"> setFormData({ ...formData, is_off_day: e.target.checked })}
+                onChange={(e) => setFormData({ ...formData, is_off_day: e.target.checked })}
                 className="rounded border-[hsl(var(--border))]"
               />
               <span>Marcar como folga</span>

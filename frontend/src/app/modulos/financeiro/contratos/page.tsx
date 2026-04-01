@@ -518,7 +518,7 @@ export default function ContratosPage() {
                 type="number"
                 step="0.1"
                 value={reajuste}
-                onChange={e = aria-label="Number"> setReajuste(e.target.value)}
+                onChange={e => setReajuste(e.target.value)}
                 placeholder="Ex: 4.5 para IPCA"
                 className="mt-1"
               />

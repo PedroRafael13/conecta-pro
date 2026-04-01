@@ -105,7 +105,7 @@ const NFeFormModal: React.FC<NFeFormModalProps> = ({
           step="0.01"
           min="0"
           value={formData.amount}
-          onChange={(e) = aria-label="Number"> handleChange('amount', e.target.value)}
+          onChange={(e) => handleChange('amount', e.target.value)}
           placeholder="0,00"
           required
           data-testid="input-amount"

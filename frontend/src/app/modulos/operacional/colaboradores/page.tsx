@@ -473,7 +473,7 @@ export default function ColaboradoresPage() {
             <div className="grid gap-2">
               <Label htmlFor="edit-email">E-mail</Label>
               <Input id="edit-email" type="email" value={editForm.email}
-                onChange={(e) = aria-label="Email"> setEditForm({ ...editForm, email: e.target.value })}
+                onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
                 placeholder="email@exemplo.com" />
             </div>
             <div className="grid gap-2">
@@ -533,7 +533,7 @@ export default function ColaboradoresPage() {
             <div className="grid gap-2">
               <Label htmlFor="new-email">E-mail *</Label>
               <Input id="new-email" type="email" value={newForm.email}
-                onChange={(e) = aria-label="Email"> setNewForm({ ...newForm, email: e.target.value })}
+                onChange={(e) => setNewForm({ ...newForm, email: e.target.value })}
                 placeholder="email@exemplo.com" />
             </div>
             <div className="grid grid-cols-2 gap-4">
