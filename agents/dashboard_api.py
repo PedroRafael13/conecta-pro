@@ -237,7 +237,143 @@ def get_ultimo_ciclo() -> dict:
         return {}
 
 
+def get_agentes_cto() -> dict:
+    """Status dos agentes via TeamBridge."""
+    try:
+        sys.path.insert(0, str(PROJECT_DIR / "agents" / "cto"))
+        from team_bridge import TeamBridge
+        bridge = TeamBridge()
+        # Ler último ciclo para scores
+        ciclo_dir = PROJECT_DIR / "reports" / "modules"
+        import glob, os as _os
+        ciclos = sorted(
+            glob.glob(str(ciclo_dir / "ciclo_geral_*.json")),
+            key=_os.path.getmtime,
+            reverse=True,
+        )
+        if ciclos:
+            ciclo = json.loads(Path(ciclos[0]).read_text())
+            resultados = ciclo.get("resultados", [])
+            total = len(resultados)
+            saudaveis = sum(1 for r in resultados if float(r.get("score", 10) or 10) >= 9)
+            problemas = [
+                {"modulo": r.get("modulo", "?"), "score": float(r.get("score", 10) or 10)}
+                for r in resultados
+                if float(r.get("score", 10) or 10) < 9
+            ]
+            problemas.sort(key=lambda x: x["score"])
+            return {
+                "total": total,
+                "saudaveis": saudaveis,
+                "com_problema": len(problemas),
+                "score_geral": float(ciclo.get("score_geral", 10) or 10),
+                "top_problemas": problemas[:5],
+                "ciclo_ts": ciclo.get("timestamp", ""),
+            }
+    except Exception as e:
+        pass
+    return {"total": 0, "saudaveis": 0, "com_problema": 0, "erro": "TeamBridge indisponível"}
+
+
+def get_tickets_cto() -> dict:
+    """Tickets abertos e resolvidos hoje."""
+    tickets_dir = PROJECT_DIR / "agents" / "cto" / "tickets"
+    if not tickets_dir.exists():
+        return {"abertos": 0, "resolvidos_hoje": 0, "lista": []}
+
+    agora = datetime.now()
+    abertos = []
+    resolvidos_hoje = 0
+
+    for f in sorted(tickets_dir.glob("CTO-*.json"), reverse=True)[:100]:
+        try:
+            t = json.loads(f.read_text())
+            if t.get("status") == "aberto":
+                abertos.append({
+                    "numero": t["numero"],
+                    "titulo": t["titulo"][:50],
+                    "severidade": t.get("severidade", ""),
+                    "criado_em": t.get("criado_em", "")[:16],
+                    "requer_jordan": t.get("requer_jordan", False),
+                })
+            elif t.get("status") == "resolvido":
+                re_em = t.get("resolvido_em", "")
+                if re_em:
+                    ts = datetime.fromisoformat(re_em.replace("Z", ""))
+                    if (agora - ts).total_seconds() < 86400:
+                        resolvidos_hoje += 1
+        except Exception:
+            pass
+
+    return {
+        "abertos": len(abertos),
+        "resolvidos_hoje": resolvidos_hoje,
+        "lista": abertos[:10],
+    }
+
+
+def get_pos_mortems_recentes() -> list:
+    """Últimos pós-mortems gerados."""
+    try:
+        sys.path.insert(0, str(PROJECT_DIR / "agents" / "cto"))
+        from pos_mortem import PósMortem
+        return [
+            {
+                "numero": pm["numero"],
+                "titulo": pm["titulo"][:40],
+                "duracao": pm["duracao"],
+                "auto": pm.get("auto_resolvido", False),
+                "gerado_em": pm.get("gerado_em", "")[:16],
+            }
+            for pm in PósMortem().listar(5)
+        ]
+    except Exception:
+        return []
+
+
+def get_runbook_stats() -> dict:
+    """Estatísticas dos runbooks executados."""
+    try:
+        sys.path.insert(0, str(PROJECT_DIR / "agents" / "cto"))
+        from runbook import RunbookExecutor
+        rb = RunbookExecutor()
+        # Ler histórico de runbooks
+        hist = getattr(rb, "historico", None)
+        if hist is None:
+            hist_file = PROJECT_DIR / "agents" / "cto" / "knowledge" / "runbook_history.json"
+            if hist_file.exists():
+                hist = json.loads(hist_file.read_text())
+            else:
+                hist = []
+        total = len(hist)
+        sucesso = sum(1 for h in hist if h.get("resolvido", False))
+        return {"total_executados": total, "sucesso": sucesso, "falha": total - sucesso}
+    except Exception:
+        return {}
+
+
 if __name__ == "__main__":
+    print(f"[Dashboard] Gerando snapshot {datetime.now().strftime('%H:%M:%S')}...")
     data = collect()
+
+    # Enriquecer com dados ao vivo do CTO
+    data["agentes"] = get_agentes_cto()
+    data["tickets"] = get_tickets_cto()
+    data["pos_mortems_recentes"] = get_pos_mortems_recentes()
+    data["runbook_stats"] = get_runbook_stats()
+    # Compatibilidade retroativa
+    data.setdefault("openclaw_interventions", data.get("interventions", []))
+
     OUTPUT.write_text(json.dumps(data, indent=2, ensure_ascii=False, default=str))
-    print(f"Dashboard data written to {OUTPUT} ({len(data['containers'])} containers)")
+
+    c = data["containers"]
+    sist = data["metrics"]
+    ags = data["agentes"]
+    tks = data["tickets"]
+    print(f"  ✅ Containers: {sum(1 for x in c if x.get('health') in ('healthy','running'))}/{len(c)} healthy")
+    print(f"  ✅ RAM: {sist['mem_percent']}% | Swap: {sist.get('swap_used_gb', 0)}GB usados")
+    print(f"  ✅ Agentes: {ags.get('saudaveis', 0)}/{ags.get('total', 0)} saudáveis (score {ags.get('score_geral', '?')}/10)")
+    print(f"  ✅ Tickets: {tks['abertos']} abertos | {tks['resolvidos_hoje']} resolvidos hoje")
+    pms = data["pos_mortems_recentes"]
+    print(f"  ✅ Pós-mortems recentes: {len(pms)}")
+    print(f"  ✅ Dashboard atualizado → {OUTPUT}")

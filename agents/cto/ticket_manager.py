@@ -123,6 +123,14 @@ class TicketManager:
                     ticket["solucao_aplicada"] = solucao_aplicada
                 if licao:
                     ticket["licao_aprendida"] = licao
+                # Gerar pós-mortem automaticamente
+                try:
+                    import sys
+                    sys.path.insert(0, "/opt/conecta-pro/agents/cto")
+                    from pos_mortem import PósMortem
+                    PósMortem().gerar(ticket)
+                except Exception as e:
+                    print(f"[PM] {e}")
 
         f.write_text(
             json.dumps(ticket, indent=2, ensure_ascii=False, default=str)

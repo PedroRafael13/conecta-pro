@@ -166,6 +166,9 @@ def cmd_ajuda(chat_id: int):
         "   Tipos: RedisDown, SwapHigh, CeleryUnhealthy,\n"
         "          BackendUnhealthy, DiskSpaceLow, PM2ExcessiveRestarts\n"
         "`/escaladas` — Ver escaladas ativas\n\n"
+        "📊 *Sprint 7 — Dashboard + Pós-Mortem:*\n"
+        "`/posmortem` — Últimos pós-mortems gerados\n"
+        "`/dashboard` — Forçar atualização do dashboard ao vivo\n\n"
         "🌙 *Sprint 8 — Turno + Semanal:*\n"
         "`/turno` — Turno atual (dia/noite/fim de semana)\n"
         "`/semanal` — Relatório semanal sob demanda\n\n"
@@ -734,6 +737,10 @@ def processar_update(update: dict):
         cmd_autoevolucao(chat_id)
     elif tl.startswith("/auditar"):
         cmd_auditar(chat_id)
+    elif tl.startswith("/posmortem"):
+        cmd_posmortem(chat_id)
+    elif tl.startswith("/dashboard"):
+        cmd_dashboard(chat_id)
     elif tl.startswith("/runbooks"):
         cmd_runbooks(chat_id)
     elif tl.startswith("/resolver"):
@@ -870,6 +877,52 @@ def cmd_auditar(chat_id: int):
         send(resultado, chat_id=chat_id)
     except Exception as e:
         send(f"⚠️ Erro: {e}", chat_id=chat_id)
+
+
+# ─── Comandos Sprint 7 ───────────────────────────────────────────────────────
+
+
+def cmd_posmortem(chat_id: int):
+    """Lista pós-mortems recentes."""
+    try:
+        sys.path.insert(0, str(CTO_DIR))
+        from pos_mortem import PósMortem
+        pms = PósMortem().listar(5)
+        if not pms:
+            send("ℹ️ Nenhum pós-mortem gerado ainda.\n"
+                 "_Pós-mortems são criados automaticamente quando um ticket fecha._",
+                 chat_id=chat_id)
+            return
+        linhas = ["📋 *Últimos pós-mortems:*\n"]
+        for pm in pms:
+            emoji = "✅" if pm.get("auto_resolvido") else "🔧"
+            linhas.append(
+                f"{emoji} *{pm['numero']}*\n"
+                f"  _{pm['titulo'][:45]}_\n"
+                f"  ⏱ {pm['duracao']}\n"
+            )
+        send("\n".join(linhas), chat_id=chat_id)
+    except Exception as e:
+        send(f"⚠️ {e}", chat_id=chat_id)
+
+
+def cmd_dashboard(chat_id: int):
+    """Força atualização do dashboard ao vivo."""
+    send("📊 Atualizando dashboard com dados ao vivo...", chat_id=chat_id)
+    try:
+        r = subprocess.run(
+            "python3 /opt/conecta-pro/agents/dashboard_api.py",
+            shell=True, capture_output=True, text=True, timeout=45,
+        )
+        if r.returncode == 0:
+            # Parse output for key metrics
+            linhas = [l for l in r.stdout.splitlines() if "✅" in l]
+            msg = "✅ *Dashboard atualizado!*\n\n" + "\n".join(linhas)
+            send(msg, chat_id=chat_id)
+        else:
+            send(f"⚠️ Erro: {r.stderr[:150]}", chat_id=chat_id)
+    except Exception as e:
+        send(f"⚠️ {e}", chat_id=chat_id)
 
 
 # ─── Comandos Sprint 6 ───────────────────────────────────────────────────────
