@@ -191,16 +191,20 @@ class AnnouncementRepository:
             query = query.where(Announcement.status == filters.status.value)
 
         if filters.priority:
-            query = query.where(Announcement.priority == filters.priority.value)
+            # prioridade é a coluna real; priority é @property alias
+            query = query.where(Announcement.prioridade == filters.priority.value)
 
         if filters.category:
-            query = query.where(Announcement.category == filters.category.value)
+            # tipo é a coluna real; category é @property alias
+            query = query.where(Announcement.tipo == filters.category.value)
 
         if filters.target_type:
-            query = query.where(Announcement.target_type == filters.target_type.value)
+            # destinatarios_tipo é a coluna real; target_type é @property alias
+            query = query.where(Announcement.destinatarios_tipo == filters.target_type.value)
 
         if filters.requires_acknowledgment is not None:
-            query = query.where(Announcement.requires_acknowledgment == filters.requires_acknowledgment)
+            # requer_confirmacao é a coluna real; requires_acknowledgment é @property alias
+            query = query.where(Announcement.requer_confirmacao == filters.requires_acknowledgment)
 
         if filters.is_active is not None:
             query = query.where(Announcement.is_active == filters.is_active)
@@ -209,8 +213,9 @@ class AnnouncementRepository:
             search_term = f"%{filters.search}%"
             query = query.where(
                 or_(
-                    Announcement.title.ilike(search_term),
-                    Announcement.content.ilike(search_term),
+                    # titulo/conteudo são as colunas reais; title/content são @property aliases
+                    Announcement.titulo.ilike(search_term),
+                    Announcement.conteudo.ilike(search_term),
                 )
             )
 
@@ -537,7 +542,7 @@ class AnnouncementRepository:
         result = await self.db.execute(
             select(Announcement).where(
                 Announcement.status == AnnouncementStatus.SCHEDULED.value,
-                Announcement.publish_at <= datetime.utcnow(),
+                Announcement.data_publicacao <= datetime.utcnow(),  # coluna real; publish_at é @property
                 Announcement.is_active.is_(True),
             )
         )
@@ -546,7 +551,7 @@ class AnnouncementRepository:
         count = 0
         for announcement in scheduled:
             announcement.status = AnnouncementStatus.PUBLISHED.value
-            announcement.published_at = datetime.utcnow()
+            announcement.data_publicacao = datetime.utcnow()  # coluna real; published_at é @property sem setter
             announcement.updated_at = datetime.utcnow()
             count += 1
 
