@@ -98,6 +98,13 @@ class MasterOrchestrator:
         )
 
         if self.ciclo in ["diario", "semanal"]:
+            from rescisao_validator import RescisaoValidator
+
+            print("\n[N3] RescisaoValidator...")
+            resultados["rescisao"] = self._rodar(
+                "rescisao", RescisaoValidator, self.token
+            )
+
             from performance_agent import PerformanceAgent
             from security_agent import SecurityAgent
             from coverage_agent import CoverageAgent
@@ -178,6 +185,7 @@ class MasterOrchestrator:
             "trend": "Tendência Perf",
             "load": "Carga",
             "business": "Negócio",
+            "rescisao": "Rescisão/eSocial",
             "auditoria": "Auditoria Código",
         }
         linhas = [
