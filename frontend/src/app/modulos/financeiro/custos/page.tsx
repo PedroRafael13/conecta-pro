@@ -170,7 +170,7 @@ function ModalRegistro({ tipoInicial, mes, onClose, onSuccess }: ModalRegistroPr
             <input
               type="month"
               value={mesForm}
-              onChange={e => setMesForm(e.target.value)}
+              onChange={e = aria-label="Month"> setMesForm(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
               required
             />
@@ -183,7 +183,7 @@ function ModalRegistro({ tipoInicial, mes, onClose, onSuccess }: ModalRegistroPr
               step="0.01"
               min="0"
               value={custoTotal}
-              onChange={e => setCustoTotal(e.target.value)}
+              onChange={e = aria-label="Number"> setCustoTotal(e.target.value)}
               placeholder="Ex: 8500.00"
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
               required
@@ -197,7 +197,7 @@ function ModalRegistro({ tipoInicial, mes, onClose, onSuccess }: ModalRegistroPr
               step="0.01"
               min="0"
               value={margemContratual}
-              onChange={e => setMargemContratual(e.target.value)}
+              onChange={e = aria-label="Number"> setMargemContratual(e.target.value)}
               placeholder="Ex: 1800.00"
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
             />
@@ -327,7 +327,7 @@ export default function CustosPage() {
           <input
             type="month"
             value={mes}
-            onChange={e => setMes(e.target.value)}
+            onChange={e = aria-label="Month"> setMes(e.target.value)}
             className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
           />
           <button

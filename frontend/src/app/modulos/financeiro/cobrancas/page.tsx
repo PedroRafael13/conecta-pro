@@ -498,7 +498,7 @@ function TabEmitir() {
               <Input
                 placeholder="Ex: João da Silva"
                 value={form.payer_name}
-                onChange={(e) => setField('payer_name', e.target.value)}
+                onChange={(e) = aria-label="Ex:  João Da  Silva"> setField('payer_name', e.target.value)}
               />
             </div>
 
@@ -507,7 +507,7 @@ function TabEmitir() {
               <Input
                 placeholder="000.000.000-00 ou 00.000.000/0001-00"
                 value={form.payer_document}
-                onChange={(e) => setField('payer_document', maskDocument(e.target.value))}
+                onChange={(e) = aria-label="000.000.000 00 Ou 00.000.000/0001 00"> setField('payer_document', maskDocument(e.target.value))}
                 maxLength={18}
               />
             </div>
@@ -518,7 +518,7 @@ function TabEmitir() {
                 <Input
                   type="number" min="0.01" step="0.01" placeholder="0,00"
                   value={form.amount}
-                  onChange={(e) => setField('amount', e.target.value)}
+                  onChange={(e) = aria-label="0,00"> setField('amount', e.target.value)}
                 />
               </div>
               <div className="space-y-1.5">
@@ -527,7 +527,7 @@ function TabEmitir() {
                   type="date"
                   value={form.due_date}
                   min={new Date().toISOString().split('T')[0]}
-                  onChange={(e) => setField('due_date', e.target.value)}
+                  onChange={(e) = aria-label="Date"> setField('due_date', e.target.value)}
                 />
               </div>
             </div>
@@ -538,7 +538,7 @@ function TabEmitir() {
                 rows={3}
                 placeholder="Ex: Mensalidade de vigilância — Janeiro/2026"
                 value={form.description}
-                onChange={(e) => setField('description', e.target.value)}
+                onChange={(e) = aria-label="Ex:  Mensalidade De Vigilância —  Janeiro/2026"> setField('description', e.target.value)}
                 className={cn(
                   'w-full rounded-md border border-input bg-background px-3 py-2 text-sm',
                   'placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1',
@@ -638,7 +638,7 @@ function TabEmitir() {
                     <Input
                       type="number" step="0.01" min="0.01" placeholder="Ex: 1.250,00"
                       value={pixForm.amount}
-                      onChange={(e) => setPixForm(p => ({ ...p, amount: e.target.value }))}
+                      onChange={(e) = aria-label="Ex: 1.250,00"> setPixForm(p => ({ ...p, amount: e.target.value }))}
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -661,7 +661,7 @@ function TabEmitir() {
                   <Input
                     placeholder="Ex: Contrato de vigilância — Março/2026"
                     value={pixForm.description}
-                    onChange={(e) => setPixForm(p => ({ ...p, description: e.target.value }))}
+                    onChange={(e) = aria-label="Ex:  Contrato De Vigilância —  Março/2026"> setPixForm(p => ({ ...p, description: e.target.value }))}
                     maxLength={140}
                   />
                 </div>
@@ -672,7 +672,7 @@ function TabEmitir() {
                     <Input
                       placeholder="Nome ou razão social"
                       value={pixForm.payer_name}
-                      onChange={(e) => setPixForm(p => ({ ...p, payer_name: e.target.value }))}
+                      onChange={(e) = aria-label="Nome Ou Razão Social"> setPixForm(p => ({ ...p, payer_name: e.target.value }))}
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -680,7 +680,7 @@ function TabEmitir() {
                     <Input
                       placeholder="000.000.000-00"
                       value={pixForm.payer_document}
-                      onChange={(e) => setPixForm(p => ({ ...p, payer_document: maskDocument(e.target.value) }))}
+                      onChange={(e) = aria-label="000.000.000 00"> setPixForm(p => ({ ...p, payer_document: maskDocument(e.target.value) }))}
                     />
                   </div>
                 </div>
@@ -1151,7 +1151,7 @@ function TabInadimplentes() {
           <Input
             type="number" min="0" step="100" placeholder="R$ 0"
             value={filtroValor}
-            onChange={(e) => setFiltroValor(e.target.value)}
+            onChange={(e) = aria-label="R$ 0"> setFiltroValor(e.target.value)}
             className="w-32 h-9"
           />
         </div>
@@ -1345,7 +1345,7 @@ function TabInadimplentes() {
                   rows={4}
                   placeholder="Ex: Falei com o responsável financeiro. Prometeu pagar até dia 15/03. Aguardando…"
                   value={notaTexto}
-                  onChange={(e) => setNotaTexto(e.target.value)}
+                  onChange={(e) = aria-label="Ex:  Falei Com O Responsável Financeiro.  Prometeu Pagar Até Dia 15/03.  Aguardando…"> setNotaTexto(e.target.value)}
                   className={cn(
                     'w-full rounded-md border border-input bg-background px-3 py-2 text-sm',
                     'placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none'
@@ -1392,7 +1392,7 @@ function TabInadimplentes() {
                     type="number" min="0.01" step="0.01"
                     placeholder={String(acordoModal.valor.toFixed(2))}
                     value={acordoForm.valor}
-                    onChange={(e) => setAcordoForm((p) => ({ ...p, valor: e.target.value }))}
+                    onChange={(e) = aria-label="Number"> setAcordoForm((p) => ({ ...p, valor: e.target.value }))}
                   />
                 </div>
 
@@ -1415,7 +1415,7 @@ function TabInadimplentes() {
                       type="date"
                       value={acordoForm.data_primeiro}
                       min={new Date().toISOString().split('T')[0]}
-                      onChange={(e) => setAcordoForm((p) => ({ ...p, data_primeiro: e.target.value }))}
+                      onChange={(e) = aria-label="Date"> setAcordoForm((p) => ({ ...p, data_primeiro: e.target.value }))}
                     />
                   </div>
                 </div>

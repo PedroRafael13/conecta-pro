@@ -245,7 +245,7 @@ export function EditDocumentDialog({
               <Input
                 placeholder="Código ou referência externa"
                 value={formData.external_reference}
-                onChange={(e) => updateField('external_reference', e.target.value)}
+                onChange={(e) = aria-label="Código Ou Referência Externa"> updateField('external_reference', e.target.value)}
                 maxLength={100}
               />
             </div>
@@ -271,7 +271,7 @@ export function EditDocumentDialog({
                   <Input
                     type="date"
                     value={formData.valid_from}
-                    onChange={(e) => updateField('valid_from', e.target.value)}
+                    onChange={(e) = aria-label="Date"> updateField('valid_from', e.target.value)}
                   />
                 </div>
 
@@ -280,7 +280,7 @@ export function EditDocumentDialog({
                   <Input
                     type="date"
                     value={formData.valid_until}
-                    onChange={(e) => updateField('valid_until', e.target.value)}
+                    onChange={(e) = aria-label="Date"> updateField('valid_until', e.target.value)}
                   />
                 </div>
               </div>
@@ -377,7 +377,7 @@ export function EditDocumentDialog({
                 <Input
                   type="datetime-local"
                   value={formData.signature_deadline}
-                  onChange={(e) => updateField('signature_deadline', e.target.value)}
+                  onChange={(e) = aria-label="Datetime Local"> updateField('signature_deadline', e.target.value)}
                 />
               </div>
             )}

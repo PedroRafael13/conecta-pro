@@ -698,7 +698,7 @@ export default function DisputasDashboardPage() {
                             type="number"
                             placeholder="0,00"
                             value={manualLanceValue}
-                            onChange={(e) => setManualLanceValue(e.target.value)}
+                            onChange={(e) = aria-label="0,00"> setManualLanceValue(e.target.value)}
                             className="w-full h-9 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] pl-9 pr-3 text-sm text-[hsl(var(--foreground))]"
                           />
                         </div>
@@ -758,7 +758,7 @@ export default function DisputasDashboardPage() {
                     <input
                       type="number"
                       value={simValorRef}
-                      onChange={(e) => setSimValorRef(e.target.value)}
+                      onChange={(e) = aria-label="Number"> setSimValorRef(e.target.value)}
                       placeholder="2500000"
                       className="w-full h-9 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-3 text-sm text-[hsl(var(--foreground))]"
                     />
@@ -789,7 +789,7 @@ export default function DisputasDashboardPage() {
                     <input
                       type="number"
                       value={simPisoMinimo}
-                      onChange={(e) => setSimPisoMinimo(e.target.value)}
+                      onChange={(e) = aria-label="Number"> setSimPisoMinimo(e.target.value)}
                       placeholder="2000000"
                       className="w-full h-9 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-3 text-sm text-[hsl(var(--foreground))]"
                     />
@@ -803,7 +803,7 @@ export default function DisputasDashboardPage() {
                     <input
                       type="number"
                       value={simRodadas}
-                      onChange={(e) => setSimRodadas(e.target.value)}
+                      onChange={(e) = aria-label="Number"> setSimRodadas(e.target.value)}
                       min={1}
                       max={50}
                       className="w-full h-9 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-3 text-sm text-[hsl(var(--foreground))]"
@@ -818,7 +818,7 @@ export default function DisputasDashboardPage() {
                     <input
                       type="number"
                       value={simConcorrentes}
-                      onChange={(e) => setSimConcorrentes(e.target.value)}
+                      onChange={(e) = aria-label="Number"> setSimConcorrentes(e.target.value)}
                       min={1}
                       max={10}
                       className="w-full h-9 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-3 text-sm text-[hsl(var(--foreground))]"

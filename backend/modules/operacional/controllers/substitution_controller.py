@@ -138,7 +138,7 @@ async def get_pending_substitutions(
 @router.post(
     "/suggest",
     response_model=list[SubstituteSuggestion],
-    dependencies=[require_operacional_permission(Permission.SUBSTITUTIONS_CREATE)],
+    dependencies=[require_operacional_permission(Permission.SUBSTITUTIONS_CREATE, status_code=201)],
 )
 async def suggest_substitutes(
     data: SubstitutionSuggestRequest,
@@ -258,7 +258,7 @@ async def update_substitution(
 @router.post(
     "/{substitution_id}/confirm",
     response_model=SubstitutionResponse,
-    dependencies=[require_operacional_permission(Permission.SUBSTITUTIONS_APPROVE)],
+    dependencies=[require_operacional_permission(Permission.SUBSTITUTIONS_APPROVE, status_code=201)],
 )
 async def confirm_substitution(
     substitution_id: str,
@@ -293,7 +293,7 @@ async def confirm_substitution(
 @router.post(
     "/{substitution_id}/reject",
     response_model=SubstitutionResponse,
-    dependencies=[require_operacional_permission(Permission.SUBSTITUTIONS_APPROVE)],
+    dependencies=[require_operacional_permission(Permission.SUBSTITUTIONS_APPROVE, status_code=201)],
 )
 async def reject_substitution(
     substitution_id: str,
@@ -326,7 +326,7 @@ async def reject_substitution(
 @router.post(
     "/{substitution_id}/complete",
     response_model=SubstitutionResponse,
-    dependencies=[require_operacional_permission(Permission.SUBSTITUTIONS_APPROVE)],
+    dependencies=[require_operacional_permission(Permission.SUBSTITUTIONS_APPROVE, status_code=201)],
 )
 async def complete_substitution(
     substitution_id: str,

@@ -232,7 +232,7 @@ export default function GedClientesPage() {
           type="text"
           placeholder="Buscar por nome ou CNPJ..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) = aria-label="Buscar Por Nome Ou  C N P J..."> setSearch(e.target.value)}
           className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
         />
       </div>
@@ -325,7 +325,7 @@ export default function GedClientesPage() {
                 <input
                   type="text"
                   value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  onChange={(e) = aria-label="Text"> setForm({ ...form, name: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                   placeholder="Nome do cliente"
                 />
@@ -350,7 +350,7 @@ export default function GedClientesPage() {
                   <input
                     type="text"
                     value={form.cnpj}
-                    onChange={(e) => setForm({ ...form, cnpj: e.target.value })}
+                    onChange={(e) = aria-label="Text"> setForm({ ...form, cnpj: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                     placeholder="00.000.000/0000-00"
                   />
@@ -361,7 +361,7 @@ export default function GedClientesPage() {
                 <input
                   type="text"
                   value={form.contact_name}
-                  onChange={(e) => setForm({ ...form, contact_name: e.target.value })}
+                  onChange={(e) = aria-label="Text"> setForm({ ...form, contact_name: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                   placeholder="Nome do contato"
                 />
@@ -372,7 +372,7 @@ export default function GedClientesPage() {
                   <input
                     type="email"
                     value={form.contact_email}
-                    onChange={(e) => setForm({ ...form, contact_email: e.target.value })}
+                    onChange={(e) = aria-label="Email"> setForm({ ...form, contact_email: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                     placeholder="email@exemplo.com"
                   />
@@ -382,7 +382,7 @@ export default function GedClientesPage() {
                   <input
                     type="text"
                     value={form.contact_phone}
-                    onChange={(e) => setForm({ ...form, contact_phone: e.target.value })}
+                    onChange={(e) = aria-label="Text"> setForm({ ...form, contact_phone: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                     placeholder="(92) 99999-0000"
                   />

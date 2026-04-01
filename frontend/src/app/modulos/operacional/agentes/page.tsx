@@ -233,7 +233,7 @@ export default function AgentesPage() {
               type="search"
               placeholder="Buscar por nome, email ou matricula..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) = aria-label="Buscar Por Nome, Email Ou Matricula..."> setSearchTerm(e.target.value)}
               icon={<Search className="w-4 h-4" />}
             />
           </div>

@@ -106,7 +106,7 @@ export function BillingRuleFormModal({ isOpen, onClose, onSubmit, rule, isLoadin
                 step={formData.type === 'percentage' ? '0.1' : '0.01'}
                 min="0"
                 value={formData.value}
-                onChange={(e) => handleChange('value', e.target.value)}
+                onChange={(e) = aria-label="Number"> handleChange('value', e.target.value)}
                 placeholder={formData.type === 'percentage' ? '0,0' : '0,00'}
                 required
               />

@@ -133,7 +133,9 @@ async def download_payslip(
     )
 
 
-@router.post("/{payslip_id}/acknowledge", response_model=PaySlipResponse, summary="Dar ciência no contracheque")
+@router.post(
+    "/{payslip_id}/acknowledge", response_model=PaySlipResponse, summary="Dar ciência no contracheque", status_code=201
+)
 async def acknowledge_payslip(
     payslip_id: UUID,
     db: AsyncSession = Depends(get_async_session),
@@ -153,7 +155,7 @@ async def acknowledge_payslip(
     return PaySlipResponse.model_validate(payslip)
 
 
-@router.post("/{payslip_id}/contest", response_model=PaySlipResponse, summary="Contestar contracheque")
+@router.post("/{payslip_id}/contest", response_model=PaySlipResponse, summary="Contestar contracheque", status_code=201)
 async def contest_payslip(
     payslip_id: UUID,
     reason: str = Query(..., min_length=10, max_length=1000),
@@ -186,7 +188,7 @@ async def contest_payslip(
     "/{payslip_id}/publish",
     response_model=PaySlipResponse,
     summary="Publicar contracheque",
-    dependencies=[Depends(require_roles(["admin", "hr"]))],
+    dependencies=[Depends(require_roles(["admin", "hr"], status_code=201))],
 )
 async def publish_payslip(
     payslip_id: UUID,
@@ -213,7 +215,7 @@ async def publish_payslip(
 @router.post(
     "/bulk-publish",
     summary="Publicar contracheques em lote",
-    dependencies=[Depends(require_roles(["admin", "hr"]))],
+    dependencies=[Depends(require_roles(["admin", "hr"], status_code=201))],
 )
 async def bulk_publish_payslips(
     year: int = Query(..., ge=2020, le=2100),

@@ -350,7 +350,7 @@ export default function OcorrenciasPage() {
                   <Input
                     placeholder="Buscar por funcionario, codigo, descricao..."
                     value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onChange={(e) = aria-label="Buscar Por Funcionario, Codigo, Descricao..."> setSearchTerm(e.target.value)}
                     className="pl-10"
                   />
                 </div>

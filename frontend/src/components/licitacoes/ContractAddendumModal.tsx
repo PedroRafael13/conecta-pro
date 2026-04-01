@@ -105,7 +105,7 @@ export function ContractAddendumModal({
                 type="number"
                 step="0.01"
                 value={formData.novo_valor}
-                onChange={(e) =>
+                onChange={(e) = aria-label="Number">
                   setFormData({ ...formData, novo_valor: Number(e.target.value) })
                 }
                 required
@@ -121,7 +121,7 @@ export function ContractAddendumModal({
                 id="nova_data_fim"
                 type="date"
                 value={formData.nova_data_fim}
-                onChange={(e) =>
+                onChange={(e) = aria-label="Date">
                   setFormData({ ...formData, nova_data_fim: e.target.value })
                 }
                 required
@@ -135,7 +135,7 @@ export function ContractAddendumModal({
               id="data_aditivo"
               type="date"
               value={formData.data_aditivo}
-              onChange={(e) =>
+              onChange={(e) = aria-label="Date">
                 setFormData({ ...formData, data_aditivo: e.target.value })
               }
               required

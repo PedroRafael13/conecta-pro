@@ -310,7 +310,7 @@ export default function NotificacoesPage() {
               <Input
                 placeholder="Buscar notificacoes..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) = aria-label="Buscar Notificacoes..."> setSearchTerm(e.target.value)}
                 className="pl-10"
               />
             </div>

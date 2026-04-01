@@ -422,7 +422,7 @@ export default function AlocacoesPage() {
                   <input
                     type="checkbox"
                     checked={filters.is_current === true}
-                    onChange={(e) =>
+                    onChange={(e) = aria-label="Checkbox">
                       setFilters({
                         ...filters,
                         is_current: e.target.checked ? true : undefined,
@@ -440,7 +440,7 @@ export default function AlocacoesPage() {
                 <Input
                   type="date"
                   value={filters.start_date_from || ''}
-                  onChange={(e) =>
+                  onChange={(e) = aria-label="Date">
                     setFilters({
                       ...filters,
                       start_date_from: e.target.value || undefined,
@@ -455,7 +455,7 @@ export default function AlocacoesPage() {
                 <Input
                   type="date"
                   value={filters.start_date_to || ''}
-                  onChange={(e) =>
+                  onChange={(e) = aria-label="Date">
                     setFilters({
                       ...filters,
                       start_date_to: e.target.value || undefined,
@@ -697,7 +697,7 @@ export default function AlocacoesPage() {
             <Input
               type="date"
               value={terminateData.end_date}
-              onChange={(e) => setTerminateData({ ...terminateData, end_date: e.target.value })}
+              onChange={(e) = aria-label="Date"> setTerminateData({ ...terminateData, end_date: e.target.value })}
             />
           </div>
           <div>
@@ -784,7 +784,7 @@ export default function AlocacoesPage() {
             <Input
               type="date"
               value={transferData.transfer_date}
-              onChange={(e) => setTransferData({ ...transferData, transfer_date: e.target.value })}
+              onChange={(e) = aria-label="Date"> setTransferData({ ...transferData, transfer_date: e.target.value })}
             />
           </div>
 

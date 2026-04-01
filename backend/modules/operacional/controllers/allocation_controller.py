@@ -274,7 +274,7 @@ async def update_allocation(
 @router.post(
     "/{allocation_id}/terminate",
     response_model=AllocationResponse,
-    dependencies=[require_operacional_permission(Permission.ALLOCATIONS_EDIT)],
+    dependencies=[require_operacional_permission(Permission.ALLOCATIONS_EDIT, status_code=201)],
 )
 async def terminate_allocation(
     allocation_id: str,

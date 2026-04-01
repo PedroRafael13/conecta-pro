@@ -314,7 +314,7 @@ async def get_recommendations(
 @router.post(
     "/compensate/{employee_id}",
     response_model=TimeBankResponse,
-    dependencies=[require_operacional_permission(Permission.TIMEBANK_CREATE)],
+    dependencies=[require_operacional_permission(Permission.TIMEBANK_CREATE, status_code=201)],
 )
 async def compensate_hours(
     employee_id: str,
@@ -429,7 +429,7 @@ async def update_entry(
 @router.post(
     "/{entry_id}/approve",
     response_model=TimeBankResponse,
-    dependencies=[require_operacional_permission(Permission.TIMEBANK_APPROVE)],
+    dependencies=[require_operacional_permission(Permission.TIMEBANK_APPROVE, status_code=201)],
 )
 async def approve_entry(
     entry_id: str,
@@ -462,7 +462,7 @@ async def approve_entry(
 @router.post(
     "/{entry_id}/reject",
     response_model=TimeBankResponse,
-    dependencies=[require_operacional_permission(Permission.TIMEBANK_APPROVE)],
+    dependencies=[require_operacional_permission(Permission.TIMEBANK_APPROVE, status_code=201)],
 )
 async def reject_entry(
     entry_id: str,

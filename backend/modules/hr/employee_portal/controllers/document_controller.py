@@ -156,7 +156,9 @@ async def download_document(
     )
 
 
-@router.post("/{document_id}/acknowledge", response_model=DocumentResponse, summary="Dar ciência no documento")
+@router.post(
+    "/{document_id}/acknowledge", response_model=DocumentResponse, summary="Dar ciência no documento", status_code=201
+)
 async def acknowledge_document(
     document_id: UUID,
     request: Request,
@@ -191,7 +193,9 @@ async def acknowledge_document(
         )
 
 
-@router.post("/{document_id}/sign", response_model=DocumentResponse, summary="Assinar documento digitalmente")
+@router.post(
+    "/{document_id}/sign", response_model=DocumentResponse, summary="Assinar documento digitalmente", status_code=201
+)
 async def sign_document(
     document_id: UUID,
     data: DocumentSignRequest,
@@ -254,7 +258,7 @@ async def upload_document(
     "/{document_id}/publish",
     response_model=DocumentResponse,
     summary="Publicar documento",
-    dependencies=[Depends(require_roles(["admin", "hr"]))],
+    dependencies=[Depends(require_roles(["admin", "hr"], status_code=201))],
 )
 async def publish_document(
     document_id: UUID,

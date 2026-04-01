@@ -108,7 +108,7 @@ const PayableFormModal: React.FC<PayableFormModalProps> = ({
           step="0.01"
           min="0.01"
           value={form.amount}
-          onChange={(e) => updateField('amount', e.target.value)}
+          onChange={(e) = aria-label="Number"> updateField('amount', e.target.value)}
           placeholder="0,00"
           data-testid="input-amount"
         />
@@ -118,7 +118,7 @@ const PayableFormModal: React.FC<PayableFormModalProps> = ({
           id="due_date"
           type="date"
           value={form.due_date}
-          onChange={(e) => updateField('due_date', e.target.value)}
+          onChange={(e) = aria-label="Date"> updateField('due_date', e.target.value)}
           data-testid="input-due-date"
         />
 

@@ -238,7 +238,7 @@ export function DocumentTagManager({
               <Input
                 placeholder="Buscar tags..."
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) = aria-label="Buscar Tags..."> setSearch(e.target.value)}
                 className="pl-10"
               />
             </div>
@@ -289,7 +289,7 @@ export function DocumentTagManager({
                 <Input
                   placeholder="Nome da tag"
                   value={newTagName}
-                  onChange={(e) => setNewTagName(e.target.value)}
+                  onChange={(e) = aria-label="Nome Da Tag"> setNewTagName(e.target.value)}
                   maxLength={50}
                 />
               </div>
@@ -299,7 +299,7 @@ export function DocumentTagManager({
                 <Textarea
                   placeholder="Descrição opcional"
                   value={newTagDescription}
-                  onChange={(e) => setNewTagDescription(e.target.value)}
+                  onChange={(e) = aria-label="Descrição Opcional"> setNewTagDescription(e.target.value)}
                   maxLength={500}
                   rows={2}
                 />

@@ -300,7 +300,7 @@ export function ProposalItemsManager({
                 min="0"
                 step="1"
                 value={formData.quantidade}
-                onChange={(e) =>
+                onChange={(e) = aria-label="Number">
                   setFormData({
                     ...formData,
                     quantidade: parseFloat(e.target.value) || 0,
@@ -320,7 +320,7 @@ export function ProposalItemsManager({
                 min="0"
                 step="0.01"
                 value={formData.valor_unitario}
-                onChange={(e) =>
+                onChange={(e) = aria-label="Number">
                   setFormData({
                     ...formData,
                     valor_unitario: parseFloat(e.target.value) || 0,

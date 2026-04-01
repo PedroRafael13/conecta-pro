@@ -139,7 +139,7 @@ export function CertificateUploadModal({
                 id="data_emissao"
                 type="date"
                 value={formData.data_emissao}
-                onChange={(e) =>
+                onChange={(e) = aria-label="Date">
                   setFormData({ ...formData, data_emissao: e.target.value })
                 }
                 required
@@ -152,7 +152,7 @@ export function CertificateUploadModal({
                 id="data_validade"
                 type="date"
                 value={formData.data_validade}
-                onChange={(e) =>
+                onChange={(e) = aria-label="Date">
                   setFormData({ ...formData, data_validade: e.target.value })
                 }
                 required
