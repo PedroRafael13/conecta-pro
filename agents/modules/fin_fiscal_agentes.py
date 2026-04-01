@@ -191,7 +191,7 @@ class AgentePrecificacao(BaseAgent):
     MODULO = "financeiro"
     SUBMODULO = "precificacao"
     ENDPOINTS = [
-        f'/api/v1/financial/contracts',
+        '/api/v1/financial/contracts',
     ]
     CONHECE_BUGS = []
 

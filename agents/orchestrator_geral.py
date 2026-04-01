@@ -165,12 +165,12 @@ def formatar_telegram(resultados: list, media: float, duracao: float) -> str:
     emoji_media = "🟢" if media >= 8 else "🟡" if media >= 6 else "🔴"
 
     linhas = [
-        f"🤖 <b>Conecta PRO — Ciclo de Monitoramento</b>",
+        "🤖 <b>Conecta PRO — Ciclo de Monitoramento</b>",
         f"📅 {agora} | ⏱ {duracao:.0f}s",
-        f"",
+        "",
         f"{emoji_media} <b>Score Geral: {media:.1f}/10</b>",
-        f"",
-        f"<b>Módulos:</b>",
+        "",
+        "<b>Módulos:</b>",
     ]
 
     for r in resultados:
