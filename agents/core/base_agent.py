@@ -43,8 +43,8 @@ class BaseAgent:
     #           "auto_corrigivel": bool}
     CONHECE_BUGS: list = []
 
-    def __init__(self, token: str = None):
-        self.token: Optional[str] = token  # injetado pelo orquestrador
+    def __init__(self):
+        self.token: Optional[str] = None
         self.container: Optional[str] = None
         self.resultados: list = []
         self.correcoes_aplicadas: list = []
@@ -55,13 +55,7 @@ class BaseAgent:
     # ─── AUTH ───────────────────────────────────────
 
     def obter_token(self) -> str:
-        """Retorna token atual ou obtém um novo (fallback)."""
-        if self.token:
-            return self.token
-        return self._obter_token_proprio()
-
-    def _obter_token_proprio(self) -> str:
-        """Obter JWT token do backend — usado apenas como fallback."""
+        """Obter JWT token do backend."""
         try:
             r = subprocess.run([
                 'curl', '-sf', '-X', 'POST',
@@ -364,8 +358,7 @@ class BaseAgent:
         5. Gerar relatório
         """
         # Setup
-        if not self.token:
-            self._obter_token_proprio()
+        self.obter_token()
         self.obter_container()
 
         if not self.token:
