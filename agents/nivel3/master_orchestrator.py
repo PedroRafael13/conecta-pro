@@ -132,6 +132,14 @@ class MasterOrchestrator:
 
             print("\n[N3] BusinessAgent...")
             resultados["business"] = self._rodar("business", BusinessAgent, self.token)
+
+            print("\n[N3] BrowserAgent (E2E Playwright)...")
+            try:
+                from browser_agent import BrowserAgent
+
+                resultados["browser"] = BrowserAgent(token=self.token).auditar()
+            except Exception as e:
+                resultados["browser"] = {"score": 0, "erro": str(e), "bugs": []}
             print("\n[N2] AuditAgent...")
             try:
                 from audit_orchestrator import AuditOrchestrator
@@ -185,6 +193,7 @@ class MasterOrchestrator:
             "trend": "Tendência Perf",
             "load": "Carga",
             "business": "Negócio",
+            "browser": "E2E Browser",
             "rescisao": "Rescisão/eSocial",
             "auditoria": "Auditoria Código",
         }
