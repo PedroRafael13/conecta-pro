@@ -128,6 +128,16 @@ def gerar_relatorio() -> str:
         except Exception:
             pass
 
+    # ─── 4b. TEAM SUPPORT ────────────────────────────────────────────────────
+    try:
+        import sys as _sys
+        _sys.path.insert(0, str(CTO_DIR))
+        from team_bridge import TeamBridge
+        resumo_team = TeamBridge().resumo_para_cto()
+        secoes.append(resumo_team)
+    except Exception:
+        pass
+
     # ─── 5. TICKETS ABERTOS ───────────────────────────────────────────────────
     tickets_abertos = []
     for f in sorted(TICKETS_DIR.glob("*.json"), reverse=True)[:30]:

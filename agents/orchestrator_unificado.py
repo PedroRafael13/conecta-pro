@@ -91,6 +91,16 @@ except Exception as e:
     _CTO_BRAIN = None
     CTO_BRAIN_OK = False
 
+# ── TeamBridge (Sprint 5 — CTO ↔ 80 agentes) ─────────────────────────────────
+try:
+    from team_bridge import TeamBridge
+    _TEAM_BRIDGE = TeamBridge()
+    TEAM_BRIDGE_OK = True
+except Exception as e:
+    print(f"[team_bridge] indisponível: {e}")
+    _TEAM_BRIDGE = None
+    TEAM_BRIDGE_OK = False
+
 # ── Carrega base classes do .pyc se .py ausente (orchestrator_geral legacy) ───
 def _load_pyc(name: str, pyc_path: Path):
     loader = importlib.machinery.SourcelessFileLoader(name, str(pyc_path))
@@ -694,6 +704,18 @@ def ciclo_completo(token: str, estado: dict) -> dict:
     if latest.exists() or latest.is_symlink():
         latest.unlink()
     latest.symlink_to(nome_report)
+
+    # TeamBridge: reportar ao CTOBrain após ciclo completo
+    if TEAM_BRIDGE_OK and _TEAM_BRIDGE:
+        try:
+            resultado_bridge = _TEAM_BRIDGE.processar_ciclo()
+            tickets = resultado_bridge.get("tickets_criados", [])
+            if tickets:
+                logger.info(
+                    f"[TeamBridge] {len(tickets)} ticket(s) criado(s): {tickets}"
+                )
+        except Exception as e:
+            logger.warning(f"[TeamBridge] Erro ao processar ciclo: {e}")
 
     return estado
 

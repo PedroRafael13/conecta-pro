@@ -154,7 +154,12 @@ def cmd_ajuda(chat_id: int):
         "`/memoria` — Memória de longo prazo\n"
         "`/licoes` — Últimas lições aprendidas\n"
         "`/frageis` — Componentes mais problemáticos\n"
-        "`/relatorio_semanal` — Relatório de 7 dias\n\n"
+        "`/relatorio_semanal` — Relatório de 7 dias\n"
+        "`/visao360` — Visão 360°: correlações técnico-negócio\n"
+        "`/propostas` — Propostas proativas do CTO\n"
+        "`/agentes` — Status dos 80 agentes (13 módulos)\n"
+        "`/modulo [nome]` — Detalhe de um módulo específico\n"
+        "`/team` — Resumo executivo do time de suporte\n\n"
         "*Linguagem natural:*\n"
         "Apenas descreva o problema:\n"
         "_Redis caiu_, _Postgres lento_, _Celery parou_\n\n"
@@ -616,6 +621,26 @@ def cmd_anomalias(chat_id: int):
         send(f"⚠️ Erro: {e}", chat_id=chat_id)
 
 
+def cmd_visao360(chat_id: int):
+    """Visão 360°: correlaciona eventos técnicos com impacto de negócio."""
+    try:
+        from visao_360 import gerar_visao_360
+        texto = gerar_visao_360()
+        send(texto, chat_id=chat_id)
+    except Exception as e:
+        send(f"⚠️ Visão 360° erro: {e}", chat_id=chat_id)
+
+
+def cmd_propostas(chat_id: int):
+    """CTO proativo: lista propostas de melhoria detectadas agora."""
+    try:
+        from proatividade import gerar_listagem_propostas
+        texto = gerar_listagem_propostas()
+        send(texto, chat_id=chat_id)
+    except Exception as e:
+        send(f"⚠️ Propostas erro: {e}", chat_id=chat_id)
+
+
 # ─── Loop principal ───────────────────────────────────────────────────────────
 
 def processar_update(update: dict):
@@ -682,9 +707,84 @@ def processar_update(update: dict):
         cmd_licoes(chat_id)
     elif tl.startswith("/frageis"):
         cmd_frageis(chat_id)
+    elif tl.startswith("/visao360"):
+        cmd_visao360(chat_id)
+    elif tl.startswith("/propostas"):
+        cmd_propostas(chat_id)
+    elif tl.startswith("/agentes"):
+        cmd_agentes(chat_id)
+    elif tl.startswith("/modulo"):
+        parts = text.split(maxsplit=1)
+        if len(parts) > 1:
+            cmd_modulo(chat_id, parts[1])
+        else:
+            send("Uso: `/modulo operacional`", chat_id=chat_id)
+    elif tl.startswith("/team"):
+        cmd_team(chat_id)
     else:
         # Linguagem natural
         handle_natural_language(text, chat_id)
+
+
+# ─── Comandos Sprint 5 ───────────────────────────────────────────────────────
+
+def cmd_agentes(chat_id: int):
+    """Status consolidado dos 80 agentes em 13 módulos."""
+    brain = get_brain()
+    if not brain:
+        send("❌ CTOBrain indisponível.", chat_id=chat_id)
+        return
+    try:
+        resumo = brain.resumo_team_support()
+        send(resumo, chat_id=chat_id)
+    except Exception as e:
+        send(f"⚠️ Erro: {e}", chat_id=chat_id)
+
+
+def cmd_modulo(chat_id: int, nome: str):
+    """Status detalhado de um módulo específico por nome."""
+    brain = get_brain()
+    if not brain:
+        send("❌ CTOBrain indisponível.", chat_id=chat_id)
+        return
+    try:
+        status = brain.status_modulo(nome)
+        send(status, chat_id=chat_id)
+    except Exception as e:
+        send(f"⚠️ Erro: {e}", chat_id=chat_id)
+
+
+def cmd_team(chat_id: int):
+    """Resumo executivo do time de suporte com estatísticas do TeamBridge."""
+    brain = get_brain()
+    if not brain:
+        send("❌ CTOBrain indisponível.", chat_id=chat_id)
+        return
+    try:
+        resumo = brain.resumo_team_support()
+
+        # Adicionar estatísticas do estado interno do bridge
+        sys.path.insert(0, str(CTO_DIR))
+        from team_bridge import TeamBridge
+        bridge = TeamBridge()
+        estado = bridge.estado
+
+        msg = (
+            f"🏢 *Team Support — Visão Executiva*\n\n"
+            f"{resumo}\n"
+            f"─────────────────\n"
+            f"Ciclos processados: `{estado.get('total_ciclos', 0)}`\n"
+            f"Tickets criados: `{estado.get('tickets_criados', 0)}`\n"
+            f"Alertas escalados: `{estado.get('alertas_escalados', 0)}`\n"
+        )
+        modulos_problema = estado.get("modulos_com_falha", {})
+        if modulos_problema:
+            msg += "\n*Módulos com falha recorrente:*\n"
+            for mod, cont in sorted(modulos_problema.items(), key=lambda x: -x[1])[:3]:
+                msg += f"  ⚠️ `{mod}`: {cont}x\n"
+        send(msg, chat_id=chat_id)
+    except Exception as e:
+        send(f"⚠️ Erro: {e}", chat_id=chat_id)
 
 
 def run():

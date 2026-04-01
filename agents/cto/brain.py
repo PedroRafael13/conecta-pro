@@ -469,6 +469,16 @@ class CTOBrain:
             linhas.append("✅ Sem tickets abertos")
 
         linhas.append("")
+
+        # Team support — resumo dos 80 agentes
+        try:
+            bridge = self._get_team_bridge()
+            if bridge:
+                linhas.append(bridge.resumo_para_cto())
+        except Exception:
+            pass
+
+        linhas.append("")
         linhas.append("_/ajuda para comandos_")
 
         return "\n".join(linhas)
@@ -552,3 +562,33 @@ class CTOBrain:
             except Exception as e:
                 return {"erro": str(e), "mudancas": []}
         return CTOBrain._aprendizado_instance.executar()
+
+    # ─── SPRINT 5 — TEAM BRIDGE (CTO ↔ 80 agentes) ───────────────────────────
+
+    _team_bridge_instance = None
+
+    @classmethod
+    def _get_team_bridge(cls):
+        if cls._team_bridge_instance is None:
+            try:
+                import sys as _sys
+                _sys.path.insert(0, str(CTO_DIR))
+                from team_bridge import TeamBridge
+                cls._team_bridge_instance = TeamBridge()
+            except Exception:
+                pass
+        return cls._team_bridge_instance
+
+    def status_modulo(self, nome: str) -> str:
+        """Status detalhado de um módulo por nome (Sprint 5)."""
+        bridge = self._get_team_bridge()
+        if bridge:
+            return bridge.status_modulo(nome)
+        return f"❌ TeamBridge indisponível"
+
+    def resumo_team_support(self) -> str:
+        """Resumo dos 80 agentes em 13 módulos (Sprint 5)."""
+        bridge = self._get_team_bridge()
+        if bridge:
+            return bridge.resumo_para_cto()
+        return "⚠️ TeamBridge indisponível"
